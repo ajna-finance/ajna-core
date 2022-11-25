@@ -219,6 +219,40 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         );
     }
 
+    /*******************************/
+    /*** Pool Override Functions ***/
+    /*******************************/
+
+    /**
+     *  @notice ERC20 collateralization calculation.
+     *  @param debt_       Debt to calculate collateralization for.
+     *  @param collateral_ Collateral to calculate collateralization for.
+     *  @param price_      Price to calculate collateralization for.
+     *  @return True if collateralization calculated is equal or greater than 1.
+     */
+    function _isCollateralized(
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 price_
+    ) internal pure override returns (bool) {
+        return Maths.wmul(collateral_, price_) >= debt_;
+    }
+
+   /**
+     *  @notice Settle an ERC20 pool auction, remove from auction queue and emit event.
+     *  @param borrowerAddress_    Address of the borrower that exits auction.
+     *  @param borrowerCollateral_ Borrower collateral amount before auction exit.
+     *  @return floorCollateral_   Remaining borrower collateral after auction exit.
+     */
+    function _settleAuction(
+        address borrowerAddress_,
+        uint256 borrowerCollateral_
+    ) internal override returns (uint256) {
+        Auctions.settleERC20Auction(auctions, borrowerAddress_);
+        emit AuctionSettle(borrowerAddress_, borrowerCollateral_);
+        return borrowerCollateral_;
+    }
+
     /************************/
     /*** Helper Functions ***/
     /************************/

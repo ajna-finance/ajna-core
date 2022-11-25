@@ -435,7 +435,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
         uint256 reserves = Maths.wmul(t0poolDebt, poolState.inflator) + _getPoolQuoteTokenBalance() - deposits.treeSum() - auctions.totalBondEscrowed - reserveAuctionUnclaimed;
         Loans.Borrower storage borrower = loans.borrowers[borrowerAddress_];
-        (uint256 remainingCollateral, uint256 remainingt0Debt) = Auctions.settle(
+        (uint256 remainingCollateral, uint256 remainingt0Debt) = Auctions.settlePoolDebt(
             auctions,
             buckets,
             deposits,
@@ -447,7 +447,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             maxDepth_
         );
 
-        if (remainingt0Debt == 0) auctions.removeAuction(borrowerAddress_);
+        if (remainingt0Debt == 0) _settleAuction(borrowerAddress_, borrower.collateral); // TODO: should we here just remove auction or should we settle and reconcile pool collateral for NFT?
 
         uint256 t0settledDebt = borrower.t0debt - remainingt0Debt;
         t0poolDebt           -= t0settledDebt;
@@ -580,7 +580,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             t0DebtInAuction -= borrower.t0debt;
 
             borrower.collateral = _settleAuction(borrowerAddress_, borrower.collateral);
-            Auctions.removeAuction(auctions, borrowerAddress_);
         }
 
         loans.update(
@@ -642,7 +641,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 t0DebtInAuction -= borrower.t0debt; // remove entire borrower debt from pool accumulator
 
                 borrower.collateral = _settleAuction(borrowerAddress, borrower.collateral);
-                Auctions.removeAuction(auctions, borrowerAddress);
             } else {
                 t0DebtInAuction -= t0repaidDebt; // partial repaid, remove only the paid debt
             }
@@ -722,6 +720,35 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
 
+    /******************************/
+    /*** Pool Virtual Functions ***/
+    /******************************/
+
+    /**
+     *  @notice Default collateralization calculation (to be overridden in pool implementations).
+     *  @param debt_       Debt to calculate collateralization for.
+     *  @param collateral_ Collateral to calculate collateralization for.
+     *  @param price_      Price to calculate collateralization for.
+     *  @return True if collateralization calculated is equal or greater than 1.
+     */
+    function _isCollateralized(
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 price_
+    ) internal virtual returns (bool);
+
+   /**
+     *  @notice Settle an auction when it exits the auction queue (to be overridden in pool implementations).
+     *  @param borrowerAddress_    Address of the borrower that exits auction.
+     *  @param borrowerCollateral_ Borrower collateral amount before auction exit.
+     *  @return floorCollateral_   Remaining borrower collateral after auction exit.
+     */
+    function _settleAuction(
+        address borrowerAddress_,
+        uint256 borrowerCollateral_
+    ) internal virtual returns (uint256);
+
+
     /*****************************/
     /*** Pool Helper Functions ***/
     /*****************************/
@@ -756,35 +783,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 poolState_.accruedDebt = Maths.wmul(t0Debt, poolState_.inflator);
             }
         }
-    }
-
-    /**
-     *  @notice Default collateralization calculation (to be overridden in other pool implementations like NFT's).
-     *  @param debt_       Debt to calculate collateralization for.
-     *  @param collateral_ Collateral to calculate collateralization for.
-     *  @param price_      Price to calculate collateralization for.
-     *  @return True if collateralization calculated is equal or greater than 1.
-     */
-    function _isCollateralized(
-        uint256 debt_,
-        uint256 collateral_,
-        uint256 price_
-    ) internal virtual returns (bool) {
-        return Maths.wmul(collateral_, price_) >= debt_;
-    }
-
-   /**
-     *  @notice Additional method to settle an auction when it exits the auction queue.
-     *  @dev Empty implementation for ERC20 pool; Overriden in NFT implementations to reconcile fragments of collateral.
-     *  @param borrowerAddress_    Address of the borrower that exits auction.
-     *  @param borrowerCollateral_ Borrower collateral amount before auction exit.
-     *  @return floorCollateral_   Remaining borrower collateral after auction exit.
-     */
-    function _settleAuction(
-        address borrowerAddress_,
-        uint256 borrowerCollateral_
-    ) internal virtual returns (uint256) {
-        return borrowerCollateral_;
     }
 
     function _updatePool(PoolState memory poolState_, uint256 lup_) internal {

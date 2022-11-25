@@ -202,13 +202,13 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
      *  @notice Performs NFT auction settlement by rounding down borrower's collateral amount and by moving borrower's token ids to pool claimable array.
      *  @param borrowerAddress_    Address of the borrower that exits auction.
      *  @param borrowerCollateral_ Borrower collateral amount before auction exit (could be fragmented as result of partial takes).
-     *  @return floorCollateral_   Rounded down collateral, the number of NFT tokens borrower can pull after auction exit.
+     *  @return Rounded down collateral, the number of NFT tokens borrower can pull after auction exit.
      */
     function _settleAuction(
         address borrowerAddress_,
         uint256 borrowerCollateral_
-    ) internal override returns (uint256 floorCollateral_) {
-        floorCollateral_ = Auctions.settleNFTAuction(
+    ) internal override returns (uint256) {
+        (uint256 floorCollateral, uint256 lps, uint256 bucketIndex) = Auctions.settleNFTAuction(
             auctions,
             buckets,
             deposits,
@@ -217,6 +217,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             borrowerAddress_,
             borrowerCollateral_
         );
+        emit AuctionNFTSettle(borrowerAddress_, floorCollateral, lps, bucketIndex);
+        return floorCollateral;
     }
 
 

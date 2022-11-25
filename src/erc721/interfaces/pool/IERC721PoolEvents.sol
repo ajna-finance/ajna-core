@@ -19,6 +19,20 @@ interface IERC721PoolEvents {
     );
 
     /**
+     *  @notice Emitted when NFT auction is completed.
+     *  @param  borrower   Address of borrower that exits auction.
+     *  @param  collateral Borrower's remaining collateral when auction completed.
+     *  @param  lps        Amount of LPs given to the borrower to compensate fractional collateral (if any).
+     *  @param  index      Index of the bucket with LPs to compensate fractional collateral.
+     */
+    event AuctionNFTSettle(
+        address indexed borrower,
+        uint256 collateral,
+        uint256 lps,
+        uint256 index
+    );
+
+    /**
      *  @notice Emitted when borrower locks collateral in the pool.
      *  @param  borrower `msg.sender`.
      *  @param  tokenIds Array of tokenIds to be added to the pool.

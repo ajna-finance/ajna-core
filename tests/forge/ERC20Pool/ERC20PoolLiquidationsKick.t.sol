@@ -346,13 +346,14 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             }
         );
 
-        _repay(
+        _repayAndSettleAuction(
             {
-                from:      _borrower,
-                borrower:  _borrower,
-                amount:    2 * 1e18,
-                repaid:    2 * 1e18,
-                newLup:    9.721295865031779605 * 1e18
+                from:       _borrower,
+                borrower:   _borrower,
+                amount:     2 * 1e18,
+                repaid:     2 * 1e18,
+                collateral: 2 * 1e18,
+                newLup:     9.721295865031779605 * 1e18
             }
         );
         _assertAuction(
@@ -507,11 +508,12 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             }
         );
 
-        _pledgeCollateral(
+        _pledgeCollateralAndSettleAuction(
             {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   2 * 1e18
+                from:       _borrower,
+                borrower:   _borrower,
+                amount:     2 * 1e18,
+                collateral: 4 * 1e18 // collateral after auction settled = 2 new pledged + initial 2 collateral pledged 
             }
         );
         _assertAuction(
