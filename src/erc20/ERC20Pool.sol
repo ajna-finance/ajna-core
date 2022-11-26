@@ -82,7 +82,8 @@ contract ERC20Pool is ReentrancyGuard, IERC20Pool, FlashloanablePool {
         _transferCollateralFrom(msg.sender, collateralAmountToAdd_);
     }
 
-    function removeAllCollateral(
+    function redeemLPforCollateral(
+        uint256 maxLPAmount_,
         uint256 index_
     ) external override returns (uint256 collateralAmountRemoved_, uint256 redeemedLenderLPs_) {
         auctions.revertIfAuctionClearable(loans);

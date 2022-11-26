@@ -475,9 +475,9 @@ abstract contract DSTestPlus is Test {
 
         uint256 lup = _poolUtils.lup(address(_pool));
 
-        assertEq(debt,        borrowerDebt);
-        assertEq(col,         borrowerCollateral);
-        assertEq(t0Np,  borrowert0Np);
+        assertEq(debt, borrowerDebt);
+        assertEq(col,  borrowerCollateral);
+        assertEq(t0Np, borrowert0Np);
         assertEq(
             PoolUtils.collateralization(
                 borrowerDebt,
