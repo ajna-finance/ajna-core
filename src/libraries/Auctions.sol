@@ -19,12 +19,12 @@ library Auctions {
     struct Liquidation {
         address kicker;         // address that initiated liquidation
         uint96  bondFactor;     // bond factor used to start liquidation
-        uint256 bondSize;       // liquidation bond size
         uint96  kickTime;       // timestamp when liquidation was started
         address prev;           // previous liquidated borrower in auctions queue
         uint96  kickMomp;       // Momp when liquidation was started
         address next;           // next liquidated borrower in auctions queue
-        uint256 neutralPrice;   // Neutral Price when liquidation was started
+        uint160 bondSize;       // liquidation bond size
+        uint96  neutralPrice;   // Neutral Price when liquidation was started
     }
 
     struct Kicker {
@@ -233,9 +233,9 @@ library Auctions {
         liquidation.kicker              = msg.sender;
         liquidation.kickTime            = uint96(block.timestamp);
         liquidation.kickMomp            = uint96(momp_);
-        liquidation.bondSize            = bondSize_;
+        liquidation.bondSize            = uint160(bondSize_);
         liquidation.bondFactor          = uint96(bondFactor);
-        liquidation.neutralPrice        = neutralPrice_;
+        liquidation.neutralPrice        = uint96(neutralPrice_);
 
         if (self.head != address(0)) {
             // other auctions in queue, liquidation doesn't exist or overwriting.
@@ -310,7 +310,7 @@ library Auctions {
         if (!params_.isRewarded) {
             // take is above neutralPrice, Kicker is penalized
             params_.bondChange = Maths.min(liquidation.bondSize, Maths.wmul(params_.quoteTokenAmount, uint256(-bpf)));
-            liquidation.bondSize                -= params_.bondChange;
+            liquidation.bondSize                -= uint160(params_.bondChange);
             self.kickers[params_.kicker].locked -= params_.bondChange;
             self.totalBondEscrowed              -= params_.bondChange;
         } else {
@@ -362,14 +362,14 @@ library Auctions {
         if (params_.isRewarded) {
             // take is below neutralPrice, Kicker is rewarded
             params_.bondChange = Maths.wmul(params_.quoteTokenAmount, uint256(bpf));
-            liquidation.bondSize                += params_.bondChange;
+            liquidation.bondSize                += uint160(params_.bondChange);
             self.kickers[params_.kicker].locked += params_.bondChange;
             self.totalBondEscrowed              += params_.bondChange;
 
         } else {
             // take is above neutralPrice, Kicker is penalized
             params_.bondChange = Maths.min(liquidation.bondSize, Maths.wmul(params_.quoteTokenAmount, uint256(-bpf)));
-            liquidation.bondSize                -= params_.bondChange;
+            liquidation.bondSize                -= uint160(params_.bondChange);
             self.kickers[params_.kicker].locked -= params_.bondChange;
             self.totalBondEscrowed              -= params_.bondChange;
         }
