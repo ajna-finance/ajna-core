@@ -264,8 +264,8 @@ library Buckets {
 
     /**
      *  @notice Returns the amount of quote tokens calculated for the given amount of LPs.
-     *  @param  bucketCollateral_ Amount of collateral in bucket.
      *  @param  bucketLPs_        Amount of LPs in bucket.
+     *  @param  bucketCollateral_ Amount of collateral in bucket.
      *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs.
      *  @param  lenderLPsBalance_ The amount of LPs to calculate quote token amount for.
      *  @param  maxQuoteToken_    The max quote token amount to calculate LPs for.
@@ -275,8 +275,8 @@ library Buckets {
      *  @return lenderLPs_        Lender LPs balance in current bucket.
      */
     function lpsToQuoteToken(
-        uint256 bucketCollateral_,
         uint256 bucketLPs_,
+        uint256 bucketCollateral_,
         uint256 deposit_,
         uint256 lenderLPsBalance_,
         uint256 maxQuoteToken_,

@@ -20,6 +20,7 @@ import './PositionNFT.sol';
 
 import '../libraries/Maths.sol';
 import '../libraries/Buckets.sol';
+import '../libraries/PoolUtils.sol';
 
 contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC20, ReentrancyGuard {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -118,7 +119,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
             bucketDeposit,
             lps[params_.tokenId][params_.fromIndex],
             bucketDeposit,
-            params_.fromIndex
+            PoolUtils.indexToPrice(params_.fromIndex)
         );
 
         // update prices set at which a position has liquidity
