@@ -31,19 +31,23 @@ abstract contract Pool is Clone, Multicall, IPool {
     /*** State Variables ***/
     /***********************/
 
-    uint256 public override interestRate;       // [WAD]
-    uint256 public override interestRateUpdate; // [SEC]
+    uint160 public override interestRate;       // [WAD]
+    uint96  public override interestRateUpdate; // [SEC]
+
+    uint160 internal inflatorSnapshot;           // [WAD]
+    uint96  internal lastInflatorSnapshotUpdate; // [SEC]
+
     uint256 public override pledgedCollateral;  // [WAD]
 
     uint256 internal debtEma;   // [WAD]
     uint256 internal lupColEma; // [WAD]
 
-    uint256 internal inflatorSnapshot;           // [WAD]
-    uint256 internal lastInflatorSnapshotUpdate; // [SEC]
-
     uint256 internal reserveAuctionKicked;    // Time a Claimable Reserve Auction was last kicked.
     uint256 internal reserveAuctionUnclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
     uint256 internal t0DebtInAuction;         // Total debt in auction used to restrict LPB holder from withdrawing [WAD]
+
+    uint256 internal poolInitializations;
+    uint256 internal t0poolDebt;           // Pool debt as if the whole amount was incurred upon the first loan. [WAD]
 
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 
@@ -51,8 +55,6 @@ abstract contract Pool is Clone, Multicall, IPool {
     mapping(uint256 => Buckets.Bucket) internal buckets;              // deposit index -> bucket
     Deposits.Data                      internal deposits;
     Loans.Data                         internal loans;
-    uint256                            internal poolInitializations;
-    uint256                            internal t0poolDebt;           // Pool debt as if the whole amount was incurred upon the first loan. [WAD]
 
     struct PoolState {
         uint256 accruedDebt;
@@ -820,8 +822,8 @@ abstract contract Pool is Clone, Multicall, IPool {
                 }
 
                 if (poolState_.rate != newInterestRate) {
-                    interestRate       = newInterestRate;
-                    interestRateUpdate = block.timestamp;
+                    interestRate       = uint160(newInterestRate);
+                    interestRateUpdate = uint96(block.timestamp);
 
                     emit UpdateInterestRate(poolState_.rate, newInterestRate);
                 }
@@ -831,11 +833,11 @@ abstract contract Pool is Clone, Multicall, IPool {
         pledgedCollateral = poolState_.collateral;
 
         if (poolState_.isNewInterestAccrued) {
-            inflatorSnapshot           = poolState_.inflator;
-            lastInflatorSnapshotUpdate = block.timestamp;
+            inflatorSnapshot           = uint160(poolState_.inflator);
+            lastInflatorSnapshotUpdate = uint96(block.timestamp);
         } else if (poolState_.accruedDebt == 0) {
-            inflatorSnapshot           = Maths.WAD;
-            lastInflatorSnapshotUpdate = block.timestamp;
+            inflatorSnapshot           = uint160(Maths.WAD);
+            lastInflatorSnapshotUpdate = uint96(block.timestamp);
         }
     }
 
