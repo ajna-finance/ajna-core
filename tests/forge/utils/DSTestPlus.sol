@@ -280,7 +280,7 @@ abstract contract DSTestPlus is Test {
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(from, index, expectedWithdrawal, newLup);
         _assertTokenTransferEvent(address(_pool), from, expectedWithdrawal);
-        (uint256 depositRemoved, uint256 lpRedeemed) = _pool.removeQuoteToken(amount, index);
+        (uint256 depositRemoved, uint256 lpRedeemed) = _pool.redeemLPforQuoteToken(lpRedeem, index);
         assertEq(depositRemoved, expectedWithdrawal);
         assertEq(lpRedeemed, lpRedeem);
     }
