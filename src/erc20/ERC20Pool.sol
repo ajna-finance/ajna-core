@@ -44,15 +44,36 @@ contract ERC20Pool is IERC20Pool, Pool {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function pledgeCollateral(
-        address borrower_,
-        uint256 collateralAmountToPledge_
-    ) external override {
-        _pledgeCollateral(borrower_, collateralAmountToPledge_);
+    // function pledgeCollateral(
+    //     address borrower_,
+    //     uint256 collateralAmountToPledge_
+    // ) external override {
+    //     _pledgeCollateral(borrower_, collateralAmountToPledge_);
 
-        // move collateral from sender to pool
-        emit PledgeCollateral(borrower_, collateralAmountToPledge_);
-        _transferCollateralFrom(msg.sender, collateralAmountToPledge_);
+    //     // move collateral from sender to pool
+    //     emit PledgeCollateral(borrower_, collateralAmountToPledge_);
+    //     _transferCollateralFrom(msg.sender, collateralAmountToPledge_);
+    // }
+
+    function drawDebt(
+        address borrower_,
+        uint256 amountToBorrow_,
+        uint256 limitIndex_,
+        uint256 collateralToPledge_
+    ) external {
+        PoolState memory poolState = _accruePoolInterest();
+
+        // pledge collateral to pool
+        if (collateralToPledge_ != 0) {
+            _pledgeCollateral(poolState, borrower_, collateralToPledge_);
+
+            // move collateral from sender to pool
+            emit PledgeCollateral(borrower_, collateralToPledge_);
+            _transferCollateralFrom(borrower_, collateralToPledge_);
+        }
+
+        // borrow against pledged collateral
+        if (amountToBorrow_ != 0) _borrow(poolState, amountToBorrow_, limitIndex_);
     }
 
     function pullCollateral(

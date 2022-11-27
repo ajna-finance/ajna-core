@@ -56,15 +56,34 @@ contract ERC721Pool is IERC721Pool, Pool {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function pledgeCollateral(
-        address borrower_,
-        uint256[] calldata tokenIdsToPledge_
-    ) external override {
-        _pledgeCollateral(borrower_, Maths.wad(tokenIdsToPledge_.length));
+    // function pledgeCollateral(
+    //     address borrower_,
+    //     uint256[] calldata tokenIdsToPledge_
+    // ) external override {
+    //     _pledgeCollateral(borrower_, Maths.wad(tokenIdsToPledge_.length));
 
-        // move collateral from sender to pool
-        emit PledgeCollateralNFT(borrower_, tokenIdsToPledge_);
-        _transferFromSenderToPool(borrowerTokenIds[borrower_], tokenIdsToPledge_);
+    //     // move collateral from sender to pool
+    //     emit PledgeCollateralNFT(borrower_, tokenIdsToPledge_);
+    //     _transferFromSenderToPool(borrowerTokenIds[borrower_], tokenIdsToPledge_);
+    // }
+
+    function drawDebt(
+        address borrower_,
+        uint256 amountToBorrow_,
+        uint256 limitIndex_,
+        uint256[] calldata tokenIdsToPledge_
+    ) external {
+        PoolState memory poolState = _accruePoolInterest();
+
+        if (tokenIdsToPledge_.length != 0) {
+            _pledgeCollateral(poolState, borrower_, Maths.wad(tokenIdsToPledge_.length));
+
+            // move collateral from sender to pool
+            emit PledgeCollateralNFT(borrower_, tokenIdsToPledge_);
+            _transferFromSenderToPool(borrowerTokenIds[borrower_], tokenIdsToPledge_);
+        }
+
+        if (amountToBorrow_ != 0) _borrow(poolState, amountToBorrow_, limitIndex_);
     }
 
     function pullCollateral(

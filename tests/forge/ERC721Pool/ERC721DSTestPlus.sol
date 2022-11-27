@@ -203,6 +203,68 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         bucketsUsed.add(index); 
     }
 
+    function _borrow(
+        address from,
+        uint256 amount,
+        uint256 indexLimit,
+        uint256 newLup
+    ) internal {
+        changePrank(from);
+        vm.expectEmit(true, true, false, true);
+        emit Borrow(from, newLup, amount);
+        _assertTokenTransferEvent(address(_pool), from, amount);
+
+        uint256[] memory emptyArray;
+        ERC721Pool(address(_pool)).drawDebt(from, amount, indexLimit, emptyArray);
+
+        // Add for tearDown
+        borrowers.add(from);
+    }
+
+    function _drawDebt(
+        address from,
+        address borrower,
+        uint256 amountToBorrow,
+        uint256 limitIndex,
+        uint256[] memory tokenIds
+    ) internal {
+        changePrank(from);
+
+        // pledge collateral
+        if (tokenIds.length != 0) {
+            vm.expectEmit(true, true, false, true);
+            emit PledgeCollateralNFT(borrower, tokenIds);
+            for (uint256 i = 0; i < tokenIds.length; i++) {
+                assertEq(_collateral.ownerOf(tokenIds[i]), from); // token is owned by pledger address
+                vm.expectEmit(true, true, false, true);
+                emit Transfer(from, address(_pool), tokenIds[i]);
+            }
+        }
+
+        // borrow quote
+        if (amountToBorrow != 0) {
+            // calculate newLup for use in emit
+            uint256 newLup = _poolUtils.lup(address(_pool));
+
+            vm.expectEmit(true, true, false, true);
+            emit Borrow(from, newLup, amountToBorrow);
+            _assertTokenTransferEvent(address(_pool), from, amountToBorrow);
+        }
+
+        ERC721Pool(address(_pool)).drawDebt(borrower, amountToBorrow, limitIndex, tokenIds);
+
+        // check tokenIds were transferred to the pool
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            assertEq(_collateral.ownerOf(tokenIds[i]), address(_pool));
+        }
+
+        // Add for tearDown
+        borrowers.add(borrower);
+        for (uint256 i=0; i < tokenIds.length; i++) {
+            borrowerPlegedNFTIds[borrower].add(tokenIds[i]);
+        }
+    }
+
     function _pledgeCollateral(
         address from,
         address borrower,
@@ -217,7 +279,8 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
             emit Transfer(from, address(_pool), tokenIds[i]);
         }
 
-        ERC721Pool(address(_pool)).pledgeCollateral(borrower, tokenIds);
+        // ERC721Pool(address(_pool)).pledgeCollateral(borrower, tokenIds);
+        ERC721Pool(address(_pool)).drawDebt(borrower, 0, 0, tokenIds);
         for (uint256 i = 0; i < tokenIds.length; i++) {
             assertEq(_collateral.ownerOf(tokenIds[i]), address(_pool));
         }
@@ -346,7 +409,47 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
     ) internal {
         changePrank(from);
         vm.expectRevert(IERC721PoolErrors.OnlySubset.selector);
-        ERC721Pool(address(_pool)).pledgeCollateral(from, tokenIds);
+        _pledgeCollateral(from, from, tokenIds);
+    }
+
+    function _assertBorrowAuctionActiveRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('AuctionActive()'));
+        _borrow(from, amount, indexLimit, _poolUtils.lup(address(_pool)));
+    }
+
+    function _assertBorrowLimitIndexRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.LimitIndexReached.selector);
+        _borrow(from, amount, indexLimit, _poolUtils.lup(address(_pool)));
+    }
+
+    function _assertBorrowBorrowerUnderCollateralizedRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.BorrowerUnderCollateralized.selector);
+        _borrow(from, amount, indexLimit, _poolUtils.lup(address(_pool)));
+    }
+
+    function _assertBorrowMinDebtRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
+        _borrow(from, amount, indexLimit, _poolUtils.lup(address(_pool)));
     }
 
 }

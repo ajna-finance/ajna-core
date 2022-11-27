@@ -97,21 +97,29 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(address(_pool)), 50_000 * 1e18);
         assertEq(_quote.balanceOf(_lender),        150_000 * 1e18);
 
-        _pledgeCollateral(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   100 * 1e18
-            }
-        );
-        _borrow(
-            {
-                from:       _borrower,
-                amount:     21_000 * 1e18,
-                indexLimit: 3_000,
-                newLup:     2_981.007422784467321543 * 1e18
-            }
-        );
+        // _pledgeCollateral(
+        //     {
+        //         from:     _borrower,
+        //         borrower: _borrower,
+        //         amount:   100 * 1e18
+        //     }
+        // );
+        // _borrow(
+        //     {
+        //         from:       _borrower,
+        //         amount:     21_000 * 1e18,
+        //         indexLimit: 3_000,
+        //         newLup:     2_981.007422784467321543 * 1e18
+        //     }
+        // );
+
+        _drawDebt({
+            from: _borrower,
+            borrower: _borrower,
+            amountToBorrow: 21_000 * 1e18,
+            limitIndex: 3_000,
+            collateralToPledge: 100 * 1e18
+        });
 
         _assertPool(
             PoolState({
@@ -924,7 +932,9 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             }
         );
         vm.expectRevert(abi.encodeWithSignature('ZeroThresholdPrice()'));
-        _pool.borrow(0.00000000000000001 * 1e18, 3000);
+        // _pool.borrow(0.00000000000000001 * 1e18, 3000);
+        _borrow(_borrower, 0.00000000000000001 * 1e18, 3000, _poolUtils.lup(address(_pool)));
+
 
         // borrower 1 borrows 500 quote from the pool after using a non 0 TP
         _pledgeCollateral(

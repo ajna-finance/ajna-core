@@ -169,6 +169,56 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         return ERC20Pool(address(_pool)).addCollateral(amount, index);
     }
 
+    function _borrow(
+        address from,
+        uint256 amount,
+        uint256 indexLimit,
+        uint256 newLup
+    ) internal {
+        changePrank(from);
+        vm.expectEmit(true, true, false, true);
+        emit Borrow(from, newLup, amount);
+        _assertTokenTransferEvent(address(_pool), from, amount);
+
+        ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
+
+        // Add for tearDown
+        borrowers.add(from);
+    }
+
+    function _drawDebt(
+        address from,
+        address borrower,
+        uint256 amountToBorrow,
+        uint256 limitIndex,
+        uint256 collateralToPledge
+    ) internal {
+        changePrank(from);
+
+        // pledge collateral
+        if (collateralToPledge != 0) {
+            vm.expectEmit(true, true, false, true);
+            emit PledgeCollateral(borrower, collateralToPledge);
+            vm.expectEmit(true, true, false, true);
+            emit Transfer(from, address(_pool), collateralToPledge / ERC20Pool(address(_pool)).collateralScale());
+        }
+
+        // borrow quote
+        if (amountToBorrow != 0) {
+            // calculate newLup for use in emit
+            uint256 newLup = _poolUtils.lup(address(_pool));
+
+            vm.expectEmit(true, true, false, true);
+            emit Borrow(from, newLup, amountToBorrow);
+            _assertTokenTransferEvent(address(_pool), from, amountToBorrow);
+        }
+
+        ERC20Pool(address(_pool)).drawDebt(borrower, amountToBorrow, limitIndex, collateralToPledge);
+
+        // add for tearDown
+        borrowers.add(borrower);
+    }
+
     function _moveCollateral(
         address from,
         uint256 amount,
@@ -197,7 +247,9 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         emit PledgeCollateral(borrower, amount);
         vm.expectEmit(true, true, false, true);
         emit Transfer(from, address(_pool), amount / ERC20Pool(address(_pool)).collateralScale());
-        ERC20Pool(address(_pool)).pledgeCollateral(borrower, amount);
+
+        // call out to drawDebt w/ amountToBorrow == 0
+        ERC20Pool(address(_pool)).drawDebt(borrower, 0, 0, amount);
 
         borrowers.add(borrower);
     }
@@ -370,6 +422,46 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         _pool.removeQuoteToken(amount, index);
     }
 
+    function _assertBorrowAuctionActiveRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('AuctionActive()'));
+        _borrow(from, amount, indexLimit, _poolUtils.lup(address(_pool)));
+    }
+
+    function _assertBorrowLimitIndexRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.LimitIndexReached.selector);
+        _borrow(from, amount, indexLimit, _poolUtils.lup(address(_pool)));
+    }
+
+    function _assertBorrowBorrowerUnderCollateralizedRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.BorrowerUnderCollateralized.selector);
+        _borrow(from, amount, indexLimit, _poolUtils.lup(address(_pool)));
+    }
+
+    function _assertBorrowMinDebtRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
+        _borrow(from, amount, indexLimit, _poolUtils.lup(address(_pool)));
+    }
+
 }
 
 abstract contract ERC20HelperContract is ERC20DSTestPlus {
@@ -406,7 +498,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
                 amount:   collateralAmount
             }
         );
-        _pool.borrow(loanAmount, limitIndex);
+        _borrow(borrower, loanAmount, limitIndex, _poolUtils.lup(address(_pool)));
         borrowers.add(borrower);
     }
 

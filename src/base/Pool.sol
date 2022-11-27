@@ -269,14 +269,15 @@ abstract contract Pool is Clone, Multicall, IPool {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function borrow(
+    function _borrow(
+        PoolState      memory poolState,
         uint256 amountToBorrow_,
         uint256 limitIndex_
-    ) external override {
+    ) internal {
         // if borrower auctioned then it cannot draw more debt
         auctions.revertIfActive(msg.sender);
 
-        PoolState memory poolState     = _accruePoolInterest();
+        // PoolState memory poolState     = _accruePoolInterest();
         Loans.Borrower memory borrower = loans.getBorrowerInfo(msg.sender);
         uint256 borrowerDebt           = Maths.wmul(borrower.t0debt, poolState.inflator);
 
@@ -552,11 +553,12 @@ abstract contract Pool is Clone, Multicall, IPool {
     /***********************************/
 
     function _pledgeCollateral(
+        PoolState      memory poolState,
         address borrowerAddress_,
         uint256 collateralAmountToPledge_
     ) internal {
 
-        PoolState      memory poolState = _accruePoolInterest();
+        // PoolState      memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
 
         borrower.collateral  += collateralAmountToPledge_;
