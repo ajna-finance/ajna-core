@@ -365,7 +365,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         address borrowerAddress_,
         bool    depositTake_,
         uint256 index_
-    ) external override nonReentrant {
+    ) external override {
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
         if (borrower.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
 
