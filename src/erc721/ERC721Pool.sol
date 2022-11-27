@@ -31,10 +31,10 @@ contract ERC721Pool is ReentrancyGuard, IERC721Pool, FlashloanablePool {
     ) external override {
         if (poolInitializations != 0) revert AlreadyInitialized();
 
-        inflatorSnapshot           = uint160(10**18);
-        lastInflatorSnapshotUpdate = uint96(block.timestamp);
-        interestRate               = uint160(rate_);
-        interestRateUpdate         = uint96(block.timestamp);
+        inflatorSnapshot           = uint208(10**18);
+        lastInflatorSnapshotUpdate = uint48(block.timestamp);
+        interestRate               = uint208(rate_);
+        interestRateUpdate         = uint48(block.timestamp);
 
         uint256 noOfTokens = tokenIds_.length;
         if (noOfTokens > 0) {

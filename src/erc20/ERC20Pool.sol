@@ -31,10 +31,10 @@ contract ERC20Pool is ReentrancyGuard, IERC20Pool, FlashloanablePool {
 
         collateralScale = uint128(collateralScale_);
 
-        inflatorSnapshot           = uint160(10**18);
-        lastInflatorSnapshotUpdate = uint96(block.timestamp);
-        interestRate               = uint160(rate_);
-        interestRateUpdate         = uint96(block.timestamp);
+        inflatorSnapshot           = uint208(10**18);
+        lastInflatorSnapshotUpdate = uint48(block.timestamp);
+        interestRate               = uint208(rate_);
+        interestRateUpdate         = uint48(block.timestamp);
 
         loans.init();
 

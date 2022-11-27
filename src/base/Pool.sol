@@ -31,11 +31,11 @@ abstract contract Pool is Clone, Multicall, IPool {
     /*** State Variables ***/
     /***********************/
 
-    uint160 public override interestRate;       // [WAD]
-    uint96  public override interestRateUpdate; // [SEC]
+    uint208 public override interestRate;       // [WAD]
+    uint48  public override interestRateUpdate; // [SEC]
 
-    uint160 internal inflatorSnapshot;           // [WAD]
-    uint96  internal lastInflatorSnapshotUpdate; // [SEC]
+    uint208 internal inflatorSnapshot;           // [WAD]
+    uint48  internal lastInflatorSnapshotUpdate; // [SEC]
 
     uint256 public override pledgedCollateral;  // [WAD]
 
@@ -822,8 +822,8 @@ abstract contract Pool is Clone, Multicall, IPool {
                 }
 
                 if (poolState_.rate != newInterestRate) {
-                    interestRate       = uint160(newInterestRate);
-                    interestRateUpdate = uint96(block.timestamp);
+                    interestRate       = uint208(newInterestRate);
+                    interestRateUpdate = uint48(block.timestamp);
 
                     emit UpdateInterestRate(poolState_.rate, newInterestRate);
                 }
@@ -833,11 +833,11 @@ abstract contract Pool is Clone, Multicall, IPool {
         pledgedCollateral = poolState_.collateral;
 
         if (poolState_.isNewInterestAccrued) {
-            inflatorSnapshot           = uint160(poolState_.inflator);
-            lastInflatorSnapshotUpdate = uint96(block.timestamp);
+            inflatorSnapshot           = uint208(poolState_.inflator);
+            lastInflatorSnapshotUpdate = uint48(block.timestamp);
         } else if (poolState_.accruedDebt == 0) {
-            inflatorSnapshot           = uint160(Maths.WAD);
-            lastInflatorSnapshotUpdate = uint96(block.timestamp);
+            inflatorSnapshot           = uint208(Maths.WAD);
+            lastInflatorSnapshotUpdate = uint48(block.timestamp);
         }
     }
 
