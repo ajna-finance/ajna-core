@@ -26,6 +26,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
 
     // Pool events
     event AddCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
+    event AuctionSettle(address indexed borrower, uint256 collateral);
     event PledgeCollateral(address indexed borrower_, uint256 amount_);
 
     event Transfer(address indexed from, address indexed to, uint256 value);
@@ -219,30 +220,15 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         borrowers.add(borrower);
     }
 
-    function _moveCollateral(
-        address from,
-        uint256 amount,
-        uint256 fromIndex, 
-        uint256 toIndex,
-        uint256 lpRedeemFrom,
-        uint256 lpRedeemTo
-    ) internal {
-        changePrank(from);
-        vm.expectEmit(true, true, true, true);
-        emit MoveCollateral(from, fromIndex, toIndex, amount);
-        (uint256 lpbFrom, uint256 lpbTo) = ERC20Pool(address(_pool)).moveCollateral(amount, fromIndex, toIndex);
-        assertEq(lpbFrom, lpRedeemFrom);
-        assertEq(lpbTo,   lpRedeemTo);
-
-        bidderDepositedIndex[from].add(toIndex);
-    }
-
-    function _pledgeCollateral(
+    function _pledgeCollateralAndSettleAuction(
         address from,
         address borrower,
-        uint256 amount
+        uint256 amount,
+        uint256 collateral
     ) internal {
         changePrank(from);
+        vm.expectEmit(true, true, false, true);
+        emit AuctionSettle(borrower, collateral);
         vm.expectEmit(true, true, false, true);
         emit PledgeCollateral(borrower, amount);
         vm.expectEmit(true, true, false, true);
@@ -268,6 +254,23 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         (uint256 collateralRemoved, uint256 lpAmount) = ERC20Pool(address(_pool)).removeAllCollateral(index);
         assertEq(collateralRemoved, amount);
         assertEq(lpAmount, lpRedeem);
+    }
+
+    function _repayAndSettleAuction(
+        address from,
+        address borrower,
+        uint256 amount,
+        uint256 repaid,
+        uint256 collateral,
+        uint256 newLup
+    ) internal {
+        changePrank(from);
+        vm.expectEmit(true, true, false, true);
+        emit AuctionSettle(borrower, collateral);
+        vm.expectEmit(true, true, false, true);
+        emit Repay(borrower, newLup, repaid);
+        _assertTokenTransferEvent(from, address(_pool), repaid);
+        _pool.repay(borrower, amount);
     }
 
     function _transferLpTokens(
@@ -337,39 +340,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     ) internal {
         vm.expectRevert(IPoolFactory.PoolAlreadyExists.selector);
         ERC20PoolFactory(poolFactory).deployPool(collateral, quote, interestRate);
-    }
-
-    function _assertMoveCollateralInsufficientLPsRevert(
-        address from,
-        uint256 amount,
-        uint256 fromIndex,
-        uint256 toIndex
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.InsufficientLPs.selector);
-        ERC20Pool(address(_pool)).moveCollateral(amount, fromIndex, toIndex);
-    }
-
-    function _assertMoveCollateralToSamePriceRevert(
-        address from,
-        uint256 amount,
-        uint256 fromIndex,
-        uint256 toIndex
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.MoveToSamePrice.selector);
-        ERC20Pool(address(_pool)).moveCollateral(amount, fromIndex, toIndex);
-    }
-
-    function _assertMoveInsufficientCollateralRevert(
-        address from,
-        uint256 amount,
-        uint256 fromIndex,
-        uint256 toIndex
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
-        ERC20Pool(address(_pool)).moveCollateral(amount, fromIndex, toIndex);
     }
 
     function _assertRemoveAllCollateralNoClaimRevert(

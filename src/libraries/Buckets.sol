@@ -58,6 +58,7 @@ library Buckets {
 
     /**
      *  @notice Add collateral to a bucket and updates LPs for bucket and lender with the amount coresponding to collateral amount added.
+     *  @param  lender_                Address of the lender.
      *  @param  deposit_               Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs
      *  @param  collateralAmountToAdd_ Additional collateral amount to add to bucket.
      *  @param  bucketPrice_           Bucket price.
@@ -65,6 +66,7 @@ library Buckets {
      */
     function addCollateral(
         Bucket storage bucket_,
+        address lender_,
         uint256 deposit_,
         uint256 collateralAmountToAdd_,
         uint256 bucketPrice_
@@ -83,7 +85,7 @@ library Buckets {
         if (bucket_.bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
         bucket_.collateral += collateralAmountToAdd_;
         // update bucket and lender LPs balance and deposit timestamp
-        addLPs(bucket_, msg.sender, addedLPs_);
+        addLPs(bucket_, lender_, addedLPs_);
     }
 
     /**
@@ -264,8 +266,8 @@ library Buckets {
 
     /**
      *  @notice Returns the amount of quote tokens calculated for the given amount of LPs.
-     *  @param  bucketCollateral_ Amount of collateral in bucket.
      *  @param  bucketLPs_        Amount of LPs in bucket.
+     *  @param  bucketCollateral_ Amount of collateral in bucket.
      *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs.
      *  @param  lenderLPsBalance_ The amount of LPs to calculate quote token amount for.
      *  @param  maxQuoteToken_    The max quote token amount to calculate LPs for.
@@ -275,8 +277,8 @@ library Buckets {
      *  @return lenderLPs_        Lender LPs balance in current bucket.
      */
     function lpsToQuoteToken(
-        uint256 bucketCollateral_,
         uint256 bucketLPs_,
+        uint256 bucketCollateral_,
         uint256 deposit_,
         uint256 lenderLPsBalance_,
         uint256 maxQuoteToken_,

@@ -19,17 +19,13 @@ interface IERC20PoolEvents {
     );
 
     /**
-     *  @notice Emitted when lender moves collateral from a bucket price to another.
-     *  @param  lender Recipient that moved collateral.
-     *  @param  from   Price bucket from which collateral was moved.
-     *  @param  to     Price bucket where collateral was moved.
-     *  @param  amount Amount of collateral moved.
+     *  @notice Emitted when auction is completed.
+     *  @param  borrower   Address of borrower that exits auction.
+     *  @param  collateral Borrower's remaining collateral when auction completed.
      */
-    event MoveCollateral(
-        address indexed lender,
-        uint256 indexed from,
-        uint256 indexed to,
-        uint256 amount
+    event AuctionSettle(
+        address indexed borrower,
+        uint256 collateral
     );
 
     /**

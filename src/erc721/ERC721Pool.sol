@@ -3,10 +3,12 @@
 pragma solidity 0.8.14;
 
 import './interfaces/IERC721Pool.sol';
-import '../base/Pool.sol';
+import './interfaces/IERC721Taker.sol';
+import '../base/FlashloanablePool.sol';
 
-contract ERC721Pool is IERC721Pool, Pool {
+contract ERC721Pool is IERC721Pool, FlashloanablePool {
     using Auctions for Auctions.Data;
+    using Deposits for Deposits.Data;
     using Loans    for Loans.Data;
 
     /***********************/
@@ -92,7 +94,7 @@ contract ERC721Pool is IERC721Pool, Pool {
         _pullCollateral(Maths.wad(noOfNFTsToPull_));
 
         emit PullCollateral(msg.sender, noOfNFTsToPull_);
-        _transferFromPoolToSender(borrowerTokenIds[msg.sender], noOfNFTsToPull_);
+        _transferFromPoolToAddress(msg.sender, borrowerTokenIds[msg.sender], noOfNFTsToPull_);
     }
 
     /*********************************/
@@ -117,7 +119,7 @@ contract ERC721Pool is IERC721Pool, Pool {
         bucketLPs_ = _removeCollateral(Maths.wad(noOfNFTsToRemove_), index_);
 
         emit RemoveCollateral(msg.sender, index_, noOfNFTsToRemove_);
-        _transferFromPoolToSender(bucketTokenIds, noOfNFTsToRemove_);
+        _transferFromPoolToAddress(msg.sender, bucketTokenIds, noOfNFTsToRemove_);
     }
 
     /*******************************/
@@ -125,10 +127,11 @@ contract ERC721Pool is IERC721Pool, Pool {
     /*******************************/
 
     function take(
-        address borrowerAddress_,
-        uint256 collateral_,
-        bytes memory swapCalldata_
-    ) external override {
+        address        borrowerAddress_,
+        uint256        collateral_,
+        address        callee_,
+        bytes calldata data_
+    ) external override nonReentrant {
         PoolState      memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
         if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
@@ -153,8 +156,6 @@ contract ERC721Pool is IERC721Pool, Pool {
         borrower.collateral  -= collateralTaken;
         poolState.collateral -= collateralTaken;
 
-        _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
-
         emit Take(
             borrowerAddress_,
             params.quoteTokenAmount,
@@ -163,25 +164,31 @@ contract ERC721Pool is IERC721Pool, Pool {
             params.isRewarded
         );
 
-        // TODO: implement flashloan functionality
-        // Flash loan full amount to liquidate to borrower
-        // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
-        //msg.sender.call(swapCalldata_);
+        // transfer rounded collateral from pool to taker
+        uint256[] memory tokensTaken = _transferFromPoolToAddress(callee_, borrowerTokenIds[borrowerAddress_], collateralTaken / 1e18);
+
+        if (data_.length != 0) {
+            IERC721Taker(callee_).atomicSwapCallback(
+                tokensTaken, 
+                params.quoteTokenAmount / _getArgUint256(40), 
+                data_
+            );
+        }
 
         // transfer from taker to pool the amount of quote tokens needed to cover collateral auctioned (including excess for rounded collateral)
-        _transferQuoteTokenFrom(msg.sender, params.quoteTokenAmount + excessQuoteToken);
+        _transferQuoteTokenFrom(callee_, params.quoteTokenAmount + excessQuoteToken);
 
         // transfer from pool to borrower the excess of quote tokens after rounding collateral auctioned
         if (excessQuoteToken != 0) _transferQuoteToken(borrowerAddress_, excessQuoteToken);
 
-        // transfer rounded collateral from pool to taker
-        _transferFromPoolToSender(borrowerTokenIds[borrowerAddress_], collateralTaken / 1e18);
+        _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
+
     }
 
 
-    /**************************/
-    /*** Internal Functions ***/
-    /**************************/
+    /*******************************/
+    /*** Pool Override Functions ***/
+    /*******************************/
 
     /**
      *  @notice Overrides default implementation and use floor(amount of collateral) to calculate collateralization.
@@ -199,6 +206,34 @@ contract ERC721Pool is IERC721Pool, Pool {
         collateral_ = (collateral_ / Maths.WAD) * Maths.WAD; // use collateral floor
         return Maths.wmul(collateral_, price_) >= debt_;
     }
+
+    /**
+     *  @notice Performs NFT auction settlement by rounding down borrower's collateral amount and by moving borrower's token ids to pool claimable array.
+     *  @param borrowerAddress_    Address of the borrower that exits auction.
+     *  @param borrowerCollateral_ Borrower collateral amount before auction exit (could be fragmented as result of partial takes).
+     *  @return Rounded down collateral, the number of NFT tokens borrower can pull after auction exit.
+     */
+    function _settleAuction(
+        address borrowerAddress_,
+        uint256 borrowerCollateral_
+    ) internal override returns (uint256) {
+        (uint256 floorCollateral, uint256 lps, uint256 bucketIndex) = Auctions.settleNFTAuction(
+            auctions,
+            buckets,
+            deposits,
+            borrowerTokenIds[borrowerAddress_],
+            bucketTokenIds,
+            borrowerAddress_,
+            borrowerCollateral_
+        );
+        emit AuctionNFTSettle(borrowerAddress_, floorCollateral, lps, bucketIndex);
+        return floorCollateral;
+    }
+
+
+    /**************************/
+    /*** Internal Functions ***/
+    /**************************/
 
     /**
      *  @notice Helper function for transferring multiple NFT tokens from msg.sender to pool.
@@ -225,26 +260,34 @@ contract ERC721Pool is IERC721Pool, Pool {
     }
 
     /**
-     *  @notice Helper function for transferring multiple NFT tokens from pool to msg.sender.
+     *  @notice Helper function for transferring multiple NFT tokens from pool to given address.
      *  @notice It transfers NFTs from the most recent one added into the pool (pop from array tracking NFTs in pool).
+     *  @param  toAddress_      Address where pool should transfer tokens to.
      *  @param  poolTokens_     Array in pool that tracks NFT ids (could be tracking NFTs pledged by borrower or NFTs added by a lender in a specific bucket).
-     *  @param  amountToRemove_ Number of NFT tokens to transfer from pool to msg.sender.
+     *  @param  amountToRemove_ Number of NFT tokens to transfer from pool to given address.
+     *  @return Array containing token ids that were transferred from pool to address.
      */
-    function _transferFromPoolToSender(
+    function _transferFromPoolToAddress(
+        address toAddress_,
         uint256[] storage poolTokens_,
         uint256 amountToRemove_
-    ) internal {
+    ) internal returns (uint256[] memory) {
+        uint256[] memory tokensTransferred = new uint256[](amountToRemove_);
+
         uint256 noOfNFTsInPool = poolTokens_.length;
         for (uint256 i = 0; i < amountToRemove_;) {
             uint256 tokenId = poolTokens_[--noOfNFTsInPool]; // start with transferring the last token added in bucket
             poolTokens_.pop();
 
-            _transferNFT(address(this), msg.sender, tokenId);
+            _transferNFT(address(this), toAddress_, tokenId);
+            tokensTransferred[i] = tokenId;
 
             unchecked {
                 ++i;
             }
         }
+
+        return tokensTransferred;
     }
 
     /**

@@ -3,9 +3,10 @@
 pragma solidity 0.8.14;
 
 import './interfaces/IERC20Pool.sol';
-import '../base/Pool.sol';
+import './interfaces/IERC20Taker.sol';
+import '../base/FlashloanablePool.sol';
 
-contract ERC20Pool is IERC20Pool, Pool {
+contract ERC20Pool is IERC20Pool, FlashloanablePool {
     using Auctions for Auctions.Data;
     using Buckets  for mapping(uint256 => Buckets.Bucket);
     using Deposits for Deposits.Data;
@@ -101,49 +102,6 @@ contract ERC20Pool is IERC20Pool, Pool {
         _transferCollateralFrom(msg.sender, collateralAmountToAdd_);
     }
 
-    function moveCollateral(
-        uint256 collateralAmountToMove_,
-        uint256 fromIndex_,
-        uint256 toIndex_
-    ) external override returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
-        if (fromIndex_ == toIndex_) revert MoveToSamePrice();
-
-        Buckets.Bucket storage fromBucket = buckets[fromIndex_];
-        if (fromBucket.collateral < collateralAmountToMove_) revert InsufficientCollateral();
-
-        PoolState memory poolState = _accruePoolInterest();
-
-        fromBucketLPs_= Buckets.collateralToLPs(
-            fromBucket.collateral,
-            fromBucket.lps,
-            deposits.valueAt(fromIndex_),
-            collateralAmountToMove_,
-            PoolUtils.indexToPrice(fromIndex_)
-        );
-
-        (uint256 lpBalance, ) = buckets.getLenderInfo(
-            fromIndex_,
-            msg.sender
-        );
-        if (fromBucketLPs_ > lpBalance) revert InsufficientLPs();
-
-        Buckets.removeCollateral(
-            fromBucket,
-            collateralAmountToMove_,
-            fromBucketLPs_
-        );
-        toBucketLPs_ = Buckets.addCollateral(
-            buckets[toIndex_],
-            deposits.valueAt(toIndex_),
-            collateralAmountToMove_,
-            PoolUtils.indexToPrice(toIndex_)
-        );
-
-        _updatePool(poolState, _lup(poolState.accruedDebt));
-
-        emit MoveCollateral(msg.sender, fromIndex_, toIndex_, collateralAmountToMove_);
-    }
-
     function removeAllCollateral(
         uint256 index_
     ) external override returns (uint256 collateralAmountRemoved_, uint256 redeemedLenderLPs_) {
@@ -194,17 +152,12 @@ contract ERC20Pool is IERC20Pool, Pool {
     /*** Pool External Functions ***/
     /*******************************/
 
-    /**
-     *  @notice Performs take checks, calculates amounts and bpf reward / penalty.
-     *  @dev Internal support method assisting in the ERC20 and ERC721 pool take calls.
-     *  @param borrowerAddress_   Address of the borower take is being called upon.
-     *  @param collateral_        Max amount of collateral to take, submited by the taker.
-     */
     function take(
-        address borrowerAddress_,
-        uint256 collateral_,
-        bytes memory swapCalldata_
-    ) external override {
+        address        borrowerAddress_,
+        uint256        collateral_,
+        address        callee_,
+        bytes calldata data_
+    ) external override nonReentrant {
         PoolState      memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
         if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
@@ -220,8 +173,6 @@ contract ERC20Pool is IERC20Pool, Pool {
         borrower.collateral  -= params.collateralAmount;
         poolState.collateral -= params.collateralAmount;
 
-        _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
-
         emit Take(
             borrowerAddress_,
             params.quoteTokenAmount,
@@ -230,13 +181,53 @@ contract ERC20Pool is IERC20Pool, Pool {
             params.isRewarded
         );
 
-        // TODO: implement flashloan functionality
-        // Flash loan full amount to liquidate to borrower
-        // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
-        //msg.sender.call(swapCalldata_);
+        _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
 
-        _transferQuoteTokenFrom(msg.sender, params.quoteTokenAmount);
-        _transferCollateral(msg.sender, params.collateralAmount);
+        _transferCollateral(callee_, params.collateralAmount);
+
+        if (data_.length != 0) {
+            IERC20Taker(callee_).atomicSwapCallback(
+                params.collateralAmount / collateralScale, 
+                params.quoteTokenAmount / _getArgUint256(40), 
+                data_
+            );
+        }
+
+        _transferQuoteTokenFrom(callee_, params.quoteTokenAmount);
+    }
+
+    /*******************************/
+    /*** Pool Override Functions ***/
+    /*******************************/
+
+    /**
+     *  @notice ERC20 collateralization calculation.
+     *  @param debt_       Debt to calculate collateralization for.
+     *  @param collateral_ Collateral to calculate collateralization for.
+     *  @param price_      Price to calculate collateralization for.
+     *  @return True if collateralization calculated is equal or greater than 1.
+     */
+    function _isCollateralized(
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 price_
+    ) internal pure override returns (bool) {
+        return Maths.wmul(collateral_, price_) >= debt_;
+    }
+
+   /**
+     *  @notice Settle an ERC20 pool auction, remove from auction queue and emit event.
+     *  @param borrowerAddress_    Address of the borrower that exits auction.
+     *  @param borrowerCollateral_ Borrower collateral amount before auction exit.
+     *  @return floorCollateral_   Remaining borrower collateral after auction exit.
+     */
+    function _settleAuction(
+        address borrowerAddress_,
+        uint256 borrowerCollateral_
+    ) internal override returns (uint256) {
+        Auctions.settleERC20Auction(auctions, borrowerAddress_);
+        emit AuctionSettle(borrowerAddress_, borrowerCollateral_);
+        return borrowerCollateral_;
     }
 
     /************************/
