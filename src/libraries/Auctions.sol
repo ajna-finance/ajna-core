@@ -5,6 +5,7 @@ pragma solidity 0.8.14;
 import './Buckets.sol';
 import './Loans.sol';
 import './Maths.sol';
+import './PoolUtils.sol';
 
 library Auctions {
 
@@ -37,6 +38,7 @@ library Auctions {
         uint256 t0repayAmount;    // The amount of debt (quote tokens) that is recovered / repayed by take t0 terms.
         uint256 collateralAmount;  // The amount of collateral taken.
         uint256 auctionPrice;     // The price of auction.
+        uint256 bucketPrice;      // The bucket price.
         uint256 bondChange;       // The change made on the bond size (beeing reward or penalty).
         address kicker;           // Address of auction kicker.
         bool    isRewarded;       // True if kicker is rewarded (auction price lower than neutral price), false if penalized (auction price greater than neutral price).
@@ -92,7 +94,7 @@ library Auctions {
      *  @return The amount of borrower collateral left after settle.
      *  @return The amount of borrower debt left after settle.
      */
-    function settle(
+    function settlePoolDebt(
         Data storage self,
         mapping(uint256 => Buckets.Bucket) storage buckets_,
         Deposits.Data storage deposits_,
@@ -251,37 +253,39 @@ library Auctions {
     }
 
     /**
-     *  @notice Performs bucket take collateral on an auction and updates bond size and kicker balance in case kicker is penalized.
-     *  @notice Logic of kicker being rewarded happens outside this function as bond change will be given as LPs in the arbed bucket.
+     *  @notice Performs bucket take collateral on an auction and rewards taker and kicker (if case).
      *  @param  borrowerAddress_  Borrower address in auction.
      *  @param  borrower_         Borrower struct containing updated info of auctioned borrower.
      *  @param  bucketDeposit_    Arbed bucket deposit.
-     *  @param  bucketPrice_      Bucket price.
+     *  @param  bucketIndex_      Bucket index.
      *  @param  depositTake_      If true then the take happens at bucket price. Auction price is used otherwise.
      *  @param  poolInflator_     The pool's inflator, used to calculate borrower debt.
      *  @return params_           Struct containing take action details.
     */
     function bucketTake(
         Data storage self,
+        Deposits.Data storage deposits_,
+        Buckets.Bucket storage bucket_,
         address borrowerAddress_,
         Loans.Borrower memory borrower_,
         uint256 bucketDeposit_,
-        uint256 bucketPrice_,
+        uint256 bucketIndex_,
         bool    depositTake_,
         uint256 poolInflator_
     ) external returns (TakeParams memory params_) {
         Liquidation storage liquidation = self.liquidations[borrowerAddress_];
         _validateTake(liquidation);
 
+        params_.bucketPrice  = PoolUtils.indexToPrice(bucketIndex_);
         params_.auctionPrice = PoolUtils.auctionPrice(
             liquidation.kickMomp,
             liquidation.kickTime
         );
         // cannot arb with a price lower than the auction price
-        if (params_.auctionPrice > bucketPrice_) revert AuctionPriceGtBucketPrice();
+        if (params_.auctionPrice > params_.bucketPrice) revert AuctionPriceGtBucketPrice();
 
         // if deposit take then price to use when calculating take is bucket price
-        uint256 price = depositTake_ ? bucketPrice_ : params_.auctionPrice;
+        uint256 price = depositTake_ ? params_.bucketPrice : params_.auctionPrice;
         (
             uint256 borrowerDebt,
             int256  bpf,
@@ -316,6 +320,8 @@ library Auctions {
         } else {
             params_.bondChange = Maths.wmul(params_.quoteTokenAmount, uint256(bpf)); // will be rewarded as LPBs
         }
+
+        _rewardBucketTake(deposits_, bucket_, bucketDeposit_, bucketIndex_, depositTake_, params_);
     }
 
     /**
@@ -375,15 +381,85 @@ library Auctions {
         }
     }
 
+   /**
+     *  @notice Performs ERC20 auction settlement.
+     *  @param  borrower_ Borrower address to settle.
+     */
+    function settleERC20Auction(
+        Data storage self,
+        address borrower_
+    ) external {
+        _removeAuction(self, borrower_);
+    }
+
+    /**
+     *  @notice Performs NFT auction settlement by rounding down borrower's collateral amount and by moving borrower's token ids to pool claimable array.
+     *  @param borrowerTokens_     Array of borrower NFT token ids.
+     *  @param poolTokens_         Array of claimable NFT token ids in pool.
+     *  @param borrowerAddress_    Address of the borrower that exits auction.
+     *  @param borrowerCollateral_ Borrower collateral amount before auction exit (could be fragmented as result of partial takes).
+     *  @return floorCollateral_   Rounded down collateral, the number of NFT tokens borrower can pull after auction exit.
+     *  @return lps_               LPs given to the borrower to compensate fractional collateral (if any).
+     *  @return bucketIndex_       Index of the bucket with LPs to compensate.
+     */
+    function settleNFTAuction(
+        Data storage self,
+        mapping(uint256 => Buckets.Bucket) storage buckets_,
+        Deposits.Data storage deposits_,
+        uint256[] storage borrowerTokens_,
+        uint256[] storage poolTokens_,
+        address borrowerAddress_,
+        uint256 borrowerCollateral_
+    ) external returns (uint256 floorCollateral_, uint256 lps_, uint256 bucketIndex_) {
+        floorCollateral_ = (borrowerCollateral_ / Maths.WAD) * Maths.WAD; // floor collateral of borrower
+
+        // if there's fraction of NFTs remaining then reward difference to borrower as LPs in auction price bucket
+        if (floorCollateral_ != borrowerCollateral_) {
+            // cover borrower's fractional amount with LPs in auction price bucket
+            uint256 fractionalCollateral = borrowerCollateral_ - floorCollateral_;
+            uint256 auctionPrice = PoolUtils.auctionPrice(
+                self.liquidations[borrowerAddress_].kickMomp,
+                self.liquidations[borrowerAddress_].kickTime
+            );
+            bucketIndex_ = PoolUtils.priceToIndex(auctionPrice);
+            lps_ = Buckets.addCollateral(
+                buckets_[bucketIndex_],
+                borrowerAddress_,
+                Deposits.valueAt(deposits_, bucketIndex_),
+                fractionalCollateral,
+                PoolUtils.indexToPrice(bucketIndex_)
+            );
+        }
+
+        // rebalance borrower's collateral, transfer difference to floor collateral from borrower to pool claimable array
+        uint256 noOfTokensPledged    = borrowerTokens_.length;
+        uint256 noOfTokensToTransfer = noOfTokensPledged - floorCollateral_ / 1e18;
+        for (uint256 i = 0; i < noOfTokensToTransfer;) {
+            uint256 tokenId = borrowerTokens_[--noOfTokensPledged]; // start with moving the last token pledged by borrower
+            borrowerTokens_.pop();                                  // remove token id from borrower
+            poolTokens_.push(tokenId);                              // add token id to pool claimable tokens
+            unchecked {
+                ++i;
+            }
+        }
+
+        _removeAuction(self, borrowerAddress_);
+    }
+
+
+    /***************************/
+    /***  Internal Functions ***/
+    /***************************/
+
     /**
      *  @notice Removes auction and repairs the queue order.
      *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from liquidationBondEscrowed.
      *  @param  borrower_ Auctioned borrower address.
      */
-    function removeAuction(
+    function _removeAuction(
         Data storage self,
         address borrower_
-    ) external {
+    ) internal {
         Liquidation memory liquidation = self.liquidations[borrower_];
         // update kicker balances
         Kicker storage kicker = self.kickers[liquidation.kicker];
@@ -418,10 +494,50 @@ library Auctions {
          delete self.liquidations[borrower_];
     }
 
+    /**
+     *  @notice Rewards actors of a bucket take action.
+     *  @param  bucketDeposit_ Arbed bucket deposit.
+     *  @param  bucketIndex_   Bucket index.
+     *  @param  params_        Struct containing take action details.
+     */
+    function _rewardBucketTake(
+        Deposits.Data storage deposits_,
+        Buckets.Bucket storage bucket_,
+        uint256 bucketDeposit_,
+        uint256 bucketIndex_,
+        bool depositTake_,
+        TakeParams memory params_
+    ) internal {
+        uint256 bucketExchangeRate = Buckets.getExchangeRate(
+            bucket_.collateral,
+            bucket_.lps,
+            bucketDeposit_,
+            params_.bucketPrice
+        );
 
-    /***************************/
-    /***  Internal Functions ***/
-    /***************************/
+        // if arb take - taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
+        if (!depositTake_) Buckets.addLPs(
+            bucket_,
+            msg.sender,
+            Maths.wrdivr(
+                Maths.wmul(params_.collateralAmount, params_.bucketPrice - params_.auctionPrice),
+                bucketExchangeRate
+            )
+        );
+        bucket_.collateral += params_.collateralAmount; // collateral is added to the bucket’s claimable collateral
+
+        // the bondholder/kicker is awarded bond change worth of LPB in the bucket
+        uint256 depositAmountToRemove = params_.quoteTokenAmount;
+        if (params_.isRewarded) {
+            Buckets.addLPs(
+                bucket_,
+                params_.kicker,
+                Maths.wrdivr(params_.bondChange, bucketExchangeRate)
+            );
+            depositAmountToRemove -= params_.bondChange;
+        }
+        Deposits.remove(deposits_, bucketIndex_, depositAmountToRemove, bucketDeposit_); // remove quote tokens from bucket’s deposit
+    }
 
     /**
      *  @notice Utility function to validate take action.

@@ -58,6 +58,7 @@ library Buckets {
 
     /**
      *  @notice Add collateral to a bucket and updates LPs for bucket and lender with the amount coresponding to collateral amount added.
+     *  @param  lender_                Address of the lender.
      *  @param  deposit_               Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs
      *  @param  collateralAmountToAdd_ Additional collateral amount to add to bucket.
      *  @param  bucketPrice_           Bucket price.
@@ -65,6 +66,7 @@ library Buckets {
      */
     function addCollateral(
         Bucket storage bucket_,
+        address lender_,
         uint256 deposit_,
         uint256 collateralAmountToAdd_,
         uint256 bucketPrice_
@@ -83,7 +85,7 @@ library Buckets {
         if (bucket_.bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
         bucket_.collateral += collateralAmountToAdd_;
         // update bucket and lender LPs balance and deposit timestamp
-        addLPs(bucket_, msg.sender, addedLPs_);
+        addLPs(bucket_, lender_, addedLPs_);
     }
 
     /**
