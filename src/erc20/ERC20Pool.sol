@@ -2,12 +2,11 @@
 
 pragma solidity 0.8.14;
 
-import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import './interfaces/IERC20Pool.sol';
 import './interfaces/IERC20Taker.sol';
 import '../base/FlashloanablePool.sol';
 
-contract ERC20Pool is ReentrancyGuard, IERC20Pool, FlashloanablePool {
+contract ERC20Pool is IERC20Pool, FlashloanablePool {
     using Auctions for Auctions.Data;
     using Buckets  for mapping(uint256 => Buckets.Bucket);
     using Deposits for Deposits.Data;
@@ -153,8 +152,6 @@ contract ERC20Pool is ReentrancyGuard, IERC20Pool, FlashloanablePool {
         borrower.collateral  -= params.collateralAmount;
         poolState.collateral -= params.collateralAmount;
 
-        _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
-
         emit Take(
             borrowerAddress_,
             params.quoteTokenAmount,
@@ -163,9 +160,11 @@ contract ERC20Pool is ReentrancyGuard, IERC20Pool, FlashloanablePool {
             params.isRewarded
         );
 
+        _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
+
         _transferCollateral(callee_, params.collateralAmount);
 
-        if (data_.length > 0) {
+        if (data_.length != 0) {
             IERC20Taker(callee_).atomicSwapCallback(
                 params.collateralAmount / collateralScale, 
                 params.quoteTokenAmount / _getArgUint256(40), 
@@ -174,6 +173,40 @@ contract ERC20Pool is ReentrancyGuard, IERC20Pool, FlashloanablePool {
         }
 
         _transferQuoteTokenFrom(callee_, params.quoteTokenAmount);
+    }
+
+    /*******************************/
+    /*** Pool Override Functions ***/
+    /*******************************/
+
+    /**
+     *  @notice ERC20 collateralization calculation.
+     *  @param debt_       Debt to calculate collateralization for.
+     *  @param collateral_ Collateral to calculate collateralization for.
+     *  @param price_      Price to calculate collateralization for.
+     *  @return True if collateralization calculated is equal or greater than 1.
+     */
+    function _isCollateralized(
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 price_
+    ) internal pure override returns (bool) {
+        return Maths.wmul(collateral_, price_) >= debt_;
+    }
+
+   /**
+     *  @notice Settle an ERC20 pool auction, remove from auction queue and emit event.
+     *  @param borrowerAddress_    Address of the borrower that exits auction.
+     *  @param borrowerCollateral_ Borrower collateral amount before auction exit.
+     *  @return floorCollateral_   Remaining borrower collateral after auction exit.
+     */
+    function _settleAuction(
+        address borrowerAddress_,
+        uint256 borrowerCollateral_
+    ) internal override returns (uint256) {
+        Auctions.settleERC20Auction(auctions, borrowerAddress_);
+        emit AuctionSettle(borrowerAddress_, borrowerCollateral_);
+        return borrowerCollateral_;
     }
 
     /************************/
