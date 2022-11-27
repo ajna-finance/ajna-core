@@ -68,14 +68,21 @@ library Deposits {
         if (numLoans_ != 0) momp_ = PoolUtils.indexToPrice(findIndexOfSum(self, Maths.wdiv(curDebt_, numLoans_ * 1e18)));
     }
 
-    function mompFactor(
+    function t0Np(
         Data storage self,
         uint256 inflator_,
         uint256 curDebt_,
-        uint256 numLoans_
-    ) internal view returns (uint256 factor_) {
+        uint256 numLoans_,
+        uint256 interestRate_,
+        uint256 lup_,
+        uint256 borrowerT0debt_,
+        uint256 borrowerCollateral_
+    ) internal view returns (uint256 t0Np_) {
+        uint256 borrowerDebt = Maths.wmul(borrowerT0debt_, inflator_);
+        uint256 thresholdPrice = borrowerDebt * Maths.WAD / borrowerCollateral_; 
         uint256 curMomp = momp(self, curDebt_, numLoans_);
-        if (curMomp != 0) factor_ = Maths.wdiv(curMomp, inflator_);
+        // t0Np = ((1 + rate) * MOMP * (TP / LUP)) / Inflator
+        if (curMomp != 0) t0Np_ = (1e18 + interestRate_) * curMomp * thresholdPrice / lup_ / inflator_;
     }
 
     /**

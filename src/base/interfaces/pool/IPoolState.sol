@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.14;
 
+import '../../../libraries/Auctions.sol';
+
 /**
  * @title Pool State
  */
@@ -9,24 +11,10 @@ interface IPoolState {
 
     /**
      *  @notice Returns details of an auction for a given borrower address.
-     *  @param  borrower   Address of the borrower that is liquidated.
-     *  @return kicker     Address that initiated the auction (kicker).
-     *  @return bondSize   The size of the bond in quote token.
-     *  @return bondFactor The factor used for calculating bond size.
-     *  @return kickTime   Time the liquidation was initiated.
-     *  @return kickPrice  Highest Price Bucket at time of liquidation.
-     *  @return prev       The address of previous borrower in auctions queue.
-     *  @return next       The address of next borrower in auctions queue.
+     *  @param  borrower     Address of the borrower that is liquidated.
+     *  @return Liquidation  Auction Liquidation struct
      */
-    function auctionInfo(address borrower) external view returns (
-        address kicker,
-        uint256 bondSize,
-        uint256 bondFactor,
-        uint256 kickTime,
-        uint256 kickPrice,
-        address prev,
-        address next
-    );
+    function auctionInfo(address borrower) external view returns (Auctions.Liquidation memory);
 
     /**
      *  @notice Returns pool related debt values.
@@ -42,7 +30,7 @@ interface IPoolState {
      *  @param  borrower   Address of the borrower.
      *  @return t0debt     Amount of debt borrower would have had if their loan was the first debt drawn from the pool
      *  @return collateral Amount of collateral that the borrower has deposited, in collateral token.
-     *  @return mompFactor Momp / borrowerInflatorSnapshot factor used.
+     *  @return t0Np       Np / borrowerInflatorSnapshot
      */
     function borrowerInfo(address borrower)
         external
@@ -50,7 +38,7 @@ interface IPoolState {
         returns (
             uint256 t0debt,
             uint256 collateral,
-            uint256 mompFactor
+            uint256 t0Np
         );
 
     /**

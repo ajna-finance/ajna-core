@@ -82,7 +82,7 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         // liquidate the borrower
         _ajnaPool.kick(_borrower);
         // wait for the price to become profitable
-        skip(6 hours);
+        skip(6.5 hours);
     }
 
     function testTakeWithFlashLoan() external {
@@ -106,10 +106,10 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
             })
         );
         vm.expectEmit(true, true, false, true);
-        emit Take(_borrower, 19.442591730063559232 * 1e18, 2 * 1e18, 0.194425917300635592 * 1e18, true);
+        emit Take(_borrower, 13.885812040442529856 * 1e18, 2 * 1e18, 0.138858120404425299 * 1e18, true);
         taker.take(tokens, amounts, data);
 
-        assertGt(usdc.balanceOf(address(this)), 1000); // could vary
+        assertGt(usdc.balanceOf(address(this)), 0); // could vary
     }
 
     function testTakeFromContractWithAtomicSwap() external {
@@ -127,10 +127,10 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         // call take using taker contract
         bytes memory data = abi.encode(address(_ajnaPool));
         vm.expectEmit(true, true, false, true);
-        emit Take(_borrower, 19.442591730063559232 * 1e18, 2 * 1e18, 0.194425917300635592 * 1e18, true);
+        emit Take(_borrower, 13.885812040442529856 * 1e18, 2 * 1e18, 0.138858120404425299 * 1e18, true);
         _ajnaPool.take(_borrower, takeAmount, address(taker), data);
 
         // confirm we earned some quote token
-        assertGt(usdc.balanceOf(address(taker)), 1000);
+        assertGt(usdc.balanceOf(address(taker)), 0);
     }
 }
