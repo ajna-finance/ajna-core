@@ -152,8 +152,6 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         borrower.collateral  -= params.collateralAmount;
         poolState.collateral -= params.collateralAmount;
 
-        _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
-
         emit Take(
             borrowerAddress_,
             params.quoteTokenAmount,
@@ -161,6 +159,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             params.bondChange,
             params.isRewarded
         );
+
+        _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
 
         _transferCollateral(callee_, params.collateralAmount);
 

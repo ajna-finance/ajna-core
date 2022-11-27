@@ -137,6 +137,14 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         borrower.collateral  -= collateralTaken;
         poolState.collateral -= collateralTaken;
 
+        emit Take(
+            borrowerAddress_,
+            params.quoteTokenAmount,
+            params.collateralAmount,
+            params.bondChange,
+            params.isRewarded
+        );
+
         // transfer rounded collateral from pool to taker
         uint256[] memory tokensTaken = _transferFromPoolToAddress(callee_, borrowerTokenIds[borrowerAddress_], collateralTaken / 1e18);
 
@@ -156,13 +164,6 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
         _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
 
-        emit Take(
-            borrowerAddress_,
-            params.quoteTokenAmount,
-            params.collateralAmount,
-            params.bondChange,
-            params.isRewarded
-        );
     }
 
 
