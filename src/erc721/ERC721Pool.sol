@@ -37,9 +37,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         interestRateUpdate         = uint48(block.timestamp);
 
         uint256 noOfTokens = tokenIds_.length;
-        if (noOfTokens > 0) {
+        if (noOfTokens > 0) { // add subset of tokenIds allowed in the pool
             isSubset = true;
-            // add subset of tokenIds allowed in the pool
             for (uint256 id = 0; id < noOfTokens;) {
                 tokenIdsAllowed[tokenIds_[id]] = true;
                 unchecked {
@@ -50,8 +49,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
         loans.init();
 
-        // increment initializations count to ensure these values can't be updated
-        poolInitializations += 1;
+        poolInitializations += 1; // increment initializations count to ensure these values can't be updated
     }
 
     /***********************************/
@@ -64,9 +62,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     ) external override {
         _pledgeCollateral(borrower_, Maths.wad(tokenIdsToPledge_.length));
 
-        // move collateral from sender to pool
         emit PledgeCollateralNFT(borrower_, tokenIdsToPledge_);
-        _transferFromSenderToPool(borrowerTokenIds[borrower_], tokenIdsToPledge_);
+        _transferFromSenderToPool(borrowerTokenIds[borrower_], tokenIdsToPledge_); // move collateral from sender to pool
     }
 
     function pullCollateral(
@@ -88,9 +85,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     ) external override returns (uint256 bucketLPs_) {
         bucketLPs_ = _addCollateral(Maths.wad(tokenIdsToAdd_.length), index_);
 
-        // move required collateral from sender to pool
         emit AddCollateralNFT(msg.sender, index_, tokenIdsToAdd_);
-        _transferFromSenderToPool(bucketTokenIds, tokenIdsToAdd_);
+        _transferFromSenderToPool(bucketTokenIds, tokenIdsToAdd_); // move required collateral from sender to pool
     }
 
     function removeCollateral(

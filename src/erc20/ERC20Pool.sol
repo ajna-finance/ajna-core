@@ -37,8 +37,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         loans.init();
 
-        // increment initializations count to ensure these values can't be updated
-        poolInitializations += 1;
+        poolInitializations += 1; // increment initializations count to ensure these values can't be updated
     }
 
     /***********************************/
@@ -51,9 +50,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     ) external override {
         _pledgeCollateral(borrower_, collateralAmountToPledge_);
 
-        // move collateral from sender to pool
         emit PledgeCollateral(borrower_, collateralAmountToPledge_);
-        _transferCollateralFrom(msg.sender, collateralAmountToPledge_);
+        _transferCollateralFrom(msg.sender, collateralAmountToPledge_); // move collateral from sender to pool
     }
 
     function pullCollateral(
@@ -61,9 +59,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     ) external override {
         _pullCollateral(collateralAmountToPull_);
 
-        // move collateral from pool to sender
         emit PullCollateral(msg.sender, collateralAmountToPull_);
-        _transferCollateral(msg.sender, collateralAmountToPull_);
+        _transferCollateral(msg.sender, collateralAmountToPull_); // move collateral from pool to sender
     }
 
     /*********************************/
@@ -76,9 +73,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     ) external override returns (uint256 bucketLPs_) {
         bucketLPs_ = _addCollateral(collateralAmountToAdd_, index_);
 
-        // move required collateral from sender to pool
         emit AddCollateral(msg.sender, index_, collateralAmountToAdd_);
-        _transferCollateralFrom(msg.sender, collateralAmountToAdd_);
+        _transferCollateralFrom(msg.sender, collateralAmountToAdd_); // move required collateral from sender to pool
     }
 
     function removeAllCollateral(
@@ -111,9 +107,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         _updatePool(poolState, _lup(poolState.accruedDebt));
 
-        // move collateral from pool to lender
         emit RemoveCollateral(msg.sender, index_, collateralAmountRemoved_);
-        _transferCollateral(msg.sender, collateralAmountRemoved_);
+        _transferCollateral(msg.sender, collateralAmountRemoved_); // move collateral from pool to lender
     }
 
     function removeCollateral(
@@ -122,9 +117,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     ) external override returns (uint256 bucketLPs_) {
         bucketLPs_ = _removeCollateral(collateralAmountToRemove_, index_);
 
-        // move collateral from pool to lender
         emit RemoveCollateral(msg.sender, index_, collateralAmountToRemove_);
-        _transferCollateral(msg.sender, collateralAmountToRemove_);
+        _transferCollateral(msg.sender, collateralAmountToRemove_); // move collateral from pool to lender
     }
 
     /*******************************/
