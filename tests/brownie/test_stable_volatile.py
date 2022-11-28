@@ -195,7 +195,7 @@ def pledge_and_borrow(pool_helper, borrower, borrower_index, collateral_to_depos
     if not ensure_pool_is_funded(pool, borrow_amount, "borrow"):
         # ensure_pool_is_funded logs a message
         return
-    (_, _, _, min_debt) = pool_helper.utilizationInfo()
+    (min_debt, _, _, _) = pool_helper.utilizationInfo()
     if borrow_amount < min_debt:
         log(f" WARN: borrower {borrower_index} cannot draw {borrow_amount / 1e18:.1f}, "
             f"which is below minimum debt of {min_debt/1e18:.1f}")
@@ -303,7 +303,8 @@ def draw_debt(borrower, borrower_index, pool_helper, test_utils, collateralizati
 def add_quote_token(lender, lender_index, pool_helper):
     dai = pool_helper.quoteToken()
     index_offset = ((lender_index % 6) - 2) * 2
-    deposit_index = pool_helper.lupIndex() - index_offset
+    lup_index = pool_helper.lupIndex()
+    deposit_index = lup_index - index_offset if lup_index > 6 else MAX_BUCKET
     deposit_price = pool_helper.indexToPrice(deposit_index)
     quantity = int(MIN_PARTICIPATION * ((lender_index % 4) + 1) ** 2) * 10**18
 
