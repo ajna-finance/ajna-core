@@ -953,10 +953,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 index_,
         uint256 inflator_
     ) internal view {
-        uint256 debtInAuction = t0DebtInAuction;
-        if (debtInAuction != 0 ) {
+        uint256 t0AuctionDebt = t0DebtInAuction;
+        if (t0AuctionDebt != 0 ) {
             // deposit in buckets within liquidation debt from the top-of-book down are frozen.
-            if (index_ <= deposits.findIndexOfSum(Maths.wmul(debtInAuction, inflator_))) revert RemoveDepositLockedByAuctionDebt();
+            if (index_ <= deposits.findIndexOfSum(Maths.wmul(t0AuctionDebt, inflator_))) revert RemoveDepositLockedByAuctionDebt();
         } 
     }
 
