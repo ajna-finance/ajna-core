@@ -109,7 +109,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             redeemedLenderLPs_)
         ;
 
-        _updatePool(poolState, _lup(poolState.accruedDebt));
+        _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
         emit RemoveCollateral(msg.sender, index_, collateralAmountRemoved_);
         // move collateral from pool to lender
@@ -162,6 +162,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         );
 
         _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
+        pledgedCollateral = poolState.collateral;
 
         _transferCollateral(callee_, params.collateralAmount);
 

@@ -84,7 +84,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         deposits.add(index_, quoteTokenAmountToAdd_);
 
         uint256 newLup = _lup(poolState.accruedDebt);
-        _updatePool(poolState, newLup);
+        _updateInterestParams(poolState, newLup);
 
         emit AddQuoteToken(msg.sender, index_, quoteTokenAmountToAdd_, newLup);
         // move quote token amount from lender to pool
@@ -158,7 +158,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             fromBucketLPs_,
             toBucketLPs_
         );
-        _updatePool(poolState, newLup);
+        _updateInterestParams(poolState, newLup);
 
         emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, amountToMove, newLup);
     }
@@ -217,7 +217,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             removedAmount_
         );
 
-        _updatePool(poolState, newLup);
+        _updateInterestParams(poolState, newLup);
 
         emit RemoveQuoteToken(msg.sender, index_, removedAmount_, newLup);
         // move quote token amount from pool to lender
@@ -320,7 +320,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         t0poolDebt += t0debtChange;
-        _updatePool(poolState, newLup);
+        _updateInterestParams(poolState, newLup);
 
         emit Borrow(msg.sender, newLup, amountToBorrow_);
         // move borrowed amount from pool to sender
@@ -378,6 +378,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         poolState.collateral -= params.collateralAmount; // collateral is removed from pledged collateral accumulator
 
         _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
+        pledgedCollateral = poolState.collateral;
 
         emit BucketTake(
             borrowerAddress_,
@@ -419,7 +420,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         borrower.t0debt     = remainingt0Debt;
         borrower.collateral = remainingCollateral;
 
-        _updatePool(poolState, _lup(poolState.accruedDebt));
+        pledgedCollateral = poolState.collateral;
+        _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
         emit Settle(borrowerAddress_, t0settledDebt);
     }
@@ -463,7 +465,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         t0poolDebt      += kickPenalty;
         t0DebtInAuction += borrower.t0debt;
 
-        _updatePool(poolState, lup);
+        _updateInterestParams(poolState, lup);
 
         emit Kick(borrowerAddress_, borrowerDebt, borrower.collateral, bondSize);
         if(kickAuctionAmount != 0) _transferQuoteTokenFrom(msg.sender, kickAuctionAmount);
@@ -553,7 +555,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             poolState.rate,
             newLup
         );
-        _updatePool(poolState, newLup);
+
+        pledgedCollateral = poolState.collateral;
+        _updateInterestParams(poolState, newLup);
     }
 
     function _pullCollateral(
@@ -580,7 +584,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             poolState.rate,
             curLup
         );
-        _updatePool(poolState, curLup);
+
+        pledgedCollateral = poolState.collateral;
+        _updateInterestParams(poolState, curLup);
     }
 
     function _payLoan(
@@ -625,8 +631,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             poolState.rate,
             newLup_
         );
+
         t0poolDebt -= t0repaidDebt;
-        _updatePool(poolState, newLup_);
+        _updateInterestParams(poolState, newLup_);
     }
 
     function _checkMinDebt(uint256 accruedDebt_,  uint256 borrowerDebt_) internal view {
@@ -656,7 +663,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             collateralAmountToAdd_,
             PoolUtils.indexToPrice(index_))
         ;
-        _updatePool(poolState, _lup(poolState.accruedDebt));
+        _updateInterestParams(poolState, _lup(poolState.accruedDebt));
     }
 
     function _removeCollateral(
@@ -688,7 +695,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             bucketLPs_
         );
 
-        _updatePool(poolState, _lup(poolState.accruedDebt));
+        _updateInterestParams(poolState, _lup(poolState.accruedDebt));
     }
 
 
@@ -757,10 +764,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         }
     }
 
-    function _updatePool(PoolState memory poolState_, uint256 lup_) internal {
+    function _updateInterestParams(PoolState memory poolState_, uint256 lup_) internal {
         if (block.timestamp - interestRateUpdate > 12 hours) {
-            // Update EMAs for target utilization
-
+            // update pool EMAs for target utilization calculation
             uint256 curDebtEma = Maths.wmul(
                     poolState_.accruedDebt,
                     EMA_7D_RATE_FACTOR
@@ -775,6 +781,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             debtEma   = curDebtEma;
             lupColEma = curLupColEma;
 
+            // update pool interest rate
             if (poolState_.accruedDebt != 0) {                
                 int256 mau = int256(                                       // meaningful actual utilization                   
                     deposits.utilization(
@@ -805,8 +812,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             }
         }
 
-        pledgedCollateral = poolState_.collateral;
-
+        // update pool inflator
         if (poolState_.isNewInterestAccrued) {
             inflatorSnapshot           = uint208(poolState_.inflator);
             lastInflatorSnapshotUpdate = uint48(block.timestamp);

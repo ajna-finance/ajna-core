@@ -165,7 +165,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         if (excessQuoteToken != 0) _transferQuoteToken(borrowerAddress_, excessQuoteToken);
 
         _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
-
+        pledgedCollateral = poolState.collateral;
     }
 
 
