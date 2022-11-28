@@ -106,7 +106,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if (fromIndex_ == toIndex_) revert MoveToSamePrice();
 
         PoolState memory poolState = _accruePoolInterest();
-        _revertIfAuctionDebtLocked(fromIndex_, poolState.inflator, t0DebtInAuction);
+        _revertIfAuctionDebtLocked(fromIndex_, poolState.inflator);
 
         Buckets.Lender memory lender;
         (lender.lps, lender.depositTime) = buckets.getLenderInfo(
@@ -167,7 +167,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         auctions.revertIfAuctionClearable(loans);
 
         PoolState memory poolState = _accruePoolInterest();
-        _revertIfAuctionDebtLocked(index_, poolState.inflator, t0DebtInAuction);
+        _revertIfAuctionDebtLocked(index_, poolState.inflator);
 
         (uint256 lenderLPsBalance, uint256 lastDeposit) = buckets.getLenderInfo(
             index_,
@@ -193,7 +193,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if (removedAmount_ > deposit)    removedAmount_ = deposit;
 
         if (removedAmountBefore == removedAmount_) redeemedLPs_ = lenderLPsBalance;
-        else redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(removedAmount_, exchangeRate));
+        else {
+            redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(removedAmount_, exchangeRate));
+        }
 
         deposits.remove(index_, removedAmount_, deposit); // update FenwickTree
 
@@ -945,17 +947,16 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /**
      *  @notice Called by LPB removal functions assess whether or not LPB is locked.
      *  @param  index_          The bucket index from which LPB is attempting to be removed.
-     *  @param  debtInAuctions_ The total t0 debt in auctions.
      *  @param  inflator_       The pool inflator used to properly assess t0 debt in auctions.
      */
     function _revertIfAuctionDebtLocked(
         uint256 index_,
-        uint256 debtInAuctions_,
         uint256 inflator_
     ) internal view {
-        if (debtInAuctions_ != 0 ) {
+        uint256 debtInAuction = t0DebtInAuction;
+        if (debtInAuction != 0 ) {
             // deposit in buckets within liquidation debt from the top-of-book down are frozen.
-            if (index_ <= deposits.findIndexOfSum(Maths.wmul(debtInAuctions_, inflator_))) revert RemoveDepositLockedByAuctionDebt();
+            if (index_ <= deposits.findIndexOfSum(Maths.wmul(debtInAuction, inflator_))) revert RemoveDepositLockedByAuctionDebt();
         } 
     }
 
