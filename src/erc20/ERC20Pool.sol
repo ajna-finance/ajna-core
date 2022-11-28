@@ -37,7 +37,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         loans.init();
 
-        poolInitializations += 1; // increment initializations count to ensure these values can't be updated
+        // increment initializations count to ensure these values can't be updated
+        poolInitializations += 1;
     }
 
     /***********************************/
@@ -51,7 +52,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         _pledgeCollateral(borrower_, collateralAmountToPledge_);
 
         emit PledgeCollateral(borrower_, collateralAmountToPledge_);
-        _transferCollateralFrom(msg.sender, collateralAmountToPledge_); // move collateral from sender to pool
+        // move collateral from sender to pool
+        _transferCollateralFrom(msg.sender, collateralAmountToPledge_);
     }
 
     function pullCollateral(
@@ -60,7 +62,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         _pullCollateral(collateralAmountToPull_);
 
         emit PullCollateral(msg.sender, collateralAmountToPull_);
-        _transferCollateral(msg.sender, collateralAmountToPull_); // move collateral from pool to sender
+        // move collateral from pool to sender
+        _transferCollateral(msg.sender, collateralAmountToPull_);
     }
 
     /*********************************/
@@ -74,7 +77,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         bucketLPs_ = _addCollateral(collateralAmountToAdd_, index_);
 
         emit AddCollateral(msg.sender, index_, collateralAmountToAdd_);
-        _transferCollateralFrom(msg.sender, collateralAmountToAdd_); // move required collateral from sender to pool
+        // move required collateral from sender to pool
+        _transferCollateralFrom(msg.sender, collateralAmountToAdd_);
     }
 
     function removeAllCollateral(
@@ -108,7 +112,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         _updatePool(poolState, _lup(poolState.accruedDebt));
 
         emit RemoveCollateral(msg.sender, index_, collateralAmountRemoved_);
-        _transferCollateral(msg.sender, collateralAmountRemoved_); // move collateral from pool to lender
+        // move collateral from pool to lender
+        _transferCollateral(msg.sender, collateralAmountRemoved_);
     }
 
     function removeCollateral(
@@ -118,7 +123,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         bucketLPs_ = _removeCollateral(collateralAmountToRemove_, index_);
 
         emit RemoveCollateral(msg.sender, index_, collateralAmountToRemove_);
-        _transferCollateral(msg.sender, collateralAmountToRemove_); // move collateral from pool to lender
+        // move collateral from pool to lender
+        _transferCollateral(msg.sender, collateralAmountToRemove_);
     }
 
     /*******************************/
@@ -133,7 +139,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     ) external override nonReentrant {
         PoolState      memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
-        if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
+        // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
+        if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral();
 
         Auctions.TakeParams memory params = Auctions.take(
             auctions,

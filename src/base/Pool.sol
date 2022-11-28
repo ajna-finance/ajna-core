@@ -87,7 +87,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _updatePool(poolState, newLup);
 
         emit AddQuoteToken(msg.sender, index_, quoteTokenAmountToAdd_, newLup);
-        _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToAdd_); // move quote token amount from lender to pool
+        // move quote token amount from lender to pool
+        _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToAdd_);
     }
 
     function approveLpOwnership(
@@ -127,7 +128,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         deposits.remove(fromIndex_, amountToMove, fromDeposit);
 
-        amountToMove = PoolUtils.applyEarlyWithdrawalPenalty( // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
+        // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
+        amountToMove = PoolUtils.applyEarlyWithdrawalPenalty(
             poolState,
             lender.depositTime,
             fromIndex_,
@@ -146,7 +148,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         deposits.add(toIndex_, amountToMove);
 
-        uint256 newLup = _lup(poolState.accruedDebt); // move lup if necessary and check loan book's htp against new lup
+        // move lup if necessary and check loan book's htp against new lup
+        uint256 newLup = _lup(poolState.accruedDebt);
         if (fromIndex_ < toIndex_) if(_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
 
         Buckets.moveLPs(
@@ -173,7 +176,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             index_,
             msg.sender
         );
-        if (lenderLPsBalance == 0) revert NoClaim(); // revert if no LP to claim
+        if (lenderLPsBalance == 0) revert NoClaim();      // revert if no LP to claim
 
         uint256 deposit = deposits.valueAt(index_);
         if (deposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
@@ -202,8 +205,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 newLup = _lup(poolState.accruedDebt);
         if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
 
-        bucket.lps -= redeemedLPs_;                     // update bucket LPs balance
-        bucket.lenders[msg.sender].lps -= redeemedLPs_; // update lender LPs balance
+        // update bucket and lender LPs balances
+        bucket.lps -= redeemedLPs_;
+        bucket.lenders[msg.sender].lps -= redeemedLPs_;
 
         removedAmount_ = PoolUtils.applyEarlyWithdrawalPenalty(
             poolState,
@@ -216,7 +220,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _updatePool(poolState, newLup);
 
         emit RemoveQuoteToken(msg.sender, index_, removedAmount_, newLup);
-        _transferQuoteToken(msg.sender, removedAmount_); // move quote token amount from pool to lender
+        // move quote token amount from pool to lender
+        _transferQuoteToken(msg.sender, removedAmount_);
     }
 
     function transferLPTokens(
@@ -272,28 +277,33 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 amountToBorrow_,
         uint256 limitIndex_
     ) external override {
-        auctions.revertIfActive(msg.sender); // if borrower auctioned then it cannot draw more debt
+        // if borrower auctioned then it cannot draw more debt
+        auctions.revertIfActive(msg.sender);
 
         PoolState memory poolState     = _accruePoolInterest();
         Loans.Borrower memory borrower = loans.getBorrowerInfo(msg.sender);
         uint256 borrowerDebt           = Maths.wmul(borrower.t0debt, poolState.inflator);
 
-        uint256 debtChange   = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate) + Maths.WAD); // increase debt by the origination fee
+        // add origination fee to the amount to borrow and add to borrower's debt
+        uint256 debtChange = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate) + Maths.WAD);
         borrowerDebt += debtChange;
         _checkMinDebt(poolState.accruedDebt, borrowerDebt);
 
+        // determine new lup index and revert if borrow happens at a price higher than the specified limit (lower index than lup index)
         uint256 lupId = _lupIndex(poolState.accruedDebt + amountToBorrow_);
-        if (lupId > limitIndex_) revert LimitIndexReached(); // revert if borrow happens at a price higher than the specified limit
+        if (lupId > limitIndex_) revert LimitIndexReached();
 
+        // calculate new lup and check borrow action won't push borrower into a state of under-collateralization
         uint256 newLup = PoolUtils.indexToPrice(lupId);
         if (
             !_isCollateralized(borrowerDebt, borrower.collateral, newLup)
-        ) revert BorrowerUnderCollateralized(); // check borrow won't push borrower into a state of under-collateralization
+        ) revert BorrowerUnderCollateralized();
 
+        // check borrow won't push pool into a state of under-collateralization
         poolState.accruedDebt += debtChange;
         if (
             !_isCollateralized(poolState.accruedDebt, poolState.collateral, newLup)
-        ) revert PoolUnderCollateralized(); // check borrow won't push pool into a state of under-collateralization
+        ) revert PoolUnderCollateralized();
 
         uint256 t0debtChange = Maths.wdiv(debtChange, poolState.inflator);
         borrower.t0debt += t0debtChange;
@@ -313,7 +323,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _updatePool(poolState, newLup);
 
         emit Borrow(msg.sender, newLup, amountToBorrow_);
-        _transferQuoteToken(msg.sender, amountToBorrow_); // move borrowed amount from pool to sender
+        // move borrowed amount from pool to sender
+        _transferQuoteToken(msg.sender, amountToBorrow_);
     }
 
     function repay(
@@ -331,7 +342,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         (uint256 quoteTokenAmountToRepay, uint256 newLup) = _payLoan(t0repaidDebt, poolState, borrowerAddress_, borrower);
 
         emit Repay(borrowerAddress_, newLup, quoteTokenAmountToRepay);
-        _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToRepay); // move amount to repay from sender to pool
+        // move amount to repay from sender to pool
+        _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToRepay);
     }
 
     /*****************************/
@@ -439,11 +451,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         loans.remove(borrowerAddress_);
 
-        uint256 kickPenalty   =  Maths.wmul(Maths.wdiv(poolState.rate, 4 * 1e18), borrowerDebt); // when loan is kicked, penalty of three months of interest is added
+        // when loan is kicked, penalty of three months of interest is added
+        uint256 kickPenalty   =  Maths.wmul(Maths.wdiv(poolState.rate, 4 * 1e18), borrowerDebt);
+        // update borrower & pool debt with kickPenalty
         borrowerDebt          += kickPenalty;
-        poolState.accruedDebt += kickPenalty; 
+        poolState.accruedDebt += kickPenalty;
 
-        kickPenalty     =  Maths.wdiv(kickPenalty, poolState.inflator); // convert kick penalty to t0 amount
+        // convert kick penalty to t0 amount
+        kickPenalty     =  Maths.wdiv(kickPenalty, poolState.inflator);
         borrower.t0debt += kickPenalty;
         t0poolDebt      += kickPenalty;
         t0DebtInAuction += borrower.t0debt;
@@ -581,15 +596,22 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 borrowerDebt     = Maths.wmul(borrower.t0debt, poolState.inflator) - quoteTokenAmountToRepay_;
         poolState.accruedDebt    -= quoteTokenAmountToRepay_;
 
-        _checkMinDebt(poolState.accruedDebt, borrowerDebt); // check that repay or take doesn't leave borrower debt under min debt amount
+        // check that paying the loan doesn't leave borrower debt under min debt amount
+        _checkMinDebt(poolState.accruedDebt, borrowerDebt);
 
         newLup_ = _lup(poolState.accruedDebt);
 
         if (auctions.isActive(borrowerAddress)) {
-            if (_isCollateralized(borrowerDebt, borrower.collateral, newLup_)) {            // borrower becomes collateralized, settle auction
-                t0DebtInAuction     -= borrower.t0debt;                                     // remove entire borrower debt from pool auctions debt accumulator
-                borrower.collateral = _settleAuction(borrowerAddress, borrower.collateral); // settle auction and update borrower's collateral with value after settlement
-            } else t0DebtInAuction -= t0repaidDebt;                                         // partial repay, remove only the paid debt from pool auctions debt accumulator
+            if (_isCollateralized(borrowerDebt, borrower.collateral, newLup_)) {
+                // borrower becomes re-collateralized
+                // remove entire borrower debt from pool auctions debt accumulator
+                t0DebtInAuction     -= borrower.t0debt;
+                // settle auction and update borrower's collateral with value after settlement
+                borrower.collateral = _settleAuction(borrowerAddress, borrower.collateral);
+            } else {
+                // partial repay, remove only the paid debt from pool auctions debt accumulator
+                t0DebtInAuction -= t0repaidDebt;
+            }
         }
         
         borrower.t0debt -= t0repaidDebt;
@@ -657,7 +679,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         (uint256 lenderLpBalance, ) = buckets.getLenderInfo(index_, msg.sender);
-        if (lenderLpBalance == 0 || bucketLPs_ > lenderLpBalance) revert InsufficientLPs(); // ensure user can actually remove that much
+        // ensure lender has enough balance to remove collateral amount
+        if (lenderLpBalance == 0 || bucketLPs_ > lenderLpBalance) revert InsufficientLPs();
 
         Buckets.removeCollateral(
             bucket,

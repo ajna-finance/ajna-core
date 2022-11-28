@@ -37,8 +37,9 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         interestRateUpdate         = uint48(block.timestamp);
 
         uint256 noOfTokens = tokenIds_.length;
-        if (noOfTokens > 0) { // add subset of tokenIds allowed in the pool
+        if (noOfTokens > 0) {
             isSubset = true;
+            // add subset of tokenIds allowed in the pool
             for (uint256 id = 0; id < noOfTokens;) {
                 tokenIdsAllowed[tokenIds_[id]] = true;
                 unchecked {
@@ -49,7 +50,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
         loans.init();
 
-        poolInitializations += 1; // increment initializations count to ensure these values can't be updated
+        // increment initializations count to ensure these values can't be updated
+        poolInitializations += 1;
     }
 
     /***********************************/
@@ -63,7 +65,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         _pledgeCollateral(borrower_, Maths.wad(tokenIdsToPledge_.length));
 
         emit PledgeCollateralNFT(borrower_, tokenIdsToPledge_);
-        _transferFromSenderToPool(borrowerTokenIds[borrower_], tokenIdsToPledge_); // move collateral from sender to pool
+        // move collateral from sender to pool
+        _transferFromSenderToPool(borrowerTokenIds[borrower_], tokenIdsToPledge_);
     }
 
     function pullCollateral(
@@ -72,6 +75,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         _pullCollateral(Maths.wad(noOfNFTsToPull_));
 
         emit PullCollateral(msg.sender, noOfNFTsToPull_);
+        // move collateral from pool to sender
         _transferFromPoolToAddress(msg.sender, borrowerTokenIds[msg.sender], noOfNFTsToPull_);
     }
 
@@ -86,7 +90,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         bucketLPs_ = _addCollateral(Maths.wad(tokenIdsToAdd_.length), index_);
 
         emit AddCollateralNFT(msg.sender, index_, tokenIdsToAdd_);
-        _transferFromSenderToPool(bucketTokenIds, tokenIdsToAdd_); // move required collateral from sender to pool
+        // move required collateral from sender to pool
+        _transferFromSenderToPool(bucketTokenIds, tokenIdsToAdd_);
     }
 
     function removeCollateral(
@@ -111,7 +116,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     ) external override nonReentrant {
         PoolState      memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
-        if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
+        // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
+        if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral();
 
         Auctions.TakeParams memory params = Auctions.take(
             auctions,
