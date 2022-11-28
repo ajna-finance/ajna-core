@@ -512,13 +512,18 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 newLup = _lup(poolState.accruedDebt);
 
         if (
+            auctions.isActive(borrowerAddress_)
+            &&
             _isCollateralized(
                 Maths.wmul(borrower.t0debt, poolState.inflator),
                 borrower.collateral,
                 newLup
-            ) && auctions.isActive(borrowerAddress_)) { // borrower becomes collateralized, settle auction
-                t0DebtInAuction     -= borrower.t0debt;
-                borrower.collateral = _settleAuction(borrowerAddress_, borrower.collateral);
+            )
+        )
+        {
+            // borrower becomes collateralized, remove debt from pool accumulator and settle auction
+            t0DebtInAuction     -= borrower.t0debt;
+            borrower.collateral = _settleAuction(borrowerAddress_, borrower.collateral);
         }
 
         loans.update(
