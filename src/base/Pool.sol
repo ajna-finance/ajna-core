@@ -946,8 +946,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     /**
      *  @notice Called by LPB removal functions assess whether or not LPB is locked.
-     *  @param  index_          The bucket index from which LPB is attempting to be removed.
-     *  @param  inflator_       The pool inflator used to properly assess t0 debt in auctions.
+     *  @param  index_    The bucket index from which LPB is attempting to be removed.
+     *  @param  inflator_ The pool inflator used to properly assess t0 debt in auctions.
      */
     function _revertIfAuctionDebtLocked(
         uint256 index_,
