@@ -10,7 +10,7 @@ abstract contract FlashloanablePool is Pool {
         address token_,
         uint256 amount_,
         bytes calldata data_
-    ) external override returns (bool) {
+    ) external override nonReentrant returns (bool) {
         if (token_ != _getArgAddress(20)) revert FlashloanUnavailableForToken();
 
         _transferQuoteToken(address(receiver_), amount_);
