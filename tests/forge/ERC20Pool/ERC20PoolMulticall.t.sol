@@ -136,9 +136,11 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
         bytes[] memory callsToExecute = new bytes[](1);
 
         callsToExecute[0] = abi.encodeWithSignature(
-            "borrow(uint256,uint256)",
+            "drawDebt(address,uint256,uint256,uint256)",
+            msg.sender,
             10_000 * 1e18,
-            2550
+            2550,
+            0
         );
 
         changePrank(_lender);

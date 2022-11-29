@@ -651,15 +651,8 @@ contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
         _mintAndApproveCollateralTokens(borrower, 1);
         uint256[] memory tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = _collateral.totalSupply();
-        // _pledgeCollateral(
-        //     {
-        //         from:     borrower,
-        //         borrower: borrower,
-        //         tokenIds: tokenIdsToAdd
-        //     }
-        // );
-        // _pool.borrow(loanAmount, 7_777);
-        _drawDebt({
+
+        _drawDebtNoCheckLup({
             from: borrower,
             borrower: borrower,
             amountToBorrow: loanAmount,
@@ -715,15 +708,8 @@ contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
         tokenIdsToAdd[2] = 5;
-        // _pledgeCollateral(
-        //     {
-        //         from:     _borrower,
-        //         borrower: _borrower,
-        //         tokenIds: tokenIdsToAdd
-        //     }
-        // );
-        // _pool.borrow(1_000 * 1e18, 3000);
-        _drawDebt({
+
+        _drawDebtNoCheckLup({
             from: _borrower,
             borrower: _borrower,
             amountToBorrow: 1_000 * 1e18,

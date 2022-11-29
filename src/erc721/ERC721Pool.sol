@@ -58,17 +58,6 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    // function pledgeCollateral(
-    //     address borrower_,
-    //     uint256[] calldata tokenIdsToPledge_
-    // ) external override {
-    //     _pledgeCollateral(borrower_, Maths.wad(tokenIdsToPledge_.length));
-
-    //     // move collateral from sender to pool
-    //     emit PledgeCollateralNFT(borrower_, tokenIdsToPledge_);
-    //     _transferFromSenderToPool(borrowerTokenIds[borrower_], tokenIdsToPledge_);
-    // }
-
     function drawDebt(
         address borrower_,
         uint256 amountToBorrow_,
@@ -84,8 +73,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             emit PledgeCollateralNFT(borrower_, tokenIdsToPledge_);
             _transferFromSenderToPool(borrowerTokenIds[borrower_], tokenIdsToPledge_);
         }
-
-        if (amountToBorrow_ != 0) _borrow(poolState, amountToBorrow_, limitIndex_);
+        if (amountToBorrow_ != 0 || limitIndex_ != 0) _borrow(poolState, amountToBorrow_, limitIndex_);
     }
 
     function pullCollateral(

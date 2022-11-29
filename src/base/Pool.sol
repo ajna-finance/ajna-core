@@ -281,7 +281,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         // if borrower auctioned then it cannot draw more debt
         auctions.revertIfActive(msg.sender);
 
-        // PoolState memory poolState     = _accruePoolInterest();
         Loans.Borrower memory borrower = loans.getBorrowerInfo(msg.sender);
         uint256 borrowerDebt           = Maths.wmul(borrower.t0debt, poolState.inflator);
 
@@ -537,7 +536,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 collateralAmountToPledge_
     ) internal {
 
-        // PoolState      memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
 
         borrower.collateral  += collateralAmountToPledge_;

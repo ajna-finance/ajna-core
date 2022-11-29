@@ -45,17 +45,6 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    // function pledgeCollateral(
-    //     address borrower_,
-    //     uint256 collateralAmountToPledge_
-    // ) external override {
-    //     _pledgeCollateral(borrower_, collateralAmountToPledge_);
-
-    //     // move collateral from sender to pool
-    //     emit PledgeCollateral(borrower_, collateralAmountToPledge_);
-    //     _transferCollateralFrom(msg.sender, collateralAmountToPledge_);
-    // }
-
     function drawDebt(
         address borrower_,
         uint256 amountToBorrow_,
@@ -70,11 +59,14 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
             // move collateral from sender to pool
             emit PledgeCollateral(borrower_, collateralToPledge_);
-            _transferCollateralFrom(borrower_, collateralToPledge_);
+            _transferCollateralFrom(msg.sender, collateralToPledge_);
         }
 
         // borrow against pledged collateral
-        if (amountToBorrow_ != 0) _borrow(poolState, amountToBorrow_, limitIndex_);
+        // check both values to enable an intentional 0 borrow loan call to update borrower's loan state
+        if (amountToBorrow_ != 0 || limitIndex_ != 0) {
+            _borrow(poolState, amountToBorrow_, limitIndex_);
+        }
     }
 
     function pullCollateral(
