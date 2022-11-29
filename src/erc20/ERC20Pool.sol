@@ -16,7 +16,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     /*** State Variables ***/
     /***********************/
 
-    uint256 public override collateralScale;
+    uint128 public override collateralScale;
 
     /****************************/
     /*** Initialize Functions ***/
@@ -28,12 +28,12 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     ) external override {
         if (poolInitializations != 0) revert AlreadyInitialized();
 
-        collateralScale = collateralScale_;
+        collateralScale = uint128(collateralScale_);
 
-        inflatorSnapshot           = 10**18;
-        lastInflatorSnapshotUpdate = block.timestamp;
-        interestRate               = rate_;
-        interestRateUpdate         = block.timestamp;
+        inflatorSnapshot           = uint208(10**18);
+        lastInflatorSnapshotUpdate = uint48(block.timestamp);
+        interestRate               = uint208(rate_);
+        interestRateUpdate         = uint48(block.timestamp);
 
         loans.init();
 
