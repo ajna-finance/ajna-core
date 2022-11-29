@@ -736,6 +736,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 t0Debt        = t0poolDebt;
         poolState_.collateral = pledgedCollateral;
         poolState_.inflator   = inflatorSnapshot;
+        poolState_.rate       = interestRate;
 
         if (t0Debt != 0) {
             // Calculate prior pool debt
@@ -746,7 +747,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
             if (poolState_.isNewInterestAccrued) {
                 // Scale the borrower inflator to update amount of interest owed by borrowers
-                poolState_.rate = interestRate;
                 uint256 factor = PoolUtils.pendingInterestFactor(poolState_.rate, elapsed);
                 poolState_.inflator = Maths.wmul(poolState_.inflator, factor);
 
