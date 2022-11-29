@@ -14,6 +14,8 @@ import '../libraries/Loans.sol';
 import '../libraries/Maths.sol';
 import '../libraries/PoolUtils.sol';
 
+import '@std/console.sol';
+
 abstract contract Pool is Clone, Multicall, IPool {
     using Auctions for Auctions.Data;
     using Buckets  for mapping(uint256 => Buckets.Bucket);
@@ -314,6 +316,7 @@ abstract contract Pool is Clone, Multicall, IPool {
                 newLup
             )
         ) revert PoolUnderCollateralized();
+        console.log("borrower - ", poolState.rate);
 
         borrower.t0debt += t0debtChange;
         loans.update(
@@ -611,6 +614,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         borrower.collateral  -= collateralAmountToPull_;
         poolState.collateral -= collateralAmountToPull_;
+        console.log("rate - ", poolState.rate);
 
         loans.update(
             deposits,

@@ -229,7 +229,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         );
     }
 
-    function testArbTakeCollateralRestrict() external {
+    function testArbTakeCollateralRestrict() external tearDown {
 
         skip(6 hours);
 
@@ -407,7 +407,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         );
     }
 
-    function testArbTakeDebtRestrict() tearDown external {
+    function testArbTakeDebtRestrict() external tearDown {
 
         skip(5 hours);
 
@@ -507,7 +507,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         );
     }
 
-    function testArbTakeDepositRestrict() tearDown external {
+    function testArbTakeDepositRestrict() external tearDown {
 
         skip(5 hours);
 
@@ -616,7 +616,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         );
     }
 
-    function testArbTakeGTNeutralPrice() tearDown external {
+    function testArbTakeGTNeutralPrice() external tearDown {
 
         skip(3 hours);
 
@@ -765,7 +765,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         );
     }
 
-    function testArbTakeReverts() tearDown external {
+    function testArbTakeReverts() external tearDown {
 
         // should revert if auction in grace period
         _assertArbTakeAuctionInCooldownRevert(

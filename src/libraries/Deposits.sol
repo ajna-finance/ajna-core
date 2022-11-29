@@ -3,6 +3,7 @@ pragma solidity 0.8.14;
 
 import './Maths.sol';
 import './PoolUtils.sol';
+import '@std/console.sol';
 
 library Deposits {
 
@@ -80,9 +81,19 @@ library Deposits {
     ) internal view returns (uint256 t0Np_) {
         uint256 borrowerDebt = Maths.wmul(borrowerT0debt_, inflator_);
         uint256 thresholdPrice = borrowerDebt * Maths.WAD / borrowerCollateral_; 
+        // console.log("debt", curDebt_);
+        // console.log("numLoans", numLoans_);
         uint256 curMomp = momp(self, curDebt_, numLoans_);
+        console.log("curMomp", curMomp);
         // t0Np = ((1 + rate) * MOMP * (TP / LUP)) / Inflator
+        console.log("TP val ", thresholdPrice);
+        console.log("lup val", lup_);
+        console.log("inflator", inflator_);
+        console.log("inflator raw", interestRate_);
+        console.log("breakdown: ", (1e18 + interestRate_) * curMomp);
         if (curMomp != 0) t0Np_ = (1e18 + interestRate_) * curMomp * thresholdPrice / lup_ / inflator_;
+        console.log("t0Np", t0Np_);
+        console.log("Np", Maths.wmul(t0Np_, inflator_));
     }
 
     /**
