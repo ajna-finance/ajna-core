@@ -87,9 +87,9 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     ) external override returns (uint256 collateralAmount_, uint256 lpAmount_) {
         (collateralAmount_, lpAmount_) = _removeCollateral(maxAmount_, index_);
 
-        emit RemoveCollateral(msg.sender, index_, collateralAmountToRemove_);
+        emit RemoveCollateral(msg.sender, index_, collateralAmount_);
         // move collateral from pool to lender
-        _transferCollateral(msg.sender, collateralAmountToRemove_);
+        _transferCollateral(msg.sender, collateralAmount_);
     }
 
     /*******************************/
