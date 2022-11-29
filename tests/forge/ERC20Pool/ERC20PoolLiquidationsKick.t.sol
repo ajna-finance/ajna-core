@@ -153,7 +153,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
 
     }
     
-    function testKickSpec() external tearDown {
+    function testKick() external tearDown {
         // Skip to make borrower undercollateralized
         skip(100 days);
 

@@ -4,7 +4,6 @@ pragma solidity 0.8.14;
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
 import 'src/libraries/BucketMath.sol';
-import '@std/console.sol';
 
 contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
@@ -288,7 +287,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             }
         );
 
-        skip(47000 seconds);
+        skip(47000 seconds); // 13.05 hrs
 
         _assertPool(
             PoolState({
@@ -504,7 +503,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             }
         );
 
-        skip(43000 seconds);
+        skip(43000 seconds); // 11.94 hrs
 
         _assertPool(
             PoolState({
@@ -719,7 +718,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             }
         );
 
-        skip(43000 seconds);
+        skip(43000 seconds); // 11.94 hrs
 
         _assertPool(
             PoolState({
@@ -1108,7 +1107,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             }
         );
 
-        skip(43000 seconds);
+        skip(43000 seconds); // 11.94 hrs
 
         _assertPool(
             PoolState({
@@ -1881,27 +1880,27 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             })
         );
 
-        // _assertKicker(
-        //     {
-        //         kicker:    _lender,
-        //         claimable: 0,
-        //         locked:    98.731708442308421650 * 1e18
-        //     }
-        // );
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0,
+                locked:    98.731708442308421650 * 1e18
+            }
+        );
 
-        // skip(2 hours);
+        skip(2 hours);
 
-        // // 10 borrowers draw debt to enable the min debt check
-        // for (uint i=0; i<10; ++i) {
-        //     _anonBorrowerDrawsDebt(1_000 * 1e18, 6_000 * 1e18, 7_777);
-        // }        
-        // // should revert if auction leaves borrower with debt under minimum pool debt
-        // _assertTakeDebtUnderMinPoolDebtRevert(
-        //     {
-        //         from:          _lender,
-        //         borrower:      _borrower,
-        //         maxCollateral: 0.1 * 1e18
-        //     }
-        // );
+        // 10 borrowers draw debt to enable the min debt check
+        for (uint i=0; i<10; ++i) {
+            _anonBorrowerDrawsDebt(1_000 * 1e18, 6_000 * 1e18, 7_777);
+        }        
+        // should revert if auction leaves borrower with debt under minimum pool debt
+        _assertTakeDebtUnderMinPoolDebtRevert(
+            {
+                from:          _lender,
+                borrower:      _borrower,
+                maxCollateral: 0.1 * 1e18
+            }
+        );
     }
 }
