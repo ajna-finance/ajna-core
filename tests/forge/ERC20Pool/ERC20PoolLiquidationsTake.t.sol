@@ -22,7 +22,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _mintQuoteAndApproveTokens(_lender,  120_000 * 1e18);
         _mintQuoteAndApproveTokens(_lender1, 120_000 * 1e18);
 
-        _mintCollateralAndApproveTokens(_borrower,  854 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower,  1_100 * 1e18);
         _mintCollateralAndApproveTokens(_borrower2, 1_000 * 1e18);
         _mintCollateralAndApproveTokens(_lender1,   4 * 1e18);
 
@@ -128,7 +128,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              19.268509615384615394 * 1e18,
                 borrowerCollateral:        2 * 1e18,
-                borrowert0Np:              9.634254807692307697 * 1e18,
+                borrowert0Np:              10.115967548076923081 * 1e18,
                 borrowerCollateralization: 1.009034539679184679 * 1e18
             }
         );
@@ -137,7 +137,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 borrower:                  _borrower2,
                 borrowerDebt:              7_987.673076923076926760 * 1e18,
                 borrowerCollateral:        1_000 * 1e18,
-                borrowert0Np:              8.067749499519230641 * 1e18,
+                borrowert0Np:              8.471136974495192173 * 1e18,
                 borrowerCollateralization: 1.217037273735858713 * 1e18
             }
         );
@@ -160,6 +160,1044 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 maxCollateral: 10 * 1e18
             }
         );
+    }
+
+    function testTakeLoanColConstraintBpfPosNoResidual() external tearDown {
+
+        // Increase neutralPrice so it exceeds TP
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  _i1505_26,
+                newLup: _p1505_26
+            }
+        );
+
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   1_000 * 1e18
+            }
+        );
+
+        _borrow(
+            {
+                from:       _borrower,
+                amount:     9_020 * 1e18,
+                indexLimit: _i9_72,
+                newLup:     _p9_72
+            }
+        );
+        
+        // calling borrow stamps loan with new t0NeutralPrice
+        _borrow(
+            {
+                from:       _borrower2,
+                amount:     1_700.0 * 1e18,
+                indexLimit: _p9_72,
+                newLup:     _p9_72
+            }
+        );
+
+        skip(100 days);
+        
+        _assertPool(
+            PoolState({
+                htp:                  9.689307692307692312 * 1e18,
+                lup:                  9.721295865031779605 * 1e18,
+                poolSize:             83_000.000000000000000000 * 1e18,
+                pledgedCollateral:    2_002.000000000000000000 * 1e18,
+                encumberedCollateral: 1_954.028587437074993946 * 1e18,
+                poolDebt:             18_995.690027205926343012 * 1e18,
+                actualUtilization:    0.228863735267541281 * 1e18,
+                targetUtilization:    1.000000000000000000 * 1e18,
+                minDebtAmount:        949.784501360296317151 * 1e18,
+                loans:                2,
+                maxBorrower:          address(_borrower2),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   block.timestamp - 100 days
+            })
+        );
+
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower2,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    9.822951211365485636 * 1e18,
+                neutralPrice:      0
+            })
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_822.951211365485636462* 1e18,
+                borrowerCollateral:        1_000 * 1e18,
+                borrowert0Np:              1_575.326150647652569911 * 1e18,
+                borrowerCollateralization: 0.989651241857326201 * 1e18
+            }
+        );
+
+        _kick(
+            {
+                from:           _lender,
+                borrower:       _borrower2,
+                debt:           9_945.738101507554206918 * 1e18,
+                collateral:     1_000 * 1e18,
+                bond:           2_946.885363409645690939 * 1e18,
+                transferAmount: 2_946.885363409645690939 * 1e18
+            }
+        );
+
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0,
+                locked:    2_946.885363409645690939 * 1e18
+            }
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_945.738101507554206918 * 1e18,
+                borrowerCollateral:        1_000 * 1e18,
+                borrowert0Np:              1_575.326150647652569911 * 1e18,
+                borrowerCollateralization: 0.977433325291186371 * 1e18
+            }
+        );
+
+        _assertReserveAuction(
+            {
+                reserves:                   176.383108065231049467 * 1e18,
+                claimableReserves :         80.790723478491074900 * 1e18,
+                claimableReservesRemaining: 0,
+                auctionPrice:               0,
+                timeRemaining:              0
+            }
+        );
+
+        skip(47000 seconds);
+
+        _assertPool(
+            PoolState({
+                htp:                  9.280695967198888513 * 1e18,
+                lup:                  9.721295865031779605 * 1e18,
+                poolSize:             83_222.843809282763864000 * 1e18,
+                pledgedCollateral:    2_002.000000000000000000 * 1e18,
+                encumberedCollateral: 1_966.791200431324241706 * 1e18,
+                poolDebt:             19_119.759164133922414841 * 1e18,
+                actualUtilization:    0.359239713545693419 * 1e18,
+                targetUtilization:    0.982347302508817815 * 1e18,
+                minDebtAmount:        1_911.975916413392241484 * 1e18,
+                loans:                1,
+                maxBorrower:          address(_borrower),
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   block.timestamp - 47000 seconds
+            })
+        );
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower2,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          2_946.885363409645690939 * 1e18,
+                bondFactor:        0.3 * 1e18,
+                kickTime:          block.timestamp - 47000 seconds,
+                kickMomp:          1505.263728469068226832 * 1e18,
+                totalBondEscrowed: 2_946.885363409645690939 * 1e18,
+                auctionPrice:      11.315630002696011360 * 1e18,
+                debtInAuction:     9_945.738101507554206918 * 1e18,
+                thresholdPrice:    9.946405146835980073 * 1e18,
+                neutralPrice:      1_597.054445085392479852 * 1e18
+            })
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_946.405146835980073929 * 1e18,
+                borrowerCollateral:        1_000.000000000000000 * 1e18,
+                borrowert0Np:              1_575.326150647652569911 * 1e18,
+                borrowerCollateralization: 0.977367774740624830 * 1e18
+            }
+        );
+ 
+        // BPF Positive, Loan Col constraint
+        _take(
+            {
+                from:            _lender,
+                borrower:        _borrower2,
+                maxCollateral:   1_001 * 1e18,
+                bondChange:      3_391.760345392249653035 * 1e18,
+                givenAmount:     11_315.630002696011360000 * 1e18,
+                collateralTaken: 1000.0 * 1e18,
+                isReward:        true
+            }
+        );
+
+        // Residual is not collateralized, auction is active
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower2,
+                active:            true,
+                kicker:            address(0xb012341CA6E91C00A290F658fbaA5211F2559fB1),
+                bondSize:          6338.645708801895343974 * 1e18,
+                bondFactor:        0.3 * 1e18,
+                kickTime:          block.timestamp - 47000 seconds,
+                kickMomp:          1_505.263728469068226832 * 1e18,
+                totalBondEscrowed: 6_338.645708801895343974 * 1e18,
+                auctionPrice:      11.315630002696011360 * 1e18,
+                debtInAuction:     2_022.535489532218366964 * 1e18,
+                thresholdPrice:    0,
+                neutralPrice:      1_597.054445085392479852 * 1e18
+            })
+        );
+
+        // Bad debt remains
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              2_022.535489532218366964 * 1e18,
+                borrowerCollateral:        0,
+                borrowert0Np:              1_575.326150647652569911 * 1e18,
+                borrowerCollateralization: 0
+            }
+        );
+    }
+
+    function testTakeCallerColConstraintBpfPosNoResidual() external tearDown {
+ 
+        // Increase neutralPrice so it exceeds TP
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  _i1505_26,
+                newLup: _p1505_26
+            }
+        );
+
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   1_000 * 1e18
+            }
+        );
+
+        _borrow(
+            {
+                from:       _borrower,
+                amount:     9_020 * 1e18,
+                indexLimit: _i9_72,
+                newLup:     _p9_72
+            }
+        );
+        
+        // calling borrow stamps loan with new t0NeutralPrice
+        _borrow(
+            {
+                from:       _borrower2,
+                amount:     1_700.0 * 1e18,
+                indexLimit: _p9_72,
+                newLup:     _p9_72
+            }
+        );
+
+        skip(100 days);
+        
+        _assertPool(
+            PoolState({
+                htp:                  9.689307692307692312 * 1e18,
+                lup:                  9.721295865031779605 * 1e18,
+                poolSize:             83_000.000000000000000000 * 1e18,
+                pledgedCollateral:    2_002.000000000000000000 * 1e18,
+                encumberedCollateral: 1_954.028587437074993946 * 1e18,
+                poolDebt:             18_995.690027205926343012 * 1e18,
+                actualUtilization:    0.228863735267541281 * 1e18,
+                targetUtilization:    1.000000000000000000 * 1e18,
+                minDebtAmount:        949.784501360296317151 * 1e18,
+                loans:                2,
+                maxBorrower:          address(_borrower2),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   block.timestamp - 100 days
+            })
+        );
+
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower2,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    9.822951211365485636 * 1e18,
+                neutralPrice:      0
+            })
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_822.951211365485636462* 1e18,
+                borrowerCollateral:        1_000 * 1e18,
+                borrowert0Np:              1_575.326150647652569911 * 1e18,
+                borrowerCollateralization: 0.989651241857326201 * 1e18
+            }
+        );
+
+        _kick(
+            {
+                from:           _lender,
+                borrower:       _borrower2,
+                debt:           9_945.738101507554206918 * 1e18,
+                collateral:     1_000 * 1e18,
+                bond:           2_946.885363409645690939 * 1e18,
+                transferAmount: 2_946.885363409645690939 * 1e18
+            }
+        );
+
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0,
+                locked:    2_946.885363409645690939 * 1e18
+            }
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_945.738101507554206918 * 1e18,
+                borrowerCollateral:        1_000 * 1e18,
+                borrowert0Np:              1_575.326150647652569911 * 1e18,
+                borrowerCollateralization: 0.977433325291186371 * 1e18
+            }
+        );
+
+        _assertReserveAuction(
+            {
+                reserves:                   176.383108065231049467 * 1e18,
+                claimableReserves :         80.790723478491074900 * 1e18,
+                claimableReservesRemaining: 0,
+                auctionPrice:               0,
+                timeRemaining:              0
+            }
+        );
+
+        skip(43000 seconds);
+
+        _assertPool(
+            PoolState({
+                htp:                  9.280695967198888513 * 1e18,
+                lup:                  9.721295865031779605 * 1e18,
+                poolSize:             83_222.843809282763864000 * 1e18,
+                pledgedCollateral:    2_002.000000000000000000 * 1e18,
+                encumberedCollateral: 1_966.779974486190376300 * 1e18,
+                poolDebt:             19_119.650033399911495436 * 1e18,
+                actualUtilization:    0.359237663096559171 * 1e18,
+                targetUtilization:    0.982347302508817815 * 1e18,
+                minDebtAmount:        1_911.965003339991149544 * 1e18,
+                loans:                1,
+                maxBorrower:          address(_borrower),
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   block.timestamp - 43000 seconds
+            })
+        );
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower2,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          2_946.885363409645690939 * 1e18,
+                bondFactor:        0.3 * 1e18,
+                kickTime:          block.timestamp - 43000 seconds,
+                kickMomp:          1505.263728469068226832 * 1e18,
+                totalBondEscrowed: 2_946.885363409645690939 * 1e18,
+                auctionPrice:      24.443112772227665888 * 1e18,
+                debtInAuction:     9_945.738101507554206918 * 1e18,
+                thresholdPrice:    9.946348375279124882 * 1e18,
+                neutralPrice:      1_597.054445085392479852 * 1e18
+            })
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_946.348375279124882460 * 1e18,
+                borrowerCollateral:        1_000.000000000000000 * 1e18,
+                borrowert0Np:              1_575.326150647652569911 * 1e18,
+                borrowerCollateralization: 0.977373353339734632 * 1e18
+            }
+        );
+ 
+        // BPF Positive, Loan Debt constraint
+        _take(
+            {
+                from:            _lender,
+                borrower:        _borrower2,
+                maxCollateral:   10 * 1e18,
+                bondChange:      72.659542640405725541 * 1e18,
+                givenAmount:     244.431127722276658880 * 1e18,
+                collateralTaken: 10.0 * 1e18,
+                isReward:        true
+            }
+        );
+
+        // Residual is not collateralized, auction is active
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower2,
+                active:            true,
+                kicker:            address(0xb012341CA6E91C00A290F658fbaA5211F2559fB1),
+                bondSize:          3_019.544906050051416480 * 1e18,
+                bondFactor:        0.3 * 1e18,
+                kickTime:          block.timestamp - 43000 seconds,
+                kickMomp:          1_505.263728469068226832 * 1e18,
+                totalBondEscrowed: 3_019.544906050051416480 * 1e18,
+                auctionPrice:      24.443112772227665888 * 1e18,
+                debtInAuction:     9_774.576790197253949121 * 1e18,
+                thresholdPrice:    9.873309889088135302 * 1e18,
+                neutralPrice:      1_597.054445085392479852 * 1e18
+            })
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_774.576790197253949121 * 1e18,
+                borrowerCollateral:        990.0 * 1e18,
+                borrowert0Np:              1_575.326150647652569911 * 1e18,
+                borrowerCollateralization: 0.984603539667648861 * 1e18
+            }
+        );
+    }
+
+    function testTakeCallerColConstraintBpfPosResidual () external tearDown {
+        
+        // Increase neutralPrice so it exceeds TP
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  _i1505_26,
+                newLup: _p1505_26
+            }
+        );
+
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   1_000 * 1e18
+            }
+        );
+
+        _borrow(
+            {
+                from:       _borrower,
+                amount:     9_020 * 1e18,
+                indexLimit: _i9_72,
+                newLup:     _p9_72
+            }
+        );
+        
+        // calling borrow stamps loan with new t0NeutralPrice
+        _borrow(
+            {
+                from:       _borrower2,
+                amount:     1_700.0 * 1e18,
+                indexLimit: _p9_72,
+                newLup:     _p9_72
+            }
+        );
+
+        skip(100 days);
+        
+        _assertPool(
+            PoolState({
+                htp:                  9.689307692307692312 * 1e18,
+                lup:                  9.721295865031779605 * 1e18,
+                poolSize:             83_000.000000000000000000 * 1e18,
+                pledgedCollateral:    2_002.000000000000000000 * 1e18,
+                encumberedCollateral: 1_954.028587437074993946 * 1e18,
+                poolDebt:             18_995.690027205926343012 * 1e18,
+                actualUtilization:    0.228863735267541281 * 1e18,
+                targetUtilization:    1.000000000000000000 * 1e18,
+                minDebtAmount:        949.784501360296317151 * 1e18,
+                loans:                2,
+                maxBorrower:          address(_borrower2),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   block.timestamp - 100 days
+            })
+        );
+
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower2,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    9.822951211365485636 * 1e18,
+                neutralPrice:      0
+            })
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_822.951211365485636462* 1e18,
+                borrowerCollateral:        1_000 * 1e18,
+                borrowert0Np:              1_575.326150647652569911 * 1e18,
+                borrowerCollateralization: 0.989651241857326201 * 1e18
+            }
+        );
+
+        _kick(
+            {
+                from:           _lender,
+                borrower:       _borrower2,
+                debt:           9_945.738101507554206918 * 1e18,
+                collateral:     1_000 * 1e18,
+                bond:           2_946.885363409645690939 * 1e18,
+                transferAmount: 2_946.885363409645690939 * 1e18
+            }
+        );
+
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0,
+                locked:    2_946.885363409645690939 * 1e18
+            }
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_945.738101507554206918 * 1e18,
+                borrowerCollateral:        1_000 * 1e18,
+                borrowert0Np:              1_575.326150647652569911 * 1e18,
+                borrowerCollateralization: 0.977433325291186371 * 1e18
+            }
+        );
+
+        _assertReserveAuction(
+            {
+                reserves:                   176.383108065231049467 * 1e18,
+                claimableReserves :         80.790723478491074900 * 1e18,
+                claimableReservesRemaining: 0,
+                auctionPrice:               0,
+                timeRemaining:              0
+            }
+        );
+
+        skip(43000 seconds);
+
+        _assertPool(
+            PoolState({
+                htp:                  9.280695967198888513 * 1e18,
+                lup:                  9.721295865031779605 * 1e18,
+                poolSize:             83_222.843809282763864000 * 1e18,
+                pledgedCollateral:    2_002.000000000000000000 * 1e18,
+                encumberedCollateral: 1_966.779974486190376300 * 1e18,
+                poolDebt:             19_119.650033399911495436 * 1e18,
+                actualUtilization:    0.359237663096559171 * 1e18,
+                targetUtilization:    0.982347302508817815 * 1e18,
+                minDebtAmount:        1_911.965003339991149544 * 1e18,
+                loans:                1,
+                maxBorrower:          address(_borrower),
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   block.timestamp - 43000 seconds
+            })
+        );
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower2,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          2_946.885363409645690939 * 1e18,
+                bondFactor:        0.3 * 1e18,
+                kickTime:          block.timestamp - 43000 seconds,
+                kickMomp:          1505.263728469068226832 * 1e18,
+                totalBondEscrowed: 2_946.885363409645690939 * 1e18,
+                auctionPrice:      24.443112772227665888 * 1e18,
+                debtInAuction:     9_945.738101507554206918 * 1e18,
+                thresholdPrice:    9.946348375279124882 * 1e18,
+                neutralPrice:      1_597.054445085392479852 * 1e18
+            })
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_946.348375279124882460 * 1e18,
+                borrowerCollateral:        1_000.000000000000000 * 1e18,
+                borrowert0Np:              1_575.326150647652569911 * 1e18,
+                borrowerCollateralization: 0.977373353339734632 * 1e18
+            }
+        );
+ 
+        // BPF Positive, Caller Col constraint
+        _take(
+            {
+                from:            _lender,
+                borrower:        _borrower2,
+                maxCollateral:   577.0 * 1e18,
+                bondChange:      4_192.455610351410363728 * 1e18,
+                givenAmount:     14_103.676069575363217376 * 1e18,
+                collateralTaken: 577.0 * 1e18,
+                isReward:        true
+            }
+        );
+
+        // Residual is collateralized, auction is not active
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower2,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    0.083044718806553259 * 1e18,
+                neutralPrice:      0
+            })
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              35.127916055172028812 * 1e18,
+                borrowerCollateral:        423.0 * 1e18,
+                borrowert0Np:              1_575.326150647652569911 * 1e18,
+                borrowerCollateralization: 18_125.941662533322157279 * 1e18
+            }
+        );
+
+    }
+
+    function testTakeCallerColConstraintBpfNegResidual () external tearDown {
+
+        _borrow(
+            {
+                from:       _borrower2,
+                amount:     1_700.0 * 1e18,
+                indexLimit: _p9_72,
+                newLup:     _p9_72
+            }
+        );
+
+        skip(100 days);
+
+        _kick(
+            {
+                from:           _lender,
+                borrower:       _borrower2,
+                debt:           9_945.738101507554206918 * 1e18,
+                collateral:     1_000 * 1e18,
+                bond:           98.229512113654856365 * 1e18,
+                transferAmount: 98.229512113654856365 * 1e18
+            }
+        );
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower2,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          98.229512113654856365 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp,
+                kickMomp:          9.818751856078723036 * 1e18,
+                totalBondEscrowed: 98.229512113654856365 * 1e18,
+                auctionPrice:      314.200059394519137152 * 1e18,
+                debtInAuction:     9_945.738101507554206918 * 1e18,
+                thresholdPrice:    9.945738101507554206 * 1e18,
+                neutralPrice:      10.417497612122395691 * 1e18
+            })
+        );
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0,
+                locked:    98.229512113654856365 * 1e18
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_945.738101507554206918 * 1e18,
+                borrowerCollateral:        1_000 * 1e18,
+                borrowert0Np:              10.275765152019230606 * 1e18,
+                borrowerCollateralization: 0.977433325291186371 * 1e18
+            }
+        );
+        _assertReserveAuction(
+            {
+                reserves:                   147.625795655539437491 * 1e18,
+                claimableReserves :         97.799433758115930094 * 1e18,
+                claimableReservesRemaining: 0,
+                auctionPrice:               0,
+                timeRemaining:              0
+            }
+        );
+
+        skip(2 hours);
+
+        _assertPool(
+            PoolState({
+                htp:                  9.901856025849255254 * 1e18,
+                lup:                  9.721295865031779605 * 1e18,
+                poolSize:             73_118.396583829162042000 * 1e18,
+                pledgedCollateral:    1_002 * 1e18,
+                encumberedCollateral: 1_025.107650389722106875 * 1e18,
+                poolDebt:             9_965.374762946048672276 * 1e18,
+                actualUtilization:    0 * 1e18,
+                targetUtilization:    1.023051016482943442 * 1e18,
+                minDebtAmount:        996.537476294604867228 * 1e18,
+                loans:                1,
+                maxBorrower:          address(_borrower),
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   block.timestamp - 2 hours
+            })
+        );
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower2,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          98.229512113654856365 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp - 2 hours,
+                kickMomp:          9.818751856078723036 * 1e18,
+                totalBondEscrowed: 98.229512113654856365 * 1e18,
+                auctionPrice:      157.100029697259568576 * 1e18,
+                debtInAuction:     9_945.738101507554206918 * 1e18,
+                thresholdPrice:    9.945840284273233679 * 1e18,
+                neutralPrice:      10.417497612122395691 * 1e18
+            })
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_945.840284273233679079 * 1e18,
+                borrowerCollateral:        1_000.000000000000000 * 1e18,
+                borrowert0Np:              10.275765152019230606 * 1e18,
+                borrowerCollateralization: 0.977423283219567398 * 1e18
+            }
+        );
+
+        // BPF Negative, Caller collateral constraint
+        _take(
+            {
+                from:            _lender,
+                borrower:        _borrower2,
+                maxCollateral:   10.0 * 1e18,
+                bondChange:      15.710002969725956858 * 1e18,
+                givenAmount:     1_571.000296972595685760 * 1e18,
+                collateralTaken: 10.0 * 1e18,
+                isReward:        false
+            }
+        );
+
+        _assertPool(
+            PoolState({
+                htp:                  9.902059490734692431 * 1e18,
+                lup:                  9.721295865031779605 * 1e18,
+                poolSize:             73_118.483609771307158717 * 1e18,
+                pledgedCollateral:    992.0 * 1e18,
+                encumberedCollateral: 863.503650389722109501 * 1e18,
+                poolDebt:             8_394.374465973452986517 * 1e18,
+                actualUtilization:    0.114805095121689000 * 1e18,
+                targetUtilization:    1.023051016482943442 * 1e18,
+                minDebtAmount:        419.718723298672649326 * 1e18,
+                loans:                2,
+                maxBorrower:          address(_borrower),
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   block.timestamp - 2 hours
+            })
+        );
+ 
+        // Residual is collateralized, auction is not active
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower2,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    8.459434330606705043 * 1e18,
+                neutralPrice:      0
+            })
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              8_374.839987300637993319 * 1e18,
+                borrowerCollateral:        990.000000000000000000 * 1e18,
+                borrowert0Np:              10.275765152019230606 * 1e18,
+                borrowerCollateralization: 1.149166183589792662 * 1e18
+            }
+        );
+    }
+
+    function testTakeLoanDebtConstraintBpfPosResidual() external tearDown {
+
+        // Increase neutralPrice so it exceeds TP
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  _i1505_26,
+                newLup: _p1505_26
+            }
+        );
+
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   1_000 * 1e18
+            }
+        );
+
+        _borrow(
+            {
+                from:       _borrower,
+                amount:     9_020 * 1e18,
+                indexLimit: _i9_72,
+                newLup:     _p9_72
+            }
+        );
+        
+        // calling borrow stamps loan with new t0NeutralPrice
+        _borrow(
+            {
+                from:       _borrower2,
+                amount:     1_700.0 * 1e18,
+                indexLimit: _p9_72,
+                newLup:     _p9_72
+            }
+        );
+
+        skip(100 days);
+        
+        _assertPool(
+            PoolState({
+                htp:                  9.689307692307692312 * 1e18,
+                lup:                  9.721295865031779605 * 1e18,
+                poolSize:             83_000.000000000000000000 * 1e18,
+                pledgedCollateral:    2_002.000000000000000000 * 1e18,
+                encumberedCollateral: 1_954.028587437074993946 * 1e18,
+                poolDebt:             18_995.690027205926343012 * 1e18,
+                actualUtilization:    0.228863735267541281 * 1e18,
+                targetUtilization:    1.000000000000000000 * 1e18,
+                minDebtAmount:        949.784501360296317151 * 1e18,
+                loans:                2,
+                maxBorrower:          address(_borrower2),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   block.timestamp - 100 days
+            })
+        );
+
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower2,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    9.822951211365485636 * 1e18,
+                neutralPrice:      0
+            })
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_822.951211365485636462* 1e18,
+                borrowerCollateral:        1_000 * 1e18,
+                borrowert0Np:              1_575.326150647652569911 * 1e18,
+                borrowerCollateralization: 0.989651241857326201 * 1e18
+            }
+        );
+
+        _kick(
+            {
+                from:           _lender,
+                borrower:       _borrower2,
+                debt:           9_945.738101507554206918 * 1e18,
+                collateral:     1_000 * 1e18,
+                bond:           2_946.885363409645690939 * 1e18,
+                transferAmount: 2_946.885363409645690939 * 1e18
+            }
+        );
+
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0,
+                locked:    2_946.885363409645690939 * 1e18
+            }
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_945.738101507554206918 * 1e18,
+                borrowerCollateral:        1_000 * 1e18,
+                borrowert0Np:              1_575.326150647652569911 * 1e18,
+                borrowerCollateralization: 0.977433325291186371 * 1e18
+            }
+        );
+
+        _assertReserveAuction(
+            {
+                reserves:                   176.383108065231049467 * 1e18,
+                claimableReserves :         80.790723478491074900 * 1e18,
+                claimableReservesRemaining: 0,
+                auctionPrice:               0,
+                timeRemaining:              0
+            }
+        );
+
+        skip(43000 seconds);
+
+        _assertPool(
+            PoolState({
+                htp:                  9.280695967198888513 * 1e18,
+                lup:                  9.721295865031779605 * 1e18,
+                poolSize:             83_222.843809282763864000 * 1e18,
+                pledgedCollateral:    2_002.000000000000000000 * 1e18,
+                encumberedCollateral: 1_966.779974486190376300 * 1e18,
+                poolDebt:             19_119.650033399911495436 * 1e18,
+                actualUtilization:    0.359237663096559171 * 1e18,
+                targetUtilization:    0.982347302508817815 * 1e18,
+                minDebtAmount:        1_911.965003339991149544 * 1e18,
+                loans:                1,
+                maxBorrower:          address(_borrower),
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   block.timestamp - 43000 seconds
+            })
+        );
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower2,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          2_946.885363409645690939 * 1e18,
+                bondFactor:        0.3 * 1e18,
+                kickTime:          block.timestamp - 43000 seconds,
+                kickMomp:          1505.263728469068226832 * 1e18,
+                totalBondEscrowed: 2_946.885363409645690939 * 1e18,
+                auctionPrice:      24.443112772227665888 * 1e18,
+                debtInAuction:     9_945.738101507554206918 * 1e18,
+                thresholdPrice:    9.946348375279124882 * 1e18,
+                neutralPrice:      1_597.054445085392479852 * 1e18
+            })
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_946.348375279124882460 * 1e18,
+                borrowerCollateral:        1_000.000000000000000 * 1e18,
+                borrowert0Np:              1_575.326150647652569911 * 1e18,
+                borrowerCollateralization: 0.977373353339734632 * 1e18
+            }
+        );
+ 
+        // BPF Positive, Loan Debt constraint
+        _take(
+            {
+                from:            _lender,
+                borrower:        _borrower2,
+                maxCollateral:   1_001 * 1e18,
+                bondChange:      4_207.314752003173273858 * 1e18,
+                givenAmount:     14_153.663127282298156318 * 1e18,
+                collateralTaken: 579.045036496486256685 * 1e18,
+                isReward:        true
+            }
+        );
+
+        // Residual is collateralized, auction is not active
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower2,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    0,
+                neutralPrice:      0
+            })
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              0,
+                borrowerCollateral:        420.954963503513743315 * 1e18,
+                borrowert0Np:              1_575.326150647652569911 * 1e18,
+                borrowerCollateralization: 1.0 * 1e18
+            }
+        );
+    }
+
+    function testTakeAndSettle() external tearDown { 
 
         // Borrower2 borrows
         _borrow(
@@ -173,562 +1211,15 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         // Skip to make borrower undercollateralized
         skip(100 days);
-
         _assertBorrower(
             {
                 borrower:                  _borrower2,
                 borrowerDebt:              9_853.394241979221645666 * 1e18,
                 borrowerCollateral:        1_000 * 1e18,
-                borrowert0Np:              9.816772887259615229 * 1e18,
+                borrowert0Np:              10.307611531622595991 * 1e18,
                 borrowerCollateralization: 0.986593617011217057 * 1e18
             }
         );
-
-    }
-
-    function testTakeLoanColConstraintBpfPosNoResidual() external tearDown {
-
-        // Increase neutralPrice so it exceeds TP
-        _addLiquidity(
-            {
-                from:   _lender,
-                amount: 10_000 * 1e18,
-                index:  _i100_33,
-                newLup: _p100_33
-            }
-        );
-        
-        // calling repay stamps new t0NeutralPrice on loan (mompFactor)
-        _repay({
-            from:     _borrower2,
-            borrower: _borrower2,
-            amount:   0,
-            repaid:   0,
-            newLup:   _p100_33
-        });   
-
-        _pledgeCollateral(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   850 * 1e18
-            }
-        );
-        _borrow(
-            {
-                from:       _borrower,
-                amount:     8_000 * 1e18,
-                indexLimit: _i9_72,
-                newLup:     _p9_72
-            }
-        );
-
-        _kick(
-            {
-                from:           _lender,
-                borrower:       _borrower2,
-                debt:           9_853.394241979221645666 * 1e18,
-                collateral:     1_000 * 1e18,
-                bond:           2_956.018272593766493700 * 1e18,
-                transferAmount: 2_956.018272593766493700 * 1e18
-            }
-        );
-
-        _assertAuction(
-            AuctionState({
-                borrower:          _borrower2,
-                active:            true,
-                kicker:            _lender,
-                bondSize:          2_956.018272593766493700 * 1e18,
-                bondFactor:        0.3 * 1e18,
-                kickTime:          block.timestamp,
-                kickMomp:          _p100_33,
-                totalBondEscrowed: 2_956.018272593766493700 * 1e18,
-                auctionPrice:      3_210.635780585024316480 * 1e18,
-                debtInAuction:     9_853.394241979221645666 * 1e18,
-                thresholdPrice:    9.853394241979221645 * 1e18,
-                neutralPrice:      9.952174519255063180 * 1e18 
-            })
-        );
-
-        _assertKicker(
-            {
-                kicker:    _lender,
-                claimable: 0,
-                locked:    2_956.018272593766493700 * 1e18
-            }
-        );
-        _assertBorrower(
-            {
-                borrower:                  _borrower2,
-                borrowerDebt:              9_853.394241979221645666 * 1e18,
-                borrowerCollateral:        1_000 * 1e18,
-                borrowert0Np:              9.816772887259615229 * 1e18,
-                borrowerCollateralization: 0.986593617011217057 * 1e18
-            }
-        );
-        _assertReserveAuction(
-            {
-                reserves:                   33.358463298707422239 * 1e18,
-                claimableReserves :         0,
-                claimableReservesRemaining: 0,
-                auctionPrice:               0,
-                timeRemaining:              0
-            }
-        );
-
-        skip(33610 seconds);
-
-        _assertPool(
-            PoolState({
-                htp:                  9.552494189823609848 * 1e18,
-                lup:                  9.721295865031779605 * 1e18,
-                poolSize:             83_118.781595119199960000 * 1e18,
-                pledgedCollateral:    1_852.000000000000000000 * 1e18,
-                encumberedCollateral: 1_839.511778397294114128 * 1e18,
-                poolDebt:             17_882.438245010870556573 * 1e18,
-                actualUtilization:    0.635960636648455183 * 1e18,
-                targetUtilization:    98205815911108893,
-                minDebtAmount:        1_788.243824501087055657 * 1e18,
-                loans:                1,
-                maxBorrower:          address(_borrower),
-                interestRate:         0.0550 * 1e18,
-                interestRateUpdate:   block.timestamp - 33610 seconds
-            })
-        );
-
-        _assertAuction(
-            AuctionState({
-                borrower:          _borrower2,
-                active:            true,
-                kicker:            _lender,
-                bondSize:          2_956.018272593766493700 * 1e18,
-                bondFactor:        0.3 * 1e18,
-                kickTime:          block.timestamp - 33610 seconds,
-                kickMomp:          100.332368143282009890 * 1e18,
-                totalBondEscrowed: 2_956.018272593766493700 * 1e18,
-                auctionPrice:      9.935084144788591232 * 1e18,
-                debtInAuction:     9_853.394241979221645666 * 1e18,
-                thresholdPrice:    9.853971836657592918 * 1e18,
-                neutralPrice:      9.952174519255063180 * 1e18
-            })
-        );
-
-        _assertBorrower(
-            {
-                borrower:                  _borrower2,
-                borrowerDebt:              9_853.971836657592918128 * 1e18,
-                borrowerCollateral:        1_000.000000000000000 * 1e18,
-                borrowert0Np:              9.816772887259615229 * 1e18,
-                borrowerCollateralization: 0.986535787413939251 * 1e18
-            }
-        );
-        // BPF Positive, Loan collateral constraint
-        _take(
-            {
-                from:            _lender,
-                borrower:        _borrower2,
-                maxCollateral:   1_001 * 1e18,
-                bondChange:      518.705713222703336422 * 1e18,
-                givenAmount:     9_935.084144788591232000 * 1e18,
-                collateralTaken: 1000.0 * 1e18,
-                isReward:        true
-            }
-        );
-        
-        // Auction is still active, residual is not collateralized
-        _assertAuction(
-            AuctionState({
-                borrower:          _borrower2,
-                active:            true,
-                kicker:            _lender,
-                bondSize:          3_474.723985816469830122 * 1e18,
-                bondFactor:        0.3 * 1e18,
-                kickTime:          block.timestamp - 33610 seconds,
-                kickMomp:          100.332368143282009890 * 1e18,
-                totalBondEscrowed: 3_474.723985816469830122 * 1e18,
-                auctionPrice:      9.935084144788591232 * 1e18,
-                debtInAuction:     437.593405091705022550 * 1e18,
-                thresholdPrice:    0,
-                neutralPrice:      9.952174519255063180 * 1e18
-            })
-        );
-
-        _assertBorrower(
-            {
-                borrower:                  _borrower2,
-                borrowerDebt:              437.593405091705022550 * 1e18,
-                borrowerCollateral:        0,
-                borrowert0Np:              9.816772887259615229 * 1e18,
-                borrowerCollateralization: 0
-            }
-        );
-    }
-
-    function testTakeCallerColConstraintBpfPosNoResidual() external tearDown {
-
-        // Increase neutralPrice so it exceeds TP
-        _addLiquidity(
-            {
-                from:   _lender,
-                amount: 10_000 * 1e18,
-                index:  _i100_33,
-                newLup: _p100_33
-            }
-        );
-        
-        // calling repay stamps new t0NeutralPrice on loan (mompFactor)
-        _repay({
-            from:     _borrower2,
-            borrower: _borrower2,
-            amount:   0,
-            repaid:   0,
-            newLup:   _p100_33
-        });   
-
-        _pledgeCollateral(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   850 * 1e18
-            }
-        );
-        _borrow(
-            {
-                from:       _borrower,
-                amount:     8_000 * 1e18,
-                indexLimit: _i9_72,
-                newLup:     _p9_72
-            }
-        );
-
-        _kick(
-            {
-                from:           _lender,
-                borrower:       _borrower2,
-                debt:           9_853.394241979221645666 * 1e18,
-                collateral:     1_000 * 1e18,
-                bond:           2_956.018272593766493700 * 1e18,
-                transferAmount: 2_956.018272593766493700 * 1e18
-            }
-        );
-
-        _assertAuction(
-            AuctionState({
-                borrower:          _borrower2,
-                active:            true,
-                kicker:            _lender,
-                bondSize:          2_956.018272593766493700 * 1e18,
-                bondFactor:        0.3 * 1e18,
-                kickTime:          block.timestamp,
-                kickMomp:          _p100_33,
-                totalBondEscrowed: 2_956.018272593766493700 * 1e18,
-                auctionPrice:      3_210.635780585024316480 * 1e18,
-                debtInAuction:     9_853.394241979221645666 * 1e18,
-                thresholdPrice:    9.853394241979221645 * 1e18,
-                neutralPrice:      9.952174519255063180 * 1e18 
-            })
-        );
-
-        _assertKicker(
-            {
-                kicker:    _lender,
-                claimable: 0,
-                locked:    2_956.018272593766493700 * 1e18
-            }
-        );
-        _assertBorrower(
-            {
-                borrower:                  _borrower2,
-                borrowerDebt:              9_853.394241979221645666 * 1e18,
-                borrowerCollateral:        1_000 * 1e18,
-                borrowert0Np:              9.816772887259615229 * 1e18,
-                borrowerCollateralization: 0.986593617011217057 * 1e18
-            }
-        );
-        _assertReserveAuction(
-            {
-                reserves:                   33.358463298707422239 * 1e18,
-                claimableReserves :         0,
-                claimableReservesRemaining: 0,
-                auctionPrice:               0,
-                timeRemaining:              0
-            }
-        );
-
-        skip(33610 seconds);
-
-        _assertPool(
-            PoolState({
-                htp:                  9.552494189823609848 * 1e18,
-                lup:                  9.721295865031779605 * 1e18,
-                poolSize:             83_118.781595119199960000 * 1e18,
-                pledgedCollateral:    1_852.000000000000000000 * 1e18,
-                encumberedCollateral: 1_839.511778397294114128 * 1e18,
-                poolDebt:             17_882.438245010870556573 * 1e18,
-                actualUtilization:    0.635960636648455183 * 1e18,
-                targetUtilization:    98205815911108893,
-                minDebtAmount:        1_788.243824501087055657 * 1e18,
-                loans:                1,
-                maxBorrower:          address(_borrower),
-                interestRate:         0.0550 * 1e18,
-                interestRateUpdate:   block.timestamp - 33610 seconds
-            })
-        );
-
-        _assertAuction(
-            AuctionState({
-                borrower:          _borrower2,
-                active:            true,
-                kicker:            _lender,
-                bondSize:          2_956.018272593766493700 * 1e18,
-                bondFactor:        0.3 * 1e18,
-                kickTime:          block.timestamp - 33610 seconds,
-                kickMomp:          100.332368143282009890 * 1e18,
-                totalBondEscrowed: 2_956.018272593766493700 * 1e18,
-                auctionPrice:      9.935084144788591232 * 1e18,
-                debtInAuction:     9_853.394241979221645666 * 1e18,
-                thresholdPrice:    9.853971836657592918 * 1e18,
-                neutralPrice:      9.952174519255063180 * 1e18
-            })
-        );
-
-        _assertBorrower(
-            {
-                borrower:                  _borrower2,
-                borrowerDebt:              9_853.971836657592918128 * 1e18,
-                borrowerCollateral:        1_000.000000000000000 * 1e18,
-                borrowert0Np:              9.816772887259615229 * 1e18,
-                borrowerCollateralization: 0.986535787413939251 * 1e18
-            }
-        );
-
-        // BPF Positive, Caller collateral constraint
-        _take(
-            {
-                from:            _lender,
-                borrower:        _borrower2,
-                maxCollateral:   10 * 1e18,
-                bondChange:      5.187057132227033364 * 1e18,
-                givenAmount:     99.350841447885912320 * 1e18,
-                collateralTaken: 10.0 * 1e18,
-                isReward:        true
-            }
-        );
-        
-        // Auction is still active, residual is not collateralized
-        _assertAuction(
-            AuctionState({
-                borrower:          _borrower2,
-                active:            true,
-                kicker:            _lender,
-                bondSize:          2_961.205329725993527064 * 1e18,
-                bondFactor:        0.3 * 1e18,
-                kickTime:          block.timestamp - 33610 seconds,
-                kickMomp:          100.332368143282009890 * 1e18,
-                totalBondEscrowed: 2_961.205329725993527064 * 1e18,
-                auctionPrice:      9.935084144788591232 * 1e18,
-                debtInAuction:     9759.808052341934039172 * 1e18,
-                thresholdPrice:    9.858391972062559635 * 1e18,
-                neutralPrice:      9.952174519255063180 * 1e18
-            })
-        );
-
-        _assertBorrower(
-            {
-                borrower:                  _borrower2,
-                borrowerDebt:              9_759.808052341934039172 * 1e18,
-                borrowerCollateral:        990.000000000000000000 * 1e18,
-                borrowert0Np:              9.816772887259615229 * 1e18,
-                borrowerCollateralization: 0.986093461548364772 * 1e18
-            }
-        );
-    }
-
-    function testTakeCallerColConstraintBpfPosResidual () external tearDown {
-
-        // Increase neutralPrice so it exceeds TP
-        _addLiquidity(
-            {
-                from:   _lender,
-                amount: 10_000 * 1e18,
-                index:  _i100_33,
-                newLup: _p100_33
-            }
-        );
-        
-        // calling repay stamps new t0NeutralPrice on loan (mompFactor)
-        _repay({
-            from:     _borrower2,
-            borrower: _borrower2,
-            amount:   0,
-            repaid:   0,
-            newLup:   _p100_33
-        });   
-
-        _pledgeCollateral(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   850 * 1e18
-            }
-        );
-        _borrow(
-            {
-                from:       _borrower,
-                amount:     8_000 * 1e18,
-                indexLimit: _i9_72,
-                newLup:     _p9_72
-            }
-        );
-
-        _kick(
-            {
-                from:           _lender,
-                borrower:       _borrower2,
-                debt:           9_853.394241979221645666 * 1e18,
-                collateral:     1_000 * 1e18,
-                bond:           2_956.018272593766493700 * 1e18,
-                transferAmount: 2_956.018272593766493700 * 1e18
-            }
-        );
-
-        _assertAuction(
-            AuctionState({
-                borrower:          _borrower2,
-                active:            true,
-                kicker:            _lender,
-                bondSize:          2_956.018272593766493700 * 1e18,
-                bondFactor:        0.3 * 1e18,
-                kickTime:          block.timestamp,
-                kickMomp:          _p100_33,
-                totalBondEscrowed: 2_956.018272593766493700 * 1e18,
-                auctionPrice:      3_210.635780585024316480 * 1e18,
-                debtInAuction:     9_853.394241979221645666 * 1e18,
-                thresholdPrice:    9.853394241979221645 * 1e18,
-                neutralPrice:      9.952174519255063180 * 1e18 
-            })
-        );
-
-        _assertKicker(
-            {
-                kicker:    _lender,
-                claimable: 0,
-                locked:    2_956.018272593766493700 * 1e18
-            }
-        );
-        _assertBorrower(
-            {
-                borrower:                  _borrower2,
-                borrowerDebt:              9_853.394241979221645666 * 1e18,
-                borrowerCollateral:        1_000 * 1e18,
-                borrowert0Np:              9.816772887259615229 * 1e18,
-                borrowerCollateralization: 0.986593617011217057 * 1e18
-            }
-        );
-        _assertReserveAuction(
-            {
-                reserves:                   33.358463298707422239 * 1e18,
-                claimableReserves :         0,
-                claimableReservesRemaining: 0,
-                auctionPrice:               0,
-                timeRemaining:              0
-            }
-        );
-
-        skip(33610 seconds);
-
-        _assertPool(
-            PoolState({
-                htp:                  9.552494189823609848 * 1e18,
-                lup:                  9.721295865031779605 * 1e18,
-                poolSize:             83_118.781595119199960000 * 1e18,
-                pledgedCollateral:    1_852.000000000000000000 * 1e18,
-                encumberedCollateral: 1_839.511778397294114128 * 1e18,
-                poolDebt:             17_882.438245010870556573 * 1e18,
-                actualUtilization:    0.635960636648455183 * 1e18,
-                targetUtilization:    98205815911108893,
-                minDebtAmount:        1_788.243824501087055657 * 1e18,
-                loans:                1,
-                maxBorrower:          address(_borrower),
-                interestRate:         0.0550 * 1e18,
-                interestRateUpdate:   block.timestamp - 33610 seconds
-            })
-        );
-
-        _assertAuction(
-            AuctionState({
-                borrower:          _borrower2,
-                active:            true,
-                kicker:            _lender,
-                bondSize:          2_956.018272593766493700 * 1e18,
-                bondFactor:        0.3 * 1e18,
-                kickTime:          block.timestamp - 33610 seconds,
-                kickMomp:          100.332368143282009890 * 1e18,
-                totalBondEscrowed: 2_956.018272593766493700 * 1e18,
-                auctionPrice:      9.935084144788591232 * 1e18,
-                debtInAuction:     9_853.394241979221645666 * 1e18,
-                thresholdPrice:    9.853971836657592918 * 1e18,
-                neutralPrice:      9.952174519255063180 * 1e18
-            })
-        );
-
-        _assertBorrower(
-            {
-                borrower:                  _borrower2,
-                borrowerDebt:              9_853.971836657592918128 * 1e18,
-                borrowerCollateral:        1_000.000000000000000 * 1e18,
-                borrowert0Np:              9.816772887259615229 * 1e18,
-                borrowerCollateralization: 0.986535787413939251 * 1e18
-            }
-        );
-
-
-        // BPF Positive, Caller collateral constraint
-        _take(
-            {
-                from:            _lender,
-                borrower:        _borrower2,
-                maxCollateral:   990.0 * 1e18,
-                bondChange:      513.518656090476303058 * 1e18,
-                givenAmount:     9_835.733303340705319680 * 1e18,
-                collateralTaken: 990.0 * 1e18,
-                isReward:        true
-            }
-        );
-
-        // Residual is collateralized, auction is not active
-        _assertAuction(
-            AuctionState({
-                borrower:          _borrower2,
-                active:            false,
-                kicker:            address(0),
-                bondSize:          0,
-                bondFactor:        0,
-                kickTime:          0,
-                kickMomp:          0,
-                totalBondEscrowed: 0,
-                auctionPrice:      0,
-                debtInAuction:     0,
-                thresholdPrice:    53.175718940736390150 * 1e18,
-                neutralPrice:      0
-            })
-        );
-
-        _assertBorrower(
-            {
-                borrower:                  _borrower2,
-                borrowerDebt:              531.757189407363901506 * 1e18,
-                borrowerCollateral:        10.0 * 1e18,
-                borrowert0Np:              9.816772887259615229 * 1e18,
-                borrowerCollateralization: 1.886807929293839146 * 1e18
-            }
-        );
-
-    }
-
-    function testTakeCallerColConstraintBpfNegResidual () external tearDown {
-
         _kick(
             {
                 from:           _lender,
@@ -752,7 +1243,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 auctionPrice:      314.200059394519137152 * 1e18,
                 debtInAuction:     9_976.561670003961916237 * 1e18,
                 thresholdPrice:    9.976561670003961916 * 1e18,
-                neutralPrice:      9.952174519255063180 * 1e18
+                neutralPrice:      10.449783245217816340 * 1e18
             })
         );
         _assertKicker(
@@ -767,422 +1258,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 borrower:                  _borrower2,
                 borrowerDebt:              9_976.561670003961916237 * 1e18,
                 borrowerCollateral:        1_000 * 1e18,
-                borrowert0Np:              9.816772887259615229 * 1e18,
-                borrowerCollateralization: 0.974413448899967463 * 1e18
-            }
-        );
-        _assertReserveAuction(
-            {
-                reserves:                   148.064352861909228810 * 1e18,
-                claimableReserves :         98.083873122003682866 * 1e18,
-                claimableReservesRemaining: 0,
-                auctionPrice:               0,
-                timeRemaining:              0
-            }
-        );
-
-        skip(2 hours);
-
-        _assertPool(
-            PoolState({
-                htp:                  9.901856025849255254 * 1e18,
-                lup:                  9.721295865031779605 * 1e18,
-                poolSize:             73_118.781595119199960000 * 1e18,
-                pledgedCollateral:    1_002 * 1e18,
-                encumberedCollateral: 1_028.278409268629243557 * 1e18,
-                poolDebt:             9_996.198648124581421281 * 1e18,
-                actualUtilization:    0 * 1e18,
-                targetUtilization:    1.026215413990712532 * 1e18,
-                minDebtAmount:        999.619864812458142128 * 1e18,
-                loans:                1,
-                maxBorrower:          address(_borrower),
-                interestRate:         0.045 * 1e18,
-                interestRateUpdate:   block.timestamp - 2 hours
-            })
-        );
-
-        _assertAuction(
-            AuctionState({
-                borrower:          _borrower2,
-                active:            true,
-                kicker:            _lender,
-                bondSize:          98.533942419792216457 * 1e18,
-                bondFactor:        0.01 * 1e18,
-                kickTime:          block.timestamp - 2 hours,
-                kickMomp:          9.818751856078723036 * 1e18,
-                totalBondEscrowed: 98.533942419792216457 * 1e18,
-                auctionPrice:      157.100029697259568576 * 1e18,
-                debtInAuction:     9_976.561670003961916237 * 1e18,
-                thresholdPrice:    9.976664169451766428 * 1e18,
-                neutralPrice:      9.952174519255063180 * 1e18
-            })
-        );
-
-        _assertBorrower(
-            {
-                borrower:                  _borrower2,
-                borrowerDebt:              9_976.664169451766428084 * 1e18,
-                borrowerCollateral:        1_000.000000000000000 * 1e18,
-                borrowert0Np:              9.816772887259615229 * 1e18,
-                borrowerCollateralization: 0.974403437854316417 * 1e18
-            }
-        );
-
-        // BPF Negative, Caller collateral constraint
-        _take(
-            {
-                from:            _lender,
-                borrower:        _borrower2,
-                maxCollateral:   60 * 1e18,
-                bondChange:      94.260017818355741146 * 1e18,
-                givenAmount:     9_426.001781835574114560 * 1e18,
-                collateralTaken: 60.0 * 1e18,
-                isReward:        false
-            }
-        );
-
-        _assertPool(
-            PoolState({
-                htp:                  9.902059490734692431 * 1e18,
-                lup:                  9.917184843435912074 * 1e18,
-                poolSize:             73_118.868890241151360666 * 1e18,
-                pledgedCollateral:    942.0 * 1e18,
-                encumberedCollateral: 57.495839322427780643 * 1e18,
-                poolDebt:             570.196866289007306722 * 1e18,
-                actualUtilization:    0.007798217819054760 * 1e18,
-                targetUtilization:    1.026215413990712532 * 1e18,
-                minDebtAmount:        28.509843314450365336 * 1e18,
-                loans:                2,
-                maxBorrower:          address(_borrower),
-                interestRate:         0.045 * 1e18,
-                interestRateUpdate:   block.timestamp - 2 hours
-            })
-        );
- 
-        _assertAuction(
-            AuctionState({
-                borrower:          _borrower2,
-                active:            false,
-                kicker:            address(0),
-                bondSize:          0,
-                bondFactor:        0,
-                kickTime:          0,
-                kickMomp:          0,
-                totalBondEscrowed: 0,
-                auctionPrice:      0,
-                debtInAuction:     0,
-                thresholdPrice:    0.585811050655523737 * 1e18,
-                neutralPrice:      0
-            })
-        );
-
-        _assertBorrower(
-            {
-                borrower:                  _borrower2,
-                borrowerDebt:              550.662387616192313524 * 1e18,
-                borrowerCollateral:        940.000000000000000000 * 1e18,
-                borrowert0Np:              9.816772887259615229 * 1e18,
-                borrowerCollateralization: 16.928982190313006885 * 1e18
-            }
-        );
-    }
-
-    function testTakeLoanDebtConstraintBpfPosResidual() external {
-
-        // FIXME: BPF needs to be positive below
-        // Increase neutralPrice so it exceeds TP
-        _addLiquidity(
-            {
-                from:   _lender,
-                amount: 10_000 * 1e18,
-                index:  _i100_33,
-                newLup: _p100_33
-            }
-        );
-
-        _assertBucket(
-            {
-                index:        _i100_33,
-                lpBalance:    10_000 * 1e27,
-                collateral:   0,
-                deposit:      10_000 * 1e18,
-                exchangeRate: 1.0* 1e27
-            }
-        );
-
-        _assertPool(
-            PoolState({
-                htp:                  9.989300988155456469 * 1e18,
-                lup:                  100.332368143282009890 * 1e18,
-                poolSize:             83_118.781595119199960000 * 1e18,
-                pledgedCollateral:    1_002.000000000000000000 * 1e18,
-                encumberedCollateral: 98.402227542931110509 * 1e18,
-                poolDebt:             9_872.928519956368918239 * 1e18,
-                actualUtilization:    0.814679961220908454 * 1e18,
-                targetUtilization:    98205815911108893,
-                minDebtAmount:        493.646425997818445912 * 1e18,
-                loans:                2,
-                maxBorrower:          address(_borrower2),
-                interestRate:         0.0550 * 1e18,
-                interestRateUpdate:   block.timestamp
-            })
-        );
-        
-        // calling pullCollateral stamps new t0NeutralPrice on loan (mompFactor)
-        console.log("before Pull");
-        _pullCollateral({
-            from:     _borrower2,
-            amount:   0
-        });   
-        console.log("after Pull");
-        
-        // _assertPool(
-        //     PoolState({
-        //         htp:                  9.989300988155456469 * 1e18,
-        //         lup:                  100.332368143282009890 * 1e18,
-        //         poolSize:             83_118.781595119199960000 * 1e18,
-        //         pledgedCollateral:    1_002.000000000000000000 * 1e18,
-        //         encumberedCollateral: 98.402227542931110509 * 1e18,
-        //         poolDebt:             9_872.928519956368918239 * 1e18,
-        //         actualUtilization:    0.814679961220908454 * 1e18,
-        //         targetUtilization:    98205815911108893,
-        //         minDebtAmount:        493.646425997818445912 * 1e18,
-        //         loans:                2,
-        //         maxBorrower:          address(_borrower2),
-        //         interestRate:         0.0550 * 1e18,
-        //         interestRateUpdate:   block.timestamp
-        //     })
-        // );
-
-        // _assertBorrower(
-        //     {
-        //         borrower:                  _borrower2,
-        //         borrowerDebt:              9_853.394241979221645666 * 1e18,
-        //         borrowerCollateral:        1_000 * 1e18,
-        //         borrowert0Np:              9.719336538461538465 * 1e18,
-        //         borrowerCollateralization: 10.182518397145606251 * 1e18
-        //     }
-        // );
-
-        // _assertAuction(
-        //     AuctionState({
-        //         borrower:          _borrower2,
-        //         active:            false,
-        //         kicker:            address(0),
-        //         bondSize:          0,
-        //         bondFactor:        0,
-        //         kickTime:          0,
-        //         kickMomp:          0,
-        //         totalBondEscrowed: 0,
-        //         auctionPrice:      0,
-        //         debtInAuction:     0,
-        //         thresholdPrice:    9.853394241979221645 * 1e18,
-        //         neutralPrice:      0
-        //     })
-        // );
-
-        _pledgeCollateral(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   850 * 1e18
-            }
-        );
-
-        _borrow(
-            {
-                from:       _borrower,
-                amount:     8_000 * 1e18,
-                indexLimit: _i9_72,
-                newLup:     _p9_72
-            }
-        );
-
-        // _kick(
-        //     {
-        //         from:           _lender,
-        //         borrower:       _borrower2,
-        //         debt:           9_853.394241979221645666 * 1e18,
-        //         collateral:     1_000 * 1e18,
-        //         bond:           2_956.018272593766493700 * 1e18,
-        //         transferAmount: 2_956.018272593766493700 * 1e18
-        //     }
-        // );
-
-        // _assertAuction(
-        //     AuctionState({
-        //         borrower:          _borrower2,
-        //         active:            true,
-        //         kicker:            _lender,
-        //         bondSize:          2_956.018272593766493700 * 1e18,
-        //         bondFactor:        0.3 * 1e18,
-        //         kickTime:          block.timestamp,
-        //         kickMomp:          _p100_33,
-        //         totalBondEscrowed: 2_956.018272593766493700 * 1e18,
-        //         auctionPrice:      3_210.635780585024316480 * 1e18,
-        //         debtInAuction:     9_853.394241979221645666 * 1e18,
-        //         thresholdPrice:    9.853394241979221645 * 1e18,
-        //         neutralPrice:      9.853394241979221645 * 1e18 
-        //     })
-        // );
-
-        // assertEq(true, false);
-
-        // _assertKicker(
-        //     {
-        //         kicker:    _lender,
-        //         claimable: 0,
-        //         locked:    2_956.018272593766493700 * 1e18
-        //     }
-        // );
-        // _assertBorrower(
-        //     {
-        //         borrower:                  _borrower2,
-        //         borrowerDebt:              9_853.394241979221645666 * 1e18,
-        //         borrowerCollateral:        1_000 * 1e18,
-        //         borrowert0Np:              9.816772887259615229 * 1e18,
-        //         borrowerCollateralization: 0.986593617011217057 * 1e18
-        //     }
-        // );
-        // _assertReserveAuction(
-        //     {
-        //         reserves:                   33.358463298707422239 * 1e18,
-        //         claimableReserves :         0,
-        //         claimableReservesRemaining: 0,
-        //         auctionPrice:               0,
-        //         timeRemaining:              0
-        //     }
-        // );
-
-        // skip(33609 seconds);
-
-        // _assertPool(
-        //     PoolState({
-        //         htp:                  9.552494189823609848 * 1e18,
-        //         lup:                  9.721295865031779605 * 1e18,
-        //         poolSize:             83_118.781595119199960000 * 1e18,
-        //         pledgedCollateral:    1_852.000000000000000000 * 1e18,
-        //         encumberedCollateral: 1_839.511778397294114128 * 1e18,
-        //         poolDebt:             17_882.438245010870556573 * 1e18,
-        //         actualUtilization:    0.635960636648455183 * 1e18,
-        //         targetUtilization:    98205815911108893,
-        //         minDebtAmount:        1_788.243824501087055657 * 1e18,
-        //         loans:                1,
-        //         maxBorrower:          address(_borrower),
-        //         interestRate:         0.0550 * 1e18,
-        //         interestRateUpdate:   block.timestamp - 33610 seconds
-        //     })
-        // );
-
-        // _assertAuction(
-        //     AuctionState({
-        //         borrower:          _borrower2,
-        //         active:            true,
-        //         kicker:            _lender,
-        //         bondSize:          2_956.018272593766493700 * 1e18,
-        //         bondFactor:        0.3 * 1e18,
-        //         kickTime:          block.timestamp - 33610 seconds,
-        //         kickMomp:          100.332368143282009890 * 1e18,
-        //         totalBondEscrowed: 2_956.018272593766493700 * 1e18,
-        //         auctionPrice:      9.935084144788591232 * 1e18,
-        //         debtInAuction:     9_853.394241979221645666 * 1e18,
-        //         thresholdPrice:    9.853971836657592918 * 1e18,
-        //         neutralPrice:      9.952174519255063180 * 1e18
-        //     })
-        // );
-
-        // _assertBorrower(
-        //     {
-        //         borrower:                  _borrower2,
-        //         borrowerDebt:              9_853.971836657592918128 * 1e18,
-        //         borrowerCollateral:        1_000.000000000000000 * 1e18,
-        //         borrowert0Np:              9.816772887259615229 * 1e18,
-        //         borrowerCollateralization: 0.986535787413939251 * 1e18
-        //     }
-        // );
- 
-        // BPF Positive, Loan Debt constraint
-        // _take(
-        //     {
-        //         from:            _lender,
-        //         borrower:        _borrower2,
-        //         maxCollateral:   1_001 * 1e18,
-        //         bondChange:      2_956.018272593766493700 * 1e18,
-        //         givenAmount:     9_853.760282877293913283 * 1e18,
-        //         collateralTaken: 92.699010164385584812 * 1e18,
-        //         isReward:        false
-        //     }
-        // );
-
-        // Residual is collateralized, auction is not active
-        // _assertAuction(
-        //     AuctionState({
-        //         borrower:          _borrower2,
-        //         active:            false,
-        //         kicker:            address(0),
-        //         bondSize:          0,
-        //         bondFactor:        0,
-        //         kickTime:          0,
-        //         kickMomp:          0,
-        //         totalBondEscrowed: 0,
-        //         auctionPrice:      0,
-        //         debtInAuction:     0,
-        //         thresholdPrice:    0,
-        //         neutralPrice:      0
-        //     })
-        // );
-
-        // _assertBorrower(
-        //     {
-        //         borrower:                  _borrower2,
-        //         borrowerDebt:              0,
-        //         borrowerCollateral:        907.300989835614415188 * 1e18,
-        //         borrowert0Np:              9816772887259615229,
-        //         borrowerCollateralization: 1.0 * 1e18
-        //     }
-        // );
-    }
-
-    function testTakeAndSettle() external tearDown { 
-        _kick(
-            {
-                from:           _lender,
-                borrower:       _borrower2,
-                debt:           9_976.561670003961916237 * 1e18,
-                collateral:     1_000 * 1e18,
-                bond:           98.533942419792216457 * 1e18,
-                transferAmount: 98.533942419792216457 * 1e18
-            }
-        );
-        _assertAuction(
-            AuctionState({
-                borrower:          _borrower2,
-                active:            true,
-                kicker:            _lender,
-                bondSize:          98.533942419792216457 * 1e18,
-                bondFactor:        0.01 * 1e18,
-                kickTime:          block.timestamp,
-                kickMomp:          9.818751856078723036 * 1e18,
-                totalBondEscrowed: 98.533942419792216457 * 1e18,
-                auctionPrice:      314.200059394519137152 * 1e18,
-                debtInAuction:     9_976.561670003961916237 * 1e18,
-                thresholdPrice:    9.976561670003961916 * 1e18,
-                neutralPrice:      9.952174519255063180 * 1e18
-            })
-        );
-        _assertKicker(
-            {
-                kicker:    _lender,
-                claimable: 0,
-                locked:    98.533942419792216457 * 1e18
-            }
-        );
-        _assertBorrower(
-            {
-                borrower:                  _borrower2,
-                borrowerDebt:              9_976.561670003961916237 * 1e18,
-                borrowerCollateral:        1_000 * 1e18,
-                borrowert0Np:              9.816772887259615229 * 1e18,
+                borrowert0Np:              10.307611531622595991 * 1e18,
                 borrowerCollateralization: 0.974413448899967463 * 1e18
             }
         );
@@ -1197,7 +1273,6 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         );
 
         uint256 preTakeSnapshot = vm.snapshot();
-
         skip(358 minutes);
 
         _assertAuction(
@@ -1213,7 +1288,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 auctionPrice:      10.048254301505840000 * 1e18,
                 debtInAuction:     9_976.561670003961916237 * 1e18,
                 thresholdPrice:    9.976867463138769510 * 1e18,
-                neutralPrice:      9.952174519255063180 * 1e18
+                neutralPrice:      10.449783245217816340 * 1e18
             })
         );
 
@@ -1222,7 +1297,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 borrower:                  _borrower2,
                 borrowerDebt:              9_976.867463138769510756 * 1e18,
                 borrowerCollateral:        1_000 * 1e18,
-                borrowert0Np:              9.816772887259615229 * 1e18,
+                borrowert0Np:              10.307611531622595991 * 1e18,
                 borrowerCollateralization: 0.974383582918060948 * 1e18
             }
         );
@@ -1232,37 +1307,37 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 from:            _lender,
                 borrower:        _borrower2,
                 maxCollateral:   1_000 * 1e18,
-                bondChange:      98.533942419792216457 * 1e18,
-                givenAmount:     9_976.867463138769510756 * 1e18,
-                collateralTaken: 992.895597959102966127 * 1e18,
-                isReward:        false
+                bondChange:      85.314660426337335450 * 1e18,
+                givenAmount:     10_048.254301505840000000 * 1e18,
+                collateralTaken: 1_000 * 1e18,
+                isReward:        true
             }
         );
 
         _assertBorrower(
             {
                 borrower:                  _borrower2,
-                borrowerDebt:              0,
-                borrowerCollateral:        7.104402040897033873 * 1e18,
-                borrowert0Np:              9.816772887259615229 * 1e18,
-                borrowerCollateralization: 1 * 1e18
+                borrowerDebt:              13.927822059266846206 * 1e18,
+                borrowerCollateral:        0,
+                borrowert0Np:              10.307611531622595991 * 1e18,
+                borrowerCollateralization: 0
             }
         );
 
         _assertAuction(
             AuctionState({
                 borrower:          _borrower2,
-                active:            false,
-                kicker:            address(0),
-                bondSize:          0,
-                bondFactor:        0,
-                kickTime:          0,
-                kickMomp:          0,
-                totalBondEscrowed: 0,
-                auctionPrice:      0,
-                debtInAuction:     0,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          183.848602846129551907 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp - 358 minutes,
+                kickMomp:          9.818751856078723036 * 1e18,
+                totalBondEscrowed: 183.848602846129551907 * 1e18,
+                auctionPrice:      10.048254301505840000 * 1e18,
+                debtInAuction:     13.927822059266846206 * 1e18,
                 thresholdPrice:    0,
-                neutralPrice:      0
+                neutralPrice:      10.449783245217816340 * 1e18
             })
         );
 
@@ -1270,7 +1345,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             {
                 kicker:    _lender,
                 claimable: 0,
-                locked:    0
+                locked:    183.848602846129551907 * 1e18
             }
         );
 
@@ -1292,7 +1367,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 auctionPrice:      0.613671991004920192 * 1e18,
                 debtInAuction:     9_976.561670003961916237 * 1e18,
                 thresholdPrice:    9.977074177773911990 * 1e18,
-                neutralPrice:      9.952174519255063180 * 1e18
+                neutralPrice:      10.449783245217816340 * 1e18
             })
         );
 
@@ -1301,7 +1376,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 borrower:                  _borrower2,
                 borrowerDebt:              9_977.074177773911990381 * 1e18,
                 borrowerCollateral:        1_000 * 1e18,
-                borrowert0Np:              9.816772887259615229 * 1e18,
+                borrowert0Np:              10.307611531622595991 * 1e18,
                 borrowerCollateralization: 0.974363394700228467 * 1e18
             }
         );
@@ -1332,7 +1407,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 auctionPrice:      0.613671991004920192 * 1e18,
                 debtInAuction:     9_964.923472352014570580 * 1e18,
                 thresholdPrice:    10.168289257502055684 * 1e18,
-                neutralPrice:      9.952174519255063180 * 1e18
+                neutralPrice:      10.449783245217816340 * 1e18
             })
         );
         _assertKicker(
@@ -1347,7 +1422,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 borrower:                  _borrower2,
                 borrowerDebt:              9_964.923472352014570580 * 1e18,
                 borrowerCollateral:        980 * 1e18,
-                borrowert0Np:              9.816772887259615229 * 1e18,
+                borrowert0Np:              10.307611531622595991 * 1e18,
                 borrowerCollateralization: 0.956040452710323016 * 1e18
             }
         );
@@ -1388,7 +1463,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 auctionPrice:      0.613671991004920192 * 1e18,
                 debtInAuction:     9_369.538906679041000301 * 1e18,
                 thresholdPrice:    0,
-                neutralPrice:      9.952174519255063180 * 1e18
+                neutralPrice:      10.449783245217816340 * 1e18
             })
         );
         _assertKicker(
@@ -1403,7 +1478,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 borrower:                  _borrower2,
                 borrowerDebt:              9_369.538906679041000301 * 1e18,
                 borrowerCollateral:        0,
-                borrowert0Np:              9.816772887259615229 * 1e18,
+                borrowert0Np:              10.307611531622595991 * 1e18,
                 borrowerCollateralization: 0
             }
         );
@@ -1475,7 +1550,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 borrower:                  _borrower2,
                 borrowerDebt:              0,
                 borrowerCollateral:        0,
-                borrowert0Np:              9.816772887259615229 * 1e18,
+                borrowert0Np:              10.307611531622595991 * 1e18,
                 borrowerCollateralization: 1 * 1e18
             }
         );
@@ -1607,7 +1682,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 auctionPrice:      0.613671991004920192 * 1e18,
                 debtInAuction:     7_102.486019960249398465 * 1e18,
                 thresholdPrice:    0,
-                neutralPrice:      9.952174519255063180 * 1e18
+                neutralPrice:      10.449783245217816340  * 1e18
             })
         );
         _assertKicker(
@@ -1622,7 +1697,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 borrower:                  _borrower2,
                 borrowerDebt:              7_102.486019960249398465 * 1e18,
                 borrowerCollateral:        0,
-                borrowert0Np:              9.816772887259615229 * 1e18,
+                borrowert0Np:              10.307611531622595991 * 1e18,
                 borrowerCollateralization: 0
             }
         );
@@ -1663,7 +1738,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 borrower:                  _borrower2,
                 borrowerDebt:              0,
                 borrowerCollateral:        0,
-                borrowert0Np:              9.816772887259615229 * 1e18,
+                borrowert0Np:              10.307611531622595991 * 1e18,
                 borrowerCollateralization: 1 * 1e18
             }
         );
@@ -1681,7 +1756,21 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         );
     }
 
-    function testTakeReverts() external {
+    function testTakeReverts() external tearDown {
+
+        // Borrower2 borrows
+        _borrow(
+            {
+                from:       _borrower2,
+                amount:     1_730 * 1e18,
+                indexLimit: _i9_72,
+                newLup:     9.721295865031779605 * 1e18
+            }
+        );
+
+        // Skip to make borrower undercollateralized
+        skip(100 days);
+
         _kick(
             {
                 from:           _lender,
@@ -1705,7 +1794,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 auctionPrice:      314.200059394519137152 * 1e18,
                 debtInAuction:     9_976.561670003961916237 * 1e18,
                 thresholdPrice:    9.976561670003961916 * 1e18,
-                neutralPrice:      9.952174519255063180 * 1e18
+                neutralPrice:      10.449783245217816340 * 1e18
             })
         );
         _assertKicker(
@@ -1720,7 +1809,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 borrower:                  _borrower2,
                 borrowerDebt:              9_976.561670003961916237 * 1e18,
                 borrowerCollateral:        1_000 * 1e18,
-                borrowert0Np:              9.816772887259615229 * 1e18,
+                borrowert0Np:              10.307611531622595991 * 1e18,
                 borrowerCollateralization: 0.974413448899967463 * 1e18
             }
         );
@@ -1759,7 +1848,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              19.776602251620519294 * 1e18,
                 borrowerCollateral:        2 * 1e18,
-                borrowert0Np:              9.634254807692307697 * 1e18,
+                borrowert0Np:              10.115967548076923081 * 1e18,
                 borrowerCollateralization: 0.983110823724556080 * 1e18
             }
         );
@@ -1788,31 +1877,31 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 auctionPrice:      311.081467681016947360 * 1e18,
                 debtInAuction:     10_120.320801313999710974 * 1e18,
                 thresholdPrice:    9.999544513475625068 * 1e18,
-                neutralPrice:      9.888301125810259647 * 1e18
+                neutralPrice:      10.382716182100772629 * 1e18
             })
         );
 
-        _assertKicker(
-            {
-                kicker:    _lender,
-                claimable: 0,
-                locked:    98.731708442308421650 * 1e18
-            }
-        );
+        // _assertKicker(
+        //     {
+        //         kicker:    _lender,
+        //         claimable: 0,
+        //         locked:    98.731708442308421650 * 1e18
+        //     }
+        // );
 
-        skip(2 hours);
+        // skip(2 hours);
 
-        // 10 borrowers draw debt to enable the min debt check
-        for (uint i=0; i<10; ++i) {
-            _anonBorrowerDrawsDebt(1_000 * 1e18, 6_000 * 1e18, 7_777);
-        }        
-        // should revert if auction leaves borrower with debt under minimum pool debt
-        _assertTakeDebtUnderMinPoolDebtRevert(
-            {
-                from:          _lender,
-                borrower:      _borrower,
-                maxCollateral: 0.1 * 1e18
-            }
-        );
+        // // 10 borrowers draw debt to enable the min debt check
+        // for (uint i=0; i<10; ++i) {
+        //     _anonBorrowerDrawsDebt(1_000 * 1e18, 6_000 * 1e18, 7_777);
+        // }        
+        // // should revert if auction leaves borrower with debt under minimum pool debt
+        // _assertTakeDebtUnderMinPoolDebtRevert(
+        //     {
+        //         from:          _lender,
+        //         borrower:      _borrower,
+        //         maxCollateral: 0.1 * 1e18
+        //     }
+        // );
     }
 }

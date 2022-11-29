@@ -26,6 +26,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
 
     // Pool events
     event AddCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
+    event AuctionSettle(address indexed borrower, uint256 collateral);
     event PledgeCollateral(address indexed borrower_, uint256 amount_);
 
     event Transfer(address indexed from, address indexed to, uint256 value);
@@ -184,6 +185,24 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         borrowers.add(borrower);
     }
 
+    function _pledgeCollateralAndSettleAuction(
+        address from,
+        address borrower,
+        uint256 amount,
+        uint256 collateral
+    ) internal {
+        changePrank(from);
+        vm.expectEmit(true, true, false, true);
+        emit AuctionSettle(borrower, collateral);
+        vm.expectEmit(true, true, false, true);
+        emit PledgeCollateral(borrower, amount);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(from, address(_pool), amount / ERC20Pool(address(_pool)).collateralScale());
+        ERC20Pool(address(_pool)).pledgeCollateral(borrower, amount);
+
+        borrowers.add(borrower);
+    }
+
     function _removeAllCollateral(
         address from,
         uint256 amount,
@@ -198,6 +217,23 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         (uint256 collateralRemoved, uint256 lpAmount) = ERC20Pool(address(_pool)).removeAllCollateral(index);
         assertEq(collateralRemoved, amount);
         assertEq(lpAmount, lpRedeem);
+    }
+
+    function _repayAndSettleAuction(
+        address from,
+        address borrower,
+        uint256 amount,
+        uint256 repaid,
+        uint256 collateral,
+        uint256 newLup
+    ) internal {
+        changePrank(from);
+        vm.expectEmit(true, true, false, true);
+        emit AuctionSettle(borrower, collateral);
+        vm.expectEmit(true, true, false, true);
+        emit Repay(borrower, newLup, repaid);
+        _assertTokenTransferEvent(from, address(_pool), repaid);
+        _pool.repay(borrower, amount);
     }
 
     function _transferLpTokens(

@@ -10,6 +10,6 @@ interface IERC20PoolState {
      *  @notice Returns the `collateralScale` state variable.
      *  @return The precision of the collateral ERC-20 token based on decimals.
      */
-    function collateralScale() external view returns (uint256);
+    function collateralScale() external view returns (uint128);
 
 }

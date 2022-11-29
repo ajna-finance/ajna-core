@@ -393,7 +393,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              expectedDebt,
                 borrowerCollateral:        50 * 1e18,
-                borrowert0Np:              420.403846153846154040 * 1e18,
+                borrowert0Np:              441.424038461538461742 * 1e18,
                 borrowerCollateralization: 7.090818626082626625 * 1e18
             }
         );
@@ -430,7 +430,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              expectedDebt,
                 borrowerCollateral:        60 * 1e18,
-                borrowert0Np:              420.403846153846154040 * 1e18,
+                borrowert0Np:              441.424038461538461742 * 1e18,
                 borrowerCollateralization: 8.496170252446614257 * 1e18
             }
         );
@@ -1009,7 +1009,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              500.480769230769231 * 1e18,
                 borrowerCollateral:        50 * 1e18,
-                borrowert0Np:              10.009615384615384620 * 1e18,
+                borrowert0Np:              10.510096153846153851 * 1e18,
                 borrowerCollateralization: 300.799971477982403259 * 1e18
             }
         );
@@ -1142,13 +1142,13 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         _removeAllLiquidity(
             {
                 from:     _lender,
-                amount:   9_995 * 1e18,
+                amount:   9_990.384615384615380000 * 1e18,
                 index:    highest,
                 newLup:   BucketMath.MAX_PRICE,
                 lpRedeem: 10_000 * 1e27
             }
         );
-        assertEq(_quote.balanceOf(_lender), 159_995 * 1e18); // 5 tokens paid as penalty
+        assertEq(_quote.balanceOf(_lender), 159_990.384615384615380000 * 1e18); // 5 tokens paid as penalty
         vm.revertTo(snapshot);
 
         // borrower pulls first all their collateral pledged, PTP goes to 0, penalty should be applied
@@ -1163,13 +1163,13 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         _removeAllLiquidity(
             {
                 from:     _lender,
-                amount:   9_995 * 1e18,
+                amount:   9_990.384615384615380000 * 1e18,
                 index:    highest,
                 newLup:   BucketMath.MAX_PRICE,
                 lpRedeem: 10_000 * 1e27
             }
         );
-        assertEq(_quote.balanceOf(_lender), 159_995 * 1e18); // 5 tokens paid as penalty
+        assertEq(_quote.balanceOf(_lender), 159_990.384615384615380000 * 1e18); // 5 tokens paid as penalty
 
         // lender removes everything from price above PTP after 24 hours, penalty should not be applied
         skip(1 days);
@@ -1182,6 +1182,6 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 lpRedeem: 10_000 * 1e27
             }
         );
-        assertEq(_quote.balanceOf(_lender), 169_995 * 1e18); // no tokens paid as penalty
+        assertEq(_quote.balanceOf(_lender), 169_990.384615384615380000 * 1e18); // no tokens paid as penalty
     }
 }

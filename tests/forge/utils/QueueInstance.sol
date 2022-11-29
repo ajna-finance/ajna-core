@@ -22,7 +22,7 @@ contract QueueInstance is DSTestPlus {
     }
 
     function remove(address borrower_) external {
-        Auctions.removeAuction(auctions, borrower_);
+        auctions._removeAuction(borrower_);
     }
 
     function getHead() external view returns (address) {

@@ -296,8 +296,8 @@ contract PoolInfoUtils {
         IPool pool = IPool(ajnaPool_);
         (uint256 bucketLPs_, uint256 bucketCollateral , , uint256 bucketDeposit, ) = pool.bucketInfo(index_);
         (quoteAmount_, , ) = Buckets.lpsToQuoteToken(
-            bucketCollateral,
             bucketLPs_,
+            bucketCollateral,
             bucketDeposit,
             lpTokens_,
             bucketDeposit,
