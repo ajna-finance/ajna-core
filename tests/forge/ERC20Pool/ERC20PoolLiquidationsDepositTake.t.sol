@@ -446,6 +446,16 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             }
         );
 
+        _assertBucket(
+            {
+                index:        _i1505_26,
+                lpBalance:    25_000 * 1e27,
+                collateral:   0.0 * 1e18,
+                deposit:      25_000 * 1e18,
+                exchangeRate: 1.0 * 1e27
+            }
+        );
+
         // Amount is restricted by the debt in the loan
         _depositTake(
             {
