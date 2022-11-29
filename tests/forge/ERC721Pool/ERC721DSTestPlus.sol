@@ -276,6 +276,54 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         }
     }
 
+    function _repayDebt(
+        address from,
+        address borrower,
+        uint256 amountToRepay,
+        uint256 amountRepaid,
+        uint256 collateralToPull,
+        uint256 newLup
+    ) internal virtual {
+        changePrank(from);
+
+        // repay checks
+        if (amountToRepay != 0) {
+            vm.expectEmit(true, true, false, true);
+            emit Repay(borrower, newLup, amountRepaid);
+            _assertTokenTransferEvent(from, address(_pool), amountRepaid);
+        }
+
+        // pre pull checks
+        if (collateralToPull != 0) {
+            uint256[] memory tokenIds = new uint256[](collateralToPull);
+            (, uint256 noOfTokens, ) = _pool.borrowerInfo(from);
+            noOfTokens = noOfTokens / 1e18;
+            for (uint256 i = 0; i < collateralToPull; i++) {
+                uint256 tokenId = ERC721Pool(address(_pool)).borrowerTokenIds(from, --noOfTokens);
+                assertEq(_collateral.ownerOf(tokenId), address(_pool)); // token is owned by pool
+                tokenIds[i] = tokenId;
+            }
+
+            _pool.repayDebt(borrower, amountToRepay, collateralToPull);
+
+            // post pull checks
+            if (collateralToPull != 0) {
+                for (uint256 i = 0; i < tokenIds.length; i++) {
+                    assertEq(_collateral.ownerOf(tokenIds[i]), address(from)); // token is owned by borrower after pull
+                }
+
+                // Add for tearDown
+                for (uint256 i = 0; i < tokenIds.length; i++) {
+                    borrowerPlegedNFTIds[from].remove(tokenIds[i]);
+                }
+            }
+        }
+        else {
+            // only repay, don't pull collateral
+            _pool.repayDebt(borrower, amountToRepay, collateralToPull);
+        }
+    }
+
     function _take(
         address from,
         address borrower,

@@ -15,4 +15,10 @@ interface IERC20PoolBorrowerActions {
         address borrower,
         uint256 amount
     ) external;
+
+    function repayDebt(
+        address borrowerAddress_,
+        uint256 maxQuoteTokenAmountToRepay_,
+        uint256 collateralAmountToPull_
+    ) external;
 }

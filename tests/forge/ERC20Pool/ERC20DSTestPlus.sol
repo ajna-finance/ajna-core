@@ -57,13 +57,16 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         // mint quote tokens to borrower address equivalent to the current debt
         deal(_pool.quoteTokenAddress(), borrower, currentDebt);
 
-        // repay current debt ( all debt )
-        if (currentDebt > 0) {
-            _pool.repay(borrower, currentDebt);
-        }
+        // // repay current debt ( all debt )
+        // if (currentDebt > 0) {
+        //     _pool.repay(borrower, currentDebt);
+        // }
 
-        // pull borrower's all collateral  
-        _pullCollateral(borrower, borrowerCollateral);
+        // // pull borrower's all collateral
+        // _pullCollateral(borrower, borrowerCollateral);
+
+        // repay current debt and pull all collateral
+        _repayDebtNoLupCheck(borrower, borrower, currentDebt, currentDebt, borrowerCollateral);
 
         // check borrower state after repay of loan and pull collateral
         (borrowerT0debt, borrowerCollateral, ) = _pool.borrowerInfo(borrower);
@@ -234,6 +237,55 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         emit Repay(borrower, newLup, repaid);
         _assertTokenTransferEvent(from, address(_pool), repaid);
         _pool.repay(borrower, amount);
+    }
+
+    function _repayDebt(
+        address from,
+        address borrower,
+        uint256 amountToRepay,
+        uint256 amountRepaid,
+        uint256 collateralToPull,
+        uint256 newLup
+    ) internal {
+        changePrank(from);
+
+        // repay checks
+        if (amountToRepay != 0) {
+            vm.expectEmit(true, true, false, true);
+            emit Repay(borrower, newLup, amountRepaid);
+            _assertTokenTransferEvent(from, address(_pool), amountRepaid);
+        }
+
+        // pull checks
+        if (collateralToPull != 0) {
+            vm.expectEmit(true, true, false, true);
+            emit PullCollateral(from, collateralToPull);
+        }
+
+        _pool.repayDebt(borrower, amountToRepay, collateralToPull);
+    }
+
+    function _repayDebtNoLupCheck(
+        address from,
+        address borrower,
+        uint256 amountToRepay,
+        uint256 amountRepaid,
+        uint256 collateralToPull
+    ) internal {
+        changePrank(from);
+
+        // repay checks
+        if (amountToRepay != 0) {
+            _assertTokenTransferEvent(from, address(_pool), amountRepaid);
+        }
+
+        // pull checks
+        if (collateralToPull != 0) {
+            vm.expectEmit(true, true, false, true);
+            emit PullCollateral(from, collateralToPull);
+        }
+
+        _pool.repayDebt(borrower, amountToRepay, collateralToPull);
     }
 
     function _transferLpTokens(

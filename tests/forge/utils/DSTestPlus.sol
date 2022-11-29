@@ -225,16 +225,6 @@ abstract contract DSTestPlus is Test {
         bucketsUsed.add(toIndex);
     }
 
-    function _pullCollateral(
-        address from,
-        uint256 amount 
-    ) internal virtual {
-        changePrank(from);
-        vm.expectEmit(true, true, false, true);
-        emit PullCollateral(from, amount);
-        _pool.pullCollateral(amount);
-    }
-
     function _removeAllLiquidity(
         address from,
         uint256 amount,
@@ -292,12 +282,12 @@ abstract contract DSTestPlus is Test {
         uint256 amount,
         uint256 repaid,
         uint256 newLup
-    ) internal {
+    ) internal virtual {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit Repay(borrower, newLup, repaid);
         _assertTokenTransferEvent(from, address(_pool), repaid);
-        _pool.repay(borrower, amount);
+        _pool.repayDebt(borrower, amount, 0);
     }
 
     function _startClaimableReserveAuction(

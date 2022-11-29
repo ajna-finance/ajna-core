@@ -15,4 +15,10 @@ interface IERC721PoolBorrowerActions {
         address borrower,
         uint256[] calldata tokenIds
     ) external;
+
+    function repayDebt(
+        address borrowerAddress_,
+        uint256 maxQuoteTokenAmountToRepay_,
+        uint256 noOfNFTsToPull_
+    ) external;
 }
