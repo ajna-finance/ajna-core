@@ -536,7 +536,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
 
         // should revert if the actor does not have any LP to remove a token
-        _assertRemoveCollateralInsufficientLPsRevert(
+        _assertRemoveCollateralNoClaimRevert(
             {
                 from:   _borrower2,
                 amount: 1,

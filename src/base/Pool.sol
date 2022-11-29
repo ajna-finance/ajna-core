@@ -695,15 +695,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // limit withdrawal by the lender's LPB
         (uint256 lenderLpBalance, ) = buckets.getLenderInfo(index_, msg.sender);
+        console2.log("_removeCollateral lenderLpBalance %s", lenderLpBalance);
         if (lenderLpBalance == 0) revert NoClaim(); // revert if no LP to claim
-
         if (requiredLPs < lenderLpBalance) {
             redeemedLPs_ = requiredLPs;
             console2.log("_removeCollateral redeemedLPs_ %s", redeemedLPs_);
         } else {
             redeemedLPs_ = lenderLpBalance;
-            // TODO: round this properly
-            removedAmount_ = redeemedLPs_ * exchangeRate / bucketPrice / 1e18;
+            // removedAmount_ = Maths.rwdivw(Maths.rmul(redeemedLPs_, exchangeRate), bucketPrice);
+            removedAmount_ = ((redeemedLPs_ * exchangeRate + 1e27 / 2) / 1e18  + bucketPrice / 2) / bucketPrice;
             console2.log("_removeCollateral redeemedLPs_ %s removedAmount_ %s", redeemedLPs_, removedAmount_);
         }
 

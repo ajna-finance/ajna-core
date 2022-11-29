@@ -99,6 +99,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256 index_
     ) external override returns (uint256 collateralAmount_, uint256 lpAmount_) {
         (collateralAmount_, lpAmount_) = _removeCollateral(Maths.wad(noOfNFTsToRemove_), index_);
+        if (collateralAmount_ < Maths.WAD) revert InsufficientLPs();
 
         emit RemoveCollateral(msg.sender, index_, noOfNFTsToRemove_);
         _transferFromPoolToAddress(msg.sender, bucketTokenIds, noOfNFTsToRemove_);
