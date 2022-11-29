@@ -4,8 +4,10 @@ pragma solidity 0.8.14;
 
 import './interfaces/IPool.sol';
 
+import '../libraries/Auctions.sol';
 import '../libraries/Buckets.sol';
 import '../libraries/PoolUtils.sol';
+import '../libraries/BucketMath.sol';
 
 contract PoolInfoUtils {
 
@@ -26,7 +28,7 @@ contract PoolInfoUtils {
         ) = pool.inflatorInfo();
         uint256 interestRate = pool.interestRate();
 
-        uint256 pendingInflator = PoolUtils.pendingInflator(poolInflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
+        uint256 pendingInflator = BucketMath.pendingInflator(poolInflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
         uint256 t0debt;
         (t0debt, collateral_, t0Np_)  = pool.borrowerInfo(borrower_);
         debt_ = Maths.wmul(t0debt, pendingInflator);
@@ -96,8 +98,8 @@ contract PoolInfoUtils {
         ) = pool.inflatorInfo();
         uint256 interestRate = pool.interestRate();
 
-        pendingInflator_       = PoolUtils.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
-        pendingInterestFactor_ = PoolUtils.pendingInterestFactor(interestRate, block.timestamp - lastInflatorSnapshotUpdate);
+        pendingInflator_       = BucketMath.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
+        pendingInterestFactor_ = BucketMath.pendingInterestFactor(interestRate, block.timestamp - lastInflatorSnapshotUpdate);
     }
 
     /**
@@ -161,7 +163,7 @@ contract PoolInfoUtils {
         (uint256 bondEscrowed, uint256 unclaimedReserve, uint256 auctionKickTime) = pool.reservesInfo();
 
         reserves_ = poolDebt + quoteTokenBalance - poolSize - bondEscrowed - unclaimedReserve;
-        claimableReserves_ = PoolUtils.claimableReserves(
+        claimableReserves_ = Auctions.claimableReserves(
             poolDebt,
             poolSize,
             bondEscrowed,
@@ -170,7 +172,7 @@ contract PoolInfoUtils {
         );
 
         claimableReservesRemaining_ = unclaimedReserve;
-        auctionPrice_               = PoolUtils.reserveAuctionPrice(auctionKickTime);
+        auctionPrice_               = Auctions.reserveAuctionPrice(auctionKickTime);
         timeRemaining_              = 3 days - Maths.min(3 days, block.timestamp - auctionKickTime);
     }
 
@@ -221,7 +223,7 @@ contract PoolInfoUtils {
         uint256 poolCollateral = pool.pledgedCollateral();
         uint256 utilization    = pool.depositUtilization(poolDebt, poolCollateral);
 
-        lenderInterestMargin_ = PoolUtils.lenderInterestMargin(utilization);
+        lenderInterestMargin_ = BucketMath.lenderInterestMargin(utilization);
     }
 
     function indexToPrice(

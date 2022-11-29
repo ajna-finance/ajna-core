@@ -56,7 +56,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         (uint256 poolInflatorSnapshot, uint256 lastInflatorSnapshotUpdate) = _pool.inflatorInfo();
 
         uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
-        uint256 factor = PoolUtils.pendingInterestFactor(_pool.interestRate(), elapsed);
+        uint256 factor = BucketMath.pendingInterestFactor(_pool.interestRate(), elapsed);
 
         uint256 currentPoolInflator = Maths.wmul(poolInflatorSnapshot, factor);
 

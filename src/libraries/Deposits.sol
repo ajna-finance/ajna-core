@@ -3,6 +3,7 @@ pragma solidity 0.8.14;
 
 import './Maths.sol';
 import './PoolUtils.sol';
+import './BucketMath.sol';
 
 library Deposits {
 
@@ -33,7 +34,7 @@ library Deposits {
         uint256 depositAboveHtp = prefixSum(self, htpIndex);
 
         if (depositAboveHtp != 0) {
-            uint256 netInterestMargin = PoolUtils.lenderInterestMargin(utilization(self, debt_, collateral_));
+            uint256 netInterestMargin = BucketMath.lenderInterestMargin(utilization(self, debt_, collateral_));
             uint256 newInterest       = Maths.wmul(netInterestMargin, Maths.wmul(pendingInterestFactor_ - Maths.WAD, debt_));
 
             uint256 lenderFactor = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;

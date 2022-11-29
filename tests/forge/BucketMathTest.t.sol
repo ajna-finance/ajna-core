@@ -217,49 +217,4 @@ contract BucketMathTest is DSTestPlus {
         assertEq(BucketMath.lenderInterestMargin(1.1 * 1e18),        1 * 1e18);
     }
 
-    /**
-     *  @notice Tests bond penalty/reward factor calculation for varying parameters
-     */
-    function testBpf() external {
-        uint256 debt  = 11_000 * 1e18;
-        uint256 price = 10 * 1e18;
-        uint256 collateral = 1000 * 1e18;
-        uint256 neutralPrice = 15 * 1e18;
-        uint256 bondFactor = 0.1 *  1e18;
-
-        assertEq(BucketMath.bpf(debt, collateral, neutralPrice, bondFactor, price),               0.1 * 1e18);
-        assertEq(BucketMath.bpf(9000 * 1e18, collateral, neutralPrice, bondFactor, price),        0.083333333333333333 * 1e18);
-        assertEq(BucketMath.bpf(debt, collateral, neutralPrice, bondFactor, 9.5 * 1e18),          0.1 * 1e18);
-        assertEq(BucketMath.bpf(9000 * 1e18, collateral, neutralPrice, bondFactor, 9.5 * 1e18),   0.091666666666666667 * 1e18);
-        assertEq(BucketMath.bpf(9000 * 1e18, collateral, 10 * 1e18, bondFactor, 10.5 * 1e18),     -0.05 * 1e18);
-        assertEq(BucketMath.bpf(debt, collateral, 5 * 1e18, bondFactor, 10.5 * 1e18),             -0.1 * 1e18);
-    }
-
-    /**
-     *  @notice Tests auction price multiplier for reverse dutch auction at different times
-     */
-    function testAuctionPrice() external {
-        skip(6238);
-        uint256 referencePrice = 8_678.5 * 1e18;
-        uint256 kickTime = block.timestamp;
-        assertEq(BucketMath.auctionPrice(referencePrice, kickTime), 277_712 * 1e18);
-        skip(1444); // price should not change in the first hour
-        assertEq(BucketMath.auctionPrice(referencePrice, kickTime), 277_712 * 1e18);
-
-        skip(5756);     // 2 hours
-        assertEq(BucketMath.auctionPrice(referencePrice, kickTime), 138_856 * 1e18);
-        skip(2394);     // 2 hours, 39 minutes, 54 seconds
-        assertEq(BucketMath.auctionPrice(referencePrice, kickTime), 87_574.910740335995562528 * 1e18);
-        skip(2586);     // 3 hours, 23 minutes
-        assertEq(BucketMath.auctionPrice(referencePrice, kickTime), 53_227.960156860514117568 * 1e18);
-        skip(3);        // 3 seconds later
-        assertEq(BucketMath.auctionPrice(referencePrice, kickTime), 53_197.223359425583052544 * 1e18);
-        skip(20153);    // 8 hours, 35 minutes, 53 seconds
-        assertEq(BucketMath.auctionPrice(referencePrice, kickTime), 1_098.26293050754894624 * 1e18);
-        skip(97264);    // 36 hours
-        assertEq(BucketMath.auctionPrice(referencePrice, kickTime), 0.00000808248283696 * 1e18);
-        skip(129600);   // 72 hours
-        assertEq(BucketMath.auctionPrice(referencePrice, kickTime), 0);
-    }
-
 }

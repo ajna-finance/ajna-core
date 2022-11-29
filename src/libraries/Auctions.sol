@@ -2,12 +2,17 @@
 
 pragma solidity 0.8.14;
 
+import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
+import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
+
 import './Buckets.sol';
 import './Loans.sol';
 import './Maths.sol';
 import './PoolUtils.sol';
+import './BucketMath.sol';
 
 library Auctions {
+    uint256 internal constant MINUTE_HALF_LIFE    = 0.988514020352896135_356867505 * 1e27;  // 0.5^(1/60)
 
     struct Data {
         address head;
@@ -277,7 +282,7 @@ library Auctions {
         _validateTake(liquidation);
 
         params_.bucketPrice  = PoolUtils.indexToPrice(bucketIndex_);
-        params_.auctionPrice = PoolUtils.auctionPrice(
+        params_.auctionPrice = _auctionPrice(
             liquidation.kickMomp,
             liquidation.kickTime
         );
@@ -342,7 +347,7 @@ library Auctions {
         Liquidation storage liquidation = self.liquidations[borrowerAddress_];
         _validateTake(liquidation);
 
-        params_.auctionPrice = PoolUtils.auctionPrice(
+        params_.auctionPrice = _auctionPrice(
             liquidation.kickMomp,
             liquidation.kickTime
         );
@@ -417,7 +422,7 @@ library Auctions {
         if (floorCollateral_ != borrowerCollateral_) {
             // cover borrower's fractional amount with LPs in auction price bucket
             uint256 fractionalCollateral = borrowerCollateral_ - floorCollateral_;
-            uint256 auctionPrice = PoolUtils.auctionPrice(
+            uint256 auctionPrice = _auctionPrice(
                 self.liquidations[borrowerAddress_].kickMomp,
                 self.liquidations[borrowerAddress_].kickTime
             );
@@ -450,6 +455,58 @@ library Auctions {
     /***************************/
     /***  Internal Functions ***/
     /***************************/
+
+    function _auctionPrice(
+        uint256 referencePrice,
+        uint256 kickTime_
+    ) internal view returns (uint256 price_) {
+        uint256 elapsedHours = Maths.wdiv((block.timestamp - kickTime_) * 1e18, 1 hours * 1e18);
+        elapsedHours -= Maths.min(elapsedHours, 1e18);  // price locked during cure period
+
+        int256 timeAdjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours));
+        price_ = 32 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
+    }
+
+    /**
+     *  @notice Calculates bond penalty factor.
+     *  @dev Called in kick and take.
+     *  @param debt_             Borrower debt.
+     *  @param collateral_       Borrower collateral.
+     *  @param neutralPrice_     NP of auction.
+     *  @param bondFactor_       Factor used to determine bondSize.
+     *  @param price_            Auction price at the time of call.
+     *  @return bpf_             Factor used in determining bond Reward (positive) or penalty (negative).
+     */
+    function _bpf(
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 neutralPrice_,
+        uint256 bondFactor_,
+        uint256 price_
+    ) internal pure returns (int256) {
+        int256 thresholdPrice = int256(Maths.wdiv(debt_, collateral_));
+
+        int256 sign;
+        if (thresholdPrice < int256(neutralPrice_)) {
+            // BPF = BondFactor * min(1, max(-1, (neutralPrice - price) / (neutralPrice - thresholdPrice)))
+            sign = Maths.minInt(
+                    1e18,
+                    Maths.maxInt(
+                        -1 * 1e18,
+                        PRBMathSD59x18.div(
+                            int256(neutralPrice_) - int256(price_),
+                            int256(neutralPrice_) - thresholdPrice
+                        )
+                    )
+            );
+        } else {
+            int256 val = int256(neutralPrice_) - int256(price_);
+            if (val < 0 )      sign = -1e18;
+            else if (val != 0) sign = 1e18;
+        }
+
+        return PRBMathSD59x18.mul(int256(bondFactor_), sign);
+    }
 
     /**
      *  @notice Removes auction and repairs the queue order.
@@ -572,7 +629,7 @@ library Auctions {
     ) {
         // calculate the bond payment factor
         borrowerDebt_ = Maths.wmul(borrower_.t0debt, poolInflator_);
-        bpf_ = PoolUtils.bpf(
+        bpf_ = _bpf(
             borrowerDebt_,
             borrower_.collateral,
             liquidation_.neutralPrice,
@@ -585,6 +642,28 @@ library Auctions {
     /**********************/
     /*** View Functions ***/
     /**********************/
+
+    function claimableReserves(
+        uint256 debt_,
+        uint256 poolSize_,
+        uint256 totalBondEscrowed_,
+        uint256 reserveAuctionUnclaimed_,
+        uint256 quoteTokenBalance_
+    ) internal pure returns (uint256 claimable_) {
+        claimable_ = Maths.wmul(0.995 * 1e18, debt_) + quoteTokenBalance_;
+        claimable_ -= Maths.min(claimable_, poolSize_ + totalBondEscrowed_ + reserveAuctionUnclaimed_);
+    }
+
+    function reserveAuctionPrice(
+        uint256 reserveAuctionKicked_
+    ) internal view returns (uint256 _price) {
+        if (reserveAuctionKicked_ != 0) {
+            uint256 secondsElapsed = block.timestamp - reserveAuctionKicked_;
+            uint256 hoursComponent = 1e27 >> secondsElapsed / 3600;
+            uint256 minutesComponent = Maths.rpow(MINUTE_HALF_LIFE, secondsElapsed % 3600 / 60);
+            _price = Maths.rayToWad(1_000_000_000 * Maths.rmul(hoursComponent, minutesComponent));
+        }
+    }
 
     /**
      *  @notice Check if there is an ongoing auction for current borrower and revert if such.
