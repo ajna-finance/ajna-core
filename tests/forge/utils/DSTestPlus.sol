@@ -850,16 +850,6 @@ abstract contract DSTestPlus is Test {
         _pool.removeCollateral(amount, index);
     }
 
-    function _assertRemoveCollateralInsufficientLPsRevert(
-        address from,
-        uint256 amount,
-        uint256 index
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.InsufficientLPs.selector);
-        _pool.removeCollateral(amount, index);
-    }
-
     function _assertRemoveInsufficientCollateralRevert(
         address from,
         uint256 amount,

@@ -358,6 +358,16 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         vm.expectRevert(IPoolErrors.NoClaim.selector);
         ERC721Pool(address(_pool)).removeCollateral(amount, index);
     }
+
+    function _assertRemoveCollateralInsufficientLPsRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.InsufficientLPs.selector);
+        _pool.removeCollateral(amount, index);
+    }
 }
 
 abstract contract ERC721HelperContract is ERC721DSTestPlus {
