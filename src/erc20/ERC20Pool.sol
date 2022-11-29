@@ -81,41 +81,6 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         _transferCollateralFrom(msg.sender, collateralAmountToAdd_);
     }
 
-    // function removeAllCollateral(
-    //     uint256 index_
-    // ) external override returns (uint256 collateralAmountRemoved_, uint256 redeemedLenderLPs_) {
-    //     auctions.revertIfAuctionClearable(loans);
-
-    //     (uint256 lenderLPsBalance, ) = buckets.getLenderInfo(
-    //         index_,
-    //         msg.sender
-    //     );
-
-    //     PoolState memory poolState = _accruePoolInterest();
-
-    //     Buckets.Bucket storage bucket = buckets[index_];
-    //     (collateralAmountRemoved_, redeemedLenderLPs_) = Buckets.lpsToCollateral(
-    //         bucket.collateral,
-    //         bucket.lps,
-    //         deposits.valueAt(index_),
-    //         lenderLPsBalance,
-    //         PoolUtils.indexToPrice(index_)
-    //     );
-    //     if (collateralAmountRemoved_ == 0) revert NoClaim();
-
-    //     Buckets.removeCollateral(
-    //         bucket,
-    //         collateralAmountRemoved_,
-    //         redeemedLenderLPs_)
-    //     ;
-
-    //     _updatePool(poolState, _lup(poolState.accruedDebt));
-
-    //     // move collateral from pool to lender
-    //     emit RemoveCollateral(msg.sender, index_, collateralAmountRemoved_);
-    //     _transferCollateral(msg.sender, collateralAmountRemoved_);
-    // }
-
     function removeCollateral(
         uint256 maxAmount_,
         uint256 index_

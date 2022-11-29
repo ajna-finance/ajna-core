@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import "forge-std/console2.sol";
 import './Maths.sol';
 
 library Buckets {
@@ -148,16 +147,11 @@ library Buckets {
         uint256 collateralAmountToRemove_,
         uint256 lpsAmountToRemove_
     ) internal {
-        // FIXME: Should decrement the lender and bucket by same amounts.
         // update bucket collateral and LPs balance
-        console2.log("removeCollateral decrementing bucket_.lps");
         bucket_.lps        -= Maths.min(bucket_.lps, lpsAmountToRemove_);
-        console2.log("removeCollateral decrementing bucket_.collateral");
         bucket_.collateral -= Maths.min(bucket_.collateral, collateralAmountToRemove_);
         // update lender LPs balance
-        console2.log("removeCollateral decrementing lender lps");
         bucket_.lenders[msg.sender].lps -= lpsAmountToRemove_;
-        console2.log("removeCollateral done");
     }
 
     /**

@@ -2,7 +2,6 @@
 
 pragma solidity 0.8.14;
 
-import "forge-std/console2.sol";
 import '@clones/Clone.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/utils/Multicall.sol';
@@ -687,24 +686,19 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // limit amount by what is available in the bucket
         removedAmount_ = Maths.min(maxAmount_, bucket.collateral);
-        console2.log("_removeCollateral removedAmount_ %s", removedAmount_);
 
         // determine how much LP would be required to remove the requested amount
         uint256 requiredLPs = removedAmount_ * bucketPrice * 1e18 / exchangeRate;
-        console2.log("_removeCollateral requiredLPs %s", requiredLPs);
 
         // limit withdrawal by the lender's LPB
         (uint256 lenderLpBalance, ) = buckets.getLenderInfo(index_, msg.sender);
-        console2.log("_removeCollateral lenderLpBalance %s", lenderLpBalance);
         if (lenderLpBalance == 0) revert NoClaim(); // revert if no LP to claim
         if (requiredLPs < lenderLpBalance) {
             redeemedLPs_ = requiredLPs;
-            console2.log("_removeCollateral redeemedLPs_ %s", redeemedLPs_);
         } else {
             redeemedLPs_ = lenderLpBalance;
             // removedAmount_ = Maths.rwdivw(Maths.rmul(redeemedLPs_, exchangeRate), bucketPrice);
             removedAmount_ = ((redeemedLPs_ * exchangeRate + 1e27 / 2) / 1e18  + bucketPrice / 2) / bucketPrice;
-            console2.log("_removeCollateral redeemedLPs_ %s removedAmount_ %s", redeemedLPs_, removedAmount_);
         }
 
         Buckets.removeCollateral(
