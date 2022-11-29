@@ -318,7 +318,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                 borrower:                  _borrower,
                 borrowerDebt:              debt,
                 borrowerCollateral:        col,
-                borrowert0Np:              200.192307692307692400 * 1e18,
+                borrowert0Np:              210.201923076923077020 * 1e18,
                 borrowerCollateralization: 15.115198566768615646 * 1e18
             }
         );
@@ -388,7 +388,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                 borrower:                  _borrower,
                 borrowerDebt:              debt,
                 borrowerCollateral:        col,
-                borrowert0Np:              200.192307692307692400 * 1e18,
+                borrowert0Np:              210.201923076923077020 * 1e18,
                 borrowerCollateralization: 30.201385236096216664 * 1e18
             }
         );
@@ -455,7 +455,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                 borrower:                  _borrower,
                 borrowerDebt:              debt,
                 borrowerCollateral:        col,
-                borrowert0Np:              3025.946482308870941594 * 1e18,
+                borrowert0Np:              3_192.373538835858843381 * 1e18,
                 borrowerCollateralization: 1 * 1e18
             }
         );
