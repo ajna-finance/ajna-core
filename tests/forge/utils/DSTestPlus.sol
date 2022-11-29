@@ -262,8 +262,10 @@ abstract contract DSTestPlus is Test {
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(from, index, amount);
         _assertTokenTransferEvent(address(_pool), from, amount);
-        lpRedeemed_ = _pool.removeCollateral(amount, index);
+        uint256 collateralRemoved;  // TODO: return this
+        (collateralRemoved, lpRedeemed_) = _pool.removeCollateral(amount, index);
         assertEq(lpRedeemed_, lpRedeem);
+        assertEq(collateralRemoved, amount);
     }
 
     function _removeLiquidity(

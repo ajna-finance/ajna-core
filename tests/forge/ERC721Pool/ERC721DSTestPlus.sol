@@ -127,7 +127,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
 
                 // First redeem LP for collateral
                 uint256 noOfNftsToRemove = Maths.min(Maths.wadToIntRoundingDown(lpsAsCollateral), noOfBucketNftsRedeemable);
-                lpsRedeemed = _pool.removeCollateral(noOfNftsToRemove, bucketIndex);
+                (, lpsRedeemed) = _pool.removeCollateral(noOfNftsToRemove, bucketIndex);
             }
 
             // Then redeem LP for quote token

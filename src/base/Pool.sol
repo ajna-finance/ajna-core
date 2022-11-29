@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.14;
 
+import "forge-std/console2.sol";
 import '@clones/Clone.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/utils/Multicall.sol';
@@ -667,32 +668,49 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     function _removeCollateral(
-        uint256 collateralAmountToRemove_,
+        uint256 maxAmount_,
         uint256 index_
-    ) internal returns (uint256 bucketLPs_) {
+    ) internal returns (uint256 removedAmount_, uint256 redeemedLPs_) {
         auctions.revertIfAuctionClearable(loans);
 
-        Buckets.Bucket storage bucket = buckets[index_];
-        if (collateralAmountToRemove_ > bucket.collateral) revert InsufficientCollateral();
-
         PoolState memory poolState = _accruePoolInterest();
-        
-        bucketLPs_ = Buckets.collateralToLPs(
+
+        Buckets.Bucket storage bucket = buckets[index_];
+        if (bucket.collateral == 0) revert InsufficientCollateral(); // revert if there's no collateral in bucket
+        uint256 bucketPrice = PoolUtils.indexToPrice(index_);
+        uint256 exchangeRate = Buckets.getExchangeRate(
             bucket.collateral,
             bucket.lps,
             deposits.valueAt(index_),
-            collateralAmountToRemove_,
-            PoolUtils.indexToPrice(index_)
+            bucketPrice
         );
 
+        // limit amount by what is available in the bucket
+        removedAmount_ = Maths.min(maxAmount_, bucket.collateral);
+        console2.log("_removeCollateral removedAmount_ %s", removedAmount_);
+
+        // determine how much LP would be required to remove the requested amount
+        uint256 requiredLPs = removedAmount_ * bucketPrice * 1e18 / exchangeRate;
+        console2.log("_removeCollateral requiredLPs %s", requiredLPs);
+
+        // limit withdrawal by the lender's LPB
         (uint256 lenderLpBalance, ) = buckets.getLenderInfo(index_, msg.sender);
-        // ensure lender has enough balance to remove collateral amount
-        if (lenderLpBalance == 0 || bucketLPs_ > lenderLpBalance) revert InsufficientLPs();
+        if (lenderLpBalance == 0) revert NoClaim(); // revert if no LP to claim
+
+        if (requiredLPs < lenderLpBalance) {
+            redeemedLPs_ = requiredLPs;
+            console2.log("_removeCollateral redeemedLPs_ %s", redeemedLPs_);
+        } else {
+            redeemedLPs_ = lenderLpBalance;
+            // TODO: round this properly
+            removedAmount_ = redeemedLPs_ * exchangeRate / bucketPrice / 1e18;
+            console2.log("_removeCollateral redeemedLPs_ %s removedAmount_ %s", redeemedLPs_, removedAmount_);
+        }
 
         Buckets.removeCollateral(
             bucket,
-            collateralAmountToRemove_,
-            bucketLPs_
+            removedAmount_,
+            redeemedLPs_
         );
 
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));

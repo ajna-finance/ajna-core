@@ -147,6 +147,7 @@ library Buckets {
         uint256 collateralAmountToRemove_,
         uint256 lpsAmountToRemove_
     ) internal {
+        // FIXME: Should decrement the lender and bucket by same amounts.
         // update bucket collateral and LPs balance
         bucket_.lps        -= Maths.min(bucket_.lps, lpsAmountToRemove_);
         bucket_.collateral -= Maths.min(bucket_.collateral, collateralAmountToRemove_);

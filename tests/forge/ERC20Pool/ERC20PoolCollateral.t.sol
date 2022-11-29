@@ -413,13 +413,6 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         uint256 testIndex = 6348;
 
         // should revert if no collateral in the bucket
-        _assertRemoveAllCollateralNoClaimRevert(
-            {
-                from:  _lender,
-                index: testIndex
-            }
-        );
-
         _assertRemoveInsufficientCollateralRevert(
             {
                 from:  _lender,
@@ -440,12 +433,11 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             }
         );
 
-        // should revert if insufficient collateral in the bucket
-        _assertRemoveInsufficientCollateralRevert(
+        // should revert if actor has no LPB in the bucket
+        _assertRemoveAllCollateralNoClaimRevert(
             {
                 from:  _lender,
-                amount: 1.25 * 1e18,
-                index:  testIndex
+                index: testIndex
             }
         );
 
@@ -454,14 +446,6 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             {
                 from:  _lender,
                 index: testIndex
-            }
-        );
-
-        _assertRemoveCollateralInsufficientLPsRevert(
-            {
-                from:  _lender,
-                amount: 0.32 * 1e18,
-                index:  testIndex
             }
         );
     }
