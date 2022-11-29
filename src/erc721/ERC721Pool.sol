@@ -82,6 +82,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         _pullCollateral(Maths.wad(noOfNFTsToPull_));
 
         emit PullCollateral(msg.sender, noOfNFTsToPull_);
+        // move collateral from pool to sender
         _transferFromPoolToAddress(msg.sender, borrowerTokenIds[msg.sender], noOfNFTsToPull_);
     }
 
@@ -95,8 +96,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     ) external override returns (uint256 bucketLPs_) {
         bucketLPs_ = _addCollateral(Maths.wad(tokenIdsToAdd_.length), index_);
 
-        // move required collateral from sender to pool
         emit AddCollateralNFT(msg.sender, index_, tokenIdsToAdd_);
+        // move required collateral from sender to pool
         _transferFromSenderToPool(bucketTokenIds, tokenIdsToAdd_);
     }
 
@@ -122,7 +123,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     ) external override nonReentrant {
         PoolState      memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
-        if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
+        // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
+        if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral();
 
         Auctions.TakeParams memory params = Auctions.take(
             auctions,
@@ -170,7 +172,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         if (excessQuoteToken != 0) _transferQuoteToken(borrowerAddress_, excessQuoteToken);
 
         _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
-
+        pledgedCollateral = poolState.collateral;
     }
 
 

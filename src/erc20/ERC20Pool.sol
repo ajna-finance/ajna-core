@@ -74,8 +74,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     ) external override {
         _pullCollateral(collateralAmountToPull_);
 
-        // move collateral from pool to sender
         emit PullCollateral(msg.sender, collateralAmountToPull_);
+        // move collateral from pool to sender
         _transferCollateral(msg.sender, collateralAmountToPull_);
     }
 
@@ -89,8 +89,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     ) external override returns (uint256 bucketLPs_) {
         bucketLPs_ = _addCollateral(collateralAmountToAdd_, index_);
 
-        // move required collateral from sender to pool
         emit AddCollateral(msg.sender, index_, collateralAmountToAdd_);
+        // move required collateral from sender to pool
         _transferCollateralFrom(msg.sender, collateralAmountToAdd_);
     }
 
@@ -122,10 +122,10 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             redeemedLenderLPs_)
         ;
 
-        _updatePool(poolState, _lup(poolState.accruedDebt));
+        _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
-        // move collateral from pool to lender
         emit RemoveCollateral(msg.sender, index_, collateralAmountRemoved_);
+        // move collateral from pool to lender
         _transferCollateral(msg.sender, collateralAmountRemoved_);
     }
 
@@ -135,8 +135,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     ) external override returns (uint256 bucketLPs_) {
         bucketLPs_ = _removeCollateral(collateralAmountToRemove_, index_);
 
-        // move collateral from pool to lender
         emit RemoveCollateral(msg.sender, index_, collateralAmountToRemove_);
+        // move collateral from pool to lender
         _transferCollateral(msg.sender, collateralAmountToRemove_);
     }
 
@@ -152,7 +152,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     ) external override nonReentrant {
         PoolState      memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
-        if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
+        // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
+        if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral();
 
         Auctions.TakeParams memory params = Auctions.take(
             auctions,
@@ -174,6 +175,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         );
 
         _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
+        pledgedCollateral = poolState.collateral;
 
         _transferCollateral(callee_, params.collateralAmount);
 
