@@ -14,6 +14,7 @@ import '../libraries/Deposits.sol';
 import '../libraries/Loans.sol';
 import '../libraries/Maths.sol';
 import '../libraries/PoolUtils.sol';
+import '../libraries/BucketMath.sol';
 
 abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     using Auctions for Auctions.Data;
@@ -478,7 +479,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     function startClaimableReserveAuction() external override {
         uint256 curUnclaimedAuctionReserve = reserveAuctionUnclaimed;
-        uint256 claimable = PoolUtils.claimableReserves(
+        uint256 claimable = Auctions.claimableReserves(
             Maths.wmul(t0poolDebt, inflatorSnapshot),
             deposits.treeSum(),
             auctions.totalBondEscrowed,
@@ -490,7 +491,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if (curUnclaimedAuctionReserve != 0) {
             reserveAuctionUnclaimed = curUnclaimedAuctionReserve;
             reserveAuctionKicked    = block.timestamp;
-            emit ReserveAuction(curUnclaimedAuctionReserve, PoolUtils.reserveAuctionPrice(block.timestamp));
+            emit ReserveAuction(curUnclaimedAuctionReserve, Auctions.reserveAuctionPrice(block.timestamp));
             _transferQuoteToken(msg.sender, kickerAward);
         } else revert NoReserves();
     }
@@ -500,7 +501,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         if (kicked != 0 && block.timestamp - kicked <= 72 hours) {
             amount_ = Maths.min(reserveAuctionUnclaimed, maxAmount_);
-            uint256 price = PoolUtils.reserveAuctionPrice(kicked);
+            uint256 price = Auctions.reserveAuctionPrice(kicked);
             uint256 ajnaRequired = Maths.wmul(amount_, price);
             reserveAuctionUnclaimed -= amount_;
 
@@ -715,7 +716,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
             if (poolState_.isNewInterestAccrued) {
                 // Scale the borrower inflator to update amount of interest owed by borrowers
-                uint256 factor = PoolUtils.pendingInterestFactor(poolState_.rate, elapsed);
+                uint256 factor = BucketMath.pendingInterestFactor(poolState_.rate, elapsed);
                 poolState_.inflator = Maths.wmul(poolState_.inflator, factor);
 
                 // Scale the fenwick tree to update amount of debt owed to lenders
@@ -856,7 +857,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     function debtInfo() external view returns (uint256, uint256, uint256) {
-        uint256 pendingInflator = PoolUtils.pendingInflator(
+        uint256 pendingInflator = BucketMath.pendingInflator(
             inflatorSnapshot,
             lastInflatorSnapshotUpdate,
             interestRate
