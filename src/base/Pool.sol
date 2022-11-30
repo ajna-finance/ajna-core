@@ -666,38 +666,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
     }
 
-    function _removeCollateral(
-        uint256 collateralAmountToRemove_,
-        uint256 index_
-    ) internal returns (uint256 bucketLPs_) {
-        auctions.revertIfAuctionClearable(loans);
-
-        Buckets.Bucket storage bucket = buckets[index_];
-        if (collateralAmountToRemove_ > bucket.collateral) revert InsufficientCollateral();
-
-        PoolState memory poolState = _accruePoolInterest();
-        
-        bucketLPs_ = Buckets.collateralToLPs(
-            bucket.collateral,
-            bucket.lps,
-            deposits.valueAt(index_),
-            collateralAmountToRemove_,
-            PoolUtils.indexToPrice(index_)
-        );
-
-        (uint256 lenderLpBalance, ) = buckets.getLenderInfo(index_, msg.sender);
-        // ensure lender has enough balance to remove collateral amount
-        if (lenderLpBalance == 0 || bucketLPs_ > lenderLpBalance) revert InsufficientLPs();
-
-        Buckets.removeCollateral(
-            bucket,
-            collateralAmountToRemove_,
-            bucketLPs_
-        );
-
-        _updateInterestParams(poolState, _lup(poolState.accruedDebt));
-    }
-
 
     /******************************/
     /*** Pool Virtual Functions ***/

@@ -8,6 +8,7 @@ import '../base/FlashloanablePool.sol';
 
 contract ERC721Pool is IERC721Pool, FlashloanablePool {
     using Auctions for Auctions.Data;
+    using Buckets  for mapping(uint256 => Buckets.Bucket);
     using Deposits for Deposits.Data;
     using Loans    for Loans.Data;
 
@@ -97,8 +98,34 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     function removeCollateral(
         uint256 noOfNFTsToRemove_,
         uint256 index_
-    ) external override returns (uint256 bucketLPs_) {
-        bucketLPs_ = _removeCollateral(Maths.wad(noOfNFTsToRemove_), index_);
+    ) external override returns (uint256 collateralAmount_, uint256 lpAmount_) {
+        auctions.revertIfAuctionClearable(loans);
+
+        collateralAmount_ = Maths.wad(noOfNFTsToRemove_);
+        Buckets.Bucket storage bucket = buckets[index_];
+        if (collateralAmount_ > bucket.collateral) revert InsufficientCollateral();
+
+        PoolState memory poolState = _accruePoolInterest();
+
+        lpAmount_ = Buckets.collateralToLPs(
+            bucket.collateral,
+            bucket.lps,
+            deposits.valueAt(index_),
+            collateralAmount_,
+            PoolUtils.indexToPrice(index_)
+        );
+
+        (uint256 lenderLpBalance, ) = buckets.getLenderInfo(index_, msg.sender);
+        // ensure lender has enough balance to remove collateral amount
+        if (lenderLpBalance == 0 || lpAmount_ > lenderLpBalance) revert InsufficientLPs();
+
+        Buckets.removeCollateral(
+            bucket,
+            collateralAmount_,
+            lpAmount_
+        );
+
+        _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
         emit RemoveCollateral(msg.sender, index_, noOfNFTsToRemove_);
         _transferFromPoolToAddress(msg.sender, bucketTokenIds, noOfNFTsToRemove_);

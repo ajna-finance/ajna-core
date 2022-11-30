@@ -355,16 +355,6 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         skip(7200);
 
         changePrank(_lender);
-
-        // should revert if lender attempts to remove more collateral than available in the bucket
-        _assertRemoveInsufficientCollateralRevert(
-            {
-                from:   _lender,
-                amount: 4,
-                index:  2350
-            }
-        );
-
         // lender exchanges their lp for collateral
         (amount) = _removeCollateral(
             {
