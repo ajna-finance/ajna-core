@@ -276,20 +276,6 @@ abstract contract DSTestPlus is Test {
         assertEq(lpRedeemed,    lpRedeem);
     }
 
-    function _repay(
-        address from,
-        address borrower,
-        uint256 amount,
-        uint256 repaid,
-        uint256 newLup
-    ) internal virtual {
-        changePrank(from);
-        vm.expectEmit(true, true, false, true);
-        emit Repay(borrower, newLup, repaid);
-        _assertTokenTransferEvent(from, address(_pool), repaid);
-        _pool.repayDebt(borrower, amount, 0);
-    }
-
     function _startClaimableReserveAuction(
         address from,
         uint256 remainingReserves,
@@ -799,35 +785,6 @@ abstract contract DSTestPlus is Test {
         changePrank(from);
         vm.expectRevert(IPoolErrors.BorrowerOk.selector);
         _pool.kick(borrower);
-    }
-
-    function _assertPullInsufficientCollateralRevert(
-        address from,
-        uint256 amount
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
-        _pool.pullCollateral(amount);
-    }
-
-    function _assertRepayNoDebtRevert(
-        address from,
-        address borrower,
-        uint256 amount
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.NoDebt.selector);
-        _pool.repay(borrower, amount);
-    }
-
-    function _assertRepayMinDebtRevert(
-        address from,
-        address borrower,
-        uint256 amount
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
-        _pool.repay(borrower, amount);
     }
 
     function _assertRemoveCollateralAuctionNotClearedRevert(

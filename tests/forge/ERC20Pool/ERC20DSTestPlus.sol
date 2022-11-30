@@ -57,14 +57,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         // mint quote tokens to borrower address equivalent to the current debt
         deal(_pool.quoteTokenAddress(), borrower, currentDebt);
 
-        // // repay current debt ( all debt )
-        // if (currentDebt > 0) {
-        //     _pool.repay(borrower, currentDebt);
-        // }
-
-        // // pull borrower's all collateral
-        // _pullCollateral(borrower, borrowerCollateral);
-
         // repay current debt and pull all collateral
         _repayDebtNoLupCheck(borrower, borrower, currentDebt, currentDebt, borrowerCollateral);
 
@@ -236,7 +228,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Repay(borrower, newLup, repaid);
         _assertTokenTransferEvent(from, address(_pool), repaid);
-        _pool.repay(borrower, amount);
+        _repayDebt(from, borrower, amount, repaid, 0, newLup);
     }
 
     function _repayDebt(
@@ -262,7 +254,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
             emit PullCollateral(from, collateralToPull);
         }
 
-        _pool.repayDebt(borrower, amountToRepay, collateralToPull);
+        ERC20Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull);
     }
 
     function _repayDebtNoLupCheck(
@@ -285,7 +277,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
             emit PullCollateral(from, collateralToPull);
         }
 
-        _pool.repayDebt(borrower, amountToRepay, collateralToPull);
+        ERC20Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull);
     }
 
     function _transferLpTokens(
@@ -355,6 +347,35 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     ) internal {
         vm.expectRevert(IPoolFactory.PoolAlreadyExists.selector);
         ERC20PoolFactory(poolFactory).deployPool(collateral, quote, interestRate);
+    }
+
+    function _assertPullInsufficientCollateralRevert(
+        address from,
+        uint256 amount
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
+        ERC20Pool(address(_pool)).repayDebt(from, 0, amount);
+    }
+
+    function _assertRepayNoDebtRevert(
+        address from,
+        address borrower,
+        uint256 amount
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.NoDebt.selector);
+        ERC20Pool(address(_pool)).repayDebt(borrower, amount, 0);
+    }
+
+    function _assertRepayMinDebtRevert(
+        address from,
+        address borrower,
+        uint256 amount
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
+        ERC20Pool(address(_pool)).repayDebt(borrower, amount, 0);
     }
 
     function _assertRemoveAllCollateralNoClaimRevert(

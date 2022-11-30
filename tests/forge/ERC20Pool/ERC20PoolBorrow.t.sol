@@ -6,6 +6,8 @@ import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 import 'src/libraries/BucketMath.sol';
 import 'src/libraries/PoolUtils.sol';
 
+import 'src/erc20/ERC20Pool.sol';
+
 contract ERC20PoolBorrowTest is ERC20HelperContract {
 
     address internal _borrower;
@@ -255,15 +257,14 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(_lender),        150_000 * 1e18);
 
         // repay partial
-        _repay(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   10_000 * 1e18,
-                repaid:   10_000 * 1e18,
-                newLup:   2_966.176540084047110076 * 1e18
-            }
-        );
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    10_000 * 1e18,
+            amountRepaid:     10_000 * 1e18,
+            collateralToPull: 0,
+            newLup:           2_966.176540084047110076 * 1e18
+        });
 
         _assertPool(
             PoolState({
@@ -289,15 +290,14 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         // repay entire loan
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 40 * 1e18);
-        _repay(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   30_038.461538461538480000 * 1e18,
-                repaid:   30_038.461538461538480000 * 1e18,
-                newLup:   BucketMath.MAX_PRICE
-            }
-        );
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    30_038.461538461538480000 * 1e18,
+            amountRepaid:     30_038.461538461538480000 * 1e18,
+            collateralToPull: 0,
+            newLup:           BucketMath.MAX_PRICE
+        });
 
         _assertPool(
             PoolState({
@@ -437,12 +437,13 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         _assertLenderInterest(liquidityAdded, 27.733835462507850000 * 1e18);
 
         skip(10 days);
-        _pullCollateral(
-            {
-                from:    _borrower,
-                amount:  10 * 1e18
-            }
-        );
+        _repayDebtNoLupCheck({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    0,
+            amountRepaid:     0,
+            collateralToPull: 10 * 1e18
+        });
 
         expectedDebt = 21_086.813610779822717266 * 1e18;
         _assertPool(
@@ -513,15 +514,24 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         _assertLenderInterest(liquidityAdded, 91.962325312058000000 * 1e18);
 
         skip(10 days);
-        _repay(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   0,
-                repaid:   0,
-                newLup:   2_981.007422784467321543 * 1e18
-            }
-        );
+        // call repay to restamp the loan's neutral price
+        // _repay(
+        //     {
+        //         from:     _borrower,
+        //         borrower: _borrower,
+        //         amount:   0,
+        //         repaid:   0,
+        //         newLup:   2_981.007422784467321543 * 1e18
+        //     }
+        // );
+        // _repayDebt({
+        //     from:             _borrower,
+        //     borrower:         _borrower,
+        //     amountToRepay:    0,
+        //     amountRepaid:     0,
+        //     collateralToPull: 0,
+        //     newLup:           2_981.007422784467321543 * 1e18
+        // });
 
         expectedDebt = 21_167.707767227221328592 * 1e18;
         _assertPool(
@@ -779,15 +789,14 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         );
 
         // should be able to repay loan if properly specified
-        _repay(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   0.0001 * 1e18,
-                repaid:   0.0001 * 1e18,
-                newLup:   3_010.892022197881557845 * 1e18
-            }
-        );
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    0.0001 * 1e18,
+            amountRepaid:     0.0001 * 1e18,
+            collateralToPull: 0,
+            newLup:           3_010.892022197881557845 * 1e18
+        });
 
         _assertPool(
             PoolState({
@@ -880,15 +889,14 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         );
 
         // should be able to repay loan on behalf of borrower
-        _repay(
-            {
-                from:     _lender,
-                borrower: _borrower,
-                amount:   0.0001 * 1e18,
-                repaid:   0.0001 * 1e18,
-                newLup:   3_010.892022197881557845 * 1e18
-            }
-        );
+        _repayDebt({
+            from:             _lender,
+            borrower:         _borrower,
+            amountToRepay:    0.0001 * 1e18,
+            amountRepaid:     0.0001 * 1e18,
+            collateralToPull: 0,
+            newLup:           3_010.892022197881557845 * 1e18
+        });
 
         _assertPool(
             PoolState({
@@ -1016,18 +1024,17 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 10_000 * 1e18);
         // should revert if borrower repays most, but not all of their debt resulting in a 0 tp loan remaining on the book
         vm.expectRevert(abi.encodeWithSignature('ZeroThresholdPrice()'));
-        _pool.repay(_borrower, 500.480769230769231000 * 1e18 - 1);
+        IERC20Pool(address(_pool)).repayDebt(_borrower, 500.480769230769231000 * 1e18 - 1, 0);
 
         // should be able to pay back all pendingDebt
-        _repay(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   500.480769230769231000 * 1e18,
-                repaid:   500.480769230769231000 * 1e18,
-                newLup:   BucketMath.MAX_PRICE
-            }
-        );
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    500.480769230769231000 * 1e18,
+            amountRepaid:     500.480769230769231000 * 1e18,
+            collateralToPull: 0,
+            newLup:           BucketMath.MAX_PRICE
+        });
 
         _assertPool(
             PoolState({
@@ -1115,15 +1122,14 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         // repay entire loan
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 40 * 1e18);
-        _repay(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   21_100 * 1e18,
-                repaid:   21_020.192307692307702000 * 1e18,
-                newLup:   BucketMath.MAX_PRICE
-            }
-        );
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    21_100 * 1e18,
+            amountRepaid:     21_020.192307692307702000 * 1e18,
+            collateralToPull: 0,
+            newLup:           BucketMath.MAX_PRICE
+        });
         assertEq(_quote.balanceOf(_borrower),      19.807692307692298000 * 1e18);
         assertEq(_collateral.balanceOf(_borrower), 0);
 
@@ -1152,12 +1158,13 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         vm.revertTo(snapshot);
 
         // borrower pulls first all their collateral pledged, PTP goes to 0, penalty should be applied
-        _pullCollateral(
-            {
-                from:   _borrower,
-                amount: 100 * 1e18
-            }
-        );
+        _repayDebtNoLupCheck({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    0,
+            amountRepaid:     0,
+            collateralToPull: 100 * 1e18
+        });
         assertEq(_quote.balanceOf(_borrower),      19.807692307692298000 * 1e18);
         assertEq(_collateral.balanceOf(_borrower), 100 * 1e18);
         _removeAllLiquidity(

@@ -124,15 +124,14 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         // repay entire loan
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 200 * 1e18);
-        _repay(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   46_044.230769230769252000 * 1e18,
-                repaid:   46_044.230769230769252000 * 1e18,
-                newLup:   BucketMath.MAX_PRICE
-            }
-        );
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    46_044.230769230769252000 * 1e18,
+            amountRepaid:     46_044.230769230769252000 * 1e18,
+            collateralToPull: 0,
+            newLup:           BucketMath.MAX_PRICE
+        });
     }
 
     function testOverutilizedPoolInterestRateIncrease() external tearDown {
