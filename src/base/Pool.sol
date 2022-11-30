@@ -468,7 +468,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState,
         uint256 amountToBorrow_,
         uint256 limitIndex_
-    ) internal {
+    ) internal returns (uint256 newLup_) {
         // if borrower auctioned then it cannot draw more debt
         auctions.revertIfActive(msg.sender);
 
@@ -485,15 +485,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if (lupId > limitIndex_) revert LimitIndexReached();
 
         // calculate new lup and check borrow action won't push borrower into a state of under-collateralization
-        uint256 newLup = PoolUtils.indexToPrice(lupId);
+        newLup_ = PoolUtils.indexToPrice(lupId);
         if (
-            !_isCollateralized(borrowerDebt, borrower.collateral, newLup)
+            !_isCollateralized(borrowerDebt, borrower.collateral, newLup_)
         ) revert BorrowerUnderCollateralized();
 
         // check borrow won't push pool into a state of under-collateralization
         poolState.accruedDebt += debtChange;
         if (
-            !_isCollateralized(poolState.accruedDebt, poolState.collateral, newLup)
+            !_isCollateralized(poolState.accruedDebt, poolState.collateral, newLup_)
         ) revert PoolUnderCollateralized();
 
         uint256 t0debtChange = Maths.wdiv(debtChange, poolState.inflator);
@@ -507,11 +507,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             poolState.accruedDebt,
             poolState.inflator,
             poolState.rate,
-            newLup
+            newLup_
         );
 
         t0poolDebt += t0debtChange;
-        _updateInterestParams(poolState, newLup);
+        _updateInterestParams(poolState, newLup_);
 
         // move borrowed amount from pool to sender
         _transferQuoteToken(msg.sender, amountToBorrow_);

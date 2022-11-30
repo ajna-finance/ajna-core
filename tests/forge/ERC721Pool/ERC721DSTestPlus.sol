@@ -36,8 +36,12 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
 
     // Pool events
     event AddCollateralNFT(address indexed actor_, uint256 indexed price_, uint256[] tokenIds_);
-    event PledgeCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
-
+    event DrawDebtNFT(
+        address indexed borrower,
+        uint256   amountBorowed,
+        uint256[] tokenIdsPledged,
+        uint256   lup
+    );
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
 
     /*****************/
@@ -210,11 +214,13 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         uint256 newLup
     ) internal {
         changePrank(from);
-        vm.expectEmit(true, true, false, true);
-        emit Borrow(from, newLup, amount);
-        _assertTokenTransferEvent(address(_pool), from, amount);
 
         uint256[] memory emptyArray;
+
+        _assertTokenTransferEvent(address(_pool), from, amount);
+        vm.expectEmit(true, true, false, true);
+        emit DrawDebtNFT(from, amount, emptyArray, newLup);
+
         ERC721Pool(address(_pool)).drawDebt(from, amount, indexLimit, emptyArray);
 
         // Add for tearDown
@@ -233,8 +239,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
 
         // pledge collateral
         if (tokenIds.length != 0) {
-            vm.expectEmit(true, true, false, true);
-            emit PledgeCollateralNFT(borrower, tokenIds);
             for (uint256 i = 0; i < tokenIds.length; i++) {
                 assertEq(_collateral.ownerOf(tokenIds[i]), from); // token is owned by pledger address
                 vm.expectEmit(true, true, false, true);
@@ -249,6 +253,8 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
             _assertTokenTransferEvent(address(_pool), from, amountToBorrow);
         }
 
+        vm.expectEmit(true, true, false, true);
+        emit DrawDebtNFT(borrower, amountToBorrow, tokenIds, newLup);
         ERC721Pool(address(_pool)).drawDebt(borrower, amountToBorrow, limitIndex, tokenIds);
 
         // check tokenIds were transferred to the pool
@@ -274,8 +280,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
 
         // pledge collateral
         if (tokenIds.length != 0) {
-            vm.expectEmit(true, true, false, true);
-            emit PledgeCollateralNFT(borrower, tokenIds);
             for (uint256 i = 0; i < tokenIds.length; i++) {
                 assertEq(_collateral.ownerOf(tokenIds[i]), from); // token is owned by pledger address
                 vm.expectEmit(true, true, false, true);
@@ -308,16 +312,17 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         uint256[] memory tokenIds
     ) internal {
         changePrank(from);
-        vm.expectEmit(true, true, false, true);
-        emit PledgeCollateralNFT(borrower, tokenIds);
+
         for (uint256 i = 0; i < tokenIds.length; i++) {
             assertEq(_collateral.ownerOf(tokenIds[i]), from); // token is owned by pledger address
             vm.expectEmit(true, true, false, true);
             emit Transfer(from, address(_pool), tokenIds[i]);
         }
 
-        // ERC721Pool(address(_pool)).pledgeCollateral(borrower, tokenIds);
+        vm.expectEmit(true, true, false, true);
+        emit DrawDebtNFT(borrower, 0, tokenIds, _poolUtils.lup(address(_pool)));
         ERC721Pool(address(_pool)).drawDebt(borrower, 0, 0, tokenIds);
+
         for (uint256 i = 0; i < tokenIds.length; i++) {
             assertEq(_collateral.ownerOf(tokenIds[i]), address(_pool));
         }

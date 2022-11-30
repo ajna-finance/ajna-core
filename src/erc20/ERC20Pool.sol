@@ -52,23 +52,23 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         uint256 collateralToPledge_
     ) external {
         PoolState memory poolState = _accruePoolInterest();
-
-        emit DrawDebt(borrower_, amountToBorrow_, collateralToPledge_);
+        uint256 lup = _lup(poolState.accruedDebt);
 
         // pledge collateral to pool
         if (collateralToPledge_ != 0) {
             _pledgeCollateral(poolState, borrower_, collateralToPledge_);
 
             // move collateral from sender to pool
-            emit PledgeCollateral(borrower_, collateralToPledge_);
             _transferCollateralFrom(msg.sender, collateralToPledge_);
         }
 
         // borrow against pledged collateral
         // check both values to enable an intentional 0 borrow loan call to update borrower's loan state
         if (amountToBorrow_ != 0 || limitIndex_ != 0) {
-            _borrow(poolState, amountToBorrow_, limitIndex_);
+            lup = _borrow(poolState, amountToBorrow_, limitIndex_);
         }
+
+        emit DrawDebt(borrower_, amountToBorrow_, collateralToPledge_, lup);
     }
 
     function pullCollateral(
