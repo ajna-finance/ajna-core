@@ -10,9 +10,16 @@ abstract contract FlashloanablePool is Pool {
         address token_,
         uint256 amount_,
         bytes calldata data_
-    ) external override nonReentrant returns (bool) {
-        if (token_ != _getArgAddress(20)) revert FlashloanUnavailableForToken();
+    ) external virtual override nonReentrant returns (bool) {
+        if (token_ == _getArgAddress(20)) return _flashLoanQuoteToken(receiver_, token_, amount_, data_);
+        revert FlashloanUnavailableForToken();
+    }
 
+    function _flashLoanQuoteToken(IERC3156FlashBorrower receiver_,
+        address token_,
+        uint256 amount_,
+        bytes calldata data_
+    ) internal returns (bool) {
         _transferQuoteToken(address(receiver_), amount_);
         uint256 fee = _flashFee(amount_);
         
@@ -23,7 +30,7 @@ abstract contract FlashloanablePool is Pool {
         return true;
     }
 
-    function _flashFee(uint256 amount_) internal view  returns (uint256) {
+    function _flashFee(uint256 amount_) internal view returns (uint256) {
         return Maths.wmul(amount_, PoolUtils.feeRate(interestRate));
     }
 
