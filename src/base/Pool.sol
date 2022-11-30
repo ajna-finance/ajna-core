@@ -698,7 +698,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             redeemedLPs_ = requiredLPs;
         } else {
             redeemedLPs_ = lenderLpBalance;
-            // removedAmount_ = Maths.rwdivw(Maths.rmul(redeemedLPs_, exchangeRate), bucketPrice);
             removedAmount_ = ((redeemedLPs_ * exchangeRate + 1e27 / 2) / 1e18  + bucketPrice / 2) / bucketPrice;
         }
 
