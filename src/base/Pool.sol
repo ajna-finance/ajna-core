@@ -513,7 +513,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         t0poolDebt += t0debtChange;
         _updateInterestParams(poolState, newLup);
 
-        emit Borrow(msg.sender, newLup, amountToBorrow_);
         // move borrowed amount from pool to sender
         _transferQuoteToken(msg.sender, amountToBorrow_);
     }

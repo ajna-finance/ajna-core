@@ -66,6 +66,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     ) external {
         PoolState memory poolState = _accruePoolInterest();
 
+        emit DrawDebtNFT(borrower_, amountToBorrow_, tokenIdsToPledge_);
+
         if (tokenIdsToPledge_.length != 0) {
             _pledgeCollateral(poolState, borrower_, Maths.wad(tokenIdsToPledge_.length));
 
