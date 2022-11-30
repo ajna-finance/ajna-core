@@ -666,50 +666,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
     }
 
-    function _removeCollateral(
-        uint256 maxAmount_,
-        uint256 index_
-    ) internal returns (uint256 removedAmount_, uint256 redeemedLPs_) {
-        auctions.revertIfAuctionClearable(loans);
-
-        Buckets.Bucket storage bucket = buckets[index_];
-        if (bucket.collateral == 0) revert InsufficientCollateral(); // revert if there's no collateral in bucket
-
-        (uint256 lenderLpBalance, ) = buckets.getLenderInfo(index_, msg.sender);
-        if (lenderLpBalance == 0) revert NoClaim();                  // revert if no LP to redeem
-
-        PoolState memory poolState = _accruePoolInterest();
-        uint256 bucketPrice = PoolUtils.indexToPrice(index_);
-        uint256 exchangeRate = Buckets.getExchangeRate(
-            bucket.collateral,
-            bucket.lps,
-            deposits.valueAt(index_),
-            bucketPrice
-        );
-
-        // limit amount by what is available in the bucket
-        removedAmount_ = Maths.min(maxAmount_, bucket.collateral);
-
-        // determine how much LP would be required to remove the requested amount
-        uint256 requiredLPs = (removedAmount_ * bucketPrice * 1e18 + exchangeRate / 2) / exchangeRate;
-
-        // limit withdrawal by the lender's LPB
-        if (requiredLPs < lenderLpBalance) {
-            redeemedLPs_ = requiredLPs;
-        } else {
-            redeemedLPs_ = lenderLpBalance;
-            removedAmount_ = ((redeemedLPs_ * exchangeRate + 1e27 / 2) / 1e18 + bucketPrice / 2) / bucketPrice;
-        }
-
-        Buckets.removeCollateral(
-            bucket,
-            removedAmount_,
-            redeemedLPs_
-        );
-
-        _updateInterestParams(poolState, _lup(poolState.accruedDebt));
-    }
-
 
     /******************************/
     /*** Pool Virtual Functions ***/
