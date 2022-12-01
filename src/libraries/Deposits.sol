@@ -61,24 +61,6 @@ library Deposits {
         }
     }
 
-    function t0Np(
-        Data storage self,
-        uint256 inflator_,
-        uint256 curDebt_,
-        uint256 numLoans_,
-        uint256 interestRate_,
-        uint256 lup_,
-        uint256 borrowerT0debt_,
-        uint256 borrowerCollateral_
-    ) internal view returns (uint256 t0Np_) {
-        uint256 borrowerDebt = Maths.wmul(borrowerT0debt_, inflator_);
-        uint256 thresholdPrice = borrowerDebt * Maths.WAD / borrowerCollateral_; 
-        uint256 curMomp;
-        if (numLoans_ != 0) curMomp = PoolUtils.indexToPrice(findIndexOfSum(self, Maths.wdiv(curDebt_, numLoans_ * 1e18)));
-        // t0Np = ((1 + rate) * MOMP * (TP / LUP)) / Inflator
-        if (curMomp != 0) t0Np_ = (1e18 + interestRate_) * curMomp * thresholdPrice / lup_ / inflator_;
-    }
-
     /**
      *  @notice increase a value in the FenwickTree at an index.
      *  @dev    Starts at leaf/target and moved up towards root

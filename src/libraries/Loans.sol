@@ -90,17 +90,17 @@ library Loans {
 
         // update borrower
         if (t0NpUpdate) {
-            if (borrower_.t0debt != 0 && borrower_.collateral != 0) borrower_.t0Np = Deposits.t0Np(
-                deposits_,
-                poolInflator_,
-                poolDebt_,
-                self.loans.length - 1,
-                poolInterestRate_,
-                lup_,
-                borrower_.t0debt,
-                borrower_.collateral
-            );
-            else borrower_.t0Np = 0;
+            uint256 t0Np;
+            if (borrower_.t0debt != 0 && borrower_.collateral != 0) {
+                uint256 borrowerDebt   = Maths.wmul(borrower_.t0debt, poolInflator_);
+                uint256 thresholdPrice = borrowerDebt * Maths.WAD / borrower_.collateral;
+                uint256 numLoans       = self.loans.length - 1;
+                if (numLoans != 0) {
+                    uint256 mompIndex = Deposits.findIndexOfSum(deposits_, Maths.wdiv(poolDebt_, numLoans * 1e18));
+                    t0Np = (1e18 + poolInterestRate_) * PoolUtils.indexToPrice(mompIndex) * thresholdPrice / lup_ / poolInflator_;
+                }
+            }
+            borrower_.t0Np = t0Np;
         }
         self.borrowers[borrowerAddress_] = borrower_;
     }
