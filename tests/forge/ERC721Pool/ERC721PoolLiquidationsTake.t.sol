@@ -161,7 +161,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
     }
 
-    function testTakeCollateralSubsetPool() external {
+    function testTakeCollateralSubsetPool() external tearDown {
 
         // Skip to make borrower undercollateralized
         skip(1000 days);
@@ -461,7 +461,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_borrower), 119.8 * 1e18); // no additional tokens as there is no rounding of collateral taken (1)
     }
 
-    function testTakeCollateralAndSettleSubsetPool() external {
+    function testTakeCollateralAndSettleSubsetPool() external tearDown{
 
         // Skip to make borrower undercollateralized
         skip(1000 days);
