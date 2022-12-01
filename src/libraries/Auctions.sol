@@ -454,7 +454,6 @@ library Auctions {
         _removeAuction(self, borrowerAddress_);
     }
 
-
     /***************************/
     /***  Internal Functions ***/
     /***************************/

@@ -2,7 +2,6 @@
 
 pragma solidity 0.8.14;
 
-import '../../../libraries/Auctions.sol';
 
 /**
  * @title Pool State
@@ -11,10 +10,14 @@ interface IPoolState {
 
     /**
      *  @notice Returns details of an auction for a given borrower address.
-     *  @param  borrower     Address of the borrower that is liquidated.
-     *  @return Liquidation  Auction Liquidation struct
+     *  @param  borrower          Address of the borrower that is liquidated.
+     *  @return bondFactor        The factor used for calculating bond size.
+     *  @return bondSize          The bond amount in quote token terms.
+     *  @return kickTime          Time the liquidation was initiated.
+     *  @return kickPrice         Highest Price Bucket at time of liquidation.
+     *  @return neutralPrice      Neutral Price of auction.
      */
-    function auctionInfo(address borrower) external view returns (Auctions.Liquidation memory);
+    function auctionInfo(address borrower) external view returns (address, uint256, uint256, uint256, uint256, uint256);
 
     /**
      *  @notice Returns pool related debt values.
