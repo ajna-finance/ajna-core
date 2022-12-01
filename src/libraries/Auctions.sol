@@ -197,7 +197,7 @@ library Auctions {
      *  @param  borrower_          Borrower address to liquidate.
      *  @param  borrowerDebt_      Borrower debt to be recovered.
      *  @param  thresholdPrice_    Current threshold price (used to calculate bond factor).
-     *  @param  momp_              Current MOMP (used to calculate bond factor).
+     *  @param  mompIndex_         Current MOMP index (used to calculate bond factor).
      *  @param  neutralPrice_      Neutral Price of auction.
      *  @return kickAuctionAmount_ The amount that kicker should send to pool in order to kick auction.
      *  @return bondSize_          The amount that kicker locks in pool to kick auction.
@@ -207,20 +207,21 @@ library Auctions {
         address borrower_,
         uint256 borrowerDebt_,
         uint256 thresholdPrice_,
-        uint256 momp_,
+        uint256 mompIndex_,
         uint256 neutralPrice_
     ) external returns (uint256 kickAuctionAmount_, uint256 bondSize_) {
 
+        uint256 momp = _indexToPrice(mompIndex_);
         uint256 bondFactor;
         // bondFactor = min(30%, max(1%, (MOMP - thresholdPrice) / MOMP))
-        if (thresholdPrice_ >= momp_) {
+        if (thresholdPrice_ >= momp) {
             bondFactor = 0.01 * 1e18;
         } else {
             bondFactor = Maths.min(
                 0.3 * 1e18,
                 Maths.max(
                     0.01 * 1e18,
-                    1e18 - Maths.wdiv(thresholdPrice_, momp_)
+                    1e18 - Maths.wdiv(thresholdPrice_, momp)
                 )
             );
         }
@@ -242,7 +243,7 @@ library Auctions {
         Liquidation storage liquidation = self.liquidations[borrower_];
         liquidation.kicker              = msg.sender;
         liquidation.kickTime            = uint96(block.timestamp);
-        liquidation.kickMomp            = uint96(momp_);
+        liquidation.kickMomp            = uint96(momp);
         liquidation.bondSize            = uint160(bondSize_);
         liquidation.bondFactor          = uint96(bondFactor);
         liquidation.neutralPrice        = uint96(neutralPrice_);
