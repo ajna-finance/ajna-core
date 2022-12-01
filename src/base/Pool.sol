@@ -15,6 +15,8 @@ import '../libraries/Loans.sol';
 import '../libraries/Maths.sol';
 import '../libraries/PoolUtils.sol';
 
+// import '@std/console.sol';
+
 abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     using Auctions for Auctions.Data;
     using Buckets  for mapping(uint256 => Buckets.Bucket);
@@ -463,101 +465,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /***********************************/
     /*** Borrower Internal Functions ***/
     /***********************************/
-
-    function _borrow(
-        PoolState memory poolState,
-        uint256 amountToBorrow_,
-        uint256 limitIndex_
-    ) internal returns (uint256 newLup_) {
-        // if borrower auctioned then it cannot draw more debt
-        auctions.revertIfActive(msg.sender);
-
-        Loans.Borrower memory borrower = loans.getBorrowerInfo(msg.sender);
-        uint256 borrowerDebt           = Maths.wmul(borrower.t0debt, poolState.inflator);
-
-        // add origination fee to the amount to borrow and add to borrower's debt
-        uint256 debtChange   = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate) + Maths.WAD);
-        borrowerDebt += debtChange;
-        _checkMinDebt(poolState.accruedDebt, borrowerDebt);
-
-        // determine new lup index and revert if borrow happens at a price higher than the specified limit (lower index than lup index)
-        uint256 lupId = _lupIndex(poolState.accruedDebt + amountToBorrow_);
-        if (lupId > limitIndex_) revert LimitIndexReached();
-
-        // calculate new lup and check borrow action won't push borrower into a state of under-collateralization
-        newLup_ = PoolUtils.indexToPrice(lupId);
-        if (
-            !_isCollateralized(borrowerDebt, borrower.collateral, newLup_)
-        ) revert BorrowerUnderCollateralized();
-
-        // check borrow won't push pool into a state of under-collateralization
-        poolState.accruedDebt += debtChange;
-        if (
-            !_isCollateralized(poolState.accruedDebt, poolState.collateral, newLup_)
-        ) revert PoolUnderCollateralized();
-
-        uint256 t0debtChange = Maths.wdiv(debtChange, poolState.inflator);
-        borrower.t0debt += t0debtChange;
-
-        loans.update(
-            deposits,
-            msg.sender,
-            true,
-            borrower,
-            poolState.accruedDebt,
-            poolState.inflator,
-            poolState.rate,
-            newLup_
-        );
-
-        t0poolDebt += t0debtChange;
-        _updateInterestParams(poolState, newLup_);
-
-        // move borrowed amount from pool to sender
-        _transferQuoteToken(msg.sender, amountToBorrow_);
-    }
-
-    function _pledgeCollateral(
-        PoolState      memory poolState,
-        address borrowerAddress_,
-        uint256 collateralAmountToPledge_
-    ) internal {
-        Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
-
-        borrower.collateral  += collateralAmountToPledge_;
-        poolState.collateral += collateralAmountToPledge_;
-
-        uint256 newLup = _lup(poolState.accruedDebt);
-
-        if (
-            auctions.isActive(borrowerAddress_)
-            &&
-            _isCollateralized(
-                Maths.wmul(borrower.t0debt, poolState.inflator),
-                borrower.collateral,
-                newLup
-            )
-        )
-        {
-            // borrower becomes collateralized, remove debt from pool accumulator and settle auction
-            t0DebtInAuction     -= borrower.t0debt;
-            borrower.collateral = _settleAuction(borrowerAddress_, borrower.collateral);
-        }
-
-        loans.update(
-            deposits,
-            borrowerAddress_,
-            false,
-            borrower,
-            poolState.accruedDebt,
-            poolState.inflator,
-            poolState.rate,
-            newLup
-        );
-
-        pledgedCollateral = poolState.collateral;
-        _updateInterestParams(poolState, newLup);
-    }
 
     function _pullCollateral(
         uint256 collateralAmountToPull_

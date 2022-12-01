@@ -6,6 +6,8 @@ import './interfaces/IERC20Pool.sol';
 import './interfaces/IERC20Taker.sol';
 import '../base/FlashloanablePool.sol';
 
+// import '@std/console.sol';
+
 contract ERC20Pool is IERC20Pool, FlashloanablePool {
     using Auctions for Auctions.Data;
     using Buckets  for mapping(uint256 => Buckets.Bucket);
@@ -52,11 +54,32 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         uint256 collateralToPledge_
     ) external {
         PoolState memory poolState = _accruePoolInterest();
-        uint256 lup = _lup(poolState.accruedDebt);
+        Loans.Borrower memory borrower = loans.getBorrowerInfo(msg.sender);
 
         // pledge collateral to pool
         if (collateralToPledge_ != 0) {
-            _pledgeCollateral(poolState, borrower_, collateralToPledge_);
+
+            borrower.collateral  += collateralToPledge_;
+            poolState.collateral += collateralToPledge_;
+
+            uint256 newLup = _lup(poolState.accruedDebt);
+
+            if (
+                auctions.isActive(borrower_)
+                &&
+                _isCollateralized(
+                    Maths.wmul(borrower.t0debt, poolState.inflator),
+                    borrower.collateral,
+                    newLup
+                )
+            )
+            {
+                // borrower becomes collateralized, remove debt from pool accumulator and settle auction
+                t0DebtInAuction     -= borrower.t0debt;
+                borrower.collateral = _settleAuction(borrower_, borrower.collateral);
+            }
+
+            pledgedCollateral = poolState.collateral;
 
             // move collateral from sender to pool
             _transferCollateralFrom(msg.sender, collateralToPledge_);
@@ -65,10 +88,59 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         // borrow against pledged collateral
         // check both values to enable an intentional 0 borrow loan call to update borrower's loan state
         if (amountToBorrow_ != 0 || limitIndex_ != 0) {
-            lup = _borrow(poolState, amountToBorrow_, limitIndex_);
+
+            auctions.revertIfActive(msg.sender);
+
+            uint256 borrowerDebt = Maths.wmul(borrower.t0debt, poolState.inflator);
+
+            // add origination fee to the amount to borrow and add to borrower's debt
+            uint256 debtChange   = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate) + Maths.WAD);
+            borrowerDebt += debtChange;
+            _checkMinDebt(poolState.accruedDebt, borrowerDebt);
+
+            // determine new lup index and revert if borrow happens at a price higher than the specified limit (lower index than lup index)
+            uint256 lupId = _lupIndex(poolState.accruedDebt + amountToBorrow_);
+            if (lupId > limitIndex_) revert LimitIndexReached();
+
+            // calculate new lup and check borrow action won't push borrower into a state of under-collateralization
+            uint256 newLup_ = PoolUtils.indexToPrice(lupId);
+            if (
+                !_isCollateralized(borrowerDebt, borrower.collateral, newLup_)
+            ) revert BorrowerUnderCollateralized();
+
+            // check borrow won't push pool into a state of under-collateralization
+            poolState.accruedDebt += debtChange;
+            if (
+                !_isCollateralized(poolState.accruedDebt, poolState.collateral, newLup_)
+            ) revert PoolUnderCollateralized();
+
+            uint256 t0debtChange = Maths.wdiv(debtChange, poolState.inflator);
+            borrower.t0debt += t0debtChange;
+
+            t0poolDebt += t0debtChange;
+
+            // move borrowed amount from pool to sender
+            _transferQuoteToken(msg.sender, amountToBorrow_);
+
         }
 
+        uint256 lup = _lup(poolState.accruedDebt);
         emit DrawDebt(borrower_, amountToBorrow_, collateralToPledge_, lup);
+
+        // update loan state
+        loans.update(
+            deposits,
+            msg.sender,
+            true,
+            borrower,
+            poolState.accruedDebt,
+            poolState.inflator,
+            poolState.rate,
+            lup
+        );
+
+        // update pool global interest rate state
+        _updateInterestParams(poolState, lup);
     }
 
     function pullCollateral(
