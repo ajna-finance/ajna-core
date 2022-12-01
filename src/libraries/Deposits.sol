@@ -3,6 +3,7 @@ pragma solidity 0.8.14;
 
 import './Maths.sol';
 import './PoolUtils.sol';
+import './BucketMath.sol';
 
 library Deposits {
 
@@ -29,11 +30,11 @@ library Deposits {
         uint256 htp_,
         uint256 pendingInterestFactor_
     ) internal {
-        uint256 htpIndex = (htp_ != 0) ? PoolUtils.priceToIndex(htp_) : 4_156; // if HTP is 0 then accrue interest at max index (min price)
+        uint256 htpIndex = (htp_ != 0) ? PoolUtils.priceToIndex(htp_) : 7_388; // if HTP is 0 then accrue interest at max index (min price)
         uint256 depositAboveHtp = prefixSum(self, htpIndex);
 
         if (depositAboveHtp != 0) {
-            uint256 netInterestMargin = PoolUtils.lenderInterestMargin(utilization(self, debt_, collateral_));
+            uint256 netInterestMargin = BucketMath.lenderInterestMargin(utilization(self, debt_, collateral_));
             uint256 newInterest       = Maths.wmul(netInterestMargin, Maths.wmul(pendingInterestFactor_ - Maths.WAD, debt_));
 
             uint256 lenderFactor = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;

@@ -169,7 +169,8 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    9.767138988573636286 * 1e18
+                thresholdPrice:    9.767138988573636286 * 1e18,
+                neutralPrice:      0
             })
         );
 
@@ -246,7 +247,8 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 totalBondEscrowed: 0.195342779771472726 * 1e18,
                 auctionPrice:      314.200059394519137152 * 1e18,
                 debtInAuction:     19.778456451861613480 * 1e18,
-                thresholdPrice:    9.889228225930806740 * 1e18
+                thresholdPrice:    9.889228225930806740 * 1e18,
+                neutralPrice:      10.255495938002318100 * 1e18
             })
         );
         _assertKicker(
@@ -298,7 +300,8 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    9.767138988573636286 * 1e18
+                thresholdPrice:    9.767138988573636286 * 1e18,
+                neutralPrice:      0
             })
         );
 
@@ -334,7 +337,8 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 totalBondEscrowed: 0.195342779771472726 * 1e18,
                 auctionPrice:      314.200059394519137152 * 1e18,
                 debtInAuction:     19.778456451861613480 * 1e18,
-                thresholdPrice:    9.889228225930806740 * 1e18
+                thresholdPrice:    9.889228225930806740 * 1e18,
+                neutralPrice:      10.255495938002318100 * 1e18
             })
         );
 
@@ -368,7 +372,8 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    8.889228225930806739 * 1e18
+                thresholdPrice:    8.889228225930806739 * 1e18,
+                neutralPrice:      0
             })
         );
         _assertKicker(
@@ -426,7 +431,8 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    4.860069081639167195 * 1e18
+                thresholdPrice:    4.860069081639167195 * 1e18,
+                neutralPrice:      0
             })
         );
 
@@ -461,7 +467,8 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    9.767138988573636286 * 1e18
+                thresholdPrice:    9.767138988573636286 * 1e18,
+                neutralPrice:      0
             })
         );
 
@@ -497,7 +504,8 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 totalBondEscrowed: 0.195342779771472726 * 1e18,
                 auctionPrice:      314.200059394519137152 * 1e18,
                 debtInAuction:     19.778456451861613480 * 1e18,
-                thresholdPrice:    9.889228225930806740 * 1e18
+                thresholdPrice:    9.889228225930806740 * 1e18,
+                neutralPrice:      10.255495938002318100 * 1e18
             })
         );
         _assertKicker(
@@ -528,7 +536,8 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    4.944614112965403370 * 1e18
+                thresholdPrice:    4.944614112965403370 * 1e18,
+                neutralPrice:      0
             })
         );
         _assertKicker(
@@ -553,7 +562,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         );
     }
 
-    function testKickActiveAuctionReverts() external {
+    function testKickActiveAuctionReverts() external tearDown {
 
         // Skip to make borrower undercollateralized
         skip(100 days);
@@ -570,7 +579,8 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    9.767138988573636286 * 1e18
+                thresholdPrice:    9.767138988573636286 * 1e18,
+                neutralPrice:      0
             })
         );
 
@@ -606,7 +616,8 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 totalBondEscrowed: 0.195342779771472726 * 1e18,
                 auctionPrice:      314.200059394519137152 * 1e18,
                 debtInAuction:     19.778456451861613480 * 1e18,
-                thresholdPrice:    9.889228225930806740 * 1e18
+                thresholdPrice:    9.889228225930806740 * 1e18,
+                neutralPrice:      10.255495938002318100 * 1e18
             })
         );
 

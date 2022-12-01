@@ -60,7 +60,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         (uint256 poolInflatorSnapshot, uint256 lastInflatorSnapshotUpdate) = _pool.inflatorInfo();
 
         uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
-        uint256 factor = PoolUtils.pendingInterestFactor(_pool.interestRate(), elapsed);
+        uint256 factor = BucketMath.pendingInterestFactor(_pool.interestRate(), elapsed);
 
         uint256 currentPoolInflator = Maths.wmul(poolInflatorSnapshot, factor);
 
@@ -131,7 +131,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
 
                 // First redeem LP for collateral
                 uint256 noOfNftsToRemove = Maths.min(Maths.wadToIntRoundingDown(lpsAsCollateral), noOfBucketNftsRedeemable);
-                lpsRedeemed = _pool.removeCollateral(noOfNftsToRemove, bucketIndex);
+                (, lpsRedeemed) = _pool.removeCollateral(noOfNftsToRemove, bucketIndex);
             }
 
             // Then redeem LP for quote token
@@ -498,6 +498,25 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         ERC721Pool(address(_pool)).drawDebt(from, amount, indexLimit, emptyArray);
     }
 
+    function _assertRemoveCollateralNoClaimRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.NoClaim.selector);
+        ERC721Pool(address(_pool)).removeCollateral(amount, index);
+    }
+
+    function _assertRemoveCollateralInsufficientLPsRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.InsufficientLPs.selector);
+        _pool.removeCollateral(amount, index);
+    }
 }
 
 abstract contract ERC721HelperContract is ERC721DSTestPlus {
