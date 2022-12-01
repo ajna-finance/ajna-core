@@ -9,7 +9,7 @@ import 'src/erc20/ERC20PoolFactory.sol';
 import './IERC20Merged.sol';
 
 contract ERC20PoolFactoryTest is ERC20HelperContract {
-    address immutable poolAddress = 0x552c07AdD97DAB975A71F63dFdee3C57ECE09bf3;
+    address immutable poolAddress = 0x4a8Af66F28C5D093531f15924ee993c7D2b5b09b;
 
     ERC20PoolFactory internal _poolFactory;
 

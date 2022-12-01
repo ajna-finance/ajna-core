@@ -104,7 +104,7 @@ library Auctions {
         uint256 reserves_,
         uint256 poolInflator_,
         uint256 bucketDepth_
-    ) external returns (uint256, uint256) {
+    ) internal returns (uint256, uint256) {
         uint256 kickTime = self.liquidations[borrower_].kickTime;
         if (kickTime == 0) revert NoAuction();
 
@@ -201,7 +201,7 @@ library Auctions {
         uint256 thresholdPrice_,
         uint256 momp_,
         uint256 neutralPrice_
-    ) external returns (uint256 kickAuctionAmount_, uint256 bondSize_) {
+    ) internal returns (uint256 kickAuctionAmount_, uint256 bondSize_) {
 
         uint256 bondFactor;
         // bondFactor = min(30%, max(1%, (MOMP - thresholdPrice) / MOMP))
@@ -272,7 +272,7 @@ library Auctions {
         uint256 bucketIndex_,
         bool    depositTake_,
         uint256 poolInflator_
-    ) external returns (TakeParams memory params_) {
+    ) internal returns (TakeParams memory params_) {
         Liquidation storage liquidation = self.liquidations[borrowerAddress_];
         _validateTake(liquidation);
 
@@ -338,7 +338,7 @@ library Auctions {
         Loans.Borrower memory borrower_,
         uint256 maxCollateral_,
         uint256 poolInflator_
-    ) external returns (TakeParams memory params_) {
+    ) internal returns (TakeParams memory params_) {
         Liquidation storage liquidation = self.liquidations[borrowerAddress_];
         _validateTake(liquidation);
 
@@ -388,7 +388,7 @@ library Auctions {
     function settleERC20Auction(
         Data storage self,
         address borrower_
-    ) external {
+    ) internal {
         _removeAuction(self, borrower_);
     }
 
@@ -410,7 +410,7 @@ library Auctions {
         uint256[] storage poolTokens_,
         address borrowerAddress_,
         uint256 borrowerCollateral_
-    ) external returns (uint256 floorCollateral_, uint256 lps_, uint256 bucketIndex_) {
+    ) internal returns (uint256 floorCollateral_, uint256 lps_, uint256 bucketIndex_) {
         floorCollateral_ = (borrowerCollateral_ / Maths.WAD) * Maths.WAD; // floor collateral of borrower
 
         // if there's fraction of NFTs remaining then reward difference to borrower as LPs in auction price bucket
