@@ -77,16 +77,16 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     ) external {
         PoolState memory poolState = _accruePoolInterest();
 
+        if (maxQuoteTokenAmountToRepay_ != 0) {
+            _repay(poolState, borrowerAddress_, maxQuoteTokenAmountToRepay_);
+        }
+
         // pull collateral from pool
         if (noOfNFTsToPull_ != 0) {
             _pullCollateral(poolState, Maths.wad(noOfNFTsToPull_));
 
             emit PullCollateral(msg.sender, noOfNFTsToPull_);
             _transferFromPoolToAddress(msg.sender, borrowerTokenIds[msg.sender], noOfNFTsToPull_);
-        }
-
-        if (maxQuoteTokenAmountToRepay_ != 0) {
-            _repay(poolState, borrowerAddress_, maxQuoteTokenAmountToRepay_);
         }
     }
 

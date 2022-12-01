@@ -228,7 +228,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Repay(borrower, newLup, repaid);
         _assertTokenTransferEvent(from, address(_pool), repaid);
-        _repayDebt(from, borrower, amount, repaid, 0, newLup);
+        ERC20Pool(address(_pool)).repayDebt(borrower, amount, 0);
     }
 
     function _repayDebt(

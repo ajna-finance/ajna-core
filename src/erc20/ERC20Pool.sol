@@ -63,6 +63,10 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     ) external {
         PoolState memory poolState = _accruePoolInterest();
 
+        if (maxQuoteTokenAmountToRepay_ != 0) {
+            _repay(poolState, borrowerAddress_, maxQuoteTokenAmountToRepay_);
+        }
+
         // pull collateral from pool
         if (collateralAmountToPull_ != 0) {
             _pullCollateral(poolState, collateralAmountToPull_);
@@ -70,10 +74,6 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             // move collateral from pool to sender
             emit PullCollateral(msg.sender, collateralAmountToPull_);
             _transferCollateral(msg.sender, collateralAmountToPull_);
-        }
-
-        if (maxQuoteTokenAmountToRepay_ != 0) {
-            _repay(poolState, borrowerAddress_, maxQuoteTokenAmountToRepay_);
         }
     }
 

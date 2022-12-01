@@ -444,6 +444,35 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 exchangeRate: 1 * 1e27
             }
         );
+
+        (
+            uint256 poolSize,
+            uint256 loansCount,
+            address maxBorrower,
+            uint256 pendingInflator,
+        ) = _poolUtils.poolLoansInfo(address(_pool));
+
+        emit log_uint(loansCount);
+
+        // FIXME: borrower encumbered collateral != pool pledged collateral
+        _assertPool(
+            PoolState({
+                htp:                  48.148343567549191135 * 1e18,
+                lup:                  9.721295865031779605 * 1e18,
+                poolSize:             63_776.320825456302135751 * 1e18,
+                pledgedCollateral:    2 * 1e18,
+                encumberedCollateral: 2.010288427770370775 * 1e18,
+                poolDebt:             19.542608580405342754 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    2.100039410123873900 * 1e18,
+                minDebtAmount:        0.977130429020267138 * 1e18,
+                loans:                2,
+                maxBorrower:          address(_borrower2),
+                interestRate:         0.0405 * 1e18,
+                interestRateUpdate:   _startTime + 83 hours + 100 days
+            })
+        );
+
     }
 
     function testSettleOnAuctionKicked72HoursAgo() external tearDown {

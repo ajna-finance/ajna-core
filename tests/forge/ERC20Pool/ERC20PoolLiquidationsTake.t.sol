@@ -1639,14 +1639,6 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             }
         );
 
-        _repayDebtNoLupCheck({
-            from:             _borrower,
-            borrower:         _borrower,
-            amountToRepay:    0,
-            amountRepaid:     0,
-            collateralToPull: 1.749391266909416578 * 1e18
-        });
-
         vm.revertTo(postTakeSnapshot);
 
         _assertReserveAuction(
