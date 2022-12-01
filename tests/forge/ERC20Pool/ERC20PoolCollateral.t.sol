@@ -164,7 +164,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         _pullCollateral(
             {
                 from:   _borrower,
-                amount: 50 * 1e18 - PoolUtils.encumberance(21_049.006823139002918431 * 1e18, _lup())
+                amount: 50 * 1e18 - BucketMath.encumberance(21_049.006823139002918431 * 1e18, _lup())
             }
         );
 

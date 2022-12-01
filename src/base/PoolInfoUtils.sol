@@ -199,12 +199,12 @@ contract PoolInfoUtils {
         uint256 poolCollateral  = pool.pledgedCollateral();
         (, , uint256 noOfLoans) = pool.loansInfo();
 
-        if (poolDebt != 0) poolMinDebtAmount_ = PoolUtils.minDebtAmount(poolDebt, noOfLoans);
+        if (poolDebt != 0) poolMinDebtAmount_ = BucketMath.minDebtAmount(poolDebt, noOfLoans);
         uint256 currentLup      = PoolUtils.indexToPrice(pool.depositIndex(poolDebt));
-        poolCollateralization_ = PoolUtils.collateralization(poolDebt, poolCollateral, currentLup);
+        poolCollateralization_ = BucketMath.collateralization(poolDebt, poolCollateral, currentLup);
         poolActualUtilization_ = pool.depositUtilization(poolDebt, poolCollateral);
         (uint256 debtEma, uint256 lupColEma) = pool.emasInfo();
-        poolTargetUtilization_ = PoolUtils.poolTargetUtilization(debtEma, lupColEma);
+        poolTargetUtilization_ = BucketMath.poolTargetUtilization(debtEma, lupColEma);
     }
 
     /**

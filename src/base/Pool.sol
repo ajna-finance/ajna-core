@@ -286,7 +286,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 borrowerDebt           = Maths.wmul(borrower.t0debt, poolState.inflator);
 
         // add origination fee to the amount to borrow and add to borrower's debt
-        uint256 debtChange = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate) + Maths.WAD);
+        uint256 debtChange = Maths.wmul(amountToBorrow_, BucketMath.feeRate(interestRate) + Maths.WAD);
         borrowerDebt += debtChange;
         _checkMinDebt(poolState.accruedDebt, borrowerDebt);
 
@@ -641,7 +641,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             if (
                 loansCount >= 10
                 &&
-                (borrowerDebt_ < PoolUtils.minDebtAmount(accruedDebt_, loansCount))
+                (borrowerDebt_ < BucketMath.minDebtAmount(accruedDebt_, loansCount))
             ) revert AmountLTMinDebt();
         }
     }

@@ -16,10 +16,10 @@ contract PoolUtilsTest is DSTestPlus {
         uint256 debt  = 11_000.143012091382543917 * 1e18;
         uint256 price = 1_001.6501589292607751220 * 1e18;
 
-        assertEq(PoolUtils.encumberance(debt, price),   10.98202093218880245 * 1e18);
-        assertEq(PoolUtils.encumberance(0, price),      0);
-        assertEq(PoolUtils.encumberance(debt, 0),       0);
-        assertEq(PoolUtils.encumberance(0, 0),          0);
+        assertEq(BucketMath.encumberance(debt, price),   10.98202093218880245 * 1e18);
+        assertEq(BucketMath.encumberance(0, price),      0);
+        assertEq(BucketMath.encumberance(debt, 0),       0);
+        assertEq(BucketMath.encumberance(0, 0),          0);
     }
 
     /**
@@ -30,11 +30,11 @@ contract PoolUtilsTest is DSTestPlus {
         uint256 price = 1_001.6501589292607751220 * 1e18;
         uint256 collateral = 10.98202093218880245 * 1e18;
 
-        assertEq(PoolUtils.collateralization(debt, collateral, price),   1 * 1e18);
-        assertEq(PoolUtils.collateralization(0, collateral, price),      Maths.WAD);
-        assertEq(PoolUtils.collateralization(debt, collateral, 0),       Maths.WAD);
-        assertEq(PoolUtils.collateralization(0, collateral, 0),          Maths.WAD);
-        assertEq(PoolUtils.collateralization(debt, 0, price),            0);
+        assertEq(BucketMath.collateralization(debt, collateral, price),   1 * 1e18);
+        assertEq(BucketMath.collateralization(0, collateral, price),      Maths.WAD);
+        assertEq(BucketMath.collateralization(debt, collateral, 0),       Maths.WAD);
+        assertEq(BucketMath.collateralization(0, collateral, 0),          Maths.WAD);
+        assertEq(BucketMath.collateralization(debt, 0, price),            0);
     }
 
     /**
@@ -44,10 +44,10 @@ contract PoolUtilsTest is DSTestPlus {
         uint256 debtEma  = 11_000.143012091382543917 * 1e18;
         uint256 lupColEma = 1_001.6501589292607751220 * 1e18;
 
-        assertEq(PoolUtils.poolTargetUtilization(debtEma, lupColEma),   10.98202093218880245 * 1e18);
-        assertEq(PoolUtils.poolTargetUtilization(0, lupColEma),         Maths.WAD);
-        assertEq(PoolUtils.poolTargetUtilization(debtEma, 0),           Maths.WAD);
-        assertEq(PoolUtils.poolTargetUtilization(0, 0),                 Maths.WAD);
+        assertEq(BucketMath.poolTargetUtilization(debtEma, lupColEma),   10.98202093218880245 * 1e18);
+        assertEq(BucketMath.poolTargetUtilization(0, lupColEma),         Maths.WAD);
+        assertEq(BucketMath.poolTargetUtilization(debtEma, 0),           Maths.WAD);
+        assertEq(BucketMath.poolTargetUtilization(0, 0),                 Maths.WAD);
     }
 
     /**
@@ -55,9 +55,9 @@ contract PoolUtilsTest is DSTestPlus {
      */
     function testFeeRate() external {
         uint256 interestRate = 0.12 * 1e18;
-        assertEq(PoolUtils.feeRate(interestRate),  0.002307692307692308 * 1e18);
-        assertEq(PoolUtils.feeRate(0.52 * 1e18),     0.01 * 1e18);
-        assertEq(PoolUtils.feeRate(0.26 * 1e18),     0.005 * 1e18);
+        assertEq(BucketMath.feeRate(interestRate),  0.002307692307692308 * 1e18);
+        assertEq(BucketMath.feeRate(0.52 * 1e18),     0.01 * 1e18);
+        assertEq(BucketMath.feeRate(0.26 * 1e18),     0.005 * 1e18);
     }
 
     /**
@@ -67,10 +67,10 @@ contract PoolUtilsTest is DSTestPlus {
         uint256 debt = 11_000 * 1e18;
         uint256 loansCount = 50;
 
-        assertEq(PoolUtils.minDebtAmount(debt, loansCount), 22 * 1e18);
-        assertEq(PoolUtils.minDebtAmount(debt, 10),         110 * 1e18);
-        assertEq(PoolUtils.minDebtAmount(debt, 0),          0);
-        assertEq(PoolUtils.minDebtAmount(0, loansCount),    0);
+        assertEq(BucketMath.minDebtAmount(debt, loansCount), 22 * 1e18);
+        assertEq(BucketMath.minDebtAmount(debt, 10),         110 * 1e18);
+        assertEq(BucketMath.minDebtAmount(debt, 0),          0);
+        assertEq(BucketMath.minDebtAmount(0, loansCount),    0);
     }
 
     /**
