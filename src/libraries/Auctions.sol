@@ -681,7 +681,7 @@ library Auctions {
 
         int256 ceilIndex = PRBMathSD59x18.ceil(index);
         if (index < 0 && ceilIndex - index > 0.5 * 1e18) {
-            return uint256(7067 - PRBMathSD59x18.toInt(ceilIndex));
+            return uint256(4157 - PRBMathSD59x18.toInt(ceilIndex));
         }
         return uint256(4156 - PRBMathSD59x18.toInt(ceilIndex));
     }

@@ -88,4 +88,52 @@ contract AuctionsTest is DSTestPlus {
 
     }
 
+    /**
+     *  @notice Tests fenwick index calculation from varying bucket prices
+     */
+    function testPriceToIndex() external {
+        assertAuctionPriceToIndex(1_004_968_987.606512354182109771 * 10**18);
+        assertAuctionPriceToIndex(99_836_282_890);
+        assertAuctionPriceToIndex(49_910.043670274810022205 * 1e18);
+        assertAuctionPriceToIndex(2_000.221618840727700609 * 1e18);
+        assertAuctionPriceToIndex(146.575625611106531706 * 1e18);
+        assertAuctionPriceToIndex(145.846393642892072537 * 1e18);
+        assertAuctionPriceToIndex(5.263790124045347667 * 1e18);
+        assertAuctionPriceToIndex(1.646668492116543299 * 1e18);
+        assertAuctionPriceToIndex(1.315628874808846999 * 1e18);
+        assertAuctionPriceToIndex(1.051140132040790557 * 1e18);
+        assertAuctionPriceToIndex(0.000046545370002462 * 1e18);
+        assertAuctionPriceToIndex(0.006822416727411372 * 1e18);
+        assertAuctionPriceToIndex(0.006856528811048429 * 1e18);
+        assertAuctionPriceToIndex(0.951347940696068854 * 1e18);        
+    }
+
+    /**
+     *  @notice Tests bucket price calculation from varying fenwick index
+     */
+    function testIndexToPrice() external {
+        assertAuctionIndexToPrice(0);
+        assertAuctionIndexToPrice(7388);
+        assertAuctionIndexToPrice(1987);
+        assertAuctionIndexToPrice(2632);
+        assertAuctionIndexToPrice(3156);
+        assertAuctionIndexToPrice(3157);
+        assertAuctionIndexToPrice(3823);
+        assertAuctionIndexToPrice(4056);
+        assertAuctionIndexToPrice(4101);
+        assertAuctionIndexToPrice(4146);
+        assertAuctionIndexToPrice(6156);
+        assertAuctionIndexToPrice(5156);
+        assertAuctionIndexToPrice(5155);
+        assertAuctionIndexToPrice(4166);
+    }
+
+    function assertAuctionIndexToPrice(uint256 index_) internal {
+        assertEq(Auctions._indexToPrice(index_), PoolUtils.indexToPrice(index_));
+    }
+
+    function assertAuctionPriceToIndex(uint256 price_) internal {
+        assertEq(Auctions._priceToIndex(price_), PoolUtils.priceToIndex(price_));
+    }
+
 }
