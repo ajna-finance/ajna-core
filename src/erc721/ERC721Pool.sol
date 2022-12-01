@@ -67,13 +67,37 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         PoolState memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower = loans.getBorrowerInfo(msg.sender);
 
+        // pledge collateral to pool
         if (tokenIdsToPledge_.length != 0) {
-            (poolState, borrower) = _pledgeCollateral(poolState, borrower, borrower_, Maths.wad(tokenIdsToPledge_.length));
+            // (poolState, borrower) = _pledgeCollateral(poolState, borrower, borrower_, Maths.wad(tokenIdsToPledge_.length));
+
+            borrower.collateral  += Maths.wad(tokenIdsToPledge_.length);
+            poolState.collateral += Maths.wad(tokenIdsToPledge_.length);
+
+            uint256 newLup = _lup(poolState.accruedDebt);
+
+            if (
+                auctions.isActive(borrower_)
+                &&
+                _isCollateralized(
+                    Maths.wmul(borrower.t0debt, poolState.inflator),
+                    borrower.collateral,
+                    newLup
+                )
+            )
+            {
+                // borrower becomes collateralized, remove debt from pool accumulator and settle auction
+                t0DebtInAuction     -= borrower.t0debt;
+                borrower.collateral = _settleAuction(borrower_, borrower.collateral);
+            }
+
+            pledgedCollateral = poolState.collateral;
 
             // move collateral from sender to pool
             _transferFromSenderToPool(borrowerTokenIds[borrower_], tokenIdsToPledge_);
         }
-        
+
+        // borrow against pledged collateral
         if (amountToBorrow_ != 0 || limitIndex_ != 0) {
             (poolState, borrower) = _borrow(poolState, borrower, amountToBorrow_, limitIndex_);
         }

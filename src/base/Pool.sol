@@ -509,37 +509,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         return (poolState, borrower);
     }
 
-    function _pledgeCollateral(
-        PoolState memory poolState,
-        Loans.Borrower memory borrower,
-        address borrowerAddress_,
-        uint256 collateralAmountToPledge_
-    ) internal returns (PoolState memory, Loans.Borrower memory) {
-        borrower.collateral  += collateralAmountToPledge_;
-        poolState.collateral += collateralAmountToPledge_;
-
-        uint256 newLup = _lup(poolState.accruedDebt);
-
-        if (
-            auctions.isActive(borrowerAddress_)
-            &&
-            _isCollateralized(
-                Maths.wmul(borrower.t0debt, poolState.inflator),
-                borrower.collateral,
-                newLup
-            )
-        )
-        {
-            // borrower becomes collateralized, remove debt from pool accumulator and settle auction
-            t0DebtInAuction     -= borrower.t0debt;
-            borrower.collateral = _settleAuction(borrowerAddress_, borrower.collateral);
-        }
-
-        pledgedCollateral = poolState.collateral;
-
-        return (poolState, borrower);
-    }
-
     function _pullCollateral(
         uint256 collateralAmountToPull_
     ) internal {

@@ -58,7 +58,29 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         // pledge collateral to pool
         if (collateralToPledge_ != 0) {
-            (poolState, borrower) = _pledgeCollateral(poolState, borrower, borrower_, collateralToPledge_);
+            // (poolState, borrower) = _pledgeCollateral(poolState, borrower, borrower_, collateralToPledge_);
+
+            borrower.collateral  += collateralToPledge_;
+            poolState.collateral += collateralToPledge_;
+
+            uint256 newLup = _lup(poolState.accruedDebt);
+
+            if (
+                auctions.isActive(borrower_)
+                &&
+                _isCollateralized(
+                    Maths.wmul(borrower.t0debt, poolState.inflator),
+                    borrower.collateral,
+                    newLup
+                )
+            )
+            {
+                // borrower becomes collateralized, remove debt from pool accumulator and settle auction
+                t0DebtInAuction     -= borrower.t0debt;
+                borrower.collateral = _settleAuction(borrower_, borrower.collateral);
+            }
+
+            pledgedCollateral = poolState.collateral;
 
             // move collateral from sender to pool
             _transferCollateralFrom(msg.sender, collateralToPledge_);
@@ -67,6 +89,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         // borrow against pledged collateral
         // check both values to enable an intentional 0 borrow loan call to update borrower's loan state
         if (amountToBorrow_ != 0 || limitIndex_ != 0) {
+
             (poolState, borrower) = _borrow(poolState, borrower, amountToBorrow_, limitIndex_);
         }
 
