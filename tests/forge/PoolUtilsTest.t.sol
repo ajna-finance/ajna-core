@@ -10,28 +10,6 @@ import 'src/base/Pool.sol';
 contract PoolUtilsTest is DSTestPlus {
 
     /**
-     *  @notice Tests claimable reserves calculation for varying parameters
-     */
-    function testClaimableReserves() external {
-        uint256 debt = 11_000 * 1e18;
-        uint256 poolSize = 1_001 * 1e18;
-        uint256 liquidationBondEscrowed = 1_001 * 1e18;
-        uint256 reserveAuctionUnclaimed = 1_001 * 1e18;
-        uint256 quoteTokenBalance = 11_000 * 1e18;
-
-        assertEq(PoolUtils.claimableReserves(debt, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, quoteTokenBalance),  18_942 * 1e18);
-        assertEq(PoolUtils.claimableReserves(debt, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, 0),                  7_942 * 1e18);
-        assertEq(PoolUtils.claimableReserves(0, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, quoteTokenBalance),     7_997 * 1e18);
-        assertEq(PoolUtils.claimableReserves(debt, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, Maths.WAD),          7_943 * 1e18);
-        assertEq(PoolUtils.claimableReserves(debt, 11_000 * 1e18, liquidationBondEscrowed, reserveAuctionUnclaimed, 0),             0);
-        assertEq(PoolUtils.claimableReserves(debt, poolSize, 11_000 * 1e18, reserveAuctionUnclaimed, 0),                            0);
-        assertEq(PoolUtils.claimableReserves(debt, poolSize, liquidationBondEscrowed, 11_000 * 1e18, 0),                            0);
-        assertEq(PoolUtils.claimableReserves(debt, 11_000 * 1e18, 11_000 * 1e18, reserveAuctionUnclaimed, 0),                       0);
-        assertEq(PoolUtils.claimableReserves(debt, poolSize, 11_000 * 1e18, 10_895 * 1e18, quoteTokenBalance),                      0);
-
-    }
-
-    /**
      *  @notice Tests collateral encumberance for varying values of debt and lup
      */
     function testEncumberance() external {
@@ -93,22 +71,6 @@ contract PoolUtilsTest is DSTestPlus {
         assertEq(PoolUtils.minDebtAmount(debt, 10),         110 * 1e18);
         assertEq(PoolUtils.minDebtAmount(debt, 0),          0);
         assertEq(PoolUtils.minDebtAmount(0, loansCount),    0);
-    }
-
-    /**
-     *  @notice Tests reserve price multiplier for reverse dutch auction at different times
-     */
-    function testReserveAuctionPrice() external {
-        skip(5 days);
-        assertEq(PoolUtils.reserveAuctionPrice(block.timestamp),            1e27);
-        assertEq(PoolUtils.reserveAuctionPrice(block.timestamp - 1 hours),  500000000 * 1e18);
-        assertEq(PoolUtils.reserveAuctionPrice(block.timestamp - 2 hours),  250000000 * 1e18);
-        assertEq(PoolUtils.reserveAuctionPrice(block.timestamp - 4 hours),  62500000 * 1e18);
-        assertEq(PoolUtils.reserveAuctionPrice(block.timestamp - 16 hours), 15258.789062500000000000 * 1e18);
-        assertEq(PoolUtils.reserveAuctionPrice(block.timestamp - 24 hours), 59.604644775390625000 * 1e18);
-        assertEq(PoolUtils.reserveAuctionPrice(block.timestamp - 90 hours), 0);
-
-
     }
 
     /**

@@ -81,50 +81,52 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         _transferCollateralFrom(msg.sender, collateralAmountToAdd_);
     }
 
-    function removeAllCollateral(
+    function removeCollateral(
+        uint256 maxAmount_,
         uint256 index_
-    ) external override returns (uint256 collateralAmountRemoved_, uint256 redeemedLenderLPs_) {
+    ) external override returns (uint256 collateralAmount_, uint256 lpAmount_) {
         auctions.revertIfAuctionClearable(loans);
 
-        (uint256 lenderLPsBalance, ) = buckets.getLenderInfo(
-            index_,
-            msg.sender
-        );
+        Buckets.Bucket storage bucket = buckets[index_];
+        if (bucket.collateral == 0) revert InsufficientCollateral(); // revert if there's no collateral in bucket
+
+        (uint256 lenderLpBalance, ) = buckets.getLenderInfo(index_, msg.sender);
+        if (lenderLpBalance == 0) revert NoClaim();                  // revert if no LP to redeem
 
         PoolState memory poolState = _accruePoolInterest();
-
-        Buckets.Bucket storage bucket = buckets[index_];
-        (collateralAmountRemoved_, redeemedLenderLPs_) = Buckets.lpsToCollateral(
+        uint256 bucketPrice = PoolUtils.indexToPrice(index_);
+        uint256 exchangeRate = Buckets.getExchangeRate(
             bucket.collateral,
             bucket.lps,
             deposits.valueAt(index_),
-            lenderLPsBalance,
-            PoolUtils.indexToPrice(index_)
+            bucketPrice
         );
-        if (collateralAmountRemoved_ == 0) revert NoClaim();
+
+        // limit amount by what is available in the bucket
+        collateralAmount_ = Maths.min(maxAmount_, bucket.collateral);
+
+        // determine how much LP would be required to remove the requested amount
+        uint256 requiredLPs = (collateralAmount_ * bucketPrice * 1e18 + exchangeRate / 2) / exchangeRate;
+
+        // limit withdrawal by the lender's LPB
+        if (requiredLPs < lenderLpBalance) {
+            lpAmount_ = requiredLPs;
+        } else {
+            lpAmount_ = lenderLpBalance;
+            collateralAmount_ = ((lpAmount_ * exchangeRate + 1e27 / 2) / 1e18 + bucketPrice / 2) / bucketPrice;
+        }
 
         Buckets.removeCollateral(
             bucket,
-            collateralAmountRemoved_,
-            redeemedLenderLPs_)
-        ;
+            collateralAmount_,
+            lpAmount_
+        );
 
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
-        emit RemoveCollateral(msg.sender, index_, collateralAmountRemoved_);
+        emit RemoveCollateral(msg.sender, index_, collateralAmount_);
         // move collateral from pool to lender
-        _transferCollateral(msg.sender, collateralAmountRemoved_);
-    }
-
-    function removeCollateral(
-        uint256 collateralAmountToRemove_,
-        uint256 index_
-    ) external override returns (uint256 bucketLPs_) {
-        bucketLPs_ = _removeCollateral(collateralAmountToRemove_, index_);
-
-        emit RemoveCollateral(msg.sender, index_, collateralAmountToRemove_);
-        // move collateral from pool to lender
-        _transferCollateral(msg.sender, collateralAmountToRemove_);
+        _transferCollateral(msg.sender, collateralAmount_);
     }
 
     /*******************************/

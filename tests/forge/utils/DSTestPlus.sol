@@ -11,6 +11,7 @@ import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import 'src/base/interfaces/IPool.sol';
 import 'src/base/PoolInfoUtils.sol';
 
+import 'src/libraries/Auctions.sol';
 import 'src/libraries/Maths.sol';
 // import 'src/libraries/Auctions.sol';
 
@@ -266,7 +267,7 @@ abstract contract DSTestPlus is Test {
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(from, index, amount);
         _assertTokenTransferEvent(address(_pool), from, amount);
-        lpRedeemed_ = _pool.removeCollateral(amount, index);
+        (, lpRedeemed_) = _pool.removeCollateral(amount, index);
         assertEq(lpRedeemed_, lpRedeem);
     }
 
@@ -847,16 +848,6 @@ abstract contract DSTestPlus is Test {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('AuctionNotCleared()'));
-        _pool.removeCollateral(amount, index);
-    }
-
-    function _assertRemoveCollateralInsufficientLPsRevert(
-        address from,
-        uint256 amount,
-        uint256 index
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.InsufficientLPs.selector);
         _pool.removeCollateral(amount, index);
     }
 
