@@ -159,7 +159,7 @@ library BucketMath {
         newInflator_ = Maths.wmul(inflator_, pendingInterestFactor);
 
         uint256 htp = Maths.wmul(thresholdPrice_, newInflator_);
-        uint256 htpIndex = (htp != 0) ? _priceToIndex(htp) : 4_156; // if HTP is 0 then accrue interest at max index (min price)
+        uint256 htpIndex = (htp != 0) ? _priceToIndex(htp) : 7_388; // if HTP is 0 then accrue interest at max index (min price)
 
         // Scale the fenwick tree to update amount of debt owed to lenders
         uint256 depositAboveHtp = Deposits.prefixSum(deposits, htpIndex);
@@ -173,6 +173,22 @@ library BucketMath {
             uint256 lenderFactor = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;
             Deposits.mult(deposits, htpIndex, lenderFactor);
         }
+    }
+
+    function _indexToPrice(
+        uint256 index_
+    ) internal pure returns (uint256) {
+        int256 bucketIndex = (index_ != 8191) ? MAX_PRICE_INDEX - int256(index_) : MIN_PRICE_INDEX;
+        require(bucketIndex >= MIN_PRICE_INDEX && bucketIndex <= MAX_PRICE_INDEX, "BM:ITP:OOB");
+
+        return uint256(
+            PRBMathSD59x18.exp2(
+                PRBMathSD59x18.mul(
+                    PRBMathSD59x18.fromInt(bucketIndex),
+                    PRBMathSD59x18.log2(FLOAT_STEP_INT)
+                )
+            )
+        );
     }
 
     function _priceToIndex(

@@ -2,20 +2,13 @@
 
 pragma solidity 0.8.14;
 
-import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
-import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
-
 import './Buckets.sol';
+import './BucketMath.sol';
 import './Loans.sol';
 import './Maths.sol';
 
 library Auctions {
     uint256 internal constant MINUTE_HALF_LIFE    = 0.988514020352896135_356867505 * 1e27;  // 0.5^(1/60)
-    uint256 internal constant MIN_PRICE = 99_836_282_890;
-    uint256 internal constant MAX_PRICE = 1_004_968_987.606512354182109771 * 10**18;
-    int256 internal constant MAX_PRICE_INDEX = 4_156;
-    int256 internal constant MIN_PRICE_INDEX = -3_232;
-    int256 internal constant FLOAT_STEP_INT = 1.005 * 10**18;
 
     struct Data {
         address head;
@@ -124,7 +117,7 @@ library Auctions {
         while (bucketDepth_ != 0 && t0DebtToSettle_ != 0 && collateral_ != 0) {
             hpbVars.index   = Deposits.findIndexOfSum(deposits_, 1);
             hpbVars.deposit = Deposits.valueAt(deposits_, hpbVars.index);
-            hpbVars.price   = _indexToPrice(hpbVars.index);
+            hpbVars.price   = BucketMath._indexToPrice(hpbVars.index);
 
             uint256 depositToRemove = hpbVars.deposit;
             uint256 collateralUsed;
@@ -211,7 +204,7 @@ library Auctions {
         uint256 neutralPrice_
     ) external returns (uint256 kickAuctionAmount_, uint256 bondSize_) {
 
-        uint256 momp = _indexToPrice(mompIndex_);
+        uint256 momp = BucketMath._indexToPrice(mompIndex_);
         uint256 bondFactor;
         // bondFactor = min(30%, max(1%, (MOMP - thresholdPrice) / MOMP))
         if (thresholdPrice_ >= momp) {
@@ -285,7 +278,7 @@ library Auctions {
         Liquidation storage liquidation = self.liquidations[borrowerAddress_];
         _validateTake(liquidation);
 
-        params_.bucketPrice  = _indexToPrice(bucketIndex_);
+        params_.bucketPrice  = BucketMath._indexToPrice(bucketIndex_);
         params_.auctionPrice = _auctionPrice(
             liquidation.kickMomp,
             liquidation.kickTime
@@ -430,13 +423,13 @@ library Auctions {
                 self.liquidations[borrowerAddress_].kickMomp,
                 self.liquidations[borrowerAddress_].kickTime
             );
-            bucketIndex_ = _priceToIndex(auctionPrice);
+            bucketIndex_ = BucketMath._priceToIndex(auctionPrice);
             lps_ = Buckets.addCollateral(
                 buckets_[bucketIndex_],
                 borrowerAddress_,
                 Deposits.valueAt(deposits_, bucketIndex_),
                 fractionalCollateral,
-                _indexToPrice(bucketIndex_)
+                BucketMath._indexToPrice(bucketIndex_)
             );
         }
 
@@ -641,50 +634,6 @@ library Auctions {
             price_
         );
         factor_ = uint256(1e18 - Maths.maxInt(0, bpf_));
-    }
-
-
-    /***********************************/
-    /*** Bucket Conversion Functions ***/
-    /***********************************/
-
-    /**
-     * @dev replicated to avoid calling external BucketMath library
-     */
-    function _indexToPrice(
-        uint256 index_
-    ) internal pure returns (uint256) {
-        int256 bucketIndex = (index_ != 8191) ? MAX_PRICE_INDEX - int256(index_) : MIN_PRICE_INDEX;
-        require(bucketIndex >= MIN_PRICE_INDEX && bucketIndex <= MAX_PRICE_INDEX, "BM:ITP:OOB");
-
-        return uint256(
-            PRBMathSD59x18.exp2(
-                PRBMathSD59x18.mul(
-                    PRBMathSD59x18.fromInt(bucketIndex),
-                    PRBMathSD59x18.log2(FLOAT_STEP_INT)
-                )
-            )
-        );
-    }
-
-    /**
-     * @dev replicated to avoid calling external BucketMath library
-     */
-    function _priceToIndex(
-        uint256 price_
-    ) internal pure returns (uint256) {
-        require(price_ >= MIN_PRICE && price_ <= MAX_PRICE, "BM:PTI:OOB");
-
-        int256 index = PRBMathSD59x18.div(
-            PRBMathSD59x18.log2(int256(price_)),
-            PRBMathSD59x18.log2(FLOAT_STEP_INT)
-        );
-
-        int256 ceilIndex = PRBMathSD59x18.ceil(index);
-        if (index < 0 && ceilIndex - index > 0.5 * 1e18) {
-            return uint256(7067 - PRBMathSD59x18.toInt(ceilIndex));
-        }
-        return uint256(4156 - PRBMathSD59x18.toInt(ceilIndex));
     }
 
 
