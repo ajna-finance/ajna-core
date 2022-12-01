@@ -14,6 +14,7 @@ import '../libraries/Deposits.sol';
 import '../libraries/Loans.sol';
 import '../libraries/Maths.sol';
 import '../libraries/PoolUtils.sol';
+import '../libraries/BucketMath.sol';
 
 abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     using Auctions for Auctions.Data;
@@ -459,7 +460,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     function startClaimableReserveAuction() external override {
         uint256 curUnclaimedAuctionReserve = reserveAuctionUnclaimed;
-        uint256 claimable = PoolUtils.claimableReserves(
+        uint256 claimable = Auctions.claimableReserves(
             Maths.wmul(t0poolDebt, inflatorSnapshot),
             deposits.treeSum(),
             auctions.totalBondEscrowed,
@@ -471,7 +472,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if (curUnclaimedAuctionReserve != 0) {
             reserveAuctionUnclaimed = curUnclaimedAuctionReserve;
             reserveAuctionKicked    = block.timestamp;
-            emit ReserveAuction(curUnclaimedAuctionReserve, PoolUtils.reserveAuctionPrice(block.timestamp));
+            emit ReserveAuction(curUnclaimedAuctionReserve, Auctions.reserveAuctionPrice(block.timestamp));
             _transferQuoteToken(msg.sender, kickerAward);
         } else revert NoReserves();
     }
@@ -481,7 +482,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         if (kicked != 0 && block.timestamp - kicked <= 72 hours) {
             amount_ = Maths.min(reserveAuctionUnclaimed, maxAmount_);
-            uint256 price = PoolUtils.reserveAuctionPrice(kicked);
+            uint256 price = Auctions.reserveAuctionPrice(kicked);
             uint256 ajnaRequired = Maths.wmul(amount_, price);
             reserveAuctionUnclaimed -= amount_;
 
@@ -666,38 +667,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
     }
 
-    function _removeCollateral(
-        uint256 collateralAmountToRemove_,
-        uint256 index_
-    ) internal returns (uint256 bucketLPs_) {
-        auctions.revertIfAuctionClearable(loans);
-
-        Buckets.Bucket storage bucket = buckets[index_];
-        if (collateralAmountToRemove_ > bucket.collateral) revert InsufficientCollateral();
-
-        PoolState memory poolState = _accruePoolInterest();
-        
-        bucketLPs_ = Buckets.collateralToLPs(
-            bucket.collateral,
-            bucket.lps,
-            deposits.valueAt(index_),
-            collateralAmountToRemove_,
-            PoolUtils.indexToPrice(index_)
-        );
-
-        (uint256 lenderLpBalance, ) = buckets.getLenderInfo(index_, msg.sender);
-        // ensure lender has enough balance to remove collateral amount
-        if (lenderLpBalance == 0 || bucketLPs_ > lenderLpBalance) revert InsufficientLPs();
-
-        Buckets.removeCollateral(
-            bucket,
-            collateralAmountToRemove_,
-            bucketLPs_
-        );
-
-        _updateInterestParams(poolState, _lup(poolState.accruedDebt));
-    }
-
 
     /******************************/
     /*** Pool Virtual Functions ***/
@@ -747,7 +716,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
             if (poolState_.isNewInterestAccrued) {
                 // Scale the borrower inflator to update amount of interest owed by borrowers
-                uint256 factor = PoolUtils.pendingInterestFactor(poolState_.rate, elapsed);
+                uint256 factor = BucketMath.pendingInterestFactor(poolState_.rate, elapsed);
                 poolState_.inflator = Maths.wmul(poolState_.inflator, factor);
 
                 // Scale the fenwick tree to update amount of debt owed to lenders
@@ -853,15 +822,22 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     function auctionInfo(
         address borrower_
-    ) external view override returns (address, uint256, uint256, uint256, uint256, address, address) {
+    ) external 
+    view override returns (
+        address kicker,
+        uint256 bondFactor,
+        uint256 bondSize,
+        uint256 kickTime,
+        uint256 kickMomp,
+        uint256 neutralPrice
+    ) {
         return (
             auctions.liquidations[borrower_].kicker,
             auctions.liquidations[borrower_].bondFactor,
+            auctions.liquidations[borrower_].bondSize,
             auctions.liquidations[borrower_].kickTime,
             auctions.liquidations[borrower_].kickMomp,
-            auctions.liquidations[borrower_].neutralPrice,
-            auctions.liquidations[borrower_].prev,
-            auctions.liquidations[borrower_].next
+            auctions.liquidations[borrower_].neutralPrice
         );
     }
 
@@ -888,7 +864,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     function debtInfo() external view returns (uint256, uint256, uint256) {
-        uint256 pendingInflator = PoolUtils.pendingInflator(
+        uint256 pendingInflator = BucketMath.pendingInflator(
             inflatorSnapshot,
             lastInflatorSnapshotUpdate,
             interestRate

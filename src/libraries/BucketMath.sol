@@ -112,21 +112,10 @@ library BucketMath {
         bucketPrice_ = indexToPrice(index_);
     }
 
-    function auctionPrice(
-        uint256 referencePrice,
-        uint256 kickTime_
-    ) public view returns (uint256 price_) {
-        uint256 elapsedHours = Maths.wdiv((block.timestamp - kickTime_) * 1e18, 1 hours * 1e18);
-        elapsedHours -= Maths.min(elapsedHours, 1e18);  // price locked during cure period
-
-        int256 timeAdjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours));
-        price_ = 32 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
-    }
-
     function pendingInterestFactor(
         uint256 interestRate_,
         uint256 elapsed_
-    ) public pure returns (uint256) {
+    ) external pure returns (uint256) {
         return PRBMathUD60x18.exp((interestRate_ * elapsed_) / 365 days);
     }
 
@@ -134,7 +123,7 @@ library BucketMath {
         uint256 inflatorSnapshot_,
         uint256 lastInflatorSnapshotUpdate_,
         uint256 interestRate_
-    ) public view returns (uint256) {
+    ) external view returns (uint256) {
         return Maths.wmul(
             inflatorSnapshot_,
             PRBMathUD60x18.exp((interestRate_ * (block.timestamp - lastInflatorSnapshotUpdate_)) / 365 days)
@@ -143,7 +132,7 @@ library BucketMath {
 
     function lenderInterestMargin(
         uint256 mau_
-    ) public pure returns (uint256) {
+    ) external pure returns (uint256) {
         // TODO: Consider pre-calculating and storing a conversion table in a library or shared contract.
         // cubic root of the percentage of meaningful unutilized deposit
         uint256 base = 1000000 * 1e18 - Maths.wmul(Maths.min(mau_, 1e18), 1000000 * 1e18);
@@ -153,37 +142,6 @@ library BucketMath {
             uint256 crpud = PRBMathUD60x18.pow(base, ONE_THIRD);
             return 1e18 - Maths.wmul(Maths.wdiv(crpud, CUBIC_ROOT_1000000), 0.15 * 1e18);
         }
-    }
-
-    function bpf(
-        uint256 debt_,
-        uint256 collateral_,
-        uint256 neutralPrice_,
-        uint256 bondFactor_,
-        uint256 price_
-    ) public pure returns (int256) {
-        int256 thresholdPrice = int256(Maths.wdiv(debt_, collateral_));
-
-        int256 sign;
-        if (thresholdPrice < int256(neutralPrice_)) {
-            // BPF = BondFactor * min(1, max(-1, (neutralPrice - price) / (neutralPrice - thresholdPrice)))
-            sign = Maths.minInt(
-                    1e18,
-                    Maths.maxInt(
-                        -1 * 1e18,
-                        PRBMathSD59x18.div(
-                            int256(neutralPrice_) - int256(price_),
-                            int256(neutralPrice_) - thresholdPrice
-                        )
-                    )
-            );
-        } else {
-            int256 val = int256(neutralPrice_) - int256(price_);
-            if (val < 0 )      sign = -1e18;
-            else if (val != 0) sign = 1e18;
-        }
-
-        return PRBMathSD59x18.mul(int256(bondFactor_), sign);
     }
 
 }

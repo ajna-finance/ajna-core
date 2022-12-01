@@ -11,7 +11,9 @@ import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import 'src/base/interfaces/IPool.sol';
 import 'src/base/PoolInfoUtils.sol';
 
+import 'src/libraries/Auctions.sol';
 import 'src/libraries/Maths.sol';
+
 
 abstract contract DSTestPlus is Test {
 
@@ -47,6 +49,7 @@ abstract contract DSTestPlus is Test {
     uint256       internal _startTime;
 
     uint256 internal _p1505_26  = 1_505.263728469068226832 * 1e18;
+    uint256 internal _p100_33   = 100.332368143282009890 * 1e18;
     uint256 internal _p9_91     = 9.917184843435912074 * 1e18;
     uint256 internal _p9_81     = 9.818751856078723036 * 1e18;
     uint256 internal _p9_72     = 9.721295865031779605 * 1e18;
@@ -56,7 +59,7 @@ abstract contract DSTestPlus is Test {
     uint256 internal _i1505_26  = 2689;
     uint256 internal _i49910    = 1987;
     uint256 internal _i10016    = 2309;
-    uint256 internal _i100      = 3232;
+    uint256 internal _i100_33   = 3232;
     uint256 internal _i9_91     = 3696;
     uint256 internal _i9_81     = 3698;
     uint256 internal _i9_72     = 3700;
@@ -91,6 +94,7 @@ abstract contract DSTestPlus is Test {
         uint256 auctionPrice;
         uint256 debtInAuction;
         uint256 thresholdPrice;
+        uint256 neutralPrice;
     }
 
     mapping(address => EnumerableSet.UintSet) lendersDepositedIndex;
@@ -252,7 +256,7 @@ abstract contract DSTestPlus is Test {
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(from, index, amount);
         _assertTokenTransferEvent(address(_pool), from, amount);
-        lpRedeemed_ = _pool.removeCollateral(amount, index);
+        (, lpRedeemed_) = _pool.removeCollateral(amount, index);
         assertEq(lpRedeemed_, lpRedeem);
     }
 
@@ -331,28 +335,33 @@ abstract contract DSTestPlus is Test {
         (
             address auctionKicker,
             uint256 auctionBondFactor,
+            uint256 auctionBondSize,
             uint256 auctionKickTime,
             uint256 auctionKickMomp,
-            ,
-            ,
+            uint256 auctionNeutralPrice
         ) = _pool.auctionInfo(state_.borrower);
+
+        (uint256 borrowerDebt, uint256 borrowerCollateral , ) = _poolUtils.borrowerInfo(address(_pool), state_.borrower);
         (, uint256 lockedBonds) = _pool.kickerInfo(state_.kicker);
         (uint256 auctionTotalBondEscrowed,,) = _pool.reservesInfo();
-        (,,uint256 auctionDebtInAuction)  = _pool.debtInfo();
-        
-        (uint256 borrowerdebt, uint256 borrowerCollateral, ) = _poolUtils.borrowerInfo(address(_pool), state_.borrower);
-        uint256 borrowerThresholdPrice = borrowerCollateral > 0 ? borrowerdebt * Maths.WAD / borrowerCollateral : 0;
+        (,,uint256 auctionDebtInAuction)  = _pool.debtInfo(); 
+        uint256 borrowerThresholdPrice = borrowerCollateral > 0 ? borrowerDebt * Maths.WAD / borrowerCollateral : 0;
 
-        assertEq(auctionKickTime != 0,                                     state_.active);
-        assertEq(auctionKicker,                                            state_.kicker);
-        assertEq(lockedBonds,                                              state_.bondSize);
-        assertEq(auctionBondFactor,                                        state_.bondFactor);
-        assertEq(auctionKickTime,                                          state_.kickTime);
-        assertEq(auctionKickMomp,                                          state_.kickMomp);
-        assertEq(auctionTotalBondEscrowed,                                 state_.totalBondEscrowed);
-        assertEq(auctionDebtInAuction,                                     state_.debtInAuction);
-        assertEq(PoolUtils.auctionPrice(auctionKickMomp, auctionKickTime), state_.auctionPrice);
-        assertEq(borrowerThresholdPrice,                                   state_.thresholdPrice);
+        assertEq(auctionKickTime != 0,                                      state_.active);
+        assertEq(auctionKicker,                                             state_.kicker);
+        assertGe(lockedBonds,                                               auctionBondSize);
+        assertEq(auctionBondSize,                                           state_.bondSize);
+        assertEq(auctionBondFactor,                                         state_.bondFactor);
+        assertEq(auctionKickTime,                                           state_.kickTime);
+        assertEq(auctionKickMomp,                                           state_.kickMomp);
+        assertEq(auctionTotalBondEscrowed,                                  state_.totalBondEscrowed);
+        assertEq(auctionDebtInAuction,                                      state_.debtInAuction);
+        assertEq(auctionNeutralPrice,                                       state_.neutralPrice);
+        assertEq(borrowerThresholdPrice,                                    state_.thresholdPrice);
+        assertEq(Auctions._auctionPrice(
+            auctionKickMomp,
+            auctionKickTime
+        ),                                                                   state_.auctionPrice);
     }
 
     function _assertPool(PoolState memory state_) internal {
@@ -454,7 +463,7 @@ abstract contract DSTestPlus is Test {
 
         assertEq(debt,        borrowerDebt);
         assertEq(col,         borrowerCollateral);
-        assertEq(t0Np,  borrowert0Np);
+        assertEq(t0Np,        borrowert0Np);
         assertEq(
             PoolUtils.collateralization(
                 borrowerDebt,
@@ -794,16 +803,6 @@ abstract contract DSTestPlus is Test {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('AuctionNotCleared()'));
-        _pool.removeCollateral(amount, index);
-    }
-
-    function _assertRemoveCollateralInsufficientLPsRevert(
-        address from,
-        uint256 amount,
-        uint256 index
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.InsufficientLPs.selector);
         _pool.removeCollateral(amount, index);
     }
 
