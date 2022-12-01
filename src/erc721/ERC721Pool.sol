@@ -65,19 +65,34 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256[] calldata tokenIdsToPledge_
     ) external {
         PoolState memory poolState = _accruePoolInterest();
-        uint256 lup = _lup(poolState.accruedDebt);
+        Loans.Borrower memory borrower = loans.getBorrowerInfo(msg.sender);
 
         if (tokenIdsToPledge_.length != 0) {
-            _pledgeCollateral(poolState, borrower_, Maths.wad(tokenIdsToPledge_.length));
+            (poolState, borrower) = _pledgeCollateral(poolState, borrower, borrower_, Maths.wad(tokenIdsToPledge_.length));
 
             // move collateral from sender to pool
             _transferFromSenderToPool(borrowerTokenIds[borrower_], tokenIdsToPledge_);
         }
+        
         if (amountToBorrow_ != 0 || limitIndex_ != 0) {
-            lup = _borrow(poolState, amountToBorrow_, limitIndex_);
+            (poolState, borrower) = _borrow(poolState, borrower, amountToBorrow_, limitIndex_);
         }
 
+        uint256 lup = _lup(poolState.accruedDebt);
         emit DrawDebtNFT(borrower_, amountToBorrow_, tokenIdsToPledge_, lup);
+
+        loans.update(
+            deposits,
+            msg.sender,
+            true,
+            borrower,
+            poolState.accruedDebt,
+            poolState.inflator,
+            poolState.rate,
+            lup
+        );
+
+        _updateInterestParams(poolState, lup);
     }
 
     function pullCollateral(

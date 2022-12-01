@@ -6,6 +6,8 @@ import './interfaces/IERC20Pool.sol';
 import './interfaces/IERC20Taker.sol';
 import '../base/FlashloanablePool.sol';
 
+// import '@std/console.sol';
+
 contract ERC20Pool is IERC20Pool, FlashloanablePool {
     using Auctions for Auctions.Data;
     using Buckets  for mapping(uint256 => Buckets.Bucket);
@@ -52,11 +54,11 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         uint256 collateralToPledge_
     ) external {
         PoolState memory poolState = _accruePoolInterest();
-        uint256 lup = _lup(poolState.accruedDebt);
+        Loans.Borrower memory borrower = loans.getBorrowerInfo(msg.sender);
 
         // pledge collateral to pool
         if (collateralToPledge_ != 0) {
-            _pledgeCollateral(poolState, borrower_, collateralToPledge_);
+            (poolState, borrower) = _pledgeCollateral(poolState, borrower, borrower_, collateralToPledge_);
 
             // move collateral from sender to pool
             _transferCollateralFrom(msg.sender, collateralToPledge_);
@@ -65,10 +67,26 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         // borrow against pledged collateral
         // check both values to enable an intentional 0 borrow loan call to update borrower's loan state
         if (amountToBorrow_ != 0 || limitIndex_ != 0) {
-            lup = _borrow(poolState, amountToBorrow_, limitIndex_);
+            (poolState, borrower) = _borrow(poolState, borrower, amountToBorrow_, limitIndex_);
         }
 
+        uint256 lup = _lup(poolState.accruedDebt);
         emit DrawDebt(borrower_, amountToBorrow_, collateralToPledge_, lup);
+
+        // update loan state
+        loans.update(
+            deposits,
+            msg.sender,
+            true,
+            borrower,
+            poolState.accruedDebt,
+            poolState.inflator,
+            poolState.rate,
+            lup
+        );
+
+        // update pool global interest rate state
+        _updateInterestParams(poolState, lup);
     }
 
     function pullCollateral(
