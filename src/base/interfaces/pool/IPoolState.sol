@@ -10,22 +10,23 @@ interface IPoolState {
     /**
      *  @notice Returns details of an auction for a given borrower address.
      *  @param  borrower          Address of the borrower that is liquidated.
-     *  @return kicker            Address that initiated the auction (kicker).
+     *  @return kicker            Address of the kicker that is kicking the auction.
      *  @return bondFactor        The factor used for calculating bond size.
+     *  @return bondSize          The bond amount in quote token terms.
      *  @return kickTime          Time the liquidation was initiated.
      *  @return kickPrice         Highest Price Bucket at time of liquidation.
      *  @return neutralPrice      Neutral Price of auction.
-     *  @return prev              The address of previous borrower in auctions queue.
-     *  @return next              The address of next borrower in auctions queue.
      */
-    function auctionInfo(address borrower) external view returns (
+    function auctionInfo(address borrower)
+    external
+    view
+    returns (
         address kicker,
         uint256 bondFactor,
+        uint256 bondSize,
         uint256 kickTime,
         uint256 kickPrice,
-        uint256 neutralPrice,
-        address prev,
-        address next
+        uint256 neutralPrice
     );
 
     /**
