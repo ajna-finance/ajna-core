@@ -5,6 +5,7 @@ import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
 import './Maths.sol';
+import './Deposits.sol';
 
 /**
     @dev https://stackoverflow.com/questions/42738640/division-in-ethereum-solidity
@@ -133,6 +134,76 @@ library BucketMath {
     function lenderInterestMargin(
         uint256 mau_
     ) external pure returns (uint256) {
+        // TODO: Consider pre-calculating and storing a conversion table in a library or shared contract.
+        // cubic root of the percentage of meaningful unutilized deposit
+        uint256 base = 1000000 * 1e18 - Maths.wmul(Maths.min(mau_, 1e18), 1000000 * 1e18);
+        if (base < 1e18) {
+            return 1e18;
+        } else {
+            uint256 crpud = PRBMathUD60x18.pow(base, ONE_THIRD);
+            return 1e18 - Maths.wmul(Maths.wdiv(crpud, CUBIC_ROOT_1000000), 0.15 * 1e18);
+        }
+    }
+
+    function accrueInterest(
+        Deposits.Data storage deposits,
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 htp_,
+        uint256 pendingInterestFactor_
+    ) external {
+        uint256 htpIndex = (htp_ != 0) ? _priceToIndex(htp_) : 4_156; // if HTP is 0 then accrue interest at max index (min price)
+        uint256 depositAboveHtp = Deposits.prefixSum(deposits, htpIndex);
+
+        if (depositAboveHtp != 0) {
+            uint256 utilization = _utilization(deposits, debt_, collateral_);
+            uint256 netInterestMargin = _lenderInterestMargin(utilization);
+            uint256 newInterest       = Maths.wmul(netInterestMargin, Maths.wmul(pendingInterestFactor_ - Maths.WAD, debt_));
+
+            uint256 lenderFactor = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;
+            Deposits.mult(deposits, htpIndex, lenderFactor);
+        }
+    }
+
+    function _utilization(
+        Deposits.Data storage deposits,
+        uint256 debt_,
+        uint256 collateral_
+    ) internal view returns (uint256 utilization_) {
+        if (collateral_ != 0) {
+            uint256 ptp = Maths.wdiv(debt_, collateral_);
+
+            if (ptp != 0) {
+                uint256 depositAbove = Deposits.prefixSum(deposits, _priceToIndex(ptp));
+
+                if (depositAbove != 0) utilization_ = Maths.wdiv(
+                    debt_,
+                    depositAbove
+                );
+            }
+        }
+    }
+
+    function _priceToIndex(
+        uint256 price_
+    ) internal pure returns (uint256) {
+        require(price_ >= MIN_PRICE && price_ <= MAX_PRICE, "BM:PTI:OOB");
+
+        int256 index = PRBMathSD59x18.div(
+            PRBMathSD59x18.log2(int256(price_)),
+            PRBMathSD59x18.log2(FLOAT_STEP_INT)
+        );
+
+        int256 ceilIndex = PRBMathSD59x18.ceil(index);
+        if (index < 0 && ceilIndex - index > 0.5 * 1e18) {
+            return uint256(7067 - PRBMathSD59x18.toInt(ceilIndex));
+        }
+        return uint256(4156 - PRBMathSD59x18.toInt(ceilIndex));
+    }
+
+    function _lenderInterestMargin(
+        uint256 mau_
+    ) internal pure returns (uint256) {
         // TODO: Consider pre-calculating and storing a conversion table in a library or shared contract.
         // cubic root of the percentage of meaningful unutilized deposit
         uint256 base = 1000000 * 1e18 - Maths.wmul(Maths.min(mau_, 1e18), 1000000 * 1e18);

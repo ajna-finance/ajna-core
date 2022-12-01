@@ -441,13 +441,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         ) revert BorrowerOk();
  
         // kick auction
-        uint256 mompIndex = deposits.findIndexOfSum(Maths.wdiv(poolState.accruedDebt, loans.noOfLoans() * 1e18));
         (uint256 kickAuctionAmount, uint256 bondSize) = Auctions.kick(
             auctions,
             borrowerAddress_,
             borrowerDebt,
             borrowerDebt * Maths.WAD / borrower.collateral,
-            mompIndex,
+            deposits.findIndexOfSum(Maths.wdiv(poolState.accruedDebt, loans.noOfLoans() * 1e18)),
             Maths.wmul(borrower.t0Np, poolState.inflator)
         );
 
@@ -719,7 +718,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 poolState_.inflator = Maths.wmul(poolState_.inflator, factor);
 
                 // Scale the fenwick tree to update amount of debt owed to lenders
-                deposits.accrueInterest(
+                BucketMath.accrueInterest(
+                    deposits,
                     poolState_.accruedDebt,
                     poolState_.collateral,
                     _htp(poolState_.inflator),

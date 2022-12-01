@@ -23,25 +23,6 @@ library Deposits {
         uint256[8193] scaling; // Array of values which scale (multiply) the FenwickTree accross indexes.
     }
 
-    function accrueInterest(
-        Data storage self,
-        uint256 debt_,
-        uint256 collateral_,
-        uint256 htp_,
-        uint256 pendingInterestFactor_
-    ) internal {
-        uint256 htpIndex = (htp_ != 0) ? PoolUtils.priceToIndex(htp_) : 4_156; // if HTP is 0 then accrue interest at max index (min price)
-        uint256 depositAboveHtp = prefixSum(self, htpIndex);
-
-        if (depositAboveHtp != 0) {
-            uint256 netInterestMargin = BucketMath.lenderInterestMargin(utilization(self, debt_, collateral_));
-            uint256 newInterest       = Maths.wmul(netInterestMargin, Maths.wmul(pendingInterestFactor_ - Maths.WAD, debt_));
-
-            uint256 lenderFactor = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;
-            mult(self, htpIndex, lenderFactor);
-        }
-    }
-
     function utilization(
         Data storage self,
         uint256 debt_,
