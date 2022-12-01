@@ -141,6 +141,10 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         // update pool global interest rate state
         _updateInterestParams(poolState, newLup);
+
+        // if (poolState.accruedDebt != 0) {
+        //     _updateInterestParams(poolState, newLup);
+        // }
     }
 
     function pullCollateral(
