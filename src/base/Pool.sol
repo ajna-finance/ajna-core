@@ -713,19 +713,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             poolState_.isNewInterestAccrued = elapsed != 0;
 
             if (poolState_.isNewInterestAccrued) {
-                // Scale the borrower inflator to update amount of interest owed by borrowers
-                uint256 factor = BucketMath.pendingInterestFactor(poolState_.rate, elapsed);
-                poolState_.inflator = Maths.wmul(poolState_.inflator, factor);
-
-                // Scale the fenwick tree to update amount of debt owed to lenders
-                BucketMath.accrueInterest(
+                poolState_.inflator = BucketMath.accrueInterest(
                     deposits,
                     poolState_.accruedDebt,
                     poolState_.collateral,
-                    _htp(poolState_.inflator),
-                    factor
+                    loans.getMax().thresholdPrice,
+                    poolState_.inflator,
+                    poolState_.rate,
+                    elapsed
                 );
-
                 // After debt owed to lenders has accrued, calculate current debt owed by borrowers
                 poolState_.accruedDebt = Maths.wmul(t0Debt, poolState_.inflator);
             }
@@ -752,7 +748,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             // update pool interest rate
             if (poolState_.accruedDebt != 0) {                
                 int256 mau = int256(                                       // meaningful actual utilization                   
-                    deposits.utilization(
+                    BucketMath.utilization(
+                        deposits,
                         poolState_.accruedDebt,
                         poolState_.collateral
                     )
@@ -880,7 +877,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 debt_,
         uint256 collateral_
     ) external view override returns (uint256) {
-        return deposits.utilization(debt_, collateral_);
+        return BucketMath.utilization(deposits, debt_, collateral_);
     }
 
     function emasInfo() external view override returns (uint256, uint256) {

@@ -149,38 +149,29 @@ library BucketMath {
         Deposits.Data storage deposits,
         uint256 debt_,
         uint256 collateral_,
-        uint256 htp_,
-        uint256 pendingInterestFactor_
-    ) external {
-        uint256 htpIndex = (htp_ != 0) ? _priceToIndex(htp_) : 4_156; // if HTP is 0 then accrue interest at max index (min price)
+        uint256 thresholdPrice_,
+        uint256 inflator_,
+        uint256 interestRate_,
+        uint256 elapsed_
+    ) external returns (uint256 newInflator_) {
+        // Scale the borrower inflator to update amount of interest owed by borrowers
+        uint256 pendingInterestFactor = PRBMathUD60x18.exp((interestRate_ * elapsed_) / 365 days);
+        newInflator_ = Maths.wmul(inflator_, pendingInterestFactor);
+
+        uint256 htp = Maths.wmul(thresholdPrice_, newInflator_);
+        uint256 htpIndex = (htp != 0) ? _priceToIndex(htp) : 4_156; // if HTP is 0 then accrue interest at max index (min price)
+
+        // Scale the fenwick tree to update amount of debt owed to lenders
         uint256 depositAboveHtp = Deposits.prefixSum(deposits, htpIndex);
 
         if (depositAboveHtp != 0) {
-            uint256 utilization = _utilization(deposits, debt_, collateral_);
-            uint256 netInterestMargin = _lenderInterestMargin(utilization);
-            uint256 newInterest       = Maths.wmul(netInterestMargin, Maths.wmul(pendingInterestFactor_ - Maths.WAD, debt_));
+            uint256 newInterest = Maths.wmul(
+                _lenderInterestMargin(deposits, debt_, collateral_),
+                Maths.wmul(pendingInterestFactor - Maths.WAD, debt_)
+            );
 
             uint256 lenderFactor = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;
             Deposits.mult(deposits, htpIndex, lenderFactor);
-        }
-    }
-
-    function _utilization(
-        Deposits.Data storage deposits,
-        uint256 debt_,
-        uint256 collateral_
-    ) internal view returns (uint256 utilization_) {
-        if (collateral_ != 0) {
-            uint256 ptp = Maths.wdiv(debt_, collateral_);
-
-            if (ptp != 0) {
-                uint256 depositAbove = Deposits.prefixSum(deposits, _priceToIndex(ptp));
-
-                if (depositAbove != 0) utilization_ = Maths.wdiv(
-                    debt_,
-                    depositAbove
-                );
-            }
         }
     }
 
@@ -202,16 +193,52 @@ library BucketMath {
     }
 
     function _lenderInterestMargin(
-        uint256 mau_
-    ) internal pure returns (uint256) {
+        Deposits.Data storage deposits,
+        uint256 debt_,
+        uint256 collateral_
+    ) internal view returns (uint256) {
+
+        uint256 mau;
+        if (collateral_ != 0) {
+            uint256 ptp = Maths.wdiv(debt_, collateral_);
+
+            if (ptp != 0) {
+                uint256 depositAbove = Deposits.prefixSum(deposits, _priceToIndex(ptp));
+
+                if (depositAbove != 0) mau = Maths.wdiv(
+                    debt_,
+                    depositAbove
+                );
+            }
+        }
+
         // TODO: Consider pre-calculating and storing a conversion table in a library or shared contract.
         // cubic root of the percentage of meaningful unutilized deposit
-        uint256 base = 1000000 * 1e18 - Maths.wmul(Maths.min(mau_, 1e18), 1000000 * 1e18);
+        uint256 base = 1000000 * 1e18 - Maths.wmul(Maths.min(mau, 1e18), 1000000 * 1e18);
         if (base < 1e18) {
             return 1e18;
         } else {
             uint256 crpud = PRBMathUD60x18.pow(base, ONE_THIRD);
             return 1e18 - Maths.wmul(Maths.wdiv(crpud, CUBIC_ROOT_1000000), 0.15 * 1e18);
+        }
+    }
+
+    function utilization(
+        Deposits.Data storage deposits,
+        uint256 debt_,
+        uint256 collateral_
+    ) external view returns (uint256 utilization_) {
+        if (collateral_ != 0) {
+            uint256 ptp = Maths.wdiv(debt_, collateral_);
+
+            if (ptp != 0) {
+                uint256 depositAbove = Deposits.prefixSum(deposits, _priceToIndex(ptp));
+
+                if (depositAbove != 0) utilization_ = Maths.wdiv(
+                    debt_,
+                    depositAbove
+                );
+            }
         }
     }
 

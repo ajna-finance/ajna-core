@@ -23,25 +23,6 @@ library Deposits {
         uint256[8193] scaling; // Array of values which scale (multiply) the FenwickTree accross indexes.
     }
 
-    function utilization(
-        Data storage self,
-        uint256 debt_,
-        uint256 collateral_
-    ) internal view returns (uint256 utilization_) {
-        if (collateral_ != 0) {
-            uint256 ptp = Maths.wdiv(debt_, collateral_);
-
-            if (ptp != 0) {
-                uint256 depositAbove = prefixSum(self, PoolUtils.priceToIndex(ptp));
-
-                if (depositAbove != 0) utilization_ = Maths.wdiv(
-                    debt_,
-                    depositAbove
-                );
-            }
-        }
-    }
-
     /**
      *  @notice increase a value in the FenwickTree at an index.
      *  @dev    Starts at leaf/target and moved up towards root
