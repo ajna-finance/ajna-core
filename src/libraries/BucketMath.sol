@@ -160,8 +160,8 @@ library BucketMath {
         uint256 elapsed_
     ) external returns (uint256 newInflator_) {
         // Scale the borrower inflator to update amount of interest owed by borrowers
-        uint256 pendingInterestFactor = PRBMathUD60x18.exp((interestRate_ * elapsed_) / 365 days);
-        newInflator_ = Maths.wmul(inflator_, pendingInterestFactor);
+        uint256 pendingFactor = PRBMathUD60x18.exp((interestRate_ * elapsed_) / 365 days);
+        newInflator_ = Maths.wmul(inflator_, pendingFactor);
 
         uint256 htp = Maths.wmul(thresholdPrice_, newInflator_);
         uint256 htpIndex = (htp != 0) ? _priceToIndex(htp) : 7_388; // if HTP is 0 then accrue interest at max index (min price)
@@ -172,7 +172,7 @@ library BucketMath {
         if (depositAboveHtp != 0) {
             uint256 newInterest = Maths.wmul(
                 _lenderInterestMargin(deposits, debt_, collateral_),
-                Maths.wmul(pendingInterestFactor - Maths.WAD, debt_)
+                Maths.wmul(pendingFactor - Maths.WAD, debt_)
             );
 
             uint256 lenderFactor = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;
