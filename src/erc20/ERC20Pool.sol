@@ -58,7 +58,6 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         // pledge collateral to pool
         if (collateralToPledge_ != 0) {
-            // (poolState, borrower) = _pledgeCollateral(poolState, borrower, borrower_, collateralToPledge_);
 
             borrower.collateral  += collateralToPledge_;
             poolState.collateral += collateralToPledge_;
@@ -90,7 +89,39 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         // check both values to enable an intentional 0 borrow loan call to update borrower's loan state
         if (amountToBorrow_ != 0 || limitIndex_ != 0) {
 
-            (poolState, borrower) = _borrow(poolState, borrower, amountToBorrow_, limitIndex_);
+            auctions.revertIfActive(msg.sender);
+
+            uint256 borrowerDebt = Maths.wmul(borrower.t0debt, poolState.inflator);
+
+            // add origination fee to the amount to borrow and add to borrower's debt
+            uint256 debtChange   = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate) + Maths.WAD);
+            borrowerDebt += debtChange;
+            _checkMinDebt(poolState.accruedDebt, borrowerDebt);
+
+            // determine new lup index and revert if borrow happens at a price higher than the specified limit (lower index than lup index)
+            uint256 lupId = _lupIndex(poolState.accruedDebt + amountToBorrow_);
+            if (lupId > limitIndex_) revert LimitIndexReached();
+
+            // calculate new lup and check borrow action won't push borrower into a state of under-collateralization
+            uint256 newLup_ = PoolUtils.indexToPrice(lupId);
+            if (
+                !_isCollateralized(borrowerDebt, borrower.collateral, newLup_)
+            ) revert BorrowerUnderCollateralized();
+
+            // check borrow won't push pool into a state of under-collateralization
+            poolState.accruedDebt += debtChange;
+            if (
+                !_isCollateralized(poolState.accruedDebt, poolState.collateral, newLup_)
+            ) revert PoolUnderCollateralized();
+
+            uint256 t0debtChange = Maths.wdiv(debtChange, poolState.inflator);
+            borrower.t0debt += t0debtChange;
+
+            t0poolDebt += t0debtChange;
+
+            // move borrowed amount from pool to sender
+            _transferQuoteToken(msg.sender, amountToBorrow_);
+
         }
 
         uint256 lup = _lup(poolState.accruedDebt);
