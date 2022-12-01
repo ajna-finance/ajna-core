@@ -9,6 +9,7 @@ import 'src/erc20/ERC20Pool.sol';
 import 'src/base/interfaces/pool/IPoolErrors.sol';
 
 import 'src/libraries/BucketMath.sol';
+import './IERC20Merged.sol';
 
 contract ERC20PoolMulticallTest is ERC20HelperContract {
 
@@ -56,7 +57,7 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
         emit AddQuoteToken(_lender, 2552, 10_000 * 1e18, BucketMath.MAX_PRICE);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_lender, address(_pool), 10_000 * 1e18);                
-        ERC20Pool(address(_pool)).multicall(callsToExecute);
+        IERC20PoolMerged(address(_pool)).multicall(callsToExecute);
 
 
         _assertPoolPrices(
@@ -143,7 +144,7 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
 
         changePrank(_lender);
         vm.expectRevert(IPoolErrors.LimitIndexReached.selector);
-        ERC20Pool(address(_pool)).multicall(callsToExecute);
+        IERC20PoolMerged(address(_pool)).multicall(callsToExecute);
     }
 
 

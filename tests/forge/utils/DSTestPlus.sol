@@ -9,9 +9,14 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import 'src/base/interfaces/IPool.sol';
+import 'src/base/interfaces/IERC3156FlashLender.sol';
+import 'src/erc20/interfaces/IERC20Pool.sol';
 import 'src/base/PoolInfoUtils.sol';
+import 'src/base/interfaces/IERC3156FlashBorrower.sol';
 
 import 'src/libraries/Maths.sol';
+
+import '../ERC20Pool/IERC20Merged.sol';
 
 abstract contract DSTestPlus is Test {
 
@@ -42,9 +47,9 @@ abstract contract DSTestPlus is Test {
     event ReserveAuction(uint256 claimableReservesRemaining_, uint256 auctionPrice_);
     event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
 
-    IPool         internal _pool;
-    PoolInfoUtils internal _poolUtils;
-    uint256       internal _startTime;
+    IERC20PoolMerged         internal _pool;
+    PoolInfoUtils            internal _poolUtils;
+    uint256                  internal _startTime;
 
     uint256 internal _p1505_26  = 1_505.263728469068226832 * 1e18;
     uint256 internal _p9_91     = 9.917184843435912074 * 1e18;

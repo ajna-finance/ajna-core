@@ -6,9 +6,10 @@ import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
 import 'src/erc20/ERC20Pool.sol';
 import 'src/erc20/ERC20PoolFactory.sol';
+import './IERC20Merged.sol';
 
 contract ERC20PoolFactoryTest is ERC20HelperContract {
-    address immutable poolAddress = 0x918ebA623C6291984Eeea4EE07335c3DDa03c0d3;
+    address immutable poolAddress = 0x552c07AdD97DAB975A71F63dFdee3C57ECE09bf3;
 
     ERC20PoolFactory internal _poolFactory;
 
@@ -82,7 +83,7 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
 
         vm.expectEmit(true, true, false, true);
         emit PoolCreated(poolAddress);
-        ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(address(_collateral), address(_quote), 0.0543 * 10**18));
+        IERC20PoolMerged pool = IERC20PoolMerged(_poolFactory.deployPool(address(_collateral), address(_quote), 0.0543 * 10**18));
 
         assertEq(address(pool),             poolAddress);
         assertEq(pool.collateralAddress(),  address(_collateral));
@@ -104,7 +105,7 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         address daiAddress  = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
         vm.expectEmit(true, true, false, true);
         emit PoolCreated(poolAddress);
-        ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(compAddress, daiAddress, 0.0543 * 10**18));
+        IERC20PoolMerged pool = IERC20PoolMerged(_poolFactory.deployPool(compAddress, daiAddress, 0.0543 * 10**18));
 
         assertEq(address(pool),             poolAddress);
         assertEq(pool.collateralAddress(),  compAddress);
@@ -126,7 +127,7 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         address daiAddress  = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
         vm.expectEmit(true, true, false, true);
         emit PoolCreated(poolAddress);
-        ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(wbtcAddress, daiAddress, 0.0543 * 10**18));
+        IERC20PoolMerged pool = IERC20PoolMerged(_poolFactory.deployPool(wbtcAddress, daiAddress, 0.0543 * 10**18));
 
         assertEq(address(pool),             poolAddress);
         assertEq(pool.collateralAddress(),  wbtcAddress);
@@ -148,7 +149,7 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         address usdcAddress = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
         vm.expectEmit(true, true, false, true);
         emit PoolCreated(poolAddress);
-        ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(wbtcAddress, usdcAddress, 0.0543 * 10**18));
+        IERC20PoolMerged pool = IERC20PoolMerged(_poolFactory.deployPool(wbtcAddress, usdcAddress, 0.0543 * 10**18));
 
         assertEq(address(pool),             poolAddress);
         assertEq(pool.collateralAddress(),  wbtcAddress);
@@ -170,7 +171,7 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         address usdcAddress = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
         vm.expectEmit(true, true, false, true);
         emit PoolCreated(poolAddress);
-        ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(compAddress, usdcAddress, 0.0543 * 10**18));
+        IERC20PoolMerged pool = IERC20PoolMerged(_poolFactory.deployPool(compAddress, usdcAddress, 0.0543 * 10**18));
 
         assertEq(address(pool),             poolAddress);
         assertEq(pool.collateralAddress(),  compAddress);

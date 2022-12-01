@@ -10,6 +10,10 @@ import { Token }      from '../utils/Tokens.sol';
 import { ERC20Pool }        from 'src/erc20/ERC20Pool.sol';
 import { ERC20PoolFactory } from 'src/erc20/ERC20PoolFactory.sol';
 
+import 'src/base/interfaces/IERC3156FlashLender.sol';
+import 'src/erc20/interfaces/IERC20Pool.sol';
+import './IERC20Merged.sol';
+
 import 'src/base/interfaces/IPool.sol';
 import 'src/base/interfaces/IPoolFactory.sol';
 import 'src/base/PoolInfoUtils.sol';
@@ -371,7 +375,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"));
         _collateral = new Token("Collateral", "C");
         _quote      = new Token("Quote", "Q");
-        _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
+        _pool       = IERC20PoolMerged(address(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18)));
         _poolUtils  = new PoolInfoUtils();
         _startTime  = block.timestamp;
     }

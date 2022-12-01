@@ -45,17 +45,6 @@ interface IPoolLenderActions {
     ) external returns (uint256 lpbAmountFrom, uint256 lpbAmountTo);
 
     /**
-     *  @notice Called by lenders to claim unencumbered collateral from a price bucket.
-     *  @param  amount   The amount of unencumbered collateral (or the number of NFT tokens) to claim.
-     *  @param  index    The bucket index from which unencumbered collateral will be removed.
-     *  @return lpAmount The amount of LP used for removing collateral amount.
-     */
-    function removeCollateral(
-        uint256 amount,
-        uint256 index
-    ) external returns (uint256 lpAmount);
-
-    /**
      *  @notice Called by lenders to remove an amount of credit at a specified price bucket.
      *  @param  maxAmount        The max amount of quote token to be removed by a lender.
      *  @param  index            The bucket index from which quote tokens will be removed.
@@ -79,4 +68,9 @@ interface IPoolLenderActions {
         address newOwner,
         uint256[] calldata indexes
     ) external;
+
+    /**
+     *  @notice Called by kickers to withdraw their auction bonds (the amount of quote tokens that are not locked in active auctions).
+     */
+    function withdrawBonds() external;
 }

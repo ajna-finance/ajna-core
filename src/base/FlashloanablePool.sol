@@ -3,8 +3,10 @@
 pragma solidity 0.8.14;
 
 import '../base/Pool.sol';
+import '../base/interfaces/IERC3156FlashBorrower.sol';
+import '../base/interfaces/IERC3156FlashLender.sol';
 
-abstract contract FlashloanablePool is Pool {
+contract FlashloanablePool is Pool, IERC3156FlashLender {
     function flashLoan(
         IERC3156FlashBorrower receiver_,
         address token_,

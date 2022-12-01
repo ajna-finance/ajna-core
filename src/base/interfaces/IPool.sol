@@ -3,30 +3,26 @@
 pragma solidity 0.8.14;
 
 import './pool/IPoolLenderActions.sol';
-import './pool/IPoolBorrowerActions.sol';
-import './pool/IPoolLiquidationActions.sol';
 import './pool/IPoolReserveAuctionActions.sol';
 import './pool/IPoolImmutables.sol';
 import './pool/IPoolState.sol';
 import './pool/IPoolDerivedState.sol';
 import './pool/IPoolEvents.sol';
 import './pool/IPoolErrors.sol';
-import './IERC3156FlashLender.sol';
+import './pool/IPoolStateInfo.sol';
 
 /**
  * @title Base Pool
  */
 interface IPool is
     IPoolLenderActions,
-    IPoolBorrowerActions,
-    IPoolLiquidationActions,
     IPoolReserveAuctionActions,
     IPoolImmutables,
     IPoolState,
     IPoolDerivedState,
     IPoolEvents,
     IPoolErrors,
-    IERC3156FlashLender
+    IPoolStateInfo
 {
 
 }
