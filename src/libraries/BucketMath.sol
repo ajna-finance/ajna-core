@@ -208,9 +208,11 @@ library BucketMath {
 
         int256 ceilIndex = PRBMathSD59x18.ceil(index);
         if (index < 0 && ceilIndex - index > 0.5 * 1e18) {
-            return uint256(7067 - PRBMathSD59x18.toInt(ceilIndex));
+            int256 bucketIndex = PRBMathSD59x18.toInt(ceilIndex) - 1;
+            return uint256(7388 - (bucketIndex + 3232));
         }
-        return uint256(4156 - PRBMathSD59x18.toInt(ceilIndex));
+        int256 bucketIndex = PRBMathSD59x18.toInt(ceilIndex);
+        return uint256(7388 - (bucketIndex + 3232));
     }
 
     function _lenderInterestMargin(

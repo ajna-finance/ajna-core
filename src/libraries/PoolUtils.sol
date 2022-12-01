@@ -48,10 +48,4 @@ library PoolUtils {
         return BucketMath.indexToPrice(bucketIndex);
     }
 
-    function priceToIndex(
-        uint256 price_
-    ) internal pure returns (uint256) {
-        return uint256(7388 - (BucketMath.priceToIndex(price_) + 3232));
-    }
-
 }

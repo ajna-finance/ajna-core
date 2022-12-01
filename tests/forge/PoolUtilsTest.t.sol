@@ -103,33 +103,33 @@ contract PoolUtilsTest is DSTestPlus {
      */
     function testPriceToIndex() external {
 
-        assertEq(PoolUtils.priceToIndex(1_004_968_987.606512354182109771 * 10**18), 0);
+        assertEq(BucketMath._priceToIndex(1_004_968_987.606512354182109771 * 10**18), 0);
 
-        assertEq(PoolUtils.priceToIndex(99_836_282_890),                            7388);
+        assertEq(BucketMath._priceToIndex(99_836_282_890),                            7388);
 
-        assertEq(PoolUtils.priceToIndex(49_910.043670274810022205 * 1e18),          1987);
+        assertEq(BucketMath._priceToIndex(49_910.043670274810022205 * 1e18),          1987);
 
-        assertEq(PoolUtils.priceToIndex(2_000.221618840727700609 * 1e18),           2632);
+        assertEq(BucketMath._priceToIndex(2_000.221618840727700609 * 1e18),           2632);
 
-        assertEq(PoolUtils.priceToIndex(146.575625611106531706 * 1e18),             3156);
+        assertEq(BucketMath._priceToIndex(146.575625611106531706 * 1e18),             3156);
 
-        assertEq(PoolUtils.priceToIndex(145.846393642892072537 * 1e18),             3157);
+        assertEq(BucketMath._priceToIndex(145.846393642892072537 * 1e18),             3157);
 
-        assertEq(PoolUtils.priceToIndex(5.263790124045347667 * 1e18),               3823);
+        assertEq(BucketMath._priceToIndex(5.263790124045347667 * 1e18),               3823);
 
-        assertEq(PoolUtils.priceToIndex(1.646668492116543299 * 1e18),               4056);
+        assertEq(BucketMath._priceToIndex(1.646668492116543299 * 1e18),               4056);
 
-        assertEq(PoolUtils.priceToIndex(1.315628874808846999 * 1e18),               4101);
+        assertEq(BucketMath._priceToIndex(1.315628874808846999 * 1e18),               4101);
 
-        assertEq(PoolUtils.priceToIndex(1.051140132040790557 * 1e18),               4146);
+        assertEq(BucketMath._priceToIndex(1.051140132040790557 * 1e18),               4146);
 
-        assertEq(PoolUtils.priceToIndex(0.000046545370002462 * 1e18),               6156);
+        assertEq(BucketMath._priceToIndex(0.000046545370002462 * 1e18),               6156);
 
-        assertEq(PoolUtils.priceToIndex(0.006822416727411372 * 1e18),               5156);
+        assertEq(BucketMath._priceToIndex(0.006822416727411372 * 1e18),               5156);
 
-        assertEq(PoolUtils.priceToIndex(0.006856528811048429 * 1e18),               5155);
+        assertEq(BucketMath._priceToIndex(0.006856528811048429 * 1e18),               5155);
 
-        assertEq(PoolUtils.priceToIndex(0.951347940696068854 * 1e18),               4166);
+        assertEq(BucketMath._priceToIndex(0.951347940696068854 * 1e18),               4166);
         
     }
 
