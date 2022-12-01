@@ -5,7 +5,7 @@ import { ERC20 } from '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
-import { DSTestPlus }                from '../utils/DSTestPlus.sol';
+import { ERC721DSTestPlusBase } from './ERC721DSTestPlusBase.sol';
 import { NFTCollateralToken, Token } from '../utils/Tokens.sol';
 
 import { ERC721Pool }        from 'src/erc721/ERC721Pool.sol';
@@ -19,7 +19,9 @@ import 'src/base/PoolInfoUtils.sol';
 import 'src/libraries/Maths.sol';
 import 'src/libraries/PoolUtils.sol';
 
-abstract contract ERC721DSTestPlus is DSTestPlus {
+import './IERC721Merged.sol';
+
+abstract contract ERC721DSTestPlus is ERC721DSTestPlusBase {
 
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.UintSet;
@@ -368,17 +370,17 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
         vm.makePersistent(address(_poolUtils));
     }
 
-    function _deployCollectionPool() internal returns (ERC721Pool) {
+    function _deployCollectionPool() internal returns (IERC721PoolMerged) {
         _startTime = block.timestamp;
         uint256[] memory tokenIds;
         address contractAddress = new ERC721PoolFactory().deployPool(address(_collateral), address(_quote), tokenIds, 0.05 * 10**18);
         vm.makePersistent(contractAddress);
-        return ERC721Pool(contractAddress);
+        return IERC721PoolMerged(contractAddress);
     }
 
-    function _deploySubsetPool(uint256[] memory subsetTokenIds_) internal returns (ERC721Pool) {
+    function _deploySubsetPool(uint256[] memory subsetTokenIds_) internal returns (IERC721PoolMerged) {
         _startTime = block.timestamp;
-        return ERC721Pool(new ERC721PoolFactory().deployPool(address(_collateral), address(_quote), subsetTokenIds_, 0.05 * 10**18));
+        return IERC721PoolMerged(new ERC721PoolFactory().deployPool(address(_collateral), address(_quote), subsetTokenIds_, 0.05 * 10**18));
     }
 
     function _mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) internal {

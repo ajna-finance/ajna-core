@@ -9,6 +9,8 @@ import { ERC20PoolFactory } from 'src/erc20/ERC20PoolFactory.sol';
 
 import "./BalancerUniswapExample.sol";
 
+import '../ERC20Pool/IERC20Merged.sol';
+
 contract PurchaseQuoteWithExternalLiquidityTest is Test {
     address constant WETH     = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address constant USDC     = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
@@ -17,12 +19,12 @@ contract PurchaseQuoteWithExternalLiquidityTest is Test {
     IWETH  private weth = IWETH(WETH);
     IERC20 private usdc = IERC20(USDC);
 
-    ERC20Pool internal _ajnaPool;
+    IERC20PoolMerged internal _ajnaPool;
     address   internal _lender;
 
     function setUp() external {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"));
-        _ajnaPool = ERC20Pool(new ERC20PoolFactory().deployPool(WETH, USDC, 0.05 * 10**18));
+        _ajnaPool = IERC20PoolMerged(new ERC20PoolFactory().deployPool(WETH, USDC, 0.05 * 10**18));
         _lender   = makeAddr("lender");
 
         deal(USDC, _lender, 120_000 * 1e6);

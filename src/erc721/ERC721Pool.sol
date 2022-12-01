@@ -9,7 +9,7 @@ import './interfaces/IERC721Pool.sol';
 import './interfaces/IERC721Taker.sol';
 import '../base/Storage.sol';
 
-contract ERC721Pool is IERC721Pool, Clone, Storage, ReentrancyGuard {
+contract ERC721Pool is Storage, IERC721Pool, Clone, ReentrancyGuard {
     using Auctions for Auctions.Data;
     using Buckets  for mapping(uint256 => Buckets.Bucket);
     using Deposits for Deposits.Data;
@@ -24,6 +24,7 @@ contract ERC721Pool is IERC721Pool, Clone, Storage, ReentrancyGuard {
     uint256[]                     public bucketTokenIds;   // array of tokenIds added in pool buckets
 
     bool public isSubset; // true if pool is a subset pool
+    address immutable public pool;
 
     struct PoolState {
         uint256 accruedDebt;
@@ -31,6 +32,10 @@ contract ERC721Pool is IERC721Pool, Clone, Storage, ReentrancyGuard {
         bool    isNewInterestAccrued;
         uint256 rate;
         uint256 inflator;
+    }
+
+    constructor (address pool_) { 
+        pool = pool_;
     }
 
 
@@ -794,6 +799,31 @@ contract ERC721Pool is IERC721Pool, Clone, Storage, ReentrancyGuard {
      */
     function onERC721Received(address, address, uint256, bytes memory) external pure returns (bytes4) {
         return this.onERC721Received.selector;
+    }
+
+    /************************/
+    /***     Fallback     ***/
+    /************************/
+
+    fallback() external {
+        address facetAddress = pool;
+        // Execute external function from facet using delegatecall and return any value.
+        assembly {
+            // copy function selector and any arguments
+            calldatacopy(0, 0, calldatasize())
+            // execute function call using the facet
+            let result := delegatecall(gas(), facetAddress, 0, calldatasize(), 0, 0)
+            // get any return value
+            returndatacopy(0, 0, returndatasize())
+            // return any return value or error back to the caller
+            switch result
+                case 0 {
+                    revert(0, returndatasize())
+                }
+                default {
+                    return(0, returndatasize())
+                }
+        }
     }
 
 }

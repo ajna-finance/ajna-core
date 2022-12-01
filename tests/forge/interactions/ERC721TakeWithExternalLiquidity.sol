@@ -12,6 +12,8 @@ import { ERC721PoolFactory }  from 'src/erc721/ERC721PoolFactory.sol';
 import 'src/base/PoolInfoUtils.sol';
 import "./NFTTakeExample.sol";
 
+import '../ERC721Pool/IERC721Merged.sol';
+
 contract ERC721TakeWithExternalLiquidityTest is Test {
     // pool events
     event Take(address indexed borrower, uint256 amount, uint256 collateral, uint256 bondChange, bool isReward);
@@ -20,7 +22,7 @@ contract ERC721TakeWithExternalLiquidityTest is Test {
     IERC20  private  dai  = IERC20(DAI);
     NFTCollateralToken private nftc;
 
-    ERC721Pool internal _ajnaPool;
+    IERC721PoolMerged internal _ajnaPool;
 
     address internal _borrower;
     address internal _borrower2;
@@ -31,7 +33,7 @@ contract ERC721TakeWithExternalLiquidityTest is Test {
         nftc = new NFTCollateralToken();
         vm.makePersistent(address(nftc));
         uint256[] memory tokenIds;
-        _ajnaPool = ERC721Pool(new ERC721PoolFactory().deployPool(address(nftc), DAI, tokenIds, 0.07 * 10**18));
+        _ajnaPool = IERC721PoolMerged(new ERC721PoolFactory().deployPool(address(nftc), DAI, tokenIds, 0.07 * 10**18));
 
         // fund lenders
         _lender = makeAddr("lender");

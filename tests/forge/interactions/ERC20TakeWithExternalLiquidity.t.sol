@@ -12,6 +12,8 @@ import 'src/base/PoolInfoUtils.sol';
 import "./BalancerUniswapExample.sol";
 import "./UniswapTakeExample.sol";
 
+import '../ERC20Pool/IERC20Merged.sol';
+
 contract ERC20TakeWithExternalLiquidityTest is Test {
     // pool events
     event Take(address indexed borrower, uint256 amount, uint256 collateral, uint256 bondChange, bool isReward);
@@ -23,7 +25,7 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
     IWETH  private weth = IWETH(WETH);
     IERC20 private usdc = IERC20(USDC);
 
-    ERC20Pool internal _ajnaPool;
+    IERC20PoolMerged internal _ajnaPool;
 
     address internal _borrower;
     address internal _borrower2;
@@ -33,7 +35,7 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
     function setUp() external {
         // create an Ajna pool
         vm.createSelectFork(vm.envString("ETH_RPC_URL"));
-        _ajnaPool = ERC20Pool(new ERC20PoolFactory().deployPool(WETH, USDC, 0.05 * 10**18));
+        _ajnaPool = IERC20PoolMerged(new ERC20PoolFactory().deployPool(WETH, USDC, 0.05 * 10**18));
 
         // create some lenders and borrowers
         _borrower  = makeAddr("borrower");

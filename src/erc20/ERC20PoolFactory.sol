@@ -7,20 +7,20 @@ import './interfaces/IERC20PoolFactory.sol';
 import '../base/PoolDeployer.sol';
 
 import './ERC20Pool.sol';
-import '../base/Pool.sol';
+import '../base/FlashloanablePool.sol';
 
 contract ERC20PoolFactory is IERC20PoolFactory, PoolDeployer {
 
     using ClonesWithImmutableArgs for address;
 
     ERC20Pool public implementation;
-    Pool public poolImplementation;
+    FlashloanablePool public poolImplementation;
 
     /// @dev Default bytes32 hash used by ERC20 Non-NFTSubset pool types
     bytes32 public constant ERC20_NON_SUBSET_HASH = keccak256("ERC20_NON_SUBSET_HASH");
 
     constructor() {
-        poolImplementation = new Pool();
+        poolImplementation = new FlashloanablePool();
         implementation = new ERC20Pool(address(poolImplementation));
     }
 

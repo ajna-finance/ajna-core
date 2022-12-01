@@ -8,18 +8,21 @@ import '../base/PoolDeployer.sol';
 
 import './interfaces/IERC721PoolFactory.sol';
 import './ERC721Pool.sol';
+import '../base/FlashloanablePool.sol';
 
 contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
 
     using ClonesWithImmutableArgs for address;
 
     ERC721Pool public implementation;
+    FlashloanablePool public poolImplementation;
 
     /// @dev Default bytes32 hash used by ERC721 Non-NFTSubset pool types
     bytes32 public constant ERC721_NON_SUBSET_HASH = keccak256("ERC721_NON_SUBSET_HASH");
 
     constructor() {
-        implementation = new ERC721Pool();
+        poolImplementation = new FlashloanablePool();
+        implementation = new ERC721Pool(address(poolImplementation));
     }
 
     function deployPool(

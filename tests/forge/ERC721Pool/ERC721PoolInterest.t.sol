@@ -7,6 +7,8 @@ import 'src/erc721/ERC721Pool.sol';
 import 'src/libraries/BucketMath.sol';
 import 'src/libraries/PoolUtils.sol';
 
+import './IERC721Merged.sol';
+
 abstract contract ERC721PoolInterestTest is ERC721HelperContract {
     address internal _borrower;
     address internal _borrower2;
@@ -15,7 +17,7 @@ abstract contract ERC721PoolInterestTest is ERC721HelperContract {
     address internal _lender2;
 
     // Called by setUp method to set the _pool which tests will use
-    function createPool() external virtual returns (ERC721Pool);
+    function createPool() external virtual returns (IERC721PoolMerged);
 
     function setUp() external {
         _borrower  = makeAddr("borrower");
@@ -43,7 +45,7 @@ abstract contract ERC721PoolInterestTest is ERC721HelperContract {
 }
 
 contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
-    function createPool() external override returns (ERC721Pool) {
+    function createPool() external override returns (IERC721PoolMerged) {
         // deploy subset pool
         uint256[] memory subsetTokenIds = new uint256[](6);
         subsetTokenIds[0] = 1;

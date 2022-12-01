@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
-import { DSTestPlus } from '../utils/DSTestPlus.sol';
+import { ERC20DSTestPlusBase } from './ERC20DSTestPlusBase.sol';
 import { Token }      from '../utils/Tokens.sol';
 
 import { ERC20Pool }        from 'src/erc20/ERC20Pool.sol';
@@ -20,7 +20,7 @@ import 'src/base/PoolInfoUtils.sol';
 
 import 'src/libraries/Maths.sol';
 
-abstract contract ERC20DSTestPlus is DSTestPlus {
+abstract contract ERC20DSTestPlus is ERC20DSTestPlusBase {
 
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.UintSet;

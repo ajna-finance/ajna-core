@@ -7,16 +7,18 @@ import { NFTCollateralToken, Token } from '../utils/Tokens.sol';
 import 'src/erc721/ERC721Pool.sol';
 import 'src/erc721/ERC721PoolFactory.sol';
 
+import './IERC721Merged.sol';
+
 contract ERC721PoolFactoryTest is ERC721HelperContract {
-    address            internal _NFTCollectionPoolAddress;
-    address            internal _NFTSubsetOnePoolAddress;
-    address            internal _NFTSubsetTwoPoolAddress;
-    ERC721Pool         internal _NFTCollectionPool;
-    ERC721Pool         internal _NFTSubsetOnePool;
-    ERC721Pool         internal _NFTSubsetTwoPool;
-    ERC721PoolFactory  internal _factory;
-    uint256[]          internal _tokenIdsSubsetOne;
-    uint256[]          internal _tokenIdsSubsetTwo;
+    address                   internal _NFTCollectionPoolAddress;
+    address                   internal _NFTSubsetOnePoolAddress;
+    address                   internal _NFTSubsetTwoPoolAddress;
+    IERC721PoolMerged         internal _NFTCollectionPool;
+    IERC721PoolMerged         internal _NFTSubsetOnePool;
+    IERC721PoolMerged         internal _NFTSubsetTwoPool;
+    ERC721PoolFactory         internal _factory;
+    uint256[]                 internal _tokenIdsSubsetOne;
+    uint256[]                 internal _tokenIdsSubsetTwo;
 
     function setUp() external {
         _startTime   = block.timestamp;
@@ -29,7 +31,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         // deploy NFT collection pool
         uint256[] memory tokenIds;
         _NFTCollectionPoolAddress = _factory.deployPool(address(_collateral), address(_quote), tokenIds, 0.05 * 10**18);
-        _NFTCollectionPool        = ERC721Pool(_NFTCollectionPoolAddress);
+        _NFTCollectionPool        = IERC721PoolMerged(_NFTCollectionPoolAddress);
 
         // deploy NFT subset one pool
         _tokenIdsSubsetOne = new uint256[](4);
@@ -39,7 +41,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         _tokenIdsSubsetOne[3] = 61;
 
         _NFTSubsetOnePoolAddress = _factory.deployPool(address(_collateral), address(_quote), _tokenIdsSubsetOne, 0.05 * 10**18);
-        _NFTSubsetOnePool        = ERC721Pool(_NFTSubsetOnePoolAddress);
+        _NFTSubsetOnePool        = IERC721PoolMerged(_NFTSubsetOnePoolAddress);
 
         // deploy NFT subset two pool
         _tokenIdsSubsetTwo = new uint256[](7);
@@ -52,7 +54,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         _tokenIdsSubsetTwo[6] = 180;
 
         _NFTSubsetTwoPoolAddress = _factory.deployPool(address(_collateral), address(_quote), _tokenIdsSubsetTwo, 0.05 * 10**18);
-        _NFTSubsetTwoPool        = ERC721Pool(_NFTSubsetTwoPoolAddress);
+        _NFTSubsetTwoPool        = IERC721PoolMerged(_NFTSubsetTwoPoolAddress);
     }
 
     /***************************/
