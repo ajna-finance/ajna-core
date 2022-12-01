@@ -65,14 +65,14 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256[] calldata tokenIdsToPledge_
     ) external {
         PoolState memory poolState = _accruePoolInterest();
-        Loans.Borrower memory borrower = loans.getBorrowerInfo(msg.sender);
+        Loans.Borrower memory borrower = loans.getBorrowerInfo(borrower_);
+
+        uint256 newLup = _lup(poolState.accruedDebt);
 
         // pledge collateral to pool
         if (tokenIdsToPledge_.length != 0) {
             borrower.collateral  += Maths.wad(tokenIdsToPledge_.length);
             poolState.collateral += Maths.wad(tokenIdsToPledge_.length);
-
-            uint256 newLup = _lup(poolState.accruedDebt);
 
             if (
                 auctions.isActive(borrower_)
@@ -99,7 +99,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         if (amountToBorrow_ != 0 || limitIndex_ != 0) {
 
             // if borrower auctioned then it cannot draw more debt
-            auctions.revertIfActive(msg.sender);
+            auctions.revertIfActive(borrower_);
 
             uint256 borrowerDebt = Maths.wmul(borrower.t0debt, poolState.inflator);
 
@@ -113,15 +113,15 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             if (lupId > limitIndex_) revert LimitIndexReached();
 
             // calculate new lup and check borrow action won't push borrower into a state of under-collateralization
-            uint256 newLup_ = PoolUtils.indexToPrice(lupId);
+            newLup = PoolUtils.indexToPrice(lupId);
             if (
-                !_isCollateralized(borrowerDebt, borrower.collateral, newLup_)
+                !_isCollateralized(borrowerDebt, borrower.collateral, newLup)
             ) revert BorrowerUnderCollateralized();
 
             // check borrow won't push pool into a state of under-collateralization
             poolState.accruedDebt += debtChange;
             if (
-                !_isCollateralized(poolState.accruedDebt, poolState.collateral, newLup_)
+                !_isCollateralized(poolState.accruedDebt, poolState.collateral, newLup)
             ) revert PoolUnderCollateralized();
 
             uint256 t0debtChange = Maths.wdiv(debtChange, poolState.inflator);
@@ -133,21 +133,20 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             _transferQuoteToken(msg.sender, amountToBorrow_);
         }
 
-        uint256 lup = _lup(poolState.accruedDebt);
-        emit DrawDebtNFT(borrower_, amountToBorrow_, tokenIdsToPledge_, lup);
+        emit DrawDebtNFT(borrower_, amountToBorrow_, tokenIdsToPledge_, newLup);
 
         loans.update(
             deposits,
-            msg.sender,
+            borrower_,
             true,
             borrower,
             poolState.accruedDebt,
             poolState.inflator,
             poolState.rate,
-            lup
+            newLup
         );
 
-        _updateInterestParams(poolState, lup);
+        _updateInterestParams(poolState, newLup);
     }
 
     function pullCollateral(
