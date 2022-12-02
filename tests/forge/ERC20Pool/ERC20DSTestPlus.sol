@@ -28,6 +28,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     event AddCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
     event AuctionSettle(address indexed borrower, uint256 collateral);
     event PledgeCollateral(address indexed borrower_, uint256 amount_);
+    event RepayDebt(address indexed borrower, uint256 quoteRepaid, uint256 collateralPulled, uint256 lup);
 
     event Transfer(address indexed from, address indexed to, uint256 value);
 
@@ -225,9 +226,9 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit AuctionSettle(borrower, collateral);
-        vm.expectEmit(true, true, false, true);
-        emit Repay(borrower, newLup, repaid);
         _assertTokenTransferEvent(from, address(_pool), repaid);
+        vm.expectEmit(true, true, false, true);
+        emit RepayDebt(borrower, repaid, 0, newLup);
         ERC20Pool(address(_pool)).repayDebt(borrower, amount, 0);
     }
 
@@ -243,17 +244,16 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
 
         // repay checks
         if (amountToRepay != 0) {
-            vm.expectEmit(true, true, false, true);
-            emit Repay(borrower, newLup, amountRepaid);
             _assertTokenTransferEvent(from, address(_pool), amountRepaid);
         }
 
         // pull checks
         if (collateralToPull != 0) {
-            vm.expectEmit(true, true, false, true);
-            emit PullCollateral(from, collateralToPull);
+            _assertTokenTransferEvent(address(_pool), from, collateralToPull);
         }
 
+        vm.expectEmit(true, true, false, true);
+        emit RepayDebt(borrower, amountRepaid, collateralToPull, newLup);
         ERC20Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull);
     }
 
@@ -273,8 +273,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
 
         // pull checks
         if (collateralToPull != 0) {
-            vm.expectEmit(true, true, false, true);
-            emit PullCollateral(from, collateralToPull);
+            _assertTokenTransferEvent(address(_pool), from, collateralToPull);
         }
 
         ERC20Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull);

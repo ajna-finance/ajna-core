@@ -585,7 +585,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
         (uint256 quoteTokenAmountToRepay, uint256 newLup) = _payLoan(t0repaidDebt, poolState, borrowerAddress_, borrower);
 
-        emit Repay(borrowerAddress_, newLup, quoteTokenAmountToRepay);
         // move amount to repay from sender to pool
         _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToRepay);
     }

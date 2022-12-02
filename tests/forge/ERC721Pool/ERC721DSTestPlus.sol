@@ -37,6 +37,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
     // Pool events
     event AddCollateralNFT(address indexed actor_, uint256 indexed price_, uint256[] tokenIds_);
     event PledgeCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
+    event RepayDebt(address indexed borrower, uint256 quoteRepaid, uint256 collateralPulled, uint256 lup);
 
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
 
@@ -256,8 +257,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
 
         // repay checks
         if (amountToRepay != 0) {
-            vm.expectEmit(true, true, false, true);
-            emit Repay(borrower, newLup, amountRepaid);
             _assertTokenTransferEvent(from, address(_pool), amountRepaid);
         }
 
@@ -272,6 +271,8 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
                 tokenIds[i] = tokenId;
             }
 
+            vm.expectEmit(true, true, false, true);
+            emit RepayDebt(borrower, amountRepaid, collateralToPull, newLup);
             ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull);
 
             // post pull checks
@@ -288,6 +289,8 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         }
         else {
             // only repay, don't pull collateral
+            vm.expectEmit(true, true, false, true);
+            emit RepayDebt(borrower, amountRepaid, collateralToPull, newLup);
             ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull);
         }
     }
