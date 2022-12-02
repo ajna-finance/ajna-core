@@ -544,9 +544,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     function _pullCollateral(
         PoolState      memory poolState,
+        Loans.Borrower memory borrower,
         uint256 collateralAmountToPull_
     ) internal {
-        Loans.Borrower memory borrower  = loans.getBorrowerInfo(msg.sender);
         uint256 borrowerDebt            = Maths.wmul(borrower.t0debt, poolState.inflator);
 
         uint256 curLup = _lup(poolState.accruedDebt);

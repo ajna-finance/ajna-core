@@ -76,12 +76,13 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256 noOfNFTsToPull_
     ) external {
         PoolState memory poolState = _accruePoolInterest();
+        Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
 
         uint256 newLup = _lup(poolState.accruedDebt);
         uint256 quoteTokenAmountToRepay;
 
+        // repay loan
         if (maxQuoteTokenAmountToRepay_ != 0) {
-            Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
             if (borrower.t0debt == 0) revert NoDebt();
 
             uint256 t0repaidDebt = Maths.min(
@@ -96,7 +97,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
         // pull collateral from pool
         if (noOfNFTsToPull_ != 0) {
-            _pullCollateral(poolState, Maths.wad(noOfNFTsToPull_));
+            _pullCollateral(poolState, borrower, Maths.wad(noOfNFTsToPull_));
 
             _transferFromPoolToAddress(msg.sender, borrowerTokenIds[msg.sender], noOfNFTsToPull_);
         }

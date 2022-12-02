@@ -114,9 +114,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         }
         ( , uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
         (uint256 debt, , ) = _pool.debtInfo();
-        emit log_uint(loansCount);
-        emit log_uint(_pool.pledgedCollateral());
-        emit log_uint(debt);
         assertEq(debt, 0);
         assertEq(loansCount, 0);
         assertEq(_pool.pledgedCollateral(), 0);

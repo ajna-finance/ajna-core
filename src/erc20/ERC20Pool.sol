@@ -62,12 +62,13 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         uint256 collateralAmountToPull_
     ) external {
         PoolState memory poolState = _accruePoolInterest();
+        Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
 
         uint256 newLup = _lup(poolState.accruedDebt);
         uint256 quoteTokenAmountToRepay;
 
+        // repay loan
         if (maxQuoteTokenAmountToRepay_ != 0) {
-            Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
             if (borrower.t0debt == 0) revert NoDebt();
 
             uint256 t0repaidDebt = Maths.min(
@@ -82,7 +83,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         // pull collateral from pool
         if (collateralAmountToPull_ != 0) {
-            _pullCollateral(poolState, collateralAmountToPull_);
+            _pullCollateral(poolState, borrower, collateralAmountToPull_);
 
             // move collateral from pool to sender
             _transferCollateral(msg.sender, collateralAmountToPull_);
