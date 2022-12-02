@@ -95,6 +95,59 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         _transferFromSenderToPool(bucketTokenIds, tokenIdsToAdd_);
     }
 
+    function mergeCollateral(
+        fragment[] memory removeAmountAtIndex_,
+        uint256 toIndex_
+    ) external override returns (uint256 bucketLPs_) {
+
+        PoolState memory poolState = _accruePoolInterest();
+        uint256 collateralToMerge;
+        uint256 collateralAmount;
+        uint256 fromIndex;
+        uint256 lpAmount;
+
+        for (uint index = 0; index < removeAmountAtIndex_.length; index++) {
+
+            collateralAmount = removeAmountAtIndex_[index].amount;
+            fromIndex = removeAmountAtIndex_[index].index;
+            if (fromIndex < toIndex_) revert CannotMergeToHigherPrice();
+
+            Buckets.Bucket storage bucket = buckets[fromIndex];
+            if (collateralAmount > bucket.collateral) revert InsufficientCollateral();
+
+            lpAmount = Buckets.collateralToLPs(
+                bucket.collateral,
+                bucket.lps,
+                deposits.valueAt(fromIndex),
+                collateralAmount,
+                PoolUtils.indexToPrice(fromIndex)
+            );
+
+            (uint256 lenderLpBalance, ) = buckets.getLenderInfo(fromIndex, msg.sender);
+            // ensure lender has enough balance to remove collateral amount
+            if (lenderLpBalance == 0 || lpAmount > lenderLpBalance) revert InsufficientLPs();
+
+            Buckets.removeCollateral(
+                bucket,
+                collateralAmount,
+                lpAmount
+            );
+
+            collateralToMerge += collateralAmount;
+        }
+        
+        bucketLPs_ = Buckets.addCollateral(
+            buckets[toIndex_],
+            msg.sender,
+            deposits.valueAt(toIndex_),
+            collateralToMerge,
+            PoolUtils.indexToPrice(toIndex_))
+        ;
+
+        _updateInterestParams(poolState, _lup(poolState.accruedDebt));
+        emit MergeCollateralNFT(msg.sender, toIndex_, collateralToMerge);
+    }
+
     function removeCollateral(
         uint256 noOfNFTsToRemove_,
         uint256 index_

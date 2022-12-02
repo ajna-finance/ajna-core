@@ -44,7 +44,7 @@ library Auctions {
     struct TakeParams {
         uint256 quoteTokenAmount; // The quote token amount that taker should pay for collateral taken.
         uint256 t0repayAmount;    // The amount of debt (quote tokens) that is recovered / repayed by take t0 terms.
-        uint256 collateralAmount;  // The amount of collateral taken.
+        uint256 collateralAmount; // The amount of collateral taken.
         uint256 auctionPrice;     // The price of auction.
         uint256 bucketPrice;      // The bucket price.
         uint256 bondChange;       // The change made on the bond size (beeing reward or penalty).
