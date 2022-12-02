@@ -191,7 +191,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             bucket.collateral,
             bucket.lps,
             deposit,
-            PoolUtils.indexToPrice(index_)
+            price
         );
         removedAmount_ = Maths.rayToWad(Maths.rmul(lenderLPsBalance, exchangeRate));
         uint256 removedAmountBefore = removedAmount_;
