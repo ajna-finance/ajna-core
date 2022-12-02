@@ -7,6 +7,7 @@ from brownie import (
     ERC20Pool,
     Auctions,
     BucketMath,
+    PoolLogic,
     Deposits,
     Maths,
     Loans,
@@ -32,6 +33,7 @@ class AjnaProtocol:
 
         self.bucket_math = BucketMath.deploy({"from": self.deployer})
         self.deposits = Deposits.deploy({"from": self.deployer})
+        self.pool_logic = PoolLogic.deploy({"from": self.deployer})
         self.maths = Maths.deploy({"from": self.deployer})
         self.loans = Loans.deploy({"from": self.deployer})
         self.auctions = Auctions.deploy({"from": self.deployer})

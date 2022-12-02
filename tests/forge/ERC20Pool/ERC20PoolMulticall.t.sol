@@ -45,15 +45,15 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
 
         changePrank(_lender);
         vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(_lender, 2550, 10_000 * 1e18, BucketMath.MAX_PRICE);
+        emit AddQuoteToken(_lender, 2550, 10_000 * 1e18, PoolLogic.MAX_PRICE);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_lender, address(_pool), 10_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(_lender, 2551, 10_000 * 1e18, BucketMath.MAX_PRICE);
+        emit AddQuoteToken(_lender, 2551, 10_000 * 1e18, PoolLogic.MAX_PRICE);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_lender, address(_pool), 10_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(_lender, 2552, 10_000 * 1e18, BucketMath.MAX_PRICE);
+        emit AddQuoteToken(_lender, 2552, 10_000 * 1e18, PoolLogic.MAX_PRICE);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_lender, address(_pool), 10_000 * 1e18);                
         ERC20Pool(address(_pool)).multicall(callsToExecute);
@@ -65,7 +65,7 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
                 htpIndex: 0,
                 hpb:      3_010.892022197881557845 * 1e18,
                 hpbIndex: 2550,
-                lup:      BucketMath.MAX_PRICE,
+                lup:      PoolLogic.MAX_PRICE,
                 lupIndex: 0
             }
         );

@@ -7,7 +7,7 @@ import './interfaces/IPool.sol';
 import '../libraries/Auctions.sol';
 import '../libraries/Buckets.sol';
 import '../libraries/PoolUtils.sol';
-import '../libraries/BucketMath.sol';
+import '../libraries/PoolLogic.sol';
 
 contract PoolInfoUtils {
 
@@ -28,7 +28,7 @@ contract PoolInfoUtils {
         ) = pool.inflatorInfo();
         uint256 interestRate = pool.interestRate();
 
-        uint256 pendingInflator = BucketMath.pendingInflator(poolInflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
+        uint256 pendingInflator = PoolLogic.pendingInflator(poolInflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
         uint256 t0debt;
         (t0debt, collateral_, t0Np_)  = pool.borrowerInfo(borrower_);
         debt_ = Maths.wmul(t0debt, pendingInflator);
@@ -98,8 +98,8 @@ contract PoolInfoUtils {
         ) = pool.inflatorInfo();
         uint256 interestRate = pool.interestRate();
 
-        pendingInflator_       = BucketMath.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
-        pendingInterestFactor_ = BucketMath.pendingInterestFactor(interestRate, block.timestamp - lastInflatorSnapshotUpdate);
+        pendingInflator_       = PoolLogic.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
+        pendingInterestFactor_ = PoolLogic.pendingInterestFactor(interestRate, block.timestamp - lastInflatorSnapshotUpdate);
     }
 
     /**
@@ -223,7 +223,7 @@ contract PoolInfoUtils {
         uint256 poolCollateral = pool.pledgedCollateral();
         uint256 utilization    = pool.depositUtilization(poolDebt, poolCollateral);
 
-        lenderInterestMargin_ = BucketMath.lenderInterestMargin(utilization);
+        lenderInterestMargin_ = PoolLogic.lenderInterestMargin(utilization);
     }
 
     function indexToPrice(

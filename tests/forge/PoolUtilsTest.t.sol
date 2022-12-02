@@ -74,31 +74,6 @@ contract PoolUtilsTest is DSTestPlus {
     }
 
     /**
-     *  @notice Tests early withdrawal amount after penalty for varying parameters
-     */
-    function testApplyEarlyWithdrawalPenalty() external {
-        Pool.PoolState memory poolState_;
-        poolState_.collateral = 5 * 1e18;
-        poolState_.accruedDebt = 8000 * 1e18; 
-        poolState_.rate = 0.05 * 1e18;
-        skip(4 days);
-        uint256 depositTime = block.timestamp - 2 days;
-        uint256 fromIndex  = 1524; // price -> 2_000.221618840727700609 * 1e18
-        uint256 toIndex  = 1000; // price -> 146.575625611106531706 * 1e18
-        uint256 amount  = 100000 * 1e18;
-
-        assertEq(PoolUtils.applyEarlyWithdrawalPenalty(poolState_, depositTime, fromIndex, toIndex, amount), amount);
-
-        poolState_.collateral = 2 * 1e18;
-        assertEq(PoolUtils.applyEarlyWithdrawalPenalty(poolState_, depositTime, fromIndex, toIndex, amount), amount);
-
-        assertEq(PoolUtils.applyEarlyWithdrawalPenalty(poolState_, block.timestamp - 4 hours, fromIndex, 0, amount), 99903.8461538461538 * 1e18);
-
-        poolState_.collateral = 0; // should apply penalty also when no collateral in pool
-        assertEq(PoolUtils.applyEarlyWithdrawalPenalty(poolState_, block.timestamp - 4 hours, fromIndex, 0, amount), 99903.8461538461538 * 1e18);
-    }
-
-    /**
      *  @notice Tests fenwick index calculation from varying bucket prices
      */
     function testPriceToIndex() external {

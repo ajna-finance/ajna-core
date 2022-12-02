@@ -15,6 +15,7 @@ import '../libraries/Loans.sol';
 import '../libraries/Maths.sol';
 import '../libraries/PoolUtils.sol';
 import '../libraries/BucketMath.sol';
+import '../libraries/PoolLogic.sol';
 
 abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     using Auctions for Auctions.Data;
@@ -116,7 +117,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             msg.sender
         );
         uint256 amountToMove;
+        uint256 fromPrice   = PoolUtils.indexToPrice(fromIndex_);
         uint256 fromDeposit = deposits.valueAt(fromIndex_);
+
         Buckets.Bucket storage fromBucket = buckets[fromIndex_];
         (amountToMove, fromBucketLPs_, ) = Buckets.lpsToQuoteToken(
             fromBucket.lps,
@@ -124,19 +127,19 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             fromDeposit,
             lender.lps,
             maxAmountToMove_,
-            PoolUtils.indexToPrice(fromIndex_)
+            fromPrice
         );
 
         deposits.remove(fromIndex_, amountToMove, fromDeposit);
 
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
-        amountToMove = PoolUtils.applyEarlyWithdrawalPenalty(
-            poolState,
-            lender.depositTime,
-            fromIndex_,
-            toIndex_,
-            amountToMove
-        );
+        uint256 toPrice = PoolUtils.indexToPrice(toIndex_);
+        if (lender.depositTime != 0 && block.timestamp - lender.depositTime < 1 days) {
+            uint256 ptp = poolState.collateral != 0 ? Maths.wdiv(poolState.accruedDebt, poolState.collateral) : 0;
+            if (fromPrice > ptp && toPrice < ptp) {
+                amountToMove = Maths.wmul(amountToMove, Maths.WAD - PoolUtils.feeRate(poolState.rate));
+            }
+        }
 
         Buckets.Bucket storage toBucket = buckets[toIndex_];
         toBucketLPs_ = Buckets.quoteTokensToLPs(
@@ -144,7 +147,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             toBucket.lps,
             deposits.valueAt(toIndex_),
             amountToMove,
-            PoolUtils.indexToPrice(toIndex_)
+            toPrice
         );
 
         deposits.add(toIndex_, amountToMove);
@@ -182,6 +185,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 deposit = deposits.valueAt(index_);
         if (deposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
 
+        uint256 price = PoolUtils.indexToPrice(index_);
+
         Buckets.Bucket storage bucket = buckets[index_];
         uint256 exchangeRate = Buckets.getExchangeRate(
             bucket.collateral,
@@ -206,17 +211,17 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 newLup = _lup(poolState.accruedDebt);
         if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
 
+        // apply early withdrawal penalty if quote token is removed from above the PTP
+        if (lastDeposit != 0 && block.timestamp - lastDeposit < 1 days) {
+            uint256 ptp = poolState.collateral != 0 ? Maths.wdiv(poolState.accruedDebt, poolState.collateral) : 0;
+            if (price > ptp) {
+                removedAmount_ = Maths.wmul(removedAmount_, Maths.WAD - PoolUtils.feeRate(poolState.rate));
+            }
+        }
+
         // update bucket and lender LPs balances
         bucket.lps -= redeemedLPs_;
         bucket.lenders[msg.sender].lps -= redeemedLPs_;
-
-        removedAmount_ = PoolUtils.applyEarlyWithdrawalPenalty(
-            poolState,
-            lastDeposit,
-            index_,
-            0,
-            removedAmount_
-        );
 
         _updateInterestParams(poolState, newLup);
 
@@ -715,18 +720,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             poolState_.isNewInterestAccrued = elapsed != 0;
 
             if (poolState_.isNewInterestAccrued) {
-                // Scale the borrower inflator to update amount of interest owed by borrowers
-                uint256 factor = BucketMath.pendingInterestFactor(poolState_.rate, elapsed);
-                poolState_.inflator = Maths.wmul(poolState_.inflator, factor);
-
-                // Scale the fenwick tree to update amount of debt owed to lenders
-                deposits.accrueInterest(
+                poolState_.inflator = PoolLogic.accrueInterest(
+                    deposits,
                     poolState_.accruedDebt,
                     poolState_.collateral,
-                    _htp(poolState_.inflator),
-                    factor
+                    loans.getMax().thresholdPrice,
+                    poolState_.inflator,
+                    poolState_.rate,
+                    elapsed
                 );
-
                 // After debt owed to lenders has accrued, calculate current debt owed by borrowers
                 poolState_.accruedDebt = Maths.wmul(t0Debt, poolState_.inflator);
             }
@@ -864,7 +866,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     function debtInfo() external view returns (uint256, uint256, uint256) {
-        uint256 pendingInflator = BucketMath.pendingInflator(
+        uint256 pendingInflator = PoolLogic.pendingInflator(
             inflatorSnapshot,
             lastInflatorSnapshotUpdate,
             interestRate
