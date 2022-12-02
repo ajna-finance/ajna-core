@@ -757,12 +757,12 @@ abstract contract DSTestPlus is Test {
 
     function _assertFlashloanTooLargeRevert(
         IERC3156FlashBorrower flashBorrower,
+        address token,
         uint256 amount
     ) internal {
         changePrank(address(flashBorrower));
-        address quoteTokenAddress = _pool.quoteTokenAddress();
         vm.expectRevert();
-        _pool.flashLoan(flashBorrower, quoteTokenAddress, amount, new bytes(0));
+        _pool.flashLoan(flashBorrower, token, amount, new bytes(0));
     }
 
     function _assertFlashloanUnavailableForToken(

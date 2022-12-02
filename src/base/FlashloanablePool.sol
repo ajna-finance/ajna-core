@@ -37,14 +37,14 @@ abstract contract FlashloanablePool is Pool {
     function flashFee(
         address token_,
         uint256 amount_
-    ) external view override returns (uint256) {
+    ) external virtual view override returns (uint256) {
         if (token_ != _getArgAddress(20)) revert FlashloanUnavailableForToken();
         return _flashFee(amount_);
     }
 
     function maxFlashLoan(
         address token_
-    ) external view override returns (uint256 maxLoan_) {
+    ) external virtual view override returns (uint256 maxLoan_) {
         if (token_ == _getArgAddress(20)) maxLoan_ = _getPoolQuoteTokenBalance();
     }
 }

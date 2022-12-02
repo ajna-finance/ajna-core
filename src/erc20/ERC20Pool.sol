@@ -45,28 +45,6 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function flashLoan(
-        IERC3156FlashBorrower receiver_,
-        address token_,
-        uint256 amount_,
-        bytes calldata data_
-    ) public override(IERC3156FlashLender, FlashloanablePool) nonReentrant returns (bool) {
-        if (token_ == _getArgAddress(20)) return _flashLoanQuoteToken(receiver_, token_, amount_, data_);
-
-        if (token_ == _getArgAddress(0)) {
-            _transferCollateral(address(receiver_), amount_);            
-            uint256 fee = 0;
-            
-            if (receiver_.onFlashLoan(msg.sender, token_, amount_, fee, data_) != 
-                keccak256("ERC3156FlashBorrower.onFlashLoan")) revert FlashloanCallbackFailed();
-
-            _transferCollateralFrom(address(receiver_), amount_ + fee);
-            return true;
-        }
-
-        revert FlashloanUnavailableForToken();
-    }
-
     function pledgeCollateral(
         address borrower_,
         uint256 collateralAmountToPledge_
@@ -86,6 +64,49 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         emit PullCollateral(msg.sender, collateralAmountToPull_);
         // move collateral from pool to sender
         _transferCollateral(msg.sender, collateralAmountToPull_);
+    }
+
+    /************************************/
+    /*** Flashloan External Functions ***/
+    /************************************/
+
+    function flashLoan(
+        IERC3156FlashBorrower receiver_,
+        address token_,
+        uint256 amount_,
+        bytes calldata data_
+    ) external override(IERC3156FlashLender, FlashloanablePool) nonReentrant returns (bool) {
+        if (token_ == _getArgAddress(20)) return _flashLoanQuoteToken(receiver_, token_, amount_, data_);
+
+        if (token_ == _getArgAddress(0)) {
+            _transferCollateral(address(receiver_), amount_);            
+            uint256 fee = 0;
+            
+            if (receiver_.onFlashLoan(msg.sender, token_, amount_, fee, data_) != 
+                keccak256("ERC3156FlashBorrower.onFlashLoan")) revert FlashloanCallbackFailed();
+
+            _transferCollateralFrom(address(receiver_), amount_ + fee);
+            return true;
+        }
+
+        revert FlashloanUnavailableForToken();
+    }
+
+    function flashFee(
+        address token_,
+        uint256 amount_
+    ) external view override(IERC3156FlashLender, FlashloanablePool) returns (uint256) {
+        if      (token_ == _getArgAddress(20)) return _flashFee(amount_);
+        else if (token_ == _getArgAddress(0))  return 0;
+        else    revert FlashloanUnavailableForToken();
+    }
+
+    function maxFlashLoan(
+        address token_
+    ) external view override(IERC3156FlashLender, FlashloanablePool) returns (uint256 maxLoan_) {
+        if (token_ == _getArgAddress(20) || token_ == _getArgAddress(0)) {
+            maxLoan_ = IERC20Token(token_).balanceOf(address(this));
+        }
     }
 
     /*********************************/
