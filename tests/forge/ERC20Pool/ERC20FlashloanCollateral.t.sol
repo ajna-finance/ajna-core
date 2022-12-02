@@ -80,6 +80,21 @@ contract ERC20PoolFlashloanTest is ERC20HelperContract {
         assertEq(_collateral.balanceOf(address(flasher)), 3.5 * 1e18);
     }
 
+    function testFlashloanFee() external tearDown {
+        uint256 loanAmount = 100 * 1e18;
+
+        // Ensure there is no fee for quote token
+        uint256 fee = _pool.flashFee(address(_quote), loanAmount);
+        assertEq(fee, 0);
+
+        // Ensure there is no fee for collateral
+        fee = _pool.flashFee(address(_collateral), loanAmount);
+        assertEq(fee, 0);
+
+        // Ensure fee reverts for a random address which isn't a token
+        _assertFlashloanFeeRevertsForToken(makeAddr("nobody"), loanAmount);
+    }
+
     function testCannotFlashloanMoreCollateralThanAvailable() external tearDown {
         FlashloanBorrower flasher = new FlashloanBorrower(address(0), new bytes(0));
 

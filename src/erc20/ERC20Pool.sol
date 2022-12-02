@@ -80,12 +80,11 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         if (token_ == _getArgAddress(0)) {
             _transferCollateral(address(receiver_), amount_);            
-            uint256 fee = 0;
             
-            if (receiver_.onFlashLoan(msg.sender, token_, amount_, fee, data_) != 
+            if (receiver_.onFlashLoan(msg.sender, token_, amount_, 0, data_) != 
                 keccak256("ERC3156FlashBorrower.onFlashLoan")) revert FlashloanCallbackFailed();
 
-            _transferCollateralFrom(address(receiver_), amount_ + fee);
+            _transferCollateralFrom(address(receiver_), amount_);
             return true;
         }
 
@@ -94,11 +93,10 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
     function flashFee(
         address token_,
-        uint256 amount_
-    ) external view override(IERC3156FlashLender, FlashloanablePool) returns (uint256) {
-        if      (token_ == _getArgAddress(20)) return _flashFee(amount_);
-        else if (token_ == _getArgAddress(0))  return 0;
-        else    revert FlashloanUnavailableForToken();
+        uint256
+    ) external pure override(IERC3156FlashLender, FlashloanablePool) returns (uint256) {
+        if (token_ == _getArgAddress(20) || token_ == _getArgAddress(0)) return 0;
+        revert FlashloanUnavailableForToken();
     }
 
     function maxFlashLoan(

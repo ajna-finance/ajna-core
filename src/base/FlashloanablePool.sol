@@ -21,25 +21,20 @@ abstract contract FlashloanablePool is Pool {
         bytes calldata data_
     ) internal returns (bool) {
         _transferQuoteToken(address(receiver_), amount_);
-        uint256 fee = _flashFee(amount_);
         
-        if (receiver_.onFlashLoan(msg.sender, token_, amount_, fee, data_) != 
+        if (receiver_.onFlashLoan(msg.sender, token_, amount_, 0, data_) != 
             keccak256("ERC3156FlashBorrower.onFlashLoan")) revert FlashloanCallbackFailed();
 
-        _transferQuoteTokenFrom(address(receiver_), amount_ + fee);
+        _transferQuoteTokenFrom(address(receiver_), amount_);
         return true;
-    }
-
-    function _flashFee(uint256 amount_) internal view returns (uint256) {
-        return Maths.wmul(amount_, PoolUtils.feeRate(interestRate));
     }
 
     function flashFee(
         address token_,
-        uint256 amount_
+        uint256
     ) external virtual view override returns (uint256) {
         if (token_ != _getArgAddress(20)) revert FlashloanUnavailableForToken();
-        return _flashFee(amount_);
+        return 0;
     }
 
     function maxFlashLoan(

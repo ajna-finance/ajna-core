@@ -67,9 +67,6 @@ contract ERC721PoolFlashloanTest is ERC721HelperContract {
         uint256 loanAmount = 100 * 1e18;
         assertEq(_pool.maxFlashLoan(address(_quote)), loanAmount);
 
-        // Record reserves for later comparison
-        (uint256 reserves, , , , ) = _poolUtils.poolReservesInfo(address(_pool));
-
         // Create an example defi strategy which produces enough yield to pay the fee
         SomeDefiStrategy strategy = new SomeDefiStrategy(_quote);
         deal(address(_quote), address(strategy), 10 * 1e18);
@@ -79,10 +76,8 @@ contract ERC721PoolFlashloanTest is ERC721HelperContract {
         FlashloanBorrower flasher = new FlashloanBorrower(address(strategy), strategyCalldata);
 
         // Check the fee and run approvals
-        uint256 fee = _pool.flashFee(address(_quote), loanAmount);
-        assertEq(fee, 0.096153846153846200 * 1e18);
         changePrank(address(flasher));
-        _quote.approve(address(_pool),    loanAmount + fee);
+        _quote.approve(address(_pool),    loanAmount);
         _quote.approve(address(strategy), loanAmount);
 
         // Use a flashloan to interact with the strategy
@@ -90,10 +85,21 @@ contract ERC721PoolFlashloanTest is ERC721HelperContract {
         assertTrue(!flasher.callbackInvoked());
         _pool.flashLoan(flasher, address(_quote), loanAmount, new bytes(0));
         assertTrue(flasher.callbackInvoked());
-        assertEq(_quote.balanceOf(address(flasher)), 3.403846153846153800 * 1e18);
+        assertEq(_quote.balanceOf(address(flasher)), 3.5 * 1e18);
+    }
 
-        (uint256 reservesAfterFlashloan, , , , ) = _poolUtils.poolReservesInfo(address(_pool));
-        assertGt(reservesAfterFlashloan, reserves);
+    function testFlashloanFee() external tearDown {
+        uint256 loanAmount = 100 * 1e18;
+
+        // Ensure there is no fee for quote token
+        uint256 fee = _pool.flashFee(address(_quote), loanAmount);
+        assertEq(fee, 0);
+
+        // Ensure fee reverts for nonfungible collateral
+        _assertFlashloanFeeRevertsForToken(address(_collateral), loanAmount);
+
+        // Ensure fee reverts for a random address which isn't a token
+        _assertFlashloanFeeRevertsForToken(makeAddr("nobody"), loanAmount);
     }
 
     function testCannotFlashloanMoreThanAvailable() external tearDown {
