@@ -114,6 +114,9 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         }
         ( , uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
         (uint256 debt, , ) = _pool.debtInfo();
+        emit log_uint(loansCount);
+        emit log_uint(_pool.pledgedCollateral());
+        emit log_uint(debt);
         assertEq(debt, 0);
         assertEq(loansCount, 0);
         assertEq(_pool.pledgedCollateral(), 0);
@@ -145,6 +148,15 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     ) internal override {
         vm.expectEmit(true, true, false, true);
         emit Transfer(from, to, amount / _pool.quoteTokenScale());
+    }
+
+    function _assertCollateralTokenTransferEvent(
+        address from,
+        address to,
+        uint256 amount
+    ) internal {
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(from, to, amount / ERC20Pool(address(_pool)).collateralScale());
     }
 
     function _addCollateral(
@@ -249,7 +261,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
 
         // pull checks
         if (collateralToPull != 0) {
-            _assertTokenTransferEvent(address(_pool), from, collateralToPull);
+            _assertCollateralTokenTransferEvent(address(_pool), from, collateralToPull);
         }
 
         vm.expectEmit(true, true, false, true);
@@ -265,6 +277,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         uint256 collateralToPull
     ) internal {
         changePrank(from);
+        emit log("repaying debt");
 
         // repay checks
         if (amountToRepay != 0) {
@@ -273,7 +286,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
 
         // pull checks
         if (collateralToPull != 0) {
-            _assertTokenTransferEvent(address(_pool), from, collateralToPull);
+            _assertCollateralTokenTransferEvent(address(_pool), from, collateralToPull);
         }
 
         ERC20Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull);

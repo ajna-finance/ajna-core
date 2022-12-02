@@ -445,16 +445,8 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             }
         );
 
-        (
-            uint256 poolSize,
-            uint256 loansCount,
-            address maxBorrower,
-            uint256 pendingInflator,
-        ) = _poolUtils.poolLoansInfo(address(_pool));
+        emit log_address(address(_borrower2));
 
-        emit log_uint(loansCount);
-
-        // FIXME: borrower encumbered collateral != pool pledged collateral
         _assertPool(
             PoolState({
                 htp:                  48.148343567549191135 * 1e18,
@@ -472,7 +464,6 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 interestRateUpdate:   _startTime + 83 hours + 100 days
             })
         );
-
     }
 
     function testSettleOnAuctionKicked72HoursAgo() external tearDown {
