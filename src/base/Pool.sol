@@ -116,6 +116,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             msg.sender
         );
         uint256 amountToMove;
+        uint256 fromPrice = PoolUtils.indexToPrice(fromIndex_);
         uint256 fromDeposit = deposits.valueAt(fromIndex_);
         Buckets.Bucket storage fromBucket = buckets[fromIndex_];
         (amountToMove, fromBucketLPs_, ) = Buckets.lpsToQuoteToken(
@@ -124,19 +125,19 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             fromDeposit,
             lender.lps,
             maxAmountToMove_,
-            PoolUtils.indexToPrice(fromIndex_)
+            fromPrice
         );
 
         deposits.remove(fromIndex_, amountToMove, fromDeposit);
 
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
-        amountToMove = PoolUtils.applyEarlyWithdrawalPenalty(
-            poolState,
-            lender.depositTime,
-            fromIndex_,
-            toIndex_,
-            amountToMove
-        );
+        uint256 toPrice = PoolUtils.indexToPrice(toIndex_);
+        if (lender.depositTime != 0 && block.timestamp - lender.depositTime < 1 days) {
+            uint256 ptp = poolState.collateral != 0 ? Maths.wdiv(poolState.accruedDebt, poolState.collateral) : 0;
+            if (fromPrice > ptp && toPrice < ptp) {
+                amountToMove = Maths.wmul(amountToMove, Maths.WAD - BucketMath.feeRate(poolState.rate));
+            }
+        }
 
         Buckets.Bucket storage toBucket = buckets[toIndex_];
         toBucketLPs_ = Buckets.quoteTokensToLPs(
@@ -144,7 +145,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             toBucket.lps,
             deposits.valueAt(toIndex_),
             amountToMove,
-            PoolUtils.indexToPrice(toIndex_)
+            toPrice
         );
 
         deposits.add(toIndex_, amountToMove);
@@ -182,12 +183,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 deposit = deposits.valueAt(index_);
         if (deposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
 
+        uint256 price = PoolUtils.indexToPrice(index_);
+
         Buckets.Bucket storage bucket = buckets[index_];
         uint256 exchangeRate = Buckets.getExchangeRate(
             bucket.collateral,
             bucket.lps,
             deposit,
-            PoolUtils.indexToPrice(index_)
+            price
         );
         removedAmount_ = Maths.rayToWad(Maths.rmul(lenderLPsBalance, exchangeRate));
         uint256 removedAmountBefore = removedAmount_;
@@ -206,17 +209,17 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 newLup = _lup(poolState.accruedDebt);
         if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
 
+        // apply early withdrawal penalty if quote token is removed from above the PTP
+        if (lastDeposit != 0 && block.timestamp - lastDeposit < 1 days) {
+            uint256 ptp = poolState.collateral != 0 ? Maths.wdiv(poolState.accruedDebt, poolState.collateral) : 0;
+            if (price > ptp) {
+                removedAmount_ = Maths.wmul(removedAmount_, Maths.WAD - BucketMath.feeRate(poolState.rate));
+            }
+        }
+
         // update bucket and lender LPs balances
         bucket.lps -= redeemedLPs_;
         bucket.lenders[msg.sender].lps -= redeemedLPs_;
-
-        removedAmount_ = PoolUtils.applyEarlyWithdrawalPenalty(
-            poolState,
-            lastDeposit,
-            index_,
-            0,
-            removedAmount_
-        );
 
         _updateInterestParams(poolState, newLup);
 
