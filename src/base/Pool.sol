@@ -284,8 +284,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if (borrower.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
 
         PoolState memory poolState = _accruePoolInterest();
-        uint256 bucketDeposit = deposits.valueAt(index_);
-        if (bucketDeposit == 0) revert InsufficientLiquidity(); // revert if no quote tokens in arbed bucket
 
         Auctions.TakeParams memory params = Auctions.bucketTake(
             auctions,
@@ -293,7 +291,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             buckets[index_],
             borrowerAddress_,
             borrower,
-            bucketDeposit,
             index_,
             depositTake_,
             poolState.inflator

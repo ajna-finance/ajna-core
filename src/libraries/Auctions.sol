@@ -79,6 +79,10 @@ library Auctions {
      */
     error AuctionPriceGtBucketPrice();
     /**
+     *  @notice Bucket to arb must have more quote available in the bucket.
+     */
+    error InsufficientLiquidity();
+    /**
      *  @notice Actor is attempting to take or clear an inactive auction.
      */
     error NoAuction();
@@ -265,7 +269,6 @@ library Auctions {
      *  @notice Performs bucket take collateral on an auction and rewards taker and kicker (if case).
      *  @param  borrowerAddress_  Borrower address in auction.
      *  @param  borrower_         Borrower struct containing updated info of auctioned borrower.
-     *  @param  bucketDeposit_    Arbed bucket deposit.
      *  @param  bucketIndex_      Bucket index.
      *  @param  depositTake_      If true then the take happens at bucket price. Auction price is used otherwise.
      *  @param  poolInflator_     The pool's inflator, used to calculate borrower debt.
@@ -277,11 +280,14 @@ library Auctions {
         Buckets.Bucket storage bucket_,
         address borrowerAddress_,
         Loans.Borrower memory borrower_,
-        uint256 bucketDeposit_,
         uint256 bucketIndex_,
         bool    depositTake_,
         uint256 poolInflator_
     ) external returns (TakeParams memory params_) {
+
+        uint256 bucketDeposit = Deposits.valueAt(deposits_, bucketIndex_);
+        if (bucketDeposit == 0) revert InsufficientLiquidity(); // revert if no quote tokens in arbed bucket
+
         Liquidation storage liquidation = self.liquidations[borrowerAddress_];
         _validateTake(liquidation);
 
@@ -304,9 +310,9 @@ library Auctions {
         params_.isRewarded = (bpf >= 0);
 
         // determine how much of the loan will be repaid
-        if (borrowerDebt >= bucketDeposit_) {
-            params_.t0repayAmount    = Maths.wdiv(bucketDeposit_, poolInflator_);
-            params_.quoteTokenAmount = Maths.wdiv(bucketDeposit_, factor);
+        if (borrowerDebt >= bucketDeposit) {
+            params_.t0repayAmount    = Maths.wdiv(bucketDeposit, poolInflator_);
+            params_.quoteTokenAmount = Maths.wdiv(bucketDeposit, factor);
         } else {
             params_.t0repayAmount    = borrower_.t0debt;
             params_.quoteTokenAmount = Maths.wdiv(borrowerDebt, factor);
@@ -330,7 +336,7 @@ library Auctions {
             params_.bondChange = Maths.wmul(params_.quoteTokenAmount, uint256(bpf)); // will be rewarded as LPBs
         }
 
-        _rewardBucketTake(deposits_, bucket_, bucketDeposit_, bucketIndex_, depositTake_, params_);
+        _rewardBucketTake(deposits_, bucket_, bucketDeposit, bucketIndex_, depositTake_, params_);
     }
 
     /**
