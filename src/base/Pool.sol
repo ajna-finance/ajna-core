@@ -15,6 +15,7 @@ import '../libraries/Loans.sol';
 import '../libraries/Maths.sol';
 import '../libraries/PoolUtils.sol';
 import '../libraries/PoolLogic.sol';
+import '../libraries/LenderActions.sol';
 
 abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     using Auctions for Auctions.Data;
@@ -108,7 +109,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
         _revertIfAuctionDebtLocked(fromIndex_, poolState.inflator);
 
-        PoolLogic.MoveParams memory moveParams;
+        LenderActions.MoveParams memory moveParams;
         moveParams.sender          = msg.sender;
         moveParams.maxAmountToMove = maxAmountToMove_;
         moveParams.fromIndex       = fromIndex_;
@@ -124,7 +125,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             toBucketLPs_,
             amountToMove,
             newLup
-        ) = PoolLogic.moveQuoteToken(
+        ) = LenderActions.moveQuoteToken(
             buckets,
             deposits,
             moveParams
@@ -146,7 +147,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
         _revertIfAuctionDebtLocked(index_, poolState.inflator);
 
-        PoolLogic.RemoveParams memory removeParams;
+        LenderActions.RemoveParams memory removeParams;
         removeParams.sender    = msg.sender;
         removeParams.maxAmount = maxAmount_;
         removeParams.index     = index_;
@@ -159,7 +160,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             removedAmount_,
             redeemedLPs_,
             newLup
-        ) = PoolLogic.removeQuoteToken(buckets, deposits, removeParams);
+        ) = LenderActions.removeQuoteToken(buckets, deposits, removeParams);
 
         if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
 
@@ -175,7 +176,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         address newOwner_,
         uint256[] calldata indexes_
     ) external override {
-        uint256 tokensTransferred = PoolLogic.transferLPTokens(
+        uint256 tokensTransferred = LenderActions.transferLPTokens(
             buckets,
             _lpTokenAllowances,
             owner_,
