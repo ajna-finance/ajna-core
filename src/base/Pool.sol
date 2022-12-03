@@ -105,8 +105,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 fromIndex_,
         uint256 toIndex_
     ) external override returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
-        if (fromIndex_ == toIndex_) revert MoveToSamePrice();
-
         PoolState memory poolState = _accruePoolInterest();
         _revertIfAuctionDebtLocked(fromIndex_, poolState.inflator);
 

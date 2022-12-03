@@ -49,6 +49,10 @@ library PoolLogic {
      *  @notice Bucket must have more quote available in the bucket than the lender is attempting to claim.
      */
     error InsufficientLiquidity();
+    /**
+     *  @notice from bucket and to bucket arguments to move are the same.
+     */
+    error MoveToSamePrice();
 
     struct MoveParams {
         address sender;
@@ -146,6 +150,7 @@ library PoolLogic {
         Deposits.Data storage deposits_,
         MoveParams calldata params_
     ) external returns (uint256 fromBucketLPs_, uint256 toBucketLPs_, uint256 amountToMove_, uint256 lup_) {
+        if (params_.fromIndex == params_.toIndex) revert MoveToSamePrice();
 
         uint256 fromPrice   = _indexToPrice(params_.fromIndex);
         uint256 toPrice     = _indexToPrice(params_.toIndex);
