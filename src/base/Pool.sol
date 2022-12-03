@@ -669,7 +669,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             // update pool interest rate
             if (poolState_.accruedDebt != 0) {                
                 int256 mau = int256(                                       // meaningful actual utilization                   
-                    deposits.utilization(
+                    PoolLogic.utilization(
+                        deposits,
                         poolState_.accruedDebt,
                         poolState_.collateral
                     )
@@ -804,7 +805,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 debt_,
         uint256 collateral_
     ) external view override returns (uint256) {
-        return deposits.utilization(debt_, collateral_);
+        return PoolLogic.utilization(deposits, debt_, collateral_);
     }
 
     function emasInfo() external view override returns (uint256, uint256) {
