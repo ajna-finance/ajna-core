@@ -110,57 +110,30 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
         _revertIfAuctionDebtLocked(fromIndex_, poolState.inflator);
 
-        Buckets.Lender memory lender;
-        (lender.lps, lender.depositTime) = buckets.getLenderInfo(
-            fromIndex_,
-            msg.sender
-        );
+        PoolLogic.MoveParams memory moveParams;
+        moveParams.sender          = msg.sender;
+        moveParams.maxAmountToMove = maxAmountToMove_;
+        moveParams.fromIndex       = fromIndex_;
+        moveParams.toIndex         = toIndex_;
+        moveParams.poolDebt        = poolState.accruedDebt;
+        moveParams.ptp             = PoolUtils.ptp(poolState.accruedDebt, poolState.collateral);
+        moveParams.feeRate         = PoolUtils.feeRate(poolState.rate);
+
         uint256 amountToMove;
-        uint256 fromPrice   = PoolUtils.indexToPrice(fromIndex_);
-        uint256 fromDeposit = deposits.valueAt(fromIndex_);
-
-        Buckets.Bucket storage fromBucket = buckets[fromIndex_];
-        (amountToMove, fromBucketLPs_, ) = Buckets.lpsToQuoteToken(
-            fromBucket.lps,
-            fromBucket.collateral,
-            fromDeposit,
-            lender.lps,
-            maxAmountToMove_,
-            fromPrice
-        );
-
-        deposits.remove(fromIndex_, amountToMove, fromDeposit);
-
-        // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
-        uint256 toPrice = PoolUtils.indexToPrice(toIndex_);
-        if (lender.depositTime != 0 && block.timestamp - lender.depositTime < 1 days) {
-            uint256 ptp = poolState.collateral != 0 ? Maths.wdiv(poolState.accruedDebt, poolState.collateral) : 0;
-            if (fromPrice > ptp && toPrice < ptp) {
-                amountToMove = Maths.wmul(amountToMove, Maths.WAD - PoolUtils.feeRate(poolState.rate));
-            }
-        }
-
-        Buckets.Bucket storage toBucket = buckets[toIndex_];
-        toBucketLPs_ = Buckets.quoteTokensToLPs(
-            toBucket.collateral,
-            toBucket.lps,
-            deposits.valueAt(toIndex_),
+        uint256 newLup;
+        (
+            fromBucketLPs_,
+            toBucketLPs_,
             amountToMove,
-            toPrice
+            newLup
+        ) = PoolLogic.moveQuoteToken(
+            buckets,
+            deposits,
+            moveParams
         );
-
-        deposits.add(toIndex_, amountToMove);
-
         // move lup if necessary and check loan book's htp against new lup
-        uint256 newLup = _lup(poolState.accruedDebt);
         if (fromIndex_ < toIndex_) if(_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
 
-        Buckets.moveLPs(
-            fromBucket,
-            toBucket,
-            fromBucketLPs_,
-            toBucketLPs_
-        );
         _updateInterestParams(poolState, newLup);
 
         emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, amountToMove, newLup);
@@ -169,58 +142,28 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function removeQuoteToken(
         uint256 maxAmount_,
         uint256 index_
-    ) external returns (uint256 removedAmount_, uint256 redeemedLPs_) {
+    ) external override returns (uint256 removedAmount_, uint256 redeemedLPs_) {
         auctions.revertIfAuctionClearable(loans);
 
         PoolState memory poolState = _accruePoolInterest();
         _revertIfAuctionDebtLocked(index_, poolState.inflator);
 
-        (uint256 lenderLPsBalance, uint256 lastDeposit) = buckets.getLenderInfo(
-            index_,
-            msg.sender
-        );
-        if (lenderLPsBalance == 0) revert NoClaim();      // revert if no LP to claim
+        PoolLogic.RemoveParams memory removeParams;
+        removeParams.sender    = msg.sender;
+        removeParams.maxAmount = maxAmount_;
+        removeParams.index     = index_;
+        removeParams.poolDebt  = poolState.accruedDebt;
+        removeParams.ptp       = PoolUtils.ptp(poolState.accruedDebt, poolState.collateral);
+        removeParams.feeRate   = PoolUtils.feeRate(poolState.rate);
 
-        uint256 deposit = deposits.valueAt(index_);
-        if (deposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
+        uint256 newLup;
+        (
+            removedAmount_,
+            redeemedLPs_,
+            newLup
+        ) = PoolLogic.removeQuoteToken(buckets, deposits, removeParams);
 
-        uint256 price = PoolUtils.indexToPrice(index_);
-
-        Buckets.Bucket storage bucket = buckets[index_];
-        uint256 exchangeRate = Buckets.getExchangeRate(
-            bucket.collateral,
-            bucket.lps,
-            deposit,
-            price
-        );
-        removedAmount_ = Maths.rayToWad(Maths.rmul(lenderLPsBalance, exchangeRate));
-        uint256 removedAmountBefore = removedAmount_;
-
-        // remove min amount of lender entitled LPBs, max amount desired and deposit in bucket
-        if (removedAmount_ > maxAmount_) removedAmount_ = maxAmount_;
-        if (removedAmount_ > deposit)    removedAmount_ = deposit;
-
-        if (removedAmountBefore == removedAmount_) redeemedLPs_ = lenderLPsBalance;
-        else {
-            redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(removedAmount_, exchangeRate));
-        }
-
-        deposits.remove(index_, removedAmount_, deposit); // update FenwickTree
-
-        uint256 newLup = _lup(poolState.accruedDebt);
         if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
-
-        // apply early withdrawal penalty if quote token is removed from above the PTP
-        if (lastDeposit != 0 && block.timestamp - lastDeposit < 1 days) {
-            uint256 ptp = poolState.collateral != 0 ? Maths.wdiv(poolState.accruedDebt, poolState.collateral) : 0;
-            if (price > ptp) {
-                removedAmount_ = Maths.wmul(removedAmount_, Maths.WAD - PoolUtils.feeRate(poolState.rate));
-            }
-        }
-
-        // update bucket and lender LPs balances
-        bucket.lps -= redeemedLPs_;
-        bucket.lenders[msg.sender].lps -= redeemedLPs_;
 
         _updateInterestParams(poolState, newLup);
 
@@ -232,38 +175,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function transferLPTokens(
         address owner_,
         address newOwner_,
-        uint256[] calldata indexes_)
-    external {
-        uint256 tokensTransferred;
-        uint256 indexesLength = indexes_.length;
-
-        for (uint256 i = 0; i < indexesLength; ) {
-            if (indexes_[i] > 8192 ) revert InvalidIndex();
-
-            uint256 transferAmount = _lpTokenAllowances[owner_][newOwner_][indexes_[i]];
-            (uint256 lenderLpBalance, uint256 lenderLastDepositTime) = buckets.getLenderInfo(
-                indexes_[i],
-                owner_
-            );
-            if (transferAmount == 0 || transferAmount != lenderLpBalance) revert NoAllowance();
-
-            delete _lpTokenAllowances[owner_][newOwner_][indexes_[i]]; // delete allowance
-
-            buckets.transferLPs(
-                owner_,
-                newOwner_,
-                transferAmount,
-                indexes_[i],
-                lenderLastDepositTime
-            );
-
-            tokensTransferred += transferAmount;
-
-            unchecked {
-                ++i;
-            }
-        }
-
+        uint256[] calldata indexes_
+    ) external override {
+        uint256 tokensTransferred = PoolLogic.transferLPTokens(
+            buckets,
+            _lpTokenAllowances,
+            owner_,
+            newOwner_,
+            indexes_
+        );
         emit TransferLPTokens(owner_, newOwner_, indexes_, tokensTransferred);
     }
 

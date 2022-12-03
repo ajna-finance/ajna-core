@@ -41,6 +41,13 @@ library PoolUtils {
         return Maths.max(Maths.wdiv(interestRate_, WAD_WEEKS_PER_YEAR), MIN_FEE);
     }
 
+    function ptp(
+        uint256 debt_,
+        uint256 collateral_
+    ) internal pure returns (uint256 ptp_) {
+        if (collateral_ != 0) ptp_ = Maths.wdiv(debt_, collateral_);
+    }
+
     function minDebtAmount(
         uint256 debt_,
         uint256 loansCount_
