@@ -144,7 +144,7 @@ library PoolLogic {
     function moveQuoteToken(
         mapping(uint256 => Buckets.Bucket) storage buckets_,
         Deposits.Data storage deposits_,
-        MoveParams memory params_
+        MoveParams calldata params_
     ) external returns (uint256 fromBucketLPs_, uint256 toBucketLPs_, uint256 amountToMove_, uint256 lup_) {
 
         uint256 fromPrice   = _indexToPrice(params_.fromIndex);
@@ -201,7 +201,7 @@ library PoolLogic {
     function removeQuoteToken(
         mapping(uint256 => Buckets.Bucket) storage buckets_,
         Deposits.Data storage deposits_,
-        RemoveParams memory params_
+        RemoveParams calldata params_
     ) external returns (uint256 removedAmount_, uint256 redeemedLPs_, uint256 lup_) {
 
         (uint256 lenderLPs, uint256 depositTime) = Buckets.getLenderInfo(
