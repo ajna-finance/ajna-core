@@ -29,7 +29,7 @@ contract FenwickTreeInstance is DSTestPlus {
     }
 
     function remove(uint256 i_, uint256 x_) public {
-        deposits.remove(i_, x_);
+        deposits.remove(i_, x_, deposits.valueAt(i_));
     }
 
     function mult(uint256 i_, uint256 f_) public {
@@ -54,6 +54,15 @@ contract FenwickTreeInstance is DSTestPlus {
 
     function prefixSum(uint256 i_) external view returns (uint256 s_) {
         return deposits.prefixSum(i_);
+    }
+
+    function obliterate(uint256 i_) public {
+        uint256 deposit = deposits.valueAt(i_);
+	    deposits.remove(i_, deposit, deposit);
+    }
+
+    function valueAt(uint256 i_) external view returns (uint256 s_) {
+        return deposits.valueAt(i_);
     }
 
     /**

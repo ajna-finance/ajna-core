@@ -115,7 +115,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              21_020.192307692307702000 * 1e18,
                 borrowerCollateral:        100 * 1e18,
-                borrowerMompFactor:        2_981.007422784467321543 * 1e18,
+                borrowert0Np:              220.712019230769230871 * 1e18,
                 borrowerCollateralization: 14.181637252165253251 * 1e18
             }
         );
@@ -154,7 +154,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              21_049.006823139002918431 * 1e18,
                 borrowerCollateral:        50 * 1e18,
-                borrowerMompFactor:        2_976.926646662711731597 * 1e18,
+                borrowert0Np:              441.424038461538461741 * 1e18,
                 borrowerCollateralization: 7.081111825921092812 * 1e18
             }
         );
@@ -190,7 +190,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              21_049.006823139002918431 * 1e18,
                 borrowerCollateral:        7.061038044473493202 * 1e18,
-                borrowerMompFactor:        2_976.926646662711731597 * 1e18,
+                borrowert0Np:              3_140.657612229160876676 * 1e18,
                 borrowerCollateralization: 1 * 1e18
             }
         );
@@ -413,13 +413,6 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         uint256 testIndex = 6348;
 
         // should revert if no collateral in the bucket
-        _assertRemoveAllCollateralNoClaimRevert(
-            {
-                from:  _lender,
-                index: testIndex
-            }
-        );
-
         _assertRemoveInsufficientCollateralRevert(
             {
                 from:  _lender,
@@ -440,12 +433,11 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             }
         );
 
-        // should revert if insufficient collateral in the bucket
-        _assertRemoveInsufficientCollateralRevert(
+        // should revert if actor has no LPB in the bucket
+        _assertRemoveAllCollateralNoClaimRevert(
             {
                 from:  _lender,
-                amount: 1.25 * 1e18,
-                index:  testIndex
+                index: testIndex
             }
         );
 
@@ -454,270 +446,6 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             {
                 from:  _lender,
                 index: testIndex
-            }
-        );
-
-        _assertRemoveCollateralInsufficientLPsRevert(
-            {
-                from:  _lender,
-                amount: 0.32 * 1e18,
-                index:  testIndex
-            }
-        );
-    }
-
-    function testMoveCollateral() external tearDown {
-        // actor deposits collateral into two buckets
-        _mintCollateralAndApproveTokens(_lender,  20 * 1e18);
-        _addCollateral(
-            {
-                from:   _lender,
-                amount: 16.3 * 1e18,
-                index:  3333
-            }
-        );
-        _addCollateral(
-            {
-                from:   _lender,
-                amount: 3.7 * 1e18,
-                index:  3334
-            }
-        );
-
-        skip(2 hours);
-
-        // should revert if trying to move into same bucket
-        _assertMoveCollateralToSamePriceRevert(
-            {
-                from:      _lender,
-                amount:    5 * 1e18,
-                fromIndex: 3334,
-                toIndex:   3334
-            }
-        );
-
-        // should revert if bucket doesn't have enough collateral to move
-        _assertMoveInsufficientCollateralRevert(
-            {
-                from:      _lender,
-                amount:    5 * 1e18,
-                fromIndex: 3334,
-                toIndex:   3333
-            }
-        );
-
-        _addCollateral(
-            {
-                from:   _borrower,
-                amount: 1.3 * 1e18,
-                index:  3334
-            }
-        );
-        // should revert if actor doesn't have enough LP to move specified amount
-        _assertMoveCollateralInsufficientLPsRevert(
-            {
-                from:      _lender,
-                amount:    5 * 1e18,
-                fromIndex: 3334,
-                toIndex:   3333
-            }
-        );
-
-        // actor moves all their LP into one bucket
-        _moveCollateral(
-            {
-                from:         _lender,
-                amount:       3.7 * 1e18,
-                fromIndex:    3334,
-                toIndex:      3333,
-                lpRedeemFrom: 223.2052924064089299299 * 1e27,
-                lpRedeemTo:   224.3213188684409727605 * 1e27
-            }
-        );
-
-        // check bucket state and bidder's LPs
-        _assertBucket(
-            {
-                index:        3333,
-                lpBalance:    1_212.5476695591403933 * 1e27,
-                collateral:   20 * 1e18,
-                deposit:      0,
-                exchangeRate: 1 * 1e27
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      _lender,
-                index:       3333,
-                lpBalance:   1_212.5476695591403933 * 1e27,
-                depositTime: _startTime + 2 hours
-            }
-        );
-        _assertBucket(
-            {
-                index:        3334,
-                lpBalance:    78.4234811157652997051 * 1e27,
-                collateral:   1.3 * 1e18,
-                deposit:      0,
-                exchangeRate: 1 * 1e27
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      _lender,
-                index:       3334,
-                lpBalance:   0,
-                depositTime: _startTime
-            }
-        );
-    }
-
-    function testMoveHalfCollateral() external tearDown {
-        _mintCollateralAndApproveTokens(_lender,  20 * 1e18);
-
-        uint256 fromBucket = 1369;
-        uint256 toBucket   = 1111;
-
-        // actor deposits collateral
-       _addCollateral(
-            {
-                from:   _lender,
-                amount: 1 * 1e18,
-                index:  fromBucket
-            }
-        );
-        skip(2 hours);
-
-        // check buckets and LPs
-        _assertBucket(
-            {
-                index:        fromBucket,
-                lpBalance:    1_088_464.114498091939987319 * 1e27,
-                collateral:   1 * 1e18,
-                deposit:      0,
-                exchangeRate: 1 * 1e27
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      _lender,
-                index:       fromBucket,
-                lpBalance:   1_088_464.114498091939987319 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertBucket(
-            {
-                index:        toBucket,
-                lpBalance:    0,
-                collateral:   0,
-                deposit:      0,
-                exchangeRate: 1 * 1e27
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      _lender,
-                index:       toBucket,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-
-        // actor moves half their LP into another bucket
-        _moveCollateral(
-            {
-                from:         _lender,
-                amount:       0.5 * 1e18,
-                fromIndex:    fromBucket,
-                toIndex:      toBucket,
-                lpRedeemFrom: 544_232.0572490459699936595 * 1e27,
-                lpRedeemTo:   1_970_734.1978643312064901215 * 1e27
-            }
-        );
-
-        // check buckets and LPs
-        _assertBucket(
-            {
-                index:        fromBucket,
-                lpBalance:    544_232.0572490459699936595 * 1e27,
-                collateral:   0.5 * 1e18,
-                deposit:      0,
-                exchangeRate: 1 * 1e27
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      _lender,
-                index:       fromBucket,
-                lpBalance:   544_232.0572490459699936595 * 1e27,
-                depositTime: _startTime
-            }
-        );
-
-        _assertBucket(
-            {
-                index:        toBucket,
-                lpBalance:    1_970_734.1978643312064901215 * 1e27,
-                collateral:   0.5 * 1e18,
-                deposit:      0,
-                exchangeRate: 1 * 1e27
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      _lender,
-                index:       toBucket,
-                lpBalance:   1_970_734.1978643312064901215 * 1e27,
-                depositTime: _startTime + 2 hours
-            }
-        );
-
-        // actor moves remaining LP into the same bucket
-        _moveCollateral(
-            {
-                from:         _lender,
-                amount:       0.5 * 1e18,
-                fromIndex:    fromBucket,
-                toIndex:      toBucket,
-                lpRedeemFrom: 544_232.0572490459699936595 * 1e27,
-                lpRedeemTo:   1_970_734.1978643312064901215 * 1e27
-            }
-        );
-
-        // check buckets and LPs
-        _assertBucket(
-            {
-                index:        fromBucket,
-                lpBalance:    0,
-                collateral:   0,
-                deposit:      0,
-                exchangeRate: 1 * 1e27
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      _lender,
-                index:       fromBucket,
-                lpBalance:   0,
-                depositTime: _startTime
-            }
-        );
-        _assertBucket(
-            {
-                index:        toBucket,
-                lpBalance:    3_941_468.395728662412980243 * 1e27,
-                collateral:   1 * 1e18,
-                deposit:      0,
-                exchangeRate: 1 * 1e27
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      _lender,
-                index:       toBucket,
-                lpBalance:   3_941_468.395728662412980243 * 1e27,
-                depositTime: _startTime + 2 hours
             }
         );
     }
