@@ -46,6 +46,26 @@ library LenderActions {
         uint256 feeRate;
     }
 
+    function addCollateral(
+        mapping(uint256 => Buckets.Bucket) storage buckets_,
+        Deposits.Data storage deposits_,
+        uint256 collateralAmountToAdd_,
+        uint256 index_,
+        uint256 poolDebt_
+    ) external returns (uint256 bucketLPs_, uint256 lup_) {
+        uint256 bucketDeposit = Deposits.valueAt(deposits_, index_);
+        uint256 bucketPrice   = PoolLogic._indexToPrice(index_);
+        bucketLPs_ = Buckets.addCollateral(
+            buckets_[index_],
+            msg.sender,
+            bucketDeposit,
+            collateralAmountToAdd_,
+            bucketPrice
+        );
+
+        lup_ = PoolLogic._indexToPrice(Deposits.findIndexOfSum(deposits_, poolDebt_));
+    }
+
     function addQuoteToken(
         mapping(uint256 => Buckets.Bucket) storage buckets_,
         Deposits.Data storage deposits_,

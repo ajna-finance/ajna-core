@@ -575,14 +575,17 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 index_
     ) internal returns (uint256 bucketLPs_) {
         PoolState memory poolState = _accruePoolInterest();
-        bucketLPs_ = Buckets.addCollateral(
-            buckets[index_],
-            msg.sender,
-            deposits.valueAt(index_),
+
+        uint256 newLup;
+        (bucketLPs_, newLup) = LenderActions.addCollateral(
+            buckets,
+            deposits,
             collateralAmountToAdd_,
-            PoolUtils.indexToPrice(index_))
-        ;
-        _updateInterestParams(poolState, _lup(poolState.accruedDebt));
+            index_,
+            poolState.accruedDebt
+        );
+
+        _updateInterestParams(poolState, newLup);
     }
 
 
