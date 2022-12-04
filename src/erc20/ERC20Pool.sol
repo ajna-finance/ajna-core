@@ -32,8 +32,9 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         inflatorSnapshot           = uint208(10**18);
         lastInflatorSnapshotUpdate = uint48(block.timestamp);
-        interestRate               = uint208(rate_);
-        interestRateUpdate         = uint48(block.timestamp);
+
+        interestParams.interestRate       = uint208(rate_);
+        interestParams.interestRateUpdate = uint48(block.timestamp);
 
         loans.init();
 

@@ -434,8 +434,9 @@ abstract contract DSTestPlus is Test {
         assertGe(poolInflatorSnapshot, 1e18);
         assertGe(pendingInflator,      poolInflatorSnapshot);
 
-        assertEq(_pool.interestRate(),       state_.interestRate);
-        assertEq(_pool.interestRateUpdate(), state_.interestRateUpdate);
+        (uint256 interestRate, uint256 interestRateUpdate) = _pool.interestRateInfo();
+        assertEq(interestRate,       state_.interestRate);
+        assertEq(interestRateUpdate, state_.interestRateUpdate);
     }
 
     function _assertLenderLpBalance(

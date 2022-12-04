@@ -32,6 +32,13 @@ library PoolLogic {
     // minimum fee that can be applied for early withdraw penalty
     uint256 internal constant MIN_FEE = 0.0005 * 10**18;
 
+    struct InterestParams {
+        uint208 interestRate;       // [WAD]
+        uint48  interestRateUpdate; // [SEC]
+        uint256 debtEma;            // [WAD]
+        uint256 lupColEma;          // [WAD]
+    }
+
     function accrueInterest(
         Deposits.Data storage deposits_,
         uint256 debt_,

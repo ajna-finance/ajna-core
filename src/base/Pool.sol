@@ -34,16 +34,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*** State Variables ***/
     /***********************/
 
-    uint208 public override interestRate;       // [WAD]
-    uint48  public override interestRateUpdate; // [SEC]
-
     uint208 internal inflatorSnapshot;           // [WAD]
     uint48  internal lastInflatorSnapshotUpdate; // [SEC]
 
-    uint256 public override pledgedCollateral;  // [WAD]
+    PoolLogic.InterestParams internal interestParams;
 
-    uint256 internal debtEma;   // [WAD]
-    uint256 internal lupColEma; // [WAD]
+    uint256 public override pledgedCollateral;  // [WAD]
 
     uint256 internal reserveAuctionKicked;    // Time a Claimable Reserve Auction was last kicked.
     uint256 internal reserveAuctionUnclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
@@ -207,7 +203,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 borrowerDebt           = Maths.wmul(borrower.t0debt, poolState.inflator);
 
         // add origination fee to the amount to borrow and add to borrower's debt
-        uint256 debtChange = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate) + Maths.WAD);
+        uint256 debtChange = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestParams.interestRate) + Maths.WAD);
         borrowerDebt += debtChange;
         _checkMinDebt(poolState.accruedDebt, borrowerDebt);
 
@@ -626,7 +622,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 t0Debt        = t0poolDebt;
         poolState_.collateral = pledgedCollateral;
         poolState_.inflator   = inflatorSnapshot;
-        poolState_.rate       = interestRate;
+        poolState_.rate       = interestParams.interestRate;
 
         if (t0Debt != 0) {
             // Calculate prior pool debt
@@ -652,21 +648,21 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     function _updateInterestParams(PoolState memory poolState_, uint256 lup_) internal {
-        if (block.timestamp - interestRateUpdate > 12 hours) {
+        if (block.timestamp - interestParams.interestRateUpdate > 12 hours) {
             // update pool EMAs for target utilization calculation
             uint256 curDebtEma = Maths.wmul(
                     poolState_.accruedDebt,
                     EMA_7D_RATE_FACTOR
-                ) + Maths.wmul(debtEma, LAMBDA_EMA_7D
+                ) + Maths.wmul(interestParams.debtEma, LAMBDA_EMA_7D
             );
             uint256 curLupColEma = Maths.wmul(
                     Maths.wmul(lup_, poolState_.collateral),
                     EMA_7D_RATE_FACTOR
-                ) + Maths.wmul(lupColEma, LAMBDA_EMA_7D
+                ) + Maths.wmul(interestParams.lupColEma, LAMBDA_EMA_7D
             );
 
-            debtEma   = curDebtEma;
-            lupColEma = curLupColEma;
+            interestParams.debtEma   = curDebtEma;
+            interestParams.lupColEma = curLupColEma;
 
             // update pool interest rate
             if (poolState_.accruedDebt != 0) {                
@@ -679,7 +675,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 );
                 int256 tu = int256(Maths.wdiv(curDebtEma, curLupColEma));  // target utilization
 
-                if (!poolState_.isNewInterestAccrued) poolState_.rate = interestRate;
+                if (!poolState_.isNewInterestAccrued) poolState_.rate = interestParams.interestRate;
                 // raise rates if 4*(tu-1.02*mau) < (tu+1.02*mau-1)^2-1
                 // decrease rates if 4*(tu-mau) > 1-(tu+mau-1)^2
                 int256 mau102 = mau * PERCENT_102 / 10**18;
@@ -692,8 +688,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 }
 
                 if (poolState_.rate != newInterestRate) {
-                    interestRate       = uint208(newInterestRate);
-                    interestRateUpdate = uint48(block.timestamp);
+                    interestParams.interestRate       = uint208(newInterestRate);
+                    interestParams.interestRateUpdate = uint48(block.timestamp);
 
                     emit UpdateInterestRate(poolState_.rate, newInterestRate);
                 }
@@ -786,7 +782,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 pendingInflator = PoolLogic.pendingInflator(
             inflatorSnapshot,
             lastInflatorSnapshotUpdate,
-            interestRate
+            interestParams.interestRate
         );
         return (
             Maths.wmul(t0poolDebt, pendingInflator),
@@ -812,8 +808,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     function emasInfo() external view override returns (uint256, uint256) {
         return (
-            debtEma,
-            lupColEma
+            interestParams.debtEma,
+            interestParams.lupColEma
         );
     }
 
@@ -821,6 +817,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         return (
             inflatorSnapshot,
             lastInflatorSnapshotUpdate
+        );
+    }
+
+    function interestRateInfo() external view returns (uint256, uint256) {
+        return (
+            interestParams.interestRate,
+            interestParams.interestRateUpdate
         );
     }
 

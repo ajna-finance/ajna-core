@@ -26,7 +26,7 @@ contract PoolInfoUtils {
             uint256 poolInflatorSnapshot,
             uint256 lastInflatorSnapshotUpdate
         ) = pool.inflatorInfo();
-        uint256 interestRate = pool.interestRate();
+        (uint256 interestRate, ) = pool.interestRateInfo();
 
         uint256 pendingInflator = PoolLogic.pendingInflator(poolInflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
         uint256 t0debt;
@@ -96,7 +96,7 @@ contract PoolInfoUtils {
             uint256 inflatorSnapshot,
             uint256 lastInflatorSnapshotUpdate
         ) = pool.inflatorInfo();
-        uint256 interestRate = pool.interestRate();
+        (uint256 interestRate, ) = pool.interestRateInfo();
 
         pendingInflator_       = PoolLogic.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
         pendingInterestFactor_ = PoolLogic.pendingInterestFactor(interestRate, block.timestamp - lastInflatorSnapshotUpdate);
