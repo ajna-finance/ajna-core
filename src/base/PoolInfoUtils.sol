@@ -4,9 +4,9 @@ pragma solidity 0.8.14;
 
 import './interfaces/IPool.sol';
 
-import '../libraries/Auctions.sol';
+import '../libraries/external/Auctions.sol';
 import '../libraries/Buckets.sol';
-import '../libraries/PoolCommons.sol';
+import '../libraries/external/PoolCommons.sol';
 
 contract PoolInfoUtils {
 

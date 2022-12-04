@@ -8,14 +8,14 @@ import '@openzeppelin/contracts/utils/Multicall.sol';
 
 import './interfaces/IPool.sol';
 
-import '../libraries/Auctions.sol';
 import '../libraries/Buckets.sol';
 import '../libraries/Deposits.sol';
 import '../libraries/Loans.sol';
 import '../libraries/Maths.sol';
 
-import '../libraries/PoolCommons.sol';
-import '../libraries/LenderCommons.sol';
+import '../libraries/external/Auctions.sol';
+import '../libraries/external/PoolCommons.sol';
+import '../libraries/external/LenderCommons.sol';
 
 abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     using Auctions for Auctions.Data;

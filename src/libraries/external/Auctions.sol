@@ -2,9 +2,9 @@
 
 pragma solidity 0.8.14;
 
-import './Buckets.sol';
-import './Loans.sol';
-import './Maths.sol';
+import '../Buckets.sol';
+import '../Loans.sol';
+import '../Maths.sol';
 import './PoolCommons.sol';
 
 library Auctions {

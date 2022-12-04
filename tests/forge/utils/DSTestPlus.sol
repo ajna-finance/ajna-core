@@ -11,7 +11,7 @@ import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import 'src/base/interfaces/IPool.sol';
 import 'src/base/PoolInfoUtils.sol';
 
-import 'src/libraries/Auctions.sol';
+import 'src/libraries/external/Auctions.sol';
 import 'src/libraries/Maths.sol';
 
 

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import './Maths.sol';
-import './Deposits.sol';
-import './Buckets.sol';
+import '../Maths.sol';
+import '../Deposits.sol';
+import '../Buckets.sol';
 import './PoolCommons.sol';
 
 library LenderCommons {

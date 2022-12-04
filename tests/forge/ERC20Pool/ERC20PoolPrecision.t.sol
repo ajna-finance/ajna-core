@@ -9,7 +9,6 @@ import 'src/erc20/ERC20PoolFactory.sol';
 
 import 'src/base/PoolInfoUtils.sol';
 
-import 'src/libraries/BucketMath.sol';
 import 'src/libraries/Maths.sol';
 
 contract ERC20PoolPrecisionTest is ERC20DSTestPlus {

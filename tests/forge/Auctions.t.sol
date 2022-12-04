@@ -3,7 +3,7 @@ pragma solidity 0.8.14;
 
 import './utils/DSTestPlus.sol';
 
-import 'src/libraries/Auctions.sol';
+import 'src/libraries/external/Auctions.sol';
 
 contract AuctionsTest is DSTestPlus {
 

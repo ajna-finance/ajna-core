@@ -20,7 +20,7 @@ import './PositionNFT.sol';
 
 import '../libraries/Maths.sol';
 import '../libraries/Buckets.sol';
-import '../libraries/PoolCommons.sol';
+import '../libraries/external/PoolCommons.sol';
 
 contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC20, ReentrancyGuard {
     using EnumerableSet for EnumerableSet.UintSet;

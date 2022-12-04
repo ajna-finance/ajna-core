@@ -2,7 +2,7 @@
 pragma solidity 0.8.14;
 
 import './Maths.sol';
-import './PoolCommons.sol';
+import './external/PoolCommons.sol';
 
 library Deposits {
 

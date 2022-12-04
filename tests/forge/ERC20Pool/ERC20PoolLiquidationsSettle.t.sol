@@ -5,8 +5,6 @@ import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
 import 'src/erc20/ERC20Pool.sol';
 
-import 'src/libraries/BucketMath.sol';
-
 contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
     address internal _borrower;
