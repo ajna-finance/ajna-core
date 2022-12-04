@@ -105,7 +105,6 @@ class PoolHelper:
         self.loans = ajna_protocol.loans
         self.pool = pool
         self.pool_info_utils = ajna_protocol.pool_info_utils
-        self.pool_utils = ajna_protocol.pool_utils
 
     # TODO: Move this functionality into SDK to insulate consumer from implementation logic.
 

@@ -5,7 +5,7 @@ pragma solidity 0.8.14;
 import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 
 import 'src/libraries/Maths.sol';
-import 'src/libraries/PoolLogic.sol';
+import 'src/libraries/PoolCommons.sol';
 
 contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
 
@@ -73,7 +73,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  testIndex,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
 
@@ -217,7 +217,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 from:   _lender,
                 amount: 20_000 * 1e18,
                 index:  2350,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         _addLiquidity(
@@ -225,7 +225,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2351,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         _addLiquidity(
@@ -233,7 +233,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2352,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
 
@@ -242,7 +242,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 from:   _lender2,
                 amount: 4_000 * 1e18,
                 index:  2350,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         _addLiquidity(
@@ -250,7 +250,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 from:   _lender2,
                 amount: 5_000 * 1e18,
                 index:  2352,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
 

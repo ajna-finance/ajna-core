@@ -5,7 +5,7 @@ pragma solidity 0.8.14;
 import './Buckets.sol';
 import './Loans.sol';
 import './Maths.sol';
-import './PoolLogic.sol';
+import './PoolCommons.sol';
 
 library Auctions {
     uint256 internal constant MINUTE_HALF_LIFE    = 0.988514020352896135_356867505 * 1e27;  // 0.5^(1/60)
@@ -126,7 +126,7 @@ library Auctions {
         while (bucketDepth_ != 0 && t0DebtToSettle_ != 0 && collateral_ != 0) {
             hpbVars.index   = Deposits.findIndexOfSum(deposits_, 1);
             hpbVars.deposit = Deposits.valueAt(deposits_, hpbVars.index);
-            hpbVars.price   = PoolLogic._indexToPrice(hpbVars.index);
+            hpbVars.price   = PoolCommons._indexToPrice(hpbVars.index);
 
             uint256 depositToRemove = hpbVars.deposit;
             uint256 collateralUsed;
@@ -288,7 +288,7 @@ library Auctions {
         Liquidation storage liquidation = self.liquidations[borrowerAddress_];
         _validateTake(liquidation);
 
-        params_.bucketPrice  = PoolLogic._indexToPrice(bucketIndex_);
+        params_.bucketPrice  = PoolCommons._indexToPrice(bucketIndex_);
         params_.auctionPrice = _auctionPrice(
             liquidation.kickMomp,
             liquidation.kickTime
@@ -433,13 +433,13 @@ library Auctions {
                 self.liquidations[borrowerAddress_].kickMomp,
                 self.liquidations[borrowerAddress_].kickTime
             );
-            bucketIndex_ = PoolLogic._priceToIndex(auctionPrice);
+            bucketIndex_ = PoolCommons._priceToIndex(auctionPrice);
             lps_ = Buckets.addCollateral(
                 buckets_[bucketIndex_],
                 borrowerAddress_,
                 Deposits.valueAt(deposits_, bucketIndex_),
                 fractionalCollateral,
-                PoolLogic._indexToPrice(bucketIndex_)
+                PoolCommons._indexToPrice(bucketIndex_)
             );
         }
 

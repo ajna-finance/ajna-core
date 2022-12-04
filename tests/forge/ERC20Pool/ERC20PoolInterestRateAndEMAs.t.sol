@@ -3,7 +3,7 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import 'src/libraries/PoolLogic.sol';
+import 'src/libraries/PoolCommons.sol';
 
 contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
     address internal _borrower;
@@ -30,7 +30,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2550,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         _addLiquidity(
@@ -38,7 +38,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 from:   _lender,
                 amount: 20_000 * 1e18,
                 index:  2551,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         _addLiquidity(
@@ -46,7 +46,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 from:   _lender,
                 amount: 20_000 * 1e18,
                 index:  2552,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         _addLiquidity(
@@ -54,7 +54,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 from:   _lender,
                 amount: 50_000 * 1e18,
                 index:  3900,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         _addLiquidity(
@@ -62,7 +62,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  4200,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
 
@@ -71,7 +71,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         _assertPool(
             PoolState({
                 htp:                  0,
-                lup:                  PoolLogic.MAX_PRICE,
+                lup:                  PoolCommons.MAX_PRICE,
                 poolSize:             110_000 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
@@ -130,7 +130,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 borrower: _borrower,
                 amount:   46_044.230769230769252000 * 1e18,
                 repaid:   46_044.230769230769252000 * 1e18,
-                newLup:   PoolLogic.MAX_PRICE
+                newLup:   PoolCommons.MAX_PRICE
             }
         );
     }
@@ -142,7 +142,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 from:   _lender,
                 amount: 1_000 * 1e18,
                 index:  3232,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
 
@@ -217,7 +217,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2873,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         // borrower draws debt
@@ -296,7 +296,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2550,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         _addLiquidity(
@@ -304,7 +304,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2552,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         _addLiquidity(
@@ -312,7 +312,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  4200,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
 
@@ -383,7 +383,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  3_010,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         _addLiquidity(
@@ -391,14 +391,14 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2_995,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
 
         _assertPool(
             PoolState({
                 htp:                  0,
-                lup:                  PoolLogic.MAX_PRICE,
+                lup:                  PoolCommons.MAX_PRICE,
                 poolSize:             20_000 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,

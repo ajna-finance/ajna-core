@@ -13,8 +13,9 @@ import '../libraries/Buckets.sol';
 import '../libraries/Deposits.sol';
 import '../libraries/Loans.sol';
 import '../libraries/Maths.sol';
-import '../libraries/PoolLogic.sol';
-import '../libraries/LenderActions.sol';
+
+import '../libraries/PoolCommons.sol';
+import '../libraries/LenderCommons.sol';
 
 abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     using Auctions for Auctions.Data;
@@ -73,7 +74,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
 
         uint256 newLup;
-        (bucketLPs_, newLup) = LenderActions.addQuoteToken(
+        (bucketLPs_, newLup) = LenderCommons.addQuoteToken(
             buckets,
             deposits,
             quoteTokenAmountToAdd_,
@@ -104,7 +105,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
         _revertIfAuctionDebtLocked(fromIndex_, poolState.inflator);
 
-        LenderActions.MoveParams memory moveParams;
+        LenderCommons.MoveParams memory moveParams;
         moveParams.maxAmountToMove = maxAmountToMove_;
         moveParams.fromIndex       = fromIndex_;
         moveParams.toIndex         = toIndex_;
@@ -119,7 +120,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             toBucketLPs_,
             amountToMove,
             newLup
-        ) = LenderActions.moveQuoteToken(
+        ) = LenderCommons.moveQuoteToken(
             buckets,
             deposits,
             moveParams
@@ -141,7 +142,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
         _revertIfAuctionDebtLocked(index_, poolState.inflator);
 
-        LenderActions.RemoveParams memory removeParams;
+        LenderCommons.RemoveParams memory removeParams;
         removeParams.maxAmount = maxAmount_;
         removeParams.index     = index_;
         removeParams.poolDebt  = poolState.accruedDebt;
@@ -153,7 +154,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             removedAmount_,
             redeemedLPs_,
             newLup
-        ) = LenderActions.removeQuoteToken(buckets, deposits, removeParams);
+        ) = LenderCommons.removeQuoteToken(
+            buckets,
+            deposits,
+            removeParams
+        );
 
         if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
 
@@ -169,7 +174,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         address newOwner_,
         uint256[] calldata indexes_
     ) external override {
-        uint256 tokensTransferred = LenderActions.transferLPTokens(
+        uint256 tokensTransferred = LenderCommons.transferLPTokens(
             buckets,
             _lpTokenAllowances,
             owner_,
@@ -572,7 +577,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
 
         uint256 newLup;
-        (bucketLPs_, newLup) = LenderActions.addCollateral(
+        (bucketLPs_, newLup) = LenderCommons.addCollateral(
             buckets,
             deposits,
             collateralAmountToAdd_,
@@ -631,7 +636,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             poolState_.isNewInterestAccrued = elapsed != 0;
 
             if (poolState_.isNewInterestAccrued) {
-                poolState_.inflator = PoolLogic.accrueInterest(
+                poolState_.inflator = PoolCommons.accrueInterest(
                     deposits,
                     poolState_.accruedDebt,
                     poolState_.collateral,
@@ -648,7 +653,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     function _updateInterestParams(PoolState memory poolState_, uint256 lup_) internal {
         if (block.timestamp - interestParams.interestRateUpdate > 12 hours) {
-            PoolLogic.updateInterestRate(interestParams, deposits, poolState_, lup_);
+            PoolCommons.updateInterestRate(interestParams, deposits, poolState_, lup_);
         }
 
         // update pool inflator
@@ -734,7 +739,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     function debtInfo() external view returns (uint256, uint256, uint256) {
-        uint256 pendingInflator = PoolLogic.pendingInflator(
+        uint256 pendingInflator = PoolCommons.pendingInflator(
             inflatorSnapshot,
             lastInflatorSnapshotUpdate,
             interestParams.interestRate
@@ -758,7 +763,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 debt_,
         uint256 collateral_
     ) external view override returns (uint256) {
-        return PoolLogic.utilization(deposits, debt_, collateral_);
+        return PoolCommons.utilization(deposits, debt_, collateral_);
     }
 
     function emasInfo() external view override returns (uint256, uint256) {
@@ -896,5 +901,5 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function priceAt(
         uint256 index_
     ) pure returns (uint256) {
-        return PoolLogic.indexToPrice(index_);
+        return PoolCommons.indexToPrice(index_);
     }

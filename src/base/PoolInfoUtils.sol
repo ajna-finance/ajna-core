@@ -6,7 +6,7 @@ import './interfaces/IPool.sol';
 
 import '../libraries/Auctions.sol';
 import '../libraries/Buckets.sol';
-import '../libraries/PoolLogic.sol';
+import '../libraries/PoolCommons.sol';
 
 contract PoolInfoUtils {
 
@@ -27,7 +27,7 @@ contract PoolInfoUtils {
         ) = pool.inflatorInfo();
         (uint256 interestRate, ) = pool.interestRateInfo();
 
-        uint256 pendingInflator = PoolLogic.pendingInflator(poolInflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
+        uint256 pendingInflator = PoolCommons.pendingInflator(poolInflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
         uint256 t0debt;
         (t0debt, collateral_, t0Np_)  = pool.borrowerInfo(borrower_);
         debt_ = Maths.wmul(t0debt, pendingInflator);
@@ -97,8 +97,8 @@ contract PoolInfoUtils {
         ) = pool.inflatorInfo();
         (uint256 interestRate, ) = pool.interestRateInfo();
 
-        pendingInflator_       = PoolLogic.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
-        pendingInterestFactor_ = PoolLogic.pendingInterestFactor(interestRate, block.timestamp - lastInflatorSnapshotUpdate);
+        pendingInflator_       = PoolCommons.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
+        pendingInterestFactor_ = PoolCommons.pendingInterestFactor(interestRate, block.timestamp - lastInflatorSnapshotUpdate);
     }
 
     /**
@@ -129,7 +129,7 @@ contract PoolInfoUtils {
         (, uint256 maxThresholdPrice, ) = pool.loansInfo();
         (uint256 inflatorSnapshot, )    = pool.inflatorInfo();
         htp_      = Maths.wmul(maxThresholdPrice, inflatorSnapshot);
-        if (htp_ != 0) htpIndex_ = PoolLogic.priceToIndex(htp_);
+        if (htp_ != 0) htpIndex_ = PoolCommons.priceToIndex(htp_);
         lupIndex_ = pool.depositIndex(debt);
         lup_      = priceAt(lupIndex_);
     }
@@ -222,21 +222,21 @@ contract PoolInfoUtils {
         uint256 poolCollateral = pool.pledgedCollateral();
         uint256 utilization    = pool.depositUtilization(poolDebt, poolCollateral);
 
-        lenderInterestMargin_ = PoolLogic.lenderInterestMargin(utilization);
+        lenderInterestMargin_ = PoolCommons.lenderInterestMargin(utilization);
     }
 
     function indexToPrice(
         uint256 index_
     ) external pure returns (uint256)
     {
-        return PoolLogic.indexToPrice(index_);
+        return PoolCommons.indexToPrice(index_);
     }
 
     function priceToIndex(
         uint256 price_
     ) external pure returns (uint256)
     {
-        return PoolLogic.priceToIndex(price_);
+        return PoolCommons.priceToIndex(price_);
     }
 
     function lup(

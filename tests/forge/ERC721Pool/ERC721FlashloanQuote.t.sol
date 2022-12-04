@@ -30,14 +30,14 @@ contract ERC721PoolFlashloanTest is ERC721HelperContract {
 
         // lender adds liquidity and borrower draws debt
         _bucketPrice = 251.186576139566121965 * 1e18;
-        _bucketId = PoolLogic.priceToIndex(_bucketPrice);
+        _bucketId = PoolCommons.priceToIndex(_bucketPrice);
         assertEq(_bucketId, 3048);
         _addLiquidity(
             {
                 from:   _lender,
                 amount: 300 * 1e18,
                 index:  _bucketId,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
 

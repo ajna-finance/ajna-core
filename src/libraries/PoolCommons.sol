@@ -10,7 +10,7 @@ import './Buckets.sol';
 import './Loans.sol';
 import '../base/Pool.sol';
 
-library PoolLogic {
+library PoolCommons {
     /**
         @dev constant price indices defining the min and max of the potential price range
      */

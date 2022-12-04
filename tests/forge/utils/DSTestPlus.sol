@@ -371,21 +371,20 @@ abstract contract DSTestPlus is Test {
         (,,uint256 auctionDebtInAuction)  = _pool.debtInfo(); 
         uint256 borrowerThresholdPrice = borrowerCollateral > 0 ? borrowerDebt * Maths.WAD / borrowerCollateral : 0;
 
-        assertEq(auctionKickTime != 0,                                      state_.active);
-        assertEq(auctionKicker,                                             state_.kicker);
-        assertGe(lockedBonds,                                               auctionBondSize);
-        assertEq(auctionBondSize,                                           state_.bondSize);
-        assertEq(auctionBondFactor,                                         state_.bondFactor);
-        assertEq(auctionKickTime,                                           state_.kickTime);
-        assertEq(auctionKickMomp,                                           state_.kickMomp);
-        assertEq(auctionTotalBondEscrowed,                                  state_.totalBondEscrowed);
-        assertEq(auctionDebtInAuction,                                      state_.debtInAuction);
-        assertEq(auctionNeutralPrice,                                       state_.neutralPrice);
-        assertEq(borrowerThresholdPrice,                                    state_.thresholdPrice);
+        assertEq(auctionKickTime != 0,     state_.active);
+        assertEq(auctionKicker,            state_.kicker);
+        assertGe(lockedBonds,              auctionBondSize);
+        assertEq(auctionBondSize,          state_.bondSize);
+        assertEq(auctionBondFactor,        state_.bondFactor);
+        assertEq(auctionKickTime,          state_.kickTime);
+        assertEq(auctionKickMomp,          state_.kickMomp);
+        assertEq(auctionTotalBondEscrowed, state_.totalBondEscrowed);
+        assertEq(auctionDebtInAuction,     state_.debtInAuction);
+        assertEq(auctionNeutralPrice,      state_.neutralPrice);
+        assertEq(borrowerThresholdPrice,   state_.thresholdPrice);
         assertEq(Auctions._auctionPrice(
             auctionKickMomp,
-            auctionKickTime
-        ),                                                                   state_.auctionPrice);
+            auctionKickTime),              state_.auctionPrice);
     }
 
     function _assertPool(PoolState memory state_) internal {
@@ -422,7 +421,7 @@ abstract contract DSTestPlus is Test {
                 state_.lup
             ),                               state_.encumberedCollateral
         );
-        assertEq(poolDebt,               state_.poolDebt);
+        assertEq(poolDebt,                   state_.poolDebt);
         assertEq(poolActualUtilization,      state_.actualUtilization);
         assertEq(poolTargetUtilization,      state_.targetUtilization);
         assertEq(poolMinDebtAmount,          state_.minDebtAmount);

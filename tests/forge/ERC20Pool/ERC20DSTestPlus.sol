@@ -48,7 +48,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
 
         uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
         (uint256 interestRate, ) = _pool.interestRateInfo();
-        uint256 factor = PoolLogic.pendingInterestFactor(interestRate, elapsed);
+        uint256 factor = PoolCommons.pendingInterestFactor(interestRate, elapsed);
 
         uint256 currentPoolInflator = Maths.wmul(poolInflatorSnapshot, factor);
 

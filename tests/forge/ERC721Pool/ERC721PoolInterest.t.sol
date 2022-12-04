@@ -58,7 +58,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2550,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         _addLiquidity(
@@ -66,7 +66,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2551,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         _addLiquidity(
@@ -74,7 +74,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2552,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         _addLiquidity(
@@ -82,7 +82,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2553,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         _addLiquidity(
@@ -90,7 +90,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2554,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         (uint256 liquidityAdded, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
@@ -219,7 +219,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 borrower: _borrower,
                 amount:   6_043.220426872049838854 * 1e18,
                 repaid:   6_043.220426872049838854 * 1e18,
-                newLup:   PoolLogic.MAX_PRICE
+                newLup:   PoolCommons.MAX_PRICE
             }
         );
 
@@ -245,7 +245,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2550,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         _addLiquidity(
@@ -253,7 +253,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2551,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         _addLiquidity(
@@ -261,7 +261,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2552,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         (uint256 liquidityAdded, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
@@ -466,7 +466,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2550,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         _addLiquidity(
@@ -474,7 +474,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2551,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         _addLiquidity(
@@ -482,7 +482,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2552,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         _addLiquidity(
@@ -490,7 +490,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2553,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         _addLiquidity(
@@ -498,7 +498,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2554,
-                newLup: PoolLogic.MAX_PRICE
+                newLup: PoolCommons.MAX_PRICE
             }
         );
         (uint256 liquidityAdded, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
@@ -567,7 +567,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 borrower: _borrower,
                 amount:   6_000 * 1e18,
                 repaid:   5_035.064750533460450062 * 1e18,
-                newLup:   PoolLogic.MAX_PRICE
+                newLup:   PoolCommons.MAX_PRICE
             }
         );
 
@@ -701,7 +701,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 borrower: _borrower,
                 amount:   7_000 * 1e18,
                 repaid:   6_047.560214870786628632 * 1e18,
-                newLup:   PoolLogic.MAX_PRICE
+                newLup:   PoolCommons.MAX_PRICE
             }
         );
 
