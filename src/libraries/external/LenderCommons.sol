@@ -6,6 +6,10 @@ import '../Deposits.sol';
 import '../Buckets.sol';
 import './PoolCommons.sol';
 
+/**
+    @notice External library containing logic for common lender actions.
+            Specific logic is implemented in pool contract (e.g. remove collateral).
+ */
 library LenderCommons {
 
     /**
@@ -17,33 +21,33 @@ library LenderCommons {
      */
     error InvalidIndex();
     /**
-     *  @notice Lender must have non-zero LPB when attemptign to remove quote token from the pool.
+     *  @notice Lender must have non-zero LPB when attempting to remove quote token from the pool.
      */
     error NoClaim();
     /**
-     *  @notice Bucket must have more quote available in the bucket than the lender is attempting to claim.
+     *  @notice Deposit must have more quote available than the lender is attempting to claim.
      */
     error InsufficientLiquidity();
     /**
-     *  @notice from bucket and to bucket arguments to move are the same.
+     *  @notice From and to deposit indexes to move are the same.
      */
     error MoveToSamePrice();
 
-    struct MoveParams {
-        uint256 maxAmountToMove;
-        uint256 fromIndex;
-        uint256 toIndex;
-        uint256 poolDebt;
-        uint256 ptp;
-        uint256 feeRate;
+    struct MoveQuoteParams {
+        uint256 maxAmountToMove; // max amount to move between deposits
+        uint256 fromIndex;       // the deposit index from where amount is moved
+        uint256 toIndex;         // the deposit index where amount is moved to
+        uint256 poolDebt;        // the amount of debt in pool
+        uint256 ptp;             // the Pool Threshold Price (used to determine if penalty should be applied
+        uint256 feeRate;         // the fee rate in pool (used to calculate penalty)
     }
 
-    struct RemoveParams {
-        uint256 maxAmount;
-        uint256 index;
-        uint256 poolDebt;
-        uint256 ptp;
-        uint256 feeRate;
+    struct RemoveQuoteParams {
+        uint256 maxAmount; // max amount to be removed
+        uint256 index;     // the deposit index from where amount is removed
+        uint256 poolDebt;  // the amount of debt in pool
+        uint256 ptp;       // the Pool Threshold Price (used to determine if penalty should be applied)
+        uint256 feeRate;   // the fee rate in pool (used to calculate penalty)
     }
 
     function addCollateral(
@@ -89,7 +93,7 @@ library LenderCommons {
     function moveQuoteToken(
         mapping(uint256 => Buckets.Bucket) storage buckets_,
         Deposits.Data storage deposits_,
-        MoveParams calldata params_
+        MoveQuoteParams calldata params_
     ) external returns (uint256 fromBucketLPs_, uint256 toBucketLPs_, uint256 amountToMove_, uint256 lup_) {
         if (params_.fromIndex == params_.toIndex) revert MoveToSamePrice();
 
@@ -147,7 +151,7 @@ library LenderCommons {
     function removeQuoteToken(
         mapping(uint256 => Buckets.Bucket) storage buckets_,
         Deposits.Data storage deposits_,
-        RemoveParams calldata params_
+        RemoveQuoteParams calldata params_
     ) external returns (uint256 removedAmount_, uint256 redeemedLPs_, uint256 lup_) {
 
         (uint256 lenderLPs, uint256 depositTime) = Buckets.getLenderInfo(
@@ -197,6 +201,13 @@ library LenderCommons {
         lup_ = PoolCommons._indexToPrice(Deposits.findIndexOfSum(deposits_, params_.poolDebt));
     }
 
+    /**
+     *  @notice Called by lenders to transfers their LP tokens to a different address.
+     *  @dev    Used by PositionManager.memorializePositions().
+     *  @param  owner_    The original owner address of the position.
+     *  @param  newOwner_ The new owner address of the position.
+     *  @param  indexes_  Array of deposit indexes at which LP tokens were moved.
+     */
     function transferLPTokens(
         mapping(uint256 => Buckets.Bucket) storage buckets_,
         mapping(address => mapping(address => mapping(uint256 => uint256))) storage allowances_,

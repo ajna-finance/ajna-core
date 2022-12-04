@@ -105,7 +105,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
         _revertIfAuctionDebtLocked(fromIndex_, poolState.inflator);
 
-        LenderCommons.MoveParams memory moveParams;
+        LenderCommons.MoveQuoteParams memory moveParams;
         moveParams.maxAmountToMove = maxAmountToMove_;
         moveParams.fromIndex       = fromIndex_;
         moveParams.toIndex         = toIndex_;
@@ -142,7 +142,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
         _revertIfAuctionDebtLocked(index_, poolState.inflator);
 
-        LenderCommons.RemoveParams memory removeParams;
+        LenderCommons.RemoveQuoteParams memory removeParams;
         removeParams.maxAmount = maxAmount_;
         removeParams.index     = index_;
         removeParams.poolDebt  = poolState.accruedDebt;
@@ -833,7 +833,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     /**
      *  @notice Called by LPB removal functions assess whether or not LPB is locked.
-     *  @param  index_    The bucket index from which LPB is attempting to be removed.
+     *  @param  index_    The deposit index from which LPB is attempting to be removed.
      *  @param  inflator_ The pool inflator used to properly assess t0 debt in auctions.
      */
     function _revertIfAuctionDebtLocked(
@@ -852,6 +852,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*** Free Functions ***/
     /**********************/
 
+    /**
+     *  @notice Calculates encumberance for a debt amount at a given price.
+     *  @param  debt_         The debt amount to calculate encumberance for.
+     *  @param  price_        The price to calculate encumberance at.
+     *  @return encumberance_ Encumberance value.
+     */
     function encumberance(
         uint256 debt_,
         uint256 price_
@@ -859,6 +865,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         return price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
     }
 
+    /**
+     *  @notice Calculates collateralization for a given debt and collateral amounts, at a given price.
+     *  @param  debt_       The debt amount.
+     *  @param  collateral_ The collateral amount.
+     *  @param  price_      The price to calculate collateralization at.
+     *  @return Collateralization value. 1**18 if debt amount is 0.
+     */
     function collateralization(
         uint256 debt_,
         uint256 collateral_,
@@ -868,6 +881,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         return encumbered != 0 ? Maths.wdiv(collateral_, encumbered) : Maths.WAD;
     }
 
+    /**
+     *  @notice Calculates the minimum debt amount that can be borrowed or can remain in a loan in pool.
+     *  @param  debt_          The debt amount to calculate minimum debt amount for.
+     *  @param  loansCount_    The number of loans in pool.
+     *  @return minDebtAmount_ Minimum debt amount value of the pool.
+     */
     function minDebtAmount(
         uint256 debt_,
         uint256 loansCount_
@@ -877,6 +896,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         }
     }
 
+    /**
+     *  @notice Calculates fee rate for a given interest rate.
+     *  @notice Calculated as greater of the current annualized interest rate divided by 52 (one week of interest) or 5 bps.
+     *  @param  interestRate_ The current interest rate.
+     *  @return Fee rate applied to the given interest rate.
+     */
     function feeRate(
         uint256 interestRate_
     ) pure returns (uint256) {
@@ -884,6 +909,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         return Maths.max(Maths.wdiv(interestRate_, 52 * 10**18), 0.0005 * 10**18);
     }
 
+    /**
+     *  @notice Calculates Pool Threshold Price (PTP) for a given debt and collateral amount.
+     *  @param  debt_       The debt amount to calculate PTP for.
+     *  @param  collateral_ The amount of collateral to calculate PTP for.
+     *  @return ptp_        Pool Threshold Price value.
+     */
     function getPtp(
         uint256 debt_,
         uint256 collateral_
@@ -891,6 +922,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if (collateral_ != 0) ptp_ = Maths.wdiv(debt_, collateral_);
     }
 
+    /**
+     *  @notice Calculates target utilization for given EMA values.
+     *  @param  debtEma_   The EMA of debt value.
+     *  @param  lupColEma_ The EMA of lup * collateral value.
+     *  @return Target utilization of the pool.
+     */
     function targetUtilization(
         uint256 debtEma_,
         uint256 lupColEma_
@@ -898,6 +935,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         return (debtEma_ != 0 && lupColEma_ != 0) ? Maths.wdiv(debtEma_, lupColEma_) : Maths.WAD;
     }
 
+    /**
+     *  @notice Wrapper function for call to external Poolcommons library.
+     *  @param  index_ The deposit index from which LPB is attempting to be removed.
+     *  @return Price for the given index.
+     */
     function priceAt(
         uint256 index_
     ) pure returns (uint256) {
