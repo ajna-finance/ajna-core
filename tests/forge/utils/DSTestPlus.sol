@@ -204,7 +204,7 @@ abstract contract DSTestPlus is Test {
         vm.expectEmit(true, true, false, true);
         emit Kick(borrower, debt, collateral, bond);
         if(transferAmount != 0) _assertTokenTransferEvent(from, address(_pool), transferAmount);
-        _pool.kick(borrower);
+        _pool.kick(borrower, 0);
     }
 
     function _kickWithLPB(
@@ -218,7 +218,7 @@ abstract contract DSTestPlus is Test {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit Kick(borrower, debt, collateral, bond);
-        _pool.kickWithLPB(borrower, index);
+        _pool.kick(borrower, index);
     }
 
     function _moveLiquidity(
@@ -822,7 +822,7 @@ abstract contract DSTestPlus is Test {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('AuctionActive()'));
-        _pool.kick(borrower);
+        _pool.kick(borrower, 0);
     }
 
     function _assertKickCollateralizedBorrowerRevert(
@@ -831,7 +831,7 @@ abstract contract DSTestPlus is Test {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.BorrowerOk.selector);
-        _pool.kick(borrower);
+        _pool.kick(borrower, 0);
     }
 
     function _assertPullInsufficientCollateralRevert(

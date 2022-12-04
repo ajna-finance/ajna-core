@@ -257,7 +257,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         vm.warp(8640000000);
         vm.startPrank(kicker);
         for (uint256 i; i < LOANS_COUNT; i ++) {
-            _pool.kick(_borrowers[i]);
+            _pool.kick(_borrowers[i], 0);
         }
         skip(2 hours);
         for (uint256 i; i < LOANS_COUNT - 1; i ++) {
@@ -273,7 +273,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         vm.warp(8640000000);
         vm.startPrank(kicker);
         for (uint256 i; i < LOANS_COUNT; i ++) {
-            _pool.kick(_borrowers[LOANS_COUNT - 1 - i]);
+            _pool.kick(_borrowers[LOANS_COUNT - 1 - i], 0);
         }
         skip(2 hours);
         for (uint256 i; i < LOANS_COUNT - 1; i ++) {
@@ -308,7 +308,7 @@ contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
         vm.warp(8640000000);
         vm.startPrank(kicker);
         for (uint256 i; i < LOANS_COUNT; i ++) {
-            _pool.kick(_borrowers[i]);
+            _pool.kick(_borrowers[i], 0);
         }
         // add quote tokens in bucket to arb
         _pool.addQuoteToken(100_000 * 1e18, 2_000);
@@ -329,7 +329,7 @@ contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
         vm.warp(8640000000);
         vm.startPrank(kicker);
         for (uint256 i; i < LOANS_COUNT; i ++) {
-            _pool.kick(_borrowers[LOANS_COUNT - 1 - i]);
+            _pool.kick(_borrowers[LOANS_COUNT - 1 - i], 0);
         }
         // add quote tokens in bucket to arb
         _pool.addQuoteToken(100_000 * 1e18, 2_000);
