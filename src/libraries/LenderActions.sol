@@ -30,7 +30,6 @@ library LenderActions {
     error MoveToSamePrice();
 
     struct MoveParams {
-        address sender;
         uint256 maxAmountToMove;
         uint256 fromIndex;
         uint256 toIndex;
@@ -40,7 +39,6 @@ library LenderActions {
     }
 
     struct RemoveParams {
-        address sender;
         uint256 maxAmount;
         uint256 index;
         uint256 poolDebt;
@@ -48,43 +46,24 @@ library LenderActions {
         uint256 feeRate;
     }
 
-    function transferLPTokens(
+    function addQuoteToken(
         mapping(uint256 => Buckets.Bucket) storage buckets_,
-        mapping(address => mapping(address => mapping(uint256 => uint256))) storage allowances_,
-        address owner_,
-        address newOwner_,
-        uint256[] calldata indexes_
-    ) external returns (uint256 tokensTransferred_){
-        uint256 indexesLength = indexes_.length;
+        Deposits.Data storage deposits_,
+        uint256 quoteTokenAmountToAdd_,
+        uint256 index_,
+        uint256 poolDebt_
+    ) external returns (uint256 bucketLPs_, uint256 lup_) {
+        uint256 bucketDeposit = Deposits.valueAt(deposits_, index_);
+        uint256 bucketPrice   = PoolLogic._indexToPrice(index_);
+        bucketLPs_ = Buckets.addQuoteToken(
+            buckets_[index_],
+            bucketDeposit,
+            quoteTokenAmountToAdd_,
+            bucketPrice
+        );
+        Deposits.add(deposits_, index_, quoteTokenAmountToAdd_);
 
-        for (uint256 i = 0; i < indexesLength; ) {
-            if (indexes_[i] > 8192 ) revert InvalidIndex();
-
-            uint256 transferAmount = allowances_[owner_][newOwner_][indexes_[i]];
-            (uint256 lenderLpBalance, uint256 lenderLastDepositTime) = Buckets.getLenderInfo(
-                buckets_,
-                indexes_[i],
-                owner_
-            );
-            if (transferAmount == 0 || transferAmount != lenderLpBalance) revert NoAllowance();
-
-            delete allowances_[owner_][newOwner_][indexes_[i]]; // delete allowance
-
-            Buckets.transferLPs(
-                buckets_,
-                owner_,
-                newOwner_,
-                transferAmount,
-                indexes_[i],
-                lenderLastDepositTime
-            );
-
-            tokensTransferred_ += transferAmount;
-
-            unchecked {
-                ++i;
-            }
-        }
+        lup_ = PoolLogic._indexToPrice(Deposits.findIndexOfSum(deposits_, poolDebt_));
     }
 
     function moveQuoteToken(
@@ -103,7 +82,7 @@ library LenderActions {
             (uint256 lenderLPs, uint256 depositTime) = Buckets.getLenderInfo(
                 buckets_,
                 params_.fromIndex,
-                params_.sender
+                msg.sender
             );
             (amountToMove_, fromBucketLPs_, ) = Buckets.lpsToQuoteToken(
                 fromBucket.lps,
@@ -154,7 +133,7 @@ library LenderActions {
         (uint256 lenderLPs, uint256 depositTime) = Buckets.getLenderInfo(
             buckets_,
             params_.index,
-            params_.sender
+            msg.sender
         );
         if (lenderLPs == 0) revert NoClaim();      // revert if no LP to claim
 
@@ -193,8 +172,47 @@ library LenderActions {
 
         // update bucket and lender LPs balances
         bucket.lps -= redeemedLPs_;
-        bucket.lenders[params_.sender].lps -= redeemedLPs_;
+        bucket.lenders[msg.sender].lps -= redeemedLPs_;
 
         lup_ = PoolLogic._indexToPrice(Deposits.findIndexOfSum(deposits_, params_.poolDebt));
+    }
+
+    function transferLPTokens(
+        mapping(uint256 => Buckets.Bucket) storage buckets_,
+        mapping(address => mapping(address => mapping(uint256 => uint256))) storage allowances_,
+        address owner_,
+        address newOwner_,
+        uint256[] calldata indexes_
+    ) external returns (uint256 tokensTransferred_){
+        uint256 indexesLength = indexes_.length;
+
+        for (uint256 i = 0; i < indexesLength; ) {
+            if (indexes_[i] > 8192 ) revert InvalidIndex();
+
+            uint256 transferAmount = allowances_[owner_][newOwner_][indexes_[i]];
+            (uint256 lenderLpBalance, uint256 lenderLastDepositTime) = Buckets.getLenderInfo(
+                buckets_,
+                indexes_[i],
+                owner_
+            );
+            if (transferAmount == 0 || transferAmount != lenderLpBalance) revert NoAllowance();
+
+            delete allowances_[owner_][newOwner_][indexes_[i]]; // delete allowance
+
+            Buckets.transferLPs(
+                buckets_,
+                owner_,
+                newOwner_,
+                transferAmount,
+                indexes_[i],
+                lenderLastDepositTime
+            );
+
+            tokensTransferred_ += transferAmount;
+
+            unchecked {
+                ++i;
+            }
+        }
     }
 }

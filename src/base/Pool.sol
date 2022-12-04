@@ -77,15 +77,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     ) external override returns (uint256 bucketLPs_) {
         PoolState memory poolState = _accruePoolInterest();
 
-        bucketLPs_ = Buckets.addQuoteToken(
-            buckets[index_],
-            deposits.valueAt(index_),
+        uint256 newLup;
+        (bucketLPs_, newLup) = LenderActions.addQuoteToken(
+            buckets,
+            deposits,
             quoteTokenAmountToAdd_,
-            PoolUtils.indexToPrice(index_)
+            index_,
+            poolState.accruedDebt
         );
-        deposits.add(index_, quoteTokenAmountToAdd_);
 
-        uint256 newLup = _lup(poolState.accruedDebt);
         _updateInterestParams(poolState, newLup);
 
         emit AddQuoteToken(msg.sender, index_, quoteTokenAmountToAdd_, newLup);
@@ -110,7 +110,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _revertIfAuctionDebtLocked(fromIndex_, poolState.inflator);
 
         LenderActions.MoveParams memory moveParams;
-        moveParams.sender          = msg.sender;
         moveParams.maxAmountToMove = maxAmountToMove_;
         moveParams.fromIndex       = fromIndex_;
         moveParams.toIndex         = toIndex_;
@@ -148,7 +147,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _revertIfAuctionDebtLocked(index_, poolState.inflator);
 
         LenderActions.RemoveParams memory removeParams;
-        removeParams.sender    = msg.sender;
         removeParams.maxAmount = maxAmount_;
         removeParams.index     = index_;
         removeParams.poolDebt  = poolState.accruedDebt;
