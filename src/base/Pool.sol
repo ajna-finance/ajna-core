@@ -466,8 +466,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if (
             _isCollateralized(borrowerDebt, borrower.collateral, lup)
         ) revert BorrowerOk();
-
-        uint256 neutralPrice = Maths.wmul(borrower.t0Np, poolState.inflator);
  
         // kick auction
         (uint256 kickAuctionAmount, uint256 bondSize) = Auctions.kick(
@@ -476,7 +474,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             borrowerDebt,
             borrowerDebt * Maths.WAD / borrower.collateral,
             deposits.momp(poolState.accruedDebt, loans.noOfLoans()),
-            neutralPrice
+            Maths.wmul(borrower.t0Np, poolState.inflator)
         );
 
         loans.remove(borrowerAddress_);
@@ -506,7 +504,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             uint256 lpTokenReq = Buckets.quoteTokensToLPs(
                 bucket.collateral,
                 bucket.lps,
-                deposits.valueAt(index_),
+                deposit,
                 kickAuctionAmount,
                 PoolUtils.indexToPrice(index_));
 

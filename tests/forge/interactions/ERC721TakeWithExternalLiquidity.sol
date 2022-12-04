@@ -76,7 +76,7 @@ contract ERC721TakeWithExternalLiquidityTest is Test {
         skip(60 days);
         // lender kicks the liquidation
         changePrank(_lender);
-        _ajnaPool.kick(_borrower);
+        _ajnaPool.kick(_borrower, 0);
         // price becomes favorable
         skip(8 hours);
     }
