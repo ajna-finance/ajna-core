@@ -8,6 +8,7 @@ import './Maths.sol';
 import './Deposits.sol';
 import './Buckets.sol';
 import './Loans.sol';
+import '../base/Pool.sol';
 
 library PoolLogic {
     /**
@@ -32,11 +33,69 @@ library PoolLogic {
     // minimum fee that can be applied for early withdraw penalty
     uint256 internal constant MIN_FEE = 0.0005 * 10**18;
 
-    struct InterestParams {
-        uint208 interestRate;       // [WAD]
-        uint48  interestRateUpdate; // [SEC]
-        uint256 debtEma;            // [WAD]
-        uint256 lupColEma;          // [WAD]
+    uint256 internal constant INCREASE_COEFFICIENT = 1.1 * 10**18;
+    uint256 internal constant DECREASE_COEFFICIENT = 0.9 * 10**18;
+
+    uint256 internal constant LAMBDA_EMA_7D      = 0.905723664263906671 * 1e18; // Lambda used for interest EMAs calculated as exp(-1/7   * ln2)
+    uint256 internal constant EMA_7D_RATE_FACTOR = 1e18 - LAMBDA_EMA_7D;
+    int256  internal constant PERCENT_102        = 1.02 * 10**18;
+
+    event UpdateInterestRate(
+        uint256 oldRate,
+        uint256 newRate
+    );
+
+    function updateInterestRate(
+        Pool.InterestParams storage interestParams_,
+        Deposits.Data storage deposits_,
+        Pool.PoolState memory poolState_,
+        uint256 lup_
+    ) external {
+        // update pool EMAs for target utilization calculation
+        uint256 curDebtEma = Maths.wmul(
+                poolState_.accruedDebt,
+                    EMA_7D_RATE_FACTOR
+            ) + Maths.wmul(interestParams_.debtEma, LAMBDA_EMA_7D
+        );
+        uint256 curLupColEma = Maths.wmul(
+                Maths.wmul(lup_, poolState_.collateral),
+                EMA_7D_RATE_FACTOR
+            ) + Maths.wmul(interestParams_.lupColEma, LAMBDA_EMA_7D
+        );
+
+        interestParams_.debtEma   = curDebtEma;
+        interestParams_.lupColEma = curLupColEma;
+
+        // update pool interest rate
+        if (poolState_.accruedDebt != 0) {
+            int256 mau = int256(                                       // meaningful actual utilization
+                _utilization(
+                    deposits_,
+                    poolState_.accruedDebt,
+                    poolState_.collateral
+                )
+            );
+            int256 tu = int256(Maths.wdiv(curDebtEma, curLupColEma));  // target utilization
+
+            if (!poolState_.isNewInterestAccrued) poolState_.rate = interestParams_.interestRate;
+            // raise rates if 4*(tu-1.02*mau) < (tu+1.02*mau-1)^2-1
+            // decrease rates if 4*(tu-mau) > 1-(tu+mau-1)^2
+            int256 mau102 = mau * PERCENT_102 / 10**18;
+
+            uint256 newInterestRate = poolState_.rate;
+            if (4 * (tu - mau102) < ((tu + mau102 - 10**18) ** 2) / 10**18 - 10**18) {
+                newInterestRate = Maths.wmul(poolState_.rate, INCREASE_COEFFICIENT);
+            } else if (4 * (tu - mau) > 10**18 - ((tu + mau - 10**18) ** 2) / 10**18) {
+                newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
+            }
+
+            if (poolState_.rate != newInterestRate) {
+                interestParams_.interestRate       = uint208(newInterestRate);
+                interestParams_.interestRateUpdate = uint48(block.timestamp);
+
+                emit UpdateInterestRate(poolState_.rate, newInterestRate);
+            }
+        }
     }
 
     function accrueInterest(
@@ -127,6 +186,14 @@ library PoolLogic {
         uint256 debt_,
         uint256 collateral_
     ) external view returns (uint256 utilization_) {
+        return _utilization(deposits, debt_, collateral_);
+    }
+
+    function _utilization(
+        Deposits.Data storage deposits,
+        uint256 debt_,
+        uint256 collateral_
+    ) internal view returns (uint256 utilization_) {
         if (collateral_ != 0) {
             uint256 ptp = Maths.wdiv(debt_, collateral_);
 

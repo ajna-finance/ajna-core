@@ -23,13 +23,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     using Deposits for Deposits.Data;
     using Loans    for Loans.Data;
 
-    uint256 internal constant INCREASE_COEFFICIENT = 1.1 * 10**18;
-    uint256 internal constant DECREASE_COEFFICIENT = 0.9 * 10**18;
-
-    uint256 internal constant LAMBDA_EMA_7D      = 0.905723664263906671 * 1e18; // Lambda used for interest EMAs calculated as exp(-1/7   * ln2)
-    uint256 internal constant EMA_7D_RATE_FACTOR = 1e18 - LAMBDA_EMA_7D;
-    int256  internal constant PERCENT_102        = 1.02 * 10**18;
-
     /***********************/
     /*** State Variables ***/
     /***********************/
@@ -37,7 +30,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     uint208 internal inflatorSnapshot;           // [WAD]
     uint48  internal lastInflatorSnapshotUpdate; // [SEC]
 
-    PoolLogic.InterestParams internal interestParams;
+    InterestParams internal interestParams;
 
     uint256 public override pledgedCollateral;  // [WAD]
 
@@ -54,6 +47,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     mapping(uint256 => Buckets.Bucket) internal buckets;   // deposit index -> bucket
     Deposits.Data                      internal deposits;
     Loans.Data                         internal loans;
+
+    struct InterestParams {
+        uint208 interestRate;       // [WAD]
+        uint48  interestRateUpdate; // [SEC]
+        uint256 debtEma;            // [WAD]
+        uint256 lupColEma;          // [WAD]
+    }
 
     struct PoolState {
         uint256 accruedDebt;
@@ -649,51 +649,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     function _updateInterestParams(PoolState memory poolState_, uint256 lup_) internal {
         if (block.timestamp - interestParams.interestRateUpdate > 12 hours) {
-            // update pool EMAs for target utilization calculation
-            uint256 curDebtEma = Maths.wmul(
-                    poolState_.accruedDebt,
-                    EMA_7D_RATE_FACTOR
-                ) + Maths.wmul(interestParams.debtEma, LAMBDA_EMA_7D
-            );
-            uint256 curLupColEma = Maths.wmul(
-                    Maths.wmul(lup_, poolState_.collateral),
-                    EMA_7D_RATE_FACTOR
-                ) + Maths.wmul(interestParams.lupColEma, LAMBDA_EMA_7D
-            );
-
-            interestParams.debtEma   = curDebtEma;
-            interestParams.lupColEma = curLupColEma;
-
-            // update pool interest rate
-            if (poolState_.accruedDebt != 0) {                
-                int256 mau = int256(                                       // meaningful actual utilization                   
-                    PoolLogic.utilization(
-                        deposits,
-                        poolState_.accruedDebt,
-                        poolState_.collateral
-                    )
-                );
-                int256 tu = int256(Maths.wdiv(curDebtEma, curLupColEma));  // target utilization
-
-                if (!poolState_.isNewInterestAccrued) poolState_.rate = interestParams.interestRate;
-                // raise rates if 4*(tu-1.02*mau) < (tu+1.02*mau-1)^2-1
-                // decrease rates if 4*(tu-mau) > 1-(tu+mau-1)^2
-                int256 mau102 = mau * PERCENT_102 / 10**18;
-
-                uint256 newInterestRate = poolState_.rate;
-                if (4 * (tu - mau102) < ((tu + mau102 - 10**18) ** 2) / 10**18 - 10**18) {
-                    newInterestRate = Maths.wmul(poolState_.rate, INCREASE_COEFFICIENT);
-                } else if (4 * (tu - mau) > 10**18 - ((tu + mau - 10**18) ** 2) / 10**18) {
-                    newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
-                }
-
-                if (poolState_.rate != newInterestRate) {
-                    interestParams.interestRate       = uint208(newInterestRate);
-                    interestParams.interestRateUpdate = uint48(block.timestamp);
-
-                    emit UpdateInterestRate(poolState_.rate, newInterestRate);
-                }
-            }
+            PoolLogic.updateInterestRate(interestParams, deposits, poolState_, lup_);
         }
 
         // update pool inflator
