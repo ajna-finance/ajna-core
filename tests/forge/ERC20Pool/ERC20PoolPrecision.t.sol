@@ -293,7 +293,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         );
 
         // borrower borrows
-        uint256 price = PoolUtils.indexToPrice(2549);
+        uint256 price = priceAt(2549);
 
         _borrow(
             {
@@ -519,7 +519,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
         // bidder purchases quote with collateral
         changePrank(_bidder);
-        uint256 price = PoolUtils.indexToPrice(2549);
+        uint256 price = priceAt(2549);
         uint256 quoteToPurchase = 500 * _quotePoolPrecision;
         uint256 collateralRequired = Maths.wdiv(quoteToPurchase, price);
         uint256 adjustedCollateralReq = collateralRequired / ERC20Pool(address(_pool)).collateralScale();

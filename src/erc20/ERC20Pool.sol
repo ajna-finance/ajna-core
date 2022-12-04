@@ -95,7 +95,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         if (lenderLpBalance == 0) revert NoClaim();                  // revert if no LP to redeem
 
         PoolState memory poolState = _accruePoolInterest();
-        uint256 bucketPrice = PoolUtils.indexToPrice(index_);
+        uint256 bucketPrice = priceAt(index_);
         uint256 exchangeRate = Buckets.getExchangeRate(
             bucket.collateral,
             bucket.lps,

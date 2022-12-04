@@ -4,9 +4,9 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import 'src/libraries/BucketMath.sol';
 import 'src/libraries/Maths.sol';
-import 'src/libraries/PoolUtils.sol';
+import 'src/libraries/PoolLogic.sol';
+// import '../base/Pool.sol';
 
 contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
 
@@ -276,7 +276,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
                 from:       _borrower,
                 amount:     15_000 * 1e18,
                 indexLimit: 3_000,
-                newLup:     PoolUtils.indexToPrice(2551)
+                newLup:     priceAt(2551)
             }
         );
 
@@ -309,7 +309,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
                 from:     _bidder,
                 amount:   amountWithInterest,
                 index:    2550,
-                newLup:   PoolUtils.indexToPrice(2552),
+                newLup:   priceAt(2552),
                 lpRedeem: 10_000.349513872212134187552326469 * 1e27
             }
         );

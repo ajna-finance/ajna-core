@@ -13,7 +13,6 @@ import '../libraries/Buckets.sol';
 import '../libraries/Deposits.sol';
 import '../libraries/Loans.sol';
 import '../libraries/Maths.sol';
-import '../libraries/PoolUtils.sol';
 import '../libraries/PoolLogic.sol';
 import '../libraries/LenderActions.sol';
 
@@ -110,8 +109,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         moveParams.fromIndex       = fromIndex_;
         moveParams.toIndex         = toIndex_;
         moveParams.poolDebt        = poolState.accruedDebt;
-        moveParams.ptp             = PoolUtils.ptp(poolState.accruedDebt, poolState.collateral);
-        moveParams.feeRate         = PoolUtils.feeRate(poolState.rate);
+        moveParams.ptp             = getPtp(poolState.accruedDebt, poolState.collateral);
+        moveParams.feeRate         = feeRate(poolState.rate);
 
         uint256 amountToMove;
         uint256 newLup;
@@ -146,8 +145,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         removeParams.maxAmount = maxAmount_;
         removeParams.index     = index_;
         removeParams.poolDebt  = poolState.accruedDebt;
-        removeParams.ptp       = PoolUtils.ptp(poolState.accruedDebt, poolState.collateral);
-        removeParams.feeRate   = PoolUtils.feeRate(poolState.rate);
+        removeParams.ptp       = getPtp(poolState.accruedDebt, poolState.collateral);
+        removeParams.feeRate   = feeRate(poolState.rate);
 
         uint256 newLup;
         (
@@ -203,7 +202,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 borrowerDebt           = Maths.wmul(borrower.t0debt, poolState.inflator);
 
         // add origination fee to the amount to borrow and add to borrower's debt
-        uint256 debtChange = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestParams.interestRate) + Maths.WAD);
+        uint256 debtChange = Maths.wmul(amountToBorrow_, feeRate(interestParams.interestRate) + Maths.WAD);
         borrowerDebt += debtChange;
         _checkMinDebt(poolState.accruedDebt, borrowerDebt);
 
@@ -212,7 +211,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if (lupId > limitIndex_) revert LimitIndexReached();
 
         // calculate new lup and check borrow action won't push borrower into a state of under-collateralization
-        uint256 newLup = PoolUtils.indexToPrice(lupId);
+        uint256 newLup = priceAt(lupId);
         if (
             !_isCollateralized(borrowerDebt, borrower.collateral, newLup)
         ) revert BorrowerUnderCollateralized();
@@ -557,7 +556,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             if (
                 loansCount >= 10
                 &&
-                (borrowerDebt_ < PoolUtils.minDebtAmount(accruedDebt_, loansCount))
+                (borrowerDebt_ < minDebtAmount(accruedDebt_, loansCount))
             ) revert AmountLTMinDebt();
         }
     }
@@ -683,7 +682,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     function _lup(uint256 debt_) internal view returns (uint256) {
-        return PoolUtils.indexToPrice(_lupIndex(debt_));
+        return priceAt(_lupIndex(debt_));
     }
 
 
@@ -842,5 +841,60 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             if (index_ <= deposits.findIndexOfSum(Maths.wmul(t0AuctionDebt, inflator_))) revert RemoveDepositLockedByAuctionDebt();
         } 
     }
-
 }
+
+    /**********************/
+    /*** Free Functions ***/
+    /**********************/
+
+    function encumberance(
+        uint256 debt_,
+        uint256 price_
+    ) pure returns (uint256 encumberance_) {
+        return price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
+    }
+
+    function collateralization(
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 price_
+    ) pure returns (uint256) {
+        uint256 encumbered = encumberance(debt_, price_);
+        return encumbered != 0 ? Maths.wdiv(collateral_, encumbered) : Maths.WAD;
+    }
+
+    function minDebtAmount(
+        uint256 debt_,
+        uint256 loansCount_
+    ) pure returns (uint256 minDebtAmount_) {
+        if (loansCount_ != 0) {
+            minDebtAmount_ = Maths.wdiv(Maths.wdiv(debt_, Maths.wad(loansCount_)), 10**19);
+        }
+    }
+
+    function feeRate(
+        uint256 interestRate_
+    ) pure returns (uint256) {
+        // greater of the current annualized interest rate divided by 52 (one week of interest) or 5 bps
+        return Maths.max(Maths.wdiv(interestRate_, 52 * 10**18), 0.0005 * 10**18);
+    }
+
+    function getPtp(
+        uint256 debt_,
+        uint256 collateral_
+    ) pure returns (uint256 ptp_) {
+        if (collateral_ != 0) ptp_ = Maths.wdiv(debt_, collateral_);
+    }
+
+    function targetUtilization(
+        uint256 debtEma_,
+        uint256 lupColEma_
+    ) pure returns (uint256) {
+        return (debtEma_ != 0 && lupColEma_ != 0) ? Maths.wdiv(debtEma_, lupColEma_) : Maths.WAD;
+    }
+
+    function priceAt(
+        uint256 index_
+    ) pure returns (uint256) {
+        return PoolLogic.indexToPrice(index_);
+    }

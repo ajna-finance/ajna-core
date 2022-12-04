@@ -6,7 +6,6 @@ import './interfaces/IPool.sol';
 
 import '../libraries/Auctions.sol';
 import '../libraries/Buckets.sol';
-import '../libraries/PoolUtils.sol';
 import '../libraries/PoolLogic.sol';
 
 contract PoolInfoUtils {
@@ -58,7 +57,7 @@ contract PoolInfoUtils {
     {
         IPool pool = IPool(ajnaPool_);
 
-        price_ = PoolUtils.indexToPrice(index_);
+        price_ = priceAt(index_);
 
         (bucketLPs_, collateral_, , quoteTokens_, scale_) = pool.bucketInfo(index_);
         if (bucketLPs_ == 0) {
@@ -126,13 +125,13 @@ contract PoolInfoUtils {
         IPool pool = IPool(ajnaPool_);
         (uint256 debt,,) = pool.debtInfo();
         hpbIndex_ = pool.depositIndex(1);
-        hpb_      = PoolUtils.indexToPrice(hpbIndex_);
+        hpb_      = priceAt(hpbIndex_);
         (, uint256 maxThresholdPrice, ) = pool.loansInfo();
         (uint256 inflatorSnapshot, )    = pool.inflatorInfo();
         htp_      = Maths.wmul(maxThresholdPrice, inflatorSnapshot);
-        if (htp_ != 0) htpIndex_ = PoolUtils.priceToIndex(htp_);
+        if (htp_ != 0) htpIndex_ = PoolLogic.priceToIndex(htp_);
         lupIndex_ = pool.depositIndex(debt);
-        lup_      = PoolUtils.indexToPrice(lupIndex_);
+        lup_      = priceAt(lupIndex_);
     }
 
     /**
@@ -199,12 +198,12 @@ contract PoolInfoUtils {
         uint256 poolCollateral  = pool.pledgedCollateral();
         (, , uint256 noOfLoans) = pool.loansInfo();
 
-        if (poolDebt != 0) poolMinDebtAmount_ = PoolUtils.minDebtAmount(poolDebt, noOfLoans);
-        uint256 currentLup      = PoolUtils.indexToPrice(pool.depositIndex(poolDebt));
-        poolCollateralization_ = PoolUtils.collateralization(poolDebt, poolCollateral, currentLup);
+        if (poolDebt != 0) poolMinDebtAmount_ = minDebtAmount(poolDebt, noOfLoans);
+        uint256 currentLup      = priceAt(pool.depositIndex(poolDebt));
+        poolCollateralization_ = collateralization(poolDebt, poolCollateral, currentLup);
         poolActualUtilization_ = pool.depositUtilization(poolDebt, poolCollateral);
         (uint256 debtEma, uint256 lupColEma) = pool.emasInfo();
-        poolTargetUtilization_ = PoolUtils.poolTargetUtilization(debtEma, lupColEma);
+        poolTargetUtilization_ = targetUtilization(debtEma, lupColEma);
     }
 
     /**
@@ -230,14 +229,14 @@ contract PoolInfoUtils {
         uint256 index_
     ) external pure returns (uint256)
     {
-        return PoolUtils.indexToPrice(index_);
+        return PoolLogic.indexToPrice(index_);
     }
 
     function priceToIndex(
         uint256 price_
     ) external pure returns (uint256)
     {
-        return PoolUtils.priceToIndex(price_);
+        return PoolLogic.priceToIndex(price_);
     }
 
     function lup(
@@ -246,7 +245,7 @@ contract PoolInfoUtils {
         IPool pool = IPool(ajnaPool_);
         (uint256 debt,,) = pool.debtInfo();
         uint256 currentLupIndex = pool.depositIndex(debt);
-        return PoolUtils.indexToPrice(currentLupIndex);
+        return priceAt(currentLupIndex);
     }
 
     function lupIndex(
@@ -264,7 +263,7 @@ contract PoolInfoUtils {
         IPool pool = IPool(ajnaPool_);
 
         uint256 hbpIndex = pool.depositIndex(1);
-        return PoolUtils.indexToPrice(hbpIndex);
+        return priceAt(hbpIndex);
     }
 
     function hpbIndex(
@@ -303,7 +302,7 @@ contract PoolInfoUtils {
             bucketDeposit,
             lpTokens_,
             bucketDeposit,
-            PoolUtils.indexToPrice(index_)
+            priceAt(index_)
         );
     }
 
@@ -325,7 +324,7 @@ contract PoolInfoUtils {
             bucketLPs_,
             bucketDeposit,
             lpTokens_,
-            PoolUtils.indexToPrice(index_)
+            priceAt(index_)
         );
     }
 

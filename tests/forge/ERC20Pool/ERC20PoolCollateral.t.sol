@@ -3,8 +3,7 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import 'src/libraries/BucketMath.sol';
-import 'src/libraries/PoolUtils.sol';
+import 'src/libraries/PoolLogic.sol';
 
 contract ERC20PoolCollateralTest is ERC20HelperContract {
 
@@ -164,7 +163,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         _pullCollateral(
             {
                 from:   _borrower,
-                amount: 50 * 1e18 - PoolUtils.encumberance(21_049.006823139002918431 * 1e18, _lup())
+                amount: 50 * 1e18 - encumberance(21_049.006823139002918431 * 1e18, _lup())
             }
         );
 

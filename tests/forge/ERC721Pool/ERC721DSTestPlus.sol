@@ -17,7 +17,6 @@ import 'src/base/interfaces/IPool.sol';
 import 'src/base/PoolInfoUtils.sol';
 
 import 'src/libraries/Maths.sol';
-import 'src/libraries/PoolUtils.sol';
 
 abstract contract ERC721DSTestPlus is DSTestPlus {
 

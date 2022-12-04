@@ -272,7 +272,7 @@ library PoolLogic {
         // utilization
         uint256 mau;
         if (collateral_ != 0) {
-            uint256 ptp = Maths.wdiv(debt_, collateral_);
+            uint256 ptp = getPtp(debt_, collateral_);
 
             if (ptp != 0) {
                 uint256 depositAbove = Deposits.prefixSum(deposits_, _priceToIndex(ptp));

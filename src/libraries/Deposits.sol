@@ -2,8 +2,7 @@
 pragma solidity 0.8.14;
 
 import './Maths.sol';
-import './PoolUtils.sol';
-import './BucketMath.sol';
+import './PoolLogic.sol';
 
 library Deposits {
 
@@ -28,7 +27,7 @@ library Deposits {
         uint256 curDebt_,
         uint256 numLoans_
     ) internal view returns (uint256 momp_) {
-        if (numLoans_ != 0) momp_ = PoolUtils.indexToPrice(findIndexOfSum(self, Maths.wdiv(curDebt_, numLoans_ * 1e18)));
+        if (numLoans_ != 0) momp_ = priceAt(findIndexOfSum(self, Maths.wdiv(curDebt_, numLoans_ * 1e18)));
     }
 
     function t0Np(

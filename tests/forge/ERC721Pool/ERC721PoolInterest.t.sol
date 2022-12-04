@@ -4,9 +4,6 @@ pragma solidity 0.8.14;
 import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 import 'src/erc721/ERC721Pool.sol';
 
-import 'src/libraries/BucketMath.sol';
-import 'src/libraries/PoolUtils.sol';
-
 abstract contract ERC721PoolInterestTest is ERC721HelperContract {
     address internal _borrower;
     address internal _borrower2;
@@ -290,7 +287,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 from:       _borrower,
                 amount:     borrowAmount,
                 indexLimit: 2_551,
-                newLup:     PoolUtils.indexToPrice(2550)
+                newLup:     priceAt(2550)
             }
         );
         uint256 expectedBorrower1Debt = 8_007.692307692307696000 * 1e18;
@@ -325,7 +322,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 from:       _borrower2,
                 amount:     borrowAmount,
                 indexLimit: 3_000,
-                newLup:     PoolUtils.indexToPrice(2551)
+                newLup:     priceAt(2551)
             }
         );
         expectedBorrower1Debt = 8_007.875133804645608008 * 1e18;
@@ -371,7 +368,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 from:       _borrower3,
                 amount:     borrowAmount,
                 indexLimit: 3_000,
-                newLup:     PoolUtils.indexToPrice(2551)
+                newLup:     priceAt(2551)
             }
         );
         expectedBorrower1Debt = 8_008.057964091143327677 * 1e18;

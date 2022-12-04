@@ -3,8 +3,7 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import 'src/libraries/BucketMath.sol';
-import 'src/libraries/PoolUtils.sol';
+import 'src/libraries/PoolLogic.sol';
 
 contract ERC20PoolBorrowTest is ERC20HelperContract {
 
@@ -1097,7 +1096,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  PoolUtils.priceToIndex(200 * 1e18),
+                index:  PoolLogic.priceToIndex(200 * 1e18),
                 newLup: 2_981.007422784467321543 * 1e18
             }
         );
@@ -1106,7 +1105,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             {
                 from:     _lender,
                 amount:   10_000 * 1e18,
-                index:    PoolUtils.priceToIndex(200 * 1e18),
+                index:    PoolLogic.priceToIndex(200 * 1e18),
                 newLup:   2_981.007422784467321543 * 1e18,
                 lpRedeem: 10_000 * 1e27
             }

@@ -3,7 +3,6 @@
 pragma solidity 0.8.14;
 
 import './Deposits.sol';
-import './PoolUtils.sol';
 import './Maths.sol';
 
 library Loans {

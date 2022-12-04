@@ -113,7 +113,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             bucket.lps,
             deposits.valueAt(index_),
             collateralAmount_,
-            PoolUtils.indexToPrice(index_)
+            priceAt(index_)
         );
 
         (uint256 lenderLpBalance, ) = buckets.getLenderInfo(index_, msg.sender);
