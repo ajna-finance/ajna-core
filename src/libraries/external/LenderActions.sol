@@ -44,7 +44,6 @@ library LenderActions {
         uint256 maxAmountToMove; // max amount to move between deposits
         uint256 fromIndex;       // the deposit index from where amount is moved
         uint256 toIndex;         // the deposit index where amount is moved to
-        uint256 poolDebt;        // the amount of debt in pool
         uint256 ptp;             // the Pool Threshold Price (used to determine if penalty should be applied
         uint256 feeRate;         // the fee rate in pool (used to calculate penalty)
     }
@@ -52,7 +51,6 @@ library LenderActions {
     struct RemoveQuoteParams {
         uint256 maxAmount; // max amount to be removed
         uint256 index;     // the deposit index from where amount is removed
-        uint256 poolDebt;  // the amount of debt in pool
         uint256 ptp;       // the Pool Threshold Price (used to determine if penalty should be applied)
         uint256 feeRate;   // the fee rate in pool (used to calculate penalty)
     }
@@ -61,11 +59,10 @@ library LenderActions {
         mapping(uint256 => Buckets.Bucket) storage buckets_,
         Deposits.Data storage deposits_,
         uint256 collateralAmountToAdd_,
-        uint256 index_,
-        uint256 poolDebt_
-    ) external returns (uint256 bucketLPs_, uint256 lup_) {
+        uint256 index_
+    ) external returns (uint256 bucketLPs_) {
         uint256 bucketDeposit = Deposits.valueAt(deposits_, index_);
-        uint256 bucketPrice   = PoolCommons._indexToPrice(index_);
+        uint256 bucketPrice   = priceAt(index_);
         bucketLPs_ = Buckets.addCollateral(
             buckets_[index_],
             msg.sender,
@@ -73,19 +70,16 @@ library LenderActions {
             collateralAmountToAdd_,
             bucketPrice
         );
-
-        lup_ = PoolCommons._indexToPrice(Deposits.findIndexOfSum(deposits_, poolDebt_));
     }
 
     function addQuoteToken(
         mapping(uint256 => Buckets.Bucket) storage buckets_,
         Deposits.Data storage deposits_,
         uint256 quoteTokenAmountToAdd_,
-        uint256 index_,
-        uint256 poolDebt_
-    ) external returns (uint256 bucketLPs_, uint256 lup_) {
+        uint256 index_
+    ) external returns (uint256 bucketLPs_) {
         uint256 bucketDeposit = Deposits.valueAt(deposits_, index_);
-        uint256 bucketPrice   = PoolCommons._indexToPrice(index_);
+        uint256 bucketPrice   = priceAt(index_);
         bucketLPs_ = Buckets.addQuoteToken(
             buckets_[index_],
             bucketDeposit,
@@ -93,19 +87,17 @@ library LenderActions {
             bucketPrice
         );
         Deposits.add(deposits_, index_, quoteTokenAmountToAdd_);
-
-        lup_ = PoolCommons._indexToPrice(Deposits.findIndexOfSum(deposits_, poolDebt_));
     }
 
     function moveQuoteToken(
         mapping(uint256 => Buckets.Bucket) storage buckets_,
         Deposits.Data storage deposits_,
         MoveQuoteParams calldata params_
-    ) external returns (uint256 fromBucketLPs_, uint256 toBucketLPs_, uint256 amountToMove_, uint256 lup_) {
+    ) external returns (uint256 fromBucketLPs_, uint256 toBucketLPs_, uint256 amountToMove_) {
         if (params_.fromIndex == params_.toIndex) revert MoveToSamePrice();
 
-        uint256 fromPrice   = PoolCommons._indexToPrice(params_.fromIndex);
-        uint256 toPrice     = PoolCommons._indexToPrice(params_.toIndex);
+        uint256 fromPrice   = priceAt(params_.fromIndex);
+        uint256 toPrice     = priceAt(params_.toIndex);
         uint256 fromDeposit = Deposits.valueAt(deposits_, params_.fromIndex);
 
         Buckets.Bucket storage fromBucket = buckets_[params_.fromIndex];
@@ -151,15 +143,13 @@ library LenderActions {
             fromBucketLPs_,
             toBucketLPs_
         );
-
-        lup_ = PoolCommons._indexToPrice(Deposits.findIndexOfSum(deposits_, params_.poolDebt));
     }
 
     function removeQuoteToken(
         mapping(uint256 => Buckets.Bucket) storage buckets_,
         Deposits.Data storage deposits_,
         RemoveQuoteParams calldata params_
-    ) external returns (uint256 removedAmount_, uint256 redeemedLPs_, uint256 lup_) {
+    ) external returns (uint256 removedAmount_, uint256 redeemedLPs_) {
 
         (uint256 lenderLPs, uint256 depositTime) = Buckets.getLenderInfo(
             buckets_,
@@ -171,7 +161,7 @@ library LenderActions {
         uint256 deposit = Deposits.valueAt(deposits_, params_.index);
         if (deposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
 
-        uint256 price = PoolCommons._indexToPrice(params_.index);
+        uint256 price = priceAt(params_.index);
 
         Buckets.Bucket storage bucket = buckets_[params_.index];
         uint256 exchangeRate = Buckets.getExchangeRate(
@@ -204,17 +194,14 @@ library LenderActions {
         // update bucket and lender LPs balances
         bucket.lps -= redeemedLPs_;
         bucket.lenders[msg.sender].lps -= redeemedLPs_;
-
-        lup_ = PoolCommons._indexToPrice(Deposits.findIndexOfSum(deposits_, params_.poolDebt));
     }
 
     function removeMaxCollateral(
         mapping(uint256 => Buckets.Bucket) storage buckets_,
         Deposits.Data storage deposits_,
         uint256 maxAmount_,
-        uint256 index_,
-        uint256 poolDebt_
-    ) external returns (uint256 collateralAmount_, uint256 lpAmount_, uint256 lup_) {
+        uint256 index_
+    ) external returns (uint256 collateralAmount_, uint256 lpAmount_) {
 
         Buckets.Bucket storage bucket = buckets_[index_];
         if (bucket.collateral == 0) revert InsufficientCollateral(); // revert if there's no collateral in bucket
@@ -222,7 +209,7 @@ library LenderActions {
         (uint256 lenderLpBalance, ) = Buckets.getLenderInfo(buckets_, index_, msg.sender);
         if (lenderLpBalance == 0) revert NoClaim();                  // revert if no LP to redeem
 
-        uint256 bucketPrice = PoolCommons._indexToPrice(index_);
+        uint256 bucketPrice = priceAt(index_);
         uint256 exchangeRate = Buckets.getExchangeRate(
             bucket.collateral,
             bucket.lps,
@@ -249,22 +236,19 @@ library LenderActions {
             collateralAmount_,
             lpAmount_
         );
-
-        lup_ = PoolCommons._indexToPrice(Deposits.findIndexOfSum(deposits_, poolDebt_));
     }
 
     function removeCollateral(
         mapping(uint256 => Buckets.Bucket) storage buckets_,
         Deposits.Data storage deposits_,
         uint256 amount_,
-        uint256 index_,
-        uint256 poolDebt_
-    ) external returns (uint256 lpAmount_, uint256 lup_) {
+        uint256 index_
+    ) external returns (uint256 lpAmount_) {
 
         Buckets.Bucket storage bucket = buckets_[index_];
         if (amount_ > bucket.collateral) revert InsufficientCollateral();
 
-        uint256 bucketPrice = PoolCommons._indexToPrice(index_);
+        uint256 bucketPrice = priceAt(index_);
         lpAmount_ = Buckets.collateralToLPs(
             bucket.collateral,
             bucket.lps,
@@ -282,8 +266,6 @@ library LenderActions {
             amount_,
             lpAmount_
         );
-
-        lup_ = PoolCommons._indexToPrice(Deposits.findIndexOfSum(deposits_, poolDebt_));
     }
 
     /**

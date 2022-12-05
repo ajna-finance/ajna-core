@@ -89,7 +89,16 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256[] calldata tokenIdsToAdd_,
         uint256 index_
     ) external override returns (uint256 bucketLPs_) {
-        bucketLPs_ = _addCollateral(Maths.wad(tokenIdsToAdd_.length), index_);
+        PoolState memory poolState = _accruePoolInterest();
+
+        bucketLPs_ = LenderActions.addCollateral(
+            buckets,
+            deposits,
+            Maths.wad(tokenIdsToAdd_.length),
+            index_
+        );
+
+        _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
         emit AddCollateralNFT(msg.sender, index_, tokenIdsToAdd_);
         // move required collateral from sender to pool
@@ -105,16 +114,14 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         PoolState memory poolState = _accruePoolInterest();
 
         collateralAmount_ = Maths.wad(noOfNFTsToRemove_);
-        uint256 newLup;
-        (lpAmount_, newLup) = LenderActions.removeCollateral(
+        lpAmount_ = LenderActions.removeCollateral(
             buckets,
             deposits,
             collateralAmount_,
-            index_,
-            poolState.accruedDebt
+            index_
         );
 
-        _updateInterestParams(poolState, newLup);
+        _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
         emit RemoveCollateral(msg.sender, index_, noOfNFTsToRemove_);
         _transferFromPoolToAddress(msg.sender, bucketTokenIds, noOfNFTsToRemove_);
