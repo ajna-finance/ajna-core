@@ -764,14 +764,22 @@ abstract contract DSTestPlus is Test {
         _pool.borrow(amount, indexLimit);
     }
 
+    function _assertFlashloanFeeRevertsForToken(
+        address token,
+        uint256 amount
+    ) internal {
+        vm.expectRevert(abi.encodeWithSignature('FlashloanUnavailableForToken()'));
+        _pool.flashFee(token, amount);
+    }
+
     function _assertFlashloanTooLargeRevert(
         IERC3156FlashBorrower flashBorrower,
+        address token,
         uint256 amount
     ) internal {
         changePrank(address(flashBorrower));
-        address quoteTokenAddress = _pool.quoteTokenAddress();
-        vm.expectRevert();
-        _pool.flashLoan(flashBorrower, quoteTokenAddress, amount, new bytes(0));
+        vm.expectRevert('ERC20: transfer amount exceeds balance');
+        _pool.flashLoan(flashBorrower, token, amount, new bytes(0));
     }
 
     function _assertFlashloanUnavailableForToken(

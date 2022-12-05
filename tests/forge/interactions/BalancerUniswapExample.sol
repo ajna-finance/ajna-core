@@ -38,7 +38,7 @@ contract BalancerUniswapTaker {
     function receiveFlashLoan(
         IERC20[] calldata tokens,
         uint256[] calldata amounts,
-        uint256[] calldata feeAmounts,
+        uint256[] calldata,
         bytes calldata userData
     ) public payable {
         if (msg.sender != balancerAddress) revert NotBalancer();
@@ -119,7 +119,7 @@ contract BalancerUniswapPurchaser {
     function receiveFlashLoan(
         IERC20[] calldata tokens,
         uint256[] calldata amounts,
-        uint256[] calldata feeAmounts,
+        uint256[] calldata,
         bytes calldata userData
     ) public payable {
         if (msg.sender != balancerAddress) revert NotBalancer();
