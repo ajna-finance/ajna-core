@@ -179,29 +179,47 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
         if (lenderLPsBalance == 0) revert NoClaim();      // revert if no LP to claim
 
-        uint256 deposit = deposits.valueAt(index_);
-        if (deposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
+        uint256 rawDeposit = deposits.rawValueAt(index_);
+        uint256 depositScale = deposits.scale(index_);
+        if (rawDeposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
 
         Buckets.Bucket storage bucket = buckets[index_];
-        uint256 exchangeRate = Buckets.getExchangeRate(
+	
+        uint256 rawExchangeRate = Buckets.getRawExchangeRate(
             bucket.collateral,
             bucket.lps,
-            deposit,
+            rawDeposit,
+	    depositScale,
             PoolUtils.indexToPrice(index_)
         );
-        removedAmount_ = Maths.rayToWad(Maths.rmul(lenderLPsBalance, exchangeRate));
-        uint256 removedAmountBefore = removedAmount_;
 
-        // remove min amount of lender entitled LPBs, max amount desired and deposit in bucket
-        if (removedAmount_ > maxAmount_) removedAmount_ = maxAmount_;
-        if (removedAmount_ > deposit)    removedAmount_ = deposit;
+	// rawRemovedAmount = min ( maxAmount_/scale, rawDeposit, lenderLPsBalance*rawExchangeRate)
+	// redeemedLPs_ = rawRemovedAmount/rawEchangeRate
+	// redeemedLPs_ = min ( maxAmount_/(rawExchangeRate*scale), rawDeposit/rawExchangeRate, lenderLPsBalance)
 
-        if (removedAmountBefore == removedAmount_) redeemedLPs_ = lenderLPsBalance;
-        else {
-            redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(removedAmount_, exchangeRate));
-        }
-
-        deposits.remove(index_, removedAmount_, deposit); // update FenwickTree
+	uint256 rawRemovedAmount;
+	
+	if( maxAmount_ < Maths.wmul(rawDeposit, depositScale) &&
+	    Maths.wwdivr(maxAmount_, depositScale) < Maths.rmul(lenderLPsBalance, rawExchangeRate) ) {
+	    // maxAmount is binding constraint
+	    rawRemovedAmount = Maths.wdiv(maxAmount_, depositScale);
+	    redeemedLPs_ = Maths.wrdivr(rawRemovedAmount, rawExchangeRate);
+	} else if ( Maths.wadToRay(rawDeposit) < Maths.rmul(lenderLPsBalance, rawExchangeRate ) ) {
+	    // rawDeposit is binding constraint
+	    rawRemovedAmount = rawDeposit;
+	    redeemedLPs_ = Maths.wrdivr(rawRemovedAmount, rawExchangeRate);
+	} else {
+	    // redeeming all LPs
+	    redeemedLPs_ = lenderLPsBalance;
+	    rawRemovedAmount = Maths.rrdivw(redeemedLPs_, rawExchangeRate);
+	}
+	
+	// If clearing out the bucket deposit, ensure it's zeroed out
+	if (redeemedLPs_ == bucket.lps) {
+	    rawRemovedAmount = rawDeposit;
+	}
+	
+        deposits.rawRemove(index_, rawRemovedAmount); // update FenwickTree
 
         uint256 newLup = _lup(poolState.accruedDebt);
         if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
@@ -215,7 +233,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             lastDeposit,
             index_,
             0,
-            removedAmount_
+            Maths.wmul(rawRemovedAmount, depositScale)
         );
 
         _updateInterestParams(poolState, newLup);

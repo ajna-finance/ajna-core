@@ -218,6 +218,26 @@ library Buckets {
             (bucketDeposit_ * 1e18 + bucketPrice_ * bucketCollateral_) * 1e18 / bucketLPs_;
             // 10^36 * 1e18 / 10^27 = 10^54 / 10^27 = 10^27
     }
+    /**
+     *  @notice Returns the exchange rate for a given bucket.
+     *  @param  bucketCollateral_ Amount of collateral in bucket.
+     *  @param  bucketLPs_        Amount of LPs in bucket.
+     *  @param  bucketRawDeposit_ The amount of unscaled Fenwick tree amount in bucket.
+     *  @param  bucketScale_      Bucket scale factor
+     *  @param  bucketPrice_      Bucket's price.
+     */
+
+    function getRawExchangeRate(
+        uint256 bucketCollateral_,
+        uint256 bucketLPs_,
+        uint256 bucketRawDeposit_,
+	uint256 bucketScale_,
+        uint256 bucketPrice_
+    ) internal pure returns (uint256) {
+        return bucketLPs_ == 0 ? Maths.RAY :
+            (bucketRawDeposit_ + bucketPrice_ * bucketCollateral_ / bucketScale_ ) * 10**36 / bucketLPs_;
+            // 10^18 * 1e36 / 10^27 = 10^54 / 10^27 = 10^27
+    }
 
     /**
      *  @notice Returns the lender info for a given bucket.

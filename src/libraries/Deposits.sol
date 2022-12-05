@@ -100,7 +100,7 @@ library Deposits {
         if (index_ >= SIZE) revert InvalidIndex();
 
         index_ += 1;
-        addAmount_ = Maths.wdiv(addAmount_, scale(self, index_));
+        addAmount_ = Maths.wdiv(addAmount_, scale(self, index_)); // TODO: is this right?  index_+1?
 
         while (index_ <= SIZE) {
             uint256 value    = self.values[index_];
@@ -255,42 +255,40 @@ library Deposits {
         }
     }
 
-    /**
-     *  @notice Decrease a node in the FenwickTree at an index.
-     *  @dev    Starts at leaf/target and moved up towards root
-     *  @param  index_          The deposit index.
-     *  @param  removeAmount_   Amount to decrease deposit by.
-     *  @param  currentDeposit_ Current deposit amount.
-     */    
     function remove(
         Data storage self,
         uint256 index_,
         uint256 removeAmount_,
-        uint256 currentDeposit_
+	uint256 currentAmount_
+    ) internal {
+	if (removeAmount_ == currentAmount_) {
+	    rawRemove(self, index_, rawValueAt(self,index_));
+	} else {
+	    rawRemove(self, index_, Maths.wdiv(removeAmount_, scale(self, index_)));
+	}
+    }
+
+    
+    /**
+     *  @notice Decrease a node in the FenwickTree at an index.
+     *  @dev    Starts at leaf/target and moved up towards root
+     *  @param  index_          The deposit index.
+     *  @param  rawRemoveAmount_   Unscaled amount to decrease deposit by.
+     */    
+    function rawRemove(
+        Data storage self,
+        uint256 index_,
+        uint256 rawRemoveAmount_
     ) internal {
         if (index_ >= SIZE) revert InvalidIndex();
 
         index_ += 1;
 
-        uint256 runningSum;
-        if (removeAmount_ == currentDeposit_) { // obliterate
-            uint256 j = 1;
-            while (j & index_ == 0) {
-                uint256 scaling = self.scaling[index_ - j];
-                uint256 value   = self.values[index_ - j];
-                runningSum      += scaling != 0 ? Maths.wmul(scaling, value) : value;
-                j = j << 1;
-            }
-            runningSum = self.values[index_] - runningSum;
-        } else {
-            runningSum = Maths.wdiv(removeAmount_, scale(self, index_));
-        }
-
         while (index_ <= SIZE) {
             uint256 value    = self.values[index_];
-            uint256 newValue = value - runningSum;
+            uint256 newValue = value - rawRemoveAmount_;
             uint256 scaling  = self.scaling[index_];
-            if (scaling != 0) runningSum = Maths.wmul(value, scaling) - Maths.wmul(newValue,  scaling);
+            if (scaling != 0) rawRemoveAmount_ = Maths.wmul(value, scaling) - Maths.wmul(newValue,  scaling);
             self.values[index_] = newValue;
             index_ += lsb(index_);
         }
@@ -307,6 +305,7 @@ library Deposits {
         uint256 index_
     ) internal view returns (uint256 scaled_) {
         if (index_ > SIZE) revert InvalidIndex();
+	index_+=1;  // TODO: is this right?  
 
         scaled_ = Maths.WAD;
         while (index_ <= SIZE) {
@@ -336,21 +335,25 @@ library Deposits {
     ) internal view returns (uint256 depositValue_) {
         if (index_ >= SIZE) revert InvalidIndex();
 
+	depositValue_ = Maths.wmul(rawValueAt(self, index_), scale(self,index_));
+    }
+
+    function rawValueAt(
+        Data storage self,
+        uint256 index_
+    ) internal view returns (uint256 rawDepositValue_) {
+        if (index_ >= SIZE) revert InvalidIndex();
+
         index_ += 1;
 
         uint256 j = 1;
 
+        rawDepositValue_ = self.values[index_];
         while (j & index_ == 0) {
             uint256 value   = self.values[index_ - j];
             uint256 scaling = self.scaling[index_ - j];
-            depositValue_ += scaling != 0 ? Maths.wmul(scaling, value) : value;
+            rawDepositValue_ -= scaling != 0 ? Maths.wmul(scaling, value) : value;
             j = j << 1;
-        }
-        depositValue_ = self.values[index_] - depositValue_;
-        while (index_ <= SIZE) {
-            uint256 scaling = self.scaling[index_];
-            if (scaling != 0) depositValue_ = Maths.wmul(scaling, depositValue_);
-            index_ += lsb(index_);
         }
     }
 }
