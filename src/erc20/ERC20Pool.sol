@@ -75,7 +75,16 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         uint256 collateralAmountToAdd_,
         uint256 index_
     ) external override returns (uint256 bucketLPs_) {
-        bucketLPs_ = _addCollateral(collateralAmountToAdd_, index_);
+        PoolState memory poolState = _accruePoolInterest();
+
+        bucketLPs_ = LenderActions.addCollateral(
+            buckets,
+            deposits,
+            collateralAmountToAdd_,
+            index_
+        );
+
+        _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
         emit AddCollateral(msg.sender, index_, collateralAmountToAdd_);
         // move required collateral from sender to pool
@@ -90,16 +99,14 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         PoolState memory poolState = _accruePoolInterest();
 
-        uint256 newLup;
-        (collateralAmount_, lpAmount_, newLup) = LenderActions.removeMaxCollateral(
+        (collateralAmount_, lpAmount_) = LenderActions.removeMaxCollateral(
             buckets,
             deposits,
             maxAmount_,
-            index_,
-            poolState.accruedDebt
+            index_
         );
 
-        _updateInterestParams(poolState, newLup);
+        _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
         emit RemoveCollateral(msg.sender, index_, collateralAmount_);
         // move collateral from pool to lender

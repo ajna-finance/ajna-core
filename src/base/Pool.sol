@@ -75,15 +75,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     ) external override returns (uint256 bucketLPs_) {
         PoolState memory poolState = _accruePoolInterest();
 
-        uint256 newLup;
-        (bucketLPs_, newLup) = LenderActions.addQuoteToken(
+        bucketLPs_ = LenderActions.addQuoteToken(
             buckets,
             deposits,
             quoteTokenAmountToAdd_,
-            index_,
-            poolState.accruedDebt
+            index_
         );
 
+        uint256 newLup = _lup(poolState.accruedDebt);
         _updateInterestParams(poolState, newLup);
 
         emit AddQuoteToken(msg.sender, index_, quoteTokenAmountToAdd_, newLup);
@@ -111,23 +110,22 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         moveParams.maxAmountToMove = maxAmountToMove_;
         moveParams.fromIndex       = fromIndex_;
         moveParams.toIndex         = toIndex_;
-        moveParams.poolDebt        = poolState.accruedDebt;
         moveParams.ptp             = getPtp(poolState.accruedDebt, poolState.collateral);
         moveParams.feeRate         = feeRate(poolState.rate);
 
         uint256 amountToMove;
-        uint256 newLup;
         (
             fromBucketLPs_,
             toBucketLPs_,
-            amountToMove,
-            newLup
+            amountToMove
         ) = LenderActions.moveQuoteToken(
             buckets,
             deposits,
             moveParams
         );
+
         // move lup if necessary and check loan book's htp against new lup
+        uint256 newLup = _lup(poolState.accruedDebt);
         if (fromIndex_ < toIndex_) if(_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
 
         _updateInterestParams(poolState, newLup);
@@ -147,23 +145,20 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         LenderActions.RemoveQuoteParams memory removeParams;
         removeParams.maxAmount = maxAmount_;
         removeParams.index     = index_;
-        removeParams.poolDebt  = poolState.accruedDebt;
         removeParams.ptp       = getPtp(poolState.accruedDebt, poolState.collateral);
         removeParams.feeRate   = feeRate(poolState.rate);
 
-        uint256 newLup;
         (
             removedAmount_,
-            redeemedLPs_,
-            newLup
+            redeemedLPs_
         ) = LenderActions.removeQuoteToken(
             buckets,
             deposits,
             removeParams
         );
 
+        uint256 newLup = _lup(poolState.accruedDebt);
         if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
-
         _updateInterestParams(poolState, newLup);
 
         emit RemoveQuoteToken(msg.sender, index_, removedAmount_, newLup);
@@ -568,28 +563,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         }
     }
 
-    /*********************************/
-    /*** Lender Internal Functions ***/
-    /*********************************/
-
-    function _addCollateral(
-        uint256 collateralAmountToAdd_,
-        uint256 index_
-    ) internal returns (uint256 bucketLPs_) {
-        PoolState memory poolState = _accruePoolInterest();
-
-        uint256 newLup;
-        (bucketLPs_, newLup) = LenderActions.addCollateral(
-            buckets,
-            deposits,
-            collateralAmountToAdd_,
-            index_,
-            poolState.accruedDebt
-        );
-
-        _updateInterestParams(poolState, newLup);
-    }
-
 
     /******************************/
     /*** Pool Virtual Functions ***/
@@ -859,9 +832,18 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*************************/
 
     /**
-     *  @notice Wrapper function for call to external Poolcommons library.
-     *  @param  index_ The deposit index from which LPB is attempting to be removed.
-     *  @return Price for the given index.
+     *  @notice Calculates the price for a given Fenwick index
+     *  @dev    Throws if index exceeds maximum constant
+     *  @dev    Uses fixed-point math to get around lack of floating point numbers in EVM
+     *  @dev    Price expected to be inputted as a 18 decimal WAD
+     *  @dev    Fenwick index is converted to bucket index
+     *  @dev Fenwick index to bucket index conversion
+     *          1.00      : bucket index 0,     fenwick index 4146: 7388-4156-3232=0
+     *          MAX_PRICE : bucket index 4156,  fenwick index 0:    7388-0-3232=4156.
+     *          MIN_PRICE : bucket index -3232, fenwick index 7388: 7388-7388-3232=-3232.
+     *  @dev    V1: price = MIN_PRICE + (FLOAT_STEP * index)
+     *          V2: price = MAX_PRICE * (FLOAT_STEP ** (abs(int256(index - MAX_PRICE_INDEX))));
+     *          V3 (final): x^y = 2^(y*log_2(x))
      */
     function priceAt(
         uint256 index_
