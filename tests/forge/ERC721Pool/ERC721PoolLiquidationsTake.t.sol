@@ -40,7 +40,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
                 from:   _lender,
                 amount: 2_000 * 1e18,
                 index:  _i9_91,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -48,7 +48,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
                 from:   _lender,
                 amount: 5_000 * 1e18,
                 index:  _i9_81,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -56,7 +56,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
                 from:   _lender,
                 amount: 11_000 * 1e18,
                 index:  _i9_72,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -64,7 +64,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
                 from:   _lender,
                 amount: 25_000 * 1e18,
                 index:  _i9_62,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -72,7 +72,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
                 from:   _lender,
                 amount: 30_000 * 1e18,
                 index:  _i9_52,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 

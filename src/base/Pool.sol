@@ -832,6 +832,19 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*************************/
 
     /**
+        @dev constant price indices defining the min and max of the potential price range
+     */
+    int256 constant MAX_BUCKET_INDEX = 4_156;
+    int256 constant MIN_BUCKET_INDEX = -3_232;
+
+    uint256 constant MIN_PRICE = 99_836_282_890;
+    uint256 constant MAX_PRICE = 1_004_968_987.606512354182109771 * 10**18;
+    /**
+        @dev step amounts in basis points. This is a constant across pools at .005, achieved by dividing WAD by 10,000
+     */
+    int256 constant FLOAT_STEP_INT = 1.005 * 10**18;
+
+    /**
      *  @notice Calculates the price for a given Fenwick index
      *  @dev    Throws if index exceeds maximum constant
      *  @dev    Uses fixed-point math to get around lack of floating point numbers in EVM
@@ -848,14 +861,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function priceAt(
         uint256 index_
     ) pure returns (uint256) {
-        int256 bucketIndex = (index_ != 8191) ? 4_156 - int256(index_) : -3_232;
-        require(bucketIndex >= -3_232 && bucketIndex <= 4_156, "BM:ITP:OOB");
+        int256 bucketIndex = (index_ != 8191) ? MAX_BUCKET_INDEX - int256(index_) : MIN_BUCKET_INDEX;
+        require(bucketIndex >= MIN_BUCKET_INDEX && bucketIndex <= MAX_BUCKET_INDEX, "BM:ITP:OOB");
 
         return uint256(
             PRBMathSD59x18.exp2(
                 PRBMathSD59x18.mul(
                     PRBMathSD59x18.fromInt(bucketIndex),
-                    PRBMathSD59x18.log2(1.005 * 10**18)
+                    PRBMathSD59x18.log2(FLOAT_STEP_INT)
                 )
             )
         );
@@ -873,11 +886,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function indexOf(
         uint256 price_
     ) pure returns (uint256) {
-        require(price_ >= 99_836_282_890 && price_ <= 1_004_968_987.606512354182109771 * 10**18, "BM:PTI:OOB");
+        require(price_ >= MIN_PRICE && price_ <= MAX_PRICE, "BM:PTI:OOB");
 
         int256 index = PRBMathSD59x18.div(
             PRBMathSD59x18.log2(int256(price_)),
-            PRBMathSD59x18.log2(1.005 * 10**18)
+            PRBMathSD59x18.log2(FLOAT_STEP_INT)
         );
 
         int256 ceilIndex = PRBMathSD59x18.ceil(index);

@@ -34,7 +34,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
                 from:   _lender,
                 amount: 200_000 * 1e18,
                 index:  bucketId,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -116,7 +116,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
                 borrower: _borrower,
                 amount:   205_000 * 1e18,
                 repaid:   179_590.373946590638353626 * 1e18,
-                newLup:   PoolCommons.MAX_PRICE
+                newLup:   MAX_PRICE
             }
         );
         _assertReserveAuction(
@@ -182,7 +182,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
                 borrower: _borrower,
                 amount:   205_000 * 1e18,
                 repaid:   179_590.373946590638353626 * 1e18,
-                newLup:   PoolCommons.MAX_PRICE
+                newLup:   MAX_PRICE
             }
         );
         (uint256 debt,,) = _pool.debtInfo();
@@ -411,7 +411,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
                 borrower: _borrower,
                 amount:   105_000 * 1e18,
                 repaid:   79_940.029064520279557316 * 1e18,
-                newLup:   PoolCommons.MAX_PRICE
+                newLup:   MAX_PRICE
             }
         );
 

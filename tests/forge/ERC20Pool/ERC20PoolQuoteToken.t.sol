@@ -32,7 +32,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
      *              attempts to addQuoteToken at invalid price.
      */
     function testPoolDepositQuoteToken() external tearDown {
-        assertEq(_hpb(), PoolCommons.MIN_PRICE);
+        assertEq(_hpb(), MIN_PRICE);
 
         // test 10_000 deposit at price of 3_010.892022197881557845
         _addLiquidity(
@@ -40,13 +40,13 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2550,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _assertPool(
             PoolState({
                 htp:                  0,
-                lup:                  PoolCommons.MAX_PRICE,
+                lup:                  MAX_PRICE,
                 poolSize:             10_000 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
@@ -87,13 +87,13 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 20_000 * 1e18,
                 index:  2551,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _assertPool(
             PoolState({
                 htp:                  0,
-                lup:                  PoolCommons.MAX_PRICE,
+                lup:                  MAX_PRICE,
                 poolSize:             30_000 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
@@ -153,13 +153,13 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 40_000 * 1e18,
                 index:  2549,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _assertPool(
             PoolState({
                 htp:                  0,
-                lup:                  PoolCommons.MAX_PRICE,
+                lup:                  MAX_PRICE,
                 poolSize:             70_000 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
@@ -237,7 +237,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 40_000 * 1e18,
                 index:  2549,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
        _addLiquidity(
@@ -245,7 +245,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2550,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
        _addLiquidity(
@@ -253,13 +253,13 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 20_000 * 1e18,
                 index:  2551,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _assertPool(
             PoolState({
                 htp:                  0,
-                lup:                  PoolCommons.MAX_PRICE,
+                lup:                  MAX_PRICE,
                 poolSize:             70_000 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
@@ -337,14 +337,14 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 amount:   5_000 * 1e18,
                 index:    2549,
                 penalty:  0,
-                newLup:   PoolCommons.MAX_PRICE,
+                newLup:   MAX_PRICE,
                 lpRedeem: 5_000 * 1e27
             }
         );
         _assertPool(
             PoolState({
                 htp:                  0,
-                lup:                  PoolCommons.MAX_PRICE,
+                lup:                  MAX_PRICE,
                 poolSize:             65_000 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
@@ -421,14 +421,14 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 amount:   35_000 * 1e18,
                 index:    2549,
                 penalty:  0,
-                newLup:   PoolCommons.MAX_PRICE,
+                newLup:   MAX_PRICE,
                 lpRedeem: 35_000 * 1e27
             }
         );
         _assertPool(
             PoolState({
                 htp:                  0,
-                lup:                  PoolCommons.MAX_PRICE,
+                lup:                  MAX_PRICE,
                 poolSize:             30_000 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
@@ -513,7 +513,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  4550,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -556,7 +556,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 40_000 * 1e18,
                 index:  4549,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -564,7 +564,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  4550,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -572,7 +572,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 20_000 * 1e18,
                 index:  4551,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -580,7 +580,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 30_000 * 1e18,
                 index:  4990,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         // add collateral in order to give lender LPs in bucket 5_000 with 0 deposit
@@ -668,7 +668,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         );
 
         // someone else deposits into the bucket
-        _addLiquidity(_lender1, 900 * 1e18, i100, PoolCommons.MAX_PRICE);
+        _addLiquidity(_lender1, 900 * 1e18, i100, MAX_PRICE);
 
         // should be able to remove a small amount of deposit
         skip(1 days);
@@ -678,7 +678,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 amount:   100 * 1e18,
                 index:    i100,
                 penalty:  0,
-                newLup:   PoolCommons.MAX_PRICE,
+                newLup:   MAX_PRICE,
                 lpRedeem: 100 * 1e27
             }
         );
@@ -689,7 +689,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:     _lender,
                 amount:   800 * 1e18,
                 index:    i100,
-                newLup:   PoolCommons.MAX_PRICE,
+                newLup:   MAX_PRICE,
                 lpRedeem: 800 * 1e27
             }
         );
@@ -716,7 +716,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 3_400 * 1e18,
                 index:  1606,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -724,7 +724,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 3_400 * 1e18,
                 index:  1663,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -876,7 +876,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 40_000 * 1e18,
                 index:  2549,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -884,7 +884,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2550,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -892,7 +892,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 20_000 * 1e18,
                 index:  2551,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -919,7 +919,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 amount:       5_000 * 1e18,
                 fromIndex:    2549,
                 toIndex:      2552,
-                newLup:       PoolCommons.MAX_PRICE,
+                newLup:       MAX_PRICE,
                 lpRedeemFrom: 5_000 * 1e27,
                 lpRedeemTo:   5_000 * 1e27
             }
@@ -948,7 +948,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 amount:       5_000 * 1e18,
                 fromIndex:    2549,
                 toIndex:      2540,
-                newLup:       PoolCommons.MAX_PRICE,
+                newLup:       MAX_PRICE,
                 lpRedeemFrom: 5_000 * 1e27,
                 lpRedeemTo:   5_000 * 1e27
             }
@@ -985,7 +985,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 amount:       15_000 * 1e18,
                 fromIndex:    2551,
                 toIndex:      2777,
-                newLup:       PoolCommons.MAX_PRICE,
+                newLup:       MAX_PRICE,
                 lpRedeemFrom: 15_000 * 1e27,
                 lpRedeemTo:   15_000 * 1e27
             }
@@ -1051,7 +1051,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 40_000 * 1e18,
                 index:  4549,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -1059,7 +1059,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  4550,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -1067,7 +1067,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 20_000 * 1e18,
                 index:  4551,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -1075,7 +1075,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 30_000 * 1e18,
                 index:  4651,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -1139,7 +1139,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2873,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 

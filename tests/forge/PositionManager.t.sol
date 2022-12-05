@@ -88,7 +88,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testAddress,
                 amount: 3_000 * 1e18,
                 index:  indexes[0],
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -96,7 +96,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testAddress,
                 amount: 3_000 * 1e18,
                 index:  indexes[1],
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -104,7 +104,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testAddress,
                 amount: 3_000 * 1e18,
                 index:  indexes[2],
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -165,7 +165,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testAddress,
                 amount: 3_000 * 1e18,
                 index:  indexes[0],
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -173,7 +173,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testAddress,
                 amount: 3_000 * 1e18,
                 index:  indexes[1],
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -181,7 +181,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testAddress,
                 amount: 3_000 * 1e18,
                 index:  indexes[2],
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -325,7 +325,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testAddress,
                 amount: 1_000 * 1e18,
                 index:  indexes[0],
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -333,7 +333,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testAddress,
                 amount: 2_000 * 1e18,
                 index:  indexes[1],
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -341,7 +341,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testAddress,
                 amount: 3_000 * 1e18,
                 index:  indexes[2],
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -498,7 +498,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testLender1,
                 amount: 3_000 * 1e18,
                 index:  indexes[0],
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -506,7 +506,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testLender1,
                 amount: 3_000 * 1e18,
                 index:  indexes[1],
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -514,7 +514,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testLender1,
                 amount: 3_000 * 1e18,
                 index:  indexes[2],
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -523,7 +523,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testLender2,
                 amount: 3_000 * 1e18,
                 index:  indexes[0],
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -531,7 +531,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testLender2,
                 amount: 3_000 * 1e18,
                 index:  indexes[3],
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -877,7 +877,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testMinter,
                 amount: 15_000 * 1e18,
                 index:  testIndexPrice,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -1026,7 +1026,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testMinter,
                 amount: 15_000 * 1e18,
                 index:  testIndexPrice,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -1217,7 +1217,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testMinter,
                 amount: 15_000 * 1e18,
                 index:  testIndexPrice,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -1273,7 +1273,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testAddress,
                 amount: 10_000 * 1e18,
                 index:  2550,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -1308,7 +1308,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testAddress1,
                 amount: 2_500 * 1e18,
                 index:  mintIndex,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -1317,7 +1317,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testAddress2,
                 amount: 5_500 * 1e18,
                 index:  mintIndex,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -1694,7 +1694,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testMinter,
                 amount: 15_000 * 1e18,
                 index:  testIndexPrice,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -1834,7 +1834,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testReceiver,
                 amount: 25_000 * 1e18,
                 index:  testIndexPrice,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -1842,7 +1842,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testReceiver,
                 amount: 15_000 * 1e18,
                 index:  2551,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -1851,7 +1851,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   testMinter,
                 amount: 15_000 * 1e18,
                 index:  testIndexPrice,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -2080,7 +2080,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   lender,
                 amount: 10_000 * 1e18,
                 index:  2550,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _assertLenderLpBalance(
@@ -2248,7 +2248,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 from:   lender,
                 amount: 10_000 * 1e18,
                 index:  2550,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _assertLenderLpBalance(
@@ -2390,7 +2390,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
                 from:   testAddress1,
                 amount: 3_000 * 1e18,
                 index:  indexes[0],
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -2398,7 +2398,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
                 from:   testAddress1,
                 amount: 3_000 * 1e18,
                 index:  indexes[1],
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -2406,7 +2406,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
                 from:   testAddress1,
                 amount: 3_000 * 1e18,
                 index:  indexes[2],
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -2550,7 +2550,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
                 from:   testAddress1,
                 amount: 1_000 * 1e18,
                 index:  indexes[0],
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -2558,7 +2558,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
                 from:   testAddress1,
                 amount: 2_000 * 1e18,
                 index:  indexes[1],
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -2566,7 +2566,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
                 from:   testAddress1,
                 amount: 3_000 * 1e18,
                 index:  indexes[2],
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 

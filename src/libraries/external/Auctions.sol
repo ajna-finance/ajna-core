@@ -11,11 +11,6 @@ import '../../base/Pool.sol';
 
 library Auctions {
     uint256 internal constant MINUTE_HALF_LIFE    = 0.988514020352896135_356867505 * 1e27;  // 0.5^(1/60)
-    uint256 internal constant MIN_PRICE = 99_836_282_890;
-    uint256 internal constant MAX_PRICE = 1_004_968_987.606512354182109771 * 10**18;
-    int256 internal constant MAX_PRICE_INDEX = 4_156;
-    int256 internal constant MIN_PRICE_INDEX = -3_232;
-    int256 internal constant FLOAT_STEP_INT = 1.005 * 10**18;
 
     struct Data {
         address head;

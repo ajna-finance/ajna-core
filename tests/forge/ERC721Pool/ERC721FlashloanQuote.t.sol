@@ -36,7 +36,7 @@ contract ERC721PoolFlashloanTest is ERC721HelperContract {
                 from:   _lender,
                 amount: 300 * 1e18,
                 index:  _bucketId,
-                newLup: PoolCommons.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 

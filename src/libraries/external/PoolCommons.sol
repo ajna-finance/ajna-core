@@ -15,14 +15,6 @@ import '../../base/Pool.sol';
             - pool utilization
  */
 library PoolCommons {
-    uint256 internal constant MIN_PRICE = 99_836_282_890;
-    uint256 internal constant MAX_PRICE = 1_004_968_987.606512354182109771 * 10**18;
-
-    /**
-        @dev step amounts in basis points. This is a constant across pools at .005, achieved by dividing WAD by 10,000
-     */
-    int256 internal constant FLOAT_STEP_INT = 1.005 * 10**18;
-
     uint256 internal constant CUBIC_ROOT_1000000 = 100 * 1e18;
     uint256 internal constant ONE_THIRD          = 0.333333333333333334 * 1e18;
 
