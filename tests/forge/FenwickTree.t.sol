@@ -246,7 +246,7 @@ contract FenwickTreeGasLoadTest is DSTestPlus {
         }
     }
 
-    function testLoadFenwickTreeGasExerciseFindIndexOfSumOnAllDeposits() public {
+    function testLoadFenwickTreeGasExercisefindIndexOfSumOnAllDeposits() public {
         for (uint256 i; i < DEPOSITS_COUNT; i++) {
             assertEq(_tree.findIndexOfSum(819_200 * 1e18 - i * 100 * 1e18), DEPOSITS_COUNT - i - 1);
         }

@@ -62,7 +62,7 @@ library LenderActions {
         uint256 index_
     ) external returns (uint256 bucketLPs_) {
         uint256 bucketDeposit = Deposits.valueAt(deposits_, index_);
-        uint256 bucketPrice   = priceAt(index_);
+        uint256 bucketPrice   = _priceAt(index_);
         bucketLPs_ = Buckets.addCollateral(
             buckets_[index_],
             msg.sender,
@@ -79,7 +79,7 @@ library LenderActions {
         uint256 index_
     ) external returns (uint256 bucketLPs_) {
         uint256 bucketDeposit = Deposits.valueAt(deposits_, index_);
-        uint256 bucketPrice   = priceAt(index_);
+        uint256 bucketPrice   = _priceAt(index_);
         bucketLPs_ = Buckets.addQuoteToken(
             buckets_[index_],
             bucketDeposit,
@@ -96,8 +96,8 @@ library LenderActions {
     ) external returns (uint256 fromBucketLPs_, uint256 toBucketLPs_, uint256 amountToMove_) {
         if (params_.fromIndex == params_.toIndex) revert MoveToSamePrice();
 
-        uint256 fromPrice   = priceAt(params_.fromIndex);
-        uint256 toPrice     = priceAt(params_.toIndex);
+        uint256 fromPrice   = _priceAt(params_.fromIndex);
+        uint256 toPrice     = _priceAt(params_.toIndex);
         uint256 fromDeposit = Deposits.valueAt(deposits_, params_.fromIndex);
 
         Buckets.Bucket storage fromBucket = buckets_[params_.fromIndex];
@@ -161,7 +161,7 @@ library LenderActions {
         uint256 deposit = Deposits.valueAt(deposits_, params_.index);
         if (deposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
 
-        uint256 price = priceAt(params_.index);
+        uint256 price = _priceAt(params_.index);
 
         Buckets.Bucket storage bucket = buckets_[params_.index];
         uint256 exchangeRate = Buckets.getExchangeRate(
@@ -209,7 +209,7 @@ library LenderActions {
         (uint256 lenderLpBalance, ) = Buckets.getLenderInfo(buckets_, index_, msg.sender);
         if (lenderLpBalance == 0) revert NoClaim();                  // revert if no LP to redeem
 
-        uint256 bucketPrice = priceAt(index_);
+        uint256 bucketPrice = _priceAt(index_);
         uint256 exchangeRate = Buckets.getExchangeRate(
             bucket.collateral,
             bucket.lps,
@@ -248,7 +248,7 @@ library LenderActions {
         Buckets.Bucket storage bucket = buckets_[index_];
         if (amount_ > bucket.collateral) revert InsufficientCollateral();
 
-        uint256 bucketPrice = priceAt(index_);
+        uint256 bucketPrice = _priceAt(index_);
         lpAmount_ = Buckets.collateralToLPs(
             bucket.collateral,
             bucket.lps,

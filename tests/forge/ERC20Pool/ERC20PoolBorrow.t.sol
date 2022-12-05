@@ -1096,7 +1096,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  indexOf(200 * 1e18),
+                index:  _indexOf(200 * 1e18),
                 newLup: 2_981.007422784467321543 * 1e18
             }
         );
@@ -1105,7 +1105,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             {
                 from:     _lender,
                 amount:   10_000 * 1e18,
-                index:    indexOf(200 * 1e18),
+                index:    _indexOf(200 * 1e18),
                 newLup:   2_981.007422784467321543 * 1e18,
                 lpRedeem: 10_000 * 1e27
             }

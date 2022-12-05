@@ -416,7 +416,7 @@ abstract contract DSTestPlus is Test {
         assertEq(poolSize,                   state_.poolSize);
         assertEq(_pool.pledgedCollateral(),  state_.pledgedCollateral);
         assertEq(
-            encumberance(
+            _encumberance(
                 state_.poolDebt,
                 state_.lup
             ),                               state_.encumberedCollateral
@@ -489,7 +489,7 @@ abstract contract DSTestPlus is Test {
         assertEq(col,         borrowerCollateral);
         assertEq(t0Np,        borrowert0Np);
         assertEq(
-            collateralization(
+            _collateralization(
                 borrowerDebt,
                 borrowerCollateral,
                 lup

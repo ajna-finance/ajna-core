@@ -275,7 +275,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
                 from:       _borrower,
                 amount:     15_000 * 1e18,
                 indexLimit: 3_000,
-                newLup:     priceAt(2551)
+                newLup:     _priceAt(2551)
             }
         );
 
@@ -308,7 +308,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
                 from:     _bidder,
                 amount:   amountWithInterest,
                 index:    2550,
-                newLup:   priceAt(2552),
+                newLup:   _priceAt(2552),
                 lpRedeem: 10_000.349513872212134187552326469 * 1e27
             }
         );

@@ -110,8 +110,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         moveParams.maxAmountToMove = maxAmountToMove_;
         moveParams.fromIndex       = fromIndex_;
         moveParams.toIndex         = toIndex_;
-        moveParams.ptp             = getPtp(poolState.accruedDebt, poolState.collateral);
-        moveParams.feeRate         = feeRate(poolState.rate);
+        moveParams.ptp             = _ptp(poolState.accruedDebt, poolState.collateral);
+        moveParams.feeRate         = _feeRate(poolState.rate);
 
         uint256 amountToMove;
         (
@@ -145,8 +145,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         LenderActions.RemoveQuoteParams memory removeParams;
         removeParams.maxAmount = maxAmount_;
         removeParams.index     = index_;
-        removeParams.ptp       = getPtp(poolState.accruedDebt, poolState.collateral);
-        removeParams.feeRate   = feeRate(poolState.rate);
+        removeParams.ptp       = _ptp(poolState.accruedDebt, poolState.collateral);
+        removeParams.feeRate   = _feeRate(poolState.rate);
 
         (
             removedAmount_,
@@ -204,7 +204,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 borrowerDebt           = Maths.wmul(borrower.t0debt, poolState.inflator);
 
         // add origination fee to the amount to borrow and add to borrower's debt
-        uint256 debtChange = Maths.wmul(amountToBorrow_, feeRate(interestParams.interestRate) + Maths.WAD);
+        uint256 debtChange = Maths.wmul(amountToBorrow_, _feeRate(interestParams.interestRate) + Maths.WAD);
         borrowerDebt += debtChange;
         _checkMinDebt(poolState.accruedDebt, borrowerDebt);
 
@@ -213,7 +213,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if (lupId > limitIndex_) revert LimitIndexReached();
 
         // calculate new lup and check borrow action won't push borrower into a state of under-collateralization
-        uint256 newLup = priceAt(lupId);
+        uint256 newLup = _priceAt(lupId);
         if (
             !_isCollateralized(borrowerDebt, borrower.collateral, newLup)
         ) revert BorrowerUnderCollateralized();
@@ -558,7 +558,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             if (
                 loansCount >= 10
                 &&
-                (borrowerDebt_ < minDebtAmount(accruedDebt_, loansCount))
+                (borrowerDebt_ < _minDebtAmount(accruedDebt_, loansCount))
             ) revert AmountLTMinDebt();
         }
     }
@@ -662,7 +662,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     function _lup(uint256 debt_) internal view returns (uint256) {
-        return priceAt(_lupIndex(debt_));
+        return _priceAt(_lupIndex(debt_));
     }
 
 
@@ -858,7 +858,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *          V2: price = MAX_PRICE * (FLOAT_STEP ** (abs(int256(index - MAX_PRICE_INDEX))));
      *          V3 (final): x^y = 2^(y*log_2(x))
      */
-    function priceAt(
+    function _priceAt(
         uint256 index_
     ) pure returns (uint256) {
         int256 bucketIndex = (index_ != 8191) ? MAX_BUCKET_INDEX - int256(index_) : MIN_BUCKET_INDEX;
@@ -883,7 +883,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *          V3 (final): bucket index =  log_2(price) / log_2(FLOAT_STEP)
      *  @dev    Fenwick index = 7388 - bucket index + 3232
      */
-    function indexOf(
+    function _indexOf(
         uint256 price_
     ) pure returns (uint256) {
         require(price_ >= MIN_PRICE && price_ <= MAX_PRICE, "BM:PTI:OOB");
@@ -910,7 +910,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @param  price_        The price to calculate encumberance at.
      *  @return encumberance_ Encumberance value.
      */
-    function encumberance(
+    function _encumberance(
         uint256 debt_,
         uint256 price_
     ) pure returns (uint256 encumberance_) {
@@ -924,12 +924,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @param  price_      The price to calculate collateralization at.
      *  @return Collateralization value. 1**18 if debt amount is 0.
      */
-    function collateralization(
+    function _collateralization(
         uint256 debt_,
         uint256 collateral_,
         uint256 price_
     ) pure returns (uint256) {
-        uint256 encumbered = encumberance(debt_, price_);
+        uint256 encumbered = _encumberance(debt_, price_);
         return encumbered != 0 ? Maths.wdiv(collateral_, encumbered) : Maths.WAD;
     }
 
@@ -939,7 +939,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @param  loansCount_    The number of loans in pool.
      *  @return minDebtAmount_ Minimum debt amount value of the pool.
      */
-    function minDebtAmount(
+    function _minDebtAmount(
         uint256 debt_,
         uint256 loansCount_
     ) pure returns (uint256 minDebtAmount_) {
@@ -954,7 +954,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @param  interestRate_ The current interest rate.
      *  @return Fee rate applied to the given interest rate.
      */
-    function feeRate(
+    function _feeRate(
         uint256 interestRate_
     ) pure returns (uint256) {
         // greater of the current annualized interest rate divided by 52 (one week of interest) or 5 bps
@@ -967,7 +967,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @param  collateral_ The amount of collateral to calculate PTP for.
      *  @return ptp_        Pool Threshold Price value.
      */
-    function getPtp(
+    function _ptp(
         uint256 debt_,
         uint256 collateral_
     ) pure returns (uint256 ptp_) {
@@ -980,7 +980,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @param  lupColEma_ The EMA of lup * collateral value.
      *  @return Target utilization of the pool.
      */
-    function targetUtilization(
+    function _targetUtilization(
         uint256 debtEma_,
         uint256 lupColEma_
     ) pure returns (uint256) {

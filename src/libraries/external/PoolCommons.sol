@@ -118,7 +118,7 @@ library PoolCommons {
         newInflator_ = Maths.wmul(inflator_, pendingFactor);
 
         uint256 htp = Maths.wmul(thresholdPrice_, newInflator_);
-        uint256 htpIndex = (htp != 0) ? indexOf(htp) : 7_388; // if HTP is 0 then accrue interest at max index (min price)
+        uint256 htpIndex = (htp != 0) ? _indexOf(htp) : 7_388; // if HTP is 0 then accrue interest at max index (min price)
 
         // Scale the fenwick tree to update amount of debt owed to lenders
         uint256 depositAboveHtp = Deposits.prefixSum(deposits_, htpIndex);
@@ -207,10 +207,10 @@ library PoolCommons {
         uint256 collateral_
     ) internal view returns (uint256 utilization_) {
         if (collateral_ != 0) {
-            uint256 ptp = getPtp(debt_, collateral_);
+            uint256 ptp = _ptp(debt_, collateral_);
 
             if (ptp != 0) {
-                uint256 depositAbove = Deposits.prefixSum(deposits, indexOf(ptp));
+                uint256 depositAbove = Deposits.prefixSum(deposits, _indexOf(ptp));
 
                 if (depositAbove != 0) utilization_ = Maths.wdiv(
                     debt_,

@@ -118,7 +118,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
             bucketDeposit,
             lps[params_.tokenId][params_.fromIndex],
             bucketDeposit,
-            priceAt(params_.fromIndex)
+            _priceAt(params_.fromIndex)
         );
 
         // update prices set at which a position has liquidity

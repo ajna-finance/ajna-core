@@ -649,7 +649,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 amount:   10_000 * 1e18,
                 index:    4990,
                 penalty:  0,
-                newLup:   priceAt(4551),
+                newLup:   _priceAt(4551),
                 lpRedeem: 10_000 * 1e27
             }
         );
@@ -658,7 +658,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
     function testPoolRemoveQuoteTokenWithCollateral() external {
         // add 10 collateral into the 100 bucket, for LP worth 1000 quote tokens
         _mintCollateralAndApproveTokens(_lender, 10 * 1e18);
-        uint256 i100 = indexOf(100 * 1e18);
+        uint256 i100 = _indexOf(100 * 1e18);
         _addCollateral(
             {
                 from:   _lender,
@@ -814,21 +814,21 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 amount:   1_700 * 1e18,
                 index:    1606,
                 penalty:  penalty,
-                newLup:   priceAt(1663),
+                newLup:   _priceAt(1663),
                 lpRedeem: 1_699.992488670769259236317168938 * 1e27
             }
         );
 
         // lender removes all quote token, including interest, from the bucket
         skip(1 days);
-        assertGt(priceAt(1606), _htp());
+        assertGt(_priceAt(1606), _htp());
         uint256 expectedWithdrawal2 = 1_700.136856335210791693 * 1e18;
         _removeAllLiquidity(
             {
                 from:     _lender,
                 amount:   expectedWithdrawal2,
                 index:    1606,
-                newLup:   priceAt(1663),
+                newLup:   _priceAt(1663),
                 lpRedeem: 1_700.007511329230740763682831062 * 1e27
             }
         );
@@ -1123,7 +1123,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 amount:       10_000 * 1e18,
                 fromIndex:    4549,
                 toIndex:      4550,
-                newLup:       priceAt(4551),
+                newLup:       _priceAt(4551),
                 lpRedeemFrom: 10_000 * 1e27,
                 lpRedeemTo:   10_000 * 1e27
             }

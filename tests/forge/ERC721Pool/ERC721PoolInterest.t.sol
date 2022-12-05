@@ -287,7 +287,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 from:       _borrower,
                 amount:     borrowAmount,
                 indexLimit: 2_551,
-                newLup:     priceAt(2550)
+                newLup:     _priceAt(2550)
             }
         );
         uint256 expectedBorrower1Debt = 8_007.692307692307696000 * 1e18;
@@ -322,7 +322,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 from:       _borrower2,
                 amount:     borrowAmount,
                 indexLimit: 3_000,
-                newLup:     priceAt(2551)
+                newLup:     _priceAt(2551)
             }
         );
         expectedBorrower1Debt = 8_007.875133804645608008 * 1e18;
@@ -368,7 +368,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 from:       _borrower3,
                 amount:     borrowAmount,
                 indexLimit: 3_000,
-                newLup:     priceAt(2551)
+                newLup:     _priceAt(2551)
             }
         );
         expectedBorrower1Debt = 8_008.057964091143327677 * 1e18;

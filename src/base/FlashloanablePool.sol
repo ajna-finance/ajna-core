@@ -24,7 +24,7 @@ abstract contract FlashloanablePool is Pool {
     }
 
     function _flashFee(uint256 amount_) internal view  returns (uint256) {
-        return Maths.wmul(amount_, feeRate(interestParams.interestRate));
+        return Maths.wmul(amount_, _feeRate(interestParams.interestRate));
     }
 
     function flashFee(
