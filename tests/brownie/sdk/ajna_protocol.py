@@ -7,7 +7,7 @@ from brownie import (
     ERC20Pool,
     Auctions,
     PoolCommons,
-    LenderCommons,
+    LenderActions,
     Deposits,
     Maths,
     Loans,
