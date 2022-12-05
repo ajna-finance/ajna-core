@@ -107,7 +107,7 @@ library LenderActions {
                 params_.fromIndex,
                 msg.sender
             );
-            (amountToMove_, fromBucketLPs_, ) = Buckets.lpsToQuoteToken(
+            (amountToMove_, fromBucketLPs_) = Buckets.lpsToQuoteToken(
                 fromBucket.lps,
                 fromBucket.collateral,
                 fromDeposit,
