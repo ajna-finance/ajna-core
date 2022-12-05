@@ -78,8 +78,26 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     ) external override returns (uint256 bucketLPs_) {
         PoolState memory poolState = _accruePoolInterest();
 
+        Buckets.Bucket storage bucket = buckets[index_];
+
+        // repay advanced deposit if any
+        if (bucket.lenders[msg.sender].advancedDeposit != 0) {
+
+            uint256 advancedDeposit = bucket.lenders[msg.sender].advancedDeposit;
+            bucket.lenders[msg.sender].advancedDeposit -= quoteTokenAmountToAdd_;
+            totalAdvancedDeposit -= quoteTokenAmountToAdd_;
+
+            if (advancedDeposit < quoteTokenAmountToAdd_) {
+                quoteTokenAmountToAdd_ -= advancedDeposit;
+            }
+            else {
+                // all additional quote was used to pay down existing advanced deposit
+                return 0;
+            }
+        }
+
         bucketLPs_ = Buckets.addQuoteToken(
-            buckets[index_],
+            bucket,
             deposits.valueAt(index_),
             quoteTokenAmountToAdd_,
             PoolUtils.indexToPrice(index_)
@@ -180,7 +198,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             msg.sender
         );
         if (lenderLPsBalance == 0) revert NoClaim();      // revert if no LP to claim
-        if (advancedDeposit != 0) revert AdvancedDepositNonZero(); // revert if advanced deposit > 0
 
         uint256 deposit = deposits.valueAt(index_);
         if (deposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
@@ -202,6 +219,17 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if (removedAmountBefore == removedAmount_) redeemedLPs_ = lenderLPsBalance;
         else {
             redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(removedAmount_, exchangeRate));
+        }
+
+        // update advanced deposit state
+        if (advancedDeposit > 0) {
+            if (advancedDeposit > removedAmount_) {
+                revert AdvancedDepositNonZero();
+            } else {
+                removedAmount_ -= advancedDeposit;
+                bucket.lenders[msg.sender].advancedDeposit = 0;
+                totalAdvancedDeposit -= removedAmount_;
+            }
         }
 
         deposits.remove(index_, removedAmount_, deposit); // update FenwickTree
