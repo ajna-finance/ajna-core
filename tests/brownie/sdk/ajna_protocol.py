@@ -32,7 +32,7 @@ class AjnaProtocol:
 
         self.deposits = Deposits.deploy({"from": self.deployer})
         self.pool_logic = PoolCommons.deploy({"from": self.deployer})
-        self.lender_commons = LenderCommons.deploy({"from": self.deployer})
+        self.lender_actions = LenderActions.deploy({"from": self.deployer})
         self.maths = Maths.deploy({"from": self.deployer})
         self.loans = Loans.deploy({"from": self.deployer})
         self.auctions = Auctions.deploy({"from": self.deployer})

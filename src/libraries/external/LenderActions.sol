@@ -8,9 +8,8 @@ import './PoolCommons.sol';
 
 /**
     @notice External library containing logic for common lender actions.
-            Specific logic is implemented in pool contract (e.g. remove collateral).
  */
-library LenderCommons {
+library LenderActions {
 
     /**
      *  @notice Owner of the LP tokens must have approved the new owner prior to transfer.
@@ -25,9 +24,17 @@ library LenderCommons {
      */
     error NoClaim();
     /**
+     *  @notice Lender is attempting to remove more collateral they have claim to in the bucket.
+     */
+    error InsufficientLPs();
+    /**
      *  @notice Deposit must have more quote available than the lender is attempting to claim.
      */
     error InsufficientLiquidity();
+    /**
+     *  @notice User is attempting to remove more collateral than available.
+     */
+    error InsufficientCollateral();
     /**
      *  @notice From and to deposit indexes to move are the same.
      */
@@ -199,6 +206,84 @@ library LenderCommons {
         bucket.lenders[msg.sender].lps -= redeemedLPs_;
 
         lup_ = PoolCommons._indexToPrice(Deposits.findIndexOfSum(deposits_, params_.poolDebt));
+    }
+
+    function removeMaxCollateral(
+        mapping(uint256 => Buckets.Bucket) storage buckets_,
+        Deposits.Data storage deposits_,
+        uint256 maxAmount_,
+        uint256 index_,
+        uint256 poolDebt_
+    ) external returns (uint256 collateralAmount_, uint256 lpAmount_, uint256 lup_) {
+
+        Buckets.Bucket storage bucket = buckets_[index_];
+        if (bucket.collateral == 0) revert InsufficientCollateral(); // revert if there's no collateral in bucket
+
+        (uint256 lenderLpBalance, ) = Buckets.getLenderInfo(buckets_, index_, msg.sender);
+        if (lenderLpBalance == 0) revert NoClaim();                  // revert if no LP to redeem
+
+        uint256 bucketPrice = PoolCommons._indexToPrice(index_);
+        uint256 exchangeRate = Buckets.getExchangeRate(
+            bucket.collateral,
+            bucket.lps,
+            Deposits.valueAt(deposits_, index_),
+            bucketPrice
+        );
+
+        // limit amount by what is available in the bucket
+        collateralAmount_ = Maths.min(maxAmount_, bucket.collateral);
+
+        // determine how much LP would be required to remove the requested amount
+        uint256 requiredLPs = (collateralAmount_ * bucketPrice * 1e18 + exchangeRate / 2) / exchangeRate;
+
+        // limit withdrawal by the lender's LPB
+        if (requiredLPs < lenderLpBalance) {
+            lpAmount_ = requiredLPs;
+        } else {
+            lpAmount_ = lenderLpBalance;
+            collateralAmount_ = ((lpAmount_ * exchangeRate + 1e27 / 2) / 1e18 + bucketPrice / 2) / bucketPrice;
+        }
+
+        Buckets.removeCollateral(
+            bucket,
+            collateralAmount_,
+            lpAmount_
+        );
+
+        lup_ = PoolCommons._indexToPrice(Deposits.findIndexOfSum(deposits_, poolDebt_));
+    }
+
+    function removeCollateral(
+        mapping(uint256 => Buckets.Bucket) storage buckets_,
+        Deposits.Data storage deposits_,
+        uint256 amount_,
+        uint256 index_,
+        uint256 poolDebt_
+    ) external returns (uint256 lpAmount_, uint256 lup_) {
+
+        Buckets.Bucket storage bucket = buckets_[index_];
+        if (amount_ > bucket.collateral) revert InsufficientCollateral();
+
+        uint256 bucketPrice = PoolCommons._indexToPrice(index_);
+        lpAmount_ = Buckets.collateralToLPs(
+            bucket.collateral,
+            bucket.lps,
+            Deposits.valueAt(deposits_, index_),
+            amount_,
+            bucketPrice
+        );
+
+        (uint256 lenderLpBalance, ) = Buckets.getLenderInfo(buckets_, index_, msg.sender);
+        // ensure lender has enough balance to remove collateral amount
+        if (lenderLpBalance == 0 || lpAmount_ > lenderLpBalance) revert InsufficientLPs();
+
+        Buckets.removeCollateral(
+            bucket,
+            amount_,
+            lpAmount_
+        );
+
+        lup_ = PoolCommons._indexToPrice(Deposits.findIndexOfSum(deposits_, poolDebt_));
     }
 
     /**

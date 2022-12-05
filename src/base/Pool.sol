@@ -14,8 +14,8 @@ import '../libraries/Loans.sol';
 import '../libraries/Maths.sol';
 
 import '../libraries/external/Auctions.sol';
+import '../libraries/external/LenderActions.sol';
 import '../libraries/external/PoolCommons.sol';
-import '../libraries/external/LenderCommons.sol';
 
 abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     using Auctions for Auctions.Data;
@@ -74,7 +74,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
 
         uint256 newLup;
-        (bucketLPs_, newLup) = LenderCommons.addQuoteToken(
+        (bucketLPs_, newLup) = LenderActions.addQuoteToken(
             buckets,
             deposits,
             quoteTokenAmountToAdd_,
@@ -105,7 +105,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
         _revertIfAuctionDebtLocked(fromIndex_, poolState.inflator);
 
-        LenderCommons.MoveQuoteParams memory moveParams;
+        LenderActions.MoveQuoteParams memory moveParams;
         moveParams.maxAmountToMove = maxAmountToMove_;
         moveParams.fromIndex       = fromIndex_;
         moveParams.toIndex         = toIndex_;
@@ -120,7 +120,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             toBucketLPs_,
             amountToMove,
             newLup
-        ) = LenderCommons.moveQuoteToken(
+        ) = LenderActions.moveQuoteToken(
             buckets,
             deposits,
             moveParams
@@ -142,7 +142,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
         _revertIfAuctionDebtLocked(index_, poolState.inflator);
 
-        LenderCommons.RemoveQuoteParams memory removeParams;
+        LenderActions.RemoveQuoteParams memory removeParams;
         removeParams.maxAmount = maxAmount_;
         removeParams.index     = index_;
         removeParams.poolDebt  = poolState.accruedDebt;
@@ -154,7 +154,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             removedAmount_,
             redeemedLPs_,
             newLup
-        ) = LenderCommons.removeQuoteToken(
+        ) = LenderActions.removeQuoteToken(
             buckets,
             deposits,
             removeParams
@@ -174,7 +174,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         address newOwner_,
         uint256[] calldata indexes_
     ) external override {
-        uint256 tokensTransferred = LenderCommons.transferLPTokens(
+        uint256 tokensTransferred = LenderActions.transferLPTokens(
             buckets,
             _lpTokenAllowances,
             owner_,
@@ -577,7 +577,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
 
         uint256 newLup;
-        (bucketLPs_, newLup) = LenderCommons.addCollateral(
+        (bucketLPs_, newLup) = LenderActions.addCollateral(
             buckets,
             deposits,
             collateralAmountToAdd_,
