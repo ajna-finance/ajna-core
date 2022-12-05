@@ -88,42 +88,18 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     ) external override returns (uint256 collateralAmount_, uint256 lpAmount_) {
         auctions.revertIfAuctionClearable(loans);
 
-        Buckets.Bucket storage bucket = buckets[index_];
-        if (bucket.collateral == 0) revert InsufficientCollateral(); // revert if there's no collateral in bucket
-
-        (uint256 lenderLpBalance, ) = buckets.getLenderInfo(index_, msg.sender);
-        if (lenderLpBalance == 0) revert NoClaim();                  // revert if no LP to redeem
-
         PoolState memory poolState = _accruePoolInterest();
-        uint256 bucketPrice = priceAt(index_);
-        uint256 exchangeRate = Buckets.getExchangeRate(
-            bucket.collateral,
-            bucket.lps,
-            deposits.valueAt(index_),
-            bucketPrice
+
+        uint256 newLup;
+        (collateralAmount_, lpAmount_, newLup) = LenderActions.removeMaxCollateral(
+            buckets,
+            deposits,
+            maxAmount_,
+            index_,
+            poolState.accruedDebt
         );
 
-        // limit amount by what is available in the bucket
-        collateralAmount_ = Maths.min(maxAmount_, bucket.collateral);
-
-        // determine how much LP would be required to remove the requested amount
-        uint256 requiredLPs = (collateralAmount_ * bucketPrice * 1e18 + exchangeRate / 2) / exchangeRate;
-
-        // limit withdrawal by the lender's LPB
-        if (requiredLPs < lenderLpBalance) {
-            lpAmount_ = requiredLPs;
-        } else {
-            lpAmount_ = lenderLpBalance;
-            collateralAmount_ = ((lpAmount_ * exchangeRate + 1e27 / 2) / 1e18 + bucketPrice / 2) / bucketPrice;
-        }
-
-        Buckets.removeCollateral(
-            bucket,
-            collateralAmount_,
-            lpAmount_
-        );
-
-        _updateInterestParams(poolState, _lup(poolState.accruedDebt));
+        _updateInterestParams(poolState, newLup);
 
         emit RemoveCollateral(msg.sender, index_, collateralAmount_);
         // move collateral from pool to lender
