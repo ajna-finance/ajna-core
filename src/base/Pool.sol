@@ -84,14 +84,16 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if (bucket.lenders[msg.sender].advancedDeposit != 0) {
 
             uint256 advancedDeposit = bucket.lenders[msg.sender].advancedDeposit;
-            bucket.lenders[msg.sender].advancedDeposit -= quoteTokenAmountToAdd_;
-            totalAdvancedDeposit -= quoteTokenAmountToAdd_;
 
             if (advancedDeposit < quoteTokenAmountToAdd_) {
+                bucket.lenders[msg.sender].advancedDeposit = 0;
+                totalAdvancedDeposit -= advancedDeposit;
                 quoteTokenAmountToAdd_ -= advancedDeposit;
             }
             else {
                 // all additional quote was used to pay down existing advanced deposit
+                bucket.lenders[msg.sender].advancedDeposit -= quoteTokenAmountToAdd_;
+                totalAdvancedDeposit -= quoteTokenAmountToAdd_;
                 return 0;
             }
         }
@@ -300,6 +302,37 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _transferQuoteToken(msg.sender, claimable);
     }
 
+    function withdrawBondsAdvancedDeposit(uint256[] calldata indices) external {
+        uint256 claimable = auctions.kickers[msg.sender].claimable;
+
+        // check for advanced deposit
+        if (indices.length != 0) {
+            for (uint256 index = 0; index < indices.length;) {
+                Buckets.Bucket storage bucket = buckets[index];
+
+                // credit claimable against advancedDeposit
+                uint256 advancedDeposit = bucket.lenders[msg.sender].advancedDeposit;
+
+                if (advancedDeposit < claimable) {
+                    bucket.lenders[msg.sender].advancedDeposit = 0;
+                    totalAdvancedDeposit -= advancedDeposit;
+                    claimable -= advancedDeposit;
+                }
+                else {
+                    bucket.lenders[msg.sender].advancedDeposit -= claimable;
+                    totalAdvancedDeposit -= claimable;
+                    return;
+                }
+
+                unchecked {
+                    ++index;
+                }
+            }
+        }
+
+        auctions.kickers[msg.sender].claimable = 0;
+        _transferQuoteToken(msg.sender, claimable);
+    }
 
     /***********************************/
     /*** Borrower External Functions ***/
@@ -562,6 +595,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             // calculate amount of quote tokens available for paying advanced deposit from lp balance in bucket
             (uint256 lenderLpBalance, , uint256 advancedDeposit) = buckets.getLenderInfo(index, msg.sender);
             uint256 depositAvailable = Maths.rayToWad(Maths.rmul(lenderLpBalance, exchangeRate));
+
+            // check there is deposit available when account for any existing advancedDeposit
+            depositAvailable > advancedDeposit ? depositAvailable -= advancedDeposit : depositAvailable = 0;
 
             if (depositAvailable >= kickAuctionAmountReq) {
                 depositAvailable = kickAuctionAmountReq;
