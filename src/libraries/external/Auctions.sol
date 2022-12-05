@@ -2,10 +2,12 @@
 
 pragma solidity 0.8.14;
 
+import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
+
 import '../Buckets.sol';
 import '../Loans.sol';
 import '../Maths.sol';
-import './PoolCommons.sol';
+import '../../base/Pool.sol';
 
 library Auctions {
     uint256 internal constant MINUTE_HALF_LIFE    = 0.988514020352896135_356867505 * 1e27;  // 0.5^(1/60)
