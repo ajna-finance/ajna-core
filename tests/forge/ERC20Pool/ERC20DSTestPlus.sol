@@ -442,7 +442,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         address from,
         uint256 amount,
         uint256 indexLimit
-    ) internal {
+    ) internal override {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('AuctionActive()'));
         ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
@@ -452,7 +452,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         address from,
         uint256 amount,
         uint256 indexLimit
-    ) internal {
+    ) internal override {
         changePrank(from);
         vm.expectRevert(IPoolErrors.LimitIndexReached.selector);
         ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
@@ -462,7 +462,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         address from,
         uint256 amount,
         uint256 indexLimit
-    ) internal {
+    ) internal override {
         changePrank(from);
         vm.expectRevert(IPoolErrors.BorrowerUnderCollateralized.selector);
         ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
@@ -472,7 +472,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         address from,
         uint256 amount,
         uint256 indexLimit
-    ) internal {
+    ) internal override {
         changePrank(from);
         vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
         ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);

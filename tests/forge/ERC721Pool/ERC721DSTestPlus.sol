@@ -458,7 +458,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         address from,
         uint256 amount,
         uint256 indexLimit
-    ) internal {
+    ) internal override {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('AuctionActive()'));
         uint256[] memory emptyArray;
@@ -469,7 +469,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         address from,
         uint256 amount,
         uint256 indexLimit
-    ) internal {
+    ) internal override {
         changePrank(from);
         vm.expectRevert(IPoolErrors.LimitIndexReached.selector);
         uint256[] memory emptyArray;
@@ -480,7 +480,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         address from,
         uint256 amount,
         uint256 indexLimit
-    ) internal {
+    ) internal override {
         changePrank(from);
         vm.expectRevert(IPoolErrors.BorrowerUnderCollateralized.selector);
         uint256[] memory emptyArray;
@@ -491,7 +491,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         address from,
         uint256 amount,
         uint256 indexLimit
-    ) internal {
+    ) internal override {
         changePrank(from);
         vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
         uint256[] memory emptyArray;

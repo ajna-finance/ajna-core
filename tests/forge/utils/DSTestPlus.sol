@@ -708,14 +708,58 @@ abstract contract DSTestPlus is Test {
         _pool.bucketTake(borrower, true, index);
     }
 
+    function _assertBorrowAuctionActiveRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal virtual {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('AuctionActive()'));
+    }
+
+    function _assertBorrowLimitIndexRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal virtual {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.LimitIndexReached.selector);
+    }
+
+    function _assertBorrowBorrowerUnderCollateralizedRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal virtual {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.BorrowerUnderCollateralized.selector);
+    }
+
+    function _assertBorrowMinDebtRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal virtual {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
+    }
+
+    function _assertFlashloanFeeRevertsForToken(
+        address token,
+        uint256 amount
+    ) internal {
+        vm.expectRevert(abi.encodeWithSignature('FlashloanUnavailableForToken()'));
+        _pool.flashFee(token, amount);
+    }
+
     function _assertFlashloanTooLargeRevert(
         IERC3156FlashBorrower flashBorrower,
+        address token,
         uint256 amount
     ) internal {
         changePrank(address(flashBorrower));
-        address quoteTokenAddress = _pool.quoteTokenAddress();
-        vm.expectRevert();
-        _pool.flashLoan(flashBorrower, quoteTokenAddress, amount, new bytes(0));
+        vm.expectRevert('ERC20: transfer amount exceeds balance');
+        _pool.flashLoan(flashBorrower, token, amount, new bytes(0));
     }
 
     function _assertFlashloanUnavailableForToken(
