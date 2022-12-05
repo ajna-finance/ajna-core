@@ -137,7 +137,7 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
 
         callsToExecute[0] = abi.encodeWithSignature(
             "drawDebt(address,uint256,uint256,uint256)",
-            msg.sender,
+            _lender,
             10_000 * 1e18,
             2550,
             0

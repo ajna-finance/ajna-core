@@ -710,8 +710,8 @@ abstract contract DSTestPlus is Test {
 
     function _assertBorrowAuctionActiveRevert(
         address from,
-        uint256 amount,
-        uint256 indexLimit
+        uint256,
+        uint256
     ) internal virtual {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('AuctionActive()'));
@@ -719,8 +719,8 @@ abstract contract DSTestPlus is Test {
 
     function _assertBorrowLimitIndexRevert(
         address from,
-        uint256 amount,
-        uint256 indexLimit
+        uint256,
+        uint256
     ) internal virtual {
         changePrank(from);
         vm.expectRevert(IPoolErrors.LimitIndexReached.selector);
@@ -728,8 +728,8 @@ abstract contract DSTestPlus is Test {
 
     function _assertBorrowBorrowerUnderCollateralizedRevert(
         address from,
-        uint256 amount,
-        uint256 indexLimit
+        uint256,
+        uint256
     ) internal virtual {
         changePrank(from);
         vm.expectRevert(IPoolErrors.BorrowerUnderCollateralized.selector);
@@ -737,8 +737,8 @@ abstract contract DSTestPlus is Test {
 
     function _assertBorrowMinDebtRevert(
         address from,
-        uint256 amount,
-        uint256 indexLimit
+        uint256,
+        uint256
     ) internal virtual {
         changePrank(from);
         vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
