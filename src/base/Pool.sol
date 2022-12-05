@@ -180,7 +180,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             msg.sender
         );
         if (lenderLPsBalance == 0) revert NoClaim();      // revert if no LP to claim
-        if (advancedDeposit != 0) revert(); // revert if deposit advanced
+        if (advancedDeposit != 0) revert AdvancedDepositNonZero(); // revert if advanced deposit > 0
 
         uint256 deposit = deposits.valueAt(index_);
         if (deposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
@@ -473,6 +473,92 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         emit Kick(borrowerAddress_, borrowerDebt, borrower.collateral, bondSize);
         if(kickAuctionAmount != 0) _transferQuoteTokenFrom(msg.sender, kickAuctionAmount);
+    }
+
+    function kickWithLPB(address borrowerAddress_, uint256[] calldata indices) external {
+        auctions.revertIfActive(borrowerAddress_);
+
+        Loans.Borrower storage borrower = loans.borrowers[borrowerAddress_];
+
+        PoolState memory poolState = _accruePoolInterest();
+
+        uint256 lup = _lup(poolState.accruedDebt);
+        uint256 borrowerDebt = Maths.wmul(borrower.t0debt, poolState.inflator);
+        if (
+            _isCollateralized(borrowerDebt, borrower.collateral, lup)
+        ) revert BorrowerOk();
+
+        uint256 neutralPrice = Maths.wmul(borrower.t0Np, poolState.inflator);
+
+        // kick auction
+        (uint256 kickAuctionAmountReq, uint256 bondSize) = Auctions.kick(
+            auctions,
+            borrowerAddress_,
+            borrowerDebt,
+            borrowerDebt * Maths.WAD / borrower.collateral,
+            deposits.momp(poolState.accruedDebt, loans.noOfLoans()),
+            neutralPrice
+        );
+
+        loans.remove(borrowerAddress_);
+
+        // when loan is kicked, penalty of three months of interest is added
+        uint256 kickPenalty   =  Maths.wmul(Maths.wdiv(poolState.rate, 4 * 1e18), borrowerDebt);
+        // update borrower & pool debt with kickPenalty
+        borrowerDebt          += kickPenalty;
+        poolState.accruedDebt += kickPenalty;
+
+        // convert kick penalty to t0 amount
+        kickPenalty     =  Maths.wdiv(kickPenalty, poolState.inflator);
+        borrower.t0debt += kickPenalty;
+        t0poolDebt      += kickPenalty;
+        t0DebtInAuction += borrower.t0debt;
+
+        //
+        // UNIQUE BELOW HERE
+        //
+
+        for (uint256 index = 0; index < indices.length;) {
+            _revertIfAuctionDebtLocked(index, poolState.inflator);
+
+           // get bucket info
+            Buckets.Bucket storage bucket = buckets[index];
+            uint256 deposit = deposits.valueAt(index);
+            uint256 exchangeRate = Buckets.getExchangeRate(
+                bucket.collateral,
+                bucket.lps,
+                deposit,
+                PoolUtils.indexToPrice(index)
+            );
+
+            // calculate amount of quote tokens available for paying advanced deposit from lp balance in bucket
+            (uint256 lenderLpBalance, , uint256 advancedDeposit) = buckets.getLenderInfo(index, msg.sender);
+            uint256 depositAvailable = Maths.rayToWad(Maths.rmul(lenderLpBalance, exchangeRate));
+
+            if (depositAvailable >= kickAuctionAmountReq) {
+                depositAvailable = kickAuctionAmountReq;
+                kickAuctionAmountReq = 0;
+            } else {
+                kickAuctionAmountReq -= depositAvailable;
+            }
+
+            // update advanced deposit state
+            Buckets.Lender storage kicker = bucket.lenders[msg.sender];
+            kicker.advancedDeposit += depositAvailable;
+            totalAdvancedDeposit += depositAvailable;
+
+            unchecked {
+                ++index;
+            }
+        }
+
+        // check that supplied range of indices have sufficent lpb to cover kick amount
+        if (kickAuctionAmountReq != 0) revert InsufficientLPs();
+
+        // update pool state
+        _updateInterestParams(poolState, lup);
+
+        emit Kick(borrowerAddress_, borrowerDebt, borrower.collateral, bondSize);
     }
 
 

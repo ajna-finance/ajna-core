@@ -116,9 +116,9 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         );
 
         (uint256 lenderLpBalance, , uint256 advancedDeposit) = buckets.getLenderInfo(index_, msg.sender);
-        // ensure lender has enough balance to remove collateral amount
+        // ensure lender has enough balance to remove collateral amount, and advancedDeposit == 0
         if (lenderLpBalance == 0 || lpAmount_ > lenderLpBalance) revert InsufficientLPs();
-        if (advancedDeposit != 0) revert(); // revert if deposit advanced
+        if (advancedDeposit != 0) revert AdvancedDepositNonZero();
 
         Buckets.removeCollateral(
             bucket,

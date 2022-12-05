@@ -11,6 +11,11 @@ interface IPoolErrors {
     /**************************/
 
     /**
+     *  @notice Lender can't withdraw from the pool when advancedDeposit > 0.
+     */
+    error AdvancedDepositNonZero();
+
+    /**
      *  @notice Pool already initialized.
      */
     error AlreadyInitialized();

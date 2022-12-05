@@ -132,8 +132,9 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         if (bucket.collateral == 0) revert InsufficientCollateral(); // revert if there's no collateral in bucket
 
         (uint256 lenderLpBalance, , uint256 advancedDeposit) = buckets.getLenderInfo(index_, msg.sender);
-        if (lenderLpBalance == 0) revert NoClaim();                  // revert if no LP to redeem
-        if (advancedDeposit != 0) revert(); // revert if deposit advanced
+        // ensure lender has enough balance to remove collateral amount, and advancedDeposit == 0
+        if (lenderLpBalance == 0) revert NoClaim();
+        if (advancedDeposit != 0) revert AdvancedDepositNonZero();
 
         PoolState memory poolState = _accruePoolInterest();
         uint256 bucketPrice = PoolUtils.indexToPrice(index_);
