@@ -113,7 +113,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
         IPool pool = IPool(params_.pool);
         (uint256 bucketLPs, uint256 bucketCollateral, , uint256 bucketDeposit, ) = pool.bucketInfo(params_.fromIndex);
-        (uint256 maxQuote, , ) = Buckets.lpsToQuoteToken(
+        (uint256 maxQuote, ) = Buckets.lpsToQuoteToken(
             bucketLPs,
             bucketCollateral,
             bucketDeposit,
