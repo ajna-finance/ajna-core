@@ -222,7 +222,7 @@ library LenderActions {
         (uint256 lenderLpBalance, ) = Buckets.getLenderInfo(buckets_, index_, msg.sender);
         if (lenderLpBalance == 0) revert NoClaim();                  // revert if no LP to redeem
 
-        uint256 bucketPrice = PoolCommons._indexToPrice(index_);
+        uint256 bucketPrice = priceAt(index_);
         uint256 exchangeRate = Buckets.getExchangeRate(
             bucket.collateral,
             bucket.lps,
@@ -250,7 +250,7 @@ library LenderActions {
             lpAmount_
         );
 
-        lup_ = PoolCommons._indexToPrice(Deposits.findIndexOfSum(deposits_, poolDebt_));
+        lup_ = priceAt(Deposits.findIndexOfSum(deposits_, poolDebt_));
     }
 
     function removeCollateral(
@@ -264,7 +264,7 @@ library LenderActions {
         Buckets.Bucket storage bucket = buckets_[index_];
         if (amount_ > bucket.collateral) revert InsufficientCollateral();
 
-        uint256 bucketPrice = PoolCommons._indexToPrice(index_);
+        uint256 bucketPrice = priceAt(index_);
         lpAmount_ = Buckets.collateralToLPs(
             bucket.collateral,
             bucket.lps,
@@ -283,7 +283,7 @@ library LenderActions {
             lpAmount_
         );
 
-        lup_ = PoolCommons._indexToPrice(Deposits.findIndexOfSum(deposits_, poolDebt_));
+        lup_ = priceAt(Deposits.findIndexOfSum(deposits_, poolDebt_));
     }
 
     /**
