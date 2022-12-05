@@ -14,16 +14,8 @@ import '../../base/Pool.sol';
     @notice External library containing logic for common pool functionality:
             - interest rate accrual and interest rate params update
             - pool utilization
-            - index to price conversions
-    @dev External libraries are calling internal functions for price conversions.
  */
 library PoolCommons {
-    /**
-        @dev constant price indices defining the min and max of the potential price range
-     */
-    int256 internal constant MAX_PRICE_INDEX = 4_156;
-    int256 internal constant MIN_PRICE_INDEX = -3_232;
-
     uint256 internal constant MIN_PRICE = 99_836_282_890;
     uint256 internal constant MAX_PRICE = 1_004_968_987.606512354182109771 * 10**18;
 
@@ -135,7 +127,7 @@ library PoolCommons {
         newInflator_ = Maths.wmul(inflator_, pendingFactor);
 
         uint256 htp = Maths.wmul(thresholdPrice_, newInflator_);
-        uint256 htpIndex = (htp != 0) ? _priceToIndex(htp) : 7_388; // if HTP is 0 then accrue interest at max index (min price)
+        uint256 htpIndex = (htp != 0) ? indexOf(htp) : 7_388; // if HTP is 0 then accrue interest at max index (min price)
 
         // Scale the fenwick tree to update amount of debt owed to lenders
         uint256 depositAboveHtp = Deposits.prefixSum(deposits_, htpIndex);
@@ -152,26 +144,6 @@ library PoolCommons {
                 Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD // lender factor
             );
         }
-    }
-
-    /**
-     *  @notice Calculates the price for a given deposit index
-     *  @dev Wrapper of the internal function.
-     */
-    function indexToPrice(
-        uint256 index_
-    ) external pure returns (uint256) {
-        return _indexToPrice(index_);
-    }
-
-    /**
-     *  @notice Calculates the deposit index for a given price
-     *  @dev Wrapper of the internal function.
-     */
-    function priceToIndex(
-        uint256 price_
-    ) external pure returns (uint256) {
-        return _priceToIndex(price_);
     }
 
     /**
@@ -247,7 +219,7 @@ library PoolCommons {
             uint256 ptp = getPtp(debt_, collateral_);
 
             if (ptp != 0) {
-                uint256 depositAbove = Deposits.prefixSum(deposits, _priceToIndex(ptp));
+                uint256 depositAbove = Deposits.prefixSum(deposits, indexOf(ptp));
 
                 if (depositAbove != 0) utilization_ = Maths.wdiv(
                     debt_,
@@ -255,62 +227,6 @@ library PoolCommons {
                 );
             }
         }
-    }
-
-    /**
-     *  @notice Calculates the price for a given Fenwick index
-     *  @dev    Throws if index exceeds maximum constant
-     *  @dev    Uses fixed-point math to get around lack of floating point numbers in EVM
-     *  @dev    Price expected to be inputted as a 18 decimal WAD
-     *  @dev    Fenwick index is converted to bucket index
-     *  @dev Fenwick index to bucket index conversion
-     *          1.00      : bucket index 0,     fenwick index 4146: 7388-4156-3232=0
-     *          MAX_PRICE : bucket index 4156,  fenwick index 0:    7388-0-3232=4156.
-     *          MIN_PRICE : bucket index -3232, fenwick index 7388: 7388-7388-3232=-3232.
-     *  @dev    V1: price = MIN_PRICE + (FLOAT_STEP * index)
-     *          V2: price = MAX_PRICE * (FLOAT_STEP ** (abs(int256(index - MAX_PRICE_INDEX))));
-     *          V3 (final): x^y = 2^(y*log_2(x))
-     */
-    function _indexToPrice(
-        uint256 index_
-    ) internal pure returns (uint256) {
-        int256 bucketIndex = (index_ != 8191) ? MAX_PRICE_INDEX - int256(index_) : MIN_PRICE_INDEX;
-        require(bucketIndex >= MIN_PRICE_INDEX && bucketIndex <= MAX_PRICE_INDEX, "BM:ITP:OOB");
-
-        return uint256(
-            PRBMathSD59x18.exp2(
-                PRBMathSD59x18.mul(
-                    PRBMathSD59x18.fromInt(bucketIndex),
-                    PRBMathSD59x18.log2(FLOAT_STEP_INT)
-                )
-            )
-        );
-    }
-
-    /**
-     *  @notice Calculates the Fenwick index for a given price
-     *  @dev    Throws if price exceeds maximum constant
-     *  @dev    Price expected to be inputted as a 18 decimal WAD
-     *  @dev    V1: bucket index = (price - MIN_PRICE) / FLOAT_STEP
-     *          V2: bucket index = (log(FLOAT_STEP) * price) /  MAX_PRICE
-     *          V3 (final): bucket index =  log_2(price) / log_2(FLOAT_STEP)
-     *  @dev    Fenwick index = 7388 - bucket index + 3232
-     */
-    function _priceToIndex(
-        uint256 price_
-    ) internal pure returns (uint256) {
-        require(price_ >= MIN_PRICE && price_ <= MAX_PRICE, "BM:PTI:OOB");
-
-        int256 index = PRBMathSD59x18.div(
-            PRBMathSD59x18.log2(int256(price_)),
-            PRBMathSD59x18.log2(FLOAT_STEP_INT)
-        );
-
-        int256 ceilIndex = PRBMathSD59x18.ceil(index);
-        if (index < 0 && ceilIndex - index > 0.5 * 1e18) {
-            return uint256(4157 - PRBMathSD59x18.toInt(ceilIndex));
-        }
-        return uint256(4156 - PRBMathSD59x18.toInt(ceilIndex));
     }
 
     /**

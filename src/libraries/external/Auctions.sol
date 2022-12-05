@@ -126,7 +126,7 @@ library Auctions {
         while (bucketDepth_ != 0 && t0DebtToSettle_ != 0 && collateral_ != 0) {
             hpbVars.index   = Deposits.findIndexOfSum(deposits_, 1);
             hpbVars.deposit = Deposits.valueAt(deposits_, hpbVars.index);
-            hpbVars.price   = PoolCommons._indexToPrice(hpbVars.index);
+            hpbVars.price   = priceAt(hpbVars.index);
 
             uint256 depositToRemove = hpbVars.deposit;
             uint256 collateralUsed;
@@ -288,7 +288,7 @@ library Auctions {
         Liquidation storage liquidation = self.liquidations[borrowerAddress_];
         _validateTake(liquidation);
 
-        params_.bucketPrice  = PoolCommons._indexToPrice(bucketIndex_);
+        params_.bucketPrice  = priceAt(bucketIndex_);
         params_.auctionPrice = _auctionPrice(
             liquidation.kickMomp,
             liquidation.kickTime
@@ -433,13 +433,13 @@ library Auctions {
                 self.liquidations[borrowerAddress_].kickMomp,
                 self.liquidations[borrowerAddress_].kickTime
             );
-            bucketIndex_ = PoolCommons._priceToIndex(auctionPrice);
+            bucketIndex_ = indexOf(auctionPrice);
             lps_ = Buckets.addCollateral(
                 buckets_[bucketIndex_],
                 borrowerAddress_,
                 Deposits.valueAt(deposits_, bucketIndex_),
                 fractionalCollateral,
-                PoolCommons._indexToPrice(bucketIndex_)
+                priceAt(bucketIndex_)
             );
         }
 

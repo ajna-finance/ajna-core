@@ -852,6 +852,61 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*** Free Functions ***/
     /**********************/
 
+    /*************************/
+    /*** Price Conversions ***/
+    /*************************/
+
+    /**
+     *  @notice Wrapper function for call to external Poolcommons library.
+     *  @param  index_ The deposit index from which LPB is attempting to be removed.
+     *  @return Price for the given index.
+     */
+    function priceAt(
+        uint256 index_
+    ) pure returns (uint256) {
+        int256 bucketIndex = (index_ != 8191) ? 4_156 - int256(index_) : -3_232;
+        require(bucketIndex >= -3_232 && bucketIndex <= 4_156, "BM:ITP:OOB");
+
+        return uint256(
+            PRBMathSD59x18.exp2(
+                PRBMathSD59x18.mul(
+                    PRBMathSD59x18.fromInt(bucketIndex),
+                    PRBMathSD59x18.log2(1.005 * 10**18)
+                )
+            )
+        );
+    }
+
+    /**
+     *  @notice Calculates the Fenwick index for a given price
+     *  @dev    Throws if price exceeds maximum constant
+     *  @dev    Price expected to be inputted as a 18 decimal WAD
+     *  @dev    V1: bucket index = (price - MIN_PRICE) / FLOAT_STEP
+     *          V2: bucket index = (log(FLOAT_STEP) * price) /  MAX_PRICE
+     *          V3 (final): bucket index =  log_2(price) / log_2(FLOAT_STEP)
+     *  @dev    Fenwick index = 7388 - bucket index + 3232
+     */
+    function indexOf(
+        uint256 price_
+    ) pure returns (uint256) {
+        require(price_ >= 99_836_282_890 && price_ <= 1_004_968_987.606512354182109771 * 10**18, "BM:PTI:OOB");
+
+        int256 index = PRBMathSD59x18.div(
+            PRBMathSD59x18.log2(int256(price_)),
+            PRBMathSD59x18.log2(1.005 * 10**18)
+        );
+
+        int256 ceilIndex = PRBMathSD59x18.ceil(index);
+        if (index < 0 && ceilIndex - index > 0.5 * 1e18) {
+            return uint256(4157 - PRBMathSD59x18.toInt(ceilIndex));
+        }
+        return uint256(4156 - PRBMathSD59x18.toInt(ceilIndex));
+    }
+
+    /**********************/
+    /*** Pool Utilities ***/
+    /**********************/
+
     /**
      *  @notice Calculates encumberance for a debt amount at a given price.
      *  @param  debt_         The debt amount to calculate encumberance for.
@@ -933,15 +988,4 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 lupColEma_
     ) pure returns (uint256) {
         return (debtEma_ != 0 && lupColEma_ != 0) ? Maths.wdiv(debtEma_, lupColEma_) : Maths.WAD;
-    }
-
-    /**
-     *  @notice Wrapper function for call to external Poolcommons library.
-     *  @param  index_ The deposit index from which LPB is attempting to be removed.
-     *  @return Price for the given index.
-     */
-    function priceAt(
-        uint256 index_
-    ) pure returns (uint256) {
-        return PoolCommons.indexToPrice(index_);
     }

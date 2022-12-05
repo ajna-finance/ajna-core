@@ -129,7 +129,7 @@ contract PoolInfoUtils {
         (, uint256 maxThresholdPrice, ) = pool.loansInfo();
         (uint256 inflatorSnapshot, )    = pool.inflatorInfo();
         htp_      = Maths.wmul(maxThresholdPrice, inflatorSnapshot);
-        if (htp_ != 0) htpIndex_ = PoolCommons.priceToIndex(htp_);
+        if (htp_ != 0) htpIndex_ = indexOf(htp_);
         lupIndex_ = pool.depositIndex(debt);
         lup_      = priceAt(lupIndex_);
     }
@@ -229,14 +229,14 @@ contract PoolInfoUtils {
         uint256 index_
     ) external pure returns (uint256)
     {
-        return PoolCommons.indexToPrice(index_);
+        return priceAt(index_);
     }
 
     function priceToIndex(
         uint256 price_
     ) external pure returns (uint256)
     {
-        return PoolCommons.priceToIndex(price_);
+        return indexOf(price_);
     }
 
     function lup(

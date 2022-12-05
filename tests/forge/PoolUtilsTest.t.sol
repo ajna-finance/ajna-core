@@ -9,6 +9,46 @@ import 'src/base/Pool.sol';
 contract PoolUtilsTest is DSTestPlus {
 
     /**
+     *  @notice Tests fenwick index calculation from varying bucket prices
+     */
+    function testPriceToIndex() external {
+        assertEq(indexOf(1_004_968_987.606512354182109771 * 10**18), 0);
+        assertEq(indexOf(99_836_282_890),                            7388);
+        assertEq(indexOf(49_910.043670274810022205 * 1e18),          1987);
+        assertEq(indexOf(2_000.221618840727700609 * 1e18),           2632);
+        assertEq(indexOf(146.575625611106531706 * 1e18),             3156);
+        assertEq(indexOf(145.846393642892072537 * 1e18),             3157);
+        assertEq(indexOf(5.263790124045347667 * 1e18),               3823);
+        assertEq(indexOf(1.646668492116543299 * 1e18),               4056);
+        assertEq(indexOf(1.315628874808846999 * 1e18),               4101);
+        assertEq(indexOf(1.051140132040790557 * 1e18),               4146);
+        assertEq(indexOf(0.000046545370002462 * 1e18),               6156);
+        assertEq(indexOf(0.006822416727411372 * 1e18),               5156);
+        assertEq(indexOf(0.006856528811048429 * 1e18),               5155);
+        assertEq(indexOf(0.951347940696068854 * 1e18),               4166);
+    }
+
+    /**
+     *  @notice Tests bucket price calculation from varying fenwick index
+     */
+    function testindexToPrice() external {
+        assertEq(priceAt( 0 ),    1_004_968_987.606512354182109771 * 10**18);
+        assertEq(priceAt( 7388 ), 99_836_282_890);
+        assertEq(priceAt( 1987 ), 49_910.043670274810022205 * 1e18);
+        assertEq(priceAt( 2632 ), 2_000.221618840727700609 * 1e18);
+        assertEq(priceAt( 3156 ), 146.575625611106531706 * 1e18);
+        assertEq(priceAt( 3157 ), 145.846393642892072537 * 1e18);
+        assertEq(priceAt( 3823 ), 5.263790124045347667 * 1e18);
+        assertEq(priceAt( 4056 ), 1.646668492116543299 * 1e18);
+        assertEq(priceAt( 4101 ), 1.315628874808846999 * 1e18);
+        assertEq(priceAt( 4146 ), 1.051140132040790557 * 1e18);
+        assertEq(priceAt( 6156 ), 0.000046545370002462 * 1e18);
+        assertEq(priceAt( 5156 ), 0.006822416727411372 * 1e18);
+        assertEq(priceAt( 5155 ), 0.006856528811048429 * 1e18);
+        assertEq(priceAt( 4166 ), 0.951347940696068854 * 1e18);
+    }
+
+    /**
      *  @notice Tests collateral encumberance for varying values of debt and lup
      */
     function testEncumberance() external {

@@ -658,7 +658,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
     function testPoolRemoveQuoteTokenWithCollateral() external {
         // add 10 collateral into the 100 bucket, for LP worth 1000 quote tokens
         _mintCollateralAndApproveTokens(_lender, 10 * 1e18);
-        uint256 i100 = PoolCommons.priceToIndex(100 * 1e18);
+        uint256 i100 = indexOf(100 * 1e18);
         _addCollateral(
             {
                 from:   _lender,
