@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import './Maths.sol';
-import './external/PoolCommons.sol';
+import '../base/PoolHelper.sol';
 
 library Deposits {
 

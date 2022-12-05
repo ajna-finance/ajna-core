@@ -3,10 +3,11 @@ pragma solidity 0.8.14;
 
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
-import '../Maths.sol';
 import '../Deposits.sol';
 import '../Buckets.sol';
 import '../Loans.sol';
+
+import '../../base/PoolHelper.sol';
 import '../../base/Pool.sol';
 
 /**

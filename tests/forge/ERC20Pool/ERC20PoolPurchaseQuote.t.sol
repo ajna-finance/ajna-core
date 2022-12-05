@@ -4,8 +4,7 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import 'src/libraries/Maths.sol';
-import 'src/libraries/external/PoolCommons.sol';
+import 'src/base/PoolHelper.sol';
 
 contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
 
