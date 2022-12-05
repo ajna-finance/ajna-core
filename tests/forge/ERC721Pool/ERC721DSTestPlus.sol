@@ -90,7 +90,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         for(uint256 j = 0; j < indexes.length(); j++){
             uint256 lenderLpBalance;
             uint256 bucketIndex = indexes.at(j);
-            (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
+            (lenderLpBalance, ,) = _pool.lenderInfo(bucketIndex, lender);
             if (lenderLpBalance == 0) continue;
 
             // Calculating redeemable Quote and Collateral Token in particular bucket
@@ -121,7 +121,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
                     deal(_pool.quoteTokenAddress(), lender, depositRequired);
                     Token(_pool.quoteTokenAddress()).approve(address(_pool) , depositRequired);
                     _pool.addQuoteToken(depositRequired, bucketIndex);
-                    (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
+                    (lenderLpBalance, ,) = _pool.lenderInfo(bucketIndex, lender);
                     lpsAsCollateral = _poolUtils.lpsToCollateral(address(_pool), lenderLpBalance, bucketIndex);
                 }
 
@@ -134,7 +134,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
             (, lpsRedeemed) = _pool.removeQuoteToken(type(uint256).max, bucketIndex);
         
             // Confirm all lp balance has been redeemed            
-            (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
+            (lenderLpBalance, ,) = _pool.lenderInfo(bucketIndex, lender);
         }
     }
 

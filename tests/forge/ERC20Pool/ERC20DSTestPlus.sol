@@ -81,7 +81,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         for(uint j = 0; j < indexes.length(); j++ ){
             uint256 bucketIndex = indexes.at(j);
             (, uint256 bucketQuote, uint256 bucketCollateral, , ,) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
-            (uint256 lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
+            (uint256 lenderLpBalance, ,) = _pool.lenderInfo(bucketIndex, lender);
 
             // redeem LP for quote token if available
             uint256 lpRedeemed;
@@ -99,7 +99,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
             // confirm the redemption amount returned by removal methods is correct
             assertEq(lenderLpBalance, 0);
             // confirm the user actually has 0 LPB in the bucket
-            (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
+            (lenderLpBalance, ,) = _pool.lenderInfo(bucketIndex, lender);
             assertEq(lenderLpBalance, 0);
         }
     }

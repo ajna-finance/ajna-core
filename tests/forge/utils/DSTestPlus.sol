@@ -444,9 +444,10 @@ abstract contract DSTestPlus is Test {
         uint256 lpBalance,
         uint256 depositTime
     ) internal {
-        (uint256 curLpBalance, uint256 time) = _pool.lenderInfo(index, lender);
+        (uint256 curLpBalance, uint256 time, ) = _pool.lenderInfo(index, lender);
         assertEq(curLpBalance, lpBalance);
         assertEq(time,       depositTime);
+        // TODO: add assertion for hte value of advancedDeposit against expectations 
     }
 
     function _assertBucket(

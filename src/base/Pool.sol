@@ -51,6 +51,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     uint256 internal poolInitializations;
     uint256 internal t0poolDebt;              // Pool debt as if the whole amount was incurred upon the first loan. [WAD]
 
+    uint256 internal totalAdvancedDeposit;
+
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 
     Auctions.Data                      internal auctions;
@@ -111,7 +113,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _revertIfAuctionDebtLocked(fromIndex_, poolState.inflator);
 
         Buckets.Lender memory lender;
-        (lender.lps, lender.depositTime) = buckets.getLenderInfo(
+        (lender.lps, lender.depositTime,) = buckets.getLenderInfo(
             fromIndex_,
             msg.sender
         );
@@ -173,11 +175,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
         _revertIfAuctionDebtLocked(index_, poolState.inflator);
 
-        (uint256 lenderLPsBalance, uint256 lastDeposit) = buckets.getLenderInfo(
+        (uint256 lenderLPsBalance, uint256 lastDeposit, uint256 advancedDeposit) = buckets.getLenderInfo(
             index_,
             msg.sender
         );
         if (lenderLPsBalance == 0) revert NoClaim();      // revert if no LP to claim
+        if (advancedDeposit != 0) revert(); // revert if deposit advanced
 
         uint256 deposit = deposits.valueAt(index_);
         if (deposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
@@ -237,7 +240,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             if (indexes_[i] > 8192 ) revert InvalidIndex();
 
             uint256 transferAmount = _lpTokenAllowances[owner_][newOwner_][indexes_[i]];
-            (uint256 lenderLpBalance, uint256 lenderLastDepositTime) = buckets.getLenderInfo(
+            (uint256 lenderLpBalance, uint256 lenderLastDepositTime, ) = buckets.getLenderInfo(
                 indexes_[i],
                 owner_
             );
@@ -917,7 +920,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function lenderInfo(
         uint256 index_,
         address lender_
-    ) external view override returns (uint256, uint256) {
+    ) external view override returns (uint256, uint256, uint256) {
         return buckets.getLenderInfo(index_, lender_);
     }
 

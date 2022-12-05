@@ -6,8 +6,9 @@ import './Maths.sol';
 library Buckets {
 
     struct Lender {
-        uint256 lps;         // [RAY] Lender LP accumulator
-        uint256 depositTime; // timestamp of last deposit
+        uint256 lps;             // [RAY] Lender LP accumulator
+        uint256 depositTime;     // timestamp of last deposit
+        uint256 advancedDeposit;
     }
 
     struct Bucket {
@@ -221,18 +222,20 @@ library Buckets {
 
     /**
      *  @notice Returns the lender info for a given bucket.
-     *  @param  index_       Index of the bucket.
-     *  @param  lender_      Lender's address.
-     *  @return lpBalance_   LPs balance of lender in current bucket.
-     *  @return depositTime_ Timestamp of last lender deposit in current bucket.
+     *  @param  index_           Index of the bucket.
+     *  @param  lender_          Lender's address.
+     *  @return lpBalance_       LPs balance of lender in current bucket.
+     *  @return depositTime_     Timestamp of last lender deposit in current bucket.
+     *  @return advancedDeposit_ Accumulator tracking lenders advanced deposit balance.
      */
     function getLenderInfo(
         mapping(uint256 => Bucket) storage self,
         uint256 index_,
         address lender_
-    ) internal view returns (uint256 lpBalance_, uint256 depositTime_) {
+    ) internal view returns (uint256 lpBalance_, uint256 depositTime_, uint256 advancedDeposit_) {
         depositTime_ = self[index_].lenders[lender_].depositTime;
         if (self[index_].bankruptcyTime < depositTime_) lpBalance_ = self[index_].lenders[lender_].lps;
+        advancedDeposit_ = self[index_].lenders[lender_].advancedDeposit;
     }
 
     /**

@@ -133,6 +133,7 @@ interface IPoolState {
      *  @param  lp               Address of the liquidity provider.
      *  @return lpBalance        Amount of LPs owner has in current bucket.
      *  @return lastQuoteDeposit Time the user last deposited quote token.
+     *  @return advancedDeposit  Accumulator tracking lenders advanced deposit balance.
      */
     function lenderInfo(
         uint256 index,
@@ -142,7 +143,8 @@ interface IPoolState {
         view
         returns (
             uint256 lpBalance,
-            uint256 lastQuoteDeposit
+            uint256 lastQuoteDeposit,
+            uint256 advancedDeposit
     );
 
     /**
