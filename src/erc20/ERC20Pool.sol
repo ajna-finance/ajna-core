@@ -6,8 +6,6 @@ import './interfaces/IERC20Pool.sol';
 import './interfaces/IERC20Taker.sol';
 import '../base/FlashloanablePool.sol';
 
-import '@std/console.sol';
-
 contract ERC20Pool is IERC20Pool, FlashloanablePool {
     using Auctions for Auctions.Data;
     using Buckets  for mapping(uint256 => Buckets.Bucket);
@@ -89,6 +87,9 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         // check both values to enable an intentional 0 borrow loan call to update borrower's loan state
         if (amountToBorrow_ != 0 || limitIndex_ != 0) {
 
+            // only intended recipient can borrow quote
+            if (borrower_ != msg.sender) revert BorrowerNotSender();
+
             // if borrower auctioned then it cannot draw more debt
             auctions.revertIfActive(borrower_);
 
@@ -122,7 +123,6 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
             // move borrowed amount from pool to sender
             _transferQuoteToken(msg.sender, amountToBorrow_);
-
         }
 
         emit DrawDebt(borrower_, amountToBorrow_, collateralToPledge_, newLup);
@@ -141,10 +141,6 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         // update pool global interest rate state
         _updateInterestParams(poolState, newLup);
-
-        // if (poolState.accruedDebt != 0) {
-        //     _updateInterestParams(poolState, newLup);
-        // }
     }
 
     function pullCollateral(

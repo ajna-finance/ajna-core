@@ -30,7 +30,7 @@ interface IERC20PoolEvents {
 
     /**
      *  @notice Emitted when borrower draws debt from the pool, or adds collateral to the pool.
-     *  @param  borrower          `msg.sender`.
+     *  @param  borrower          The borrower to whom collateral was pledged, and/or debt was drawn for.
      *  @param  amountBorowed     Amount of quote tokens borrowed from the pool.
      *  @param  collateralPledged Amount of collateral locked in the pool.
      *  @param  lup               LUP after borrow.

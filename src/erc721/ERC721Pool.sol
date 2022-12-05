@@ -99,6 +99,9 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         // borrow against pledged collateral
         if (amountToBorrow_ != 0 || limitIndex_ != 0) {
 
+            // only intended recipient can borrow quote
+            if (borrower_ != msg.sender) revert BorrowerNotSender();
+
             // if borrower auctioned then it cannot draw more debt
             auctions.revertIfActive(borrower_);
 
