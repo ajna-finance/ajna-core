@@ -769,7 +769,7 @@ abstract contract DSTestPlus is Test {
         uint256 amount
     ) internal {
         changePrank(address(flashBorrower));
-        vm.expectRevert();
+        vm.expectRevert('ERC20: transfer amount exceeds balance');
         _pool.flashLoan(flashBorrower, token, amount, new bytes(0));
     }
 
