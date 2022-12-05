@@ -118,7 +118,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 amountToMove;
         uint256 fromDeposit = deposits.valueAt(fromIndex_);
         Buckets.Bucket storage fromBucket = buckets[fromIndex_];
-        (amountToMove, fromBucketLPs_, ) = Buckets.lpsToQuoteToken(
+        (amountToMove, fromBucketLPs_) = Buckets.lpsToQuoteToken(
             fromBucket.lps,
             fromBucket.collateral,
             fromDeposit,

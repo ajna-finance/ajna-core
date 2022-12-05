@@ -273,8 +273,7 @@ library Buckets {
      *  @param  maxQuoteToken_    The max quote token amount to calculate LPs for.
      *  @param  bucketPrice_      Bucket price.
      *  @return quoteTokenAmount_ Amount of quote tokens calculated for the given LPs amount.
-     *  @return lps_              Amount of bucket LPs corresponding for calculated collateral amount.
-     *  @return lenderLPs_        Lender LPs balance in current bucket.
+     *  @return lps_              Amount of bucket LPs corresponding for calculated quote token amount.
      */
     function lpsToQuoteToken(
         uint256 bucketLPs_,
@@ -283,15 +282,11 @@ library Buckets {
         uint256 lenderLPsBalance_,
         uint256 maxQuoteToken_,
         uint256 bucketPrice_
-    ) internal pure returns (uint256 quoteTokenAmount_, uint256 lps_, uint256 lenderLPs_) {
-        lenderLPs_   = lenderLPsBalance_;
+    ) internal pure returns (uint256 quoteTokenAmount_, uint256 lps_) {
         uint256 rate = getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_);
         quoteTokenAmount_ = Maths.rayToWad(Maths.rmul(lenderLPsBalance_, rate));
-        if (quoteTokenAmount_ > deposit_) {
-            quoteTokenAmount_ = deposit_;
-            lenderLPs_        = Maths.wrdivr(quoteTokenAmount_, rate);
-        }
-        if (maxQuoteToken_ != quoteTokenAmount_) quoteTokenAmount_ = Maths.min(maxQuoteToken_,quoteTokenAmount_);
+        if (quoteTokenAmount_ > deposit_) quoteTokenAmount_ = deposit_;
+        if (quoteTokenAmount_ > maxQuoteToken_) quoteTokenAmount_ = maxQuoteToken_;
         lps_ = Maths.wrdivr(quoteTokenAmount_, rate);
     }
 
