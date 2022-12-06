@@ -374,9 +374,6 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             }
         );
 
-        // TODO: assertLender
-        // _assertLender()
-
         /******************************/
         /*** Assert Post-kick state ***/
         /******************************/
@@ -433,11 +430,12 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 neutralPrice:      10.255495938002318100 * 1e18
             })
         );
-        _assertKicker(
+        _assertKickerWithAdvancedDeposit(
             {
                 kicker:    _lender,
                 claimable: 0,
-                locked:    0.195342779771472726 * 1e18
+                locked:    0.195342779771472726 * 1e18,
+                indexes: indexes
             }
         );
         _assertReserveAuction(
@@ -465,10 +463,21 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         });
 
         // add quote token to pay down advanced deposits to enable tearDown
+        // check adding liquidity won't increase pool size if it cancels out advanced deposits
+        uint256 poolQuoteTokenBalance = 65_000.750005000000000000 * 1e18;
+        uint256 poolDepositSize = 73_094.502284691716022000 * 1e18;
+        assertEq(_quote.balanceOf(address(_pool)), poolQuoteTokenBalance);
+        assertEq(_pool.depositSize(), poolDepositSize);
         (, , uint256 advancedDeposit) = _pool.lenderInfo(_i100_33, _lender);
         _pool.addQuoteToken(advancedDeposit, _i100_33);
         (, , advancedDeposit) = _pool.lenderInfo(_i9_52, _lender);
         _pool.addQuoteToken(advancedDeposit, _i9_52);
+        assertEq(_quote.balanceOf(address(_pool)), poolQuoteTokenBalance);
+        assertEq(_pool.depositSize(), poolDepositSize);
+    }
+
+    function testKickWithAdvancedDepositRemoveLiquidity() external tearDown {
+
     }
 
     function testKickAndSaveByRepay() external tearDown {

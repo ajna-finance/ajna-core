@@ -386,7 +386,7 @@ abstract contract DSTestPlus is Test {
         ) = _pool.auctionInfo(state_.borrower);
 
         (uint256 borrowerDebt, uint256 borrowerCollateral , ) = _poolUtils.borrowerInfo(address(_pool), state_.borrower);
-        (, uint256 lockedBonds) = _pool.kickerInfo(state_.kicker);
+        (, uint256 lockedBonds, ) = _pool.kickerInfo(state_.kicker);
         (uint256 auctionTotalBondEscrowed,,) = _pool.reservesInfo();
         (,,uint256 auctionDebtInAuction)  = _pool.debtInfo(); 
         uint256 borrowerThresholdPrice = borrowerCollateral > 0 ? borrowerDebt * Maths.WAD / borrowerCollateral : 0;
@@ -534,10 +534,26 @@ abstract contract DSTestPlus is Test {
         uint256 claimable,
         uint256 locked
     ) internal {
-        (uint256 curClaimable, uint256 curLocked) = _pool.kickerInfo(kicker);
+        (uint256 curClaimable, uint256 curLocked, uint256[] memory indexes) = _pool.kickerInfo(kicker);
 
         assertEq(curClaimable, claimable);
         assertEq(curLocked,    locked);
+        assertEq(indexes.length, 0);
+    }
+
+    function _assertKickerWithAdvancedDeposit(
+        address kicker,
+        uint256 claimable,
+        uint256 locked,
+        uint256[] memory indexes
+    ) internal {
+        (uint256 curClaimable, uint256 curLocked, uint256[] memory curIndexes) = _pool.kickerInfo(kicker);
+
+        assertEq(curClaimable, claimable);
+        assertEq(curLocked,    locked);
+        for (uint256 i = 0; i < indexes.length; i++) {
+            assertEq(curIndexes[i], indexes[i]);
+        }
     }
 
     function _assertLenderInterest(

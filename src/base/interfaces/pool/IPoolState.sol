@@ -118,13 +118,15 @@ interface IPoolState {
      *  @param  kicker    The address of the kicker to retrieved info for.
      *  @return claimable Amount of quote token kicker can claim / withdraw from pool at any time.
      *  @return locked    Amount of quote token kicker locked in auctions (as bonds).
+     *  @return indexes   Array of indexes containing advancedDeposit.
      */
     function kickerInfo(address kicker)
         external
         view
         returns (
             uint256 claimable,
-            uint256 locked
+            uint256 locked,
+            uint256[] memory indexes
         );
 
     /**

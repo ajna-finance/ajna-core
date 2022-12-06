@@ -1071,10 +1071,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     function kickerInfo(
         address kicker_
-    ) external view override returns (uint256, uint256) {
+    ) external view override returns (uint256, uint256, uint256[] memory) {
         return(
             auctions.kickers[kicker_].claimable,
-            auctions.kickers[kicker_].locked
+            auctions.kickers[kicker_].locked,
+            auctions.kickers[kicker_].advancedDepositIndexes
         );
     }
 
