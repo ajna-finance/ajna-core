@@ -200,15 +200,15 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
         uint256 excessQuoteToken;
         uint256 collateralTaken = (params.collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
-        if (collateralTaken !=  params.collateralAmount) { // collateral taken not a round number
-            // collateralTaken += 1e18; // round up collateral to take
+        if (collateralTaken !=  params.collateralAmount && borrower.collateral > params.collateralAmount) { // collateral taken not a round number
+            collateralTaken += 1e18; // round up collateral to take
             // taker should send additional quote tokens to cover difference between collateral needed to be taken and rounded collateral, at auction price
             // borrower will get quote tokens for the difference between rounded collateral and collateral taken to cover debt
-            excessQuoteToken = Maths.wmul((collateralTaken + 1e18) - params.collateralAmount, params.auctionPrice);
+            excessQuoteToken = Maths.wmul(collateralTaken - params.collateralAmount, params.auctionPrice);
         }
 
-        borrower.collateral  -= params.collateralAmount;
-        poolState.collateral -= params.collateralAmount;
+        borrower.collateral  -= collateralTaken;
+        poolState.collateral -= collateralTaken;
 
         emit Take(
             borrowerAddress_,
