@@ -55,6 +55,7 @@ abstract contract DSTestPlus is Test {
     uint256 internal _p9_72     = 9.721295865031779605 * 1e18;
     uint256 internal _p9_62     = 9.624807173121239337 * 1e18;
     uint256 internal _p9_52     = 9.529276179422528643 * 1e18;
+    uint256 internal _p0_014    = 0.014854015662334135 * 1e18;
 
     uint256 internal _i1505_26  = 2689;
     uint256 internal _i49910    = 1987;
@@ -65,6 +66,7 @@ abstract contract DSTestPlus is Test {
     uint256 internal _i9_72     = 3700;
     uint256 internal _i9_62     = 3702;
     uint256 internal _i9_52     = 3704;
+    uint256 internal _i0_014    = 5000;
 
     struct PoolState {
         uint256 htp;
@@ -205,6 +207,24 @@ abstract contract DSTestPlus is Test {
         emit Kick(borrower, debt, collateral, bond);
         if(transferAmount != 0) _assertTokenTransferEvent(from, address(_pool), transferAmount);
         _pool.kick(borrower);
+    }
+
+    function _kickWithAdvancedDeposit(
+        address from,
+        address borrower,
+        uint256 debt,
+        uint256 collateral,
+        uint256 bond,
+        uint256 transferAmount,
+        uint256[] memory indices
+    ) internal {
+        // TODO: check advanced deposit change?
+        changePrank(from);
+        vm.expectEmit(true, true, false, true);
+        emit Kick(borrower, debt, collateral, bond);
+        _pool.kickWithAdvancedDeposit(borrower, indices);
+
+        // assert lender advanced deposit
     }
 
     function _moveLiquidity(
@@ -820,6 +840,36 @@ abstract contract DSTestPlus is Test {
         _pool.kick(borrower);
     }
 
+    function _assertKickWithAdvancedDepositDuplicateIndexRevert(
+        address from,
+        address borrower,
+        uint256[] memory indices
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AdvancedDepositDuplicateIndex.selector);
+        _pool.kickWithAdvancedDeposit(borrower, indices);
+    }
+
+    function _assertKickWithAdvancedDepositInsufficientLpsRevert(
+        address from,
+        address borrower,
+        uint256[] memory indices
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.InsufficientLPs.selector);
+        _pool.kickWithAdvancedDeposit(borrower, indices);
+    }
+
+    function _assertKickWithAdvancedDepositLockedByAuctionDebtRevert(
+        address from,
+        address borrower,
+        uint256[] memory indices
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.RemoveDepositLockedByAuctionDebt.selector);
+        _pool.kickWithAdvancedDeposit(borrower, indices);
+    }
+
     function _assertKickCollateralizedBorrowerRevert(
         address from,
         address borrower
@@ -868,6 +918,16 @@ abstract contract DSTestPlus is Test {
         _pool.removeCollateral(amount, index);
     }
 
+    function _assertRemoveCollateralAdvancedDepositNonZeroRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AdvancedDepositNonZero.selector);
+        _pool.removeCollateral(amount, index);
+    }
+
     function _assertRemoveInsufficientCollateralRevert(
         address from,
         uint256 amount,
@@ -876,6 +936,16 @@ abstract contract DSTestPlus is Test {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
         _pool.removeCollateral(amount, index);
+    }
+
+    function _assertRemoveLiquidityAdvancedDepositNonZeroRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AdvancedDepositNonZero.selector);
+        _pool.removeQuoteToken(amount, index);
     }
 
     function _assertRemoveLiquidityAuctionNotClearedRevert(

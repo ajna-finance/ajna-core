@@ -220,20 +220,20 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if (removedAmount_ > maxAmount_) removedAmount_ = maxAmount_;
         if (removedAmount_ > deposit)    removedAmount_ = deposit;
 
-        if (removedAmountBefore == removedAmount_) redeemedLPs_ = lenderLPsBalance;
-        else {
-            redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(removedAmount_, exchangeRate));
-        }
-
-        // update advanced deposit state
+        // update advanced deposit state if necessary
         if (advancedDeposit > 0) {
             if (advancedDeposit > removedAmount_) {
                 revert AdvancedDepositNonZero();
             } else {
                 removedAmount_ -= advancedDeposit;
+                totalAdvancedDeposit -= advancedDeposit;
                 bucket.lenders[msg.sender].advancedDeposit = 0;
-                totalAdvancedDeposit -= removedAmount_;
             }
+        }
+
+        if (removedAmountBefore == removedAmount_) redeemedLPs_ = lenderLPsBalance;
+        else {
+            redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(removedAmount_, exchangeRate));
         }
 
         deposits.remove(index_, removedAmount_, deposit); // update FenwickTree
