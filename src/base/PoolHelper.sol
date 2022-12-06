@@ -165,3 +165,31 @@ import '../libraries/Maths.sol';
     ) pure returns (uint256) {
         return (debtEma_ != 0 && lupColEma_ != 0) ? Maths.wdiv(debtEma_, lupColEma_) : Maths.WAD;
     }
+
+    /*********************************/
+    /*** Reserve Auction Utilities ***/
+    /*********************************/
+
+    uint256 constant MINUTE_HALF_LIFE    = 0.988514020352896135_356867505 * 1e27;  // 0.5^(1/60)
+
+    function _claimableReserves(
+        uint256 debt_,
+        uint256 poolSize_,
+        uint256 totalBondEscrowed_,
+        uint256 reserveAuctionUnclaimed_,
+        uint256 quoteTokenBalance_
+    ) pure returns (uint256 claimable_) {
+        claimable_ = Maths.wmul(0.995 * 1e18, debt_) + quoteTokenBalance_;
+        claimable_ -= Maths.min(claimable_, poolSize_ + totalBondEscrowed_ + reserveAuctionUnclaimed_);
+    }
+
+    function _reserveAuctionPrice(
+        uint256 reserveAuctionKicked_
+    ) view returns (uint256 _price) {
+        if (reserveAuctionKicked_ != 0) {
+            uint256 secondsElapsed = block.timestamp - reserveAuctionKicked_;
+            uint256 hoursComponent = 1e27 >> secondsElapsed / 3600;
+            uint256 minutesComponent = Maths.rpow(MINUTE_HALF_LIFE, secondsElapsed % 3600 / 60);
+            _price = Maths.rayToWad(1_000_000_000 * Maths.rmul(hoursComponent, minutesComponent));
+        }
+    }

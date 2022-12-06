@@ -57,13 +57,13 @@ contract AuctionsTest is DSTestPlus {
      */
     function testReserveAuctionPrice() external {
         skip(5 days);
-        assertEq(Auctions.reserveAuctionPrice(block.timestamp),            1e27);
-        assertEq(Auctions.reserveAuctionPrice(block.timestamp - 1 hours),  500000000 * 1e18);
-        assertEq(Auctions.reserveAuctionPrice(block.timestamp - 2 hours),  250000000 * 1e18);
-        assertEq(Auctions.reserveAuctionPrice(block.timestamp - 4 hours),  62500000 * 1e18);
-        assertEq(Auctions.reserveAuctionPrice(block.timestamp - 16 hours), 15258.789062500000000000 * 1e18);
-        assertEq(Auctions.reserveAuctionPrice(block.timestamp - 24 hours), 59.604644775390625000 * 1e18);
-        assertEq(Auctions.reserveAuctionPrice(block.timestamp - 90 hours), 0);
+        assertEq(_reserveAuctionPrice(block.timestamp),            1e27);
+        assertEq(_reserveAuctionPrice(block.timestamp - 1 hours),  500000000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 2 hours),  250000000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 4 hours),  62500000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 16 hours), 15258.789062500000000000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 24 hours), 59.604644775390625000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 90 hours), 0);
     }
 
     /**
@@ -76,15 +76,15 @@ contract AuctionsTest is DSTestPlus {
         uint256 reserveAuctionUnclaimed = 1_001 * 1e18;
         uint256 quoteTokenBalance = 11_000 * 1e18;
 
-        assertEq(Auctions.claimableReserves(debt, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, quoteTokenBalance),  18_942 * 1e18);
-        assertEq(Auctions.claimableReserves(debt, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, 0),                  7_942 * 1e18);
-        assertEq(Auctions.claimableReserves(0, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, quoteTokenBalance),     7_997 * 1e18);
-        assertEq(Auctions.claimableReserves(debt, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, Maths.WAD),          7_943 * 1e18);
-        assertEq(Auctions.claimableReserves(debt, 11_000 * 1e18, liquidationBondEscrowed, reserveAuctionUnclaimed, 0),             0);
-        assertEq(Auctions.claimableReserves(debt, poolSize, 11_000 * 1e18, reserveAuctionUnclaimed, 0),                            0);
-        assertEq(Auctions.claimableReserves(debt, poolSize, liquidationBondEscrowed, 11_000 * 1e18, 0),                            0);
-        assertEq(Auctions.claimableReserves(debt, 11_000 * 1e18, 11_000 * 1e18, reserveAuctionUnclaimed, 0),                       0);
-        assertEq(Auctions.claimableReserves(debt, poolSize, 11_000 * 1e18, 10_895 * 1e18, quoteTokenBalance),                      0);
+        assertEq(_claimableReserves(debt, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, quoteTokenBalance),  18_942 * 1e18);
+        assertEq(_claimableReserves(debt, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, 0),                  7_942 * 1e18);
+        assertEq(_claimableReserves(0, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, quoteTokenBalance),     7_997 * 1e18);
+        assertEq(_claimableReserves(debt, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, Maths.WAD),          7_943 * 1e18);
+        assertEq(_claimableReserves(debt, 11_000 * 1e18, liquidationBondEscrowed, reserveAuctionUnclaimed, 0),             0);
+        assertEq(_claimableReserves(debt, poolSize, 11_000 * 1e18, reserveAuctionUnclaimed, 0),                            0);
+        assertEq(_claimableReserves(debt, poolSize, liquidationBondEscrowed, 11_000 * 1e18, 0),                            0);
+        assertEq(_claimableReserves(debt, 11_000 * 1e18, 11_000 * 1e18, reserveAuctionUnclaimed, 0),                       0);
+        assertEq(_claimableReserves(debt, poolSize, 11_000 * 1e18, 10_895 * 1e18, quoteTokenBalance),                      0);
 
     }
 

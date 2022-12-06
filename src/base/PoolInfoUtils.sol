@@ -162,7 +162,7 @@ contract PoolInfoUtils {
         (uint256 bondEscrowed, uint256 unclaimedReserve, uint256 auctionKickTime) = pool.reservesInfo();
 
         reserves_ = poolDebt + quoteTokenBalance - poolSize - bondEscrowed - unclaimedReserve;
-        claimableReserves_ = Auctions.claimableReserves(
+        claimableReserves_ = _claimableReserves(
             poolDebt,
             poolSize,
             bondEscrowed,
@@ -171,7 +171,7 @@ contract PoolInfoUtils {
         );
 
         claimableReservesRemaining_ = unclaimedReserve;
-        auctionPrice_               = Auctions.reserveAuctionPrice(auctionKickTime);
+        auctionPrice_               = _reserveAuctionPrice(auctionKickTime);
         timeRemaining_              = 3 days - Maths.min(3 days, block.timestamp - auctionKickTime);
     }
 

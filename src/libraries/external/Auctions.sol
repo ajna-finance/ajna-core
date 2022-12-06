@@ -8,10 +8,9 @@ import '../Buckets.sol';
 import '../Loans.sol';
 
 import '../../base/PoolHelper.sol';
+import '../../base/Pool.sol';
 
 library Auctions {
-    uint256 internal constant MINUTE_HALF_LIFE    = 0.988514020352896135_356867505 * 1e27;  // 0.5^(1/60)
-
     struct Data {
         address head;
         address tail;
@@ -75,6 +74,13 @@ library Auctions {
         uint256 index;          // bucket index, used by bucket take
     }
 
+    struct StartReserveAuctionParams {
+        uint256 poolSize;    // total deposits in pool (with accrued debt)
+        uint256 poolDebt;    // current t0 pool debt
+        uint256 poolBalance; // pool quote token balance
+        uint256 inflator;    // pool current inflator
+    }
+
     event BucketTake(
         address indexed borrower,
         uint256 index,
@@ -97,6 +103,11 @@ library Auctions {
         uint256 collateral,
         uint256 bondChange,
         bool    isReward
+    );
+
+    event ReserveAuction(
+        uint256 claimableReservesRemaining,
+        uint256 auctionPrice
     );
 
     /**
@@ -127,6 +138,14 @@ library Auctions {
      *  @notice Actor is attempting to take or clear an inactive auction.
      */
     error NoAuction();
+    /**
+     *  @notice No pool reserves are claimable.
+     */
+    error NoReserves();
+    /**
+     *  @notice Actor is attempting to take or clear an inactive reserves auction.
+     */
+    error NoReservesAuction();
     /**
      *  @notice Take was called before 1 hour had passed from kick time.
      */
@@ -524,6 +543,53 @@ library Auctions {
         _removeAuction(self, borrowerAddress_);
     }
 
+    /***********************/
+    /*** Reserve Auction ***/
+    /***********************/
+
+
+    function startClaimableReserveAuction(
+        Data storage self,
+        Pool.ReserveAuctionParams storage reserveAuction_,
+        StartReserveAuctionParams calldata params_
+    ) external returns (uint256 kickerAward_) {
+        uint256 curUnclaimedAuctionReserve = reserveAuction_.unclaimed;
+        uint256 claimable = _claimableReserves(
+            Maths.wmul(params_.poolDebt, params_.inflator),
+            params_.poolSize,
+            self.totalBondEscrowed,
+            curUnclaimedAuctionReserve,
+            params_.poolBalance
+        );
+        kickerAward_ = Maths.wmul(0.01 * 1e18, claimable);
+        curUnclaimedAuctionReserve += claimable - kickerAward_;
+        if (curUnclaimedAuctionReserve == 0) revert NoReserves();
+
+        reserveAuction_.unclaimed = curUnclaimedAuctionReserve;
+        reserveAuction_.kicked    = block.timestamp;
+        emit ReserveAuction(curUnclaimedAuctionReserve, _reserveAuctionPrice(block.timestamp));
+    }
+
+    function takeReserves(
+        Pool.ReserveAuctionParams storage reserveAuction_,
+        uint256 maxAmount_
+    ) external returns (uint256 amount_, uint256 ajnaRequired_) {
+        uint256 kicked = reserveAuction_.kicked;
+
+        if (kicked != 0 && block.timestamp - kicked <= 72 hours) {
+            uint256 unclaimed = reserveAuction_.unclaimed;
+            uint256 price     = _reserveAuctionPrice(kicked);
+
+            amount_       = Maths.min(unclaimed, maxAmount_);
+            ajnaRequired_ = Maths.wmul(amount_, price);
+
+            unclaimed -= amount_;
+            reserveAuction_.unclaimed = unclaimed;
+
+            emit ReserveAuction(unclaimed, price);
+        } else revert NoReservesAuction();
+    }
+
     /***************************/
     /***  Internal Functions ***/
     /***************************/
@@ -715,28 +781,6 @@ library Auctions {
     /**********************/
     /*** View Functions ***/
     /**********************/
-
-    function claimableReserves(
-        uint256 debt_,
-        uint256 poolSize_,
-        uint256 totalBondEscrowed_,
-        uint256 reserveAuctionUnclaimed_,
-        uint256 quoteTokenBalance_
-    ) internal pure returns (uint256 claimable_) {
-        claimable_ = Maths.wmul(0.995 * 1e18, debt_) + quoteTokenBalance_;
-        claimable_ -= Maths.min(claimable_, poolSize_ + totalBondEscrowed_ + reserveAuctionUnclaimed_);
-    }
-
-    function reserveAuctionPrice(
-        uint256 reserveAuctionKicked_
-    ) internal view returns (uint256 _price) {
-        if (reserveAuctionKicked_ != 0) {
-            uint256 secondsElapsed = block.timestamp - reserveAuctionKicked_;
-            uint256 hoursComponent = 1e27 >> secondsElapsed / 3600;
-            uint256 minutesComponent = Maths.rpow(MINUTE_HALF_LIFE, secondsElapsed % 3600 / 60);
-            _price = Maths.rayToWad(1_000_000_000 * Maths.rmul(hoursComponent, minutesComponent));
-        }
-    }
 
     /**
      *  @notice Check if there is an ongoing auction for current borrower and revert if such.

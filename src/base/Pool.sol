@@ -31,16 +31,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     uint208 internal inflatorSnapshot;           // [WAD]
     uint48  internal lastInflatorSnapshotUpdate; // [SEC]
 
-    InterestParams internal interestParams;
+    InterestParams       internal interestParams;
+    ReserveAuctionParams internal reserveAuction;
 
     uint256 public override pledgedCollateral;  // [WAD]
 
-    uint256 internal reserveAuctionKicked;    // Time a Claimable Reserve Auction was last kicked.
-    uint256 internal reserveAuctionUnclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
-    uint256 internal t0DebtInAuction;         // Total debt in auction used to restrict LPB holder from withdrawing [WAD]
+    uint256 internal t0DebtInAuction; // Total debt in auction used to restrict LPB holder from withdrawing [WAD]
+    uint256 internal t0poolDebt;      // Pool debt as if the whole amount was incurred upon the first loan. [WAD]
 
     uint256 internal poolInitializations;
-    uint256 internal t0poolDebt;              // Pool debt as if the whole amount was incurred upon the first loan. [WAD]
 
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 
@@ -54,6 +53,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint48  interestRateUpdate; // [SEC]
         uint256 debtEma;            // [WAD]
         uint256 lupColEma;          // [WAD]
+    }
+
+    struct ReserveAuctionParams {
+        uint256 kicked;    // Time a Claimable Reserve Auction was last kicked.
+        uint256 unclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
     }
 
     struct PoolState {
@@ -303,7 +307,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 maxDepth_
     ) external override {
         PoolState memory poolState = _accruePoolInterest();
-        uint256 reserves = Maths.wmul(t0poolDebt, poolState.inflator) + _getPoolQuoteTokenBalance() - deposits.treeSum() - auctions.totalBondEscrowed - reserveAuctionUnclaimed;
+        uint256 reserves = Maths.wmul(t0poolDebt, poolState.inflator) + _getPoolQuoteTokenBalance() - deposits.treeSum() - auctions.totalBondEscrowed - reserveAuction.unclaimed;
         Loans.Borrower storage borrower = loans.borrowers[borrowerAddress_];
 
         Auctions.SettleParams memory params;
@@ -383,40 +387,30 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*********************************/
 
     function startClaimableReserveAuction() external override {
-        uint256 curUnclaimedAuctionReserve = reserveAuctionUnclaimed;
-        uint256 claimable = Auctions.claimableReserves(
-            Maths.wmul(t0poolDebt, inflatorSnapshot),
-            deposits.treeSum(),
-            auctions.totalBondEscrowed,
-            curUnclaimedAuctionReserve,
-            _getPoolQuoteTokenBalance()
+        Auctions.StartReserveAuctionParams memory params;
+        params.poolSize    = deposits.treeSum();
+        params.poolDebt    = t0poolDebt;
+        params.poolBalance = _getPoolQuoteTokenBalance();
+        params.inflator    = inflatorSnapshot;
+        uint256 kickerAward = Auctions.startClaimableReserveAuction(
+            auctions,
+            reserveAuction,
+            params
         );
-        uint256 kickerAward = Maths.wmul(0.01 * 1e18, claimable);
-        curUnclaimedAuctionReserve += claimable - kickerAward;
-        if (curUnclaimedAuctionReserve != 0) {
-            reserveAuctionUnclaimed = curUnclaimedAuctionReserve;
-            reserveAuctionKicked    = block.timestamp;
-            emit ReserveAuction(curUnclaimedAuctionReserve, Auctions.reserveAuctionPrice(block.timestamp));
-            _transferQuoteToken(msg.sender, kickerAward);
-        } else revert NoReserves();
+        _transferQuoteToken(msg.sender, kickerAward);
     }
 
     function takeReserves(uint256 maxAmount_) external override returns (uint256 amount_) {
-        uint256 kicked = reserveAuctionKicked;
+        uint256 ajnaRequired;
+        (amount_, ajnaRequired) = Auctions.takeReserves(
+            reserveAuction,
+            maxAmount_
+        );
 
-        if (kicked != 0 && block.timestamp - kicked <= 72 hours) {
-            amount_ = Maths.min(reserveAuctionUnclaimed, maxAmount_);
-            uint256 price = Auctions.reserveAuctionPrice(kicked);
-            uint256 ajnaRequired = Maths.wmul(amount_, price);
-            reserveAuctionUnclaimed -= amount_;
-
-            emit ReserveAuction(reserveAuctionUnclaimed, price);
-
-            IERC20Token ajnaToken = IERC20Token(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079);
-            if (!ajnaToken.transferFrom(msg.sender, address(this), ajnaRequired)) revert ERC20TransferFailed();
-            ajnaToken.burn(ajnaRequired);
-            _transferQuoteToken(msg.sender, amount_);
-        } else revert NoReservesAuction();
+        IERC20Token ajnaToken = IERC20Token(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079);
+        if (!ajnaToken.transferFrom(msg.sender, address(this), ajnaRequired)) revert ERC20TransferFailed();
+        ajnaToken.burn(ajnaRequired);
+        _transferQuoteToken(msg.sender, amount_);
     }
 
 
@@ -779,8 +773,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function reservesInfo() external view override returns (uint256, uint256, uint256) {
         return (
             auctions.totalBondEscrowed,
-            reserveAuctionUnclaimed,
-            reserveAuctionKicked
+            reserveAuction.unclaimed,
+            reserveAuction.kicked
         );
     }
 
