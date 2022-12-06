@@ -96,46 +96,37 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     }
 
     function mergeCollateral(
-        fragment[] memory removeAmountAtIndex_,
+        uint256[] memory removalIndexes_,
         uint256 toIndex_
     ) external override returns (uint256 bucketLPs_) {
 
         PoolState memory poolState = _accruePoolInterest();
         uint256 collateralToMerge;
-        uint256 collateralAmount;
         uint256 fromIndex;
-        uint256 lpAmount;
 
-        for (uint index = 0; index < removeAmountAtIndex_.length; index++) {
+        for (uint256 i = 0; i < removalIndexes_.length;) {
 
-            collateralAmount = removeAmountAtIndex_[index].amount;
-            fromIndex = removeAmountAtIndex_[index].index;
-            if (fromIndex < toIndex_) revert CannotMergeToHigherPrice();
+            fromIndex = removalIndexes_[i];
+            if (fromIndex > toIndex_) revert CannotMergeToHigherPrice();
 
+            // get and check lender has positive LP bal
             Buckets.Bucket storage bucket = buckets[fromIndex];
-            if (collateralAmount > bucket.collateral) revert InsufficientCollateral();
+            (uint256 lenderLpBalance, )   = buckets.getLenderInfo(fromIndex, msg.sender);
+            if (lenderLpBalance == 0) revert InsufficientLPs();
 
-            lpAmount = Buckets.collateralToLPs(
-                bucket.collateral,
-                bucket.lps,
-                deposits.valueAt(fromIndex),
-                collateralAmount,
-                PoolUtils.indexToPrice(fromIndex)
-            );
-
-            (uint256 lenderLpBalance, ) = buckets.getLenderInfo(fromIndex, msg.sender);
-            // ensure lender has enough balance to remove collateral amount
-            if (lenderLpBalance == 0 || lpAmount > lenderLpBalance) revert InsufficientLPs();
-
+            // update collateral values
+            collateralToMerge += bucket.collateral;
             Buckets.removeCollateral(
                 bucket,
-                collateralAmount,
-                lpAmount
+                collateralToMerge,
+                lenderLpBalance
             );
 
-            collateralToMerge += collateralAmount;
+            unchecked {
+                ++i;
+            }
         }
-        
+  
         bucketLPs_ = Buckets.addCollateral(
             buckets[toIndex_],
             msg.sender,
@@ -210,14 +201,14 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256 excessQuoteToken;
         uint256 collateralTaken = (params.collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
         if (collateralTaken !=  params.collateralAmount) { // collateral taken not a round number
-            collateralTaken += 1e18; // round up collateral to take
+            // collateralTaken += 1e18; // round up collateral to take
             // taker should send additional quote tokens to cover difference between collateral needed to be taken and rounded collateral, at auction price
             // borrower will get quote tokens for the difference between rounded collateral and collateral taken to cover debt
-            excessQuoteToken = Maths.wmul(collateralTaken - params.collateralAmount, params.auctionPrice);
+            excessQuoteToken = Maths.wmul((collateralTaken + 1e18) - params.collateralAmount, params.auctionPrice);
         }
 
-        borrower.collateral  -= collateralTaken;
-        poolState.collateral -= collateralTaken;
+        borrower.collateral  -= params.collateralAmount;
+        poolState.collateral -= params.collateralAmount;
 
         emit Take(
             borrowerAddress_,

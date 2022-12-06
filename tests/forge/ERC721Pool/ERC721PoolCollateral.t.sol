@@ -631,4 +631,226 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             }
         );
     }
+
+    function testMergeCollateral() external {
+
+        // insert liquidity starting at 3430 iterating 100 buckets up, going down in price
+        for (uint256 i = 3060; i < (3060 + 100); i++) {
+            _addLiquidity(
+                {
+                    from:   _lender,
+                    amount: 1.5 * 1e18,
+                    index:  i,
+                    newLup: BucketMath.MAX_PRICE
+                }
+            );
+        }
+
+        uint256[] memory tokenIdsToAdd = new uint256[](2);
+        tokenIdsToAdd[0] = 1;
+        tokenIdsToAdd[1] = 3;
+
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                tokenIds: tokenIdsToAdd
+            }
+        );
+
+        _borrow(
+            {
+                from:       _borrower,
+                amount:     150 * 1e18,
+                indexLimit: 8191,
+                newLup:     144.398795715840771153 * 1e18
+            }
+        );
+
+        // _assertBorrower(
+        //     {
+        //         borrower:                  _borrower,
+        //         borrowerDebt:              452.434615384615384824 * 1e18,
+        //         borrowerCollateral:        3.0 * 1e18,
+        //         borrowert0Np:              158.352115384615384688 * 1e18,
+        //         borrowerCollateralization: 1.001436823705115821 * 1e18
+        //     }
+        // );
+
+        // _assertBorrower(
+        //     {
+        //         borrower:                  _borrower,
+        //         borrowerDebt:              455.544119443412080295 * 1e18,
+        //         borrowerCollateral:        3.0 * 1e18,
+        //         borrowert0Np:              158.352115384615384688 * 1e18,
+        //         borrowerCollateralization: 0.989652839901229304 * 1e18
+        //     }
+        // );
+
+        _kick(
+            {
+                from:           _lender,
+                borrower:       _borrower,
+                debt:           152.021033653846153916 * 1e18,
+                collateral:     2.0 * 1e18,
+                bond:           1.501442307692307693 * 1e18,
+                transferAmount: 1.501442307692307693 * 1e18
+            }
+        );
+
+        skip(710 minutes);
+
+        // _assertAuction(
+        //     AuctionState({
+        //         borrower:          _borrower,
+        //         active:            true,
+        //         kicker:            address(_lender),
+        //         bondSize:          4.555441194434120803 * 1e18,
+        //         bondFactor:        0.010 * 1e18,
+        //         kickTime:          block.timestamp - 8 hours,
+        //         kickMomp:          151.028228055004986385 * 1e18,
+        //         totalBondEscrowed: 4.555441194434120803 * 1e18,
+        //         auctionPrice:      37.757057013751246592 * 1e18,
+        //         debtInAuction:     461.238420936454731300 * 1e18,
+        //         thresholdPrice:    153.753862914970725936 * 1e18,
+        //         neutralPrice:      159.440441805194228103 * 1e18
+        //     })
+        // );
+
+        uint256[] memory removalIndexes = new uint256[](100);
+        uint256 removalI = 0; 
+        for (uint256 i = 3060; i < (3060 + 100); i++) {
+            _depositTake(
+                {
+                    from:             _lender,
+                    borrower:         _borrower,
+                    index:            i
+                }
+            );
+            removalIndexes[removalI] = i;
+            removalI++;
+        }
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              2.021033653846153956 * 1e18,
+                borrowerCollateral:        1.179971400853377640 * 1e18,
+                borrowert0Np:              0.000000054499533442 * 1e18,
+                borrowerCollateralization: 0.000000058288964339 * 1e18
+            }
+        );
+
+        _take(
+            {
+                from:            _lender,
+                borrower:        _borrower,
+                maxCollateral:   2.0 * 1e18,
+                bondChange:      0.000000000020661012 * 1e18,
+                givenAmount:     0.000000002066101150 * 1e18,
+                collateralTaken: 1.179971400853377640 * 1e18,
+                isReward:        true
+            }
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              2.021033651800713817 * 1e18,
+                borrowerCollateral:        0,
+                borrowert0Np:              0.000000054499533442 * 1e18,
+                borrowerCollateralization: 0
+            }
+        );
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower,
+                active:            true,
+                kicker:            address(_lender),
+                bondSize:          0.001339626416318005 * 1e18,
+                bondFactor:        0.010 * 1e18,
+                kickTime:          block.timestamp - 710 minutes,
+                kickMomp:          0.000000099836282890 * 1e18,
+                totalBondEscrowed: 0.001339626416318005 * 1e18,
+                auctionPrice:      0.000000001750975616 * 1e18,
+                debtInAuction:     2.021033651800713817 * 1e18,
+                thresholdPrice:    0,
+                neutralPrice:      0.000000054499533442 * 1e18
+            })
+        );
+
+        _settle(
+            {
+                from:        _lender,
+                borrower:    _borrower,
+                maxDepth:    10,
+                settledDebt: 2.020897152044737825 * 1e18
+            }
+        );
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    0,
+                neutralPrice:      0
+            })
+        );
+
+        _assertBucket(
+            {
+                index:        3060,
+                lpBalance:    1.5 * 1e27,
+                collateral:   0.006340409414897197 * 1e18,
+                deposit:      0,
+                exchangeRate: 1.000068454197767093408353819 * 1e27
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        3159,
+                lpBalance:    1.5 * 1e27,
+                collateral:   0.010388609363811246 * 1e18,
+                deposit:      0,
+                exchangeRate: 1.000068454197767112030992711 * 1e27
+            }
+        );
+
+        _mergeCollateral({
+            from:                _lender,
+            toIndex:             3159,
+            collateralMerged:    0.820028599146622360 * 1e18,
+            removeAmountAtIndex: removalIndexes
+        });
+
+        _assertBucket(
+            {
+                index:        3060,
+                lpBalance:    0,
+                collateral:   0,
+                deposit:      0,
+                exchangeRate: 1.0 * 1e27
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        3159,
+                lpBalance:    118.411142169320201884688667898 * 1e27,
+                collateral:   0.820028599146622360 * 1e18,
+                deposit:      0,
+                exchangeRate: 0.999999999999999999999999999 * 1e27
+            }
+        );   
+    }
 }

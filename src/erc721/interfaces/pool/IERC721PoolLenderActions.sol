@@ -17,20 +17,12 @@ interface IERC721PoolLenderActions {
     ) external returns (uint256);
 
     /**
-     *  @notice Struct used in mergeCollateral call
-     */
-    struct fragment {
-        uint256 index;    // index where we would like to withdraw
-        uint256 amount;   // amount we would like to from index
-    }
-
-    /**
      *  @notice Deposit unencumbered collateral into a specified bucket.
      *  @param  removeAmountAtIndex_ Array of collateral to deposit.
      *  @param  toIndex_    The bucket index to which collateral will be deposited.
      */
     function mergeCollateral(
-        fragment[] memory removeAmountAtIndex_,
+        uint256[] memory removeAmountAtIndex_,
         uint256 toIndex_
     ) external returns (uint256 bucketLPs_);
 }

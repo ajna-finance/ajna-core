@@ -56,9 +56,9 @@ abstract contract DSTestPlus is Test {
     uint256 internal _p9_62     = 9.624807173121239337 * 1e18;
     uint256 internal _p9_52     = 9.529276179422528643 * 1e18;
 
-    uint256 internal _i1505_26  = 2689;
     uint256 internal _i49910    = 1987;
     uint256 internal _i10016    = 2309;
+    uint256 internal _i1505_26  = 2689;
     uint256 internal _i100_33   = 3232;
     uint256 internal _i9_91     = 3696;
     uint256 internal _i9_81     = 3698;
@@ -172,6 +172,15 @@ abstract contract DSTestPlus is Test {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit BucketTake(borrower, index, quoteTokenAmount, collateralArbed, bondChange, isReward);
+        _depositTake(from, borrower, index);
+    }
+
+    function _depositTake(
+        address from,
+        address borrower,
+        uint256 index
+    ) internal virtual {
+
         _pool.bucketTake(borrower, true, index);
 
         // Add for tearDown

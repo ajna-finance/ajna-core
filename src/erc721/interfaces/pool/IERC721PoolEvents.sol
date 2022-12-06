@@ -21,12 +21,12 @@ interface IERC721PoolEvents {
     /**
      *  @notice Emitted when actor adds unencumbered collateral to a bucket.
      *  @param  actor            Recipient that added collateral.
-     *  @param  price            Price at which collateral were added.
-     *  @param  collateralMerged Array of tokenIds to be added to the pool.
+     *  @param  toIndex          Price at which collateral were added.
+     *  @param  collateralMerged Amount of collateral merged.
      */
     event MergeCollateralNFT(
         address indexed actor,
-        uint256 indexed price,
+        uint256 indexed toIndex,
         uint256 collateralMerged
     );
 
