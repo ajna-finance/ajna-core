@@ -4,9 +4,7 @@ pragma solidity 0.8.14;
 
 import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 
-import 'src/libraries/PoolUtils.sol';
-import 'src/libraries/BucketMath.sol';
-import 'src/libraries/Maths.sol';
+import 'src/base/PoolHelper.sol';
 
 contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
 
@@ -47,8 +45,8 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
     function testSubsetPurchaseQuote() external tearDown {
         // test setup
         uint256 testIndex = 2550;
-        uint256 priceAtTestIndex = PoolUtils.indexToPrice(testIndex);
-        assertEq(priceAtTestIndex, 3_010.892022197881557845 * 1e18);
+        uint256 _priceAtTestIndex = _priceAt(testIndex);
+        assertEq(_priceAtTestIndex, 3_010.892022197881557845 * 1e18);
 
         // check bucket state
         _assertBucket(
@@ -74,7 +72,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  testIndex,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -132,7 +130,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
 
         // bidder removes quote token from bucket
         skip(1 days); // skip to avoid penalty
-        uint256 qtToRemove = Maths.wmul(priceAtTestIndex, 3 * 1e18);
+        uint256 qtToRemove = Maths.wmul(_priceAtTestIndex, 3 * 1e18);
         _removeAllLiquidity(
             {
                 from:     _bidder,
@@ -218,7 +216,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 from:   _lender,
                 amount: 20_000 * 1e18,
                 index:  2350,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -226,7 +224,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2351,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -234,7 +232,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2352,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -243,7 +241,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 from:   _lender2,
                 amount: 4_000 * 1e18,
                 index:  2350,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -251,7 +249,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 from:   _lender2,
                 amount: 5_000 * 1e18,
                 index:  2352,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -278,7 +276,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 newLup:     8_164.085273480993906521 * 1e18
             }
         );
-        assertEq(_lup(), PoolUtils.indexToPrice(2351));
+        assertEq(_lup(), _priceAt(2351));
         skip(86400);
 
         // check bucket state
@@ -315,7 +313,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 from:     _bidder,
                 amount:   amountWithInterest,
                 index:    2350,
-                newLup:   PoolUtils.indexToPrice(2352),
+                newLup:   _priceAt(2352),
                 lpRedeem: 24_000.766696558404292700519565293 * 1e27
             }
         );

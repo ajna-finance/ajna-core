@@ -17,7 +17,6 @@ import 'src/base/interfaces/IPool.sol';
 import 'src/base/PoolInfoUtils.sol';
 
 import 'src/libraries/Maths.sol';
-import 'src/libraries/PoolUtils.sol';
 
 abstract contract ERC721DSTestPlus is DSTestPlus {
 
@@ -56,7 +55,8 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         (uint256 poolInflatorSnapshot, uint256 lastInflatorSnapshotUpdate) = _pool.inflatorInfo();
 
         uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
-        uint256 factor = BucketMath.pendingInterestFactor(_pool.interestRate(), elapsed);
+        (uint256 interestRate, ) = _pool.interestRateInfo();
+        uint256 factor = PoolCommons.pendingInterestFactor(interestRate, elapsed);
 
         uint256 currentPoolInflator = Maths.wmul(poolInflatorSnapshot, factor);
 

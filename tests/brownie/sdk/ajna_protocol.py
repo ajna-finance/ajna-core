@@ -6,12 +6,12 @@ from brownie import (
     ERC20PoolFactory,
     ERC20Pool,
     Auctions,
-    BucketMath,
+    PoolCommons,
+    LenderActions,
     Deposits,
     Maths,
     Loans,
     PoolInfoUtils,
-    PoolUtils,
 )
 from brownie.network.account import Accounts, LocalAccount
 
@@ -30,13 +30,12 @@ class AjnaProtocol:
         self._tokens = {}
         self.deployer = self._accounts[0]
 
-        self.bucket_math = BucketMath.deploy({"from": self.deployer})
         self.deposits = Deposits.deploy({"from": self.deployer})
+        self.pool_logic = PoolCommons.deploy({"from": self.deployer})
+        self.lender_actions = LenderActions.deploy({"from": self.deployer})
         self.maths = Maths.deploy({"from": self.deployer})
         self.loans = Loans.deploy({"from": self.deployer})
         self.auctions = Auctions.deploy({"from": self.deployer})
-        self.pool_info_utils = PoolInfoUtils.deploy({"from": self.deployer})
-        self.pool_utils = PoolUtils.deploy({"from": self.deployer})
 
         self.ajna_factory = ERC20PoolFactory.deploy({"from": self.deployer})
 

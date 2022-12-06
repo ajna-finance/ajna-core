@@ -11,7 +11,7 @@ import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import 'src/base/interfaces/IPool.sol';
 import 'src/base/PoolInfoUtils.sol';
 
-import 'src/libraries/Auctions.sol';
+import 'src/libraries/external/Auctions.sol';
 import 'src/libraries/Maths.sol';
 
 
@@ -371,21 +371,20 @@ abstract contract DSTestPlus is Test {
         (,,uint256 auctionDebtInAuction)  = _pool.debtInfo(); 
         uint256 borrowerThresholdPrice = borrowerCollateral > 0 ? borrowerDebt * Maths.WAD / borrowerCollateral : 0;
 
-        assertEq(auctionKickTime != 0,                                      state_.active);
-        assertEq(auctionKicker,                                             state_.kicker);
-        assertGe(lockedBonds,                                               auctionBondSize);
-        assertEq(auctionBondSize,                                           state_.bondSize);
-        assertEq(auctionBondFactor,                                         state_.bondFactor);
-        assertEq(auctionKickTime,                                           state_.kickTime);
-        assertEq(auctionKickMomp,                                           state_.kickMomp);
-        assertEq(auctionTotalBondEscrowed,                                  state_.totalBondEscrowed);
-        assertEq(auctionDebtInAuction,                                      state_.debtInAuction);
-        assertEq(auctionNeutralPrice,                                       state_.neutralPrice);
-        assertEq(borrowerThresholdPrice,                                    state_.thresholdPrice);
+        assertEq(auctionKickTime != 0,     state_.active);
+        assertEq(auctionKicker,            state_.kicker);
+        assertGe(lockedBonds,              auctionBondSize);
+        assertEq(auctionBondSize,          state_.bondSize);
+        assertEq(auctionBondFactor,        state_.bondFactor);
+        assertEq(auctionKickTime,          state_.kickTime);
+        assertEq(auctionKickMomp,          state_.kickMomp);
+        assertEq(auctionTotalBondEscrowed, state_.totalBondEscrowed);
+        assertEq(auctionDebtInAuction,     state_.debtInAuction);
+        assertEq(auctionNeutralPrice,      state_.neutralPrice);
+        assertEq(borrowerThresholdPrice,   state_.thresholdPrice);
         assertEq(Auctions._auctionPrice(
             auctionKickMomp,
-            auctionKickTime
-        ),                                                                   state_.auctionPrice);
+            auctionKickTime),              state_.auctionPrice);
     }
 
     function _assertPool(PoolState memory state_) internal {
@@ -417,12 +416,12 @@ abstract contract DSTestPlus is Test {
         assertEq(poolSize,                   state_.poolSize);
         assertEq(_pool.pledgedCollateral(),  state_.pledgedCollateral);
         assertEq(
-            PoolUtils.encumberance(
+            _encumberance(
                 state_.poolDebt,
                 state_.lup
             ),                               state_.encumberedCollateral
         );
-        assertEq(poolDebt,               state_.poolDebt);
+        assertEq(poolDebt,                   state_.poolDebt);
         assertEq(poolActualUtilization,      state_.actualUtilization);
         assertEq(poolTargetUtilization,      state_.targetUtilization);
         assertEq(poolMinDebtAmount,          state_.minDebtAmount);
@@ -434,8 +433,9 @@ abstract contract DSTestPlus is Test {
         assertGe(poolInflatorSnapshot, 1e18);
         assertGe(pendingInflator,      poolInflatorSnapshot);
 
-        assertEq(_pool.interestRate(),       state_.interestRate);
-        assertEq(_pool.interestRateUpdate(), state_.interestRateUpdate);
+        (uint256 interestRate, uint256 interestRateUpdate) = _pool.interestRateInfo();
+        assertEq(interestRate,       state_.interestRate);
+        assertEq(interestRateUpdate, state_.interestRateUpdate);
     }
 
     function _assertLenderLpBalance(
@@ -489,7 +489,7 @@ abstract contract DSTestPlus is Test {
         assertEq(col,         borrowerCollateral);
         assertEq(t0Np,        borrowert0Np);
         assertEq(
-            PoolUtils.collateralization(
+            _collateralization(
                 borrowerDebt,
                 borrowerCollateral,
                 lup

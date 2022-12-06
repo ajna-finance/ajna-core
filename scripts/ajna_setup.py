@@ -6,7 +6,8 @@ def main():
 
     # deploy Ajna pool factories and dump them in json config file
     Deposits.deploy({"from": accounts[0]})
-    BucketMath.deploy({"from": accounts[0]})
+    PoolCommons.deploy({"from": accounts[0]})
+    LenderActions.deploy({"from": accounts[0]})
     Auctions.deploy({"from": accounts[0]})
     erc20_pool_factory = ERC20PoolFactory.deploy({"from": accounts[0]})
     erc721_pool_factory = ERC721PoolFactory.deploy({"from": accounts[0]})

@@ -4,9 +4,7 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import 'src/libraries/BucketMath.sol';
-import 'src/libraries/Maths.sol';
-import 'src/libraries/PoolUtils.sol';
+import 'src/base/PoolHelper.sol';
 
 contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
 
@@ -41,7 +39,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  testIndex,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -223,7 +221,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 6_000 * 1e18,
                 index:  2550,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -231,7 +229,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2551,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -239,7 +237,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 5_000 * 1e18,
                 index:  2552,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -249,7 +247,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
                 from:   _lender1,
                 amount: 4_000 * 1e18,
                 index:  2550,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -257,7 +255,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
                 from:   _lender1,
                 amount: 5_000 * 1e18,
                 index:  2552,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -276,7 +274,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
                 from:       _borrower,
                 amount:     15_000 * 1e18,
                 indexLimit: 3_000,
-                newLup:     PoolUtils.indexToPrice(2551)
+                newLup:     _priceAt(2551)
             }
         );
 
@@ -309,7 +307,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
                 from:     _bidder,
                 amount:   amountWithInterest,
                 index:    2550,
-                newLup:   PoolUtils.indexToPrice(2552),
+                newLup:   _priceAt(2552),
                 lpRedeem: 10_000.349513872212134187552326469 * 1e27
             }
         );

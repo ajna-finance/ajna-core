@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
-import './Maths.sol';
+import 'src/libraries/Maths.sol';
 
 /**
     @dev https://stackoverflow.com/questions/42738640/division-in-ethereum-solidity
@@ -110,38 +110,6 @@ library BucketMath {
     function getClosestBucket(uint256 price_) external pure returns (int256 index_, uint256 bucketPrice_) {
         index_ = priceToIndex(price_);
         bucketPrice_ = indexToPrice(index_);
-    }
-
-    function pendingInterestFactor(
-        uint256 interestRate_,
-        uint256 elapsed_
-    ) external pure returns (uint256) {
-        return PRBMathUD60x18.exp((interestRate_ * elapsed_) / 365 days);
-    }
-
-    function pendingInflator(
-        uint256 inflatorSnapshot_,
-        uint256 lastInflatorSnapshotUpdate_,
-        uint256 interestRate_
-    ) external view returns (uint256) {
-        return Maths.wmul(
-            inflatorSnapshot_,
-            PRBMathUD60x18.exp((interestRate_ * (block.timestamp - lastInflatorSnapshotUpdate_)) / 365 days)
-        );
-    }
-
-    function lenderInterestMargin(
-        uint256 mau_
-    ) external pure returns (uint256) {
-        // TODO: Consider pre-calculating and storing a conversion table in a library or shared contract.
-        // cubic root of the percentage of meaningful unutilized deposit
-        uint256 base = 1000000 * 1e18 - Maths.wmul(Maths.min(mau_, 1e18), 1000000 * 1e18);
-        if (base < 1e18) {
-            return 1e18;
-        } else {
-            uint256 crpud = PRBMathUD60x18.pow(base, ONE_THIRD);
-            return 1e18 - Maths.wmul(Maths.wdiv(crpud, CUBIC_ROOT_1000000), 0.15 * 1e18);
-        }
     }
 
 }
