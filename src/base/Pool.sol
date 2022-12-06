@@ -111,42 +111,42 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _revertIfAuctionDebtLocked(fromIndex_, poolState.inflator);
 
         Buckets.Lender memory lender;
-	
+        
         (lender.lps, lender.depositTime) = buckets.getLenderInfo(
             fromIndex_,
             msg.sender
         );
 
         Buckets.Bucket storage fromBucket = buckets[fromIndex_];
-	uint256 rawAmountToMove;
-	uint256 amountToCredit;
-	
-	{
-        uint256 fromRawDeposit = deposits.rawValueAt(fromIndex_);
-        uint256 fromScale = deposits.scale(fromIndex_);
-	uint256 fromPrice = PoolUtils.indexToPrice(fromIndex_);
-	
-	(rawAmountToMove, fromBucketLPs_) = Buckets.getRawConstrainedDeposit(
-	    fromRawDeposit,
-	    maxAmountToMove_,
-	    lender.lps,
-	    fromBucket,
-	    fromScale,
-	    fromPrice
-	);
-	
-        deposits.rawRemove(fromIndex_, rawAmountToMove);
+        uint256 amountToCredit;
+        
+        {
+            uint256 rawAmountToMove;
+            uint256 fromRawDeposit = deposits.rawValueAt(fromIndex_);
+            uint256 fromScale = deposits.scale(fromIndex_);
+            uint256 fromPrice = PoolUtils.indexToPrice(fromIndex_);
+        
+            (rawAmountToMove, fromBucketLPs_) = Buckets.getRawConstrainedDeposit(
+                    fromRawDeposit,
+                    maxAmountToMove_,
+                    lender.lps,
+                    fromBucket,
+                    fromScale,
+                    fromPrice
+            );
+        
+            deposits.rawRemove(fromIndex_, rawAmountToMove);
 
-        // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
-        amountToCredit = PoolUtils.applyEarlyWithdrawalPenalty(
-            poolState,
-            lender.depositTime,
-            fromIndex_,
-            toIndex_,
-            Maths.wmul(rawAmountToMove, fromScale)
-        );
-	}
-	
+            // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
+            amountToCredit = PoolUtils.applyEarlyWithdrawalPenalty(
+                    poolState,
+                    lender.depositTime,
+                    fromIndex_,
+                    toIndex_,
+                    Maths.wmul(rawAmountToMove, fromScale)
+            );
+        }
+        
         Buckets.Bucket storage toBucket = buckets[toIndex_];
         toBucketLPs_ = Buckets.quoteTokensToLPs(
             toBucket.collateral,
@@ -182,37 +182,37 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
         _revertIfAuctionDebtLocked(index_, poolState.inflator);
 
-	uint256 lastDepositTime;
+        uint256 lastDepositTime;
         Buckets.Bucket storage bucket = buckets[index_];
 
-	{
-	uint256 lenderLPsBalance;
-        uint256 depositScale = deposits.scale(index_);
-        (lenderLPsBalance, lastDepositTime) = buckets.getLenderInfo(
-            index_,
-            msg.sender
-        );
-        if (lenderLPsBalance == 0) revert NoClaim();      // revert if no LP to claim
+        {
+            uint256 lenderLPsBalance;
+            uint256 depositScale = deposits.scale(index_);
+            (lenderLPsBalance, lastDepositTime) = buckets.getLenderInfo(
+                   index_,
+                   msg.sender
+            );
+            if (lenderLPsBalance == 0) revert NoClaim();      // revert if no LP to claim
 
-        uint256 rawDeposit = deposits.rawValueAt(index_);
-        if (rawDeposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
+            uint256 rawDeposit = deposits.rawValueAt(index_);
+            if (rawDeposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
 
-	(rawDeposit, redeemedLPs_) = Buckets.getRawConstrainedDeposit(
-	   rawDeposit,
-	   maxAmount_,
-	   lenderLPsBalance,
-	   bucket,
-	   depositScale,
-	   PoolUtils.indexToPrice(index_)
-	);
-	
-        deposits.rawRemove(index_, rawDeposit); // update FenwickTree
-	removedAmount_ = Maths.wmul(rawDeposit, depositScale);
-	}
-	
+            (rawDeposit, redeemedLPs_) = Buckets.getRawConstrainedDeposit(
+                   rawDeposit,
+                   maxAmount_,
+                   lenderLPsBalance,
+                   bucket,
+                   depositScale,
+                   PoolUtils.indexToPrice(index_)
+            );
+        
+            deposits.rawRemove(index_, rawDeposit); // update FenwickTree
+            removedAmount_ = Maths.wmul(rawDeposit, depositScale);
+        }
+        
         uint256 newLup = _lup(poolState.accruedDebt);
         if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
-	
+        
 
         // update bucket and lender LPs balances
         bucket.lps -= redeemedLPs_;
@@ -223,7 +223,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             lastDepositTime,
             index_,
             0,
-	    removedAmount_
+            removedAmount_
         );
 
         _updateInterestParams(poolState, newLup);
