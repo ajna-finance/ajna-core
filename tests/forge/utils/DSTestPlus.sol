@@ -713,8 +713,7 @@ abstract contract DSTestPlus is Test {
         uint256,
         uint256
     ) internal virtual {
-        changePrank(from);
-        vm.expectRevert(abi.encodeWithSignature('AuctionActive()'));
+        // to be overidden by ERC20/ERC721DSTestPlus 
     }
 
     function _assertBorrowLimitIndexRevert(
@@ -722,8 +721,7 @@ abstract contract DSTestPlus is Test {
         uint256,
         uint256
     ) internal virtual {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.LimitIndexReached.selector);
+        // to be overidden by ERC20/ERC721DSTestPlus 
     }
 
     function _assertBorrowBorrowerUnderCollateralizedRevert(
@@ -731,8 +729,7 @@ abstract contract DSTestPlus is Test {
         uint256,
         uint256
     ) internal virtual {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.BorrowerUnderCollateralized.selector);
+        // to be overidden by ERC20/ERC721DSTestPlus 
     }
 
     function _assertBorrowMinDebtRevert(
@@ -740,8 +737,7 @@ abstract contract DSTestPlus is Test {
         uint256,
         uint256
     ) internal virtual {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
+        // to be overidden by ERC20/ERC721DSTestPlus 
     }
 
     function _assertFlashloanFeeRevertsForToken(
