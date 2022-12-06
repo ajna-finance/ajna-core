@@ -142,52 +142,52 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
         if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral();
 
-        Auctions.TakeParams memory params = Auctions.take(
+        Auctions.TakeParams memory params;
+        params.borrower       = borrowerAddress_;
+        params.collateral     = borrower.collateral;
+        params.debt           = borrower.t0debt;
+        params.takeCollateral = Maths.wad(collateral_);
+        params.inflator       = poolState.inflator;
+        (
+            uint256 collateralAmount,
+            uint256 quoteTokenAmount,
+            uint256 t0repayAmount,
+            uint256 auctionPrice
+        ) = Auctions.take(
             auctions,
-            borrowerAddress_,
-            borrower,
-            Maths.wad(collateral_),
-            poolState.inflator
+            params
         );
 
         uint256 excessQuoteToken;
-        uint256 collateralTaken = (params.collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
-        if (collateralTaken !=  params.collateralAmount) { // collateral taken not a round number
+        uint256 collateralTaken = (collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
+        if (collateralTaken != collateralAmount) { // collateral taken not a round number
             collateralTaken += 1e18; // round up collateral to take
             // taker should send additional quote tokens to cover difference between collateral needed to be taken and rounded collateral, at auction price
             // borrower will get quote tokens for the difference between rounded collateral and collateral taken to cover debt
-            excessQuoteToken = Maths.wmul(collateralTaken - params.collateralAmount, params.auctionPrice);
+            excessQuoteToken = Maths.wmul(collateralTaken - collateralAmount, auctionPrice);
         }
 
         borrower.collateral  -= collateralTaken;
         poolState.collateral -= collateralTaken;
 
-        emit Take(
-            borrowerAddress_,
-            params.quoteTokenAmount,
-            params.collateralAmount,
-            params.bondChange,
-            params.isRewarded
-        );
-
         // transfer rounded collateral from pool to taker
-        uint256[] memory tokensTaken = _transferFromPoolToAddress(callee_, borrowerTokenIds[borrowerAddress_], collateralTaken / 1e18);
+        uint256[] memory tokensTaken = _transferFromPoolToAddress(callee_, borrowerTokenIds[params.borrower], collateralTaken / 1e18);
 
         if (data_.length != 0) {
             IERC721Taker(callee_).atomicSwapCallback(
                 tokensTaken, 
-                params.quoteTokenAmount / _getArgUint256(40), 
+                quoteTokenAmount / _getArgUint256(40), 
                 data_
             );
         }
 
         // transfer from taker to pool the amount of quote tokens needed to cover collateral auctioned (including excess for rounded collateral)
-        _transferQuoteTokenFrom(callee_, params.quoteTokenAmount + excessQuoteToken);
+        _transferQuoteTokenFrom(callee_, quoteTokenAmount + excessQuoteToken);
 
         // transfer from pool to borrower the excess of quote tokens after rounding collateral auctioned
-        if (excessQuoteToken != 0) _transferQuoteToken(borrowerAddress_, excessQuoteToken);
+        if (excessQuoteToken != 0) _transferQuoteToken(params.borrower, excessQuoteToken);
 
-        _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
+        _payLoan(t0repayAmount, poolState, params.borrower, borrower);
         pledgedCollateral = poolState.collateral;
     }
 

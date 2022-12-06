@@ -169,39 +169,38 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
         if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral();
 
-        Auctions.TakeParams memory params = Auctions.take(
+        Auctions.TakeParams memory params;
+        params.borrower       = borrowerAddress_;
+        params.collateral     = borrower.collateral;
+        params.debt           = borrower.t0debt;
+        params.takeCollateral = collateral_;
+        params.inflator       = poolState.inflator;
+        (
+            uint256 collateralAmount,
+            uint256 quoteTokenAmount,
+            uint256 t0repayAmount,
+        ) = Auctions.take(
             auctions,
-            borrowerAddress_,
-            borrower,
-            collateral_,
-            poolState.inflator
+            params
         );
 
-        borrower.collateral  -= params.collateralAmount;
-        poolState.collateral -= params.collateralAmount;
+        borrower.collateral  -= collateralAmount;
+        poolState.collateral -= collateralAmount;
 
-        emit Take(
-            borrowerAddress_,
-            params.quoteTokenAmount,
-            params.collateralAmount,
-            params.bondChange,
-            params.isRewarded
-        );
-
-        _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
+        _payLoan(t0repayAmount, poolState, params.borrower, borrower);
         pledgedCollateral = poolState.collateral;
 
-        _transferCollateral(callee_, params.collateralAmount);
+        _transferCollateral(callee_, collateralAmount);
 
         if (data_.length != 0) {
             IERC20Taker(callee_).atomicSwapCallback(
-                params.collateralAmount / collateralScale, 
-                params.quoteTokenAmount / _getArgUint256(40), 
+                collateralAmount / collateralScale, 
+                quoteTokenAmount / _getArgUint256(40), 
                 data_
             );
         }
 
-        _transferQuoteTokenFrom(callee_, params.quoteTokenAmount);
+        _transferQuoteTokenFrom(callee_, quoteTokenAmount);
     }
 
     /*******************************/

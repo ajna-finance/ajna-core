@@ -273,36 +273,33 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         bool    depositTake_,
         uint256 index_
     ) external override {
-        Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
-        if (borrower.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
 
         PoolState memory poolState = _accruePoolInterest();
+        Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
 
-        Auctions.TakeParams memory params = Auctions.bucketTake(
+        Auctions.TakeParams memory params;
+        params.borrower    = borrowerAddress_;
+        params.collateral  = borrower.collateral;
+        params.debt        = borrower.t0debt;
+        params.inflator    = poolState.inflator;
+        params.depositTake = depositTake_;
+        params.index       = index_;
+        (
+            uint256 collateralAmount,
+            uint256 t0repayAmount
+        ) = Auctions.bucketTake(
             auctions,
             deposits,
-            buckets[index_],
-            borrowerAddress_,
-            borrower,
-            index_,
-            depositTake_,
-            poolState.inflator
+            buckets,
+            params
         );
 
-        borrower.collateral  -= params.collateralAmount; // collateral is removed from the loan
-        poolState.collateral -= params.collateralAmount; // collateral is removed from pledged collateral accumulator
+        borrower.collateral  -= collateralAmount; // collateral is removed from the loan
+        poolState.collateral -= collateralAmount; // collateral is removed from pledged collateral accumulator
 
-        _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
+        _payLoan(t0repayAmount, poolState, borrowerAddress_, borrower);
         pledgedCollateral = poolState.collateral;
 
-        emit BucketTake(
-            borrowerAddress_,
-            index_,
-            params.quoteTokenAmount,
-            params.collateralAmount,
-            params.bondChange,
-            params.isRewarded
-        );
     }
 
     function settle(
@@ -312,19 +309,22 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
         uint256 reserves = Maths.wmul(t0poolDebt, poolState.inflator) + _getPoolQuoteTokenBalance() - deposits.treeSum() - auctions.totalBondEscrowed - reserveAuctionUnclaimed;
         Loans.Borrower storage borrower = loans.borrowers[borrowerAddress_];
+
+        Auctions.SettleParams memory params;
+        params.borrower    = borrowerAddress_;
+        params.collateral  = borrower.collateral;
+        params.debt        = borrower.t0debt;
+        params.reserves    = reserves;
+        params.inflator    = poolState.inflator;
+        params.bucketDepth = maxDepth_;
         (uint256 remainingCollateral, uint256 remainingt0Debt) = Auctions.settlePoolDebt(
             auctions,
             buckets,
             deposits,
-            borrower.collateral,
-            borrower.t0debt,
-            borrowerAddress_,
-            reserves,
-            poolState.inflator,
-            maxDepth_
+            params
         );
 
-        if (remainingt0Debt == 0) remainingCollateral = _settleAuction(borrowerAddress_, remainingCollateral);
+        if (remainingt0Debt == 0) remainingCollateral = _settleAuction(params.borrower, remainingCollateral);
 
         uint256 t0settledDebt = borrower.t0debt - remainingt0Debt;
         t0poolDebt      -= t0settledDebt;
@@ -338,42 +338,38 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         pledgedCollateral = poolState.collateral;
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
-        emit Settle(borrowerAddress_, t0settledDebt);
+        emit Settle(params.borrower, t0settledDebt);
     }
 
     function kick(address borrowerAddress_) external override {
         auctions.revertIfActive(borrowerAddress_);
 
+        PoolState memory poolState = _accruePoolInterest();
         Loans.Borrower storage borrower = loans.borrowers[borrowerAddress_];
 
-        PoolState memory poolState = _accruePoolInterest();
+        Auctions.KickParams memory params;
+        params.borrower     = borrowerAddress_;
+        params.debt         = Maths.wmul(borrower.t0debt, poolState.inflator);
+        params.collateral   = borrower.collateral;
+        params.momp         = deposits.momp(poolState.accruedDebt, loans.noOfLoans());
+        params.neutralPrice = Maths.wmul(borrower.t0Np, poolState.inflator);
+        params.rate         = poolState.rate;
 
         uint256 lup = _lup(poolState.accruedDebt);
-        uint256 borrowerDebt = Maths.wmul(borrower.t0debt, poolState.inflator);
         if (
-            _isCollateralized(borrowerDebt, borrower.collateral, lup)
+            _isCollateralized(params.debt , borrower.collateral, lup)
         ) revert BorrowerOk();
 
-        uint256 neutralPrice = Maths.wmul(borrower.t0Np, poolState.inflator);
- 
         // kick auction
-        (uint256 kickAuctionAmount, uint256 bondSize) = Auctions.kick(
+        (uint256 kickAuctionAmount, uint256 kickPenalty) = Auctions.kick(
             auctions,
-            borrowerAddress_,
-            borrowerDebt,
-            borrowerDebt * Maths.WAD / borrower.collateral,
-            deposits.momp(poolState.accruedDebt, loans.noOfLoans()),
-            neutralPrice
+            params
         );
 
-        loans.remove(borrowerAddress_);
+        // remove kicked loan from heap
+        loans.remove(params.borrower);
 
-        // when loan is kicked, penalty of three months of interest is added
-        uint256 kickPenalty   =  Maths.wmul(Maths.wdiv(poolState.rate, 4 * 1e18), borrowerDebt);
-        // update borrower & pool debt with kickPenalty
-        borrowerDebt          += kickPenalty;
         poolState.accruedDebt += kickPenalty;
-
         // convert kick penalty to t0 amount
         kickPenalty     =  Maths.wdiv(kickPenalty, poolState.inflator);
         borrower.t0debt += kickPenalty;
@@ -382,7 +378,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         _updateInterestParams(poolState, lup);
 
-        emit Kick(borrowerAddress_, borrowerDebt, borrower.collateral, bondSize);
         if(kickAuctionAmount != 0) _transferQuoteTokenFrom(msg.sender, kickAuctionAmount);
     }
 
