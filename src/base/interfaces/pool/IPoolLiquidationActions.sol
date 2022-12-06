@@ -37,6 +37,8 @@ interface IPoolLiquidationActions {
         address borrower
     ) external;
 
+    function kickWithAdvancedDeposit(address borrowerAddress_, uint256[] calldata indices) external;
+
     /**
      *  @notice Called by actors to purchase collateral from the auction in exchange for quote token.
      *  @param  borrower  Address of the borower take is being called upon.

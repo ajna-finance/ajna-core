@@ -39,6 +39,7 @@ library Auctions {
     struct Kicker {
         uint256 claimable; // kicker's claimable balance
         uint256 locked;    // kicker's balance of tokens locked in auction bonds
+        uint256[] advancedDepositIndexes; // list of indexes containing advancedDeposit
     }
 
     struct TakeParams {

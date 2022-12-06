@@ -16,6 +16,11 @@ interface IPoolErrors {
     error AdvancedDepositNonZero();
 
     /**
+     *  @notice Lender can't use the same bucket for their advanced deposit multiple times.
+     */
+    error AdvancedDepositDuplicateIndex();
+
+    /**
      *  @notice Pool already initialized.
      */
     error AlreadyInitialized();

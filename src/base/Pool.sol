@@ -16,6 +16,8 @@ import '../libraries/Maths.sol';
 import '../libraries/PoolUtils.sol';
 import '../libraries/BucketMath.sol';
 
+import '@std/console.sol';
+
 abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     using Auctions for Auctions.Data;
     using Buckets  for mapping(uint256 => Buckets.Bucket);
@@ -298,16 +300,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     function withdrawBonds() external {
         uint256 claimable = auctions.kickers[msg.sender].claimable;
-        auctions.kickers[msg.sender].claimable = 0;
-        _transferQuoteToken(msg.sender, claimable);
-    }
-
-    function withdrawBondsAdvancedDeposit(uint256[] calldata indices) external {
-        uint256 claimable = auctions.kickers[msg.sender].claimable;
 
         // check for advanced deposit
-        if (indices.length != 0) {
-            for (uint256 index = 0; index < indices.length;) {
+        if (auctions.kickers[msg.sender].advancedDepositIndexes.length != 0) {
+            uint256[] storage advancedDepositIndexes = auctions.kickers[msg.sender].advancedDepositIndexes;
+
+            // move backwards through list of advanced deposit indexes
+            for (uint256 i = advancedDepositIndexes.length - 1; i > 0;) {
+                uint256 index = advancedDepositIndexes[i];
+
                 Buckets.Bucket storage bucket = buckets[index];
 
                 // credit claimable against advancedDeposit
@@ -324,12 +325,16 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                     return;
                 }
 
+                // remove paid down advanced deposit from list
+                advancedDepositIndexes.pop();
+
                 unchecked {
-                    ++index;
+                    --i;
                 }
             }
         }
 
+        // transfer any remaining tokens to kicker
         auctions.kickers[msg.sender].claimable = 0;
         _transferQuoteToken(msg.sender, claimable);
     }
@@ -536,7 +541,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if(kickAuctionAmount != 0) _transferQuoteTokenFrom(msg.sender, kickAuctionAmount);
     }
 
-    function kickWithLPB(address borrowerAddress_, uint256[] calldata indices) external {
+    function kickWithAdvancedDeposit(address borrowerAddress_, uint256[] calldata indices) external {
         auctions.revertIfActive(borrowerAddress_);
 
         Loans.Borrower storage borrower = loans.borrowers[borrowerAddress_];
@@ -579,8 +584,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         // UNIQUE BELOW HERE
         //
 
-        for (uint256 index = 0; index < indices.length;) {
-            _revertIfAuctionDebtLocked(index, poolState.inflator);
+        for (uint256 i = 0; i < indices.length;) {
+            uint256 index = indices[i];
+
+            // FIXME: revert check failing
+            // _revertIfAuctionDebtLocked(index, poolState.inflator);
 
            // get bucket info
             Buckets.Bucket storage bucket = buckets[index];
@@ -608,11 +616,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
             // update advanced deposit state
             Buckets.Lender storage kicker = bucket.lenders[msg.sender];
+            if (kicker.advancedDeposit != 0) revert AdvancedDepositDuplicateIndex(); //can't use the same index for advanced deposit twice
+
             kicker.advancedDeposit += depositAvailable;
             totalAdvancedDeposit += depositAvailable;
+            auctions.kickers[msg.sender].advancedDepositIndexes.push(index);
 
             unchecked {
-                ++index;
+                ++i;
             }
         }
 
