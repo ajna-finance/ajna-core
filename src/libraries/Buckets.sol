@@ -278,12 +278,66 @@ library Buckets {
 
         collateralAmount_ = Maths.rwdivw(Maths.rmul(lenderLPsBalance_, rate), bucketPrice_);
         if (collateralAmount_ > bucketCollateral_) {
+
             // user is owed more collateral than is available in the bucket
             collateralAmount_ = bucketCollateral_;
             lenderLPs_        = Maths.wrdivr(Maths.wmul(collateralAmount_, bucketPrice_), rate);
         }
     }
 
+    /**
+     *  @notice Returns the amount of quote tokens calculated for the given amount of LPs.
+     *  @param  rawDepositAvailable_   Raw (unscaled) deposit quantity in bucket
+     *  @param  depositConstraint_     Constraint on deposit in quote token
+     *  @param  lpConstraint_          Constraint in LPB terms
+     *  @param  bucket_                Bucket data
+     *  @param  price_                 Price of bucket
+     *  @param  depositScale_          Scale of bucket
+     *  @return rawDepositAmount_      Amount of raw deposit satistfying constraint
+     *  @return lps_                   Amount of bucket LPs corresponding for calculated raw deposit amount
+     */
+    function getRawConstrainedDeposit(
+				      uint256 rawDepositAvailable_,
+				      uint256 depositConstraint_,
+				      uint256 lpConstraint_,
+				      Bucket storage bucket_,
+				      uint256 depositScale_,
+				      uint256 price_
+    ) internal view returns (uint256 rawDepositAmount_, uint256 lps_) {
+        uint256 rawExchangeRate = getRawExchangeRate(
+            bucket_.collateral,
+            bucket_.lps,
+            rawDepositAvailable_,
+	    depositScale_,
+            price_
+        );
+
+	// rawRemovedAmount = min ( maxAmount_/scale, rawDeposit, lenderLPsBalance*rawExchangeRate)
+	// redeemedLPs_ = rawRemovedAmount/rawEchangeRate
+	// redeemedLPs_ = min ( maxAmount_/(rawExchangeRate*scale), rawDeposit/rawExchangeRate, lenderLPsBalance)
+
+	if( depositConstraint_ < Maths.wmul(rawDepositAvailable_, depositScale_) &&
+	    Maths.wwdivr(depositConstraint_, depositScale_) < Maths.rmul(lpConstraint_, rawExchangeRate) ) {
+	    // depositConstraint_ is binding constraint
+	    rawDepositAmount_ = Maths.wdiv(depositConstraint_, depositScale_);
+	    lps_ = Maths.wrdivr(rawDepositAmount_, rawExchangeRate);
+	} else if ( Maths.wadToRay(rawDepositAvailable_) < Maths.rmul(lpConstraint_, rawExchangeRate ) ) {
+	    // rawDeposit is binding constraint
+	    rawDepositAmount_ = rawDepositAvailable_;
+	    lps_ = Maths.wrdivr(rawDepositAmount_, rawExchangeRate);
+	} else {
+	    // redeeming all LPs
+	    lps_ = lpConstraint_;
+	    rawDepositAmount_ = Maths.rayToWad(Maths.rmul(lps_, rawExchangeRate));
+	}
+	
+	// If clearing out the bucket deposit, ensure it's zeroed out
+	if (lps_ == bucket_.lps) {
+	    rawDepositAmount_ = rawDepositAvailable_;
+	}
+    }
+
+    
     /**
      *  @notice Returns the amount of quote tokens calculated for the given amount of LPs.
      *  @param  bucketLPs_        Amount of LPs in bucket.

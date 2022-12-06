@@ -111,43 +111,52 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _revertIfAuctionDebtLocked(fromIndex_, poolState.inflator);
 
         Buckets.Lender memory lender;
+	
         (lender.lps, lender.depositTime) = buckets.getLenderInfo(
             fromIndex_,
             msg.sender
         );
-        uint256 amountToMove;
-        uint256 fromDeposit = deposits.valueAt(fromIndex_);
-        Buckets.Bucket storage fromBucket = buckets[fromIndex_];
-        (amountToMove, fromBucketLPs_) = Buckets.lpsToQuoteToken(
-            fromBucket.lps,
-            fromBucket.collateral,
-            fromDeposit,
-            lender.lps,
-            maxAmountToMove_,
-            PoolUtils.indexToPrice(fromIndex_)
-        );
 
-        deposits.remove(fromIndex_, amountToMove, fromDeposit);
+        Buckets.Bucket storage fromBucket = buckets[fromIndex_];
+	uint256 rawAmountToMove;
+	uint256 amountToCredit;
+	
+	{
+        uint256 fromRawDeposit = deposits.rawValueAt(fromIndex_);
+        uint256 fromScale = deposits.scale(fromIndex_);
+	uint256 fromPrice = PoolUtils.indexToPrice(fromIndex_);
+	
+	(rawAmountToMove, fromBucketLPs_) = Buckets.getRawConstrainedDeposit(
+	    fromRawDeposit,
+	    maxAmountToMove_,
+	    lender.lps,
+	    fromBucket,
+	    fromScale,
+	    fromPrice
+	);
+	
+        deposits.rawRemove(fromIndex_, rawAmountToMove);
 
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
-        amountToMove = PoolUtils.applyEarlyWithdrawalPenalty(
+        amountToCredit = PoolUtils.applyEarlyWithdrawalPenalty(
             poolState,
             lender.depositTime,
             fromIndex_,
             toIndex_,
-            amountToMove
+            Maths.wmul(rawAmountToMove, fromScale)
         );
-
+	}
+	
         Buckets.Bucket storage toBucket = buckets[toIndex_];
         toBucketLPs_ = Buckets.quoteTokensToLPs(
             toBucket.collateral,
             toBucket.lps,
             deposits.valueAt(toIndex_),
-            amountToMove,
+            amountToCredit,
             PoolUtils.indexToPrice(toIndex_)
         );
 
-        deposits.add(toIndex_, amountToMove);
+        deposits.add(toIndex_, amountToCredit);
 
         // move lup if necessary and check loan book's htp against new lup
         uint256 newLup = _lup(poolState.accruedDebt);
@@ -161,7 +170,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
         _updateInterestParams(poolState, newLup);
 
-        emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, amountToMove, newLup);
+        emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, amountToCredit, newLup);
     }
 
     function removeQuoteToken(
@@ -173,56 +182,37 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
         _revertIfAuctionDebtLocked(index_, poolState.inflator);
 
-        (uint256 lenderLPsBalance, uint256 lastDeposit) = buckets.getLenderInfo(
+	uint256 lastDepositTime;
+        Buckets.Bucket storage bucket = buckets[index_];
+
+	{
+	uint256 lenderLPsBalance;
+        uint256 depositScale = deposits.scale(index_);
+        (lenderLPsBalance, lastDepositTime) = buckets.getLenderInfo(
             index_,
             msg.sender
         );
         if (lenderLPsBalance == 0) revert NoClaim();      // revert if no LP to claim
 
         uint256 rawDeposit = deposits.rawValueAt(index_);
-        uint256 depositScale = deposits.scale(index_);
         if (rawDeposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
 
-        Buckets.Bucket storage bucket = buckets[index_];
+	(rawDeposit, redeemedLPs_) = Buckets.getRawConstrainedDeposit(
+	   rawDeposit,
+	   maxAmount_,
+	   lenderLPsBalance,
+	   bucket,
+	   depositScale,
+	   PoolUtils.indexToPrice(index_)
+	);
 	
-        uint256 rawExchangeRate = Buckets.getRawExchangeRate(
-            bucket.collateral,
-            bucket.lps,
-            rawDeposit,
-	    depositScale,
-            PoolUtils.indexToPrice(index_)
-        );
-
-	// rawRemovedAmount = min ( maxAmount_/scale, rawDeposit, lenderLPsBalance*rawExchangeRate)
-	// redeemedLPs_ = rawRemovedAmount/rawEchangeRate
-	// redeemedLPs_ = min ( maxAmount_/(rawExchangeRate*scale), rawDeposit/rawExchangeRate, lenderLPsBalance)
-
-	uint256 rawRemovedAmount;
-	
-	if( maxAmount_ < Maths.wmul(rawDeposit, depositScale) &&
-	    Maths.wwdivr(maxAmount_, depositScale) < Maths.rmul(lenderLPsBalance, rawExchangeRate) ) {
-	    // maxAmount is binding constraint
-	    rawRemovedAmount = Maths.wdiv(maxAmount_, depositScale);
-	    redeemedLPs_ = Maths.wrdivr(rawRemovedAmount, rawExchangeRate);
-	} else if ( Maths.wadToRay(rawDeposit) < Maths.rmul(lenderLPsBalance, rawExchangeRate ) ) {
-	    // rawDeposit is binding constraint
-	    rawRemovedAmount = rawDeposit;
-	    redeemedLPs_ = Maths.wrdivr(rawRemovedAmount, rawExchangeRate);
-	} else {
-	    // redeeming all LPs
-	    redeemedLPs_ = lenderLPsBalance;
-	    rawRemovedAmount = Maths.rrdivw(redeemedLPs_, rawExchangeRate);
+        deposits.rawRemove(index_, rawDeposit); // update FenwickTree
+	removedAmount_ = Maths.wmul(rawDeposit, depositScale);
 	}
 	
-	// If clearing out the bucket deposit, ensure it's zeroed out
-	if (redeemedLPs_ == bucket.lps) {
-	    rawRemovedAmount = rawDeposit;
-	}
-	
-        deposits.rawRemove(index_, rawRemovedAmount); // update FenwickTree
-
         uint256 newLup = _lup(poolState.accruedDebt);
         if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
+	
 
         // update bucket and lender LPs balances
         bucket.lps -= redeemedLPs_;
@@ -230,10 +220,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         removedAmount_ = PoolUtils.applyEarlyWithdrawalPenalty(
             poolState,
-            lastDeposit,
+            lastDepositTime,
             index_,
             0,
-            Maths.wmul(rawRemovedAmount, depositScale)
+	    removedAmount_
         );
 
         _updateInterestParams(poolState, newLup);
