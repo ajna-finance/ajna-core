@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
+import '../../base/interfaces/pool/IPoolEvents.sol';
+
 import '../Deposits.sol';
 import '../Buckets.sol';
 
@@ -19,6 +21,11 @@ library LenderActions {
      *  @notice When transferring LP tokens between indices, the new index must be a valid index.
      */
     error InvalidIndex();
+    /**
+     *  @notice When moving quote token HTP must stay below LUP.
+     *  @notice When removing quote token HTP must stay below LUP.
+     */
+    error LUPBelowHTP();
     /**
      *  @notice Lender must have non-zero LPB when attempting to remove quote token from the pool.
      */
@@ -45,15 +52,41 @@ library LenderActions {
         uint256 fromIndex;       // the deposit index from where amount is moved
         uint256 toIndex;         // the deposit index where amount is moved to
         uint256 ptp;             // the Pool Threshold Price (used to determine if penalty should be applied
-        uint256 feeRate;         // the fee rate in pool (used to calculate penalty)
+        uint256 htp;             // the Highest Threshold Price in pool
+        uint256 poolDebt;        // the current debt of the pool
+        uint256 rate;            // the interest rate in pool (used to calculate penalty)
     }
 
     struct RemoveQuoteParams {
         uint256 maxAmount; // max amount to be removed
         uint256 index;     // the deposit index from where amount is removed
         uint256 ptp;       // the Pool Threshold Price (used to determine if penalty should be applied)
-        uint256 feeRate;   // the fee rate in pool (used to calculate penalty)
+        uint256 htp;       // the Highest Threshold Price in pool
+        uint256 poolDebt;  // the current debt of the pool
+        uint256 rate;      // the interest rate in pool (used to calculate penalty)
     }
+
+    event MoveQuoteToken(
+        address indexed lender,
+        uint256 indexed from,
+        uint256 indexed to,
+        uint256 amount,
+        uint256 lup
+    );
+
+    event RemoveQuoteToken(
+        address indexed lender,
+        uint256 indexed price,
+        uint256 amount,
+        uint256 lup
+    );
+
+    event TransferLPTokens(
+        address owner,
+        address newOwner,
+        uint256[] indexes,
+        uint256 lpTokens
+    );
 
     function addCollateral(
         mapping(uint256 => Buckets.Bucket) storage buckets_,
@@ -93,12 +126,13 @@ library LenderActions {
         mapping(uint256 => Buckets.Bucket) storage buckets_,
         Deposits.Data storage deposits_,
         MoveQuoteParams calldata params_
-    ) external returns (uint256 fromBucketLPs_, uint256 toBucketLPs_, uint256 amountToMove_) {
+    ) external returns (uint256 fromBucketLPs_, uint256 toBucketLPs_, uint256 lup_) {
         if (params_.fromIndex == params_.toIndex) revert MoveToSamePrice();
 
         uint256 fromPrice   = _priceAt(params_.fromIndex);
         uint256 toPrice     = _priceAt(params_.toIndex);
         uint256 fromDeposit = Deposits.valueAt(deposits_, params_.fromIndex);
+        uint256 amountToMove;
 
         Buckets.Bucket storage fromBucket = buckets_[params_.fromIndex];
         {
@@ -107,7 +141,7 @@ library LenderActions {
                 params_.fromIndex,
                 msg.sender
             );
-            (amountToMove_, fromBucketLPs_) = Buckets.lpsToQuoteToken(
+            (amountToMove, fromBucketLPs_) = Buckets.lpsToQuoteToken(
                 fromBucket.lps,
                 fromBucket.collateral,
                 fromDeposit,
@@ -116,12 +150,12 @@ library LenderActions {
                 fromPrice
             );
 
-            Deposits.remove(deposits_, params_.fromIndex, amountToMove_, fromDeposit);
+            Deposits.remove(deposits_, params_.fromIndex, amountToMove, fromDeposit);
 
             // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
             if (depositTime != 0 && block.timestamp - depositTime < 1 days) {
                 if (fromPrice > params_.ptp && toPrice < params_.ptp) {
-                    amountToMove_ = Maths.wmul(amountToMove_, Maths.WAD - params_.feeRate);
+                    amountToMove = Maths.wmul(amountToMove, Maths.WAD - _feeRate(params_.rate));
                 }
             }
         }
@@ -131,11 +165,11 @@ library LenderActions {
             toBucket.collateral,
             toBucket.lps,
             Deposits.valueAt(deposits_, params_.toIndex),
-            amountToMove_,
+            amountToMove,
             toPrice
         );
 
-        Deposits.add(deposits_, params_.toIndex, amountToMove_);
+        Deposits.add(deposits_, params_.toIndex, amountToMove);
 
         Buckets.moveLPs(
             fromBucket,
@@ -143,13 +177,18 @@ library LenderActions {
             fromBucketLPs_,
             toBucketLPs_
         );
+
+        lup_ = _lup(deposits_, params_.poolDebt);
+        // check loan book's htp against new lup
+        if (params_.fromIndex < params_.toIndex) if(params_.htp > lup_) revert LUPBelowHTP();
+        emit MoveQuoteToken(msg.sender, params_.fromIndex, params_.toIndex, amountToMove, lup_);
     }
 
     function removeQuoteToken(
         mapping(uint256 => Buckets.Bucket) storage buckets_,
         Deposits.Data storage deposits_,
         RemoveQuoteParams calldata params_
-    ) external returns (uint256 removedAmount_, uint256 redeemedLPs_) {
+    ) external returns (uint256 removedAmount_, uint256 redeemedLPs_, uint256 lup_) {
 
         (uint256 lenderLPs, uint256 depositTime) = Buckets.getLenderInfo(
             buckets_,
@@ -187,13 +226,18 @@ library LenderActions {
         // apply early withdrawal penalty if quote token is removed from above the PTP
         if (depositTime != 0 && block.timestamp - depositTime < 1 days) {
             if (price > params_.ptp) {
-                removedAmount_ = Maths.wmul(removedAmount_, Maths.WAD - params_.feeRate);
+                removedAmount_ = Maths.wmul(removedAmount_, Maths.WAD - _feeRate(params_.rate));
             }
         }
 
         // update bucket and lender LPs balances
         bucket.lps -= redeemedLPs_;
         bucket.lenders[msg.sender].lps -= redeemedLPs_;
+
+        lup_ = _lup(deposits_, params_.poolDebt);
+        // check loan book's htp against new lup
+        if (params_.htp > lup_) revert LUPBelowHTP();
+        emit RemoveQuoteToken(msg.sender, params_.index, removedAmount_, lup_);
     }
 
     function removeMaxCollateral(
@@ -281,8 +325,9 @@ library LenderActions {
         address owner_,
         address newOwner_,
         uint256[] calldata indexes_
-    ) external returns (uint256 tokensTransferred_){
+    ) external {
         uint256 indexesLength = indexes_.length;
+        uint256 tokensTransferred;
 
         for (uint256 i = 0; i < indexesLength; ) {
             if (indexes_[i] > 8192 ) revert InvalidIndex();
@@ -306,11 +351,19 @@ library LenderActions {
                 lenderLastDepositTime
             );
 
-            tokensTransferred_ += transferAmount;
+            tokensTransferred += transferAmount;
 
             unchecked {
                 ++i;
             }
         }
+        emit TransferLPTokens(owner_, newOwner_, indexes_, tokensTransferred);
+    }
+
+    function _lup(
+        Deposits.Data storage deposits_,
+        uint256 debt_
+    ) internal view returns (uint256) {
+        return _priceAt(Deposits.findIndexOfSum(deposits_, debt_));
     }
 }

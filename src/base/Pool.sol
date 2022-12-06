@@ -110,26 +110,22 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         moveParams.fromIndex       = fromIndex_;
         moveParams.toIndex         = toIndex_;
         moveParams.ptp             = _ptp(poolState.accruedDebt, poolState.collateral);
-        moveParams.feeRate         = _feeRate(poolState.rate);
+        moveParams.htp             = _htp(poolState.inflator);
+        moveParams.poolDebt        = poolState.accruedDebt;
+        moveParams.rate            = poolState.rate;
 
-        uint256 amountToMove;
+        uint256 newLup;
         (
             fromBucketLPs_,
             toBucketLPs_,
-            amountToMove
+            newLup
         ) = LenderActions.moveQuoteToken(
             buckets,
             deposits,
             moveParams
         );
 
-        // move lup if necessary and check loan book's htp against new lup
-        uint256 newLup = _lup(poolState.accruedDebt);
-        if (fromIndex_ < toIndex_) if(_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
-
         _updateInterestParams(poolState, newLup);
-
-        emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, amountToMove, newLup);
     }
 
     function removeQuoteToken(
@@ -145,22 +141,23 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         removeParams.maxAmount = maxAmount_;
         removeParams.index     = index_;
         removeParams.ptp       = _ptp(poolState.accruedDebt, poolState.collateral);
-        removeParams.feeRate   = _feeRate(poolState.rate);
+        removeParams.htp       = _htp(poolState.inflator);
+        removeParams.poolDebt  = poolState.accruedDebt;
+        removeParams.rate      = poolState.rate;
 
+        uint256 newLup;
         (
             removedAmount_,
-            redeemedLPs_
+            redeemedLPs_,
+            newLup
         ) = LenderActions.removeQuoteToken(
             buckets,
             deposits,
             removeParams
         );
 
-        uint256 newLup = _lup(poolState.accruedDebt);
-        if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
         _updateInterestParams(poolState, newLup);
 
-        emit RemoveQuoteToken(msg.sender, index_, removedAmount_, newLup);
         // move quote token amount from pool to lender
         _transferQuoteToken(msg.sender, removedAmount_);
     }
@@ -170,14 +167,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         address newOwner_,
         uint256[] calldata indexes_
     ) external override {
-        uint256 tokensTransferred = LenderActions.transferLPTokens(
+        LenderActions.transferLPTokens(
             buckets,
             _lpTokenAllowances,
             owner_,
             newOwner_,
             indexes_
         );
-        emit TransferLPTokens(owner_, newOwner_, indexes_, tokensTransferred);
     }
 
     function withdrawBonds() external {
