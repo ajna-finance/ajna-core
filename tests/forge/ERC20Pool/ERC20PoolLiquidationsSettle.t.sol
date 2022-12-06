@@ -5,8 +5,6 @@ import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
 import 'src/erc20/ERC20Pool.sol';
 
-import 'src/libraries/BucketMath.sol';
-
 contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
     address internal _borrower;
@@ -33,7 +31,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 2_000 * 1e18,
                 index:  _i9_91,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -41,7 +39,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 5_000 * 1e18,
                 index:  _i9_81,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -49,7 +47,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 11_000 * 1e18,
                 index:  _i9_72,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -57,7 +55,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 25_000 * 1e18,
                 index:  _i9_62,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -65,7 +63,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 30_000 * 1e18,
                 index:  _i9_52,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 

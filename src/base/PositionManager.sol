@@ -15,12 +15,12 @@ import './interfaces/IPositionManager.sol';
 import '../erc20/interfaces/IERC20Pool.sol';
 import '../erc721/interfaces/IERC721Pool.sol';
 
+import './PoolHelper.sol';
 import './PermitERC20.sol';
 import './PositionNFT.sol';
 
 import '../libraries/Maths.sol';
 import '../libraries/Buckets.sol';
-import '../libraries/PoolUtils.sol';
 
 contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC20, ReentrancyGuard {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -111,15 +111,14 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     function moveLiquidity(MoveLiquidityParams calldata params_) external override mayInteract(params_.pool, params_.tokenId) {
         address owner = ownerOf(params_.tokenId);
 
-        IPool pool = IPool(params_.pool);
-        (uint256 bucketLPs, uint256 bucketCollateral, , uint256 bucketDeposit, ) = pool.bucketInfo(params_.fromIndex);
+        (uint256 bucketLPs, uint256 bucketCollateral, , uint256 bucketDeposit, ) = IPool(params_.pool).bucketInfo(params_.fromIndex);
         (uint256 maxQuote, ) = Buckets.lpsToQuoteToken(
             bucketLPs,
             bucketCollateral,
             bucketDeposit,
             lps[params_.tokenId][params_.fromIndex],
             bucketDeposit,
-            PoolUtils.indexToPrice(params_.fromIndex)
+            _priceAt(params_.fromIndex)
         );
 
         // update prices set at which a position has liquidity
@@ -129,7 +128,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
         // move quote tokens in pool
         emit MoveLiquidity(owner, params_.tokenId);
-        (uint256 lpbAmountFrom, uint256 lpbAmountTo) = pool.moveQuoteToken(maxQuote, params_.fromIndex, params_.toIndex);
+        (uint256 lpbAmountFrom, uint256 lpbAmountTo) = IPool(params_.pool).moveQuoteToken(maxQuote, params_.fromIndex, params_.toIndex);
 
         // update tracked LPs
         lps[params_.tokenId][params_.fromIndex] -= lpbAmountFrom;

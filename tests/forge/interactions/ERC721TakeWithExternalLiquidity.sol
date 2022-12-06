@@ -52,7 +52,7 @@ contract ERC721TakeWithExternalLiquidityTest is Test {
         nftc.setApprovalForAll(address(_ajnaPool), true);
 
         // lender adds liquidity
-        uint256 bucketId = PoolUtils.priceToIndex(1_000 * 1e18);
+        uint256 bucketId = _indexOf(1_000 * 1e18);
         assertEq(bucketId, 2770);
         changePrank(_lender);
         _ajnaPool.addQuoteToken(50_000 * 1e18, 2770);

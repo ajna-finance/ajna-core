@@ -3,7 +3,7 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import 'src/libraries/BucketMath.sol';
+import 'src/base/PoolHelper.sol';
 
 contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
 
@@ -109,7 +109,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 from:   _lender1,
                 amount: 10_000 * 1e18,
                 index:  indexes[0],
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -117,7 +117,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 from:   _lender1,
                 amount: 20_000 * 1e18,
                 index:  indexes[1],
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -148,7 +148,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 from:   _lender1,
                 amount: 10_000 * 1e18,
                 index:  indexes[0],
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -156,7 +156,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 from:   _lender1,
                 amount: 20_000 * 1e18,
                 index:  indexes[1],
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -164,7 +164,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 from:   _lender1,
                 amount: 30_000 * 1e18,
                 index:  indexes[2],
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -310,7 +310,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 from:   _lender1,
                 amount: 10_000 * 1e18,
                 index:  depositIndexes[0],
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -318,7 +318,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 from:   _lender1,
                 amount: 20_000 * 1e18,
                 index:  depositIndexes[1],
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -326,7 +326,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 from:   _lender1,
                 amount: 30_000 * 1e18,
                 index:  depositIndexes[2],
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -469,7 +469,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 from:   _lender1,
                 amount: 10_000 * 1e18,
                 index:  indexes[0],
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -477,7 +477,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 from:   _lender1,
                 amount: 20_000 * 1e18,
                 index:  indexes[1],
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -485,7 +485,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 from:   _lender1,
                 amount: 30_000 * 1e18,
                 index:  indexes[2],
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -496,7 +496,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 from:   _lender2,
                 amount: 5_000 * 1e18,
                 index:  indexes[0],
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -504,7 +504,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 from:   _lender2,
                 amount: 10_000 * 1e18,
                 index:  indexes[1],
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -512,7 +512,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 from:   _lender2,
                 amount: 15_000 * 1e18,
                 index:  indexes[2],
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
