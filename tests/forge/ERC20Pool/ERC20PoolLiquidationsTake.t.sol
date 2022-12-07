@@ -1649,8 +1649,8 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 index:        3_696,
                 lpBalance:    2_000 * 1e27,
                 collateral:   0,
-                deposit:      2_118.911507166546111004 * 1e18,
-                exchangeRate: 1.059455753583273055502000000 * 1e27
+                deposit:      2_118.911507166546112000 * 1e18,
+                exchangeRate: 1.059455753583273056000000000 * 1e27
             }
         );
         _settle(
@@ -1732,8 +1732,8 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 index:        _i9_72,
                 lpBalance:    11_000 * 1e27,
                 collateral:   0,
-                deposit:      8_897.820552570976601535 * 1e18,
-                exchangeRate: 0.808892777506452418321363636 * 1e27
+                deposit:      8_897.820552570976602531 * 1e18,
+                exchangeRate: 0.808892777506452418411909090 * 1e27
             }
         );
         _assertLenderLpBalance(

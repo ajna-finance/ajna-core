@@ -90,6 +90,34 @@ library Deposits {
      *  @notice increase a value in the FenwickTree at an index.
      *  @dev    Starts at leaf/target and moved up towards root
      *  @param  index_     The deposit index.
+     *  @param  rawAddAmount_ The unscaled amount to increase deposit by.
+     */    
+    function rawAdd(
+        Data storage self,
+        uint256 index_,
+        uint256 rawAddAmount_
+    ) internal {
+        if (index_ >= SIZE) revert InvalidIndex();
+
+        index_ += 1;
+
+        while (index_ <= SIZE) {
+            uint256 value    = self.values[index_];
+            uint256 scaling  = self.scaling[index_];
+            uint256 newValue = value + rawAddAmount_;
+            // Note: we can't just multiply addAmount_ by scaling[i_] due to rounding
+            // We need to track the precice change in self.values[i_] in order to ensure
+            // obliterated indices remain zero after subsequent adding to related indices
+            if (scaling != 0) rawAddAmount_ = Maths.wmul(newValue, scaling) - Maths.wmul(value, scaling);
+            self.values[index_] = newValue;
+            index_ += lsb(index_);
+        }
+    }
+
+    /**
+     *  @notice increase a value in the FenwickTree at an index.
+     *  @dev    Starts at leaf/target and moved up towards root
+     *  @param  index_     The deposit index.
      *  @param  addAmount_ The amount to increase deposit by.
      */    
     function add(
@@ -97,22 +125,7 @@ library Deposits {
         uint256 index_,
         uint256 addAmount_
     ) internal {
-        if (index_ >= SIZE) revert InvalidIndex();
-
-        index_ += 1;
-        addAmount_ = Maths.wdiv(addAmount_, scale(self, index_)); // TODO: is this right?  index_+1?
-
-        while (index_ <= SIZE) {
-            uint256 value    = self.values[index_];
-            uint256 scaling  = self.scaling[index_];
-            uint256 newValue = value + addAmount_;
-            // Note: we can't just multiply addAmount_ by scaling[i_] due to rounding
-            // We need to track the precice change in self.values[i_] in order to ensure
-            // obliterated indices remain zero after subsequent adding to related indices
-            if (scaling != 0) addAmount_ = Maths.wmul(newValue, scaling) - Maths.wmul(value, scaling);
-            self.values[index_] = newValue;
-            index_ += lsb(index_);
-        }
+        rawAdd(self, index_, Maths.wdiv(addAmount_, scale(self, index_)));
     }
 
     /**
@@ -125,7 +138,7 @@ library Deposits {
     function findIndexAndSumOfSum(
         Data storage self,
         uint256 targetSum_
-    ) internal view returns (uint256 sumIndex_, uint256 sumIndexSum_) {
+    ) internal view returns (uint256 sumIndex_, uint256 sumIndexSum_, uint256 sumIndexScale_) {
         uint256 i             = 4096; // 1 << (_numBits - 1) = 1 << (13 - 1) = 4096
         uint256 sc            = Maths.WAD;
         uint256 lowerIndexSum;
@@ -140,6 +153,7 @@ library Deposits {
             } else {
                 if (scaling != 0) sc = Maths.wmul(sc, scaling);
                 sumIndexSum_ = scaledValue;
+                sumIndexScale_ = sc;
             }
             i = i >> 1;
         }
@@ -155,7 +169,7 @@ library Deposits {
         Data storage self,
         uint256 sum_
     ) internal view returns (uint256 sumIndex_) {
-        (sumIndex_,) = findIndexAndSumOfSum(self, sum_);
+        (sumIndex_,,) = findIndexAndSumOfSum(self, sum_);
     }
 
     /**
@@ -301,6 +315,10 @@ library Deposits {
             uint256 value    = self.values[index_];
             uint256 newValue = value - rawRemoveAmount_;
             uint256 scaling  = self.scaling[index_];
+            // On the line below, it would be tempting to replace this with:
+            // rawRemoveAmount_ = Maths.wmul(rawRemoveAmount, scaling).  This will introduce nonzero values up
+            // the tree due to rounding.  It's important to compute the actual change in self.values[index_]
+            // and propogate that upwards.
             if (scaling != 0) rawRemoveAmount_ = Maths.wmul(value, scaling) - Maths.wmul(newValue,  scaling);
             self.values[index_] = newValue;
             index_ += lsb(index_);

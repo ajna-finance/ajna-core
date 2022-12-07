@@ -76,13 +76,17 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     ) external override returns (uint256 bucketLPs_) {
         PoolState memory poolState = _accruePoolInterest();
 
+        uint256 bucketScale = deposits.scale(index_);
+        uint256 rawDeposit = deposits.rawValueAt(index_);
+        
         bucketLPs_ = Buckets.addQuoteToken(
             buckets[index_],
-            deposits.valueAt(index_),
+            Maths.wmul(bucketScale, rawDeposit),
             quoteTokenAmountToAdd_,
             PoolUtils.indexToPrice(index_)
         );
-        deposits.add(index_, quoteTokenAmountToAdd_);
+        
+        deposits.rawAdd(index_, Maths.wdiv(quoteTokenAmountToAdd_,bucketScale));
 
         uint256 newLup = _lup(poolState.accruedDebt);
         _updateInterestParams(poolState, newLup);

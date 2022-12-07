@@ -59,6 +59,7 @@ library Auctions {
         uint256 index;
         uint256 deposit;
         uint256 price;
+        uint256 scale;
     }
 
     /**
@@ -122,7 +123,7 @@ library Auctions {
 
         // auction has debt to cover with remaining collateral
         while (bucketDepth_ != 0 && t0DebtToSettle_ != 0 && collateral_ != 0) {
-            (hpbVars.index, hpbVars.deposit) = Deposits.findIndexAndSumOfSum(deposits_, 1);
+            (hpbVars.index, hpbVars.deposit, hpbVars.scale) = Deposits.findIndexAndSumOfSum(deposits_, 1);
             hpbVars.price   = _indexToPrice(hpbVars.index);
 
             uint256 depositToRemove = hpbVars.deposit;
@@ -162,7 +163,7 @@ library Auctions {
 
             // if there's still debt after settling from reserves then start to forgive amount from next HPB
             while (bucketDepth_ != 0 && t0DebtToSettle_ != 0) { // loop through remaining buckets if there's still debt to settle
-                (hpbVars.index, hpbVars.deposit)   = Deposits.findIndexAndSumOfSum(deposits_, 1);
+                (hpbVars.index, hpbVars.deposit, hpbVars.scale)   = Deposits.findIndexAndSumOfSum(deposits_, 1);
 
                 uint256 depositToRemove = hpbVars.deposit;
                 uint256 debtToSettle    = Maths.wmul(t0DebtToSettle_, poolInflator_);
