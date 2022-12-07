@@ -9,6 +9,8 @@ import './Buckets.sol';
 import './Loans.sol';
 import './Maths.sol';
 
+import '@std/console.sol';
+
 library Auctions {
     uint256 internal constant MINUTE_HALF_LIFE    = 0.988514020352896135_356867505 * 1e27;  // 0.5^(1/60)
     uint256 internal constant MIN_PRICE = 99_836_282_890;

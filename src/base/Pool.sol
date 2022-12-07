@@ -16,6 +16,8 @@ import '../libraries/Maths.sol';
 import '../libraries/PoolUtils.sol';
 import '../libraries/BucketMath.sol';
 
+import '@std/console.sol';
+
 abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     using Auctions for Auctions.Data;
     using Buckets  for mapping(uint256 => Buckets.Bucket);
@@ -409,6 +411,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             poolState.inflator,
             maxDepth_
         );
+
+        console.log("remainingCol", remainingCollateral);
+        console.log("remainingt0Debt", remainingt0Debt);
 
         if (remainingt0Debt == 0) remainingCollateral = _settleAuction(borrowerAddress_, remainingCollateral);
 

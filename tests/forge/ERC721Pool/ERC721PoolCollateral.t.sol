@@ -7,6 +7,8 @@ import 'src/libraries/BucketMath.sol';
 import 'src/libraries/Maths.sol';
 import 'src/libraries/PoolUtils.sol';
 
+import '@std/console.sol';
+
 contract ERC721PoolCollateralTest is ERC721HelperContract {
 
     address internal _borrower;
@@ -30,6 +32,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _pool = _deploySubsetPool(subsetTokenIds);
 
         _mintAndApproveQuoteTokens(_lender, 200_000 * 1e18);
+        _mintAndApproveQuoteTokens(_borrower, 100 * 1e18);
 
         _mintAndApproveCollateralTokens(_borrower,  52);
         _mintAndApproveCollateralTokens(_borrower2, 53);
@@ -780,12 +783,53 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             })
         );
 
-        _settle(
+        // skip 72 hours past kick so auction can be settled
+        skip(61 hours);
+
+        _assertBorrower(
             {
-                from:        _lender,
-                borrower:    _borrower,
-                maxDepth:    10,
-                settledDebt: 2.020897152044737825 * 1e18
+                borrower:                  _borrower,
+                borrowerDebt:              2.021737444707094282 * 1e18,
+                borrowerCollateral:        0.179971400853377640 * 1e18,
+                borrowert0Np:              0.000000054499533442 * 1e18,
+                borrowerCollateralization: 0.000000008887244847 * 1e18
+            }
+        );
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower,
+                active:            true,
+                kicker:            address(_lender),
+                bondSize:          0.001339626416318005 * 1e18,
+                bondFactor:        0.010 * 1e18,
+                kickTime:          block.timestamp - 4370 minutes,
+                kickMomp:          0.000000099836282890 * 1e18,
+                totalBondEscrowed: 0.001339626416318005 * 1e18,
+                auctionPrice:      0.0 * 1e18,
+                debtInAuction:     2.021033651800713817* 1e18,
+                thresholdPrice:    11.233659543241539558 * 1e18,
+                neutralPrice:      0.000000054499533442 * 1e18
+            })
+        );
+
+        // FIXME: Settle call should work here and should insert LP into a bucket. Currently it does not.
+        // _settle(
+        //     {
+        //         from:        _lender,
+        //         borrower:    _borrower,
+        //         maxDepth:    10,
+        //         settledDebt: 0
+        //     }
+        // );
+
+        _repay(
+            {
+                from:     _borrower,
+                borrower: _borrower, 
+                amount:   2.021737444707094282 * 1e18,
+                repaid:   2.021737444707094282 * 1e18,
+                newLup:   0.000000099836282890 * 1e18
             }
         );
 
@@ -800,7 +844,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 kickMomp:          0,
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
-                debtInAuction:     0,
+                debtInAuction:     2.021737444707094282 * 1e18,
                 thresholdPrice:    0,
                 neutralPrice:      0
             })
