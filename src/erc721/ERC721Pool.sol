@@ -65,7 +65,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256 amountToBorrow_,
         uint256 limitIndex_,
         uint256[] calldata tokenIdsToPledge_
-    ) external {
+    ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
 
