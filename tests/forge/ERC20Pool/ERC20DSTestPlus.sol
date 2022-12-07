@@ -28,7 +28,12 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     event AddCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
     event AuctionSettle(address indexed borrower, uint256 collateral);
     event PledgeCollateral(address indexed borrower_, uint256 amount_);
-
+    event DrawDebt(
+        address indexed borrower,
+        uint256 amountBorowed,
+        uint256 collateralPledged,
+        uint256 lup
+    );
     event Transfer(address indexed from, address indexed to, uint256 value);
 
     /*****************/
@@ -171,6 +176,79 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         return ERC20Pool(address(_pool)).addCollateral(amount, index);
     }
 
+    function _borrow(
+        address from,
+        uint256 amount,
+        uint256 indexLimit,
+        uint256 newLup
+    ) internal {
+        changePrank(from);
+        _assertTokenTransferEvent(address(_pool), from, amount);
+        vm.expectEmit(true, true, false, true);
+        emit DrawDebt(from, amount, 0, newLup);
+
+        ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
+
+        // Add for tearDown
+        borrowers.add(from);
+    }
+
+    function _drawDebt(
+        address from,
+        address borrower,
+        uint256 amountToBorrow,
+        uint256 limitIndex,
+        uint256 collateralToPledge,
+        uint256 newLup
+    ) internal {
+        changePrank(from);
+
+        // pledge collateral
+        if (collateralToPledge != 0) {
+            vm.expectEmit(true, true, false, true);
+            emit Transfer(from, address(_pool), collateralToPledge / ERC20Pool(address(_pool)).collateralScale());
+        }
+
+        // borrow quote
+        if (amountToBorrow != 0) {
+            _assertTokenTransferEvent(address(_pool), from, amountToBorrow);
+        }
+
+        vm.expectEmit(true, true, false, true);
+        emit DrawDebt(from, amountToBorrow, collateralToPledge, newLup);
+        ERC20Pool(address(_pool)).drawDebt(borrower, amountToBorrow, limitIndex, collateralToPledge);
+
+        // add for tearDown
+        borrowers.add(borrower);
+    }
+
+    // Used when lup can't be known in advance
+    function _drawDebtNoCheckLup(
+        address from,
+        address borrower,
+        uint256 amountToBorrow,
+        uint256 limitIndex,
+        uint256 collateralToPledge
+    ) internal {
+        changePrank(from);
+
+        // pledge collateral
+        if (collateralToPledge != 0) {
+            vm.expectEmit(true, true, false, true);
+            emit Transfer(from, address(_pool), collateralToPledge / ERC20Pool(address(_pool)).collateralScale());
+        }
+
+        // borrow quote
+        if (amountToBorrow != 0) {
+            _assertTokenTransferEvent(address(_pool), from, amountToBorrow);
+        }
+
+        ERC20Pool(address(_pool)).drawDebt(borrower, amountToBorrow, limitIndex, collateralToPledge);
+
+        // add for tearDown
+        borrowers.add(borrower);
+    }
+
     function _pledgeCollateral(
         address from,
         address borrower,
@@ -178,11 +256,14 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     ) internal {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
-        emit PledgeCollateral(borrower, amount);
-        vm.expectEmit(true, true, false, true);
         emit Transfer(from, address(_pool), amount / ERC20Pool(address(_pool)).collateralScale());
-        ERC20Pool(address(_pool)).pledgeCollateral(borrower, amount);
+        vm.expectEmit(true, true, false, true);
+        emit DrawDebt(borrower, 0, amount, _poolUtils.lup(address(_pool)));
 
+        // call out to drawDebt w/ amountToBorrow == 0
+        ERC20Pool(address(_pool)).drawDebt(borrower, 0, 0, amount);
+
+        // add for tearDown
         borrowers.add(borrower);
     }
 
@@ -196,10 +277,12 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit AuctionSettle(borrower, collateral);
         vm.expectEmit(true, true, false, true);
-        emit PledgeCollateral(borrower, amount);
-        vm.expectEmit(true, true, false, true);
         emit Transfer(from, address(_pool), amount / ERC20Pool(address(_pool)).collateralScale());
-        ERC20Pool(address(_pool)).pledgeCollateral(borrower, amount);
+        vm.expectEmit(true, true, false, true);
+        emit DrawDebt(borrower, 0, amount, _poolUtils.lup(address(_pool)));
+
+        // call out to drawDebt w/ amountToBorrow == 0
+        ERC20Pool(address(_pool)).drawDebt(borrower, 0, 0, amount);
 
         borrowers.add(borrower);
     }
@@ -356,6 +439,46 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         _pool.removeQuoteToken(amount, index);
     }
 
+    function _assertBorrowAuctionActiveRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal override {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('AuctionActive()'));
+        ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
+    }
+
+    function _assertBorrowLimitIndexRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal override {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.LimitIndexReached.selector);
+        ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
+    }
+
+    function _assertBorrowBorrowerUnderCollateralizedRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal override {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.BorrowerUnderCollateralized.selector);
+        ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
+    }
+
+    function _assertBorrowMinDebtRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal override {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
+        ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
+    }
+
 }
 
 abstract contract ERC20HelperContract is ERC20DSTestPlus {
@@ -385,15 +508,13 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         address borrower = makeAddr(string(abi.encodePacked("anonBorrower", _anonBorrowerCount)));
         vm.stopPrank();
         _mintCollateralAndApproveTokens(borrower,  collateralAmount);
-        _pledgeCollateral(
-            {
-                from:     borrower,
-                borrower: borrower,
-                amount:   collateralAmount
-            }
-        );
-        _pool.borrow(loanAmount, limitIndex);
-        borrowers.add(borrower);
+        _drawDebtNoCheckLup({
+            from: borrower,
+            borrower: borrower,
+            amountToBorrow: loanAmount,
+            limitIndex: limitIndex,
+            collateralToPledge: collateralAmount
+        });
     }
 
     function _mintQuoteAndApproveTokens(address operator_, uint256 mintAmount_) internal {

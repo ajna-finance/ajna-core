@@ -46,15 +46,51 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function pledgeCollateral(
-        address borrower_,
-        uint256 collateralAmountToPledge_
-    ) external override {
-        _pledgeCollateral(borrower_, collateralAmountToPledge_);
+    function drawDebt(
+        address borrowerAddress_,
+        uint256 amountToBorrow_,
+        uint256 limitIndex_,
+        uint256 collateralToPledge_
+    ) external nonReentrant {
+        PoolState memory poolState = _accruePoolInterest();
+        Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
 
-        emit PledgeCollateral(borrower_, collateralAmountToPledge_);
-        // move collateral from sender to pool
-        _transferCollateralFrom(msg.sender, collateralAmountToPledge_);
+        uint256 newLup = _lup(poolState.accruedDebt);
+
+        // pledge collateral to pool
+        if (collateralToPledge_ != 0) {
+            (borrower, poolState) = _pledgeCollateral(borrower, poolState, borrowerAddress_, collateralToPledge_, newLup);
+
+            // move collateral from sender to pool
+            _transferCollateralFrom(msg.sender, collateralToPledge_);
+        }
+
+        // borrow against pledged collateral
+        // check both values to enable an intentional 0 borrow loan call to update borrower's loan state
+        if (amountToBorrow_ != 0 || limitIndex_ != 0) {
+            // only intended recipient can borrow quote
+            if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
+
+            // borrow from the pool
+            (borrower, poolState, newLup) = _borrow(borrower, poolState, amountToBorrow_, limitIndex_);
+        }
+
+        emit DrawDebt(borrowerAddress_, amountToBorrow_, collateralToPledge_, newLup);
+
+        // update loan state
+        loans.update(
+            deposits,
+            borrowerAddress_,
+            true,
+            borrower,
+            poolState.accruedDebt,
+            poolState.inflator,
+            poolState.rate,
+            newLup
+        );
+
+        // update pool global interest rate state
+        _updateInterestParams(poolState, newLup);
     }
 
     function pullCollateral(

@@ -144,22 +144,6 @@ abstract contract DSTestPlus is Test {
         bucketsUsed.add(index);
     }
 
-    function _borrow(
-        address from,
-        uint256 amount,
-        uint256 indexLimit,
-        uint256 newLup
-    ) internal {
-        changePrank(from);
-        vm.expectEmit(true, true, false, true);
-        emit Borrow(from, newLup, amount);
-        _assertTokenTransferEvent(address(_pool), from, amount);
-        _pool.borrow(amount, indexLimit);
-
-        // Add for tearDown
-        borrowers.add(from);
-    }
-
     function _depositTake(
         address from,
         address borrower,
@@ -726,42 +710,34 @@ abstract contract DSTestPlus is Test {
 
     function _assertBorrowAuctionActiveRevert(
         address from,
-        uint256 amount,
-        uint256 indexLimit
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(abi.encodeWithSignature('AuctionActive()'));
-        _pool.borrow(amount, indexLimit);
+        uint256,
+        uint256
+    ) internal virtual {
+        // to be overidden by ERC20/ERC721DSTestPlus 
     }
 
     function _assertBorrowLimitIndexRevert(
         address from,
-        uint256 amount,
-        uint256 indexLimit
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.LimitIndexReached.selector);
-        _pool.borrow(amount, indexLimit);
+        uint256,
+        uint256
+    ) internal virtual {
+        // to be overidden by ERC20/ERC721DSTestPlus 
     }
 
     function _assertBorrowBorrowerUnderCollateralizedRevert(
         address from,
-        uint256 amount,
-        uint256 indexLimit
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.BorrowerUnderCollateralized.selector);
-        _pool.borrow(amount, indexLimit);
+        uint256,
+        uint256
+    ) internal virtual {
+        // to be overidden by ERC20/ERC721DSTestPlus 
     }
 
     function _assertBorrowMinDebtRevert(
         address from,
-        uint256 amount,
-        uint256 indexLimit
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
-        _pool.borrow(amount, indexLimit);
+        uint256,
+        uint256
+    ) internal virtual {
+        // to be overidden by ERC20/ERC721DSTestPlus 
     }
 
     function _assertFlashloanFeeRevertsForToken(

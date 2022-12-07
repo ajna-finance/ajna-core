@@ -60,15 +60,48 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function pledgeCollateral(
-        address borrower_,
+    function drawDebt(
+        address borrowerAddress_,
+        uint256 amountToBorrow_,
+        uint256 limitIndex_,
         uint256[] calldata tokenIdsToPledge_
-    ) external override {
-        _pledgeCollateral(borrower_, Maths.wad(tokenIdsToPledge_.length));
+    ) external nonReentrant {
+        PoolState memory poolState = _accruePoolInterest();
+        Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
 
-        emit PledgeCollateralNFT(borrower_, tokenIdsToPledge_);
-        // move collateral from sender to pool
-        _transferFromSenderToPool(borrowerTokenIds[borrower_], tokenIdsToPledge_);
+        uint256 newLup = _lup(poolState.accruedDebt);
+
+        // pledge collateral to pool
+        if (tokenIdsToPledge_.length != 0) {
+            (borrower, poolState) = _pledgeCollateral(borrower, poolState, borrowerAddress_, Maths.wad(tokenIdsToPledge_.length), newLup);
+
+            // move collateral from sender to pool
+            _transferFromSenderToPool(borrowerTokenIds[borrowerAddress_], tokenIdsToPledge_);
+        }
+
+        // borrow against pledged collateral
+        if (amountToBorrow_ != 0 || limitIndex_ != 0) {
+            // only intended recipient can borrow quote
+            if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
+
+            // borrow from the pool
+            (borrower, poolState, newLup) = _borrow(borrower, poolState, amountToBorrow_, limitIndex_);
+        }
+
+        emit DrawDebtNFT(borrowerAddress_, amountToBorrow_, tokenIdsToPledge_, newLup);
+
+        loans.update(
+            deposits,
+            borrowerAddress_,
+            true,
+            borrower,
+            poolState.accruedDebt,
+            poolState.inflator,
+            poolState.rate,
+            newLup
+        );
+
+        _updateInterestParams(poolState, newLup);
     }
 
     function pullCollateral(

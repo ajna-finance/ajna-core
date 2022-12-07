@@ -62,15 +62,13 @@ contract ERC721TakeWithExternalLiquidityTest is Test {
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
         changePrank(_borrower);
-        _ajnaPool.pledgeCollateral(_borrower, tokenIdsToAdd);
-        _ajnaPool.borrow(1_999 * 1e18, 3232);
+        _ajnaPool.drawDebt(_borrower, 1_999 * 1e18, 3232, tokenIdsToAdd);
 
         // borrower2 adds collateral and borrows a trivial amount
         tokenIdsToAdd[0] = 4;
         tokenIdsToAdd[1] = 5;
         changePrank(_borrower2);
-        _ajnaPool.pledgeCollateral(_borrower2, tokenIdsToAdd);
-        _ajnaPool.borrow(5 * 1e18, 3232);
+        _ajnaPool.drawDebt(_borrower2, 5 * 1e18, 3232, tokenIdsToAdd);
 
         // enough time passes that the borrower becomes undercollateralized
         skip(60 days);
