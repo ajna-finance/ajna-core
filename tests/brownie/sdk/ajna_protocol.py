@@ -36,6 +36,7 @@ class AjnaProtocol:
         self.maths = Maths.deploy({"from": self.deployer})
         self.loans = Loans.deploy({"from": self.deployer})
         self.auctions = Auctions.deploy({"from": self.deployer})
+        self.pool_info_utils = PoolInfoUtils.deploy({"from": self.deployer})
 
         self.ajna_factory = ERC20PoolFactory.deploy({"from": self.deployer})
 

@@ -101,7 +101,6 @@ def borrowers(ajna_protocol, scaled_pool):
 # Layer of abstraction between pool contracts and brownie tests
 class PoolHelper:
     def __init__(self, ajna_protocol: AjnaProtocol, pool):
-        self.bucket_math = ajna_protocol.bucket_math
         self.loans = ajna_protocol.loans
         self.pool = pool
         self.pool_info_utils = ajna_protocol.pool_info_utils
@@ -161,7 +160,8 @@ class PoolHelper:
         return self.pool_info_utils.poolUtilizationInfo(self.pool.address)
 
     def get_origination_fee(self, amount):
-        fee_rate = max(self.pool.interestRate() / 52, 0.0005 * 10**18)
+        (interest_rate, _) = self.pool.interestRateInfo()
+        fee_rate = max(interest_rate / 52, 0.0005 * 10**18)
         assert fee_rate >= (0.0005 * 10**18)
         assert fee_rate < (100 * 10**18)
         return fee_rate * amount / 10**18
@@ -399,7 +399,10 @@ class TestUtils:
 
         lup_index = pool_helper.lupIndex()
         htp_index = pool_helper.price_to_index_safe(pool_helper.htp())
-        ptp_index = pool_helper.price_to_index_safe(int(pool_helper.debt() * 1e18 / pool.pledgedCollateral()))
+
+        pledged_collateral = pool.pledgedCollateral()
+        ptp_index = pool_helper.price_to_index_safe(int(pool_helper.debt() * 1e18 / pledged_collateral)) \
+            if pledged_collateral > 0 else 0
 
         min_bucket_index = max(0, pool_helper.priceToIndex(pool_helper.hpb()) - 3)  # HPB
         max_bucket_index = min(7388, max(lup_index, htp_index) + 3) if htp_index < 7388 else min(7388, lup_index + 3)
@@ -457,6 +460,7 @@ class TestUtils:
         contract_quote_balance = pool_helper.quoteToken().balanceOf(pool)
         reserves = contract_quote_balance + poolDebt - pool.depositSize()
         pledged_collateral = pool.pledgedCollateral()
+        (interest_rate, _) = pool.interestRateInfo()
         if pledged_collateral > 0:
             ptp = poolDebt * 10 ** 18 / pledged_collateral
             ptp_index = pool_helper.priceToIndex(ptp)
@@ -466,7 +470,7 @@ class TestUtils:
               f"deposit:        {pool.depositSize()/1e18:>12.1f}  "
               f"reserves:       {reserves/1e18:>12.1f}  "
               f"pledged:        {pool.pledgedCollateral()/1e18:>12.1f}  "
-              f"rate:           {pool.interestRate()/1e18:>8.4%}")
+              f"rate:           {interest_rate/1e18:>8.4%}")
 
         lup = pool_helper.lup()
         htp = pool_helper.htp()
