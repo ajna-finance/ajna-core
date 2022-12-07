@@ -97,7 +97,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
         uint256 collateralAmountToPull_
-    ) external {
+    ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
 

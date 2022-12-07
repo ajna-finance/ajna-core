@@ -358,7 +358,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         uint256 collateralToPull
     ) internal {
         changePrank(from);
-        emit log("repaying debt");
 
         // repay checks
         if (amountToRepay != 0) {

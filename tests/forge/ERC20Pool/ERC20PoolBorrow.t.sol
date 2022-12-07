@@ -344,7 +344,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
     }
 
     // FIXME: update values pending interest rate changes. Test failsas _accruePoolInterest is only called once at top of `repayDebt` instead of twice in prio subordinate methods.
-    function skip_testPoolBorrowerInterestAccumulation() external tearDown {
+    function testPoolBorrowerInterestAccumulation() external tearDown {
         (uint256 liquidityAdded, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
         skip(10 days);
         _drawDebt({
@@ -500,24 +500,9 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         _assertLenderInterest(liquidityAdded, 119.836959946754650000 * 1e18);
 
         skip(10 days);
-        // call repay to restamp the loan's neutral price
-        // _repay(
-        //     {
-        //         from:     _borrower,
-        //         borrower: _borrower,
-        //         amount:   0,
-        //         repaid:   0,
-        //         newLup:   2_981.007422784467321543 * 1e18
-        //     }
-        // );
-        // _repayDebt({
-        //     from:             _borrower,
-        //     borrower:         _borrower,
-        //     amountToRepay:    0,
-        //     amountRepaid:     0,
-        //     collateralToPull: 0,
-        //     newLup:           2_981.007422784467321543 * 1e18
-        // });
+
+        // call drawDebt to restamp the loan's neutral price
+        IERC20Pool(address(_pool)).drawDebt(_borrower, 0, 0, 0);
 
         expectedDebt = 21_199.628356897284442294 * 1e18;
         _assertPool(
@@ -542,7 +527,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              expectedDebt,
                 borrowerCollateral:        50 * 1e18,
-                borrowert0Np:              448.381722115384615590 * 1e18,
+                borrowert0Np:              451.179509711538461745 * 1e18,
                 borrowerCollateralization: 7.030801136225104190 * 1e18
             }
         );
@@ -572,7 +557,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              expectedDebt,
                 borrowerCollateral:        50 * 1e18,
-                borrowert0Np:              448.381722115384615590 * 1e18,
+                borrowert0Np:              451.179509711538461745 * 1e18,
                 borrowerCollateralization: 7.015307034516347067 * 1e18
             }
         );

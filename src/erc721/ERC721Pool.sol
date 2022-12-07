@@ -108,7 +108,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
         uint256 noOfNFTsToPull_
-    ) external {
+    ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
 

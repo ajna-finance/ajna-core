@@ -137,8 +137,8 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         _repayDebt({
             from:             _borrower,
             borrower:         _borrower,
-            amountToRepay:    46_044.230769230769252000 * 1e18,
-            amountRepaid:     46_044.230769230769252000 * 1e18,
+            amountToRepay:    46_113.664786991249514684 * 1e18,
+            amountRepaid:     46_113.664786991249514684 * 1e18,
             collateralToPull: 0,
             newLup:           MAX_PRICE
         });
