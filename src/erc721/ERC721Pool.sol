@@ -131,7 +131,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
         // pull collateral from pool
         if (noOfNFTsToPull_ != 0) {
-            _pullCollateral(poolState, borrower, Maths.wad(noOfNFTsToPull_));
+            _pullCollateral(poolState, borrower, Maths.wad(noOfNFTsToPull_), newLup);
 
             _transferFromPoolToAddress(msg.sender, borrowerTokenIds[msg.sender], noOfNFTsToPull_);
         }

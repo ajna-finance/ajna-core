@@ -120,7 +120,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         // pull collateral from pool
         if (collateralAmountToPull_ != 0) {
-            _pullCollateral(poolState, borrower, collateralAmountToPull_);
+            _pullCollateral(poolState, borrower, collateralAmountToPull_, newLup);
 
             // move collateral from pool to sender
             _transferCollateral(msg.sender, collateralAmountToPull_);

@@ -416,12 +416,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function _pullCollateral(
         PoolState      memory poolState,
         Loans.Borrower memory borrower,
-        uint256 collateralAmountToPull_
+        uint256 collateralAmountToPull_,
+        uint256 lup
     ) internal {
         uint256 borrowerDebt            = Maths.wmul(borrower.t0debt, poolState.inflator);
 
-        uint256 curLup = _lup(poolState.accruedDebt);
-        uint256 encumberedCollateral = borrower.t0debt != 0 ? Maths.wdiv(borrowerDebt, curLup) : 0;
+        uint256 encumberedCollateral = borrower.t0debt != 0 ? Maths.wdiv(borrowerDebt, lup) : 0;
         if (borrower.collateral - encumberedCollateral < collateralAmountToPull_) revert InsufficientCollateral();
 
         borrower.collateral  -= collateralAmountToPull_;
@@ -435,11 +435,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             poolState.accruedDebt,
             poolState.inflator,
             poolState.rate,
-            curLup
+            lup
         );
 
         pledgedCollateral = poolState.collateral;
-        _updateInterestParams(poolState, curLup);
+        _updateInterestParams(poolState, lup);
     }
 
     function _payLoan(

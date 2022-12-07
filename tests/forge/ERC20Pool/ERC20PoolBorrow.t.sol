@@ -343,7 +343,6 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         );
     }
 
-    // FIXME: update values pending interest rate changes. Test failsas _accruePoolInterest is only called once at top of `repayDebt` instead of twice in prio subordinate methods.
     function testPoolBorrowerInterestAccumulation() external tearDown {
         (uint256 liquidityAdded, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
         skip(10 days);
