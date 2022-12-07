@@ -24,8 +24,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
     function initialize(
         uint256 collateralScale_,
-        uint256 rate_,
-        address ajna_
+        uint256 rate_
     ) external override {
         if (poolInitializations != 0) revert AlreadyInitialized();
 
@@ -36,8 +35,6 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         interestParams.interestRate       = uint208(rate_);
         interestParams.interestRateUpdate = uint48(block.timestamp);
-
-        ajna = ajna_;
 
         loans.init();
 

@@ -31,7 +31,8 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
         bytes memory data = abi.encodePacked(
             collateral_,
             quote_,
-            quoteTokenScale
+            quoteTokenScale,
+            ajna
         );
 
         ERC721Pool pool = ERC721Pool(address(implementation).clone(data));
@@ -39,7 +40,7 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
         deployedPools[getNFTSubsetHash(tokenIds_)][collateral_][quote_] = pool_;
         emit PoolCreated(pool_);
 
-        pool.initialize(tokenIds_, interestRate_, ajna);
+        pool.initialize(tokenIds_, interestRate_);
     }
 
     /*********************************/
