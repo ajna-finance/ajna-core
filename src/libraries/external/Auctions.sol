@@ -388,7 +388,7 @@ library Auctions {
 
         _rewardBucketTake(
             deposits_,
-            buckets_[params_.index],
+            buckets_,
             bucketDeposit,
             params_.index,
             params_.depositTake,
@@ -652,41 +652,49 @@ library Auctions {
      */
     function _rewardBucketTake(
         Deposits.Data storage deposits_,
-        Buckets.Bucket storage bucket_,
+        mapping(uint256 => Buckets.Bucket) storage buckets_,
         uint256 bucketDeposit_,
         uint256 bucketIndex_,
         bool depositTake_,
         TakeResult memory result_
     ) internal {
+        Buckets.Bucket storage bucket = buckets_[bucketIndex_];
         uint256 bucketExchangeRate = Buckets.getExchangeRate(
-            bucket_.collateral,
-            bucket_.lps,
+            bucket.collateral,
+            bucket.lps,
             bucketDeposit_,
             result_.bucketPrice
         );
 
+        uint256 bankruptcyTime = bucket.bankruptcyTime;
+        uint256 totalLPsReward;
         // if arb take - taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
-        if (!depositTake_) Buckets.addLPs(
-            bucket_,
-            msg.sender,
-            Maths.wrdivr(
+        if (!depositTake_) {
+            uint256 takerLPsReward = Maths.wrdivr(
                 Maths.wmul(result_.collateralAmount, result_.bucketPrice - result_.auctionPrice),
                 bucketExchangeRate
-            )
-        );
-        bucket_.collateral += result_.collateralAmount; // collateral is added to the bucket’s claimable collateral
+            );
+
+            totalLPsReward += takerLPsReward;
+            Buckets.addLenderLPs(bucket, bankruptcyTime, msg.sender, takerLPsReward);
+        }
 
         // the bondholder/kicker is awarded bond change worth of LPB in the bucket
         uint256 depositAmountToRemove = result_.quoteTokenAmount;
         if (result_.isRewarded) {
-            Buckets.addLPs(
-                bucket_,
-                result_.kicker,
-                Maths.wrdivr(result_.bondChange, bucketExchangeRate)
-            );
+            uint256 kickerLPsReward = Maths.wrdivr(result_.bondChange, bucketExchangeRate);
             depositAmountToRemove -= result_.bondChange;
+
+            totalLPsReward += kickerLPsReward;
+            Buckets.addLenderLPs(bucket, bankruptcyTime, result_.kicker, kickerLPsReward);
         }
+
         Deposits.remove(deposits_, bucketIndex_, depositAmountToRemove, bucketDeposit_); // remove quote tokens from bucket’s deposit
+
+        // total rewarded LPs are added to the bucket LP balance
+        bucket.lps += totalLPsReward;
+        // collateral is added to the bucket’s claimable collateral
+        bucket.collateral += result_.collateralAmount;
     }
 
     function _auctionPrice(

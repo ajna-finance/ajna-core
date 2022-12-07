@@ -7,8 +7,6 @@ import './interfaces/IERC20Taker.sol';
 import '../base/FlashloanablePool.sol';
 
 contract ERC20Pool is IERC20Pool, FlashloanablePool {
-    using Auctions for Auctions.Data;
-    using Buckets  for mapping(uint256 => Buckets.Bucket);
     using Deposits for Deposits.Data;
     using Loans    for Loans.Data;
 
@@ -136,7 +134,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         uint256 maxAmount_,
         uint256 index_
     ) external override returns (uint256 collateralAmount_, uint256 lpAmount_) {
-        auctions.revertIfAuctionClearable(loans);
+        Auctions.revertIfAuctionClearable(auctions, loans);
 
         PoolState memory poolState = _accruePoolInterest();
 
