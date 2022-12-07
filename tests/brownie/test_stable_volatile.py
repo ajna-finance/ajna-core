@@ -229,7 +229,8 @@ def draw_and_bid(lenders, borrowers, start_from, pool_helper, chain, test_utils,
     user_index = start_from
     end_time = chain.time() + duration
     # Update the interest rate
-    interest_rate = pool_helper.pool.interestRate() / 10**18
+    (interest_rate, _) = pool_helper.pool.interestRateInfo()
+    interest_rate = interest_rate / 10**18
     chain.sleep(14)
 
     while chain.time() < end_time:
