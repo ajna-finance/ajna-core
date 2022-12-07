@@ -280,7 +280,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         Auctions.TakeParams memory params;
         params.borrower    = borrowerAddress_;
         params.collateral  = borrower.collateral;
-        params.debt        = borrower.t0debt;
+        params.t0debt      = borrower.t0debt;
         params.inflator    = poolState.inflator;
         params.depositTake = depositTake_;
         params.index       = index_;
@@ -313,7 +313,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         Auctions.SettleParams memory params;
         params.borrower    = borrowerAddress_;
         params.collateral  = borrower.collateral;
-        params.debt        = borrower.t0debt;
+        params.t0debt      = borrower.t0debt;
         params.reserves    = reserves;
         params.inflator    = poolState.inflator;
         params.bucketDepth = maxDepth_;
@@ -326,11 +326,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         if (remainingt0Debt == 0) remainingCollateral = _settleAuction(params.borrower, remainingCollateral);
 
-        uint256 t0settledDebt = borrower.t0debt - remainingt0Debt;
+        uint256 t0settledDebt = params.t0debt - remainingt0Debt;
         t0poolDebt      -= t0settledDebt;
         t0DebtInAuction -= t0settledDebt;
 
-        poolState.collateral -= borrower.collateral - remainingCollateral;
+        poolState.collateral -= params.collateral - remainingCollateral;
 
         borrower.t0debt     = remainingt0Debt;
         borrower.collateral = remainingCollateral;
@@ -346,10 +346,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         PoolState memory poolState = _accruePoolInterest();
         Loans.Borrower storage borrower = loans.borrowers[borrowerAddress_];
+        uint256 borrowerT0debt = borrower.t0debt;
 
         Auctions.KickParams memory params;
         params.borrower     = borrowerAddress_;
-        params.debt         = Maths.wmul(borrower.t0debt, poolState.inflator);
+        params.debt         = Maths.wmul(borrowerT0debt, poolState.inflator);
         params.collateral   = borrower.collateral;
         params.momp         = deposits.momp(poolState.accruedDebt, loans.noOfLoans());
         params.neutralPrice = Maths.wmul(borrower.t0Np, poolState.inflator);
@@ -357,7 +358,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         uint256 lup = _lup(poolState.accruedDebt);
         if (
-            _isCollateralized(params.debt , borrower.collateral, lup)
+            _isCollateralized(params.debt , params.collateral, lup)
         ) revert BorrowerOk();
 
         // kick auction
@@ -370,11 +371,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         loans.remove(params.borrower);
 
         poolState.accruedDebt += kickPenalty;
-        // convert kick penalty to t0 amount
+        // convert kick penalty to t0 amount, update borrower t0 debt and pool t0 debt accumulators
         kickPenalty     =  Maths.wdiv(kickPenalty, poolState.inflator);
-        borrower.t0debt += kickPenalty;
+        borrowerT0debt  += kickPenalty;
+        borrower.t0debt = borrowerT0debt;
+        t0DebtInAuction += borrowerT0debt;
         t0poolDebt      += kickPenalty;
-        t0DebtInAuction += borrower.t0debt;
 
         _updateInterestParams(poolState, lup);
 

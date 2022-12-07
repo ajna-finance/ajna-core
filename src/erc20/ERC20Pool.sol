@@ -172,7 +172,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         Auctions.TakeParams memory params;
         params.borrower       = borrowerAddress_;
         params.collateral     = borrower.collateral;
-        params.debt           = borrower.t0debt;
+        params.t0debt         = borrower.t0debt;
         params.takeCollateral = collateral_;
         params.inflator       = poolState.inflator;
         (
