@@ -40,18 +40,6 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when borrower borrows quote tokens from pool.
-     *  @param  borrower `msg.sender`.
-     *  @param  lup      LUP after borrow.
-     *  @param  amount   Amount of quote tokens borrowed from the pool.
-     */
-    event Borrow(
-        address indexed borrower,
-        uint256 lup,
-        uint256 amount
-    );
-
-    /**
      *  @notice Emitted when an actor uses quote token outside of the book to purchase collateral under liquidation.
      *  @param  borrower   Identifies the loan being liquidated.
      *  @param  index      Index of the price bucket from which quote token was exchanged for collateral.

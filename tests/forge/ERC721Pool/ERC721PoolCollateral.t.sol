@@ -3,9 +3,7 @@ pragma solidity 0.8.14;
 
 import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 
-import 'src/libraries/BucketMath.sol';
-import 'src/libraries/Maths.sol';
-import 'src/libraries/PoolUtils.sol';
+import 'src/base/PoolHelper.sol';
 
 contract ERC721PoolCollateralTest is ERC721HelperContract {
 
@@ -305,7 +303,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2552,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -313,7 +311,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2551,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -321,7 +319,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2550,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -336,7 +334,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _assertPool(
             PoolState({
                 htp:                  0,
-                lup:                  BucketMath.MAX_PRICE,
+                lup:                  MAX_PRICE,
                 poolSize:             30_000 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
@@ -369,7 +367,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 from:       _borrower,
                 amount:     3_000 * 1e18,
                 indexLimit: 2_551,
-                newLup:     PoolUtils.indexToPrice(2550)
+                newLup:     _priceAt(2550)
             }
         );
 
@@ -384,7 +382,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _assertPool(
             PoolState({
                 htp:                  1_000.961538461538462 * 1e18,
-                lup:                  PoolUtils.indexToPrice(2550),
+                lup:                  _priceAt(2550),
                 poolSize:             30_000 * 1e18,
                 pledgedCollateral:    Maths.wad(3),
                 encumberedCollateral: 0.997340520100278804 * 1e18,
@@ -419,7 +417,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _assertPool(
             PoolState({
                 htp:                  3_002.884615384615386000 * 1e18,
-                lup:                  PoolUtils.indexToPrice(2550),
+                lup:                  _priceAt(2550),
                 poolSize:             30_000 * 1e18,
                 pledgedCollateral:    Maths.wad(1),
                 encumberedCollateral: 0.997340520100278804 * 1e18,
@@ -444,7 +442,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2552,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -452,7 +450,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2551,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -460,7 +458,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2550,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -480,7 +478,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         // check collateralization after pledge
         (uint256 poolDebt,,) = _pool.debtInfo();
-        assertEq(PoolUtils.encumberance(poolDebt, _lup()), 0);
+        assertEq(_encumberance(poolDebt, _lup()), 0);
 
         // borrower borrows some quote
         _borrow(
@@ -488,13 +486,13 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 from:       _borrower,
                 amount:     9_000 * 1e18,
                 indexLimit: 2_551,
-                newLup:     PoolUtils.indexToPrice(2550)
+                newLup:     _priceAt(2550)
             }
         );
 
         // check collateralization after borrow
         (poolDebt,,) = _pool.debtInfo();
-        assertEq(PoolUtils.encumberance(poolDebt, _lup()), 2.992021560300836411 * 1e18);
+        assertEq(_encumberance(poolDebt, _lup()), 2.992021560300836411 * 1e18);
 
         // should revert if borrower attempts to pull more collateral than is unencumbered
         _assertPullInsufficientCollateralRevert(
@@ -513,7 +511,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  1692,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -521,7 +519,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  1530,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -619,7 +617,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 from:     _lender,
                 amount:   10_000 * 1e18,
                 index:    1530,
-                newLup:   BucketMath.MAX_PRICE,
+                newLup:   MAX_PRICE,
                 lpRedeem: 10_000 * 1e27
             }
         );

@@ -3,7 +3,8 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import 'src/libraries/BucketMath.sol';
+import 'src/base/PoolHelper.sol';
+import 'src/erc20/interfaces/IERC20Pool.sol';
 
 contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
@@ -31,7 +32,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 2_000 * 1e18,
                 index:  _i9_91,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -39,7 +40,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 5_000 * 1e18,
                 index:  _i9_81,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -47,7 +48,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 11_000 * 1e18,
                 index:  _i9_72,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -55,7 +56,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 25_000 * 1e18,
                 index:  _i9_62,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -63,7 +64,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 30_000 * 1e18,
                 index:  _i9_52,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
@@ -479,13 +480,8 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             }
         );
 
-        _pledgeCollateral(
-            {
-                from:     _lender,
-                borrower: _lender,
-                amount:   0
-            }
-        );
+        // draw debt is called to trigger accrual of pool interest that will push the lup back up
+        IERC20Pool(address(_pool)).drawDebt(_lender, 0, 0, 0);
 
         _assertPool(
             PoolState({

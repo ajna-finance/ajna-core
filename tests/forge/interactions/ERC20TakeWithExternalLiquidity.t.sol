@@ -64,16 +64,14 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         vm.startPrank(_borrower);
         weth.approve(address(_ajnaPool), type(uint256).max);
         usdc.approve(address(_ajnaPool), type(uint256).max);
-        _ajnaPool.pledgeCollateral(_borrower, 2 * 1e18);
-        _ajnaPool.borrow(19.25 * 1e18, 3696);
+        _ajnaPool.drawDebt(_borrower, 19.25 * 1e18, 3696, 2 * 1e18);
         vm.stopPrank();
 
         // borrower2 draws debt
         vm.startPrank(_borrower2);
         weth.approve(address(_ajnaPool), type(uint256).max);
         usdc.approve(address(_ajnaPool), type(uint256).max);
-        _ajnaPool.pledgeCollateral(_borrower2, 1_000 * 1e18);
-        _ajnaPool.borrow(7_980 * 1e18, 3700);
+        _ajnaPool.drawDebt(_borrower2, 7_980 * 1e18, 3700, 1_000 * 1e18);
         vm.stopPrank();
 
         // wait for borrower to become undercollateralized due to interest accrual
