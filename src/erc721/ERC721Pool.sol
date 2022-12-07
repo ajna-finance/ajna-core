@@ -61,88 +61,38 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     /***********************************/
 
     function drawDebt(
-        address borrower_,
+        address borrowerAddress_,
         uint256 amountToBorrow_,
         uint256 limitIndex_,
         uint256[] calldata tokenIdsToPledge_
     ) external {
         PoolState memory poolState = _accruePoolInterest();
-        Loans.Borrower memory borrower = loans.getBorrowerInfo(borrower_);
+        Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
 
         uint256 newLup = _lup(poolState.accruedDebt);
 
         // pledge collateral to pool
         if (tokenIdsToPledge_.length != 0) {
-            borrower.collateral  += Maths.wad(tokenIdsToPledge_.length);
-            poolState.collateral += Maths.wad(tokenIdsToPledge_.length);
-
-            if (
-                auctions.isActive(borrower_)
-                &&
-                _isCollateralized(
-                    Maths.wmul(borrower.t0debt, poolState.inflator),
-                    borrower.collateral,
-                    newLup
-                )
-            )
-            {
-                // borrower becomes collateralized, remove debt from pool accumulator and settle auction
-                t0DebtInAuction     -= borrower.t0debt;
-                borrower.collateral = _settleAuction(borrower_, borrower.collateral);
-            }
-
-            pledgedCollateral = poolState.collateral;
+            (borrower, poolState) = _pledgeCollateral(borrower, poolState, borrowerAddress_, Maths.wad(tokenIdsToPledge_.length), newLup);
 
             // move collateral from sender to pool
-            _transferFromSenderToPool(borrowerTokenIds[borrower_], tokenIdsToPledge_);
+            _transferFromSenderToPool(borrowerTokenIds[borrowerAddress_], tokenIdsToPledge_);
         }
 
         // borrow against pledged collateral
         if (amountToBorrow_ != 0 || limitIndex_ != 0) {
-
             // only intended recipient can borrow quote
-            if (borrower_ != msg.sender) revert BorrowerNotSender();
+            if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
 
-            // if borrower auctioned then it cannot draw more debt
-            auctions.revertIfActive(borrower_);
-
-            uint256 borrowerDebt = Maths.wmul(borrower.t0debt, poolState.inflator);
-
-            // add origination fee to the amount to borrow and add to borrower's debt
-            uint256 debtChange   = Maths.wmul(amountToBorrow_, _feeRate(interestParams.interestRate) + Maths.WAD);
-            borrowerDebt += debtChange;
-            _checkMinDebt(poolState.accruedDebt, borrowerDebt);
-
-            // determine new lup index and revert if borrow happens at a price higher than the specified limit (lower index than lup index)
-            uint256 lupId = _lupIndex(poolState.accruedDebt + amountToBorrow_);
-            if (lupId > limitIndex_) revert LimitIndexReached();
-
-            // calculate new lup and check borrow action won't push borrower into a state of under-collateralization
-            newLup = _priceAt(lupId);
-            if (
-                !_isCollateralized(borrowerDebt, borrower.collateral, newLup)
-            ) revert BorrowerUnderCollateralized();
-
-            // check borrow won't push pool into a state of under-collateralization
-            poolState.accruedDebt += debtChange;
-            if (
-                !_isCollateralized(poolState.accruedDebt, poolState.collateral, newLup)
-            ) revert PoolUnderCollateralized();
-
-            uint256 t0debtChange = Maths.wdiv(debtChange, poolState.inflator);
-            borrower.t0debt += t0debtChange;
-
-            t0poolDebt += t0debtChange;
-
-            // move borrowed amount from pool to sender
-            _transferQuoteToken(msg.sender, amountToBorrow_);
+            // borrow from the pool
+            (borrower, poolState, newLup) = _borrow(borrower, poolState, amountToBorrow_, limitIndex_);
         }
 
-        emit DrawDebtNFT(borrower_, amountToBorrow_, tokenIdsToPledge_, newLup);
+        emit DrawDebtNFT(borrowerAddress_, amountToBorrow_, tokenIdsToPledge_, newLup);
 
         loans.update(
             deposits,
-            borrower_,
+            borrowerAddress_,
             true,
             borrower,
             poolState.accruedDebt,
