@@ -102,31 +102,24 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
 
         uint256 newLup = _lup(poolState.accruedDebt);
-        uint256 quoteTokenAmountToRepay;
 
         // repay loan
         if (maxQuoteTokenAmountToRepay_ != 0) {
-            if (borrower.t0debt == 0) revert NoDebt();
-
-            uint256 t0repaidDebt = Maths.min(
-                borrower.t0debt,
-                Maths.wdiv(maxQuoteTokenAmountToRepay_, poolState.inflator)
-            );
-            (quoteTokenAmountToRepay, newLup) = _payLoan(t0repaidDebt, poolState, borrowerAddress_, borrower);
-
-            // move amount to repay from sender to pool
-            _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToRepay);
+            (poolState, borrower, maxQuoteTokenAmountToRepay_, newLup) = _repay(poolState, borrower, borrowerAddress_, maxQuoteTokenAmountToRepay_);
         }
 
         // pull collateral from pool
         if (collateralAmountToPull_ != 0) {
+            // only intended recipient can pull collateral
+            if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
+
             _pullCollateral(poolState, borrower, collateralAmountToPull_, newLup);
 
             // move collateral from pool to sender
             _transferCollateral(msg.sender, collateralAmountToPull_);
         }
 
-        emit RepayDebt(borrowerAddress_, quoteTokenAmountToRepay, collateralAmountToPull_, newLup);
+        emit RepayDebt(borrowerAddress_, maxQuoteTokenAmountToRepay_, collateralAmountToPull_, newLup);
     }
 
     /************************************/

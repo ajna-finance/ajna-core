@@ -442,6 +442,26 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _updateInterestParams(poolState, lup);
     }
 
+    function _repay(
+        PoolState      memory poolState,
+        Loans.Borrower memory borrower,
+        address borrowerAddress_,
+        uint256 maxQuoteTokenAmountToRepay_
+    ) internal returns (PoolState memory, Loans.Borrower memory, uint256, uint256 lup_) {
+        if (borrower.t0debt == 0) revert NoDebt();
+
+        uint256 t0repaidDebt = Maths.min(
+            borrower.t0debt,
+            Maths.wdiv(maxQuoteTokenAmountToRepay_, poolState.inflator)
+        );
+        (maxQuoteTokenAmountToRepay_, lup_) = _payLoan(t0repaidDebt, poolState, borrowerAddress_, borrower);
+
+        // move amount to repay from sender to pool
+        _transferQuoteTokenFrom(msg.sender, maxQuoteTokenAmountToRepay_);
+
+        return (poolState, borrower, maxQuoteTokenAmountToRepay_, lup_);
+    }
+
     function _payLoan(
         uint256 t0repaidDebt_,
         PoolState memory poolState_,
