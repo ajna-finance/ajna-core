@@ -24,7 +24,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         _quote       = new Token("Quote", "Q");
 
         // deploy factory
-        _factory = new ERC721PoolFactory();
+        _factory = new ERC721PoolFactory(_ajna);
 
         // deploy NFT collection pool
         uint256[] memory tokenIds;

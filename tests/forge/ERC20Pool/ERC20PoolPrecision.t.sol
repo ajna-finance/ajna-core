@@ -31,7 +31,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
     function init(uint256 collateralPrecisionDecimals_, uint256 quotePrecisionDecimals_) internal {
         _collateral = new TokenWithNDecimals("Collateral", "C", uint8(collateralPrecisionDecimals_));
         _quote      = new TokenWithNDecimals("Quote", "Q", uint8(quotePrecisionDecimals_));
-        _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
+        _pool       = ERC20Pool(new ERC20PoolFactory(_ajna).deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
         _poolUtils  = new PoolInfoUtils();
 
         _borrower  = makeAddr("borrower");

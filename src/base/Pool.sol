@@ -39,7 +39,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     uint256 internal t0DebtInAuction; // Total debt in auction used to restrict LPB holder from withdrawing [WAD]
     uint256 internal t0poolDebt;      // Pool debt as if the whole amount was incurred upon the first loan. [WAD]
 
-    uint256 internal poolInitializations;
+    address internal ajna;            // Address of the AJNA token for the deployment chain.
+    uint96  internal poolInitializations;
 
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 
@@ -407,7 +408,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             maxAmount_
         );
 
-        IERC20Token ajnaToken = IERC20Token(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079);
+        IERC20Token ajnaToken = IERC20Token(ajna);
         if (!ajnaToken.transferFrom(msg.sender, address(this), ajnaRequired)) revert ERC20TransferFailed();
         ajnaToken.burn(ajnaRequired);
         _transferQuoteToken(msg.sender, amount_);

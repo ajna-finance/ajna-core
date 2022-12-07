@@ -26,10 +26,12 @@ interface IERC721Pool is
      *  @notice Initializes a new pool, setting initial state variables.
      *  @param  tokenIds  Enumerates tokenIds to be allowed in the pool.
      *  @param  rate      Initial interest rate of the pool.
+     *  @param  ajna      Address of the AJNA token for the deployment chain.
      */
     function initialize(
         uint256[] memory tokenIds,
-        uint256 rate
+        uint256 rate,
+        address ajna
     ) external;
 
 }

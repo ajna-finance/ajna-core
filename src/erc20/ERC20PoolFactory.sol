@@ -17,7 +17,8 @@ contract ERC20PoolFactory is IERC20PoolFactory, PoolDeployer {
     /// @dev Default bytes32 hash used by ERC20 Non-NFTSubset pool types
     bytes32 public constant ERC20_NON_SUBSET_HASH = keccak256("ERC20_NON_SUBSET_HASH");
 
-    constructor() {
+    constructor(address ajna_) {
+        ajna           = ajna_;
         implementation = new ERC20Pool();
     }
 
@@ -38,6 +39,6 @@ contract ERC20PoolFactory is IERC20PoolFactory, PoolDeployer {
         deployedPools[ERC20_NON_SUBSET_HASH][collateral_][quote_] = pool_;
         emit PoolCreated(pool_);
 
-        pool.initialize(collateralScale, interestRate_);
+        pool.initialize(collateralScale, interestRate_, ajna);
     }
 }

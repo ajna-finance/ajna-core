@@ -25,10 +25,11 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     /****************************/
     /*** Initialize Functions ***/
     /****************************/
-
+    
     function initialize(
         uint256[] memory tokenIds_,
-        uint256 rate_
+        uint256 rate_,
+        address ajna_
     ) external override {
         if (poolInitializations != 0) revert AlreadyInitialized();
 
@@ -37,6 +38,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
         interestParams.interestRate       = uint208(rate_);
         interestParams.interestRateUpdate = uint48(block.timestamp);
+
+        ajna = ajna_;
 
         uint256 noOfTokens = tokenIds_.length;
         if (noOfTokens > 0) {

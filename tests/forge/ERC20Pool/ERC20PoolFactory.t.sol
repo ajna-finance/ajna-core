@@ -13,7 +13,7 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
     ERC20PoolFactory internal _poolFactory;
 
     function setUp() external {
-        _poolFactory = new ERC20PoolFactory();
+        _poolFactory = new ERC20PoolFactory(_ajna);
     }
 
     function testDeployERC20PoolWithZeroAddress() external {

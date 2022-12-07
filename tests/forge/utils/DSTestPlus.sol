@@ -23,6 +23,9 @@ abstract contract DSTestPlus is Test {
     // nonce for generating random addresses
     uint16 internal _nonce = 0;
 
+    // mainnet address of AJNA token, because tests are forked
+    address internal _ajna = 0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079;
+
     /*************/
     /*** Pools ***/
     /*************/

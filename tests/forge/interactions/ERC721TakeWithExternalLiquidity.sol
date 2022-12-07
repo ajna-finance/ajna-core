@@ -16,6 +16,7 @@ contract ERC721TakeWithExternalLiquidityTest is Test {
     // pool events
     event Take(address indexed borrower, uint256 amount, uint256 collateral, uint256 bondChange, bool isReward);
 
+    address constant AJNA = 0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079;
     address constant DAI  = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     IERC20  private  dai  = IERC20(DAI);
     NFTCollateralToken private nftc;
@@ -31,7 +32,7 @@ contract ERC721TakeWithExternalLiquidityTest is Test {
         nftc = new NFTCollateralToken();
         vm.makePersistent(address(nftc));
         uint256[] memory tokenIds;
-        _ajnaPool = ERC721Pool(new ERC721PoolFactory().deployPool(address(nftc), DAI, tokenIds, 0.07 * 10**18));
+        _ajnaPool = ERC721Pool(new ERC721PoolFactory(AJNA).deployPool(address(nftc), DAI, tokenIds, 0.07 * 10**18));
 
         // fund lenders
         _lender = makeAddr("lender");

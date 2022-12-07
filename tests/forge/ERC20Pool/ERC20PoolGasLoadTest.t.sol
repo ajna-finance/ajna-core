@@ -25,7 +25,7 @@ contract ERC20PoolGasLoadTest is ERC20DSTestPlus {
 
         _collateral = new Token("Collateral", "C");
         _quote      = new Token("Quote", "Q");
-        _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
+        _pool       = ERC20Pool(new ERC20PoolFactory(_ajna).deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
         _poolUtils  = new PoolInfoUtils();
 
         skip(1 hours); // avoid deposit time to be the same as bucket bankruptcy time

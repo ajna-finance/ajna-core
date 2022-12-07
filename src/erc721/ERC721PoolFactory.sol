@@ -18,7 +18,8 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
     /// @dev Default bytes32 hash used by ERC721 Non-NFTSubset pool types
     bytes32 public constant ERC721_NON_SUBSET_HASH = keccak256("ERC721_NON_SUBSET_HASH");
 
-    constructor() {
+    constructor(address ajna_) {
+        ajna           = ajna_;
         implementation = new ERC721Pool();
     }
 
@@ -38,7 +39,7 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
         deployedPools[getNFTSubsetHash(tokenIds_)][collateral_][quote_] = pool_;
         emit PoolCreated(pool_);
 
-        pool.initialize(tokenIds_, interestRate_);
+        pool.initialize(tokenIds_, interestRate_, ajna);
     }
 
     /*********************************/

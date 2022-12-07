@@ -24,10 +24,12 @@ interface IERC20Pool is
      *  @notice Initializes a new pool, setting initial state variables.
      *  @param  collateralScale Collateral scale. The precision of the collateral ERC-20 token based on decimals.
      *  @param  rate            Initial interest rate of the pool.
+     *  @param  ajna            Address of the AJNA token for the deployment chain.
      */
     function initialize(
         uint256 collateralScale,
-        uint256 rate
+        uint256 rate,
+        address ajna
     ) external;
 
 }
