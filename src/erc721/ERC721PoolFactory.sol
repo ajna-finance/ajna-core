@@ -30,7 +30,8 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
         bytes memory data = abi.encodePacked(
             collateral_,
             quote_,
-            quoteTokenScale
+            quoteTokenScale,
+            tokenIds_.length
         );
 
         ERC721Pool pool = ERC721Pool(address(implementation).clone(data));

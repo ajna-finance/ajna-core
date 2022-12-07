@@ -20,8 +20,6 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     mapping(address => uint256[]) public borrowerTokenIds; // borrower address => array of tokenIds pledged by borrower
     uint256[]                     public bucketTokenIds;   // array of tokenIds added in pool buckets
 
-    bool public isSubset; // true if pool is a subset pool
-
     /****************************/
     /*** Initialize Functions ***/
     /****************************/
@@ -39,8 +37,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         interestParams.interestRateUpdate = uint48(block.timestamp);
 
         uint256 noOfTokens = tokenIds_.length;
-        if (noOfTokens > 0) {
-            isSubset = true;
+        if (noOfTokens != 0) {
             // add subset of tokenIds allowed in the pool
             for (uint256 id = 0; id < noOfTokens;) {
                 tokenIdsAllowed[tokenIds_[id]] = true;
@@ -251,7 +248,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256[] storage poolTokens_,
         uint256[] calldata tokenIds_
     ) internal {
-        bool subset = isSubset;
+        bool subset = _getArgUint256(72) != 0;
         for (uint256 i = 0; i < tokenIds_.length;) {
             uint256 tokenId = tokenIds_[i];
             if (subset && !tokenIdsAllowed[tokenId]) revert OnlySubset();
@@ -305,6 +302,10 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     function _transferNFT(address from_, address to_, uint256 tokenId_) internal {
         //slither-disable-next-line calls-loop
         IERC721Token(_getArgAddress(0)).safeTransferFrom(from_, to_, tokenId_);
+    }
+
+    function isSubset() external pure override returns (bool) {
+        return _getArgUint256(72) != 0;
     }
 
     /************************/
