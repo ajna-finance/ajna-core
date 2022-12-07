@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo Deploying to chain with AJNA token address ${AJNA_TOKEN:?}
+
 read -p "Enter keystore password: " -s password
 
 regex="Deployed to: ([0-9xa-fA-F]+)"
@@ -10,7 +12,7 @@ echo Deploying libraries...
 libraries=( Auctions LenderActions PoolCommons )
 for contract in "${libraries[@]}"
 do
-    createlib="forge create --rpc-url ${ETH_RPC_URL:?} --keystore ${DEPLOY_KEY:?} --password ${password} \
+    createlib="forge create --rpc-url ${ETH_RPC_URL:?} --keystore ${DEPLOY_KEY:?} --password ${password:?} \
         src/libraries/external/$contract.sol:$contract"    
     output=$($createlib)
     if [[ $output =~ $regex ]]
@@ -28,8 +30,8 @@ echo Deploying factories...
 factories=( ERC20PoolFactory ERC721PoolFactory )
 for contract in "${factories[@]}"
 do
-    createfactory="forge create --rpc-url ${ETH_RPC_URL:?} --keystore ${DEPLOY_KEY:?} --password ${password} \
-        src/erc20/ERC20PoolFactory.sol:ERC20PoolFactory ${linkage}"
+    createfactory="forge create --rpc-url ${ETH_RPC_URL:?} --keystore ${DEPLOY_KEY:?} --password ${password:?} \
+        src/erc20/ERC20PoolFactory.sol:ERC20PoolFactory --constructor-args ${AJNA_TOKEN:?} ${linkage}"
     output=$($createfactory)
     if [[ $output =~ $regex ]]
     then
