@@ -355,7 +355,13 @@ library Auctions {
             uint256 borrowerDebt,
             int256  bpf,
             uint256 factor
-        ) = _takeParameters(liquidation, params_.collateral, params_.t0debt, price, params_.inflator);
+        ) = _takeParameters(
+            liquidation,
+            params_.collateral,
+            params_.t0debt,
+            price,
+            params_.inflator
+        );
         result.kicker = liquidation.kicker;
         result.isRewarded = (bpf >= 0);
 
@@ -553,7 +559,6 @@ library Auctions {
     /***********************/
     /*** Reserve Auction ***/
     /***********************/
-
 
     function startClaimableReserveAuction(
         Data storage self,

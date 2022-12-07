@@ -184,7 +184,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _transferQuoteToken(msg.sender, claimable);
     }
 
-
     /***********************************/
     /*** Borrower External Functions ***/
     /***********************************/
@@ -381,7 +380,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if(kickAuctionAmount != 0) _transferQuoteTokenFrom(msg.sender, kickAuctionAmount);
     }
 
-
     /*********************************/
     /*** Reserve Auction Functions ***/
     /*********************************/
@@ -412,7 +410,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         ajnaToken.burn(ajnaRequired);
         _transferQuoteToken(msg.sender, amount_);
     }
-
 
     /***********************************/
     /*** Borrower Internal Functions ***/
@@ -547,7 +544,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         }
     }
 
-
     /******************************/
     /*** Pool Virtual Functions ***/
     /******************************/
@@ -575,7 +571,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         address borrowerAddress_,
         uint256 borrowerCollateral_
     ) internal virtual returns (uint256);
-
 
     /*****************************/
     /*** Pool Helper Functions ***/
@@ -648,7 +643,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function _lup(uint256 debt_) internal view returns (uint256) {
         return _priceAt(_lupIndex(debt_));
     }
-
 
     /**************************/
     /*** External Functions ***/

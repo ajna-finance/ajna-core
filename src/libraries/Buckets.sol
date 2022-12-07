@@ -82,7 +82,6 @@ library Buckets {
         lender.depositTime = block.timestamp;
     }
 
-
     /**********************/
     /*** View Functions ***/
     /**********************/
