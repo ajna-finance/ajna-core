@@ -125,7 +125,7 @@ def draw_initial_debt(borrowers, pool_helper, test_utils, chain, target_utilizat
         else:
             collateral_to_deposit = borrow_amount * 10**18 / pool_price * collateralization_ratio  # WAD
 
-        pledge_and_borrow(pool_helper, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils, debug=True)
+        draw_debt(pool_helper, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils, debug=True)
         test_utils.validate_pool(pool_helper, borrowers)
         chain.sleep(sleep_amount)
 
@@ -187,7 +187,7 @@ def log_borrower_stats(borrowers, pool_helper, chain, debug=False):
     chain.sleep(14)
 
 
-def pledge_and_borrow(pool_helper, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils, debug=False):
+def draw_debt(pool_helper, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils, debug=False):
     pool = pool_helper.pool
 
     # prevent invalid actions
@@ -201,7 +201,7 @@ def pledge_and_borrow(pool_helper, borrower, borrower_index, collateral_to_depos
             f"which is below minimum debt of {min_debt/1e18:.1f}")
         return
 
-    # pledge collateral
+    # determine amount to pledge
     collateral_balance = pool_helper.collateralToken().balanceOf(borrower)
     if collateral_balance < collateral_to_deposit:
         log(f" WARN: borrower {borrower_index} only has {collateral_balance/1e18:.1f} collateral "
@@ -211,7 +211,6 @@ def pledge_and_borrow(pool_helper, borrower, borrower_index, collateral_to_depos
     if debug:
         log(f" borrower {borrower_index:>4} pledging {collateral_to_deposit / 1e18:.8f} collateral")
     assert collateral_to_deposit > 0.001 * 10**18
-    pool.pledgeCollateral(borrower, collateral_to_deposit, {"from": borrower})
 
     # draw debt
     (debt, collateral_deposited, _) = pool_helper.borrowerInfo(borrower.address)
@@ -221,7 +220,7 @@ def pledge_and_borrow(pool_helper, borrower, borrower_index, collateral_to_depos
         f"with {collateral_deposited / 1e18:>6.1f} collateral deposited, "
         f"with {new_total_debt/1e18:>9.1f} total debt "
         f"at a TP of {threshold_price/1e18:8.1f}")
-    tx = pool.borrow(borrow_amount, MIN_BUCKET, {"from": borrower})
+    tx = pool.drawDebt(borrower, borrow_amount, MIN_BUCKET, collateral_to_deposit, {"from": borrower})
     return tx
 
 
@@ -298,7 +297,7 @@ def draw_debt(borrower, borrower_index, pool_helper, test_utils, collateralizati
         log(f" WARN: borrower {borrower_index} only has {collateral_balance/1e18:.1f} collateral; "
               f" drawing {borrow_amount/1e18:.1f} of debt against it")
 
-    tx = pledge_and_borrow(pool_helper, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils)
+    tx = draw_debt(pool_helper, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils)
 
 
 def add_quote_token(lender, lender_index, pool_helper):
