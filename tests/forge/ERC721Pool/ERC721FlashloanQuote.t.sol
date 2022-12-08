@@ -6,7 +6,6 @@ import { FlashloanBorrower, SomeDefiStrategy } from '../utils/FlashloanBorrower.
 
 import 'src/erc721/ERC721Pool.sol';
 
-import 'src/libraries/BucketMath.sol';
 import 'src/libraries/Maths.sol';
 
 contract ERC721PoolFlashloanTest is ERC721HelperContract {
@@ -29,14 +28,14 @@ contract ERC721PoolFlashloanTest is ERC721HelperContract {
 
         // lender adds liquidity
         _bucketPrice = 251.186576139566121965 * 1e18;
-        _bucketId = PoolUtils.priceToIndex(_bucketPrice);
+        _bucketId = _indexOf(_bucketPrice);
         assertEq(_bucketId, 3048);
         _addLiquidity(
             {
                 from:   _lender,
                 amount: 300 * 1e18,
                 index:  _bucketId,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 

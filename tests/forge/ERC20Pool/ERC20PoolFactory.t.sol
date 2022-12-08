@@ -8,7 +8,7 @@ import 'src/erc20/ERC20Pool.sol';
 import 'src/erc20/ERC20PoolFactory.sol';
 
 contract ERC20PoolFactoryTest is ERC20HelperContract {
-    address immutable poolAddress = 0xC557cA6053cdF046dE138BDc41c9a11203073f2D;
+    address immutable poolAddress = 0x918ebA623C6291984Eeea4EE07335c3DDa03c0d3;
 
     ERC20PoolFactory internal _poolFactory;
 
@@ -89,8 +89,10 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         assertEq(pool.collateralScale(),    10 ** 0);
         assertEq(pool.quoteTokenAddress(),  address(_quote));
         assertEq(pool.quoteTokenScale(),    10 ** 0);
-        assertEq(pool.interestRate(),       0.0543 * 10**18);
-        assertEq(pool.interestRateUpdate(), _startTime + 333);
+
+        (uint256 interestRate, uint256 interestRateUpdate) = pool.interestRateInfo();
+        assertEq(interestRate,       0.0543 * 10**18);
+        assertEq(interestRateUpdate, _startTime + 333);
 
         (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = pool.inflatorInfo();
         assertEq(poolInflatorSnapshot, 10**18);
@@ -111,8 +113,10 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         assertEq(pool.collateralScale(),    10 ** 0);
         assertEq(pool.quoteTokenAddress(),  daiAddress);
         assertEq(pool.quoteTokenScale(),    10 ** 0);
-        assertEq(pool.interestRate(),       0.0543 * 10**18);
-        assertEq(pool.interestRateUpdate(), _startTime + 333);
+
+        (uint256 interestRate, uint256 interestRateUpdate) = pool.interestRateInfo();
+        assertEq(interestRate,       0.0543 * 10**18);
+        assertEq(interestRateUpdate, _startTime + 333);
 
         (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = pool.inflatorInfo();
         assertEq(poolInflatorSnapshot, 10**18);
@@ -133,8 +137,10 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         assertEq(pool.collateralScale(),    10 ** 10);         // WBTC has precision of 8, so 10 ** (18 - 8) = 10 ** 10
         assertEq(pool.quoteTokenAddress(),  daiAddress);
         assertEq(pool.quoteTokenScale(),    10 ** 0);          // DAI has precision of 18, so 10 ** (18 - 18) = 10 ** 0
-        assertEq(pool.interestRate(),       0.0543 * 10**18);
-        assertEq(pool.interestRateUpdate(), _startTime + 333);
+
+        (uint256 interestRate, uint256 interestRateUpdate) = pool.interestRateInfo();
+        assertEq(interestRate,       0.0543 * 10**18);
+        assertEq(interestRateUpdate, _startTime + 333);
 
         (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = pool.inflatorInfo();
         assertEq(poolInflatorSnapshot, 10**18);
@@ -155,8 +161,10 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         assertEq(pool.collateralScale(),    10 ** 10);         // WBTC has precision of 8, so 10 ** (18 - 8) = 10 ** 10
         assertEq(pool.quoteTokenAddress(),  usdcAddress);
         assertEq(pool.quoteTokenScale(),    10 ** 12);         // USDC has precision of 6, so 10 ** (18 - 6) = 10 ** 12
-        assertEq(pool.interestRate(),       0.0543 * 10**18);
-        assertEq(pool.interestRateUpdate(), _startTime + 333);
+
+        (uint256 interestRate, uint256 interestRateUpdate) = pool.interestRateInfo();
+        assertEq(interestRate,       0.0543 * 10**18);
+        assertEq(interestRateUpdate, _startTime + 333);
 
         (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = pool.inflatorInfo();
         assertEq(poolInflatorSnapshot, 10**18);
@@ -177,8 +185,10 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         assertEq(pool.collateralScale(),    10 ** 0);
         assertEq(pool.quoteTokenAddress(),  usdcAddress);
         assertEq(pool.quoteTokenScale(),    10 ** 12);
-        assertEq(pool.interestRate(),       0.0543 * 10**18);
-        assertEq(pool.interestRateUpdate(), _startTime + 333);
+
+        (uint256 interestRate, uint256 interestRateUpdate) = pool.interestRateInfo();
+        assertEq(interestRate,       0.0543 * 10**18);
+        assertEq(interestRateUpdate, _startTime + 333);
 
         (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = pool.inflatorInfo();
         assertEq(poolInflatorSnapshot, 10**18);

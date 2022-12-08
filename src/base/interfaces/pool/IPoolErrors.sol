@@ -11,11 +11,6 @@ interface IPoolErrors {
     /**************************/
 
     /**
-     *  @notice Lender can't withdraw from the pool when advancedDeposit > 0.
-     */
-    error AdvancedDepositNonZero();
-
-    /**
      *  @notice Lender can't use the same bucket for their advanced deposit multiple times.
      */
     error AdvancedDepositDuplicateIndex();
@@ -29,6 +24,11 @@ interface IPoolErrors {
      *  @notice Borrower is attempting to create or modify a loan such that their loan's quote token would be less than the pool's minimum debt amount.
      */
     error AmountLTMinDebt();
+
+    /**
+     *  @notice Recipient of borrowed quote tokens doesn't match the caller of the drawDebt function.
+     */
+    error BorrowerNotSender();
 
     /**
      *  @notice Borrower has a healthy over-collateralized position.
@@ -76,11 +76,6 @@ interface IPoolErrors {
      *  @notice Borrower is attempting to borrow more quote token than is available before the supplied limitIndex.
      */
     error LimitIndexReached();
-
-    /**
-     *  @notice Borrower has a healthy over-collateralized position.
-     */
-    error LiquidateBorrowerOk();
 
     /**
      *  @notice When moving quote token HTP must stay below LUP.
@@ -133,7 +128,6 @@ interface IPoolErrors {
      *  @notice Borrower is attempting to borrow an amount of quote tokens that will push the pool into under-collateralization.
      */
     error PoolUnderCollateralized();
-
 
     /**
      *  @notice Lender is attempting to remove quote tokens from a bucket that exists above active auction debt from top-of-book downward.

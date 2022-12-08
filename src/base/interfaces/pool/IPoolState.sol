@@ -102,16 +102,18 @@ interface IPoolState {
     );
 
     /**
-     *  @notice Returns the `interestRate` state variable.
-     *  @return Current annual percentage rate of the pool
+     *  @notice Returns information about pool interest rate.
+     *  @return interestRate       Current interest rate in pool.
+     *  @return interestRateUpdate The timestamp of the last interest rate update.
      */
-    function interestRate() external view returns (uint208);
+    function interestRateInfo()
+        external
+        view
+        returns (
+            uint256 interestRate,
+            uint256 interestRateUpdate
+        );
 
-    /**
-     *  @notice Returns the `interestRateUpdate` state variable.
-     *  @return The timestamp of the last rate update.
-     */
-    function interestRateUpdate() external view returns (uint48);
 
     /**
      *  @notice Returns details about kicker balances.

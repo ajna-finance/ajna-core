@@ -4,10 +4,9 @@ pragma solidity 0.8.14;
 
 import './interfaces/IPool.sol';
 
-import '../libraries/Auctions.sol';
+import '../libraries/external/Auctions.sol';
 import '../libraries/Buckets.sol';
-import '../libraries/PoolUtils.sol';
-import '../libraries/BucketMath.sol';
+import '../libraries/external/PoolCommons.sol';
 
 contract PoolInfoUtils {
 
@@ -26,9 +25,9 @@ contract PoolInfoUtils {
             uint256 poolInflatorSnapshot,
             uint256 lastInflatorSnapshotUpdate
         ) = pool.inflatorInfo();
-        uint256 interestRate = pool.interestRate();
+        (uint256 interestRate, ) = pool.interestRateInfo();
 
-        uint256 pendingInflator = BucketMath.pendingInflator(poolInflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
+        uint256 pendingInflator = PoolCommons.pendingInflator(poolInflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
         uint256 t0debt;
         (t0debt, collateral_, t0Np_)  = pool.borrowerInfo(borrower_);
         debt_ = Maths.wmul(t0debt, pendingInflator);
@@ -58,7 +57,7 @@ contract PoolInfoUtils {
     {
         IPool pool = IPool(ajnaPool_);
 
-        price_ = PoolUtils.indexToPrice(index_);
+        price_ = _priceAt(index_);
 
         (bucketLPs_, collateral_, , quoteTokens_, scale_) = pool.bucketInfo(index_);
         if (bucketLPs_ == 0) {
@@ -96,10 +95,10 @@ contract PoolInfoUtils {
             uint256 inflatorSnapshot,
             uint256 lastInflatorSnapshotUpdate
         ) = pool.inflatorInfo();
-        uint256 interestRate = pool.interestRate();
+        (uint256 interestRate, ) = pool.interestRateInfo();
 
-        pendingInflator_       = BucketMath.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
-        pendingInterestFactor_ = BucketMath.pendingInterestFactor(interestRate, block.timestamp - lastInflatorSnapshotUpdate);
+        pendingInflator_       = PoolCommons.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
+        pendingInterestFactor_ = PoolCommons.pendingInterestFactor(interestRate, block.timestamp - lastInflatorSnapshotUpdate);
     }
 
     /**
@@ -126,13 +125,13 @@ contract PoolInfoUtils {
         IPool pool = IPool(ajnaPool_);
         (uint256 debt,,) = pool.debtInfo();
         hpbIndex_ = pool.depositIndex(1);
-        hpb_      = PoolUtils.indexToPrice(hpbIndex_);
+        hpb_      = _priceAt(hpbIndex_);
         (, uint256 maxThresholdPrice, ) = pool.loansInfo();
         (uint256 inflatorSnapshot, )    = pool.inflatorInfo();
         htp_      = Maths.wmul(maxThresholdPrice, inflatorSnapshot);
-        if (htp_ != 0) htpIndex_ = PoolUtils.priceToIndex(htp_);
+        if (htp_ != 0) htpIndex_ = _indexOf(htp_);
         lupIndex_ = pool.depositIndex(debt);
-        lup_      = PoolUtils.indexToPrice(lupIndex_);
+        lup_      = _priceAt(lupIndex_);
     }
 
     /**
@@ -163,7 +162,7 @@ contract PoolInfoUtils {
         (uint256 bondEscrowed, uint256 unclaimedReserve, uint256 auctionKickTime) = pool.reservesInfo();
 
         reserves_ = poolDebt + quoteTokenBalance - poolSize - bondEscrowed - unclaimedReserve;
-        claimableReserves_ = Auctions.claimableReserves(
+        claimableReserves_ = _claimableReserves(
             poolDebt,
             poolSize,
             bondEscrowed,
@@ -172,7 +171,7 @@ contract PoolInfoUtils {
         );
 
         claimableReservesRemaining_ = unclaimedReserve;
-        auctionPrice_               = Auctions.reserveAuctionPrice(auctionKickTime);
+        auctionPrice_               = _reserveAuctionPrice(auctionKickTime);
         timeRemaining_              = 3 days - Maths.min(3 days, block.timestamp - auctionKickTime);
     }
 
@@ -199,12 +198,12 @@ contract PoolInfoUtils {
         uint256 poolCollateral  = pool.pledgedCollateral();
         (, , uint256 noOfLoans) = pool.loansInfo();
 
-        if (poolDebt != 0) poolMinDebtAmount_ = PoolUtils.minDebtAmount(poolDebt, noOfLoans);
-        uint256 currentLup      = PoolUtils.indexToPrice(pool.depositIndex(poolDebt));
-        poolCollateralization_ = PoolUtils.collateralization(poolDebt, poolCollateral, currentLup);
+        if (poolDebt != 0) poolMinDebtAmount_ = _minDebtAmount(poolDebt, noOfLoans);
+        uint256 currentLup      = _priceAt(pool.depositIndex(poolDebt));
+        poolCollateralization_ = _collateralization(poolDebt, poolCollateral, currentLup);
         poolActualUtilization_ = pool.depositUtilization(poolDebt, poolCollateral);
         (uint256 debtEma, uint256 lupColEma) = pool.emasInfo();
-        poolTargetUtilization_ = PoolUtils.poolTargetUtilization(debtEma, lupColEma);
+        poolTargetUtilization_ = _targetUtilization(debtEma, lupColEma);
     }
 
     /**
@@ -223,21 +222,21 @@ contract PoolInfoUtils {
         uint256 poolCollateral = pool.pledgedCollateral();
         uint256 utilization    = pool.depositUtilization(poolDebt, poolCollateral);
 
-        lenderInterestMargin_ = BucketMath.lenderInterestMargin(utilization);
+        lenderInterestMargin_ = PoolCommons.lenderInterestMargin(utilization);
     }
 
     function indexToPrice(
         uint256 index_
     ) external pure returns (uint256)
     {
-        return PoolUtils.indexToPrice(index_);
+        return _priceAt(index_);
     }
 
     function priceToIndex(
         uint256 price_
     ) external pure returns (uint256)
     {
-        return PoolUtils.priceToIndex(price_);
+        return _indexOf(price_);
     }
 
     function lup(
@@ -246,7 +245,7 @@ contract PoolInfoUtils {
         IPool pool = IPool(ajnaPool_);
         (uint256 debt,,) = pool.debtInfo();
         uint256 currentLupIndex = pool.depositIndex(debt);
-        return PoolUtils.indexToPrice(currentLupIndex);
+        return _priceAt(currentLupIndex);
     }
 
     function lupIndex(
@@ -264,7 +263,7 @@ contract PoolInfoUtils {
         IPool pool = IPool(ajnaPool_);
 
         uint256 hbpIndex = pool.depositIndex(1);
-        return PoolUtils.indexToPrice(hbpIndex);
+        return _priceAt(hbpIndex);
     }
 
     function hpbIndex(
@@ -303,7 +302,7 @@ contract PoolInfoUtils {
             bucketDeposit,
             lpTokens_,
             bucketDeposit,
-            PoolUtils.indexToPrice(index_)
+            _priceAt(index_)
         );
     }
 
@@ -325,7 +324,7 @@ contract PoolInfoUtils {
             bucketLPs_,
             bucketDeposit,
             lpTokens_,
-            PoolUtils.indexToPrice(index_)
+            _priceAt(index_)
         );
     }
 

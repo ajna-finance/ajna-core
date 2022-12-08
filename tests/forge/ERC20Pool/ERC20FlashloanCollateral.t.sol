@@ -4,8 +4,7 @@ pragma solidity 0.8.14;
 import { ERC20HelperContract }                 from './ERC20DSTestPlus.sol';
 import { FlashloanBorrower, SomeDefiStrategy } from '../utils/FlashloanBorrower.sol';
 
-import 'src/libraries/BucketMath.sol';
-import 'src/libraries/PoolUtils.sol';
+import 'src/base/PoolHelper.sol';
 
 contract ERC20PoolFlashloanTest is ERC20HelperContract {
     address internal _borrower;
@@ -23,14 +22,14 @@ contract ERC20PoolFlashloanTest is ERC20HelperContract {
 
         // lender adds liquidity
         _bucketPrice = 502.433988063349232760 * 1e18;
-        _bucketId = PoolUtils.priceToIndex(_bucketPrice);
+        _bucketId = _indexOf(_bucketPrice);
         assertEq(_bucketId, 2909);
         _addLiquidity(
             {
                 from:   _lender,
                 amount: 100_000 * 1e18,
                 index:  _bucketId,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
