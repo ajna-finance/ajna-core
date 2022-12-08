@@ -64,43 +64,24 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256 amountToBorrow_,
         uint256 limitIndex_,
         uint256[] calldata tokenIdsToPledge_
-    ) external nonReentrant {
-        PoolState memory poolState = _accruePoolInterest();
-        Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
-
-        uint256 newLup = _lup(poolState.accruedDebt);
-
-        // pledge collateral to pool
-        if (tokenIdsToPledge_.length != 0) {
-            (borrower, poolState) = _pledgeCollateral(borrower, poolState, borrowerAddress_, Maths.wad(tokenIdsToPledge_.length), newLup);
-
-            // move collateral from sender to pool
-            _transferFromSenderToPool(borrowerTokenIds[borrowerAddress_], tokenIdsToPledge_);
-        }
-
-        // borrow against pledged collateral
-        if (amountToBorrow_ != 0 || limitIndex_ != 0) {
-            // only intended recipient can borrow quote
-            if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
-
-            // borrow from the pool
-            (borrower, poolState, newLup) = _borrow(borrower, poolState, amountToBorrow_, limitIndex_);
-        }
+    ) external {
+        (
+            bool pledge,
+            bool borrow,
+            uint256 newLup
+        ) = _drawDebt(
+            borrowerAddress_,
+            amountToBorrow_,
+            limitIndex_,
+            Maths.wad(tokenIdsToPledge_.length)
+        );
 
         emit DrawDebtNFT(borrowerAddress_, amountToBorrow_, tokenIdsToPledge_, newLup);
 
-        loans.update(
-            deposits,
-            borrowerAddress_,
-            true,
-            borrower,
-            poolState.accruedDebt,
-            poolState.inflator,
-            poolState.rate,
-            newLup
-        );
-
-        _updateInterestParams(poolState, newLup);
+        // move collateral from sender to pool
+        if (pledge) _transferFromSenderToPool(borrowerTokenIds[borrowerAddress_], tokenIdsToPledge_);
+        // move borrowed amount from pool to sender
+        if (borrow) _transferQuoteToken(msg.sender, amountToBorrow_);
     }
 
     function pullCollateral(
