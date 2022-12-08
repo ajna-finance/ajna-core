@@ -107,7 +107,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 amount: 46_000 * 1e18
             }
         );
-        // TODO fix events check
+        // TODO fix events check order, can see them in forge output but not sure why fails to assert
         // vm.expectEmit(true, true, false, true);
         // emit DrawDebt(_borrower, 46_000 * 1e18, 100 * 1e18, 2_981.007422784467321543 * 1e18);
         // vm.expectEmit(true, true, false, true);
