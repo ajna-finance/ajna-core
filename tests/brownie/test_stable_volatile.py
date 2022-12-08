@@ -201,7 +201,7 @@ def pledge_and_borrow(pool_helper, borrower, borrower_index, collateral_to_depos
             f"which is below minimum debt of {min_debt/1e18:.1f}")
         return
 
-    # pledge collateral
+    # determine amount to pledge
     collateral_balance = pool_helper.collateralToken().balanceOf(borrower)
     if collateral_balance < collateral_to_deposit:
         log(f" WARN: borrower {borrower_index} only has {collateral_balance/1e18:.1f} collateral "
@@ -211,17 +211,16 @@ def pledge_and_borrow(pool_helper, borrower, borrower_index, collateral_to_depos
     if debug:
         log(f" borrower {borrower_index:>4} pledging {collateral_to_deposit / 1e18:.8f} collateral")
     assert collateral_to_deposit > 0.001 * 10**18
-    pool.pledgeCollateral(borrower, collateral_to_deposit, {"from": borrower})
 
     # draw debt
-    (debt, collateral_deposited, _) = pool_helper.borrowerInfo(borrower.address)
+    collateral_deposited = collateral_balance + collateral_to_deposit
     new_total_debt = debt + borrow_amount + pool_helper.get_origination_fee(borrow_amount)
     threshold_price = new_total_debt * 10**18 / collateral_deposited
     log(f" borrower {borrower_index:>4} drawing {borrow_amount / 1e18:>8.1f} from bucket {pool_helper.lup() / 1e18:>6.3f} "
         f"with {collateral_deposited / 1e18:>6.1f} collateral deposited, "
         f"with {new_total_debt/1e18:>9.1f} total debt "
         f"at a TP of {threshold_price/1e18:8.1f}")
-    tx = pool.borrow(borrow_amount, MIN_BUCKET, {"from": borrower})
+    tx = pool.drawDebt(borrower, borrow_amount, MIN_BUCKET, collateral_to_deposit, {"from": borrower})
     return tx
 
 
@@ -389,7 +388,7 @@ def test_stable_volatile_one(pool_helper, lenders, borrowers, test_utils, chain)
     start_time = chain.time()
     end_time = start_time + SECONDS_PER_DAY * 7
     actor_id = 0
-    with test_utils.GasWatcher(['addQuoteToken', 'borrow', 'removeQuoteToken', 'repay']):
+    with test_utils.GasWatcher(['addQuoteToken', 'drawDebt', 'removeQuoteToken', 'repay']):
         while chain.time() < end_time:
             # hit the pool an hour at a time, calculating interest and then sending transactions
             actor_id = draw_and_bid(lenders, borrowers, actor_id, pool_helper, chain, test_utils)
