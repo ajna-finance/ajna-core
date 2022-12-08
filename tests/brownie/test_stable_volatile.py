@@ -125,7 +125,7 @@ def draw_initial_debt(borrowers, pool_helper, test_utils, chain, target_utilizat
         else:
             collateral_to_deposit = borrow_amount * 10**18 / pool_price * collateralization_ratio  # WAD
 
-        draw_debt(pool_helper, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils, debug=True)
+        pledge_and_borrow(pool_helper, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils, debug=True)
         test_utils.validate_pool(pool_helper, borrowers)
         chain.sleep(sleep_amount)
 
@@ -187,7 +187,7 @@ def log_borrower_stats(borrowers, pool_helper, chain, debug=False):
     chain.sleep(14)
 
 
-def draw_debt(pool_helper, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils, debug=False):
+def pledge_and_borrow(pool_helper, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils, debug=False):
     pool = pool_helper.pool
 
     # prevent invalid actions
@@ -213,7 +213,7 @@ def draw_debt(pool_helper, borrower, borrower_index, collateral_to_deposit, borr
     assert collateral_to_deposit > 0.001 * 10**18
 
     # draw debt
-    (debt, collateral_deposited, _) = pool_helper.borrowerInfo(borrower.address)
+    collateral_deposited = collateral_balance + collateral_to_deposit
     new_total_debt = debt + borrow_amount + pool_helper.get_origination_fee(borrow_amount)
     threshold_price = new_total_debt * 10**18 / collateral_deposited
     log(f" borrower {borrower_index:>4} drawing {borrow_amount / 1e18:>8.1f} from bucket {pool_helper.lup() / 1e18:>6.3f} "
@@ -297,7 +297,7 @@ def draw_debt(borrower, borrower_index, pool_helper, test_utils, collateralizati
         log(f" WARN: borrower {borrower_index} only has {collateral_balance/1e18:.1f} collateral; "
               f" drawing {borrow_amount/1e18:.1f} of debt against it")
 
-    tx = draw_debt(pool_helper, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils)
+    tx = pledge_and_borrow(pool_helper, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils)
 
 
 def add_quote_token(lender, lender_index, pool_helper):
@@ -388,7 +388,7 @@ def test_stable_volatile_one(pool_helper, lenders, borrowers, test_utils, chain)
     start_time = chain.time()
     end_time = start_time + SECONDS_PER_DAY * 7
     actor_id = 0
-    with test_utils.GasWatcher(['addQuoteToken', 'borrow', 'removeQuoteToken', 'repay']):
+    with test_utils.GasWatcher(['addQuoteToken', 'drawDebt', 'removeQuoteToken', 'repay']):
         while chain.time() < end_time:
             # hit the pool an hour at a time, calculating interest and then sending transactions
             actor_id = draw_and_bid(lenders, borrowers, actor_id, pool_helper, chain, test_utils)
