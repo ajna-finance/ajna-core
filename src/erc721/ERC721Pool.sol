@@ -8,7 +8,6 @@ import '../base/FlashloanablePool.sol';
 
 contract ERC721Pool is IERC721Pool, FlashloanablePool {
     using Auctions for Auctions.Data;
-    using Buckets  for mapping(uint256 => Buckets.Bucket);
     using Deposits for Deposits.Data;
     using Loans    for Loans.Data;
 
@@ -178,7 +177,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         Auctions.TakeParams memory params;
         params.borrower       = borrowerAddress_;
         params.collateral     = borrower.collateral;
-        params.debt           = borrower.t0debt;
+        params.t0debt         = borrower.t0debt;
         params.takeCollateral = Maths.wad(collateral_);
         params.inflator       = poolState.inflator;
         (

@@ -191,7 +191,6 @@ library PoolCommons {
         return _utilization(deposits, debt_, collateral_);
     }
 
-
     /**************************/
     /*** Internal Functions ***/
     /**************************/
