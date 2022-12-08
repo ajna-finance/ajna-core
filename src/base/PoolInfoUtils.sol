@@ -327,5 +327,50 @@ contract PoolInfoUtils {
             _priceAt(index_)
         );
     }
-
 }
+
+    /**********************/
+    /*** Pool Utilities ***/
+    /**********************/
+
+    /**
+     *  @notice Calculates encumberance for a debt amount at a given price.
+     *  @param  debt_         The debt amount to calculate encumberance for.
+     *  @param  price_        The price to calculate encumberance at.
+     *  @return encumberance_ Encumberance value.
+     */
+    function _encumberance(
+        uint256 debt_,
+        uint256 price_
+    ) pure returns (uint256 encumberance_) {
+        return price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
+    }
+
+    /**
+     *  @notice Calculates collateralization for a given debt and collateral amounts, at a given price.
+     *  @param  debt_       The debt amount.
+     *  @param  collateral_ The collateral amount.
+     *  @param  price_      The price to calculate collateralization at.
+     *  @return Collateralization value. 1**18 if debt amount is 0.
+     */
+    function _collateralization(
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 price_
+    ) pure returns (uint256) {
+        uint256 encumbered = _encumberance(debt_, price_);
+        return encumbered != 0 ? Maths.wdiv(collateral_, encumbered) : Maths.WAD;
+    }
+
+    /**
+     *  @notice Calculates target utilization for given EMA values.
+     *  @param  debtEma_   The EMA of debt value.
+     *  @param  lupColEma_ The EMA of lup * collateral value.
+     *  @return Target utilization of the pool.
+     */
+    function _targetUtilization(
+        uint256 debtEma_,
+        uint256 lupColEma_
+    ) pure returns (uint256) {
+        return (debtEma_ != 0 && lupColEma_ != 0) ? Maths.wdiv(debtEma_, lupColEma_) : Maths.WAD;
+    }
