@@ -32,7 +32,8 @@ contract ERC20PoolFactory is IERC20PoolFactory, PoolDeployer {
             collateral_,
             quote_,
             quoteTokenScale,
-            ajna
+            ajna,
+            collateralScale
         );
 
         ERC20Pool pool = ERC20Pool(address(implementation).clone(data));
@@ -40,6 +41,6 @@ contract ERC20PoolFactory is IERC20PoolFactory, PoolDeployer {
         deployedPools[ERC20_NON_SUBSET_HASH][collateral_][quote_] = pool_;
         emit PoolCreated(pool_);
 
-        pool.initialize(collateralScale, interestRate_);
+        pool.initialize(interestRate_);
     }
 }

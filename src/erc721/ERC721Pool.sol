@@ -19,8 +19,6 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     mapping(address => uint256[]) public borrowerTokenIds; // borrower address => array of tokenIds pledged by borrower
     uint256[]                     public bucketTokenIds;   // array of tokenIds added in pool buckets
 
-    bool public isSubset; // true if pool is a subset pool
-
     /****************************/
     /*** Initialize Functions ***/
     /****************************/
@@ -38,8 +36,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         interestParams.interestRateUpdate = uint48(block.timestamp);
 
         uint256 noOfTokens = tokenIds_.length;
-        if (noOfTokens > 0) {
-            isSubset = true;
+        if (noOfTokens != 0) {
             // add subset of tokenIds allowed in the pool
             for (uint256 id = 0; id < noOfTokens;) {
                 tokenIdsAllowed[tokenIds_[id]] = true;
@@ -53,6 +50,14 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
         // increment initializations count to ensure these values can't be updated
         poolInitializations += 1;
+    }
+
+    /******************/
+    /*** Immutables ***/
+    /******************/
+
+    function isSubset() external pure override returns (bool) {
+        return _getArgUint256(92) != 0;
     }
 
     /***********************************/
@@ -273,7 +278,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256[] storage poolTokens_,
         uint256[] calldata tokenIds_
     ) internal {
-        bool subset = isSubset;
+        bool subset = _getArgUint256(92) != 0;
         for (uint256 i = 0; i < tokenIds_.length;) {
             uint256 tokenId = tokenIds_[i];
             if (subset && !tokenIdsAllowed[tokenId]) revert OnlySubset();

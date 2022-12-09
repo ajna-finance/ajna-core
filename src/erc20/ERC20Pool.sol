@@ -11,23 +11,14 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     using Deposits for Deposits.Data;
     using Loans    for Loans.Data;
 
-    /***********************/
-    /*** State Variables ***/
-    /***********************/
-
-    uint128 public override collateralScale;
-
     /****************************/
     /*** Initialize Functions ***/
     /****************************/
 
     function initialize(
-        uint256 collateralScale_,
         uint256 rate_
     ) external override {
         if (poolInitializations != 0) revert AlreadyInitialized();
-
-        collateralScale = uint128(collateralScale_);
 
         inflatorSnapshot           = uint208(10**18);
         lastInflatorSnapshotUpdate = uint48(block.timestamp);
@@ -39,6 +30,14 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         // increment initializations count to ensure these values can't be updated
         poolInitializations += 1;
+    }
+
+    /******************/
+    /*** Immutables ***/
+    /******************/
+
+    function collateralScale() external pure override returns (uint256) {
+        return _getArgUint256(92);
     }
 
     /***********************************/
@@ -216,7 +215,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         if (data_.length != 0) {
             IERC20Taker(callee_).atomicSwapCallback(
-                collateralAmount / collateralScale, 
+                collateralAmount / _getArgUint256(92), 
                 quoteTokenAmount / _getArgUint256(40), 
                 data_
             );
@@ -264,10 +263,10 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     /************************/
 
     function _transferCollateralFrom(address from_, uint256 amount_) internal {
-        if (!IERC20Token(_getArgAddress(0)).transferFrom(from_, address(this), amount_ / collateralScale)) revert ERC20TransferFailed();
+        if (!IERC20Token(_getArgAddress(0)).transferFrom(from_, address(this), amount_ / _getArgUint256(92))) revert ERC20TransferFailed();
     }
 
     function _transferCollateral(address to_, uint256 amount_) internal {
-        if (!IERC20Token(_getArgAddress(0)).transfer(to_, amount_ / collateralScale)) revert ERC20TransferFailed();
+        if (!IERC20Token(_getArgAddress(0)).transfer(to_, amount_ / _getArgUint256(92))) revert ERC20TransferFailed();
     }
 }
