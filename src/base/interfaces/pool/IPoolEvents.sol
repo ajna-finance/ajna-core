@@ -40,18 +40,6 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when borrower borrows quote tokens from pool.
-     *  @param  borrower `msg.sender`.
-     *  @param  lup      LUP after borrow.
-     *  @param  amount   Amount of quote tokens borrowed from the pool.
-     */
-    event Borrow(
-        address indexed borrower,
-        uint256 lup,
-        uint256 amount
-    );
-
-    /**
      *  @notice Emitted when an actor uses quote token outside of the book to purchase collateral under liquidation.
      *  @param  borrower   Identifies the loan being liquidated.
      *  @param  index      Index of the price bucket from which quote token was exchanged for collateral.
@@ -110,16 +98,6 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when borrower removes pledged collateral from the pool.
-     *  @param  borrower `msg.sender`.
-     *  @param  amount   Amount of collateral (or number of NFTs) removed from the pool.
-     */
-    event PullCollateral(
-        address indexed borrower,
-        uint256 amount
-    );
-
-    /**
      *  @notice Emitted when lender claims unencumbered collateral.
      *  @param  claimer Recipient that claimed collateral.
      *  @param  price   Price at which unencumbered collateral was claimed.
@@ -145,16 +123,19 @@ interface IPoolEvents {
         uint256 lup
     );
 
+
     /**
-     *  @notice Emitted when borrower repays quote tokens to the pool.
-     *  @param  borrower `msg.sender` or on behalf of sender.
-     *  @param  lup      LUP after repay.
-     *  @param  amount   Amount of quote tokens repayed to the pool.
+     *  @notice Emitted when borrower repays quote tokens to the pool, and/or pulls collateral from the pool.
+     *  @param  borrower         `msg.sender` or on behalf of sender.
+     *  @param  quoteRepaid      Amount of quote tokens repaid to the pool.
+     *  @param  collateralPulled The amount of collateral (or number of NFT tokens) transferred to the claimer.
+     *  @param  lup              LUP after repay.
      */
-    event Repay(
+    event RepayDebt(
         address indexed borrower,
-        uint256 lup,
-        uint256 amount
+        uint256 quoteRepaid,
+        uint256 collateralPulled,
+        uint256 lup
     );
 
     /**

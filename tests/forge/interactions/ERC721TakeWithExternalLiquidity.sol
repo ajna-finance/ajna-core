@@ -16,6 +16,7 @@ contract ERC721TakeWithExternalLiquidityTest is Test {
     // pool events
     event Take(address indexed borrower, uint256 amount, uint256 collateral, uint256 bondChange, bool isReward);
 
+    address constant AJNA = 0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079;
     address constant DAI  = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     IERC20  private  dai  = IERC20(DAI);
     NFTCollateralToken private nftc;
@@ -31,7 +32,7 @@ contract ERC721TakeWithExternalLiquidityTest is Test {
         nftc = new NFTCollateralToken();
         vm.makePersistent(address(nftc));
         uint256[] memory tokenIds;
-        _ajnaPool = ERC721Pool(new ERC721PoolFactory().deployPool(address(nftc), DAI, tokenIds, 0.07 * 10**18));
+        _ajnaPool = ERC721Pool(new ERC721PoolFactory(AJNA).deployPool(address(nftc), DAI, tokenIds, 0.07 * 10**18));
 
         // fund lenders
         _lender = makeAddr("lender");
@@ -52,7 +53,7 @@ contract ERC721TakeWithExternalLiquidityTest is Test {
         nftc.setApprovalForAll(address(_ajnaPool), true);
 
         // lender adds liquidity
-        uint256 bucketId = PoolUtils.priceToIndex(1_000 * 1e18);
+        uint256 bucketId = _indexOf(1_000 * 1e18);
         assertEq(bucketId, 2770);
         changePrank(_lender);
         _ajnaPool.addQuoteToken(50_000 * 1e18, 2770);
@@ -62,15 +63,13 @@ contract ERC721TakeWithExternalLiquidityTest is Test {
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
         changePrank(_borrower);
-        _ajnaPool.pledgeCollateral(_borrower, tokenIdsToAdd);
-        _ajnaPool.borrow(1_999 * 1e18, 3232);
+        _ajnaPool.drawDebt(_borrower, 1_999 * 1e18, 3232, tokenIdsToAdd);
 
         // borrower2 adds collateral and borrows a trivial amount
         tokenIdsToAdd[0] = 4;
         tokenIdsToAdd[1] = 5;
         changePrank(_borrower2);
-        _ajnaPool.pledgeCollateral(_borrower2, tokenIdsToAdd);
-        _ajnaPool.borrow(5 * 1e18, 3232);
+        _ajnaPool.drawDebt(_borrower2, 5 * 1e18, 3232, tokenIdsToAdd);
 
         // enough time passes that the borrower becomes undercollateralized
         skip(60 days);

@@ -6,6 +6,7 @@ import '../../base/interfaces/IPool.sol';
 
 import './pool/IERC721PoolBorrowerActions.sol';
 import './pool/IERC721PoolLenderActions.sol';
+import './pool/IERC721PoolImmutables.sol';
 import './pool/IERC721PoolState.sol';
 import './pool/IERC721PoolEvents.sol';
 import './pool/IERC721PoolErrors.sol';
@@ -18,6 +19,7 @@ interface IERC721Pool is
     IERC721PoolLenderActions,
     IERC721PoolBorrowerActions,
     IERC721PoolState,
+    IERC721PoolImmutables,
     IERC721PoolEvents,
     IERC721PoolErrors
 {

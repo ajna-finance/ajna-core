@@ -3,8 +3,7 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import 'src/libraries/BucketMath.sol';
-import 'src/libraries/PoolUtils.sol';
+import 'src/base/PoolHelper.sol';
 
 contract ERC20PoolCollateralTest is ERC20HelperContract {
 
@@ -37,7 +36,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2550,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -45,7 +44,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2551,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
         _addLiquidity(
@@ -53,14 +52,14 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 from:   _lender,
                 amount: 10_000 * 1e18,
                 index:  2552,
-                newLup: BucketMath.MAX_PRICE
+                newLup: MAX_PRICE
             }
         );
 
         _assertPool(
             PoolState({
                 htp:                  0,
-                lup:                  BucketMath.MAX_PRICE,
+                lup:                  MAX_PRICE,
                 poolSize:             30_000 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
@@ -125,12 +124,13 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         skip(10 days);
 
         // remove some of the collateral
-        _pullCollateral(
-            {
-                from:    _borrower,
-                amount:  50 * 1e18
-            }
-        );
+        _repayDebtNoLupCheck({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    0,
+            amountRepaid:     0,
+            collateralToPull: 50 * 1e18
+        });
 
         _assertPool(
             PoolState({
@@ -161,12 +161,13 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         assertEq(_collateral.balanceOf(_borrower), 100 * 1e18);
 
         // remove all of the remaining unencumbered collateral
-        _pullCollateral(
-            {
-                from:   _borrower,
-                amount: 50 * 1e18 - PoolUtils.encumberance(21_049.006823139002918431 * 1e18, _lup())
-            }
-        );
+        _repayDebtNoLupCheck({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    0,
+            amountRepaid:     0,
+            collateralToPull: 50 * 1e18 - _encumberance(21_049.006823139002918431 * 1e18, _lup())
+        });
 
         _assertPool(
             PoolState({
@@ -220,12 +221,13 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         );
 
         // should be able to now remove collateral
-        _pullCollateral(
-            {
-                from:    _borrower,
-                amount:  100 * 1e18
-            }
-        );
+        _repayDebtNoLupCheck({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    0,
+            amountRepaid:     0,
+            collateralToPull: 100 * 1e18
+        });
     }
 
     /**
@@ -455,7 +457,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         _assertPool(
             PoolState({
                 htp:                  0,
-                lup:                  BucketMath.MAX_PRICE,
+                lup:                  MAX_PRICE,
                 poolSize:             0,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
@@ -485,7 +487,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         _assertPool(
             PoolState({
                 htp:                  0,
-                lup:                  BucketMath.MAX_PRICE,
+                lup:                  MAX_PRICE,
                 poolSize:             0,
                 pledgedCollateral:    100 * 1e18,
                 encumberedCollateral: 0,

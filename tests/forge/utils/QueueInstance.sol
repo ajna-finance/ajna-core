@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 
 import './DSTestPlus.sol';
 
-import 'src/libraries/Auctions.sol';
+import 'src/libraries/external/Auctions.sol';
 
 contract QueueInstance is DSTestPlus {
     using Auctions for Auctions.Data;
@@ -12,13 +12,10 @@ contract QueueInstance is DSTestPlus {
     Auctions.Data private auctions;
 
     function kick(address borrower_) external returns (uint256, uint256) {
-        return auctions.kick(
-            borrower_,
-            1,
-            1,
-            1,
-            1
-        );
+        Auctions.KickParams memory params;
+        params.borrower = borrower_;
+        params.collateral = 1;
+        return auctions.kick(params);
     }
 
     function remove(address borrower_) external {
