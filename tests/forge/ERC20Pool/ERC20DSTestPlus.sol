@@ -496,7 +496,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"));
         _collateral = new Token("Collateral", "C");
         _quote      = new Token("Quote", "Q");
-        _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
+        _pool       = ERC20Pool(new ERC20PoolFactory(_ajna).deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
         _poolUtils  = new PoolInfoUtils();
         _startTime  = block.timestamp;
     }

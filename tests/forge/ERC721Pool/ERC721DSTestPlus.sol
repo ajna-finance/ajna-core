@@ -25,7 +25,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
     
     NFTCollateralToken internal _collateral;
     Token              internal _quote;
-    ERC20              internal _ajna;
+    ERC20              internal _ajnaToken;
 
     mapping(address => EnumerableSet.UintSet) borrowerPlegedNFTIds;
     mapping(uint256 => uint256) NFTidToIndex;
@@ -532,8 +532,8 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
         vm.makePersistent(address(_collateral));
         _quote      = new Token("Quote", "Q");
         vm.makePersistent(address(_quote));
-        _ajna       = ERC20(address(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079));
-        vm.makePersistent(address(_ajna));
+        _ajnaToken  = ERC20(_ajna);
+        vm.makePersistent(_ajna);
         _poolUtils  = new PoolInfoUtils();
         vm.makePersistent(address(_poolUtils));
     }
@@ -541,14 +541,14 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     function _deployCollectionPool() internal returns (ERC721Pool) {
         _startTime = block.timestamp;
         uint256[] memory tokenIds;
-        address contractAddress = new ERC721PoolFactory().deployPool(address(_collateral), address(_quote), tokenIds, 0.05 * 10**18);
+        address contractAddress = new ERC721PoolFactory(_ajna).deployPool(address(_collateral), address(_quote), tokenIds, 0.05 * 10**18);
         vm.makePersistent(contractAddress);
         return ERC721Pool(contractAddress);
     }
 
     function _deploySubsetPool(uint256[] memory subsetTokenIds_) internal returns (ERC721Pool) {
         _startTime = block.timestamp;
-        return ERC721Pool(new ERC721PoolFactory().deployPool(address(_collateral), address(_quote), subsetTokenIds_, 0.05 * 10**18));
+        return ERC721Pool(new ERC721PoolFactory(_ajna).deployPool(address(_collateral), address(_quote), subsetTokenIds_, 0.05 * 10**18));
     }
 
     function _mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) internal {
@@ -564,8 +564,8 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     }
 
     function _mintAndApproveAjnaTokens(address operator_, uint256 mintAmount_) internal {
-        deal(address(_ajna), operator_, mintAmount_);
+        deal(_ajna, operator_, mintAmount_);
         vm.prank(operator_);
-        _ajna.approve(address(_pool), type(uint256).max);
+        _ajnaToken.approve(address(_pool), type(uint256).max);
     }
 }

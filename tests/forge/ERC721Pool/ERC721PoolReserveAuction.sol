@@ -23,7 +23,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         _mintAndApproveQuoteTokens(_lender,   250_000 * 1e18);
         _mintAndApproveQuoteTokens(_borrower, 5_000 * 1e18);
         _mintAndApproveAjnaTokens( _bidder,   40_000 * 1e18);
-        assertEq(_ajna.balanceOf(_bidder), 40_000 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_bidder), 40_000 * 1e18);
         _mintAndApproveCollateralTokens(_borrower, 12);
 
         // lender adds liquidity and borrower draws debt
@@ -249,7 +249,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
 
         expectedQuoteBalance += 300 * 1e18;
         assertEq(_quote.balanceOf(_bidder), expectedQuoteBalance);
-        assertEq(_ajna.balanceOf(_bidder), 22_118.6065673828125 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_bidder), 22_118.6065673828125 * 1e18);
         expectedReserves -= 300 * 1e18;
         _assertReserveAuction(
             {
@@ -284,7 +284,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         );
         expectedQuoteBalance += expectedReserves;
         assertEq(_quote.balanceOf(_bidder), expectedQuoteBalance);
-        assertEq(_ajna.balanceOf(_bidder),  11_193.643043356438691840 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_bidder),  11_193.643043356438691840 * 1e18);
 
         expectedReserves = 0;
         _assertReserveAuction(

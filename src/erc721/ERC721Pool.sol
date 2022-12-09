@@ -24,7 +24,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     /****************************/
     /*** Initialize Functions ***/
     /****************************/
-
+    
     function initialize(
         uint256[] memory tokenIds_,
         uint256 rate_
