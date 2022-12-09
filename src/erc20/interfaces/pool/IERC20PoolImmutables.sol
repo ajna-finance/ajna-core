@@ -2,7 +2,7 @@
 pragma solidity 0.8.14;
 
 /**
- * @title ERC20 Pool State
+ * @title ERC20 Pool Immutables
  */
 interface IERC20PoolImmutables{
 
