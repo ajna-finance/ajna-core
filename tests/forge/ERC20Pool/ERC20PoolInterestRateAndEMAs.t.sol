@@ -93,26 +93,19 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         );
         // enforce EMA and target utilization update
         changePrank(_borrower);
-        _assertTokenTransferEvent(
-            {
-                from:   _borrower,
-                to:     address(_pool),
-                amount: 100 * 1e18
-            }
-        );
-        _assertTokenTransferEvent(
-            {
-                from:   address(_pool),
-                to:     _borrower,
-                amount: 46_000 * 1e18
-            }
-        );
-        vm.expectEmit(true, true, false, true);
-        emit DrawDebt(_borrower, 46_000 * 1e18, 100 * 1e18, 2_981.007422784467321543 * 1e18);
+
         vm.expectEmit(true, true, false, true);
         emit UpdateInterestRate(0.05 * 1e18, 0.055 * 1e18);
-        IERC20Pool(address(_pool)).drawDebt(_borrower, 46_000 * 1e18, 4_300, 100 * 1e18);
-        borrowers.add(_borrower);
+        _drawDebt(
+            {
+                from:               _borrower,
+                borrower:           _borrower,
+                amountToBorrow:     46_000 * 1e18,
+                limitIndex:         4_300,
+                collateralToPledge: 100 * 1e18,
+                newLup:             2_981.007422784467321543 * 1e18
+            }
+        );
 
         _assertPool(
             PoolState({

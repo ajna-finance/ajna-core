@@ -8,7 +8,6 @@ import '../base/FlashloanablePool.sol';
 
 contract ERC20Pool is IERC20Pool, FlashloanablePool {
     using Auctions for Auctions.Data;
-    using Buckets  for mapping(uint256 => Buckets.Bucket);
     using Deposits for Deposits.Data;
     using Loans    for Loans.Data;
 
@@ -51,75 +50,43 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         uint256 amountToBorrow_,
         uint256 limitIndex_,
         uint256 collateralToPledge_
-    ) external nonReentrant {
-        PoolState memory poolState = _accruePoolInterest();
-        Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
-
-        uint256 newLup = _lup(poolState.accruedDebt);
-
-        // pledge collateral to pool
-        if (collateralToPledge_ != 0) {
-            (borrower, poolState) = _pledgeCollateral(borrower, poolState, borrowerAddress_, collateralToPledge_, newLup);
-
-            // move collateral from sender to pool
-            _transferCollateralFrom(msg.sender, collateralToPledge_);
-        }
-
-        // borrow against pledged collateral
-        // check both values to enable an intentional 0 borrow loan call to update borrower's loan state
-        if (amountToBorrow_ != 0 || limitIndex_ != 0) {
-            // only intended recipient can borrow quote
-            if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
-
-            // borrow from the pool
-            (borrower, poolState, newLup) = _borrow(borrower, poolState, amountToBorrow_, limitIndex_);
-        }
+    ) external {
+        (
+            bool pledge,
+            bool borrow,
+            uint256 newLup
+        ) = _drawDebt(
+            borrowerAddress_,
+            amountToBorrow_,
+            limitIndex_,
+            collateralToPledge_
+        );
 
         emit DrawDebt(borrowerAddress_, amountToBorrow_, collateralToPledge_, newLup);
 
-        // update loan state
-        loans.update(
-            deposits,
-            borrowerAddress_,
-            true,
-            borrower,
-            poolState.accruedDebt,
-            poolState.inflator,
-            poolState.rate,
-            newLup
-        );
-
-        // update pool global interest rate state
-        _updateInterestParams(poolState, newLup);
+        // move collateral from sender to pool
+        if (pledge) _transferCollateralFrom(msg.sender, collateralToPledge_);
+        // move borrowed amount from pool to sender
+        if (borrow) _transferQuoteToken(msg.sender, amountToBorrow_);
     }
 
     function repayDebt(
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
         uint256 collateralAmountToPull_
-    ) external nonReentrant {
-        PoolState memory poolState = _accruePoolInterest();
-        Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
+    ) external {
+        (uint256 quoteTokenToRepay, uint256 newLup) = _repayDebt(borrowerAddress_, maxQuoteTokenAmountToRepay_, collateralAmountToPull_);
 
-        uint256 newLup = _lup(poolState.accruedDebt);
+        emit RepayDebt(borrowerAddress_, quoteTokenToRepay, collateralAmountToPull_, newLup);
 
-        // repay loan
-        if (maxQuoteTokenAmountToRepay_ != 0) {
-            (poolState, borrower, maxQuoteTokenAmountToRepay_, newLup) = _repay(poolState, borrower, borrowerAddress_, maxQuoteTokenAmountToRepay_);
+        if (quoteTokenToRepay != 0) {
+            // move amount to repay from sender to pool
+            _transferQuoteTokenFrom(msg.sender, quoteTokenToRepay);
         }
-
-        // pull collateral from pool
         if (collateralAmountToPull_ != 0) {
-            // only intended recipient can pull collateral
-            if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
-
-            _pullCollateral(poolState, borrower, collateralAmountToPull_, newLup);
-
             // move collateral from pool to sender
             _transferCollateral(msg.sender, collateralAmountToPull_);
         }
-
-        emit RepayDebt(borrowerAddress_, maxQuoteTokenAmountToRepay_, collateralAmountToPull_, newLup);
     }
 
     /************************************/
@@ -227,7 +194,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         Auctions.TakeParams memory params;
         params.borrower       = borrowerAddress_;
         params.collateral     = borrower.collateral;
-        params.debt           = borrower.t0debt;
+        params.t0debt         = borrower.t0debt;
         params.takeCollateral = collateral_;
         params.inflator       = poolState.inflator;
         (
