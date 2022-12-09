@@ -5,6 +5,8 @@ pragma solidity 0.8.14;
 import '@clones/Clone.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/utils/Multicall.sol';
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import './interfaces/IPool.sol';
 
@@ -19,10 +21,11 @@ import '../libraries/external/LenderActions.sol';
 import '../libraries/external/PoolCommons.sol';
 
 abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
-    using Auctions for Auctions.Data;
-    using Buckets  for mapping(uint256 => Buckets.Bucket);
-    using Deposits for Deposits.Data;
-    using Loans    for Loans.Data;
+    using Auctions  for Auctions.Data;
+    using Buckets   for mapping(uint256 => Buckets.Bucket);
+    using Deposits  for Deposits.Data;
+    using Loans     for Loans.Data;
+    using SafeERC20 for IERC20;
 
     /***********************/
     /*** State Variables ***/
@@ -624,15 +627,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     function _transferQuoteTokenFrom(address from_, uint256 amount_) internal {
-        if (!IERC20Token(_getArgAddress(20)).transferFrom(from_, address(this), amount_ / _getArgUint256(40))) revert ERC20TransferFailed();
+        IERC20(_getArgAddress(20)).safeTransferFrom(from_, address(this), amount_ / _getArgUint256(40));
     }
 
     function _transferQuoteToken(address to_, uint256 amount_) internal {
-        if (!IERC20Token(_getArgAddress(20)).transfer(to_, amount_ / _getArgUint256(40))) revert ERC20TransferFailed();
+        IERC20(_getArgAddress(20)).safeTransfer(to_, amount_ / _getArgUint256(40));
     }
 
     function _getPoolQuoteTokenBalance() internal view returns (uint256) {
-        return IERC20Token(_getArgAddress(20)).balanceOf(address(this));
+        return IERC20(_getArgAddress(20)).balanceOf(address(this));
     }
 
     function _htp(uint256 inflator_) internal view returns (uint256) {
