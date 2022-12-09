@@ -315,29 +315,28 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         );
 
         // confirm interest rate starts out at 5%
-        // _assertPool(
-        //     PoolState({
-        //         htp:                  0.000000100096153846 * 1e18,
-        //         lup:                  _p1505_26,
-        //         poolSize:             10_000 * 1e18,
-        //         pledgedCollateral:    10_000 * 1e18,
-        //         encumberedCollateral: 0.000000664974196568 * 1e18,
-        //         poolDebt:             0.001000961538461538 * 1e18,
-        //         actualUtilization:    0.000000100096153846 * 1e18,
-        //         targetUtilization:    1e18,
-        //         minDebtAmount:        0.000100096153846154 * 1e18,
-        //         loans:                1,
-        //         maxBorrower:          _borrower,
-        //         interestRate:         0.05 * 1e18,
-        //         interestRateUpdate:   _startTime
-        //     })
-        // );
+        _assertPool(
+            PoolState({
+                htp:                  0.000000001000961538 * 1e18,
+                lup:                  _p1505_26,
+                poolSize:             10_000 * 1e18,
+                pledgedCollateral:    10_000 * 1e18,
+                encumberedCollateral: 0.000000006649741966 * 1e18,
+                poolDebt:             0.000010009615384615 * 1e18,
+                actualUtilization:    0.000000001000961538 * 1e18,
+                targetUtilization:    1e18,
+                minDebtAmount:        0.000001000961538462 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
 
-        uint8 i = 0;
-        while (i < 2 * 7 * 52) {
+        uint i = 0;
+        while (i < 196) {
             // trigger an interest accumulation
             skip(12 hours);
-            // FIXME: OOB
             _borrow(
                 {
                     from:       _borrower,
@@ -351,23 +350,24 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             }
         }
 
-        // _assertPool(
-        //     PoolState({
-        //         htp:                  0.000000100096153846 * 1e18,
-        //         lup:                  _p1505_26,
-        //         poolSize:             10_000 * 1e18,
-        //         pledgedCollateral:    10_000 * 1e18,
-        //         encumberedCollateral: 0.000000664974196568 * 1e18,
-        //         poolDebt:             0.001000961538461538 * 1e18,
-        //         actualUtilization:    0.000000100096153846 * 1e18,
-        //         targetUtilization:    1e18,
-        //         minDebtAmount:        0.000100096153846154 * 1e18,
-        //         loans:                1,
-        //         maxBorrower:          _borrower,
-        //         interestRate:         0.05 * 1e18,
-        //         interestRateUpdate:   _startTime
-        //     })
-        // );
+        // show that the rate maxed out at 500%
+        _assertPool(
+            PoolState({
+                htp:                  32229.862501923749497041 * 1e18,
+                lup:                  _p1505_26,
+                poolSize:             10_048.284243805461810000 * 1e18,
+                pledgedCollateral:    10_000 * 1e18,
+                encumberedCollateral: 0.037733346596011819 * 1e18,
+                poolDebt:             56.798637984728374088 * 1e18,
+                actualUtilization:    0.005652570787867933 * 1e18,
+                targetUtilization:    0.000000466616755449 * 1e18,
+                minDebtAmount:        5.679863798472837409 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         500 * 1e18,
+                interestRateUpdate:   _startTime + (194*12 hours)
+            })
+        );
     }
 
     function testPendingInflator() external tearDown {

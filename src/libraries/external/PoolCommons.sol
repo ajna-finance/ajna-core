@@ -120,7 +120,8 @@ library PoolCommons {
         newInflator_ = Maths.wmul(inflator_, pendingFactor);
 
         uint256 htp = Maths.wmul(thresholdPrice_, newInflator_);
-        uint256 htpIndex = (htp != 0) ? _indexOf(htp) : 7_388; // if HTP is 0 then accrue interest at max index (min price)
+        // if HTP is under the lowest price bucket then accrue interest at max index (min price)
+        uint256 htpIndex = (htp >= MIN_PRICE) ? _indexOf(htp) : 7_388;
 
         // Scale the fenwick tree to update amount of debt owed to lenders
         uint256 depositAboveHtp = Deposits.prefixSum(deposits_, htpIndex);
@@ -211,7 +212,8 @@ library PoolCommons {
             uint256 ptp = _ptp(debt_, collateral_);
 
             if (ptp != 0) {
-                uint256 depositAbove = Deposits.prefixSum(deposits, _indexOf(ptp));
+                uint256 depositAbove = ptp >= MIN_PRICE ? Deposits.prefixSum(deposits, _indexOf(ptp)) 
+                    : Deposits.treeSum(deposits);
 
                 if (depositAbove != 0) utilization_ = Maths.wdiv(
                     debt_,
@@ -230,11 +232,11 @@ library PoolCommons {
         uint256 mau_
     ) internal pure returns (uint256) {
         // TODO: Consider pre-calculating and storing a conversion table in a library or shared contract.
-        // cubic root of the percentage of meaningful unutilized deposit
         uint256 base = 1000000 * 1e18 - Maths.wmul(Maths.min(mau_, 1e18), 1000000 * 1e18);
         if (base < 1e18) {
             return 1e18;
         } else {
+            // cubic root of the percentage of meaningful unutilized deposit
             uint256 crpud = PRBMathUD60x18.pow(base, ONE_THIRD);
             return 1e18 - Maths.wmul(Maths.wdiv(crpud, CUBIC_ROOT_1000000), 0.15 * 1e18);
         }
