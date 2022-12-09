@@ -134,7 +134,8 @@ Deployed          PoolCommons to 0x8BBCA51044d00dbf16aaB8Fd6cbC5B45503B898b
 Deploying factories...
 Deployed     ERC20PoolFactory to 0xED625fbf62695A13d2cADEdd954b23cc97249988
 Deployed    ERC721PoolFactory to 0x775D30918A42160bC7aE56BA1660E32ff50CF6dC
-
+Deploying PoolInfoUtils...
+Deployed        PoolInfoUtils to 0xd8A51cE16c7665111401C0Ba2ABEcE03B847b4e6
 ```
 
 Record the factory addresses.
