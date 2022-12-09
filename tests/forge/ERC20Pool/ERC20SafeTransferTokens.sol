@@ -45,8 +45,7 @@ contract ERC20SafeTransferTokens is ERC20HelperContract {
         deal(address(_collateral), _borrower, 1_000 * 1e18);
         _collateral.approve(address(pool), type(uint256).max);
 
-        pool.pledgeCollateral(_borrower, 1_000 * 1e18);
-        pool.borrow(10 * 1e18, 2549);
+        pool.drawDebt(_borrower, 10 * 1e18, 2549, 1_000 * 1e18);(_borrower, 1_000 * 1e18);
     }
 
     function testNonStandardERC20CollateralTokenTransfers() external {
@@ -64,7 +63,6 @@ contract ERC20SafeTransferTokens is ERC20HelperContract {
         deal(address(usdt), _borrower, 1_000 * 1e18);
         usdt.approve(address(pool), 1_000 * 1e18);
 
-        pool.pledgeCollateral(_borrower, 1_000 * 1e18);
-        pool.borrow(10 * 1e18, 2549);
+        pool.drawDebt(_borrower, 10 * 1e18, 2549, 1_000 * 1e18);(_borrower, 1_000 * 1e18);
     }
 }

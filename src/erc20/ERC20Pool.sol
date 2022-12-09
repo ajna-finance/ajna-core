@@ -11,7 +11,6 @@ import '../base/FlashloanablePool.sol';
 
 contract ERC20Pool is IERC20Pool, FlashloanablePool {
     using Auctions  for Auctions.Data;
-    using Buckets   for mapping(uint256 => Buckets.Bucket);
     using Deposits  for Deposits.Data;
     using Loans     for Loans.Data;
     using SafeERC20 for IERC20;
@@ -50,15 +49,29 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function pledgeCollateral(
-        address borrower_,
-        uint256 collateralAmountToPledge_
-    ) external override {
-        _pledgeCollateral(borrower_, collateralAmountToPledge_);
+    function drawDebt(
+        address borrowerAddress_,
+        uint256 amountToBorrow_,
+        uint256 limitIndex_,
+        uint256 collateralToPledge_
+    ) external {
+        (
+            bool pledge,
+            bool borrow,
+            uint256 newLup
+        ) = _drawDebt(
+            borrowerAddress_,
+            amountToBorrow_,
+            limitIndex_,
+            collateralToPledge_
+        );
 
-        emit PledgeCollateral(borrower_, collateralAmountToPledge_);
+        emit DrawDebt(borrowerAddress_, amountToBorrow_, collateralToPledge_, newLup);
+
         // move collateral from sender to pool
-        _transferCollateralFrom(msg.sender, collateralAmountToPledge_);
+        if (pledge) _transferCollateralFrom(msg.sender, collateralToPledge_);
+        // move borrowed amount from pool to sender
+        if (borrow) _transferQuoteToken(msg.sender, amountToBorrow_);
     }
 
     function pullCollateral(
@@ -176,7 +189,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         Auctions.TakeParams memory params;
         params.borrower       = borrowerAddress_;
         params.collateral     = borrower.collateral;
-        params.debt           = borrower.t0debt;
+        params.t0debt         = borrower.t0debt;
         params.takeCollateral = collateral_;
         params.inflator       = poolState.inflator;
         (

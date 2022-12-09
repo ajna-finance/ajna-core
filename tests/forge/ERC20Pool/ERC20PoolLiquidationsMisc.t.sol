@@ -4,6 +4,7 @@ pragma solidity 0.8.14;
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
 import 'src/base/PoolHelper.sol';
+import 'src/erc20/interfaces/IERC20Pool.sol';
 
 contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
@@ -479,13 +480,8 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             }
         );
 
-        _pledgeCollateral(
-            {
-                from:     _lender,
-                borrower: _lender,
-                amount:   0
-            }
-        );
+        // draw debt is called to trigger accrual of pool interest that will push the lup back up
+        IERC20Pool(address(_pool)).drawDebt(_lender, 0, 0, 0);
 
         _assertPool(
             PoolState({

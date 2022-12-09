@@ -8,7 +8,6 @@ import '../base/FlashloanablePool.sol';
 
 contract ERC721Pool is IERC721Pool, FlashloanablePool {
     using Auctions for Auctions.Data;
-    using Buckets  for mapping(uint256 => Buckets.Bucket);
     using Deposits for Deposits.Data;
     using Loans    for Loans.Data;
 
@@ -60,15 +59,29 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function pledgeCollateral(
-        address borrower_,
+    function drawDebt(
+        address borrowerAddress_,
+        uint256 amountToBorrow_,
+        uint256 limitIndex_,
         uint256[] calldata tokenIdsToPledge_
-    ) external override {
-        _pledgeCollateral(borrower_, Maths.wad(tokenIdsToPledge_.length));
+    ) external {
+        (
+            bool pledge,
+            bool borrow,
+            uint256 newLup
+        ) = _drawDebt(
+            borrowerAddress_,
+            amountToBorrow_,
+            limitIndex_,
+            Maths.wad(tokenIdsToPledge_.length)
+        );
 
-        emit PledgeCollateralNFT(borrower_, tokenIdsToPledge_);
+        emit DrawDebtNFT(borrowerAddress_, amountToBorrow_, tokenIdsToPledge_, newLup);
+
         // move collateral from sender to pool
-        _transferFromSenderToPool(borrowerTokenIds[borrower_], tokenIdsToPledge_);
+        if (pledge) _transferFromSenderToPool(borrowerTokenIds[borrowerAddress_], tokenIdsToPledge_);
+        // move borrowed amount from pool to sender
+        if (borrow) _transferQuoteToken(msg.sender, amountToBorrow_);
     }
 
     function pullCollateral(
@@ -145,7 +158,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         Auctions.TakeParams memory params;
         params.borrower       = borrowerAddress_;
         params.collateral     = borrower.collateral;
-        params.debt           = borrower.t0debt;
+        params.t0debt         = borrower.t0debt;
         params.takeCollateral = Maths.wad(collateral_);
         params.inflator       = poolState.inflator;
         (

@@ -10,7 +10,7 @@ def test_quote_deposit_move_remove_scaled(
     capsys,
     test_utils
 ):
-    with test_utils.GasWatcher(["addQuoteToken"]):
+    with test_utils.GasWatcher(["addQuoteToken", "moveQuoteToken", "removeQuoteToken"]):
         add_txes = []
         for i in range(2530, 2550):
             tx = scaled_pool.addQuoteToken(100 * 10**18, i, {"from": lenders[0]})
@@ -52,7 +52,7 @@ def test_borrow_repay_scaled(
     capsys,
     test_utils
 ):
-    with test_utils.GasWatcher(["borrow"]):
+    with test_utils.GasWatcher(["addQuoteToken", "pledgeCollateral", "borrow", "repay"]):
 
         scaled_pool.addQuoteToken(100 * 10**18, 2550, {"from": lenders[0]})
         scaled_pool.addQuoteToken(100 * 10**18, 2560, {"from": lenders[0]})

@@ -7,12 +7,18 @@ pragma solidity 0.8.14;
 interface IERC721PoolBorrowerActions {
 
     /**
-     *  @notice Emitted when borrower locks collateral in the pool.
-     *  @param  borrower The address of borrower to pledge collateral for.
-     *  @param  tokenIds Array of tokenIds to be added to the pool.
+     *  @notice Called by borrowers to add collateral to the pool and/or borrow quote from the pool.
+     *  @dev    Can be called by borrowers with either 0 amountToBorrow_ or 0 collateralToPledge_, if borrower only wants to take a single action. 
+     *          Call with 0 amountToBorrow_, and non-0 limitIndex_ to restamp loan's neutral price.
+     *  @param  borrower_         The address of borrower to drawDebt for.
+     *  @param  amountToBorrow_   The amount of quote tokens to borrow.
+     *  @param  limitIndex_       Lower bound of LUP change (if any) that the borrower will tolerate from a creating or modifying position.
+     *  @param  tokenIdsToPledge_ Array of tokenIds to be pledged to the pool.
      */
-    function pledgeCollateral(
-        address borrower,
-        uint256[] calldata tokenIds
+    function drawDebt(
+        address borrower_,
+        uint256 amountToBorrow_,
+        uint256 limitIndex_,
+        uint256[] calldata tokenIdsToPledge_
     ) external;
 }
