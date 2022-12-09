@@ -84,15 +84,14 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
 
     function testUnclaimableReserves() external {
         // borrower repays partial debt, ensure cannot kick when there are no claimable reserves
-        _repay(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   50_000 * 1e18,
-                repaid:   50_000 * 1e18,
-                newLup:   251_183.992399245533703810 * 1e18
-            }
-        );
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    50_000 * 1e18,
+            amountRepaid:     50_000 * 1e18,
+            collateralToPull: 0,
+            newLup:           251_183.992399245533703810 * 1e18
+        });
 
         _assertReserveAuction(
             {
@@ -109,15 +108,14 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
 
     function testReserveAuctionPricing() external {
         // borrower repays all debt (auction for full reserves)
-        _repay(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   205_000 * 1e18,
-                repaid:   179_590.373946590638353626 * 1e18,
-                newLup:   MAX_PRICE
-            }
-        );
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    205_000 * 1e18,
+            amountRepaid:     179_590.373946590638353626 * 1e18,
+            collateralToPull: 0,
+            newLup:           MAX_PRICE
+        });
         _assertReserveAuction(
             {
                 reserves:                   499.181304561658553626 * 1e18,
@@ -175,15 +173,14 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
 
     function testClaimableReserveAuction() external {
         // borrower repays all debt (auction for full reserves)
-        _repay(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   205_000 * 1e18,
-                repaid:   179_590.373946590638353626 * 1e18,
-                newLup:   MAX_PRICE
-            }
-        );
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    205_000 * 1e18,
+            amountRepaid:     179_590.373946590638353626 * 1e18,
+            collateralToPull: 0,
+            newLup:           MAX_PRICE
+        });
         (uint256 debt,,) = _pool.debtInfo();
         assertEq(debt, 0);
 
@@ -319,15 +316,14 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
 
     function testReserveAuctionPartiallyTaken() external {
         // borrower repays partial debt (auction for full reserves)
-        _repay(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   100_000 * 1e18,
-                repaid:   100_000 * 1e18,
-                newLup:   251_183.992399245533703810 * 1e18
-            }
-        );
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    100_000 * 1e18,
+            amountRepaid:     100_000 * 1e18,
+            collateralToPull: 0,
+            newLup:           251_183.992399245533703810 * 1e18
+        });
         uint256 reserves          = 499.181304561658553626 * 1e18;
         uint256 claimableReserves = 101.229434828705361858 * 1e18;
         _assertReserveAuction(
@@ -404,15 +400,14 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         // after more interest accumulates, borrower repays remaining debt
         skip(4 weeks);
 
-        _repay(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   105_000 * 1e18,
-                repaid:   79_940.029064520279557316 * 1e18,
-                newLup:   MAX_PRICE
-            }
-        );
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    105_000 * 1e18,
+            amountRepaid:     79_940.029064520279557316 * 1e18,
+            collateralToPull: 0,
+            newLup:           MAX_PRICE
+        });
 
         // start an auction, confirm old claimable reserves are included alongside new claimable reserves
         skip(1 days);

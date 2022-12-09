@@ -243,7 +243,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool_helper, chain, test_utils,
                     target_collateralization = max(1.1, 1/GOAL_UTILIZATION)
                     draw_debt(borrowers[user_index], user_index, pool_helper, test_utils, collateralization=target_collateralization)
                 elif utilization > MIN_UTILIZATION:  # start repaying debt if interest grows too high
-                    repay(borrowers[user_index], user_index, pool_helper, test_utils)
+                    repay_debt(borrowers[user_index], user_index, pool_helper, test_utils)
                 # log_borrower_stats(borrowers, pool_helper, chain, debug=True)
                 chain.sleep(14)
 
@@ -332,7 +332,7 @@ def remove_quote_token(lender, lender_index, price, pool_helper):
         log(f" lender   {lender_index:>4} has no claim to bucket {price / 10**18:.1f}")
 
 
-def repay(borrower, borrower_index, pool_helper, test_utils):
+def repay_debt(borrower, borrower_index, pool_helper, test_utils):
     dai = pool_helper.quoteToken()
     (debt, collateral_deposited, _) = pool_helper.borrowerInfo(borrower)
     quote_balance = dai.balanceOf(borrower)
@@ -350,21 +350,22 @@ def repay(borrower, borrower_index, pool_helper, test_utils):
             log(f" borrower {borrower_index:>4} not repaying loan of {debt / 1e18:.1f}; "
                   f"repayment would drop below min debt amount of {min_debt / 1e18:.1f}")
             return
-
-        # do the repayment
-        repay_amount = int(repay_amount * 1.01)
         log(f" borrower {borrower_index:>4} repaying {repay_amount/1e18:.1f} of {debt/1e18:.1f} debt")
-        tx = pool_helper.pool.repay(borrower, repay_amount, {"from": borrower})
 
         # withdraw appropriate amount of collateral to maintain a target-utilization-friendly collateralization
-        (debt, collateral_deposited, _) = pool_helper.borrowerInfo(borrower)
-        collateral_encumbered = int((debt * 10**18) / pool_helper.lup())
-        collateral_to_withdraw = int(collateral_deposited - (collateral_encumbered * 1.667))
+        remaining_debt = debt - repay_amount
+        if remaining_debt == 0:
+            collateral_to_withdraw = collateral_deposited
+            collateral_encumbered = 0
+        else:
+            collateral_encumbered = int((remaining_debt * 10**18) / pool_helper.lup())
+            collateral_to_withdraw = int(collateral_deposited - (collateral_encumbered * 1.667))
         log(f" borrower {borrower_index:>4}, with {collateral_deposited/1e18:.1f} deposited "
               f"and {collateral_encumbered/1e18:.1f} encumbered, "
               f"is withdrawing {collateral_deposited/1e18:.1f} collateral")
-        assert collateral_to_withdraw > 0
-        tx = pool_helper.pool.pullCollateral(collateral_to_withdraw, {"from": borrower})
+        # assert collateral_to_withdraw > 0
+        repay_amount = int(repay_amount * 1.01)
+        tx = pool_helper.pool.repayDebt(borrower, repay_amount, collateral_to_withdraw, {"from": borrower})
     elif debt == 0:
         log(f" borrower {borrower_index:>4} has no debt to repay")
     else:
@@ -388,7 +389,7 @@ def test_stable_volatile_one(pool_helper, lenders, borrowers, test_utils, chain)
     start_time = chain.time()
     end_time = start_time + SECONDS_PER_DAY * 7
     actor_id = 0
-    with test_utils.GasWatcher(['addQuoteToken', 'drawDebt', 'removeQuoteToken', 'repay']):
+    with test_utils.GasWatcher(['addQuoteToken', 'drawDebt', 'removeQuoteToken', 'repayDebt']):
         while chain.time() < end_time:
             # hit the pool an hour at a time, calculating interest and then sending transactions
             actor_id = draw_and_bid(lenders, borrowers, actor_id, pool_helper, chain, test_utils)

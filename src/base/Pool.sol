@@ -186,29 +186,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _transferQuoteToken(msg.sender, claimable);
     }
 
-    /***********************************/
-    /*** Borrower External Functions ***/
-    /***********************************/
-
-    function repay(
-        address borrowerAddress_,
-        uint256 maxQuoteTokenAmountToRepay_
-    ) external override {
-        PoolState memory poolState     = _accruePoolInterest();
-        Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
-        if (borrower.t0debt == 0) revert NoDebt();
-
-        uint256 t0repaidDebt = Maths.min(
-            borrower.t0debt,
-            Maths.wdiv(maxQuoteTokenAmountToRepay_, poolState.inflator)
-        );
-        (uint256 quoteTokenAmountToRepay, uint256 newLup) = _payLoan(t0repaidDebt, poolState, borrowerAddress_, borrower);
-
-        emit Repay(borrowerAddress_, newLup, quoteTokenAmountToRepay);
-        // move amount to repay from sender to pool
-        _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToRepay);
-    }
-
     /*****************************/
     /*** Liquidation Functions ***/
     /*****************************/
@@ -446,33 +423,53 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _updateInterestParams(poolState, newLup_);
     }
 
-    function _pullCollateral(
+    function _repayDebt(
+        address borrowerAddress_,
+        uint256 maxQuoteTokenAmountToRepay_,
         uint256 collateralAmountToPull_
-    ) internal {
-        PoolState      memory poolState = _accruePoolInterest();
-        Loans.Borrower memory borrower  = loans.getBorrowerInfo(msg.sender);
-        uint256 borrowerDebt            = Maths.wmul(borrower.t0debt, poolState.inflator);
+    ) internal returns (uint256 quoteTokenToRepay_, uint256 newLup_) {
+        PoolState memory poolState = _accruePoolInterest();
+        Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
 
-        uint256 curLup = _lup(poolState.accruedDebt);
-        uint256 encumberedCollateral = borrower.t0debt != 0 ? Maths.wdiv(borrowerDebt, curLup) : 0;
-        if (borrower.collateral - encumberedCollateral < collateralAmountToPull_) revert InsufficientCollateral();
+        newLup_ = _lup(poolState.accruedDebt);
 
-        borrower.collateral  -= collateralAmountToPull_;
-        poolState.collateral -= collateralAmountToPull_;
+        if (maxQuoteTokenAmountToRepay_ != 0) {
+            if (borrower.t0debt == 0) revert NoDebt();
 
-        loans.update(
-            deposits,
-            msg.sender,
-            true,
-            borrower,
-            poolState.accruedDebt,
-            poolState.inflator,
-            poolState.rate,
-            curLup
-        );
+            uint256 t0repaidDebt = Maths.min(
+                borrower.t0debt,
+                Maths.wdiv(maxQuoteTokenAmountToRepay_, poolState.inflator)
+            );
+            (quoteTokenToRepay_, newLup_) = _payLoan(t0repaidDebt, poolState, borrowerAddress_, borrower);
+        }
 
-        pledgedCollateral = poolState.collateral;
-        _updateInterestParams(poolState, curLup);
+        if (collateralAmountToPull_ != 0) {
+            // only intended recipient can pull collateral
+            if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
+
+            uint256 borrowerDebt = Maths.wmul(borrower.t0debt, poolState.inflator);
+
+            uint256 encumberedCollateral = borrower.t0debt != 0 ? Maths.wdiv(borrowerDebt, newLup_) : 0;
+            if (borrower.collateral - encumberedCollateral < collateralAmountToPull_) revert InsufficientCollateral();
+
+            borrower.collateral  -= collateralAmountToPull_;
+            poolState.collateral -= collateralAmountToPull_;
+
+            // update loan state
+            loans.update(
+                deposits,
+                msg.sender,
+                true,
+                borrower,
+                poolState.accruedDebt,
+                poolState.inflator,
+                poolState.rate,
+                newLup_
+            );
+
+            pledgedCollateral = poolState.collateral;
+            _updateInterestParams(poolState, newLup_);
+        }
     }
 
     function _payLoan(

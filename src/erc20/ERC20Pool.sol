@@ -70,14 +70,23 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         if (borrow) _transferQuoteToken(msg.sender, amountToBorrow_);
     }
 
-    function pullCollateral(
+    function repayDebt(
+        address borrowerAddress_,
+        uint256 maxQuoteTokenAmountToRepay_,
         uint256 collateralAmountToPull_
-    ) external override {
-        _pullCollateral(collateralAmountToPull_);
+    ) external {
+        (uint256 quoteTokenToRepay, uint256 newLup) = _repayDebt(borrowerAddress_, maxQuoteTokenAmountToRepay_, collateralAmountToPull_);
 
-        emit PullCollateral(msg.sender, collateralAmountToPull_);
-        // move collateral from pool to sender
-        _transferCollateral(msg.sender, collateralAmountToPull_);
+        emit RepayDebt(borrowerAddress_, quoteTokenToRepay, collateralAmountToPull_, newLup);
+
+        if (quoteTokenToRepay != 0) {
+            // move amount to repay from sender to pool
+            _transferQuoteTokenFrom(msg.sender, quoteTokenToRepay);
+        }
+        if (collateralAmountToPull_ != 0) {
+            // move collateral from pool to sender
+            _transferCollateral(msg.sender, collateralAmountToPull_);
+        }
     }
 
     /************************************/
