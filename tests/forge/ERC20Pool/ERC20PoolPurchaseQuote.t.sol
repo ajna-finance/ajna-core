@@ -310,7 +310,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
                 amount:   amountWithInterest,
                 index:    2550,
                 newLup:   PoolUtils.indexToPrice(2552),
-                lpRedeem: 10_000.349513872212134187552326469 * 1e27
+                lpRedeem: 10_000.349513872212134187863727799 * 1e27
             }
         );
 
@@ -321,7 +321,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
                 from:     _bidder,
                 amount:   expectedCollateral,
                 index:    2550,
-                lpRedeem: 200.034347595268741480953543034 * 1e27
+                lpRedeem: 200.034347595268741480642141704 * 1e27
             }
         );
         _assertLenderLpBalance(

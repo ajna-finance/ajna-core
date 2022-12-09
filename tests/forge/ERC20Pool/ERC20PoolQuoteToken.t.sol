@@ -815,7 +815,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 index:    1606,
                 penalty:  penalty,
                 newLup:   PoolUtils.indexToPrice(1663),
-                lpRedeem: 1_699.992488670769259236317168938 * 1e27
+                lpRedeem: 1_699.992488670769259236000000000 * 1e27
             }
         );
 
@@ -829,7 +829,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 amount:   expectedWithdrawal2,
                 index:    1606,
                 newLup:   PoolUtils.indexToPrice(1663),
-                lpRedeem: 1_700.007511329230740763682831062 * 1e27
+                lpRedeem: 1_700.007511329230740764000000000 * 1e27
             }
         );
         assertEq(_quote.balanceOf(_lender), lenderBalanceBefore + expectedWithdrawal1 + expectedWithdrawal2);
@@ -1174,7 +1174,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 fromIndex:    2873,
                 toIndex:      2954,
                 newLup:       _lup(),
-                lpRedeemFrom: 2_499.899333909953254268257527496 * 1e27,
+                lpRedeemFrom: 2_499.899333909953254268000000000 * 1e27,
                 lpRedeemTo:   2_497.596153846153845 * 1e27
             }
         );
@@ -1200,7 +1200,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 fromIndex:    2873,
                 toIndex:      2954,
                 newLup:       _lup(),
-                lpRedeemFrom: 2_499.810182702901761331141452320 * 1e27,
+                lpRedeemFrom: 2_499.810182702901761330952408614 * 1e27,
                 lpRedeemTo:   2_500 * 1e27
             }
         );
@@ -1225,7 +1225,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 amount:   5_003.981613396490344248 * 1e18,
                 index:    2873,
                 newLup:   601.252968524772188572 * 1e18,
-                lpRedeem: 5_000.290483387144984400601020184 * 1e27
+                lpRedeem: 5_000.290483387144984401047591386 * 1e27
             }
         );
         _removeAllLiquidity(

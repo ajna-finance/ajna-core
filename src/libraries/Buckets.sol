@@ -218,6 +218,26 @@ library Buckets {
             (bucketDeposit_ * 1e18 + bucketPrice_ * bucketCollateral_) * 1e18 / bucketLPs_;
             // 10^36 * 1e18 / 10^27 = 10^54 / 10^27 = 10^27
     }
+    /**
+     *  @notice Returns the exchange rate for a given bucket.
+     *  @param  bucketCollateral_ Amount of collateral in bucket.
+     *  @param  bucketLPs_        Amount of LPs in bucket.
+     *  @param  bucketRawDeposit_ The amount of unscaled Fenwick tree amount in bucket.
+     *  @param  bucketScale_      Bucket scale factor
+     *  @param  bucketPrice_      Bucket's price.
+     */
+
+    function getRawExchangeRate(
+        uint256 bucketCollateral_,
+        uint256 bucketLPs_,
+        uint256 bucketRawDeposit_,
+	uint256 bucketScale_,
+        uint256 bucketPrice_
+    ) internal pure returns (uint256) {
+        return bucketLPs_ == 0 ? Maths.RAY :
+            (bucketRawDeposit_ + bucketPrice_ * bucketCollateral_ / bucketScale_ ) * 10**36 / bucketLPs_;
+            // 10^18 * 1e36 / 10^27 = 10^54 / 10^27 = 10^27
+    }
 
     /**
      *  @notice Returns the lender info for a given bucket.
@@ -264,6 +284,59 @@ library Buckets {
         }
     }
 
+    /**
+     *  @notice Returns the amount of quote tokens calculated for the given amount of LPs.
+     *  @param  rawDepositAvailable_   Raw (unscaled) deposit quantity in bucket
+     *  @param  depositConstraint_     Constraint on deposit in quote token
+     *  @param  lpConstraint_          Constraint in LPB terms
+     *  @param  bucket_                Bucket data
+     *  @param  price_                 Price of bucket
+     *  @param  depositScale_          Scale of bucket
+     *  @return rawDepositAmount_      Amount of raw deposit satistfying constraint
+     *  @return lps_                   Amount of bucket LPs corresponding for calculated raw deposit amount
+     */
+    function getRawConstrainedDeposit(
+				      uint256 rawDepositAvailable_,
+				      uint256 depositConstraint_,
+				      uint256 lpConstraint_,
+				      Bucket storage bucket_,
+				      uint256 depositScale_,
+				      uint256 price_
+    ) internal view returns (uint256 rawDepositAmount_, uint256 lps_) {
+        uint256 rawExchangeRate = getRawExchangeRate(
+            bucket_.collateral,
+            bucket_.lps,
+            rawDepositAvailable_,
+	    depositScale_,
+            price_
+        );
+
+	// rawRemovedAmount = min ( maxAmount_/scale, rawDeposit, lenderLPsBalance*rawExchangeRate)
+	// redeemedLPs_ = rawRemovedAmount/rawEchangeRate
+	// redeemedLPs_ = min ( maxAmount_/(rawExchangeRate*scale), rawDeposit/rawExchangeRate, lenderLPsBalance)
+
+	if( depositConstraint_ < Maths.wmul(rawDepositAvailable_, depositScale_) &&
+	    Maths.wwdivr(depositConstraint_, depositScale_) < Maths.rmul(lpConstraint_, rawExchangeRate) ) {
+	    // depositConstraint_ is binding constraint
+	    rawDepositAmount_ = Maths.wdiv(depositConstraint_, depositScale_);
+	    lps_ = Maths.wrdivr(rawDepositAmount_, rawExchangeRate);
+	} else if ( Maths.wadToRay(rawDepositAvailable_) < Maths.rmul(lpConstraint_, rawExchangeRate ) ) {
+	    // rawDeposit is binding constraint
+	    rawDepositAmount_ = rawDepositAvailable_;
+	    lps_ = Maths.wrdivr(rawDepositAmount_, rawExchangeRate);
+	} else {
+	    // redeeming all LPs
+	    lps_ = lpConstraint_;
+	    rawDepositAmount_ = Maths.rayToWad(Maths.rmul(lps_, rawExchangeRate));
+	}
+	
+	// If clearing out the bucket deposit, ensure it's zeroed out
+	if (lps_ == bucket_.lps) {
+	    rawDepositAmount_ = rawDepositAvailable_;
+	}
+    }
+
+    
     /**
      *  @notice Returns the amount of quote tokens calculated for the given amount of LPs.
      *  @param  bucketLPs_        Amount of LPs in bucket.

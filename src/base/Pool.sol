@@ -115,39 +115,47 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             fromIndex_,
             msg.sender
         );
-        uint256 amountToMove;
-        uint256 fromDeposit = deposits.valueAt(fromIndex_);
+
         Buckets.Bucket storage fromBucket = buckets[fromIndex_];
-        (amountToMove, fromBucketLPs_) = Buckets.lpsToQuoteToken(
-            fromBucket.lps,
-            fromBucket.collateral,
-            fromDeposit,
-            lender.lps,
-            maxAmountToMove_,
-            PoolUtils.indexToPrice(fromIndex_)
-        );
+        uint256 amountToCredit;
+        
+        {
+            uint256 rawAmountToMove;
+            uint256 fromRawDeposit = deposits.rawValueAt(fromIndex_);
+            uint256 fromScale = deposits.scale(fromIndex_);
+            uint256 fromPrice = PoolUtils.indexToPrice(fromIndex_);
+        
+            (rawAmountToMove, fromBucketLPs_) = Buckets.getRawConstrainedDeposit(
+                    fromRawDeposit,
+                    maxAmountToMove_,
+                    lender.lps,
+                    fromBucket,
+                    fromScale,
+                    fromPrice
+            );
+        
+            deposits.rawRemove(fromIndex_, rawAmountToMove);
 
-        deposits.remove(fromIndex_, amountToMove, fromDeposit);
-
-        // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
-        amountToMove = PoolUtils.applyEarlyWithdrawalPenalty(
-            poolState,
-            lender.depositTime,
-            fromIndex_,
-            toIndex_,
-            amountToMove
-        );
-
+            // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
+            amountToCredit = PoolUtils.applyEarlyWithdrawalPenalty(
+                    poolState,
+                    lender.depositTime,
+                    fromIndex_,
+                    toIndex_,
+                    Maths.wmul(rawAmountToMove, fromScale)
+            );
+        }
+        
         Buckets.Bucket storage toBucket = buckets[toIndex_];
         toBucketLPs_ = Buckets.quoteTokensToLPs(
             toBucket.collateral,
             toBucket.lps,
             deposits.valueAt(toIndex_),
-            amountToMove,
+            amountToCredit,
             PoolUtils.indexToPrice(toIndex_)
         );
 
-        deposits.add(toIndex_, amountToMove);
+        deposits.add(toIndex_, amountToCredit);
 
         // move lup if necessary and check loan book's htp against new lup
         uint256 newLup = _lup(poolState.accruedDebt);
@@ -161,7 +169,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
         _updateInterestParams(poolState, newLup);
 
-        emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, amountToMove, newLup);
+        emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, amountToCredit, newLup);
     }
 
     function removeQuoteToken(
@@ -173,36 +181,34 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
         _revertIfAuctionDebtLocked(index_, poolState.inflator);
 
-        (uint256 lenderLPsBalance, uint256 lastDeposit) = buckets.getLenderInfo(
-            index_,
-            msg.sender
-        );
-        if (lenderLPsBalance == 0) revert NoClaim();      // revert if no LP to claim
-
-        uint256 deposit = deposits.valueAt(index_);
-        if (deposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
-
+        uint256 lastDepositTime;
         Buckets.Bucket storage bucket = buckets[index_];
-        uint256 exchangeRate = Buckets.getExchangeRate(
-            bucket.collateral,
-            bucket.lps,
-            deposit,
-            PoolUtils.indexToPrice(index_)
-        );
-        removedAmount_ = Maths.rayToWad(Maths.rmul(lenderLPsBalance, exchangeRate));
-        uint256 removedAmountBefore = removedAmount_;
 
-        // remove min amount of lender entitled LPBs, max amount desired and deposit in bucket
-        if (removedAmount_ > maxAmount_) removedAmount_ = maxAmount_;
-        if (removedAmount_ > deposit)    removedAmount_ = deposit;
+        {
+            uint256 lenderLPsBalance;
+            uint256 depositScale = deposits.scale(index_);
+            (lenderLPsBalance, lastDepositTime) = buckets.getLenderInfo(
+                   index_,
+                   msg.sender
+            );
+            if (lenderLPsBalance == 0) revert NoClaim();      // revert if no LP to claim
 
-        if (removedAmountBefore == removedAmount_) redeemedLPs_ = lenderLPsBalance;
-        else {
-            redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(removedAmount_, exchangeRate));
+            uint256 rawDeposit = deposits.rawValueAt(index_);
+            if (rawDeposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
+
+            (rawDeposit, redeemedLPs_) = Buckets.getRawConstrainedDeposit(
+                   rawDeposit,
+                   maxAmount_,
+                   lenderLPsBalance,
+                   bucket,
+                   depositScale,
+                   PoolUtils.indexToPrice(index_)
+            );
+        
+            deposits.rawRemove(index_, rawDeposit); // update FenwickTree
+            removedAmount_ = Maths.wmul(rawDeposit, depositScale);
         }
-
-        deposits.remove(index_, removedAmount_, deposit); // update FenwickTree
-
+        
         uint256 newLup = _lup(poolState.accruedDebt);
         if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
 
@@ -212,7 +218,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         removedAmount_ = PoolUtils.applyEarlyWithdrawalPenalty(
             poolState,
-            lastDeposit,
+            lastDepositTime,
             index_,
             0,
             removedAmount_
@@ -396,7 +402,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 maxDepth_
     ) external override {
         PoolState memory poolState = _accruePoolInterest();
-        uint256 reserves = Maths.wmul(t0poolDebt, poolState.inflator) + _getPoolQuoteTokenBalance() - deposits.treeSum() - auctions.totalBondEscrowed - reserveAuctionUnclaimed;
+        uint256 reserves;
+        {
+            uint256 assets = Maths.wmul(t0poolDebt, poolState.inflator) + _getPoolQuoteTokenBalance();
+            uint256 liabilities = deposits.treeSum() + auctions.totalBondEscrowed + reserveAuctionUnclaimed;
+            reserves = (assets > liabilities) ? (assets-liabilities) : 0;
+        }
+
         Loans.Borrower storage borrower = loans.borrowers[borrowerAddress_];
         (uint256 remainingCollateral, uint256 remainingt0Debt) = Auctions.settlePoolDebt(
             auctions,
