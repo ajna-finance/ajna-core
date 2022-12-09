@@ -183,9 +183,9 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         uint256 newLup
     ) internal {
         changePrank(from);
-        _assertTokenTransferEvent(address(_pool), from, amount);
         vm.expectEmit(true, true, false, true);
         emit DrawDebt(from, amount, 0, newLup);
+        _assertTokenTransferEvent(address(_pool), from, amount);
 
         ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
 
@@ -203,6 +203,9 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     ) internal {
         changePrank(from);
 
+        vm.expectEmit(true, true, false, true);
+        emit DrawDebt(from, amountToBorrow, collateralToPledge, newLup);
+
         // pledge collateral
         if (collateralToPledge != 0) {
             vm.expectEmit(true, true, false, true);
@@ -214,8 +217,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
             _assertTokenTransferEvent(address(_pool), from, amountToBorrow);
         }
 
-        vm.expectEmit(true, true, false, true);
-        emit DrawDebt(from, amountToBorrow, collateralToPledge, newLup);
         ERC20Pool(address(_pool)).drawDebt(borrower, amountToBorrow, limitIndex, collateralToPledge);
 
         // add for tearDown
@@ -256,9 +257,9 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     ) internal {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
-        emit Transfer(from, address(_pool), amount / ERC20Pool(address(_pool)).collateralScale());
-        vm.expectEmit(true, true, false, true);
         emit DrawDebt(borrower, 0, amount, _poolUtils.lup(address(_pool)));
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(from, address(_pool), amount / ERC20Pool(address(_pool)).collateralScale());
 
         // call out to drawDebt w/ amountToBorrow == 0
         ERC20Pool(address(_pool)).drawDebt(borrower, 0, 0, amount);
@@ -277,9 +278,9 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit AuctionSettle(borrower, collateral);
         vm.expectEmit(true, true, false, true);
-        emit Transfer(from, address(_pool), amount / ERC20Pool(address(_pool)).collateralScale());
-        vm.expectEmit(true, true, false, true);
         emit DrawDebt(borrower, 0, amount, _poolUtils.lup(address(_pool)));
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(from, address(_pool), amount / ERC20Pool(address(_pool)).collateralScale());
 
         // call out to drawDebt w/ amountToBorrow == 0
         ERC20Pool(address(_pool)).drawDebt(borrower, 0, 0, amount);
