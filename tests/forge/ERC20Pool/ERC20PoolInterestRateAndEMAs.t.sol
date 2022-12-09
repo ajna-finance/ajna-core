@@ -350,7 +350,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             }
         }
 
-        // show that the rate maxed out at 500%
+        // show the rate maxed out at 50000%
         _assertPool(
             PoolState({
                 htp:                  32229.862501923749497041 * 1e18,

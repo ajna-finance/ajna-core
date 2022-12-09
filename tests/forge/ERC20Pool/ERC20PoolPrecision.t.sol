@@ -110,7 +110,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _assertPoolPrices(
             {
                 htp:      0,
-                htpIndex: 0,
+                htpIndex: 7388,
                 hpb:      3_025.946482308870940904 * 1e18,
                 hpbIndex: 2549,
                 lup:      MAX_PRICE,
@@ -166,7 +166,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _assertPoolPrices(
             {
                 htp:      0,
-                htpIndex: 0,
+                htpIndex: 7388,
                 hpb:      3_025.946482308870940904 * 1e18,
                 hpbIndex: 2549,
                 lup:      MAX_PRICE,
@@ -256,7 +256,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _assertPoolPrices(
             {
                 htp:      0,
-                htpIndex: 0,
+                htpIndex: 7388,
                 hpb:      3_025.946482308870940904 * 1e18,
                 hpbIndex: 2549,
                 lup:      MAX_PRICE,
