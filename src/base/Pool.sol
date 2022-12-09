@@ -416,23 +416,24 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             maxDepth_
         );
 
-        console.log("remainingCol", remainingCollateral);
-        console.log("remainingt0Debt", remainingt0Debt);
-
         if (remainingt0Debt == 0) remainingCollateral = _settleAuction(borrowerAddress_, remainingCollateral);
 
         uint256 t0settledDebt = borrower.t0debt - remainingt0Debt;
         t0poolDebt      -= t0settledDebt;
         t0DebtInAuction -= t0settledDebt;
 
+        console.log("remainingCollateral", remainingCollateral);
+        console.log("b col", borrower.collateral);
         poolState.collateral -= borrower.collateral - remainingCollateral;
+        console.log("poolState.collateral", poolState.collateral);
+        console.log("poolState.debt", poolState.accruedDebt);
 
         borrower.t0debt     = remainingt0Debt;
         borrower.collateral = remainingCollateral;
 
         pledgedCollateral = poolState.collateral;
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
-
+        console.log("overflow catch3");
         emit Settle(borrowerAddress_, t0settledDebt);
     }
 
@@ -753,25 +754,32 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                     EMA_7D_RATE_FACTOR
                 ) + Maths.wmul(debtEma, LAMBDA_EMA_7D
             );
+            console.log("oldlupCol", lupColEma);
+            console.log("lup", lup_);
             uint256 curLupColEma = Maths.wmul(
                     Maths.wmul(lup_, poolState_.collateral),
                     EMA_7D_RATE_FACTOR
                 ) + Maths.wmul(lupColEma, LAMBDA_EMA_7D
             );
+            console.log("overflow chk 01");
 
             debtEma   = curDebtEma;
             lupColEma = curLupColEma;
 
             // update pool interest rate
             if (poolState_.accruedDebt != 0) {                
+                console.log("overflow chk 02");
                 int256 mau = int256(                                       // meaningful actual utilization                   
                     deposits.utilization(
                         poolState_.accruedDebt,
                         poolState_.collateral
                     )
                 );
-                int256 tu = int256(Maths.wdiv(curDebtEma, curLupColEma));  // target utilization
+                console.log("curLupColEma", curLupColEma);
+                console.log("curDebtEma", curDebtEma);
+                int256 tu = int256(Maths.wdiv(curDebtEma, curLupColEma)); // target utilization
 
+                console.log("overflow chk 04");
                 if (!poolState_.isNewInterestAccrued) poolState_.rate = interestRate;
                 // raise rates if 4*(tu-1.02*mau) < (tu+1.02*mau-1)^2-1
                 // decrease rates if 4*(tu-mau) > 1-(tu+mau-1)^2
@@ -784,6 +792,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                     newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
                 }
 
+                console.log("overflow chk 04");
                 if (poolState_.rate != newInterestRate) {
                     interestRate       = uint208(newInterestRate);
                     interestRateUpdate = uint48(block.timestamp);

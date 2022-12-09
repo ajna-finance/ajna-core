@@ -122,7 +122,6 @@ library Auctions {
 
         HpbLocalVars memory hpbVars;
 
-        console.log("settle pool Debt call");
         // auction has debt to cover with remaining collateral
         while (bucketDepth_ != 0 && t0DebtToSettle_ != 0 && collateral_ != 0) {
             hpbVars.index   = Deposits.findIndexOfSum(deposits_, 1);
@@ -136,35 +135,27 @@ library Auctions {
                 uint256 debtToSettle      = Maths.wmul(t0DebtToSettle_, poolInflator_);     // current debt to be settled
                 uint256 maxSettleableDebt = Maths.wmul(collateral_, hpbVars.price);         // max debt that can be settled with existing collateral
 
-                    console.log("index", hpbVars.index);
-                    console.log("depositToRemove avail", depositToRemove);
-                    console.log("debtToSettle", debtToSettle);
                     // FIXME: Is it possible for the depositToRemove to not be greater than debtToSettle
                 if (depositToRemove >= debtToSettle && maxSettleableDebt >= debtToSettle) { // enough deposit in bucket and collateral avail to settle entire debt
                     depositToRemove = debtToSettle;                                         // remove only what's needed to settle the debt
                     t0DebtToSettle_ = 0;                                                    // no remaining debt to settle
                     collateralUsed  = Maths.wdiv(debtToSettle, hpbVars.price);
                     collateral_     -= collateralUsed;
-                } else if (maxSettleableDebt >= depositToRemove) {                          // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
-                    console.log("in here2");
+                } else if (depositToRemove != 0 && maxSettleableDebt >= depositToRemove) {  // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
                     t0DebtToSettle_ -= Maths.wdiv(depositToRemove, poolInflator_);          // subtract from debt the corresponding t0 amount of deposit
                     collateralUsed  = Maths.wdiv(depositToRemove, hpbVars.price);
                     collateral_     -= collateralUsed;
-                    console.log("depositToRemove", depositToRemove);
-                    console.log("colUsed", collateralUsed);
-                    console.log("collateral_", collateral_);
                 } else {                                                                    // constrained by collateral available
-                    depositToRemove = maxSettleableDebt;
+                    // depositToRemove == 0 if hpbVars.index is lowest price bucket
+                    depositToRemove = depositToRemove != 0 ? maxSettleableDebt : 0;
                     t0DebtToSettle_ -= Maths.wdiv(maxSettleableDebt, poolInflator_);
                     collateralUsed  = collateral_;
                     collateral_     = 0;
                 }
             }
 
-            console.log("col used", collateralUsed);
-            console.log("index inserted into", hpbVars.index);
             buckets_[hpbVars.index].collateral += collateralUsed;                        // add settled collateral into bucket
-            Deposits.remove(deposits_, hpbVars.index, depositToRemove, hpbVars.deposit); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
+            if (depositToRemove != 0) Deposits.remove(deposits_, hpbVars.index, depositToRemove, hpbVars.deposit); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
 
             --bucketDepth_;
         }
