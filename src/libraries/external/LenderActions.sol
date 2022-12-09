@@ -369,6 +369,22 @@ library LenderActions {
         emit TransferLPTokens(owner_, newOwner_, indexes_, tokensTransferred);
     }
 
+    function _transferAdvancedDepositAmount(
+        Buckets.Bucket storage bucket,
+        address owner_,
+        address newOwner_,
+        uint256 advancedDeposit_
+    ) internal {
+        bucket.lenders[owner_].advancedDeposit -= advancedDeposit_;
+        bucket.lenders[newOwner_].advancedDeposit += advancedDeposit_;
+
+        if (bucket.lenders[owner_].advancedDeposit == 0) {
+            // replace with ennumerable set?
+            // auctions.kickers[owner_].pop();
+        }
+
+    }
+
     function _lup(
         Deposits.Data storage deposits_,
         uint256 debt_
