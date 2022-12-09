@@ -23,6 +23,9 @@ abstract contract DSTestPlus is Test {
     // nonce for generating random addresses
     uint16 internal _nonce = 0;
 
+    // mainnet address of AJNA token, because tests are forked
+    address internal _ajna = 0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079;
+
     /*************/
     /*** Pools ***/
     /*************/
@@ -144,22 +147,6 @@ abstract contract DSTestPlus is Test {
         bucketsUsed.add(index);
     }
 
-    function _borrow(
-        address from,
-        uint256 amount,
-        uint256 indexLimit,
-        uint256 newLup
-    ) internal {
-        changePrank(from);
-        vm.expectEmit(true, true, false, true);
-        emit Borrow(from, newLup, amount);
-        _assertTokenTransferEvent(address(_pool), from, amount);
-        _pool.borrow(amount, indexLimit);
-
-        // Add for tearDown
-        borrowers.add(from);
-    }
-
     function _depositTake(
         address from,
         address borrower,
@@ -229,16 +216,6 @@ abstract contract DSTestPlus is Test {
         bucketsUsed.add(toIndex);
     }
 
-    function _pullCollateral(
-        address from,
-        uint256 amount 
-    ) internal virtual {
-        changePrank(from);
-        vm.expectEmit(true, true, false, true);
-        emit PullCollateral(from, amount);
-        _pool.pullCollateral(amount);
-    }
-
     function _removeAllLiquidity(
         address from,
         uint256 amount,
@@ -288,20 +265,6 @@ abstract contract DSTestPlus is Test {
         (uint256 removedAmount, uint256 lpRedeemed) = _pool.removeQuoteToken(amount, index);
         assertEq(removedAmount, expectedWithdrawal);
         assertEq(lpRedeemed,    lpRedeem);
-    }
-
-    function _repay(
-        address from,
-        address borrower,
-        uint256 amount,
-        uint256 repaid,
-        uint256 newLup
-    ) internal {
-        changePrank(from);
-        vm.expectEmit(true, true, false, true);
-        emit Repay(borrower, newLup, repaid);
-        _assertTokenTransferEvent(from, address(_pool), repaid);
-        _pool.repay(borrower, amount);
     }
 
     function _startClaimableReserveAuction(
@@ -726,42 +689,34 @@ abstract contract DSTestPlus is Test {
 
     function _assertBorrowAuctionActiveRevert(
         address from,
-        uint256 amount,
-        uint256 indexLimit
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(abi.encodeWithSignature('AuctionActive()'));
-        _pool.borrow(amount, indexLimit);
+        uint256,
+        uint256
+    ) internal virtual {
+        // to be overidden by ERC20/ERC721DSTestPlus 
     }
 
     function _assertBorrowLimitIndexRevert(
         address from,
-        uint256 amount,
-        uint256 indexLimit
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.LimitIndexReached.selector);
-        _pool.borrow(amount, indexLimit);
+        uint256,
+        uint256
+    ) internal virtual {
+        // to be overidden by ERC20/ERC721DSTestPlus 
     }
 
     function _assertBorrowBorrowerUnderCollateralizedRevert(
         address from,
-        uint256 amount,
-        uint256 indexLimit
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.BorrowerUnderCollateralized.selector);
-        _pool.borrow(amount, indexLimit);
+        uint256,
+        uint256
+    ) internal virtual {
+        // to be overidden by ERC20/ERC721DSTestPlus 
     }
 
     function _assertBorrowMinDebtRevert(
         address from,
-        uint256 amount,
-        uint256 indexLimit
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
-        _pool.borrow(amount, indexLimit);
+        uint256,
+        uint256
+    ) internal virtual {
+        // to be overidden by ERC20/ERC721DSTestPlus 
     }
 
     function _assertFlashloanFeeRevertsForToken(
@@ -826,35 +781,6 @@ abstract contract DSTestPlus is Test {
         changePrank(from);
         vm.expectRevert(IPoolErrors.BorrowerOk.selector);
         _pool.kick(borrower);
-    }
-
-    function _assertPullInsufficientCollateralRevert(
-        address from,
-        uint256 amount
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
-        _pool.pullCollateral(amount);
-    }
-
-    function _assertRepayNoDebtRevert(
-        address from,
-        address borrower,
-        uint256 amount
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.NoDebt.selector);
-        _pool.repay(borrower, amount);
-    }
-
-    function _assertRepayMinDebtRevert(
-        address from,
-        address borrower,
-        uint256 amount
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
-        _pool.repay(borrower, amount);
     }
 
     function _assertRemoveCollateralAuctionNotClearedRevert(

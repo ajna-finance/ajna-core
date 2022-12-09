@@ -49,7 +49,7 @@ library Auctions {
     struct SettleParams {
         address borrower;    // borrower address to settle
         uint256 collateral;  // remaining collateral pledged by borrower that can be used to settle debt
-        uint256 debt;        // borrower debt to settle 
+        uint256 t0debt;      // borrower t0 debt to settle 
         uint256 reserves;    // current reserves in pool
         uint256 inflator;    // current pool inflator
         uint256 bucketDepth; // number of buckets to use when settle debt
@@ -67,7 +67,7 @@ library Auctions {
     struct TakeParams {
         address borrower;       // borrower address to take from
         uint256 collateral;     // borrower available collateral to take
-        uint256 debt;           // borrower debt
+        uint256 t0debt;         // borrower t0 debt
         uint256 takeCollateral; // desired amount to take
         uint256 inflator;       // current pool inflator
         bool    depositTake;    // deposit or arb take, used by bucket take
@@ -176,7 +176,7 @@ library Auctions {
         // HpbLocalVars memory hpbVars;
 
         // auction has debt to cover with remaining collateral
-        while (params_.bucketDepth != 0 && params_.debt != 0 && params_.collateral != 0) {
+        while (params_.bucketDepth != 0 && params_.t0debt != 0 && params_.collateral != 0) {
             uint256 index   = Deposits.findIndexOfSum(deposits_, 1);
             uint256 deposit = Deposits.valueAt(deposits_, index);
             uint256 price   = _priceAt(index);
@@ -185,21 +185,21 @@ library Auctions {
             uint256 collateralUsed;
 
             {
-                uint256 debtToSettle      = Maths.wmul(params_.debt, params_.inflator);     // current debt to be settled
+                uint256 debtToSettle      = Maths.wmul(params_.t0debt, params_.inflator);     // current debt to be settled
                 uint256 maxSettleableDebt = Maths.wmul(params_.collateral, price);          // max debt that can be settled with existing collateral
 
                 if (depositToRemove >= debtToSettle && maxSettleableDebt >= debtToSettle) { // enough deposit in bucket and collateral avail to settle entire debt
                     depositToRemove    = debtToSettle;                                      // remove only what's needed to settle the debt
-                    params_.debt       = 0;                                                 // no remaining debt to settle
+                    params_.t0debt    = 0;                                                 // no remaining debt to settle
                     collateralUsed     = Maths.wdiv(debtToSettle, price);
                     params_.collateral -= collateralUsed;
                 } else if (maxSettleableDebt >= depositToRemove) {                          // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
-                    params_.debt       -= Maths.wdiv(depositToRemove, params_.inflator);    // subtract from debt the corresponding t0 amount of deposit
+                    params_.t0debt     -= Maths.wdiv(depositToRemove, params_.inflator);    // subtract from debt the corresponding t0 amount of deposit
                     collateralUsed     = Maths.wdiv(depositToRemove, price);
                     params_.collateral -= collateralUsed;
                 } else {                                                                    // constrained by collateral available
                     depositToRemove    = maxSettleableDebt;
-                    params_.debt       -= Maths.wdiv(maxSettleableDebt, params_.inflator);
+                    params_.t0debt     -= Maths.wdiv(maxSettleableDebt, params_.inflator);
                     collateralUsed     = params_.collateral;
                     params_.collateral = 0;
                 }
@@ -212,27 +212,27 @@ library Auctions {
         }
 
         // if there's still debt and no collateral
-        if (params_.debt != 0 && params_.collateral == 0) {
+        if (params_.t0debt != 0 && params_.collateral == 0) {
             // settle debt from reserves
-            params_.debt -= Maths.min(params_.debt, Maths.wdiv(params_.reserves, params_.inflator));
+            params_.t0debt -= Maths.min(params_.t0debt, Maths.wdiv(params_.reserves, params_.inflator));
 
             // if there's still debt after settling from reserves then start to forgive amount from next HPB
-            while (params_.bucketDepth != 0 && params_.debt != 0) { // loop through remaining buckets if there's still debt to settle
+            while (params_.bucketDepth != 0 && params_.t0debt != 0) { // loop through remaining buckets if there's still debt to settle
                 uint256 index   = Deposits.findIndexOfSum(deposits_, 1);
                 uint256 deposit = Deposits.valueAt(deposits_, index);
 
                 uint256 depositToRemove = deposit;
-                uint256 debtToSettle    = Maths.wmul(params_.debt, params_.inflator);
+                uint256 debtToSettle    = Maths.wmul(params_.t0debt, params_.inflator);
 
-                if (depositToRemove >= debtToSettle) {                             // enough deposit in bucket to settle entire debt
-                    depositToRemove = debtToSettle;                                // remove only what's needed to settle the debt
-                    params_.debt    = 0;                                           // no remaining debt to settle
+                if (depositToRemove >= debtToSettle) {                               // enough deposit in bucket to settle entire debt
+                    depositToRemove = debtToSettle;                                  // remove only what's needed to settle the debt
+                    params_.t0debt  = 0;                                             // no remaining debt to settle
 
-                } else {                                                           // not enough deposit to settle entire debt, we settle only deposit amount
-                    params_.debt -= Maths.wdiv(depositToRemove, params_.inflator); // subtract from remaining debt the corresponding t0 amount of deposit
+                } else {                                                             // not enough deposit to settle entire debt, we settle only deposit amount
+                    params_.t0debt -= Maths.wdiv(depositToRemove, params_.inflator); // subtract from remaining debt the corresponding t0 amount of deposit
 
                     Buckets.Bucket storage hpbBucket = buckets_[index];
-                    if (hpbBucket.collateral == 0) {                               // existing LPB and LP tokens for the bucket shall become unclaimable.
+                    if (hpbBucket.collateral == 0) {                                 // existing LPB and LP tokens for the bucket shall become unclaimable.
                         hpbBucket.lps = 0;
                         hpbBucket.bankruptcyTime = block.timestamp;
                     }
@@ -244,7 +244,7 @@ library Auctions {
             }
         }
 
-        return (params_.collateral, params_.debt);
+        return (params_.collateral, params_.t0debt);
     }
 
     /**
@@ -276,10 +276,11 @@ library Auctions {
         uint256 bondSize = Maths.wmul(bondFactor,  params_.debt);
         Kicker storage kicker = self.kickers[msg.sender];
         kicker.locked += bondSize;
-        if (kicker.claimable >= bondSize) {
+        uint256 kickerClaimable = kicker.claimable;
+        if (kickerClaimable >= bondSize) {
             kicker.claimable -= bondSize;
         } else {
-            kickAuctionAmount_ = bondSize - kicker.claimable;
+            kickAuctionAmount_ = bondSize - kickerClaimable;
             kicker.claimable = 0;
         }
         // update totalBondEscrowed accumulator
@@ -334,13 +335,16 @@ library Auctions {
         if (bucketDeposit == 0) revert InsufficientLiquidity(); // revert if no quote tokens in arbed bucket
 
         Liquidation storage liquidation = self.liquidations[params_.borrower];
-        _validateTake(liquidation);
+
+        uint256 kickTime = liquidation.kickTime;
+        if (kickTime == 0) revert NoAuction();
+        if (block.timestamp - kickTime <= 1 hours) revert TakeNotPastCooldown();
 
         TakeResult memory result;
         result.bucketPrice  = _priceAt(params_.index);
         result.auctionPrice = _auctionPrice(
             liquidation.kickMomp,
-            liquidation.kickTime
+            kickTime
         );
         // cannot arb with a price lower than the auction price
         if (result.auctionPrice > result.bucketPrice) revert AuctionPriceGtBucketPrice();
@@ -351,7 +355,13 @@ library Auctions {
             uint256 borrowerDebt,
             int256  bpf,
             uint256 factor
-        ) = _takeParameters(liquidation, params_.collateral, params_.debt, price, params_.inflator);
+        ) = _takeParameters(
+            liquidation,
+            params_.collateral,
+            params_.t0debt,
+            price,
+            params_.inflator
+        );
         result.kicker = liquidation.kicker;
         result.isRewarded = (bpf >= 0);
 
@@ -360,7 +370,7 @@ library Auctions {
             result.t0repayAmount    = Maths.wdiv(bucketDeposit, params_.inflator);
             result.quoteTokenAmount = Maths.wdiv(bucketDeposit, factor);
         } else {
-            result.t0repayAmount    = params_.debt;
+            result.t0repayAmount    = params_.t0debt;
             result.quoteTokenAmount = Maths.wdiv(borrowerDebt, factor);
         }
 
@@ -384,7 +394,7 @@ library Auctions {
 
         _rewardBucketTake(
             deposits_,
-            buckets_[params_.index],
+            buckets_,
             bucketDeposit,
             params_.index,
             params_.depositTake,
@@ -416,12 +426,15 @@ library Auctions {
         TakeParams calldata params_
     ) external returns (uint256, uint256, uint256, uint256) {
         Liquidation storage liquidation = self.liquidations[params_.borrower];
-        _validateTake(liquidation);
+
+        uint256 kickTime = liquidation.kickTime;
+        if (kickTime == 0) revert NoAuction();
+        if (block.timestamp - kickTime <= 1 hours) revert TakeNotPastCooldown();
 
         TakeResult memory result;
         result.auctionPrice = _auctionPrice(
             liquidation.kickMomp,
-            liquidation.kickTime
+            kickTime
         );
         result.kicker = liquidation.kicker;
         (
@@ -431,7 +444,7 @@ library Auctions {
         ) = _takeParameters(
             liquidation,
             params_.collateral,
-            params_.debt,
+            params_.t0debt,
             result.auctionPrice,
             params_.inflator
         );
@@ -442,8 +455,8 @@ library Auctions {
         result.quoteTokenAmount = Maths.wmul(result.auctionPrice, result.collateralAmount);
         result.t0repayAmount    = Maths.wdiv(Maths.wmul(result.quoteTokenAmount, factor), params_.inflator);
 
-        if (result.t0repayAmount >= params_.debt) {
-            result.t0repayAmount    = params_.debt;
+        if (result.t0repayAmount >= params_.t0debt) {
+            result.t0repayAmount    = params_.t0debt;
             result.quoteTokenAmount = Maths.wdiv(borrowerDebt, factor);
             result.collateralAmount = Maths.min(Maths.wdiv(result.quoteTokenAmount, result.auctionPrice), result.collateralAmount);
         }
@@ -547,7 +560,6 @@ library Auctions {
     /*** Reserve Auction ***/
     /***********************/
 
-
     function startClaimableReserveAuction(
         Data storage self,
         Pool.ReserveAuctionParams storage reserveAuction_,
@@ -593,58 +605,6 @@ library Auctions {
     /***************************/
     /***  Internal Functions ***/
     /***************************/
-
-    function _auctionPrice(
-        uint256 referencePrice,
-        uint256 kickTime_
-    ) internal view returns (uint256 price_) {
-        uint256 elapsedHours = Maths.wdiv((block.timestamp - kickTime_) * 1e18, 1 hours * 1e18);
-        elapsedHours -= Maths.min(elapsedHours, 1e18);  // price locked during cure period
-
-        int256 timeAdjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours));
-        price_ = 32 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
-    }
-
-    /**
-     *  @notice Calculates bond penalty factor.
-     *  @dev Called in kick and take.
-     *  @param debt_             Borrower debt.
-     *  @param collateral_       Borrower collateral.
-     *  @param neutralPrice_     NP of auction.
-     *  @param bondFactor_       Factor used to determine bondSize.
-     *  @param price_            Auction price at the time of call.
-     *  @return bpf_             Factor used in determining bond Reward (positive) or penalty (negative).
-     */
-    function _bpf(
-        uint256 debt_,
-        uint256 collateral_,
-        uint256 neutralPrice_,
-        uint256 bondFactor_,
-        uint256 price_
-    ) internal pure returns (int256) {
-        int256 thresholdPrice = int256(Maths.wdiv(debt_, collateral_));
-
-        int256 sign;
-        if (thresholdPrice < int256(neutralPrice_)) {
-            // BPF = BondFactor * min(1, max(-1, (neutralPrice - price) / (neutralPrice - thresholdPrice)))
-            sign = Maths.minInt(
-                    1e18,
-                    Maths.maxInt(
-                        -1 * 1e18,
-                        PRBMathSD59x18.div(
-                            int256(neutralPrice_) - int256(price_),
-                            int256(neutralPrice_) - thresholdPrice
-                        )
-                    )
-            );
-        } else {
-            int256 val = int256(neutralPrice_) - int256(price_);
-            if (val < 0 )      sign = -1e18;
-            else if (val != 0) sign = 1e18;
-        }
-
-        return PRBMathSD59x18.mul(int256(bondFactor_), sign);
-    }
 
     /**
      *  @notice Removes auction and repairs the queue order.
@@ -697,52 +657,101 @@ library Auctions {
      */
     function _rewardBucketTake(
         Deposits.Data storage deposits_,
-        Buckets.Bucket storage bucket_,
+        mapping(uint256 => Buckets.Bucket) storage buckets_,
         uint256 bucketDeposit_,
         uint256 bucketIndex_,
         bool depositTake_,
         TakeResult memory result_
     ) internal {
+        Buckets.Bucket storage bucket = buckets_[bucketIndex_];
         uint256 bucketExchangeRate = Buckets.getExchangeRate(
-            bucket_.collateral,
-            bucket_.lps,
+            bucket.collateral,
+            bucket.lps,
             bucketDeposit_,
             result_.bucketPrice
         );
 
+        uint256 bankruptcyTime = bucket.bankruptcyTime;
+        uint256 totalLPsReward;
         // if arb take - taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
-        if (!depositTake_) Buckets.addLPs(
-            bucket_,
-            msg.sender,
-            Maths.wrdivr(
+        if (!depositTake_) {
+            uint256 takerLPsReward = Maths.wrdivr(
                 Maths.wmul(result_.collateralAmount, result_.bucketPrice - result_.auctionPrice),
                 bucketExchangeRate
-            )
-        );
-        bucket_.collateral += result_.collateralAmount; // collateral is added to the bucket’s claimable collateral
+            );
+
+            totalLPsReward += takerLPsReward;
+            Buckets.addLenderLPs(bucket, bankruptcyTime, msg.sender, takerLPsReward);
+        }
 
         // the bondholder/kicker is awarded bond change worth of LPB in the bucket
         uint256 depositAmountToRemove = result_.quoteTokenAmount;
         if (result_.isRewarded) {
-            Buckets.addLPs(
-                bucket_,
-                result_.kicker,
-                Maths.wrdivr(result_.bondChange, bucketExchangeRate)
-            );
+            uint256 kickerLPsReward = Maths.wrdivr(result_.bondChange, bucketExchangeRate);
             depositAmountToRemove -= result_.bondChange;
+
+            totalLPsReward += kickerLPsReward;
+            Buckets.addLenderLPs(bucket, bankruptcyTime, result_.kicker, kickerLPsReward);
         }
+
         Deposits.remove(deposits_, bucketIndex_, depositAmountToRemove, bucketDeposit_); // remove quote tokens from bucket’s deposit
+
+        // total rewarded LPs are added to the bucket LP balance
+        bucket.lps += totalLPsReward;
+        // collateral is added to the bucket’s claimable collateral
+        bucket.collateral += result_.collateralAmount;
+    }
+
+    function _auctionPrice(
+        uint256 referencePrice,
+        uint256 kickTime_
+    ) internal view returns (uint256 price_) {
+        uint256 elapsedHours = Maths.wdiv((block.timestamp - kickTime_) * 1e18, 1 hours * 1e18);
+        elapsedHours -= Maths.min(elapsedHours, 1e18);  // price locked during cure period
+
+        int256 timeAdjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours));
+        price_ = 32 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
     }
 
     /**
-     *  @notice Utility function to validate take action.
-     *  @param  liquidation_  Liquidation struct holding auction details.
+     *  @notice Calculates bond penalty factor.
+     *  @dev Called in kick and take.
+     *  @param debt_             Borrower debt.
+     *  @param collateral_       Borrower collateral.
+     *  @param neutralPrice_     NP of auction.
+     *  @param bondFactor_       Factor used to determine bondSize.
+     *  @param price_            Auction price at the time of call.
+     *  @return bpf_             Factor used in determining bond Reward (positive) or penalty (negative).
      */
-    function _validateTake(
-        Liquidation storage liquidation_
-    ) internal view {
-        if (liquidation_.kickTime == 0) revert NoAuction();
-        if (block.timestamp - liquidation_.kickTime <= 1 hours) revert TakeNotPastCooldown();
+    function _bpf(
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 neutralPrice_,
+        uint256 bondFactor_,
+        uint256 price_
+    ) internal pure returns (int256) {
+        int256 thresholdPrice = int256(Maths.wdiv(debt_, collateral_));
+
+        int256 sign;
+        if (thresholdPrice < int256(neutralPrice_)) {
+            // BPF = BondFactor * min(1, max(-1, (neutralPrice - price) / (neutralPrice - thresholdPrice)))
+            sign = Maths.minInt(
+                    1e18,
+                    Maths.maxInt(
+                        -1 * 1e18,
+                        PRBMathSD59x18.div(
+                            int256(neutralPrice_) - int256(price_),
+                            int256(neutralPrice_) - thresholdPrice
+                        )
+                    )
+            );
+        } else {
+            int256 val = int256(neutralPrice_) - int256(price_);
+            if (val < 0 )      sign = -1e18;
+            else if (val != 0) sign = 1e18;
+        }
+
+        return PRBMathSD59x18.mul(int256(bondFactor_), sign);
     }
 
     /**
@@ -818,15 +827,12 @@ library Auctions {
     ) internal view {
         address head     = self.head;
         uint256 kickTime = self.liquidations[head].kickTime;
-        if (
-            kickTime != 0
-            &&
-            (
-                block.timestamp - kickTime > 72 hours
-                ||
-                (loans_.borrowers[head].t0debt != 0 && loans_.borrowers[head].collateral == 0)
-            )
-        ) revert AuctionNotCleared();
+        if (kickTime != 0) {
+            if (block.timestamp - kickTime > 72 hours) revert AuctionNotCleared();
+
+            Loans.Borrower storage borrower = loans_.borrowers[head];
+            if (borrower.t0debt != 0 && borrower.collateral == 0) revert AuctionNotCleared();
+        }
     }
 
 }

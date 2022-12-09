@@ -1,11 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
+import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
 import 'src/base/PoolHelper.sol';
+import 'src/erc20/interfaces/IERC20Pool.sol';
 
 contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
+
+    using EnumerableSet for EnumerableSet.AddressSet;
+
     address internal _borrower;
     address internal _borrower2;
     address internal _lender;
@@ -86,21 +92,18 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             })
         );
         // enforce EMA and target utilization update
-        _pledgeCollateral(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   100 * 1e18
-            }
-        );
+        changePrank(_borrower);
+
         vm.expectEmit(true, true, false, true);
         emit UpdateInterestRate(0.05 * 1e18, 0.055 * 1e18);
-        _borrow(
+        _drawDebt(
             {
-                from:       _borrower,
-                amount:     46_000 * 1e18,
-                indexLimit: 4_300,
-                newLup:     2_981.007422784467321543 * 1e18
+                from:               _borrower,
+                borrower:           _borrower,
+                amountToBorrow:     46_000 * 1e18,
+                limitIndex:         4_300,
+                collateralToPledge: 100 * 1e18,
+                newLup:             2_981.007422784467321543 * 1e18
             }
         );
 
@@ -110,11 +113,11 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             110_000 * 1e18,
                 pledgedCollateral:    100 * 1e18,
-                encumberedCollateral: 15.445862501819022598 * 1e18,
-                poolDebt:             46_044.230769230769252000 * 1e18,
-                actualUtilization:    0.920884615384615385 * 1e18,
-                targetUtilization:    0.000000505854275034 * 1e18,
-                minDebtAmount:        4_604.423076923076925200 * 1e18,
+                encumberedCollateral: 15.469154633609698947 * 1e18,
+                poolDebt:             46_113.664786991249514684 * 1e18,
+                actualUtilization:    0.922273295739824990 * 1e18,
+                targetUtilization:    0.154458625018190226 * 1e18,
+                minDebtAmount:        4_611.366478699124951468 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
                 interestRate:         0.055 * 1e18,
@@ -124,15 +127,14 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         // repay entire loan
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 200 * 1e18);
-        _repay(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   46_044.230769230769252000 * 1e18,
-                repaid:   46_044.230769230769252000 * 1e18,
-                newLup:   MAX_PRICE
-            }
-        );
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    46_113.664786991249514684 * 1e18,
+            amountRepaid:     46_113.664786991249514684 * 1e18,
+            collateralToPull: 0,
+            newLup:           MAX_PRICE
+        });
     }
 
     function testOverutilizedPoolInterestRateIncrease() external tearDown {

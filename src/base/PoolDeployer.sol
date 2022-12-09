@@ -9,6 +9,8 @@ abstract contract PoolDeployer {
     uint256 public constant MIN_RATE = 0.01 * 10**18;
     uint256 public constant MAX_RATE = 0.1 * 10**18;
 
+    address public ajna;
+
     /***********************/
     /*** State Variables ***/
     /***********************/

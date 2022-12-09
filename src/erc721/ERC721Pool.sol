@@ -8,7 +8,6 @@ import '../base/FlashloanablePool.sol';
 
 contract ERC721Pool is IERC721Pool, FlashloanablePool {
     using Auctions for Auctions.Data;
-    using Buckets  for mapping(uint256 => Buckets.Bucket);
     using Deposits for Deposits.Data;
     using Loans    for Loans.Data;
 
@@ -23,7 +22,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     /****************************/
     /*** Initialize Functions ***/
     /****************************/
-
+    
     function initialize(
         uint256[] memory tokenIds_,
         uint256 rate_
@@ -57,25 +56,48 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function pledgeCollateral(
-        address borrower_,
+    function drawDebt(
+        address borrowerAddress_,
+        uint256 amountToBorrow_,
+        uint256 limitIndex_,
         uint256[] calldata tokenIdsToPledge_
-    ) external override {
-        _pledgeCollateral(borrower_, Maths.wad(tokenIdsToPledge_.length));
+    ) external {
+        (
+            bool pledge,
+            bool borrow,
+            uint256 newLup
+        ) = _drawDebt(
+            borrowerAddress_,
+            amountToBorrow_,
+            limitIndex_,
+            Maths.wad(tokenIdsToPledge_.length)
+        );
 
-        emit PledgeCollateralNFT(borrower_, tokenIdsToPledge_);
+        emit DrawDebtNFT(borrowerAddress_, amountToBorrow_, tokenIdsToPledge_, newLup);
+
         // move collateral from sender to pool
-        _transferFromSenderToPool(borrowerTokenIds[borrower_], tokenIdsToPledge_);
+        if (pledge) _transferFromSenderToPool(borrowerTokenIds[borrowerAddress_], tokenIdsToPledge_);
+        // move borrowed amount from pool to sender
+        if (borrow) _transferQuoteToken(msg.sender, amountToBorrow_);
     }
 
-    function pullCollateral(
+    function repayDebt(
+        address borrowerAddress_,
+        uint256 maxQuoteTokenAmountToRepay_,
         uint256 noOfNFTsToPull_
-    ) external override {
-        _pullCollateral(Maths.wad(noOfNFTsToPull_));
+    ) external {
+        (uint256 quoteTokenToRepay, uint256 newLup) = _repayDebt(borrowerAddress_, maxQuoteTokenAmountToRepay_, Maths.wad(noOfNFTsToPull_));
 
-        emit PullCollateral(msg.sender, noOfNFTsToPull_);
-        // move collateral from pool to sender
-        _transferFromPoolToAddress(msg.sender, borrowerTokenIds[msg.sender], noOfNFTsToPull_);
+        emit RepayDebt(borrowerAddress_, quoteTokenToRepay, noOfNFTsToPull_, newLup);
+
+        if (quoteTokenToRepay != 0) {
+            // move amount to repay from sender to pool
+            _transferQuoteTokenFrom(msg.sender, quoteTokenToRepay);
+        }
+        if (noOfNFTsToPull_ != 0) {
+            // move collateral from pool to sender
+            _transferFromPoolToAddress(msg.sender, borrowerTokenIds[msg.sender], noOfNFTsToPull_);
+        }
     }
 
     /*********************************/
@@ -142,7 +164,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         Auctions.TakeParams memory params;
         params.borrower       = borrowerAddress_;
         params.collateral     = borrower.collateral;
-        params.debt           = borrower.t0debt;
+        params.t0debt         = borrower.t0debt;
         params.takeCollateral = Maths.wad(collateral_);
         params.inflator       = poolState.inflator;
         (
@@ -248,7 +270,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256[] storage poolTokens_,
         uint256[] calldata tokenIds_
     ) internal {
-        bool subset = _getArgUint256(72) != 0;
+        bool subset = _getArgUint256(92) != 0;
         for (uint256 i = 0; i < tokenIds_.length;) {
             uint256 tokenId = tokenIds_[i];
             if (subset && !tokenIdsAllowed[tokenId]) revert OnlySubset();
@@ -305,7 +327,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     }
 
     function isSubset() external pure override returns (bool) {
-        return _getArgUint256(72) != 0;
+        return _getArgUint256(92) != 0;
     }
 
     /************************/

@@ -151,7 +151,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 borrower:                  _borrower,
                 borrowerDebt:              expectedDebt,
                 borrowerCollateral:        4 * 1e18,
-                borrowert0Np:              1_751.682692307692308500 * 1e18,
+                borrowert0Np:              1_320.018028846153846761 * 1e18,
                 borrowerCollateralization: 2.402776420583669600 * 1e18
             }
         );
@@ -160,12 +160,13 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         // borrower pulls some of their collateral after some time has passed
         skip(10 days);
 
-        _pullCollateral(
-            {
-                from:   _borrower,
-                amount: 1
-            }
-        );
+        _repayDebtNoLupCheck({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    0,
+            amountRepaid:     0,
+            collateralToPull: 1
+        });
 
         expectedDebt = 5_020.669907328529218397 * 1e18;
         (poolDebt,,) = _pool.debtInfo();
@@ -213,18 +214,17 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         // borrower repays their loan after some additional time
         skip(10 days);
 
-        _repay(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   6_043.220426872049838854 * 1e18,
-                repaid:   6_043.220426872049838854 * 1e18,
-                newLup:   MAX_PRICE
-            }
-        );
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    6_043.220426872049838854 * 1e18,
+            amountRepaid:     6_043.220426872049838854 * 1e18,
+            collateralToPull: 0,
+            newLup:           MAX_PRICE
+        });
 
         (poolDebt,,) = _pool.debtInfo();
-        assertEq(poolDebt, 0);
+        assertEq(poolDebt, 0);  
 
         _assertBorrower(
             {
@@ -561,15 +561,14 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         // borrower repays their loan after some additional time
         skip(10 days);
 
-        _repay(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   6_000 * 1e18,
-                repaid:   5_035.064750533460450062 * 1e18,
-                newLup:   MAX_PRICE
-            }
-        );
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    6_000 * 1e18,
+            amountRepaid:     5_035.064750533460450062 * 1e18,
+            collateralToPull: 0,
+            newLup:           MAX_PRICE
+        });
 
         (poolDebt, , ) = _pool.debtInfo();
         assertEq(poolDebt, 0);
@@ -633,7 +632,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 borrower:                  _borrower,
                 borrowerDebt:              expectedDebt,
                 borrowerCollateral:        4 * 1e18,
-                borrowert0Np:              1_749.615635192876748587 * 1e18,
+                borrowert0Np:              1_319.052640608089425505 * 1e18,
                 borrowerCollateralization: 2.402183628347594810 * 1e18
             }
         );
@@ -642,12 +641,13 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         // borrower pulls some of their collateral after some time has passed
         skip(10 days);
 
-        _pullCollateral(
-            {
-                from:   _borrower,
-                amount: 1
-            }
-        );
+        _repayDebtNoLupCheck({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    0,
+            amountRepaid:     0,
+            collateralToPull: 1
+        });
 
         expectedDebt = 5_022.741336874076464394 * 1e18;
         (poolDebt, , ) = _pool.debtInfo();
@@ -694,16 +694,15 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
 
         // borrower repays their loan after some additional time
         skip(10 days);
-        
-        _repay(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   7_000 * 1e18,
-                repaid:   6_047.560214870786628632 * 1e18,
-                newLup:   MAX_PRICE
-            }
-        );
+
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    7_000 * 1e18,
+            amountRepaid:     6_047.560214870786628632 * 1e18,
+            collateralToPull: 0,
+            newLup:           MAX_PRICE
+        });
 
         (poolDebt, , ) = _pool.debtInfo();
         assertEq(poolDebt, 0);

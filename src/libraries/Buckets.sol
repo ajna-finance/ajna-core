@@ -27,36 +27,6 @@ library Buckets {
     /***********************************/
 
     /**
-     *  @notice Updates LP balances for bucket and lender with the amount coresponding to quote token amount added.
-     *  @param  deposit_               Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs
-     *  @param  quoteTokenAmountToAdd_ Additional quote tokens amount to add to bucket deposit.
-     *  @param  bucketPrice_           Bucket price.
-     *  @return addedLPs_              Amount of bucket LPs for the quote tokens amount added.
-     */
-    function addQuoteToken(
-        Bucket storage bucket_,
-        uint256 deposit_,
-        uint256 quoteTokenAmountToAdd_,
-        uint256 bucketPrice_
-    ) internal returns (uint256 addedLPs_) {
-
-        // calculate amount of LPs to be added for the amount of quote tokens added to bucket
-        addedLPs_ = quoteTokensToLPs(
-            bucket_.collateral,
-            bucket_.lps,
-            deposit_,
-            quoteTokenAmountToAdd_,
-            bucketPrice_
-        );
-
-        // update bucket LPs balance
-        // cannot deposit in the same block when bucket becomes insolvent
-        if (bucket_.bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
-        // update bucket and lender LPs balance and deposit timestamp
-        addLPs(bucket_, msg.sender, addedLPs_);
-    }
-
-    /**
      *  @notice Add collateral to a bucket and updates LPs for bucket and lender with the amount coresponding to collateral amount added.
      *  @param  lender_                Address of the lender.
      *  @param  deposit_               Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs
@@ -71,6 +41,9 @@ library Buckets {
         uint256 collateralAmountToAdd_,
         uint256 bucketPrice_
     ) internal returns (uint256 addedLPs_) {
+        // cannot deposit in the same block when bucket becomes insolvent
+        uint256 bankruptcyTime = bucket_.bankruptcyTime;
+        if (bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
 
         // calculate amount of LPs to be added for the amount of collateral added to bucket
         addedLPs_ = collateralToLPs(
@@ -81,101 +54,33 @@ library Buckets {
             bucketPrice_
         );
         // update bucket LPs balance and collateral
-        // cannot deposit in the same block when bucket becomes insolvent
-        if (bucket_.bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
+
+        // update bucket collateral
         bucket_.collateral += collateralAmountToAdd_;
         // update bucket and lender LPs balance and deposit timestamp
-        addLPs(bucket_, lender_, addedLPs_);
+        bucket_.lps += addedLPs_;
+
+        addLenderLPs(bucket_, bankruptcyTime, lender_, addedLPs_);
     }
 
     /**
      *  @notice Add amount of LPs for a given lender in a given bucket.
-     *  @param  bucket_    Bucket to record lender LPs.
-     *  @param  lender_    Lender address to add LPs for in the given bucket.
-     *  @param  lpsAmount_ Amount of LPs to be recorded for the given lender.
+     *  @param  bucket_         Bucket to record lender LPs.
+     *  @param  bankruptcyTime_ Time when bucket become insolvent.
+     *  @param  lender_         Lender address to add LPs for in the given bucket.
+     *  @param  lpsAmount_      Amount of LPs to be recorded for the given lender.
      */
-    function addLPs(
+    function addLenderLPs(
         Bucket storage bucket_,
+        uint256 bankruptcyTime_,
         address lender_,
         uint256 lpsAmount_
     ) internal {
-        bucket_.lps += lpsAmount_;
-
         Lender storage lender = bucket_.lenders[lender_];
-        if (bucket_.bankruptcyTime >= lender.depositTime) lender.lps = lpsAmount_;
+        if (bankruptcyTime_ >= lender.depositTime) lender.lps = lpsAmount_;
         else lender.lps += lpsAmount_;
         lender.depositTime = block.timestamp;
     }
-
-    /**
-     *  @notice Moves LPs between buckets and updates lender balance accordingly.
-     *  @param  fromLPsAmount_ The amount of LPs to move from origin bucket.
-     *  @param  toLPsAmount_   The amount of LPs to move to destination bucket.
-     */
-    function moveLPs(
-        Bucket storage fromBucket_,
-        Bucket storage toBucket_,
-        uint256 fromLPsAmount_,
-        uint256 toLPsAmount_
-    ) internal {
-
-        // cannot move in the same block when target bucket becomes insolvent
-        if (toBucket_.bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
-
-        // update buckets LPs balance
-        fromBucket_.lps -= fromLPsAmount_;
-        toBucket_.lps   += toLPsAmount_;
-        // update lender LPs balance in from bucket
-        Lender storage fromLender = fromBucket_.lenders[msg.sender];
-        fromLender.lps -= fromLPsAmount_;
-
-        // update lender LPs balance and deposit time in target bucket
-        Lender storage lender = toBucket_.lenders[msg.sender];
-        if (toBucket_.bankruptcyTime >= lender.depositTime) lender.lps = toLPsAmount_;
-        else lender.lps += toLPsAmount_;
-        // set deposit time to the greater of the lender's from bucket and the target bucket's last bankruptcy timestamp + 1 so deposit won't get invalidated
-        lender.depositTime = Maths.max(fromLender.depositTime, toBucket_.bankruptcyTime + 1);
-    }
-
-    /**
-     *  @notice Removes collateral from a bucket and subtracts LPs (coresponding to collateral amount removed) from bucket and lender balances.
-     *  @param  collateralAmountToRemove_ Collateral amount to be removed from bucket.
-     *  @param  lpsAmountToRemove_        The amount of LPs to be removed from bucket.
-     */
-    function removeCollateral(
-        Bucket storage bucket_,
-        uint256 collateralAmountToRemove_,
-        uint256 lpsAmountToRemove_
-    ) internal {
-        // update bucket collateral and LPs balance
-        bucket_.lps        -= Maths.min(bucket_.lps, lpsAmountToRemove_);
-        bucket_.collateral -= Maths.min(bucket_.collateral, collateralAmountToRemove_);
-        // update lender LPs balance
-        bucket_.lenders[msg.sender].lps -= lpsAmountToRemove_;
-    }
-
-    /**
-     *  @notice Transfer LPs from owner to an allowed address.
-     *  @param  owner_     The current owner of LPs.
-     *  @param  newOwner_  The new owner address.
-     *  @param  lpsAmount_ The amount of LPs to transfer to new owner.
-     */
-    function transferLPs(
-        mapping(uint256 => Bucket) storage self,
-        address owner_,
-        address newOwner_,
-        uint256 lpsAmount_,
-        uint256 index_,
-        uint256 depositTime_
-    ) internal {
-        // move lp tokens to the new owner address
-        Lender storage newOwner = self[index_].lenders[newOwner_];
-        newOwner.lps         += lpsAmount_;
-        newOwner.depositTime = Maths.max(depositTime_, newOwner.depositTime);
-        // reset owner lp balance for this index
-        delete self[index_].lenders[owner_];
-    }
-
 
     /**********************/
     /*** View Functions ***/
