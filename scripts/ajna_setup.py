@@ -11,11 +11,13 @@ def main():
     Auctions.deploy({"from": accounts[0]})
     erc20_pool_factory = ERC20PoolFactory.deploy({"from": accounts[0]})
     erc721_pool_factory = ERC721PoolFactory.deploy({"from": accounts[0]})
+    pool_utils = PoolInfoUtils.deploy({"from": accounts[0]})
 
     with open("scripts/.env", "w") as outfile:
         outfile.write("ETH_RPC_URL=http://localhost:8545/")
         outfile.write("\nERC20_FACTORY="+erc20_pool_factory.address)
         outfile.write("\nERC721_FACTORY="+erc721_pool_factory.address)
+        outfile.write("\nPOOL_UTILS="+pool_utils.address)
         outfile.write("\nLENDER_ADDRESS=0x5E9badd492c5bF5824b45E834B1A5b4a41B273f3")
         outfile.write("\nLENDER_PRIVATE_KEY=0xacd5fc4b1c3141f67b35f09210379295c34f7e5c33d6bf1755a65c3c07a9e854")
         outfile.write("\nBORROWER_ADDRESS=0x92620c1bCdC5D16a3661285C1f86D7992df26b1c")
