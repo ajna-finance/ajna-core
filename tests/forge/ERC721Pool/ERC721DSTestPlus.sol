@@ -276,18 +276,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         }
     }
 
-    // function _settle(
-    //     address borrower,
-    //     uint256 bucketDepth
-    // ) internal {
-    //     changePrank(from);
-    //     vm.expectEmit(true, true, false, true);
-    //     emit AuctionNFTSettle(borrower, floorCollateral, lps, bucketIndex);
-    //     emit Settle(borrower, settledDebt);
-    //     super._take(from, borrower, maxCollateral, bondChange, givenAmount, collateralTaken, isReward);
-    //     ERC721Pool(address(_pool)).setle(borrower, bucketDepth);
-    // }
-
     function _take(
         address from,
         address borrower,

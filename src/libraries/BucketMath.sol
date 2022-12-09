@@ -47,7 +47,9 @@ library BucketMath {
      *          V3 (final): index =  log_2(price) / log_2(FLOAT_STEP)
      */
     function priceToIndex(uint256 price_) public pure returns (int256) {
-        require(price_ >= MIN_PRICE && price_ <= MAX_PRICE, "BM:PTI:OOB");
+        //require(price_ >= MIN_PRICE && price_ <= MAX_PRICE, "BM:PTI:OOB");
+        require(price_ <= MAX_PRICE, "BM:PTI:OOB");
+        if (price_ <= MIN_PRICE) price_ = MIN_PRICE + 1;
 
         int256 index = PRBMathSD59x18.div(
             PRBMathSD59x18.log2(int256(price_)),

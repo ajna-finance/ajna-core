@@ -122,6 +122,7 @@ library Auctions {
 
         HpbLocalVars memory hpbVars;
 
+        console.log("settle pool Debt call");
         // auction has debt to cover with remaining collateral
         while (bucketDepth_ != 0 && t0DebtToSettle_ != 0 && collateral_ != 0) {
             hpbVars.index   = Deposits.findIndexOfSum(deposits_, 1);
@@ -135,15 +136,23 @@ library Auctions {
                 uint256 debtToSettle      = Maths.wmul(t0DebtToSettle_, poolInflator_);     // current debt to be settled
                 uint256 maxSettleableDebt = Maths.wmul(collateral_, hpbVars.price);         // max debt that can be settled with existing collateral
 
+                    console.log("index", hpbVars.index);
+                    console.log("depositToRemove avail", depositToRemove);
+                    console.log("debtToSettle", debtToSettle);
+                    // FIXME: Is it possible for the depositToRemove to not be greater than debtToSettle
                 if (depositToRemove >= debtToSettle && maxSettleableDebt >= debtToSettle) { // enough deposit in bucket and collateral avail to settle entire debt
                     depositToRemove = debtToSettle;                                         // remove only what's needed to settle the debt
                     t0DebtToSettle_ = 0;                                                    // no remaining debt to settle
                     collateralUsed  = Maths.wdiv(debtToSettle, hpbVars.price);
                     collateral_     -= collateralUsed;
                 } else if (maxSettleableDebt >= depositToRemove) {                          // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
+                    console.log("in here2");
                     t0DebtToSettle_ -= Maths.wdiv(depositToRemove, poolInflator_);          // subtract from debt the corresponding t0 amount of deposit
                     collateralUsed  = Maths.wdiv(depositToRemove, hpbVars.price);
                     collateral_     -= collateralUsed;
+                    console.log("depositToRemove", depositToRemove);
+                    console.log("colUsed", collateralUsed);
+                    console.log("collateral_", collateral_);
                 } else {                                                                    // constrained by collateral available
                     depositToRemove = maxSettleableDebt;
                     t0DebtToSettle_ -= Maths.wdiv(maxSettleableDebt, poolInflator_);
@@ -152,6 +161,8 @@ library Auctions {
                 }
             }
 
+            console.log("col used", collateralUsed);
+            console.log("index inserted into", hpbVars.index);
             buckets_[hpbVars.index].collateral += collateralUsed;                        // add settled collateral into bucket
             Deposits.remove(deposits_, hpbVars.index, depositToRemove, hpbVars.deposit); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
 
@@ -421,6 +432,7 @@ library Auctions {
         address borrowerAddress_,
         uint256 borrowerCollateral_
     ) external returns (uint256 floorCollateral_, uint256 lps_, uint256 bucketIndex_) {
+        console.log("in settle NFT");
         floorCollateral_ = (borrowerCollateral_ / Maths.WAD) * Maths.WAD; // floor collateral of borrower
 
         // if there's fraction of NFTs remaining then reward difference to borrower as LPs in auction price bucket
@@ -431,6 +443,8 @@ library Auctions {
                 self.liquidations[borrowerAddress_].kickMomp,
                 self.liquidations[borrowerAddress_].kickTime
             );
+            console.log("auctionPrice is below");
+            console.log("auctionPrice", auctionPrice);
             bucketIndex_ = _priceToIndex(auctionPrice);
             lps_ = Buckets.addCollateral(
                 buckets_[bucketIndex_],
@@ -441,6 +455,7 @@ library Auctions {
             );
         }
 
+        console.log("in below fraction");
         // rebalance borrower's collateral, transfer difference to floor collateral from borrower to pool claimable array
         uint256 noOfTokensPledged    = borrowerTokens_.length;
         uint256 noOfTokensToTransfer = noOfTokensPledged - floorCollateral_ / 1e18;
@@ -469,6 +484,7 @@ library Auctions {
 
         int256 timeAdjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours));
         price_ = 32 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
+        console.log("price leaving", price_);
     }
 
     /**

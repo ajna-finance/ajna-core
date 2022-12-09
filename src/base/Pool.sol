@@ -337,12 +337,16 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState     = _accruePoolInterest();
         Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
         if (borrower.t0debt == 0) revert NoDebt();
+        console.log("repay 01");
 
         uint256 t0repaidDebt = Maths.min(
             borrower.t0debt,
             Maths.wdiv(maxQuoteTokenAmountToRepay_, poolState.inflator)
         );
+        console.log("t0repaidDebt", t0repaidDebt);
+        console.log("borrowerAddress_", borrowerAddress_);
         (uint256 quoteTokenAmountToRepay, uint256 newLup) = _payLoan(t0repaidDebt, poolState, borrowerAddress_, borrower);
+        console.log("repay 03");
 
         emit Repay(borrowerAddress_, newLup, quoteTokenAmountToRepay);
         // move amount to repay from sender to pool
@@ -610,7 +614,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // check that paying the loan doesn't leave borrower debt under min debt amount
         _checkMinDebt(poolState_.accruedDebt, borrowerDebt);
-
+        console.log("lup check");
         newLup_ = _lup(poolState_.accruedDebt);
 
         if (auctions.isActive(borrowerAddress_)) {
@@ -620,11 +624,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 t0DebtInAuction -= borrower_.t0debt;
                 // settle auction and update borrower's collateral with value after settlement
                 borrower_.collateral = _settleAuction(borrowerAddress_, borrower_.collateral);
+                console.log("in col", borrower_.collateral);
             } else {
                 // partial repay, remove only the paid debt from pool auctions debt accumulator
+                console.log("partial else");
                 t0DebtInAuction -= t0repaidDebt_;
             }
         }
+        console.log("after is check");
         
         borrower_.t0debt -= t0repaidDebt_;
         loans.update(
