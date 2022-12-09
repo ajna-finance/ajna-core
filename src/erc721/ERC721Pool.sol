@@ -52,6 +52,14 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         poolInitializations += 1;
     }
 
+    /******************/
+    /*** Immutables ***/
+    /******************/
+
+    function isSubset() external pure override returns (bool) {
+        return _getArgUint256(92) != 0;
+    }
+
     /***********************************/
     /*** Borrower External Functions ***/
     /***********************************/
@@ -324,10 +332,6 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     function _transferNFT(address from_, address to_, uint256 tokenId_) internal {
         //slither-disable-next-line calls-loop
         IERC721Token(_getArgAddress(0)).safeTransferFrom(from_, to_, tokenId_);
-    }
-
-    function isSubset() external pure override returns (bool) {
-        return _getArgUint256(92) != 0;
     }
 
     /************************/

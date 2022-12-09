@@ -68,6 +68,23 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 inflator;
     }
 
+    /******************/
+    /*** Immutables ***/
+    /******************/
+
+    function collateralAddress() external pure override returns (address) {
+        return _getArgAddress(0);
+    }
+
+    function quoteTokenAddress() external pure override returns (address) {
+        return _getArgAddress(20);
+    }
+
+    function quoteTokenScale() external pure override returns (uint256) {
+        return _getArgUint256(40);
+    }
+
+
     /*********************************/
     /*** Lender External Functions ***/
     /*********************************/
@@ -756,18 +773,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             reserveAuction.unclaimed,
             reserveAuction.kicked
         );
-    }
-
-    function collateralAddress() external pure override returns (address) {
-        return _getArgAddress(0);
-    }
-
-    function quoteTokenAddress() external pure override returns (address) {
-        return _getArgAddress(20);
-    }
-
-    function quoteTokenScale() external pure override returns (uint256) {
-        return _getArgUint256(40);
     }
 
     /**

@@ -32,6 +32,14 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         poolInitializations += 1;
     }
 
+    /******************/
+    /*** Immutables ***/
+    /******************/
+
+    function collateralScale() external pure override returns (uint256) {
+        return _getArgUint256(92);
+    }
+
     /***********************************/
     /*** Borrower External Functions ***/
     /***********************************/
@@ -260,9 +268,5 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
     function _transferCollateral(address to_, uint256 amount_) internal {
         if (!IERC20Token(_getArgAddress(0)).transfer(to_, amount_ / _getArgUint256(92))) revert ERC20TransferFailed();
-    }
-
-    function collateralScale() external pure override returns (uint256) {
-        return _getArgUint256(92);
     }
 }
