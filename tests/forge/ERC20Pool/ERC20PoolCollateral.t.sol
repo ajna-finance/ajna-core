@@ -124,12 +124,13 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         skip(10 days);
 
         // remove some of the collateral
-        _pullCollateral(
-            {
-                from:    _borrower,
-                amount:  50 * 1e18
-            }
-        );
+        _repayDebtNoLupCheck({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    0,
+            amountRepaid:     0,
+            collateralToPull: 50 * 1e18
+        });
 
         _assertPool(
             PoolState({
@@ -160,12 +161,13 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         assertEq(_collateral.balanceOf(_borrower), 100 * 1e18);
 
         // remove all of the remaining unencumbered collateral
-        _pullCollateral(
-            {
-                from:   _borrower,
-                amount: 50 * 1e18 - _encumberance(21_049.006823139002918431 * 1e18, _lup())
-            }
-        );
+        _repayDebtNoLupCheck({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    0,
+            amountRepaid:     0,
+            collateralToPull: 50 * 1e18 - _encumberance(21_049.006823139002918431 * 1e18, _lup())
+        });
 
         _assertPool(
             PoolState({
@@ -219,12 +221,13 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         );
 
         // should be able to now remove collateral
-        _pullCollateral(
-            {
-                from:    _borrower,
-                amount:  100 * 1e18
-            }
-        );
+        _repayDebtNoLupCheck({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    0,
+            amountRepaid:     0,
+            collateralToPull: 100 * 1e18
+        });
     }
 
     /**

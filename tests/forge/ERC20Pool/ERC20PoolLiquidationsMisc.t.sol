@@ -700,8 +700,13 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             }
         );
 
-
-        _pullCollateral(_borrower, 1.746878914360183483 * 1e18);
+        _repayDebtNoLupCheck({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    0,
+            amountRepaid:     0,
+            collateralToPull: 1.746878914360183483 * 1e18
+        });
 
         _assertBorrower(
             {

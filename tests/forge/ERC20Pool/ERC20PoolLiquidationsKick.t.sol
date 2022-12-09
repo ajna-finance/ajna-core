@@ -409,15 +409,14 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             }
         );
 
-        _repay(
-            {
-                from:      _borrower,
-                borrower:  _borrower,
-                amount:    10 * 1e18,
-                repaid:    10 * 1e18,
-                newLup:    9.721295865031779605 * 1e18
-            }
-        );
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    10 * 1e18,
+            amountRepaid:     10 * 1e18,
+            collateralToPull: 0,
+            newLup:           9.721295865031779605 * 1e18
+        });
 
         _assertAuction(
             AuctionState({

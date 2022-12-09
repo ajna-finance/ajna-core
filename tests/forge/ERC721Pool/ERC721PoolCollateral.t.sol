@@ -220,12 +220,13 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.ownerOf(53), address(_pool));
 
         // borrower removes some of their deposted NFTS from the pool
-        _pullCollateral(
-            {
-                from:   _borrower,
-                amount: 2
-            }
-        );
+        _repayDebtNoLupCheck({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    0,
+            amountRepaid:     0,
+            collateralToPull: 2
+        });
 
         // check token balances after remove
         assertEq(_pool.pledgedCollateral(), Maths.wad(2));
@@ -283,12 +284,13 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
 
         // borrower should be able to remove collateral in the pool
-        _pullCollateral(
-            {
-                from:   _borrower,
-                amount: 3
-            }
-        );
+        _repayDebtNoLupCheck({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    0,
+            amountRepaid:     0,
+            collateralToPull: 3
+        });
         // borrower is owner of pulled NFTs
         assertEq(_collateral.ownerOf(1), _borrower);
         assertEq(_collateral.ownerOf(3), _borrower);
@@ -396,12 +398,13 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
 
         // borrower removes some of their deposited NFTS from the pool
-        _pullCollateral(
-            {
-                from:   _borrower,
-                amount: 2
-            }
-        );
+        _repayDebtNoLupCheck({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    0,
+            amountRepaid:     0,
+            collateralToPull: 2
+        });
 
         // check token balances after remove
         assertEq(_collateral.balanceOf(_borrower),      51);

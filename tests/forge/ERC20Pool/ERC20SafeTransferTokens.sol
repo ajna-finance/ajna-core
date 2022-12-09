@@ -24,7 +24,7 @@ contract ERC20SafeTransferTokens is ERC20HelperContract {
     address internal USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
 
     function setUp() external {
-        _poolFactory = new ERC20PoolFactory();
+        _poolFactory = new ERC20PoolFactory(_ajna);
         _lender      = makeAddr("lender");
         _borrower    = makeAddr("borrower");
         usdt         = IUSDT(USDT);

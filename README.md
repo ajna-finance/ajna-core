@@ -107,3 +107,60 @@ pip install solc-select && solc-select install 0.8.14 && solc-select use 0.8.14
 ```bash
 make analyze
 ```
+
+## Deployment
+
+A deployment script has been created to automate deployment of libraries and factory contracts.
+To use it, set up an environment with the following:
+- **AJNA_TOKEN** - address of the AJNA token on your target chain
+- **ETH_RPC_URL** - node pointing to the target chain
+- **DEPLOY_KEY** - path to the JSON keystore file for your deployment account
+
+Ensure your deployment account is funded with some ETH for gas.
+
+The deployment script takes no arguments, and interactively prompts for your keystore password:
+```
+./deploy.sh
+```
+
+Upon completion, contract addresses will be printed to `stdout`:
+```
+Deploying to chain with AJNA token address 0xDD576260ed60AaAb798D8ECa9bdBf33D70E077F4
+Enter keystore password: 
+Deploying libraries...
+Deployed             Auctions to 0xDD576260ed60AaAb798D8ECa9bdBf33D70E077F4
+Deployed        LenderActions to 0x4c08A2ec1f5C067DC53A5fCc36C649501F403b93
+Deployed          PoolCommons to 0x8BBCA51044d00dbf16aaB8Fd6cbC5B45503B898b
+Deploying factories...
+Deployed     ERC20PoolFactory to 0xED625fbf62695A13d2cADEdd954b23cc97249988
+Deployed    ERC721PoolFactory to 0x775D30918A42160bC7aE56BA1660E32ff50CF6dC
+Deploying PoolInfoUtils...
+Deployed        PoolInfoUtils to 0xd8A51cE16c7665111401C0Ba2ABEcE03B847b4e6
+```
+
+Record the factory addresses.
+
+### Validation
+
+Validate the deployment by creating a pool.  Set relevant environment variables, and run the following:
+```
+cast send ${ERC20_POOLFACTORY} "deployPool(address,address,uint256)(address)" \
+	${WBTC_TOKEN} ${DAI_TOKEN} 50000000000000000 \
+	--from ${DEPLOY_ADDRESS} --keystore ${DEPLOY_KEY}
+```
+
+Where did it deploy the pool?  Let's find out:
+```
+export ERC20_NON_SUBSET_HASH=0x2263c4378b4920f0bef611a3ff22c506afa4745b3319c50b6d704a874990b8b2
+cast call ${ERC20_POOLFACTORY} "deployedPools(bytes32,address,address)(address)" \
+	${ERC20_NON_SUBSET_HASH} ${WBTC_TOKEN} ${DAI_TOKEN}
+```
+Record the pool address.
+
+Run an approval to let the contract spend some of your quote token, and then add some liquidity:
+```
+cast send ${DAI_TOKEN} "approve(address,uint256)" ${WBTC_DAI_POOL} 50000ether \
+	--from ${DEPLOY_ADDRESS} --keystore ${DEPLOY_KEY}
+cast send ${WBTC_DAI_POOL} "addQuoteToken(uint256,uint256)" 100ether 3232 \
+	--from ${DEPLOY_ADDRESS} --keystore ${DEPLOY_KEY}
+```

@@ -41,5 +41,4 @@ interface IERC20PoolEvents {
         uint256 collateralPledged,
         uint256 lup
     );
-
 }
