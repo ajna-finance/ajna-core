@@ -86,6 +86,7 @@ library PoolCommons {
                 newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
             }
 
+            newInterestRate = Maths.min(500 * 1e18, Maths.max(0.001 * 1e18, newInterestRate));
             if (poolState_.rate != newInterestRate) {
                 interestParams_.interestRate       = uint208(newInterestRate);
                 interestParams_.interestRateUpdate = uint48(block.timestamp);
