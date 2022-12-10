@@ -325,6 +325,88 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if(kickAuctionAmount != 0) _transferQuoteTokenFrom(msg.sender, kickAuctionAmount);
     }
 
+    error NoAuctionKicked();
+
+    function kickAndWithdraw(uint256 amountToWithdraw, uint256 index_) external {
+        auctions.revertIfAuctionClearable(loans);
+
+        PoolState memory poolState = _accruePoolInterest();
+
+        uint256 bucketDeposit = deposits.valueAt(index_);
+        if (bucketDeposit == 0) revert InsufficientLiquidity();
+
+        uint256 removedAmount = buckets.removeLPs(
+            index_,
+            bucketDeposit,
+            _priceAt(index_),
+            bucketDeposit
+        );
+        if (removedAmount == 0) revert InsufficientLiquidity();
+
+        uint256 cumulativeDepositAboveBucket = deposits.treeSum() - bucketDeposit - deposits.prefixSum(index_);
+        deposits.remove(index_, removedAmount, bucketDeposit);
+
+        uint256 lup = _lup(poolState.accruedDebt);
+        uint256 htp = _htp(poolState.inflator);
+        // revert if removal can be done without kick
+        if (htp <= lup) revert NoAuctionKicked();
+
+        uint256 totalBondsAmount;
+
+        // if htp > lup, then lender must kick auctions with their removed amount prior to receiving funds.
+        while (htp > lup) {
+            // TODO: move code below in a single utility function that can be used in normal kick too
+            address topBorrower = loans.getMax().borrower; // TODO: avoid loading top loan multiple times in same loop
+            Loans.Borrower storage borrower = loans.borrowers[topBorrower];
+            uint256 borrowerT0debt = borrower.t0debt;
+
+            Auctions.KickParams memory params;
+            params.borrower     = topBorrower;
+            params.debt         = Maths.wmul(borrowerT0debt, poolState.inflator);
+            params.collateral   = borrower.collateral;
+            params.momp         = deposits.momp(poolState.accruedDebt, loans.noOfLoans()); // TODO: avoid loading noOfLoans multiple times
+            params.neutralPrice = Maths.wmul(borrower.t0Np, poolState.inflator);
+            params.rate         = poolState.rate;
+
+            if (
+                _isCollateralized(params.debt , params.collateral, lup)
+            ) revert BorrowerOk();
+
+            // TODO: kick in a loop is bad as it means one external call for each kick
+            (uint256 amountToCoverBond, uint256 kickPenalty) = Auctions.kick(
+                auctions,
+                params
+            );
+            totalBondsAmount += amountToCoverBond;
+
+            // remove kicked loan from heap
+            loans.remove(params.borrower);
+
+            poolState.accruedDebt += kickPenalty;
+
+            // convert kick penalty to t0 amount, update borrower t0 debt and pool t0 debt accumulators
+            kickPenalty     =  Maths.wdiv(kickPenalty, poolState.inflator);
+            borrowerT0debt  += kickPenalty;
+            borrower.t0debt = borrowerT0debt;
+            t0DebtInAuction += borrowerT0debt; // TODO: write storage variables only once at the end and not inside the loop
+            t0poolDebt      += kickPenalty;    // TODO: write storage variables only once at the end and not inside the loop
+
+            htp = _htp(poolState.inflator); // TODO: avoid loading top loan multiple times in same loop
+        }
+
+        // check if enough quote tokens removed to cover liquidation bond and if cumulative deposits above bucket less than liquidationDebt
+        if (
+            totalBondsAmount > removedAmount
+            ||
+            cumulativeDepositAboveBucket < t0DebtInAuction
+        ) revert InsufficientLiquidity();
+
+        _updateInterestParams(poolState, lup);
+
+        // transfer reminder to kicker
+        _transferQuoteToken(msg.sender, removedAmount - totalBondsAmount);
+     }
+
     /*********************************/
     /*** Reserve Auction Functions ***/
     /*********************************/
