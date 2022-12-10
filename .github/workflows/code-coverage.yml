@@ -25,14 +25,16 @@ jobs:
       - name: Setup LCOV
         uses: hrishikesh-kadam/setup-lcov@v1
       - name: Filter lcov
-        run: lcov -r lcov.info "tests/*" -o lcov-filtered.info --rc lcov_branch_coverage=1 > coverage-summary.txt
+        run: |
+          lcov -r lcov.info "tests/*" -o lcov-filtered.info --rc lcov_branch_coverage=1 > coverage-summary.txt
+          echo "$(tail -4 coverage-summary.txt)" > coverage-summary.txt
       - name: Send to Discord
         uses: appleboy/discord-action@master
         with:
           webhook_id: ${{ secrets.DISCORD_ID }}
           webhook_token: ${{ secrets.DISCORD_TOKEN }}
+          username: "Code Coverage Reporter"
           file: "./coverage-summary.txt"
-          message: Filtered code coverage summary
       - name: Verify coverage level
         uses: zgosalvez/github-actions-report-lcov@v1
         with:
