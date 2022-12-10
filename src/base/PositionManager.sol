@@ -16,13 +16,12 @@ import '../erc20/interfaces/IERC20Pool.sol';
 import '../erc721/interfaces/IERC721Pool.sol';
 
 import './PoolHelper.sol';
-import './PermitERC20.sol';
 import './PositionNFT.sol';
 
 import '../libraries/Maths.sol';
 import '../libraries/Buckets.sol';
 
-contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC20, ReentrancyGuard {
+contract PositionManager is IPositionManager, Multicall, PositionNFT, ReentrancyGuard {
     using EnumerableSet for EnumerableSet.UintSet;
     using SafeERC20 for ERC20;
 
