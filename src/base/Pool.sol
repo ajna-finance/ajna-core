@@ -325,6 +325,66 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if(kickAuctionAmount != 0) _transferQuoteTokenFrom(msg.sender, kickAuctionAmount);
     }
 
+    function kickWithDeposit(uint256 index_) external {
+        address topBorrower = loans.getMax().borrower;
+        auctions.revertIfActive(topBorrower);
+
+        uint256 bucketDeposit = deposits.valueAt(index_);
+        if (bucketDeposit == 0) revert InsufficientLiquidity();
+
+        PoolState memory poolState = _accruePoolInterest();
+        Loans.Borrower storage borrower = loans.borrowers[topBorrower];
+        uint256 borrowerT0debt = borrower.t0debt;
+
+        Auctions.KickParams memory params;
+        params.borrower     = topBorrower;
+        params.debt         = Maths.wmul(borrowerT0debt, poolState.inflator);
+        params.collateral   = borrower.collateral;
+        params.momp         = deposits.momp(poolState.accruedDebt, loans.noOfLoans());
+        params.neutralPrice = Maths.wmul(borrower.t0Np, poolState.inflator);
+        params.rate         = poolState.rate;
+
+        // kick auction
+        (uint256 amountToCoverBond, uint256 kickPenalty) = Auctions.kick(
+            auctions,
+            params
+        );
+
+        // return the max of kicker deposit at given index and amount needed to cover the auction bond 
+        uint256 usedAmount = buckets.removeLPs(
+            index_,
+            bucketDeposit,
+            _priceAt(index_),
+            amountToCoverBond
+        );
+        amountToCoverBond     -= usedAmount;  // subtract from required amount to cover bond the amount used from deposit
+        params.debt           += kickPenalty; // update borrower debt with kick penalty
+        poolState.accruedDebt += kickPenalty; // update pool debt with kick penalty
+        // remove from deposit the amount used to cover auction bond
+        deposits.remove(index_, usedAmount, bucketDeposit);
+
+        // check if borrower is collateralized at the new lup and revert if so
+        uint256 lup = _lup(poolState.accruedDebt);
+        if (
+            _isCollateralized(params.debt + kickPenalty, params.collateral, lup)
+        ) revert BorrowerOk();
+
+        // remove kicked loan from heap
+        loans.remove(params.borrower);
+
+        // convert kick penalty to t0 amount, update borrower t0 debt and pool t0 debt accumulators
+        kickPenalty     =  Maths.wdiv(kickPenalty, poolState.inflator);
+        borrowerT0debt  += kickPenalty;
+        borrower.t0debt = borrowerT0debt;
+        t0DebtInAuction += borrowerT0debt;
+        t0poolDebt      += kickPenalty;
+
+        _updateInterestParams(poolState, lup);
+
+        // additional quote tokens are required to cover auction bond
+        if(amountToCoverBond != 0) _transferQuoteTokenFrom(msg.sender, amountToCoverBond);
+    }
+
     /*********************************/
     /*** Reserve Auction Functions ***/
     /*********************************/
