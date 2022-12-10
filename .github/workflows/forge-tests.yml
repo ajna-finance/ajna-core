@@ -52,21 +52,4 @@ jobs:
           webhook_token: ${{ secrets.DISCORD_TOKEN }}
           message: https://github.com/ajna-finance/contracts/commit/${{ github.sha }}  ```${{ steps.forge-tests.outputs.gas-diff }} compared with last run in branch ${{ steps.gas.outputs.branch }}```
 
-      # Report code coverage to discord
-      - name: Generate coverage
-        run: forge coverage --report lcov --no-match-test testLoad
-      - name: Setup LCOV
-        uses: hrishikesh-kadam/setup-lcov@v1
-      - name: Filter lcov
-        run: | 
-          lcov -r lcov.info "tests/*" -o lcov-filtered.info --rc lcov_branch_coverage=1
-          genhtml lcov-filtered.info -o report --branch-coverage
-      - name: Send to Discord
-        uses: appleboy/discord-action@master
-        with:
-          webhook_id: ${{ secrets.DISCORD_ID }}
-          webhook_token: ${{ secrets.DISCORD_TOKEN }}
-          file: "./report/index.html"
-          message: Filtered code coverage
-
     timeout-minutes: 10
