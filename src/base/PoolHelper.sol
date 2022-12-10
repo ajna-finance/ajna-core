@@ -6,6 +6,9 @@ import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 
 import '../libraries/Maths.sol';
 
+    error BucketIndexOutOfBounds();
+    error BucketPriceOutOfBounds();
+
     /*************************/
     /*** Price Conversions ***/
     /*************************/
@@ -41,7 +44,7 @@ import '../libraries/Maths.sol';
         uint256 index_
     ) pure returns (uint256) {
         int256 bucketIndex = (index_ != 8191) ? MAX_BUCKET_INDEX - int256(index_) : MIN_BUCKET_INDEX;
-        require(bucketIndex >= MIN_BUCKET_INDEX && bucketIndex <= MAX_BUCKET_INDEX, "BM:ITP:OOB");
+        if (bucketIndex < MIN_BUCKET_INDEX || bucketIndex > MAX_BUCKET_INDEX) revert BucketIndexOutOfBounds();
 
         return uint256(
             PRBMathSD59x18.exp2(
@@ -65,7 +68,7 @@ import '../libraries/Maths.sol';
     function _indexOf(
         uint256 price_
     ) pure returns (uint256) {
-        require(price_ >= MIN_PRICE && price_ <= MAX_PRICE, "BM:PTI:OOB");
+        if (price_ < MIN_PRICE || price_ > MAX_PRICE) revert BucketPriceOutOfBounds();
 
         int256 index = PRBMathSD59x18.div(
             PRBMathSD59x18.log2(int256(price_)),
