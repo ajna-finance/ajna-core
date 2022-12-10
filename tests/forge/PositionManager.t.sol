@@ -7,6 +7,8 @@ import { ERC721HelperContract } from './ERC721Pool/ERC721DSTestPlus.sol';
 import 'src/base/interfaces/IPositionManager.sol';
 import 'src/base/PositionManager.sol';
 
+import './utils/ContractNFTRecipient.sol';
+
 // TODO: test this against ERC721Pool
 abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract {
 
@@ -68,8 +70,8 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
      *  @notice Tests attachment of a created position to an already existing NFT.
      *          LP tokens are checked to verify ownership of position.
      *          Reverts:
-     *              Attempts to memorialize when lp tokens aren't allowed to be transfered
-     *              Attempts to set position owner when not owner of the LP tokens
+     *              Attempts to memorialize when lp tokens aren't allowed to be transfered.
+     *              Attempts to set position owner when not owner of the LP tokens.
      */
     function testMemorializePositions() external {
         address testAddress = makeAddr("testAddress");
@@ -137,11 +139,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // check memorialization success
         uint256 positionAtPriceOneLPTokens = _positionManager.getLPTokens(tokenId, indexes[0]);
-        assert(positionAtPriceOneLPTokens > 0);
+        assertGt(positionAtPriceOneLPTokens, 0);
 
         // check lp tokens at non added to price
         uint256 positionAtWrongPriceLPTokens = _positionManager.getLPTokens(tokenId, 4000000 * 1e18);
-        assert(positionAtWrongPriceLPTokens == 0);
+        assertEq(positionAtWrongPriceLPTokens, 0);
 
         assertTrue(_positionManager.isIndexInPosition(tokenId, 2550));
         assertTrue(_positionManager.isIndexInPosition(tokenId, 2551));
@@ -848,14 +850,21 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
      *  @notice Tests a contract minting an NFT.
      */
     function testMintToContract() external {
-        // TODO to be reviewed
-        address lender = makeAddr("lender");
-        _quote.mint(lender, 200_000 * 1e18);
+        // deploy contract to receive the NFT
+        ContractNFTRecipient recipientContract = new ContractNFTRecipient();
 
         // check that contract can successfully receive the NFT
         vm.expectEmit(true, true, true, true);
-        emit Mint(lender, address(_pool), 1);
-        _mintNFT(lender, lender, address(_pool));
+        emit Mint(address(recipientContract), address(_pool), 1);
+        _mintNFT(address(recipientContract), address(recipientContract), address(_pool));
+
+        // check contract is owner of minted NFT
+        assertEq(_positionManager.ownerOf(1), address(recipientContract));
+
+        // check contract owner can transfer to another smart contract
+        ContractNFTRecipient secondRecipient = new ContractNFTRecipient();
+        recipientContract.transferNFT(address(_positionManager), address(secondRecipient), 1);
+        assertEq(_positionManager.ownerOf(1), address(secondRecipient));
     }
 
     /**
@@ -2336,6 +2345,42 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
         vm.expectRevert(IPositionManager.WrongPool.selector);
         _positionManager.burn(burnParams);
+    }
+
+    function testTokenURI() external {
+        address testAddress = makeAddr("testAddress");
+        uint256 mintAmount  = 10000 * 1e18;
+
+        _mintQuoteAndApproveManagerTokens(testAddress, mintAmount);
+
+        // call pool contract directly to add quote tokens
+        uint256[] memory indexes = new uint256[](1);
+        indexes[0] = 2550;
+
+        _addLiquidity(
+            {
+                from:   testAddress,
+                amount: 3_000 * 1e18,
+                index:  indexes[0],
+                newLup: MAX_PRICE
+            }
+        );
+
+        // mint NFT
+        uint256 tokenId = _mintNFT(testAddress, testAddress, address(_pool));
+
+        // allow position manager to take ownership of the position
+        _pool.approveLpOwnership(address(_positionManager), indexes[0], 3_000 * 1e27);
+
+        // memorialize position
+        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
+            tokenId, indexes
+        );
+        _positionManager.memorializePositions(memorializeParams);
+
+        // TODO: expand this test to check string matches an expected hardcoded string
+        string memory uriString = _positionManager.tokenURI(tokenId);
+        assertGt(bytes(uriString).length, 0);
     }
 
 }
