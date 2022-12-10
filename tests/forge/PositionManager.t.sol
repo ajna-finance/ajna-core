@@ -89,7 +89,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         uint256 lpTokens = _positionManager.getLPTokens(tokenId, mintPrice);
 
         assertEq(owner, testAddress);
-        assert(lpTokens == 0);
+        assertEq(lpTokens, 0);
     }
 
     /**
@@ -876,8 +876,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
      *  @notice Tests a contract minting an NFT.
      */
     function testMintToContract() external {
+        address mintingOwner = makeAddr("mintingOwner");
+        address recipientOwner = makeAddr("recipientOwner");
+
         // deploy contract to receive the NFT
-        ContractNFTRecipient recipientContract = new ContractNFTRecipient();
+        ContractNFTRecipient recipientContract = new ContractNFTRecipient(mintingOwner);
 
         // check that contract can successfully receive the NFT
         vm.expectEmit(true, true, true, true);
@@ -888,7 +891,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertEq(_positionManager.ownerOf(1), address(recipientContract));
 
         // check contract owner can transfer to another smart contract
-        ContractNFTRecipient secondRecipient = new ContractNFTRecipient();
+        ContractNFTRecipient secondRecipient = new ContractNFTRecipient(recipientOwner);
         recipientContract.transferNFT(address(_positionManager), address(secondRecipient), 1);
         assertEq(_positionManager.ownerOf(1), address(secondRecipient));
     }
@@ -1211,6 +1214,28 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
     }
 
+    function testPermitByContract() external {
+        // deploy recipient contract
+        (address nonMintingContractOwner, uint256 nonMintingContractPrivateKey) = makeAddrAndKey("nonMintingContract");
+        ContractNFTRecipient recipientContract = new ContractNFTRecipient(nonMintingContractOwner);
+
+        // deploy contract to receive the NFT
+        (address testContractOwner, uint256 ownerPrivateKey) = makeAddrAndKey("testContractOwner");
+        ContractNFTRecipient ownerContract = new ContractNFTRecipient(testContractOwner);
+        uint256 tokenId = _mintNFT(address(ownerContract), address(ownerContract), address(_pool));
+
+        // check contract owned nft can't be signed by non owner
+        uint256 deadline = block.timestamp + 1 days;
+        (uint8 v, bytes32 r, bytes32 s) = _getPermitSig(address(recipientContract), tokenId, deadline, nonMintingContractPrivateKey);
+        vm.expectRevert("ajna/nft-unauthorized");
+        _positionManager.safeTransferFromWithPermit(address(ownerContract), address(recipientContract), address(recipientContract), tokenId, deadline, v, r, s );
+
+        // check owner can permit their contract to transfer the NFT
+        deadline = block.timestamp + 1 days;
+        (v, r, s) = _getPermitSig(address(recipientContract), tokenId, deadline, ownerPrivateKey);
+        _positionManager.safeTransferFromWithPermit(address(ownerContract), address(recipientContract), address(recipientContract), tokenId, deadline, v, r, s );
+    }
+
     function testPermitReverts() external {
         // generate addresses and set test params
         (address testMinter, uint256 minterPrivateKey) = makeAddrAndKey("testMinter");
@@ -1237,6 +1262,12 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         (v, r, s) = _getPermitSig(testReceiver, tokenId, deadline, receiverPrivateKey);
         vm.expectRevert("ajna/nft-unauthorized");
         _positionManager.safeTransferFromWithPermit(testMinter, testReceiver, testReceiver, tokenId, deadline, v, r, s );
+
+        // check signature is valid
+        deadline = block.timestamp + 1 days;
+        (v, r, s) = _getPermitSig(testReceiver, tokenId, deadline, minterPrivateKey);
+        vm.expectRevert("ajna/nft-invalid-signature");
+        _positionManager.safeTransferFromWithPermit(testMinter, testReceiver, testReceiver, tokenId, deadline, 0, r, s );
     }
 
     /**
