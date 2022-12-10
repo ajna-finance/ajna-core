@@ -19,7 +19,23 @@ contract AjnaRewards is IAjnaRewards {
     /*** Events ***/
     /**************/
 
+    /**
+     *  @notice Emitted when lender deposits their LP NFT into the rewards contract.
+     *  @param  owner        Owner of the staked NFT.
+     *  @param  ajnaPool     Address of the Ajna pool the NFT corresponds to.
+     *  @param  tokenId      ID of the staked NFT.
+     *  @param  depositBlock Block number in which the NFT was staked.
+     */
     event DepositToken(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId, uint256 depositBlock);
+
+    /**
+     *  @notice Emitted when lender withdraws their LP NFT from the rewards contract.
+     *  @param  owner         Owner of the staked NFT.
+     *  @param  ajnaPool      Address of the Ajna pool the NFT corresponds to.
+     *  @param  tokenId       ID of the staked NFT.
+     *  @param  withdrawBlock Block number in which the NFT was withdrawn.
+     */
+    event WithdrawToken(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId, uint256 withdrawBlock);
 
     /**************/
     /*** Errors ***/
@@ -80,6 +96,8 @@ contract AjnaRewards is IAjnaRewards {
 
         // TODO: figure out how to store the total lps in each of these buckets at the time of deposit
 
+        emit DepositToken(msg.sender, ajnaPool_, tokenId_, block.number);
+
         // transfer LP NFT to this contract
         IERC721(address(positionManager)).safeTransferFrom(msg.sender, address(this), tokenId_);
 
@@ -89,6 +107,8 @@ contract AjnaRewards is IAjnaRewards {
 
         // claim rewards, if any
         _claimRewards(tokenId_);
+
+        emit WithdrawToken(msg.sender, deposits[tokenId_].ajnaPool, tokenId_, block.number);
 
         // transfer LP NFT from contract to sender
         IERC721(address(positionManager)).safeTransferFrom(address(this), msg.sender, tokenId_);
