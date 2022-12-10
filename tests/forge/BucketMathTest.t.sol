@@ -3,6 +3,7 @@ pragma solidity 0.8.14;
 
 import './utils/DSTestPlus.sol';
 import './utils/BucketMath.sol';
+import '@std/console.sol';
 
 contract BucketMathTest is DSTestPlus {
 
@@ -58,14 +59,17 @@ contract BucketMathTest is DSTestPlus {
      *  @notice Tests price maps to index. BucketMath revert: attempt to get index of bad price.
      */
     function testPriceToIndex() public {
-        uint256 badPrice = 5 * 10**10;
 
-        vm.expectRevert("BM:PTI:OOB");
-        BucketMath.priceToIndex(badPrice);
+        uint256 priceLtLowestBound = 5 * 10**10;
+        int256 lowestIndex = BucketMath.priceToIndex(priceLtLowestBound);
+        assertEq(lowestIndex, -3_232);
+
+        uint256 priceGtHighestBound = 1_004_968_999.0 * 10**18;
+        int256 highestIndex = BucketMath.priceToIndex(priceGtHighestBound);
+        assertEq(highestIndex, 4_156);
 
         uint256 priceToTest = 5 * 10**18;
         int256 index = BucketMath.priceToIndex(priceToTest);
-
         assertEq(index, 323);
     }
 
