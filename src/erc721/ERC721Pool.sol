@@ -141,36 +141,27 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256 collateralToMerge;
         uint256 fromIndex;
 
+        // Loop over buckets
         for (uint256 i = 0; i < removalIndexes_.length;) {
 
             fromIndex = removalIndexes_[i];
             if (fromIndex > toIndex_) revert CannotMergeToHigherPrice();
 
-            // get and check lender has positive LP bal
-            Buckets.Bucket storage bucket = buckets[fromIndex];
-
-            // update collateral values
-            collateralToMerge += bucket.collateral;
-            LenderActions.removeCollateral(
+            // Lender removes all collateral from bucket that they have LP to cover
+            (uint256 collateralRemoved, ) = LenderActions.removeMaxCollateral(
                 buckets,
                 deposits,
-                bucket.collateral,
+                type(uint256).max,
                 fromIndex
             );
+            collateralToMerge += collateralRemoved;
 
             unchecked {
                 ++i;
             }
         }
   
-        // bucketLPs_ = LenderActions.addCollateral(
-        //     buckets[toIndex_],
-        //     msg.sender,
-        //     deposits.valueAt(toIndex_),
-        //     collateralToMerge,
-        //     PoolUtils.indexToPrice(toIndex_))
-        // ;
-
+        // Merge totalled collateral to specified bucket, toIndex_
         bucketLPs_ = LenderActions.addCollateral(
             buckets,
             deposits,

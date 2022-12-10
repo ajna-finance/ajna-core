@@ -524,7 +524,6 @@ library Auctions {
         address borrowerAddress_,
         uint256 borrowerCollateral_
     ) external returns (uint256 floorCollateral_, uint256 lps_, uint256 bucketIndex_) {
-        console.log("in settle NFT");
         floorCollateral_ = (borrowerCollateral_ / Maths.WAD) * Maths.WAD; // floor collateral of borrower
 
         // if there's fraction of NFTs remaining then reward difference to borrower as LPs in auction price bucket
@@ -545,7 +544,6 @@ library Auctions {
             );
         }
 
-        console.log("in below fraction");
         // rebalance borrower's collateral, transfer difference to floor collateral from borrower to pool claimable array
         uint256 noOfTokensPledged    = borrowerTokens_.length;
         uint256 noOfTokensToTransfer = noOfTokensPledged - floorCollateral_ / 1e18;
@@ -716,7 +714,6 @@ library Auctions {
 
         int256 timeAdjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours));
         price_ = 32 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
-        console.log("price leaving", price_);
     }
 
     /**

@@ -509,7 +509,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // check that paying the loan doesn't leave borrower debt under min debt amount
         _checkMinDebt(poolState_.accruedDebt, borrowerDebt);
-        console.log("lup check");
         newLup_ = _lup(poolState_.accruedDebt);
 
         if (auctions.isActive(borrowerAddress_)) {
@@ -522,11 +521,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 console.log("in col", borrower_.collateral);
             } else {
                 // partial repay, remove only the paid debt from pool auctions debt accumulator
-                console.log("partial else");
                 t0DebtInAuction -= t0repaidDebt_;
             }
         }
-        console.log("after is check");
         
         borrower_.t0debt -= t0repaidDebt_;
         loans.update(
