@@ -18,6 +18,7 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
 
     address constant WETH     = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address constant USDC     = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    address constant AJNA     = 0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079;
     uint24  constant POOL_FEE = 3000;
 
     IWETH  private weth = IWETH(WETH);
@@ -33,7 +34,7 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
     function setUp() external {
         // create an Ajna pool
         vm.createSelectFork(vm.envString("ETH_RPC_URL"));
-        _ajnaPool = ERC20Pool(new ERC20PoolFactory().deployPool(WETH, USDC, 0.05 * 10**18));
+        _ajnaPool = ERC20Pool(new ERC20PoolFactory(AJNA).deployPool(WETH, USDC, 0.05 * 10**18));
 
         // create some lenders and borrowers
         _borrower  = makeAddr("borrower");
@@ -64,16 +65,14 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         vm.startPrank(_borrower);
         weth.approve(address(_ajnaPool), type(uint256).max);
         usdc.approve(address(_ajnaPool), type(uint256).max);
-        _ajnaPool.pledgeCollateral(_borrower, 2 * 1e18);
-        _ajnaPool.borrow(19.25 * 1e18, 3696);
+        _ajnaPool.drawDebt(_borrower, 19.25 * 1e18, 3696, 2 * 1e18);
         vm.stopPrank();
 
         // borrower2 draws debt
         vm.startPrank(_borrower2);
         weth.approve(address(_ajnaPool), type(uint256).max);
         usdc.approve(address(_ajnaPool), type(uint256).max);
-        _ajnaPool.pledgeCollateral(_borrower2, 1_000 * 1e18);
-        _ajnaPool.borrow(7_980 * 1e18, 3700);
+        _ajnaPool.drawDebt(_borrower2, 7_980 * 1e18, 3700, 1_000 * 1e18);
         vm.stopPrank();
 
         // wait for borrower to become undercollateralized due to interest accrual

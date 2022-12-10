@@ -8,7 +8,6 @@ import '../base/FlashloanablePool.sol';
 
 contract ERC721Pool is IERC721Pool, FlashloanablePool {
     using Auctions for Auctions.Data;
-    using Buckets  for mapping(uint256 => Buckets.Bucket);
     using Deposits for Deposits.Data;
     using Loans    for Loans.Data;
 
@@ -20,12 +19,10 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     mapping(address => uint256[]) public borrowerTokenIds; // borrower address => array of tokenIds pledged by borrower
     uint256[]                     public bucketTokenIds;   // array of tokenIds added in pool buckets
 
-    bool public isSubset; // true if pool is a subset pool
-
     /****************************/
     /*** Initialize Functions ***/
     /****************************/
-
+    
     function initialize(
         uint256[] memory tokenIds_,
         uint256 rate_
@@ -34,12 +31,12 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
         inflatorSnapshot           = uint208(10**18);
         lastInflatorSnapshotUpdate = uint48(block.timestamp);
-        interestRate               = uint208(rate_);
-        interestRateUpdate         = uint48(block.timestamp);
+
+        interestParams.interestRate       = uint208(rate_);
+        interestParams.interestRateUpdate = uint48(block.timestamp);
 
         uint256 noOfTokens = tokenIds_.length;
-        if (noOfTokens > 0) {
-            isSubset = true;
+        if (noOfTokens != 0) {
             // add subset of tokenIds allowed in the pool
             for (uint256 id = 0; id < noOfTokens;) {
                 tokenIdsAllowed[tokenIds_[id]] = true;
@@ -55,29 +52,60 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         poolInitializations += 1;
     }
 
+    /******************/
+    /*** Immutables ***/
+    /******************/
+
+    function isSubset() external pure override returns (bool) {
+        return _getArgUint256(92) != 0;
+    }
+
     /***********************************/
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function pledgeCollateral(
-        address borrower_,
+    function drawDebt(
+        address borrowerAddress_,
+        uint256 amountToBorrow_,
+        uint256 limitIndex_,
         uint256[] calldata tokenIdsToPledge_
-    ) external override {
-        _pledgeCollateral(borrower_, Maths.wad(tokenIdsToPledge_.length));
+    ) external {
+        (
+            bool pledge,
+            bool borrow,
+            uint256 newLup
+        ) = _drawDebt(
+            borrowerAddress_,
+            amountToBorrow_,
+            limitIndex_,
+            Maths.wad(tokenIdsToPledge_.length)
+        );
 
-        emit PledgeCollateralNFT(borrower_, tokenIdsToPledge_);
+        emit DrawDebtNFT(borrowerAddress_, amountToBorrow_, tokenIdsToPledge_, newLup);
+
         // move collateral from sender to pool
-        _transferFromSenderToPool(borrowerTokenIds[borrower_], tokenIdsToPledge_);
+        if (pledge) _transferFromSenderToPool(borrowerTokenIds[borrowerAddress_], tokenIdsToPledge_);
+        // move borrowed amount from pool to sender
+        if (borrow) _transferQuoteToken(msg.sender, amountToBorrow_);
     }
 
-    function pullCollateral(
+    function repayDebt(
+        address borrowerAddress_,
+        uint256 maxQuoteTokenAmountToRepay_,
         uint256 noOfNFTsToPull_
-    ) external override {
-        _pullCollateral(Maths.wad(noOfNFTsToPull_));
+    ) external {
+        (uint256 quoteTokenToRepay, uint256 newLup) = _repayDebt(borrowerAddress_, maxQuoteTokenAmountToRepay_, Maths.wad(noOfNFTsToPull_));
 
-        emit PullCollateral(msg.sender, noOfNFTsToPull_);
-        // move collateral from pool to sender
-        _transferFromPoolToAddress(msg.sender, borrowerTokenIds[msg.sender], noOfNFTsToPull_);
+        emit RepayDebt(borrowerAddress_, quoteTokenToRepay, noOfNFTsToPull_, newLup);
+
+        if (quoteTokenToRepay != 0) {
+            // move amount to repay from sender to pool
+            _transferQuoteTokenFrom(msg.sender, quoteTokenToRepay);
+        }
+        if (noOfNFTsToPull_ != 0) {
+            // move collateral from pool to sender
+            _transferFromPoolToAddress(msg.sender, borrowerTokenIds[msg.sender], noOfNFTsToPull_);
+        }
     }
 
     /*********************************/
@@ -88,7 +116,16 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256[] calldata tokenIdsToAdd_,
         uint256 index_
     ) external override returns (uint256 bucketLPs_) {
-        bucketLPs_ = _addCollateral(Maths.wad(tokenIdsToAdd_.length), index_);
+        PoolState memory poolState = _accruePoolInterest();
+
+        bucketLPs_ = LenderActions.addCollateral(
+            buckets,
+            deposits,
+            Maths.wad(tokenIdsToAdd_.length),
+            index_
+        );
+
+        _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
         emit AddCollateralNFT(msg.sender, index_, tokenIdsToAdd_);
         // move required collateral from sender to pool
@@ -101,28 +138,14 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     ) external override returns (uint256 collateralAmount_, uint256 lpAmount_) {
         auctions.revertIfAuctionClearable(loans);
 
-        collateralAmount_ = Maths.wad(noOfNFTsToRemove_);
-        Buckets.Bucket storage bucket = buckets[index_];
-        if (collateralAmount_ > bucket.collateral) revert InsufficientCollateral();
-
         PoolState memory poolState = _accruePoolInterest();
 
-        lpAmount_ = Buckets.collateralToLPs(
-            bucket.collateral,
-            bucket.lps,
-            deposits.valueAt(index_),
+        collateralAmount_ = Maths.wad(noOfNFTsToRemove_);
+        lpAmount_ = LenderActions.removeCollateral(
+            buckets,
+            deposits,
             collateralAmount_,
-            PoolUtils.indexToPrice(index_)
-        );
-
-        (uint256 lenderLpBalance, ) = buckets.getLenderInfo(index_, msg.sender);
-        // ensure lender has enough balance to remove collateral amount
-        if (lenderLpBalance == 0 || lpAmount_ > lenderLpBalance) revert InsufficientLPs();
-
-        Buckets.removeCollateral(
-            bucket,
-            collateralAmount_,
-            lpAmount_
+            index_
         );
 
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
@@ -146,52 +169,52 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
         if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral();
 
-        Auctions.TakeParams memory params = Auctions.take(
+        Auctions.TakeParams memory params;
+        params.borrower       = borrowerAddress_;
+        params.collateral     = borrower.collateral;
+        params.t0debt         = borrower.t0debt;
+        params.takeCollateral = Maths.wad(collateral_);
+        params.inflator       = poolState.inflator;
+        (
+            uint256 collateralAmount,
+            uint256 quoteTokenAmount,
+            uint256 t0repayAmount,
+            uint256 auctionPrice
+        ) = Auctions.take(
             auctions,
-            borrowerAddress_,
-            borrower,
-            Maths.wad(collateral_),
-            poolState.inflator
+            params
         );
 
         uint256 excessQuoteToken;
-        uint256 collateralTaken = (params.collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
-        if (collateralTaken !=  params.collateralAmount) { // collateral taken not a round number
+        uint256 collateralTaken = (collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
+        if (collateralTaken != collateralAmount) { // collateral taken not a round number
             collateralTaken += 1e18; // round up collateral to take
             // taker should send additional quote tokens to cover difference between collateral needed to be taken and rounded collateral, at auction price
             // borrower will get quote tokens for the difference between rounded collateral and collateral taken to cover debt
-            excessQuoteToken = Maths.wmul(collateralTaken - params.collateralAmount, params.auctionPrice);
+            excessQuoteToken = Maths.wmul(collateralTaken - collateralAmount, auctionPrice);
         }
 
         borrower.collateral  -= collateralTaken;
         poolState.collateral -= collateralTaken;
 
-        emit Take(
-            borrowerAddress_,
-            params.quoteTokenAmount,
-            params.collateralAmount,
-            params.bondChange,
-            params.isRewarded
-        );
-
         // transfer rounded collateral from pool to taker
-        uint256[] memory tokensTaken = _transferFromPoolToAddress(callee_, borrowerTokenIds[borrowerAddress_], collateralTaken / 1e18);
+        uint256[] memory tokensTaken = _transferFromPoolToAddress(callee_, borrowerTokenIds[params.borrower], collateralTaken / 1e18);
 
         if (data_.length != 0) {
             IERC721Taker(callee_).atomicSwapCallback(
                 tokensTaken, 
-                params.quoteTokenAmount / _getArgUint256(40), 
+                quoteTokenAmount / _getArgUint256(40), 
                 data_
             );
         }
 
         // transfer from taker to pool the amount of quote tokens needed to cover collateral auctioned (including excess for rounded collateral)
-        _transferQuoteTokenFrom(callee_, params.quoteTokenAmount + excessQuoteToken);
+        _transferQuoteTokenFrom(callee_, quoteTokenAmount + excessQuoteToken);
 
         // transfer from pool to borrower the excess of quote tokens after rounding collateral auctioned
-        if (excessQuoteToken != 0) _transferQuoteToken(borrowerAddress_, excessQuoteToken);
+        if (excessQuoteToken != 0) _transferQuoteToken(params.borrower, excessQuoteToken);
 
-        _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
+        _payLoan(t0repayAmount, poolState, params.borrower, borrower);
         pledgedCollateral = poolState.collateral;
     }
 
@@ -255,7 +278,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256[] storage poolTokens_,
         uint256[] calldata tokenIds_
     ) internal {
-        bool subset = isSubset;
+        bool subset = _getArgUint256(92) != 0;
         for (uint256 i = 0; i < tokenIds_.length;) {
             uint256 tokenId = tokenIds_[i];
             if (subset && !tokenIdsAllowed[tokenId]) revert OnlySubset();

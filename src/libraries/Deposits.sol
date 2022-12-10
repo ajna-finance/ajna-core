@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import './Maths.sol';
-import './PoolUtils.sol';
-import './BucketMath.sol';
+import '../base/PoolHelper.sol';
 
 library Deposits {
 
@@ -23,50 +21,12 @@ library Deposits {
         uint256[8193] scaling; // Array of values which scale (multiply) the FenwickTree accross indexes.
     }
 
-    function accrueInterest(
-        Data storage self,
-        uint256 debt_,
-        uint256 collateral_,
-        uint256 htp_,
-        uint256 pendingInterestFactor_
-    ) internal {
-        uint256 htpIndex = (htp_ != 0) ? PoolUtils.priceToIndex(htp_) : 7_388; // if HTP is 0 then accrue interest at max index (min price)
-        uint256 depositAboveHtp = prefixSum(self, htpIndex);
-
-        if (depositAboveHtp != 0) {
-            uint256 netInterestMargin = BucketMath.lenderInterestMargin(utilization(self, debt_, collateral_));
-            uint256 newInterest       = Maths.wmul(netInterestMargin, Maths.wmul(pendingInterestFactor_ - Maths.WAD, debt_));
-
-            uint256 lenderFactor = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;
-            mult(self, htpIndex, lenderFactor);
-        }
-    }
-
-    function utilization(
-        Data storage self,
-        uint256 debt_,
-        uint256 collateral_
-    ) internal view returns (uint256 utilization_) {
-        if (collateral_ != 0) {
-            uint256 ptp = Maths.wdiv(debt_, collateral_);
-
-            if (ptp != 0) {
-                uint256 depositAbove = prefixSum(self, PoolUtils.priceToIndex(ptp));
-
-                if (depositAbove != 0) utilization_ = Maths.wdiv(
-                    debt_,
-                    depositAbove
-                );
-            }
-        }
-    }
-
     function momp(
         Data storage self,
         uint256 curDebt_,
         uint256 numLoans_
     ) internal view returns (uint256 momp_) {
-        if (numLoans_ != 0) momp_ = PoolUtils.indexToPrice(findIndexOfSum(self, Maths.wdiv(curDebt_, numLoans_ * 1e18)));
+        if (numLoans_ != 0) momp_ = _priceAt(findIndexOfSum(self, Maths.wdiv(curDebt_, numLoans_ * 1e18)));
     }
 
     function t0Np(

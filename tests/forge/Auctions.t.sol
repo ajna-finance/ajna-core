@@ -3,7 +3,7 @@ pragma solidity 0.8.14;
 
 import './utils/DSTestPlus.sol';
 
-import 'src/libraries/Auctions.sol';
+import 'src/libraries/external/Auctions.sol';
 
 contract AuctionsTest is DSTestPlus {
 
@@ -57,13 +57,13 @@ contract AuctionsTest is DSTestPlus {
      */
     function testReserveAuctionPrice() external {
         skip(5 days);
-        assertEq(Auctions.reserveAuctionPrice(block.timestamp),            1e27);
-        assertEq(Auctions.reserveAuctionPrice(block.timestamp - 1 hours),  500000000 * 1e18);
-        assertEq(Auctions.reserveAuctionPrice(block.timestamp - 2 hours),  250000000 * 1e18);
-        assertEq(Auctions.reserveAuctionPrice(block.timestamp - 4 hours),  62500000 * 1e18);
-        assertEq(Auctions.reserveAuctionPrice(block.timestamp - 16 hours), 15258.789062500000000000 * 1e18);
-        assertEq(Auctions.reserveAuctionPrice(block.timestamp - 24 hours), 59.604644775390625000 * 1e18);
-        assertEq(Auctions.reserveAuctionPrice(block.timestamp - 90 hours), 0);
+        assertEq(_reserveAuctionPrice(block.timestamp),            1e27);
+        assertEq(_reserveAuctionPrice(block.timestamp - 1 hours),  500000000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 2 hours),  250000000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 4 hours),  62500000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 16 hours), 15258.789062500000000000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 24 hours), 59.604644775390625000 * 1e18);
+        assertEq(_reserveAuctionPrice(block.timestamp - 90 hours), 0);
     }
 
     /**
@@ -76,64 +76,16 @@ contract AuctionsTest is DSTestPlus {
         uint256 reserveAuctionUnclaimed = 1_001 * 1e18;
         uint256 quoteTokenBalance = 11_000 * 1e18;
 
-        assertEq(Auctions.claimableReserves(debt, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, quoteTokenBalance),  18_942 * 1e18);
-        assertEq(Auctions.claimableReserves(debt, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, 0),                  7_942 * 1e18);
-        assertEq(Auctions.claimableReserves(0, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, quoteTokenBalance),     7_997 * 1e18);
-        assertEq(Auctions.claimableReserves(debt, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, Maths.WAD),          7_943 * 1e18);
-        assertEq(Auctions.claimableReserves(debt, 11_000 * 1e18, liquidationBondEscrowed, reserveAuctionUnclaimed, 0),             0);
-        assertEq(Auctions.claimableReserves(debt, poolSize, 11_000 * 1e18, reserveAuctionUnclaimed, 0),                            0);
-        assertEq(Auctions.claimableReserves(debt, poolSize, liquidationBondEscrowed, 11_000 * 1e18, 0),                            0);
-        assertEq(Auctions.claimableReserves(debt, 11_000 * 1e18, 11_000 * 1e18, reserveAuctionUnclaimed, 0),                       0);
-        assertEq(Auctions.claimableReserves(debt, poolSize, 11_000 * 1e18, 10_895 * 1e18, quoteTokenBalance),                      0);
+        assertEq(_claimableReserves(debt, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, quoteTokenBalance),  18_942 * 1e18);
+        assertEq(_claimableReserves(debt, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, 0),                  7_942 * 1e18);
+        assertEq(_claimableReserves(0, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, quoteTokenBalance),     7_997 * 1e18);
+        assertEq(_claimableReserves(debt, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, Maths.WAD),          7_943 * 1e18);
+        assertEq(_claimableReserves(debt, 11_000 * 1e18, liquidationBondEscrowed, reserveAuctionUnclaimed, 0),             0);
+        assertEq(_claimableReserves(debt, poolSize, 11_000 * 1e18, reserveAuctionUnclaimed, 0),                            0);
+        assertEq(_claimableReserves(debt, poolSize, liquidationBondEscrowed, 11_000 * 1e18, 0),                            0);
+        assertEq(_claimableReserves(debt, 11_000 * 1e18, 11_000 * 1e18, reserveAuctionUnclaimed, 0),                       0);
+        assertEq(_claimableReserves(debt, poolSize, 11_000 * 1e18, 10_895 * 1e18, quoteTokenBalance),                      0);
 
-    }
-
-    /**
-     *  @notice Tests fenwick index calculation from varying bucket prices
-     */
-    function testPriceToIndex() external {
-        assertAuctionPriceToIndex(1_004_968_987.606512354182109771 * 10**18);
-        assertAuctionPriceToIndex(99_836_282_890);
-        assertAuctionPriceToIndex(49_910.043670274810022205 * 1e18);
-        assertAuctionPriceToIndex(2_000.221618840727700609 * 1e18);
-        assertAuctionPriceToIndex(146.575625611106531706 * 1e18);
-        assertAuctionPriceToIndex(145.846393642892072537 * 1e18);
-        assertAuctionPriceToIndex(5.263790124045347667 * 1e18);
-        assertAuctionPriceToIndex(1.646668492116543299 * 1e18);
-        assertAuctionPriceToIndex(1.315628874808846999 * 1e18);
-        assertAuctionPriceToIndex(1.051140132040790557 * 1e18);
-        assertAuctionPriceToIndex(0.000046545370002462 * 1e18);
-        assertAuctionPriceToIndex(0.006822416727411372 * 1e18);
-        assertAuctionPriceToIndex(0.006856528811048429 * 1e18);
-        assertAuctionPriceToIndex(0.951347940696068854 * 1e18);        
-    }
-
-    /**
-     *  @notice Tests bucket price calculation from varying fenwick index
-     */
-    function testIndexToPrice() external {
-        assertAuctionIndexToPrice(0);
-        assertAuctionIndexToPrice(7388);
-        assertAuctionIndexToPrice(1987);
-        assertAuctionIndexToPrice(2632);
-        assertAuctionIndexToPrice(3156);
-        assertAuctionIndexToPrice(3157);
-        assertAuctionIndexToPrice(3823);
-        assertAuctionIndexToPrice(4056);
-        assertAuctionIndexToPrice(4101);
-        assertAuctionIndexToPrice(4146);
-        assertAuctionIndexToPrice(6156);
-        assertAuctionIndexToPrice(5156);
-        assertAuctionIndexToPrice(5155);
-        assertAuctionIndexToPrice(4166);
-    }
-
-    function assertAuctionIndexToPrice(uint256 index_) internal {
-        assertEq(Auctions._indexToPrice(index_), PoolUtils.indexToPrice(index_));
-    }
-
-    function assertAuctionPriceToIndex(uint256 price_) internal {
-        assertEq(Auctions._priceToIndex(price_), PoolUtils.priceToIndex(price_));
     }
 
 }
