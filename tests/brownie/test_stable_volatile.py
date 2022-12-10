@@ -16,7 +16,7 @@ SECONDS_PER_DAY = 3600 * 24
 MIN_UTILIZATION = 0.4
 MAX_UTILIZATION = 0.8
 GOAL_UTILIZATION = 0.6      # borrowers should collateralize such that target utilization approaches this
-MIN_PARTICIPATION = 10000   # in quote token, the minimum amount to lend
+MIN_PARTICIPATION = 25000   # in quote token, the minimum amount to lend
 NUM_LENDERS = 50
 NUM_BORROWERS = 50
 LOG_LENDER_ACTIONS = True
@@ -87,7 +87,7 @@ def pool_helper(ajna_protocol, scaled_pool, lenders, borrowers, test_utils, chai
 def add_initial_liquidity(lenders, pool_helper):
     # Lenders 0-9 will be "new to the pool" upon actual testing
     # TODO: determine this non-arbitrarily
-    deposit_amount = 1_000 * 10 ** 18
+    deposit_amount = MIN_PARTICIPATION * 10**18
     first_lender = 0 if len(lenders) <= 10 else 10
     for i in range(first_lender, len(lenders) - 1):
         # determine how many buckets to deposit into
@@ -227,19 +227,16 @@ def pledge_and_borrow(pool_helper, borrower, borrower_index, collateral_to_depos
 def draw_and_bid(lenders, borrowers, start_from, pool_helper, chain, test_utils, duration=3600):
     user_index = start_from
     end_time = chain.time() + duration
-    # Update the interest rate
-    (interest_rate, _) = pool_helper.pool.interestRateInfo()
-    interest_rate = interest_rate / 10**18
     chain.sleep(14)
 
     while chain.time() < end_time:
         if chain.time() - last_triggered[user_index] > get_time_between_interactions(user_index):
 
-            # Draw debt, repay debt, or do nothing depending on interest rate
+            # Draw debt, repay debt, or do nothing depending on utilization
             if user_index < NUM_BORROWERS:
                 (_, _, poolActualUtilization, _) = pool_helper.utilizationInfo()
                 utilization = poolActualUtilization / 10**18
-                if interest_rate < 0.10 and utilization < MAX_UTILIZATION:
+                if utilization < MAX_UTILIZATION:
                     target_collateralization = max(1.1, 1/GOAL_UTILIZATION)
                     draw_debt(borrowers[user_index], user_index, pool_helper, test_utils, collateralization=target_collateralization)
                 elif utilization > MIN_UTILIZATION:  # start repaying debt if interest grows too high
@@ -253,12 +250,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool_helper, chain, test_utils,
                 utilization = poolActualUtilization / 10**18
                 if utilization < MAX_UTILIZATION and len(buckets_deposited[user_index]) > 0:
                     price = buckets_deposited[user_index].pop()
-                    # try:
                     remove_quote_token(lenders[user_index], user_index, price, pool_helper)
-                    # except VirtualMachineError as ex:
-                    #     log(f" ERROR removing liquidity at {price / 10**18:.1f}: {ex}")
-                    #     log(test_utils.dump_book(pool_helper))
-                    #     buckets_deposited[user_index].add(price)  # try again later when pool is better collateralized
                 else:
                     price = add_quote_token(lenders[user_index], user_index, pool_helper)
                     if price:
@@ -274,7 +266,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool_helper, chain, test_utils,
 
             last_triggered[user_index] = chain.time()
         # chain.mine(blocks=20, timedelta=274)  # https://github.com/eth-brownie/brownie/issues/1514
-        chain.sleep(274)
+        chain.sleep(900)
         user_index = (user_index + 1) % max(NUM_LENDERS, NUM_BORROWERS)  # increment with wraparound
     return user_index
 
