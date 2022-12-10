@@ -36,6 +36,32 @@ abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract 
         changePrank(minter_);
         return _positionManager.mint(mintParams);
     }
+
+    function _getPermitSig(
+        address receiver_,
+        uint256 tokenId_,
+        uint256 deadline_,
+        uint256 ownerPrivateKey_
+    ) internal returns (uint8 v, bytes32 r, bytes32 s) {
+        return vm.sign(
+                ownerPrivateKey_,
+                keccak256(
+                    abi.encodePacked(
+                        "\x19\x01",
+                        _positionManager.DOMAIN_SEPARATOR(),
+                        keccak256(
+                            abi.encode(
+                                _positionManager.PERMIT_TYPEHASH(),
+                                receiver_,
+                                tokenId_,
+                                0,
+                                deadline_
+                            )
+                        )
+                    )
+                )
+            );
+    }
 }
 
 contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract {
@@ -1183,6 +1209,34 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // check position manager state
         assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 0);
         assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
+    }
+
+    function testPermitReverts() external {
+        // generate addresses and set test params
+        (address testMinter, uint256 minterPrivateKey) = makeAddrAndKey("testMinter");
+        (address testReceiver, uint256 receiverPrivateKey) = makeAddrAndKey("testReceiver");
+
+        vm.prank(testMinter);
+        uint256 tokenId = _mintNFT(testMinter, testMinter, address(_pool));
+        assertEq(_positionManager.ownerOf(tokenId), testMinter);
+
+        // check can't use a deadline in the past
+        uint256 deadline = block.timestamp - 1 days;
+        (uint8 v, bytes32 r, bytes32 s) = _getPermitSig(testReceiver, tokenId, deadline, minterPrivateKey);
+        vm.expectRevert("ajna/nft-permit-expired");
+        _positionManager.safeTransferFromWithPermit(testMinter, testReceiver, testReceiver, tokenId, deadline, v, r, s );
+
+        // check can't self approve
+        deadline = block.timestamp + 1 days;
+        (v, r, s) = _getPermitSig(testMinter, tokenId, deadline, minterPrivateKey);
+        vm.expectRevert("ERC721Permit: approval to current owner");
+        _positionManager.safeTransferFromWithPermit(testMinter, testMinter, testMinter, tokenId, deadline, v, r, s );
+
+        // check signer is authorized to permit
+        deadline = block.timestamp + 1 days;
+        (v, r, s) = _getPermitSig(testReceiver, tokenId, deadline, receiverPrivateKey);
+        vm.expectRevert("ajna/nft-unauthorized");
+        _positionManager.safeTransferFromWithPermit(testMinter, testReceiver, testReceiver, tokenId, deadline, v, r, s );
     }
 
     /**
@@ -2348,6 +2402,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
     }
 
     function testTokenURI() external {
+        // should revert if using non-existant tokenId
+        vm.expectRevert();
+        _positionManager.tokenURI(1);
+
         address testAddress = makeAddr("testAddress");
         uint256 mintAmount  = 10000 * 1e18;
 
