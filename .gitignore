@@ -11,3 +11,4 @@ reports/
 .gas-snapshot
 .DS_store
 coverage/
+*.info
