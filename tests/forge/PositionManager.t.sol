@@ -1773,6 +1773,14 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertTrue(_positionManager.isIndexInPosition(tokenId1, moveIndex));
         assertFalse(_positionManager.isIndexInPosition(tokenId2, mintIndex));
         assertTrue(_positionManager.isIndexInPosition(tokenId2, moveIndex));
+
+        // check can't move liquidity from position with no liquidity
+        moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
+            tokenId2, address(_pool), 1000, 2000
+        );
+        changePrank(address(testAddress2));
+        vm.expectRevert(IPositionManager.RemoveLiquidityFailed.selector);
+        _positionManager.moveLiquidity(moveLiquidityParams);
     }
 
     function testRedeemPositions() external {
