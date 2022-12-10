@@ -292,7 +292,85 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         );
     }
 
-    function testMaxInterestRate() external {
+    function testMinInterestRate() external tearDown {
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  _i1505_26,
+                newLup: MAX_PRICE
+            }
+        );
+
+        // pledge a tiny amount of collateral and draw a tiny amount of debt
+        _drawDebt(
+            {
+                from:               _borrower,
+                borrower:           _borrower,
+                amountToBorrow:     0.00001 * 1e18,
+                limitIndex:         _i1505_26,
+                collateralToPledge: 0.00001 * 1e18,
+                newLup:             _p1505_26
+            }
+        );
+
+        // confirm interest rate starts out at 5%
+        _assertPool(
+            PoolState({
+                htp:                  1.0009615384615 * 1e18,
+                lup:                  _p1505_26,
+                poolSize:             10_000 * 1e18,
+                pledgedCollateral:    0.00001 * 1e18,
+                encumberedCollateral: 0.000000006649741966 * 1e18,
+                poolDebt:             0.000010009615384615 * 1e18,
+                actualUtilization:    0.000000001000961538 * 1e18,
+                targetUtilization:    1e18,
+                minDebtAmount:        0.000001000961538462 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+
+        uint i = 0;
+        while (i < 77) {
+            // trigger an interest accumulation
+            skip(12 hours);
+            _borrow(
+                {
+                    from:       _borrower,
+                    amount:     0,
+                    indexLimit: _i1505_26,
+                    newLup:     _p1505_26
+                }
+            );
+            unchecked {
+                ++i;
+            }
+        }
+
+        // show the rate bottoms out at 10 bps
+        _assertPool(
+            PoolState({
+                htp:                  1.003660230043452158 * 1e18,
+                lup:                  _p1505_26,
+                poolSize:             10_000.000000011461690000 * 1e18,
+                pledgedCollateral:    0.00001 * 1e18,
+                encumberedCollateral: 0.000000006658700114 * 1e18,
+                poolDebt:             0.000010023099759839 * 1e18,
+                actualUtilization:    0.000000001002309976 * 1e18,
+                targetUtilization:    0.000665816943976221 * 1e18,
+                minDebtAmount:        0.000001002309975984 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.001 * 1e18,
+                interestRateUpdate:   _startTime + (76*12 hours)
+            })
+        );
+    }
+
+    function testMaxInterestRate() external tearDown {
         _addLiquidity(
             {
                 from:   _lender,
