@@ -12,3 +12,4 @@ reports/
 .DS_store
 coverage/
 *.info
+report/
