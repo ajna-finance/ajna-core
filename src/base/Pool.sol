@@ -677,6 +677,19 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
+    function bucketExchangeRate(
+        uint256 index_
+    ) external view returns (uint256 exchangeRate_) {
+        Buckets.Bucket storage bucket = buckets[index_];
+
+        exchangeRate_ = Buckets.getExchangeRate(
+            bucket.collateral,
+            bucket.lps,
+            deposits.valueAt(index_),
+            _priceAt(index_)
+        );
+    }
+
     function debtInfo() external view returns (uint256, uint256, uint256) {
         uint256 pendingInflator = PoolCommons.pendingInflator(
             inflatorSnapshot,
@@ -783,6 +796,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if (t0AuctionDebt != 0 ) {
             // deposit in buckets within liquidation debt from the top-of-book down are frozen.
             if (index_ <= deposits.findIndexOfSum(Maths.wmul(t0AuctionDebt, inflator_))) revert RemoveDepositLockedByAuctionDebt();
-        } 
+        }
     }
 }

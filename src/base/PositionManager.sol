@@ -38,7 +38,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     /** @dev Mapping of tokenIds to nonce values used for permit */
     mapping(uint256 => uint96) public nonces;
 
-    /** @dev Mapping of tokenIds to pool lps */
+    /** @dev Mapping of tokenIds => index => lpb */
     mapping(uint256 => mapping(uint256 => uint256)) public lps;
 
     /** @dev Mapping of tokenIds to set of prices associated with a Position */
@@ -177,6 +177,10 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
     function getLPTokens(uint256 tokenId_, uint256 index_) external override view returns (uint256) {
         return lps[tokenId_][index_];
+    }
+
+    function getPositionPrices(uint256 tokenId_) external view override returns (uint256[] memory) {
+        return positionPrices[tokenId_].values();
     }
 
     function isIndexInPosition(uint256 tokenId_, uint256 index_) external override view returns (bool) {
