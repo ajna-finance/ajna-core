@@ -26,10 +26,7 @@ library Deposits {
         uint256 curDebt_,
         uint256 numLoans_
     ) internal view returns (uint256 momp_) {
-        if (numLoans_ != 0) {
-            uint256 mompIndex = findIndexOfSum(self, Maths.wdiv(curDebt_, numLoans_ * 1e18));
-            momp_ = _priceAt(Maths.min(mompIndex, MAX_FENWICK_INDEX));
-        }
+        if (numLoans_ != 0) momp_ = _priceAt(findIndexOfSum(self, Maths.wdiv(curDebt_, numLoans_ * 1e18)));
     }
 
     function t0Np(
@@ -106,6 +103,8 @@ library Deposits {
             i = i >> 1;
             index = sumIndex_ + i;
         }
+        // If the sum was not found, return the highest Fenwick index
+        if (sumIndex_ == SIZE-1) sumIndex_ = MAX_FENWICK_INDEX;
     }
 
     /**

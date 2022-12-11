@@ -411,6 +411,6 @@ library LenderActions {
         Deposits.Data storage deposits_,
         uint256 debt_
     ) internal view returns (uint256) {
-        return _priceAt(Maths.min(Deposits.findIndexOfSum(deposits_, debt_), MAX_FENWICK_INDEX));
+        return _priceAt(Deposits.findIndexOfSum(deposits_, debt_));
     }
 }

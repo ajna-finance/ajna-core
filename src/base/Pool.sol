@@ -647,7 +647,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     function _lup(uint256 debt_) internal view returns (uint256) {
-        return _priceAt(Maths.min(_lupIndex(debt_), MAX_FENWICK_INDEX));
+        return _priceAt(_lupIndex(debt_));
     }
 
     /**************************/
@@ -711,7 +711,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     function depositIndex(uint256 debt_) external view override returns (uint256) {
-        return Maths.min(deposits.findIndexOfSum(debt_), MAX_FENWICK_INDEX);
+        return deposits.findIndexOfSum(debt_);
     }
 
     function depositSize() external view override returns (uint256) {
