@@ -10,8 +10,6 @@ import '../Loans.sol';
 import '../../base/PoolHelper.sol';
 import '../../base/Pool.sol';
 
-import '@std/console.sol';
-
 library Auctions {
     struct Data {
         address head;
@@ -187,28 +185,27 @@ library Auctions {
             uint256 collateralUsed;
 
             {
-                uint256 debtToSettle      = Maths.wmul(params_.t0debt, params_.inflator);     // current debt to be settled
+                uint256 debtToSettle      = Maths.wmul(params_.t0debt, params_.inflator);   // current debt to be settled
                 uint256 maxSettleableDebt = Maths.wmul(params_.collateral, price);          // max debt that can be settled with existing collateral
 
-                // FIXME: Is it possible for the depositToRemove to not be greater than debtToSettle
                 if (depositToRemove >= debtToSettle && maxSettleableDebt >= debtToSettle) { // enough deposit in bucket and collateral avail to settle entire debt
-                    depositToRemove    = debtToSettle;                                      // remove only what's needed to settle the debt
-                    params_.t0debt    = 0;                                                 // no remaining debt to settle
-                    collateralUsed     = Maths.wdiv(debtToSettle, price);
+                    depositToRemove    =  debtToSettle;                                     // remove only what's needed to settle the debt
+                    params_.t0debt     =  0;                                                // no remaining debt to settle
+                    collateralUsed     =  Maths.wdiv(debtToSettle, price);
                     params_.collateral -= collateralUsed;
                 } else if (depositToRemove != 0 && maxSettleableDebt >= depositToRemove) {                          // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
                     params_.t0debt     -= Maths.wdiv(depositToRemove, params_.inflator);    // subtract from debt the corresponding t0 amount of deposit
-                    collateralUsed     = Maths.wdiv(depositToRemove, price);
+                    collateralUsed     =  Maths.wdiv(depositToRemove, price);
                     params_.collateral -= collateralUsed;
                 } else {                                                                    // constrained by collateral available
                     depositToRemove = depositToRemove != 0 ? maxSettleableDebt : 0;
                     params_.t0debt     -= Maths.wdiv(maxSettleableDebt, params_.inflator);
-                    collateralUsed     = params_.collateral;
-                    params_.collateral = 0;
+                    collateralUsed     =  params_.collateral;
+                    params_.collateral =  0;
                 }
             }
 
-            buckets_[index].collateral += collateralUsed;                // add settled collateral into bucket
+            buckets_[index].collateral += collateralUsed;                                          // add settled collateral into bucket
             if (depositToRemove != 0) Deposits.remove(deposits_, index, depositToRemove, deposit); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
 
             --params_.bucketDepth;
@@ -284,7 +281,7 @@ library Auctions {
             kicker.claimable -= bondSize;
         } else {
             kickAuctionAmount_ = bondSize - kickerClaimable;
-            kicker.claimable = 0;
+            kicker.claimable   = 0;     
         }
         // update totalBondEscrowed accumulator
         self.totalBondEscrowed += bondSize;
@@ -389,7 +386,7 @@ library Auctions {
             // take is above neutralPrice, Kicker is penalized
             result.bondChange = Maths.min(liquidation.bondSize, Maths.wmul(result.quoteTokenAmount, uint256(-bpf)));
             liquidation.bondSize                -= uint160(result.bondChange);
-            self.kickers[result.kicker].locked -= result.bondChange;
+            self.kickers[result.kicker].locked  -= result.bondChange;
             self.totalBondEscrowed              -= result.bondChange;
         } else {
             result.bondChange = Maths.wmul(result.quoteTokenAmount, uint256(bpf)); // will be rewarded as LPBs
@@ -468,14 +465,14 @@ library Auctions {
             // take is below neutralPrice, Kicker is rewarded
             result.bondChange = Maths.wmul(result.quoteTokenAmount, uint256(bpf));
             liquidation.bondSize                += uint160(result.bondChange);
-            self.kickers[result.kicker].locked += result.bondChange;
+            self.kickers[result.kicker].locked  += result.bondChange;
             self.totalBondEscrowed              += result.bondChange;
 
         } else {
             // take is above neutralPrice, Kicker is penalized
             result.bondChange = Maths.min(liquidation.bondSize, Maths.wmul(result.quoteTokenAmount, uint256(-bpf)));
             liquidation.bondSize                -= uint160(result.bondChange);
-            self.kickers[result.kicker].locked -= result.bondChange;
+            self.kickers[result.kicker].locked  -= result.bondChange;
             self.totalBondEscrowed              -= result.bondChange;
         }
 

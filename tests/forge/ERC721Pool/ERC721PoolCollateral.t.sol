@@ -930,11 +930,11 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         allRemovalIndexes[100] = 8191;
 
         _mergeOrRemoveCollateral({
-            from:                _lender,
-            toIndex:             8191,
-            noOfNFTsToRemove:    1,
-            collateralMerged:    1.0 * 1e18,
-            removeAmountAtIndex: allRemovalIndexes
+            from:                    _lender,
+            toIndex:                 8191,
+            noOfNFTsToRemove:        1,
+            collateralMerged:        1.0 * 1e18,
+            removeCollateralAtIndex: allRemovalIndexes
         });
 
         _assertBucket(
@@ -991,11 +991,11 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         }
 
         _mergeOrRemoveCollateral({
-            from:                _lender,
-            toIndex:             8191,
-            noOfNFTsToRemove:    1.0,
-            collateralMerged:    0.819981164624475010 * 1e18,
-            removeAmountAtIndex: removalIndexes
+            from:                    _lender,
+            toIndex:                 8191,
+            noOfNFTsToRemove:        1.0,
+            collateralMerged:        0.819981164624475010 * 1e18,
+            removeCollateralAtIndex: removalIndexes
         });
 
         _assertBucket(
@@ -1041,7 +1041,5 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(_lender),        1);
         assertEq(_collateral.balanceOf(_borrower),      50);
         assertEq(_collateral.balanceOf(address(_pool)), 1);
-
-
     }
 }

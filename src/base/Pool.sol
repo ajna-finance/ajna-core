@@ -20,8 +20,6 @@ import '../libraries/external/Auctions.sol';
 import '../libraries/external/LenderActions.sol';
 import '../libraries/external/PoolCommons.sol';
 
-import '@std/console.sol';
-
 abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     using Auctions  for Auctions.Data;
     using Buckets   for mapping(uint256 => Buckets.Bucket);
@@ -518,7 +516,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 t0DebtInAuction -= borrower_.t0debt;
                 // settle auction and update borrower's collateral with value after settlement
                 borrower_.collateral = _settleAuction(borrowerAddress_, borrower_.collateral);
-                console.log("in col", borrower_.collateral);
             } else {
                 // partial repay, remove only the paid debt from pool auctions debt accumulator
                 t0DebtInAuction -= t0repaidDebt_;

@@ -3,7 +3,6 @@ pragma solidity 0.8.14;
 
 import './utils/DSTestPlus.sol';
 import './utils/BucketMath.sol';
-import '@std/console.sol';
 
 contract BucketMathTest is DSTestPlus {
 
