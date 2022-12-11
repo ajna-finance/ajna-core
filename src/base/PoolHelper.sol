@@ -16,8 +16,9 @@ import '../libraries/Maths.sol';
     /**
         @dev constant price indices defining the min and max of the potential price range
      */
-    int256 constant MAX_BUCKET_INDEX = 4_156;
-    int256 constant MIN_BUCKET_INDEX = -3_232;
+    int256  constant MAX_BUCKET_INDEX  =  4_156;
+    int256  constant MIN_BUCKET_INDEX  = -3_232;
+    uint256 constant MAX_FENWICK_INDEX =  7_388;
 
     uint256 constant MIN_PRICE = 99_836_282_890;
     uint256 constant MAX_PRICE = 1_004_968_987.606512354182109771 * 10**18;
@@ -43,7 +44,8 @@ import '../libraries/Maths.sol';
     function _priceAt(
         uint256 index_
     ) pure returns (uint256) {
-        int256 bucketIndex = (index_ != 8191) ? MAX_BUCKET_INDEX - int256(index_) : MIN_BUCKET_INDEX;
+        // Lowest Fenwick index is highest price, so invert the index and offset by highest bucket index.
+        int256 bucketIndex = MAX_BUCKET_INDEX - int256(index_);
         if (bucketIndex < MIN_BUCKET_INDEX || bucketIndex > MAX_BUCKET_INDEX) revert BucketIndexOutOfBounds();
 
         return uint256(
