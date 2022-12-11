@@ -32,7 +32,8 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
             collateral_,
             quote_,
             quoteTokenScale,
-            ajna
+            ajna,
+            tokenIds_.length
         );
 
         ERC721Pool pool = ERC721Pool(address(implementation).clone(data));
