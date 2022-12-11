@@ -360,6 +360,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         amountToCoverBond     -= usedAmount;  // subtract from required amount to cover bond the amount used from deposit
         params.debt           += kickPenalty; // update borrower debt with kick penalty
         poolState.accruedDebt += kickPenalty; // update pool debt with kick penalty
+
+        uint256 cumulativeDepositAboveBucket = deposits.treeSum() - bucketDeposit - deposits.prefixSum(index_);
+
         // remove from deposit the amount used to cover auction bond
         deposits.remove(index_, usedAmount, bucketDeposit);
 
@@ -376,7 +379,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         kickPenalty     =  Maths.wdiv(kickPenalty, poolState.inflator);
         borrowerT0debt  += kickPenalty;
         borrower.t0debt = borrowerT0debt;
-        t0DebtInAuction += borrowerT0debt;
+
+        uint256 auctionDebt = t0DebtInAuction + borrowerT0debt;
+        if (
+            cumulativeDepositAboveBucket < auctionDebt
+        ) revert InsufficientLiquidity();
+
+        t0DebtInAuction += auctionDebt;
         t0poolDebt      += kickPenalty;
 
         _updateInterestParams(poolState, lup);
