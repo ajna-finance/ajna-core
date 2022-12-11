@@ -325,7 +325,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if(kickAuctionAmount != 0) _transferQuoteTokenFrom(msg.sender, kickAuctionAmount);
     }
 
-    function kickWithDeposit(uint256 index_) external {
+    function kickWithDeposit(uint256 amount_, uint256 index_) external {
         address topBorrower = loans.getMax().borrower;
         auctions.revertIfActive(topBorrower);
 
@@ -350,20 +350,20 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             params
         );
 
-        // return the max of kicker deposit at given index and amount needed to cover the auction bond 
+        // return the min of bucket deposit at given index and amount user wants to use
         uint256 usedAmount = buckets.removeLPs(
             index_,
             bucketDeposit,
             _priceAt(index_),
-            amountToCoverBond
+            amount_
         );
-        amountToCoverBond     -= usedAmount;  // subtract from required amount to cover bond the amount used from deposit
+
         params.debt           += kickPenalty; // update borrower debt with kick penalty
         poolState.accruedDebt += kickPenalty; // update pool debt with kick penalty
 
         uint256 cumulativeDepositAboveBucket = deposits.treeSum() - bucketDeposit - deposits.prefixSum(index_);
 
-        // remove from deposit the amount used to cover auction bond
+        // remove from deposit the amount user wants to use
         deposits.remove(index_, usedAmount, bucketDeposit);
 
         // check if borrower is collateralized at the new lup and revert if so
@@ -392,7 +392,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _updateInterestParams(poolState, lup);
 
         // additional quote tokens are required to cover auction bond
-        if(amountToCoverBond != 0) _transferQuoteTokenFrom(msg.sender, amountToCoverBond);
+        if (amountToCoverBond > usedAmount)      _transferQuoteTokenFrom(msg.sender, amountToCoverBond - usedAmount);
+        // extra quote tokens removed after bond is covered are sent to lender account
+        else if (amountToCoverBond < usedAmount) _transferQuoteToken(msg.sender, usedAmount - amountToCoverBond);
     }
 
     /*********************************/
