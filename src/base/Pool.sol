@@ -380,6 +380,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         borrowerT0debt  += kickPenalty;
         borrower.t0debt = borrowerT0debt;
 
+        // check if cumulative deposits above bucket less than liquidationDebt
         uint256 auctionDebt = t0DebtInAuction + borrowerT0debt;
         if (
             cumulativeDepositAboveBucket < auctionDebt
