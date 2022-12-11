@@ -140,7 +140,15 @@ library Deposits {
         uint256 value;
         uint256 scaling;
         uint256 bit = lsb(index_);
-        
+
+        // Starting with the lSB of index, we iteratively move up towards the MSB of SIZE
+        // Case 1:     the bit of index_ is set to 1.  In this case, the entire subtree below index_
+        //             is scaled.  So, we include factor_ into scaleing[index_], and remember in sum how much
+        //             we increased the subtree by, so that we can use it in case we encounter 0 bits (below).
+        // Case 2:     The bit of index_ is set to 0.  In this case, consider the subtree below the node 
+        //             index_+bit. The subtree below that is not entirely scaled, but it does contain the
+        //             subtree what was scaled earlier.  Therefore: we need to increment it's stored value
+        //             (in sum) which was set in a prior interation in case 1.
         while (bit <= SIZE) {
             if((bit & index_)!=0) {
                 value   = self.values[index_];
@@ -162,12 +170,12 @@ library Deposits {
 
                 index_ -= bit;
             } else {
-                uint256 j=index_+bit;
-                value = (self.values[j] += sum);
-                scaling = self.scaling[j];
+                uint256 superRangeIndex = index_ + bit;
+                value = (self.values[superRangeIndex] += sum);
+                scaling = self.scaling[superRangeIndex];
                 // again, in following line, need to be careful due to rounding
-                if (scaling != 0) sum = Maths.wmul(value, scaling) - Maths.wmul(value-sum, scaling);
-            }
+                if (scaling != 0) sum = Maths.wmul(value, scaling) - Maths.wmul(value - sum, scaling);
+            } 
             bit = bit << 1;
         }
     }
@@ -226,7 +234,7 @@ library Deposits {
     /**
      *  @notice Decrease a node in the FenwickTree at an index.
      *  @dev    Starts at leaf/target and moved up towards root
-     *  @param  index_          The deposit index.
+     *  @param  index_             The deposit index.
      *  @param  rawRemoveAmount_   Unscaled amount to decrease deposit by.
      */    
     function rawRemove(
@@ -245,7 +253,7 @@ library Deposits {
             // rawRemoveAmount_ = Maths.wmul(rawRemoveAmount, scaling).  This will introduce nonzero values up
             // the tree due to rounding.  It's important to compute the actual change in self.values[index_]
             // and propogate that upwards.
-            if (scaling != 0) rawRemoveAmount_ = Maths.wmul(value+rawRemoveAmount_, scaling) - Maths.wmul(value,  scaling);
+            if (scaling != 0) rawRemoveAmount_ = Maths.wmul(value + rawRemoveAmount_, scaling) - Maths.wmul(value,  scaling);
             index_ += lsb(index_);
         }
     }
@@ -261,8 +269,8 @@ library Deposits {
         uint256 index_
     ) internal view returns (uint256 scaled_) {
         if (index_ > SIZE) revert InvalidIndex();
-	index_+=1;  // TODO: is this right?  
-
+	++index_;
+        
         scaled_ = Maths.WAD;
         while (index_ <= SIZE) {
             uint256 scaling = self.scaling[index_];

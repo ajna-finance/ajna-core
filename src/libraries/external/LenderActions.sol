@@ -236,8 +236,10 @@ library LenderActions {
         RemoveQuoteParams calldata params_
     ) external returns (uint256 removedAmount_, uint256 redeemedLPs_, uint256 lup_) {
         uint256 rawDeposit = Deposits.rawValueAt(deposits_, params_.index);
-        uint256 depositScale = Deposits.scale(deposits_, params_.index);
+
         if (rawDeposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
+
+        uint256 depositScale = Deposits.scale(deposits_, params_.index);
 
         Buckets.Bucket storage bucket = buckets_[params_.index];
         Buckets.Lender storage lender = bucket.lenders[msg.sender];

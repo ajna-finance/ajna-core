@@ -123,6 +123,7 @@ library Buckets {
             (bucketDeposit_ * 1e18 + bucketPrice_ * bucketCollateral_) * 1e18 / bucketLPs_;
             // 10^36 * 1e18 / 10^27 = 10^54 / 10^27 = 10^27
     }
+
     /**
      *  @notice Returns the exchange rate for a given bucket.
      *  @param  bucketCollateral_ Amount of collateral in bucket.
@@ -131,7 +132,6 @@ library Buckets {
      *  @param  bucketScale_      Bucket scale factor
      *  @param  bucketPrice_      Bucket's price.
      */
-
     function getRawExchangeRate(
         uint256 bucketCollateral_,
         uint256 bucketLPs_,
@@ -216,8 +216,10 @@ library Buckets {
             price_
         );
 
+        // Below is pseudocode explaining the logic behind finding the constrained amount of deposit and LPB
+        // rawRemovedAmount is constrained by the de-scaled maxAmount(in QT), the rawDeposit constraint, and
+        // the lender LPB exchange rate in raw deposit-to-LPB for the bucket:
 	// rawRemovedAmount = min ( maxAmount_/scale, rawDeposit, lenderLPsBalance*rawExchangeRate)
-	// redeemedLPs_ = rawRemovedAmount/rawEchangeRate
 	// redeemedLPs_ = min ( maxAmount_/(rawExchangeRate*scale), rawDeposit/rawExchangeRate, lenderLPsBalance)
 
 	if( depositConstraint_ < Maths.wmul(rawDepositAvailable_, depositScale_) &&
@@ -240,7 +242,6 @@ library Buckets {
 	    rawDepositAmount_ = rawDepositAvailable_;
 	}
     }
-
     
     /**
      *  @notice Returns the amount of quote tokens calculated for the given amount of LPs.
