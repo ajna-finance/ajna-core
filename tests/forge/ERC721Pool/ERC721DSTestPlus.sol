@@ -36,7 +36,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
     // Pool events
     event AddCollateralNFT(address indexed actor_, uint256 indexed price_, uint256[] tokenIds_);
     event RepayDebt(address indexed borrower, uint256 quoteRepaid, uint256 collateralPulled, uint256 lup);
-    event MergeCollateralNFT(address indexed actor, uint256 indexed toIndex, uint256 collateralMerged);
+    event MergeOrRemoveCollateralNFT(address indexed actor, uint256 collateralMerged);
     
     event DrawDebtNFT(
         address indexed borrower,
@@ -474,16 +474,17 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         }
     }
  
-    function _mergeCollateral(
+    function _mergeOrRemoveCollateral(
         address from,
         uint256 toIndex,
-        uint256 collateralMerged,
-        uint256[] memory removeAmountAtIndex
+        uint256 noOfNFTsToRemove,
+        uint256[] memory removeAmountAtIndex,
+        uint256 collateralMerged
     ) internal virtual {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
-        emit MergeCollateralNFT(from, toIndex, collateralMerged);
-        ERC721Pool(address(_pool)).mergeCollateral(removeAmountAtIndex, toIndex);
+        emit MergeOrRemoveCollateralNFT(from, collateralMerged);
+        ERC721Pool(address(_pool)).mergeOrRemoveCollateral(removeAmountAtIndex, noOfNFTsToRemove, toIndex);
     }
 
     /**********************/

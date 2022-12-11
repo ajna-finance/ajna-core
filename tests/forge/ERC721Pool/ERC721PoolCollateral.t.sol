@@ -634,7 +634,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
     }
 
-    function testMergeCollateral() external {
+    function testMergeOrRemoveCollateral() external {
 
         // insert liquidity at 3060 - 3159, going down in price
         for (uint256 i = 3060; i < (3060 + 100); i++) {
@@ -647,6 +647,14 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 }
             );
         }
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 1.5 * 1e18,
+                index:  8191,
+                newLup: MAX_PRICE
+            }
+        );
 
         uint256[] memory tokenIdsToAdd = new uint256[](2);
         tokenIdsToAdd[0] = 1;
@@ -709,9 +717,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             })
         );
 
-        uint256[] memory removalIndexes = new uint256[](100);
-        uint256 removalI = 0; 
-
         // exchange collateral for lpb 3060 - 3159, going down in price
         for (uint256 i = 3060; i < (3060 + 100); i++) {
             _depositTake(
@@ -721,8 +726,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                     index:            i
                 }
             );
-            removalIndexes[removalI] = i;
-            removalI++;
         }
 
         _assertBucket(
@@ -902,9 +905,95 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             }
         );
 
-        _mergeCollateral({
+        _assertBucket(
+            {
+                index:        8191,
+                lpBalance:    1.500000000000000000000000000 * 1e27,
+                collateral:   0.180018835375524990 * 1e18,
+                deposit:      1.499999982027588626 * 1e18,
+                exchangeRate: 1.000000000000000000052834855 * 1e27
+            }
+        );
+
+        assertEq(_collateral.balanceOf(_lender),        1);
+        assertEq(_collateral.balanceOf(_borrower),      50);
+        assertEq(_collateral.balanceOf(address(_pool)), 1);
+
+        uint256 snapshot = vm.snapshot();
+
+        uint256[] memory allRemovalIndexes = new uint256[](101);
+        uint256 allRemovalI = 0; 
+        for (uint256 i = 3060; i < (3060 + 100); i++) {
+            allRemovalIndexes[allRemovalI] = i;
+            allRemovalI++;
+        }
+        allRemovalIndexes[100] = 8191;
+
+        _mergeOrRemoveCollateral({
             from:                _lender,
-            toIndex:             3159,
+            toIndex:             8191,
+            noOfNFTsToRemove:    1,
+            collateralMerged:    1.0 * 1e18,
+            removeAmountAtIndex: allRemovalIndexes
+        });
+
+        _assertBucket(
+            {
+                index:        3060,
+                lpBalance:    0,
+                collateral:   0,
+                deposit:      0,
+                exchangeRate: 1.0 * 1e27
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        3061,
+                lpBalance:    0,
+                collateral:   0,
+                deposit:      0,
+                exchangeRate: 1.0 * 1e27
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        3159,
+                lpBalance:    0,
+                collateral:   0,
+                deposit:      0,
+                exchangeRate: 1.0 * 1e27
+            }
+        );   
+
+        _assertBucket(
+            {
+                index:        8191,
+                lpBalance:    1.499999982027588625920747717 * 1e27,
+                collateral:   0,
+                deposit:      1.499999982027588626 * 1e18,
+                exchangeRate: 1.000000000000000000052834855 * 1e27
+            }
+        );   
+
+        assertEq(_collateral.balanceOf(_lender),        2);
+        assertEq(_collateral.balanceOf(_borrower),      50);
+        assertEq(_collateral.balanceOf(address(_pool)), 0);
+
+        vm.revertTo(snapshot);
+
+        uint256[] memory removalIndexes = new uint256[](100);
+        uint256 removalI = 0; 
+        for (uint256 i = 3060; i < (3060 + 100); i++) {
+            removalIndexes[removalI] = i;
+            removalI++;
+        }
+
+        _mergeOrRemoveCollateral({
+            from:                _lender,
+            toIndex:             8191,
+            noOfNFTsToRemove:    1.0,
             collateralMerged:    0.819981164624475010 * 1e18,
             removeAmountAtIndex: removalIndexes
         });
@@ -932,11 +1021,27 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _assertBucket(
             {
                 index:        3159,
-                lpBalance:    118.404292681446768167332184816 * 1e27,
-                collateral:   0.819981164624475010 * 1e18,
+                lpBalance:    0,
+                collateral:   0,
                 deposit:      0,
                 exchangeRate: 1.0 * 1e27
             }
         );   
+
+        _assertBucket(
+            {
+                index:        8191,
+                lpBalance:    1.500000081863871515920747712 * 1e27,
+                collateral:   1.0 * 1e18,
+                deposit:      1.499999982027588626 * 1e18,
+                exchangeRate: 1.000000000000000000052834855 * 1e27
+            }
+        );   
+
+        assertEq(_collateral.balanceOf(_lender),        1);
+        assertEq(_collateral.balanceOf(_borrower),      50);
+        assertEq(_collateral.balanceOf(address(_pool)), 1);
+
+
     }
 }

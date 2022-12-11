@@ -190,13 +190,13 @@ library Auctions {
                 uint256 debtToSettle      = Maths.wmul(params_.t0debt, params_.inflator);     // current debt to be settled
                 uint256 maxSettleableDebt = Maths.wmul(params_.collateral, price);          // max debt that can be settled with existing collateral
 
-                    // FIXME: Is it possible for the depositToRemove to not be greater than debtToSettle
+                // FIXME: Is it possible for the depositToRemove to not be greater than debtToSettle
                 if (depositToRemove >= debtToSettle && maxSettleableDebt >= debtToSettle) { // enough deposit in bucket and collateral avail to settle entire debt
                     depositToRemove    = debtToSettle;                                      // remove only what's needed to settle the debt
                     params_.t0debt    = 0;                                                 // no remaining debt to settle
                     collateralUsed     = Maths.wdiv(debtToSettle, price);
                     params_.collateral -= collateralUsed;
-                } else if (depositToRemove != 0 &&maxSettleableDebt >= depositToRemove) {                          // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
+                } else if (depositToRemove != 0 && maxSettleableDebt >= depositToRemove) {                          // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
                     params_.t0debt     -= Maths.wdiv(depositToRemove, params_.inflator);    // subtract from debt the corresponding t0 amount of deposit
                     collateralUsed     = Maths.wdiv(depositToRemove, price);
                     params_.collateral -= collateralUsed;
