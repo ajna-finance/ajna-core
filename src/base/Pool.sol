@@ -369,7 +369,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         // check if borrower is collateralized at the new lup and revert if so
         uint256 lup = _lup(poolState.accruedDebt);
         if (
-            _isCollateralized(params.debt + kickPenalty, params.collateral, lup)
+            _isCollateralized(params.debt, params.collateral, lup)
         ) revert BorrowerOk();
 
         // remove kicked loan from heap
