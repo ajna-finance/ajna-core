@@ -44,6 +44,7 @@ import '../libraries/Maths.sol';
     function _priceAt(
         uint256 index_
     ) pure returns (uint256) {
+        // Lowest Fenwick index is highest price, so invert the index and offset by highest bucket index.
         int256 bucketIndex = MAX_BUCKET_INDEX - int256(index_);
         if (bucketIndex < MIN_BUCKET_INDEX || bucketIndex > MAX_BUCKET_INDEX) revert BucketIndexOutOfBounds();
 
