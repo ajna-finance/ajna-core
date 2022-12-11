@@ -5,7 +5,6 @@ import { ERC721HelperContract }                from './ERC721DSTestPlus.sol';
 import { FlashloanBorrower, SomeDefiStrategy } from '../utils/FlashloanBorrower.sol';
 
 import 'src/erc721/ERC721Pool.sol';
-
 import 'src/libraries/Maths.sol';
 
 contract ERC721PoolFlashloanTest is ERC721HelperContract {
@@ -74,7 +73,7 @@ contract ERC721PoolFlashloanTest is ERC721HelperContract {
         bytes memory strategyCalldata = abi.encodeWithSignature("makeMoney(uint256)", loanAmount);
         FlashloanBorrower flasher = new FlashloanBorrower(address(strategy), strategyCalldata);
 
-        // Check the fee and run approvals
+        // Run approvals
         changePrank(address(flasher));
         _quote.approve(address(_pool),    loanAmount);
         _quote.approve(address(strategy), loanAmount);
@@ -119,5 +118,25 @@ contract ERC721PoolFlashloanTest is ERC721HelperContract {
 
         // Cannot flashloan a random address which isn't a token
         _assertFlashloanUnavailableForToken(flasher, makeAddr("nobody"), 1);
+    }
+
+    function testCallbackFailure() external {
+        uint256 loanAmount = 100 * 1e18;
+
+        // Create an example defi strategy
+        SomeDefiStrategy strategy = new SomeDefiStrategy(_quote);
+
+        // Create a flashloan borrower contract which invokes a non-existant method on the strategy
+        bytes memory strategyCalldata = abi.encodeWithSignature("missing()");
+        FlashloanBorrower flasher = new FlashloanBorrower(address(strategy), strategyCalldata);
+
+        // Run approvals
+        changePrank(address(flasher));
+        _quote.approve(address(_pool),    loanAmount);
+
+        // Make a failed attempt to interact with the strategy
+        vm.expectRevert(IPoolErrors.FlashloanCallbackFailed.selector);
+        _pool.flashLoan(flasher, address(_quote), loanAmount, new bytes(0));
+        assertFalse(flasher.callbackInvoked());
     }
 }
