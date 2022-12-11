@@ -5,6 +5,7 @@ import { ERC20HelperContract }                 from './ERC20DSTestPlus.sol';
 import { FlashloanBorrower, SomeDefiStrategy } from '../utils/FlashloanBorrower.sol';
 
 import 'src/base/PoolHelper.sol';
+import 'src/erc20/ERC20Pool.sol';
 
 contract ERC20PoolFlashloanTest is ERC20HelperContract {
     address internal _borrower;
@@ -94,6 +95,12 @@ contract ERC20PoolFlashloanTest is ERC20HelperContract {
         _assertFlashloanFeeRevertsForToken(makeAddr("nobody"), loanAmount);
     }
 
+    function testMaxFlashloan() external tearDown {
+        assertEq(_pool.maxFlashLoan(_pool.quoteTokenAddress()), 75_000 * 1e18);
+        assertEq(_pool.maxFlashLoan(_pool.collateralAddress()), 100 * 1e18);
+        assertEq(_pool.maxFlashLoan(makeAddr("nobody")), 0);
+    }
+
     function testCannotFlashloanMoreCollateralThanAvailable() external tearDown {
         FlashloanBorrower flasher = new FlashloanBorrower(address(0), new bytes(0));
 
@@ -109,5 +116,25 @@ contract ERC20PoolFlashloanTest is ERC20HelperContract {
 
         // Cannot flashloan a random address which isn't a token
         _assertFlashloanUnavailableForToken(flasher, makeAddr("nobody"), 1);
+    }
+
+    function testCallbackFailure() external tearDown {
+        uint256 loanAmount = 100 * 1e18;
+
+        // Create an example defi strategy
+        SomeDefiStrategy strategy = new SomeDefiStrategy(_collateral);
+
+        // Create a flashloan borrower contract which invokes a non-existant method on the strategy
+        bytes memory strategyCalldata = abi.encodeWithSignature("missing()");
+        FlashloanBorrower flasher = new FlashloanBorrower(address(strategy), strategyCalldata);
+
+        // Run approvals
+        changePrank(address(flasher));
+        _quote.approve(address(_pool), loanAmount);
+
+        // Make a failed attempt to interact with the strategy
+        vm.expectRevert(IPoolErrors.FlashloanCallbackFailed.selector);
+        _pool.flashLoan(flasher, address(_collateral), loanAmount, new bytes(0));
+        assertFalse(flasher.callbackInvoked());
     }
 }

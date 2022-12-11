@@ -41,7 +41,7 @@ contract SomeDefiStrategy {
     function makeMoney(uint256 amount_) external {
         // step 1: take deposit from caller
         token.transferFrom(msg.sender, address(this), amount_);
-        // step 2: earn tree fiddy per 100 tokens
+        // step 2: earn 3.5% reward
         uint256 reward = Maths.wmul(0.035 * 1e18, amount_);
         // step 3: profit
         token.transfer(msg.sender, amount_ + reward);
