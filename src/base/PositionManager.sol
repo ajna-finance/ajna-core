@@ -16,13 +16,12 @@ import '../erc20/interfaces/IERC20Pool.sol';
 import '../erc721/interfaces/IERC721Pool.sol';
 
 import './PoolHelper.sol';
-import './PermitERC20.sol';
 import './PositionNFT.sol';
 
 import '../libraries/Maths.sol';
 import '../libraries/Buckets.sol';
 
-contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC20, ReentrancyGuard {
+contract PositionManager is IPositionManager, Multicall, PositionNFT, ReentrancyGuard {
     using EnumerableSet for EnumerableSet.UintSet;
     using SafeERC20 for ERC20;
 
@@ -72,7 +71,6 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         _burn(params_.tokenId);
     }
 
-    /// TODO: (X) indexes can be memorialized at a time
     function memorializePositions(MemorializePositionsParams calldata params_) external override {
         address owner = ownerOf(params_.tokenId);
         EnumerableSet.UintSet storage positionPrice = positionPrices[params_.tokenId];
@@ -188,13 +186,6 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
         ConstructTokenURIParams memory params = ConstructTokenURIParams(tokenId_, poolKey[tokenId_], positionPrices[tokenId_].values());
         return constructTokenURI(params);
-    }
-
-    /** @notice Implementing this method allows contracts to receive ERC721 tokens
-     *  @dev https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
-     */
-    function onERC721Received(address, address, uint256, bytes memory) external pure returns (bytes4) {
-        return this.onERC721Received.selector;
     }
 
 }

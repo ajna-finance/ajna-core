@@ -63,6 +63,16 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         assertTrue(_factory.getNFTSubsetHash(_tokenIdsSubsetOne) != _factory.getNFTSubsetHash(_tokenIdsSubsetTwo));
     }
 
+    function testPoolAlreadyInitialized() external {
+        // check can't call reiinitalize with a different token subset
+        _tokenIdsSubsetOne = new uint256[](2);
+        _tokenIdsSubsetOne[0] = 2;
+        _tokenIdsSubsetOne[1] = 3;
+
+        vm.expectRevert(IPoolErrors.AlreadyInitialized.selector);
+        _NFTSubsetOnePool.initialize(_tokenIdsSubsetOne, 0.05 * 10**18);
+    }
+
     /*******************************/
     /*** ERC721 Collection Tests ***/
     /*******************************/
