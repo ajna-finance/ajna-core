@@ -195,4 +195,13 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         assertEq(lastInflatorUpdate,   _startTime + 333);
     }
 
+    function testPoolAlreadyInitialized() external {
+        vm.expectEmit(true, true, false, true);
+        emit PoolCreated(poolAddress);
+        address pool = _poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
+
+        vm.expectRevert(IPoolErrors.AlreadyInitialized.selector);
+        ERC20Pool(pool).initialize(0.05 * 10**18);
+    }
+
 }
