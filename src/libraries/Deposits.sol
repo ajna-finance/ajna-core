@@ -26,7 +26,10 @@ library Deposits {
         uint256 curDebt_,
         uint256 numLoans_
     ) internal view returns (uint256 momp_) {
-        if (numLoans_ != 0) momp_ = _priceAt(findIndexOfSum(self, Maths.wdiv(curDebt_, numLoans_ * 1e18)));
+        if (numLoans_ != 0) {
+            uint256 mompIndex = findIndexOfSum(self, Maths.wdiv(curDebt_, numLoans_ * 1e18));
+            momp_ = _priceAt(Maths.min(mompIndex, MAX_FENWICK_INDEX));
+        }
     }
 
     function t0Np(
