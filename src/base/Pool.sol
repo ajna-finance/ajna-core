@@ -326,13 +326,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     function kickWithDeposit(uint256 amount_, uint256 index_) external {
-        address topBorrower = loans.getMax().borrower;
-        auctions.revertIfActive(topBorrower);
 
         uint256 bucketDeposit = deposits.valueAt(index_);
         if (bucketDeposit == 0) revert InsufficientLiquidity();
 
         PoolState memory poolState = _accruePoolInterest();
+
+        address topBorrower = loans.getMax().borrower;
         Loans.Borrower storage borrower = loans.borrowers[topBorrower];
         uint256 borrowerT0debt = borrower.t0debt;
 
