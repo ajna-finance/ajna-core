@@ -12,6 +12,8 @@ import './base/interfaces/IPositionManager.sol';
 import './base/PositionManager.sol';
 
 import './libraries/Maths.sol';
+import './libraries/external/PoolCommons.sol';
+
 import './IAjnaRewards.sol';
 
 contract AjnaRewards is IAjnaRewards {
@@ -30,18 +32,16 @@ contract AjnaRewards is IAjnaRewards {
      *  @param  owner        Owner of the staked NFT.
      *  @param  ajnaPool     Address of the Ajna pool the NFT corresponds to.
      *  @param  tokenId      ID of the staked NFT.
-     *  @param  depositBlock Block number in which the NFT was staked.
      */
-    event DepositToken(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId, uint256 depositBlock);
+    event DepositToken(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
 
     /**
      *  @notice Emitted when lender withdraws their LP NFT from the rewards contract.
      *  @param  owner         Owner of the staked NFT.
      *  @param  ajnaPool      Address of the Ajna pool the NFT corresponds to.
      *  @param  tokenId       ID of the staked NFT.
-     *  @param  withdrawBlock Block number in which the NFT was withdrawn.
      */
-    event WithdrawToken(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId, uint256 withdrawBlock);
+    event WithdrawToken(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
 
     /**************/
     /*** Errors ***/
@@ -53,20 +53,25 @@ contract AjnaRewards is IAjnaRewards {
     /*** State Variables ***/
     /***********************/
 
+    address public immutable ajnaToken;
+
+    IPositionManager public immutable positionManager;
+
+    uint256 internal constant REWARD_FACTOR = 0.500000000000000000 * 1e18;
+
     // tokenID => Deposit information
     mapping(uint256 => Deposit) public deposits;
 
     // poolAddress => bucketIndex => checkpoint => exchangeRate
     mapping (address => mapping(uint256 => Checkpoints.History)) internal poolBucketExchangeRateCheckpoints;
 
-    address public immutable ajnaToken;
-
-    IPositionManager public immutable positionManager;
+    // poolAddress => checkpoint => totalInterest
+    mapping (address => Checkpoints.History) internal poolTotalInterestCheckpoints;
 
     struct Deposit {
         address owner;
         address ajnaPool;
-        uint256 depositBlock;
+        uint256 lastInteractionBlock;
         mapping(uint256 => uint256) lpsAtDeposit; // total pool deposits in each of the buckets a position is in
     }
 
@@ -92,35 +97,43 @@ contract AjnaRewards is IAjnaRewards {
         Deposit storage deposit = deposits[tokenId_];
         deposit.owner = msg.sender;
         deposit.ajnaPool = ajnaPool;
-        deposit.depositBlock = block.number;
+        deposit.lastInteractionBlock = block.number;
 
         // TODO: do these calculations inline
         _setPositionLPs(tokenId_);
 
+        // update checkpoints
         _updateExchangeRates(tokenId_);
+        _updatePoolTotalInterest(ajnaPool);
 
-        emit DepositToken(msg.sender, ajnaPool, tokenId_, block.number);
+        emit DepositToken(msg.sender, ajnaPool, tokenId_);
 
         // transfer LP NFT to this contract
         IERC721(address(positionManager)).safeTransferFrom(msg.sender, address(this), tokenId_);
     }
 
     function withdrawNFT(uint256 tokenId_) external {
+        address ajnaPool = deposits[tokenId_].ajnaPool;
 
+        // update checkpoints
         _updateExchangeRates(tokenId_);
+        _updatePoolTotalInterest(ajnaPool);
 
         // claim rewards, if any
         _claimRewards(tokenId_);
 
-        emit WithdrawToken(msg.sender, deposits[tokenId_].ajnaPool, tokenId_, block.number);
+        emit WithdrawToken(msg.sender, ajnaPool, tokenId_);
 
         // transfer LP NFT from contract to sender
         IERC721(address(positionManager)).safeTransferFrom(address(this), msg.sender, tokenId_);
     }
 
     function claimRewards(uint256 tokenId_) external {
+        address ajnaPool = deposits[tokenId_].ajnaPool;
 
+        // update checkpoints
         _updateExchangeRates(tokenId_);
+        _updatePoolTotalInterest(ajnaPool);
 
         _claimRewards(tokenId_);
     }
@@ -131,45 +144,55 @@ contract AjnaRewards is IAjnaRewards {
     /**************************/
 
     function _claimRewards(uint256 tokenId_) internal {
+        uint256 rewardsEarned = _calculateRewardsEarned(tokenId_);
 
-        Deposit storage deposit = deposits[tokenId_];
-
-        uint256 blocksElapsed = block.number - deposit.depositBlock;
-        // uint256 interestEarnedByDeposit = _calculateInterestEarned(tokenId_, deposit.exchangeRatesAtDeposit, _getExchangeRates(tokenId_));
-
-        // TODO: implement this
-        // calculate proportion of interest earned by deposit to total interest earned
-        // multiply by total ajna tokens burned
-
-        uint256 rewardsEarned = 0;
         emit ClaimRewards(msg.sender, deposits[tokenId_].ajnaPool, tokenId_, rewardsEarned);
 
         // TODO: use safeTransferFrom
         // transfer rewards to sender
         IERC20(ajnaToken).transferFrom(address(this), msg.sender, rewardsEarned);
-
     }
 
-    // function _calculateInterestEarned(uint256 tokenId_, uint256[] memory exchangeRatesAtDeposit, uint256[] memory exchangeRatesNow) internal view returns (uint256 interestEarned_) {
-    //     for (uint256 i = 0; i < exchangeRatesAtDeposit.length; ) {
+    function _calculateRewardsEarned(uint256 tokenId_) internal returns (uint256 rewards_) {
+        Deposit storage deposit = deposits[tokenId_];
+        uint256[] memory positionPrices = positionManager.getPositionPrices(tokenId_);
 
-    //         uint256 lpTokens = IPositionManager(positionManager).getLPTokens(tokenId_, exchangeRatesAtDeposit[i]);
+        address ajnaPool = deposit.ajnaPool;
+        uint256 interestEarned = 0;
+        uint256 lastInteractionBlock = deposit.lastInteractionBlock;
 
-    //         uint256 quoteAtDeposit = Maths.rayToWad(Maths.rmul(exchangeRatesAtDeposit[i], lpTokens));
-    //         uint256 quoteNow = Maths.rayToWad(Maths.rmul(exchangeRatesNow[i], lpTokens));
+        for (uint256 i = 0; i < positionPrices.length; ) {
+            uint256 lastClaimedExchangeRate = poolBucketExchangeRateCheckpoints[ajnaPool][positionPrices[i]].getAtBlock(lastInteractionBlock);
+            uint256 currentExchangeRate = poolBucketExchangeRateCheckpoints[ajnaPool][positionPrices[i]].latest();
 
-    //         if (quoteNow > quoteAtDeposit) {
-    //             interestEarned_ += quoteNow - quoteAtDeposit;
-    //         }
-    //         else {
-    //             interestEarned_ -= quoteAtDeposit - quoteNow;
-    //         }
+            uint256 quoteAtLastClaimed = Maths.rayToWad(Maths.rmul(lastClaimedExchangeRate, deposit.lpsAtDeposit[positionPrices[i]]));
+            uint256 quoteAtCurrentRate = Maths.rayToWad(Maths.rmul(currentExchangeRate, deposit.lpsAtDeposit[positionPrices[i]]));
 
-    //         unchecked {
-    //             ++i;
-    //         }
-    //     }
-    // }
+            if (quoteAtCurrentRate > quoteAtLastClaimed) {
+                interestEarned += quoteAtCurrentRate - quoteAtLastClaimed;
+            }
+            else {
+                interestEarned -= quoteAtLastClaimed - quoteAtCurrentRate;
+            }
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        // calculate total interest accumulated by the pool over the claim period
+        uint256 totalInterestAtLastClaim = poolTotalInterestCheckpoints[ajnaPool].getAtBlock(lastInteractionBlock);
+        uint256 totalInterestCurrent = poolTotalInterestCheckpoints[ajnaPool].latest();
+        
+        uint256 totalInterestEarned = totalInterestCurrent - totalInterestAtLastClaim;
+
+        rewards_ = REWARD_FACTOR * (interestEarned / totalInterestEarned) * _getAjnaTokensBurned(lastInteractionBlock);
+    }
+
+    // TODO: implement this
+    function _getAjnaTokensBurned(uint256 lastBlock_) internal returns (uint256 ajnaTokensBurned_) {
+        
+    }
 
     // use deposits object instead of tokenId?
     function _updateExchangeRates(uint256 tokenId_) internal {
@@ -185,6 +208,11 @@ contract AjnaRewards is IAjnaRewards {
                 ++i;
             }
         }
+    }
+
+    function _updatePoolTotalInterest(address ajnaPool_) internal {
+        // push the total interest into the checkpoint history
+        poolTotalInterestCheckpoints[ajnaPool_].push(PoolCommons.accumulatedInterest());
     }
 
     function _setPositionLPs(uint256 tokenId_) internal {
@@ -205,7 +233,7 @@ contract AjnaRewards is IAjnaRewards {
 
     function getDepositInfo(uint256 tokenId_) external view returns (address, address, uint256) {
         Deposit storage deposit = deposits[tokenId_];
-        return (deposit.owner, deposit.ajnaPool, deposit.depositBlock);
+        return (deposit.owner, deposit.ajnaPool, deposit.lastInteractionBlock);
     }
 
     /************************/
