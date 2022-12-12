@@ -34,13 +34,11 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         assertEq(_hpb(), MIN_PRICE);
 
         // test 10_000 deposit at price of 3_010.892022197881557845
-        _addLiquidity(
+        _addInitialLiquidity(
             {
-                from:      _lender,
-                amount:    10_000 * 1e18,
-                index:     2550,
-                lpAward: 10_000 * 1e27,
-                newLup:    MAX_PRICE
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  2550
             }
         );
         _assertPool(
@@ -82,13 +80,11 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(_lender),        190_000 * 1e18);
 
         // test 20_000 deposit at price of 2_995.912459898389633881
-       _addLiquidity(
+       _addInitialLiquidity(
             {
-                from:    _lender,
-                amount:  20_000 * 1e18,
-                index:   2551,
-                lpAward: 20_000 * 1e27,
-                newLup:  MAX_PRICE
+                from:   _lender,
+                amount: 20_000 * 1e18,
+                index:  2551
             }
         );
         _assertPool(
@@ -149,13 +145,11 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(_lender),        170_000 * 1e18);
 
         // test 40_000 deposit at price of 3_025.946482308870940904 DAI
-       _addLiquidity(
+       _addInitialLiquidity(
             {
-                from:    _lender,
-                amount:  40_000 * 1e18,
-                index:   2549,
-                lpAward: 40_000 * 1e27,
-                newLup:  MAX_PRICE
+                from:   _lender,
+                amount: 40_000 * 1e18,
+                index:  2549
             }
         );
         _assertPool(

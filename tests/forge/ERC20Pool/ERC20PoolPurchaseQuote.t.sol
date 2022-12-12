@@ -34,12 +34,11 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         uint256 testIndex = 2550;
 
         // lender adds initial quote to pool
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  testIndex,
-                newLup: MAX_PRICE
+                index:  testIndex
             }
         );
 
@@ -89,7 +88,6 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
                 from:     _bidder,
                 amount:   10_000 * 1e18,
                 index:    testIndex,
-                penalty:  0,
                 newLup:   _lup(),
                 lpRedeem: 10_000 * 1e27
             }
@@ -216,46 +214,41 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
 
         // lenders add liquidity
         // lender 1
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 6_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2551,
-                newLup: MAX_PRICE
+                index:  2551
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 5_000 * 1e18,
-                index:  2552,
-                newLup: MAX_PRICE
+                index:  2552
             }
         );
 
         // lender 2
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender1,
                 amount: 4_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender1,
                 amount: 5_000 * 1e18,
-                index:  2552,
-                newLup: MAX_PRICE
+                index:  2552
             }
         );
 

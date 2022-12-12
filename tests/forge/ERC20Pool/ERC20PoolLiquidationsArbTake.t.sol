@@ -28,44 +28,39 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         _mintCollateralAndApproveTokens(_lender1,   4 * 1e18);
 
         // Lender adds Quote token accross 5 prices
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 2_000 * 1e18,
-                index:  _i9_91,
-                newLup: MAX_PRICE
+                index:  _i9_91
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 5_000 * 1e18,
-                index:  _i9_81,
-                newLup: MAX_PRICE
+                index:  _i9_81
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 11_000 * 1e18,
-                index:  _i9_72,
-                newLup: MAX_PRICE
+                index:  _i9_72
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 25_000 * 1e18,
-                index:  _i9_62,
-                newLup: MAX_PRICE
+                index:  _i9_62
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 30_000 * 1e18,
-                index:  _i9_52,
-                newLup: MAX_PRICE
+                index:  _i9_52
             }
         );
 
@@ -271,10 +266,11 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         // add liquidity to accrue interest and update reserves before arb take
         _addLiquidity(
            {
-               from:   _lender1,
-               amount: 1 * 1e18,
-               index:  _i9_52,
-               newLup: 9.721295865031779605 * 1e18
+               from:    _lender1,
+               amount:  1 * 1e18,
+               index:   _i9_52,
+               lpAward: 0.999997070675736137779283206 * 1e27,
+               newLup:  9.721295865031779605 * 1e18
            }
         );
         _assertBucket(
@@ -430,10 +426,11 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
 
         _addLiquidity(
             {
-                from:   _lender,
-                amount: 25_000 * 1e18,
-                index:  _i1505_26,
-                newLup: 1_505.263728469068226832 * 1e18
+                from:    _lender,
+                amount:  25_000 * 1e18,
+                index:   _i1505_26,
+                lpAward: 25_000 * 1e27,
+                newLup:  1_505.263728469068226832 * 1e18
             }
         );
 
@@ -530,10 +527,11 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
 
         _addLiquidity(
             {
-                from:   _lender,
-                amount: 15.0 * 1e18,
-                index:  _i1505_26,
-                newLup: 9.721295865031779605 * 1e18
+                from:    _lender,
+                amount:  15.0 * 1e18,
+                index:   _i1505_26,
+                lpAward: 15.0 * 1e27,
+                newLup:  9.721295865031779605 * 1e18
             }
         );
 
@@ -622,10 +620,11 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
 
         _addLiquidity(
             {
-                from:   _lender,
-                amount: 1_000 * 1e18,
-                index:  _i10016,
-                newLup: 9.721295865031779605 * 1e18
+                from:    _lender,
+                amount:  1_000 * 1e18,
+                index:   _i10016,
+                lpAward: 1_000 * 1e27,
+                newLup:  9.721295865031779605 * 1e18
             }
         );
 
