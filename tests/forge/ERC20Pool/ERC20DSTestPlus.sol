@@ -9,6 +9,7 @@ import { Token }      from '../utils/Tokens.sol';
 
 import { ERC20Pool }        from 'src/erc20/ERC20Pool.sol';
 import { ERC20PoolFactory } from 'src/erc20/ERC20PoolFactory.sol';
+import { IERC20PoolEvents } from 'src/erc20/interfaces/pool/IERC20PoolEvents.sol';
 
 import 'src/base/interfaces/IPool.sol';
 import 'src/base/interfaces/IPoolFactory.sol';
@@ -16,7 +17,7 @@ import 'src/base/PoolInfoUtils.sol';
 
 import 'src/libraries/Maths.sol';
 
-abstract contract ERC20DSTestPlus is DSTestPlus {
+abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
 
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.UintSet;
@@ -24,17 +25,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     mapping(address => EnumerableSet.UintSet) bidderDepositedIndex;
     EnumerableSet.AddressSet bidders;
 
-    // Pool events
-    event AddCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
-    event AuctionSettle(address indexed borrower, uint256 collateral);
-    event RepayDebt(address indexed borrower, uint256 quoteRepaid, uint256 collateralPulled, uint256 lup);
-
-    event DrawDebt(
-        address indexed borrower,
-        uint256 amountBorowed,
-        uint256 collateralPledged,
-        uint256 lup
-    );
     event Transfer(address indexed from, address indexed to, uint256 value);
 
     /*****************/

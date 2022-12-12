@@ -9,13 +9,14 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import 'src/base/interfaces/IPool.sol';
+import 'src/base/interfaces/pool/IPoolEvents.sol';
 import 'src/base/PoolInfoUtils.sol';
 
 import 'src/libraries/external/Auctions.sol';
 import 'src/libraries/Maths.sol';
 
 
-abstract contract DSTestPlus is Test {
+abstract contract DSTestPlus is Test, IPoolEvents {
 
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.UintSet;
@@ -29,23 +30,6 @@ abstract contract DSTestPlus is Test {
     /*************/
     /*** Pools ***/
     /*************/
-
-    // Pool events
-    event AddQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
-    event BucketTake(address indexed borrower, uint256 index, uint256 amount, uint256 collateral, uint256 bondChange, bool isReward);
-    event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
-    event Settle(address indexed borrower, uint256 settledDebt);
-    event Kick(address indexed borrower_, uint256 debt_, uint256 collateral_, uint256 bond_);
-    event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
-    event MoveCollateral(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_);
-    event PullCollateral(address indexed borrower_, uint256 amount_);
-    event RemoveCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
-    event RemoveQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
-    event Take(address indexed borrower, uint256 amount, uint256 collateral, uint256 bondChange, bool isReward);
-    event TransferLPTokens(address owner_, address newOwner_, uint256[] prices_, uint256 lpTokens_);
-    event UpdateInterestRate(uint256 oldRate_, uint256 newRate_);
-    event ReserveAuction(uint256 claimableReservesRemaining_, uint256 auctionPrice_);
-    event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
 
     IPool         internal _pool;
     PoolInfoUtils internal _poolUtils;
@@ -113,11 +97,12 @@ abstract contract DSTestPlus is Test {
         address from,
         uint256 amount,
         uint256 index,
+        uint256 lpAward,
         uint256 newLup
     ) internal {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(from, index, amount, newLup);
+        emit AddQuoteToken(from, index, amount, lpAward, newLup);
         _assertTokenTransferEvent(from, address(_pool), amount);
         _pool.addQuoteToken(amount, index);
 
@@ -199,16 +184,29 @@ abstract contract DSTestPlus is Test {
         uint256 amount,
         uint256 fromIndex,
         uint256 toIndex,
-        uint256 newLup,
         uint256 lpRedeemFrom,
-        uint256 lpRedeemTo
+        uint256 lpAwardTo,
+        uint256 newLup
+    ) internal {
+        _moveLiquidityWithPenalty(from, amount, amount, fromIndex, toIndex, lpRedeemFrom, lpAwardTo, newLup);
+    }
+
+    function _moveLiquidityWithPenalty(
+        address from,
+        uint256 amount,
+        uint256 amountMoved,    // amount less penalty, where applicable
+        uint256 fromIndex,
+        uint256 toIndex,
+        uint256 lpRedeemFrom,
+        uint256 lpAwardTo,
+        uint256 newLup
     ) internal {
         changePrank(from);
         vm.expectEmit(true, true, true, true);
-        emit MoveQuoteToken(from, fromIndex, toIndex, lpRedeemTo / 1e9, newLup);
+        emit MoveQuoteToken(from, fromIndex, toIndex, amountMoved, lpRedeemFrom, lpAwardTo, newLup);
         (uint256 lpbFrom, uint256 lpbTo) = _pool.moveQuoteToken(amount, fromIndex, toIndex);
         assertEq(lpbFrom, lpRedeemFrom);
-        assertEq(lpbTo,   lpRedeemTo);
+        assertEq(lpbTo,   lpAwardTo);
 
         // Add for tearDown
         lenders.add(from);
@@ -223,10 +221,9 @@ abstract contract DSTestPlus is Test {
         uint256 newLup,
         uint256 lpRedeem
     ) internal {
-        // apply penalty if case
         changePrank(from);
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(from, index, amount, newLup);
+        emit RemoveQuoteToken(from, index, amount, lpRedeem, newLup);
         _assertTokenTransferEvent(address(_pool), from, amount);
         (uint256 removedAmount, uint256 lpRedeemed) = _pool.removeQuoteToken(type(uint256).max, index);
         assertEq(removedAmount, amount);
@@ -260,7 +257,7 @@ abstract contract DSTestPlus is Test {
 
         changePrank(from);
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(from, index, expectedWithdrawal, newLup);
+        emit RemoveQuoteToken(from, index, expectedWithdrawal, lpRedeem, newLup);
         _assertTokenTransferEvent(address(_pool), from, expectedWithdrawal);
         (uint256 removedAmount, uint256 lpRedeemed) = _pool.removeQuoteToken(amount, index);
         assertEq(removedAmount, expectedWithdrawal);

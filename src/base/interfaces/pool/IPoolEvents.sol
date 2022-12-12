@@ -8,15 +8,17 @@ pragma solidity 0.8.14;
 interface IPoolEvents {
     /**
      *  @notice Emitted when lender adds quote token to the pool.
-     *  @param  lender Recipient that added quote tokens.
-     *  @param  price  Price at which quote tokens were added.
-     *  @param  amount Amount of quote tokens added to the pool.
-     *  @param  lup    LUP calculated after deposit.
+     *  @param  lender    Recipient that added quote tokens.
+     *  @param  price     Price at which quote tokens were added.
+     *  @param  amount    Amount of quote tokens added to the pool.
+     *  @param  lpAwarded Amount of LP awarded for the deposit. 
+     *  @param  lup       LUP calculated after deposit.
      */
     event AddQuoteToken(
         address indexed lender,
         uint256 indexed price,
         uint256 amount,
+        uint256 lpAwarded,
         uint256 lup
     );
 
@@ -50,10 +52,10 @@ interface IPoolEvents {
      */
     event DepositTake(
         address indexed borrower,
-        uint256 index,
+        uint256 index,  // TODO: emit LP change
         uint256 amount,
         uint256 collateral,
-        int256 bondChange
+        int256  bondChange
     );
 
     /**
@@ -83,17 +85,21 @@ interface IPoolEvents {
 
     /**
      *  @notice Emitted when lender moves quote token from a bucket price to another.
-     *  @param  lender Recipient that moved quote tokens.
-     *  @param  from   Price bucket from which quote tokens were moved.
-     *  @param  to     Price bucket where quote tokens were moved.
-     *  @param  amount Amount of quote tokens moved.
-     *  @param  lup    LUP calculated after removal.
+     *  @param  lender         Recipient that moved quote tokens.
+     *  @param  from           Price bucket from which quote tokens were moved.
+     *  @param  to             Price bucket where quote tokens were moved.
+     *  @param  amount         Amount of quote tokens moved.
+     *  @param  lpRedeemedFrom Amount of LP removed from the `from` bucket.
+     *  @param  lpAwardedTo    Amount of LP credited to the `to` bucket.
+     *  @param  lup            LUP calculated after removal.
      */
     event MoveQuoteToken(
         address indexed lender,
         uint256 indexed from,
         uint256 indexed to,
         uint256 amount,
+        uint256 lpRedeemedFrom,
+        uint256 lpAwardedTo,
         uint256 lup
     );
 
@@ -111,15 +117,17 @@ interface IPoolEvents {
 
     /**
      *  @notice Emitted when lender removes quote token from the pool.
-     *  @param  lender Recipient that removed quote tokens.
-     *  @param  price  Price at which quote tokens were removed.
-     *  @param  amount Amount of quote tokens removed from the pool.
-     *  @param  lup    LUP calculated after removal.
+     *  @param  lender     Recipient that removed quote tokens.
+     *  @param  price      Price at which quote tokens were removed.
+     *  @param  amount     Amount of quote tokens removed from the pool.
+     *  @param  lpRedeemed Amount of LP exchanged for quote token.
+     *  @param  lup        LUP calculated after removal.
      */
     event RemoveQuoteToken(
         address indexed lender,
         uint256 indexed price,
         uint256 amount,
+        uint256 lpRedeemed,
         uint256 lup
     );
 
