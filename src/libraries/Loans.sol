@@ -75,7 +75,6 @@ library Loans {
         uint256 poolInterestRate_,
         uint256 lup_
     ) internal {
-
         // update loan heap
         if (borrower_.t0debt != 0 && borrower_.collateral != 0) {
             _upsert(

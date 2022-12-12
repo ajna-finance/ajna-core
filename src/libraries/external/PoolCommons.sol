@@ -121,7 +121,7 @@ library PoolCommons {
 
         uint256 htp = Maths.wmul(thresholdPrice_, newInflator_);
         // if HTP is under the lowest price bucket then accrue interest at max index (min price)
-        uint256 htpIndex = (htp >= MIN_PRICE) ? _indexOf(htp) : 7_388;
+        uint256 htpIndex = (htp >= MIN_PRICE) ? _indexOf(htp) : MAX_FENWICK_INDEX;
 
         // Scale the fenwick tree to update amount of debt owed to lenders
         uint256 depositAboveHtp = Deposits.prefixSum(deposits_, htpIndex);
