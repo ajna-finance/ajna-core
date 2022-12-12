@@ -133,56 +133,32 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     }
 
     function mergeOrRemoveCollateral(
-        uint256[] memory removalIndexes_,
+        uint256[] calldata removalIndexes_,
         uint256 noOfNFTsToRemove_,
         uint256 toIndex_
-    ) external override returns (uint256 bucketLPs_) {
+    ) external override returns (uint256 collateralMerged, uint256 bucketLPs_) {
 
         PoolState memory poolState = _accruePoolInterest();
         uint256 collateralAmount = Maths.wad(noOfNFTsToRemove_);
-        uint256 collateralRemoved;
-        uint256 fromIndex;
-        uint256 collateralRemaining = collateralAmount;
-        uint256 collateralToMerge;
-        uint256 i;
+        
+        (
+            collateralMerged,
+            bucketLPs_
+        ) = LenderActions.mergeOrRemoveCollateral(
+            buckets,
+            deposits,
+            removalIndexes_,
+            collateralAmount,
+            toIndex_
+        );
 
-        // Loop over buckets
-        while (collateralToMerge < collateralAmount && i < removalIndexes_.length) {
-
-            fromIndex = removalIndexes_[i];
-            if (fromIndex > toIndex_) revert CannotMergeToHigherPrice();
-
-            // Lender removes all collateral from bucket that they have LP to cover
-            (collateralRemoved, ) = LenderActions.removeMaxCollateral(
-                buckets,
-                deposits,
-                collateralRemaining,
-                fromIndex
-            );
-
-            collateralToMerge   += collateralRemoved;
-            collateralRemaining =  collateralRemaining - collateralRemoved;
-
-            unchecked {
-                ++i;
-            }
-        }
-
-        if (collateralToMerge == collateralAmount) {
-            // total collateral in buckets did not meet requested removal amount, noOfNFTsToRemove_
-            _transferFromPoolToAddress(msg.sender, bucketTokenIds, noOfNFTsToRemove_);
-        } else {
-            // Merge totalled collateral to specified bucket, toIndex_
-            bucketLPs_ = LenderActions.addCollateral(
-                buckets,
-                deposits,
-                collateralToMerge,
-                toIndex_
-            ); 
-        } 
-
-        emit MergeOrRemoveCollateralNFT(msg.sender, collateralToMerge);
+        emit MergeOrRemoveCollateralNFT(msg.sender, collateralMerged);
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
+
+        if (collateralMerged == collateralAmount) {
+            // Total collateral in buckets meets the requested removal amount, noOfNFTsToRemove_
+            _transferFromPoolToAddress(msg.sender, bucketTokenIds, noOfNFTsToRemove_);
+        }
 
     }
 

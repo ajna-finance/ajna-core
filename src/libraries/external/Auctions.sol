@@ -9,6 +9,7 @@ import '../Loans.sol';
 
 import '../../base/PoolHelper.sol';
 import '../../base/Pool.sol';
+import '@std/console.sol';
 
 library Auctions {
     struct Data {
@@ -204,9 +205,21 @@ library Auctions {
                     params_.collateral =  0;
                 }
             }
+            if (depositToRemove != 0) {
+                buckets_[index].collateral += collateralUsed;                // add settled collateral into bucket
+                Deposits.remove(deposits_, index, depositToRemove, deposit); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
+            } else {
 
-            buckets_[index].collateral += collateralUsed;                                          // add settled collateral into bucket
-            if (depositToRemove != 0) Deposits.remove(deposits_, index, depositToRemove, deposit); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
+                uint256 bucketDeposit = Deposits.valueAt(deposits_, index);
+                uint256 bucketPrice   = _priceAt(index);
+                Buckets.addCollateral(
+                    buckets_[index],
+                    msg.sender,
+                    bucketDeposit,
+                    collateralUsed,
+                    bucketPrice
+                );
+            }
 
             --params_.bucketDepth;
         }

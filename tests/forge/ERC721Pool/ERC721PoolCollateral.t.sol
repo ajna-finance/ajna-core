@@ -647,14 +647,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 }
             );
         }
-        _addLiquidity(
-            {
-                from:   _lender,
-                amount: 1.5 * 1e18,
-                index:  8191,
-                newLup: MAX_PRICE
-            }
-        );
 
         uint256[] memory tokenIdsToAdd = new uint256[](2);
         tokenIdsToAdd[0] = 1;
@@ -908,10 +900,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _assertBucket(
             {
                 index:        8191,
-                lpBalance:    1.500000000000000000000000000 * 1e27,
+                lpBalance:    0.000000017972411374079252284 * 1e27,
                 collateral:   0.180018835375524990 * 1e18,
-                deposit:      1.499999982027588626 * 1e18,
-                exchangeRate: 1.000000000000000000052834855 * 1e27
+                deposit:      0,
+                exchangeRate: 0.999999999999999999994681910 * 1e27
             }
         );
 
@@ -970,10 +962,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _assertBucket(
             {
                 index:        8191,
-                lpBalance:    1.499999982027588625920747717 * 1e27,
+                lpBalance:    0,
                 collateral:   0,
-                deposit:      1.499999982027588626 * 1e18,
-                exchangeRate: 1.000000000000000000052834855 * 1e27
+                deposit:      0,
+                exchangeRate: 1.0 * 1e27
             }
         );   
 
@@ -1031,10 +1023,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _assertBucket(
             {
                 index:        8191,
-                lpBalance:    1.500000081863871515920747712 * 1e27,
+                lpBalance:    0.000000099836282890000000001 * 1e27,
                 collateral:   1.0 * 1e18,
-                deposit:      1.499999982027588626 * 1e18,
-                exchangeRate: 1.000000000000000000052834855 * 1e27
+                deposit:      0,
+                exchangeRate: 0.999999999999999999989983601 * 1e27
             }
         );   
 

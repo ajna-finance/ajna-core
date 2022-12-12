@@ -26,5 +26,5 @@ interface IERC721PoolLenderActions {
         uint256[] memory removeAmountAtIndex_,
         uint256 noOfNFTsToRemove_,
         uint256 toIndex_
-    ) external returns (uint256 bucketLPs_);
+    ) external returns (uint256 collateralMerged, uint256 bucketLPs_);
 }

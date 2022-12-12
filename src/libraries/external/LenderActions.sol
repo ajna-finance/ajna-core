@@ -51,6 +51,11 @@ library LenderActions {
     error MoveToSamePrice();
 
     /**
+     *  @notice User attempted to merge collateral from a lower price bucket into a higher price bucket.
+     */
+    error CannotMergeToHigherPrice();
+
+    /**
      *  @dev Struct to hold move quote token details, used to prevent stack too deep error.
      */
     struct MoveQuoteLocalVars {
@@ -109,7 +114,7 @@ library LenderActions {
         Deposits.Data storage deposits_,
         uint256 collateralAmountToAdd_,
         uint256 index_
-    ) external returns (uint256 bucketLPs_) {
+    ) internal returns (uint256 bucketLPs_) {
         uint256 bucketDeposit = Deposits.valueAt(deposits_, index_);
         uint256 bucketPrice   = _priceAt(index_);
         bucketLPs_ = Buckets.addCollateral(
@@ -283,7 +288,7 @@ library LenderActions {
         Deposits.Data storage deposits_,
         uint256 maxAmount_,
         uint256 index_
-    ) external returns (uint256 collateralAmount_, uint256 lpAmount_) {
+    ) internal returns (uint256 collateralAmount_, uint256 lpAmount_) {
 
         Buckets.Bucket storage bucket = buckets_[index_];
         uint256 bucketCollateral = bucket.collateral;
@@ -355,6 +360,53 @@ library LenderActions {
         // update bucket LPs and collateral balance
         bucket.lps        -= Maths.min(bucketLPs, lpAmount_);
         bucket.collateral -= Maths.min(bucketCollateral, amount_);
+    }
+
+
+    function mergeOrRemoveCollateral(
+        mapping(uint256 => Buckets.Bucket) storage buckets_,
+        Deposits.Data storage deposits_,
+        uint256[] calldata removalIndexes_,
+        uint256 collateralAmount_,
+        uint256 toIndex_
+    ) public returns (uint256 collateralToMerge_, uint256 bucketLPs_) {
+
+        uint256 i;
+        uint256 fromIndex;
+        uint256 collateralRemoved;
+        uint256 noOfBuckets = removalIndexes_.length;
+        uint256 collateralRemaining = collateralAmount_;
+
+        // Loop over buckets, exit if collateralAmount is reached or max noOfBuckets is reached
+        while (collateralToMerge_ < collateralAmount_ && i < noOfBuckets) {
+
+            fromIndex = removalIndexes_[i];
+            if (fromIndex > toIndex_) revert CannotMergeToHigherPrice();
+
+            (collateralRemoved, ) = LenderActions.removeMaxCollateral(
+                buckets_,
+                deposits_,
+                collateralRemaining,
+                fromIndex
+            );
+
+            collateralToMerge_   += collateralRemoved;
+            collateralRemaining  =  collateralRemaining - collateralRemoved;
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        if (collateralToMerge_ != collateralAmount_) {
+            // Merge totalled collateral to specified bucket, toIndex_
+            bucketLPs_ = LenderActions.addCollateral(
+                buckets_,
+                deposits_,
+                collateralToMerge_,
+                toIndex_
+            ); 
+        }
     }
 
     /**
