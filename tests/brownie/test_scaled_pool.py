@@ -52,7 +52,7 @@ def test_borrow_repay_scaled(
     capsys,
     test_utils
 ):
-    with test_utils.GasWatcher(["addQuoteToken", "pledgeCollateral", "borrow", "repay"]):
+    with test_utils.GasWatcher(["addQuoteToken", "drawDebt", "repayDebt"]):
 
         scaled_pool.addQuoteToken(100 * 10**18, 2550, {"from": lenders[0]})
         scaled_pool.addQuoteToken(100 * 10**18, 2560, {"from": lenders[0]})
@@ -60,7 +60,7 @@ def test_borrow_repay_scaled(
 
         col_txes = []
         for i in range(10):
-            tx = scaled_pool.pledgeCollateral(borrowers[0], 10 * 10**18, {"from": borrowers[0]})
+            tx = scaled_pool.drawDebt(borrowers[0], 0, 0, 10 * 10**18, {"from": borrowers[0]})
             col_txes.append(tx)
         with capsys.disabled():
             print("\n==================================")
@@ -70,11 +70,11 @@ def test_borrow_repay_scaled(
                 print(f"Transaction: {i} | {test_utils.get_usage(col_txes[i].gas_used)}")
         
         txes = []
-        tx1 = scaled_pool.borrow(110 * 10**18, 5000, {"from": borrowers[0]})
+        tx1 = scaled_pool.drawDebt(borrowers[0], 110 * 10**18, 5000, 0, {"from": borrowers[0]})
         txes.append(tx1)
-        tx2 = scaled_pool.borrow(110 * 10**18, 5000, {"from": borrowers[0]})
+        tx2 = scaled_pool.drawDebt(borrowers[0], 110 * 10**18, 5000, 0, {"from": borrowers[0]})
         txes.append(tx2)
-        tx3 = scaled_pool.borrow(50 * 10**18, 5000, {"from": borrowers[0]})
+        tx3 = scaled_pool.drawDebt(borrowers[0], 50 * 10**18, 5000, 0, {"from": borrowers[0]})
         txes.append(tx3)
 
         with capsys.disabled():
@@ -85,11 +85,11 @@ def test_borrow_repay_scaled(
                 print(f"Transaction: {i} | {test_utils.get_usage(txes[i].gas_used)}")
 
         repay_txes = []
-        tx = scaled_pool.repay(borrowers[0], 110 * 10**18, {"from": borrowers[0]})
+        tx = scaled_pool.repayDebt(borrowers[0], 110 * 10**18, 0, {"from": borrowers[0]})
         repay_txes.append(tx)
-        tx = scaled_pool.repay(borrowers[0], 110 * 10**18, {"from": borrowers[0]})
+        tx = scaled_pool.repayDebt(borrowers[0], 110 * 10**18, 0, {"from": borrowers[0]})
         repay_txes.append(tx)
-        tx = scaled_pool.repay(borrowers[0], 50 * 10**18, {"from": borrowers[0]})
+        tx = scaled_pool.repayDebt(borrowers[0], 50 * 10**18, 0, {"from": borrowers[0]})
         repay_txes.append(tx)
         with capsys.disabled():
             print("\n==================================")

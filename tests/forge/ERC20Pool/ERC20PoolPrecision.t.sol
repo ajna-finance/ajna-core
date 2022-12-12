@@ -31,7 +31,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
     function init(uint256 collateralPrecisionDecimals_, uint256 quotePrecisionDecimals_) internal {
         _collateral = new TokenWithNDecimals("Collateral", "C", uint8(collateralPrecisionDecimals_));
         _quote      = new TokenWithNDecimals("Quote", "Q", uint8(quotePrecisionDecimals_));
-        _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
+        _pool       = ERC20Pool(new ERC20PoolFactory(_ajna).deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
         _poolUtils  = new PoolInfoUtils();
 
         _borrower  = makeAddr("borrower");
@@ -110,7 +110,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _assertPoolPrices(
             {
                 htp:      0,
-                htpIndex: 0,
+                htpIndex: 7388,
                 hpb:      3_025.946482308870940904 * 1e18,
                 hpbIndex: 2549,
                 lup:      MAX_PRICE,
@@ -166,7 +166,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _assertPoolPrices(
             {
                 htp:      0,
-                htpIndex: 0,
+                htpIndex: 7388,
                 hpb:      3_025.946482308870940904 * 1e18,
                 hpbIndex: 2549,
                 lup:      MAX_PRICE,
@@ -256,7 +256,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _assertPoolPrices(
             {
                 htp:      0,
-                htpIndex: 0,
+                htpIndex: 7388,
                 hpb:      3_025.946482308870940904 * 1e18,
                 hpbIndex: 2549,
                 lup:      MAX_PRICE,
@@ -362,15 +362,14 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         );
 
         // borrower repays half of loan
-        _repay(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   5_000 * _quotePoolPrecision,
-                repaid:   5_000 * _quotePoolPrecision,
-                newLup:   3_025.946482308870940904 * 1e18
-            }
-        );
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    5_000 * _quotePoolPrecision,
+            amountRepaid:     5_000 * _quotePoolPrecision,
+            collateralToPull: 0,
+            newLup:           3_025.946482308870940904 * 1e18
+        });
 
         // check balances
         assertEq(_collateral.balanceOf(address(_pool)), 50 * _collateralPrecision);
@@ -434,12 +433,13 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         // remove all of the remaining unencumbered collateral
         uint256 unencumberedCollateral = col - _encumberedCollateral(debt, _lup());
 
-        _pullCollateral(
-            {
-                from:   _borrower,
-                amount: unencumberedCollateral
-            }
-        );
+        _repayDebtNoLupCheck({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    0,
+            amountRepaid:     0,
+            collateralToPull: unencumberedCollateral
+        });
 
         assertEq(_collateral.balanceOf(address(_pool)),   (50 * 1e18) / ERC20Pool(address(_pool)).collateralScale() - (unencumberedCollateral / ERC20Pool(address(_pool)).collateralScale()));
         assertEq(_collateral.balanceOf(_borrower), (100 * 1e18) / ERC20Pool(address(_pool)).collateralScale() + (unencumberedCollateral / ERC20Pool(address(_pool)).collateralScale()));

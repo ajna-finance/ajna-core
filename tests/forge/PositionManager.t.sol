@@ -7,6 +7,8 @@ import { ERC721HelperContract } from './ERC721Pool/ERC721DSTestPlus.sol';
 import 'src/base/interfaces/IPositionManager.sol';
 import 'src/base/PositionManager.sol';
 
+import './utils/ContractNFTRecipient.sol';
+
 // TODO: test this against ERC721Pool
 abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract {
 
@@ -33,6 +35,32 @@ abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract 
         
         changePrank(minter_);
         return _positionManager.mint(mintParams);
+    }
+
+    function _getPermitSig(
+        address receiver_,
+        uint256 tokenId_,
+        uint256 deadline_,
+        uint256 ownerPrivateKey_
+    ) internal returns (uint8 v, bytes32 r, bytes32 s) {
+        return vm.sign(
+                ownerPrivateKey_,
+                keccak256(
+                    abi.encodePacked(
+                        "\x19\x01",
+                        _positionManager.DOMAIN_SEPARATOR(),
+                        keccak256(
+                            abi.encode(
+                                _positionManager.PERMIT_TYPEHASH(),
+                                receiver_,
+                                tokenId_,
+                                0,
+                                deadline_
+                            )
+                        )
+                    )
+                )
+            );
     }
 }
 
@@ -61,15 +89,15 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         uint256 lpTokens = _positionManager.getLPTokens(tokenId, mintPrice);
 
         assertEq(owner, testAddress);
-        assert(lpTokens == 0);
+        assertEq(lpTokens, 0);
     }
 
     /**
      *  @notice Tests attachment of a created position to an already existing NFT.
      *          LP tokens are checked to verify ownership of position.
      *          Reverts:
-     *              Attempts to memorialize when lp tokens aren't allowed to be transfered
-     *              Attempts to set position owner when not owner of the LP tokens
+     *              Attempts to memorialize when lp tokens aren't allowed to be transfered.
+     *              Attempts to set position owner when not owner of the LP tokens.
      */
     function testMemorializePositions() external {
         address testAddress = makeAddr("testAddress");
@@ -137,11 +165,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // check memorialization success
         uint256 positionAtPriceOneLPTokens = _positionManager.getLPTokens(tokenId, indexes[0]);
-        assert(positionAtPriceOneLPTokens > 0);
+        assertGt(positionAtPriceOneLPTokens, 0);
 
         // check lp tokens at non added to price
         uint256 positionAtWrongPriceLPTokens = _positionManager.getLPTokens(tokenId, 4000000 * 1e18);
-        assert(positionAtWrongPriceLPTokens == 0);
+        assertEq(positionAtWrongPriceLPTokens, 0);
 
         assertTrue(_positionManager.isIndexInPosition(tokenId, 2550));
         assertTrue(_positionManager.isIndexInPosition(tokenId, 2551));
@@ -848,14 +876,24 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
      *  @notice Tests a contract minting an NFT.
      */
     function testMintToContract() external {
-        // TODO to be reviewed
-        address lender = makeAddr("lender");
-        _quote.mint(lender, 200_000 * 1e18);
+        address mintingOwner = makeAddr("mintingOwner");
+        address recipientOwner = makeAddr("recipientOwner");
+
+        // deploy contract to receive the NFT
+        ContractNFTRecipient recipientContract = new ContractNFTRecipient(mintingOwner);
 
         // check that contract can successfully receive the NFT
         vm.expectEmit(true, true, true, true);
-        emit Mint(lender, address(_pool), 1);
-        _mintNFT(lender, lender, address(_pool));
+        emit Mint(address(recipientContract), address(_pool), 1);
+        _mintNFT(address(recipientContract), address(recipientContract), address(_pool));
+
+        // check contract is owner of minted NFT
+        assertEq(_positionManager.ownerOf(1), address(recipientContract));
+
+        // check contract owner can transfer to another smart contract
+        ContractNFTRecipient secondRecipient = new ContractNFTRecipient(recipientOwner);
+        recipientContract.transferNFT(address(_positionManager), address(secondRecipient), 1);
+        assertEq(_positionManager.ownerOf(1), address(secondRecipient));
     }
 
     /**
@@ -1174,6 +1212,62 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // check position manager state
         assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 0);
         assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
+    }
+
+    function testPermitByContract() external {
+        // deploy recipient contract
+        (address nonMintingContractOwner, uint256 nonMintingContractPrivateKey) = makeAddrAndKey("nonMintingContract");
+        ContractNFTRecipient recipientContract = new ContractNFTRecipient(nonMintingContractOwner);
+
+        // deploy contract to receive the NFT
+        (address testContractOwner, uint256 ownerPrivateKey) = makeAddrAndKey("testContractOwner");
+        ContractNFTRecipient ownerContract = new ContractNFTRecipient(testContractOwner);
+        uint256 tokenId = _mintNFT(address(ownerContract), address(ownerContract), address(_pool));
+
+        // check contract owned nft can't be signed by non owner
+        uint256 deadline = block.timestamp + 1 days;
+        (uint8 v, bytes32 r, bytes32 s) = _getPermitSig(address(recipientContract), tokenId, deadline, nonMintingContractPrivateKey);
+        vm.expectRevert("ajna/nft-unauthorized");
+        _positionManager.safeTransferFromWithPermit(address(ownerContract), address(recipientContract), address(recipientContract), tokenId, deadline, v, r, s );
+
+        // check owner can permit their contract to transfer the NFT
+        deadline = block.timestamp + 1 days;
+        (v, r, s) = _getPermitSig(address(recipientContract), tokenId, deadline, ownerPrivateKey);
+        _positionManager.safeTransferFromWithPermit(address(ownerContract), address(recipientContract), address(recipientContract), tokenId, deadline, v, r, s );
+    }
+
+    function testPermitReverts() external {
+        // generate addresses and set test params
+        (address testMinter, uint256 minterPrivateKey) = makeAddrAndKey("testMinter");
+        (address testReceiver, uint256 receiverPrivateKey) = makeAddrAndKey("testReceiver");
+
+        vm.prank(testMinter);
+        uint256 tokenId = _mintNFT(testMinter, testMinter, address(_pool));
+        assertEq(_positionManager.ownerOf(tokenId), testMinter);
+
+        // check can't use a deadline in the past
+        uint256 deadline = block.timestamp - 1 days;
+        (uint8 v, bytes32 r, bytes32 s) = _getPermitSig(testReceiver, tokenId, deadline, minterPrivateKey);
+        vm.expectRevert("ajna/nft-permit-expired");
+        _positionManager.safeTransferFromWithPermit(testMinter, testReceiver, testReceiver, tokenId, deadline, v, r, s );
+
+        // check can't self approve
+        deadline = block.timestamp + 1 days;
+        (v, r, s) = _getPermitSig(testMinter, tokenId, deadline, minterPrivateKey);
+        vm.expectRevert("ERC721Permit: approval to current owner");
+        _positionManager.safeTransferFromWithPermit(testMinter, testMinter, testMinter, tokenId, deadline, v, r, s );
+
+        // check signer is authorized to permit
+        deadline = block.timestamp + 1 days;
+        (v, r, s) = _getPermitSig(testReceiver, tokenId, deadline, receiverPrivateKey);
+        vm.expectRevert("ajna/nft-unauthorized");
+        _positionManager.safeTransferFromWithPermit(testMinter, testReceiver, testReceiver, tokenId, deadline, v, r, s );
+
+        // check signature is valid
+        deadline = block.timestamp + 1 days;
+        (v, r, s) = _getPermitSig(testReceiver, tokenId, deadline, minterPrivateKey);
+        vm.expectRevert("ajna/nft-invalid-signature");
+        _positionManager.safeTransferFromWithPermit(testMinter, testReceiver, testReceiver, tokenId, deadline, 0, r, s );
     }
 
     /**
@@ -1679,6 +1773,14 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertTrue(_positionManager.isIndexInPosition(tokenId1, moveIndex));
         assertFalse(_positionManager.isIndexInPosition(tokenId2, mintIndex));
         assertTrue(_positionManager.isIndexInPosition(tokenId2, moveIndex));
+
+        // check can't move liquidity from position with no liquidity
+        moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
+            tokenId2, address(_pool), 1000, 2000
+        );
+        changePrank(address(testAddress2));
+        vm.expectRevert(IPositionManager.RemoveLiquidityFailed.selector);
+        _positionManager.moveLiquidity(moveLiquidityParams);
     }
 
     function testRedeemPositions() external {
@@ -2336,6 +2438,46 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
         vm.expectRevert(IPositionManager.WrongPool.selector);
         _positionManager.burn(burnParams);
+    }
+
+    function testTokenURI() external {
+        // should revert if using non-existant tokenId
+        vm.expectRevert();
+        _positionManager.tokenURI(1);
+
+        address testAddress = makeAddr("testAddress");
+        uint256 mintAmount  = 10000 * 1e18;
+
+        _mintQuoteAndApproveManagerTokens(testAddress, mintAmount);
+
+        // call pool contract directly to add quote tokens
+        uint256[] memory indexes = new uint256[](1);
+        indexes[0] = 2550;
+
+        _addLiquidity(
+            {
+                from:   testAddress,
+                amount: 3_000 * 1e18,
+                index:  indexes[0],
+                newLup: MAX_PRICE
+            }
+        );
+
+        // mint NFT
+        uint256 tokenId = _mintNFT(testAddress, testAddress, address(_pool));
+
+        // allow position manager to take ownership of the position
+        _pool.approveLpOwnership(address(_positionManager), indexes[0], 3_000 * 1e27);
+
+        // memorialize position
+        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
+            tokenId, indexes
+        );
+        _positionManager.memorializePositions(memorializeParams);
+
+        // TODO: expand this test to check string matches an expected hardcoded string
+        string memory uriString = _positionManager.tokenURI(tokenId);
+        assertGt(bytes(uriString).length, 0);
     }
 
 }

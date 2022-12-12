@@ -21,4 +21,17 @@ interface IERC721PoolBorrowerActions {
         uint256 limitIndex_,
         uint256[] calldata tokenIdsToPledge_
     ) external;
+
+    /**
+     *  @notice Called by borrowers to repay borrowed quote to the pool, and/or pull collateral form the pool.
+     *  @dev    Can be called by borrowers with either 0 maxQuoteTokenAmountToRepay_ or 0 collateralAmountToPull_, if borrower only wants to take a single action. 
+     *  @param  borrowerAddress_            The borrower whose loan is being interacted with.
+     *  @param  maxQuoteTokenAmountToRepay_ The amount of quote tokens to repay.
+     *  @param  noOfNFTsToPull_             The integer number of NFT collateral to be puled from the pool.
+     */
+    function repayDebt(
+        address borrowerAddress_,
+        uint256 maxQuoteTokenAmountToRepay_,
+        uint256 noOfNFTsToPull_
+    ) external;
 }

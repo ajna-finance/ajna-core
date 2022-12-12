@@ -129,7 +129,7 @@ contract PoolInfoUtils {
         (, uint256 maxThresholdPrice, ) = pool.loansInfo();
         (uint256 inflatorSnapshot, )    = pool.inflatorInfo();
         htp_      = Maths.wmul(maxThresholdPrice, inflatorSnapshot);
-        if (htp_ != 0) htpIndex_ = _indexOf(htp_);
+        htpIndex_ = htp_ >= MIN_PRICE ? _indexOf(htp_) : 7_388;
         lupIndex_ = pool.depositIndex(debt);
         lup_      = _priceAt(lupIndex_);
     }
