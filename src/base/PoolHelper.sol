@@ -6,6 +6,9 @@ import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 
 import '../libraries/Maths.sol';
 
+    error BucketIndexOutOfBounds();
+    error BucketPriceOutOfBounds();
+
     /*************************/
     /*** Price Conversions ***/
     /*************************/
@@ -13,8 +16,9 @@ import '../libraries/Maths.sol';
     /**
         @dev constant price indices defining the min and max of the potential price range
      */
-    int256 constant MAX_BUCKET_INDEX = 4_156;
-    int256 constant MIN_BUCKET_INDEX = -3_232;
+    int256  constant MAX_BUCKET_INDEX  =  4_156;
+    int256  constant MIN_BUCKET_INDEX  = -3_232;
+    uint256 constant MAX_FENWICK_INDEX =  7_388;
 
     uint256 constant MIN_PRICE = 99_836_282_890;
     uint256 constant MAX_PRICE = 1_004_968_987.606512354182109771 * 10**18;
@@ -40,8 +44,9 @@ import '../libraries/Maths.sol';
     function _priceAt(
         uint256 index_
     ) pure returns (uint256) {
-        int256 bucketIndex = (index_ != 8191) ? MAX_BUCKET_INDEX - int256(index_) : MIN_BUCKET_INDEX;
-        require(bucketIndex >= MIN_BUCKET_INDEX && bucketIndex <= MAX_BUCKET_INDEX, "BM:ITP:OOB");
+        // Lowest Fenwick index is highest price, so invert the index and offset by highest bucket index.
+        int256 bucketIndex = MAX_BUCKET_INDEX - int256(index_);
+        if (bucketIndex < MIN_BUCKET_INDEX || bucketIndex > MAX_BUCKET_INDEX) revert BucketIndexOutOfBounds();
 
         return uint256(
             PRBMathSD59x18.exp2(
@@ -65,7 +70,7 @@ import '../libraries/Maths.sol';
     function _indexOf(
         uint256 price_
     ) pure returns (uint256) {
-        require(price_ >= MIN_PRICE && price_ <= MAX_PRICE, "BM:PTI:OOB");
+        if (price_ < MIN_PRICE || price_ > MAX_PRICE) revert BucketPriceOutOfBounds();
 
         int256 index = PRBMathSD59x18.div(
             PRBMathSD59x18.log2(int256(price_)),
@@ -82,35 +87,6 @@ import '../libraries/Maths.sol';
     /**********************/
     /*** Pool Utilities ***/
     /**********************/
-
-    /**
-     *  @notice Calculates encumberance for a debt amount at a given price.
-     *  @param  debt_         The debt amount to calculate encumberance for.
-     *  @param  price_        The price to calculate encumberance at.
-     *  @return encumberance_ Encumberance value.
-     */
-    function _encumberance(
-        uint256 debt_,
-        uint256 price_
-    ) pure returns (uint256 encumberance_) {
-        return price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
-    }
-
-    /**
-     *  @notice Calculates collateralization for a given debt and collateral amounts, at a given price.
-     *  @param  debt_       The debt amount.
-     *  @param  collateral_ The collateral amount.
-     *  @param  price_      The price to calculate collateralization at.
-     *  @return Collateralization value. 1**18 if debt amount is 0.
-     */
-    function _collateralization(
-        uint256 debt_,
-        uint256 collateral_,
-        uint256 price_
-    ) pure returns (uint256) {
-        uint256 encumbered = _encumberance(debt_, price_);
-        return encumbered != 0 ? Maths.wdiv(collateral_, encumbered) : Maths.WAD;
-    }
 
     /**
      *  @notice Calculates the minimum debt amount that can be borrowed or can remain in a loan in pool.
@@ -151,19 +127,6 @@ import '../libraries/Maths.sol';
         uint256 collateral_
     ) pure returns (uint256 ptp_) {
         if (collateral_ != 0) ptp_ = Maths.wdiv(debt_, collateral_);
-    }
-
-    /**
-     *  @notice Calculates target utilization for given EMA values.
-     *  @param  debtEma_   The EMA of debt value.
-     *  @param  lupColEma_ The EMA of lup * collateral value.
-     *  @return Target utilization of the pool.
-     */
-    function _targetUtilization(
-        uint256 debtEma_,
-        uint256 lupColEma_
-    ) pure returns (uint256) {
-        return (debtEma_ != 0 && lupColEma_ != 0) ? Maths.wdiv(debtEma_, lupColEma_) : Maths.WAD;
     }
 
     /*********************************/

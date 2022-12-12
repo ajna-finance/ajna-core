@@ -16,6 +16,7 @@ abstract contract PoolDeployer {
     /***********************/
 
     /// @dev SubsetHash => CollateralAddress => QuoteAddress => Pool Address
+    // slither-disable-next-line uninitialized-state
     mapping(bytes32 => mapping(address => mapping(address => address))) public deployedPools;
 
     /*****************/
