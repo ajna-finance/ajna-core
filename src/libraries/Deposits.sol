@@ -167,7 +167,7 @@ library Deposits {
             uint256 lsbJ = lsb(j);
 
             // Execute while i is a range parent of j (zero is the highest parent).
-            //slither-disable-next-line incorrect-equality
+            // slither-disable-next-line incorrect-equality
             while ((lsbJ < lsb(index_)) || (index_ == 0 && j <= SIZE)) {
                 // Sum > 0 only when j is a range parent of starting node, index_.
                 value = self.values[j];
