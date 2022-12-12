@@ -190,7 +190,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             params
         );
 
-        uint256 excessQuoteToken;
+        uint256 excessQuoteToken = 0;
+        //slither-disable-next-line divide-before-multiply
         uint256 collateralTaken = (collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
         if (collateralTaken != collateralAmount) { // collateral taken not a round number
             collateralTaken += 1e18; // round up collateral to take

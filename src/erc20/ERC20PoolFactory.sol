@@ -18,6 +18,8 @@ contract ERC20PoolFactory is IERC20PoolFactory, PoolDeployer {
     bytes32 public constant ERC20_NON_SUBSET_HASH = keccak256("ERC20_NON_SUBSET_HASH");
 
     constructor(address ajna_) {
+        if (ajna_ == address(0)) revert DeployWithZeroAddress();
+
         ajna           = ajna_;
         implementation = new ERC20Pool();
     }
