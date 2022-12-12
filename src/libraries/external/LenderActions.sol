@@ -57,7 +57,7 @@ library LenderActions {
     struct MoveQuoteLocalVars {
         uint256 amountToMove;
         uint256 fromBucketPrice;
-        uint256 fromBucketRawDeposit;
+        uint256 fromBucketUnscaledDeposit;
         uint256 fromBucketLPs;
         uint256 fromBucketDepositTime;
         uint256 fromBucketScale;
@@ -172,23 +172,24 @@ library LenderActions {
         Buckets.Bucket storage fromBucket = buckets_[params_.fromIndex];
         Buckets.Lender storage fromBucketLender = fromBucket.lenders[msg.sender];
 
-        vars.fromBucketPrice       = _priceAt(params_.fromIndex);
-        vars.toBucketPrice         = _priceAt(params_.toIndex);
-        vars.fromBucketRawDeposit  = Deposits.rawValueAt(deposits_, params_.fromIndex);
-        vars.fromBucketScale       = Deposits.scale(deposits_, params_.fromIndex);
-        vars.fromBucketDepositTime = fromBucketLender.depositTime;
+        vars.fromBucketPrice            = _priceAt(params_.fromIndex);
+        vars.toBucketPrice              = _priceAt(params_.toIndex);
+        vars.fromBucketUnscaledDeposit  = Deposits.unscaledValueAt(deposits_, params_.fromIndex);
+        vars.fromBucketScale            = Deposits.scale(deposits_, params_.fromIndex);
+        vars.fromBucketDepositTime      = fromBucketLender.depositTime;
 
         if (fromBucket.bankruptcyTime < vars.fromBucketDepositTime) vars.fromBucketLPs = fromBucketLender.lps;
-        (vars.amountToMove, fromBucketLPs_) = Buckets.getRawConstrainedDeposit(
-            vars.fromBucketRawDeposit,
+        (vars.amountToMove, fromBucketLPs_) = Buckets.getUnscaledConstrainedDeposit(
+            vars.fromBucketUnscaledDeposit,
             params_.maxAmountToMove,
             vars.fromBucketLPs,
-            fromBucket,
+            fromBucket.lps,
+            fromBucket.collateral,
             vars.fromBucketScale,
             vars.fromBucketPrice
         );
 
-        Deposits.rawRemove(deposits_, params_.fromIndex, vars.amountToMove);
+        Deposits.unscaledRemove(deposits_, params_.fromIndex, vars.amountToMove);
 
         // From here and below, amountToMove is an absolute quote token amount
         vars.amountToMove = Maths.wmul(vars.fromBucketScale, vars.amountToMove);
@@ -235,9 +236,9 @@ library LenderActions {
         Deposits.Data storage deposits_,
         RemoveQuoteParams calldata params_
     ) external returns (uint256 removedAmount_, uint256 redeemedLPs_, uint256 lup_) {
-        uint256 rawDeposit = Deposits.rawValueAt(deposits_, params_.index);
+        uint256 unscaledDeposit = Deposits.unscaledValueAt(deposits_, params_.index);
 
-        if (rawDeposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
+        if (unscaledDeposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
 
         uint256 depositScale = Deposits.scale(deposits_, params_.index);
 
@@ -249,19 +250,20 @@ library LenderActions {
         if (lenderLPs == 0) revert NoClaim();      // revert if no LP to claim
 
         uint256 price = _priceAt(params_.index);
-        uint256 rawRemoveAmount;
-        (rawRemoveAmount, redeemedLPs_) = Buckets.getRawConstrainedDeposit(
-                 rawDeposit,
+        uint256 unscaledRemoveAmount;
+        (unscaledRemoveAmount, redeemedLPs_) = Buckets.getUnscaledConstrainedDeposit(
+                 unscaledDeposit,
                  params_.maxAmount,
                  lenderLPs,
-                 bucket,
+                 bucket.lps,
+		 bucket.collateral,
                  depositScale,
                  price
         );
 
-        Deposits.rawRemove(deposits_, params_.index, rawRemoveAmount); // update FenwickTree
+        Deposits.unscaledRemove(deposits_, params_.index, unscaledRemoveAmount); // update FenwickTree
 
-        removedAmount_ = Maths.wmul(depositScale, rawRemoveAmount);
+        removedAmount_ = Maths.wmul(depositScale, unscaledRemoveAmount);
 
         // apply early withdrawal penalty if quote token is removed from above the PTP
         if (depositTime != 0 && block.timestamp - depositTime < 1 days) {

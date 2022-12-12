@@ -150,7 +150,7 @@ library Deposits {
         //             subtree what was scaled earlier.  Therefore: we need to increment it's stored value
         //             (in sum) which was set in a prior interation in case 1.
         while (bit <= SIZE) {
-            if((bit & index_)!=0) {
+            if((bit & index_) != 0) {
                 value   = self.values[index_];
                 scaling = self.scaling[index_];
             
@@ -224,9 +224,9 @@ library Deposits {
 	uint256 currentAmount_
     ) internal {
 	if (removeAmount_ == currentAmount_) {
-	    rawRemove(self, index_, rawValueAt(self,index_));
+	    unscaledRemove(self, index_, unscaledValueAt(self,index_));
 	} else {
-	    rawRemove(self, index_, Maths.wdiv(removeAmount_, scale(self, index_)));
+	    unscaledRemove(self, index_, Maths.wdiv(removeAmount_, scale(self, index_)));
 	}
     }
 
@@ -235,25 +235,25 @@ library Deposits {
      *  @notice Decrease a node in the FenwickTree at an index.
      *  @dev    Starts at leaf/target and moved up towards root
      *  @param  index_             The deposit index.
-     *  @param  rawRemoveAmount_   Unscaled amount to decrease deposit by.
+     *  @param  unscaledRemoveAmount_   Unscaled amount to decrease deposit by.
      */    
-    function rawRemove(
+    function unscaledRemove(
         Data storage self,
         uint256 index_,
-        uint256 rawRemoveAmount_
+        uint256 unscaledRemoveAmount_
     ) internal {
         if (index_ >= SIZE) revert InvalidIndex();
 
         index_ += 1;
 
         while (index_ <= SIZE) {
-            uint256 value    = (self.values[index_] -= rawRemoveAmount_);
+            uint256 value    = (self.values[index_] -= unscaledRemoveAmount_);
             uint256 scaling  = self.scaling[index_];
             // On the line below, it would be tempting to replace this with:
-            // rawRemoveAmount_ = Maths.wmul(rawRemoveAmount, scaling).  This will introduce nonzero values up
+            // unscaledRemoveAmount_ = Maths.wmul(unscaledRemoveAmount, scaling).  This will introduce nonzero values up
             // the tree due to rounding.  It's important to compute the actual change in self.values[index_]
             // and propogate that upwards.
-            if (scaling != 0) rawRemoveAmount_ = Maths.wmul(value + rawRemoveAmount_, scaling) - Maths.wmul(value,  scaling);
+            if (scaling != 0) unscaledRemoveAmount_ = Maths.wmul(value + unscaledRemoveAmount_, scaling) - Maths.wmul(value,  scaling);
             index_ += lsb(index_);
         }
     }
@@ -301,24 +301,24 @@ library Deposits {
     ) internal view returns (uint256 depositValue_) {
         if (index_ >= SIZE) revert InvalidIndex();
 
-	depositValue_ = Maths.wmul(rawValueAt(self, index_), scale(self,index_));
+	depositValue_ = Maths.wmul(unscaledValueAt(self, index_), scale(self,index_));
     }
 
-    function rawValueAt(
+    function unscaledValueAt(
         Data storage self,
         uint256 index_
-    ) internal view returns (uint256 rawDepositValue_) {
+    ) internal view returns (uint256 unscaledDepositValue_) {
         if (index_ >= SIZE) revert InvalidIndex();
 
         index_ += 1;
 
         uint256 j = 1;
 
-        rawDepositValue_ = self.values[index_];
+        unscaledDepositValue_ = self.values[index_];
         while (j & index_ == 0) {
             uint256 value   = self.values[index_ - j];
             uint256 scaling = self.scaling[index_ - j];
-            rawDepositValue_ -= scaling != 0 ? Maths.wmul(scaling, value) : value;
+            unscaledDepositValue_ -= scaling != 0 ? Maths.wmul(scaling, value) : value;
             j = j << 1;
         }
     }

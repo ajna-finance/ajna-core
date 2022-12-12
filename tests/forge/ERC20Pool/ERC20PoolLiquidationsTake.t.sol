@@ -1677,108 +1677,108 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 neutralPrice:      0
             })
         );
-       _assertKicker(
-           {
-               kicker:    _lender,
-               claimable: 104.670662329841418377 * 1e18,
-               locked:    0
-           }
-       );
-       _assertBorrower(
-           {
-               borrower:                  _borrower2,
-               borrowerDebt:              0,
-               borrowerCollateral:        0,
-               borrowert0Np:              10.307611531622595991 * 1e18,
-               borrowerCollateralization: 1 * 1e18
-           }
-       );
-       _assertBucket(
-           {
-               index:        _i9_91,
-               lpBalance:    0, // bucket is bankrupt
-               collateral:   0,
-               deposit:      0,
-               exchangeRate: 1 * 1e27
-           }
-       );
-       _assertLenderLpBalance(
-           {
-               lender:      _lender,
-               index:       _i9_91,
-               lpBalance:   0, // bucket is bankrupt
-               depositTime: _startTime
-           }
-       );
-       _assertBucket(
-           {
-               index:        _i9_81,
-               lpBalance:    0, // bucket is bankrupt
-               collateral:   0,
-               deposit:      0,
-               exchangeRate: 1 * 1e27
-           }
-       );
-       _assertLenderLpBalance(
-           {
-               lender:      _lender,
-               index:       _i9_81,
-               lpBalance:   0, // bucket is bankrupt
-               depositTime: _startTime
-           }
-       );
-       _assertBucket(
-           {
-               index:        _i9_72,
-               lpBalance:    11_000 * 1e27,
-               collateral:   0,
-               deposit:      8_897.820552570976602531 * 1e18, 
-               exchangeRate: 0.808892777506452418411909090 * 1e27
-           }
-       );
-       _assertLenderLpBalance(
-           {
-               lender:      _lender,
-               index:       _i9_72,
-               lpBalance:   11_000 * 1e27,
-               depositTime: _startTime
-           }
-       );
-       _assertBucket(
-           {
-               index:        _i9_62,
-               lpBalance:    25_000 * 1e27,
-               collateral:   0,
-               deposit:      25_000 * 1e18,
-               exchangeRate: 1 * 1e27
-           }
-       );
-       _assertLenderLpBalance(
-           {
-               lender:      _lender,
-               index:       _i9_62,
-               lpBalance:   25_000 * 1e27,
-               depositTime: _startTime
-           }
-       );
-       _assertBucket(
-           {
-               index:        _i9_52,
-               lpBalance:    30_000 * 1e27,
-               collateral:   0,
-               deposit:      30_000 * 1e18,
-               exchangeRate: 1 * 1e27
-           }
-       );
-       _assertLenderLpBalance(
-           {
-               lender:      _lender,
-               index:       _i9_52,
-               lpBalance:   30_000 * 1e27,
-               depositTime: _startTime
-           }
-       );
-
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 104.670662329841418377 * 1e18,
+                locked:    0
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              0,
+                borrowerCollateral:        0,
+                borrowert0Np:              10.307611531622595991 * 1e18,
+                borrowerCollateralization: 1 * 1e18
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_91,
+                lpBalance:    0, // bucket is bankrupt
+                collateral:   0,
+                deposit:      0,
+                exchangeRate: 1 * 1e27
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i9_91,
+                lpBalance:   0, // bucket is bankrupt
+                depositTime: _startTime
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_81,
+                lpBalance:    0, // bucket is bankrupt
+                collateral:   0,
+                deposit:      0,
+                exchangeRate: 1 * 1e27
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i9_81,
+                lpBalance:   0, // bucket is bankrupt
+                depositTime: _startTime
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_72,
+                lpBalance:    11_000 * 1e27,
+                collateral:   0,
+                deposit:      8_897.820552570976602531 * 1e18, 
+                exchangeRate: 0.808892777506452418411909090 * 1e27
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i9_72,
+                lpBalance:   11_000 * 1e27,
+                depositTime: _startTime
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_62,
+                lpBalance:    25_000 * 1e27,
+                collateral:   0,
+                deposit:      25_000 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i9_62,
+                lpBalance:   25_000 * 1e27,
+                depositTime: _startTime
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_52,
+                lpBalance:    30_000 * 1e27,
+                collateral:   0,
+                deposit:      30_000 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i9_52,
+                lpBalance:   30_000 * 1e27,
+                depositTime: _startTime
+            }
+        );
+ 
         vm.revertTo(postTakeSnapshot);
 
        _assertReserveAuction(

@@ -125,22 +125,22 @@ library Buckets {
     }
 
     /**
-     *  @notice Returns the exchange rate for a given bucket.
-     *  @param  bucketCollateral_ Amount of collateral in bucket.
-     *  @param  bucketLPs_        Amount of LPs in bucket.
-     *  @param  bucketRawDeposit_ The amount of unscaled Fenwick tree amount in bucket.
-     *  @param  bucketScale_      Bucket scale factor
-     *  @param  bucketPrice_      Bucket's price.
+     *  @notice Returns the unscaled exchange rate for a given bucket.
+     *  @param  bucketCollateral_       Amount of collateral in bucket.
+     *  @param  bucketLPs_              Amount of LPs in bucket.
+     *  @param  bucketUnscaledDeposit_  The amount of unscaled Fenwick tree amount in bucket.
+     *  @param  bucketScale_            Bucket scale factor
+     *  @param  bucketPrice_            Bucket's price.
      */
-    function getRawExchangeRate(
+    function getUnscaledExchangeRate(
         uint256 bucketCollateral_,
         uint256 bucketLPs_,
-        uint256 bucketRawDeposit_,
+        uint256 bucketUnscaledDeposit_,
 	uint256 bucketScale_,
         uint256 bucketPrice_
     ) internal pure returns (uint256) {
         return bucketLPs_ == 0 ? Maths.RAY :
-            (bucketRawDeposit_ + bucketPrice_ * bucketCollateral_ / bucketScale_ ) * 10**36 / bucketLPs_;
+            (bucketUnscaledDeposit_ + bucketPrice_ * bucketCollateral_ / bucketScale_ ) * 10**36 / bucketLPs_;
             // 10^18 * 1e36 / 10^27 = 10^54 / 10^27 = 10^27
     }
 
@@ -191,55 +191,57 @@ library Buckets {
     
     /**
      *  @notice Returns the amount of quote tokens calculated for the given amount of LPs.
-     *  @param  rawDepositAvailable_   Raw (unscaled) deposit quantity in bucket
-     *  @param  depositConstraint_     Constraint on deposit in quote token
-     *  @param  lpConstraint_          Constraint in LPB terms
-     *  @param  bucket_                Bucket data
-     *  @param  price_                 Price of bucket
-     *  @param  depositScale_          Scale of bucket
-     *  @return rawDepositAmount_      Amount of raw deposit satistfying constraint
-     *  @return lps_                   Amount of bucket LPs corresponding for calculated raw deposit amount
+     *  @param  unscaledDepositAvailable_   Unscaled deposit quantity in bucket
+     *  @param  depositConstraint_          Constraint on deposit in quote token
+     *  @param  lpConstraint_               Constraint in LPB terms
+     *  @param  bucketLPs_                  Total LPB in the bucket
+     *  @param  bucketCollateral_           Claimable collateral in the bucket
+     *  @param  price_                      Price of bucket
+     *  @param  depositScale_               Scale of bucket
+     *  @return unscaledDepositAmount_      Amount of unscaled deposit satistfying constraint
+     *  @return lps_                        Amount of bucket LPs corresponding for calculated unscaled deposit amount
      */
-    function getRawConstrainedDeposit(
-				      uint256 rawDepositAvailable_,
+    function getUnscaledConstrainedDeposit(
+				      uint256 unscaledDepositAvailable_,
 				      uint256 depositConstraint_,
 				      uint256 lpConstraint_,
-				      Bucket storage bucket_,
+				      uint256 bucketLPs_,
+				      uint256 bucketCollateral_,
 				      uint256 depositScale_,
 				      uint256 price_
-    ) internal view returns (uint256 rawDepositAmount_, uint256 lps_) {
-        uint256 rawExchangeRate = getRawExchangeRate(
-            bucket_.collateral,
-            bucket_.lps,
-            rawDepositAvailable_,
+    ) internal pure returns (uint256 unscaledDepositAmount_, uint256 lps_) {
+        uint256 unscaledExchangeRate = getUnscaledExchangeRate(
+            bucketCollateral_,
+            bucketLPs_,
+            unscaledDepositAvailable_,
 	    depositScale_,
             price_
         );
 
         // Below is pseudocode explaining the logic behind finding the constrained amount of deposit and LPB
-        // rawRemovedAmount is constrained by the de-scaled maxAmount(in QT), the rawDeposit constraint, and
-        // the lender LPB exchange rate in raw deposit-to-LPB for the bucket:
-	// rawRemovedAmount = min ( maxAmount_/scale, rawDeposit, lenderLPsBalance*rawExchangeRate)
-	// redeemedLPs_ = min ( maxAmount_/(rawExchangeRate*scale), rawDeposit/rawExchangeRate, lenderLPsBalance)
+        // unscaledRemovedAmount is constrained by the de-scaled maxAmount(in QT), the unscaledDeposit constraint, and
+        // the lender LPB exchange rate in unscaled deposit-to-LPB for the bucket:
+	// unscaledRemovedAmount = min ( maxAmount_/scale, unscaledDeposit, lenderLPsBalance*unscaledExchangeRate)
+	// redeemedLPs_ = min ( maxAmount_/(unscaledExchangeRate*scale), unscaledDeposit/unscaledExchangeRate, lenderLPsBalance)
 
-	if( depositConstraint_ < Maths.wmul(rawDepositAvailable_, depositScale_) &&
-	    Maths.wwdivr(depositConstraint_, depositScale_) < Maths.rmul(lpConstraint_, rawExchangeRate) ) {
+	if( depositConstraint_ < Maths.wmul(unscaledDepositAvailable_, depositScale_) &&
+	    Maths.wwdivr(depositConstraint_, depositScale_) < Maths.rmul(lpConstraint_, unscaledExchangeRate) ) {
 	    // depositConstraint_ is binding constraint
-	    rawDepositAmount_ = Maths.wdiv(depositConstraint_, depositScale_);
-	    lps_ = Maths.wrdivr(rawDepositAmount_, rawExchangeRate);
-	} else if ( Maths.wadToRay(rawDepositAvailable_) < Maths.rmul(lpConstraint_, rawExchangeRate ) ) {
-	    // rawDeposit is binding constraint
-	    rawDepositAmount_ = rawDepositAvailable_;
-	    lps_ = Maths.wrdivr(rawDepositAmount_, rawExchangeRate);
+	    unscaledDepositAmount_ = Maths.wdiv(depositConstraint_, depositScale_);
+	    lps_ = Maths.wrdivr(unscaledDepositAmount_, unscaledExchangeRate);
+	} else if ( Maths.wadToRay(unscaledDepositAvailable_) < Maths.rmul(lpConstraint_, unscaledExchangeRate ) ) {
+	    // unscaledDeposit is binding constraint
+	    unscaledDepositAmount_ = unscaledDepositAvailable_;
+	    lps_ = Maths.wrdivr(unscaledDepositAmount_, unscaledExchangeRate);
 	} else {
 	    // redeeming all LPs
 	    lps_ = lpConstraint_;
-	    rawDepositAmount_ = Maths.rayToWad(Maths.rmul(lps_, rawExchangeRate));
+	    unscaledDepositAmount_ = Maths.rayToWad(Maths.rmul(lps_, unscaledExchangeRate));
 	}
 	
 	// If clearing out the bucket deposit, ensure it's zeroed out
-	if (lps_ == bucket_.lps) {
-	    rawDepositAmount_ = rawDepositAvailable_;
+	if (lps_ == bucketLPs_) {
+	    unscaledDepositAmount_ = unscaledDepositAvailable_;
 	}
     }
     
