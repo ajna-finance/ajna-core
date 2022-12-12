@@ -2,17 +2,18 @@
 
 pragma solidity 0.8.14;
 
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 import '@openzeppelin/contracts/utils/Checkpoints.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
-import './base/interfaces/IPool.sol';
-import './base/interfaces/IPositionManager.sol';
-import './base/PositionManager.sol';
+import { IPool } from './base/interfaces/IPool.sol';
+import { IPositionManager } from './base/interfaces/IPositionManager.sol';
+import { PositionManager } from './base/PositionManager.sol';
 
 import './libraries/Maths.sol';
-import './libraries/external/PoolCommons.sol';
+
+import { PoolCommons } from './libraries/external/PoolCommons.sol';
 
 import './IAjnaRewards.sol';
 
@@ -113,6 +114,8 @@ contract AjnaRewards is IAjnaRewards {
     }
 
     function withdrawNFT(uint256 tokenId_) external {
+        if (msg.sender != deposits[tokenId_].owner) revert NotOwnerOfToken();
+
         address ajnaPool = deposits[tokenId_].ajnaPool;
 
         // update checkpoints
@@ -129,6 +132,8 @@ contract AjnaRewards is IAjnaRewards {
     }
 
     function claimRewards(uint256 tokenId_) external {
+        if (msg.sender != deposits[tokenId_].owner) revert NotOwnerOfToken();
+
         address ajnaPool = deposits[tokenId_].ajnaPool;
 
         // update checkpoints
@@ -138,7 +143,6 @@ contract AjnaRewards is IAjnaRewards {
         _claimRewards(tokenId_);
     }
 
-
     /**************************/
     /*** Internal Functions ***/
     /**************************/
@@ -147,6 +151,9 @@ contract AjnaRewards is IAjnaRewards {
         uint256 rewardsEarned = _calculateRewardsEarned(tokenId_);
 
         emit ClaimRewards(msg.sender, deposits[tokenId_].ajnaPool, tokenId_, rewardsEarned);
+
+        // update last interaction block
+        deposits[tokenId_].lastInteractionBlock = block.number;
 
         // TODO: use safeTransferFrom
         // transfer rewards to sender
@@ -186,12 +193,15 @@ contract AjnaRewards is IAjnaRewards {
         
         uint256 totalInterestEarned = totalInterestCurrent - totalInterestAtLastClaim;
 
-        rewards_ = REWARD_FACTOR * (interestEarned / totalInterestEarned) * _getAjnaTokensBurned(lastInteractionBlock);
+        rewards_ = REWARD_FACTOR * (interestEarned / totalInterestEarned) * _getAjnaTokensBurned(ajnaPool, lastInteractionBlock);
     }
 
-    // TODO: implement this
-    function _getAjnaTokensBurned(uint256 lastBlock_) internal returns (uint256 ajnaTokensBurned_) {
-        
+    function _getAjnaTokensBurned(address ajnaPool_, uint256 lastBlock_) internal returns (uint256 ajnaTokensBurned_) {
+        (uint256 burnAmountLatest, uint256 totalInterestLatest, uint256 totalBurnedLatest) = IPool(ajnaPool_).burnInfoLatest();
+
+        (uint256 burnAmountAtBlock, uint256 totalInterestAtBlock, uint256 totalBurnedAtBlock) = IPool(ajnaPool_).burnInfoAtBlock(lastBlock_);
+
+        return totalBurnedLatest - totalBurnedAtBlock;
     }
 
     // use deposits object instead of tokenId?

@@ -6,7 +6,8 @@ import '@clones/Clone.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/utils/Multicall.sol';
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { Checkpoints } from '@openzeppelin/contracts/utils/Checkpoints.sol';
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import './interfaces/IPool.sol';
 
@@ -16,9 +17,9 @@ import '../libraries/Buckets.sol';
 import '../libraries/Deposits.sol';
 import '../libraries/Loans.sol';
 
-import '../libraries/external/Auctions.sol';
-import '../libraries/external/LenderActions.sol';
-import '../libraries/external/PoolCommons.sol';
+import { Auctions } from '../libraries/external/Auctions.sol';
+import { LenderActions } from '../libraries/external/LenderActions.sol';
+import { PoolCommons } from '../libraries/external/PoolCommons.sol';
 
 abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     using Auctions  for Auctions.Data;
@@ -752,9 +753,21 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
-    function burnInfo(uint256 blockNumber_) external view returns (uint256, uint256, uint256) {
+    function burnInfoAtBlock(uint256 blockNumber_) external view returns (uint256, uint256, uint256) {
         uint256 burnEventId = Auctions.getBurnAtBlock(_burnEventCheckpoints, blockNumber_);
         BurnEvent memory burnEvent = burnEvents[burnEventId];
+
+        return (
+            burnEvent.burnAmount,
+            burnEvent.totalInterest,
+            burnEvent.totalBurned
+        );
+    }
+
+    function burnInfoLatest() external view returns (uint256, uint256, uint256) {
+        uint256 burnEventId = Auctions.getLastBurn(_burnEventCheckpoints);
+        BurnEvent memory burnEvent = burnEvents[burnEventId];
+
         return (
             burnEvent.burnAmount,
             burnEvent.totalInterest,
