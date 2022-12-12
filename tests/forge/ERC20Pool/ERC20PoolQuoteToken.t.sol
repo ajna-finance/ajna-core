@@ -341,7 +341,6 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:     _lender,
                 amount:   5_000 * 1e18,
                 index:    2549,
-                penalty:  0,
                 newLup:   MAX_PRICE,
                 lpRedeem: 5_000 * 1e27
             }
@@ -425,7 +424,6 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:     _lender,
                 amount:   35_000 * 1e18,
                 index:    2549,
-                penalty:  0,
                 newLup:   MAX_PRICE,
                 lpRedeem: 35_000 * 1e27
             }
@@ -652,7 +650,6 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:     _lender,
                 amount:   10_000 * 1e18,
                 index:    4990,
-                penalty:  0,
                 newLup:   _priceAt(4551),
                 lpRedeem: 10_000 * 1e27
             }
@@ -689,7 +686,6 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:     _lender,
                 amount:   100 * 1e18,
                 index:    i100,
-                penalty:  0,
                 newLup:   MAX_PRICE,
                 lpRedeem: 100 * 1e27
             }
@@ -815,14 +811,14 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         uint256 penalty = Maths.WAD - Maths.wdiv(interestRate, 52 * 10**18);
         assertLt(penalty, Maths.WAD);
         uint256 expectedWithdrawal1 = Maths.wmul(1_700 * 1e18, penalty);
-        _removeLiquidity(
+        _removeLiquidityWithPenalty(
             {
-                from:     _lender,
-                amount:   1_700 * 1e18,
-                index:    1606,
-                penalty:  penalty,
-                newLup:   _priceAt(1663),
-                lpRedeem: 1_699.988795593461528952268999517 * 1e27
+                from:          _lender,
+                amount:        1_700 * 1e18,
+                amountRemoved: expectedWithdrawal1,
+                index:         1606,
+                newLup:        _priceAt(1663),
+                lpRedeem:      1_699.988795593461528952268999517 * 1e27
             }
         );
 

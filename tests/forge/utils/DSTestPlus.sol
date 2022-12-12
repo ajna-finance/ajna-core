@@ -248,19 +248,26 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         address from,
         uint256 amount,
         uint256 index,
-        uint256 penalty,
         uint256 newLup,
         uint256 lpRedeem
     ) internal {
-        // apply penalty if case
-        uint256 expectedWithdrawal = penalty != 0 ? Maths.wmul(amount, penalty) : amount;
+        _removeLiquidityWithPenalty(from, amount, amount, index, newLup, lpRedeem);
+    }
 
+    function _removeLiquidityWithPenalty(
+        address from,
+        uint256 amount,
+        uint256 amountRemoved,  // amount less penalty, where applicable
+        uint256 index,
+        uint256 newLup,
+        uint256 lpRedeem
+    ) internal {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(from, index, expectedWithdrawal, lpRedeem, newLup);
-        _assertTokenTransferEvent(address(_pool), from, expectedWithdrawal);
+        emit RemoveQuoteToken(from, index, amountRemoved, lpRedeem, newLup);
+        _assertTokenTransferEvent(address(_pool), from, amountRemoved);
         (uint256 removedAmount, uint256 lpRedeemed) = _pool.removeQuoteToken(amount, index);
-        assertEq(removedAmount, expectedWithdrawal);
+        assertEq(removedAmount, amountRemoved);
         assertEq(lpRedeemed,    lpRedeem);
     }
 
