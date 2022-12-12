@@ -191,7 +191,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         );
 
         uint256 excessQuoteToken = 0;
-        //slither-disable-next-line divide-before-multiply
+        // slither-disable-next-line divide-before-multiply
         uint256 collateralTaken = (collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
         if (collateralTaken != collateralAmount) { // collateral taken not a round number
             collateralTaken += 1e18; // round up collateral to take
@@ -241,7 +241,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256 collateral_,
         uint256 price_
     ) internal pure override returns (bool) {
-        //slither-disable-next-line divide-before-multiply
+        // slither-disable-next-line divide-before-multiply
         collateral_ = (collateral_ / Maths.WAD) * Maths.WAD; // use collateral floor
         return Maths.wmul(collateral_, price_) >= debt_;
     }
@@ -336,7 +336,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
      *  @param tokenId_ NFT token id to be transferred.
      */
     function _transferNFT(address from_, address to_, uint256 tokenId_) internal {
-        //slither-disable-next-line calls-loop
+        // slither-disable-next-line calls-loop
         IERC721Token(_getArgAddress(0)).safeTransferFrom(from_, to_, tokenId_);
     }
 

@@ -276,7 +276,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             deposits,
             params
         );
-        //slither-disable-next-line incorrect-equality
+        // slither-disable-next-line incorrect-equality
         if (remainingt0Debt == 0) remainingCollateral = _settleAuction(params.borrower, remainingCollateral);
 
         uint256 t0settledDebt = params.t0debt - remainingt0Debt;
@@ -636,7 +636,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if (poolState_.isNewInterestAccrued) {
             inflatorSnapshot           = uint208(poolState_.inflator);
             lastInflatorSnapshotUpdate = uint48(block.timestamp);
-        //slither-disable-next-line incorrect-equality
+        // slither-disable-next-line incorrect-equality
         } else if (poolState_.accruedDebt == 0) {
             inflatorSnapshot           = uint208(Maths.WAD);
             lastInflatorSnapshotUpdate = uint48(block.timestamp);
