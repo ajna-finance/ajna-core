@@ -34,6 +34,7 @@ jobs:
           webhook_id: ${{ secrets.DISCORD_ID }}
           webhook_token: ${{ secrets.DISCORD_TOKEN }}
           username: "Code Coverage Reporter"
+          message: Coverage summary for `${{ github.ref }}`
           file: "./coverage-summary.txt"
       - name: Verify coverage level
         uses: zgosalvez/github-actions-report-lcov@v1
