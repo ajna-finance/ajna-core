@@ -174,8 +174,6 @@ library Auctions {
 
         if ((block.timestamp - kickTime < 72 hours) && (params_.collateral != 0)) revert AuctionNotClearable();
 
-        // HpbLocalVars memory hpbVars;
-
         // auction has debt to cover with remaining collateral
         while (params_.bucketDepth != 0 && params_.t0debt != 0 && params_.collateral != 0) {
             uint256 index   = Deposits.findIndexOfSum(deposits_, 1);
