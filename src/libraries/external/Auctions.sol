@@ -9,7 +9,6 @@ import '../Loans.sol';
 
 import '../../base/PoolHelper.sol';
 import '../../base/Pool.sol';
-import '@std/console.sol';
 
 library Auctions {
     struct Data {
@@ -210,11 +209,13 @@ library Auctions {
                     params_.collateral =  0;
                 }
             }
+
             if (depositToRemove != 0) {
+                // Deposits in the tree are non zero
                 buckets_[index].collateral += collateralUsed;                // add settled collateral into bucket
                 Deposits.remove(deposits_, index, depositToRemove, deposit); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
             } else {
-
+                // Deposits in the tree are zero, insert collateral into index 7388
                 uint256 bucketDeposit = Deposits.valueAt(deposits_, index);
                 uint256 bucketPrice   = _priceAt(index);
                 Buckets.addCollateral(

@@ -17,10 +17,10 @@ interface IERC721PoolLenderActions {
     ) external returns (uint256);
 
     /**
-     *  @notice Deposit unencumbered collateral into a specified bucket.
-     *  @param  removeAmountAtIndex_ Array of collateral to deposit.
-     *  @param  toIndex_             The bucket index to which collateral will be deposited.
-     *  @param  noOfNFTsToRemove_    The bucket index to which collateral will be deposited.
+     *  @notice Merge collateral accross a number of buckets, removeAmountAtIndex_to reconstitute an NFT
+     *  @param  removeAmountAtIndex_ Array of bucket indexes to remove all collateral that the caller has ownership over.
+     *  @param  toIndex_             The bucket index to which merge collateral into.
+     *  @param  noOfNFTsToRemove_    Intergral number of NFTs to remove if collateral amount is met noOfNFTsToRemove_, else merge at bucket index, toIndex_.
      */
     function mergeOrRemoveCollateral(
         uint256[] memory removeAmountAtIndex_,

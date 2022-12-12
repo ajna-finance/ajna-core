@@ -898,9 +898,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             }
         );
 
+        //return;
         _assertBucket(
             {
-                index:        8191,
+                index:        7388,
                 lpBalance:    0.000000017972411374079252284 * 1e27,
                 collateral:   0.180018835375524990 * 1e18,
                 deposit:      0,
@@ -920,11 +921,11 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             allRemovalIndexes[allRemovalI] = i;
             allRemovalI++;
         }
-        allRemovalIndexes[100] = 8191;
+        allRemovalIndexes[100] = 7388;
 
         _mergeOrRemoveCollateral({
             from:                    _lender,
-            toIndex:                 8191,
+            toIndex:                 7388,
             noOfNFTsToRemove:        1,
             collateralMerged:        1.0 * 1e18,
             removeCollateralAtIndex: allRemovalIndexes
@@ -962,13 +963,13 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _assertBucket(
             {
-                index:        8191,
+                index:        7388,
                 lpBalance:    0,
                 collateral:   0,
                 deposit:      0,
                 exchangeRate: 1.0 * 1e27
             }
-        );   
+        );
 
         assertEq(_collateral.balanceOf(_lender),        2);
         assertEq(_collateral.balanceOf(_borrower),      50);
@@ -985,7 +986,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _mergeOrRemoveCollateral({
             from:                    _lender,
-            toIndex:                 8191,
+            toIndex:                 7388,
             noOfNFTsToRemove:        1.0,
             collateralMerged:        0.819981164624475010 * 1e18,
             removeCollateralAtIndex: removalIndexes
@@ -1023,7 +1024,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _assertBucket(
             {
-                index:        8191,
+                index:        7388,
                 lpBalance:    0.000000099836282890000000001 * 1e27,
                 collateral:   1.0 * 1e18,
                 deposit:      0,
