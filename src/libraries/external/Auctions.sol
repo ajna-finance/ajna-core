@@ -3,6 +3,7 @@
 pragma solidity 0.8.14;
 
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
+import '@openzeppelin/contracts/utils/Checkpoints.sol';
 
 import '../Buckets.sol';
 import '../Loans.sol';
@@ -11,6 +12,9 @@ import '../../base/PoolHelper.sol';
 import '../../base/Pool.sol';
 
 library Auctions {
+
+    using Checkpoints for Checkpoints.History;
+
     struct Data {
         address head;
         address tail;
@@ -559,6 +563,35 @@ library Auctions {
     /***********************/
     /*** Reserve Auction ***/
     /***********************/
+
+    function addCheckpoint(
+        Checkpoints.History storage history_,
+        uint256 value
+    ) external {
+        history_.push(value);
+    }
+
+    function hashCheckpointedBurn(
+        address pool_,
+        uint256 burnAmount_,
+        uint256 burnBlock_ // TODO: determine if we need to include the block number in the hash
+        // TODO: storage struct containing total pool interest
+    ) external pure returns (bytes32) {
+        return keccak256(abi.encodePacked(pool_, burnAmount_, burnBlock_));
+    }
+
+    function getLastBurn(
+        Checkpoints.History storage history_
+    ) external view returns (uint256) {
+        return history_.latest();
+    }
+
+    function getBurnAtBlock(
+        Checkpoints.History storage history_,
+        uint256 blockNumber_
+    ) external view returns (uint256) {
+        return history_.getAtBlock(blockNumber_);
+    }
 
     function startClaimableReserveAuction(
         Data storage self,

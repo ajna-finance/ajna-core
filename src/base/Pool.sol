@@ -51,6 +51,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     Deposits.Data                      internal deposits;
     Loans.Data                         internal loans;
 
+    Checkpoints.History internal _burnEventCheckpoints;
+
     struct InterestParams {
         uint208 interestRate;       // [WAD]
         uint48  interestRateUpdate; // [SEC]
@@ -70,6 +72,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 rate;
         uint256 inflator;
     }
+
+    // tracks ajna token burn events
+    struct BurnEvent {
+        uint256 burnAmount;
+        uint256 burnBlock;
+        uint256 inflator;
+    }
+    // mapping burnEventId => BurnEvent
+    mapping (uint256 => BurnEvent) internal burnEvents;
 
     /******************/
     /*** Immutables ***/
@@ -353,6 +364,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         IERC20Token ajnaToken = IERC20Token(_getArgAddress(72));
         if (!ajnaToken.transferFrom(msg.sender, address(this), ajnaRequired)) revert ERC20TransferFailed();
         ajnaToken.burn(ajnaRequired);
+        Auctions.addCheckpoint(_burnEventCheckpoints, ajnaRequired);
         _transferQuoteToken(msg.sender, amount_);
     }
 
