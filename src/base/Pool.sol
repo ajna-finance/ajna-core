@@ -228,15 +228,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             auctions,
             deposits,
             buckets,
-            Auctions.TakeParams(
+            Auctions.BucketTakeParams(
                 {
-                    borrower:       borrowerAddress_,
-                    collateral:     borrower.collateral,
-                    t0debt:         borrower.t0debt,
-                    inflator:       poolState.inflator,
-                    depositTake:    depositTake_,
-                    index:          index_,
-                    takeCollateral: 0
+                    borrower:    borrowerAddress_,
+                    collateral:  borrower.collateral,
+                    t0debt:      borrower.t0debt,
+                    inflator:    poolState.inflator,
+                    depositTake: depositTake_,
+                    index:       index_
                 }
             )
         );

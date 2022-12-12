@@ -200,9 +200,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
                 collateral:     borrower.collateral,
                 t0debt:         borrower.t0debt,
                 takeCollateral: collateral_,
-                inflator:       poolState.inflator,
-                depositTake:    false,
-                index:          0
+                inflator:       poolState.inflator
             }
         );
         (

@@ -175,9 +175,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
                 collateral:     borrower.collateral,
                 t0debt:         borrower.t0debt,
                 takeCollateral: Maths.wad(collateral_),
-                inflator:       poolState.inflator,
-                depositTake:    false,
-                index:          0
+                inflator:       poolState.inflator
             }
         );
         (
