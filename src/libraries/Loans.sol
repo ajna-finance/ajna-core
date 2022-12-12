@@ -61,7 +61,6 @@ library Loans {
         Borrower memory borrower_,
         uint256 loanIndex_
     ) internal {
-
         // update loan heap
         if (borrower_.t0debt != 0 && borrower_.collateral != 0) {
             _upsert(

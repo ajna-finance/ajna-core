@@ -64,14 +64,21 @@ library Auctions {
         uint256 rate;           // pool's Interest Rate
     }
 
+    struct BucketTakeParams {
+        address borrower;       // borrower address to take from
+        uint256 collateral;     // borrower available collateral to take
+        uint256 t0debt;         // borrower t0 debt
+        uint256 inflator;       // current pool inflator
+        bool    depositTake;    // deposit or arb take, used by bucket take
+        uint256 index;          // bucket index, used by bucket take
+    }
+
     struct TakeParams {
         address borrower;       // borrower address to take from
         uint256 collateral;     // borrower available collateral to take
         uint256 t0debt;         // borrower t0 debt
         uint256 takeCollateral; // desired amount to take
         uint256 inflator;       // current pool inflator
-        bool    depositTake;    // deposit or arb take, used by bucket take
-        uint256 index;          // bucket index, used by bucket take
     }
 
     struct StartReserveAuctionParams {
@@ -327,7 +334,7 @@ library Auctions {
         Data storage self,
         Deposits.Data storage deposits_,
         mapping(uint256 => Buckets.Bucket) storage buckets_,
-        TakeParams calldata params_
+        BucketTakeParams calldata params_
     ) external returns (uint256, uint256) {
         if (params_.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
 

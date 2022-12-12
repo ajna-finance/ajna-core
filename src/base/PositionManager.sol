@@ -106,7 +106,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, Reentrancy
         _safeMint(params_.recipient, tokenId_);
     }
 
-    function moveLiquidity(MoveLiquidityParams calldata params_) external override mayInteract(params_.pool, params_.tokenId) {
+    function moveLiquidity(MoveLiquidityParams calldata params_) external override mayInteract(params_.pool, params_.tokenId) nonReentrant {
         address owner = ownerOf(params_.tokenId);
 
         (uint256 bucketLPs, uint256 bucketCollateral, , uint256 bucketDeposit, ) = IPool(params_.pool).bucketInfo(params_.fromIndex);
