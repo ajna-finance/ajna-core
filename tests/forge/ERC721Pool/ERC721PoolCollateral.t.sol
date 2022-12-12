@@ -298,28 +298,25 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     }
 
     function testPullCollateralPartiallyEncumbered() external tearDown {
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2552,
-                newLup: MAX_PRICE
+                index:  2552
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2551,
-                newLup: MAX_PRICE
+                index:  2551
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
 
@@ -437,28 +434,25 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     function testPullCollateralOverlyEncumbered() external tearDown {
 
         // lender deposits 10000 Quote into 3 buckets
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2552,
-                newLup: MAX_PRICE
+                index:  2552
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2551,
-                newLup: MAX_PRICE
+                index:  2551
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
 
@@ -506,20 +500,18 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     function testAddRemoveCollateral() external tearDown {
 
         // lender adds some liquidity
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  1692,
-                newLup: MAX_PRICE
+                index:  1692
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  1530,
-                newLup: MAX_PRICE
+                index:  1530
             }
         );
 

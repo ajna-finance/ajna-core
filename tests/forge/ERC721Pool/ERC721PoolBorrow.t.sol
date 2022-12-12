@@ -57,28 +57,25 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
     function testBorrowLimitReached() external tearDown {
 
         // lender deposits 10000 Quote into 3 buckets
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2551,
-                newLup: MAX_PRICE
+                index:  2551
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2552,
-                newLup: MAX_PRICE
+                index:  2552
             }
         );
 
@@ -107,12 +104,11 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
 
     function testBorrowBorrowerUnderCollateralized() external tearDown {
         // add initial quote to the pool
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 1_000 * 1e18,
-                index:  3575,
-                newLup: MAX_PRICE
+                index:  3575
             }
         );
 
@@ -140,12 +136,11 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
 
     function testBorrowPoolUnderCollateralized() external tearDown {
         // add initial quote to the pool
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 1_000 * 1e18,
-                index:  3232,
-                newLup: MAX_PRICE
+                index:  3232
             }
         );
 
@@ -162,28 +157,25 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
     function testBorrowAndRepay() external {
 
         // lender deposits 10000 Quote into 3 buckets
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2551,
-                newLup: MAX_PRICE
+                index:  2551
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2552,
-                newLup: MAX_PRICE
+                index:  2552
             }
         );
 
@@ -449,20 +441,18 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
 
     function testPoolRepayRequireChecks() external tearDown {
         // add initial quote to the pool
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2551,
-                newLup: MAX_PRICE
+                index:  2551
             }
         );
 
@@ -545,28 +535,25 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
 
 
     function testRepayLoanFromDifferentActor() external tearDown {
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2551,
-                newLup: MAX_PRICE
+                index:  2551
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2552,
-                newLup: MAX_PRICE
+                index:  2552
             }
         );
 
