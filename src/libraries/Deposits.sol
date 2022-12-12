@@ -85,6 +85,9 @@ library Deposits {
         Data storage self,
         uint256 sum_
     ) internal view returns (uint256 sumIndex_) {
+        // Avoid looking for a sum greater than the tree size
+        if (treeSum(self) < sum_) return MAX_FENWICK_INDEX;
+
         uint256 i     = 4096; // 1 << (_numBits - 1) = 1 << (13 - 1) = 4096
         uint256 ss    = 0;
         uint256 sc    = Maths.WAD;

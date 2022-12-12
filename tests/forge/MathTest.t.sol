@@ -14,15 +14,14 @@ contract MathTest is DSTestPlus {
         uint256 amount = 5_000.00076103507940381999999950 * 1e27;
         assertEq(Maths.rayToWad(amount), 5_000.000761035079403820 * 1e18);
 
-        assertEq(Maths.rayToWad(4 * 10e27), 4 * 10e18);
-        assertEq(Maths.rayToWad(0.00000000000000000006 * 10e27), 1);
-        assertEq(Maths.rayToWad(0.00000000000000000004 * 10e27), 0);
+        assertEq(Maths.rayToWad(4 * 1e27), 4 * 1e18);
+        assertEq(Maths.rayToWad(0.0000000000000000006 * 1e27), 1);
+        assertEq(Maths.rayToWad(0.0000000000000000004 * 1e27), 0);
     }
 
     function testZeroStaysZero() external {
         assertEq(Maths.rayToWad(0), 0);
-        assertEq(Maths.radToRay(0), 0);
-        assertEq(Maths.radToWad(0), 0);
+        assertEq(Maths.wadToRay(0), 0);
     }
 
     function testMultiplication() external {
@@ -30,9 +29,6 @@ contract MathTest is DSTestPlus {
         uint256 inflator = 1.02132007 * 1e27;
 
         assertEq(debt * inflator,                         10_213.6546200311111065616975993 * 1e45);
-        assertEq(Maths.radToRay(debt * inflator),         10_213.6546200311111065616975993 * 1e27);
-        assertEq(Maths.radToWad(debt * inflator),         10_213.654620031111106562 * 1e18);
-        assertEq(Maths.radToWadTruncate(debt * inflator), 10_213.654620031111106561 * 1e18);
     }
 
     function testDivision() external {
@@ -59,6 +55,7 @@ contract MathTest is DSTestPlus {
         assertEq(claimableCollateral2, 33.726184963566645998 * 1e18);
 
         assertEq(Maths.wdiv(1 * 1e18, 60 * 1e18), 0.016666666666666667 * 1e18);
+        assertEq(Maths.rdiv(1 * 1e27, 3 * 1e27),  0.333333333333333333333333333 * 1e27);
     }
 
     function testWadToIntRoundingDown() external {
@@ -71,6 +68,11 @@ contract MathTest is DSTestPlus {
         assertEq(Maths.wadToIntRoundingDown(testNum3), 0);
     }
 
+    function testScaleConversions() external {
+        assertEq(Maths.wad(153), 153 * 1e18);
+        assertEq(Maths.ray(2009), 2009 * 1e27);
+    } 
+
     function testExp() external {
         assertEq(PRBMathUD60x18.exp(1.53 * 1e18), 4.618176822299780807 * 1e18);
 
@@ -79,7 +81,6 @@ contract MathTest is DSTestPlus {
     }
 
     function testPow() external {
-        assertEq(Maths.wpow(3 * 1e18, 3), 27 * 1e18);
         assertEq(Maths.rpow(0.5 * 1e27, 60), 0.000000000000000000867361738 * 1e27);
         assertEq(Maths.rpow(0.5 * 1e27, 80), 0.000000000000000000000000827 * 1e27);
     }
