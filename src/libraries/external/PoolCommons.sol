@@ -140,6 +140,15 @@ library PoolCommons {
         }
     }
 
+    // TODO: finish implementing this based upon required inputs from accrueInterest above
+    function accumulatedInterest() external pure returns (uint256 interestAccumulated_) {
+        // interestAccumulated_ = Maths.wmul(
+        //     _lenderInterestMargin(_utilization(deposits_, debt_, collateral_)),
+        //     Maths.wmul(pendingFactor - Maths.WAD, debt_)
+        // );
+        interestAccumulated_ = 1;
+    }
+
     /**
      *  @notice Calculates pool interest factor for a given interest rate and time elapsed since last inflator update.
      *  @param  interestRate_   Current pool interest rate.

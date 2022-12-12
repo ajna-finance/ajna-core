@@ -73,14 +73,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 inflator;
     }
 
-    // TODO: add an accumulator of the total ajna tokens burned in the pool up to this burn event
     // tracks ajna token burn events
     struct BurnEvent {
         uint256 burnAmount;
-        uint256 inflator; // current pool inflator rate
+        uint256 totalInterest; // current pool interest accumulator `PoolCommons.accrueInterest().newInterest
+        uint256 totalBurned; // burn amount accumulator
     }
     // mapping burnEventId => BurnEvent
     mapping (uint256 => BurnEvent) internal burnEvents;
+    uint256 totalAjnaBurned; // total ajna burned in the pool
 
     /******************/
     /*** Immutables ***/
@@ -380,11 +381,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         IERC20Token ajnaToken = IERC20Token(_getArgAddress(72));
         if (!ajnaToken.transferFrom(msg.sender, address(this), ajnaRequired)) revert ERC20TransferFailed();
         ajnaToken.burn(ajnaRequired);
+        totalAjnaBurned += ajnaRequired;
 
         // record burn event information to enable querying by staking rewards
         BurnEvent memory burnEvent = BurnEvent({
             burnAmount: ajnaRequired,
-            inflator:   inflatorSnapshot
+            totalInterest: PoolCommons.accumulatedInterest(),
+            totalBurned: totalAjnaBurned
         });
         uint256 burnEventId = Auctions.getNewBurnEventId(_burnEventCheckpoints);
         burnEvents[burnEventId] = burnEvent;
@@ -749,12 +752,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
-    function burnInfo(uint256 blockNumber_) external view returns (uint256, uint256) {
+    function burnInfo(uint256 blockNumber_) external view returns (uint256, uint256, uint256) {
         uint256 burnEventId = Auctions.getBurnAtBlock(_burnEventCheckpoints, blockNumber_);
         BurnEvent memory burnEvent = burnEvents[burnEventId];
         return (
             burnEvent.burnAmount,
-            burnEvent.inflator
+            burnEvent.totalInterest,
+            burnEvent.totalBurned
         );
     }
 
