@@ -73,11 +73,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 inflator;
     }
 
+    // TODO: add an accumulator of the total ajna tokens burned in the pool up to this burn event
     // tracks ajna token burn events
     struct BurnEvent {
         uint256 burnAmount;
-        uint256 burnBlock;
-        uint256 inflator;
+        uint256 inflator; // current pool inflator rate
     }
     // mapping burnEventId => BurnEvent
     mapping (uint256 => BurnEvent) internal burnEvents;
@@ -361,10 +361,21 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             maxAmount_
         );
 
+        // burn required number of ajna tokens to take quote from reserves
         IERC20Token ajnaToken = IERC20Token(_getArgAddress(72));
         if (!ajnaToken.transferFrom(msg.sender, address(this), ajnaRequired)) revert ERC20TransferFailed();
         ajnaToken.burn(ajnaRequired);
-        Auctions.addCheckpoint(_burnEventCheckpoints, ajnaRequired);
+
+        // record burn event information to enable querying by staking rewards
+        BurnEvent memory burnEvent = BurnEvent({
+            burnAmount: ajnaRequired,
+            inflator:   inflatorSnapshot
+        });
+        uint256 burnEventId = Auctions.getNewBurnEventId(_burnEventCheckpoints);
+        burnEvents[burnEventId] = burnEvent;
+        Auctions.addCheckpoint(_burnEventCheckpoints, burnEventId);
+
+        // transfer quote token to caller
         _transferQuoteToken(msg.sender, amount_);
     }
 
@@ -719,6 +730,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             bucket.lps,
             deposits.valueAt(index_),
             _priceAt(index_)
+        );
+    }
+
+    function burnInfo(uint256 blockNumber_) external view returns (uint256, uint256) {
+        uint256 burnEventId = Auctions.getBurnAtBlock(_burnEventCheckpoints, blockNumber_);
+        BurnEvent memory burnEvent = burnEvents[burnEventId];
+        return (
+            burnEvent.burnAmount,
+            burnEvent.inflator
         );
     }
 

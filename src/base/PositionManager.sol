@@ -99,6 +99,9 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, Reentrancy
     function mint(MintParams calldata params_) external override payable returns (uint256 tokenId_) {
         tokenId_ = _nextId++;
 
+        // TODO: check that the params_.pool is a valid pool
+        if (!_isAjnaPool(params_.pool)) revert NotAjnaPool();
+
         // record which pool the tokenId was minted in
         poolKey[tokenId_] = params_.pool;
 
@@ -167,6 +170,12 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, Reentrancy
     /** @dev Used for tracking nonce input to permit function */
     function _getAndIncrementNonce(uint256 tokenId_) internal override returns (uint256) {
         return uint256(nonces[tokenId_]++);
+    }
+
+    // TODO: finish implementing
+    function _isAjnaPool(address pool_) internal view returns (bool) {
+        // return pool_ == address(ajnaPool);
+        return true;
     }
 
     /**********************/

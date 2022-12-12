@@ -8,6 +8,8 @@ import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import './base/interfaces/IPool.sol';
 import './base/interfaces/IPositionManager.sol';
+import './base/PositionManager.sol';
+
 import './libraries/Maths.sol';
 import './IAjnaRewards.sol';
 
@@ -71,7 +73,7 @@ contract AjnaRewards is IAjnaRewards {
     /*** Constructor ***/
     /*******************/
 
-    constructor (address ajnaToken_, IPositionManager positionManager_) public {
+    constructor (address ajnaToken_, IPositionManager positionManager_) {
         ajnaToken = ajnaToken_;
         positionManager = positionManager_;
     }
@@ -80,23 +82,23 @@ contract AjnaRewards is IAjnaRewards {
     /*** External Functions ***/
     /**************************/
 
-    function depositNFT(address ajnaPool_, uint256 tokenId_) external {
+    function depositNFT(uint256 tokenId_) external {
 
-        // TODO: check that ajnaPool_ is a valid AjnaPool
+        address ajnaPool = PositionManager(address(positionManager)).poolKey(tokenId_);
 
         // check that msg.sender is owner of tokenId
         if (IERC721(address(positionManager)).ownerOf(tokenId_) != msg.sender) revert NotOwnerOfToken();
 
         Deposit storage deposit = deposits[tokenId_];
         deposit.owner = msg.sender;
-        deposit.ajnaPool = ajnaPool_;
+        deposit.ajnaPool = ajnaPool;
         deposit.depositBlock = block.number;
 
         deposit.exchangeRatesAtDeposit = _getExchangeRates(tokenId_);
 
         // TODO: figure out how to store the total lps in each of these buckets at the time of deposit
 
-        emit DepositToken(msg.sender, ajnaPool_, tokenId_, block.number);
+        emit DepositToken(msg.sender, ajnaPool, tokenId_, block.number);
 
         // transfer LP NFT to this contract
         IERC721(address(positionManager)).safeTransferFrom(msg.sender, address(this), tokenId_);
@@ -170,6 +172,7 @@ contract AjnaRewards is IAjnaRewards {
 
     }
 
+    // FIXME: check ordering can safely be used in _calculateInterestEarned
     function _getExchangeRates(uint256 tokenId_) internal view returns (uint256[] memory) {
         uint256[] memory positionPrices = IPositionManager(positionManager).getPositionPrices(tokenId_);
         uint256[] memory exchangeRates = new uint256[](positionPrices.length);
