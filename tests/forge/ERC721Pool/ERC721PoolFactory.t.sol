@@ -55,6 +55,11 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         _NFTSubsetTwoPool        = ERC721Pool(_NFTSubsetTwoPoolAddress);
     }
 
+    function testInstantiateERC721FactoryWithZeroAddress() external {
+        vm.expectRevert(IPoolFactory.DeployWithZeroAddress.selector);
+        new ERC721PoolFactory(address(0));
+    }
+
     /***************************/
     /*** ERC721 Common Tests ***/
     /***************************/

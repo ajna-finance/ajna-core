@@ -19,6 +19,8 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
     bytes32 public constant ERC721_NON_SUBSET_HASH = keccak256("ERC721_NON_SUBSET_HASH");
 
     constructor(address ajna_) {
+        if (ajna_ == address(0)) revert DeployWithZeroAddress();
+
         ajna           = ajna_;
         implementation = new ERC721Pool();
     }
