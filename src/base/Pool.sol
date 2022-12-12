@@ -522,6 +522,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // check that paying the loan doesn't leave borrower debt under min debt amount
         _checkMinDebt(poolState_.accruedDebt, borrowerDebt);
+        
         newLup_ = _lup(poolState_.accruedDebt);
 
         if (auctions.isActive(borrowerAddress_)) {
