@@ -93,6 +93,15 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     /*** Actor actions asserts ***/
     /*****************************/
 
+    // Adds liquidity to a pool which has no debt drawn and a bucket with exchange rate of 1
+    function _addInitialLiquidity(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        _addLiquidity(from, amount, index, amount * 1e9, MAX_PRICE);
+    }
+
     function _addLiquidity(
         address from,
         uint256 amount,

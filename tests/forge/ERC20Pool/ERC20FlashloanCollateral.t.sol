@@ -25,13 +25,11 @@ contract ERC20PoolFlashloanTest is ERC20HelperContract {
         _bucketPrice = 502.433988063349232760 * 1e18;
         _bucketId = _indexOf(_bucketPrice);
         assertEq(_bucketId, 2909);
-        _addLiquidity(
+        _addInitialLiquidity(
             {
-                from:    _lender,
-                amount:  100_000 * 1e18,
-                index:   _bucketId,
-                lpAward: 100_000 * 1e27,
-                newLup:  MAX_PRICE
+                from:   _lender,
+                amount: 100_000 * 1e18,
+                index:  _bucketId
             }
         );
 
