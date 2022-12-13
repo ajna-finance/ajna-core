@@ -383,9 +383,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         IERC20Token ajnaToken = IERC20Token(_getArgAddress(72));
         if (!ajnaToken.transferFrom(msg.sender, address(this), ajnaRequired)) revert ERC20TransferFailed();
         ajnaToken.burn(ajnaRequired);
-        totalAjnaBurned += ajnaRequired;
 
         // record burn event information to enable querying by staking rewards
+        totalAjnaBurned += ajnaRequired;
         BurnEvent memory burnEvent = BurnEvent({
             totalInterest: totalInterestEarned,
             totalBurned: totalAjnaBurned

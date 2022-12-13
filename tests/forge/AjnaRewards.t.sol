@@ -9,6 +9,7 @@ import 'src/IAjnaRewards.sol';
 
 import 'src/base/interfaces/IPositionManager.sol';
 import 'src/base/PositionManager.sol';
+import 'src/base/PoolInfoUtils.sol';
 
 import { DSTestPlus } from './utils/DSTestPlus.sol';
 import { Token }      from './utils/Tokens.sol';
@@ -35,9 +36,14 @@ contract AjnaRewardsTest is DSTestPlus {
     event WithdrawToken(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
 
     function setUp() external {
+
+        vm.createSelectFork(vm.envString("ETH_RPC_URL"));
+        vm.makePersistent(_ajna);
+
         _ajnaToken       = ERC20(_ajna);
         _positionManager = new PositionManager();
         _ajnaRewards     = new AjnaRewards(_ajna, _positionManager);
+        _poolUtils       = new PoolInfoUtils();
 
         _collateralOne = new Token("Collateral 1", "C1");
         _quoteOne      = new Token("Quote 1", "Q1");
@@ -46,8 +52,28 @@ contract AjnaRewardsTest is DSTestPlus {
         _collateralTwo = new Token("Collateral 2", "C2");
         _quoteTwo      = new Token("Quote 2", "Q2");
         _poolTwo       = ERC20Pool(new ERC20PoolFactory(_ajna).deployPool(address(_collateralTwo), address(_quoteTwo), 0.05 * 10**18));
+    }
 
-        _bidder    = makeAddr("bidder");
+    function _depositNFT(address pool_, address owner_, uint256 tokenId_) internal {
+        changePrank(owner_);
+
+        // approve and deposit NFT into rewards contract
+        _positionManager.approve(address(_ajnaRewards), tokenId_);
+        vm.expectEmit(true, true, true, true);
+        emit DepositToken(owner_, address(pool_), tokenId_);
+        _ajnaRewards.depositNFT(tokenId_);
+
+        // check deposit state
+        (address owner, address pool, uint256 interactionBlock) = _ajnaRewards.getDepositInfo(tokenId_);
+        assertEq(owner, owner_);
+        assertEq(pool, address(pool_));
+        assertEq(interactionBlock, block.number);
+    }
+
+    function _mintAndApproveAjnaTokens(address operator_, address pool_, uint256 mintAmount_) internal {
+        deal(_ajna, operator_, mintAmount_);
+        changePrank(operator_);
+        _ajnaToken.approve(pool_, type(uint256).max);
     }
 
     // TODO: dynamically set mint amount
@@ -92,6 +118,17 @@ contract AjnaRewardsTest is DSTestPlus {
 
         changePrank(borrower);
 
+        Token collateral = Token(pool_.collateralAddress());
+        Token quote = Token(pool_.quoteTokenAddress());
+
+        // deal tokens
+        deal(address(collateral), borrower, 250_000 * 1e18);
+        deal(address(quote), borrower, 250_000 * 1e18);
+
+        // approve tokens
+        collateral.approve(address(pool_), type(uint256).max);
+        quote.approve(address(pool_), type(uint256).max);
+
         // TODO: determine how to randomize these values
         // borrower drawsDebt from the pool
         uint256 amountToBorrow = 300 * 1e18;
@@ -101,6 +138,8 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // allow time to pass for interest to accumulate
         skip(26 weeks);
+
+        // TODO: calculate borrower debt
 
         // borrower repays some of their debt, providing reserves to be claimed
         // don't pull any collateral, as such functionality is unrelated to reserve auctions
@@ -129,26 +168,10 @@ contract AjnaRewardsTest is DSTestPlus {
         uint256 tokenIdTwo = _mintAndMemorializePositionNFT(testMinterTwo, _poolTwo, depositIndexes);
 
         // minterOne deposits their NFT into the rewards contract
-        changePrank(testMinterOne);
-        _positionManager.approve(address(_ajnaRewards), tokenIdOne);
-        vm.expectEmit(true, true, true, true);
-        emit DepositToken(testMinterOne, address(_poolOne), tokenIdOne);
-        _ajnaRewards.depositNFT(tokenIdOne);
-        (address owner, address pool, uint256 interactionBlock) = _ajnaRewards.getDepositInfo(tokenIdOne);
-        assertEq(owner, testMinterOne);
-        assertEq(pool, address(_poolOne));
-        assertEq(interactionBlock, block.number);
+        _depositNFT(address(_poolOne), testMinterOne, tokenIdOne);
 
         // minterTwo deposits their NFT into the rewards contract
-        changePrank(testMinterTwo);
-        _positionManager.approve(address(_ajnaRewards), tokenIdTwo);
-        vm.expectEmit(true, true, true, true);
-        emit DepositToken(testMinterTwo, address(_poolTwo), tokenIdTwo);        
-        _ajnaRewards.depositNFT(tokenIdTwo);
-        (owner, pool, interactionBlock) = _ajnaRewards.getDepositInfo(tokenIdTwo);
-        assertEq(owner, testMinterTwo);
-        assertEq(pool, address(_poolTwo));
-        assertEq(interactionBlock, block.number);
+        _depositNFT(address(_poolTwo), testMinterTwo, tokenIdTwo);
     }
 
     function testWithdrawToken() external {
@@ -166,15 +189,62 @@ contract AjnaRewardsTest is DSTestPlus {
     }
 
     function testClaimRewards() external {
+        skip(10);
+
+        address testMinterOne = makeAddr("testMinterOne");
 
         // deposit NFTs into the rewards contract
+        uint256[] memory depositIndexes = new uint256[](5);
+        // depositIndexes[0] = 2550;
+        // depositIndexes[1] = 2551;
+        // depositIndexes[2] = 2552;
+        // depositIndexes[3] = 2553;
+        // depositIndexes[4] = 2555;
+        depositIndexes[0] = 9;
+        depositIndexes[1] = 1;
+        depositIndexes[2] = 2;
+        depositIndexes[3] = 3;
+        depositIndexes[4] = 4;
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT(testMinterOne, _poolOne, depositIndexes);
+        _depositNFT(address(_poolOne), testMinterOne, tokenIdOne);
 
+        // provide ajna tokens to bidder
+        _bidder    = makeAddr("bidder");
+        _mintAndApproveAjnaTokens(_bidder, address(_poolOne), 900_000_000 * 10**18);
 
-        // trigger reserve auctions
+        // borrower takes actions providing reserves enabling reserve auctions
         _triggerReserveAuctions(_poolOne);
 
-        // TODO: implement this test
-    
+        // start reserve auction
+        changePrank(_bidder);
+        _poolOne.startClaimableReserveAuction();
+
+        // allow time to pass for the reserve price to decrease
+        skip(24 hours);
+
+        (
+            uint256 curReserves,
+            uint256 curClaimableReserves,
+            uint256 curClaimableReservesRemaining,
+            uint256 curAuctionPrice,
+            uint256 curTimeRemaining
+        ) = _poolUtils.poolReservesInfo(address(_poolOne));
+
+        emit log_uint(curReserves);
+        emit log_uint(curClaimableReserves);
+        emit log_uint(curClaimableReservesRemaining);
+
+        // take claimable reserves
+        _poolOne.takeReserves(curClaimableReservesRemaining);
+
+        // claim rewards accrued since deposit
+        changePrank(testMinterOne);
+        // vm.expectEmit(true, true, true, true);
+        // emit ClaimRewards(testMinterOne, address(_poolOne), tokenIdOne, 1000 );
+        _ajnaRewards.claimRewards(tokenIdOne);
+
+        // TODO: check interest accrued
+
     }
 
 }
