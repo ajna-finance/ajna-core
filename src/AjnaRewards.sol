@@ -160,7 +160,7 @@ contract AjnaRewards is IAjnaRewards {
         IERC20(ajnaToken).transferFrom(address(this), msg.sender, rewardsEarned);
     }
 
-    function _calculateRewardsEarned(uint256 tokenId_) internal returns (uint256 rewards_) {
+    function _calculateRewardsEarned(uint256 tokenId_) internal view returns (uint256 rewards_) {
         Deposit storage deposit = deposits[tokenId_];
         uint256[] memory positionPrices = positionManager.getPositionPrices(tokenId_);
 
@@ -196,7 +196,7 @@ contract AjnaRewards is IAjnaRewards {
         rewards_ = REWARD_FACTOR * (interestEarned / totalInterestEarned) * _getAjnaTokensBurned(ajnaPool, lastInteractionBlock);
     }
 
-    function _getAjnaTokensBurned(address ajnaPool_, uint256 lastBlock_) internal returns (uint256 ajnaTokensBurned_) {
+    function _getAjnaTokensBurned(address ajnaPool_, uint256 lastBlock_) internal view returns (uint256 ajnaTokensBurned_) {
         (uint256 burnAmountLatest, uint256 totalInterestLatest, uint256 totalBurnedLatest) = IPool(ajnaPool_).burnInfoLatest();
 
         (uint256 burnAmountAtBlock, uint256 totalInterestAtBlock, uint256 totalBurnedAtBlock) = IPool(ajnaPool_).burnInfoAtBlock(lastBlock_);

@@ -74,6 +74,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 inflator;
     }
 
+    // TODO: remove this struct entirely in favor of writing totalAjnaBurned to the checkpoint
     // tracks ajna token burn events
     struct BurnEvent {
         uint256 burnAmount;
