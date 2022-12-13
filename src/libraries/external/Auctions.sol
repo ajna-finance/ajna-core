@@ -211,8 +211,17 @@ library Auctions {
                 buckets_[index].collateral += collateralUsed;                // add settled collateral into bucket
                 Deposits.remove(deposits_, index, depositToRemove, deposit); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
             } else {
-                buckets_[index].collateral += params_.collateral; // no deposit in bucket, add entire collateral into bucket
-                params_.collateral = 0;                           // entire collateral added into bucket
+                // buckets_[index].collateral += params_.collateral; // no deposit in bucket, add entire collateral into bucket
+
+                // Deposits in the tree are zero, insert entire collateral into index 7388
+                Buckets.addCollateral(
+                    buckets_[index],
+                    params_.borrower,
+                    deposit,
+                    params_.collateral,
+                    price
+                );
+                params_.collateral = 0; // entire collateral added into bucket
             }
 
             --params_.bucketDepth;

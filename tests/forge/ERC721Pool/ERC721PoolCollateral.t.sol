@@ -897,16 +897,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             }
         );
 
-        _assertBucket(
-            {
-                index:        7388,
-                lpBalance:    0,                           // no LPs rewarded for settled collateral
-                collateral:   0.180018835375524990 * 1e18, // settled collateral amount, can be purchased with LPs (quote tokens or collateral)
-                deposit:      0,
-                exchangeRate: 1 * 1e27
-            }
-        );
-
         _assertLenderLpBalance(
             {
                 lender:      _lender,
@@ -916,6 +906,24 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             }
         );
 
+        _assertBucket(
+            {
+                index:        7388,
+                lpBalance:    0.000000017972411374079252284 * 1e27, // LPs awarded to borrower for settled collateral
+                collateral:   0.180018835375524990 * 1e18,          // settled collateral amount
+                deposit:      0,
+                exchangeRate: 0.999999999999999999994681910 * 1e27
+            }
+        );
+
+        _assertLenderLpBalance(
+            {
+                lender:      _borrower,
+                index:       7388,
+                lpBalance:   0.000000017972411374079252284 * 1e27,
+                depositTime: _startTime + (110 + 4210) * 60
+            }
+        );
         assertEq(_collateral.balanceOf(_lender),        1);
         assertEq(_collateral.balanceOf(_borrower),      50);
         assertEq(_collateral.balanceOf(address(_pool)), 1);
@@ -969,10 +977,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _assertBucket(
             {
                 index:        7388,
-                lpBalance:    0,
-                collateral:   0.180018835375524990 * 1e18,
+                lpBalance:    0.000000017972411374079252284 * 1e27, // LPs awarded to borrower for settled collateral
+                collateral:   0.180018835375524990 * 1e18,          // settled collateral amount
                 deposit:      0,
-                exchangeRate: 1 * 1e27
+                exchangeRate: 0.999999999999999999994681910 * 1e27
             }
         );
 
@@ -1004,7 +1012,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             {
                 lender:      _lender,
                 index:       7388,
-                lpBalance:   1 * 1e27, // lender now owns 1 LP in bucket 7388 which can be used to merge bucket collateral
+                lpBalance:   1.000000000000000000005318090 * 1e27, // lender now owns 1 LP in bucket 7388 which can be used to merge bucket collateral
                 depositTime: _startTime + (110 + 4210) * 60
             }
         );
@@ -1055,10 +1063,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _assertBucket(
             {
                 index:        7388,
-                lpBalance:    0.999999982027588948928312510 * 1e27, // LPs in bucket 7388 diminished when NFT merged and removed
+                lpBalance:    1.000000000000000000005318090 * 1e27, // LPs in bucket 7388 diminished when NFT merged and removed
                 collateral:   0,                                    // no collateral remaining as it was merged and removed
                 deposit:      1 * 1e18,
-                exchangeRate: 1.000000017972411374079252283 * 1e27
+                exchangeRate: 0.999999999999999999994681910 * 1e27
             }
         );
 
@@ -1066,7 +1074,16 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             {
                 lender:      _lender,
                 index:       7388,
-                lpBalance:   0.999999982027588948928312510 * 1e27, // lender LPs decreased with the amount used to merge NFT
+                lpBalance:   0.999999982027588625926065806 * 1e27, // lender LPs decreased with the amount used to merge NFT
+                depositTime: _startTime + (110 + 4210) * 60
+            }
+        );
+
+        _assertLenderLpBalance(
+            {
+                lender:      _borrower,
+                index:       7388,
+                lpBalance:   0.000000017972411374079252284 * 1e27, // Borrower LPs remain the same in the bucket
                 depositTime: _startTime + (110 + 4210) * 60
             }
         );
