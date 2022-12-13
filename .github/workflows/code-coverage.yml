@@ -1,6 +1,6 @@
 name: Code Coverage
 
-on: [fork]
+on: [push]
 
 env:
   ## Loads environment from secrets
