@@ -236,9 +236,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
 
         // borrow quote
         if (amountToBorrow != 0) {
-            // TODO: Borrow event no longer exists; is there a DrawDebt event this should look at?
-            // vm.expectEmit(true, true, false, true);
-            // emit Borrow(from, newLup, amountToBorrow);
             _assertTokenTransferEvent(address(_pool), from, amountToBorrow);
         }
 

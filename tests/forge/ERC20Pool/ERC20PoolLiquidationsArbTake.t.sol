@@ -324,11 +324,14 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
            {
                from:             _taker,
                borrower:         _borrower,
+               kicker:           _lender,
                index:            _i9_91,
                collateralArbed:  2 * 1e18,
                quoteTokenAmount: 19.637503712157446080 * 1e18,
                bondChange:       0.196375037121574461 * 1e18,
-               isReward:         true
+               isReward:         true,
+               lpAwardTaker:     0.194243053548020465115456781 * 1e27,
+               lpAwardKicker:    0.193758656905756398885318018 * 1e27
            }
         );
 
@@ -449,11 +452,14 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             {
                 from:             _taker,
                 borrower:         _borrower,
+                kicker:           _lender,
                 index:            _i1505_26,
                 collateralArbed:  1.007203601669595219 * 1e18,
                 quoteTokenAmount: 19.778964466685025779 * 1e18,
                 bondChange:       0.195342779771472726 * 1e18,
-                isReward:         false
+                isReward:         false,
+                lpAwardTaker:     1_496.328084309964105327000000000 * 1e27,
+                lpAwardKicker:    0
             }
         );
 
@@ -550,11 +556,14 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             {
                 from:             _taker,
                 borrower:         _borrower,
+                kicker:           _lender,
                 index:            _i1505_26,
                 collateralArbed:  0.763844540521390261 * 1e18,
                 quoteTokenAmount: 15.0 * 1e18,
                 bondChange:       0.15 * 1e18,
-                isReward:         false
+                isReward:         false,
+                lpAwardTaker:     1134.787481035970172219 * 1e27,
+                lpAwardKicker:    0
             }
         );
 
@@ -697,11 +706,14 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             {
                 from:             _taker,
                 borrower:         _borrower,
+                kicker:           _lender,
                 index:            _i10016,
                 collateralArbed:  0.251798313435135887 * 1e18,
                 quoteTokenAmount: 19.778761259189860403 * 1e18,
                 bondChange:       0.195342779771472726 * 1e18,
-                isReward:         false
+                isReward:         false,
+                lpAwardTaker:     2502.359445445046938391 * 1e27,
+                lpAwardKicker:    0
             }
         );
 

@@ -42,20 +42,17 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when an actor uses quote token outside of the book to purchase collateral under liquidation.
-     *  @param  borrower   Identifies the loan being liquidated.
-     *  @param  index      Index of the price bucket from which quote token was exchanged for collateral.
-     *  @param  amount     Amount of quote token taken from the bucket to purchase collateral.
-     *  @param  collateral Amount of collateral purchased with quote token.
-     *  @param  bondChange Impact of this take to the liquidation bond.
-     *  @dev    amount / collateral implies the auction price.
+     *  @notice Emitted when LPs are awarded to a taker or kicker in a bucket take.
+     *  @param  taker           Actor who invoked the bucket take.
+     *  @param  kicker          Actor who started the auction.
+     *  @param  lpAwardedTaker  Amount of LP awarded to the taker.
+     *  @param  lpAwardedKicker Amount of LP awarded to the actor who started the auction.
      */
-    event DepositTake(
-        address indexed borrower,
-        uint256 index,  // TODO: emit LP change
-        uint256 amount,
-        uint256 collateral,
-        int256  bondChange
+    event BucketTakeLPAwarded(
+        address indexed taker,
+        address indexed kicker,
+        uint256 lpAwardedTaker,
+        uint256 lpAwardedKicker
     );
 
     /**

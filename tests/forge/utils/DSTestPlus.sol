@@ -124,13 +124,18 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     function _arbTake(
         address from,
         address borrower,
+        address kicker,
         uint256 index,
         uint256 collateralArbed,
         uint256 quoteTokenAmount,
         uint256 bondChange,
-        bool isReward
+        bool    isReward,
+        uint256 lpAwardTaker,
+        uint256 lpAwardKicker
     ) internal virtual {
         changePrank(from);
+        vm.expectEmit(true, true, false, true);
+        emit BucketTakeLPAwarded(from, kicker, lpAwardTaker, lpAwardKicker);
         vm.expectEmit(true, true, false, true);
         emit BucketTake(borrower, index, quoteTokenAmount, collateralArbed, bondChange, isReward);
         _pool.bucketTake(borrower, false, index);
@@ -144,13 +149,18 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     function _depositTake(
         address from,
         address borrower,
+        address kicker,
         uint256 index,
         uint256 collateralArbed,
         uint256 quoteTokenAmount,
         uint256 bondChange,
-        bool isReward
+        bool    isReward,
+        uint256 lpAwardTaker,
+        uint256 lpAwardKicker
     ) internal virtual {
         changePrank(from);
+        vm.expectEmit(true, true, false, true);
+        emit BucketTakeLPAwarded(from, kicker, lpAwardTaker, lpAwardKicker);
         vm.expectEmit(true, true, false, true);
         emit BucketTake(borrower, index, quoteTokenAmount, collateralArbed, bondChange, isReward);
         _pool.bucketTake(borrower, true, index);

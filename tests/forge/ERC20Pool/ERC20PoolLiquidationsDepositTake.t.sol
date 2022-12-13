@@ -323,11 +323,14 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
            {
                from:             _taker,
                borrower:         _borrower,
+               kicker:           _lender,
                index:            _i9_91,
                collateralArbed:  2 * 1e18,
                quoteTokenAmount: 19.834369686871824148 * 1e18,
                bondChange:       0.198343696868718241 * 1e18,
-               isReward:         true
+               isReward:         true,
+               lpAwardTaker:     0,
+               lpAwardKicker:    0.198343102933742890077232102 * 1e27
            }
         );
         _assertLenderLpBalance(
@@ -458,11 +461,14 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             {
                 from:             _taker,
                 borrower:         _borrower,
+                kicker:           _lender,
                 index:            _i1505_26,
                 collateralArbed:  0.013412656817410703 * 1e18,
                 quoteTokenAmount: 20.189585809651700719 * 1e18,
                 bondChange:       0.199398195043779403 * 1e18,
-                isReward:         false
+                isReward:         false,
+                lpAwardTaker:     0,
+                lpAwardKicker:    0
             }
         );
 
@@ -559,11 +565,14 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             {
                 from:             _taker,
                 borrower:         _borrower,
+                kicker:           _lender,
                 index:            _i1505_26,
                 collateralArbed:  0.009965031187761219 * 1e18,
                 quoteTokenAmount: 15.0 * 1e18,
                 bondChange:       0.15 * 1e18,
-                isReward:         false
+                isReward:         false,
+                lpAwardTaker:     0,
+                lpAwardKicker:    0
             }
         );
 
@@ -706,11 +715,14 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             {
                 from:             _taker,
                 borrower:         _borrower,
+                kicker:           _lender,
                 index:            _i10016,
                 collateralArbed:  0.002015611758605193 * 1e18,
                 quoteTokenAmount: 20.189378383465778990 * 1e18,
                 bondChange:       0.199398195043779403 * 1e18,
-                isReward:         false
+                isReward:         false,
+                lpAwardTaker:     0,
+                lpAwardKicker:    0
             }
         );
         

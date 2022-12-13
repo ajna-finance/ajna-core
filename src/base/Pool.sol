@@ -241,7 +241,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         _payLoan(t0repayAmount, poolState, borrowerAddress_, borrower);
         pledgedCollateral = poolState.collateral;
-
     }
 
     function settle(
