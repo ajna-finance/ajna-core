@@ -254,12 +254,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     ) external override {
         PoolState memory poolState = _accruePoolInterest();
 
-        uint256 reserves;
         uint256 assets = Maths.wmul(t0poolDebt, poolState.inflator) + _getPoolQuoteTokenBalance();
         uint256 liabilities = deposits.treeSum() + auctions.totalBondEscrowed + reserveAuction.unclaimed;
-
-        // Reserves are the positive net balance sheet, if it's positive, otherwise 0 if negative
-        reserves = (assets > liabilities) ? (assets-liabilities) : 0;
 
         Loans.Borrower storage borrower = loans.borrowers[borrowerAddress_];
 
@@ -268,11 +264,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 borrower:    borrowerAddress_,
                 collateral:  borrower.collateral,
                 t0debt:      borrower.t0debt,
-                reserves:    Maths.wmul(t0poolDebt, poolState.inflator) 
-                                + _getPoolQuoteTokenBalance()
-                                - deposits.treeSum()
-                                - auctions.totalBondEscrowed
-                                - reserveAuction.unclaimed,
+                reserves:    (assets > liabilities) ? (assets-liabilities) : 0,
                 inflator:    poolState.inflator,
                 bucketDepth: maxDepth_
             }
