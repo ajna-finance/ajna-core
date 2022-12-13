@@ -8,7 +8,7 @@ def create_empty_sdk():
     Creates empty AjnaProtocol with 0 lenders and 0 borrowers.
     No pool is deployed. No tokens are connected.
     """
-    return AjnaProtocol()
+    return AjnaProtocol(AJNA_ADDRESS)
 
 
 def create_default_sdk():
@@ -19,7 +19,7 @@ def create_default_sdk():
     """
     protocol_definition = InitialProtocolState.DEFAULT()
 
-    sdk = AjnaProtocol()
+    sdk = AjnaProtocol(AJNA_ADDRESS)
     sdk.get_runner().prepare_protocol_to_state_by_definition(
         protocol_definition.build()
     )
