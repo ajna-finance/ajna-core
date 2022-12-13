@@ -91,7 +91,6 @@ library Buckets {
     ) internal returns (uint256 quoteTokenAmount_) {
         Bucket storage bucket = self[index_];
         Lender storage lender = bucket.lenders[msg.sender];
-        uint256 depositTime = lender.depositTime;
         uint256 lenderLPs;
         if (bucket.bankruptcyTime < lender.depositTime) lenderLPs = lender.lps;
 

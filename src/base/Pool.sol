@@ -340,7 +340,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     error NoAuctionKicked();
 
-    function kickAndWithdraw(uint256 amountToWithdraw, uint256 index_) external {
+    function kickAndWithdraw(uint256 amountToWithdraw, uint256 index_, uint256 maxKicks_) external {
         auctions.revertIfAuctionClearable(loans);
 
         PoolState memory poolState = _accruePoolInterest();
@@ -352,7 +352,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             index_,
             bucketDeposit,
             _priceAt(index_),
-            bucketDeposit
+            amountToWithdraw
         );
         if (removedAmount == 0) revert InsufficientLiquidity();
 
@@ -403,6 +403,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             borrower.t0debt = borrowerT0debt;
             t0DebtInAuction += borrowerT0debt; // TODO: write storage variables only once at the end and not inside the loop
             t0poolDebt      += kickPenalty;    // TODO: write storage variables only once at the end and not inside the loop
+
+            if (--maxKicks_ == 0) break;
 
             lup = _lup(poolState.accruedDebt); // TODO: optimize this
             htp = _htp(poolState.inflator); // TODO: avoid loading top loan multiple times in same loop
