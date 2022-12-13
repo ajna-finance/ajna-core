@@ -198,7 +198,7 @@ library LenderActions {
         if (vars.fromBucketDepositTime != 0 && block.timestamp - vars.fromBucketDepositTime < 1 days) {
             if (vars.fromBucketPrice > params_.ptp && vars.toBucketPrice < params_.ptp) {
                 vars.amountToMove = Maths.wmul(vars.amountToMove, Maths.WAD - _feeRate(params_.rate));
-            } 
+            }
         }
 
         toBucketLPs_ = Buckets.quoteTokensToLPs(

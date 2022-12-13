@@ -59,7 +59,7 @@ library Deposits {
     ) internal {
         if (index_ >= SIZE) revert InvalidIndex();
 
-        index_ += 1;
+        ++index_;
         addAmount_ = Maths.wdiv(addAmount_, scale(self, index_));
 
         while (index_ <= SIZE) {
@@ -137,7 +137,7 @@ library Deposits {
         if (index_ >= SIZE) revert InvalidIndex();
         if (factor_ == 0)   revert InvalidScalingFactor();
 
-        index_ += 1;
+        ++index_;
 
         uint256 sum;
         uint256 value;
@@ -194,7 +194,7 @@ library Deposits {
         uint256 sumIndex_
     ) internal view returns (uint256 sum_) {
 
-        sumIndex_ += 1; // Translate from 0 -> 1 indexed array
+        ++sumIndex_; // Translate from 0 -> 1 indexed array
 
         uint256 sc    = Maths.WAD;
         uint256 j     = SIZE;      // Binary index, 1 << 13
@@ -247,7 +247,7 @@ library Deposits {
     ) internal {
         if (index_ >= SIZE) revert InvalidIndex();
 
-        index_ += 1;
+        ++index_;
 
         while (index_ <= SIZE) {
             uint256 value    = (self.values[index_] -= unscaledRemoveAmount_);
@@ -313,7 +313,7 @@ library Deposits {
     ) internal view returns (uint256 unscaledDepositValue_) {
         if (index_ >= SIZE) revert InvalidIndex();
 
-        index_ += 1;
+        ++index_;
 
         uint256 j = 1;
 

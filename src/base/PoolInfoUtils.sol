@@ -164,9 +164,8 @@ contract PoolInfoUtils {
         // due to rounding issues, especially in Auction.settle, this can be slighly negative
         if( poolDebt + quoteTokenBalance >= poolSize + bondEscrowed + unclaimedReserve) {
             reserves_ = poolDebt + quoteTokenBalance - poolSize - bondEscrowed - unclaimedReserve;
-        } else {
-            reserves_ = 0;
         }
+        
         claimableReserves_ = _claimableReserves(
             poolDebt,
             poolSize,

@@ -188,7 +188,7 @@ library Buckets {
             lenderLPs_        = Maths.wrdivr(Maths.wmul(collateralAmount_, bucketPrice_), rate);
         }
     }
-    
+
     /**
      *  @notice Returns the amount of quote tokens calculated for the given amount of LPs.
      *  @param  bucketLPs_        Amount of LPs in bucket.

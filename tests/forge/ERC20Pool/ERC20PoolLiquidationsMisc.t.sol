@@ -196,7 +196,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 amount:   2_992.8 * 1e18,
                 index:    _i9_72,
                 penalty:  0,
-		newLup:   9.721295865031779605 * 1e18,
+                newLup:   9.721295865031779605 * 1e18,
                 lpRedeem: 2_992.637443019737234731000000000 * 1e27
             }
         );
@@ -675,7 +675,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _assertBucket(
             {
                 index:        _i9_72,
-                lpBalance:    0,  
+                lpBalance:    0,
                 collateral:   0,          
                 deposit:      0,
                 exchangeRate: 1 * 1e27
@@ -693,7 +693,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _assertBucket(
             {
                 index:        _i9_52,
-		lpBalance:    0,
+                lpBalance:    0,
                 collateral:   0,          
                 deposit:      0,
                 exchangeRate: 1.00000000000000000000000000 * 1e27
