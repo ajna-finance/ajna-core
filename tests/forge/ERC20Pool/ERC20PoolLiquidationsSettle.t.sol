@@ -340,8 +340,8 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 index:        _i9_91,
                 lpBalance:    2_000 * 1e27,
                 collateral:   0,
-                deposit:      2_118.911507166546111004 * 1e18,
-                exchangeRate: 1.059455753583273055502 * 1e27
+                deposit:      2_118.911507166546112000 * 1e18,
+                exchangeRate: 1.059455753583273056000 * 1e27
             }
         );
         _assertBucket(
@@ -430,8 +430,8 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 index:        _i9_72,
                 lpBalance:    11_000 * 1e27,
                 collateral:   0,
-                deposit:      8_776.320825456302135751 * 1e18,
-                exchangeRate: 0.797847347768754739613727272 * 1e27
+                deposit:      8_775.731868287982080143 * 1e18,
+                exchangeRate: 0.797793806207998370922090909 * 1e27
             }
         );
         _assertBucket(
@@ -448,7 +448,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             PoolState({
                 htp:                  48.148343567549191135 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             63_776.320825456302135751 * 1e18,
+                poolSize:             63_775.731868287982080143 * 1e18,
                 pledgedCollateral:    2 * 1e18,
                 encumberedCollateral: 2.010288427770370775 * 1e18,
                 poolDebt:             19.542608580405342754 * 1e18,
@@ -663,8 +663,8 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 index:        _i9_72,
                 lpBalance:    11_000 * 1e27,
                 collateral:   276.799212598874783539 * 1e18,
-                deposit:      8_290.291604705064327150 * 1e18,
-                exchangeRate: 0.998285331416959839423741275 * 1e27
+                deposit:      8_289.734142970131967959 * 1e18,
+                exchangeRate: 0.998234653077420534042741275 * 1e27
             }
         );
         _assertBucket(
@@ -830,7 +830,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             {
                 lender:      _lender1,
                 index:       _i9_91,
-                lpBalance:   94.388085261495553091346700232 * 1e27,
+                lpBalance:   94.388085261495553046979329248 * 1e27,
                 depositTime: _startTime + 100 days + 10 hours
             }
         );
@@ -927,7 +927,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             {
                 lender:      _lender1,
                 index:       _i9_91,
-                lpBalance:   149.668739373743648321147432044 * 1e27,
+                lpBalance:   149.668739373743648296000000000 * 1e27,
                 depositTime: _startTime + 100 days + 10 hours + 1 hours
             }
         );
@@ -935,10 +935,10 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         _assertBucket(
             {
                 index:        _i9_91,
-                lpBalance:    149.668739373743648321147432044 * 1e27,
+                lpBalance:    149.668739373743648296000000000 * 1e27,
                 collateral:   4 * 1e18,
-                deposit:      109.999999999999999948 * 1e18,
-                exchangeRate: 0.999999999999999999484545454 * 1e27
+                deposit:      110.0000000000000000000000 * 1e18,
+                exchangeRate: 1.00000000000000000000000000 * 1e27
             }
         );
 
@@ -957,7 +957,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             {
                 lender:      _lender,
                 index:       _i9_91,
-                lpBalance:   1_000.000000000000000515454546000 * 1e27,
+                lpBalance:   1_000.000000000000000000000000000 * 1e27,
                 depositTime: _startTime + 100 days + 10 hours + 1 // _i9_91 bucket insolvency time + 1 (since deposit in _i9_52 from bucket was done before _i9_91 target bucket become insolvent)
             }
         );
@@ -967,7 +967,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             {
                 lender:      _lender,
                 index:       _i9_91,
-                lpBalance:   2_000.000000000000001438852689000 * 1e27,
+                lpBalance:   1_999.999999999999999999130185000 * 1e27,
                 depositTime: _startTime + 100 days + 10 hours + 1 hours // time of deposit in _i9_52 from bucket (since deposit in _i9_52 from bucket was done after _i9_91 target bucket become insolvent)
             }
         );

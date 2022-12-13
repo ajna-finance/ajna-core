@@ -253,6 +253,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 maxDepth_
     ) external override {
         PoolState memory poolState = _accruePoolInterest();
+
+        uint256 assets = Maths.wmul(t0poolDebt, poolState.inflator) + _getPoolQuoteTokenBalance();
+        uint256 liabilities = deposits.treeSum() + auctions.totalBondEscrowed + reserveAuction.unclaimed;
+
         Loans.Borrower storage borrower = loans.borrowers[borrowerAddress_];
 
         Auctions.SettleParams memory params = Auctions.SettleParams(
@@ -260,11 +264,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 borrower:    borrowerAddress_,
                 collateral:  borrower.collateral,
                 t0debt:      borrower.t0debt,
-                reserves:    Maths.wmul(t0poolDebt, poolState.inflator) 
-                                + _getPoolQuoteTokenBalance()
-                                - deposits.treeSum()
-                                - auctions.totalBondEscrowed
-                                - reserveAuction.unclaimed,
+                reserves:    (assets > liabilities) ? (assets-liabilities) : 0,
                 inflator:    poolState.inflator,
                 bucketDepth: maxDepth_
             }
