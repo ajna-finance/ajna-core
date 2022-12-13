@@ -169,12 +169,15 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
         if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral();
 
-        Auctions.TakeParams memory params;
-        params.borrower       = borrowerAddress_;
-        params.collateral     = borrower.collateral;
-        params.t0debt         = borrower.t0debt;
-        params.takeCollateral = Maths.wad(collateral_);
-        params.inflator       = poolState.inflator;
+        Auctions.TakeParams memory params = Auctions.TakeParams(
+            {
+                borrower:       borrowerAddress_,
+                collateral:     borrower.collateral,
+                t0debt:         borrower.t0debt,
+                takeCollateral: Maths.wad(collateral_),
+                inflator:       poolState.inflator
+            }
+        );
         (
             uint256 collateralAmount,
             uint256 quoteTokenAmount,
@@ -185,7 +188,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             params
         );
 
-        uint256 excessQuoteToken;
+        uint256 excessQuoteToken = 0;
+        // slither-disable-next-line divide-before-multiply
         uint256 collateralTaken = (collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
         if (collateralTaken != collateralAmount) { // collateral taken not a round number
             collateralTaken += 1e18; // round up collateral to take
@@ -235,7 +239,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256 collateral_,
         uint256 price_
     ) internal pure override returns (bool) {
-        //slither-disable-next-line divide-before-multiply
+        // slither-disable-next-line divide-before-multiply
         collateral_ = (collateral_ / Maths.WAD) * Maths.WAD; // use collateral floor
         return Maths.wmul(collateral_, price_) >= debt_;
     }
@@ -330,7 +334,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
      *  @param tokenId_ NFT token id to be transferred.
      */
     function _transferNFT(address from_, address to_, uint256 tokenId_) internal {
-        //slither-disable-next-line calls-loop
+        // slither-disable-next-line calls-loop
         IERC721Token(_getArgAddress(0)).safeTransferFrom(from_, to_, tokenId_);
     }
 

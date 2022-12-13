@@ -8,6 +8,8 @@ import 'src/libraries/Maths.sol';
 
 contract FenwickTreeTest is DSTestPlus {
 
+    uint internal constant MAX_INDEX = 7388;
+
     FenwickTreeInstance private _tree;
 
     function setUp() public {
@@ -41,7 +43,7 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(_tree.findIndexOfSum(200 * 1e18), 9);
         assertEq(_tree.findIndexOfSum(250 * 1e18), 11);
         assertEq(_tree.findIndexOfSum(500 * 1e18), 11);
-        assertEq(_tree.findIndexOfSum(700 * 1e18), 8191);
+        assertEq(_tree.findIndexOfSum(700 * 1e18), MAX_INDEX);
     }
     /**
      *  @notice Tests additions and scaling values in the tree.
@@ -77,7 +79,7 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(_tree.findIndexOfSum(400 * 1e18),   9);
         assertEq(_tree.findIndexOfSum(500 * 1e18),   9);
         assertEq(_tree.findIndexOfSum(900 * 1e18),   11);
-        assertEq(_tree.findIndexOfSum(1_000 * 1e18), 8191);
+        assertEq(_tree.findIndexOfSum(1_000 * 1e18), MAX_INDEX);
 
         _tree.remove(11, 300 * 1e18);
 
@@ -89,8 +91,8 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(_tree.findIndexOfSum(350 * 1e18),   9);
         assertEq(_tree.findIndexOfSum(400 * 1e18),   9);
         assertEq(_tree.findIndexOfSum(500 * 1e18),   9);
-        assertEq(_tree.findIndexOfSum(900 * 1e18),   8191);
-        assertEq(_tree.findIndexOfSum(1_000 * 1e18), 8191);
+        assertEq(_tree.findIndexOfSum(900 * 1e18),   MAX_INDEX);
+        assertEq(_tree.findIndexOfSum(1_000 * 1e18), MAX_INDEX);
 
         assertEq(_tree.get(5),  132 * 1e18);
         assertEq(_tree.get(9),  480 * 1e18);
@@ -113,7 +115,7 @@ contract FenwickTreeTest is DSTestPlus {
 
         _tree.fuzzyFill(insertions_, totalAmount_, false);
 
-        uint256 scaleIndex = bound(scaleIndex_, 2, 8191);
+        uint256 scaleIndex = bound(scaleIndex_, 2, MAX_INDEX);
         uint256 subIndex = randomInRange(0, scaleIndex - 1);
         uint256 factor = bound(factor_, 1 * 1e18, 5 * 1e18);
 

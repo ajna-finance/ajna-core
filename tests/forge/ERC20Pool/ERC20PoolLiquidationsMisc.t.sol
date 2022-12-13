@@ -620,7 +620,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             PoolState({
                 htp:                  0,
                 lup:                  1_004_968_987.606512354182109771 * 1e18,
-                poolSize:             9.176161196119415536 * 1e18,
+                poolSize:             9.170249839416101528 * 1e18,
                 pledgedCollateral:    1.749391266909416578 * 1e18,
                 encumberedCollateral: 0,
                 poolDebt:             0,
@@ -639,19 +639,19 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 index:        _i9_52,
                 lpBalance:    7_989.987933044093783839000000000 * 1e27,
                 collateral:   0,          
-                deposit:      9.176161196119415540 * 1e18,
-                exchangeRate: 1_148_457.453630146265364997 * 1e18
+                deposit:      9.170249839416101532 * 1e18,
+                exchangeRate: 1_147_717.608119383166017025 * 1e18
             }
         );
 
         _removeLiquidity(
             {
                 from:     _lender,
-                amount:   9.176155018749412335 * 1e18,
+                amount:   9.170249839416101532 * 1e18,
                 penalty:  0,
                 index:    _i9_52,
                 newLup:   1_004_968_987.606512354182109771 * 1e18,
-                lpRedeem: 7_989.982554203124378104398357747 * 1e27
+                lpRedeem: 7_989.987933044093783839000000000 * 1e27
             }
         );
         _assertBucket(
@@ -693,10 +693,10 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _assertBucket(
             {
                 index:        _i9_52,
-                lpBalance:    0.005378840969405734601642253 * 1e27,
+		lpBalance:    0,
                 collateral:   0,          
-                deposit:      6177370003205,
-                exchangeRate: 0.00114845745363010584158959 * 1e27
+                deposit:      0,
+                exchangeRate: 1.00000000000000000000000000 * 1e27
             }
         );
 
@@ -722,7 +722,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             PoolState({
                 htp:                  0,
                 lup:                  1_004_968_987.606512354182109771 * 1e18,
-                poolSize:             6177370003206,
+                poolSize:             0,
                 pledgedCollateral:    0.002512352549233095 * 1e18,
                 encumberedCollateral: 0,
                 poolDebt:             0,

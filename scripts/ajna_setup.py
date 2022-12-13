@@ -4,13 +4,15 @@ import json
 
 def main():
 
+    ajna_address = "0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079"
+
     # deploy Ajna pool factories and dump them in json config file
     Deposits.deploy({"from": accounts[0]})
     PoolCommons.deploy({"from": accounts[0]})
     LenderActions.deploy({"from": accounts[0]})
     Auctions.deploy({"from": accounts[0]})
-    erc20_pool_factory = ERC20PoolFactory.deploy({"from": accounts[0]})
-    erc721_pool_factory = ERC721PoolFactory.deploy({"from": accounts[0]})
+    erc20_pool_factory = ERC20PoolFactory.deploy(ajna_address, {"from": accounts[0]})
+    erc721_pool_factory = ERC721PoolFactory.deploy(ajna_address, {"from": accounts[0]})
     pool_utils = PoolInfoUtils.deploy({"from": accounts[0]})
 
     with open("scripts/.env", "w") as outfile:

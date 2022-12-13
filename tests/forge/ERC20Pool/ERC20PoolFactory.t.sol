@@ -16,6 +16,11 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         _poolFactory = new ERC20PoolFactory(_ajna);
     }
 
+    function testInstantiateERC20FactoryWithZeroAddress() external {
+        vm.expectRevert(IPoolFactory.DeployWithZeroAddress.selector);
+        new ERC20PoolFactory(address(0));
+    }
+
     function testDeployERC20PoolWithZeroAddress() external {
         // should revert if trying to deploy with zero address as collateral
         _assertDeployWith0xAddressRevert(
@@ -193,6 +198,15 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = pool.inflatorInfo();
         assertEq(poolInflatorSnapshot, 10**18);
         assertEq(lastInflatorUpdate,   _startTime + 333);
+    }
+
+    function testPoolAlreadyInitialized() external {
+        vm.expectEmit(true, true, false, true);
+        emit PoolCreated(poolAddress);
+        address pool = _poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
+
+        vm.expectRevert(IPoolErrors.AlreadyInitialized.selector);
+        ERC20Pool(pool).initialize(0.05 * 10**18);
     }
 
 }
