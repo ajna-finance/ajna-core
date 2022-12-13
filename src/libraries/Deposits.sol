@@ -21,31 +21,6 @@ library Deposits {
         uint256[8193] scaling; // Array of values which scale (multiply) the FenwickTree accross indexes.
     }
 
-    function momp(
-        Data storage self,
-        uint256 curDebt_,
-        uint256 numLoans_
-    ) internal view returns (uint256 momp_) {
-        if (numLoans_ != 0) momp_ = _priceAt(findIndexOfSum(self, Maths.wdiv(curDebt_, numLoans_ * 1e18)));
-    }
-
-    function t0Np(
-        Data storage self,
-        uint256 inflator_,
-        uint256 curDebt_,
-        uint256 numLoans_,
-        uint256 interestRate_,
-        uint256 lup_,
-        uint256 borrowerT0debt_,
-        uint256 borrowerCollateral_
-    ) internal view returns (uint256 t0Np_) {
-        uint256 borrowerDebt = Maths.wmul(borrowerT0debt_, inflator_);
-        uint256 thresholdPrice = borrowerDebt * Maths.WAD / borrowerCollateral_; 
-        uint256 curMomp = momp(self, curDebt_, numLoans_);
-        // t0Np = ((1 + rate) * MOMP * (TP / LUP)) / Inflator
-        if (curMomp != 0) t0Np_ = (1e18 + interestRate_) * curMomp * thresholdPrice / lup_ / inflator_;
-    }
-
     /**
      *  @notice increase a value in the FenwickTree at an index.
      *  @dev    Starts at leaf/target and moved up towards root
@@ -85,6 +60,9 @@ library Deposits {
         Data storage self,
         uint256 sum_
     ) internal view returns (uint256 sumIndex_) {
+        // Avoid looking for a sum greater than the tree size
+        if (treeSum(self) < sum_) return MAX_FENWICK_INDEX;
+
         uint256 i     = 4096; // 1 << (_numBits - 1) = 1 << (13 - 1) = 4096
         uint256 ss    = 0;
         uint256 sc    = Maths.WAD;
@@ -164,7 +142,7 @@ library Deposits {
             uint256 lsbJ = lsb(j);
 
             // Execute while i is a range parent of j (zero is the highest parent).
-            //slither-disable-next-line incorrect-equality
+            // slither-disable-next-line incorrect-equality
             while ((lsbJ < lsb(index_)) || (index_ == 0 && j <= SIZE)) {
                 // Sum > 0 only when j is a range parent of starting node, index_.
                 value = self.values[j];

@@ -16,6 +16,11 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         _poolFactory = new ERC20PoolFactory(_ajna);
     }
 
+    function testInstantiateERC20FactoryWithZeroAddress() external {
+        vm.expectRevert(IPoolFactory.DeployWithZeroAddress.selector);
+        new ERC20PoolFactory(address(0));
+    }
+
     function testDeployERC20PoolWithZeroAddress() external {
         // should revert if trying to deploy with zero address as collateral
         _assertDeployWith0xAddressRevert(
