@@ -66,9 +66,6 @@ contract AjnaRewards is IAjnaRewards {
     // poolAddress => bucketIndex => checkpoint => exchangeRate
     mapping (address => mapping(uint256 => Checkpoints.History)) internal poolBucketExchangeRateCheckpoints;
 
-    // poolAddress => checkpoint => totalInterest
-    mapping (address => Checkpoints.History) internal poolTotalInterestCheckpoints;
-
     struct Deposit {
         address owner;
         address ajnaPool;
@@ -105,7 +102,6 @@ contract AjnaRewards is IAjnaRewards {
 
         // update checkpoints
         _updateExchangeRates(tokenId_);
-        _updatePoolTotalInterest(ajnaPool);
 
         emit DepositToken(msg.sender, ajnaPool, tokenId_);
 
@@ -113,6 +109,11 @@ contract AjnaRewards is IAjnaRewards {
         IERC721(address(positionManager)).safeTransferFrom(msg.sender, address(this), tokenId_);
     }
 
+    /**
+     *  @notice Withdraw a staked LP NFT from the rewards contract.
+     *  @dev    If rewards are available, claim all available rewards before withdrawal.
+     *  @param  tokenId_ ID of the staked LP NFT.
+     */
     function withdrawNFT(uint256 tokenId_) external {
         if (msg.sender != deposits[tokenId_].owner) revert NotOwnerOfToken();
 
@@ -120,7 +121,6 @@ contract AjnaRewards is IAjnaRewards {
 
         // update checkpoints
         _updateExchangeRates(tokenId_);
-        _updatePoolTotalInterest(ajnaPool);
 
         // claim rewards, if any
         _claimRewards(tokenId_);
@@ -131,6 +131,10 @@ contract AjnaRewards is IAjnaRewards {
         IERC721(address(positionManager)).safeTransferFrom(address(this), msg.sender, tokenId_);
     }
 
+    /**
+     *  @notice Claim ajna token rewards that have accrued to a staked LP NFT.
+     *  @param  tokenId_ ID of the staked LP NFT.
+     */
     function claimRewards(uint256 tokenId_) external {
         if (msg.sender != deposits[tokenId_].owner) revert NotOwnerOfToken();
 
@@ -138,7 +142,6 @@ contract AjnaRewards is IAjnaRewards {
 
         // update checkpoints
         _updateExchangeRates(tokenId_);
-        _updatePoolTotalInterest(ajnaPool);
 
         _claimRewards(tokenId_);
     }
@@ -188,20 +191,22 @@ contract AjnaRewards is IAjnaRewards {
         }
 
         // calculate total interest accumulated by the pool over the claim period
-        uint256 totalInterestAtLastClaim = poolTotalInterestCheckpoints[ajnaPool].getAtBlock(lastInteractionBlock);
-        uint256 totalInterestCurrent = poolTotalInterestCheckpoints[ajnaPool].latest();
-        
-        uint256 totalInterestEarned = totalInterestCurrent - totalInterestAtLastClaim;
+        (uint256 ajnaTokensBurned, uint256 totalInterestEarned) = _getPoolAccumulators(ajnaPool, lastInteractionBlock);
 
-        rewards_ = REWARD_FACTOR * (interestEarned / totalInterestEarned) * _getAjnaTokensBurned(ajnaPool, lastInteractionBlock);
+        rewards_ = REWARD_FACTOR * (interestEarned / totalInterestEarned) * ajnaTokensBurned;
     }
 
-    function _getAjnaTokensBurned(address ajnaPool_, uint256 lastBlock_) internal view returns (uint256 ajnaTokensBurned_) {
-        (uint256 burnAmountLatest, uint256 totalInterestLatest, uint256 totalBurnedLatest) = IPool(ajnaPool_).burnInfoLatest();
+    /**
+     *  @notice Retrieve the total ajna tokens burned and total interest earned by a pool since a given block.
+     *  @param  ajnaPool_  Address of the Ajna pool to retrieve accumulators of.
+     *  @param  lastBlock_ Block number to use as checkpoint since which values should have accumulated.
+     */
+    function _getPoolAccumulators(address ajnaPool_, uint256 lastBlock_) internal view returns (uint256 ajnaTokensBurned_, uint256 totalInterestEarned_) {
+        (uint256 totalInterestLatest, uint256 totalBurnedLatest) = IPool(ajnaPool_).burnInfoLatest();
+        (uint256 totalInterestAtBlock, uint256 totalBurnedAtBlock) = IPool(ajnaPool_).burnInfoAtBlock(lastBlock_);
 
-        (uint256 burnAmountAtBlock, uint256 totalInterestAtBlock, uint256 totalBurnedAtBlock) = IPool(ajnaPool_).burnInfoAtBlock(lastBlock_);
-
-        return totalBurnedLatest - totalBurnedAtBlock;
+        ajnaTokensBurned_ = totalBurnedLatest - totalBurnedAtBlock;
+        totalInterestEarned_ = totalInterestLatest - totalInterestAtBlock;
     }
 
     // use deposits object instead of tokenId?
@@ -218,11 +223,6 @@ contract AjnaRewards is IAjnaRewards {
                 ++i;
             }
         }
-    }
-
-    function _updatePoolTotalInterest(address ajnaPool_) internal {
-        // push the total interest into the checkpoint history
-        poolTotalInterestCheckpoints[ajnaPool_].push(PoolCommons.accumulatedInterest());
     }
 
     function _setPositionLPs(uint256 tokenId_) internal {

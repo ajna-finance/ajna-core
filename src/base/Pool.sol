@@ -77,13 +77,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     // TODO: remove this struct entirely in favor of writing totalAjnaBurned to the checkpoint
     // tracks ajna token burn events
     struct BurnEvent {
-        uint256 burnAmount;
         uint256 totalInterest; // current pool interest accumulator `PoolCommons.accrueInterest().newInterest
         uint256 totalBurned; // burn amount accumulator
     }
     // mapping burnEventId => BurnEvent
     mapping (uint256 => BurnEvent) internal burnEvents;
     uint256 totalAjnaBurned; // total ajna burned in the pool
+    uint256 totalInterestEarned; // total interest earned by all lenders in the pool
 
     /******************/
     /*** Immutables ***/
@@ -387,8 +387,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // record burn event information to enable querying by staking rewards
         BurnEvent memory burnEvent = BurnEvent({
-            burnAmount: ajnaRequired,
-            totalInterest: PoolCommons.accumulatedInterest(),
+            totalInterest: totalInterestEarned,
             totalBurned: totalAjnaBurned
         });
         uint256 burnEventId = Auctions.getNewBurnEventId(_burnEventCheckpoints);
@@ -639,7 +638,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             poolState_.isNewInterestAccrued = elapsed != 0;
 
             if (poolState_.isNewInterestAccrued) {
-                poolState_.inflator = PoolCommons.accrueInterest(
+                (uint256 newInflator, uint256 newInterest) = PoolCommons.accrueInterest(
                     deposits,
                     poolState_.accruedDebt,
                     poolState_.collateral,
@@ -648,8 +647,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                     poolState_.rate,
                     elapsed
                 );
+                poolState_.inflator = newInflator;
                 // After debt owed to lenders has accrued, calculate current debt owed by borrowers
                 poolState_.accruedDebt = Maths.wmul(t0Debt, poolState_.inflator);
+
+                // update total interest earned accumulator with the newly accrued interest
+                totalInterestEarned += newInterest;
             }
         }
     }
@@ -754,23 +757,21 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
-    function burnInfoAtBlock(uint256 blockNumber_) external view returns (uint256, uint256, uint256) {
+    function burnInfoAtBlock(uint256 blockNumber_) external view returns (uint256, uint256) {
         uint256 burnEventId = Auctions.getBurnAtBlock(_burnEventCheckpoints, blockNumber_);
         BurnEvent memory burnEvent = burnEvents[burnEventId];
 
         return (
-            burnEvent.burnAmount,
             burnEvent.totalInterest,
             burnEvent.totalBurned
         );
     }
 
-    function burnInfoLatest() external view returns (uint256, uint256, uint256) {
+    function burnInfoLatest() external view returns (uint256, uint256) {
         uint256 burnEventId = Auctions.getLastBurn(_burnEventCheckpoints);
         BurnEvent memory burnEvent = burnEvents[burnEventId];
 
         return (
-            burnEvent.burnAmount,
             burnEvent.totalInterest,
             burnEvent.totalBurned
         );

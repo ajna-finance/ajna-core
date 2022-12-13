@@ -129,13 +129,21 @@ contract AjnaRewardsTest is DSTestPlus {
 
     function testWithdrawToken() external {
 
-        // TODO: implemet this test
+        // TODO: implement this test
     
+    }
+
+    function testCantWithdrawNonOwnedTokens() external {
+        // TODO: implement this test
+    }
+
+    function testWithdrawAndClaimRewards() external {
+        // TODO: implement this test
     }
 
     function testClaimRewards() external {
 
-        // TODO: implemet this test
+        // TODO: implement this test
     
     }
 

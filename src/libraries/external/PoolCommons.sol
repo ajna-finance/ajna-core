@@ -114,7 +114,7 @@ library PoolCommons {
         uint256 inflator_,
         uint256 interestRate_,
         uint256 elapsed_
-    ) external returns (uint256 newInflator_) {
+    ) external returns (uint256 newInflator_, uint256 newInterest_) {
         // Scale the borrower inflator to update amount of interest owed by borrowers
         uint256 pendingFactor = PRBMathUD60x18.exp((interestRate_ * elapsed_) / 365 days);
         newInflator_ = Maths.wmul(inflator_, pendingFactor);
@@ -127,7 +127,7 @@ library PoolCommons {
         uint256 depositAboveHtp = Deposits.prefixSum(deposits_, htpIndex);
 
         if (depositAboveHtp != 0) {
-            uint256 newInterest = Maths.wmul(
+            newInterest_ = Maths.wmul(
                 _lenderInterestMargin(_utilization(deposits_, debt_, collateral_)),
                 Maths.wmul(pendingFactor - Maths.WAD, debt_)
             );
@@ -135,18 +135,9 @@ library PoolCommons {
             Deposits.mult(
                 deposits_,
                 htpIndex,
-                Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD // lender factor
+                Maths.wdiv(newInterest_, depositAboveHtp) + Maths.WAD // lender factor
             );
         }
-    }
-
-    // TODO: finish implementing this based upon required inputs from accrueInterest above
-    function accumulatedInterest() external pure returns (uint256 interestAccumulated_) {
-        // interestAccumulated_ = Maths.wmul(
-        //     _lenderInterestMargin(_utilization(deposits_, debt_, collateral_)),
-        //     Maths.wmul(pendingFactor - Maths.WAD, debt_)
-        // );
-        interestAccumulated_ = 1;
     }
 
     /**
