@@ -5,7 +5,6 @@ library Maths {
 
     uint256 internal constant WAD = 10**18;
     uint256 internal constant RAY = 10**27;
-    uint256 internal constant RAD = 10**45;
 
     function wmul(uint256 x, uint256 y) internal pure returns (uint256) {
         return (x * y + 10**18 / 2) / 10**18;
@@ -76,48 +75,12 @@ library Maths {
         }
     }
 
-    function wpow(uint256 x, uint256 n) internal pure returns (uint256 z) {
-        z = n % 2 != 0 ? x : 10**18;
-
-        for (n /= 2; n != 0; n /= 2) {
-            x = wmul(x, x);
-
-            if (n % 2 != 0) {
-                z = wmul(z, x);
-            }
-        }
-    }
-
-    function rad(uint256 x) internal pure returns (uint256) {
-        return x * 10**45;
-    }
-
     function wadToRay(uint256 x) internal pure returns (uint256) {
         return x * 10**9;
     }
 
-    function wadToRad(uint256 x) internal pure returns (uint256) {
-        return x * 10**27;
-    }
-
     function rayToWad(uint256 x) internal pure returns (uint256) {
         return (x + 10**9 / 2) / 10**9;
-    }
-
-    function rayToRad(uint256 x) internal pure returns (uint256) {
-        return x * 10**18;
-    }
-
-    function radToWad(uint256 x) internal pure returns (uint256) {
-        return (x + 10**27 / 2) / 10**27;
-    }
-
-    function radToWadTruncate(uint256 x) internal pure returns (uint256) {
-        return x / 10**27;
-    }
-
-    function radToRay(uint256 x) internal pure returns (uint256) {
-        return (x + 10**18 / 2) / 10**18;
     }
 
     /**

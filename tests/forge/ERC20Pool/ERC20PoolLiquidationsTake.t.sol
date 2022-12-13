@@ -161,6 +161,59 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         );
     }
 
+    function testTakeCoolDownPeriod() external tearDown {
+
+        // should revert if there's no auction started
+        _assertTakeNoAuctionRevert(
+            {
+                from:          _lender,
+                borrower:      _borrower,
+                maxCollateral: 10 * 1e18
+            }
+        );
+
+        /********************/
+        /*** Kick Auction ***/
+        /********************/
+
+        _borrow(
+            {
+                from:       _borrower2,
+                amount:     1_700.0 * 1e18,
+                indexLimit: _p9_72,
+                newLup:     _p9_72
+            }
+        );
+
+        skip(100 days);
+
+        _kick(
+            {
+                from:           _lender,
+                borrower:       _borrower2,
+                debt:           9_945.738101507554206918 * 1e18,
+                collateral:     1_000 * 1e18,
+                bond:           98.229512113654856365 * 1e18,
+                transferAmount: 98.229512113654856365 * 1e18
+            }
+        );
+
+        /********************/
+        /*** Take Auction ***/
+        /********************/
+
+        skip(30 minutes);
+
+        // should revert if still in cool down period
+        _assertTakeAuctionInCooldownRevert(
+            {
+                from:          _lender,
+                borrower:      _borrower2,
+                maxCollateral: 10 * 1e18
+            }
+        );
+    }
+
     function testTakeLoanColConstraintBpfPosNoResidual() external tearDown {
 
         // Increase neutralPrice so it exceeds TP

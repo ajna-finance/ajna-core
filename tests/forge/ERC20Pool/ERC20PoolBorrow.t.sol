@@ -1086,7 +1086,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         _assertPoolPrices(
             {
                 htp:      0,
-                htpIndex: 0,
+                htpIndex: 7_388,
                 hpb:      3_010.892022197881557845 * 1e18,
                 hpbIndex: 2550,
                 lup:      MAX_PRICE,
