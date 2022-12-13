@@ -192,26 +192,25 @@ library Auctions {
             if (depositToRemove == 0) {
                 collateralUsed = params_.collateral;
             } else {
-                {
-                    uint256 debtToSettle      = Maths.wmul(params_.t0debt, params_.inflator);     // current debt to be settled
-                    uint256 maxSettleableDebt = Maths.wmul(params_.collateral, price);          // max debt that can be settled with existing collateral
+                uint256 debtToSettle      = Maths.wmul(params_.t0debt, params_.inflator);   // current debt to be settled
+                uint256 maxSettleableDebt = Maths.wmul(params_.collateral, price);          // max debt that can be settled with existing collateral
 
-                    if (depositToRemove >= debtToSettle && maxSettleableDebt >= debtToSettle) { // enough deposit in bucket and collateral avail to settle entire debt
-                        depositToRemove    = debtToSettle;                                      // remove only what's needed to settle the debt
-                        params_.t0debt    = 0;                                                 // no remaining debt to settle
-                        collateralUsed     = Maths.wdiv(debtToSettle, price);
-                        params_.collateral -= collateralUsed;
-                    } else if (maxSettleableDebt >= depositToRemove) {                          // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
-                        params_.t0debt     -= Maths.wdiv(depositToRemove, params_.inflator);    // subtract from debt the corresponding t0 amount of deposit
-                        collateralUsed     = Maths.wdiv(depositToRemove, price);
-                        params_.collateral -= collateralUsed;
-                    } else {                                                                    // constrained by collateral available
-                        depositToRemove    = maxSettleableDebt;
-                        params_.t0debt     -= Maths.wdiv(maxSettleableDebt, params_.inflator);
-                        collateralUsed     = params_.collateral;
-                        params_.collateral = 0;
-                    }
+                if (depositToRemove >= debtToSettle && maxSettleableDebt >= debtToSettle) { // enough deposit in bucket and collateral avail to settle entire debt
+                    depositToRemove    = debtToSettle;                                      // remove only what's needed to settle the debt
+                    params_.t0debt    = 0;                                                  // no remaining debt to settle
+                    collateralUsed     = Maths.wdiv(debtToSettle, price);
+                    params_.collateral -= collateralUsed;
+                } else if (maxSettleableDebt >= depositToRemove) {                          // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
+                    params_.t0debt     -= Maths.wdiv(depositToRemove, params_.inflator);    // subtract from debt the corresponding t0 amount of deposit
+                    collateralUsed     = Maths.wdiv(depositToRemove, price);
+                    params_.collateral -= collateralUsed;
+                } else {                                                                    // constrained by collateral available
+                    depositToRemove    = maxSettleableDebt;
+                    params_.t0debt     -= Maths.wdiv(maxSettleableDebt, params_.inflator);
+                    collateralUsed     = params_.collateral;
+                    params_.collateral = 0;
                 }
+                
                 Deposits.remove(deposits_, index, depositToRemove, deposit); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
             }
             buckets_[index].collateral += collateralUsed;                    // add settled collateral into bucket
