@@ -5,6 +5,7 @@ pragma solidity 0.8.14;
 import './interfaces/IERC721Pool.sol';
 import './interfaces/IERC721Taker.sol';
 import '../base/FlashloanablePool.sol';
+import './interfaces/IERC721NonStandard.sol';
 
 contract ERC721Pool is IERC721Pool, FlashloanablePool {
     using Auctions for Auctions.Data;
@@ -283,12 +284,21 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256[] calldata tokenIds_
     ) internal {
         bool subset = _getArgUint256(92) != 0;
+        uint8 nftType = _getArgUint8(124);
         for (uint256 i = 0; i < tokenIds_.length;) {
             uint256 tokenId = tokenIds_[i];
             if (subset && !tokenIdsAllowed[tokenId]) revert OnlySubset();
             poolTokens_.push(tokenId);
-
-            _transferNFT(msg.sender, address(this), tokenId);
+            
+            if (nftType == uint8(NFTTypes.STANDARD_ERC721)){
+                _transferNFT(msg.sender, address(this), tokenId);
+            }
+            else if (nftType == uint8(NFTTypes.CRYPTOKITTIES)) {
+                ICryptoKitties(_getArgAddress(0)).transferFrom(msg.sender ,address(this), tokenId);
+            }
+            else{
+                ICryptoPunks(_getArgAddress(0)).buyPunk(tokenId);
+            }
 
             unchecked {
                 ++i;
@@ -312,11 +322,21 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256[] memory tokensTransferred = new uint256[](amountToRemove_);
 
         uint256 noOfNFTsInPool = poolTokens_.length;
+        uint8 nftType = _getArgUint8(124);
         for (uint256 i = 0; i < amountToRemove_;) {
             uint256 tokenId = poolTokens_[--noOfNFTsInPool]; // start with transferring the last token added in bucket
             poolTokens_.pop();
 
-            _transferNFT(address(this), toAddress_, tokenId);
+            if (nftType == uint8(NFTTypes.STANDARD_ERC721)){
+                _transferNFT(address(this), toAddress_, tokenId);
+            }
+            else if (nftType == uint8(NFTTypes.CRYPTOKITTIES)) {
+                ICryptoKitties(_getArgAddress(0)).transfer(toAddress_, tokenId);
+            }
+            else{
+                ICryptoPunks(_getArgAddress(0)).transferPunk(toAddress_, tokenId);
+            }
+
             tokensTransferred[i] = tokenId;
 
             unchecked {
