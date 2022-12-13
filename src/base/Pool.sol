@@ -404,6 +404,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             t0DebtInAuction += borrowerT0debt; // TODO: write storage variables only once at the end and not inside the loop
             t0poolDebt      += kickPenalty;    // TODO: write storage variables only once at the end and not inside the loop
 
+            lup = _lup(poolState.accruedDebt); // TODO: optimize this
             htp = _htp(poolState.inflator); // TODO: avoid loading top loan multiple times in same loop
         }
 
