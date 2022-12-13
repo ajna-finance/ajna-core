@@ -23,7 +23,7 @@ interface IERC721PoolLenderActions {
      *  @param  noOfNFTsToRemove_    Intergral number of NFTs to remove if collateral amount is met noOfNFTsToRemove_, else merge at bucket index, toIndex_.
      */
     function mergeOrRemoveCollateral(
-        uint256[] memory removeAmountAtIndex_,
+        uint256[] calldata removeAmountAtIndex_,
         uint256 noOfNFTsToRemove_,
         uint256 toIndex_
     ) external returns (uint256 collateralMerged, uint256 bucketLPs_);

@@ -283,52 +283,6 @@ library LenderActions {
         emit RemoveQuoteToken(msg.sender, params_.index, removedAmount_, lup_);
     }
 
-    function removeMaxCollateral(
-        mapping(uint256 => Buckets.Bucket) storage buckets_,
-        Deposits.Data storage deposits_,
-        uint256 maxAmount_,
-        uint256 index_
-    ) internal returns (uint256 collateralAmount_, uint256 lpAmount_) {
-
-        Buckets.Bucket storage bucket = buckets_[index_];
-        uint256 bucketCollateral = bucket.collateral;
-        if (bucketCollateral == 0) revert InsufficientCollateral(); // revert if there's no collateral in bucket
-
-        Buckets.Lender storage lender = bucket.lenders[msg.sender];
-        uint256 lenderLpBalance;
-        if (bucket.bankruptcyTime < lender.depositTime) lenderLpBalance = lender.lps;
-        if (lenderLpBalance == 0) revert NoClaim();                  // revert if no LP to redeem
-
-        uint256 bucketPrice = _priceAt(index_);
-        uint256 bucketLPs   = bucket.lps;
-        uint256 exchangeRate = Buckets.getExchangeRate(
-            bucketCollateral,
-            bucketLPs,
-            Deposits.valueAt(deposits_, index_),
-            bucketPrice
-        );
-
-        // limit amount by what is available in the bucket
-        collateralAmount_ = Maths.min(maxAmount_, bucketCollateral);
-
-        // determine how much LP would be required to remove the requested amount
-        uint256 requiredLPs = (collateralAmount_ * bucketPrice * 1e18 + exchangeRate / 2) / exchangeRate;
-
-        // limit withdrawal by the lender's LPB
-        if (requiredLPs < lenderLpBalance) {
-            lpAmount_ = requiredLPs;
-        } else {
-            lpAmount_ = lenderLpBalance;
-            collateralAmount_ = ((lpAmount_ * exchangeRate + 1e27 / 2) / 1e18 + bucketPrice / 2) / bucketPrice;
-        }
-
-        // update lender LPs balance
-        lender.lps -= lpAmount_;
-        // update bucket LPs and collateral balance
-        bucket.lps        -= Maths.min(bucketLPs, lpAmount_);
-        bucket.collateral -= Maths.min(bucketCollateral, collateralAmount_);
-    }
-
     function removeCollateral(
         mapping(uint256 => Buckets.Bucket) storage buckets_,
         Deposits.Data storage deposits_,
@@ -362,6 +316,19 @@ library LenderActions {
         bucket.collateral -= Maths.min(bucketCollateral, amount_);
     }
 
+    function removeMaxCollateral(
+        mapping(uint256 => Buckets.Bucket) storage buckets_,
+        Deposits.Data storage deposits_,
+        uint256 maxAmount_,
+        uint256 index_
+    ) external returns (uint256, uint256) {
+        return _removeMaxCollateral(
+            buckets_,
+            deposits_,
+            maxAmount_,
+            index_
+        );
+    }
 
     function mergeOrRemoveCollateral(
         mapping(uint256 => Buckets.Bucket) storage buckets_,
@@ -369,7 +336,7 @@ library LenderActions {
         uint256[] calldata removalIndexes_,
         uint256 collateralAmount_,
         uint256 toIndex_
-    ) public returns (uint256 collateralToMerge_, uint256 bucketLPs_) {
+    ) external returns (uint256 collateralToMerge_, uint256 bucketLPs_) {
 
         uint256 i;
         uint256 fromIndex;
@@ -383,7 +350,7 @@ library LenderActions {
             fromIndex = removalIndexes_[i];
             if (fromIndex > toIndex_) revert CannotMergeToHigherPrice();
 
-            (collateralRemoved, ) = LenderActions.removeMaxCollateral(
+            (collateralRemoved, ) = _removeMaxCollateral(
                 buckets_,
                 deposits_,
                 collateralRemaining,
@@ -456,6 +423,57 @@ library LenderActions {
             }
         }
         emit TransferLPTokens(owner_, newOwner_, indexes_, tokensTransferred);
+    }
+
+
+    /**************************/
+    /*** Internal Functions ***/
+    /**************************/
+
+    function _removeMaxCollateral(
+        mapping(uint256 => Buckets.Bucket) storage buckets_,
+        Deposits.Data storage deposits_,
+        uint256 maxAmount_,
+        uint256 index_
+    ) internal returns (uint256 collateralAmount_, uint256 lpAmount_) {
+
+        Buckets.Bucket storage bucket = buckets_[index_];
+        uint256 bucketCollateral = bucket.collateral;
+        if (bucketCollateral == 0) revert InsufficientCollateral(); // revert if there's no collateral in bucket
+
+        Buckets.Lender storage lender = bucket.lenders[msg.sender];
+        uint256 lenderLpBalance;
+        if (bucket.bankruptcyTime < lender.depositTime) lenderLpBalance = lender.lps;
+        if (lenderLpBalance == 0) revert NoClaim();                  // revert if no LP to redeem
+
+        uint256 bucketPrice = _priceAt(index_);
+        uint256 bucketLPs   = bucket.lps;
+        uint256 exchangeRate = Buckets.getExchangeRate(
+            bucketCollateral,
+            bucketLPs,
+            Deposits.valueAt(deposits_, index_),
+            bucketPrice
+        );
+
+        // limit amount by what is available in the bucket
+        collateralAmount_ = Maths.min(maxAmount_, bucketCollateral);
+
+        // determine how much LP would be required to remove the requested amount
+        uint256 requiredLPs = (collateralAmount_ * bucketPrice * 1e18 + exchangeRate / 2) / exchangeRate;
+
+        // limit withdrawal by the lender's LPB
+        if (requiredLPs < lenderLpBalance) {
+            lpAmount_ = requiredLPs;
+        } else {
+            lpAmount_ = lenderLpBalance;
+            collateralAmount_ = ((lpAmount_ * exchangeRate + 1e27 / 2) / 1e18 + bucketPrice / 2) / bucketPrice;
+        }
+
+        // update lender LPs balance
+        lender.lps -= lpAmount_;
+        // update bucket LPs and collateral balance
+        bucket.lps        -= Maths.min(bucketLPs, lpAmount_);
+        bucket.collateral -= Maths.min(bucketCollateral, collateralAmount_);
     }
 
     function _lup(
