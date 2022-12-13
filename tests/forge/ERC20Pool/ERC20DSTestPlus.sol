@@ -155,11 +155,12 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     function _addCollateral(
         address from,
         uint256 amount,
-        uint256 index
+        uint256 index,
+        uint256 lpAward
     ) internal returns (uint256) {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
-        emit AddCollateral(from, index, amount);
+        emit AddCollateral(from, index, amount, lpAward);
         vm.expectEmit(true, true, false, true);
         emit Transfer(from, address(_pool), amount);
 
@@ -291,7 +292,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectEmit(true, true, true, true);
-        emit RemoveCollateral(from, index, amount);
+        emit RemoveCollateral(from, index, amount, lpRedeem);
         vm.expectEmit(true, true, true, true);
         emit Transfer(address(_pool), from, amount);
         (uint256 collateralRemoved, uint256 lpAmount) = ERC20Pool(address(_pool)).removeCollateral(type(uint256).max, index);

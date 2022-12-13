@@ -97,7 +97,8 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             {
                 from:     _bidder,
                 tokenIds: tokenIdsToAdd,
-                index:    testIndex
+                index:    testIndex,
+                lpAward:  9_032.676066593644673535 * 1e27
             }
         );
 
@@ -298,7 +299,8 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             {
                 from:     _bidder,
                 tokenIds: tokenIdsToAdd,
-                index:    2350
+                index:    2350,
+                lpAward:  32_654.410675370944354984500292928 * 1e27
             }
         );
         skip(25 hours); // remove liquidity after one day to avoid early withdraw penalty

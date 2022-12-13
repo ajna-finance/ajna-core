@@ -169,11 +169,12 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     function _addCollateral(
         address from,
         uint256[] memory tokenIds,
-        uint256 index
+        uint256 index,
+        uint256 lpAward
     ) internal returns (uint256 lps_){
         changePrank(from);
         vm.expectEmit(true, true, false, true);
-        emit AddCollateralNFT(from, index, tokenIds);
+        emit AddCollateralNFT(from, index, tokenIds, lpAward);
         for (uint256 i = 0; i < tokenIds.length; i++) {
             assertEq(_collateral.ownerOf(tokenIds[i]), from); // token is owned by borrower
             vm.expectEmit(true, true, false, true);

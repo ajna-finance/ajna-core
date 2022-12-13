@@ -257,7 +257,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal virtual returns (uint256 lpRedeemed_) {
         changePrank(from);
         vm.expectEmit(true, true, true, true);
-        emit RemoveCollateral(from, index, amount);
+        emit RemoveCollateral(from, index, amount, lpRedeem);
         _assertTokenTransferEvent(address(_pool), from, amount);
         (, lpRedeemed_) = _pool.removeCollateral(amount, index);
         assertEq(lpRedeemed_, lpRedeem);

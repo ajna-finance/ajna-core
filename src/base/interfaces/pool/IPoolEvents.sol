@@ -102,14 +102,16 @@ interface IPoolEvents {
 
     /**
      *  @notice Emitted when lender claims unencumbered collateral.
-     *  @param  claimer Recipient that claimed collateral.
-     *  @param  price   Price at which unencumbered collateral was claimed.
-     *  @param  amount  The amount of collateral (or number of NFT tokens) transferred to the claimer.
+     *  @param  claimer    Recipient that claimed collateral.
+     *  @param  price      Price at which unencumbered collateral was claimed.
+     *  @param  amount     The amount of collateral (or number of NFT tokens) transferred to the claimer.
+     *  @param  lpRedeemed Amount of LP exchanged for quote token.
      */
     event RemoveCollateral(
         address indexed claimer,
         uint256 indexed price,
-        uint256 amount
+        uint256 amount,
+        uint256 lpRedeemed
     );
 
     /**
@@ -127,7 +129,6 @@ interface IPoolEvents {
         uint256 lpRedeemed,
         uint256 lup
     );
-
 
     /**
      *  @notice Emitted when borrower repays quote tokens to the pool, and/or pulls collateral from the pool.

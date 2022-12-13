@@ -557,7 +557,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 amount:  10_000 * 1e18,
                 index:   4550,
                 lpAward: 10_000 * 1e27,
-                newLup:    MAX_PRICE
+                newLup:  MAX_PRICE
             }   
         );   
         _addLiquidity(   
@@ -582,9 +582,10 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         // used to test revert on remove when bucket deposit is 0
         _addCollateral(
             {
-                from:   _lender,
-                amount: 1 * 1e18,
-                index:  5000
+                from:    _lender,
+                amount:  1 * 1e18,
+                index:   5000,
+                lpAward: 0.014854015662334135 * 1e27
             }
         );
         _pledgeCollateral(
@@ -656,9 +657,10 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         uint256 i100 = _indexOf(100 * 1e18);
         _addCollateral(
             {
-                from:   _lender,
-                amount: 10 * 1e18,
-                index:  i100
+                from:    _lender,
+                amount:  10 * 1e18,
+                index:   i100,
+                lpAward: 1003.3236814328200989 * 1e27
             }
         );
 

@@ -1679,9 +1679,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         _addCollateral(
             {
-                from:   testAddress3,
-                amount: 10_000 * 1e18,
-                index:  mintIndex
+                from:    testAddress3,
+                amount:  10_000 * 1e18,
+                index:   mintIndex,
+                lpAward: 30_108_920.22197881557845 * 1e27
             }
         );
 

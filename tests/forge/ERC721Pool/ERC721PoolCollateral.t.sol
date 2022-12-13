@@ -432,7 +432,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     }
 
     function testPullCollateralOverlyEncumbered() external tearDown {
-
         // lender deposits 10000 Quote into 3 buckets
         _addInitialLiquidity(
             {
@@ -498,7 +497,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     }
 
     function testAddRemoveCollateral() external tearDown {
-
         // lender adds some liquidity
         _addInitialLiquidity(
             {
@@ -524,7 +522,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             {
                 from:     _borrower,
                 tokenIds: tokenIds,
-                index:    1530
+                index:    1530,
+                lpAward:  975_232.505322350083963682 * 1e27
             }
         );
 

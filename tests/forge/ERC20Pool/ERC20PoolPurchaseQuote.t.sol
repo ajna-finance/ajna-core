@@ -46,9 +46,10 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         uint256 collateralToPurchaseWith = 4 * 1e18;
         _addCollateral(
             {
-                from:   _bidder,
-                amount: collateralToPurchaseWith,
-                index:  testIndex
+                from:    _bidder,
+                amount:  collateralToPurchaseWith,
+                index:   testIndex,
+                lpAward: 12_043.56808879152623138 * 1e27
             }
         );
 
@@ -288,9 +289,10 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         // bidder purchases all quote from the highest bucket
         _addCollateral(
             {
-                from:   _bidder,
-                amount: collateralToPurchaseWith,
-                index:  2550
+                from:    _bidder,
+                amount:  collateralToPurchaseWith,
+                index:   2550,
+                lpAward: 10_200.383861467480875668505869503 * 1e27
             }
         );
 
