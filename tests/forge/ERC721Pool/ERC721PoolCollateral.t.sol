@@ -635,7 +635,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
     }
 
-    function testMergeOrRemoveCollateral() external {
+    function _testMergeOrRemoveCollateral() external {
 
         // insert liquidity at 3060 - 3159, going down in price
         for (uint256 i = 3060; i < (3060 + 100); i++) {
