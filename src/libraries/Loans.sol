@@ -27,10 +27,6 @@ library Loans {
     }
 
     /**
-     *  @notice The loan to be removed does not exist in loans heap.
-     */
-    error NoLoan();
-    /**
      *  @notice The threshold price of the loan to be inserted in loans heap is zero.
      */
     error ZeroThresholdPrice();
@@ -55,51 +51,29 @@ library Loans {
     /**
      *  @notice Updates a loan: updates heap (upsert if TP not 0, remove otherwise) and borrower balance.
      *  @param self Holds tree loan data.
-     *  @param deposits_            Pool deposits, used to calculate borrower MOMP factor.
-     *  @param borrowerAddress_     Borrower's address to update.
-     *  @param t0NpUpdate           t0Np should be stamped only in borrow, pull collateral
-     *  @param borrower_            Borrower struct with borrower details.
-     *  @param poolDebt_            Pool debt, used for calculating borrower MOMP factor.
-     *  @param poolInflator_        The current pool inflator used to calculate borrower MOMP factor.
-     *  @param poolInterestRate_    Current Pool interest Rate.
-     *  @param lup_                 Current Lup.
+     *  @param borrowerAddress_ Borrower's address to update.
+     *  @param borrower_        Borrower struct with borrower details.
+     *  @param loanIndex_       Current index of the loan (can be 0 if new loan to be inserted in heap)
      */
     function update(
         Data storage self,
-        Deposits.Data storage deposits_,
         address borrowerAddress_,
-        bool t0NpUpdate,
         Borrower memory borrower_,
-        uint256 poolDebt_,
-        uint256 poolInflator_,
-        uint256 poolInterestRate_,
-        uint256 lup_
+        uint256 loanIndex_
     ) internal {
         // update loan heap
         if (borrower_.t0debt != 0 && borrower_.collateral != 0) {
             _upsert(
                 self,
                 borrowerAddress_,
+                loanIndex_,
                 uint96(Maths.wdiv(borrower_.t0debt, borrower_.collateral))
             );
-        } else if (self.indices[borrowerAddress_] != 0) {
-            remove(self, borrowerAddress_);
+
+        } else if (loanIndex_ != 0) {
+            remove(self, borrowerAddress_, loanIndex_);
         }
 
-        // update borrower
-        if (t0NpUpdate) {
-            if (borrower_.t0debt != 0 && borrower_.collateral != 0) borrower_.t0Np = Deposits.t0Np(
-                deposits_,
-                poolInflator_,
-                poolDebt_,
-                self.loans.length - 1,
-                poolInterestRate_,
-                lup_,
-                borrower_.t0debt,
-                borrower_.collateral
-            );
-            else borrower_.t0Np = 0;
-        }
         self.borrowers[borrowerAddress_] = borrower_;
     }
 
@@ -169,19 +143,17 @@ library Loans {
      *  @notice Removes loan for given borrower address.
      *  @param self      Holds tree loan data.
      *  @param borrower_ Borrower address whose loan is being updated or inserted.
+     *  @param id_       Loan id.
      */
-    function remove(Data storage self, address borrower_) internal {
-        uint256 i_ = self.indices[borrower_];
-        if (i_ == 0) revert NoLoan();
-
+    function remove(Data storage self, address borrower_, uint256 id_) internal {
         delete self.indices[borrower_];
         uint256 tailIndex = self.loans.length - 1;
-        if (i_ == tailIndex) self.loans.pop(); // we're removing the tail, pop without sorting
+        if (id_ == tailIndex) self.loans.pop(); // we're removing the tail, pop without sorting
         else {
             Loan memory tail = self.loans[tailIndex];
             self.loans.pop();            // remove tail loan
-            _bubbleUp(self, tail, i_);
-            _bubbleDown(self, self.loans[i_], i_);
+            _bubbleUp(self, tail, id_);
+            _bubbleDown(self, self.loans[id_], id_);
         }
     }
 
@@ -189,25 +161,26 @@ library Loans {
      *  @notice Performs an insert or an update dependent on borrowers existance.
      *  @param self Holds tree loan data.
      *  @param borrower_       Borrower address that is being updated or inserted.
+     *  @param id_             Loan id.
      *  @param thresholdPrice_ Threshold Price that is updated or inserted.
      */
     function _upsert(
         Data storage self,
         address borrower_,
+        uint256 id_,
         uint96 thresholdPrice_
     ) internal {
         if (thresholdPrice_ == 0) revert ZeroThresholdPrice();
-        uint256 i = self.indices[borrower_];
 
         // Loan exists, update in place.
-        if (i != 0) {
-            Loan memory currentLoan = self.loans[i];
+        if (id_ != 0) {
+            Loan memory currentLoan = self.loans[id_];
             if (currentLoan.thresholdPrice > thresholdPrice_) {
                 currentLoan.thresholdPrice = thresholdPrice_;
-                _bubbleDown(self, currentLoan, i);
+                _bubbleDown(self, currentLoan, id_);
             } else {
                 currentLoan.thresholdPrice = thresholdPrice_;
-                _bubbleUp(self, currentLoan, i);
+                _bubbleUp(self, currentLoan, id_);
             }
 
         // New loan, insert it

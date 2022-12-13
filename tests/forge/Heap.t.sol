@@ -260,27 +260,6 @@ contract HeapTest is DSTestPlus {
         assertTrue(_loans.getTp(removeAddress) != tp);
     }
 
-    function testHeapRemoveNonExistentTp() public {
-        address b1 = makeAddr("b1");
-        address b2 = makeAddr("b2");
-        address b3 = makeAddr("b3");
-        address b4 = makeAddr("b4");
-        address b5 = makeAddr("b5");
-        address b6 = makeAddr("b6");
-
-        _loans.upsertTp(b1, 100 * 1e18);
-        _loans.upsertTp(b2, 200 * 1e18);
-        _loans.upsertTp(b3, 300 * 1e18);
-        _loans.upsertTp(b4, 400 * 1e18);
-        _loans.upsertTp(b5, 500 * 1e18);
-        _loans.upsertTp(b6, 600 * 1e18);
-        assertEq(_loans.getMaxBorrower(), b6);
-        assertEq(_loans.getTotalTps(),    7);
-
-        vm.expectRevert(abi.encodeWithSignature('NoLoan()'));
-        _loans.removeTp(address(100));
-    }
-
     function testHeapBorrowRepayBorrow() public {
         address b1 = makeAddr("b1");
 
