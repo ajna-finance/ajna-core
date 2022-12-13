@@ -359,15 +359,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 cumulativeDepositAboveBucket = deposits.treeSum() - bucketDeposit - deposits.prefixSum(index_);
         deposits.remove(index_, removedAmount, bucketDeposit);
 
+        uint256 lup = _lup(poolState.accruedDebt);
+        uint256 htp = _htp(poolState.inflator);
+        // revert if removal can be done without kick
+        if (htp <= lup) revert NoAuctionKicked();
+
         uint256 totalBondsAmount;
-        uint256 lup;
 
         // if htp > lup, then lender must kick auctions with their removed amount prior to receiving funds.
-        while (maxKicks_ > 0) {
-            lup = _lup(poolState.accruedDebt);   // TODO: optimize this
-            uint256 htp = _htp(poolState.inflator);      // TODO: avoid loading top loan multiple times in same loop
-            if (htp <= lup) break;
-
+        while (htp > lup) {
             // TODO: move code below in a single utility function that can be used in normal kick too
             address topBorrower = loans.getMax().borrower; // TODO: avoid loading top loan multiple times in same loop
             Loans.Borrower storage borrower = loans.borrowers[topBorrower];
@@ -404,7 +404,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             t0DebtInAuction += borrowerT0debt; // TODO: write storage variables only once at the end and not inside the loop
             t0poolDebt      += kickPenalty;    // TODO: write storage variables only once at the end and not inside the loop
 
-            --maxKicks_;
+            if (--maxKicks_ == 0) break;
+
+            lup = _lup(poolState.accruedDebt); // TODO: optimize this
+            htp = _htp(poolState.inflator); // TODO: avoid loading top loan multiple times in same loop
         }
 
         // check if enough quote tokens removed to cover liquidation bond and if cumulative deposits above bucket less than liquidationDebt
