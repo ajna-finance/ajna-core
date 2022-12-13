@@ -186,12 +186,9 @@ library Auctions {
             uint256 deposit = Deposits.valueAt(deposits_, index);
             uint256 price   = _priceAt(index);
 
-            uint256 depositToRemove = deposit;
-            uint256 collateralUsed;
-
-            if (depositToRemove == 0) {
-                collateralUsed = params_.collateral;
-            } else {
+            if (deposit != 0) {
+                uint256 collateralUsed;
+                uint256 depositToRemove   = deposit;
                 uint256 debtToSettle      = Maths.wmul(params_.t0debt, params_.inflator);   // current debt to be settled
                 uint256 maxSettleableDebt = Maths.wmul(params_.collateral, price);          // max debt that can be settled with existing collateral
 
@@ -210,10 +207,13 @@ library Auctions {
                     collateralUsed     = params_.collateral;
                     params_.collateral = 0;
                 }
-                
+
+                buckets_[index].collateral += collateralUsed;                // add settled collateral into bucket
                 Deposits.remove(deposits_, index, depositToRemove, deposit); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
+            } else {
+                buckets_[index].collateral += params_.collateral; // no deposit in bucket, add entire collateral into bucket
+                params_.collateral = 0;                           // entire collateral added into bucket
             }
-            buckets_[index].collateral += collateralUsed;                    // add settled collateral into bucket
 
             --params_.bucketDepth;
         }
