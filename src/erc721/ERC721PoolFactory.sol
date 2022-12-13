@@ -39,13 +39,15 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
         // CryptoKitties and CryptoFighters NFTs
         else if ( collateral_ == 0x06012c8cf97BEaD5deAe237070F9587f8E7A266d || collateral_ ==  0x87d598064c736dd0C712D329aFCFAA0Ccc1921A1 ){
             nftType = NFTTypes.CRYPTOKITTIES;
-        } else {
+        }
+        // All other NFTs that support the EIP721 standard 
+        else {
+            // Here 0x80ac58cd is the ERC721 interface Id
             bool supportsERC721Interface = IERC165(collateral_).supportsInterface(0x80ac58cd);
 
-            // Non Standard ERC721 and Not supported Nfts
+            // Neither a standard NFT nor a non-standard supported NFT(punk, kitty or fighter)
             if (!supportsERC721Interface) revert NFTNotSupported();
 
-            // Standard ERC721 NFTs
             nftType = NFTTypes.STANDARD_ERC721;
         }
 
