@@ -29,4 +29,9 @@ interface IERC721PoolFactory is IPoolFactory {
         uint256[] memory tokenIds,
         uint256 interestRate
     ) external returns (address pool);
+
+    /**
+     *  @notice User attempted to make pool with non supported NFT contract as collateral.
+     */
+    error NFTNotSupported();
 }
