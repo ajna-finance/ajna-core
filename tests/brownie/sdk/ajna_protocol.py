@@ -25,7 +25,7 @@ class AjnaProtocol:
     # keccak256("ERC20_NON_SUBSET_HASH")
     ERC20_POOL_HASH = "2263c4378b4920f0bef611a3ff22c506afa4745b3319c50b6d704a874990b8b2"
 
-    def __init__(self) -> None:
+    def __init__(self, ajna) -> None:
         self._accounts = Accounts()
         self._tokens = {}
         self.deployer = self._accounts[0]
@@ -38,7 +38,7 @@ class AjnaProtocol:
         self.auctions = Auctions.deploy({"from": self.deployer})
         self.pool_info_utils = PoolInfoUtils.deploy({"from": self.deployer})
 
-        self.ajna_factory = ERC20PoolFactory.deploy({"from": self.deployer})
+        self.ajna_factory = ERC20PoolFactory.deploy(ajna, {"from": self.deployer})
 
         self.pools: List[ERC20Pool] = []
         self.lenders = []
