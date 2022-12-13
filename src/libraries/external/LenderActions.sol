@@ -114,12 +114,15 @@ library LenderActions {
         Deposits.Data storage deposits_,
         uint256 collateralAmountToAdd_,
         uint256 index_
-    ) external returns (uint256) {
-        return _addCollateral(
-            buckets_,
-            deposits_,
+    ) external returns (uint256 bucketLPs_) {
+        uint256 bucketDeposit = Deposits.valueAt(deposits_, index_);
+        uint256 bucketPrice   = _priceAt(index_);
+        bucketLPs_ = Buckets.addCollateral(
+            buckets_[index_],
+            msg.sender,
+            bucketDeposit,
             collateralAmountToAdd_,
-            index_
+            bucketPrice
         );
     }
 
@@ -364,12 +367,15 @@ library LenderActions {
 
         if (collateralToMerge_ != collateralAmount_) {
             // Merge totalled collateral to specified bucket, toIndex_
-            bucketLPs_ = _addCollateral(
-                buckets_,
-                deposits_,
+            uint256 toBucketDeposit = Deposits.valueAt(deposits_, toIndex_);
+            uint256 toBucketPrice   = _priceAt(toIndex_);
+            bucketLPs_ = Buckets.addCollateral(
+                buckets_[toIndex_],
+                msg.sender,
+                toBucketDeposit,
                 collateralToMerge_,
-                toIndex_
-            ); 
+                toBucketPrice
+            );
         }
     }
 
@@ -426,23 +432,6 @@ library LenderActions {
     /**************************/
     /*** Internal Functions ***/
     /**************************/
-
-    function _addCollateral(
-        mapping(uint256 => Buckets.Bucket) storage buckets_,
-        Deposits.Data storage deposits_,
-        uint256 collateralAmountToAdd_,
-        uint256 index_
-    ) internal returns (uint256 bucketLPs_) {
-        uint256 bucketDeposit = Deposits.valueAt(deposits_, index_);
-        uint256 bucketPrice   = _priceAt(index_);
-        bucketLPs_ = Buckets.addCollateral(
-            buckets_[index_],
-            msg.sender,
-            bucketDeposit,
-            collateralAmountToAdd_,
-            bucketPrice
-        );
-    }
 
     function _removeMaxCollateral(
         mapping(uint256 => Buckets.Bucket) storage buckets_,
