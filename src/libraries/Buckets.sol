@@ -136,7 +136,7 @@ library Buckets {
         uint256 bucketCollateral_,
         uint256 bucketLPs_,
         uint256 bucketUnscaledDeposit_,
-	    uint256 bucketScale_,
+        uint256 bucketScale_,
         uint256 bucketPrice_
     ) internal pure returns (uint256) {
         return bucketLPs_ == 0 ? Maths.RAY :

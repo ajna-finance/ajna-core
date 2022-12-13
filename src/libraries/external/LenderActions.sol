@@ -436,7 +436,7 @@ library LenderActions {
             bucketCollateral_,
             bucketLPs_,
             unscaledDepositAvailable_,
-	        depositScale_,
+            depositScale_,
             price_
         );
 
