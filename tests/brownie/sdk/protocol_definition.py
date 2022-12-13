@@ -1,6 +1,7 @@
 from typing import List
 from dataclasses import dataclass, field
 
+AJNA_ADDRESS = "0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079"
 
 DAI_ADDRESS = "0x6b175474e89094c44da98b954eedeac495271d0f"
 DAI_RESERVE_ADDRESS = "0x9759A6Ac90977b93B58547b4A71c78317f391A28"
