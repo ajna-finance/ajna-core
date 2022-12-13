@@ -5,7 +5,6 @@ pragma solidity 0.8.14;
 import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 import '@openzeppelin/contracts/utils/Checkpoints.sol';
-import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { IPool } from './base/interfaces/IPool.sol';
 import { IPositionManager } from './base/interfaces/IPositionManager.sol';
@@ -20,27 +19,33 @@ import './IAjnaRewards.sol';
 contract AjnaRewards is IAjnaRewards {
 
     using Checkpoints for Checkpoints.History;
-    using EnumerableSet for EnumerableSet.UintSet; // TODO: remove this?
 
     /**************/
     /*** Events ***/
     /**************/
 
+    /**
+     *  @notice Emitted when lender claims rewards that have accrued to their deposit.
+     *  @param  owner    Owner of the staked NFT.
+     *  @param  ajnaPool Address of the Ajna pool the NFT corresponds to.
+     *  @param  tokenId  ID of the staked NFT.
+     *  @param  amount   The amount of AJNA tokens claimed by the depositor.
+     */
     event ClaimRewards(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId, uint256 amount);
 
     /**
      *  @notice Emitted when lender deposits their LP NFT into the rewards contract.
-     *  @param  owner        Owner of the staked NFT.
-     *  @param  ajnaPool     Address of the Ajna pool the NFT corresponds to.
-     *  @param  tokenId      ID of the staked NFT.
+     *  @param  owner    Owner of the staked NFT.
+     *  @param  ajnaPool Address of the Ajna pool the NFT corresponds to.
+     *  @param  tokenId  ID of the staked NFT.
      */
     event DepositToken(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
 
     /**
      *  @notice Emitted when lender withdraws their LP NFT from the rewards contract.
-     *  @param  owner         Owner of the staked NFT.
-     *  @param  ajnaPool      Address of the Ajna pool the NFT corresponds to.
-     *  @param  tokenId       ID of the staked NFT.
+     *  @param  owner    Owner of the staked NFT.
+     *  @param  ajnaPool Address of the Ajna pool the NFT corresponds to.
+     *  @param  tokenId  ID of the staked NFT.
      */
     event WithdrawToken(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
 
@@ -48,28 +53,42 @@ contract AjnaRewards is IAjnaRewards {
     /*** Errors ***/
     /**************/
 
+    /**
+     *  @notice User attempted to interact with an NFT they aren't the owner of.
+     */
     error NotOwnerOfToken();
 
     /***********************/
     /*** State Variables ***/
     /***********************/
 
-    address public immutable ajnaToken;
+    address public immutable ajnaToken; // address of the AJNA token
 
-    IPositionManager public immutable positionManager;
+    IPositionManager public immutable positionManager; // address of the PositionManager contract
 
+    /**
+     * @notice Reward factor by which to scale the total rewards earned.
+     * @dev ensures that rewards issued to staked lenders in a given pool are less than the ajna tokens burned in that pool.
+     */
     uint256 internal constant REWARD_FACTOR = 0.500000000000000000 * 1e18;
 
-    // tokenID => Deposit information
+    /**
+     * @notice Mapping of LP NFTs staked in the Ajna Rewards contract.
+     * @dev tokenID => Deposit
+     */
     mapping(uint256 => Deposit) public deposits;
 
-    // poolAddress => bucketIndex => checkpoint => exchangeRate
+    /**
+     * @notice Mapping of per pool bucket exchange rates, checkpointed by block.
+     * @dev Checkpoints for a given bucket are updated everytime any depositer staked in that bucket interacts with the rewards contract.
+     * @dev poolAddress => bucketIndex => checkpoint => exchangeRate
+     */
     mapping (address => mapping(uint256 => Checkpoints.History)) internal poolBucketExchangeRateCheckpoints;
 
     struct Deposit {
-        address owner;
-        address ajnaPool;
-        uint256 lastInteractionBlock;
+        address owner;                            // owner of the LP NFT
+        address ajnaPool;                         // address of the Ajna pool the NFT corresponds to
+        uint256 lastInteractionBlock;             // last block the deposit interacted with the rewards contract
         mapping(uint256 => uint256) lpsAtDeposit; // total pool deposits in each of the buckets a position is in
     }
 
@@ -86,6 +105,11 @@ contract AjnaRewards is IAjnaRewards {
     /*** External Functions ***/
     /**************************/
 
+    /**
+     *  @notice Deposit a LP NFT into the rewards contract.
+     *  @dev    Underlying NFT LP positions cannot change while staked. Retrieves exchange rates for each bucket the NFT is associated with.
+     *  @param  tokenId_ ID of the LP NFT to stake in the AjnaRewards contract.
+     */
     function depositNFT(uint256 tokenId_) external {
         address ajnaPool = PositionManager(address(positionManager)).poolKey(tokenId_);
 
@@ -125,9 +149,10 @@ contract AjnaRewards is IAjnaRewards {
         // claim rewards, if any
         _claimRewards(tokenId_);
 
-        emit WithdrawToken(msg.sender, ajnaPool, tokenId_);
+        delete deposits[tokenId_];
 
         // transfer LP NFT from contract to sender
+        emit WithdrawToken(msg.sender, ajnaPool, tokenId_);
         IERC721(address(positionManager)).safeTransferFrom(address(this), msg.sender, tokenId_);
     }
 
@@ -171,6 +196,7 @@ contract AjnaRewards is IAjnaRewards {
         uint256 interestEarned = 0;
         uint256 lastInteractionBlock = deposit.lastInteractionBlock;
 
+        // calculate accrued interest as determined by the difference in exchange rates between the last interaction block and the current block
         for (uint256 i = 0; i < positionPrices.length; ) {
             uint256 lastClaimedExchangeRate = poolBucketExchangeRateCheckpoints[ajnaPool][positionPrices[i]].getAtBlock(lastInteractionBlock);
             uint256 currentExchangeRate = poolBucketExchangeRateCheckpoints[ajnaPool][positionPrices[i]].latest();
@@ -190,7 +216,7 @@ contract AjnaRewards is IAjnaRewards {
             }
         }
 
-        // calculate total interest accumulated by the pool over the claim period
+        // retrieve total interest accumulated by the pool over the claim period, and total tokens burned over that period
         (uint256 ajnaTokensBurned, uint256 totalInterestEarned) = _getPoolAccumulators(ajnaPool, lastInteractionBlock);
 
         rewards_ = REWARD_FACTOR * (interestEarned / totalInterestEarned) * ajnaTokensBurned;
@@ -209,7 +235,7 @@ contract AjnaRewards is IAjnaRewards {
         totalInterestEarned_ = totalInterestLatest - totalInterestAtBlock;
     }
 
-    // use deposits object instead of tokenId?
+    // TODO: use deposits object instead of tokenId?
     function _updateExchangeRates(uint256 tokenId_) internal {
         address ajnaPool = PositionManager(address(positionManager)).poolKey(tokenId_);
 
@@ -241,6 +267,13 @@ contract AjnaRewards is IAjnaRewards {
     /*** View Functions ***/
     /**********************/
 
+    /**
+     *  @notice Retrieve information about a given deposit.
+     *  @param  tokenId_  ID of the NFT deposited into the rewards contract to retrieve information about.
+     *  @return The owner of a given NFT deposit.
+     *  @return The Pool the NFT represents positions in.
+     *  @return The last block in which the owner of the NFT interacted with the rewards contract.
+     */
     function getDepositInfo(uint256 tokenId_) external view returns (address, address, uint256) {
         Deposit storage deposit = deposits[tokenId_];
         return (deposit.owner, deposit.ajnaPool, deposit.lastInteractionBlock);

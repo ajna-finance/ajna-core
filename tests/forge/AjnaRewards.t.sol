@@ -16,10 +16,11 @@ import { Token }      from './utils/Tokens.sol';
 contract AjnaRewardsTest is DSTestPlus {
 
     // address          internal _ajna = 0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079;
-    ERC20            internal _ajnaToken;
+    address         internal _bidder;
+    ERC20           internal _ajnaToken;
 
-    AjnaRewards      internal _ajnaRewards;
-    PositionManager  internal _positionManager;
+    AjnaRewards     internal _ajnaRewards;
+    PositionManager internal _positionManager;
 
     Token           internal _collateralOne;
     Token           internal _quoteOne;
@@ -45,9 +46,14 @@ contract AjnaRewardsTest is DSTestPlus {
         _collateralTwo = new Token("Collateral 2", "C2");
         _quoteTwo      = new Token("Quote 2", "Q2");
         _poolTwo       = ERC20Pool(new ERC20PoolFactory(_ajna).deployPool(address(_collateralTwo), address(_quoteTwo), 0.05 * 10**18));
+
+        _bidder    = makeAddr("bidder");
     }
 
     // TODO: dynamically set mint amount
+    // TODO: fuzz or randomize the inputs to above function
+    // function _getIndexes()
+    // function _getAmounts()    
     function _mintAndMemorializePositionNFT(address minter_, ERC20Pool pool_, uint256[] memory indexes_) internal returns (uint256 tokenId_) {
         changePrank(minter_);
 
@@ -79,9 +85,27 @@ contract AjnaRewardsTest is DSTestPlus {
         _positionManager.memorializePositions(memorializeParams);
     }
 
-    // TODO: fuzz or randomize the inputs to above function
-    // function _getIndexes()
-    // function _getAmounts()
+    // TODO: add support for multiple borrowers
+    function _triggerReserveAuctions(ERC20Pool pool_) internal {
+
+        address borrower = makeAddr("borrower");
+
+        changePrank(borrower);
+
+        // TODO: determine how to randomize these values
+        // borrower drawsDebt from the pool
+        uint256 amountToBorrow = 300 * 1e18;
+        uint256 limitIndex = 3;
+        uint256 collateralToPledge = 10 * 1e18;
+        pool_.drawDebt(borrower, amountToBorrow, limitIndex, collateralToPledge);
+
+        // allow time to pass for interest to accumulate
+        skip(26 weeks);
+
+        // borrower repays some of their debt, providing reserves to be claimed
+        // don't pull any collateral, as such functionality is unrelated to reserve auctions
+        pool_.repayDebt(borrower, amountToBorrow / 2, 0);
+    }
 
     function testDepositToken() external {
         skip(10);
@@ -142,6 +166,12 @@ contract AjnaRewardsTest is DSTestPlus {
     }
 
     function testClaimRewards() external {
+
+        // deposit NFTs into the rewards contract
+
+
+        // trigger reserve auctions
+        _triggerReserveAuctions(_poolOne);
 
         // TODO: implement this test
     
