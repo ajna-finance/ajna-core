@@ -102,7 +102,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         /*****************************/
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  9.634254807692307697 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
                 poolSize:             73_000 * 1e18,
@@ -214,7 +214,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         skip(16 hours);
 
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            false,
                 kicker:            address(0),
@@ -262,7 +262,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         );
 
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            true,
                 kicker:            _lender,
@@ -300,7 +300,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         );
 
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            true,
                 kicker:            _lender,
@@ -330,7 +330,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         
         // Borrower is removed from auction, keeps collateral in system
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            false,
                 kicker:            address(0),
@@ -357,7 +357,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         );
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  7.991488192808991114 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
                 poolSize:             63_008.836766669707730070 * 1e18,
@@ -442,7 +442,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         skip(25 hours);
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  7.991488192808991114 * 1e18,
                 lup:                  0.000000099836282890 * 1e18,
                 poolSize:             7_990.380260129405185051 * 1e18,
@@ -473,7 +473,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         IERC20Pool(address(_pool)).drawDebt(_lender, 0, 0, 0);
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  7.993335753787741967 * 1e18,
                 lup:                  9.529276179422528643 * 1e18,
                 poolSize:             7_991.297334721700257995 * 1e18,
@@ -524,7 +524,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         skip(10 hours);
 
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower2,
                 active:            true,
                 kicker:            _lender,
@@ -563,7 +563,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         );
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  0.000000099836282890 * 1e18,
                 poolSize:             8_105.800538156165698866 * 1e18,
@@ -606,7 +606,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         );
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  1_004_968_987.606512354182109771 * 1e18,
                 poolSize:             9.170249839416101528 * 1e18,
@@ -707,7 +707,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         );
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  1_004_968_987.606512354182109771 * 1e18,
                 poolSize:             0,

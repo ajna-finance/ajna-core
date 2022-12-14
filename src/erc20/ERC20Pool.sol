@@ -10,9 +10,8 @@ import './interfaces/IERC20Taker.sol';
 import '../base/FlashloanablePool.sol';
 
 contract ERC20Pool is IERC20Pool, FlashloanablePool {
-    using Auctions  for Auctions.Data;
-    using Deposits  for Deposits.Data;
-    using Loans     for Loans.Data;
+    using Deposits  for DepositsState;
+    using Loans     for LoansState;
     using SafeERC20 for IERC20;
 
     /*****************/
@@ -168,7 +167,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         uint256 maxAmount_,
         uint256 index_
     ) external override returns (uint256 collateralAmount_, uint256 lpAmount_) {
-        auctions.revertIfAuctionClearable(loans);
+        Auctions.revertIfAuctionClearable(auctions, loans);
 
         PoolState memory poolState = _accruePoolInterest();
 
@@ -196,12 +195,12 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         address        callee_,
         bytes calldata data_
     ) external override nonReentrant {
-        PoolState      memory poolState = _accruePoolInterest();
-        Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
+        PoolState memory poolState = _accruePoolInterest();
+        Borrower  memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
         // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
         if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral();
 
-        Auctions.TakeParams memory params = Auctions.TakeParams(
+        TakeParams memory params = TakeParams(
             {
                 borrower:       borrowerAddress_,
                 collateral:     borrower.collateral,

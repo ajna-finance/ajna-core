@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
+import { MoveQuoteParams, RemoveQuoteParams } from '../../base/interfaces/pool/IPoolLenderActions.sol';
+
 import '../Deposits.sol';
 import '../Buckets.sol';
 
@@ -63,25 +65,6 @@ library LenderActions {
         uint256 toBucketBankruptcyTime;
     }
 
-    struct MoveQuoteParams {
-        uint256 maxAmountToMove; // max amount to move between deposits
-        uint256 fromIndex;       // the deposit index from where amount is moved
-        uint256 toIndex;         // the deposit index where amount is moved to
-        uint256 ptp;             // the Pool Threshold Price (used to determine if penalty should be applied
-        uint256 htp;             // the Highest Threshold Price in pool
-        uint256 poolDebt;        // the current debt of the pool
-        uint256 rate;            // the interest rate in pool (used to calculate penalty)
-    }
-
-    struct RemoveQuoteParams {
-        uint256 maxAmount; // max amount to be removed
-        uint256 index;     // the deposit index from where amount is removed
-        uint256 ptp;       // the Pool Threshold Price (used to determine if penalty should be applied)
-        uint256 htp;       // the Highest Threshold Price in pool
-        uint256 poolDebt;  // the current debt of the pool
-        uint256 rate;      // the interest rate in pool (used to calculate penalty)
-    }
-
     /**
      *  @notice Emitted when lender moves quote token from a bucket price to another.
      *  @param  lender         Recipient that moved quote tokens.
@@ -126,8 +109,8 @@ library LenderActions {
     );
 
     function addCollateral(
-        mapping(uint256 => Buckets.Bucket) storage buckets_,
-        Deposits.Data storage deposits_,
+        mapping(uint256 => Bucket) storage buckets_,
+        DepositsState storage deposits_,
         uint256 collateralAmountToAdd_,
         uint256 index_
     ) external returns (uint256 bucketLPs_) {
@@ -143,12 +126,12 @@ library LenderActions {
     }
 
     function addQuoteToken(
-        mapping(uint256 => Buckets.Bucket) storage buckets_,
-        Deposits.Data storage deposits_,
+        mapping(uint256 => Bucket) storage buckets_,
+        DepositsState storage deposits_,
         uint256 quoteTokenAmountToAdd_,
         uint256 index_
     ) external returns (uint256 bucketLPs_) {
-        Buckets.Bucket storage bucket = buckets_[index_];
+        Bucket storage bucket = buckets_[index_];
         uint256 bankruptcyTime = bucket.bankruptcyTime;
         // cannot deposit in the same block when bucket becomes insolvent
         if (bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
@@ -166,7 +149,7 @@ library LenderActions {
         Deposits.add(deposits_, index_, quoteTokenAmountToAdd_);
 
         // update lender LPs
-        Buckets.Lender storage lender = bucket.lenders[msg.sender];
+        Lender storage lender = bucket.lenders[msg.sender];
         if (bankruptcyTime >= lender.depositTime) lender.lps = bucketLPs_;
         else lender.lps += bucketLPs_;
         lender.depositTime = block.timestamp;
@@ -175,21 +158,21 @@ library LenderActions {
     }
 
     function moveQuoteToken(
-        mapping(uint256 => Buckets.Bucket) storage buckets_,
-        Deposits.Data storage deposits_,
+        mapping(uint256 => Bucket) storage buckets_,
+        DepositsState storage deposits_,
         MoveQuoteParams calldata params_
     ) external returns (uint256 fromBucketLPs_, uint256 toBucketLPs_, uint256 lup_) {
         if (params_.fromIndex == params_.toIndex) revert MoveToSamePrice();
 
-        Buckets.Bucket storage toBucket = buckets_[params_.toIndex];
+        Bucket storage toBucket = buckets_[params_.toIndex];
 
         MoveQuoteLocalVars memory vars;
         vars.toBucketBankruptcyTime = toBucket.bankruptcyTime;
         // cannot move in the same block when target bucket becomes insolvent
         if (vars.toBucketBankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
 
-        Buckets.Bucket storage fromBucket = buckets_[params_.fromIndex];
-        Buckets.Lender storage fromBucketLender = fromBucket.lenders[msg.sender];
+        Bucket storage fromBucket = buckets_[params_.fromIndex];
+        Lender storage fromBucketLender = fromBucket.lenders[msg.sender];
 
         vars.fromBucketPrice            = _priceAt(params_.fromIndex);
         vars.toBucketPrice              = _priceAt(params_.toIndex);
@@ -237,7 +220,7 @@ library LenderActions {
         // update lender LPs balance in from bucket
         fromBucketLender.lps -= fromBucketLPs_;
         // update lender LPs balance and deposit time in target bucket
-        Buckets.Lender storage toBucketLender = toBucket.lenders[msg.sender];
+        Lender storage toBucketLender = toBucket.lenders[msg.sender];
         if (vars.toBucketBankruptcyTime >= toBucketLender.depositTime) toBucketLender.lps = toBucketLPs_;
         else toBucketLender.lps += toBucketLPs_;
         // set deposit time to the greater of the lender's from bucket and the target bucket's last bankruptcy timestamp + 1 so deposit won't get invalidated
@@ -259,8 +242,8 @@ library LenderActions {
     }
 
     function removeQuoteToken(
-        mapping(uint256 => Buckets.Bucket) storage buckets_,
-        Deposits.Data storage deposits_,
+        mapping(uint256 => Bucket) storage buckets_,
+        DepositsState storage deposits_,
         RemoveQuoteParams calldata params_
     ) external returns (uint256 removedAmount_, uint256 redeemedLPs_, uint256 lup_) {
         uint256 unscaledDeposit = Deposits.unscaledValueAt(deposits_, params_.index);
@@ -269,8 +252,8 @@ library LenderActions {
 
         uint256 depositScale = Deposits.scale(deposits_, params_.index);
 
-        Buckets.Bucket storage bucket = buckets_[params_.index];
-        Buckets.Lender storage lender = bucket.lenders[msg.sender];
+        Bucket storage bucket = buckets_[params_.index];
+        Lender storage lender = bucket.lenders[msg.sender];
         uint256 depositTime = lender.depositTime;
         uint256 lenderLPs;
         if (bucket.bankruptcyTime < lender.depositTime) lenderLPs = lender.lps;
@@ -311,17 +294,17 @@ library LenderActions {
     }
 
     function removeMaxCollateral(
-        mapping(uint256 => Buckets.Bucket) storage buckets_,
-        Deposits.Data storage deposits_,
+        mapping(uint256 => Bucket) storage buckets_,
+        DepositsState storage deposits_,
         uint256 maxAmount_,
         uint256 index_
     ) external returns (uint256 collateralAmount_, uint256 lpAmount_) {
 
-        Buckets.Bucket storage bucket = buckets_[index_];
+        Bucket storage bucket = buckets_[index_];
         uint256 bucketCollateral = bucket.collateral;
         if (bucketCollateral == 0) revert InsufficientCollateral(); // revert if there's no collateral in bucket
 
-        Buckets.Lender storage lender = bucket.lenders[msg.sender];
+        Lender storage lender = bucket.lenders[msg.sender];
         uint256 lenderLpBalance;
         if (bucket.bankruptcyTime < lender.depositTime) lenderLpBalance = lender.lps;
         if (lenderLpBalance == 0) revert NoClaim();                  // revert if no LP to redeem
@@ -357,13 +340,13 @@ library LenderActions {
     }
 
     function removeCollateral(
-        mapping(uint256 => Buckets.Bucket) storage buckets_,
-        Deposits.Data storage deposits_,
+        mapping(uint256 => Bucket) storage buckets_,
+        DepositsState storage deposits_,
         uint256 amount_,
         uint256 index_
     ) external returns (uint256 lpAmount_) {
 
-        Buckets.Bucket storage bucket = buckets_[index_];
+        Bucket storage bucket = buckets_[index_];
         uint256 bucketCollateral = bucket.collateral;
         if (amount_ > bucketCollateral) revert InsufficientCollateral();
 
@@ -377,7 +360,7 @@ library LenderActions {
             bucketPrice
         );
 
-        Buckets.Lender storage lender = bucket.lenders[msg.sender];
+        Lender storage lender = bucket.lenders[msg.sender];
         uint256 lenderLpBalance;
         if (bucket.bankruptcyTime < lender.depositTime) lenderLpBalance = lender.lps;
         if (lenderLpBalance == 0 || lpAmount_ > lenderLpBalance) revert InsufficientLPs();
@@ -397,7 +380,7 @@ library LenderActions {
      *  @param  indexes_  Array of deposit indexes at which LP tokens were moved.
      */
     function transferLPTokens(
-        mapping(uint256 => Buckets.Bucket) storage buckets_,
+        mapping(uint256 => Bucket) storage buckets_,
         mapping(address => mapping(address => mapping(uint256 => uint256))) storage allowances_,
         address owner_,
         address newOwner_,
@@ -411,9 +394,9 @@ library LenderActions {
             if (index > 8192 ) revert InvalidIndex();
 
             uint256 transferAmount = allowances_[owner_][newOwner_][index];
-            Buckets.Bucket storage bucket = buckets_[index];
 
-            Buckets.Lender storage lender = bucket.lenders[owner_];
+            Bucket storage bucket = buckets_[index];
+            Lender storage lender = bucket.lenders[owner_];
             uint256 lenderDepositTime = lender.depositTime;
             uint256 lenderLpBalance;
             if (bucket.bankruptcyTime < lenderDepositTime) lenderLpBalance = lender.lps;
@@ -423,7 +406,7 @@ library LenderActions {
             delete allowances_[owner_][newOwner_][index]; // delete allowance
 
             // move lp tokens to the new owner address
-            Buckets.Lender storage newLender = bucket.lenders[newOwner_];
+            Lender storage newLender = bucket.lenders[newOwner_];
             newLender.lps         += transferAmount;
             newLender.depositTime = Maths.max(lenderDepositTime, newLender.depositTime);
             // reset owner lp balance for this index
@@ -495,7 +478,7 @@ library LenderActions {
     }
 
     function _lup(
-        Deposits.Data storage deposits_,
+        DepositsState storage deposits_,
         uint256 debt_
     ) internal view returns (uint256) {
         return _priceAt(Deposits.findIndexOfSum(deposits_, debt_));

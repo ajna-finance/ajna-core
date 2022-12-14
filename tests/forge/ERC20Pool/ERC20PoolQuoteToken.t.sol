@@ -42,7 +42,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             }
         );
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
                 poolSize:             10_000 * 1e18,
@@ -88,7 +88,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             }
         );
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
                 poolSize:             30_000 * 1e18,
@@ -153,7 +153,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             }
         );
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
                 poolSize:             70_000 * 1e18,
@@ -256,7 +256,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             }
         );
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
                 poolSize:             70_000 * 1e18,
@@ -340,7 +340,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             }
         );
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
                 poolSize:             65_000 * 1e18,
@@ -423,7 +423,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             }
         );
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
                 poolSize:             30_000 * 1e18,

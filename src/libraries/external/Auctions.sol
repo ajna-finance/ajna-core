@@ -4,36 +4,26 @@ pragma solidity 0.8.14;
 
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 
+import {
+    DepositsState,
+    AuctionsState,
+    Liquidation,
+    Kicker,
+    ReserveAuctionState,
+    SettleParams,
+    KickParams,
+    BucketTakeParams,
+    TakeParams,
+    StartReserveAuctionParams
+} from '../../base/interfaces/IPool.sol';
+
 import '../Buckets.sol';
+import '../Deposits.sol';
 import '../Loans.sol';
 
 import '../../base/PoolHelper.sol';
-import '../../base/Pool.sol';
 
 library Auctions {
-    struct Data {
-        address head;
-        address tail;
-        uint256 totalBondEscrowed; // [WAD]
-        mapping(address => Liquidation) liquidations;
-        mapping(address => Kicker)      kickers;
-    }
-
-    struct Liquidation {
-        address kicker;         // address that initiated liquidation
-        uint96  bondFactor;     // bond factor used to start liquidation
-        uint96  kickTime;       // timestamp when liquidation was started
-        address prev;           // previous liquidated borrower in auctions queue
-        uint96  kickMomp;       // Momp when liquidation was started
-        address next;           // next liquidated borrower in auctions queue
-        uint160 bondSize;       // liquidation bond size
-        uint96  neutralPrice;   // Neutral Price when liquidation was started
-    }
-
-    struct Kicker {
-        uint256 claimable; // kicker's claimable balance
-        uint256 locked;    // kicker's balance of tokens locked in auction bonds
-    }
 
     struct TakeResult {
         uint256 quoteTokenAmount; // The quote token amount that taker should pay for collateral taken.
@@ -44,48 +34,6 @@ library Auctions {
         uint256 bondChange;       // The change made on the bond size (beeing reward or penalty).
         address kicker;           // Address of auction kicker.
         bool    isRewarded;       // True if kicker is rewarded (auction price lower than neutral price), false if penalized (auction price greater than neutral price).
-    }
-
-    struct SettleParams {
-        address borrower;    // borrower address to settle
-        uint256 collateral;  // remaining collateral pledged by borrower that can be used to settle debt
-        uint256 t0debt;      // borrower t0 debt to settle 
-        uint256 reserves;    // current reserves in pool
-        uint256 inflator;    // current pool inflator
-        uint256 bucketDepth; // number of buckets to use when settle debt
-    }
-
-    struct KickParams {
-        address borrower;       // borrower address to kick
-        uint256 collateral;     // borrower collateral
-        uint256 debt;           // borrower debt 
-        uint256 momp;           // loan's MOMP
-        uint256 neutralPrice;   // loan's Neutral Price
-        uint256 rate;           // pool's Interest Rate
-    }
-
-    struct BucketTakeParams {
-        address borrower;       // borrower address to take from
-        uint256 collateral;     // borrower available collateral to take
-        uint256 t0debt;         // borrower t0 debt
-        uint256 inflator;       // current pool inflator
-        bool    depositTake;    // deposit or arb take, used by bucket take
-        uint256 index;          // bucket index, used by bucket take
-    }
-
-    struct TakeParams {
-        address borrower;       // borrower address to take from
-        uint256 collateral;     // borrower available collateral to take
-        uint256 t0debt;         // borrower t0 debt
-        uint256 takeCollateral; // desired amount to take
-        uint256 inflator;       // current pool inflator
-    }
-
-    struct StartReserveAuctionParams {
-        uint256 poolSize;    // total deposits in pool (with accrued debt)
-        uint256 poolDebt;    // current t0 pool debt
-        uint256 poolBalance; // pool quote token balance
-        uint256 inflator;    // pool current inflator
     }
 
     /**
@@ -194,12 +142,12 @@ library Auctions {
      *  @return The amount of borrower debt left after settle.
      */
     function settlePoolDebt(
-        Data storage self,
-        mapping(uint256 => Buckets.Bucket) storage buckets_,
-        Deposits.Data storage deposits_,
+        AuctionsState storage auctions_,
+        mapping(uint256 => Bucket) storage buckets_,
+        DepositsState storage deposits_,
         SettleParams memory params_
     ) external returns (uint256, uint256) {
-        uint256 kickTime = self.liquidations[params_.borrower].kickTime;
+        uint256 kickTime = auctions_.liquidations[params_.borrower].kickTime;
         if (kickTime == 0) revert NoAuction();
 
         if ((block.timestamp - kickTime < 72 hours) && (params_.collateral != 0)) revert AuctionNotClearable();
@@ -262,7 +210,7 @@ library Auctions {
                 } else {                                                             // not enough deposit to settle entire debt, we settle only deposit amount
                     params_.t0debt -= Maths.wdiv(depositToRemove, params_.inflator); // subtract from remaining debt the corresponding t0 amount of deposit
 
-                    Buckets.Bucket storage hpbBucket = buckets_[index];
+                    Bucket storage hpbBucket = buckets_[index];
                     if (hpbBucket.collateral == 0) {                                 // existing LPB and LP tokens for the bucket shall become unclaimable.
                         hpbBucket.lps = 0;
                         hpbBucket.bankruptcyTime = block.timestamp;
@@ -285,7 +233,7 @@ library Auctions {
      *  @return kickPenalty_       The kick penalty (three months of interest).
      */
     function kick(
-        Data storage self,
+        AuctionsState storage auctions_,
         KickParams calldata params_
     ) external returns (uint256 kickAuctionAmount_, uint256 kickPenalty_) {
         uint256 thresholdPrice = params_.debt  * Maths.WAD / params_.collateral;
@@ -305,7 +253,7 @@ library Auctions {
 
         // update kicker balances
         uint256 bondSize = Maths.wmul(bondFactor,  params_.debt);
-        Kicker storage kicker = self.kickers[msg.sender];
+        Kicker storage kicker = auctions_.kickers[msg.sender];
         kicker.locked += bondSize;
         uint256 kickerClaimable = kicker.claimable;
         if (kickerClaimable >= bondSize) {
@@ -315,10 +263,10 @@ library Auctions {
             kicker.claimable = 0;
         }
         // update totalBondEscrowed accumulator
-        self.totalBondEscrowed += bondSize;
+        auctions_.totalBondEscrowed += bondSize;
 
         // record liquidation info
-        Liquidation storage liquidation = self.liquidations[ params_.borrower];
+        Liquidation storage liquidation = auctions_.liquidations[ params_.borrower];
         liquidation.kicker              = msg.sender;
         liquidation.kickTime            = uint96(block.timestamp);
         liquidation.kickMomp            = uint96(params_.momp);
@@ -326,17 +274,17 @@ library Auctions {
         liquidation.bondFactor          = uint96(bondFactor);
         liquidation.neutralPrice        = uint96(params_.neutralPrice);
 
-        if (self.head != address(0)) {
+        if (auctions_.head != address(0)) {
             // other auctions in queue, liquidation doesn't exist or overwriting.
-            self.liquidations[self.tail].next =  params_.borrower;
-            liquidation.prev = self.tail;
+            auctions_.liquidations[auctions_.tail].next =  params_.borrower;
+            liquidation.prev = auctions_.tail;
         } else {
             // first auction in queue
-            self.head = params_.borrower;
+            auctions_.head = params_.borrower;
         }
 
         // update liquidation with the new ordering
-        self.tail =  params_.borrower;
+        auctions_.tail =  params_.borrower;
 
         // when loan is kicked, penalty of three months of interest is added
         kickPenalty_ = Maths.wmul(Maths.wdiv(params_.rate, 4 * 1e18), params_.debt );
@@ -355,9 +303,9 @@ library Auctions {
      *  @return T0 debt amount repaid.
     */
     function bucketTake(
-        Data storage self,
-        Deposits.Data storage deposits_,
-        mapping(uint256 => Buckets.Bucket) storage buckets_,
+        AuctionsState storage auctions_,
+        DepositsState storage deposits_,
+        mapping(uint256 => Bucket) storage buckets_,
         BucketTakeParams calldata params_
     ) external returns (uint256, uint256) {
         if (params_.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
@@ -365,7 +313,7 @@ library Auctions {
         uint256 bucketDeposit = Deposits.valueAt(deposits_, params_.index);
         if (bucketDeposit == 0) revert InsufficientLiquidity(); // revert if no quote tokens in arbed bucket
 
-        Liquidation storage liquidation = self.liquidations[params_.borrower];
+        Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
 
         uint256 kickTime = liquidation.kickTime;
         if (kickTime == 0) revert NoAuction();
@@ -416,16 +364,16 @@ library Auctions {
         if (!result.isRewarded) {
             // take is above neutralPrice, Kicker is penalized
             result.bondChange = Maths.min(liquidation.bondSize, Maths.wmul(result.quoteTokenAmount, uint256(-bpf)));
-            liquidation.bondSize                -= uint160(result.bondChange);
-            self.kickers[result.kicker].locked -= result.bondChange;
-            self.totalBondEscrowed              -= result.bondChange;
+            liquidation.bondSize                    -= uint160(result.bondChange);
+            auctions_.kickers[result.kicker].locked -= result.bondChange;
+            auctions_.totalBondEscrowed             -= result.bondChange;
         } else {
             result.bondChange = Maths.wmul(result.quoteTokenAmount, uint256(bpf)); // will be rewarded as LPBs
         }
 
         _rewardBucketTake(
-            deposits_,
             buckets_,
+            deposits_,
             bucketDeposit,
             params_.index,
             params_.depositTake,
@@ -452,10 +400,10 @@ library Auctions {
      *  @return Auction price.
     */
     function take(
-        Data storage self,
+        AuctionsState storage auctions_,
         TakeParams calldata params_
     ) external returns (uint256, uint256, uint256, uint256) {
-        Liquidation storage liquidation = self.liquidations[params_.borrower];
+        Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
 
         uint256 kickTime = liquidation.kickTime;
         if (kickTime == 0) revert NoAuction();
@@ -495,15 +443,15 @@ library Auctions {
             // take is below neutralPrice, Kicker is rewarded
             result.bondChange = Maths.wmul(result.quoteTokenAmount, uint256(bpf));
             liquidation.bondSize                += uint160(result.bondChange);
-            self.kickers[result.kicker].locked += result.bondChange;
-            self.totalBondEscrowed              += result.bondChange;
+            auctions_.kickers[result.kicker].locked += result.bondChange;
+            auctions_.totalBondEscrowed              += result.bondChange;
 
         } else {
             // take is above neutralPrice, Kicker is penalized
             result.bondChange = Maths.min(liquidation.bondSize, Maths.wmul(result.quoteTokenAmount, uint256(-bpf)));
             liquidation.bondSize                -= uint160(result.bondChange);
-            self.kickers[result.kicker].locked -= result.bondChange;
-            self.totalBondEscrowed              -= result.bondChange;
+            auctions_.kickers[result.kicker].locked -= result.bondChange;
+            auctions_.totalBondEscrowed              -= result.bondChange;
         }
 
         emit Take(
@@ -526,10 +474,10 @@ library Auctions {
      *  @param  borrower_ Borrower address to settle.
      */
     function settleERC20Auction(
-        Data storage self,
+        AuctionsState storage auctions_,
         address borrower_
     ) external {
-        _removeAuction(self, borrower_);
+        _removeAuction(auctions_, borrower_);
     }
 
     /**
@@ -543,9 +491,9 @@ library Auctions {
      *  @return bucketIndex_       Index of the bucket with LPs to compensate.
      */
     function settleNFTAuction(
-        Data storage self,
-        mapping(uint256 => Buckets.Bucket) storage buckets_,
-        Deposits.Data storage deposits_,
+        AuctionsState storage auctions_,
+        mapping(uint256 => Bucket) storage buckets_,
+        DepositsState storage deposits_,
         uint256[] storage borrowerTokens_,
         uint256[] storage poolTokens_,
         address borrowerAddress_,
@@ -558,8 +506,8 @@ library Auctions {
             // cover borrower's fractional amount with LPs in auction price bucket
             uint256 fractionalCollateral = borrowerCollateral_ - floorCollateral_;
             uint256 auctionPrice = _auctionPrice(
-                self.liquidations[borrowerAddress_].kickMomp,
-                self.liquidations[borrowerAddress_].kickTime
+                auctions_.liquidations[borrowerAddress_].kickMomp,
+                auctions_.liquidations[borrowerAddress_].kickTime
             );
             bucketIndex_ = _indexOf(auctionPrice);
             lps_ = Buckets.addCollateral(
@@ -583,7 +531,7 @@ library Auctions {
             }
         }
 
-        _removeAuction(self, borrowerAddress_);
+        _removeAuction(auctions_, borrowerAddress_);
     }
 
     /***********************/
@@ -591,15 +539,15 @@ library Auctions {
     /***********************/
 
     function startClaimableReserveAuction(
-        Data storage self,
-        Pool.ReserveAuctionParams storage reserveAuction_,
+        AuctionsState storage auctions_,
+        ReserveAuctionState storage reserveAuction_,
         StartReserveAuctionParams calldata params_
     ) external returns (uint256 kickerAward_) {
         uint256 curUnclaimedAuctionReserve = reserveAuction_.unclaimed;
         uint256 claimable = _claimableReserves(
             Maths.wmul(params_.poolDebt, params_.inflator),
             params_.poolSize,
-            self.totalBondEscrowed,
+            auctions_.totalBondEscrowed,
             curUnclaimedAuctionReserve,
             params_.poolBalance
         );
@@ -613,7 +561,7 @@ library Auctions {
     }
 
     function takeReserves(
-        Pool.ReserveAuctionParams storage reserveAuction_,
+        ReserveAuctionState storage reserveAuction_,
         uint256 maxAmount_
     ) external returns (uint256 amount_, uint256 ajnaRequired_) {
         uint256 kicked = reserveAuction_.kicked;
@@ -642,41 +590,41 @@ library Auctions {
      *  @param  borrower_ Auctioned borrower address.
      */
     function _removeAuction(
-        Data storage self,
+        AuctionsState storage auctions_,
         address borrower_
     ) internal {
-        Liquidation memory liquidation = self.liquidations[borrower_];
+        Liquidation memory liquidation = auctions_.liquidations[borrower_];
         // update kicker balances
-        Kicker storage kicker = self.kickers[liquidation.kicker];
+        Kicker storage kicker = auctions_.kickers[liquidation.kicker];
         kicker.locked    -= liquidation.bondSize;
         kicker.claimable += liquidation.bondSize;
 
         // remove auction bond size from bond escrow accumulator 
-        self.totalBondEscrowed -= liquidation.bondSize;
+        auctions_.totalBondEscrowed -= liquidation.bondSize;
 
-        if (self.head == borrower_ && self.tail == borrower_) {
+        if (auctions_.head == borrower_ && auctions_.tail == borrower_) {
             // liquidation is the head and tail
-            self.head = address(0);
-            self.tail = address(0);
+            auctions_.head = address(0);
+            auctions_.tail = address(0);
 
-        } else if(self.head == borrower_) {
+        } else if(auctions_.head == borrower_) {
             // liquidation is the head
-            self.liquidations[liquidation.next].prev = address(0);
-            self.head = liquidation.next;
+            auctions_.liquidations[liquidation.next].prev = address(0);
+            auctions_.head = liquidation.next;
 
-        } else if(self.tail == borrower_) {
+        } else if(auctions_.tail == borrower_) {
             // liquidation is the tail
-            self.liquidations[liquidation.prev].next = address(0);
-            self.tail = liquidation.prev;
+            auctions_.liquidations[liquidation.prev].next = address(0);
+            auctions_.tail = liquidation.prev;
 
         } else {
             // liquidation is in the middle
-            self.liquidations[liquidation.prev].next = liquidation.next;
-            self.liquidations[liquidation.next].prev = liquidation.prev;
+            auctions_.liquidations[liquidation.prev].next = liquidation.next;
+            auctions_.liquidations[liquidation.next].prev = liquidation.prev;
         }
 
         // delete liquidation
-         delete self.liquidations[borrower_];
+         delete auctions_.liquidations[borrower_];
     }
 
     /**
@@ -686,14 +634,14 @@ library Auctions {
      *  @param  result_        Struct containing take action result details.
      */
     function _rewardBucketTake(
-        Deposits.Data storage deposits_,
-        mapping(uint256 => Buckets.Bucket) storage buckets_,
+        mapping(uint256 => Bucket) storage buckets_,
+        DepositsState storage deposits_,
         uint256 bucketDeposit_,
         uint256 bucketIndex_,
         bool depositTake_,
         TakeResult memory result_
     ) internal {
-        Buckets.Bucket storage bucket = buckets_[bucketIndex_];
+        Bucket storage bucket = buckets_[bucketIndex_];
         uint256 bucketExchangeRate = Buckets.getExchangeRate(
             bucket.collateral,
             bucket.lps,
@@ -837,10 +785,10 @@ library Auctions {
      *  @param  borrower_ Borrower address to check auction status for.
      */
     function revertIfActive(
-        Data storage self,
+        AuctionsState storage auctions_,
         address borrower_
     ) internal view {
-        if (isActive(self, borrower_)) revert AuctionActive();
+        if (isActive(auctions_, borrower_)) revert AuctionActive();
     }
 
     /**
@@ -850,10 +798,10 @@ library Auctions {
      *  @return  active_ Boolean, based on if borrower is in auction.
      */
     function isActive(
-        Data storage self,
+        AuctionsState storage auctions_,
         address borrower_
     ) internal view returns (bool) {
-        return self.liquidations[borrower_].kickTime != 0;
+        return auctions_.liquidations[borrower_].kickTime != 0;
     }
 
     /**
@@ -861,15 +809,15 @@ library Auctions {
      *  @notice Revert if auction is clearable
      */
     function revertIfAuctionClearable(
-        Data storage self,
-        Loans.Data storage loans_
+        AuctionsState storage auctions_,
+        LoansState    storage loans_
     ) internal view {
-        address head     = self.head;
-        uint256 kickTime = self.liquidations[head].kickTime;
+        address head     = auctions_.head;
+        uint256 kickTime = auctions_.liquidations[head].kickTime;
         if (kickTime != 0) {
             if (block.timestamp - kickTime > 72 hours) revert AuctionNotCleared();
 
-            Loans.Borrower storage borrower = loans_.borrowers[head];
+            Borrower storage borrower = loans_.borrowers[head];
             if (borrower.t0debt != 0 && borrower.collateral == 0) revert AuctionNotCleared();
         }
     }

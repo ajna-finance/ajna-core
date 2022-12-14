@@ -101,7 +101,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         /*****************************/
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  9.634254807692307697 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
                 poolSize:             73_000 * 1e18,
@@ -153,7 +153,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         skip(100 days);
 
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            false,
                 kicker:            address(0),
@@ -195,7 +195,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         /******************************/
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  8.209538814158655264 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
                 poolSize:             73_094.502279691716022000 * 1e18,
@@ -231,7 +231,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         );
         assertEq(_quote.balanceOf(_lender), 46_999.804657220228527274 * 1e18);
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            true,
                 kicker:            _lender,
@@ -284,7 +284,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         skip(100 days);
 
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            false,
                 kicker:            address(0),
@@ -321,7 +321,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             }
         );
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            true,
                 kicker:            _lender,
@@ -356,7 +356,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             }
         );
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            false,
                 kicker:            address(0),
@@ -414,7 +414,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         });
 
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            false,
                 kicker:            address(0),
@@ -450,7 +450,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         skip(100 days);
 
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            false,
                 kicker:            address(0),
@@ -487,7 +487,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             }
         );
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            true,
                 kicker:            _lender,
@@ -519,7 +519,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             }
         );
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            false,
                 kicker:            address(0),
@@ -562,7 +562,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         skip(100 days);
 
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            false,
                 kicker:            address(0),
@@ -599,7 +599,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             }
         );
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            true,
                 kicker:            _lender,
@@ -711,7 +711,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         );
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  9.721295865031779605 * 1e18,
                 poolSize:             73_118.781595119199960000 * 1e18,
@@ -742,7 +742,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         );
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  9.721295865031779605 * 1e18,
                 poolSize:             73_120.392693241980910026 * 1e18,

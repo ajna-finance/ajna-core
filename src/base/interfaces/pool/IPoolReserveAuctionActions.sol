@@ -20,3 +20,14 @@ interface IPoolReserveAuctionActions {
         uint256 maxAmount
     ) external returns (uint256 amount);
 }
+
+/*********************/
+/*** Param Structs ***/
+/*********************/
+
+struct StartReserveAuctionParams {
+    uint256 poolSize;    // total deposits in pool (with accrued debt)
+    uint256 poolDebt;    // current t0 pool debt
+    uint256 poolBalance; // pool quote token balance
+    uint256 inflator;    // pool current inflator
+}
