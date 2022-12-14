@@ -90,6 +90,7 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(address(_collateral), address(_quote), 0.0543 * 10**18));
 
         assertEq(address(pool),             poolAddress);
+        assertEq(pool.poolType(),           0);
         assertEq(pool.collateralAddress(),  address(_collateral));
         assertEq(pool.collateralScale(),    10 ** 0);
         assertEq(pool.quoteTokenAddress(),  address(_quote));
@@ -114,6 +115,7 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(compAddress, daiAddress, 0.0543 * 10**18));
 
         assertEq(address(pool),             poolAddress);
+        assertEq(pool.poolType(),           0);
         assertEq(pool.collateralAddress(),  compAddress);
         assertEq(pool.collateralScale(),    10 ** 0);
         assertEq(pool.quoteTokenAddress(),  daiAddress);
@@ -138,6 +140,7 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(wbtcAddress, daiAddress, 0.0543 * 10**18));
 
         assertEq(address(pool),             poolAddress);
+        assertEq(pool.poolType(),           0);
         assertEq(pool.collateralAddress(),  wbtcAddress);
         assertEq(pool.collateralScale(),    10 ** 10);         // WBTC has precision of 8, so 10 ** (18 - 8) = 10 ** 10
         assertEq(pool.quoteTokenAddress(),  daiAddress);
@@ -162,6 +165,7 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(wbtcAddress, usdcAddress, 0.0543 * 10**18));
 
         assertEq(address(pool),             poolAddress);
+        assertEq(pool.poolType(),           0);
         assertEq(pool.collateralAddress(),  wbtcAddress);
         assertEq(pool.collateralScale(),    10 ** 10);         // WBTC has precision of 8, so 10 ** (18 - 8) = 10 ** 10
         assertEq(pool.quoteTokenAddress(),  usdcAddress);
@@ -186,6 +190,7 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(compAddress, usdcAddress, 0.0543 * 10**18));
 
         assertEq(address(pool),             poolAddress);
+        assertEq(pool.poolType(),           0);
         assertEq(pool.collateralAddress(),  compAddress);
         assertEq(pool.collateralScale(),    10 ** 0);
         assertEq(pool.quoteTokenAddress(),  usdcAddress);

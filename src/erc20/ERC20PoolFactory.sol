@@ -32,10 +32,10 @@ contract ERC20PoolFactory is IERC20PoolFactory, PoolDeployer {
 
         bytes memory data = abi.encodePacked(
             PoolType.ERC20,
+            ajna,
             collateral_,
             quote_,
             quoteTokenScale,
-            ajna,
             collateralScale
         );
 

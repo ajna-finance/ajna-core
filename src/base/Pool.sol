@@ -27,6 +27,17 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     using Loans     for Loans.Data;
     using SafeERC20 for IERC20;
 
+    /*****************/
+    /*** Constants ***/
+    /*****************/
+
+    // immutable args offset
+    uint256 internal constant POOL_TYPE          = 0;
+    uint256 internal constant AJNA_ADDRESS       = 1;
+    uint256 internal constant COLLATERAL_ADDRESS = 21;
+    uint256 internal constant QUOTE_ADDRESS      = 41;
+    uint256 internal constant QUOTE_SCALE        = 61;
+
     /***********************/
     /*** State Variables ***/
     /***********************/
@@ -75,16 +86,20 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*** Immutables ***/
     /******************/
 
+    function poolType() external pure override returns (uint8) {
+        return _getArgUint8(POOL_TYPE);
+    }
+
     function collateralAddress() external pure override returns (address) {
-        return _getArgAddress(1);
+        return _getArgAddress(COLLATERAL_ADDRESS);
     }
 
     function quoteTokenAddress() external pure override returns (address) {
-        return _getArgAddress(21);
+        return _getArgAddress(QUOTE_ADDRESS);
     }
 
     function quoteTokenScale() external pure override returns (uint256) {
-        return _getArgUint256(41);
+        return _getArgUint256(QUOTE_SCALE);
     }
 
 
@@ -364,7 +379,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             maxAmount_
         );
 
-        IERC20Token ajnaToken = IERC20Token(_getArgAddress(73));
+        IERC20Token ajnaToken = IERC20Token(_getArgAddress(AJNA_ADDRESS));
         if (!ajnaToken.transferFrom(msg.sender, address(this), ajnaRequired)) revert ERC20TransferFailed();
         ajnaToken.burn(ajnaRequired);
         _transferQuoteToken(msg.sender, amount_);
@@ -640,15 +655,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     function _transferQuoteTokenFrom(address from_, uint256 amount_) internal {
-        IERC20(_getArgAddress(21)).safeTransferFrom(from_, address(this), amount_ / _getArgUint256(41));
+        IERC20(_getArgAddress(QUOTE_ADDRESS)).safeTransferFrom(from_, address(this), amount_ / _getArgUint256(QUOTE_SCALE));
     }
 
     function _transferQuoteToken(address to_, uint256 amount_) internal {
-        IERC20(_getArgAddress(21)).safeTransfer(to_, amount_ / _getArgUint256(41));
+        IERC20(_getArgAddress(QUOTE_ADDRESS)).safeTransfer(to_, amount_ / _getArgUint256(QUOTE_SCALE));
     }
 
     function _getPoolQuoteTokenBalance() internal view returns (uint256) {
-        return IERC20(_getArgAddress(21)).balanceOf(address(this));
+        return IERC20(_getArgAddress(QUOTE_ADDRESS)).balanceOf(address(this));
     }
 
     function _htp(uint256 inflator_) internal view returns (uint256) {
