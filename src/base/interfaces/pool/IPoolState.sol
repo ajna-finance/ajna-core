@@ -204,11 +204,11 @@ struct ReserveAuctionState {
 }
 
 struct PoolState {
-    uint256 accruedDebt;
-    uint256 collateral;
-    bool    isNewInterestAccrued;
-    uint256 rate;
-    uint256 inflator;
+    uint256 accruedDebt;          // total debt in pool, accrued in current block
+    uint256 collateral;           // total collateral pledged in pool
+    uint256 inflator;             // current pool inflator
+    bool    isNewInterestAccrued; // true if new interest already accrued in current block
+    uint256 rate;                 // pool's current interest rate
 }
 
 /*** Buckets State ***/
