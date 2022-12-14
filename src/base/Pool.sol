@@ -327,7 +327,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         uint256 lup = _lup(poolState.accruedDebt);
         if (
-            _isCollateralized(params.debt , params.collateral, lup)
+            _isCollateralized(params.debt , params.collateral, lup, _getArgUint8(POOL_TYPE))
         ) revert BorrowerOk();
 
         // kick auction
@@ -412,7 +412,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             if (
                 auctions.isActive(borrowerAddress_)
                 &&
-                _isCollateralized(borrowerDebt, borrower.collateral, newLup_)
+                _isCollateralized(borrowerDebt, borrower.collateral, newLup_, _getArgUint8(POOL_TYPE))
             )
             {
                 // borrower becomes collateralized, remove debt from pool accumulator and settle auction
@@ -442,13 +442,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             // calculate new lup and check borrow action won't push borrower into a state of under-collateralization
             newLup_ = _priceAt(lupId);
             if (
-                !_isCollateralized(borrowerDebt, borrower.collateral, newLup_)
+                !_isCollateralized(borrowerDebt, borrower.collateral, newLup_, _getArgUint8(POOL_TYPE))
             ) revert BorrowerUnderCollateralized();
 
             // check borrow won't push pool into a state of under-collateralization
             poolState.accruedDebt += debtChange;
             if (
-                !_isCollateralized(poolState.accruedDebt, poolState.collateral, newLup_)
+                !_isCollateralized(poolState.accruedDebt, poolState.collateral, newLup_, _getArgUint8(POOL_TYPE))
             ) revert PoolUnderCollateralized();
 
             uint256 t0DebtChange = Maths.wdiv(debtChange, poolState.inflator);
@@ -544,7 +544,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         newLup_ = _lup(poolState_.accruedDebt);
 
         if (auctions.isActive(borrowerAddress_)) {
-            if (_isCollateralized(borrowerDebt, borrower_.collateral, newLup_)) {
+            if (_isCollateralized(borrowerDebt, borrower_.collateral, newLup_, _getArgUint8(POOL_TYPE))) {
                 // borrower becomes re-collateralized
                 // remove entire borrower debt from pool auctions debt accumulator
                 t0DebtInAuction -= borrower_.t0debt;
@@ -580,19 +580,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /******************************/
     /*** Pool Virtual Functions ***/
     /******************************/
-
-    /**
-     *  @notice Collateralization calculation (implemented by each pool accordingly).
-     *  @param debt_       Debt to calculate collateralization for.
-     *  @param collateral_ Collateral to calculate collateralization for.
-     *  @param price_      Price to calculate collateralization for.
-     *  @return True if collateralization calculated is equal or greater than 1.
-     */
-    function _isCollateralized(
-        uint256 debt_,
-        uint256 collateral_,
-        uint256 price_
-    ) internal virtual returns (bool);
 
     /**
      *  @notice Settle an auction when it exits the auction queue (implemented by each pool accordingly).

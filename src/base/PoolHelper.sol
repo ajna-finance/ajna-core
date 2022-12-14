@@ -4,6 +4,8 @@ pragma solidity 0.8.14;
 
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 
+import { PoolType } from './interfaces/IPool.sol';
+
 import '../libraries/Maths.sol';
 
     error BucketIndexOutOfBounds();
@@ -127,6 +129,28 @@ import '../libraries/Maths.sol';
         uint256 collateral_
     ) pure returns (uint256 ptp_) {
         if (collateral_ != 0) ptp_ = Maths.wdiv(debt_, collateral_);
+    }
+
+    /**
+     *  @notice Collateralization calculation.
+     *  @param debt_       Debt to calculate collateralization for.
+     *  @param collateral_ Collateral to calculate collateralization for.
+     *  @param price_      Price to calculate collateralization for.
+     *  @param type_       Type of the pool.
+     *  @return True if collateralization calculated is equal or greater than 1.
+     */
+    function _isCollateralized(
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 price_,
+        uint8 type_
+    ) pure returns (bool) {
+        if (type_ == uint8(PoolType.ERC20)) return Maths.wmul(collateral_, price_) >= debt_;
+        else {
+            //slither-disable-next-line divide-before-multiply
+            collateral_ = (collateral_ / Maths.WAD) * Maths.WAD; // use collateral floor
+            return Maths.wmul(collateral_, price_) >= debt_;
+        }
     }
 
     /*********************************/

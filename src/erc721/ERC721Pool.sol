@@ -237,23 +237,6 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     /*******************************/
 
     /**
-     *  @notice Overrides default implementation and use floor(amount of collateral) to calculate collateralization.
-     *  @param debt_       Debt to calculate collateralization for.
-     *  @param collateral_ Collateral to calculate collateralization for.
-     *  @param price_      Price to calculate collateralization for.
-     *  @return True if collateralization calculated is equal or greater than 1.
-     */
-    function _isCollateralized(
-        uint256 debt_,
-        uint256 collateral_,
-        uint256 price_
-    ) internal pure override returns (bool) {
-        // slither-disable-next-line divide-before-multiply
-        collateral_ = (collateral_ / Maths.WAD) * Maths.WAD; // use collateral floor
-        return Maths.wmul(collateral_, price_) >= debt_;
-    }
-
-    /**
      *  @notice Performs NFT auction settlement by rounding down borrower's collateral amount and by moving borrower's token ids to pool claimable array.
      *  @param borrowerAddress_    Address of the borrower that exits auction.
      *  @param borrowerCollateral_ Borrower collateral amount before auction exit (could be fragmented as result of partial takes).
