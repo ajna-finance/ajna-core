@@ -958,7 +958,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             toIndex:                 3159,
             noOfNFTsToRemove:        1.0,
             collateralMerged:        0.819981164624475010 * 1e18,
-            removeCollateralAtIndex: removalIndexes
+            removeCollateralAtIndex: removalIndexes,
+            toIndexLps:              118.404292681446768167332184816 * 1e27
         });
 
         _assertBucket(
@@ -1044,7 +1045,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             toIndex:                 7388,
             noOfNFTsToRemove:        1,
             collateralMerged:        1 * 1e18,
-            removeCollateralAtIndex: allRemovalIndexes
+            removeCollateralAtIndex: allRemovalIndexes,
+            toIndexLps:              0
         });
 
         _assertBucket(

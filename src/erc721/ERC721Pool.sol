@@ -160,7 +160,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             toIndex_
         );
 
-        emit MergeOrRemoveCollateralNFT(msg.sender, collateralMerged);
+        emit MergeOrRemoveCollateralNFT(msg.sender, collateralMerged, bucketLPs_);
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
         if (collateralMerged == collateralAmount) {

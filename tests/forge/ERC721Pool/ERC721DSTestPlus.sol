@@ -467,11 +467,12 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         uint256 toIndex,
         uint256 noOfNFTsToRemove,
         uint256[] memory removeCollateralAtIndex,
-        uint256 collateralMerged
+        uint256 collateralMerged,
+        uint256 toIndexLps
     ) internal virtual {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
-        emit MergeOrRemoveCollateralNFT(from, collateralMerged);
+        emit MergeOrRemoveCollateralNFT(from, collateralMerged, toIndexLps);
         ERC721Pool(address(_pool)).mergeOrRemoveCollateral(removeCollateralAtIndex, noOfNFTsToRemove, toIndex);
     }
 
