@@ -5,6 +5,7 @@ import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 
 import 'src/base/PoolInfoUtils.sol';
 import 'src/base/PoolHelper.sol';
+import '@std/console.sol';
 
 contract ERC721PoolCollateralTest is ERC721HelperContract {
 
@@ -690,7 +691,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 bond:           1.501442307692307693 * 1e18,
                 transferAmount: 1.501442307692307693 * 1e18
             }
-        );
+        ); 
 
         skip(110 minutes);
 
@@ -710,6 +711,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 neutralPrice:      0.000000054499533442 * 1e18
             })
         );
+
+        // before depositTake: NFTs pledged by liquidated borrower are owned by the borrower in the pool
+        assertEq(_collateral.ownerOf(1), address(_pool));
+        assertEq(_collateral.ownerOf(3), address(_pool));
 
         // exchange collateral for lpb 3060 - 3159, going down in price
         for (uint256 i = 3060; i < (3060 + 100); i++) {
@@ -772,6 +777,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             }
         );
 
+        // after depositTake but before take: NFTs pledged by liquidated borrower are owned by the pool
+        assertEq(_collateral.ownerOf(1), address(_pool));
+        assertEq(_collateral.ownerOf(3), address(_pool));
+
         _take(
             {
                 from:            _lender,
@@ -793,6 +802,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 borrowerCollateralization: 0.000000008892692190 * 1e18
             }
         );
+
+        // after take: NFT, 1 pledged by liquidated borrower is owned by the taker
+        assertEq(_collateral.ownerOf(1), address(_pool));
+        assertEq(_collateral.ownerOf(3), _lender);
         
         // 70.16 hours
         skip(4210 minutes);
@@ -859,6 +872,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 borrowerCollateralization: 1.0 * 1e18
             }
         );
+
+        // after take: NFT, 1 pledged by liquidated borrower is owned by the taker
+        assertEq(_collateral.ownerOf(1), address(_pool));
+        assertEq(_collateral.ownerOf(3), _lender);
 
         _assertAuction( 
              AuctionState({
@@ -930,11 +947,19 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         // lender merge his entitled collateral (based on their LPs) in bucket 3159 
         uint256[] memory removalIndexes = new uint256[](100);
-        uint256 removalI = 0; 
+        uint256 removalI = 0;
         for (uint256 i = 3060; i < (3060 + 100); i++) {
             removalIndexes[removalI] = i;
             removalI++;
         }
+
+        // Reverts because 3059 is a higher price than 3060, must merge down in price
+        _assertCannotMergeToHigherPriceRevert({
+            from:                    _lender,
+            toIndex:                 3059,
+            noOfNFTsToRemove:        1.0,
+            removeCollateralAtIndex: removalIndexes
+        });
 
         _mergeOrRemoveCollateral({
             from:                    _lender,

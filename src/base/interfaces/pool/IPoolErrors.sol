@@ -36,6 +36,11 @@ interface IPoolErrors {
     error BorrowerUnderCollateralized();
 
     /**
+     *  @notice User attempted to merge collateral from a lower price bucket into a higher price bucket.
+     */
+    error CannotMergeToHigherPrice();
+
+    /**
      *  @notice Callback invoked by flashLoan function did not return the expected hash (see ERC-3156 spec).
      */
     error FlashloanCallbackFailed();
@@ -128,4 +133,5 @@ interface IPoolErrors {
      *  @notice Lender is attempting to remove quote tokens from a bucket that exists above active auction debt from top-of-book downward.
      */
     error RemoveDepositLockedByAuctionDebt();
+
 }

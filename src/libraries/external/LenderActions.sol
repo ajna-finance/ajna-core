@@ -17,6 +17,10 @@ library LenderActions {
      */
     error BucketBankruptcyBlock();
     /**
+     *  @notice User attempted to merge collateral from a lower price bucket into a higher price bucket.
+     */
+    error CannotMergeToHigherPrice();
+    /**
      *  @notice Owner of the LP tokens must have approved the new owner prior to transfer.
      */
     error NoAllowance();
@@ -49,12 +53,6 @@ library LenderActions {
      *  @notice From and to deposit indexes to move are the same.
      */
     error MoveToSamePrice();
-
-    /**
-     *  @notice User attempted to merge collateral from a lower price bucket into a higher price bucket.
-     */
-    error CannotMergeToHigherPrice();
-
     /**
      *  @dev Struct to hold move quote token details, used to prevent stack too deep error.
      */

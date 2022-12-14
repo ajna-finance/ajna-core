@@ -211,9 +211,7 @@ library Auctions {
                 buckets_[index].collateral += collateralUsed;                // add settled collateral into bucket
                 Deposits.remove(deposits_, index, depositToRemove, deposit); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
             } else {
-                // buckets_[index].collateral += params_.collateral; // no deposit in bucket, add entire collateral into bucket
-
-                // Deposits in the tree are zero, insert entire collateral into index 7388
+                // Deposits in the tree is zero, insert entire collateral into lowest bucket 7388
                 Buckets.addCollateral(
                     buckets_[index],
                     params_.borrower,
@@ -381,11 +379,13 @@ library Auctions {
         result.kicker = liquidation.kicker;
         result.isRewarded = (bpf >= 0);
 
-        // determine how much of the loan will be repaid
+        // Determine how much of the loan will be repaid
         if (borrowerDebt >= bucketDeposit) {
+            // Debt in loan exceeds or equal to bucket deposit
             result.t0repayAmount    = Maths.wdiv(bucketDeposit, params_.inflator);
             result.quoteTokenAmount = Maths.wdiv(bucketDeposit, factor);
         } else {
+            // Deposit in bucket exceeds loan debt
             result.t0repayAmount    = params_.t0debt;
             result.quoteTokenAmount = Maths.wdiv(borrowerDebt, factor);
         }
@@ -393,6 +393,7 @@ library Auctions {
         result.collateralAmount = Maths.wdiv(result.quoteTokenAmount, price);
 
         if (result.collateralAmount > params_.collateral) {
+            // Updated collateral amount exceeds collateral restraint provided by caller
             result.collateralAmount = params_.collateral;
             result.quoteTokenAmount = Maths.wmul(result.collateralAmount, price);
             result.t0repayAmount    = Maths.wdiv(Maths.wmul(factor, result.quoteTokenAmount), params_.inflator);
@@ -405,6 +406,7 @@ library Auctions {
             self.kickers[result.kicker].locked  -= result.bondChange;
             self.totalBondEscrowed              -= result.bondChange;
         } else {
+            // take is below neutralPrice, Kicker is penalized
             result.bondChange = Maths.wmul(result.quoteTokenAmount, uint256(bpf)); // will be rewarded as LPBs
         }
 

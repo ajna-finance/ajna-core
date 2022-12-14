@@ -167,12 +167,10 @@ abstract contract DSTestPlus is Test {
         address borrower,
         uint256 index
     ) internal virtual {
-
+        changePrank(from);
         _pool.bucketTake(borrower, true, index);
 
         // Add for tearDown
-        lenders.add(from);
-        lendersDepositedIndex[from].add(index);
         bucketsUsed.add(index);
     }
 
