@@ -116,6 +116,7 @@ library LenderActions {
         uint256 collateralAmountToAdd_,
         uint256 index_
     ) external returns (uint256 bucketLPs_) {
+        if (index_ == 0 || index_ > MAX_FENWICK_INDEX) revert InvalidIndex();
         uint256 bucketDeposit = Deposits.valueAt(deposits_, index_);
         uint256 bucketPrice   = _priceAt(index_);
         bucketLPs_ = Buckets.addCollateral(
@@ -133,6 +134,7 @@ library LenderActions {
         uint256 quoteTokenAmountToAdd_,
         uint256 index_
     ) external returns (uint256 bucketLPs_) {
+        if (index_ == 0) revert InvalidIndex();
         Bucket storage bucket = buckets_[index_];
         uint256 bankruptcyTime = bucket.bankruptcyTime;
         // cannot deposit in the same block when bucket becomes insolvent
@@ -165,6 +167,7 @@ library LenderActions {
         MoveQuoteParams calldata params_
     ) external returns (uint256 fromBucketLPs_, uint256 toBucketLPs_, uint256 lup_) {
         if (params_.fromIndex == params_.toIndex) revert MoveToSamePrice();
+        if (params_.toIndex == 0) revert InvalidIndex();
 
         Bucket storage toBucket = buckets_[params_.toIndex];
 
@@ -301,7 +304,6 @@ library LenderActions {
         uint256 amount_,
         uint256 index_
     ) external returns (uint256 lpAmount_) {
-
         Bucket storage bucket = buckets_[index_];
         uint256 bucketCollateral = bucket.collateral;
         if (amount_ > bucketCollateral) revert InsufficientCollateral();
@@ -410,7 +412,7 @@ library LenderActions {
 
         for (uint256 i = 0; i < indexesLength; ) {
             uint256 index = indexes_[i];
-            if (index > 8192 ) revert InvalidIndex();
+            if (index > MAX_FENWICK_INDEX) revert InvalidIndex();
 
             uint256 transferAmount = allowances_[owner_][newOwner_][index];
 

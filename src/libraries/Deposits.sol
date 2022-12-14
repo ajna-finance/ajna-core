@@ -29,7 +29,7 @@ library Deposits {
         uint256 index_,
         uint256 addAmount_
     ) internal {
-        if (index_ >= SIZE) revert InvalidIndex();
+        if (index_ > MAX_FENWICK_INDEX) revert InvalidIndex();
 
         ++index_;
         addAmount_ = Maths.wdiv(addAmount_, scale(deposits_, index_));

@@ -116,11 +116,11 @@ contract FenwickTreeTest is DSTestPlus {
         _tree.fuzzyFill(insertions_, totalAmount_, false);
 
         uint256 scaleIndex = bound(scaleIndex_, 2, MAX_INDEX);
-        uint256 subIndex = randomInRange(0, scaleIndex - 1);
-        uint256 factor = bound(factor_, 1 * 1e18, 5 * 1e18);
+        uint256 subIndex   = randomInRange(1, scaleIndex - 1);
+        uint256 factor     = bound(factor_, 1 * 1e18, 5 * 1e18);
 
         uint256 scaleIndexSum = _tree.prefixSum(scaleIndex);
-        uint256 subIndexSum = _tree.prefixSum(subIndex);
+        uint256 subIndexSum   = _tree.prefixSum(subIndex);
 
         _tree.mult(scaleIndex, factor);
 
@@ -213,63 +213,62 @@ contract FenwickTreeTest is DSTestPlus {
 
 contract FenwickTreeGasLoadTest is DSTestPlus {
     FenwickTreeInstance private _tree;
-    uint256 private constant DEPOSITS_COUNT = 8_192;
 
     function setUp() public {
         _tree = new FenwickTreeInstance();
-        for (uint256 i; i < DEPOSITS_COUNT; i++) {
+        for (uint256 i; i < MAX_FENWICK_INDEX; i++) {
             _tree.add(i, 100 * 1e18);
         }
     }
 
     function testLoadFenwickTreeGasExerciseDeleteOnAllDeposits() public {
 
-        for (uint256 i; i < DEPOSITS_COUNT; i++) {
+        for (uint256 i; i < MAX_FENWICK_INDEX; i++) {
             uint256 snapshot = vm.snapshot();
-            assertEq(_tree.treeSum(), DEPOSITS_COUNT * 100 * 1e18);
+            assertEq(_tree.treeSum(), MAX_FENWICK_INDEX * 100 * 1e18);
 
             _tree.remove(i, 100 * 1e18);
 
-            assertEq(_tree.treeSum(), DEPOSITS_COUNT * 100 * 1e18 - 100 * 1e18);
+            assertEq(_tree.treeSum(), MAX_FENWICK_INDEX * 100 * 1e18 - 100 * 1e18);
             vm.revertTo(snapshot);
         }
     }
 
     function testLoadFenwickTreeGasExerciseAddOnAllDeposits() public {
 
-        for (uint256 i; i < DEPOSITS_COUNT; i++) {
+        for (uint256 i; i < MAX_FENWICK_INDEX; i++) {
             uint256 snapshot = vm.snapshot();
-            assertEq(_tree.treeSum(), DEPOSITS_COUNT * 100 * 1e18);
+            assertEq(_tree.treeSum(), MAX_FENWICK_INDEX * 100 * 1e18);
 
             _tree.add(i, 100 * 1e18);
 
-            assertEq(_tree.treeSum(), DEPOSITS_COUNT * 100 * 1e18 + 100 * 1e18);
+            assertEq(_tree.treeSum(), MAX_FENWICK_INDEX * 100 * 1e18 + 100 * 1e18);
             vm.revertTo(snapshot);
         }
     }
 
     function testLoadFenwickTreeGasExercisefindIndexOfSumOnAllDeposits() public {
-        for (uint256 i; i < DEPOSITS_COUNT; i++) {
-            assertEq(_tree.findIndexOfSum(819_200 * 1e18 - i * 100 * 1e18), DEPOSITS_COUNT - i - 1);
+        for (uint256 i; i < MAX_FENWICK_INDEX; i++) {
+            assertEq(_tree.findIndexOfSum(819_200 * 1e18 - i * 100 * 1e18), MAX_FENWICK_INDEX - i - 1);
         }
     }
 
     function testLoadFenwickTreeGasExerciseFindPrefixSumOnAllDeposits() public {
-        for (uint256 i; i < DEPOSITS_COUNT; i++) {
+        for (uint256 i; i < MAX_FENWICK_INDEX; i++) {
             assertEq(_tree.prefixSum(i), 100 * 1e18 + i * 100 * 1e18);
         }
     }
 
     function testLoadFenwickTreeGasExerciseGetOnAllIndexes() public {
-        for (uint256 i; i < DEPOSITS_COUNT; i++) {
+        for (uint256 i; i < MAX_FENWICK_INDEX; i++) {
             assertEq(_tree.get(i), 100 * 1e18);
         }
     }
 
     function testLoadFenwickTreeGasExerciseScaleOnAllDeposits() public {
-        for (uint256 i; i < DEPOSITS_COUNT; i++) {
+        for (uint256 i; i < MAX_FENWICK_INDEX; i++) {
             uint256 snapshot = vm.snapshot();
-            assertEq(_tree.treeSum(), DEPOSITS_COUNT * 100 * 1e18);
+            assertEq(_tree.treeSum(), MAX_FENWICK_INDEX * 100 * 1e18);
 
             _tree.mult(i, 100 * 1e18);
             _tree.scale(2);
