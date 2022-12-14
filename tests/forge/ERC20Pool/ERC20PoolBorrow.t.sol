@@ -36,42 +36,47 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         // lender deposits 10000 DAI in 5 buckets each
         _addLiquidity(
             {
-                from:   _lender,
-                amount: 10_000 * 1e18,
-                index:  highest,
-                newLup: MAX_PRICE
+                from:    _lender,
+                amount:  10_000 * 1e18,
+                index:   highest,
+                lpAward: 10_000 * 1e27,
+                newLup:  MAX_PRICE
             }
         );
         _addLiquidity(
             {
-                from:   _lender,
-                amount: 10_000 * 1e18,
-                index:  high,
-                newLup: MAX_PRICE
-            }
-        );
-        _addLiquidity(
-            {
-                from:   _lender,
-                amount: 10_000 * 1e18,
-                index:  med,
-                newLup: MAX_PRICE
-            }
-        );
-        _addLiquidity(
-            {
-                from:   _lender,
-                amount: 10_000 * 1e18,
-                index:  low,
-                newLup: MAX_PRICE
-            }
-        );
-        _addLiquidity(
-            {
-                from:   _lender,
-                amount: 10_000 * 1e18,
-                index:  lowest,
-                newLup: MAX_PRICE
+                from:    _lender,
+                amount:  10_000 * 1e18,
+                index:   high,
+                lpAward: 10_000 * 1e27,
+                newLup:  MAX_PRICE
+            } 
+        ); 
+        _addLiquidity( 
+            { 
+                from:    _lender,
+                amount:  10_000 * 1e18,
+                index:   med,
+                lpAward: 10_000 * 1e27,
+                newLup:  MAX_PRICE
+            } 
+        ); 
+        _addLiquidity( 
+            { 
+                from:    _lender,
+                amount:  10_000 * 1e18,
+                index:   low,
+                lpAward: 10_000 * 1e27,
+                newLup:  MAX_PRICE
+            } 
+        ); 
+        _addLiquidity( 
+            { 
+                from:    _lender,
+                amount:  10_000 * 1e18,
+                index:   lowest,
+                lpAward: 10_000 * 1e27,
+                newLup:  MAX_PRICE
             }
         );
 
@@ -1052,10 +1057,11 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         // penalty should not be applied on buckets with prices lower than PTP
         _addLiquidity(
             {
-                from:   _lender,
-                amount: 10_000 * 1e18,
-                index:  _indexOf(200 * 1e18),
-                newLup: 2_981.007422784467321543 * 1e18
+                from:    _lender,
+                amount:  10_000 * 1e18,
+                index:   _indexOf(200 * 1e18),
+                lpAward: 10_000 * 1e27,
+                newLup:  2_981.007422784467321543 * 1e18
             }
         );
         assertEq(_quote.balanceOf(_lender), 140_000 * 1e18);

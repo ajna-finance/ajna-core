@@ -26,44 +26,39 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         _mintCollateralAndApproveTokens(_lender1,   4 * 1e18);
 
         // Lender adds Quote token accross 5 prices
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 2_000 * 1e18,
-                index:  _i9_91,
-                newLup: MAX_PRICE
+                index:  _i9_91
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 5_000 * 1e18,
-                index:  _i9_81,
-                newLup: MAX_PRICE
+                index:  _i9_81
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 11_000 * 1e18,
-                index:  _i9_72,
-                newLup: MAX_PRICE
+                index:  _i9_72
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 25_000 * 1e18,
-                index:  _i9_62,
-                newLup: MAX_PRICE
+                index:  _i9_62
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 30_000 * 1e18,
-                index:  _i9_52,
-                newLup: MAX_PRICE
+                index:  _i9_52
             }
         );
 
@@ -738,10 +733,11 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
 
         _addLiquidity(
             {
-                from:   _lender1,
-                amount: 1 * 1e18,
-                index:  _i9_91,
-                newLup: 9.721295865031779605 * 1e18
+                from:    _lender1,
+                amount:  1 * 1e18,
+                index:   _i9_91,
+                lpAward: 0.943930837199358257319707317 * 1e27,
+                newLup:  9.721295865031779605 * 1e18
             }
         );
 

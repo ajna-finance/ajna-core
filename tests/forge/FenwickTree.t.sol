@@ -147,7 +147,7 @@ contract FenwickTreeTest is DSTestPlus {
         _tree.mult(  3_701, 1.000070411233491284 * 1e18);
         _tree.mult(  3_739, 1.000001510259590795 * 1e18);
 
-        assertEq(_tree.valueAt(3_700), 8_008.373442262808822463 * 1e18);
+        assertEq(_tree.valueAt(3_700), 8_008.373442262808824908 * 1e18);
         _tree.obliterate(3_700);
         assertEq(_tree.valueAt(3_700), 0);
     }

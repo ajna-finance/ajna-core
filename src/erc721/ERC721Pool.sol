@@ -128,7 +128,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
-        emit AddCollateralNFT(msg.sender, index_, tokenIdsToAdd_);
+        emit AddCollateralNFT(msg.sender, index_, tokenIdsToAdd_, bucketLPs_);
         // move required collateral from sender to pool
         _transferFromSenderToPool(bucketTokenIds, tokenIdsToAdd_);
     }
@@ -151,7 +151,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
-        emit RemoveCollateral(msg.sender, index_, noOfNFTsToRemove_);
+        emit RemoveCollateral(msg.sender, index_, noOfNFTsToRemove_, lpAmount_);
         _transferFromPoolToAddress(msg.sender, bucketTokenIds, noOfNFTsToRemove_);
     }
 

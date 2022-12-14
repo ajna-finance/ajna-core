@@ -8,15 +8,17 @@ pragma solidity 0.8.14;
 interface IPoolEvents {
     /**
      *  @notice Emitted when lender adds quote token to the pool.
-     *  @param  lender Recipient that added quote tokens.
-     *  @param  price  Price at which quote tokens were added.
-     *  @param  amount Amount of quote tokens added to the pool.
-     *  @param  lup    LUP calculated after deposit.
+     *  @param  lender    Recipient that added quote tokens.
+     *  @param  price     Price at which quote tokens were added.
+     *  @param  amount    Amount of quote tokens added to the pool.
+     *  @param  lpAwarded Amount of LP awarded for the deposit. 
+     *  @param  lup       LUP calculated after deposit.
      */
     event AddQuoteToken(
         address indexed lender,
         uint256 indexed price,
         uint256 amount,
+        uint256 lpAwarded,
         uint256 lup
     );
 
@@ -40,20 +42,17 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when an actor uses quote token outside of the book to purchase collateral under liquidation.
-     *  @param  borrower   Identifies the loan being liquidated.
-     *  @param  index      Index of the price bucket from which quote token was exchanged for collateral.
-     *  @param  amount     Amount of quote token taken from the bucket to purchase collateral.
-     *  @param  collateral Amount of collateral purchased with quote token.
-     *  @param  bondChange Impact of this take to the liquidation bond.
-     *  @dev    amount / collateral implies the auction price.
+     *  @notice Emitted when LPs are awarded to a taker or kicker in a bucket take.
+     *  @param  taker           Actor who invoked the bucket take.
+     *  @param  kicker          Actor who started the auction.
+     *  @param  lpAwardedTaker  Amount of LP awarded to the taker.
+     *  @param  lpAwardedKicker Amount of LP awarded to the actor who started the auction.
      */
-    event DepositTake(
-        address indexed borrower,
-        uint256 index,
-        uint256 amount,
-        uint256 collateral,
-        int256 bondChange
+    event BucketTakeLPAwarded(
+        address indexed taker,
+        address indexed kicker,
+        uint256 lpAwardedTaker,
+        uint256 lpAwardedKicker
     );
 
     /**
@@ -83,46 +82,53 @@ interface IPoolEvents {
 
     /**
      *  @notice Emitted when lender moves quote token from a bucket price to another.
-     *  @param  lender Recipient that moved quote tokens.
-     *  @param  from   Price bucket from which quote tokens were moved.
-     *  @param  to     Price bucket where quote tokens were moved.
-     *  @param  amount Amount of quote tokens moved.
-     *  @param  lup    LUP calculated after removal.
+     *  @param  lender         Recipient that moved quote tokens.
+     *  @param  from           Price bucket from which quote tokens were moved.
+     *  @param  to             Price bucket where quote tokens were moved.
+     *  @param  amount         Amount of quote tokens moved.
+     *  @param  lpRedeemedFrom Amount of LP removed from the `from` bucket.
+     *  @param  lpAwardedTo    Amount of LP credited to the `to` bucket.
+     *  @param  lup            LUP calculated after removal.
      */
     event MoveQuoteToken(
         address indexed lender,
         uint256 indexed from,
         uint256 indexed to,
         uint256 amount,
+        uint256 lpRedeemedFrom,
+        uint256 lpAwardedTo,
         uint256 lup
     );
 
     /**
      *  @notice Emitted when lender claims unencumbered collateral.
-     *  @param  claimer Recipient that claimed collateral.
-     *  @param  price   Price at which unencumbered collateral was claimed.
-     *  @param  amount  The amount of collateral (or number of NFT tokens) transferred to the claimer.
+     *  @param  claimer    Recipient that claimed collateral.
+     *  @param  price      Price at which unencumbered collateral was claimed.
+     *  @param  amount     The amount of collateral (or number of NFT tokens) transferred to the claimer.
+     *  @param  lpRedeemed Amount of LP exchanged for quote token.
      */
     event RemoveCollateral(
         address indexed claimer,
         uint256 indexed price,
-        uint256 amount
+        uint256 amount,
+        uint256 lpRedeemed
     );
 
     /**
      *  @notice Emitted when lender removes quote token from the pool.
-     *  @param  lender Recipient that removed quote tokens.
-     *  @param  price  Price at which quote tokens were removed.
-     *  @param  amount Amount of quote tokens removed from the pool.
-     *  @param  lup    LUP calculated after removal.
+     *  @param  lender     Recipient that removed quote tokens.
+     *  @param  price      Price at which quote tokens were removed.
+     *  @param  amount     Amount of quote tokens removed from the pool.
+     *  @param  lpRedeemed Amount of LP exchanged for quote token.
+     *  @param  lup        LUP calculated after removal.
      */
     event RemoveQuoteToken(
         address indexed lender,
         uint256 indexed price,
         uint256 amount,
+        uint256 lpRedeemed,
         uint256 lup
     );
-
 
     /**
      *  @notice Emitted when borrower repays quote tokens to the pool, and/or pulls collateral from the pool.

@@ -31,44 +31,39 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
     }
 
     function testPoolInterestRateIncreaseDecrease() external tearDown {
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 20_000 * 1e18,
-                index:  2551,
-                newLup: MAX_PRICE
+                index:  2551
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 20_000 * 1e18,
-                index:  2552,
-                newLup: MAX_PRICE
+                index:  2552
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 50_000 * 1e18,
-                index:  3900,
-                newLup: MAX_PRICE
+                index:  3900
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  4200,
-                newLup: MAX_PRICE
+                index:  4200
             }
         );
 
@@ -139,12 +134,11 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
     function testOverutilizedPoolInterestRateIncrease() external tearDown {
         // lender deposits 1000
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 1_000 * 1e18,
-                index:  3232,
-                newLup: MAX_PRICE
+                index:  3232
             }
         );
 
@@ -186,10 +180,11 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         skip(13 hours);
         _addLiquidity(
             {
-                from:   _lender,
-                amount: 0,
-                index:  3232,
-                newLup: 100.332368143282009890 * 1e18
+                from:    _lender,
+                amount:  0,
+                index:   3232,
+                lpAward: 0,
+                newLup:  100.332368143282009890 * 1e18
             }
         );
         _assertPool(
@@ -214,12 +209,11 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
     function testPoolInterestRateDecrease() external tearDown {
         // lender makes an initial deposit
         skip(1 hours);
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2873,
-                newLup: MAX_PRICE
+                index:  2873
             }
         );
         // borrower draws debt
@@ -265,10 +259,11 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         emit UpdateInterestRate(0.05 * 1e18, 0.045 * 1e18);
         _addLiquidity(
             {
-                from:   _lender1,
-                amount: 1_000 * 1e18,
-                index:  2873,
-                newLup: 601.252968524772188572 * 1e18
+                from:    _lender1,
+                amount:  1_000 * 1e18,
+                index:   2873,
+                lpAward: 999.969800213715631476604245327 * 1e27,
+                newLup:  601.252968524772188572 * 1e18
             }
         );
 
@@ -292,12 +287,11 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
     }
 
     function testMinInterestRate() external tearDown {
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  _i1505_26,
-                newLup: MAX_PRICE
+                index:  _i1505_26
             }
         );
 
@@ -370,12 +364,11 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
     }
 
     function testMaxInterestRate() external tearDown {
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  _i1505_26,
-                newLup: MAX_PRICE
+                index:  _i1505_26
             }
         );
 
@@ -449,28 +442,25 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
     function testPendingInflator() external tearDown {
         // add liquidity
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2552,
-                newLup: MAX_PRICE
+                index:  2552
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  4200,
-                newLup: MAX_PRICE
+                index:  4200
             }
         );
 
@@ -536,20 +526,18 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
     function testPoolEMAAndTargetUtilizationUpdate() external tearDown {
 
         // add initial quote to the pool
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  3_010,
-                newLup: MAX_PRICE
+                index:  3_010
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2_995,
-                newLup: MAX_PRICE
+                index:  2_995
             }
         );
 
