@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
+import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+
 import { ERC20DSTestPlus }    from './ERC20DSTestPlus.sol';
 import { TokenWithNDecimals } from '../utils/Tokens.sol';
 
@@ -12,6 +14,9 @@ import 'src/base/PoolInfoUtils.sol';
 import 'src/libraries/Maths.sol';
 
 contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
+
+    using EnumerableSet for EnumerableSet.AddressSet;
+    using EnumerableSet for EnumerableSet.UintSet;
 
     uint256 internal _lpPoolPrecision         = 10**27;
     uint256 internal _quotePoolPrecision      = 10**18;
@@ -64,6 +69,8 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
         changePrank(_lender);
         _quote.approve(address(_pool), 200_000 * _quotePrecision);
+
+        skip(1 days); // to avoid deposit time 0 equals bucket bankruptcy time
     }
 
     function testAddRemoveQuotePrecision(uint8 collateralPrecisionDecimals_, uint8 quotePrecisionDecimals_) external virtual tearDown {
@@ -76,7 +83,6 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         init(boundColPrecision, boundQuotePrecision);
 
         // deposit 50_000 quote tokens into each of 3 buckets
-        skip(1 days); // to avoid deposit time 0 equals bucket bankruptcy time
         _addInitialLiquidity(
             {
                 from:   _lender,
@@ -207,7 +213,6 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
         init(boundColPrecision, boundQuotePrecision);
 
-        skip(1 days); // to avoid deposit time 0 equals bucket bankruptcy time
         _addInitialLiquidity(
             {
                 from:   _lender,
@@ -474,151 +479,56 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         assertEq(_pool.pledgedCollateral(), col);
     }
 
-    // TODO: Rework this test to do something useful, now that the purchase feature has been eliminated.
-    function skip_testPurchaseClaimPrecision(uint8 collateralPrecisionDecimals_, uint8 quotePrecisionDecimals_) external virtual {
+    function testAvailableCollateral(
+        uint8  collateralPrecisionDecimals_, 
+        uint8  quotePrecisionDecimals_,
+        uint16 bucketIndex
+    ) external virtual tearDown {
         // setup fuzzy bounds and initialize the pool
-        uint256 boundColPrecision = bound(uint256(collateralPrecisionDecimals_), 1, 18);
-        uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_), 1, 18);
-        _collateralPrecision = uint256(10) ** boundColPrecision;
-        _quotePrecision = uint256(10) ** boundQuotePrecision;
-
+        uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 16, 18);
+        uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_), 0, 18);
+        uint256 bucketId            = bound(uint256(bucketIndex), 2000, 3000);
+        _collateralPrecision        = uint256(10) ** boundColPrecision;
+        _quotePrecision             = uint256(10) ** boundQuotePrecision;
         init(boundColPrecision, boundQuotePrecision);
 
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 50_000 * _quotePoolPrecision,
-                index:  2549
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 50_000 * _quotePoolPrecision,
-                index:  2550
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 50_000 * _quotePoolPrecision,
-                index:  2551
-            }
-        );
+        uint256 amount = 50 * _collateralPoolPrecision;
 
-        // bidder purchases quote with collateral
-        changePrank(_bidder);
-        uint256 price = _priceAt(2549);
-        uint256 quoteToPurchase = 500 * _quotePoolPrecision;
-        uint256 collateralRequired = Maths.wdiv(quoteToPurchase, price);
-        uint256 adjustedCollateralReq = collateralRequired / ERC20Pool(address(_pool)).collateralScale();
-    //     vm.expectEmit(true, true, false, true);
-    //     emit Transfer(address(_bidder), address(_pool), adjustedCollateralReq);
-    //     vm.expectEmit(true, true, false, true);
-    //     emit Transfer(address(_pool), address(_bidder), 500 * _quotePrecision);
-    //     vm.expectEmit(true, true, false, true);
-    //     emit Purchase(address(_bidder), _pool.indexToPrice(2549), quoteToPurchase, collateralRequired);
-    //    _bidder.purchaseQuote(_pool, quoteToPurchase, 2549);
+        _assertBucket({
+            index:        bucketId,
+            lpBalance:    0,
+            collateral:   0,
+            deposit:      0,
+            exchangeRate: 1e27
+        });
 
-        // check bucket state
-        uint256 lpAccumulatorStateOne = 25_000 * 1e27;
-        uint256 availableCollateral;
-        _assertBucket(
-            {
-                index:        2549,
-                lpBalance:    lpAccumulatorStateOne,
-                collateral:   availableCollateral,
-                deposit:      1,
-                exchangeRate: 1 * 1e27
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      _lender,
-                index:       2549,
-                lpBalance:   lpAccumulatorStateOne,
-                depositTime: 0
-            }
-        );
-        assertEq(availableCollateral,   collateralRequired);
-        assertGt(availableCollateral,   0);
+        _addCollateralWithoutCheckingLP(_bidder, amount, bucketId);
 
-        // check balances
-        assertEq(_collateral.balanceOf(address(_pool)), adjustedCollateralReq);
-        assertEq(_collateral.balanceOf(_bidder),        150 * _collateralPrecision - adjustedCollateralReq);
-        assertEq(_quote.balanceOf(address(_pool)),      150_000 * _quotePrecision - 500 * _quotePrecision);
-        assertEq(_quote.balanceOf(_bidder),             500 * _quotePrecision);
-
-        // check pool state
-        ( , , uint256 htp, , uint256 lup, ) = _poolUtils.poolPricesInfo(address(_pool));
-        assertEq(htp, 0);
-        assertEq(lup, MAX_PRICE);
-
-        (uint256 poolSize, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
-        assertEq(poolSize, 149_500 * _quotePoolPrecision);
-
-        _assertLenderLpBalance(
-            {
-                lender:      _lender,
-                index:       2549,
-                lpBalance:   50_000 * _lpPoolPrecision,
-                depositTime: 0
-            }
-        );
-
-        // lender claims newly available collateral from bucket
-        _removeCollateral(
-            {
-                from:     _lender,
-                amount:   availableCollateral,
-                index:    2549,
-                lpRedeem: 777
-            }
-        );
-        // changePrank(_lender);
-        // vm.expectEmit(true, true, true, true);
-        // emit Transfer(address(_pool), address(_lender), adjustedCollateralReq);
-        // vm.expectEmit(true, true, true, true);
-        // emit RemoveCollateral(address(_lender), price, availableCollateral);
-        // ERC20Pool(address(_pool)).removeCollateral(availableCollateral, 2549);
-
-        // check bucket state
-        uint256 lpAccumulatorStateTwo = 25_000 * 1e27;
-        uint256 availableCollateralStateTwo;
-        _assertBucket(
-            {
-                index:        2549,
-                lpBalance:    lpAccumulatorStateTwo,
-                collateral:   availableCollateralStateTwo,
-                deposit:      1,
-                exchangeRate: 1 * 1e27
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      _lender,
-                index:       2549,
-                lpBalance:   lpAccumulatorStateTwo,
-                depositTime: 0
-            }
-        );
-
-        // check balances
-        assertEq(_collateral.balanceOf(address(_pool)), 0);
-        assertEq(_collateral.balanceOf(_bidder),        150 * _collateralPrecision - adjustedCollateralReq);
-        assertEq(_collateral.balanceOf(_lender),        adjustedCollateralReq);
-        assertEq(_quote.balanceOf(address(_pool)),      150_000 * _quotePrecision - 500 * _quotePrecision);
-        assertEq(_quote.balanceOf(_bidder),             500 * _quotePrecision);
-
-        // check pool state
-        ( , , htp, , lup, ) = _poolUtils.poolPricesInfo(address(_pool));
-        (poolSize, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
-        assertEq(htp,      0);
-        assertEq(lup,      MAX_PRICE);
-        assertEq(poolSize, 149_500 * _quotePoolPrecision);
+        (, uint256 curDeposit, uint256 availableCollateral,,,) = _poolUtils.bucketInfo(address(_pool), bucketId);
+        assertEq(curDeposit, 0);
+        assertEq(availableCollateral, amount);
     }
 
     function _encumberedCollateral(uint256 debt_, uint256 price_) internal pure returns (uint256 encumberance_) {
         encumberance_ =  price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
+    }
+
+    function _addCollateralWithoutCheckingLP(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal returns (uint256) {
+        changePrank(from);
+        vm.expectEmit(true, true, false, false);
+        emit AddCollateral(from, index, amount, 0);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(from, address(_pool), amount / ERC20Pool(address(_pool)).collateralScale());
+
+        // Add for tearDown
+        bidders.add(from);
+        bidderDepositedIndex[from].add(index);
+        bucketsUsed.add(index); 
+
+        return ERC20Pool(address(_pool)).addCollateral(amount, index);
     }
 }
