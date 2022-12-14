@@ -166,7 +166,7 @@ library Auctions {
 
                 if (depositToRemove >= debtToSettle && maxSettleableDebt >= debtToSettle) { // enough deposit in bucket and collateral avail to settle entire debt
                     depositToRemove    = debtToSettle;                                      // remove only what's needed to settle the debt
-                    params_.t0debt    = 0;                                                  // no remaining debt to settle
+                    params_.t0debt     = 0;                                                 // no remaining debt to settle
                     collateralUsed     = Maths.wdiv(debtToSettle, price);
                     params_.collateral -= collateralUsed;
                 } else if (maxSettleableDebt >= depositToRemove) {                          // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
@@ -267,7 +267,7 @@ library Auctions {
             kicker.claimable -= bondSize;
         } else {
             kickAuctionAmount_ = bondSize - kickerClaimable;
-            kicker.claimable   = 0;     
+            kicker.claimable   = 0; 
         }
         // update totalBondEscrowed accumulator
         auctions_.totalBondEscrowed += bondSize;
