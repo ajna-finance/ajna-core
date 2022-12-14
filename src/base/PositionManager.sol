@@ -37,7 +37,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, Reentrancy
     /** @dev Mapping of tokenIds to nonce values used for permit */
     mapping(uint256 => uint96) public nonces;
 
-    /** @dev Mapping of tokenIds => index => lpb */
+    /** @dev Mapping of tokenIds => bucket index => lpb */
     mapping(uint256 => mapping(uint256 => uint256)) public lps;
 
     /** @dev Mapping of tokenIds to set of prices associated with a Position */
