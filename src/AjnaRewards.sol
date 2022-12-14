@@ -16,6 +16,8 @@ import { PoolCommons } from './libraries/external/PoolCommons.sol';
 
 import './IAjnaRewards.sol';
 
+import '@std/console.sol';
+
 contract AjnaRewards is IAjnaRewards {
 
     using Checkpoints for Checkpoints.History;
@@ -146,10 +148,10 @@ contract AjnaRewards is IAjnaRewards {
         // update checkpoints
         _updateExchangeRates(tokenId_);
 
+        delete deposits[tokenId_];
+
         // claim rewards, if any
         _claimRewards(tokenId_);
-
-        delete deposits[tokenId_];
 
         // transfer LP NFT from contract to sender
         emit WithdrawToken(msg.sender, ajnaPool, tokenId_);
@@ -183,9 +185,9 @@ contract AjnaRewards is IAjnaRewards {
         // update last interaction block
         deposits[tokenId_].lastInteractionBlock = block.number;
 
-        // TODO: use safeTransferFrom
+        // TODO: use safeTransfer
         // transfer rewards to sender
-        IERC20(ajnaToken).transferFrom(address(this), msg.sender, rewardsEarned);
+        IERC20(ajnaToken).transfer(msg.sender, rewardsEarned);
     }
 
     function _calculateRewardsEarned(uint256 tokenId_) internal view returns (uint256 rewards_) {
@@ -219,7 +221,7 @@ contract AjnaRewards is IAjnaRewards {
         // retrieve total interest accumulated by the pool over the claim period, and total tokens burned over that period
         (uint256 ajnaTokensBurned, uint256 totalInterestEarned) = _getPoolAccumulators(ajnaPool, lastInteractionBlock);
 
-        rewards_ = REWARD_FACTOR * (interestEarned / totalInterestEarned) * ajnaTokensBurned;
+        rewards_ = (REWARD_FACTOR * (interestEarned / totalInterestEarned) * ajnaTokensBurned) / 1e18;
     }
 
     /**

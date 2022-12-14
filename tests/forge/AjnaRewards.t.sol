@@ -35,6 +35,8 @@ contract AjnaRewardsTest is DSTestPlus {
     event DepositToken(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
     event WithdrawToken(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
 
+    uint256 constant BLOCKS_IN_DAY = 7200;
+
     function setUp() external {
 
         vm.createSelectFork(vm.envString("ETH_RPC_URL"));
@@ -52,6 +54,10 @@ contract AjnaRewardsTest is DSTestPlus {
         _collateralTwo = new Token("Collateral 2", "C2");
         _quoteTwo      = new Token("Quote 2", "Q2");
         _poolTwo       = ERC20Pool(new ERC20PoolFactory(_ajna).deployPool(address(_collateralTwo), address(_quoteTwo), 0.05 * 10**18));
+
+        // provide initial ajna tokens to staking rewards contract
+        deal(_ajna, address(_ajnaRewards), 100_000_000 * 1e18);
+        assertEq(_ajnaToken.balanceOf(address(_ajnaRewards)), 100_000_000 * 1e18);
     }
 
     function _depositNFT(address pool_, address owner_, uint256 tokenId_) internal {
@@ -219,8 +225,10 @@ contract AjnaRewardsTest is DSTestPlus {
         changePrank(_bidder);
         _poolOne.startClaimableReserveAuction();
 
+        // TODO: create meta method to simultaneously update timestamp and block
         // allow time to pass for the reserve price to decrease
         skip(24 hours);
+        vm.roll(block.number + BLOCKS_IN_DAY);
 
         (
             uint256 curReserves,
@@ -230,18 +238,29 @@ contract AjnaRewardsTest is DSTestPlus {
             uint256 curTimeRemaining
         ) = _poolUtils.poolReservesInfo(address(_poolOne));
 
-        emit log_uint(curReserves);
-        emit log_uint(curClaimableReserves);
-        emit log_uint(curClaimableReservesRemaining);
-
         // take claimable reserves
         _poolOne.takeReserves(curClaimableReservesRemaining);
 
+        // TODO: split into two take reserves events to allow checking of different block number checkpoints
+
+        assertEq(_ajnaToken.balanceOf(testMinterOne), 0);
+
         // claim rewards accrued since deposit
         changePrank(testMinterOne);
+
         // vm.expectEmit(true, true, true, true);
         // emit ClaimRewards(testMinterOne, address(_poolOne), tokenIdOne, 1000 );
         _ajnaRewards.claimRewards(tokenIdOne);
+
+        assertGt(_ajnaToken.balanceOf(testMinterOne), 0);
+
+        // check deposit state
+        (address owner, address pool, uint256 interactionBlock) = _ajnaRewards.getDepositInfo(tokenIdOne);
+        assertEq(owner, testMinterOne);
+        assertEq(pool, address(_poolOne));
+        assertEq(interactionBlock, block.number);
+
+        // TODO: assert rewards claimed is always < ajna tokens burned
 
         // TODO: check interest accrued
 
