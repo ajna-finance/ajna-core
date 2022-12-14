@@ -788,12 +788,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     function burnInfoLatest() external view returns (uint256, uint256) {
-        uint256 burnEventId = Auctions.getLastBurn(_burnEventCheckpoints);
-        BurnEvent memory burnEvent = burnEvents[burnEventId];
-
         return (
-            burnEvent.totalInterest,
-            burnEvent.totalBurned
+            totalInterestEarned,
+            totalAjnaBurned
         );
     }
 

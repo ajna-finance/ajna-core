@@ -85,7 +85,6 @@ contract AjnaRewards is IAjnaRewards {
         deposit.ajnaPool = ajnaPool;
         deposit.lastInteractionBlock = block.number;
 
-        // TODO: do these calculations inline
         _setPositionLPs(tokenId_);
 
         // update checkpoints
@@ -110,10 +109,10 @@ contract AjnaRewards is IAjnaRewards {
         // update checkpoints
         _updateExchangeRates(tokenId_);
 
-        delete deposits[tokenId_];
-
         // claim rewards, if any
         _claimRewards(tokenId_);
+
+        delete deposits[tokenId_];
 
         // transfer LP NFT from contract to sender
         emit WithdrawToken(msg.sender, ajnaPool, tokenId_);
@@ -182,6 +181,7 @@ contract AjnaRewards is IAjnaRewards {
         (uint256 ajnaTokensBurned, uint256 totalInterestEarned) = _getPoolAccumulators(ajnaPool, lastInteractionBlock);
 
         // calculate rewards earned
+        if (ajnaTokensBurned == 0 || totalInterestEarned == 0) return 0;
         rewards_ = (REWARD_FACTOR * (interestEarned / totalInterestEarned) * ajnaTokensBurned) / 1e18;
     }
 
