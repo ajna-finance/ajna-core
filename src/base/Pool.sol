@@ -76,15 +76,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /******************/
 
     function collateralAddress() external pure override returns (address) {
-        return _getArgAddress(0);
+        return _getArgAddress(1);
     }
 
     function quoteTokenAddress() external pure override returns (address) {
-        return _getArgAddress(20);
+        return _getArgAddress(21);
     }
 
     function quoteTokenScale() external pure override returns (uint256) {
-        return _getArgUint256(40);
+        return _getArgUint256(41);
     }
 
 
@@ -365,7 +365,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             maxAmount_
         );
 
-        IERC20Token ajnaToken = IERC20Token(_getArgAddress(72));
+        IERC20Token ajnaToken = IERC20Token(_getArgAddress(73));
         if (!ajnaToken.transferFrom(msg.sender, address(this), ajnaRequired)) revert ERC20TransferFailed();
         ajnaToken.burn(ajnaRequired);
         _transferQuoteToken(msg.sender, amount_);
@@ -641,15 +641,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     function _transferQuoteTokenFrom(address from_, uint256 amount_) internal {
-        IERC20(_getArgAddress(20)).safeTransferFrom(from_, address(this), amount_ / _getArgUint256(40));
+        IERC20(_getArgAddress(21)).safeTransferFrom(from_, address(this), amount_ / _getArgUint256(41));
     }
 
     function _transferQuoteToken(address to_, uint256 amount_) internal {
-        IERC20(_getArgAddress(20)).safeTransfer(to_, amount_ / _getArgUint256(40));
+        IERC20(_getArgAddress(21)).safeTransfer(to_, amount_ / _getArgUint256(41));
     }
 
     function _getPoolQuoteTokenBalance() internal view returns (uint256) {
-        return IERC20(_getArgAddress(20)).balanceOf(address(this));
+        return IERC20(_getArgAddress(21)).balanceOf(address(this));
     }
 
     function _htp(uint256 inflator_) internal view returns (uint256) {

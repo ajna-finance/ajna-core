@@ -58,7 +58,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     /******************/
 
     function isSubset() external pure override returns (bool) {
-        return _getArgUint256(92) != 0;
+        return _getArgUint256(93) != 0;
     }
 
     /***********************************/
@@ -208,7 +208,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         if (data_.length != 0) {
             IERC721Taker(callee_).atomicSwapCallback(
                 tokensTaken, 
-                quoteTokenAmount / _getArgUint256(40), 
+                quoteTokenAmount / _getArgUint256(41), 
                 data_
             );
         }
@@ -283,8 +283,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256[] storage poolTokens_,
         uint256[] calldata tokenIds_
     ) internal {
-        bool subset = _getArgUint256(92) != 0;
-        uint8 nftType = _getArgUint8(124);
+        bool subset = _getArgUint256(93) != 0;
+        uint8 nftType = _getArgUint8(125);
         for (uint256 i = 0; i < tokenIds_.length;) {
             uint256 tokenId = tokenIds_[i];
             if (subset && !tokenIdsAllowed[tokenId]) revert OnlySubset();
@@ -294,10 +294,10 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
                 _transferNFT(msg.sender, address(this), tokenId);
             }
             else if (nftType == uint8(NFTTypes.CRYPTOKITTIES)) {
-                ICryptoKitties(_getArgAddress(0)).transferFrom(msg.sender ,address(this), tokenId);
+                ICryptoKitties(_getArgAddress(1)).transferFrom(msg.sender ,address(this), tokenId);
             }
             else{
-                ICryptoPunks(_getArgAddress(0)).buyPunk(tokenId);
+                ICryptoPunks(_getArgAddress(1)).buyPunk(tokenId);
             }
 
             unchecked {
@@ -322,7 +322,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256[] memory tokensTransferred = new uint256[](amountToRemove_);
 
         uint256 noOfNFTsInPool = poolTokens_.length;
-        uint8 nftType = _getArgUint8(124);
+        uint8 nftType = _getArgUint8(125);
         for (uint256 i = 0; i < amountToRemove_;) {
             uint256 tokenId = poolTokens_[--noOfNFTsInPool]; // start with transferring the last token added in bucket
             poolTokens_.pop();
@@ -331,10 +331,10 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
                 _transferNFT(address(this), toAddress_, tokenId);
             }
             else if (nftType == uint8(NFTTypes.CRYPTOKITTIES)) {
-                ICryptoKitties(_getArgAddress(0)).transfer(toAddress_, tokenId);
+                ICryptoKitties(_getArgAddress(1)).transfer(toAddress_, tokenId);
             }
             else{
-                ICryptoPunks(_getArgAddress(0)).transferPunk(toAddress_, tokenId);
+                ICryptoPunks(_getArgAddress(1)).transferPunk(toAddress_, tokenId);
             }
 
             tokensTransferred[i] = tokenId;
@@ -355,7 +355,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
      */
     function _transferNFT(address from_, address to_, uint256 tokenId_) internal {
         // slither-disable-next-line calls-loop
-        IERC721Token(_getArgAddress(0)).safeTransferFrom(from_, to_, tokenId_);
+        IERC721Token(_getArgAddress(1)).safeTransferFrom(from_, to_, tokenId_);
     }
 
     /************************/

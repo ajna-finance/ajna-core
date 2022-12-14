@@ -41,7 +41,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     /******************/
 
     function collateralScale() external pure override returns (uint256) {
-        return _getArgUint256(92);
+        return _getArgUint256(93);
     }
 
     /***********************************/
@@ -102,9 +102,9 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         uint256 amount_,
         bytes calldata data_
     ) external override(IERC3156FlashLender, FlashloanablePool) nonReentrant returns (bool) {
-        if (token_ == _getArgAddress(20)) return _flashLoanQuoteToken(receiver_, token_, amount_, data_);
+        if (token_ == _getArgAddress(21)) return _flashLoanQuoteToken(receiver_, token_, amount_, data_);
 
-        if (token_ == _getArgAddress(0)) {
+        if (token_ == _getArgAddress(1)) {
             _transferCollateral(address(receiver_), amount_);            
             
             if (receiver_.onFlashLoan(msg.sender, token_, amount_, 0, data_) != 
@@ -121,14 +121,14 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         address token_,
         uint256
     ) external pure override(IERC3156FlashLender, FlashloanablePool) returns (uint256) {
-        if (token_ == _getArgAddress(20) || token_ == _getArgAddress(0)) return 0;
+        if (token_ == _getArgAddress(21) || token_ == _getArgAddress(1)) return 0;
         revert FlashloanUnavailableForToken();
     }
 
     function maxFlashLoan(
         address token_
     ) external view override(IERC3156FlashLender, FlashloanablePool) returns (uint256 maxLoan_) {
-        if (token_ == _getArgAddress(20) || token_ == _getArgAddress(0)) {
+        if (token_ == _getArgAddress(21) || token_ == _getArgAddress(1)) {
             maxLoan_ = IERC20Token(token_).balanceOf(address(this));
         }
     }
@@ -222,8 +222,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         if (data_.length != 0) {
             IERC20Taker(callee_).atomicSwapCallback(
-                collateralAmount / _getArgUint256(92), 
-                quoteTokenAmount / _getArgUint256(40), 
+                collateralAmount / _getArgUint256(93), 
+                quoteTokenAmount / _getArgUint256(41), 
                 data_
             );
         }
@@ -270,10 +270,10 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     /************************/
 
     function _transferCollateralFrom(address from_, uint256 amount_) internal {
-        IERC20(_getArgAddress(0)).safeTransferFrom(from_, address(this), amount_ / _getArgUint256(92));
+        IERC20(_getArgAddress(1)).safeTransferFrom(from_, address(this), amount_ / _getArgUint256(93));
     }
 
     function _transferCollateral(address to_, uint256 amount_) internal {
-        IERC20(_getArgAddress(0)).safeTransfer(to_, amount_ / _getArgUint256(92));
+        IERC20(_getArgAddress(1)).safeTransfer(to_, amount_ / _getArgUint256(93));
     }
 }

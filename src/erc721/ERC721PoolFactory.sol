@@ -52,6 +52,7 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
         }
 
         bytes memory data = abi.encodePacked(
+            PoolType.ERC721,
             collateral_,
             quote_,
             quoteTokenScale,
