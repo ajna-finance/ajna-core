@@ -104,20 +104,18 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         indexes[0] = 2550;
         indexes[1] = 2551;
 
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender1,
                 amount: 10_000 * 1e18,
-                index:  indexes[0],
-                newLup: MAX_PRICE
+                index:  indexes[0]
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender1,
                 amount: 20_000 * 1e18,
-                index:  indexes[1],
-                newLup: MAX_PRICE
+                index:  indexes[1]
             }
         );
 
@@ -143,28 +141,25 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
 
         skip(1 hours);
 
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender1,
                 amount: 10_000 * 1e18,
-                index:  indexes[0],
-                newLup: MAX_PRICE
+                index:  indexes[0]
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender1,
                 amount: 20_000 * 1e18,
-                index:  indexes[1],
-                newLup: MAX_PRICE
+                index:  indexes[1]
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender1,
                 amount: 30_000 * 1e18,
-                index:  indexes[2],
-                newLup: MAX_PRICE
+                index:  indexes[2]
             }
         );
 
@@ -305,28 +300,25 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         transferIndexes[0] = 2550;
         transferIndexes[1] = 2552;
 
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender1,
                 amount: 10_000 * 1e18,
-                index:  depositIndexes[0],
-                newLup: MAX_PRICE
+                index:  depositIndexes[0]
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender1,
                 amount: 20_000 * 1e18,
-                index:  depositIndexes[1],
-                newLup: MAX_PRICE
+                index:  depositIndexes[1]
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender1,
                 amount: 30_000 * 1e18,
-                index:  depositIndexes[2],
-                newLup: MAX_PRICE
+                index:  depositIndexes[2]
             }
         );
 
@@ -464,55 +456,49 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
 
         skip(1 hours);
 
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender1,
                 amount: 10_000 * 1e18,
-                index:  indexes[0],
-                newLup: MAX_PRICE
+                index:  indexes[0]
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender1,
                 amount: 20_000 * 1e18,
-                index:  indexes[1],
-                newLup: MAX_PRICE
+                index:  indexes[1]
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender1,
                 amount: 30_000 * 1e18,
-                index:  indexes[2],
-                newLup: MAX_PRICE
+                index:  indexes[2]
             }
         );
 
         skip(1 hours);
 
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender2,
                 amount: 5_000 * 1e18,
-                index:  indexes[0],
-                newLup: MAX_PRICE
+                index:  indexes[0]
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender2,
                 amount: 10_000 * 1e18,
-                index:  indexes[1],
-                newLup: MAX_PRICE
+                index:  indexes[1]
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender2,
                 amount: 15_000 * 1e18,
-                index:  indexes[2],
-                newLup: MAX_PRICE
+                index:  indexes[2]
             }
         );
 

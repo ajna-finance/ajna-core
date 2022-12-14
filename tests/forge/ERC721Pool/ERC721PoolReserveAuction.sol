@@ -28,12 +28,11 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
 
         // lender adds liquidity and borrower draws debt
         uint16 bucketId = 1663;
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 200_000 * 1e18,
-                index:  bucketId,
-                newLup: MAX_PRICE
+                index:  bucketId
             }
         );
 

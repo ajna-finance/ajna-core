@@ -58,3 +58,42 @@ interface IPoolLiquidationActions {
      */
     function withdrawBonds() external;
 }
+
+/*********************/
+/*** Param Structs ***/
+/*********************/
+
+struct SettleParams {
+    address borrower;    // borrower address to settle
+    uint256 collateral;  // remaining collateral pledged by borrower that can be used to settle debt
+    uint256 t0debt;      // borrower t0 debt to settle 
+    uint256 reserves;    // current reserves in pool
+    uint256 inflator;    // current pool inflator
+    uint256 bucketDepth; // number of buckets to use when settle debt
+}
+
+struct KickParams {
+    address borrower;       // borrower address to kick
+    uint256 collateral;     // borrower collateral
+    uint256 debt;           // borrower debt 
+    uint256 momp;           // loan's MOMP
+    uint256 neutralPrice;   // loan's Neutral Price
+    uint256 rate;           // pool's Interest Rate
+}
+
+struct BucketTakeParams {
+    address borrower;       // borrower address to take from
+    uint256 collateral;     // borrower available collateral to take
+    uint256 t0debt;         // borrower t0 debt
+    uint256 inflator;       // current pool inflator
+    bool    depositTake;    // deposit or arb take, used by bucket take
+    uint256 index;          // bucket index, used by bucket take
+}
+
+struct TakeParams {
+    address borrower;       // borrower address to take from
+    uint256 collateral;     // borrower available collateral to take
+    uint256 t0debt;         // borrower t0 debt
+    uint256 takeCollateral; // desired amount to take
+    uint256 inflator;       // current pool inflator
+}

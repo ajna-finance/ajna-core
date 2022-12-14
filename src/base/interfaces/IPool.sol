@@ -29,6 +29,8 @@ interface IPool is
 
 }
 
+enum PoolType { ERC20, ERC721 }
+
 interface IERC20Token {
     function balanceOf(address account) external view returns (uint256);
     function burn(uint256 amount) external;

@@ -144,6 +144,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
 
         assert(_NFTCollectionPoolAddress != _NFTSubsetOnePoolAddress);
 
+        assertEq(_NFTCollectionPool.poolType(),           1);
         assertEq(_NFTCollectionPool.collateralAddress(),  address(_collateral));
         assertEq(_NFTCollectionPool.quoteTokenAddress(),  address(_quote));
         assertEq(_NFTCollectionPool.quoteTokenScale(),    1);
@@ -211,6 +212,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
 
         assertTrue(_NFTSubsetOnePoolAddress != _NFTSubsetTwoPoolAddress);
 
+        assertEq(_NFTCollectionPool.poolType(),          1);
         assertEq(_NFTSubsetOnePool.collateralAddress(),  address(_collateral));
         assertEq(_NFTSubsetOnePool.quoteTokenAddress(),  address(_quote));
         assertEq(_NFTSubsetOnePool.quoteTokenScale(),    1);

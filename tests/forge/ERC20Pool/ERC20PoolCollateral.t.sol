@@ -32,33 +32,30 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
     function testAddPullCollateral() external tearDown {
         // lender deposits 10000 Quote into 3 buckets
 
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2551,
-                newLup: MAX_PRICE
+                index:  2551
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2552,
-                newLup: MAX_PRICE
+                index:  2552
             }
         );
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
                 poolSize:             30_000 * 1e18,
@@ -94,7 +91,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         );
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  210.201923076923077020 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             30_000 * 1e18,
@@ -134,7 +131,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         });
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  421.557216751451801727 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             30_025.923273028334880000 * 1e18,
@@ -171,7 +168,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         });
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  2_985.093792841086761332 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             30_025.923273028334880000 * 1e18,
@@ -241,9 +238,10 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         // actor deposits collateral into a bucket
         _addCollateral(
             {
-                from:   _bidder,
-                amount: 4 * 1e18,
-                index:  2550
+                from:    _bidder,
+                amount:  4 * 1e18,
+                index:   2550,
+                lpAward: 12_043.56808879152623138 * 1e27
             }
         );
 
@@ -342,9 +340,10 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         // actor deposits collateral into a bucket
         _addCollateral(
             {
-                from:   _bidder,
-                amount: 1 * 1e18,
-                index:  1530
+                from:    _bidder,
+                amount:  1 * 1e18,
+                index:   1530,
+                lpAward: 487616.252661175041981841 * 1e27
             }
         );
 
@@ -430,9 +429,10 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         _collateral.approve(address(_pool), 100 * 1e18);
         _addCollateral(
             {
-                from:   _bidder,
-                amount: 0.65 * 1e18,
-                index:  testIndex
+                from:    _bidder,
+                amount:  0.65 * 1e18,
+                index:   testIndex,
+                lpAward: 0.0000116119721720119 * 1e27
             }
         );
 
@@ -456,7 +456,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
     function testPledgeCollateralFromDifferentActor() external tearDown {
         // check initial pool state
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
                 poolSize:             0,
@@ -486,7 +486,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
 
         // check pool state collateral accounting updated properly
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
                 poolSize:             0,

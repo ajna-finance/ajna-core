@@ -1,21 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
+import { Bucket, Lender } from '../base/interfaces/IPool.sol';
+
 import './Maths.sol';
 
 library Buckets {
-
-    struct Lender {
-        uint256 lps;         // [RAY] Lender LP accumulator
-        uint256 depositTime; // timestamp of last deposit
-    }
-
-    struct Bucket {
-        uint256 lps;                        // [RAY] Bucket LP accumulator
-        uint256 collateral;                 // [WAD] Available collateral tokens deposited in the bucket
-        uint256 bankruptcyTime;             // Timestamp when bucket become insolvent, 0 if healthy
-        mapping(address => Lender) lenders; // lender address to Lender struct mapping
-    }
 
     /**
      *  @notice Operation cannot be executed in the same block when bucket becomes insolvent.
@@ -122,6 +112,26 @@ library Buckets {
         return bucketLPs_ == 0 ? Maths.RAY :
             (bucketDeposit_ * 1e18 + bucketPrice_ * bucketCollateral_) * 1e18 / bucketLPs_;
             // 10^36 * 1e18 / 10^27 = 10^54 / 10^27 = 10^27
+    }
+
+    /**
+     *  @notice Returns the unscaled exchange rate for a given bucket.
+     *  @param  bucketCollateral_       Amount of collateral in bucket.
+     *  @param  bucketLPs_              Amount of LPs in bucket.
+     *  @param  bucketUnscaledDeposit_  The amount of unscaled Fenwick tree amount in bucket.
+     *  @param  bucketScale_            Bucket scale factor
+     *  @param  bucketPrice_            Bucket's price.
+     */
+    function getUnscaledExchangeRate(
+        uint256 bucketCollateral_,
+        uint256 bucketLPs_,
+        uint256 bucketUnscaledDeposit_,
+        uint256 bucketScale_,
+        uint256 bucketPrice_
+    ) internal pure returns (uint256) {
+        return bucketLPs_ == 0 ? Maths.RAY :
+            (bucketUnscaledDeposit_ + bucketPrice_ * bucketCollateral_ / bucketScale_ ) * 10**36 / bucketLPs_;
+            // 10^18 * 1e36 / 10^27 = 10^54 / 10^27 = 10^27
     }
 
     /**

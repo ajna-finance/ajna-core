@@ -11,7 +11,7 @@ abstract contract FlashloanablePool is Pool {
         uint256 amount_,
         bytes calldata data_
     ) external virtual override nonReentrant returns (bool) {
-        if (token_ == _getArgAddress(20)) return _flashLoanQuoteToken(receiver_, token_, amount_, data_);
+        if (token_ == _getArgAddress(QUOTE_ADDRESS)) return _flashLoanQuoteToken(receiver_, token_, amount_, data_);
         revert FlashloanUnavailableForToken();
     }
 
@@ -33,13 +33,13 @@ abstract contract FlashloanablePool is Pool {
         address token_,
         uint256
     ) external virtual view override returns (uint256) {
-        if (token_ != _getArgAddress(20)) revert FlashloanUnavailableForToken();
+        if (token_ != _getArgAddress(QUOTE_ADDRESS)) revert FlashloanUnavailableForToken();
         return 0;
     }
 
     function maxFlashLoan(
         address token_
     ) external virtual view override returns (uint256 maxLoan_) {
-        if (token_ == _getArgAddress(20)) maxLoan_ = _getPoolQuoteTokenBalance();
+        if (token_ == _getArgAddress(QUOTE_ADDRESS)) maxLoan_ = _getPoolQuoteTokenBalance();
     }
 }
