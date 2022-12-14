@@ -7,9 +7,9 @@ import './DSTestPlus.sol';
 import 'src/libraries/Deposits.sol';
 
 contract FenwickTreeInstance is DSTestPlus {
-    using Deposits for Deposits.Data;
+    using Deposits for DepositsState;
 
-    Deposits.Data private deposits;
+    DepositsState private deposits;
 
     /**
      *  @notice used to track fuzzing test insertions.

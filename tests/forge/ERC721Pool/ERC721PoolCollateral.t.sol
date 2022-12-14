@@ -330,7 +330,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         // check pool state
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
                 poolSize:             30_000 * 1e18,
@@ -378,7 +378,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         // check pool state
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  1_000.961538461538462 * 1e18,
                 lup:                  _priceAt(2550),
                 poolSize:             30_000 * 1e18,
@@ -413,7 +413,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         // check pool state
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  3_002.884615384615386000 * 1e18,
                 lup:                  _priceAt(2550),
                 poolSize:             30_000 * 1e18,

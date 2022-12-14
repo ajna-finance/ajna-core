@@ -3,12 +3,13 @@ pragma solidity 0.8.14;
 
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
+import { InterestState, PoolState, DepositsState } from '../../base/interfaces/IPool.sol';
+
 import '../Deposits.sol';
 import '../Buckets.sol';
 import '../Loans.sol';
 
 import '../../base/PoolHelper.sol';
-import '../../base/Pool.sol';
 
 /**
     @notice External library containing logic for common pool functionality:
@@ -43,9 +44,9 @@ library PoolCommons {
      *  @notice Calculates new pool interest rate params (EMAs and interest rate value) and saves new values in storage.
      */
     function updateInterestRate(
-        Pool.InterestParams storage interestParams_,
-        Deposits.Data storage deposits_,
-        Pool.PoolState memory poolState_,
+        InterestState storage interestParams_,
+        DepositsState storage deposits_,
+        PoolState memory poolState_,
         uint256 lup_
     ) external {
         // update pool EMAs for target utilization calculation
@@ -107,7 +108,7 @@ library PoolCommons {
      *  @return newInflator_   The new value of pool inflator.
      */
     function accrueInterest(
-        Deposits.Data storage deposits_,
+        DepositsState storage deposits_,
         uint256 debt_,
         uint256 collateral_,
         uint256 thresholdPrice_,
@@ -186,7 +187,7 @@ library PoolCommons {
      *  @dev Wrapper of the internal function.
      */
     function utilization(
-        Deposits.Data storage deposits,
+        DepositsState storage deposits,
         uint256 debt_,
         uint256 collateral_
     ) external view returns (uint256 utilization_) {
@@ -204,7 +205,7 @@ library PoolCommons {
      *  @return utilization_ Pool utilization value.
      */
     function _utilization(
-        Deposits.Data storage deposits,
+        DepositsState storage deposits,
         uint256 debt_,
         uint256 collateral_
     ) internal view returns (uint256 utilization_) {

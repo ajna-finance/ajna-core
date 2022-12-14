@@ -7,6 +7,11 @@ pragma solidity 0.8.14;
 interface IPoolImmutables {
 
     /**
+     *  @notice Returns the type of the pool (0 for ERC20, 1 for ERC721)
+     */
+    function poolType() external pure returns (uint8);
+
+    /**
      *  @notice Returns the address of the pool's collateral token
      */
     function collateralAddress() external pure returns (address);

@@ -119,7 +119,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         /*****************************/
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  9.909519230769230774 * 1e18,
                 lup:                  9.917184843435912074 * 1e18,
                 poolSize:             73_000 * 1e18,
@@ -162,7 +162,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         skip(1000 days);
 
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            false,
                 kicker:            address(0),
@@ -204,7 +204,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         /******************************/
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  6.582216822103492762 * 1e18,
                 lup:                  9.917184843435912074 * 1e18,
                 poolSize:             73_000 * 1e18,
@@ -240,7 +240,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         );
         assertEq(_quote.balanceOf(_lender), 46_999.772712801701582812 * 1e18);
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            true,
                 kicker:            _lender,
@@ -273,7 +273,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_borrower), 119.8 * 1e18);
 
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            true,
                 kicker:            _lender,
@@ -317,7 +317,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         );
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  6.582554958364903034 * 1e18,
                 lup:                  9.917184843435912074 * 1e18,
                 poolSize:             73_000.000878382806067000 * 1e18,
@@ -345,7 +345,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         );
 
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            false,
                 kicker:            address(0),
@@ -396,7 +396,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         );
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  6.582554958364903034 * 1e18,
                 lup:                  9.917184843435912074 * 1e18,
                 poolSize:             73_000.000878382806067000 * 1e18,
@@ -424,7 +424,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         );
 
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            false,
                 kicker:            address(0),
@@ -462,7 +462,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         skip(1000 days);
 
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            false,
                 kicker:            address(0),
@@ -504,7 +504,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         /******************************/
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  6.582216822103492762 * 1e18,
                 lup:                  9.917184843435912074 * 1e18,
                 poolSize:             73_000 * 1e18,
@@ -540,7 +540,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         );
         assertEq(_quote.balanceOf(_lender), 46_999.772712801701582812 * 1e18);
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            true,
                 kicker:            _lender,
@@ -572,7 +572,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_lender), 46_999.772712801701582812 * 1e18);
 
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            true,
                 kicker:            _lender,
@@ -621,7 +621,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_lender), 46_998.533064696272093788 * 1e18);
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  6.582893111996772890 * 1e18,
                 lup:                  9.917184843435912074 * 1e18,
                 poolSize:             73_000.001756788173660000 * 1e18,
@@ -650,7 +650,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         );
 
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            true,
                 kicker:            _lender,
@@ -685,7 +685,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         );
 
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            false,
                 kicker:            address(0),

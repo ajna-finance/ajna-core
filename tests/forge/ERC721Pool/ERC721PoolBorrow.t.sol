@@ -188,7 +188,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
 
         // check pool state
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
                 poolSize:             30_000 * 1e18,
@@ -248,7 +248,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
 
         // check pool state after borrow
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  1_000.961538461538462000 * 1e18,
                 lup:                  _priceAt(2550),
                 poolSize:             30_000 * 1e18,
@@ -309,7 +309,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
 
         // check pool state after partial repay
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  503.022258079721182348 * 1e18,
                 lup:                  _priceAt(2550),
                 poolSize:             30_003.520235392247040000 * 1e18,
@@ -391,7 +391,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
 
         // check pool state after fully repay
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
                 poolSize:             30_005.105213052294390000 * 1e18,

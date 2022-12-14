@@ -53,7 +53,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     uint256 internal _i9_62     = 3702;
     uint256 internal _i9_52     = 3704;
 
-    struct PoolState {
+    struct PoolParams {
         uint256 htp;
         uint256 lup;
         uint256 poolSize;
@@ -69,7 +69,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 interestRateUpdate;
     }
 
-    struct AuctionState {
+    struct AuctionParams {
         address borrower;
         bool    active;
         address kicker;
@@ -341,7 +341,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     /*** State asserts ***/
     /*********************/
 
-    function _assertAuction(AuctionState memory state_) internal {
+    function _assertAuction(AuctionParams memory state_) internal {
         (
             address auctionKicker,
             uint256 auctionBondFactor,
@@ -373,7 +373,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
             auctionKickTime),              state_.auctionPrice);
     }
 
-    function _assertPool(PoolState memory state_) internal {
+    function _assertPool(PoolParams memory state_) internal {
         ( 
             , 
             , 

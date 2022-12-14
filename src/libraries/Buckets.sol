@@ -1,21 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
+import { Bucket, Lender } from '../base/interfaces/IPool.sol';
+
 import './Maths.sol';
 
 library Buckets {
-
-    struct Lender {
-        uint256 lps;         // [RAY] Lender LP accumulator
-        uint256 depositTime; // timestamp of last deposit
-    }
-
-    struct Bucket {
-        uint256 lps;                        // [RAY] Bucket LP accumulator
-        uint256 collateral;                 // [WAD] Available collateral tokens deposited in the bucket
-        uint256 bankruptcyTime;             // Timestamp when bucket become insolvent, 0 if healthy
-        mapping(address => Lender) lenders; // lender address to Lender struct mapping
-    }
 
     /**
      *  @notice Operation cannot be executed in the same block when bucket becomes insolvent.

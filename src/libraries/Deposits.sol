@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
+import { DepositsState } from '../base/interfaces/IPool.sol';
+
 import '../base/PoolHelper.sol';
 
 library Deposits {
@@ -16,11 +18,6 @@ library Deposits {
      */
     error InvalidScalingFactor();
 
-    struct Data {
-        uint256[8193] values;  // Array of values in the FenwickTree.
-        uint256[8193] scaling; // Array of values which scale (multiply) the FenwickTree accross indexes.
-    }
-
     /**
      *  @notice increase a value in the FenwickTree at an index.
      *  @dev    Starts at leaf/target and moved up towards root
@@ -28,24 +25,24 @@ library Deposits {
      *  @param  addAmount_ The amount to increase deposit by.
      */    
     function add(
-        Data storage self,
+        DepositsState storage deposits_,
         uint256 index_,
         uint256 addAmount_
     ) internal {
         if (index_ >= SIZE) revert InvalidIndex();
 
         ++index_;
-        addAmount_ = Maths.wdiv(addAmount_, scale(self, index_));
+        addAmount_ = Maths.wdiv(addAmount_, scale(deposits_, index_));
 
         while (index_ <= SIZE) {
-            uint256 value    = self.values[index_];
-            uint256 scaling  = self.scaling[index_];
+            uint256 value    = deposits_.values[index_];
+            uint256 scaling  = deposits_.scaling[index_];
             uint256 newValue = value + addAmount_;
             // Note: we can't just multiply addAmount_ by scaling[i_] due to rounding
-            // We need to track the precice change in self.values[i_] in order to ensure
+            // We need to track the precice change in deposits_.values[i_] in order to ensure
             // obliterated indices remain zero after subsequent adding to related indices
             if (scaling != 0) addAmount_ = Maths.wmul(newValue, scaling) - Maths.wmul(value, scaling);
-            self.values[index_] = newValue;
+            deposits_.values[index_] = newValue;
             index_ += lsb(index_);
         }
     }
@@ -57,11 +54,11 @@ library Deposits {
      *  @return sumIndex_ Smallest index where prefixsum greater than the sum
      */    
     function findIndexOfSum(
-        Data storage self,
+        DepositsState storage deposits_,
         uint256 sum_
     ) internal view returns (uint256 sumIndex_) {
         // Avoid looking for a sum greater than the tree size
-        if (treeSum(self) < sum_) return MAX_FENWICK_INDEX;
+        if (treeSum(deposits_) < sum_) return MAX_FENWICK_INDEX;
 
         uint256 i     = 4096; // 1 << (_numBits - 1) = 1 << (13 - 1) = 4096
         uint256 ss    = 0;
@@ -69,8 +66,8 @@ library Deposits {
         uint256 index = sumIndex_ + i;
 
         while (i > 0) {
-            uint256 value       = self.values[index];
-            uint256 scaling     = self.scaling[index];
+            uint256 value       = deposits_.values[index];
+            uint256 scaling     = deposits_.scaling[index];
             uint256 scaledValue = scaling != 0 ? ss + Maths.wmul(Maths.wmul(sc, scaling), value) : ss + Maths.wmul(sc, value);
             if (scaledValue  < sum_) {
                 sumIndex_ += i;
@@ -105,7 +102,7 @@ library Deposits {
      */    
     // TODO: add check to ensure scaling factor is at least a WAD? 
     function mult(
-        Data storage self,
+        DepositsState storage deposits_,
         uint256 index_,
         uint256 factor_
     ) internal {
@@ -129,8 +126,8 @@ library Deposits {
         //             (in sum) which was set in a prior interation in case 1.
         while (bit <= SIZE) {
             if((bit & index_) != 0) {
-                value   = self.values[index_];
-                scaling = self.scaling[index_];
+                value   = deposits_.values[index_];
+                scaling = deposits_.scaling[index_];
             
                 // Calc sum, will only be stored in range parents of starting node, index_
                 if (scaling != 0) {
@@ -140,17 +137,17 @@ library Deposits {
                     uint256 scaledFactor = Maths.wmul(factor_, scaling);
                     sum += Maths.wmul(scaledFactor, value) - Maths.wmul(scaling, value);
                     // Apply scaling to all range parents less then starting node, index_
-                    self.scaling[index_] = scaledFactor;
+                    deposits_.scaling[index_] = scaledFactor;
                 } else {
                     sum += Maths.wmul(factor_, value) - value;
-                    self.scaling[index_] = factor_;
+                    deposits_.scaling[index_] = factor_;
                 }
 
                 index_ -= bit;
             } else {
                 uint256 superRangeIndex = index_ + bit;
-                value = (self.values[superRangeIndex] += sum);
-                scaling = self.scaling[superRangeIndex];
+                value = (deposits_.values[superRangeIndex] += sum);
+                scaling = deposits_.scaling[superRangeIndex];
                 // again, in following line, need to be careful due to rounding
                 if (scaling != 0) sum = Maths.wmul(value, scaling) - Maths.wmul(value - sum, scaling);
             } 
@@ -165,7 +162,7 @@ library Deposits {
      *  @param  sum_       The prefix sum from current index downwards.
      */    
     function prefixSum(
-        Data storage self,
+        DepositsState storage deposits_,
         uint256 sumIndex_
     ) internal view returns (uint256 sum_) {
 
@@ -178,8 +175,8 @@ library Deposits {
         
         while (j > 0 && index <= SIZE) {
 
-            uint256 scaled = self.scaling[index];
-            uint256 value  = self.values[index];
+            uint256 scaled = deposits_.scaling[index];
+            uint256 value  = deposits_.values[index];
 
             // If requested node is in current range, compute sum with running multiplier.
             if (sumIndex_ & j != 0) {
@@ -196,15 +193,15 @@ library Deposits {
     }
 
     function remove(
-        Data storage self,
+        DepositsState storage deposits_,
         uint256 index_,
         uint256 removeAmount_,
 	uint256 currentAmount_
     ) internal {
 	if (removeAmount_ == currentAmount_) {
-	    unscaledRemove(self, index_, unscaledValueAt(self,index_));
+	    unscaledRemove(deposits_, index_, unscaledValueAt(deposits_,index_));
 	} else {
-	    unscaledRemove(self, index_, Maths.wdiv(removeAmount_, scale(self, index_)));
+	    unscaledRemove(deposits_, index_, Maths.wdiv(removeAmount_, scale(deposits_, index_)));
 	}
     }
 
@@ -216,7 +213,7 @@ library Deposits {
      *  @param  unscaledRemoveAmount_   Unscaled amount to decrease deposit by.
      */    
     function unscaledRemove(
-        Data storage self,
+        DepositsState storage deposits_,
         uint256 index_,
         uint256 unscaledRemoveAmount_
     ) internal {
@@ -225,11 +222,11 @@ library Deposits {
         ++index_;
 
         while (index_ <= SIZE) {
-            uint256 value    = (self.values[index_] -= unscaledRemoveAmount_);
-            uint256 scaling  = self.scaling[index_];
+            uint256 value    = (deposits_.values[index_] -= unscaledRemoveAmount_);
+            uint256 scaling  = deposits_.scaling[index_];
             // On the line below, it would be tempting to replace this with:
             // unscaledRemoveAmount_ = Maths.wmul(unscaledRemoveAmount, scaling).  This will introduce nonzero values up
-            // the tree due to rounding.  It's important to compute the actual change in self.values[index_]
+            // the tree due to rounding.  It's important to compute the actual change in deposits_.values[index_]
             // and propogate that upwards.
             if (scaling != 0) unscaledRemoveAmount_ = Maths.wmul(value + unscaledRemoveAmount_, scaling) - Maths.wmul(value,  scaling);
             index_ += lsb(index_);
@@ -243,7 +240,7 @@ library Deposits {
      *  @return scaled_ Scaled value.
      */   
     function scale(
-        Data storage self,
+        DepositsState storage deposits_,
         uint256 index_
     ) internal view returns (uint256 scaled_) {
         if (index_ > SIZE) revert InvalidIndex();
@@ -251,7 +248,7 @@ library Deposits {
         
         scaled_ = Maths.WAD;
         while (index_ <= SIZE) {
-            uint256 scaling = self.scaling[index_];
+            uint256 scaling = deposits_.scaling[index_];
             if (scaling != 0) scaled_ = Maths.wmul(scaled_, scaling);
             index_ += lsb(index_);
         }
@@ -261,11 +258,11 @@ library Deposits {
      *  @notice Returns sum of all deposits.
      */ 
     function treeSum(
-        Data storage self
+        DepositsState storage deposits_
     ) internal view returns (uint256) {
-        uint256 scaling = self.scaling[SIZE];
+        uint256 scaling = deposits_.scaling[SIZE];
         if (scaling==0) scaling = Maths.WAD;
-        return Maths.wmul(scaling,self.values[SIZE]);
+        return Maths.wmul(scaling,deposits_.values[SIZE]);
     }
 
     /**
@@ -274,16 +271,16 @@ library Deposits {
      *  @return depositValue_ Value of the deposit.
      */  
     function valueAt(
-        Data storage self,
+        DepositsState storage deposits_,
         uint256 index_
     ) internal view returns (uint256 depositValue_) {
         if (index_ >= SIZE) revert InvalidIndex();
 
-	depositValue_ = Maths.wmul(unscaledValueAt(self, index_), scale(self,index_));
+        depositValue_ = Maths.wmul(unscaledValueAt(deposits_, index_), scale(deposits_,index_));
     }
 
     function unscaledValueAt(
-        Data storage self,
+        DepositsState storage deposits_,
         uint256 index_
     ) internal view returns (uint256 unscaledDepositValue_) {
         if (index_ >= SIZE) revert InvalidIndex();
@@ -292,10 +289,10 @@ library Deposits {
 
         uint256 j = 1;
 
-        unscaledDepositValue_ = self.values[index_];
+        unscaledDepositValue_ = deposits_.values[index_];
         while (j & index_ == 0) {
-            uint256 value   = self.values[index_ - j];
-            uint256 scaling = self.scaling[index_ - j];
+            uint256 value   = deposits_.values[index_ - j];
+            uint256 scaling = deposits_.scaling[index_ - j];
             unscaledDepositValue_ -= scaling != 0 ? Maths.wmul(scaling, value) : value;
             j = j << 1;
         }

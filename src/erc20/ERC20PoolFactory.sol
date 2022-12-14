@@ -31,10 +31,11 @@ contract ERC20PoolFactory is IERC20PoolFactory, PoolDeployer {
         uint256 collateralScale = 10**(18 - IERC20Token(collateral_).decimals());
 
         bytes memory data = abi.encodePacked(
+            PoolType.ERC20,
+            ajna,
             collateral_,
             quote_,
             quoteTokenScale,
-            ajna,
             collateralScale
         );
 

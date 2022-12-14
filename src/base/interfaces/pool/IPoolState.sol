@@ -184,3 +184,95 @@ interface IPoolState {
     function pledgedCollateral() external view returns (uint256);
 
 }
+
+/*********************/
+/*** State Structs ***/
+/*********************/
+
+/*** Pool State ***/
+
+struct InterestState {
+    uint208 interestRate;       // [WAD]
+    uint48  interestRateUpdate; // [SEC]
+    uint256 debtEma;            // [WAD]
+    uint256 lupColEma;          // [WAD]
+}
+
+struct ReserveAuctionState {
+    uint256 kicked;    // Time a Claimable Reserve Auction was last kicked.
+    uint256 unclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
+}
+
+struct PoolState {
+    uint256 accruedDebt;          // total debt in pool, accrued in current block
+    uint256 collateral;           // total collateral pledged in pool
+    uint256 inflator;             // current pool inflator
+    bool    isNewInterestAccrued; // true if new interest already accrued in current block
+    uint256 rate;                 // pool's current interest rate
+}
+
+/*** Buckets State ***/
+
+struct Lender {
+    uint256 lps;         // [RAY] Lender LP accumulator
+    uint256 depositTime; // timestamp of last deposit
+}
+
+struct Bucket {
+    uint256 lps;                        // [RAY] Bucket LP accumulator
+    uint256 collateral;                 // [WAD] Available collateral tokens deposited in the bucket
+    uint256 bankruptcyTime;             // Timestamp when bucket become insolvent, 0 if healthy
+    mapping(address => Lender) lenders; // lender address to Lender struct mapping
+}
+
+/*** Deposits State ***/
+
+struct DepositsState {
+    uint256[8193] values;  // Array of values in the FenwickTree.
+    uint256[8193] scaling; // Array of values which scale (multiply) the FenwickTree accross indexes.
+}
+
+/*** Loans State ***/
+
+struct LoansState {
+    Loan[] loans;
+    mapping (address => uint)     indices;   // borrower address => loan index mapping
+    mapping (address => Borrower) borrowers; // borrower address => Borrower struct mapping
+}
+
+struct Loan {
+    address borrower;       // borrower address
+    uint96  thresholdPrice; // [WAD] Loan's threshold price.
+}
+
+struct Borrower {
+    uint256 t0debt;           // [WAD] Borrower debt time-adjusted as if it was incurred upon first loan of pool.
+    uint256 collateral;       // [WAD] Collateral deposited by borrower.
+    uint256 t0Np;             // [WAD] Neutral Price time-adjusted as if it was incurred upon first loan of pool.
+}
+
+/*** Auctions State ***/
+
+struct AuctionsState {
+    address head;
+    address tail;
+    uint256 totalBondEscrowed; // [WAD]
+    mapping(address => Liquidation) liquidations;
+    mapping(address => Kicker)      kickers;
+}
+
+struct Liquidation {
+    address kicker;         // address that initiated liquidation
+    uint96  bondFactor;     // bond factor used to start liquidation
+    uint96  kickTime;       // timestamp when liquidation was started
+    address prev;           // previous liquidated borrower in auctions queue
+    uint96  kickMomp;       // Momp when liquidation was started
+    address next;           // next liquidated borrower in auctions queue
+    uint160 bondSize;       // liquidation bond size
+    uint96  neutralPrice;   // Neutral Price when liquidation was started
+}
+
+struct Kicker {
+    uint256 claimable; // kicker's claimable balance
+    uint256 locked;    // kicker's balance of tokens locked in auction bonds
+}

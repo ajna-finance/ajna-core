@@ -55,7 +55,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         );
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
                 poolSize:             30_000 * 1e18,
@@ -91,7 +91,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         );
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  210.201923076923077020 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             30_000 * 1e18,
@@ -131,7 +131,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         });
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  421.557216751451801727 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             30_025.923273028334880000 * 1e18,
@@ -168,7 +168,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         });
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  2_985.093792841086761332 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             30_025.923273028334880000 * 1e18,
@@ -456,7 +456,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
     function testPledgeCollateralFromDifferentActor() external tearDown {
         // check initial pool state
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
                 poolSize:             0,
@@ -486,7 +486,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
 
         // check pool state collateral accounting updated properly
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
                 poolSize:             0,
