@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import '../../base/interfaces/pool/IPoolEvents.sol';
-
 import '../Deposits.sol';
 import '../Buckets.sol';
 
@@ -84,18 +82,39 @@ library LenderActions {
         uint256 rate;      // the interest rate in pool (used to calculate penalty)
     }
 
+    /**
+     *  @notice Emitted when lender moves quote token from a bucket price to another.
+     *  @param  lender         Recipient that moved quote tokens.
+     *  @param  from           Price bucket from which quote tokens were moved.
+     *  @param  to             Price bucket where quote tokens were moved.
+     *  @param  amount         Amount of quote tokens moved.
+     *  @param  lpRedeemedFrom Amount of LP removed from the `from` bucket.
+     *  @param  lpAwardedTo    Amount of LP credited to the `to` bucket.
+     *  @param  lup            LUP calculated after removal.
+     */
     event MoveQuoteToken(
         address indexed lender,
         uint256 indexed from,
         uint256 indexed to,
         uint256 amount,
+        uint256 lpRedeemedFrom,
+        uint256 lpAwardedTo,
         uint256 lup
     );
 
+    /**
+     *  @notice Emitted when lender removes quote token from the pool.
+     *  @param  lender     Recipient that removed quote tokens.
+     *  @param  price      Price at which quote tokens were removed.
+     *  @param  amount     Amount of quote tokens removed from the pool.
+     *  @param  lpRedeemed Amount of LP exchanged for quote token.
+     *  @param  lup        LUP calculated after removal.
+     */
     event RemoveQuoteToken(
         address indexed lender,
         uint256 indexed price,
         uint256 amount,
+        uint256 lpRedeemed,
         uint256 lup
     );
 
@@ -228,7 +247,15 @@ library LenderActions {
         fromBucket.lps -= fromBucketLPs_;
         toBucket.lps   += toBucketLPs_;
 
-        emit MoveQuoteToken(msg.sender, params_.fromIndex, params_.toIndex, vars.amountToMove, lup_);
+        emit MoveQuoteToken(
+            msg.sender, 
+            params_.fromIndex, 
+            params_.toIndex, 
+            vars.amountToMove, 
+            fromBucketLPs_, 
+            toBucketLPs_, 
+            lup_
+        );
     }
 
     function removeQuoteToken(
@@ -280,7 +307,7 @@ library LenderActions {
         lender.lps -= redeemedLPs_;
         bucket.lps -= redeemedLPs_;
 
-        emit RemoveQuoteToken(msg.sender, params_.index, removedAmount_, lup_);
+        emit RemoveQuoteToken(msg.sender, params_.index, removedAmount_, redeemedLPs_, lup_);
     }
 
     function removeMaxCollateral(

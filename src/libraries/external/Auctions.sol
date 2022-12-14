@@ -88,6 +88,16 @@ library Auctions {
         uint256 inflator;    // pool current inflator
     }
 
+    /**
+     *  @notice Emitted when an actor uses quote token to arb higher-priced deposit off the book.
+     *  @param  borrower    Identifies the loan being liquidated.
+     *  @param  index       The index of the Highest Price Bucket used for this take.
+     *  @param  amount      Amount of quote token used to purchase collateral.
+     *  @param  collateral  Amount of collateral purchased with quote token.
+     *  @param  bondChange  Impact of this take to the liquidation bond.
+     *  @param  isReward    True if kicker was rewarded with `bondChange` amount, false if kicker was penalized.
+     *  @dev    amount / collateral implies the auction price.
+     */
     event BucketTake(
         address indexed borrower,
         uint256 index,
@@ -95,6 +105,20 @@ library Auctions {
         uint256 collateral,
         uint256 bondChange,
         bool    isReward
+    );
+
+    /**
+     *  @notice Emitted when LPs are awarded to a taker or kicker in a bucket take.
+     *  @param  taker           Actor who invoked the bucket take.
+     *  @param  kicker          Actor who started the auction.
+     *  @param  lpAwardedTaker  Amount of LP awarded to the taker.
+     *  @param  lpAwardedKicker Amount of LP awarded to the actor who started the auction.
+     */
+    event BucketTakeLPAwarded(
+        address indexed taker,
+        address indexed kicker,
+        uint256 lpAwardedTaker,
+        uint256 lpAwardedKicker
     );
 
     event Kick(
@@ -417,7 +441,6 @@ library Auctions {
             result.isRewarded
         );
         return(result.collateralAmount, result.t0repayAmount);
-
     }
 
     /**
@@ -680,9 +703,11 @@ library Auctions {
 
         uint256 bankruptcyTime = bucket.bankruptcyTime;
         uint256 totalLPsReward;
+        uint256 takerLPsReward;
+        uint256 kickerLPsReward;
         // if arb take - taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
         if (!depositTake_) {
-            uint256 takerLPsReward = Maths.wrdivr(
+            takerLPsReward = Maths.wrdivr(
                 Maths.wmul(result_.collateralAmount, result_.bucketPrice - result_.auctionPrice),
                 bucketExchangeRate
             );
@@ -694,7 +719,7 @@ library Auctions {
         // the bondholder/kicker is awarded bond change worth of LPB in the bucket
         uint256 depositAmountToRemove = result_.quoteTokenAmount;
         if (result_.isRewarded) {
-            uint256 kickerLPsReward = Maths.wrdivr(result_.bondChange, bucketExchangeRate);
+            kickerLPsReward = Maths.wrdivr(result_.bondChange, bucketExchangeRate);
             depositAmountToRemove -= result_.bondChange;
 
             totalLPsReward += kickerLPsReward;
@@ -707,6 +732,13 @@ library Auctions {
         bucket.lps += totalLPsReward;
         // collateral is added to the bucket’s claimable collateral
         bucket.collateral += result_.collateralAmount;
+
+        emit BucketTakeLPAwarded(
+            msg.sender,
+            result_.kicker,
+            takerLPsReward,
+            kickerLPsReward
+        );
     }
 
     function _auctionPrice(

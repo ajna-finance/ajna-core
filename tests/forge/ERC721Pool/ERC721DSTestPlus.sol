@@ -10,6 +10,7 @@ import { NFTCollateralToken, Token } from '../utils/Tokens.sol';
 
 import { ERC721Pool }        from 'src/erc721/ERC721Pool.sol';
 import { ERC721PoolFactory } from 'src/erc721/ERC721PoolFactory.sol';
+import { IERC721PoolEvents } from 'src/erc721/interfaces/pool/IERC721PoolEvents.sol';
 
 import 'src/erc721/interfaces/IERC721Pool.sol';
 import 'src/base/interfaces/IPoolFactory.sol';
@@ -18,7 +19,7 @@ import 'src/base/PoolInfoUtils.sol';
 
 import 'src/libraries/Maths.sol';
 
-abstract contract ERC721DSTestPlus is DSTestPlus {
+abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
 
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.UintSet;
@@ -33,16 +34,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
     mapping(address => EnumerableSet.UintSet) bidderDepositedIndex;
     EnumerableSet.AddressSet bidders;
 
-    // Pool events
-    event AddCollateralNFT(address indexed actor_, uint256 indexed price_, uint256[] tokenIds_);
-    event RepayDebt(address indexed borrower, uint256 quoteRepaid, uint256 collateralPulled, uint256 lup);
-
-    event DrawDebtNFT(
-        address indexed borrower,
-        uint256   amountBorowed,
-        uint256[] tokenIdsPledged,
-        uint256   lup
-    );
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
 
     /*****************/
@@ -178,11 +169,12 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
     function _addCollateral(
         address from,
         uint256[] memory tokenIds,
-        uint256 index
+        uint256 index,
+        uint256 lpAward
     ) internal returns (uint256 lps_){
         changePrank(from);
         vm.expectEmit(true, true, false, true);
-        emit AddCollateralNFT(from, index, tokenIds);
+        emit AddCollateralNFT(from, index, tokenIds, lpAward);
         for (uint256 i = 0; i < tokenIds.length; i++) {
             assertEq(_collateral.ownerOf(tokenIds[i]), from); // token is owned by borrower
             vm.expectEmit(true, true, false, true);
@@ -245,8 +237,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
 
         // borrow quote
         if (amountToBorrow != 0) {
-            vm.expectEmit(true, true, false, true);
-            emit Borrow(from, newLup, amountToBorrow);
             _assertTokenTransferEvent(address(_pool), from, amountToBorrow);
         }
 

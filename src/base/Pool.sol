@@ -108,7 +108,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 newLup = _lup(poolState.accruedDebt);
         _updateInterestParams(poolState, newLup);
 
-        emit AddQuoteToken(msg.sender, index_, quoteTokenAmountToAdd_, newLup);
+        emit AddQuoteToken(msg.sender, index_, quoteTokenAmountToAdd_, bucketLPs_, newLup);
         // move quote token amount from lender to pool
         _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToAdd_);
     }
@@ -245,7 +245,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         _payLoan(t0repayAmount, poolState, borrowerAddress_, borrower);
         pledgedCollateral = poolState.collateral;
-
     }
 
     function settle(

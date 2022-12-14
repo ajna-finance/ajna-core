@@ -27,44 +27,39 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _mintCollateralAndApproveTokens(_lender1,   4 * 1e18);
 
         // Lender adds Quote token accross 5 prices
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 2_000 * 1e18,
-                index:  _i9_91,
-                newLup: MAX_PRICE
+                index:  _i9_91
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 5_000 * 1e18,
-                index:  _i9_81,
-                newLup: MAX_PRICE
+                index:  _i9_81
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 11_000 * 1e18,
-                index:  _i9_72,
-                newLup: MAX_PRICE
+                index:  _i9_72
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 25_000 * 1e18,
-                index:  _i9_62,
-                newLup: MAX_PRICE
+                index:  _i9_62
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 30_000 * 1e18,
-                index:  _i9_52,
-                newLup: MAX_PRICE
+                index:  _i9_52
             }
         );
 
@@ -173,7 +168,6 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 from:     _lender,
                 amount:   2_000.00 * 1e18,
                 index:    _i9_91,
-                penalty:  0,
                 newLup:   9.721295865031779605 * 1e18,
                 lpRedeem: 1_999.891367962935869240000000000 * 1e27
             }
@@ -184,7 +178,6 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 from:     _lender,
                 amount:   5_000 * 1e18,
                 index:    _i9_81,
-                penalty:  0,
                 newLup:   9.721295865031779605 * 1e18,
                 lpRedeem: 4_999.728419907339673101000000000 * 1e27
             }
@@ -195,7 +188,6 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 from:     _lender,
                 amount:   2_992.8 * 1e18,
                 index:    _i9_72,
-                penalty:  0,
                 newLup:   9.721295865031779605 * 1e18,
                 lpRedeem: 2_992.637443019737234731000000000 * 1e27
             }
@@ -387,7 +379,6 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 from:     _lender,
                 amount:   8_008.373442262808822463 * 1e18,
                 index:    _i9_72,
-                penalty:  0,
                 newLup:   9.624807173121239337 * 1e18,
                 lpRedeem: 8_007.362556980262762824000000000 * 1e27
             }
@@ -408,7 +399,6 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 from:     _lender,
                 amount:   25_000.037756489769875000 * 1e18,
                 index:    _i9_62,
-                penalty:  0,
                 newLup:   9.529276179422528643 * 1e18,
                 lpRedeem: 25_000.00 * 1e27
             }
@@ -428,7 +418,6 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             {
                 from:     _lender,
                 amount:   22_010.045307787723850000 * 1e18,
-                penalty:  0,
                 index:    _i9_52,
                 newLup:   9.529276179422528643 * 1e18,
                 lpRedeem: 22_010.012066955906216161000000000 * 1e27
@@ -648,7 +637,6 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             {
                 from:     _lender,
                 amount:   9.170249839416101532 * 1e18,
-                penalty:  0,
                 index:    _i9_52,
                 newLup:   1_004_968_987.606512354182109771 * 1e18,
                 lpRedeem: 7_989.987933044093783839000000000 * 1e27

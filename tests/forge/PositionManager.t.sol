@@ -111,28 +111,25 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         indexes[1] = 2551;
         indexes[2] = 2552;
 
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testAddress,
                 amount: 3_000 * 1e18,
-                index:  indexes[0],
-                newLup: MAX_PRICE
+                index:  indexes[0]
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testAddress,
                 amount: 3_000 * 1e18,
-                index:  indexes[1],
-                newLup: MAX_PRICE
+                index:  indexes[1]
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testAddress,
                 amount: 3_000 * 1e18,
-                index:  indexes[2],
-                newLup: MAX_PRICE
+                index:  indexes[2]
             }
         );
 
@@ -188,28 +185,25 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         indexes[1] = 2551;
         indexes[2] = 2552;
 
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testAddress,
                 amount: 3_000 * 1e18,
-                index:  indexes[0],
-                newLup: MAX_PRICE
+                index:  indexes[0]
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testAddress,
                 amount: 3_000 * 1e18,
-                index:  indexes[1],
-                newLup: MAX_PRICE
+                index:  indexes[1]
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testAddress,
                 amount: 3_000 * 1e18,
-                index:  indexes[2],
-                newLup: MAX_PRICE
+                index:  indexes[2]
             }
         );
 
@@ -348,28 +342,25 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
 
         // add more liquidity
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testAddress,
                 amount: 1_000 * 1e18,
-                index:  indexes[0],
-                newLup: MAX_PRICE
+                index:  indexes[0]
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testAddress,
                 amount: 2_000 * 1e18,
-                index:  indexes[1],
-                newLup: MAX_PRICE
+                index:  indexes[1]
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testAddress,
                 amount: 3_000 * 1e18,
-                index:  indexes[2],
-                newLup: MAX_PRICE
+                index:  indexes[2]
             }
         );
 
@@ -521,45 +512,40 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         indexes[2] = 2552;
         indexes[3] = 2553;
 
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testLender1,
                 amount: 3_000 * 1e18,
-                index:  indexes[0],
-                newLup: MAX_PRICE
+                index:  indexes[0]
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testLender1,
                 amount: 3_000 * 1e18,
-                index:  indexes[1],
-                newLup: MAX_PRICE
+                index:  indexes[1]
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testLender1,
                 amount: 3_000 * 1e18,
-                index:  indexes[2],
-                newLup: MAX_PRICE
+                index:  indexes[2]
             }
         );
 
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testLender2,
                 amount: 3_000 * 1e18,
-                index:  indexes[0],
-                newLup: MAX_PRICE
+                index:  indexes[0]
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testLender2,
                 amount: 3_000 * 1e18,
-                index:  indexes[3],
-                newLup: MAX_PRICE
+                index:  indexes[3]
             }
         );
 
@@ -910,12 +896,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // add initial liquidity
         uint256 mintAmount = 50_000 * 1e18;
         _mintQuoteAndApproveManagerTokens(testMinter, mintAmount);
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testMinter,
                 amount: 15_000 * 1e18,
-                index:  testIndexPrice,
-                newLup: MAX_PRICE
+                index:  testIndexPrice
             }
         );
 
@@ -1059,12 +1044,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // add initial liquidity
         uint256 mintAmount = 50_000 * 1e18;
         _mintQuoteAndApproveManagerTokens(testMinter, mintAmount);
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testMinter,
                 amount: 15_000 * 1e18,
-                index:  testIndexPrice,
-                newLup: MAX_PRICE
+                index:  testIndexPrice
             }
         );
 
@@ -1306,12 +1290,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // add initial liquidity
         uint256 mintAmount = 50_000 * 1e18;
         _mintQuoteAndApproveManagerTokens(testMinter, mintAmount);
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testMinter,
                 amount: 15_000 * 1e18,
-                index:  testIndexPrice,
-                newLup: MAX_PRICE
+                index:  testIndexPrice
             }
         );
 
@@ -1361,13 +1344,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         address notOwner    = makeAddr("notOwner");
         _mintQuoteAndApproveManagerTokens(testAddress, 10_000 * 1e18);
 
-        // add initial liquidity
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testAddress,
                 amount: 10_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
 
@@ -1396,22 +1377,18 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _mintQuoteAndApproveManagerTokens(testAddress2, 10_000 * 1e18);
         _mintCollateralAndApproveTokens(testAddress3, 10_000 * 1e18);
 
-        // add initial liquidity
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testAddress1,
                 amount: 2_500 * 1e18,
-                index:  mintIndex,
-                newLup: MAX_PRICE
+                index:  mintIndex
             }
         );
-
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testAddress2,
                 amount: 5_500 * 1e18,
-                index:  mintIndex,
-                newLup: MAX_PRICE
+                index:  mintIndex
             }
         );
 
@@ -1702,9 +1679,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         _addCollateral(
             {
-                from:   testAddress3,
-                amount: 10_000 * 1e18,
-                index:  mintIndex
+                from:    testAddress3,
+                amount:  10_000 * 1e18,
+                index:   mintIndex,
+                lpAward: 30_108_920.22197881557845 * 1e27
             }
         );
 
@@ -1791,12 +1769,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // add initial liquidity
         uint256 mintAmount = 50_000 * 1e18;
         _mintQuoteAndApproveManagerTokens(testMinter, mintAmount);
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testMinter,
                 amount: 15_000 * 1e18,
-                index:  testIndexPrice,
-                newLup: MAX_PRICE
+                index:  testIndexPrice
             }
         );
 
@@ -1930,30 +1907,26 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         uint256 mintAmount = 50_000 * 1e18;
         _mintQuoteAndApproveManagerTokens(testMinter, mintAmount);
         _mintQuoteAndApproveManagerTokens(testReceiver, mintAmount);
-
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testReceiver,
                 amount: 25_000 * 1e18,
-                index:  testIndexPrice,
-                newLup: MAX_PRICE
+                index:  testIndexPrice
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testReceiver,
                 amount: 15_000 * 1e18,
-                index:  2551,
-                newLup: MAX_PRICE
+                index:  2551
             }
         );
 
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testMinter,
                 amount: 15_000 * 1e18,
-                index:  testIndexPrice,
-                newLup: MAX_PRICE
+                index:  testIndexPrice
             }
         );
 
@@ -2177,12 +2150,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         uint256[] memory indexes = new uint256[](1);
         indexes[0] = 2550;
 
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   lender,
                 amount: 10_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
         _assertLenderLpBalance(
@@ -2345,12 +2317,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         uint256[] memory indexes = new uint256[](1);
         indexes[0] = 2550;
 
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   lender,
                 amount: 10_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
         _assertLenderLpBalance(
@@ -2454,12 +2425,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         uint256[] memory indexes = new uint256[](1);
         indexes[0] = 2550;
 
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testAddress,
                 amount: 3_000 * 1e18,
-                index:  indexes[0],
-                newLup: MAX_PRICE
+                index:  indexes[0]
             }
         );
 
@@ -2527,28 +2497,25 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         indexes[1] = 2551;
         indexes[2] = 2552;
 
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testAddress1,
                 amount: 3_000 * 1e18,
-                index:  indexes[0],
-                newLup: MAX_PRICE
+                index:  indexes[0]
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testAddress1,
                 amount: 3_000 * 1e18,
-                index:  indexes[1],
-                newLup: MAX_PRICE
+                index:  indexes[1]
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testAddress1,
                 amount: 3_000 * 1e18,
-                index:  indexes[2],
-                newLup: MAX_PRICE
+                index:  indexes[2]
             }
         );
 
@@ -2687,28 +2654,25 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
 
         // add more liquidity
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testAddress1,
                 amount: 1_000 * 1e18,
-                index:  indexes[0],
-                newLup: MAX_PRICE
+                index:  indexes[0]
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testAddress1,
                 amount: 2_000 * 1e18,
-                index:  indexes[1],
-                newLup: MAX_PRICE
+                index:  indexes[1]
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   testAddress1,
                 amount: 3_000 * 1e18,
-                index:  indexes[2],
-                newLup: MAX_PRICE
+                index:  indexes[2]
             }
         );
 

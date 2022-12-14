@@ -67,12 +67,11 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_bidder),             0);
 
         // lender adds initial quote to pool
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  testIndex,
-                newLup: MAX_PRICE
+                index:  testIndex
             }
         );
 
@@ -98,7 +97,8 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             {
                 from:     _bidder,
                 tokenIds: tokenIdsToAdd,
-                index:    testIndex
+                index:    testIndex,
+                lpAward:  9_032.676066593644673535 * 1e27
             }
         );
 
@@ -211,45 +211,40 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
      */
     function testSubsetPurchaseQuoteWithDebt() external tearDown {
         // lenders add liquidity
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 20_000 * 1e18,
-                index:  2350,
-                newLup: MAX_PRICE
+                index:  2350
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2351,
-                newLup: MAX_PRICE
+                index:  2351
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2352,
-                newLup: MAX_PRICE
+                index:  2352
             }
         );
 
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender2,
                 amount: 4_000 * 1e18,
-                index:  2350,
-                newLup: MAX_PRICE
+                index:  2350
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender2,
                 amount: 5_000 * 1e18,
-                index:  2352,
-                newLup: MAX_PRICE
+                index:  2352
             }
         );
 
@@ -304,7 +299,8 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             {
                 from:     _bidder,
                 tokenIds: tokenIdsToAdd,
-                index:    2350
+                index:    2350,
+                lpAward:  32_654.410675370944354984500292928 * 1e27
             }
         );
         skip(25 hours); // remove liquidity after one day to avoid early withdraw penalty

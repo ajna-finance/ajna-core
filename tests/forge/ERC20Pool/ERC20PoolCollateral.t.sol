@@ -32,28 +32,25 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
     function testAddPullCollateral() external tearDown {
         // lender deposits 10000 Quote into 3 buckets
 
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2551,
-                newLup: MAX_PRICE
+                index:  2551
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2552,
-                newLup: MAX_PRICE
+                index:  2552
             }
         );
 
@@ -241,9 +238,10 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         // actor deposits collateral into a bucket
         _addCollateral(
             {
-                from:   _bidder,
-                amount: 4 * 1e18,
-                index:  2550
+                from:    _bidder,
+                amount:  4 * 1e18,
+                index:   2550,
+                lpAward: 12_043.56808879152623138 * 1e27
             }
         );
 
@@ -342,9 +340,10 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         // actor deposits collateral into a bucket
         _addCollateral(
             {
-                from:   _bidder,
-                amount: 1 * 1e18,
-                index:  1530
+                from:    _bidder,
+                amount:  1 * 1e18,
+                index:   1530,
+                lpAward: 487616.252661175041981841 * 1e27
             }
         );
 
@@ -430,9 +429,10 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         _collateral.approve(address(_pool), 100 * 1e18);
         _addCollateral(
             {
-                from:   _bidder,
-                amount: 0.65 * 1e18,
-                index:  testIndex
+                from:    _bidder,
+                amount:  0.65 * 1e18,
+                index:   testIndex,
+                lpAward: 0.0000116119721720119 * 1e27
             }
         );
 

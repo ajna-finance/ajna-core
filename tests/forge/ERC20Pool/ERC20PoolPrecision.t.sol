@@ -77,28 +77,25 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
         // deposit 50_000 quote tokens into each of 3 buckets
         skip(1 days); // to avoid deposit time 0 equals bucket bankruptcy time
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 50_000 * _quotePoolPrecision,
-                index:  2549,
-                newLup: MAX_PRICE
+                index:  2549
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 50_000 * _quotePoolPrecision,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 50_000 * _quotePoolPrecision,
-                index:  2551,
-                newLup: MAX_PRICE
+                index:  2551
             }
         );
 
@@ -152,7 +149,6 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                 from:     _lender,
                 amount:   25_000 * _quotePoolPrecision,
                 index:    2549,
-                penalty:  0,
                 newLup:   MAX_PRICE,
                 lpRedeem: 25_000 * 1e27
             }
@@ -212,28 +208,25 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         init(boundColPrecision, boundQuotePrecision);
 
         skip(1 days); // to avoid deposit time 0 equals bucket bankruptcy time
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 50_000 * _quotePoolPrecision,
-                index:  2549,
-                newLup: MAX_PRICE
+                index:  2549
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 50_000 * _quotePoolPrecision,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 50_000 * _quotePoolPrecision,
-                index:  2551,
-                newLup: MAX_PRICE
+                index:  2551
             }
         );
 
@@ -491,28 +484,25 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
         init(boundColPrecision, boundQuotePrecision);
 
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 50_000 * _quotePoolPrecision,
-                index:  2549,
-                newLup: MAX_PRICE
+                index:  2549
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 50_000 * _quotePoolPrecision,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 50_000 * _quotePoolPrecision,
-                index:  2551,
-                newLup: MAX_PRICE
+                index:  2551
             }
         );
 
