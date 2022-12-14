@@ -10,12 +10,14 @@ contract QueueInstance is DSTestPlus {
     using Auctions for AuctionsState;
 
     AuctionsState private auctions;
+    DepositsState private deposits;
 
-    function kick(address borrower_) external returns (uint256, uint256) {
+    function kick(address borrower_) external returns (uint256, uint256, uint256) {
         KickParams memory params;
         params.borrower = borrower_;
+        params.debt = 1e18;
         params.collateral = 1;
-        return auctions.kick(params);
+        return auctions.kick(deposits, params);
     }
 
     function remove(address borrower_) external {

@@ -204,6 +204,7 @@ struct ReserveAuctionState {
 }
 
 struct PoolState {
+    uint8   poolType;
     uint256 accruedDebt;
     uint256 collateral;
     bool    isNewInterestAccrued;

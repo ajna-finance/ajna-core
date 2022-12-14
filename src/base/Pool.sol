@@ -287,8 +287,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     function kick(address borrowerAddress_) external override {
-        Auctions.revertIfActive(auctions, borrowerAddress_);
-
         PoolState memory poolState = _accruePoolInterest();
 
         Borrower storage borrower = loans.borrowers[borrowerAddress_];
@@ -301,18 +299,16 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 collateral:   borrower.collateral,
                 momp:         _momp(poolState.accruedDebt, loans.noOfLoans()),
                 neutralPrice: Maths.wmul(borrower.t0Np, poolState.inflator),
-                rate:         poolState.rate
+                poolDebt:     poolState.accruedDebt,
+                rate:         poolState.rate,
+                poolType:     poolState.poolType
             }
         );
 
-        uint256 lup = _lup(poolState.accruedDebt);
-        if (
-            _isCollateralized(params.debt , params.collateral, lup, _getArgUint8(POOL_TYPE))
-        ) revert BorrowerOk();
-
         // kick auction
-        (uint256 kickAuctionAmount, uint256 kickPenalty) = Auctions.kick(
+        (uint256 bondDifference, uint256 kickPenalty, uint256 lup) = Auctions.kick(
             auctions,
+            deposits,
             params
         );
 
@@ -329,7 +325,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         _updateInterestParams(poolState, lup);
 
-        if(kickAuctionAmount != 0) _transferQuoteTokenFrom(msg.sender, kickAuctionAmount);
+        if(bondDifference != 0) _transferQuoteTokenFrom(msg.sender, bondDifference);
     }
 
     /*********************************/
@@ -392,7 +388,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             if (
                 Auctions.isActive(auctions, borrowerAddress_)
                 &&
-                _isCollateralized(borrowerDebt, borrower.collateral, newLup_, _getArgUint8(POOL_TYPE))
+                _isCollateralized(borrowerDebt, borrower.collateral, newLup_, poolState.poolType)
             )
             {
                 // borrower becomes collateralized, remove debt from pool accumulator and settle auction
@@ -422,13 +418,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             // calculate new lup and check borrow action won't push borrower into a state of under-collateralization
             newLup_ = _priceAt(lupId);
             if (
-                !_isCollateralized(borrowerDebt, borrower.collateral, newLup_, _getArgUint8(POOL_TYPE))
+                !_isCollateralized(borrowerDebt, borrower.collateral, newLup_, poolState.poolType)
             ) revert BorrowerUnderCollateralized();
 
             // check borrow won't push pool into a state of under-collateralization
             poolState.accruedDebt += debtChange;
             if (
-                !_isCollateralized(poolState.accruedDebt, poolState.collateral, newLup_, _getArgUint8(POOL_TYPE))
+                !_isCollateralized(poolState.accruedDebt, poolState.collateral, newLup_, poolState.poolType)
             ) revert PoolUnderCollateralized();
 
             uint256 t0DebtChange = Maths.wdiv(debtChange, poolState.inflator);
@@ -524,7 +520,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         newLup_ = _lup(poolState_.accruedDebt);
 
         if (Auctions.isActive(auctions, borrowerAddress_)) {
-            if (_isCollateralized(borrowerDebt, borrower_.collateral, newLup_, _getArgUint8(POOL_TYPE))) {
+            if (_isCollateralized(borrowerDebt, borrower_.collateral, newLup_, poolState_.poolType)) {
                 // borrower becomes re-collateralized
                 // remove entire borrower debt from pool auctions debt accumulator
                 t0DebtInAuction -= borrower_.t0debt;
@@ -581,6 +577,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         poolState_.collateral = pledgedCollateral;
         poolState_.inflator   = inflatorSnapshot;
         poolState_.rate       = interestParams.interestRate;
+        poolState_.poolType   = _getArgUint8(POOL_TYPE);
 
         if (t0Debt != 0) {
             // Calculate prior pool debt

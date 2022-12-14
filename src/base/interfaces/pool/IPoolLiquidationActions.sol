@@ -78,7 +78,9 @@ struct KickParams {
     uint256 debt;           // borrower debt 
     uint256 momp;           // loan's MOMP
     uint256 neutralPrice;   // loan's Neutral Price
+    uint256 poolDebt;       // total debt in pool
     uint256 rate;           // pool's Interest Rate
+    uint8   poolType;       // Pool Type
 }
 
 struct BucketTakeParams {
