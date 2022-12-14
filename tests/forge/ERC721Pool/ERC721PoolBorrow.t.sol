@@ -57,28 +57,25 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
     function testBorrowLimitReached() external tearDown {
 
         // lender deposits 10000 Quote into 3 buckets
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2551,
-                newLup: MAX_PRICE
+                index:  2551
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2552,
-                newLup: MAX_PRICE
+                index:  2552
             }
         );
 
@@ -107,12 +104,11 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
 
     function testBorrowBorrowerUnderCollateralized() external tearDown {
         // add initial quote to the pool
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 1_000 * 1e18,
-                index:  3575,
-                newLup: MAX_PRICE
+                index:  3575
             }
         );
 
@@ -140,12 +136,11 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
 
     function testBorrowPoolUnderCollateralized() external tearDown {
         // add initial quote to the pool
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 1_000 * 1e18,
-                index:  3232,
-                newLup: MAX_PRICE
+                index:  3232
             }
         );
 
@@ -162,28 +157,25 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
     function testBorrowAndRepay() external {
 
         // lender deposits 10000 Quote into 3 buckets
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2551,
-                newLup: MAX_PRICE
+                index:  2551
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2552,
-                newLup: MAX_PRICE
+                index:  2552
             }
         );
 
@@ -196,7 +188,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
 
         // check pool state
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
                 poolSize:             30_000 * 1e18,
@@ -256,7 +248,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
 
         // check pool state after borrow
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  1_000.961538461538462000 * 1e18,
                 lup:                  _priceAt(2550),
                 poolSize:             30_000 * 1e18,
@@ -317,7 +309,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
 
         // check pool state after partial repay
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  503.022258079721182348 * 1e18,
                 lup:                  _priceAt(2550),
                 poolSize:             30_003.520235392247040000 * 1e18,
@@ -399,7 +391,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
 
         // check pool state after fully repay
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
                 poolSize:             30_005.105213052294390000 * 1e18,
@@ -449,20 +441,18 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
 
     function testPoolRepayRequireChecks() external tearDown {
         // add initial quote to the pool
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2551,
-                newLup: MAX_PRICE
+                index:  2551
             }
         );
 
@@ -545,28 +535,25 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
 
 
     function testRepayLoanFromDifferentActor() external tearDown {
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2551,
-                newLup: MAX_PRICE
+                index:  2551
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2552,
-                newLup: MAX_PRICE
+                index:  2552
             }
         );
 

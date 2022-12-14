@@ -8,14 +8,16 @@ interface IERC20PoolEvents {
 
     /**
      *  @notice Emitted when actor adds unencumbered collateral to a bucket.
-     *  @param  actor  Recipient that added collateral.
-     *  @param  price  Price at which collateral were added.
-     *  @param  amount Amount of collateral added to the pool.
+     *  @param  actor     Recipient that added collateral.
+     *  @param  price     Price at which collateral were added.
+     *  @param  amount    Amount of collateral added to the pool.
+     *  @param  lpAwarded Amount of LP awarded for the deposit. 
      */
     event AddCollateral(
         address indexed actor,
         uint256 indexed price,
-        uint256 amount
+        uint256 amount,
+        uint256 lpAwarded
     );
 
     /**

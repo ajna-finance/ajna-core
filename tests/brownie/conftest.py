@@ -6,9 +6,10 @@ from brownie.exceptions import VirtualMachineError
 from brownie.network.state import TxHistory
 from brownie.utils import color
 
-ZRO_ADD = '0x0000000000000000000000000000000000000000'
+AJNA_ADDRESS = "0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079"
 MIN_PRICE = 99836282890
 MAX_PRICE = 1_004_968_987606512354182109771
+ZRO_ADD = '0x0000000000000000000000000000000000000000'
 
 @pytest.fixture(autouse=True)
 def get_capsys(capsys):
@@ -25,7 +26,7 @@ def ajna_protocol() -> AjnaProtocol:
         .add_token(DAI_ADDRESS, DAI_RESERVE_ADDRESS)
     )
 
-    ajna_protocol = AjnaProtocol()
+    ajna_protocol = AjnaProtocol(AJNA_ADDRESS)
     ajna_protocol.get_runner().prepare_protocol_to_state_by_definition(
         protocol_definition.build()
     )
@@ -55,7 +56,7 @@ def weth(ajna_protocol):
 
 @pytest.fixture
 def scaled_pool(deployer):
-    scaled_factory = ERC20PoolFactory.deploy({"from": deployer})
+    scaled_factory = ERC20PoolFactory.deploy(AJNA_ADDRESS, {"from": deployer})
     scaled_factory.deployPool(MKR_ADDRESS, DAI_ADDRESS, 0.05 * 1e18, {"from": deployer})
     return ERC20Pool.at(
         scaled_factory.deployedPools("2263c4378b4920f0bef611a3ff22c506afa4745b3319c50b6d704a874990b8b2", MKR_ADDRESS, DAI_ADDRESS)

@@ -35,44 +35,39 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
        _mintAndApproveCollateralTokens(_borrower2, 74);
 
         // Lender adds Quote token accross 5 prices
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 2_000 * 1e18,
-                index:  _i9_91,
-                newLup: MAX_PRICE
+                index:  _i9_91
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 5_000 * 1e18,
-                index:  _i9_81,
-                newLup: MAX_PRICE
+                index:  _i9_81
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 11_000 * 1e18,
-                index:  _i9_72,
-                newLup: MAX_PRICE
+                index:  _i9_72
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 25_000 * 1e18,
-                index:  _i9_62,
-                newLup: MAX_PRICE
+                index:  _i9_62
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 30_000 * 1e18,
-                index:  _i9_52,
-                newLup: MAX_PRICE
+                index:  _i9_52
             }
         );
 
@@ -124,7 +119,7 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
         /*****************************/
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  9.909519230769230774 * 1e18,
                 lup:                  9.917184843435912074 * 1e18,
                 poolSize:             73_000 * 1e18,
@@ -167,7 +162,7 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
         skip(1000 days);
 
          _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            false,
                 kicker:            address(0),
@@ -209,7 +204,7 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
         /******************************/
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  6.582216822103492762 * 1e18,
                 lup:                  9.917184843435912074 * 1e18,
                 poolSize:             73_000 * 1e18,
@@ -245,7 +240,7 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
         );
         assertEq(_quote.balanceOf(_lender), 46_999.772712801701582812 * 1e18);
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            true,
                 kicker:            _lender,

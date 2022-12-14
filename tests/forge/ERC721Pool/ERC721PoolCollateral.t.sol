@@ -300,28 +300,25 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     }
 
     function testPullCollateralPartiallyEncumbered() external tearDown {
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2552,
-                newLup: MAX_PRICE
+                index:  2552
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2551,
-                newLup: MAX_PRICE
+                index:  2551
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
 
@@ -334,7 +331,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         // check pool state
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
                 poolSize:             30_000 * 1e18,
@@ -382,7 +379,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         // check pool state
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  1_000.961538461538462 * 1e18,
                 lup:                  _priceAt(2550),
                 poolSize:             30_000 * 1e18,
@@ -417,7 +414,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         // check pool state
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  3_002.884615384615386000 * 1e18,
                 lup:                  _priceAt(2550),
                 poolSize:             30_000 * 1e18,
@@ -437,30 +434,26 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     }
 
     function testPullCollateralOverlyEncumbered() external tearDown {
-
         // lender deposits 10000 Quote into 3 buckets
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2552,
-                newLup: MAX_PRICE
+                index:  2552
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2551,
-                newLup: MAX_PRICE
+                index:  2551
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
 
@@ -506,22 +499,19 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     }
 
     function testAddRemoveCollateral() external tearDown {
-
         // lender adds some liquidity
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  1692,
-                newLup: MAX_PRICE
+                index:  1692
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  1530,
-                newLup: MAX_PRICE
+                index:  1530
             }
         );
 
@@ -534,7 +524,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             {
                 from:     _borrower,
                 tokenIds: tokenIds,
-                index:    1530
+                index:    1530,
+                lpAward:  975_232.505322350083963682 * 1e27
             }
         );
 
@@ -645,7 +636,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                     from:   _lender,
                     amount: 1.5 * 1e18,
                     index:  i,
-                    newLup: MAX_PRICE
+                    newLup: MAX_PRICE,
+                    lpAward: 1.5 * 1e27
                 }
             );
         }
@@ -695,7 +687,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         skip(110 minutes);
 
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            true,
                 kicker:            address(_lender),
@@ -776,6 +768,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             }
         );
 
+        
         // after depositTake but before take: NFTs pledged by liquidated borrower are owned by the pool
         assertEq(_collateral.ownerOf(1), address(_pool));
         assertEq(_collateral.ownerOf(3), address(_pool));
@@ -810,7 +803,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         skip(4210 minutes);
 
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            true,
                 kicker:            address(_lender),
@@ -837,7 +830,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
 
         _assertAuction(
-            AuctionState({
+            AuctionParams({
                 borrower:          _borrower,
                 active:            true,
                 kicker:            address(_lender),
@@ -877,7 +870,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.ownerOf(3), _lender);
 
         _assertAuction( 
-             AuctionState({
+             AuctionParams({
                 borrower:          _borrower,
                 active:            false,
                 kicker:            address(0),
@@ -1021,14 +1014,14 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(_borrower),      50);
         assertEq(_collateral.balanceOf(address(_pool)), 1);
 
-
         // lender deposit quote tokens in bucket 7388 in order to claim and merge settled collateral and to be able to remove entire NFT
         _addLiquidity(
             {
-                from:   _lender,
-                amount: 1 * 1e18,
-                index:  7388,
-                newLup: MAX_PRICE
+                from:    _lender,
+                amount:  1 * 1e18,
+                index:   7388,
+                lpAward: 1.000000000000000000005318090 * 1e27, // LPs awarded to lender for depositing quote tokens in bucket 7388
+                newLup:  1004968987606512354182109771
             }
         );
 
@@ -1087,10 +1080,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _assertBucket(
             {
                 index:        7388,
-                lpBalance:    1.000000000000000000005318090 * 1e27, // LPs in bucket 7388 diminished when NFT merged and removed
+                lpBalance:    1.000000000000190600386309347 * 1e27, // LPs in bucket 7388 diminished when NFT merged and removed
                 collateral:   0,                                    // no collateral remaining as it was merged and removed
-                deposit:      1 * 1e18,
-                exchangeRate: 0.999999999999999999994681910 * 1e27
+                deposit:      1.000010605277267445 * 1e18,
+                exchangeRate: 1.000010605277076842592320745 * 1e27
             }
         );
 
@@ -1098,7 +1091,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             {
                 lender:      _lender,
                 index:       7388,
-                lpBalance:   0.999999982027588625926065806 * 1e27, // lender LPs decreased with the amount used to merge NFT
+                lpBalance:   0.999999982027779226307057063 * 1e27, // lender LPs decreased with the amount used to merge NFT
                 depositTime: _startTime + (110 + 4210) * 60
             }
         );

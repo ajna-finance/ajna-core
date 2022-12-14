@@ -7,9 +7,9 @@ import './DSTestPlus.sol';
 import 'src/libraries/Loans.sol';
 
 contract HeapInstance is DSTestPlus {
-    using Loans for Loans.Data;
+    using Loans for LoansState;
 
-    Loans.Data private _heap;
+    LoansState private _heap;
 
     /**
      *  @notice used to track fuzzing test insertions.

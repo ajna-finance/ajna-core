@@ -34,12 +34,11 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         uint256 testIndex = 2550;
 
         // lender adds initial quote to pool
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  testIndex,
-                newLup: MAX_PRICE
+                index:  testIndex
             }
         );
 
@@ -47,9 +46,10 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         uint256 collateralToPurchaseWith = 4 * 1e18;
         _addCollateral(
             {
-                from:   _bidder,
-                amount: collateralToPurchaseWith,
-                index:  testIndex
+                from:    _bidder,
+                amount:  collateralToPurchaseWith,
+                index:   testIndex,
+                lpAward: 12_043.56808879152623138 * 1e27
             }
         );
 
@@ -89,7 +89,6 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
                 from:     _bidder,
                 amount:   10_000 * 1e18,
                 index:    testIndex,
-                penalty:  0,
                 newLup:   _lup(),
                 lpRedeem: 10_000 * 1e27
             }
@@ -216,46 +215,41 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
 
         // lenders add liquidity
         // lender 1
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 6_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2551,
-                newLup: MAX_PRICE
+                index:  2551
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 5_000 * 1e18,
-                index:  2552,
-                newLup: MAX_PRICE
+                index:  2552
             }
         );
 
         // lender 2
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender1,
                 amount: 4_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender1,
                 amount: 5_000 * 1e18,
-                index:  2552,
-                newLup: MAX_PRICE
+                index:  2552
             }
         );
 
@@ -295,9 +289,10 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         // bidder purchases all quote from the highest bucket
         _addCollateral(
             {
-                from:   _bidder,
-                amount: collateralToPurchaseWith,
-                index:  2550
+                from:    _bidder,
+                amount:  collateralToPurchaseWith,
+                index:   2550,
+                lpAward: 10_200.383861467480875668505869503 * 1e27
             }
         );
 
@@ -308,7 +303,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
                 amount:   amountWithInterest,
                 index:    2550,
                 newLup:   _priceAt(2552),
-                lpRedeem: 10_000.349513872212134187552326469 * 1e27
+                lpRedeem: 10_000.349513872212134187863727799 * 1e27
             }
         );
 
@@ -319,7 +314,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
                 from:     _bidder,
                 amount:   expectedCollateral,
                 index:    2550,
-                lpRedeem: 200.034347595268741480953543034 * 1e27
+                lpRedeem: 200.034347595268741480642141704 * 1e27
             }
         );
         _assertLenderLpBalance(
