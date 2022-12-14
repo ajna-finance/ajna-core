@@ -37,6 +37,11 @@ contract AjnaRewardsTest is DSTestPlus {
 
     uint256 constant BLOCKS_IN_DAY = 7200;
 
+    struct RewardsTestParams {
+        uint256[] depositIndexes;
+        uint256 borrowAmount;
+    }
+
     function setUp() external {
 
         vm.createSelectFork(vm.envString("ETH_RPC_URL"));
@@ -74,6 +79,9 @@ contract AjnaRewardsTest is DSTestPlus {
         assertEq(owner, owner_);
         assertEq(pool, address(pool_));
         assertEq(interactionBlock, block.number);
+
+        // check token was transferred to rewards contract
+        assertEq(_positionManager.ownerOf(tokenId_), address(_ajnaRewards));
     }
 
     function _mintAndApproveAjnaTokens(address operator_, address pool_, uint256 mintAmount_) internal {
@@ -173,25 +181,16 @@ contract AjnaRewardsTest is DSTestPlus {
         depositIndexes[3] = 12;
         uint256 tokenIdTwo = _mintAndMemorializePositionNFT(testMinterTwo, _poolTwo, depositIndexes);
 
+        // check only owner of an NFT can deposit it into the rewards contract
+        changePrank(testMinterTwo);
+        vm.expectRevert(IAjnaRewards.NotOwnerOfToken.selector);
+        _ajnaRewards.depositNFT(tokenIdOne);
+
         // minterOne deposits their NFT into the rewards contract
         _depositNFT(address(_poolOne), testMinterOne, tokenIdOne);
 
         // minterTwo deposits their NFT into the rewards contract
         _depositNFT(address(_poolTwo), testMinterTwo, tokenIdTwo);
-    }
-
-    function testWithdrawToken() external {
-
-        // TODO: implement this test
-    
-    }
-
-    function testCantWithdrawNonOwnedTokens() external {
-        // TODO: implement this test
-    }
-
-    function testWithdrawAndClaimRewards() external {
-        // TODO: implement this test
     }
 
     function testClaimRewards() external {
@@ -231,11 +230,10 @@ contract AjnaRewardsTest is DSTestPlus {
         vm.roll(block.number + BLOCKS_IN_DAY);
 
         (
-            uint256 curReserves,
+            ,
             uint256 curClaimableReserves,
             uint256 curClaimableReservesRemaining,
-            uint256 curAuctionPrice,
-            uint256 curTimeRemaining
+            ,
         ) = _poolUtils.poolReservesInfo(address(_poolOne));
 
         // take claimable reserves
@@ -243,15 +241,16 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // TODO: split into two take reserves events to allow checking of different block number checkpoints
 
-        assertEq(_ajnaToken.balanceOf(testMinterOne), 0);
+        // check only deposit owner can claim rewards
+        vm.expectRevert(IAjnaRewards.NotOwnerOfToken.selector);
+        _ajnaRewards.claimRewards(tokenIdOne);
 
         // claim rewards accrued since deposit
         changePrank(testMinterOne);
-
+        assertEq(_ajnaToken.balanceOf(testMinterOne), 0);
         // vm.expectEmit(true, true, true, true);
         // emit ClaimRewards(testMinterOne, address(_poolOne), tokenIdOne, 1000 );
         _ajnaRewards.claimRewards(tokenIdOne);
-
         assertGt(_ajnaToken.balanceOf(testMinterOne), 0);
 
         // check deposit state
@@ -265,5 +264,28 @@ contract AjnaRewardsTest is DSTestPlus {
         // TODO: check interest accrued
 
     }
+
+    function testClaimRewardsMultipleDeposits() external {
+
+    }
+
+    function testCalculateRewardsEarned() external {
+        // TODO: implement this test
+    }
+
+    function testWithdrawToken() external {
+
+        // TODO: implement this test
+
+    }
+
+    function testCantWithdrawNonOwnedTokens() external {
+        // TODO: implement this test
+    }
+
+    function testWithdrawAndClaimRewards() external {
+        // TODO: implement this test
+    }
+
 
 }

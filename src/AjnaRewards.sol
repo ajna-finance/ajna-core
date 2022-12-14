@@ -22,44 +22,6 @@ contract AjnaRewards is IAjnaRewards {
 
     using Checkpoints for Checkpoints.History;
 
-    /**************/
-    /*** Events ***/
-    /**************/
-
-    /**
-     *  @notice Emitted when lender claims rewards that have accrued to their deposit.
-     *  @param  owner    Owner of the staked NFT.
-     *  @param  ajnaPool Address of the Ajna pool the NFT corresponds to.
-     *  @param  tokenId  ID of the staked NFT.
-     *  @param  amount   The amount of AJNA tokens claimed by the depositor.
-     */
-    event ClaimRewards(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId, uint256 amount);
-
-    /**
-     *  @notice Emitted when lender deposits their LP NFT into the rewards contract.
-     *  @param  owner    Owner of the staked NFT.
-     *  @param  ajnaPool Address of the Ajna pool the NFT corresponds to.
-     *  @param  tokenId  ID of the staked NFT.
-     */
-    event DepositToken(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
-
-    /**
-     *  @notice Emitted when lender withdraws their LP NFT from the rewards contract.
-     *  @param  owner    Owner of the staked NFT.
-     *  @param  ajnaPool Address of the Ajna pool the NFT corresponds to.
-     *  @param  tokenId  ID of the staked NFT.
-     */
-    event WithdrawToken(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
-
-    /**************/
-    /*** Errors ***/
-    /**************/
-
-    /**
-     *  @notice User attempted to interact with an NFT they aren't the owner of.
-     */
-    error NotOwnerOfToken();
-
     /***********************/
     /*** State Variables ***/
     /***********************/
@@ -165,8 +127,6 @@ contract AjnaRewards is IAjnaRewards {
     function claimRewards(uint256 tokenId_) external {
         if (msg.sender != deposits[tokenId_].owner) revert NotOwnerOfToken();
 
-        address ajnaPool = deposits[tokenId_].ajnaPool;
-
         // update checkpoints
         _updateExchangeRates(tokenId_);
 
@@ -221,6 +181,7 @@ contract AjnaRewards is IAjnaRewards {
         // retrieve total interest accumulated by the pool over the claim period, and total tokens burned over that period
         (uint256 ajnaTokensBurned, uint256 totalInterestEarned) = _getPoolAccumulators(ajnaPool, lastInteractionBlock);
 
+        // calculate rewards earned
         rewards_ = (REWARD_FACTOR * (interestEarned / totalInterestEarned) * ajnaTokensBurned) / 1e18;
     }
 
@@ -268,6 +229,10 @@ contract AjnaRewards is IAjnaRewards {
     /**********************/
     /*** View Functions ***/
     /**********************/
+
+    function calculateRewardsEarned(uint256 tokenId_) external view returns (uint256 rewards_) {
+        return _calculateRewardsEarned(tokenId_);
+    }
 
     /**
      *  @notice Retrieve information about a given deposit.
