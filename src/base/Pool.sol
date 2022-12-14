@@ -289,43 +289,22 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function kick(address borrowerAddress_) external override {
         PoolState memory poolState = _accruePoolInterest();
 
-        Borrower storage borrower = loans.borrowers[borrowerAddress_];
-        uint256 borrowerT0debt = borrower.t0debt;
-
-        KickParams memory params = KickParams(
-            {
-                borrower:     borrowerAddress_,
-                debt:         Maths.wmul(borrowerT0debt, poolState.inflator),
-                collateral:   borrower.collateral,
-                momp:         _momp(poolState.accruedDebt, loans.noOfLoans()),
-                neutralPrice: Maths.wmul(borrower.t0Np, poolState.inflator),
-                poolDebt:     poolState.accruedDebt,
-                rate:         poolState.rate,
-                poolType:     poolState.poolType
-            }
-        );
-
         // kick auction
-        (uint256 bondDifference, uint256 kickPenalty, uint256 lup) = Auctions.kick(
+        KickResult memory result = Auctions.kick(
             auctions,
             deposits,
-            params
+            loans,
+            poolState,
+            borrowerAddress_
         );
 
-        // remove kicked loan from heap
-        loans.remove(params.borrower, loans.indices[params.borrower]);
+        poolState.accruedDebt += result.kickPenalty;
+        _updateInterestParams(poolState, result.lup);
 
-        poolState.accruedDebt += kickPenalty;
-        // convert kick penalty to t0 amount, update borrower t0 debt and pool t0 debt accumulators
-        kickPenalty     =  Maths.wdiv(kickPenalty, poolState.inflator);
-        borrowerT0debt  += kickPenalty;
-        borrower.t0debt = borrowerT0debt;
-        t0DebtInAuction += borrowerT0debt;
-        t0poolDebt      += kickPenalty;
+        t0DebtInAuction += result.borrowerT0debt;
+        t0poolDebt      += result.kickPenaltyT0;
 
-        _updateInterestParams(poolState, lup);
-
-        if(bondDifference != 0) _transferQuoteTokenFrom(msg.sender, bondDifference);
+        if(result.bondDifference != 0) _transferQuoteTokenFrom(msg.sender, result.bondDifference);
     }
 
     /*********************************/

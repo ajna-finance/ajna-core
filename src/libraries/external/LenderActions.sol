@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import { MoveQuoteParams, RemoveQuoteParams } from '../../base/interfaces/pool/IPoolLenderActions.sol';
+import { MoveQuoteParams, RemoveQuoteParams } from '../../base/interfaces/IPool.sol';
 
 import '../Deposits.sol';
 import '../Buckets.sol';

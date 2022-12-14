@@ -5,13 +5,14 @@ pragma solidity 0.8.14;
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 
 import {
+    PoolState,
     DepositsState,
     AuctionsState,
     Liquidation,
     Kicker,
     ReserveAuctionState,
     SettleParams,
-    KickParams,
+    KickResult,
     BucketTakeParams,
     TakeParams,
     StartReserveAuctionParams
@@ -232,39 +233,72 @@ library Auctions {
 
     /**
      *  @notice Called to start borrower liquidation and to update the auctions queue.
-     *  @param  params_         Kick params.
-     *  @return bondDifference_ The amount that kicker should send to pool to cover bond auction.
-     *  @return kickPenalty_    The kick penalty (three months of interest).
+     *  @param  poolState_       Current state of the pool.
+     *  @param  borrowerAddress_ Address of the borrower to kick.
+     *  @return kickResult_      The result of the kick action.
      */
     function kick(
         AuctionsState storage auctions_,
         DepositsState storage deposits_,
-        KickParams calldata params_
-    ) external returns (uint256 bondDifference_, uint256 kickPenalty_, uint256 lup_) {
-        revertIfActive(auctions_, params_.borrower);
+        LoansState    storage loans_,
+        PoolState calldata poolState_,
+        address borrowerAddress_
+    ) external returns (
+        KickResult memory kickResult_
+    ) {
+        revertIfActive(auctions_, borrowerAddress_);
 
-        lup_ = _lup(deposits_, params_.poolDebt);
+        Borrower storage borrower = loans_.borrowers[borrowerAddress_];
+        kickResult_.borrowerT0debt = borrower.t0debt;
+
+        uint256 borrowerDebt = Maths.wmul(kickResult_.borrowerT0debt, poolState_.inflator);
+        uint256 borrowerCollateral = borrower.collateral;
+
+        kickResult_.lup = _lup(deposits_, poolState_.accruedDebt);
         if (
-            _isCollateralized(params_.debt , params_.collateral, lup_, params_.poolType)
+            _isCollateralized(borrowerDebt , borrowerCollateral, kickResult_.lup, poolState_.poolType)
         ) revert BorrowerOk();
 
-        (uint256 bondFactor, uint256 bondSize) = _bondParams(
-            params_.debt,
-            params_.collateral,
-            params_.momp
+        // calculate auction params
+        uint256 momp = _priceAt(
+            Deposits.findIndexOfSum(
+                deposits_,
+                Maths.wdiv(poolState_.accruedDebt, (loans_.loans.length - 1) * 1e18)
+            )
         );
-
-        _recordLiquidation(auctions_, params_, bondSize, bondFactor); // record liquidation info
-        bondDifference_ = _updateKicker(auctions_, bondSize);         // update kicker balances and return bond difference
-        auctions_.totalBondEscrowed += bondSize;                      // update totalBondEscrowed accumulator
-
+        (uint256 bondFactor, uint256 bondSize) = _bondParams(
+            borrowerDebt,
+            borrowerCollateral,
+            momp
+        );
         // when loan is kicked, penalty of three months of interest is added
-        kickPenalty_ = Maths.wmul(Maths.wdiv(params_.rate, 4 * 1e18), params_.debt );
+        kickResult_.kickPenalty   = Maths.wmul(Maths.wdiv(poolState_.rate, 4 * 1e18), borrowerDebt);
+        kickResult_.kickPenaltyT0 = Maths.wdiv(kickResult_.kickPenalty, poolState_.inflator);
+
+        // record liquidation info
+        uint256 neutralPrice = Maths.wmul(borrower.t0Np, poolState_.inflator);
+        _recordLiquidation(
+            auctions_,
+            borrowerAddress_,
+            bondSize,
+            bondFactor,
+            momp,
+            neutralPrice
+        );
+        // update kicker balances and return bond difference
+        kickResult_.bondDifference = _updateKicker(auctions_, bondSize);
+        // update totalBondEscrowed accumulator
+        auctions_.totalBondEscrowed += bondSize;
+        // remove kicked loan from heap
+        Loans.remove(loans_, borrowerAddress_, loans_.indices[borrowerAddress_]);
+
+        kickResult_.borrowerT0debt += kickResult_.kickPenaltyT0;
+        borrower.t0debt =  kickResult_.borrowerT0debt;
 
         emit Kick(
-            params_.borrower,
-            params_.debt + kickPenalty_,
-            params_.collateral,
+            borrowerAddress_,
+            borrowerDebt + kickResult_.kickPenalty,
+            borrower.collateral,
             bondSize
         );
     }
@@ -567,7 +601,7 @@ library Auctions {
         uint256 debt_,
         uint256 collateral_,
         uint256 momp_
-    ) internal returns (uint256 bondFactor_, uint256 bondSize_) {
+    ) internal pure returns (uint256 bondFactor_, uint256 bondSize_) {
         uint256 thresholdPrice = debt_  * Maths.WAD / collateral_;
         // bondFactor = min(30%, max(1%, (MOMP - thresholdPrice) / MOMP))
         if (thresholdPrice >= momp_) {
@@ -607,36 +641,40 @@ library Auctions {
 
     /**
      *  @notice Saves a new liquidation that was kicked.
-     *  @param  params_     Kick params.
-     *  @param  bondSize_   Bond size to cover newly kicked auction.
-     *  @param  bondFactor_ Bond factor of the newly kicked auction.
+     *  @param  borrowerAddress_ Address of the borrower that is kicked.
+     *  @param  bondSize_        Bond size to cover newly kicked auction.
+     *  @param  bondFactor_      Bond factor of the newly kicked auction.
+     *  @param  momp_            Current pool MOMP.
+     *  @param  neutralPrice_    Current pool Neutral Price.
      */
     function _recordLiquidation(
         AuctionsState storage auctions_,
-        KickParams calldata params_,
+        address borrowerAddress_,
         uint256 bondSize_,
-        uint256 bondFactor_
-    ) internal returns (uint256 bondDifference_){
+        uint256 bondFactor_,
+        uint256 momp_,
+        uint256 neutralPrice_
+    ) internal {
         // record liquidation info
-        Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
+        Liquidation storage liquidation = auctions_.liquidations[borrowerAddress_];
         liquidation.kicker              = msg.sender;
         liquidation.kickTime            = uint96(block.timestamp);
-        liquidation.kickMomp            = uint96(params_.momp);
+        liquidation.kickMomp            = uint96(momp_);
         liquidation.bondSize            = uint160(bondSize_);
         liquidation.bondFactor          = uint96(bondFactor_);
-        liquidation.neutralPrice        = uint96(params_.neutralPrice);
+        liquidation.neutralPrice        = uint96(neutralPrice_);
 
         if (auctions_.head != address(0)) {
             // other auctions in queue, liquidation doesn't exist or overwriting.
-            auctions_.liquidations[auctions_.tail].next =  params_.borrower;
+            auctions_.liquidations[auctions_.tail].next = borrowerAddress_;
             liquidation.prev = auctions_.tail;
         } else {
             // first auction in queue
-            auctions_.head = params_.borrower;
+            auctions_.head = borrowerAddress_;
         }
 
         // update liquidation with the new ordering
-        auctions_.tail =  params_.borrower;
+        auctions_.tail = borrowerAddress_;
     }
 
     /**
