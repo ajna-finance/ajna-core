@@ -125,6 +125,26 @@ library Buckets {
     }
 
     /**
+     *  @notice Returns the unscaled exchange rate for a given bucket.
+     *  @param  bucketCollateral_       Amount of collateral in bucket.
+     *  @param  bucketLPs_              Amount of LPs in bucket.
+     *  @param  bucketUnscaledDeposit_  The amount of unscaled Fenwick tree amount in bucket.
+     *  @param  bucketScale_            Bucket scale factor
+     *  @param  bucketPrice_            Bucket's price.
+     */
+    function getUnscaledExchangeRate(
+        uint256 bucketCollateral_,
+        uint256 bucketLPs_,
+        uint256 bucketUnscaledDeposit_,
+        uint256 bucketScale_,
+        uint256 bucketPrice_
+    ) internal pure returns (uint256) {
+        return bucketLPs_ == 0 ? Maths.RAY :
+            (bucketUnscaledDeposit_ + bucketPrice_ * bucketCollateral_ / bucketScale_ ) * 10**36 / bucketLPs_;
+            // 10^18 * 1e36 / 10^27 = 10^54 / 10^27 = 10^27
+    }
+
+    /**
      *  @notice Returns the lender info for a given bucket.
      *  @param  index_       Index of the bucket.
      *  @param  lender_      Lender's address.

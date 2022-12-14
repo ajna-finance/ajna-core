@@ -194,12 +194,15 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
         if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral();
 
-        Auctions.TakeParams memory params;
-        params.borrower       = borrowerAddress_;
-        params.collateral     = borrower.collateral;
-        params.t0debt         = borrower.t0debt;
-        params.takeCollateral = collateral_;
-        params.inflator       = poolState.inflator;
+        Auctions.TakeParams memory params = Auctions.TakeParams(
+            {
+                borrower:       borrowerAddress_,
+                collateral:     borrower.collateral,
+                t0debt:         borrower.t0debt,
+                takeCollateral: collateral_,
+                inflator:       poolState.inflator
+            }
+        );
         (
             uint256 collateralAmount,
             uint256 quoteTokenAmount,

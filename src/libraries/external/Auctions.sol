@@ -64,14 +64,21 @@ library Auctions {
         uint256 rate;           // pool's Interest Rate
     }
 
+    struct BucketTakeParams {
+        address borrower;       // borrower address to take from
+        uint256 collateral;     // borrower available collateral to take
+        uint256 t0debt;         // borrower t0 debt
+        uint256 inflator;       // current pool inflator
+        bool    depositTake;    // deposit or arb take, used by bucket take
+        uint256 index;          // bucket index, used by bucket take
+    }
+
     struct TakeParams {
         address borrower;       // borrower address to take from
         uint256 collateral;     // borrower available collateral to take
         uint256 t0debt;         // borrower t0 debt
         uint256 takeCollateral; // desired amount to take
         uint256 inflator;       // current pool inflator
-        bool    depositTake;    // deposit or arb take, used by bucket take
-        uint256 index;          // bucket index, used by bucket take
     }
 
     struct StartReserveAuctionParams {
@@ -237,8 +244,8 @@ library Auctions {
 
         // if there's still debt and no collateral
         if (params_.t0debt != 0 && params_.collateral == 0) {
-            // settle debt from reserves
-            params_.t0debt -= Maths.min(params_.t0debt, Maths.wdiv(params_.reserves, params_.inflator));
+            // settle debt from reserves -- round reserves down however
+            params_.t0debt -= Maths.min(params_.t0debt, (params_.reserves / params_.inflator) * 1e18);
 
             // if there's still debt after settling from reserves then start to forgive amount from next HPB
             while (params_.bucketDepth != 0 && params_.t0debt != 0) { // loop through remaining buckets if there's still debt to settle
@@ -351,7 +358,7 @@ library Auctions {
         Data storage self,
         Deposits.Data storage deposits_,
         mapping(uint256 => Buckets.Bucket) storage buckets_,
-        TakeParams calldata params_
+        BucketTakeParams calldata params_
     ) external returns (uint256, uint256) {
         if (params_.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
 

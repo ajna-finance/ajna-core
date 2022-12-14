@@ -278,8 +278,8 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
                index:        _i9_91,
                lpBalance:    2_000 * 1e27,
                collateral:   0,
-               deposit:      2_027.006589100074751447 * 1e18,
-               exchangeRate: 1.013503294550037375723500000 * 1e27
+               deposit:      2_027.006589100074752000 * 1e18,
+               exchangeRate: 1.013503294550037376000000000 * 1e27
            }
         );
         _assertReserveAuction(
@@ -330,8 +330,8 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
                quoteTokenAmount: 19.637503712157446080 * 1e18,
                bondChange:       0.196375037121574461 * 1e18,
                isReward:         true,
-               lpAwardTaker:     0.194243053548020465115456781 * 1e27,
-               lpAwardKicker:    0.193758656905756398885318018 * 1e27
+               lpAwardTaker:     0.194243053548020465062464152 * 1e27,
+               lpAwardKicker:    0.193758656905756398832457540 * 1e27
            }
         );
 
@@ -339,7 +339,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
            {
                lender:      _taker,
                index:       _i9_91,
-               lpBalance:   0.194243053548020465115456781 * 1e27,
+               lpBalance:   0.194243053548020465062464152 * 1e27,
                depositTime: _startTime + 100 days + 6 hours
            }
         );
@@ -347,17 +347,17 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
            {
                lender:      _lender,
                index:       _i9_91,
-               lpBalance:   2_000.193758656905756398885318018 * 1e27, // rewarded with LPs in bucket
+               lpBalance:   2_000.193758656905756398832457540 * 1e27, // rewarded with LPs in bucket
                depositTime: _startTime + 100 days + 6 hours
            }
         );
         _assertBucket(
            {
                index:        _i9_91,
-               lpBalance:    2_000.388001710453776864000774799 * 1e27,
+               lpBalance:    2_000.388001710453776863894921692 * 1e27,
                collateral:   2 * 1e18,
-               deposit:      2_007.565460425038879833 * 1e18,
-               exchangeRate: 1.013503294550037375725999515 * 1e27
+               deposit:      2_007.565460425038880381 * 1e18,
+               exchangeRate: 1.013503294550037375999999999 * 1e27
            }
         );
         // reserves should remain the same after arb take

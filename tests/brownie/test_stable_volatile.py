@@ -215,9 +215,12 @@ def pledge_and_borrow(pool_helper, borrower, borrower_index, collateral_to_depos
     pledged += collateral_to_deposit
     new_total_debt = debt + borrow_amount + pool_helper.get_origination_fee(borrow_amount)
     threshold_price = new_total_debt * 10**18 / pledged
+    # CAUTION: This calculates collateralization against current LUP, rather than the new LUP once debt is drawn.
+    collateralization = pledged * pool_helper.lup() / new_total_debt
     log(f" borrower {borrower_index:>4} drawing {borrow_amount / 1e18:>8.1f} from bucket {pool_helper.lup() / 1e18:>6.3f} "
         f"with {pledged / 1e18:>6.1f} collateral pledged, "
         f"with {new_total_debt/1e18:>9.1f} total debt "
+        f"collateralized at {collateralization/1e18:>6.1%} "
         f"at a TP of {threshold_price/1e18:8.1f}")
     tx = pool.drawDebt(borrower, borrow_amount, MIN_BUCKET, collateral_to_deposit, {"from": borrower})
     return tx
@@ -236,7 +239,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool_helper, chain, test_utils,
                 (_, _, poolActualUtilization, _) = pool_helper.utilizationInfo()
                 utilization = poolActualUtilization / 10**18
                 if utilization < MAX_UTILIZATION:
-                    target_collateralization = random.uniform(1.01, 1/GOAL_UTILIZATION)
+                    target_collateralization = random.uniform(1.05, 1/MAX_UTILIZATION)
                     draw_debt(borrowers[user_index], user_index, pool_helper, test_utils, collateralization=target_collateralization)
                 elif utilization > MIN_UTILIZATION:  # start repaying debt if interest grows too high
                     repay_debt(borrowers[user_index], user_index, pool_helper, test_utils)
