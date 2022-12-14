@@ -144,13 +144,13 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256[] calldata removalIndexes_,
         uint256 noOfNFTsToRemove_,
         uint256 toIndex_
-    ) external override returns (uint256 collateralMerged, uint256 bucketLPs_) {
+    ) external override returns (uint256 collateralMerged_, uint256 bucketLPs_) {
 
         PoolState memory poolState = _accruePoolInterest();
         uint256 collateralAmount = Maths.wad(noOfNFTsToRemove_);
         
         (
-            collateralMerged,
+            collateralMerged_,
             bucketLPs_
         ) = LenderActions.mergeOrRemoveCollateral(
             buckets,
@@ -160,10 +160,10 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             toIndex_
         );
 
-        emit MergeOrRemoveCollateralNFT(msg.sender, collateralMerged, bucketLPs_);
+        emit MergeOrRemoveCollateralNFT(msg.sender, collateralMerged_, bucketLPs_);
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
-        if (collateralMerged == collateralAmount) {
+        if (collateralMerged_ == collateralAmount) {
             // Total collateral in buckets meets the requested removal amount, noOfNFTsToRemove_
             _transferFromPoolToAddress(msg.sender, bucketTokenIds, noOfNFTsToRemove_);
         }
