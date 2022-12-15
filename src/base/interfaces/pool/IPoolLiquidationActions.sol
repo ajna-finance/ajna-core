@@ -38,6 +38,18 @@ interface IPoolLiquidationActions {
     ) external;
 
     /**
+     *  @notice Called by lenders to remove liquidity from pool and liquidate starting from the top loan.
+     *  @param  amount_   The amount of liquidity to be removed by the lender.
+     *  @param  index_    The deposit index from where lender removes liquidity.
+     *  @param  maxKicks_ The max number of loans to be kicked.
+     */
+    function kickAndRemove(
+        uint256 amount_,
+        uint256 index_,
+        uint256 maxKicks_
+    ) external;
+
+    /**
      *  @notice Called by actors to purchase collateral from the auction in exchange for quote token.
      *  @param  borrower  Address of the borower take is being called upon.
      *  @param  maxAmount Max amount of collateral that will be taken from the auction (max number of NFTs in case of ERC721 pool).

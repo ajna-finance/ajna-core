@@ -13,6 +13,8 @@ import {
     ReserveAuctionState,
     SettleParams,
     KickResult,
+    KickAndRemoveResult,
+    KickAndRemoveParams,
     BucketTakeParams,
     TakeParams,
     StartReserveAuctionParams
@@ -306,6 +308,21 @@ library Auctions {
             borrower.collateral,
             bondSize
         );
+    }
+
+    /**
+     *  @notice Called by lenders to remove pool liquidity and kick loans.
+     *  @return kickResult_      The result of the kick action.
+     */
+    function kickAndRemove(
+        AuctionsState storage auctions_,
+        DepositsState storage deposits_,
+        LoansState    storage loans_,
+        PoolState calldata poolState_,
+        KickAndRemoveParams calldata params_
+    ) external returns (
+        KickAndRemoveResult memory kickResult_
+    ) {
     }
 
     /**

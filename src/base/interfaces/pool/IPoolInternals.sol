@@ -28,6 +28,13 @@ struct BucketTakeParams {
     uint256 index;          // bucket index, used by bucket take
 }
 
+struct KickAndRemoveParams {
+    uint256 poolT0DebtInAuction;
+    uint256 amount;
+    uint256 index;
+    uint256 maxKicks;
+}
+
 struct TakeParams {
     address borrower;       // borrower address to take from
     uint256 collateral;     // borrower available collateral to take
@@ -42,6 +49,14 @@ struct KickResult {
     uint256 kickPenaltyT0;  // t0 kick penalty
     uint256 borrowerT0debt; // new t0 borrower debt after kick
     uint256 lup;            // current lup
+}
+
+struct KickAndRemoveResult {
+    uint256 removedAmount;
+    uint256 kickedT0debt;
+    uint256 kickPenalty;
+    uint256 kickPenaltyT0;
+    uint256 lup;
 }
 
 /******************************************/
