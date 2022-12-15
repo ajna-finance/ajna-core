@@ -658,8 +658,8 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 borrowerCollateralization: 0.977373353339734632 * 1e18
             }
         );
- 
-        // BPF Positive, Loan Debt constraint
+
+        // BPF Positive, caller collateral is constraint
         _take(
             {
                 from:            _lender,
@@ -671,7 +671,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 isReward:        true
             }
         );
-
+        return;
         // Residual is not collateralized, auction is active
         _assertAuction(
             AuctionState({

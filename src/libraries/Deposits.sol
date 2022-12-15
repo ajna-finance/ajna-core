@@ -195,20 +195,6 @@ library Deposits {
         }
     }
 
-    function remove(
-        Data storage self,
-        uint256 index_,
-        uint256 removeAmount_,
-	uint256 currentAmount_
-    ) internal {
-	if (removeAmount_ == currentAmount_) {
-	    unscaledRemove(self, index_, unscaledValueAt(self,index_));
-	} else {
-	    unscaledRemove(self, index_, Maths.wdiv(removeAmount_, scale(self, index_)));
-	}
-    }
-
-    
     /**
      *  @notice Decrease a node in the FenwickTree at an index.
      *  @dev    Starts at leaf/target and moved up towards root
