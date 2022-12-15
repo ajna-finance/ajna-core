@@ -400,7 +400,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         uint256 collateralToPull
     ) internal {
         changePrank(from);
-
         // repay checks
         if (amountToRepay != 0) {
             _assertTokenTransferEvent(from, address(_pool), amountRepaid);
@@ -424,7 +423,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                 for (uint256 i = 0; i < tokenIds.length; i++) {
                     assertEq(_collateral.ownerOf(tokenIds[i]), address(from)); // token is owned by borrower after pull
                 }
-
+ 
                 // Add for tearDown
                 for (uint256 i = 0; i < tokenIds.length; i++) {
                     borrowerPlegedNFTIds[from].remove(tokenIds[i]);
@@ -462,7 +461,20 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
             borrowerPlegedNFTIds[borrower].remove(tokenIds[i]); // for tearDown, remove NFTs taken from borrower pledged NFTs
         }
     }
-
+ 
+    function _mergeOrRemoveCollateral(
+        address from,
+        uint256 toIndex,
+        uint256 noOfNFTsToRemove,
+        uint256[] memory removeCollateralAtIndex,
+        uint256 collateralMerged,
+        uint256 toIndexLps
+    ) internal virtual {
+        changePrank(from);
+        vm.expectEmit(true, true, false, true);
+        emit MergeOrRemoveCollateralNFT(from, collateralMerged, toIndexLps);
+        ERC721Pool(address(_pool)).mergeOrRemoveCollateral(removeCollateralAtIndex, noOfNFTsToRemove, toIndex);
+    }
 
     /**********************/
     /*** Revert asserts ***/
@@ -530,6 +542,17 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         vm.expectRevert(IPoolErrors.LimitIndexReached.selector);
         uint256[] memory emptyArray;
         ERC721Pool(address(_pool)).drawDebt(from, amount, indexLimit, emptyArray);
+    }
+
+    function _assertCannotMergeToHigherPriceRevert(
+        address from,
+        uint256 toIndex,
+        uint256 noOfNFTsToRemove,
+        uint256[] memory removeCollateralAtIndex
+    ) internal virtual {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.CannotMergeToHigherPrice.selector);
+        ERC721Pool(address(_pool)).mergeOrRemoveCollateral(removeCollateralAtIndex, noOfNFTsToRemove, toIndex);
     }
 
     function _assertBorrowBorrowerUnderCollateralizedRevert(

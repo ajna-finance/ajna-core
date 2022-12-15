@@ -204,12 +204,12 @@ struct ReserveAuctionState {
 }
 
 struct PoolState {
-    uint8   poolType;
-    uint256 accruedDebt;
-    uint256 collateral;
-    bool    isNewInterestAccrued;
-    uint256 rate;
-    uint256 inflator;
+    uint8   poolType;             // pool type, can be ERC20 or ERC721
+    uint256 accruedDebt;          // total debt in pool, accrued in current block
+    uint256 collateral;           // total collateral pledged in pool
+    uint256 inflator;             // current pool inflator
+    bool    isNewInterestAccrued; // true if new interest already accrued in current block
+    uint256 rate;                 // pool's current interest rate
 }
 
 /*** Buckets State ***/

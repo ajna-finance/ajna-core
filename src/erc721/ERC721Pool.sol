@@ -140,6 +140,36 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         _transferFromSenderToPool(bucketTokenIds, tokenIdsToAdd_);
     }
 
+    function mergeOrRemoveCollateral(
+        uint256[] calldata removalIndexes_,
+        uint256 noOfNFTsToRemove_,
+        uint256 toIndex_
+    ) external override returns (uint256 collateralMerged_, uint256 bucketLPs_) {
+
+        PoolState memory poolState = _accruePoolInterest();
+        uint256 collateralAmount = Maths.wad(noOfNFTsToRemove_);
+        
+        (
+            collateralMerged_,
+            bucketLPs_
+        ) = LenderActions.mergeOrRemoveCollateral(
+            buckets,
+            deposits,
+            removalIndexes_,
+            collateralAmount,
+            toIndex_
+        );
+
+        emit MergeOrRemoveCollateralNFT(msg.sender, collateralMerged_, bucketLPs_);
+        _updateInterestParams(poolState, _lup(poolState.accruedDebt));
+
+        if (collateralMerged_ == collateralAmount) {
+            // Total collateral in buckets meets the requested removal amount, noOfNFTsToRemove_
+            _transferFromPoolToAddress(msg.sender, bucketTokenIds, noOfNFTsToRemove_);
+        }
+
+    }
+
     function removeCollateral(
         uint256 noOfNFTsToRemove_,
         uint256 index_
@@ -199,7 +229,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256 excessQuoteToken = 0;
         // slither-disable-next-line divide-before-multiply
         uint256 collateralTaken = (collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
-        if (collateralTaken != collateralAmount) { // collateral taken not a round number
+        if (collateralTaken != collateralAmount && borrower.collateral >= collateralTaken + 1e18) { // collateral taken not a round number
             collateralTaken += 1e18; // round up collateral to take
             // taker should send additional quote tokens to cover difference between collateral needed to be taken and rounded collateral, at auction price
             // borrower will get quote tokens for the difference between rounded collateral and collateral taken to cover debt

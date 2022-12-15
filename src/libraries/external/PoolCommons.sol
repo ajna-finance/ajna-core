@@ -73,8 +73,9 @@ library PoolCommons {
                     poolState_.collateral
                 )
             );
-            int256 tu = int256(Maths.wdiv(curDebtEma, curLupColEma));  // target utilization
 
+            int256 tu = (curDebtEma != 0 && curLupColEma != 0) ? int256(Maths.wdiv(curDebtEma, curLupColEma)) : int(Maths.WAD);
+            
             if (!poolState_.isNewInterestAccrued) poolState_.rate = interestParams_.interestRate;
             // raise rates if 4*(tu-1.02*mau) < (tu+1.02*mau-1)^2-1
             // decrease rates if 4*(tu-mau) > 1-(tu+mau-1)^2
