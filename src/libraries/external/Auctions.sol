@@ -307,7 +307,7 @@ library Auctions {
             momp,
             neutralPrice
         );
-        // update kicker balances and return bond difference
+        // update kicker balances and get the difference needed to cover bond (after using any kick claimable funds if any)
         kickResult_.amount = _updateKicker(auctions_, bondSize);
         // update totalBondEscrowed accumulator
         auctions_.totalBondEscrowed += bondSize;
@@ -410,7 +410,7 @@ library Auctions {
             vars.borrowerT0debt += vars.kickPenaltyT0;
             borrower.t0debt = vars.borrowerT0debt;
 
-            // update cumulative kick result - total t0 debt kicked and total kick penalty  
+            // update cumulative kick result - total t0 debt kicked and total t0 kick and kick penalty
             kickResult_.kickedT0debt  += vars.borrowerT0debt;
             kickResult_.kickPenalty   += vars.kickPenalty;
             kickResult_.kickPenaltyT0 += vars.kickPenaltyT0;
@@ -426,7 +426,7 @@ library Auctions {
             --params_.maxKicks;
         }
 
-        // update kicker balances and calculate if enough amount remaining to cover bond difference
+        // update kicker balances and get the difference needed to cover bond (after using any kick claimable funds if any)
         uint256 bondDifference = _updateKicker(auctions_, totalBondSize);
         // revert if remaining amount to cover cummulative bonds is greater than the amount to remove
         // or if the cumulative deposit above bucket is lower than existing t0 debt in pool plus newly kicked t0 debt
