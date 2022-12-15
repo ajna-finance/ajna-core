@@ -421,7 +421,7 @@ library Auctions {
             poolState_.accruedDebt += vars.kickPenalty;
             kickResult_.lup = _lup(deposits_, poolState_.accruedDebt);
             // if LUP above HTP then no more loans are required to be kicked
-            if (_htp(loans_, poolState_.inflator) <= kickResult_.lup) break;
+            if (_htp(loans_, poolState_.inflator) < kickResult_.lup) break;
 
             --params_.maxKicks;
         }
