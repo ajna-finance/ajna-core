@@ -350,10 +350,10 @@ library Auctions {
         );
         if (kickResult_.amount == 0) revert InsufficientLiquidity();
 
-        uint256 cumulativeDepositAboveBucket = Deposits.treeSum(deposits_) - bucketDeposit - Deposits.prefixSum(deposits_, params_.index);
-        Deposits.remove(deposits_, params_.index, kickResult_.amount, bucketDeposit);
-
+        poolState_.accruedDebt += kickResult_.amount;
         kickResult_.lup = _lup(deposits_, poolState_.accruedDebt);
+
+        uint256 cumulativeDepositAboveBucket = Deposits.treeSum(deposits_) - bucketDeposit - Deposits.prefixSum(deposits_, params_.index);
 
         // TODO: should momp be the same for the entire batch of loans to be kicked?
         uint256 momp = _priceAt(
@@ -435,6 +435,9 @@ library Auctions {
             ||
             cumulativeDepositAboveBucket < params_.poolT0DebtInAuction + kickResult_.kickedT0debt
         ) revert InsufficientLiquidity();
+
+        // remove amount from deposits
+        Deposits.remove(deposits_, params_.index, kickResult_.amount, bucketDeposit);
 
         // if cummulative bonds amount can be covered from the removed amount then send difference to lender
         kickResult_.amount -= bondDifference;
