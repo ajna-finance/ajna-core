@@ -353,7 +353,7 @@ library Auctions {
         poolState_.accruedDebt += kickResult_.amount;
         kickResult_.lup = _lup(deposits_, poolState_.accruedDebt);
 
-        uint256 cumulativeDepositAboveBucket = Deposits.treeSum(deposits_) - bucketDeposit - Deposits.prefixSum(deposits_, params_.index);
+        uint256 cumulativeDepositAboveBucket = Deposits.prefixSum(deposits_, params_.index+1);
 
         // TODO: should momp be the same for the entire batch of loans to be kicked?
         uint256 momp = _priceAt(
@@ -376,7 +376,7 @@ library Auctions {
 
             if (
                 _isCollateralized(
-                    vars.borrowerDebt ,
+                    vars.borrowerDebt + kickResult_.amount,
                     vars.borrowerCollateral,
                     kickResult_.lup,
                     poolState_.poolType
