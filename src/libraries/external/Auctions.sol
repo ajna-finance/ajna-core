@@ -353,7 +353,7 @@ library Auctions {
         poolState_.accruedDebt += kickResult_.amount;
         kickResult_.lup = _lup(deposits_, poolState_.accruedDebt);
 
-        uint256 cumulativeDepositAboveBucket = Deposits.treeSum(deposits_) - bucketDeposit - Deposits.prefixSum(deposits_, params_.index);
+        uint256 cumulativeDepositAboveBucket = Deposits.prefixSum(deposits_, params_.index + 1);
 
         // TODO: should momp be the same for the entire batch of loans to be kicked?
         uint256 momp = _priceAt(
@@ -363,71 +363,58 @@ library Auctions {
             )
         );
 
-        uint256 totalBondSize;
-        while (params_.maxKicks > 0) {
-            KickLocalVars memory vars;
-            vars.borrower = Loans.getMax(loans_).borrower;
+        KickLocalVars memory vars;
+        vars.borrower = Loans.getMax(loans_).borrower;
 
-            Borrower storage borrower = loans_.borrowers[vars.borrower];
+        Borrower storage borrower = loans_.borrowers[vars.borrower];
 
-            vars.borrowerT0debt     = borrower.t0debt;
-            vars.borrowerCollateral = borrower.collateral;
-            vars.borrowerDebt       = Maths.wmul(vars.borrowerT0debt, poolState_.inflator);
+        vars.borrowerT0debt     = borrower.t0debt;
+        vars.borrowerCollateral = borrower.collateral;
+        vars.borrowerDebt       = Maths.wmul(vars.borrowerT0debt, poolState_.inflator);
 
-            if (
-                _isCollateralized(
-                    vars.borrowerDebt ,
-                    vars.borrowerCollateral,
-                    kickResult_.lup,
-                    poolState_.poolType
-                )
-            ) revert BorrowerOk();
-
+        if (! _isCollateralized(
+                                vars.borrowerDebt,
+                                vars.borrowerCollateral,
+                                kickResult_.lup,
+                                poolState_.poolType
+            )
+           ) {
+            // kick top loan
             (vars.bondFactor, vars.bondSize) = _bondParams(
-                vars.borrowerDebt,
-                vars.borrowerCollateral,
-                momp
+                                                           vars.borrowerDebt,
+                                                           vars.borrowerCollateral,
+                                                           momp
             );
             // when loan is kicked, penalty of three months of interest is added
             vars.kickPenalty   += Maths.wmul(Maths.wdiv(poolState_.rate, 4 * 1e18), vars.borrowerDebt);
             vars.kickPenaltyT0 += Maths.wdiv(vars.kickPenalty, poolState_.inflator);
-
+            
             // record liquidation info
             vars.neutralPrice = Maths.wmul(borrower.t0Np, poolState_.inflator);
             _recordLiquidation(
-                auctions_,
-                vars.borrower,
-                vars.bondSize,
-                vars.bondFactor,
-                momp,
-                vars.neutralPrice
-            );
+                   auctions_,
+                   vars.borrower,
+                   vars.bondSize,
+                   vars.bondFactor,
+                   momp,
+                   vars.neutralPrice
+               );
 
             // remove kicked loan from heap
             Loans.remove(loans_, vars.borrower, loans_.indices[vars.borrower]);
-
+            
             // update borrower t0 debt with t0 kick penalty
             vars.borrowerT0debt += vars.kickPenaltyT0;
             borrower.t0debt = vars.borrowerT0debt;
-
+            
             // update cumulative kick result - total t0 debt kicked and total t0 kick and kick penalty
-            kickResult_.kickedT0debt  += vars.borrowerT0debt;
-            kickResult_.kickPenalty   += vars.kickPenalty;
-            kickResult_.kickPenaltyT0 += vars.kickPenaltyT0;
-
-            totalBondSize += vars.bondSize;
-
-            // recalculate LUP with additional debt resulted from kick penalty
-            poolState_.accruedDebt += vars.kickPenalty;
-            kickResult_.lup = _lup(deposits_, poolState_.accruedDebt);
-            // if LUP above HTP then no more loans are required to be kicked
-            if (_htp(loans_, poolState_.inflator) < kickResult_.lup) break;
-
-            --params_.maxKicks;
+            kickResult_.kickedT0debt  = vars.borrowerT0debt;
+            kickResult_.kickPenalty   = vars.kickPenalty;
+            kickResult_.kickPenaltyT0 = vars.kickPenaltyT0;
         }
 
         // update kicker balances and get the difference needed to cover bond (after using any kick claimable funds if any)
-        uint256 bondDifference = _updateKicker(auctions_, totalBondSize);
+        uint256 bondDifference = _updateKicker(auctions_, vars.bondSize);
         // revert if remaining amount to cover cummulative bonds is greater than the amount to remove
         // or if the cumulative deposit above bucket is lower than existing t0 debt in pool plus newly kicked t0 debt
         if (
@@ -443,7 +430,7 @@ library Auctions {
         kickResult_.amount -= bondDifference;
 
         // update totalBondEscrowed accumulator
-        auctions_.totalBondEscrowed += totalBondSize;
+        auctions_.totalBondEscrowed += vars.bondSize;
     }
 
     /**
