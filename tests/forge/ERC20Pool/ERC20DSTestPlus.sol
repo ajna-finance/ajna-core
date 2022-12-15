@@ -130,6 +130,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         }
         validateEmpty(bucketsUsed);
     }
+
     /*****************************/
     /*** Actor actions asserts ***/
     /*****************************/

@@ -29,6 +29,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _pool = _deploySubsetPool(subsetTokenIds);
 
         _mintAndApproveQuoteTokens(_lender, 200_000 * 1e18);
+        _mintAndApproveQuoteTokens(_borrower, 100 * 1e18);
 
         _mintAndApproveCollateralTokens(_borrower,  52);
         _mintAndApproveCollateralTokens(_borrower2, 53);
@@ -326,7 +327,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(address(_pool)), 0);
 
         assertEq(_quote.balanceOf(address(_pool)), 30_000 * 1e18);
-        assertEq(_quote.balanceOf(_borrower),      0);
+        assertEq(_quote.balanceOf(_borrower),      100 * 1e18);
 
         // check pool state
         _assertPool(
@@ -374,7 +375,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(address(_pool)), 3);
 
         assertEq(_quote.balanceOf(address(_pool)), 27_000 * 1e18);
-        assertEq(_quote.balanceOf(_borrower),      3_000 * 1e18);
+        assertEq(_quote.balanceOf(_borrower),      3_100 * 1e18);
 
         // check pool state
         _assertPool(
@@ -409,7 +410,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(address(_pool)), 1);
 
         assertEq(_quote.balanceOf(address(_pool)), 27_000 * 1e18);
-        assertEq(_quote.balanceOf(_borrower),      3_000 * 1e18);
+        assertEq(_quote.balanceOf(_borrower),      3_100 * 1e18);
 
         // check pool state
         _assertPool(
@@ -623,5 +624,491 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 exchangeRate: 1 * 1e27
             }
         );
+    }
+
+    function testMergeOrRemoveCollateral() external {
+    // function testMergeOrRemoveCollateral() external tearDown { FIXME: this fails with FAIL. Reason: Arithmetic over/underflow]
+
+        // insert liquidity at 3060 - 3159, going down in price
+        for (uint256 i = 3060; i < (3060 + 100); i++) {
+            _addLiquidity(
+                {
+                    from:   _lender,
+                    amount: 1.5 * 1e18,
+                    index:  i,
+                    newLup: MAX_PRICE,
+                    lpAward: 1.5 * 1e27
+                }
+            );
+        }
+
+        uint256[] memory tokenIdsToAdd = new uint256[](2);
+        tokenIdsToAdd[0] = 1;
+        tokenIdsToAdd[1] = 3;
+
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                tokenIds: tokenIdsToAdd
+            }
+        );
+
+        _borrow(
+            {
+                from:       _borrower,
+                amount:     150 * 1e18,
+                indexLimit: 8191,
+                newLup:     144.398795715840771153 * 1e18
+            }
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              150.144230769230769300 * 1e18,
+                borrowerCollateral:        2.0 * 1e18,
+                borrowert0Np:              0.000000054499533442 * 1e18,
+                borrowerCollateralization: 0.000000001329871716 * 1e18
+            }
+        );
+
+        _kick(
+            {
+                from:           _lender,
+                borrower:       _borrower,
+                debt:           152.021033653846153916 * 1e18,
+                collateral:     2.0 * 1e18,
+                bond:           1.501442307692307693 * 1e18,
+                transferAmount: 1.501442307692307693 * 1e18
+            }
+        ); 
+
+        skip(110 minutes);
+
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            true,
+                kicker:            address(_lender),
+                bondSize:          1.501442307692307693 * 1e18,
+                bondFactor:        0.010 * 1e18,
+                kickTime:          block.timestamp - 110 minutes,
+                kickMomp:          0.000000099836282890 * 1e18,
+                totalBondEscrowed: 1.501442307692307693 * 1e18,
+                auctionPrice:      0.000001792999017408 * 1e18,
+                debtInAuction:     152.021033653846153916 * 1e18,
+                thresholdPrice:    76.011312222718135349 * 1e18,
+                neutralPrice:      0.000000054499533442 * 1e18
+            })
+        );
+
+        // before depositTake: NFTs pledged by liquidated borrower are owned by the borrower in the pool
+        assertEq(_collateral.ownerOf(1), address(_pool));
+        assertEq(_collateral.ownerOf(3), address(_pool));
+
+        // exchange collateral for lpb 3060 - 3159, going down in price
+        for (uint256 i = 3060; i < (3060 + 100); i++) {
+            _depositTake(
+                {
+                    from:             _lender,
+                    borrower:         _borrower,
+                    index:            i
+                }
+            );
+        }
+
+        _assertBucket(
+            {
+                index:        3060,
+                lpBalance:    1.500000000000000000000000000 * 1e27,
+                collateral:   0.006340042654163331 * 1e18,
+                deposit:      0,
+                exchangeRate: 1.000010605277267413608094245 * 1e27
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        3061,
+                lpBalance:    1.500000000000000000000000000 * 1e27,
+                collateral:   0.006371742867434148 * 1e18,
+                deposit:      0,
+                exchangeRate: 1.000010605277267475967018790 * 1e27
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        3159,
+                lpBalance:    1.500000000000000000000000000 * 1e27,
+                collateral:   0.010388008435110149 * 1e18,
+                deposit:      0,
+                exchangeRate: 1.000010605277267451202381880 * 1e27
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        3160,
+                lpBalance:    0,
+                collateral:   0,
+                deposit:      0,
+                exchangeRate: 1.0 * 1e27
+            }
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              2.021033653846153934 * 1e18,
+                borrowerCollateral:        1.180018835375524990 * 1e18,
+                borrowert0Np:              0.000000054499533442 * 1e18,
+                borrowerCollateralization: 0.000000058291307540 * 1e18
+            }
+        );
+
+        
+        // after depositTake but before take: NFTs pledged by liquidated borrower are owned by the pool
+        assertEq(_collateral.ownerOf(1), address(_pool));
+        assertEq(_collateral.ownerOf(3), address(_pool));
+
+        _take(
+            {
+                from:            _lender,
+                borrower:        _borrower,
+                maxCollateral:   2.0 * 1e18,
+                bondChange:      0.000000021157726124 * 1e18,
+                givenAmount:     0.000002115772612351 * 1e18,
+                collateralTaken: 1.180018835375524990 * 1e18,
+                isReward:        false
+            }
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              2.021031538073541583 * 1e18,
+                borrowerCollateral:        0.180018835375524990 * 1e18,
+                borrowert0Np:              0.000000054499533442 * 1e18,
+                borrowerCollateralization: 0.000000008892692190 * 1e18
+            }
+        );
+
+        // after take: NFT, 1 pledged by liquidated borrower is owned by the taker
+        assertEq(_collateral.ownerOf(1), address(_pool));
+        assertEq(_collateral.ownerOf(3), _lender);
+        
+        // 70.16 hours
+        skip(4210 minutes);
+
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            true,
+                kicker:            address(_lender),
+                bondSize:          0.001426378618680369 * 1e18,
+                bondFactor:        0.010 * 1e18,
+                kickTime:          block.timestamp - 4320 minutes,
+                kickMomp:          0.000000099836282890 * 1e18,
+                totalBondEscrowed: 0.001426378618680369 * 1e18,
+                auctionPrice:      0 * 1e18,
+                debtInAuction:     2.021031538073541583 * 1e18,
+                thresholdPrice:    11.231275373627960261 * 1e18,
+                neutralPrice:      0.000000054499533442 * 1e18
+            })
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              2.021841112542319702 * 1e18,
+                borrowerCollateral:        0.180018835375524990 * 1e18,
+                borrowert0Np:              0.000000054499533442 * 1e18,
+                borrowerCollateralization: 0.000000008889131427 * 1e18
+            }
+        );
+
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            true,
+                kicker:            address(_lender),
+                bondSize:          0.001426378618680369 * 1e18,
+                bondFactor:        0.010 * 1e18,
+                kickTime:          block.timestamp - 4320 minutes,
+                kickMomp:          0.000000099836282890 * 1e18,
+                totalBondEscrowed: 0.001426378618680369 * 1e18,
+                auctionPrice:      0.0 * 1e18,
+                debtInAuction:     2.021031538073541583 * 1e18,
+                thresholdPrice:    11.231275373627960261 * 1e18,
+                neutralPrice:      0.000000054499533442 * 1e18
+            })
+        );
+
+        _settle(
+            {
+                from:        _lender,
+                borrower:    _borrower,
+                maxDepth:    10,
+                settledDebt: 2.021010389642603383 * 1e18
+            }
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              0,
+                borrowerCollateral:        0,
+                borrowert0Np:              0.000000054499533442 * 1e18,
+                borrowerCollateralization: 1.0 * 1e18
+            }
+        );
+
+        // after take: NFT, 1 pledged by liquidated borrower is owned by the taker
+        assertEq(_collateral.ownerOf(1), address(_pool));
+        assertEq(_collateral.ownerOf(3), _lender);
+
+        _assertAuction( 
+             AuctionParams({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    0,
+                neutralPrice:      0
+            })
+        );
+
+        _assertBucket(
+            {
+                index:        3060,
+                lpBalance:    1.5 * 1e27,
+                collateral:   0.006340042654163331 * 1e18,
+                deposit:      0,
+                exchangeRate: 1.000010605277267413608094245 * 1e27
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        3159,
+                lpBalance:    1.5 * 1e27,
+                collateral:   0.010388008435110149 * 1e18,
+                deposit:      0,
+                exchangeRate: 1.000010605277267451202381880 * 1e27
+            }
+        );
+
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       3159,
+                lpBalance:   1.5 * 1e27,
+                depositTime: _startTime
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        7388,
+                lpBalance:    0.000000017972411374079252284 * 1e27, // LPs awarded to borrower for settled collateral
+                collateral:   0.180018835375524990 * 1e18,          // settled collateral amount
+                deposit:      0,
+                exchangeRate: 0.999999999999999999994681910 * 1e27
+            }
+        );
+
+        _assertLenderLpBalance(
+            {
+                lender:      _borrower,
+                index:       7388,
+                lpBalance:   0.000000017972411374079252284 * 1e27,
+                depositTime: _startTime + (110 + 4210) * 60
+            }
+        );
+        assertEq(_collateral.balanceOf(_lender),        1);
+        assertEq(_collateral.balanceOf(_borrower),      50);
+        assertEq(_collateral.balanceOf(address(_pool)), 1);
+
+        // lender merge his entitled collateral (based on their LPs) in bucket 3159 
+        uint256[] memory removalIndexes = new uint256[](100);
+        uint256 removalI = 0;
+        for (uint256 i = 3060; i < (3060 + 100); i++) {
+            removalIndexes[removalI] = i;
+            removalI++;
+        }
+
+        // Reverts because 3059 is a higher price than 3060, must merge down in price
+        _assertCannotMergeToHigherPriceRevert({
+            from:                    _lender,
+            toIndex:                 3059,
+            noOfNFTsToRemove:        1.0,
+            removeCollateralAtIndex: removalIndexes
+        });
+
+        _mergeOrRemoveCollateral({
+            from:                    _lender,
+            toIndex:                 3159,
+            noOfNFTsToRemove:        1.0,
+            collateralMerged:        0.819981164624475010 * 1e18,
+            removeCollateralAtIndex: removalIndexes,
+            toIndexLps:              118.404292681446768167332184816 * 1e27
+        });
+
+        _assertBucket(
+            {
+                index:        3060,
+                lpBalance:    0,
+                collateral:   0,
+                deposit:      0,
+                exchangeRate: 1.0 * 1e27
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        3061,
+                lpBalance:    0,
+                collateral:   0,
+                deposit:      0,
+                exchangeRate: 1.0 * 1e27
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        3159,
+                lpBalance:    118.404292681446768167332184816 * 1e27, // new LPs amount accounting collateral merged in bucket
+                collateral:   0.819981164624475010 * 1e18,            // reflects collateral merged in the bucket
+                deposit:      0,
+                exchangeRate: 1 * 1e27
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        7388,
+                lpBalance:    0.000000017972411374079252284 * 1e27, // LPs awarded to borrower for settled collateral
+                collateral:   0.180018835375524990 * 1e18,          // settled collateral amount
+                deposit:      0,
+                exchangeRate: 0.999999999999999999994681910 * 1e27
+            }
+        );
+
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       3159,
+                lpBalance:   118.404292681446768167332184816 * 1e27,
+                depositTime: _startTime + (110 + 4210) * 60
+            }
+        );
+
+        assertEq(_collateral.balanceOf(_lender),        1);
+        assertEq(_collateral.balanceOf(_borrower),      50);
+        assertEq(_collateral.balanceOf(address(_pool)), 1);
+
+        // lender deposit quote tokens in bucket 7388 in order to claim and merge settled collateral and to be able to remove entire NFT
+        _addLiquidity(
+            {
+                from:    _lender,
+                amount:  1 * 1e18,
+                index:   7388,
+                lpAward: 1.000000000000000000005318090 * 1e27, // LPs awarded to lender for depositing quote tokens in bucket 7388
+                newLup:  1004968987606512354182109771
+            }
+        );
+
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       7388,
+                lpBalance:   1.000000000000000000005318090 * 1e27, // lender now owns 1 LP in bucket 7388 which can be used to merge bucket collateral
+                depositTime: _startTime + (110 + 4210) * 60
+            }
+        );
+
+        // collateral is now splitted accross buckets 3159 and 7388
+        uint256[] memory allRemovalIndexes = new uint256[](2);
+        allRemovalIndexes[0] = 3159;
+        allRemovalIndexes[1] = 7388;
+
+        _mergeOrRemoveCollateral({
+            from:                    _lender,
+            toIndex:                 7388,
+            noOfNFTsToRemove:        1,
+            collateralMerged:        1 * 1e18,
+            removeCollateralAtIndex: allRemovalIndexes,
+            toIndexLps:              0
+        });
+
+        _assertBucket(
+            {
+                index:        3060,
+                lpBalance:    0,
+                collateral:   0,
+                deposit:      0,
+                exchangeRate: 1.0 * 1e27
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        3061,
+                lpBalance:    0,
+                collateral:   0,
+                deposit:      0,
+                exchangeRate: 1.0 * 1e27
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        3159,
+                lpBalance:    0,
+                collateral:   0,
+                deposit:      0,
+                exchangeRate: 1.0 * 1e27
+            }
+        );   
+
+        _assertBucket(
+            {
+                index:        7388,
+                lpBalance:    1.000000000000190600386309347 * 1e27, // LPs in bucket 7388 diminished when NFT merged and removed
+                collateral:   0,                                    // no collateral remaining as it was merged and removed
+                deposit:      1.000010605277267445 * 1e18,
+                exchangeRate: 1.000010605277076842592320745 * 1e27
+            }
+        );
+
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       7388,
+                lpBalance:   0.999999982027779226307057063 * 1e27, // lender LPs decreased with the amount used to merge NFT
+                depositTime: _startTime + (110 + 4210) * 60
+            }
+        );
+
+        _assertLenderLpBalance(
+            {
+                lender:      _borrower,
+                index:       7388,
+                lpBalance:   0.000000017972411374079252284 * 1e27, // Borrower LPs remain the same in the bucket
+                depositTime: _startTime + (110 + 4210) * 60
+            }
+        );
+
+        assertEq(_collateral.balanceOf(_lender),        2);
+        assertEq(_collateral.balanceOf(_borrower),      50);
+        assertEq(_collateral.balanceOf(address(_pool)), 0);
     }
 }

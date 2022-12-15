@@ -321,7 +321,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
                 htp:                  6.582554958364903034 * 1e18,
                 lup:                  9.917184843435912074 * 1e18,
                 poolSize:             73_000.000878382806067000 * 1e18,
-                pledgedCollateral:    3 * 1e18,
+                pledgedCollateral:    3.0 * 1e18,
                 encumberedCollateral: 1.736296104506289339 * 1e18,
                 poolDebt:             17.219169411326589068 * 1e18,
                 actualUtilization:    0.000235879030193623 * 1e18,
@@ -379,9 +379,9 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         vm.revertTo(snapshot);
 
 
-        /******************************************/
-        /*** Take partial collateral tokens (1) ***/
-        /******************************************/
+        /****************************************/
+        /* Take partial collateral tokens (1) ***/
+        /****************************************/
 
         _take(
             {

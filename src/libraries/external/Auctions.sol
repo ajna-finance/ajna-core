@@ -28,7 +28,7 @@ library Auctions {
     struct TakeResult {
         uint256 quoteTokenAmount; // The quote token amount that taker should pay for collateral taken.
         uint256 t0repayAmount;    // The amount of debt (quote tokens) that is recovered / repayed by take t0 terms.
-        uint256 collateralAmount;  // The amount of collateral taken.
+        uint256 collateralAmount; // The amount of collateral taken.
         uint256 auctionPrice;     // The price of auction.
         uint256 bucketPrice;      // The bucket price.
         uint256 bondChange;       // The change made on the bond size (beeing reward or penalty).
@@ -152,24 +152,21 @@ library Auctions {
 
         if ((block.timestamp - kickTime < 72 hours) && (params_.collateral != 0)) revert AuctionNotClearable();
 
-        // HpbLocalVars memory hpbVars;
-
         // auction has debt to cover with remaining collateral
         while (params_.bucketDepth != 0 && params_.t0debt != 0 && params_.collateral != 0) {
             uint256 index   = Deposits.findIndexOfSum(deposits_, 1);
             uint256 deposit = Deposits.valueAt(deposits_, index);
             uint256 price   = _priceAt(index);
 
-            uint256 depositToRemove = deposit;
-            uint256 collateralUsed;
-
-            {
-                uint256 debtToSettle      = Maths.wmul(params_.t0debt, params_.inflator);     // current debt to be settled
+            if (deposit != 0) {
+                uint256 collateralUsed;
+                uint256 depositToRemove   = deposit;
+                uint256 debtToSettle      = Maths.wmul(params_.t0debt, params_.inflator);   // current debt to be settled
                 uint256 maxSettleableDebt = Maths.wmul(params_.collateral, price);          // max debt that can be settled with existing collateral
 
                 if (depositToRemove >= debtToSettle && maxSettleableDebt >= debtToSettle) { // enough deposit in bucket and collateral avail to settle entire debt
                     depositToRemove    = debtToSettle;                                      // remove only what's needed to settle the debt
-                    params_.t0debt    = 0;                                                 // no remaining debt to settle
+                    params_.t0debt     = 0;                                                 // no remaining debt to settle
                     collateralUsed     = Maths.wdiv(debtToSettle, price);
                     params_.collateral -= collateralUsed;
                 } else if (maxSettleableDebt >= depositToRemove) {                          // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
@@ -182,10 +179,20 @@ library Auctions {
                     collateralUsed     = params_.collateral;
                     params_.collateral = 0;
                 }
-            }
 
-            buckets_[index].collateral += collateralUsed;                // add settled collateral into bucket
-            Deposits.remove(deposits_, index, depositToRemove, deposit); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
+                buckets_[index].collateral += collateralUsed;                // add settled collateral into bucket
+                Deposits.remove(deposits_, index, depositToRemove, deposit); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
+            } else {
+                // Deposits in the tree is zero, insert entire collateral into lowest bucket 7388
+                Buckets.addCollateral(
+                    buckets_[index],
+                    params_.borrower,
+                    deposit,
+                    params_.collateral,
+                    price
+                );
+                params_.collateral = 0; // entire collateral added into bucket
+            }
 
             --params_.bucketDepth;
         }
@@ -260,7 +267,7 @@ library Auctions {
             kicker.claimable -= bondSize;
         } else {
             kickAuctionAmount_ = bondSize - kickerClaimable;
-            kicker.claimable = 0;
+            kicker.claimable   = 0; 
         }
         // update totalBondEscrowed accumulator
         auctions_.totalBondEscrowed += bondSize;
@@ -344,11 +351,13 @@ library Auctions {
         result.kicker = liquidation.kicker;
         result.isRewarded = (bpf >= 0);
 
-        // determine how much of the loan will be repaid
+        // Determine how much of the loan will be repaid
         if (borrowerDebt >= bucketDeposit) {
+            // Debt in loan exceeds or equal to bucket deposit
             result.t0repayAmount    = Maths.wdiv(bucketDeposit, params_.inflator);
             result.quoteTokenAmount = Maths.wdiv(bucketDeposit, factor);
         } else {
+            // Deposit in bucket exceeds loan debt
             result.t0repayAmount    = params_.t0debt;
             result.quoteTokenAmount = Maths.wdiv(borrowerDebt, factor);
         }
@@ -356,6 +365,7 @@ library Auctions {
         result.collateralAmount = Maths.wdiv(result.quoteTokenAmount, price);
 
         if (result.collateralAmount > params_.collateral) {
+            // Updated collateral amount exceeds collateral restraint provided by caller
             result.collateralAmount = params_.collateral;
             result.quoteTokenAmount = Maths.wmul(result.collateralAmount, price);
             result.t0repayAmount    = Maths.wdiv(Maths.wmul(factor, result.quoteTokenAmount), params_.inflator);
@@ -368,6 +378,7 @@ library Auctions {
             auctions_.kickers[result.kicker].locked -= result.bondChange;
             auctions_.totalBondEscrowed             -= result.bondChange;
         } else {
+            // take is below neutralPrice, Kicker is penalized
             result.bondChange = Maths.wmul(result.quoteTokenAmount, uint256(bpf)); // will be rewarded as LPBs
         }
 
