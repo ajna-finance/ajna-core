@@ -301,10 +301,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         poolState.accruedDebt += result.kickPenalty;
         _updateInterestParams(poolState, result.lup);
 
-        t0DebtInAuction += result.borrowerT0debt;
+        t0DebtInAuction += result.kickedT0debt;
         t0poolDebt      += result.kickPenaltyT0;
 
-        if(result.bondDifference != 0) _transferQuoteTokenFrom(msg.sender, result.bondDifference);
+        if(result.amount != 0) _transferQuoteTokenFrom(msg.sender, result.amount);
     }
 
     function kickAndRemove(
@@ -314,10 +314,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     ) external override {
         PoolState memory poolState = _accruePoolInterest();
 
-        // kick auction
-        KickAndRemoveResult memory result = Auctions.kickAndRemove(
+        // kick auctions
+        KickResult memory result = Auctions.kickAndRemove(
             auctions,
             deposits,
+            buckets,
             loans,
             poolState,
             KickAndRemoveParams(
@@ -337,7 +338,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         t0poolDebt      += result.kickPenaltyT0;
 
         // transfer reminder to kicker
-        if (result.removedAmount != 0) _transferQuoteToken(msg.sender, result.removedAmount);
+        if (result.amount != 0) _transferQuoteToken(msg.sender, result.amount);
     }
 
     /*********************************/
