@@ -597,6 +597,16 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.addQuoteToken(amount, index);
     }
 
+    function _assertArbTakeNoAuction(
+        address from,
+        address borrower,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('NoAuction()'));
+        _pool.bucketTake(borrower, false, index);
+    }
+
     function _assertArbTakeAuctionInCooldownRevert(
         address from,
         address borrower,
