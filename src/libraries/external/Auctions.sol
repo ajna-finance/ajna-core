@@ -410,7 +410,6 @@ library Auctions {
             buckets_,
             params_.index,
             params_.depositTake,
-            
             result
         );
 
@@ -464,7 +463,9 @@ library Auctions {
         result.isRewarded = (bpf >= 0);
 
         result.unscaledDeposit = Maths.wmul(result.auctionPrice, params_.takeCollateral);  // in regular take(), scale is 1
-        if (bpf > 0) result.unscaledDeposit = Maths.wmul(result.unscaledDeposit, Maths.WAD - uint256(bpf));  // ugly to get take work like deposit take
+        // ugly to get take work like a bucket take -- this is the max amount of quote token from the take that could go to
+        // reduce the debt of the borrower -- analagous to the amount of deposit in the bucket for a bucket take
+        if (result.isRewarded) result.unscaledDeposit = Maths.wmul(result.unscaledDeposit, Maths.WAD - uint256(bpf));
 
         (result.collateralAmount,
          result.t0repayAmount,
@@ -476,7 +477,6 @@ library Auctions {
                                                                result.unscaledDeposit,
                                                                Maths.WAD
                                                               );
-        if (bpf > 0) result.unscaledQuoteTokenAmount = Maths.wdiv(result.unscaledQuoteTokenAmount, Maths.WAD - uint256(bpf));  // ugly to get take work like deposit take...
 
         /* console.log("params_.collateral: ", params_.collateral); */
         /* console.log("params_.t0debt: ", params_.t0debt); */
@@ -490,14 +490,15 @@ library Auctions {
 
         if (result.isRewarded) {
             // take is below neutralPrice, Kicker is rewarded
-            result.bondChange = Maths.wmul(result.unscaledQuoteTokenAmount, uint256(bpf));
+            result.bondChange = Maths.wmul(Maths.wmul(result.auctionPrice, result.collateralAmount), uint256(bpf));
             liquidation.bondSize                += uint160(result.bondChange);
             self.kickers[result.kicker].locked += result.bondChange;
             self.totalBondEscrowed              += result.bondChange;
 
         } else {
             // take is above neutralPrice, Kicker is penalized
-            result.bondChange = Maths.min(liquidation.bondSize, Maths.wmul(result.unscaledQuoteTokenAmount, uint256(-bpf)));
+            result.bondChange = Maths.min(liquidation.bondSize, Maths.wmul(Maths.wmul(result.auctionPrice, result.collateralAmount),
+                                                                           uint256(-bpf)));
             liquidation.bondSize                -= uint160(result.bondChange);
             self.kickers[result.kicker].locked -= result.bondChange;
             self.totalBondEscrowed              -= result.bondChange;
@@ -505,7 +506,7 @@ library Auctions {
 
         emit Take(
             params_.borrower,
-            result.unscaledQuoteTokenAmount,
+            Maths.wmul(result.collateralAmount, result.auctionPrice),
             result.collateralAmount,
             result.bondChange,
             result.isRewarded
@@ -640,7 +641,7 @@ library Auctions {
      *  @param  bpf                      Bond payoff/penalty factor
      *  @param  t0debt                   t0 equivalent debt in loan
      *  @param  inflator                 Pool inflator
-     *  @param  unscaledQuoteToken       Unscaled value in deposit Fenwick tree (or total quote token amount for take)
+     *  @param  unscaledQuoteToken       Unscaled value in deposit Fenwick tree, or C*p/(1-bpf) in case of take() 
      *  @param  quoteTokenScale          Scale of Fenwick tree, or 1 for take
      *  @return collateral               Collateral purchased in auctionn
      *  @return t0debtPaid               t0 equivalent amount of debt repaid in take
