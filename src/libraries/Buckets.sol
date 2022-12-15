@@ -72,31 +72,6 @@ library Buckets {
         lender.depositTime = block.timestamp;
     }
 
-    function removeLPs(
-        Bucket storage bucket_,
-        uint256 bucketDeposit_,
-        uint256 bucketPrice_,
-        uint256 maxAmount_
-    ) internal returns (uint256 quoteTokenAmount_) {
-        Lender storage lender = bucket_.lenders[msg.sender];
-        uint256 lenderLPs;
-        if (bucket_.bankruptcyTime < lender.depositTime) lenderLPs = lender.lps;
-
-        if (lenderLPs != 0) {
-            (quoteTokenAmount_, lenderLPs) = lpsToQuoteToken(
-                bucket_.lps,
-                bucket_.collateral,
-                bucketDeposit_,
-                lenderLPs,
-                maxAmount_,
-                bucketPrice_
-            );
-
-            lender.lps  -= lenderLPs;
-            bucket_.lps -= lenderLPs;
-        }
-    }
-
     /**********************/
     /*** View Functions ***/
     /**********************/

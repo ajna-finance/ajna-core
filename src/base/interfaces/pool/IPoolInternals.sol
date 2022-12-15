@@ -44,11 +44,12 @@ struct TakeParams {
 }
 
 struct KickResult {
-    uint256 amount; // amount of bond that needs to be covered
-    uint256 kickPenalty;    // kick penalty
-    uint256 kickPenaltyT0;  // t0 kick penalty
-    uint256 kickedT0debt;   // new t0 debt after kick
-    uint256 lup;            // current lup
+    uint256 amountToCoverBond; // amount of bond that needs to be covered
+    uint256 amountToRemove;    // additional amount that can be removed from pool
+    uint256 kickPenalty;       // kick penalty
+    uint256 kickPenaltyT0;     // t0 kick penalty
+    uint256 kickedT0debt;      // new t0 debt after kick
+    uint256 lup;               // current lup
 }
 
 /******************************************/
