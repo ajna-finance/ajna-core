@@ -246,8 +246,6 @@ library Auctions {
     ) external returns (
         KickResult memory kickResult_
     ) {
-        revertIfActive(auctions_, borrowerAddress_);
-
         Borrower storage borrower = loans_.borrowers[borrowerAddress_];
         kickResult_.borrowerT0debt = borrower.t0debt;
 
@@ -655,8 +653,10 @@ library Auctions {
         uint256 momp_,
         uint256 neutralPrice_
     ) internal {
-        // record liquidation info
         Liquidation storage liquidation = auctions_.liquidations[borrowerAddress_];
+        if (liquidation.kickTime != 0) revert AuctionActive();
+
+        // record liquidation info
         liquidation.kicker              = msg.sender;
         liquidation.kickTime            = uint96(block.timestamp);
         liquidation.kickMomp            = uint96(momp_);
