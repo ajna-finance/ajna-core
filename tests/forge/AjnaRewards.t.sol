@@ -114,7 +114,8 @@ contract AjnaRewardsTest is DSTestPlus {
         // TODO: make mint amounts dynamic
         for (uint256 i = 0; i < indexes_.length; i++) {
             pool_.addQuoteToken(1000 * 1e18, indexes_[i]);
-            pool_.approveLpOwnership(address(_positionManager), indexes_[i], 1_000 * 1e27);
+            (uint256 lpBalance, ) = pool_.lenderInfo(indexes_[i], minter_);
+            pool_.approveLpOwnership(address(_positionManager), indexes_[i], lpBalance);
         }
 
         // construct memorialize params struct
@@ -275,22 +276,15 @@ contract AjnaRewardsTest is DSTestPlus {
         // assertEq(rewardsEarned, 0);
     }
 
-    function testClaimRewardsMultipleDepositsMultipleAuctions() external {
-
-    }
-
-    function xtestCalculateRewardsEarned() external {
+    function testClaimRewardsMultipleDepositsSameBucketsMultipleAuctions() external {
         skip(10);
 
-        address testMinterOne = makeAddr("testMinterOne");
+        address testMinterOne   = makeAddr("testMinterOne");
+        address testMinterTwo   = makeAddr("testMinterTwo");
+        address testMinterThree = makeAddr("testMinterThree");
 
         // deposit NFTs into the rewards contract
         uint256[] memory depositIndexes = new uint256[](5);
-        // depositIndexes[0] = 2550;
-        // depositIndexes[1] = 2551;
-        // depositIndexes[2] = 2552;
-        // depositIndexes[3] = 2553;
-        // depositIndexes[4] = 2555;
         depositIndexes[0] = 9;
         depositIndexes[1] = 1;
         depositIndexes[2] = 2;
@@ -300,13 +294,57 @@ contract AjnaRewardsTest is DSTestPlus {
         _depositNFT(address(_poolOne), testMinterOne, tokenIdOne);
 
         // borrower takes actions providing reserves enabling reserve auctions
-        // bidder takes reserve auctions by providing ajna tokens to be burned
-        uint256 tokensToBurn = _triggerReserveAuctions(_poolOne);
+        uint256 auctionOneTokensToBurn = _triggerReserveAuctions(_poolOne);
 
-        // TODO: this isn't working due to updateExchangeRate not firing in direct call
-        uint256 rewardsEarned = _ajnaRewards.calculateRewardsEarned(tokenIdOne);
-        assertLt(rewardsEarned, tokensToBurn);
-        assertGt(rewardsEarned, 0);
+        // second depositor deposits an NFT representing the same positions into the rewards contract
+        uint256 tokenIdTwo = _mintAndMemorializePositionNFT(testMinterTwo, _poolOne, depositIndexes);
+        _depositNFT(address(_poolOne), testMinterTwo, tokenIdTwo);
+
+        // calculate rewards earned since exchange rates have been updated
+        uint256 idOneRewardsAtOne = _ajnaRewards.calculateRewardsEarned(tokenIdOne);
+        assertLt(idOneRewardsAtOne, auctionOneTokensToBurn);
+        assertGt(idOneRewardsAtOne, 0);
+
+        // borrower takes actions providing reserves enabling additional reserve auctions
+        vm.roll(block.number + 10);
+        uint256 auctionTwoTokensToBurn = _triggerReserveAuctions(_poolOne);
+
+        // third depositor deposits an NFT representing the same positions into the rewards contract
+        uint256 tokenIdThree = _mintAndMemorializePositionNFT(testMinterThree, _poolOne, depositIndexes);
+        _depositNFT(address(_poolOne), testMinterThree, tokenIdThree);
+
+        // calculate rewards earned since exchange rates have been updated
+        uint256 idOneRewardsAtTwo = _ajnaRewards.calculateRewardsEarned(tokenIdOne);
+        assertLt(idOneRewardsAtTwo, auctionTwoTokensToBurn);
+        assertGt(idOneRewardsAtTwo, 0);
+        assertGt(idOneRewardsAtTwo, idOneRewardsAtOne);
+
+        uint256 idTwoRewardsAtTwo = _ajnaRewards.calculateRewardsEarned(tokenIdTwo);
+        assertLt(idOneRewardsAtTwo + idTwoRewardsAtTwo, auctionTwoTokensToBurn);
+        assertGt(idTwoRewardsAtTwo, 0);
+
+        // minter one claims rewards accrued since deposit
+        changePrank(testMinterOne);
+        assertEq(_ajnaToken.balanceOf(testMinterOne), 0);
+        vm.expectEmit(true, true, true, true);
+        emit ClaimRewards(testMinterOne, address(_poolOne), tokenIdOne, idOneRewardsAtTwo);
+        _ajnaRewards.claimRewards(tokenIdOne);
+        assertEq(_ajnaToken.balanceOf(testMinterOne), idOneRewardsAtTwo);
+
+        // minter two claims rewards accrued since deposit
+        changePrank(testMinterTwo);
+        assertEq(_ajnaToken.balanceOf(testMinterTwo), 0);
+        vm.expectEmit(true, true, true, true);
+        emit ClaimRewards(testMinterTwo, address(_poolOne), tokenIdTwo, idTwoRewardsAtTwo);
+        _ajnaRewards.claimRewards(tokenIdTwo);
+        assertEq(_ajnaToken.balanceOf(testMinterTwo), idTwoRewardsAtTwo);
+
+        // FIXME: this won't fire as checkpoints haven't loaded yet
+        // check rewards state
+        // uint256 remainingRewards = _ajnaRewards.calculateRewardsEarned(tokenIdOne);
+        // assertEq(remainingRewards, 0);
+
+        // TODO: test depositor 3
     }
 
     function testWithdrawToken() external {

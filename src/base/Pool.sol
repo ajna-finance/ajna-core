@@ -748,7 +748,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function bucketExchangeRate(
         uint256 index_
     ) external view returns (uint256 exchangeRate_) {
-        Buckets.Bucket storage bucket = buckets[index_];
+        Bucket storage bucket = buckets[index_];
 
         exchangeRate_ = Buckets.getExchangeRate(
             bucket.collateral,

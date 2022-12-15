@@ -181,8 +181,8 @@ contract AjnaRewards is IAjnaRewards {
         (uint256 ajnaTokensBurned, uint256 totalInterestEarned) = _getPoolAccumulators(ajnaPool, lastInteractionBlock);
 
         // calculate rewards earned
-        if (ajnaTokensBurned == 0 || totalInterestEarned == 0) return 0;
-        rewards_ = (REWARD_FACTOR * (interestEarned / totalInterestEarned) * ajnaTokensBurned) / 1e18;
+        if (totalInterestEarned == 0) return 0;
+        rewards_ = Maths.wmul(REWARD_FACTOR, Maths.wmul(Maths.wdiv(interestEarned, totalInterestEarned), ajnaTokensBurned));
     }
 
     /**
@@ -206,7 +206,8 @@ contract AjnaRewards is IAjnaRewards {
 
         for (uint256 i = 0; i < positionPrices.length; ) {
             // push the lenders exchange rate into the checkpoint history
-            poolBucketExchangeRateCheckpoints[ajnaPool][positionPrices[i]].push(IPool(ajnaPool).bucketExchangeRate(positionPrices[i]));
+            uint256 bucketExchangeRate = IPool(ajnaPool).bucketExchangeRate(positionPrices[i]);
+            poolBucketExchangeRateCheckpoints[ajnaPool][positionPrices[i]].push(bucketExchangeRate);
 
             unchecked {
                 ++i;

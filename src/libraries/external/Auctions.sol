@@ -548,15 +548,6 @@ library Auctions {
         history_.push(value);
     }
 
-    function hashCheckpointedBurn(
-        address pool_,
-        uint256 burnAmount_,
-        uint256 burnBlock_ // TODO: determine if we need to include the block number in the hash
-        // TODO: storage struct containing total pool interest
-    ) external pure returns (bytes32) {
-        return keccak256(abi.encodePacked(pool_, burnAmount_, burnBlock_));
-    }
-
     function getLastBurn(
         Checkpoints.History storage history_
     ) external view returns (uint256) {
