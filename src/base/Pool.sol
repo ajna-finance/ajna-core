@@ -308,7 +308,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     function kickWithDeposit(
-        uint256 amount_,
         uint256 index_
     ) external override {
         PoolState memory poolState = _accruePoolInterest();
@@ -320,7 +319,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             buckets,
             loans,
             poolState,
-            amount_,
             index_
         );
 

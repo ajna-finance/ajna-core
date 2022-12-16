@@ -294,7 +294,6 @@ library Auctions {
     /**
      *  @notice Called by lenders to kick loans using their deposits.
      *  @param  poolState_           Current state of the pool.
-     *  @param  amount_              The max amount of liquidity to be used by the lender from given deposit.
      *  @param  index_               The deposit index from where lender removes liquidity.
      *  @return kickResult_ The result of the kick action.
      */
@@ -304,7 +303,6 @@ library Auctions {
         mapping(uint256 => Bucket) storage buckets_,
         LoansState    storage loans_,
         PoolState memory poolState_,
-        uint256 amount_,
         uint256 index_
     ) external returns (
         KickResult memory kickResult_
@@ -321,7 +319,6 @@ library Auctions {
         vars.bucketRate = Buckets.getExchangeRate(bucket.collateral, bucket.lps, vars.bucketDeposit, vars.bucketPrice);
         vars.amountToDebitFromDeposit = Maths.rayToWad(Maths.rmul(vars.lenderLPs, vars.bucketRate));                // calculate amount to remove based on lender LPs in bucket
         if (vars.amountToDebitFromDeposit > vars.bucketDeposit) vars.amountToDebitFromDeposit = vars.bucketDeposit; // cap the amount to remove at bucket deposit
-        if (vars.amountToDebitFromDeposit > amount_)            vars.amountToDebitFromDeposit = amount_;            // cap the amount to remove at desired amount
 
         // revert if no amount that can be removed
         if (vars.amountToDebitFromDeposit == 0) revert InsufficientLiquidity();
