@@ -148,10 +148,6 @@ library Auctions {
      */
     error NoAuction();
     /**
-     *  @notice Actor is attempting to kick and remove with a max kick of 0.
-     */
-    error NoAuctionKicked();
-    /**
      *  @notice No pool reserves are claimable.
      */
     error NoReserves();

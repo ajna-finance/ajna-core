@@ -14,6 +14,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
     address internal _borrower5;
     address internal _lender1;
     address internal _lender2;
+    address internal _lender3;
 
     function setUp() external {
         _borrower1 = makeAddr("borrower1");
@@ -23,9 +24,11 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _borrower5 = makeAddr("borrower5");
         _lender1   = makeAddr("lender1");
         _lender2   = makeAddr("lender2");
+        _lender3   = makeAddr("lender3");
 
         _mintQuoteAndApproveTokens(_lender1, 150_000 * 1e18);
         _mintQuoteAndApproveTokens(_lender2, 150_000 * 1e18);
+        _mintQuoteAndApproveTokens(_lender3, 150_000 * 1e18);
 
         _mintCollateralAndApproveTokens(_borrower1,  1_000 * 1e18);
         _mintCollateralAndApproveTokens(_borrower2, 1_000 * 1e18);
@@ -161,7 +164,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         );
     }
     
-    function testKickWithDepositAmountHigherThanAvailable() external tearDown {
+    function testKickWithDepositAmountHigherThanAvailableDeposit() external tearDown {
 
         // Kick with deposit amount higher than deposit available (15000 vs 10000)
 
@@ -260,6 +263,25 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 thresholdPrice:    20.269471153846153855 * 1e18,
                 neutralPrice:      21.020192307692307702 * 1e18
             })
+        );
+    }
+
+    function testKickWithDepositReverts() external tearDown {
+        // assert lender cannot kick with a bucket without deposit
+        _assertKickWithInsufficientLiquidityRevert(
+            {
+                from:   _lender1,
+                amount: 15_000 * 1e18,
+                index:  2_503
+            }
+        );
+        // assert lender cannot kick a loan if the proposed LUP doesn't render borrower uncollateralized
+        _assertKickWithBadProposedLupRevert(
+            {
+                from:   _lender1,
+                amount: 1_000 * 1e18,
+                index:  2_500
+            }
         );
     }
 }
