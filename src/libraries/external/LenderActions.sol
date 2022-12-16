@@ -495,7 +495,7 @@ library LenderActions {
         }
 
         // update lender LPs balance
-        lender.lps -= lpAmount_;
+        lender.lps        -= lpAmount_;
         // update bucket LPs and collateral balance
         bucket.lps        -= Maths.min(bucketLPs, lpAmount_);
         bucket.collateral -= Maths.min(bucketCollateral, collateralAmount_);
