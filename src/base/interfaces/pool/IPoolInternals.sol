@@ -28,12 +28,6 @@ struct BucketTakeParams {
     uint256 index;          // bucket index, used by bucket take
 }
 
-struct KickAndRemoveParams {
-    uint256 poolT0DebtInAuction;
-    uint256 amount;
-    uint256 index;
-}
-
 struct TakeParams {
     address borrower;       // borrower address to take from
     uint256 collateral;     // borrower available collateral to take

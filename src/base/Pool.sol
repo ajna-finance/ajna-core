@@ -320,13 +320,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             buckets,
             loans,
             poolState,
-            KickAndRemoveParams(
-                {
-                    poolT0DebtInAuction: t0DebtInAuction,
-                    amount:              amount_,
-                    index:               index_
-                }
-            )
+            t0DebtInAuction,
+            amount_,
+            index_
         );
 
         poolState.accruedDebt += result.kickPenalty;

@@ -13,7 +13,6 @@ import {
     ReserveAuctionState,
     SettleParams,
     KickResult,
-    KickAndRemoveParams,
     BucketTakeParams,
     TakeParams,
     StartReserveAuctionParams
@@ -298,6 +297,10 @@ library Auctions {
 
     /**
      *  @notice Called by lenders to remove pool liquidity and kick loans.
+     *  @param  poolState_           Current state of the pool.
+     *  @param  poolT0DebtInAuction_ Total t0 debt in auction.
+     *  @param  amount_              The max amount of liquidity to be used by the lender from given deposit.
+     *  @param  index_               The deposit index from where lender removes liquidity.
      *  @return kickResult_ The result of the kick action.
      */
     function kickAndRemove(
@@ -306,15 +309,17 @@ library Auctions {
         mapping(uint256 => Bucket) storage buckets_,
         LoansState    storage loans_,
         PoolState memory poolState_,
-        KickAndRemoveParams memory params_
+        uint256 poolT0DebtInAuction_,
+        uint256 amount_,
+        uint256 index_
     ) external returns (
         KickResult memory kickResult_
     ) {
         KickAndRemoveLocalVars memory vars;
-        vars.bucketPrice   = _priceAt(params_.index);
-        vars.bucketDeposit = Deposits.valueAt(deposits_, params_.index);
+        vars.bucketPrice   = _priceAt(index_);
+        vars.bucketDeposit = Deposits.valueAt(deposits_, index_);
 
-        Bucket storage bucket = buckets_[params_.index];
+        Bucket storage bucket = buckets_[index_];
         Lender storage lender = bucket.lenders[msg.sender];
         if (bucket.bankruptcyTime < lender.depositTime) vars.lenderLPs = lender.lps;
 
@@ -322,7 +327,7 @@ library Auctions {
         vars.bucketRate = Buckets.getExchangeRate(bucket.collateral, bucket.lps, vars.bucketDeposit, vars.bucketPrice);
         vars.amountToRemoveFromDeposit = Maths.rayToWad(Maths.rmul(vars.lenderLPs, vars.bucketRate));                  // calculate amount to remove based on lender LPs in bucket
         if (vars.amountToRemoveFromDeposit > vars.bucketDeposit) vars.amountToRemoveFromDeposit = vars.bucketDeposit;  // cap the amount to remove at bucket deposit
-        if (vars.amountToRemoveFromDeposit > params_.amount)    vars.amountToRemoveFromDeposit = params_.amount;       // cap the amount to remove at desired amount
+        if (vars.amountToRemoveFromDeposit > amount_)            vars.amountToRemoveFromDeposit = amount_;       // cap the amount to remove at desired amount
 
         // revert if no amount that can be removed
         if (vars.amountToRemoveFromDeposit == 0) revert InsufficientLiquidity();
@@ -345,9 +350,9 @@ library Auctions {
         if (vars.amountToRemoveFromDeposit > kickResult_.amountToCoverBond) {
             // lender won't receive any amount if cumulative deposit above the bucket is lower than total t0 debt in auction or if htp is lower than the proposed LUP
             // only the amount to cover bond is removed from deposits
-            uint256 cumulativeDepositAboveBucket = Deposits.prefixSum(deposits_, params_.index + 1);
+            uint256 cumulativeDepositAboveBucket = Deposits.prefixSum(deposits_, index_ + 1);
             if (
-                cumulativeDepositAboveBucket < params_.poolT0DebtInAuction + kickResult_.kickedT0debt
+                cumulativeDepositAboveBucket < poolT0DebtInAuction_ + kickResult_.kickedT0debt
                 ||
                 _htp(loans_, poolState_.inflator) < kickResult_.lup
             ) {
@@ -370,9 +375,9 @@ library Auctions {
         lender.lps -= vars.redeemedLPs;
         bucket.lps -= vars.redeemedLPs;
         // remove amount from deposits
-        Deposits.remove(deposits_, params_.index, vars.amountToRemoveFromDeposit, vars.bucketDeposit);
+        Deposits.remove(deposits_, index_, vars.amountToRemoveFromDeposit, vars.bucketDeposit);
 
-        emit RemoveQuoteToken(msg.sender, params_.index, vars.amountToRemoveFromDeposit, vars.redeemedLPs, kickResult_.lup);
+        emit RemoveQuoteToken(msg.sender, index_, vars.amountToRemoveFromDeposit, vars.redeemedLPs, kickResult_.lup);
     }
 
     /**
