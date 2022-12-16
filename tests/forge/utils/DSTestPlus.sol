@@ -864,6 +864,16 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.kickWithDeposit(amount, index);
     }
 
+    function _assertKickPriceBelowProposedLupRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('PriceBelowLUP()'));
+        _pool.kickWithDeposit(amount, index);
+    }
+
     function _assertRemoveCollateralAuctionNotClearedRevert(
         address from,
         uint256 amount,

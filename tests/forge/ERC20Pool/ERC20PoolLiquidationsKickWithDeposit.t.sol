@@ -553,7 +553,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
 
     }
 
-    function testKickWithDepositAllBorrowersAndSettle() external {
+    function testKickWithDepositAllBorrowersAndSettle() external tearDown {
         // kick borrower 1
         _kickWithDeposit(
             {
@@ -958,6 +958,24 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 from:   _lender1,
                 amount: 1_000 * 1e18,
                 index:  2_500
+            }
+        );
+
+        // Lender 2 adds Quote token at a much lower price the tries to kick with deposit
+        _addLiquidity(
+            {
+                from:    _lender3,
+                amount:  150_000 * 1e18,
+                index:   7000,
+                lpAward: 150_000 * 1e27,
+                newLup:  3_844.432207828138682757 * 1e18
+            }
+        );
+        _assertKickPriceBelowProposedLupRevert(
+            {
+                from:   _lender3,
+                amount: 150_000 * 1e18,
+                index:  7000
             }
         );
     }
