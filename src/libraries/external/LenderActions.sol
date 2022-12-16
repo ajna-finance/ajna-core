@@ -453,7 +453,6 @@ library LenderActions {
         uint256 maxAmount_,
         uint256 index_
     ) internal returns (uint256 collateralAmount_, uint256 lpAmount_) {
-
         Bucket storage bucket = buckets_[index_];
         uint256 bucketCollateral = bucket.collateral;
         if (bucketCollateral == 0) revert InsufficientCollateral(); // revert if there's no collateral in bucket
@@ -476,14 +475,23 @@ library LenderActions {
         collateralAmount_ = Maths.min(maxAmount_, bucketCollateral);
 
         // determine how much LP would be required to remove the requested amount
-        uint256 requiredLPs = (collateralAmount_ * bucketPrice * 1e18 + exchangeRate / 2) / exchangeRate;
+        uint256 requiredLPs;
+        if (collateralAmount_ == bucketCollateral && bucketLPs == lenderLpBalance) {
+            requiredLPs = bucketLPs;
+        } else {
+            requiredLPs = (collateralAmount_ * bucketPrice * 1e18 + exchangeRate / 2) / exchangeRate;
+        }
 
         // limit withdrawal by the lender's LPB
         if (requiredLPs < lenderLpBalance) {
             lpAmount_ = requiredLPs;
         } else {
             lpAmount_ = lenderLpBalance;
-            collateralAmount_ = ((lpAmount_ * exchangeRate + 1e27 / 2) / 1e18 + bucketPrice / 2) / bucketPrice;
+            if (lpAmount_ == bucketLPs) {
+                collateralAmount_ = bucketCollateral;
+            } else {
+                collateralAmount_ = ((lpAmount_ * exchangeRate + 1e18 / 2) / 1e18 + bucketPrice / 2) / bucketPrice;
+            }
         }
 
         // update lender LPs balance
