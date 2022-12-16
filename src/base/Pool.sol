@@ -309,8 +309,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     function kickAndRemove(
         uint256 amount_,
-        uint256 index_,
-        uint256 maxKicks_
+        uint256 index_
     ) external override {
         PoolState memory poolState = _accruePoolInterest();
 
@@ -325,8 +324,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 {
                     poolT0DebtInAuction: t0DebtInAuction,
                     amount:              amount_,
-                    index:               index_,
-                    maxKicks:            maxKicks_
+                    index:               index_
                 }
             )
         );

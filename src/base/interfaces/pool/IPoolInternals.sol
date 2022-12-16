@@ -32,7 +32,6 @@ struct KickAndRemoveParams {
     uint256 poolT0DebtInAuction;
     uint256 amount;
     uint256 index;
-    uint256 maxKicks;
 }
 
 struct TakeParams {
