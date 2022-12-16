@@ -31,7 +31,7 @@ library Auctions {
         uint256 bucketDeposit;
         uint256 lenderLPs;
         uint256 bucketRate;
-        uint256 amountToRemoveFromDeposit;
+        uint256 amountToDebitFromDeposit;
         uint256 redeemedLPs;
     }
 
@@ -319,15 +319,17 @@ library Auctions {
 
         // calculate max amount that can be removed (constrained by lender LPs in bucket, bucket deposit and the amount lender wants to remove)
         vars.bucketRate = Buckets.getExchangeRate(bucket.collateral, bucket.lps, vars.bucketDeposit, vars.bucketPrice);
-        vars.amountToRemoveFromDeposit = Maths.rayToWad(Maths.rmul(vars.lenderLPs, vars.bucketRate));                  // calculate amount to remove based on lender LPs in bucket
-        if (vars.amountToRemoveFromDeposit > vars.bucketDeposit) vars.amountToRemoveFromDeposit = vars.bucketDeposit;  // cap the amount to remove at bucket deposit
-        if (vars.amountToRemoveFromDeposit > amount_)            vars.amountToRemoveFromDeposit = amount_;             // cap the amount to remove at desired amount
+        vars.amountToDebitFromDeposit = Maths.rayToWad(Maths.rmul(vars.lenderLPs, vars.bucketRate));                // calculate amount to remove based on lender LPs in bucket
+        if (vars.amountToDebitFromDeposit > vars.bucketDeposit) vars.amountToDebitFromDeposit = vars.bucketDeposit; // cap the amount to remove at bucket deposit
+        if (vars.amountToDebitFromDeposit > amount_)            vars.amountToDebitFromDeposit = amount_;            // cap the amount to remove at desired amount
 
         // revert if no amount that can be removed
-        if (vars.amountToRemoveFromDeposit == 0) revert InsufficientLiquidity();
+        if (vars.amountToDebitFromDeposit == 0) revert InsufficientLiquidity();
+
+        uint256 initialPoolDebt = poolState_.accruedDebt;
 
         // add amount to remove to pool debt in order to calculate proposed LUP
-        poolState_.accruedDebt += vars.amountToRemoveFromDeposit;
+        poolState_.accruedDebt += vars.amountToDebitFromDeposit;
         // kick top borrower
         kickResult_ = _kick(
             auctions_,
@@ -337,27 +339,27 @@ library Auctions {
             Loans.getMax(loans_).borrower
         );
 
-        // revert if the bucket price used to kick and remove is below proposed LUP
-        if (vars.bucketPrice < kickResult_.lup) revert PriceBelowLUP();
-
         // amount to remove from deposit covers entire bond amount
-        if (vars.amountToRemoveFromDeposit > kickResult_.amountToCoverBond) {
-            // TODO: we're recalculating the LUP here just for remove qt emit event, should we still do it or remove LUP from event?
-            kickResult_.lup = _lup(deposits_, poolState_.accruedDebt - vars.amountToRemoveFromDeposit + kickResult_.amountToCoverBond);
-            vars.amountToRemoveFromDeposit = kickResult_.amountToCoverBond;  // cap amount to remove from deposit at amount to cover bond
-            kickResult_.amountToCoverBond = 0;                               // entire bond is covered from deposit, no additional amount to be send by lender
+        if (vars.amountToDebitFromDeposit > kickResult_.amountToCoverBond) {
+            vars.amountToDebitFromDeposit = kickResult_.amountToCoverBond;                      // cap amount to remove from deposit at amount to cover bond
+
+            kickResult_.lup = _lup(deposits_, initialPoolDebt + kickResult_.amountToCoverBond); // recalculate the LUP with the amount to cover bond
+            kickResult_.amountToCoverBond = 0;                                                  // entire bond is covered from deposit, no additional amount to be send by lender
         } else {
-            kickResult_.amountToCoverBond -= vars.amountToRemoveFromDeposit; // lender should put additional amount to cover bond
+            kickResult_.amountToCoverBond -= vars.amountToDebitFromDeposit;                     // lender should send additional amount to cover bond
         }
 
+        // revert if the bucket price used to kick and remove is below new LUP
+        if (vars.bucketPrice < kickResult_.lup) revert PriceBelowLUP();
+
         // remove bucket LPs coresponding to the amount removed from deposits
-        vars.redeemedLPs = Maths.rdiv(Maths.wadToRay(vars.amountToRemoveFromDeposit), vars.bucketRate);
+        vars.redeemedLPs = Maths.rdiv(Maths.wadToRay(vars.amountToDebitFromDeposit), vars.bucketRate);
         lender.lps -= vars.redeemedLPs;
         bucket.lps -= vars.redeemedLPs;
         // remove amount from deposits
-        Deposits.remove(deposits_, index_, vars.amountToRemoveFromDeposit, vars.bucketDeposit);
+        Deposits.remove(deposits_, index_, vars.amountToDebitFromDeposit, vars.bucketDeposit);
 
-        emit RemoveQuoteToken(msg.sender, index_, vars.amountToRemoveFromDeposit, vars.redeemedLPs, kickResult_.lup);
+        emit RemoveQuoteToken(msg.sender, index_, vars.amountToDebitFromDeposit, vars.redeemedLPs, kickResult_.lup);
     }
 
     /**

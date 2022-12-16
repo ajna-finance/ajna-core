@@ -30,7 +30,8 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _mintQuoteAndApproveTokens(_lender2, 150_000 * 1e18);
         _mintQuoteAndApproveTokens(_lender3, 150_000 * 1e18);
 
-        _mintCollateralAndApproveTokens(_borrower1,  1_000 * 1e18);
+        _mintCollateralAndApproveTokens(_lender1,   1_000 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower1, 1_000 * 1e18);
         _mintCollateralAndApproveTokens(_borrower2, 1_000 * 1e18);
         _mintCollateralAndApproveTokens(_borrower3, 1_000 * 1e18);
         _mintCollateralAndApproveTokens(_borrower4, 1_000 * 1e18);
@@ -164,9 +165,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         );
     }
     
-    function testKickWithDepositAmountHigherThanAvailableDeposit() external {
-
-        // Kick with deposit amount higher than deposit available (15000 vs 10000)
+    function testKickWithDepositAmountLowerThanAvailableDeposit() external tearDown {
 
         uint256 snapshot = vm.snapshot();
 
@@ -174,7 +173,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         /*** Scenario 1 ***/
         /******************/
         /**
-            - kick with deposit amount higher than deposit available (15000 vs 10000)
+            - kick with deposit amount lower than deposit available (lender can redeem less LPs from bucket than deposit)
             - auction bond is covered entirely from lender deposit
          */
 
@@ -293,7 +292,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         /*** Scenario 2 ***/
         /******************/
         /**
-            - kick with deposit amount higher than deposit available (15000 vs 10000)
+            - kick with deposit amount lower than deposit available (lender can redeem less LPs from bucket than deposit)
             - bond auction is not covered entirely by removed deposit, difference to cover bond is sent by lender
          */
 
@@ -408,6 +407,150 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         );
 
         vm.revertTo(snapshot);
+
+    }
+
+    function testKickWithDepositAmountHigherThanAvailableDeposit() external {
+        uint256 snapshot = vm.snapshot();
+
+        /******************/
+        /*** Scenario 1 ***/
+        /******************/
+        /**
+            - kick with deposit amount higher than deposit available (lender can redeem more LPs from bucket than deposit)
+            - auction bond is covered entirely from lender deposit
+         */
+
+        // lender1 adds collateral to bucket to be entitled to higher deposit than available
+        _addCollateral(
+            {
+                from:    _lender1,
+                amount:  10 * 1e18,
+                index:   2500,
+                lpAward: 38636.54368867279344664 * 1e27
+            }
+        );
+        // assert lender and bucket LP balances pre kick
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       2500,
+                lpBalance:   88_636.54368867279344664 * 1e27,
+                depositTime: _startTime
+            }
+        );
+        _assertBucket(
+            {
+                index:        2500,
+                lpBalance:    98_636.54368867279344664 * 1e27,
+                collateral:   10 * 1e18,
+                deposit:      60_000 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+
+        _kickWithDeposit(
+            {
+                from:               _lender1,
+                amount:             90_000 * 1e18,
+                index:              2500,
+                borrower:           _borrower1,
+                debt:               20_269.471153846153855500 * 1e18,
+                collateral:         1_000 * 1e18,
+                bond:               6_005.769230769230772000 * 1e18,
+                removedFromDeposit: 6_005.769230769230772000 * 1e18,
+                transferAmount:     0,
+                lup:                3_844.432207828138682757 * 1e18
+            }
+        );
+
+        /******************************/
+        /*** Assert post-kick state ***/
+        /******************************/
+
+        _assertPool(
+            PoolParams({
+                htp:                  20.019230769230769240 * 1e18,
+                lup:                  3_844.432207828138682757 * 1e18,
+                poolSize:             104_994.230769230769228000 * 1e18,
+                pledgedCollateral:    5_000 * 1e18,
+                encumberedCollateral: 26.101746319376146305 * 1e18,
+                poolDebt:             100_346.394230769230815500 * 1e18,
+                actualUtilization:    0.955732457827353152 * 1e18,
+                targetUtilization:    1e18,
+                minDebtAmount:        2_508.659855769230770388 * 1e18,
+                loans:                4,
+                maxBorrower:          address(_borrower5),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+        // assert balances - no change, bond was covered from deposit
+        assertEq(_quote.balanceOf(address(_pool)), 11_000 * 1e18);
+        assertEq(_quote.balanceOf(_lender1),       49_000 * 1e18);
+        assertEq(_quote.balanceOf(_lender2),       140_000 * 1e18);
+        assertEq(_quote.balanceOf(_borrower1),     20_000 * 1e18);
+        assertEq(_quote.balanceOf(_borrower2),     20_000 * 1e18);
+        assertEq(_quote.balanceOf(_borrower3),     20_000 * 1e18);
+        assertEq(_quote.balanceOf(_borrower4),     20_000 * 1e18);
+        assertEq(_quote.balanceOf(_borrower5),     20_000 * 1e18);
+        // assert lenders LPs in bucket used
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       2500,
+                lpBalance:   82_630.77445790356267464 * 1e27, // reduced by amount used to cover auction bond
+                depositTime: _startTime
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender2,
+                index:       2500,
+                lpBalance:   10_000 * 1e27,
+                depositTime: _startTime
+            }
+        );
+        // assert bucket LPs
+        _assertBucket(
+            {
+                index:        2500,
+                lpBalance:    92_630.77445790356267464 * 1e27,  // reduced by amount used to cover auction bond
+                collateral:   10 * 1e18,
+                deposit:      53_994.230769230769228000 * 1e18, // reduced by amount used to cover auction bond
+                exchangeRate: 1 * 1e27
+            }
+        );
+        // assert lender1 as a kicker
+        _assertKicker(
+            {
+                kicker:    _lender1,
+                claimable: 0,
+                locked:    6_005.769230769230772000 * 1e18
+            }
+        );
+        // assert kicked auction
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower1,
+                active:            true,
+                kicker:            _lender1,
+                bondSize:          6_005.769230769230772000 * 1e18,
+                bondFactor:        0.3 * 1e18,
+                kickTime:          _startTime,
+                kickMomp:          3_863.654368867279344664 * 1e18,
+                totalBondEscrowed: 6_005.769230769230772000 * 1e18,
+                auctionPrice:      123_636.939803752939029248 * 1e18,
+                debtInAuction:     20_269.471153846153855500 * 1e18,
+                thresholdPrice:    20.269471153846153855 * 1e18,
+                neutralPrice:      21.020192307692307702 * 1e18
+            })
+        );
+
+        vm.revertTo(snapshot);
+
+        // TODO: add scenario when deposit cannot cover the entire bond amount so lender should send more funds
+
     }
 
     function testKickWithDepositReverts() external tearDown {
