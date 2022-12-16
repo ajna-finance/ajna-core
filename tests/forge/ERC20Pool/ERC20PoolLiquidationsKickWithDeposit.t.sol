@@ -164,7 +164,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         );
     }
     
-    function testKickWithDepositAmountHigherThanAvailableDeposit() external {
+    function testKickWithDepositAmountHigherThanAvailableDeposit() external tearDown {
 
         // Kick with deposit amount higher than deposit available (15000 vs 10000)
 
