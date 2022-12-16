@@ -292,20 +292,18 @@ library Auctions {
     }
 
     /**
-     *  @notice Called by lenders to remove pool liquidity and kick loans.
+     *  @notice Called by lenders to kick loans using their deposits.
      *  @param  poolState_           Current state of the pool.
-     *  @param  poolT0DebtInAuction_ Total t0 debt in auction.
      *  @param  amount_              The max amount of liquidity to be used by the lender from given deposit.
      *  @param  index_               The deposit index from where lender removes liquidity.
      *  @return kickResult_ The result of the kick action.
      */
-    function kickAndRemove(
+    function kickWithDeposit(
         AuctionsState storage auctions_,
         DepositsState storage deposits_,
         mapping(uint256 => Bucket) storage buckets_,
         LoansState    storage loans_,
         PoolState memory poolState_,
-        uint256 poolT0DebtInAuction_,
         uint256 amount_,
         uint256 index_
     ) external returns (
@@ -342,29 +340,14 @@ library Auctions {
         // revert if the bucket price used to kick and remove is below proposed LUP
         if (vars.bucketPrice < kickResult_.lup) revert PriceBelowLUP();
 
-        // amount to remove from deposit cover entire bond amount
+        // amount to remove from deposit covers entire bond amount
         if (vars.amountToRemoveFromDeposit > kickResult_.amountToCoverBond) {
-            // lender won't receive any amount if cumulative deposit above the bucket is lower than total t0 debt in auction or if htp is lower than the proposed LUP
-            // only the amount to cover bond is removed from deposits
-            uint256 cumulativeDepositAboveBucket = Deposits.prefixSum(deposits_, index_ - 1);
-            if (
-                cumulativeDepositAboveBucket < poolT0DebtInAuction_ + kickResult_.kickedT0debt
-                ||
-                _htp(loans_, poolState_.inflator) < kickResult_.lup
-            ) {
-                kickResult_.lup = _lup(deposits_, poolState_.accruedDebt - vars.amountToRemoveFromDeposit + kickResult_.amountToCoverBond); // TODO: this is used only to properly emit remove qt event, should we recalculate here or remove LUP from event?
-                vars.amountToRemoveFromDeposit = kickResult_.amountToCoverBond; // cap amount to remove from deposit at amount to cover bond
-            } else {
-                // lender will receive the amount removed from deposits minus amount to cover bond
-                kickResult_.amountToRemove = vars.amountToRemoveFromDeposit - kickResult_.amountToCoverBond;
-            }
-
-            kickResult_.amountToCoverBond = 0; // entire bond is covered by removed amount
-        }
-        // lender won't receive any amount if amount needed to cover auction bond is greater than the amount removed from deposits
-        // lender will have to send the difference to cover the bond
-        else {
-            kickResult_.amountToCoverBond -= vars.amountToRemoveFromDeposit;
+            // TODO: we're recalculating the LUP here just for remove qt emit event, should we still do it or remove LUP from event?
+            kickResult_.lup = _lup(deposits_, poolState_.accruedDebt - vars.amountToRemoveFromDeposit + kickResult_.amountToCoverBond);
+            vars.amountToRemoveFromDeposit = kickResult_.amountToCoverBond;  // cap amount to remove from deposit at amount to cover bond
+            kickResult_.amountToCoverBond = 0;                               // entire bond is covered from deposit, no additional amount to be send by lender
+        } else {
+            kickResult_.amountToCoverBond -= vars.amountToRemoveFromDeposit; // lender should put additional amount to cover bond
         }
 
         // remove bucket LPs coresponding to the amount removed from deposits

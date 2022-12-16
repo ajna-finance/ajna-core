@@ -214,8 +214,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 collateral,
         uint256 bond,
         uint256 removedFromDeposit,
-        uint256 transferToLender,
-        uint256 transferFromLender,
+        uint256 transferAmount,
         uint256 lup
     ) internal {
         changePrank(from);
@@ -223,9 +222,8 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         emit Kick(borrower, debt, collateral, bond);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(from, index, removedFromDeposit, removedFromDeposit * 1e9, lup);
-        if(transferToLender != 0)   _assertTokenTransferEvent(address(_pool), from, transferToLender);
-        if(transferFromLender != 0) _assertTokenTransferEvent(from, address(_pool), transferFromLender);
-        _pool.kickAndRemove(amount, index);
+        if(transferAmount != 0) _assertTokenTransferEvent(from, address(_pool), transferAmount);
+        _pool.kickWithDeposit(amount, index);
     }
 
     function _moveLiquidity(
@@ -853,7 +851,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('InsufficientLiquidity()'));
-        _pool.kickAndRemove(amount, index);
+        _pool.kickWithDeposit(amount, index);
     }
 
     function _assertKickWithBadProposedLupRevert(
@@ -863,7 +861,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('BorrowerOk()'));
-        _pool.kickAndRemove(amount, index);
+        _pool.kickWithDeposit(amount, index);
     }
 
     function _assertRemoveCollateralAuctionNotClearedRevert(

@@ -38,11 +38,11 @@ interface IPoolLiquidationActions {
     ) external;
 
     /**
-     *  @notice Called by lenders to remove liquidity from pool and liquidate the top loan.
-     *  @param  amount_ The amount of liquidity to be removed by the lender.
-     *  @param  index_  The deposit index from where lender removes liquidity.
+     *  @notice Called by lenders to liquidate the top loan using their deposits.
+     *  @param  amount_ The deposit amount to be used by the lender.
+     *  @param  index_  The deposit index to use for kicking the top loan.
      */
-    function kickAndRemove(
+    function kickWithDeposit(
         uint256 amount_,
         uint256 index_
     ) external;
