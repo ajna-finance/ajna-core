@@ -1057,8 +1057,4 @@ library Auctions {
         return _priceAt(Deposits.findIndexOfSum(deposits_, debt_));
     }
 
-    function _htp(LoansState storage loans_, uint256 inflator_) internal view returns (uint256) {
-        return Maths.wmul(Loans.getMax(loans_).thresholdPrice, inflator_);
-    }
-
 }
