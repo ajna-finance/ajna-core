@@ -213,17 +213,18 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 debt,
         uint256 collateral,
         uint256 bond,
-        uint256 removedAmount,
-        uint256 sentAmount,
+        uint256 removedFromDeposit,
+        uint256 transferToLender,
+        uint256 transferFromLender,
         uint256 lup
     ) internal {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit Kick(borrower, debt, collateral, bond);
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(from, index, amount, amount * 1e9, lup);
-        if(removedAmount != 0) _assertTokenTransferEvent(address(_pool), from, removedAmount);
-        if(sentAmount != 0) _assertTokenTransferEvent(from, address(_pool), sentAmount);
+        emit RemoveQuoteToken(from, index, removedFromDeposit, removedFromDeposit * 1e9, lup);
+        if(transferToLender != 0)   _assertTokenTransferEvent(address(_pool), from, transferToLender);
+        if(transferFromLender != 0) _assertTokenTransferEvent(from, address(_pool), transferFromLender);
         _pool.kickAndRemove(amount, index);
     }
 

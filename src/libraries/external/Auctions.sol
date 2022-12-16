@@ -346,12 +346,13 @@ library Auctions {
         if (vars.amountToRemoveFromDeposit > kickResult_.amountToCoverBond) {
             // lender won't receive any amount if cumulative deposit above the bucket is lower than total t0 debt in auction or if htp is lower than the proposed LUP
             // only the amount to cover bond is removed from deposits
-            uint256 cumulativeDepositAboveBucket = Deposits.prefixSum(deposits_, index_ + 1);
+            uint256 cumulativeDepositAboveBucket = Deposits.prefixSum(deposits_, index_ - 1);
             if (
                 cumulativeDepositAboveBucket < poolT0DebtInAuction_ + kickResult_.kickedT0debt
                 ||
                 _htp(loans_, poolState_.inflator) < kickResult_.lup
             ) {
+                kickResult_.lup = _lup(deposits_, poolState_.accruedDebt - vars.amountToRemoveFromDeposit + kickResult_.amountToCoverBond); // TODO: this is used only to properly emit remove qt event, should we recalculate here or remove LUP from event?
                 vars.amountToRemoveFromDeposit = kickResult_.amountToCoverBond; // cap amount to remove from deposit at amount to cover bond
             } else {
                 // lender will receive the amount removed from deposits minus amount to cover bond
