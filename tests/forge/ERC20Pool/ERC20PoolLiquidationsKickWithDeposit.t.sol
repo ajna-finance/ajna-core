@@ -410,7 +410,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
 
     }
 
-    function testKickWithDepositAmountHigherThanAvailableDeposit() external {
+    function testKickWithDepositAmountHigherThanAvailableDeposit() external tearDown {
         uint256 snapshot = vm.snapshot();
 
         /******************/
