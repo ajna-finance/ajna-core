@@ -151,7 +151,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(_borrower4),     20_000 * 1e18);
         assertEq(_quote.balanceOf(_borrower5),     20_000 * 1e18);
 
-        // assert lender cannot remove desired amount of 10000 quote tokens as LUP moves below HTP
+        // assert lender cannot remove desired amount of 15000 quote tokens as LUP moves below HTP
         _assertRemoveLiquidityLupBelowHtpRevert(
             {
                 from:   _lender1,
@@ -161,15 +161,21 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         );
     }
     
-    function testKickWithDepositAmountHigherThanAvailable() external {
+    function testKickWithDepositAmountHigherThanAvailable() external tearDown {
 
         // Kick with deposit amount higher than deposit available (15000 vs 10000)
 
         _kickWithDeposit(
             {
-                from:   _lender1,
-                amount: 15_000 * 1e18,
-                index:  2500
+                from:          _lender1,
+                amount:        15_000 * 1e18,
+                index:         2500,
+                borrower:      _borrower1,
+                debt:          20_269.471153846153855500 * 1e18,
+                collateral:    1_000 * 1e18,
+                bond:          6_005.769230769230772000 * 1e18,
+                removedAmount: 8_994.230769230769228000 * 1e18,
+                lup:           99836282890
             }
         );
 
