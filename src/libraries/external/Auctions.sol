@@ -327,7 +327,7 @@ library Auctions {
         vars.bucketRate = Buckets.getExchangeRate(bucket.collateral, bucket.lps, vars.bucketDeposit, vars.bucketPrice);
         vars.amountToRemoveFromDeposit = Maths.rayToWad(Maths.rmul(vars.lenderLPs, vars.bucketRate));                  // calculate amount to remove based on lender LPs in bucket
         if (vars.amountToRemoveFromDeposit > vars.bucketDeposit) vars.amountToRemoveFromDeposit = vars.bucketDeposit;  // cap the amount to remove at bucket deposit
-        if (vars.amountToRemoveFromDeposit > amount_)            vars.amountToRemoveFromDeposit = amount_;       // cap the amount to remove at desired amount
+        if (vars.amountToRemoveFromDeposit > amount_)            vars.amountToRemoveFromDeposit = amount_;             // cap the amount to remove at desired amount
 
         // revert if no amount that can be removed
         if (vars.amountToRemoveFromDeposit == 0) revert InsufficientLiquidity();

@@ -205,6 +205,18 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.kick(borrower);
     }
 
+    function _kickWithDeposit(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        // vm.expectEmit(true, true, false, true);
+        // emit Kick(borrower, debt, collateral, bond);
+        // if(transferAmount != 0) _assertTokenTransferEvent(from, address(_pool), transferAmount);
+        _pool.kickAndRemove(amount, index);
+    }
+
     function _moveLiquidity(
         address from,
         uint256 amount,
@@ -372,12 +384,12 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(auctionKickTime,          state_.kickTime);
         assertEq(auctionKickMomp,          state_.kickMomp);
         assertEq(auctionTotalBondEscrowed, state_.totalBondEscrowed);
-        assertEq(auctionDebtInAuction,     state_.debtInAuction);
-        assertEq(auctionNeutralPrice,      state_.neutralPrice);
-        assertEq(borrowerThresholdPrice,   state_.thresholdPrice);
         assertEq(Auctions._auctionPrice(
             auctionKickMomp,
             auctionKickTime),              state_.auctionPrice);
+        assertEq(auctionDebtInAuction,     state_.debtInAuction);
+        assertEq(auctionNeutralPrice,      state_.neutralPrice);
+        assertEq(borrowerThresholdPrice,   state_.thresholdPrice);
     }
 
     function _assertPool(PoolParams memory state_) internal {
