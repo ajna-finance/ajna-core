@@ -553,6 +553,396 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
 
     }
 
+    function testKickWithDepositAllBorrowersAndSettle() external {
+        // kick borrower 1
+        _kickWithDeposit(
+            {
+                from:               _lender1,
+                amount:             50_000 * 1e18,
+                index:              2500,
+                borrower:           _borrower1,
+                debt:               20_269.471153846153855500 * 1e18,
+                collateral:         1_000 * 1e18,
+                bond:               6_005.769230769230772000 * 1e18,
+                removedFromDeposit: 6_005.769230769230772000 * 1e18,
+                transferAmount:     0,
+                lup:                3_844.432207828138682757 * 1e18
+            }
+        );
+        // kick borrower 5
+        _kickWithDeposit(
+            {
+                from:               _lender1,
+                amount:             50_000 * 1e18,
+                index:              2500,
+                borrower:           _borrower5,
+                debt:               20_269.471153846153855500 * 1e18,
+                collateral:         1_000 * 1e18,
+                bond:               6_005.769230769230772000 * 1e18,
+                removedFromDeposit: 6_005.769230769230772000 * 1e18,
+                transferAmount:     0,
+                lup:                99836282890
+            }
+        );
+        // kick borrower 4
+        _kickWithDeposit(
+            {
+                from:               _lender1,
+                amount:             50_000 * 1e18,
+                index:              2500,
+                borrower:           _borrower4,
+                debt:               20_269.471153846153855500 * 1e18,
+                collateral:         1_000 * 1e18,
+                bond:               6_005.769230769230772000 * 1e18,
+                removedFromDeposit: 6_005.769230769230772000 * 1e18,
+                transferAmount:     0,
+                lup:                99836282890
+            }
+        );
+        // kick borrower 3
+        _kickWithDeposit(
+            {
+                from:               _lender1,
+                amount:             50_000 * 1e18,
+                index:              2500,
+                borrower:           _borrower3,
+                debt:               20_269.471153846153855500 * 1e18,
+                collateral:         1_000 * 1e18,
+                bond:               6_005.769230769230772000 * 1e18,
+                removedFromDeposit: 6_005.769230769230772000 * 1e18,
+                transferAmount:     0,
+                lup:                99836282890
+            }
+        );
+        // kick borrower 2
+        _kickWithDeposit(
+            {
+                from:               _lender1,
+                amount:             50_000 * 1e18,
+                index:              2500,
+                borrower:           _borrower2,
+                debt:               20_269.471153846153855500 * 1e18,
+                collateral:         1_000 * 1e18,
+                bond:               200.192307692307692400 * 1e18,
+                removedFromDeposit: 200.192307692307692400 * 1e18,
+                transferAmount:     0,
+                lup:                99836282890
+            }
+        );
+        // assert pool after kicking all borrowers
+        _assertPool(
+            PoolParams({
+                htp:                  0,
+                lup:                  99836282890,
+                poolSize:             86_776.730769230769219600 * 1e18,
+                pledgedCollateral:    5_000 * 1e18,
+                encumberedCollateral: 1015135508208.931167644556923668 * 1e18,
+                poolDebt:             101_347.355769230769277500 * 1e18,
+                actualUtilization:    1.167909356239154861 * 1e18,
+                targetUtilization:    1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+
+        // skip to make loans clearable
+        skip(80 hours);
+        // settle borrower 2
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower2,
+                active:            true,
+                kicker:            _lender1,
+                bondSize:          200.192307692307692400 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          _startTime,
+                kickMomp:          99836282890,
+                totalBondEscrowed: 24_223.269230769230780400 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     101_347.355769230769277500 * 1e18,
+                thresholdPrice:    20.278728733568272609 * 1e18,
+                neutralPrice:      21.020192307692307702 * 1e18
+            })
+        );
+        _settle(
+            {
+                from:        _lender1,
+                borrower:    _borrower2,
+                maxDepth:    1,
+                settledDebt: 20_269.471153846153855500 * 1e18
+            }
+        );
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower2,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 24_023.076923076923088000 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     81_114.914934273090436935 * 1e18,
+                thresholdPrice:    0,
+                neutralPrice:      0
+            })
+        );
+
+        // settle borrower 4
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower4,
+                active:            true,
+                kicker:            _lender1,
+                bondSize:          6_005.769230769230772000 * 1e18,
+                bondFactor:        0.3 * 1e18,
+                kickTime:          _startTime,
+                kickMomp:          3_863.654368867279344664 * 1e18,
+                totalBondEscrowed: 24_023.076923076923088000 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     81_114.914934273090436935 * 1e18,
+                thresholdPrice:    20.278728733568272609 * 1e18,
+                neutralPrice:      21.125293269230769068 * 1e18
+            })
+        );
+        _settle(
+            {
+                from:        _lender1,
+                borrower:    _borrower4,
+                maxDepth:    5,
+                settledDebt: 20_269.471153846153855500 * 1e18
+            }
+        );
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower4,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 18_017.307692307692316000 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     60_836.186200704817827702 * 1e18,
+                thresholdPrice:    0,
+                neutralPrice:      0
+            })
+        );
+
+        // settle borrower 1
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower1,
+                active:            true,
+                kicker:            _lender1,
+                bondSize:          6_005.769230769230772000 * 1e18,
+                bondFactor:        0.3 * 1e18,
+                kickTime:          _startTime,
+                kickMomp:          3_863.654368867279344664 * 1e18,
+                totalBondEscrowed: 18_017.307692307692316000 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     60_836.186200704817827702 * 1e18,
+                thresholdPrice:    20.278728733568272609 * 1e18,
+                neutralPrice:      21.020192307692307702 * 1e18
+            })
+        );
+        _settle(
+            {
+                from:        _lender1,
+                borrower:    _borrower1,
+                maxDepth:    5,
+                settledDebt: 20_269.471153846153855500 * 1e18
+            }
+        );
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower1,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 12_011.538461538461544000 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     40_557.457467136545218468 * 1e18,
+                thresholdPrice:    0,
+                neutralPrice:      0
+            })
+        );
+
+        // settle borrower 5
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower5,
+                active:            true,
+                kicker:            _lender1,
+                bondSize:          6_005.769230769230772000 * 1e18,
+                bondFactor:        0.3 * 1e18,
+                kickTime:          _startTime,
+                kickMomp:          3_863.654368867279344664 * 1e18,
+                totalBondEscrowed: 12_011.538461538461544000 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     40_557.457467136545218468 * 1e18,
+                thresholdPrice:    20.278728733568272609 * 1e18,
+                neutralPrice:      21.230919735576922742 * 1e18
+            })
+        );
+        _settle(
+            {
+                from:        _lender1,
+                borrower:    _borrower5,
+                maxDepth:    5,
+                settledDebt: 20_269.471153846153855500 * 1e18
+            }
+        );
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower5,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 6_005.769230769230772000 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     20_278.728733568272609234 * 1e18,
+                thresholdPrice:    0,
+                neutralPrice:      0
+            })
+        );
+
+        // settle borrower 3
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower3,
+                active:            true,
+                kicker:            _lender1,
+                bondSize:          6_005.769230769230772000 * 1e18,
+                bondFactor:        0.3 * 1e18,
+                kickTime:          _startTime,
+                kickMomp:          3_844.432207828138682757 * 1e18,
+                totalBondEscrowed: 6_005.769230769230772000 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     20_278.728733568272609234 * 1e18,
+                thresholdPrice:    20.278728733568272609 * 1e18,
+                neutralPrice:      21.125293269230769068 * 1e18
+            })
+        );
+        _settle(
+            {
+                from:        _lender1,
+                borrower:    _borrower3,
+                maxDepth:    5,
+                settledDebt: 20_269.471153846153855500 * 1e18
+            }
+        );
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower3,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    0,
+                neutralPrice:      0
+            })
+        );
+
+        // assert pool after settle
+        _assertPool(
+            PoolParams({
+                htp:                  0,
+                lup:                  MAX_PRICE,
+                poolSize:             0,
+                pledgedCollateral:    3_978.947001291952895479 * 1e18,
+                encumberedCollateral: 0,
+                poolDebt:             0,
+                actualUtilization:    0,
+                targetUtilization:    203333271.751119404110784864 * 1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                interestRate:         0.055 * 1e18,
+                interestRateUpdate:   _startTime + 80 hours
+            })
+        );
+        // assert lender1 after settle
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       2500,
+                lpBalance:   25_776.7307692307692196 * 1e27,
+                depositTime: _startTime
+            }
+        );
+        // assert lender1 as a kicker
+        _assertKicker(
+            {
+                kicker:    _lender1,
+                claimable: 24_223.269230769230780400 * 1e18,
+                locked:    0
+            }
+        );
+        // assert borrowers after settle
+        _assertBorrower(
+            {
+                borrower:                  _borrower1,
+                borrowerDebt:              0,
+                borrowerCollateral:        994.725169378126588636 * 1e18,
+                borrowert0Np:              21.020192307692307702 * 1e18,
+                borrowerCollateralization: 1 * 1e18
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              0,
+                borrowerCollateral:        994.751412316543869246 * 1e18,
+                borrowert0Np:              21.020192307692307702 * 1e18,
+                borrowerCollateralization: 1 * 1e18
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower3,
+                borrowerDebt:              0,
+                borrowerCollateral:        0, // last borrower settled
+                borrowert0Np:              21.125293269230769068 * 1e18,
+                borrowerCollateralization: 1 * 1e18
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower4,
+                borrowerDebt:              0,
+                borrowerCollateral:        994.745250219155848961 * 1e18,
+                borrowert0Np:              21.125293269230769068 * 1e18,
+                borrowerCollateralization: 1 * 1e18
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower5,
+                borrowerDebt:              0,
+                borrowerCollateral:        994.725169378126588636 * 1e18,
+                borrowert0Np:              21.230919735576922742 * 1e18,
+                borrowerCollateralization: 1 * 1e18
+            }
+        );
+    }
+
     function testKickWithDepositReverts() external tearDown {
         // assert lender cannot kick with a bucket without deposit
         _assertKickWithInsufficientLiquidityRevert(
