@@ -37,9 +37,18 @@ contract AjnaRewardsTest is DSTestPlus {
 
     uint256 constant BLOCKS_IN_DAY = 7200;
 
-    struct RewardsTestParams {
-        uint256[] depositIndexes;
+    struct MintAndMemorializeParams {
+        uint256[] indexes;
+        address minter;
+        uint256 mintAmount;
+        ERC20Pool pool;
+    }
+
+    struct TriggerReserveAcutionParams {
         uint256 borrowAmount;
+        uint256 collateralToPledge;
+        uint256 limitIndex;
+        ERC20Pool pool;
     }
 
     function setUp() external {
@@ -94,33 +103,33 @@ contract AjnaRewardsTest is DSTestPlus {
     // TODO: fuzz or randomize the inputs to above function
     // function _getIndexes()
     // function _getAmounts()    
-    function _mintAndMemorializePositionNFT(address minter_, ERC20Pool pool_, uint256[] memory indexes_) internal returns (uint256 tokenId_) {
-        changePrank(minter_);
+    function _mintAndMemorializePositionNFT(MintAndMemorializeParams memory params_) internal returns (uint256 tokenId_) {
+        changePrank(params_.minter);
 
-        Token collateral = Token(pool_.collateralAddress());
-        Token quote = Token(pool_.quoteTokenAddress());
+        Token collateral = Token(params_.pool.collateralAddress());
+        Token quote = Token(params_.pool.quoteTokenAddress());
 
-        // deal tokens
-        deal(address(collateral), minter_, 250_000 * 1e18);
-        deal(address(quote), minter_, 250_000 * 1e18);
+        // deal tokens to the minter
+        deal(address(collateral), params_.minter, 250_000 * 1e18);
+        deal(address(quote), params_.minter, 250_000 * 1e18);
 
         // approve tokens
-        collateral.approve(address(pool_), type(uint256).max);
-        quote.approve(address(pool_), type(uint256).max);
+        collateral.approve(address(params_.pool), type(uint256).max);
+        quote.approve(address(params_.pool), type(uint256).max);
 
-        IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(minter_, address(pool_));
+        IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(params_.minter, address(params_.pool));
         tokenId_ = _positionManager.mint(mintParams);
 
         // TODO: make mint amounts dynamic
-        for (uint256 i = 0; i < indexes_.length; i++) {
-            pool_.addQuoteToken(1000 * 1e18, indexes_[i]);
-            (uint256 lpBalance, ) = pool_.lenderInfo(indexes_[i], minter_);
-            pool_.approveLpOwnership(address(_positionManager), indexes_[i], lpBalance);
+        for (uint256 i = 0; i < params_.indexes.length; i++) {
+            params_.pool.addQuoteToken(params_.mintAmount, params_.indexes[i]);
+            (uint256 lpBalance, ) = params_.pool.lenderInfo(params_.indexes[i], params_.minter);
+            params_.pool.approveLpOwnership(address(_positionManager), params_.indexes[i], lpBalance);
         }
 
         // construct memorialize params struct
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId_, indexes_
+            tokenId_, params_.indexes
         );
 
         _positionManager.memorializePositions(memorializeParams);
@@ -193,20 +202,35 @@ contract AjnaRewardsTest is DSTestPlus {
         address testMinterOne = makeAddr("testMinterOne");
         address testMinterTwo = makeAddr("testMinterTwo");
 
+        // configure NFT position one
         uint256[] memory depositIndexes = new uint256[](5);
         depositIndexes[0] = 9;
         depositIndexes[1] = 1;
         depositIndexes[2] = 2;
         depositIndexes[3] = 3;
         depositIndexes[4] = 4;
-        uint256 tokenIdOne = _mintAndMemorializePositionNFT(testMinterOne, _poolOne, depositIndexes);
+        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+            indexes: depositIndexes,
+            minter: testMinterOne,
+            mintAmount: 1000 * 1e18,
+            pool: _poolOne
+        });
 
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+
+        // configure NFT position two
         depositIndexes = new uint256[](4);
         depositIndexes[0] = 5;
         depositIndexes[1] = 1;
         depositIndexes[2] = 3;
         depositIndexes[3] = 12;
-        uint256 tokenIdTwo = _mintAndMemorializePositionNFT(testMinterTwo, _poolTwo, depositIndexes);
+        mintMemorializeParams = MintAndMemorializeParams({
+            indexes: depositIndexes,
+            minter: testMinterTwo,
+            mintAmount: 1000 * 1e18,
+            pool: _poolTwo
+        });
+        uint256 tokenIdTwo = _mintAndMemorializePositionNFT(mintMemorializeParams);
 
         // check only owner of an NFT can deposit it into the rewards contract
         changePrank(testMinterTwo);
@@ -225,19 +249,22 @@ contract AjnaRewardsTest is DSTestPlus {
 
         address testMinterOne = makeAddr("testMinterOne");
 
-        // deposit NFTs into the rewards contract
+        // configure NFT position
         uint256[] memory depositIndexes = new uint256[](5);
-        // depositIndexes[0] = 2550;
-        // depositIndexes[1] = 2551;
-        // depositIndexes[2] = 2552;
-        // depositIndexes[3] = 2553;
-        // depositIndexes[4] = 2555;
         depositIndexes[0] = 9;
         depositIndexes[1] = 1;
         depositIndexes[2] = 2;
         depositIndexes[3] = 3;
         depositIndexes[4] = 4;
-        uint256 tokenIdOne = _mintAndMemorializePositionNFT(testMinterOne, _poolOne, depositIndexes);
+        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+            indexes: depositIndexes,
+            minter: testMinterOne,
+            mintAmount: 1000 * 1e18,
+            pool: _poolOne
+        });
+
+        // mint memorialize and deposit NFT
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
         _depositNFT(address(_poolOne), testMinterOne, tokenIdOne);
 
         // borrower takes actions providing reserves enabling reserve auctions
@@ -267,13 +294,6 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // assert rewards claimed is less than ajna tokens burned
         assertLt(_ajnaToken.balanceOf(testMinterOne), tokensToBurn);
-
-        // TODO: check interest accrued
-
-        // FIXME: this is failing as the block has yet to be mined
-        // rewards earned should be set to 0 post claim
-        // uint256 rewardsEarned = _ajnaRewards.calculateRewardsEarned(tokenIdOne);
-        // assertEq(rewardsEarned, 0);
     }
 
     function testClaimRewardsMultipleDepositsSameBucketsMultipleAuctions() external {
@@ -283,21 +303,35 @@ contract AjnaRewardsTest is DSTestPlus {
         address testMinterTwo   = makeAddr("testMinterTwo");
         address testMinterThree = makeAddr("testMinterThree");
 
-        // deposit NFTs into the rewards contract
+        // configure NFT position
         uint256[] memory depositIndexes = new uint256[](5);
         depositIndexes[0] = 9;
         depositIndexes[1] = 1;
         depositIndexes[2] = 2;
         depositIndexes[3] = 3;
         depositIndexes[4] = 4;
-        uint256 tokenIdOne = _mintAndMemorializePositionNFT(testMinterOne, _poolOne, depositIndexes);
+        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+            indexes: depositIndexes,
+            minter: testMinterOne,
+            mintAmount: 1000 * 1e18,
+            pool: _poolOne
+        });
+
+        // mint memorialize and deposit NFT
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
         _depositNFT(address(_poolOne), testMinterOne, tokenIdOne);
 
         // borrower takes actions providing reserves enabling reserve auctions
         uint256 auctionOneTokensToBurn = _triggerReserveAuctions(_poolOne);
 
         // second depositor deposits an NFT representing the same positions into the rewards contract
-        uint256 tokenIdTwo = _mintAndMemorializePositionNFT(testMinterTwo, _poolOne, depositIndexes);
+        mintMemorializeParams = MintAndMemorializeParams({
+            indexes: depositIndexes,
+            minter: testMinterTwo,
+            mintAmount: 1000 * 1e18,
+            pool: _poolOne
+        });
+        uint256 tokenIdTwo = _mintAndMemorializePositionNFT(mintMemorializeParams);
         _depositNFT(address(_poolOne), testMinterTwo, tokenIdTwo);
 
         // calculate rewards earned since exchange rates have been updated
@@ -310,7 +344,13 @@ contract AjnaRewardsTest is DSTestPlus {
         uint256 auctionTwoTokensToBurn = _triggerReserveAuctions(_poolOne);
 
         // third depositor deposits an NFT representing the same positions into the rewards contract
-        uint256 tokenIdThree = _mintAndMemorializePositionNFT(testMinterThree, _poolOne, depositIndexes);
+        mintMemorializeParams = MintAndMemorializeParams({
+            indexes: depositIndexes,
+            minter: testMinterThree,
+            mintAmount: 1000 * 1e18,
+            pool: _poolOne
+        });
+        uint256 tokenIdThree = _mintAndMemorializePositionNFT(mintMemorializeParams);
         _depositNFT(address(_poolOne), testMinterThree, tokenIdThree);
 
         // calculate rewards earned since exchange rates have been updated
@@ -347,20 +387,34 @@ contract AjnaRewardsTest is DSTestPlus {
         // TODO: test depositor 3
     }
 
+    function testClaimRewardsMultipleDepositsDifferentBucketsMultipleAuctions() external {
+
+        // TODO: implement this -> instead of using the same RewardsTestParams struct for each new depositor, use modified structs across depositors
+
+    }
+
     function testWithdrawToken() external {
         skip(10);
 
         address testMinterOne = makeAddr("testMinterOne");
         address nonOwner = makeAddr("nonOwner");
 
-        // deposit NFTs into the rewards contract
+        // configure NFT position
         uint256[] memory depositIndexes = new uint256[](5);
         depositIndexes[0] = 2550;
         depositIndexes[1] = 2551;
         depositIndexes[2] = 2552;
         depositIndexes[3] = 2553;
         depositIndexes[4] = 2555;
-        uint256 tokenIdOne = _mintAndMemorializePositionNFT(testMinterOne, _poolOne, depositIndexes);
+        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+            indexes: depositIndexes,
+            minter: testMinterOne,
+            mintAmount: 1000 * 1e18,
+            pool: _poolOne
+        });
+
+        // mint memorialize and deposit NFT
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
         _depositNFT(address(_poolOne), testMinterOne, tokenIdOne);
 
         // only owner should be able to withdraw the NFT
@@ -385,7 +439,51 @@ contract AjnaRewardsTest is DSTestPlus {
     }
 
     function testWithdrawAndClaimRewards() external {
-        // TODO: implement this test
+        skip(10);
+
+        address testMinterOne = makeAddr("testMinterOne");
+
+        // deposit NFTs into the rewards contract
+        uint256[] memory depositIndexes = new uint256[](5);
+        depositIndexes[0] = 2550;
+        depositIndexes[1] = 2551;
+        depositIndexes[2] = 2552;
+        depositIndexes[3] = 2553;
+        depositIndexes[4] = 2555;
+
+        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+            indexes: depositIndexes,
+            minter: testMinterOne,
+            mintAmount: 1000 * 1e18,
+            pool: _poolOne
+        });
+
+        TriggerReserveAcutionParams memory triggerReserveAuctionParams = TriggerReserveAcutionParams({
+            borrowAmount: 10 * 1e18,
+            collateralToPledge: 10 * 1e18,
+            limitIndex: 3,
+            pool: _poolOne
+        });
+
+        // TODO: use singleton test params as argument for each meta method
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        _depositNFT(address(_poolOne), testMinterOne, tokenIdOne);
+
+
+
+        // uint256 tokensToBurn = _triggerReserveAuctions(triggerReserveAuctionParams);
+
+
+
+
+    }
+
+    function testClaimRewardsFuzzy() external {
+        // TODO: implement this
+    }
+
+    function testMultiplePools() external {
+        // TODO: implement this
     }
 
 
