@@ -347,17 +347,17 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
            {
                lender:      _lender,
                index:       _i9_91,
-               lpBalance:   2_000.198343102933742890077232102 * 1e27,
+               lpBalance:   2_000.198343102933742890000000000 * 1e27,
                depositTime: _startTime + 250 days + 6 hours
            }
         );
         _assertBucket(
            {
                index:        _i9_91,
-               lpBalance:    2_000.198343102933742890077232102 * 1e27,
+               lpBalance:    2_000.198343102933742890000000000 * 1e27,
                collateral:   2 * 1e18,
                deposit:      1_980.369962975245152094 * 1e18,
-               exchangeRate: 1.000002994482624129000499950 * 1e27
+               exchangeRate: 1.000002994482624129000538562 * 1e27
            }
         );
 
@@ -466,7 +466,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
                 borrower:         _borrower,
                 index:            _i1505_26,
                 collateralArbed:  0.013412656817410703 * 1e18,
-                quoteTokenAmount: 20.189585809651701255 * 1e18,
+                quoteTokenAmount: 20.189585809651700719 * 1e18,
                 bondChange:       0.199398195043779403 * 1e18,
                 isReward:         false
             }
