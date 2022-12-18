@@ -706,7 +706,7 @@ library Auctions {
         uint256 momp = _priceAt(
             Deposits.findIndexOfSum(
                 deposits_,
-                Maths.wdiv(poolState_.accruedDebt, (loans_.loans.length - 1) * 1e18)
+                Maths.wdiv(poolState_.accruedDebt, Loans.noOfLoans(loans_) * 1e18)
             )
         );
         (uint256 bondFactor, uint256 bondSize) = _bondParams(
