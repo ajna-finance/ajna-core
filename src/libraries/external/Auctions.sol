@@ -362,20 +362,21 @@ library Auctions {
         // revert if the bucket price used to kick and remove is below new LUP
         if (vars.bucketPrice < kickResult_.lup) revert PriceBelowLUP();
 
-        // remove bucket LPs coresponding to the amount removed from deposits
+        // remove amount from deposits
         if (vars.amountToDebitFromDeposit == vars.bucketDeposit && vars.bucketCollateral == 0) {
             // In this case we are redeeming the entire bucket exactly, and need to ensure bucket LPs are set to 0
             vars.redeemedLPs = vars.bucketLPs;
             Deposits.unscaledRemove(deposits_, index_, vars.bucketUnscaledDeposit);
         } else {
             vars.redeemedLPs = Maths.wrdivr(vars.amountToDebitFromDeposit, vars.bucketRate);
-            // remove amount from deposits
             Deposits.unscaledRemove(
                 deposits_,
                 index_,
                 Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketScale)
             );
         }
+
+        // remove bucket LPs coresponding to the amount removed from deposits
         lender.lps -= vars.redeemedLPs;
         bucket.lps -= vars.redeemedLPs;
 

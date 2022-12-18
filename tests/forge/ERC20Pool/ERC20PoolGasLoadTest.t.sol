@@ -315,11 +315,15 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         _mintQuoteAndApproveTokens(kicker, type(uint256).max); // mint enough to cover bonds
 
         vm.startPrank(kicker);
-        _pool.addQuoteToken(100_000 * 1e18, 1_000);
+        _pool.addQuoteToken(500_000_000_000_000 * 1e18, 3_000);
         vm.warp(8640000000);
-        _pool.kickWithDeposit(1_000);
+        _pool.kickWithDeposit(3_000); // worst case scenario, pool interest accrues
         skip(80 hours);
         _pool.settle(_borrowers[LOANS_COUNT - 1], 10);
+        // kick remaining loans with deposit to get average gas cost
+        for (uint256 i; i < LOANS_COUNT - 1; i ++) {
+            _pool.kickWithDeposit(3_000);
+        }
         vm.stopPrank();
     }
 }
