@@ -28,6 +28,8 @@ library Auctions {
 
     struct KickAndRemoveLocalVars {
         uint256 bucketPrice;
+        uint256 bucketUnscaledDeposit;
+        uint256 bucketScale;
         uint256 bucketDeposit;
         uint256 lenderLPs;
         uint256 bucketRate;
@@ -308,9 +310,11 @@ library Auctions {
         KickResult memory kickResult_
     ) {
         KickAndRemoveLocalVars memory vars;
-        vars.bucketPrice   = _priceAt(index_);
-        vars.bucketDeposit = Deposits.valueAt(deposits_, index_);
-
+        vars.bucketPrice           = _priceAt(index_);
+        vars.bucketUnscaledDeposit = Deposits.unscaledValueAt(deposits_, index_);
+        vars.bucketScale           = Deposits.scale(deposits_, index_);
+        vars.bucketDeposit         = Maths.wmul(vars.bucketUnscaledDeposit, vars.bucketScale);
+        
         Bucket storage bucket = buckets_[index_];
         Lender storage lender = bucket.lenders[msg.sender];
         if (bucket.bankruptcyTime < lender.depositTime) vars.lenderLPs = lender.lps;
@@ -350,11 +354,18 @@ library Auctions {
         if (vars.bucketPrice < kickResult_.lup) revert PriceBelowLUP();
 
         // remove bucket LPs coresponding to the amount removed from deposits
-        vars.redeemedLPs = Maths.rdiv(Maths.wadToRay(vars.amountToDebitFromDeposit), vars.bucketRate);
+        if (vars.amountToDebitFromDeposit == vars.bucketDeposit && bucket.collateral == 0) {
+            // In this case we are redeeming the entire bucket exactly, and need to ensure bucket LPs are set to 0
+            vars.redeemedLPs = bucket.lps;
+            Deposits.unscaledRemove(deposits_, index_, vars.bucketUnscaledDeposit);
+        } else {
+            vars.redeemedLPs = Maths.rdiv(Maths.wadToRay(vars.amountToDebitFromDeposit), vars.bucketRate);
+            // remove amount from deposits
+            Deposits.unscaledRemove(deposits_, index_,
+                                    Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketScale));
+        }
         lender.lps -= vars.redeemedLPs;
         bucket.lps -= vars.redeemedLPs;
-        // remove amount from deposits
-        Deposits.remove(deposits_, index_, vars.amountToDebitFromDeposit, vars.bucketDeposit);
 
         emit RemoveQuoteToken(msg.sender, index_, vars.amountToDebitFromDeposit, vars.redeemedLPs, kickResult_.lup);
     }
