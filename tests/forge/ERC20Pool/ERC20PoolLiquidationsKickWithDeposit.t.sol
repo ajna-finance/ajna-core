@@ -939,7 +939,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         );
     }
 
-    function testKickWithDepositReverts() external {
+    function testKickWithDepositReverts() external tearDown {
         // assert lender cannot kick with a bucket without deposit
         _assertKickWithInsufficientLiquidityRevert(
             {

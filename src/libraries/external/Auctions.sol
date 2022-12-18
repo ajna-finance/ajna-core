@@ -326,7 +326,7 @@ library Auctions {
         // calculate max amount that can be removed (constrained by lender LPs in bucket, bucket deposit and the amount lender wants to remove)
         vars.bucketRate               = Buckets.getExchangeRate(
             vars.bucketCollateral,
-            bucket.lps,
+            vars.bucketLPs,
             vars.bucketDeposit,
             vars.bucketPrice
         );
