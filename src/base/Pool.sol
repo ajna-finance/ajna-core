@@ -19,6 +19,7 @@ import '../libraries/Loans.sol';
 import '../libraries/external/Auctions.sol';
 import '../libraries/external/LenderActions.sol';
 import '../libraries/external/PoolCommons.sol';
+import '@std/console.sol';
 
 abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     using Buckets   for mapping(uint256 => Bucket);
@@ -268,6 +269,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             deposits,
             params
         );
+
         // slither-disable-next-line incorrect-equality
         if (remainingt0Debt == 0) remainingCollateral = _settleAuction(params.borrower, remainingCollateral);
 
@@ -539,7 +541,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // update loan state, no need to stamp borrower t0Np in repay action
         uint256 loanId = loans.indices[borrowerAddress_];
-        loans.update(borrowerAddress_, borrower_, loanId);
+        if (Auctions.isActive(auctions, borrowerAddress_)) {
+            loans.borrowers[borrowerAddress_] = borrower_;
+        } else {
+            loans.update(borrowerAddress_, borrower_, loanId);
+        }
 
         t0poolDebt -= t0repaidDebt_;
         _updateInterestParams(poolState_, newLup_);

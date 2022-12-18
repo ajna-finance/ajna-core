@@ -173,9 +173,6 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal virtual {
         changePrank(from);
         _pool.bucketTake(borrower, true, index);
-
-        // Add for tearDown
-        bucketsUsed.add(index);
     }
 
     function _settle(
@@ -183,7 +180,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         address borrower,
         uint256 maxDepth,
         uint256 settledDebt
-    ) internal {
+    ) internal virtual {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit Settle(borrower, settledDebt);

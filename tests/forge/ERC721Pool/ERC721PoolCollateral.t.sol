@@ -574,7 +574,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 depositTime: _startTime
             }
         );
-
         // remove another token
         _removeCollateral(
             {
@@ -626,8 +625,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
     }
 
-    function testMergeOrRemoveCollateral() external {
-    // function testMergeOrRemoveCollateral() external tearDown { FIXME: this fails with FAIL. Reason: Arithmetic over/underflow]
+    function testMergeOrRemoveCollateral() external tearDown {
 
         // insert liquidity at 3060 - 3159, going down in price
         for (uint256 i = 3060; i < (3060 + 100); i++) {
@@ -663,13 +661,19 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             }
         );
 
+        // Borrower starts with possession of tokens 1 and 3
+        uint256[] memory borrowerTokenIds = new uint256[](2);
+        borrowerTokenIds[0] = 1;
+        borrowerTokenIds[1] = 3;
+
         _assertBorrower(
             {
                 borrower:                  _borrower,
                 borrowerDebt:              150.144230769230769300 * 1e18,
                 borrowerCollateral:        2.0 * 1e18,
                 borrowert0Np:              0.000000054499533442 * 1e18,
-                borrowerCollateralization: 0.000000001329871716 * 1e18
+                borrowerCollateralization: 0.000000001329871716 * 1e18,
+                tokenIds:                  borrowerTokenIds
             }
         );
 
@@ -703,7 +707,25 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             })
         );
 
-        // before depositTake: NFTs pledged by liquidated borrower are owned by the borrower in the pool
+        _assertPool(
+            PoolParams({
+                htp:                  0,
+                lup:                  99836282890,
+                poolSize:             150000000000000000000,
+                pledgedCollateral:    2 * 1e18,
+                encumberedCollateral: 1522719196315986466490930069,
+                poolDebt:             152022624445436270698,
+                actualUtilization:    1013484162969575138,
+                targetUtilization:    1 * 1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   block.timestamp - 110 minutes
+            })
+        );
+
+        // Before depositTake: NFTs pledged by liquidated borrower are owned by the borrower in the pool
         assertEq(_collateral.ownerOf(1), address(_pool));
         assertEq(_collateral.ownerOf(3), address(_pool));
 
@@ -758,16 +780,56 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             }
         );
 
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            true,
+                kicker:            address(_lender),
+                bondSize:          0.001426399776406493 * 1e18,
+                bondFactor:        0.010 * 1e18,
+                kickTime:          block.timestamp - 110 minutes,
+                kickMomp:          0.000000099836282890 * 1e18,
+                totalBondEscrowed: 0.001426399776406493 * 1e18,
+                auctionPrice:      0.000001792999017408 * 1e18,
+                debtInAuction:     2.021033653846153934 * 1e18,
+                thresholdPrice:    1.712713045976920685 * 1e18,
+                neutralPrice:      0.000000054499533442 * 1e18
+            })
+        );
+
+
+        _assertPool(
+            PoolParams({
+                htp:                  0,
+                lup:                  99836282890,
+                poolSize:             0,
+                pledgedCollateral:    1180018835375524990,
+                encumberedCollateral: 20_243_478.576550537016893538 * 1e18, // FIX ME
+                poolDebt:             2021033653846153934,
+                actualUtilization:    0,
+                targetUtilization:    1 * 1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   block.timestamp - 110 minutes
+            })
+        );
+
+        // Borrower's collateral is < 2 therefore they have possession of token ID 1
+        borrowerTokenIds = new uint256[](1);
+        borrowerTokenIds[0] = 1;
+
         _assertBorrower(
             {
                 borrower:                  _borrower,
                 borrowerDebt:              2.021033653846153934 * 1e18,
                 borrowerCollateral:        1.180018835375524990 * 1e18,
                 borrowert0Np:              0.000000054499533442 * 1e18,
-                borrowerCollateralization: 0.000000058291307540 * 1e18
+                borrowerCollateralization: 0.000000058291307540 * 1e18,
+                tokenIds:                  borrowerTokenIds
             }
         );
-
         
         // after depositTake but before take: NFTs pledged by liquidated borrower are owned by the pool
         assertEq(_collateral.ownerOf(1), address(_pool));
@@ -785,17 +847,21 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             }
         );
 
+        // Borrower has < 1 collateral, no NFTs in possession
+        borrowerTokenIds = new uint256[](0);
+
         _assertBorrower(
             {
                 borrower:                  _borrower,
                 borrowerDebt:              2.021031538073541583 * 1e18,
                 borrowerCollateral:        0.180018835375524990 * 1e18,
                 borrowert0Np:              0.000000054499533442 * 1e18,
-                borrowerCollateralization: 0.000000008892692190 * 1e18
+                borrowerCollateralization: 0.000000008892692190 * 1e18,
+                tokenIds:                  borrowerTokenIds
             }
         );
 
-        // after take: NFT, 1 pledged by liquidated borrower is owned by the taker
+        // after take: NFT with ID 1, pledged by liquidated borrower is owned by the taker
         assertEq(_collateral.ownerOf(1), address(_pool));
         assertEq(_collateral.ownerOf(3), _lender);
         
@@ -825,7 +891,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 borrowerDebt:              2.021841112542319702 * 1e18,
                 borrowerCollateral:        0.180018835375524990 * 1e18,
                 borrowert0Np:              0.000000054499533442 * 1e18,
-                borrowerCollateralization: 0.000000008889131427 * 1e18
+                borrowerCollateralization: 0.000000008889131427 * 1e18,
+                tokenIds:                  borrowerTokenIds
             }
         );
 
@@ -861,7 +928,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 borrowerDebt:              0,
                 borrowerCollateral:        0,
                 borrowert0Np:              0.000000054499533442 * 1e18,
-                borrowerCollateralization: 1.0 * 1e18
+                borrowerCollateralization: 1.0 * 1e18,
+                tokenIds:                  borrowerTokenIds
             }
         );
 
@@ -1105,6 +1173,43 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 lpBalance:   0.000000017972411374079252284 * 1e27, // Borrower LPs remain the same in the bucket
                 depositTime: _startTime + (110 + 4210) * 60
             }
+        );
+        _removeAllLiquidity(
+            {
+                from:     _lender,
+                amount:   0.999145193527190278 * 1e18,
+                index:    7388,
+                newLup:   1004968987606512354182109771,
+                lpRedeem: 0.999999982027779226307057063 * 1e27
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        7388,
+                lpBalance:    0.000000017972411374079252284 * 1e27, // LPs in bucket 7388 diminished when NFT merged and removed
+                collateral:   0,                                    // no collateral remaining as it was merged and removed
+                deposit:      0.000000017972601976 * 1e18,
+                exchangeRate: 1.000010605250279470678985191 * 1e27
+            }
+        );
+
+        _assertPool(
+            PoolParams({
+                htp:                  0,
+                lup:                  MAX_PRICE,
+                poolSize:             0.000000017972601976 * 1e18,
+                pledgedCollateral:    0,
+                encumberedCollateral: 0,
+                poolDebt:             0,
+                actualUtilization:    0,
+                targetUtilization:    1 * 1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   block.timestamp
+            })
         );
 
         assertEq(_collateral.balanceOf(_lender),        2);
