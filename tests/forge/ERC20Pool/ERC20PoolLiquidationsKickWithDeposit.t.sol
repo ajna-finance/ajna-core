@@ -786,7 +786,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 bondSize:          200.192307692307692400 * 1e18,
                 bondFactor:        0.01 * 1e18,
                 kickTime:          _startTime,
-                kickMomp:          99836282890,
+                kickMomp:          99836282890, // TODO: double check if that's accurate
                 totalBondEscrowed: 24_223.269230769230780400 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     101_347.355769230769277500 * 1e18,

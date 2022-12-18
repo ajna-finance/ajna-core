@@ -291,7 +291,8 @@ library Auctions {
             deposits_,
             loans_,
             poolState_,
-            borrowerAddress_
+            borrowerAddress_,
+            0
         );
     }
 
@@ -336,27 +337,24 @@ library Auctions {
         // revert if no amount that can be removed
         if (vars.amountToDebitFromDeposit == 0) revert InsufficientLiquidity();
 
-        uint256 initialPoolDebt = poolState_.accruedDebt;
-
-        // add amount to remove to pool debt in order to calculate proposed LUP
-        poolState_.accruedDebt += vars.amountToDebitFromDeposit;
         // kick top borrower
         kickResult_ = _kick(
             auctions_,
             deposits_,
             loans_,
             poolState_,
-            Loans.getMax(loans_).borrower
+            Loans.getMax(loans_).borrower,
+            vars.amountToDebitFromDeposit
         );
 
         // amount to remove from deposit covers entire bond amount
         if (vars.amountToDebitFromDeposit > kickResult_.amountToCoverBond) {
-            vars.amountToDebitFromDeposit = kickResult_.amountToCoverBond;                      // cap amount to remove from deposit at amount to cover bond
+            vars.amountToDebitFromDeposit = kickResult_.amountToCoverBond;                             // cap amount to remove from deposit at amount to cover bond
 
-            kickResult_.lup = _lup(deposits_, initialPoolDebt + kickResult_.amountToCoverBond); // recalculate the LUP with the amount to cover bond
-            kickResult_.amountToCoverBond = 0;                                                  // entire bond is covered from deposit, no additional amount to be send by lender
+            kickResult_.lup = _lup(deposits_, poolState_.accruedDebt + vars.amountToDebitFromDeposit); // recalculate the LUP with the amount to cover bond
+            kickResult_.amountToCoverBond = 0;                                                         // entire bond is covered from deposit, no additional amount to be send by lender
         } else {
-            kickResult_.amountToCoverBond -= vars.amountToDebitFromDeposit;                     // lender should send additional amount to cover bond
+            kickResult_.amountToCoverBond -= vars.amountToDebitFromDeposit;                            // lender should send additional amount to cover bond
         }
 
         // revert if the bucket price used to kick and remove is below new LUP
@@ -679,6 +677,7 @@ library Auctions {
      *  @notice Called to start borrower liquidation and to update the auctions queue.
      *  @param  poolState_       Current state of the pool.
      *  @param  borrowerAddress_ Address of the borrower to kick.
+     *  @param  additionalDebt_  Additional debt to be used when calculating proposed LUP.
      *  @return kickResult_      The result of the kick action.
      */
     function _kick(
@@ -686,7 +685,8 @@ library Auctions {
         DepositsState storage deposits_,
         LoansState    storage loans_,
         PoolState memory poolState_,
-        address borrowerAddress_
+        address borrowerAddress_,
+        uint256 additionalDebt_
     ) internal returns (
         KickResult memory kickResult_
     ) {
@@ -696,7 +696,8 @@ library Auctions {
         uint256 borrowerDebt = Maths.wmul(kickResult_.kickedT0debt, poolState_.inflator);
         uint256 borrowerCollateral = borrower.collateral;
 
-        kickResult_.lup = _lup(deposits_, poolState_.accruedDebt);
+        // add amount to remove to pool debt in order to calculate proposed LUP
+        kickResult_.lup = _lup(deposits_, poolState_.accruedDebt + additionalDebt_);
         if (
             _isCollateralized(borrowerDebt , borrowerCollateral, kickResult_.lup, poolState_.poolType)
         ) revert BorrowerOk();
