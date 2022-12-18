@@ -309,6 +309,19 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         }
         vm.stopPrank();
     }
+
+    function testLoadERC20PoolGasKickWithDepositAndSettleHighestTP() public {
+        address kicker = makeAddr("kicker");
+        _mintQuoteAndApproveTokens(kicker, type(uint256).max); // mint enough to cover bonds
+
+        vm.startPrank(kicker);
+        _pool.addQuoteToken(100_000 * 1e18, 1_000);
+        vm.warp(8640000000);
+        _pool.kickWithDeposit(1_000);
+        skip(80 hours);
+        _pool.settle(_borrowers[LOANS_COUNT - 1], 10);
+        vm.stopPrank();
+    }
 }
 
 contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
