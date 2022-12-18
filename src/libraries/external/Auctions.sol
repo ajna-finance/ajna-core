@@ -598,7 +598,7 @@ library Auctions {
                 auctions_.liquidations[borrowerAddress_].kickMomp,
                 auctions_.liquidations[borrowerAddress_].kickTime
             );
-            bucketIndex_ = _indexOf(auctionPrice);
+            bucketIndex_ = auctionPrice != 0 ? _indexOf(auctionPrice) : MAX_FENWICK_INDEX;
             lps_ = Buckets.addCollateral(
                 buckets_[bucketIndex_],
                 borrowerAddress_,

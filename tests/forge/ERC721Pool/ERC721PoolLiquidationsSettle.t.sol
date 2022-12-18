@@ -84,7 +84,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
 
     }
 
-    function testKickAndSettleSubsetPool() external { //TODO: uncomment when test pass tearDown {
+    function testKickAndSettleSubsetPool() external { //FIXME: tearDown fails with Arithmetic over/underflow
 
         /*****************************/
         /*** Assert pre-kick state ***/
@@ -181,6 +181,28 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
                 interestRateUpdate:   _startTime
             })
         );
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              5_069.682183392068152308 * 1e18,
+                borrowerCollateral:        2 * 1e18,
+                borrowert0Np:              2_627.524038461538462750 * 1e18,
+                borrowerCollateralization: 1.524219558190194493 * 1e18
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              5_069.682183392068152308 * 1e18,
+                borrowerCollateral:        3 * 1e18,
+                borrowert0Np:              1_751.682692307692308500 * 1e18,
+                borrowerCollateralization: 2.286329337285291739 * 1e18
+            }
+        );
+        assertEq(_quote.balanceOf(address(_pool)), 6_000 * 1e18);
+        assertEq(_quote.balanceOf(_lender),        104_000 * 1e18);
+        assertEq(_quote.balanceOf(_borrower),      5_100 * 1e18);
+        assertEq(_quote.balanceOf(_borrower2),     13_000 * 1e18);
 
         // settle borrower 2
         _assertAuction(
@@ -199,56 +221,105 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
                 neutralPrice:      1_751.682692307692308500 * 1e18
             })
         );
-        // TODO FIXME settle reverts with BucketPriceOutOfBounds
-        // _settle(
-        //     {
-        //         from:        _lender,
-        //         borrower:    _borrower2,
-        //         maxDepth:    1,
-        //         settledDebt: 5_067.367788461538463875 * 1e18
-        //     }
-        // );
-        // _assertAuction(
-        //     AuctionParams({
-        //         borrower:          _borrower2,
-        //         active:            false,
-        //         kicker:            address(0),
-        //         bondSize:          0,
-        //         bondFactor:        0,
-        //         kickTime:          0,
-        //         kickMomp:          0,
-        //         totalBondEscrowed: 24_023.076923076923088000 * 1e18,
-        //         auctionPrice:      0,
-        //         debtInAuction:     81_114.914934273090436935 * 1e18,
-        //         thresholdPrice:    0,
-        //         neutralPrice:      0
-        //     })
-        // );
+        _settle(
+            {
+                from:        _lender,
+                borrower:    _borrower2,
+                maxDepth:    1,
+                settledDebt: 5_067.367788461538463875 * 1e18
+            }
+        );
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower2,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 1_501.442307692307693000 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     5_069.682183392068152308 * 1e18,
+                thresholdPrice:    0,
+                neutralPrice:      0
+            })
+        );
 
-        // // settle borrower
-        // _settle(
-        //     {
-        //         from:        _lender,
-        //         borrower:    _borrower,
-        //         maxDepth:    1,
-        //         settledDebt: 20_269.471153846153855500 * 1e18
-        //     }
-        // );
-        // _assertAuction(
-        //     AuctionParams({
-        //         borrower:          _borrower,
-        //         active:            false,
-        //         kicker:            address(0),
-        //         bondSize:          0,
-        //         bondFactor:        0,
-        //         kickTime:          0,
-        //         kickMomp:          0,
-        //         totalBondEscrowed: 18_017.307692307692316000 * 1e18,
-        //         auctionPrice:      0,
-        //         debtInAuction:     60_836.186200704817827702 * 1e18,
-        //         thresholdPrice:    0,
-        //         neutralPrice:      0
-        //     })
-        // );
+        // settle borrower
+        _settle(
+            {
+                from:        _lender,
+                borrower:    _borrower,
+                maxDepth:    5,
+                settledDebt: 5_067.367788461538463875 * 1e18
+            }
+        );
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    0,
+                neutralPrice:      0
+            })
+        );
+
+        _assertPool(
+            PoolParams({
+                htp:                  0,
+                lup:                  MAX_PRICE,
+                poolSize:             2_861.960513526920122158 * 1e18,
+                pledgedCollateral:    1 * 1e18,
+                encumberedCollateral: 0,
+                poolDebt:             0,
+                actualUtilization:    0,
+                targetUtilization:    33853304875.166890128186624582 * 1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                interestRate:         0.055 * 1e18,
+                interestRateUpdate:   _startTime + 80 hours
+            })
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              0,
+                borrowerCollateral:        0,
+                borrowert0Np:              2_627.524038461538462750 * 1e18,
+                borrowerCollateralization: 1 * 1e18
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              0,
+                borrowerCollateral:        1 * 1e18,
+                borrowert0Np:              1_751.682692307692308500 * 1e18,
+                borrowerCollateralization: 1 * 1e18
+            }
+        );
+        // assert bucket used for settle
+        _assertBucket(
+            {
+                index:        MAX_FENWICK_INDEX,
+                lpBalance:    0.000000137345389190751978670 * 1e27,
+                collateral:   1.375706158271934624 * 1e18,
+                deposit:      0,
+                exchangeRate: 0.999999999999999999994537736 * 1e27
+            }
+        );
+        assertEq(_quote.balanceOf(address(_pool)), 6_000 * 1e18);
+        assertEq(_quote.balanceOf(_lender),        104_000 * 1e18);
+        assertEq(_quote.balanceOf(_borrower),      5_100 * 1e18);
+        assertEq(_quote.balanceOf(_borrower2),     13_000 * 1e18);
     }
 }
