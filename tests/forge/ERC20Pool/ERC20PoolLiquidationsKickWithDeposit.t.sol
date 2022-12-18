@@ -170,7 +170,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
 
         /**
             - kick with deposit amount lower than deposit available (lender can redeem less LPs from bucket than deposit)
-            - auction bond is covered entirely from lender deposit
+            - auction bond is covered entirely from lender deposit (bucket still contains LPs)
          */
 
         // assert bucket state pre kick with deposit
@@ -283,10 +283,10 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
 
     }
 
-    function testKickWithDepositAmountLowerThanAuctionBond() external {
+    function testKickWithDepositAmountLowerThanAuctionBond() external tearDown {
         /**
             - kick with deposit amount lower than deposit available (lender can redeem less LPs from bucket than deposit)
-            - bond auction is not covered entirely by removed deposit, difference to cover bond is sent by lender
+            - bond auction is not covered entirely by removed deposit (bucket still contains LPs), difference to cover bond is sent by lender
          */
 
         // borrower 1 draws more debt from pool, bond size will increase from 6_005.769230769230772000 in prev scenario to 8_708.365384615384619400
@@ -416,6 +416,137 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 debtInAuction:     29_390.733173076923090475 * 1e18,
                 thresholdPrice:    29.390733173076923090 * 1e18,
                 neutralPrice:      30.631675240384615148 * 1e18
+            })
+        );
+    }
+
+    function testKickWithDepositUsingAllLpsWithinBucket() external tearDown {
+        /**
+            - kick using entire deposit / LPs from bucket
+            - bond auction is not covered entirely by deposit, deposit is obliterated and difference to cover bond is sent by lender
+         */
+
+        // lender 2 adds liquidity in new top bucket 2499
+        _addLiquidity(
+            {
+                from:    _lender2,
+                amount:  10_000 * 1e18,
+                index:   2499,
+                lpAward: 10_000 * 1e27,
+                newLup:  3_844.432207828138682757 * 1e18
+            }
+        );
+        // borrower draws more debt consuming entire deposit from bucket 2499
+        _drawDebt(
+            {
+                from:               _borrower1,
+                borrower:           _borrower1,
+                amountToBorrow:     15_000 * 1e18,
+                limitIndex:         5000,
+                collateralToPledge: 0,
+                newLup:             3_844.432207828138682757 * 1e18
+            }
+        );
+
+        // assert balances
+        assertEq(_quote.balanceOf(address(_pool)), 6_000 * 1e18);
+        assertEq(_quote.balanceOf(_lender1),       49_000 * 1e18);
+        assertEq(_quote.balanceOf(_lender2),       130_000 * 1e18);
+        assertEq(_quote.balanceOf(_lender3),       150_000 * 1e18);
+        assertEq(_quote.balanceOf(_borrower1),     35_000 * 1e18);
+        assertEq(_quote.balanceOf(_borrower2),     20_000 * 1e18);
+        assertEq(_quote.balanceOf(_borrower3),     20_000 * 1e18);
+        assertEq(_quote.balanceOf(_borrower4),     20_000 * 1e18);
+        assertEq(_quote.balanceOf(_borrower5),     20_000 * 1e18);
+
+        // lender 2 kicks using all LPs from bucket 2499 (10_000) and sending additional quote tokens to cover auction bond (510.096153846153851000)
+        _kickWithDeposit(
+            {
+                from:               _lender2,
+                index:              2499,
+                borrower:           _borrower1,
+                debt:               35_471.574519230769247125 * 1e18,
+                collateral:         1_000 * 1e18,
+                bond:               10_510.096153846153851000 * 1e18,
+                removedFromDeposit: 10_000 * 1e18,
+                transferAmount:     510.096153846153851000 * 1e18,
+                lup:                99836282890
+            }
+        );
+
+        /******************************/
+        /*** Assert post-kick state ***/
+        /******************************/
+
+        _assertPool(
+            PoolParams({
+                htp:                  20.019230769230769240 * 1e18,
+                lup:                  99836282890,
+                poolSize:             111_000 * 1e18,
+                pledgedCollateral:    5_000 * 1e18,
+                encumberedCollateral: 1157379804729.565349777467060503 * 1e18,
+                poolDebt:             115_548.497596153846207125 * 1e18,
+                actualUtilization:    1.040977455821205822 * 1e18,
+                targetUtilization:    1e18,
+                minDebtAmount:        2_888.712439903846155178 * 1e18,
+                loans:                4,
+                maxBorrower:          address(_borrower5),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+        // assert balances
+        assertEq(_quote.balanceOf(address(_pool)), 6_510.096153846153851000 * 1e18);   // increased with the amount sent to cover bond
+        assertEq(_quote.balanceOf(_lender1),       49_000 * 1e18);
+        assertEq(_quote.balanceOf(_lender2),       129_489.903846153846149000 * 1e18); // decreased with the amount sent to cover bond
+        assertEq(_quote.balanceOf(_lender3),       150_000 * 1e18);
+        assertEq(_quote.balanceOf(_borrower1),     35_000 * 1e18);
+        assertEq(_quote.balanceOf(_borrower2),     20_000 * 1e18);
+        assertEq(_quote.balanceOf(_borrower3),     20_000 * 1e18);
+        assertEq(_quote.balanceOf(_borrower4),     20_000 * 1e18);
+        assertEq(_quote.balanceOf(_borrower5),     20_000 * 1e18);
+        // assert lenders LPs in bucket used
+        _assertLenderLpBalance(
+            {
+                lender:      _lender2,
+                index:       2499,
+                lpBalance:   0,
+                depositTime: _startTime
+            }
+        );
+        // assert bucket - LPs and deposit obliterated
+        _assertBucket(
+            {
+                index:        2499,
+                lpBalance:    0,
+                collateral:   0,
+                deposit:      0,
+                exchangeRate: 1 * 1e27
+            }
+        );
+        // assert lender2 as a kicker
+        _assertKicker(
+            {
+                kicker:    _lender2,
+                claimable: 0,
+                locked:    10_510.096153846153851000 * 1e18
+            }
+        );
+        // assert kicked auction
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower1,
+                active:            true,
+                kicker:            _lender2,
+                bondSize:          10_510.096153846153851000 * 1e18,
+                bondFactor:        0.3 * 1e18,
+                kickTime:          _startTime,
+                kickMomp:          3_863.654368867279344664 * 1e18,
+                totalBondEscrowed: 10_510.096153846153851000 * 1e18,
+                auctionPrice:      123_636.939803752939029248 * 1e18,
+                debtInAuction:     35_471.574519230769247125 * 1e18,
+                thresholdPrice:    35.471574519230769247 * 1e18,
+                neutralPrice:      37.154109537259614798 * 1e18
             })
         );
     }
