@@ -26,7 +26,9 @@ import '../../base/PoolHelper.sol';
 
 library Auctions {
 
-    struct KickAndRemoveLocalVars {
+    struct KickWithDepositLocalVars {
+        uint256 bucketLPs;
+        uint256 bucketCollateral;
         uint256 bucketPrice;
         uint256 bucketUnscaledDeposit;
         uint256 bucketScale;
@@ -309,18 +311,25 @@ library Auctions {
     ) external returns (
         KickResult memory kickResult_
     ) {
-        KickAndRemoveLocalVars memory vars;
-        vars.bucketPrice           = _priceAt(index_);
-        vars.bucketUnscaledDeposit = Deposits.unscaledValueAt(deposits_, index_);
-        vars.bucketScale           = Deposits.scale(deposits_, index_);
-        vars.bucketDeposit         = Maths.wmul(vars.bucketUnscaledDeposit, vars.bucketScale);
-        
         Bucket storage bucket = buckets_[index_];
         Lender storage lender = bucket.lenders[msg.sender];
+
+        KickWithDepositLocalVars memory vars;
         if (bucket.bankruptcyTime < lender.depositTime) vars.lenderLPs = lender.lps;
 
+        vars.bucketLPs                = bucket.lps;
+        vars.bucketCollateral         = bucket.collateral;
+        vars.bucketPrice              = _priceAt(index_);
+        vars.bucketUnscaledDeposit    = Deposits.unscaledValueAt(deposits_, index_);
+        vars.bucketScale              = Deposits.scale(deposits_, index_);
+        vars.bucketDeposit            = Maths.wmul(vars.bucketUnscaledDeposit, vars.bucketScale);
         // calculate max amount that can be removed (constrained by lender LPs in bucket, bucket deposit and the amount lender wants to remove)
-        vars.bucketRate = Buckets.getExchangeRate(bucket.collateral, bucket.lps, vars.bucketDeposit, vars.bucketPrice);
+        vars.bucketRate               = Buckets.getExchangeRate(
+            vars.bucketCollateral,
+            bucket.lps,
+            vars.bucketDeposit,
+            vars.bucketPrice
+        );
         vars.amountToDebitFromDeposit = Maths.rayToWad(Maths.rmul(vars.lenderLPs, vars.bucketRate));                // calculate amount to remove based on lender LPs in bucket
         if (vars.amountToDebitFromDeposit > vars.bucketDeposit) vars.amountToDebitFromDeposit = vars.bucketDeposit; // cap the amount to remove at bucket deposit
 
@@ -354,15 +363,18 @@ library Auctions {
         if (vars.bucketPrice < kickResult_.lup) revert PriceBelowLUP();
 
         // remove bucket LPs coresponding to the amount removed from deposits
-        if (vars.amountToDebitFromDeposit == vars.bucketDeposit && bucket.collateral == 0) {
+        if (vars.amountToDebitFromDeposit == vars.bucketDeposit && vars.bucketCollateral == 0) {
             // In this case we are redeeming the entire bucket exactly, and need to ensure bucket LPs are set to 0
-            vars.redeemedLPs = bucket.lps;
+            vars.redeemedLPs = vars.bucketLPs;
             Deposits.unscaledRemove(deposits_, index_, vars.bucketUnscaledDeposit);
         } else {
-            vars.redeemedLPs = Maths.rdiv(Maths.wadToRay(vars.amountToDebitFromDeposit), vars.bucketRate);
+            vars.redeemedLPs = Maths.wrdivr(vars.amountToDebitFromDeposit, vars.bucketRate);
             // remove amount from deposits
-            Deposits.unscaledRemove(deposits_, index_,
-                                    Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketScale));
+            Deposits.unscaledRemove(
+                deposits_,
+                index_,
+                Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketScale)
+            );
         }
         lender.lps -= vars.redeemedLPs;
         bucket.lps -= vars.redeemedLPs;
