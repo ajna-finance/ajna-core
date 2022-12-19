@@ -156,7 +156,7 @@ contract AjnaRewardsTest is DSTestPlus {
         collateral.approve(address(params_.pool), type(uint256).max);
         quote.approve(address(params_.pool), type(uint256).max);
 
-        uint256 collateralToPledge = _requiredCollateral(params_.borrowAmount, params_.limitIndex);
+        uint256 collateralToPledge = _requiredCollateral(params_.pool, params_.borrowAmount, params_.limitIndex);
         deal(address(collateral), borrower, collateralToPledge);
 
         // borrower drawsDebt from the pool
@@ -524,9 +524,12 @@ contract AjnaRewardsTest is DSTestPlus {
         }
     }
 
-    function _requiredCollateral(uint256 borrowAmount, uint256 indexPrice) internal view returns (uint256 requiredCollateral_) {
+    function _requiredCollateral(ERC20Pool pool_, uint256 borrowAmount, uint256 indexPrice) internal view returns (uint256 requiredCollateral_) {
         // calculate the required collateral based upon the borrow amount and index price
-        requiredCollateral_ = Maths.wdiv(borrowAmount, _poolUtils.indexToPrice(indexPrice)) + Maths.WAD;
+        (uint256 interestRate, ) = pool_.interestRateInfo();
+        uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient
+        uint256 expectedDebt = Maths.wmul(borrowAmount, _feeRate(newInterestRate) + Maths.WAD);
+        requiredCollateral_ = Maths.wdiv(expectedDebt, _poolUtils.indexToPrice(indexPrice)) + Maths.WAD;
     }
 
     function testClaimRewardsFuzzy(uint256 indexes, uint256 mintAmount) external {
@@ -546,17 +549,25 @@ contract AjnaRewardsTest is DSTestPlus {
             pool: _poolOne
         });
 
+        emit log_uint(_poolUtils.indexToPrice(_findLowestIndexPrice(depositIndexes)));
+
         uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
         _depositNFT(address(_poolOne), _minterOne, tokenIdOne);
 
+        uint256 limitIndex = _findLowestIndexPrice(depositIndexes);
         TriggerReserveAcutionParams memory triggerReserveAuctionParams = TriggerReserveAcutionParams({
             borrowAmount: Maths.wdiv(mintAmount, Maths.wad(3)),
-            collateralToPledge: 10_000 * 1e18, // TODO: dynamically calculate collateral to pledge
-            limitIndex: _findLowestIndexPrice(depositIndexes),
+            collateralToPledge: 10_000 * 1e18, // TODO: remove this as collateral to pledge is dynamically set in _triggerReserveAuctions
+            limitIndex: limitIndex,
             pool: _poolOne
         });
 
         uint256 tokensToBurn = _triggerReserveAuctions(triggerReserveAuctionParams);
+
+        // TODO: determine why the tests work some of the times and not others
+        // initial lender adds collateral to the bucket to ensure that the exchange rate updates
+        changePrank(_minterOne);
+        _poolOne.addCollateral(1 * 1e18, limitIndex);
 
         // claim rewards accrued since deposit
         changePrank(_minterOne);
