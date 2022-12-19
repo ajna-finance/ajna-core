@@ -48,6 +48,7 @@ library Loans {
         uint256 loanIndex_,
         bool inAuction_
     ) internal {
+        
         if (!inAuction_ ) {
             // update loan heap
             if (borrower_.t0debt != 0 && borrower_.collateral != 0) {

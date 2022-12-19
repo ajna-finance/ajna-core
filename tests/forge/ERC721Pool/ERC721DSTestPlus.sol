@@ -19,8 +19,6 @@ import 'src/base/PoolInfoUtils.sol';
 
 import 'src/libraries/Maths.sol';
 
-import '@std/console.sol';
-
 abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
 
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -30,7 +28,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     Token              internal _quote;
     ERC20              internal _ajnaToken;
 
-    //mapping(address => EnumerableSet.UintSet) borrowerPlegedNFTIds;
     mapping(uint256 => uint256) NFTidToIndex;
 
     mapping(address => EnumerableSet.UintSet) bidderDepositedIndex;
@@ -270,9 +267,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
 
         // Add for tearDown
         borrowers.add(borrower);
-        // for (uint256 i=0; i < tokenIds.length; i++) {
-        //     borrowerPlegedNFTIds[borrower].add(tokenIds[i]);
-        // }
     }
 
     function _drawDebtNoCheckLup(
@@ -307,9 +301,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
 
         // Add for tearDown
         borrowers.add(borrower);
-        // for (uint256 i=0; i < tokenIds.length; i++) {
-        //     borrowerPlegedNFTIds[borrower].add(tokenIds[i]);
-        // }
     }
 
     function _pledgeCollateral(
@@ -443,12 +434,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
             if (collateralToPull != 0) {
                 for (uint256 i = 0; i < tokenIds.length; i++) {
                     assertEq(_collateral.ownerOf(tokenIds[i]), address(from)); // token is owned by borrower after pull
-                }
- 
-                // Add for tearDown
-                // for (uint256 i = 0; i < tokenIds.length; i++) {
-                //     borrowerPlegedNFTIds[from].remove(tokenIds[i]);
-                // }
+                } 
             }
         }
         else {
@@ -477,10 +463,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         }
 
         super._take(from, borrower, maxCollateral, bondChange, givenAmount, collateralTaken, isReward);
-
-        // for (uint256 i = 0; i < tokenIds.length; i++) {
-        //     borrowerPlegedNFTIds[borrower].remove(tokenIds[i]); // for tearDown, remove NFTs taken from borrower pledged NFTs
-        // }
     }
  
     function _mergeOrRemoveCollateral(

@@ -448,11 +448,10 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 index:        _i9_72,
                 lpBalance:    11_000 * 1e27,
                 collateral:   0,
-                deposit:      8_775.731868287982080143 * 1e18, // Deposit reduced 8775721258848371782184
-                exchangeRate: 0.797793806207998370922090909 * 1e27 // Exchange rate decreased
+                deposit:      8_775.721258848371782184 * 1e18,
+                exchangeRate: 0.797792841713488343834909090 * 1e27
             }
         );
-        return;
 
         _assertBucket(
             {
@@ -466,17 +465,17 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  48.148343567549191135 * 1e18,
+                htp:                  9.910303333009215085 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             63_775.731868287982080143 * 1e18,
+                poolSize:             63_775.721258848371782184 * 1e18,
                 pledgedCollateral:    2 * 1e18,
                 encumberedCollateral: 2.010288427770370775 * 1e18,
                 poolDebt:             19.542608580405342754 * 1e18,
                 actualUtilization:    0,
                 targetUtilization:    2.100039410123873900 * 1e18,
-                minDebtAmount:        0.977130429020267138 * 1e18,
-                loans:                2,
-                maxBorrower:          address(_borrower2),
+                minDebtAmount:        1.954260858040534275 * 1e18,
+                loans:                1,
+                maxBorrower:          address(_borrower),
                 interestRate:         0.0405 * 1e18,
                 interestRateUpdate:   _startTime + 83 hours + 100 days
             })

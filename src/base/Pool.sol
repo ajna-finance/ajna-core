@@ -404,6 +404,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             pledgedCollateral += collateralToPledge_;
         }
 
+        bool inAuction = Auctions.isActive(auctions, borrowerAddress_);
+
         // borrow against pledged collateral
         // check both values to enable an intentional 0 borrow loan call to update borrower's loan state
         if (borrow_) {
@@ -450,7 +452,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             poolState.rate,
             newLup_
         );
-        loans.update(borrowerAddress_, borrower, loanId, false);
+
+        loans.update(borrowerAddress_, borrower, loanId, inAuction);
 
         // update pool global interest rate state
         _updateInterestParams(poolState, newLup_);
