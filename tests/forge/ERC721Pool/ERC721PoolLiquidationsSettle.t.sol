@@ -56,7 +56,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
         tokenIdsToAdd[1] = 3;
 
         // borrower deposits two NFTs into the subset pool and borrows
-        _drawDebtNoCheckLup(
+        _drawDebtNoLupCheck(
             {
                 from:           _borrower,
                 borrower:       _borrower,
@@ -72,7 +72,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
         tokenIdsToAdd[1] = 53;
         tokenIdsToAdd[2] = 73;
         // borrower deposits two NFTs into the subset pool and borrows
-        _drawDebtNoCheckLup(
+        _drawDebtNoLupCheck(
             {
                 from:           _borrower2,
                 borrower:       _borrower2,
@@ -81,10 +81,6 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
                 tokenIds:       tokenIdsToAdd
             }
         );
-
-    }
-
-    function testKickAndSettleSubsetPool() external { //FIXME: tearDown fails with Arithmetic over/underflow
 
         /*****************************/
         /*** Assert pre-kick state ***/
@@ -204,6 +200,10 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_borrower),      5_100 * 1e18);
         assertEq(_quote.balanceOf(_borrower2),     13_000 * 1e18);
 
+    }
+
+    function testKickAndSettleSubsetPoolFractionalCollateral() external { //FIXME: tearDown fails with Arithmetic over/underflow
+
         // settle borrower 2
         _assertAuction(
             AuctionParams({
@@ -321,5 +321,94 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_lender),        104_000 * 1e18);
         assertEq(_quote.balanceOf(_borrower),      5_100 * 1e18);
         assertEq(_quote.balanceOf(_borrower2),     13_000 * 1e18);
+    }
+
+    function testKickAndSettleSubsetPoolByRepay() external { //FIXME: tearDown fails with Arithmetic over/underflow
+        // before auction settle: NFTs pledged by auctioned borrower are owned by the pool
+        assertEq(_collateral.ownerOf(51), address(_pool));
+        assertEq(_collateral.ownerOf(53), address(_pool));
+        assertEq(_collateral.ownerOf(73), address(_pool));
+        // borrower 2 repays debt and settles auction
+        _repayDebtNoLupCheck(
+            {
+                from:             _borrower2,
+                borrower:         _borrower2,
+                amountToRepay:    6_000 * 1e18,
+                amountRepaid:     0,
+                collateralToPull: 3
+            }
+        );
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower2,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 1_501.442307692307693000 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     5_069.682183392068152308 * 1e18,
+                thresholdPrice:    0,
+                neutralPrice:      0
+            })
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              0,
+                borrowerCollateral:        0,
+                borrowert0Np:              0,
+                borrowerCollateralization: 1 * 1e18
+            }
+        );
+        // after settle: NFTs pledged by auctioned borrower are owned by the borrower
+        assertEq(_collateral.ownerOf(51), address(_borrower2));
+        assertEq(_collateral.ownerOf(53), address(_borrower2));
+        assertEq(_collateral.ownerOf(73), address(_borrower2));
+
+
+        // before auction settle: NFTs pledged by auctioned borrower are owned by the pool
+        assertEq(_collateral.ownerOf(1), address(_pool));
+        assertEq(_collateral.ownerOf(3), address(_pool));
+        // borrower repays debt and settles auction
+        _repayDebtNoLupCheck(
+            {
+                from:             _borrower,
+                borrower:         _borrower,
+                amountToRepay:    6_000 * 1e18,
+                amountRepaid:     0,
+                collateralToPull: 2
+            }
+        );
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    0,
+                neutralPrice:      0
+            })
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              0,
+                borrowerCollateral:        0,
+                borrowert0Np:              0,
+                borrowerCollateralization: 1 * 1e18
+            }
+        );
+        // after settle: NFTs pledged by auctioned borrower are owned by the borrower
+        assertEq(_collateral.ownerOf(1), address(_borrower));
+        assertEq(_collateral.ownerOf(3), address(_borrower));
     }
 }

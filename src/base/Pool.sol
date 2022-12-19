@@ -131,15 +131,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         ) = LenderActions.moveQuoteToken(
             buckets,
             deposits,
+            poolState,
             MoveQuoteParams(
                 {
                     maxAmountToMove: maxAmountToMove_,
                     fromIndex:       fromIndex_,
                     toIndex:         toIndex_,
-                    ptp:             _ptp(poolState.accruedDebt, poolState.collateral),
-                    htp:             _htp(poolState.inflator),
-                    poolDebt:        poolState.accruedDebt,
-                    rate:            poolState.rate
+                    thresholdPrice:  loans.getMax().thresholdPrice
                 }
             )
         );
@@ -164,14 +162,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         ) = LenderActions.removeQuoteToken(
             buckets,
             deposits,
+            poolState,
             RemoveQuoteParams(
                 {
-                    maxAmount: maxAmount_,
-                    index:     index_,
-                    ptp:       _ptp(poolState.accruedDebt, poolState.collateral),
-                    htp:       _htp(poolState.inflator),
-                    poolDebt:  poolState.accruedDebt,
-                    rate:      poolState.rate
+                    maxAmount:      maxAmount_,
+                    index:          index_,
+                    thresholdPrice: loans.getMax().thresholdPrice
                 }
             )
         );
@@ -341,13 +337,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             auctions,
             reserveAuction,
             StartReserveAuctionParams(
-            {
-                poolSize:    deposits.treeSum(),
-                poolDebt:    t0poolDebt,
-                poolBalance: _getPoolQuoteTokenBalance(),
-                inflator:    inflatorSnapshot
-            }
-        )
+                {
+                    poolSize:    deposits.treeSum(),
+                    poolDebt:    t0poolDebt,
+                    poolBalance: _getPoolQuoteTokenBalance(),
+                    inflator:    inflatorSnapshot
+                }
+            )
         );
         _transferQuoteToken(msg.sender, kickerAward);
     }
@@ -592,11 +588,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             if (poolState_.isNewInterestAccrued) {
                 poolState_.inflator = PoolCommons.accrueInterest(
                     deposits,
-                    poolState_.accruedDebt,
-                    poolState_.collateral,
+                    poolState_,
                     loans.getMax().thresholdPrice,
-                    poolState_.inflator,
-                    poolState_.rate,
                     elapsed
                 );
                 // After debt owed to lenders has accrued, calculate current debt owed by borrowers
@@ -633,14 +626,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         return IERC20(_getArgAddress(QUOTE_ADDRESS)).balanceOf(address(this));
     }
 
-    function _htp(uint256 inflator_) internal view returns (uint256) {
-        return Maths.wmul(loans.getMax().thresholdPrice, inflator_);
-    }
-
-    function _momp(uint256 debt_, uint256 noOfLoans_) internal view returns (uint256) {
-        return noOfLoans_ != 0 ? _priceAt(deposits.findIndexOfSum(Maths.wdiv(debt_, noOfLoans_ * 1e18))) : 0;
-    }
-
     function _t0Np (
         uint256 loanId_,
         uint256 t0Debt_,
@@ -654,7 +639,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             // if loan id is 0 then it is a new loan, count it as part of total loans in pool
             uint256 noOfLoans = loanId_ != 0 ? loans.loans.length - 1 : loans.loans.length;
             uint256 thresholdPrice = debt_ * Maths.WAD / collateral_;
-            uint256 curMomp = _momp(t0Debt_, noOfLoans);
+            noOfLoans += auctions.noOfAuctions;
+            uint256 curMomp = _priceAt(deposits.findIndexOfSum(Maths.wdiv(debt_, noOfLoans * 1e18)));
             t0Np_ = (1e18 + rate_) * curMomp * thresholdPrice / lup_ / inflator_;
         }
     }

@@ -632,13 +632,15 @@ contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
         uint256[] memory tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = _collateral.totalSupply();
 
-        _drawDebtNoCheckLup({
-            from: borrower,
-            borrower: borrower,
-            amountToBorrow: loanAmount,
-            limitIndex: 7_777,
-            tokenIds: tokenIdsToAdd
-        });
+        _drawDebtNoLupCheck(
+            {
+                from:           borrower,
+                borrower:       borrower,
+                amountToBorrow: loanAmount,
+                limitIndex:     7_777,
+                tokenIds:       tokenIdsToAdd
+            }
+        );
     }
 
     function testMinBorrowAmountCheck() external tearDown {
@@ -689,13 +691,15 @@ contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
         tokenIdsToAdd[1] = 3;
         tokenIdsToAdd[2] = 5;
 
-        _drawDebtNoCheckLup({
-            from: _borrower,
-            borrower: _borrower,
-            amountToBorrow: 1_000 * 1e18,
-            limitIndex: 3000,
-            tokenIds: tokenIdsToAdd
-        });
+        _drawDebtNoLupCheck(
+            {
+                from:           _borrower,
+                borrower:       _borrower,
+                amountToBorrow: 1_000 * 1e18,
+                limitIndex:     3000,
+                tokenIds:       tokenIdsToAdd
+            }
+        );
 
         (, uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
         assertEq(loansCount, 10);
