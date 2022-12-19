@@ -559,12 +559,6 @@ library Auctions {
         history_.push(value);
     }
 
-    function getLastBurn(
-        Checkpoints.History storage history_
-    ) external view returns (uint256) {
-        return history_.latest();
-    }
-
     // returns the burn event at the given block, or the closest burn event before the given block
     function getBurnAtBlock(
         Checkpoints.History storage history_,
@@ -573,7 +567,6 @@ library Auctions {
         return history_.getAtBlock(blockNumber_);
     }
 
-    // TODO: delete this in favor of `getLastBurn() + 1`
     function getNewBurnEventId(
         Checkpoints.History storage history_
     ) external view returns (uint256) {
