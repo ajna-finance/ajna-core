@@ -163,7 +163,7 @@ library Auctions {
             uint256 price           = _priceAt(index);
             uint256 collateralUsed;
 
-            {
+            if (unscaledDeposit != 0) {
                 uint256 debtToSettle      = Maths.wmul(params_.t0debt, params_.inflator);   // current debt to be settled
                 uint256 maxSettleableDebt = Maths.wmul(params_.collateral, price);          // max debt that can be settled with existing collateral
                 uint256 scaledDeposit     = Maths.wmul(depositScale, unscaledDeposit);
@@ -180,11 +180,21 @@ library Auctions {
                     params_.t0debt     -= Maths.wdiv(maxSettleableDebt, params_.inflator);
                     collateralUsed     = params_.collateral;
                 }
-            }
 
-            params_.collateral         -= collateralUsed;                // move settled collateral from loan into bucket
-            buckets_[index].collateral += collateralUsed;
-            Deposits.unscaledRemove(deposits_, index, unscaledDeposit); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
+                params_.collateral         -= collateralUsed;                // move settled collateral from loan into bucket
+                buckets_[index].collateral += collateralUsed;
+                Deposits.unscaledRemove(deposits_, index, unscaledDeposit); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
+            } else {
+                // Deposits in the tree is zero, insert entire collateral into lowest bucket 7388
+                Buckets.addCollateral(
+                    buckets_[index],
+                    params_.borrower,
+                    0,  // zero deposit in bucket
+                    params_.collateral,
+                    price
+                );
+                params_.collateral = 0; // entire collateral added into bucket
+            }
 
             --params_.bucketDepth;
         }

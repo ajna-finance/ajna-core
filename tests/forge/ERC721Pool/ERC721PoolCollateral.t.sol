@@ -854,7 +854,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 settledDebt: 2.021010389642603383 * 1e18
             }
         );
-        return;
+
         _assertBorrower(
             {
                 borrower:                  _borrower,
