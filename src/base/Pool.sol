@@ -640,10 +640,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             uint256 noOfLoans = loanId_ != 0 ? loans.loans.length - 1 : loans.loans.length;
             uint256 thresholdPrice = debt_ * Maths.WAD / collateral_;
             noOfLoans += auctions.noOfAuctions;
-            if (noOfLoans != 0) {
-                uint256 curMomp = _priceAt(deposits.findIndexOfSum(Maths.wdiv(debt_, noOfLoans * 1e18)));
-                t0Np_ = (1e18 + rate_) * curMomp * thresholdPrice / lup_ / inflator_;
-            }
+            uint256 curMomp = _priceAt(deposits.findIndexOfSum(Maths.wdiv(debt_, noOfLoans * 1e18)));
+            t0Np_ = (1e18 + rate_) * curMomp * thresholdPrice / lup_ / inflator_;
         }
     }
 
