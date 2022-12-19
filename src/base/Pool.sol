@@ -19,7 +19,6 @@ import '../libraries/Loans.sol';
 import '../libraries/external/Auctions.sol';
 import '../libraries/external/LenderActions.sol';
 import '../libraries/external/PoolCommons.sol';
-import '@std/console.sol';
 
 abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     using Buckets   for mapping(uint256 => Bucket);

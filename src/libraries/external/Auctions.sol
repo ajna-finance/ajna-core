@@ -195,7 +195,6 @@ library Auctions {
             }
 
             --params_.bucketDepth;
-
         }
 
         // if there's still debt and no collateral

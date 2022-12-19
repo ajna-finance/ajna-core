@@ -148,8 +148,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
     }
     
-    // FIXME: Removed tearDown because of borrower2 being left in a state post auction of no debt or collateral, so not trigger repay or pull and no way of removing the loan from the loan book.
-    function testSettleOnAuctionKicked72HoursAgoAndPartiallyTaken() external {
+    function testSettleOnAuctionKicked72HoursAgoAndPartiallyTaken() external tearDown {
         // Borrower2 borrows
         _borrow(
             {

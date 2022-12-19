@@ -11,8 +11,6 @@ import '../Loans.sol';
 
 import '../../base/PoolHelper.sol';
 
-import '@std/console.sol';
-
 /**
     @notice External library containing logic for common pool functionality:
             - interest rate accrual and interest rate params update

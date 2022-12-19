@@ -5,7 +5,6 @@ pragma solidity 0.8.14;
 import { Borrower, LoansState, Loan } from '../base/interfaces/IPool.sol';
 
 import './Maths.sol';
-import '@std/console.sol';
 
 library Loans {
 
@@ -48,7 +47,7 @@ library Loans {
         uint256 loanIndex_,
         bool inAuction_
     ) internal {
-        
+
         if (!inAuction_ ) {
             // update loan heap
             if (borrower_.t0debt != 0 && borrower_.collateral != 0) {

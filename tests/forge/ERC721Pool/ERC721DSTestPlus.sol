@@ -39,24 +39,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     /*** Utilities ***/
     /*****************/
 
-    function _settle(
-        address from,
-        address borrower,
-        uint256 maxDepth,
-        uint256 settledDebt
-    ) internal override {
-        changePrank(from);
-        vm.expectEmit(true, true, false, true);
-        emit Settle(borrower, settledDebt);
-        _pool.settle(borrower, maxDepth);
-
-        // Add for tearDown
-        // FIXME: should pass 7388 here?
-        lenders.add(borrower);
-        lendersDepositedIndex[borrower].add(7388);
-        bucketsUsed.add(7388);
-    }
-
     function repayDebt(
         address borrower
     ) internal {
@@ -389,11 +371,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                 for (uint256 i = 0; i < tokenIds.length; i++) {
                     assertEq(_collateral.ownerOf(tokenIds[i]), address(from)); // token is owned by borrower after pull
                 }
-
-                // Add for tearDown
-                // for (uint256 i = 0; i < tokenIds.length; i++) {
-                //     borrowerPlegedNFTIds[from].remove(tokenIds[i]);
-                // }
             }
         }
         else {

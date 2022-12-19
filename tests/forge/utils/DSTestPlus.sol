@@ -180,11 +180,17 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         address borrower,
         uint256 maxDepth,
         uint256 settledDebt
-    ) internal virtual {
+    ) internal {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit Settle(borrower, settledDebt);
         _pool.settle(borrower, maxDepth);
+
+        // Added for tearDown
+        // Borrowers may receive LP in 7388 during settle if 0 deposit in book
+        lenders.add(borrower);
+        lendersDepositedIndex[borrower].add(7388);
+        bucketsUsed.add(7388);
     }
 
     function _kick(
