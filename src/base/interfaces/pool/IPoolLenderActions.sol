@@ -10,12 +10,11 @@ interface IPoolLenderActions {
      *  @notice Called by lenders to add an amount of credit at a specified price bucket.
      *  @param  amount    The amount of quote token to be added by a lender.
      *  @param  index     The index of the bucket to which the quote tokens will be added.
-     *  @return lpbChange The amount of LP Tokens changed for the added quote tokens.
      */
     function addQuoteToken(
         uint256 amount,
         uint256 index
-    ) external returns (uint256 lpbChange);
+    ) external;
 
     /**
      *  @notice Called by lenders to approve transfer of LP tokens to a new owner.
@@ -49,24 +48,22 @@ interface IPoolLenderActions {
      *  @param  maxAmount        The amount of unencumbered collateral (or the number of NFT tokens) to claim.
      *  @param  index            The bucket index from which unencumbered collateral will be removed.
      *  @return collateralAmount The amount of collateral removed.
-     *  @return lpAmount         The amount of LP used for removing collateral amount.
      */
     function removeCollateral(
         uint256 maxAmount,
         uint256 index
-    ) external returns (uint256 collateralAmount, uint256 lpAmount);
+    ) external returns (uint256 collateralAmount);
 
     /**
      *  @notice Called by lenders to remove an amount of credit at a specified price bucket.
      *  @param  maxAmount        The max amount of quote token to be removed by a lender.
      *  @param  index            The bucket index from which quote tokens will be removed.
      *  @return quoteTokenAmount The amount of quote token removed.
-     *  @return lpAmount         The amount of LP used for removing quote tokens amount.
      */
     function removeQuoteToken(
         uint256 maxAmount,
         uint256 index
-    ) external returns (uint256 quoteTokenAmount, uint256 lpAmount);
+    ) external returns (uint256 quoteTokenAmount);
 
     /**
      *  @notice Called by lenders to transfers their LP tokens to a different address.

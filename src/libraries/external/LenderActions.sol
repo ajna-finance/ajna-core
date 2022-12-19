@@ -247,7 +247,7 @@ library LenderActions {
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
         RemoveQuoteParams calldata params_
-    ) external returns (uint256 removedAmount_, uint256 redeemedLPs_, uint256 lup_) {
+    ) external returns (uint256 removedAmount_, uint256 lup_) {
         uint256 unscaledDeposit = Deposits.unscaledValueAt(deposits_, params_.index);
 
         if (unscaledDeposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
@@ -263,7 +263,8 @@ library LenderActions {
 
         uint256 price = _priceAt(params_.index);
         uint256 unscaledRemoveAmount;
-        (unscaledRemoveAmount, redeemedLPs_) = _getUnscaledConstrainedDeposit(
+        uint256 redeemedLPs;
+        (unscaledRemoveAmount, redeemedLPs) = _getUnscaledConstrainedDeposit(
             unscaledDeposit,
             params_.maxAmount,
             lenderLPs,
@@ -289,10 +290,10 @@ library LenderActions {
         if (params_.htp > lup_) revert LUPBelowHTP();
 
         // update lender and bucket LPs balances
-        lender.lps -= redeemedLPs_;
-        bucket.lps -= redeemedLPs_;
+        lender.lps -= redeemedLPs;
+        bucket.lps -= redeemedLPs;
 
-        emit RemoveQuoteToken(msg.sender, params_.index, removedAmount_, redeemedLPs_, lup_);
+        emit RemoveQuoteToken(msg.sender, params_.index, removedAmount_, redeemedLPs, lup_);
     }
 
     function removeCollateral(

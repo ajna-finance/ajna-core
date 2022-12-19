@@ -95,7 +95,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
             uint256 lpsAsCollateral = _poolUtils.lpsToCollateral(address(_pool), lenderLpBalance, bucketIndex);
 
             // Deposit additional quote token to redeem for all NFTs
-            uint256 lpsRedeemed;
             if (bucketCollateral != 0) {
                 if (lpsAsCollateral % 1e18 != 0) {
                     uint256 depositRequired;
@@ -116,11 +115,11 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
 
                 // First redeem LP for collateral
                 uint256 noOfNftsToRemove = Maths.min(Maths.wadToIntRoundingDown(lpsAsCollateral), noOfBucketNftsRedeemable);
-                (, lpsRedeemed) = _pool.removeCollateral(noOfNftsToRemove, bucketIndex);
+                _pool.removeCollateral(noOfNftsToRemove, bucketIndex);
             }
 
             // Then redeem LP for quote token
-            (, lpsRedeemed) = _pool.removeQuoteToken(type(uint256).max, bucketIndex);
+            _pool.removeQuoteToken(type(uint256).max, bucketIndex);
         
             // Confirm all lp balance has been redeemed            
             (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
@@ -171,7 +170,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         uint256[] memory tokenIds,
         uint256 index,
         uint256 lpAward
-    ) internal returns (uint256 lps_){
+    ) internal {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit AddCollateralNFT(from, index, tokenIds, lpAward);
@@ -181,7 +180,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
             emit Transfer(from, address(_pool), tokenIds[i]);
         }
 
-        lps_ = ERC721Pool(address(_pool)).addCollateral(tokenIds, index);
+        ERC721Pool(address(_pool)).addCollateral(tokenIds, index);
 
         for (uint256 i = 0; i < tokenIds.length; i++) {
             assertEq(_collateral.ownerOf(tokenIds[i]), address(_pool));  // token is owned by pool after add
@@ -325,7 +324,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         uint256 amount,
         uint256 index,
         uint256 lpRedeem
-    ) internal override returns (uint256 lpRedeemed_) {
+    ) internal override {
         uint256[] memory tokenIds = new uint256[](amount);
         (, uint256 noOfTokens, , , ) = _pool.bucketInfo(index);
         noOfTokens = noOfTokens / 1e18;
@@ -335,7 +334,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
             tokenIds[i] = tokenId;
         }
 
-        lpRedeemed_ = super._removeCollateral(from, amount, index, lpRedeem);
+        super._removeCollateral(from, amount, index, lpRedeem);
 
         for (uint256 i = 0; i < tokenIds.length; i++) {
             assertEq(_collateral.ownerOf(tokenIds[i]), from); // token is owned by lender address after remove

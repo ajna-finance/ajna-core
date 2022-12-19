@@ -93,7 +93,8 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         tokenIdsToAdd[1] = 70;
         tokenIdsToAdd[2] = 73;
 
-        uint256 lpBalanceChange = _addCollateral(
+        (uint256 lenderLpBalanceBefore, ) = _pool.lenderInfo(testIndex, _bidder);
+        _addCollateral(
             {
                 from:     _bidder,
                 tokenIds: tokenIdsToAdd,
@@ -101,6 +102,8 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 lpAward:  9_032.676066593644673535 * 1e27
             }
         );
+        (uint256 lenderLpBalanceAfter, ) = _pool.lenderInfo(testIndex, _bidder);
+        uint256 lpBalanceChange = lenderLpBalanceAfter - lenderLpBalanceBefore;
 
         // check bucket state
         _assertBucket(
@@ -328,7 +331,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         );
 
         // bidder withdraws unused collateral
-        (uint256 amount) = _removeCollateral(
+        _removeCollateral(
             {
                 from:     _bidder,
                 amount:   1,
@@ -350,7 +353,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
 
         changePrank(_lender);
         // lender exchanges their lp for collateral
-        (amount) = _removeCollateral(
+        _removeCollateral(
             {
                 from:     _lender,
                 amount:   1,

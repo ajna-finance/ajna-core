@@ -251,9 +251,8 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(from, index, amount, lpRedeem, newLup);
         _assertTokenTransferEvent(address(_pool), from, amount);
-        (uint256 removedAmount, uint256 lpRedeemed) = _pool.removeQuoteToken(type(uint256).max, index);
+        uint256 removedAmount = _pool.removeQuoteToken(type(uint256).max, index);
         assertEq(removedAmount, amount);
-        assertEq(lpRedeemed,    lpRedeem);
     }
 
     function _removeCollateral(
@@ -261,13 +260,12 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 amount,
         uint256 index,
         uint256 lpRedeem
-    ) internal virtual returns (uint256 lpRedeemed_) {
+    ) internal virtual {
         changePrank(from);
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(from, index, amount, lpRedeem);
         _assertTokenTransferEvent(address(_pool), from, amount);
-        (, lpRedeemed_) = _pool.removeCollateral(amount, index);
-        assertEq(lpRedeemed_, lpRedeem);
+        _pool.removeCollateral(amount, index);
     }
 
     function _removeLiquidity(
@@ -292,9 +290,8 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(from, index, amountRemoved, lpRedeem, newLup);
         _assertTokenTransferEvent(address(_pool), from, amountRemoved);
-        (uint256 removedAmount, uint256 lpRedeemed) = _pool.removeQuoteToken(amount, index);
+        uint256 removedAmount = _pool.removeQuoteToken(amount, index);
         assertEq(removedAmount, amountRemoved);
-        assertEq(lpRedeemed,    lpRedeem);
     }
 
     function _startClaimableReserveAuction(

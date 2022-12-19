@@ -14,7 +14,7 @@ interface IERC721PoolLenderActions {
     function addCollateral(
         uint256[] calldata tokenIds,
         uint256 index
-    ) external returns (uint256);
+    ) external;
 
     /**
      *  @notice Merge collateral accross a number of buckets, removeAmountAtIndex_to reconstitute an NFT

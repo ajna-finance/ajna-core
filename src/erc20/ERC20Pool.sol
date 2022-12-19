@@ -146,10 +146,10 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     function addCollateral(
         uint256 collateralAmountToAdd_,
         uint256 index_
-    ) external override returns (uint256 bucketLPs_) {
+    ) external override {
         PoolState memory poolState = _accruePoolInterest();
 
-        bucketLPs_ = LenderActions.addCollateral(
+        uint256 bucketLPs = LenderActions.addCollateral(
             buckets,
             deposits,
             collateralAmountToAdd_,
@@ -158,7 +158,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
-        emit AddCollateral(msg.sender, index_, collateralAmountToAdd_, bucketLPs_);
+        emit AddCollateral(msg.sender, index_, collateralAmountToAdd_, bucketLPs);
         // move required collateral from sender to pool
         _transferCollateralFrom(msg.sender, collateralAmountToAdd_);
     }
@@ -166,12 +166,13 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     function removeCollateral(
         uint256 maxAmount_,
         uint256 index_
-    ) external override returns (uint256 collateralAmount_, uint256 lpAmount_) {
+    ) external override returns (uint256 collateralAmount_) {
         Auctions.revertIfAuctionClearable(auctions, loans);
 
         PoolState memory poolState = _accruePoolInterest();
 
-        (collateralAmount_, lpAmount_) = LenderActions.removeMaxCollateral(
+        uint256 lpAmount;
+        (collateralAmount_, lpAmount) = LenderActions.removeMaxCollateral(
             buckets,
             deposits,
             maxAmount_,
@@ -180,7 +181,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
-        emit RemoveCollateral(msg.sender, index_, collateralAmount_, lpAmount_);
+        emit RemoveCollateral(msg.sender, index_, collateralAmount_, lpAmount);
         // move collateral from pool to lender
         _transferCollateral(msg.sender, collateralAmount_);
     }

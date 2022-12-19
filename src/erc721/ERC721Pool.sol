@@ -123,10 +123,10 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     function addCollateral(
         uint256[] calldata tokenIdsToAdd_,
         uint256 index_
-    ) external override returns (uint256 bucketLPs_) {
+    ) external override {
         PoolState memory poolState = _accruePoolInterest();
 
-        bucketLPs_ = LenderActions.addCollateral(
+        uint256 bucketLPs = LenderActions.addCollateral(
             buckets,
             deposits,
             Maths.wad(tokenIdsToAdd_.length),
@@ -135,7 +135,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
-        emit AddCollateralNFT(msg.sender, index_, tokenIdsToAdd_, bucketLPs_);
+        emit AddCollateralNFT(msg.sender, index_, tokenIdsToAdd_, bucketLPs);
         // move required collateral from sender to pool
         _transferFromSenderToPool(bucketTokenIds, tokenIdsToAdd_);
     }
@@ -173,13 +173,13 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     function removeCollateral(
         uint256 noOfNFTsToRemove_,
         uint256 index_
-    ) external override returns (uint256 collateralAmount_, uint256 lpAmount_) {
+    ) external override returns (uint256 collateralAmount_) {
         Auctions.revertIfAuctionClearable(auctions, loans);
 
         PoolState memory poolState = _accruePoolInterest();
 
         collateralAmount_ = Maths.wad(noOfNFTsToRemove_);
-        lpAmount_ = LenderActions.removeCollateral(
+        uint256 lpAmount = LenderActions.removeCollateral(
             buckets,
             deposits,
             collateralAmount_,
@@ -188,7 +188,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
-        emit RemoveCollateral(msg.sender, index_, noOfNFTsToRemove_, lpAmount_);
+        emit RemoveCollateral(msg.sender, index_, noOfNFTsToRemove_, lpAmount);
         _transferFromPoolToAddress(msg.sender, bucketTokenIds, noOfNFTsToRemove_);
     }
 

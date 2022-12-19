@@ -14,5 +14,5 @@ interface IERC20PoolLenderActions {
     function addCollateral(
         uint256 amount,
         uint256 index
-    ) external returns (uint256 lpbChange);
+    ) external;
 }

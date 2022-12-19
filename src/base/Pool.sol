@@ -89,10 +89,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function addQuoteToken(
         uint256 quoteTokenAmountToAdd_,
         uint256 index_
-    ) external override returns (uint256 bucketLPs_) {
+    ) external override {
         PoolState memory poolState = _accruePoolInterest();
 
-        bucketLPs_ = LenderActions.addQuoteToken(
+        uint256 bucketLPs = LenderActions.addQuoteToken(
             buckets,
             deposits,
             quoteTokenAmountToAdd_,
@@ -102,7 +102,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 newLup = _lup(poolState.accruedDebt);
         _updateInterestParams(poolState, newLup);
 
-        emit AddQuoteToken(msg.sender, index_, quoteTokenAmountToAdd_, bucketLPs_, newLup);
+        emit AddQuoteToken(msg.sender, index_, quoteTokenAmountToAdd_, bucketLPs, newLup);
         // move quote token amount from lender to pool
         _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToAdd_);
     }
@@ -150,7 +150,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function removeQuoteToken(
         uint256 maxAmount_,
         uint256 index_
-    ) external override returns (uint256 removedAmount_, uint256 redeemedLPs_) {
+    ) external override returns (uint256 removedAmount_) {
         Auctions.revertIfAuctionClearable(auctions, loans);
 
         PoolState memory poolState = _accruePoolInterest();
@@ -159,7 +159,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 newLup;
         (
             removedAmount_,
-            redeemedLPs_,
             newLup
         ) = LenderActions.removeQuoteToken(
             buckets,

@@ -76,19 +76,18 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
             (uint256 lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
 
             // redeem LP for quote token if available
-            uint256 lpRedeemed;
             if(lenderLpBalance != 0 && bucketQuote != 0) {
-                (, lpRedeemed) = _pool.removeQuoteToken(type(uint256).max, bucketIndex);
-                lenderLpBalance -= lpRedeemed;
+                _pool.removeQuoteToken(type(uint256).max, bucketIndex);
             }
 
             // redeem LP for collateral if available
+            (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
             if(lenderLpBalance != 0 && bucketCollateral != 0) {
-                (, lpRedeemed) = ERC20Pool(address(_pool)).removeCollateral(type(uint256).max, bucketIndex);
-                lenderLpBalance -= lpRedeemed;
+                ERC20Pool(address(_pool)).removeCollateral(type(uint256).max, bucketIndex);
             }
 
             // confirm the redemption amount returned by removal methods is correct
+            (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
             assertEq(lenderLpBalance, 0);
             // confirm the user actually has 0 LPB in the bucket
             (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
@@ -158,7 +157,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         uint256 amount,
         uint256 index,
         uint256 lpAward
-    ) internal returns (uint256) {
+    ) internal {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit AddCollateral(from, index, amount, lpAward);
@@ -170,7 +169,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         bidderDepositedIndex[from].add(index);
         bucketsUsed.add(index); 
 
-        return ERC20Pool(address(_pool)).addCollateral(amount, index);
+        ERC20Pool(address(_pool)).addCollateral(amount, index);
     }
 
     function _borrow(
@@ -296,9 +295,8 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         emit RemoveCollateral(from, index, amount, lpRedeem);
         vm.expectEmit(true, true, true, true);
         emit Transfer(address(_pool), from, amount);
-        (uint256 collateralRemoved, uint256 lpAmount) = ERC20Pool(address(_pool)).removeCollateral(type(uint256).max, index);
+        uint256 collateralRemoved = ERC20Pool(address(_pool)).removeCollateral(type(uint256).max, index);
         assertEq(collateralRemoved, amount);
-        assertEq(lpAmount, lpRedeem);
     }
 
     function _repayAndSettleAuction(
