@@ -31,51 +31,46 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
     }
 
     function testPoolInterestRateIncreaseDecrease() external tearDown {
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 20_000 * 1e18,
-                index:  2551,
-                newLup: MAX_PRICE
+                index:  2551
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 20_000 * 1e18,
-                index:  2552,
-                newLup: MAX_PRICE
+                index:  2552
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 50_000 * 1e18,
-                index:  3900,
-                newLup: MAX_PRICE
+                index:  3900
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  4200,
-                newLup: MAX_PRICE
+                index:  4200
             }
         );
 
         skip(10 days);
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
                 poolSize:             110_000 * 1e18,
@@ -108,7 +103,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         );
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  460.442307692307692520 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             110_000 * 1e18,
@@ -139,12 +134,11 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
     function testOverutilizedPoolInterestRateIncrease() external tearDown {
         // lender deposits 1000
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 1_000 * 1e18,
-                index:  3232,
-                newLup: MAX_PRICE
+                index:  3232
             }
         );
 
@@ -165,7 +159,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             }
         );
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0.663971153846153846 * 1e18,
                 lup:                  100.332368143282009890 * 1e18,
                 poolSize:             1_000 * 1e18,
@@ -186,14 +180,15 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         skip(13 hours);
         _addLiquidity(
             {
-                from:   _lender,
-                amount: 0,
-                index:  3232,
-                newLup: 100.332368143282009890 * 1e18
+                from:    _lender,
+                amount:  0,
+                index:   3232,
+                lpAward: 0,
+                newLup:  100.332368143282009890 * 1e18
             }
         );
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0.664069695689831259 * 1e18,
                 lup:                  100.332368143282009890 * 1e18,
                 poolSize:             1_000.072137597635984000 * 1e18,
@@ -214,12 +209,11 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
     function testPoolInterestRateDecrease() external tearDown {
         // lender makes an initial deposit
         skip(1 hours);
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2873,
-                newLup: MAX_PRICE
+                index:  2873
             }
         );
         // borrower draws debt
@@ -241,7 +235,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         );
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  500.480769230769231000 * 1e18,
                 lup:                  601.252968524772188572 * 1e18,
                 poolSize:             10_000 * 1e18,
@@ -265,15 +259,16 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         emit UpdateInterestRate(0.05 * 1e18, 0.045 * 1e18);
         _addLiquidity(
             {
-                from:   _lender1,
-                amount: 1_000 * 1e18,
-                index:  2873,
-                newLup: 601.252968524772188572 * 1e18
+                from:    _lender1,
+                amount:  1_000 * 1e18,
+                index:   2873,
+                lpAward: 999.969800213715631476604245327 * 1e27,
+                newLup:  601.252968524772188572 * 1e18
             }
         );
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  500.549332936289892272 * 1e18,
                 lup:                  601.252968524772188572 * 1e18,
                 poolSize:             11_000.302006983390040000 * 1e18,
@@ -292,12 +287,11 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
     }
 
     function testMinInterestRate() external tearDown {
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  _i1505_26,
-                newLup: MAX_PRICE
+                index:  _i1505_26
             }
         );
 
@@ -315,7 +309,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         // confirm interest rate starts out at 5%
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  1.0009615384615 * 1e18,
                 lup:                  _p1505_26,
                 poolSize:             10_000 * 1e18,
@@ -351,7 +345,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         // show the rate bottoms out at 10 bps
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  1.003660230043452158 * 1e18,
                 lup:                  _p1505_26,
                 poolSize:             10_000.000000011461690000 * 1e18,
@@ -370,12 +364,11 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
     }
 
     function testMaxInterestRate() external tearDown {
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  _i1505_26,
-                newLup: MAX_PRICE
+                index:  _i1505_26
             }
         );
 
@@ -393,7 +386,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         // confirm interest rate starts out at 5%
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0.000000001000961538 * 1e18,
                 lup:                  _p1505_26,
                 poolSize:             10_000 * 1e18,
@@ -429,7 +422,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         // show the rate maxed out at 50000%
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  32229.862501923749497041 * 1e18,
                 lup:                  _p1505_26,
                 poolSize:             10_048.284243805461810000 * 1e18,
@@ -449,28 +442,25 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
     function testPendingInflator() external tearDown {
         // add liquidity
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2550,
-                newLup: MAX_PRICE
+                index:  2550
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2552,
-                newLup: MAX_PRICE
+                index:  2552
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  4200,
-                newLup: MAX_PRICE
+                index:  4200
             }
         );
 
@@ -494,7 +484,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         );
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  300.288461538461538600 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             30_000 * 1e18,
@@ -515,7 +505,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         // ensure pendingInflator increases as time passes
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  300.288461538461538600 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             30_000 * 1e18,
@@ -536,25 +526,23 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
     function testPoolEMAAndTargetUtilizationUpdate() external tearDown {
 
         // add initial quote to the pool
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  3_010,
-                newLup: MAX_PRICE
+                index:  3_010
             }
         );
-        _addLiquidity(
+        _addInitialLiquidity(
             {
                 from:   _lender,
                 amount: 10_000 * 1e18,
-                index:  2_995,
-                newLup: MAX_PRICE
+                index:  2_995
             }
         );
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
                 poolSize:             20_000 * 1e18,
@@ -595,7 +583,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         );
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  10.009615384615384620 * 1e18,
                 lup:                  327.188250324085203338 * 1e18,
                 poolSize:             20_000 * 1e18,
@@ -635,7 +623,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         );
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  10.009615384615384620 * 1e18,
                 lup:                  327.188250324085203338 * 1e18,
                 poolSize:             20_000 * 1e18,
@@ -671,7 +659,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         );
 
         _assertPool(
-            PoolState({
+            PoolParams({
                 htp:                  10.237543320969223878 * 1e18,
                 lup:                  327.188250324085203338 * 1e18,
                 poolSize:             20_001.169794343035540000 * 1e18,

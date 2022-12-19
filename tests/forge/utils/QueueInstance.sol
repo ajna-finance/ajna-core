@@ -7,12 +7,12 @@ import './DSTestPlus.sol';
 import 'src/libraries/external/Auctions.sol';
 
 contract QueueInstance is DSTestPlus {
-    using Auctions for Auctions.Data;
+    using Auctions for AuctionsState;
 
-    Auctions.Data private auctions;
+    AuctionsState private auctions;
 
     function kick(address borrower_) external returns (uint256, uint256) {
-        Auctions.KickParams memory params;
+        KickParams memory params;
         params.borrower = borrower_;
         params.collateral = 1;
         return auctions.kick(params);
@@ -45,7 +45,7 @@ contract QueueInstance is DSTestPlus {
             address
         )
     {
-        Auctions.Liquidation memory liquidation = auctions.liquidations[borrower_];
+        Liquidation memory liquidation = auctions.liquidations[borrower_];
         return (
             liquidation.kicker,
             liquidation.bondFactor,

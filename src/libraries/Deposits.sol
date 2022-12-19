@@ -16,11 +16,6 @@ library Deposits {
      */
     error InvalidScalingFactor();
 
-    struct Data {
-        uint256[8193] values;  // Array of values in the FenwickTree.
-        uint256[8193] scaling; // Array of values which scale (multiply) the FenwickTree accross indexes.
-    }
-
     /**
      *  @notice increase a value in the FenwickTree at an index.
      *  @dev    Starts at leaf/target and moved up towards root
