@@ -330,8 +330,8 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
                quoteTokenAmount: 19.637503712157446080 * 1e18,
                bondChange:       0.196375037121574461 * 1e18,
                isReward:         true,
-               lpAwardTaker:     0.194243053548020465062464152 * 1e27,
-               lpAwardKicker:    0.193758656905756398832457540 * 1e27
+               lpAwardTaker:     0.194243053548020465000000000 * 1e27,
+               lpAwardKicker:    0.193758656905756399000000000 * 1e27
            }
         );
 
@@ -458,7 +458,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
                 quoteTokenAmount: 19.778964466685025779 * 1e18,
                 bondChange:       0.195342779771472726 * 1e18,
                 isReward:         false,
-                lpAwardTaker:     1_496.328084309964105327000000000 * 1e27,
+                lpAwardTaker:     1_496.328084309964105326536033959 * 1e27,
                 lpAwardKicker:    0
             }
         );
@@ -562,7 +562,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
                 quoteTokenAmount: 15.000000000000000000 * 1e18,
                 bondChange:       0.15 * 1e18,
                 isReward:         false,
-                lpAwardTaker:     1134.787481035970172219 * 1e27,
+                lpAwardTaker:     1134.787481035970172246990767313 * 1e27,
                 lpAwardKicker:    0
             }
         );
@@ -712,7 +712,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
                 quoteTokenAmount: 19.778761259189860403 * 1e18,
                 bondChange:       0.195342779771472726 * 1e18,
                 isReward:         false,
-                lpAwardTaker:     2502.359445445046938391 * 1e27,
+                lpAwardTaker:     2502.359445445046938391797441582 * 1e27,
                 lpAwardKicker:    0
             }
         );

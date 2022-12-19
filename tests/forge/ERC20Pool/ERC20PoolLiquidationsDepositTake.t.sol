@@ -330,7 +330,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
                bondChange:       0.198343696868718241 * 1e18,
                isReward:         true,
                lpAwardTaker:     0,
-               lpAwardKicker:    0.198343102933742890077232102 * 1e27
+               lpAwardKicker:    0.198343102933742890000000000 * 1e27
            }
         );
 

@@ -26,14 +26,17 @@ import '../../base/PoolHelper.sol';
 library Auctions {
 
     struct TakeResult {
-        uint256 quoteTokenAmount; // The quote token amount that taker should pay for collateral taken.
-        uint256 t0repayAmount;    // The amount of debt (quote tokens) that is recovered / repayed by take t0 terms.
-        uint256 collateralAmount;  // The amount of collateral taken.
-        uint256 auctionPrice;     // The price of auction.
-        uint256 bucketPrice;      // The bucket price.
-        uint256 bondChange;       // The change made on the bond size (beeing reward or penalty).
-        address kicker;           // Address of auction kicker.
-        bool    isRewarded;       // True if kicker is rewarded (auction price lower than neutral price), false if penalized (auction price greater than neutral price).
+        uint256 unscaledQuoteTokenAmount; // The unscaled token amount that taker should pay for collateral taken.
+        uint256 scaledQuoteTokenAmount;   // The quote token amount that taker should pay for collateral taken.
+        uint256 unscaledDeposit;          // Unscaled bucket quantity
+        uint256 t0repayAmount;            // The amount of debt (quote tokens) that is recovered / repayed by take t0 terms.
+        uint256 collateralAmount;         // The amount of collateral taken.
+        uint256 auctionPrice;             // The price of auction.
+        uint256 bucketPrice;              // The bucket price.
+        uint256 bucketScale;              // The bucket scale.
+        uint256 bondChange;               // The change made on the bond size (beeing reward or penalty).
+        address kicker;                   // Address of auction kicker.
+        bool    isRewarded;               // True if kicker is rewarded (auction price lower than neutral price), false if penalized (auction price greater than neutral price).
     }
 
     /**
@@ -208,7 +211,7 @@ library Auctions {
                     params_.t0debt -= Maths.wdiv(depositToRemove, params_.inflator); // subtract from remaining debt the corresponding t0 amount of deposit
 
                     Deposits.unscaledRemove(deposits_, index, unscaledDeposit);                 // Remove all deposit from bucket
-                    Buckets.Bucket storage hpbBucket = buckets_[index];
+                    Bucket storage hpbBucket = buckets_[index];
                     
                     if (hpbBucket.collateral == 0) {                                 // existing LPB and LP tokens for the bucket shall become unclaimable.
                         hpbBucket.lps = 0;
@@ -312,7 +315,7 @@ library Auctions {
         result.unscaledDeposit = Deposits.unscaledValueAt(deposits_, params_.index);
         if (result.unscaledDeposit == 0) revert InsufficientLiquidity(); // revert if no quote tokens in arbed bucket
 
-        Liquidation storage liquidation = self.liquidations[params_.borrower];
+        Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
 
         uint256 kickTime = liquidation.kickTime;
         if (kickTime == 0) revert NoAuction();
@@ -354,9 +357,9 @@ library Auctions {
         if (!result.isRewarded) {
             // take is above neutralPrice, Kicker is penalized
             result.bondChange = Maths.min(liquidation.bondSize, Maths.wmul(result.scaledQuoteTokenAmount, uint256(-bpf)));
-            liquidation.bondSize                -= uint160(result.bondChange);
-            self.kickers[result.kicker].locked -= result.bondChange;
-            self.totalBondEscrowed              -= result.bondChange;
+            liquidation.bondSize                    -= uint160(result.bondChange);
+            auctions_.kickers[result.kicker].locked -= result.bondChange;
+            auctions_.totalBondEscrowed              -= result.bondChange;
         } else {
             result.bondChange = Maths.wmul(result.scaledQuoteTokenAmount, uint256(bpf)); // will be rewarded as LPBs
         }
@@ -436,16 +439,16 @@ library Auctions {
         if (result.isRewarded) {
             // take is below neutralPrice, Kicker is rewarded
             result.bondChange = Maths.wmul(Maths.wmul(result.auctionPrice, result.collateralAmount), uint256(bpf));
-            liquidation.bondSize                += uint160(result.bondChange);
-            self.kickers[result.kicker].locked += result.bondChange;
-            self.totalBondEscrowed              += result.bondChange;
+            liquidation.bondSize                     += uint160(result.bondChange);
+            auctions_.kickers[result.kicker].locked  += result.bondChange;
+            auctions_.totalBondEscrowed              += result.bondChange;
 
         } else {
             // take is above neutralPrice, Kicker is penalized
             result.bondChange = Maths.min(liquidation.bondSize, Maths.wmul(result.unscaledQuoteTokenAmount, uint256(-bpf)));
-            liquidation.bondSize                -= uint160(result.bondChange);
-            self.kickers[result.kicker].locked -= result.bondChange;
-            self.totalBondEscrowed              -= result.bondChange;
+            liquidation.bondSize                     -= uint160(result.bondChange);
+            auctions_.kickers[result.kicker].locked  -= result.bondChange;
+            auctions_.totalBondEscrowed              -= result.bondChange;
         }
 
         emit Take(
@@ -678,18 +681,18 @@ library Auctions {
 
     /**
      *  @notice Rewards actors of a bucket take action.
-     *  @param  bucketDeposit_ Arbed bucket deposit.
+     *  @param  deposits_      Deposits state
      *  @param  bucketIndex_   Bucket index.
      *  @param  result_        Struct containing take action result details.
      */
     function _rewardBucketTake(
-        Deposits.Data storage deposits_,
-        mapping(uint256 => Buckets.Bucket) storage buckets_,
+        DepositsState storage deposits_,
+        mapping(uint256 => Bucket) storage buckets_,
         uint256 bucketIndex_,
         bool depositTake_,
         TakeResult memory result_
     ) internal {
-        Buckets.Bucket storage bucket = buckets_[bucketIndex_];
+        Bucket storage bucket = buckets_[bucketIndex_];
 
         uint256 bucketExchangeRate = Buckets.getUnscaledExchangeRate(
             bucket.collateral,
@@ -708,9 +711,10 @@ library Auctions {
             Buckets.addLenderLPs(bucket, bankruptcyTime, msg.sender, totalLPsReward);
         }
 
+        uint256 kickerLPsReward;
         // the bondholder/kicker is awarded bond change worth of LPB in the bucket
         if (result_.isRewarded) {
-            uint256 kickerLPsReward = Maths.wrdivr(Maths.wdiv(result_.bondChange, result_.bucketScale), bucketExchangeRate);
+            kickerLPsReward = Maths.wrdivr(Maths.wdiv(result_.bondChange, result_.bucketScale), bucketExchangeRate);
             totalLPsReward += kickerLPsReward;
             Buckets.addLenderLPs(bucket, bankruptcyTime, result_.kicker, kickerLPsReward);
         }
@@ -725,7 +729,7 @@ library Auctions {
         emit BucketTakeLPAwarded(
             msg.sender,
             result_.kicker,
-            takerLPsReward,
+            totalLPsReward-kickerLPsReward,
             kickerLPsReward
         );
     }
@@ -785,12 +789,9 @@ library Auctions {
     /**
      *  @notice Utility function to calculate take's parameters.
      *  @param  liquidation_  Liquidation struct holding auction details.
-     *  @param  collateral_   Borrower collateral.
      *  @param  t0debt_       Borrower t0 debt.
+     *  @param  price_        Price of take in auction (not nec. bucket price)
      *  @param  poolInflator_ The pool's inflator, used to calculate borrower debt.
-     *  @return borrowerDebt_ The debt of auctioned borrower.
-     *  @return bpf_          The bond penalty factor.
-     *  @return factor_       The take factor, calculated based on bond penalty factor.
      */
     function _takeParameters(
         Liquidation storage liquidation_,
