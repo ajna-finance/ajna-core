@@ -10,15 +10,6 @@ library Deposits {
     uint256 internal constant SIZE = 8192;
 
     /**
-     *  @notice Invalid deposit index.
-     */
-    error InvalidIndex();
-    /**
-     *  @notice Invalid factor to scale tree.
-     */
-    error InvalidScalingFactor();
-
-    /**
      *  @notice increase a value in the FenwickTree at an index.
      *  @dev    Starts at leaf/target and moved up towards root
      *  @param  index_     The deposit index.
@@ -29,8 +20,6 @@ library Deposits {
         uint256 index_,
         uint256 addAmount_
     ) internal {
-        if (index_ >= SIZE) revert InvalidIndex();
-
         ++index_;
         addAmount_ = Maths.wdiv(addAmount_, scale(deposits_, index_));
 
@@ -106,9 +95,6 @@ library Deposits {
         uint256 index_,
         uint256 factor_
     ) internal {
-        if (index_ >= SIZE) revert InvalidIndex();
-        if (factor_ == 0)   revert InvalidScalingFactor();
-
         ++index_;
 
         uint256 sum;
@@ -165,7 +151,6 @@ library Deposits {
         DepositsState storage deposits_,
         uint256 sumIndex_
     ) internal view returns (uint256 sum_) {
-
         ++sumIndex_; // Translate from 0 -> 1 indexed array
 
         uint256 sc    = Maths.WAD;
@@ -217,8 +202,6 @@ library Deposits {
         uint256 index_,
         uint256 unscaledRemoveAmount_
     ) internal {
-        if (index_ >= SIZE) revert InvalidIndex();
-
         ++index_;
 
         while (index_ <= SIZE) {
@@ -243,8 +226,7 @@ library Deposits {
         DepositsState storage deposits_,
         uint256 index_
     ) internal view returns (uint256 scaled_) {
-        if (index_ > SIZE) revert InvalidIndex();
-	++index_;
+	    ++index_;
         
         scaled_ = Maths.WAD;
         while (index_ <= SIZE) {
@@ -274,8 +256,6 @@ library Deposits {
         DepositsState storage deposits_,
         uint256 index_
     ) internal view returns (uint256 depositValue_) {
-        if (index_ >= SIZE) revert InvalidIndex();
-
         depositValue_ = Maths.wmul(unscaledValueAt(deposits_, index_), scale(deposits_,index_));
     }
 
@@ -283,8 +263,6 @@ library Deposits {
         DepositsState storage deposits_,
         uint256 index_
     ) internal view returns (uint256 unscaledDepositValue_) {
-        if (index_ >= SIZE) revert InvalidIndex();
-
         ++index_;
 
         uint256 j = 1;

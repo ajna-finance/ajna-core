@@ -163,7 +163,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         vm.expectEmit(true, true, false, true);
         emit AddCollateral(from, index, amount, lpAward);
         vm.expectEmit(true, true, false, true);
-        emit Transfer(from, address(_pool), amount);
+        emit Transfer(from, address(_pool), amount / ERC20Pool(address(_pool)).collateralScale());
 
         // Add for tearDown
         bidders.add(from);

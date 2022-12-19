@@ -75,6 +75,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         EnumerableSet.UintSet storage indexes
     ) internal {
         changePrank(lender);
+
         // Redeem all lps of lender from all buckets as quote token and collateral token
         for(uint256 j = 0; j < indexes.length(); j++){
             uint256 lenderLpBalance;
@@ -102,10 +103,8 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                     {
                         uint256 fractionOfNftRemaining = lpsAsCollateral % 1e18;
                         assertLt(fractionOfNftRemaining, 1e18);
-                        // FIXME: now getting InsufficientLPs with this amount; was working two days ago
-                        // depositRequired = Maths.wmul(1e18 - fractionOfNftRemaining, price);
-                        // HACK:  deposit extra quote token which will be pulled out on line 134.
-                        depositRequired = price;
+                        // TODO: eliminate the 1 wei workaround for rounding error
+                        depositRequired = Maths.wmul(1e18 - fractionOfNftRemaining + 1, price);
                     }
                     deal(_pool.quoteTokenAddress(), lender, depositRequired);
                     Token(_pool.quoteTokenAddress()).approve(address(_pool) , depositRequired);
