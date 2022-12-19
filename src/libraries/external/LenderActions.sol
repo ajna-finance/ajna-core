@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import { MoveQuoteParams, RemoveQuoteParams } from '../../base/interfaces/IPool.sol';
+import { MoveQuoteParams, RemoveQuoteParams, PoolState } from '../../base/interfaces/IPool.sol';
 
 import '../Deposits.sol';
 import '../Buckets.sol';
@@ -65,6 +65,8 @@ library LenderActions {
         uint256 fromBucketScale;
         uint256 toBucketPrice;
         uint256 toBucketBankruptcyTime;
+        uint256 ptp;
+        uint256 htp;
     }
 
     /**
@@ -162,6 +164,7 @@ library LenderActions {
     function moveQuoteToken(
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
+        PoolState calldata poolState_,
         MoveQuoteParams calldata params_
     ) external returns (uint256 fromBucketLPs_, uint256 toBucketLPs_, uint256 lup_) {
         if (params_.fromIndex == params_.toIndex) revert MoveToSamePrice();
@@ -197,11 +200,12 @@ library LenderActions {
 
         // From here and below, amountToMove is an absolute quote token amount
         vars.amountToMove = Maths.wmul(vars.fromBucketScale, vars.amountToMove);
-        
+
+        vars.ptp = _ptp(poolState_.accruedDebt, poolState_.collateral);
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
         if (vars.fromBucketDepositTime != 0 && block.timestamp - vars.fromBucketDepositTime < 1 days) {
-            if (vars.fromBucketPrice > params_.ptp && vars.toBucketPrice < params_.ptp) {
-                vars.amountToMove = Maths.wmul(vars.amountToMove, Maths.WAD - _feeRate(params_.rate));
+            if (vars.fromBucketPrice > vars.ptp && vars.toBucketPrice < vars.ptp) {
+                vars.amountToMove = Maths.wmul(vars.amountToMove, Maths.WAD - _feeRate(poolState_.rate));
             }
         }
 
@@ -215,9 +219,10 @@ library LenderActions {
 
         Deposits.add(deposits_, params_.toIndex, vars.amountToMove);
 
-        lup_ = _lup(deposits_, params_.poolDebt);
+        lup_ = _lup(deposits_, poolState_.accruedDebt);
         // check loan book's htp against new lup
-        if (params_.fromIndex < params_.toIndex) if(params_.htp > lup_) revert LUPBelowHTP();
+        vars.htp = Maths.wmul(params_.thresholdPrice, poolState_.inflator);
+        if (params_.fromIndex < params_.toIndex) if(vars.htp > lup_) revert LUPBelowHTP();
 
         // update lender LPs balance in from bucket
         fromBucketLender.lps -= fromBucketLPs_;
@@ -246,6 +251,7 @@ library LenderActions {
     function removeQuoteToken(
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
+        PoolState calldata poolState_,
         RemoveQuoteParams calldata params_
     ) external returns (uint256 removedAmount_, uint256 redeemedLPs_, uint256 lup_) {
         uint256 unscaledDeposit = Deposits.unscaledValueAt(deposits_, params_.index);
@@ -279,14 +285,14 @@ library LenderActions {
 
         // apply early withdrawal penalty if quote token is removed from above the PTP
         if (depositTime != 0 && block.timestamp - depositTime < 1 days) {
-            if (price > params_.ptp) {
-                removedAmount_ = Maths.wmul(removedAmount_, Maths.WAD - _feeRate(params_.rate));
+            if (price > _ptp(poolState_.accruedDebt, poolState_.collateral)) {
+                removedAmount_ = Maths.wmul(removedAmount_, Maths.WAD - _feeRate(poolState_.rate));
             }
         }
 
-        lup_ = _lup(deposits_, params_.poolDebt);
+        lup_ = _lup(deposits_, poolState_.accruedDebt);
         // check loan book's htp against new lup
-        if (params_.htp > lup_) revert LUPBelowHTP();
+        if (Maths.wmul(params_.thresholdPrice, poolState_.inflator) > lup_) revert LUPBelowHTP();
 
         // update lender and bucket LPs balances
         lender.lps -= redeemedLPs_;

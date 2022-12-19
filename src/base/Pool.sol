@@ -131,15 +131,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         ) = LenderActions.moveQuoteToken(
             buckets,
             deposits,
+            poolState,
             MoveQuoteParams(
                 {
                     maxAmountToMove: maxAmountToMove_,
                     fromIndex:       fromIndex_,
                     toIndex:         toIndex_,
-                    ptp:             _ptp(poolState.accruedDebt, poolState.collateral),
-                    htp:             _htp(poolState.inflator),
-                    poolDebt:        poolState.accruedDebt,
-                    rate:            poolState.rate
+                    thresholdPrice:  loans.getMax().thresholdPrice
                 }
             )
         );
@@ -164,14 +162,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         ) = LenderActions.removeQuoteToken(
             buckets,
             deposits,
+            poolState,
             RemoveQuoteParams(
                 {
-                    maxAmount: maxAmount_,
-                    index:     index_,
-                    ptp:       _ptp(poolState.accruedDebt, poolState.collateral),
-                    htp:       _htp(poolState.inflator),
-                    poolDebt:  poolState.accruedDebt,
-                    rate:      poolState.rate
+                    maxAmount:      maxAmount_,
+                    index:          index_,
+                    thresholdPrice: loans.getMax().thresholdPrice
                 }
             )
         );
@@ -592,11 +588,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             if (poolState_.isNewInterestAccrued) {
                 poolState_.inflator = PoolCommons.accrueInterest(
                     deposits,
-                    poolState_.accruedDebt,
-                    poolState_.collateral,
+                    poolState_,
                     loans.getMax().thresholdPrice,
-                    poolState_.inflator,
-                    poolState_.rate,
                     elapsed
                 );
                 // After debt owed to lenders has accrued, calculate current debt owed by borrowers
@@ -631,10 +624,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     function _getPoolQuoteTokenBalance() internal view returns (uint256) {
         return IERC20(_getArgAddress(QUOTE_ADDRESS)).balanceOf(address(this));
-    }
-
-    function _htp(uint256 inflator_) internal view returns (uint256) {
-        return Maths.wmul(loans.getMax().thresholdPrice, inflator_);
     }
 
     function _t0Np (
