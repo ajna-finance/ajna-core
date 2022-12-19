@@ -108,10 +108,6 @@ contract AjnaRewardsTest is DSTestPlus {
         _ajnaToken.approve(pool_, type(uint256).max);
     }
 
-    // TODO: dynamically set mint amount
-    // TODO: fuzz or randomize the inputs to above function
-    // function _getIndexes()
-    // function _getAmounts()    
     function _mintAndMemorializePositionNFT(MintAndMemorializeParams memory params_) internal returns (uint256 tokenId_) {
         changePrank(params_.minter);
 
@@ -120,7 +116,7 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // deal tokens to the minter
         deal(address(collateral), params_.minter, 250_000 * 1e18);
-        deal(address(quote), params_.minter, 250_000 * 1e18);
+        deal(address(quote), params_.minter, params_.mintAmount * params_.indexes.length);
 
         // approve tokens
         collateral.approve(address(params_.pool), type(uint256).max);
@@ -129,7 +125,6 @@ contract AjnaRewardsTest is DSTestPlus {
         IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(params_.minter, address(params_.pool));
         tokenId_ = _positionManager.mint(mintParams);
 
-        // TODO: make mint amounts dynamic
         for (uint256 i = 0; i < params_.indexes.length; i++) {
             params_.pool.addQuoteToken(params_.mintAmount, params_.indexes[i]);
             (uint256 lpBalance, ) = params_.pool.lenderInfo(params_.indexes[i], params_.minter);
@@ -154,26 +149,27 @@ contract AjnaRewardsTest is DSTestPlus {
         Token collateral = Token(params_.pool.collateralAddress());
         Token quote = Token(params_.pool.quoteTokenAddress());
 
-        // deal tokens
-        deal(address(collateral), borrower, 250_000 * 1e18);
+        // TODO: deal tokens according to incoming params
         deal(address(quote), borrower, 250_000 * 1e18);
 
         // approve tokens
         collateral.approve(address(params_.pool), type(uint256).max);
         quote.approve(address(params_.pool), type(uint256).max);
 
+        uint256 collateralToPledge = _requiredCollateral(params_.borrowAmount, params_.limitIndex);
+        deal(address(collateral), borrower, collateralToPledge);
+
         // borrower drawsDebt from the pool
-        params_.pool.drawDebt(borrower, params_.borrowAmount, params_.limitIndex, params_.collateralToPledge);
+        params_.pool.drawDebt(borrower, params_.borrowAmount, params_.limitIndex, collateralToPledge);
 
         // allow time to pass for interest to accumulate
         skip(26 weeks);
 
-        // TODO: calculate borrower debt
-
         // borrower repays some of their debt, providing reserves to be claimed
         // don't pull any collateral, as such functionality is unrelated to reserve auctions
-        params_.pool.repayDebt(borrower, params_.borrowAmount / 2, 0);
+        params_.pool.repayDebt(borrower, Maths.wdiv(params_.borrowAmount, Maths.wad(2)), 0);
 
+        // TODO: move bidder to top level
         // provide ajna tokens to bidder
         _bidder    = makeAddr("bidder");
         _mintAndApproveAjnaTokens(_bidder, address(params_.pool), 900_000_000 * 10**18);
@@ -199,6 +195,11 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // calculate ajna tokens to burn in order to take the full auction amount
         tokensToBurn_ = curClaimableReservesRemaining * curAuctionPrice;
+    }
+
+    // calculate the amount of tokens that are expected to be earned based upon current state
+    function _localRewardsEarned() internal {
+        // TODO: finish implementing this -> use for differential testing
     }
 
     function testDepositToken() external {
@@ -286,8 +287,8 @@ contract AjnaRewardsTest is DSTestPlus {
         // claim rewards accrued since deposit
         changePrank(_minterOne);
         assertEq(_ajnaToken.balanceOf(_minterOne), 0);
-        // vm.expectEmit(true, true, true, true);
-        // emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, 1000 );
+        vm.expectEmit(true, true, true, true);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, 18.085912173086791740 * 1e18);
         _ajnaRewards.claimRewards(tokenIdOne);
         assertGt(_ajnaToken.balanceOf(_minterOne), 0);
 
@@ -393,8 +394,6 @@ contract AjnaRewardsTest is DSTestPlus {
         _ajnaRewards.claimRewards(tokenIdTwo);
         assertEq(_ajnaToken.balanceOf(_minterTwo), idTwoRewardsAtTwo);
 
-
-
         // FIXME: this won't fire as checkpoints haven't loaded yet
         // check rewards state
         // uint256 remainingRewards = _ajnaRewards.calculateRewardsEarned(tokenIdOne);
@@ -470,32 +469,103 @@ contract AjnaRewardsTest is DSTestPlus {
             pool: _poolOne
         });
 
-        // TODO: use singleton test params as argument for each meta method
         uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
         _depositNFT(address(_poolOne), _minterOne, tokenIdOne);
 
         TriggerReserveAcutionParams memory triggerReserveAuctionParams = TriggerReserveAcutionParams({
             borrowAmount: 300 * 1e18,
             collateralToPledge: 10 * 1e18,
-            limitIndex: 3,
+            limitIndex: 2555,
             pool: _poolOne
         });
 
+        uint256 tokensToBurn = _triggerReserveAuctions(triggerReserveAuctionParams);
 
-        // uint256 tokensToBurn = _triggerReserveAuctions(triggerReserveAuctionParams);
-
-
-
-
-    }
-
-    function testClaimRewardsFuzzy() external {
-        // TODO: implement this
+        // check owner can withdraw the NFT and rewards will be automatically claimed
+        changePrank(_minterOne);
+        vm.expectEmit(true, true, true, true);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, 18.085912173086791740 * 1e18);
+        vm.expectEmit(true, true, true, true);
+        emit WithdrawToken(_minterOne, address(_poolOne), tokenIdOne);
+        _ajnaRewards.withdrawNFT(tokenIdOne);
+        assertEq(_positionManager.ownerOf(tokenIdOne), _minterOne);
     }
 
     function testMultiplePools() external {
         // TODO: implement this
     }
 
+    /********************/
+    /*** FUZZ TESTING ***/
+    /********************/
+
+    function _randomIndex() internal view returns (uint256) {
+        // calculate a random index between 1 and 7388
+        return 1 + uint256(keccak256(abi.encodePacked(block.number, block.difficulty))) % 7387;
+    }
+
+    function _findHighestIndexPrice(uint256[] memory indexes) internal pure returns (uint256 highestIndex_) {
+        highestIndex_ = 7388;
+        // highest index corresponds to lowest price
+        for (uint256 i = 0; i < indexes.length; ++i) {
+            if (indexes[i] < highestIndex_) {
+                highestIndex_ = indexes[i];
+            }
+        }
+    }
+
+    function _findLowestIndexPrice(uint256[] memory indexes) internal pure returns (uint256 lowestIndex_) {
+        lowestIndex_ = 1;
+        // lowest index corresponds to highest price
+        for (uint256 i = 0; i < indexes.length; ++i) {
+            if (indexes[i] > lowestIndex_) {
+                lowestIndex_ = indexes[i];
+            }
+        }
+    }
+
+    function _requiredCollateral(uint256 borrowAmount, uint256 indexPrice) internal view returns (uint256 requiredCollateral_) {
+        // calculate the required collateral based upon the borrow amount and index price
+        requiredCollateral_ = Maths.wdiv(borrowAmount, _poolUtils.indexToPrice(indexPrice)) + Maths.WAD;
+    }
+
+    function testClaimRewardsFuzzy(uint256 indexes, uint256 mintAmount) external {
+        indexes = bound(indexes, 1, 10); // number of indexes to add liquidity to
+        mintAmount = bound(mintAmount, 1 * 1e18, 100_000 * 1e18); // bound mint amount and dynamically determine borrow amount and collateral based upon provided index and mintAmount
+
+        // configure NFT position
+        uint256[] memory depositIndexes = new uint256[](indexes);
+        for (uint256 i = 0; i < indexes; ++i) {
+            depositIndexes[i] = _randomIndex();
+            vm.roll(block.number + 1); // advance block to ensure that the index price is different
+        }
+        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+            indexes: depositIndexes,
+            minter: _minterOne,
+            mintAmount: mintAmount,
+            pool: _poolOne
+        });
+
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        _depositNFT(address(_poolOne), _minterOne, tokenIdOne);
+
+        TriggerReserveAcutionParams memory triggerReserveAuctionParams = TriggerReserveAcutionParams({
+            borrowAmount: Maths.wdiv(mintAmount, Maths.wad(3)),
+            collateralToPledge: 10_000 * 1e18, // TODO: dynamically calculate collateral to pledge
+            limitIndex: _findLowestIndexPrice(depositIndexes),
+            pool: _poolOne
+        });
+
+        uint256 tokensToBurn = _triggerReserveAuctions(triggerReserveAuctionParams);
+
+        // claim rewards accrued since deposit
+        changePrank(_minterOne);
+        assertEq(_ajnaToken.balanceOf(_minterOne), 0);
+        // vm.expectEmit(true, true, true, true);
+        // emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, 18.085912173086791740 * 1e18);
+        _ajnaRewards.claimRewards(tokenIdOne);
+        assertGt(_ajnaToken.balanceOf(_minterOne), 0);
+        assertLt(_ajnaToken.balanceOf(_minterOne), tokensToBurn);
+    }
 
 }

@@ -172,6 +172,7 @@ contract AjnaRewards is IAjnaRewards {
                 interestEarned -= quoteAtLastClaimed - quoteAtCurrentRate;
             }
 
+            // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
             unchecked {
                 ++i;
             }
@@ -209,6 +210,7 @@ contract AjnaRewards is IAjnaRewards {
             uint256 bucketExchangeRate = IPool(ajnaPool).bucketExchangeRate(positionPrices[i]);
             poolBucketExchangeRateCheckpoints[ajnaPool][positionPrices[i]].push(bucketExchangeRate);
 
+            // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
             unchecked {
                 ++i;
             }
@@ -221,6 +223,7 @@ contract AjnaRewards is IAjnaRewards {
         for (uint256 i = 0; i < positionPrices.length; ) {
             deposits[tokenId_].lpsAtDeposit[positionPrices[i]] = positionManager.getLPTokens(tokenId_, positionPrices[i]);
 
+            // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
             unchecked {
                 ++i;
             }
