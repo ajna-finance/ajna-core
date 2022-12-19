@@ -56,7 +56,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
         tokenIdsToAdd[1] = 3;
 
         // borrower deposits two NFTs into the subset pool and borrows
-        _drawDebtNoCheckLup(
+        _drawDebtNoLupCheck(
             {
                 from:           _borrower,
                 borrower:       _borrower,
@@ -72,7 +72,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
         tokenIdsToAdd[1] = 53;
         tokenIdsToAdd[2] = 73;
         // borrower deposits two NFTs into the subset pool and borrows
-        _drawDebtNoCheckLup(
+        _drawDebtNoLupCheck(
             {
                 from:           _borrower2,
                 borrower:       _borrower2,

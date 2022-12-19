@@ -132,13 +132,15 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         skip(15 hours);
         address borrower = _borrowers[borrowerId_];
         vm.prank(borrower);
-        _drawDebtNoCheckLup({
-            from: borrower,
-            borrower: borrower,
-            amountToBorrow: 1_000 * 1e18,
-            limitIndex: 5000,
-            collateralToPledge: 0
-        });
+        _drawDebtNoLupCheck(
+            {
+                from:               borrower,
+                borrower:           borrower,
+                amountToBorrow:     1_000 * 1e18,
+                limitIndex:         5000,
+                collateralToPledge: 0
+            }
+        );
 
         assertEq(_noOfLoans(), LOANS_COUNT);
     }
@@ -155,21 +157,25 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
 
         vm.startPrank(newBorrower);
         skip(15 hours);
-        _drawDebtNoCheckLup({
-            from: newBorrower,
-            borrower: newBorrower,
-            amountToBorrow: 0,
-            limitIndex: 0,
-            collateralToPledge: 1_000 * 1e18
-        });
+        _drawDebtNoLupCheck(
+            {
+                from:               newBorrower,
+                borrower:           newBorrower,
+                amountToBorrow:     0,
+                limitIndex:         0,
+                collateralToPledge: 1_000 * 1e18
+            }
+        );
         skip(15 hours);
-        _drawDebtNoCheckLup({
-            from: newBorrower,
-            borrower: newBorrower,
-            amountToBorrow: 1_000 * 1e18,
-            limitIndex: 5000,
-            collateralToPledge: 0
-        });
+        _drawDebtNoLupCheck(
+            {
+                from:               newBorrower,
+                borrower:           newBorrower,
+                amountToBorrow:     1_000 * 1e18,
+                limitIndex:         5000,
+                collateralToPledge: 0
+            }
+        );
         vm.stopPrank();
 
         assertEq(_noOfLoans(), LOANS_COUNT + 1);
@@ -226,13 +232,15 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
             assertEq(_noOfLoans(), LOANS_COUNT);
 
             address borrower = _borrowers[i];
-            _drawDebtNoCheckLup({
-                from: borrower,
-                borrower: borrower,
-                amountToBorrow: 1_000 * 1e18,
-                limitIndex: 5000,
-                collateralToPledge: 0
-            });
+            _drawDebtNoLupCheck(
+                {
+                    from:               borrower,
+                    borrower:           borrower,
+                    amountToBorrow:     1_000 * 1e18,
+                    limitIndex:         5000,
+                    collateralToPledge: 0
+                }
+            );
             assertEq(_noOfLoans(), LOANS_COUNT);
             vm.revertTo(snapshot);
         }
