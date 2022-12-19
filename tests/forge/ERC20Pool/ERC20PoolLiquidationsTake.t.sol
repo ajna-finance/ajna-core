@@ -2063,9 +2063,9 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 bondSize:          0.197766022516205193 * 1e18,
                 bondFactor:        0.01 * 1e18,
                 kickTime:          block.timestamp,
-                kickMomp:          9.721295865031779605 * 1e18,
+                kickMomp:          9.818751856078723036 * 1e18,
                 totalBondEscrowed: 98.731708442308421650 * 1e18,
-                auctionPrice:      311.081467681016947360 * 1e18,
+                auctionPrice:      314.200059394519137152 * 1e18,
                 debtInAuction:     10_120.320801313999710974 * 1e18,
                 thresholdPrice:    9.999544513475625068 * 1e18,
                 neutralPrice:      10.382716182100772629 * 1e18

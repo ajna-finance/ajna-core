@@ -531,16 +531,16 @@ library Auctions {
         if (result.isRewarded) {
             // take is below neutralPrice, Kicker is rewarded
             result.bondChange = Maths.wmul(result.quoteTokenAmount, uint256(bpf));
-            liquidation.bondSize                += uint160(result.bondChange);
+            liquidation.bondSize                    += uint160(result.bondChange);
             auctions_.kickers[result.kicker].locked += result.bondChange;
-            auctions_.totalBondEscrowed              += result.bondChange;
+            auctions_.totalBondEscrowed             += result.bondChange;
 
         } else {
             // take is above neutralPrice, Kicker is penalized
             result.bondChange = Maths.min(liquidation.bondSize, Maths.wmul(result.quoteTokenAmount, uint256(-bpf)));
-            liquidation.bondSize                -= uint160(result.bondChange);
+            liquidation.bondSize                    -= uint160(result.bondChange);
             auctions_.kickers[result.kicker].locked -= result.bondChange;
-            auctions_.totalBondEscrowed              -= result.bondChange;
+            auctions_.totalBondEscrowed             -= result.bondChange;
         }
 
         emit Take(
@@ -706,7 +706,10 @@ library Auctions {
         uint256 momp = _priceAt(
             Deposits.findIndexOfSum(
                 deposits_,
-                Maths.wdiv(poolState_.accruedDebt, Loans.noOfLoans(loans_) * 1e18)
+                Maths.wdiv(
+                    poolState_.accruedDebt,
+                    (Loans.noOfLoans(loans_) + auctions_.noOfAuctions) * 1e18
+                )
             )
         );
         (uint256 bondFactor, uint256 bondSize) = _bondParams(
@@ -720,7 +723,7 @@ library Auctions {
 
         // record liquidation info
         uint256 neutralPrice = Maths.wmul(borrower.t0Np, poolState_.inflator);
-        _recordLiquidation(
+        _recordAuction(
             auctions_,
             borrowerAddress_,
             bondSize,
@@ -730,8 +733,7 @@ library Auctions {
         );
         // update kicker balances and get the difference needed to cover bond (after using any kick claimable funds if any)
         kickResult_.amountToCoverBond = _updateKicker(auctions_, bondSize);
-        // update totalBondEscrowed accumulator
-        auctions_.totalBondEscrowed += bondSize;
+
         // remove kicked loan from heap
         Loans.remove(loans_, borrowerAddress_, loans_.indices[borrowerAddress_]);
 
@@ -802,7 +804,7 @@ library Auctions {
      *  @param  momp_            Current pool MOMP.
      *  @param  neutralPrice_    Current pool Neutral Price.
      */
-    function _recordLiquidation(
+    function _recordAuction(
         AuctionsState storage auctions_,
         address borrowerAddress_,
         uint256 bondSize_,
@@ -821,6 +823,13 @@ library Auctions {
         liquidation.bondFactor          = uint96(bondFactor_);
         liquidation.neutralPrice        = uint96(neutralPrice_);
 
+        // increment number of active auctions
+        ++ auctions_.noOfAuctions;
+
+        // update totalBondEscrowed accumulator
+        auctions_.totalBondEscrowed += bondSize_;
+
+        // update auctions queue
         if (auctions_.head != address(0)) {
             // other auctions in queue, liquidation doesn't exist or overwriting.
             auctions_.liquidations[auctions_.tail].next = borrowerAddress_;
@@ -829,7 +838,6 @@ library Auctions {
             // first auction in queue
             auctions_.head = borrowerAddress_;
         }
-
         // update liquidation with the new ordering
         auctions_.tail = borrowerAddress_;
     }
@@ -849,9 +857,13 @@ library Auctions {
         kicker.locked    -= liquidation.bondSize;
         kicker.claimable += liquidation.bondSize;
 
+        // decrement number of active auctions
+        -- auctions_.noOfAuctions;
+
         // remove auction bond size from bond escrow accumulator 
         auctions_.totalBondEscrowed -= liquidation.bondSize;
 
+        // update auctions queue
         if (auctions_.head == borrower_ && auctions_.tail == borrower_) {
             // liquidation is the head and tail
             auctions_.head = address(0);
@@ -872,7 +884,6 @@ library Auctions {
             auctions_.liquidations[liquidation.prev].next = liquidation.next;
             auctions_.liquidations[liquidation.next].prev = liquidation.prev;
         }
-
         // delete liquidation
          delete auctions_.liquidations[borrower_];
     }

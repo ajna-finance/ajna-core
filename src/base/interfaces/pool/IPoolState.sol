@@ -18,16 +18,16 @@ interface IPoolState {
      *  @return neutralPrice      Neutral Price of auction.
      */
     function auctionInfo(address borrower)
-    external
-    view
-    returns (
-        address kicker,
-        uint256 bondFactor,
-        uint256 bondSize,
-        uint256 kickTime,
-        uint256 kickPrice,
-        uint256 neutralPrice
-    );
+        external
+        view
+        returns (
+            address kicker,
+            uint256 bondFactor,
+            uint256 bondSize,
+            uint256 kickTime,
+            uint256 kickPrice,
+            uint256 neutralPrice
+        );
 
     /**
      *  @notice Returns pool related debt values.
@@ -255,6 +255,7 @@ struct Borrower {
 /*** Auctions State ***/
 
 struct AuctionsState {
+    uint96  noOfAuctions;
     address head;
     address tail;
     uint256 totalBondEscrowed; // [WAD]

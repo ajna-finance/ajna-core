@@ -341,13 +341,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             auctions,
             reserveAuction,
             StartReserveAuctionParams(
-            {
-                poolSize:    deposits.treeSum(),
-                poolDebt:    t0poolDebt,
-                poolBalance: _getPoolQuoteTokenBalance(),
-                inflator:    inflatorSnapshot
-            }
-        )
+                {
+                    poolSize:    deposits.treeSum(),
+                    poolDebt:    t0poolDebt,
+                    poolBalance: _getPoolQuoteTokenBalance(),
+                    inflator:    inflatorSnapshot
+                }
+            )
         );
         _transferQuoteToken(msg.sender, kickerAward);
     }
@@ -637,10 +637,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         return Maths.wmul(loans.getMax().thresholdPrice, inflator_);
     }
 
-    function _momp(uint256 debt_, uint256 noOfLoans_) internal view returns (uint256) {
-        return noOfLoans_ != 0 ? _priceAt(deposits.findIndexOfSum(Maths.wdiv(debt_, noOfLoans_ * 1e18))) : 0;
-    }
-
     function _t0Np (
         uint256 loanId_,
         uint256 t0Debt_,
@@ -654,8 +650,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             // if loan id is 0 then it is a new loan, count it as part of total loans in pool
             uint256 noOfLoans = loanId_ != 0 ? loans.loans.length - 1 : loans.loans.length;
             uint256 thresholdPrice = debt_ * Maths.WAD / collateral_;
-            uint256 curMomp = _momp(t0Debt_, noOfLoans);
-            t0Np_ = (1e18 + rate_) * curMomp * thresholdPrice / lup_ / inflator_;
+            noOfLoans += auctions.noOfAuctions;
+            if (noOfLoans != 0) {
+                uint256 curMomp = _priceAt(deposits.findIndexOfSum(Maths.wdiv(debt_, noOfLoans * 1e18)));
+                t0Np_ = (1e18 + rate_) * curMomp * thresholdPrice / lup_ / inflator_;
+            }
         }
     }
 
