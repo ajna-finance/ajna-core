@@ -10,11 +10,6 @@ library Deposits {
     uint256 internal constant SIZE = 8192;
 
     /**
-     *  @notice Invalid factor to scale tree.
-     */
-    error InvalidScalingFactor();
-
-    /**
      *  @notice increase a value in the FenwickTree at an index.
      *  @dev    Starts at leaf/target and moved up towards root
      *  @param  index_     The deposit index.
@@ -100,8 +95,6 @@ library Deposits {
         uint256 index_,
         uint256 factor_
     ) internal {
-        if (factor_ == 0) revert InvalidScalingFactor();
-
         ++index_;
 
         uint256 sum;
