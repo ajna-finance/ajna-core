@@ -159,6 +159,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 newLup:     9.721295865031779605 * 1e18
             }
         );
+        return;
 
         // Skip to make borrower undercollateralized
         skip(100 days);
@@ -420,15 +421,18 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 exchangeRate: 1 * 1e27
             }
         );
+
         _assertBucket(
             {
                 index:        _i9_72,
                 lpBalance:    11_000 * 1e27,
                 collateral:   0,
-                deposit:      8_775.731868287982080143 * 1e18,
-                exchangeRate: 0.797793806207998370922090909 * 1e27
+                deposit:      8_775.731868287982080143 * 1e18, // Deposit reduced 8775721258848371782184
+                exchangeRate: 0.797793806207998370922090909 * 1e27 // Exchange rate decreased
             }
         );
+        return;
+
         _assertBucket(
             {
                 index:        _i9_62,

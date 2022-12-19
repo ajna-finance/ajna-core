@@ -5,6 +5,7 @@ pragma solidity 0.8.14;
 import { Borrower, LoansState, Loan } from '../base/interfaces/IPool.sol';
 
 import './Maths.sol';
+import '@std/console.sol';
 
 library Loans {
 
@@ -38,24 +39,28 @@ library Loans {
      *  @param borrowerAddress_ Borrower's address to update.
      *  @param borrower_        Borrower struct with borrower details.
      *  @param loanIndex_       Current index of the loan (can be 0 if new loan to be inserted in heap)
+     *  @param inAuction_       Whether the loan is in auction or not.
      */
     function update(
         LoansState storage loans_,
         address borrowerAddress_,
         Borrower memory borrower_,
-        uint256 loanIndex_
+        uint256 loanIndex_,
+        bool inAuction_
     ) internal {
-        // update loan heap
-        if (borrower_.t0debt != 0 && borrower_.collateral != 0) {
-            _upsert(
-                loans_,
-                borrowerAddress_,
-                loanIndex_,
-                uint96(Maths.wdiv(borrower_.t0debt, borrower_.collateral))
-            );
+        if (!inAuction_ ) {
+            // update loan heap
+            if (borrower_.t0debt != 0 && borrower_.collateral != 0) {
+                _upsert(
+                    loans_,
+                    borrowerAddress_,
+                    loanIndex_,
+                    uint96(Maths.wdiv(borrower_.t0debt, borrower_.collateral))
+                );
 
-        } else if (loanIndex_ != 0) {
-            remove(loans_, borrowerAddress_, loanIndex_);
+            } else if (loanIndex_ != 0) {
+                remove(loans_, borrowerAddress_, loanIndex_);
+            }
         }
 
         loans_.borrowers[borrowerAddress_] = borrower_;

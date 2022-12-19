@@ -325,7 +325,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         // convert kick penalty to t0 amount, update borrower t0 debt and pool t0 debt accumulators
         kickPenalty     =  Maths.wdiv(kickPenalty, poolState.inflator);
         borrowerT0debt  += kickPenalty;
-        borrower.t0debt = borrowerT0debt;
+        borrower.t0debt =  borrowerT0debt;
         t0DebtInAuction += borrowerT0debt;
         t0poolDebt      += kickPenalty;
 
@@ -450,7 +450,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             poolState.rate,
             newLup_
         );
-        loans.update(borrowerAddress_, borrower, loanId);
+        loans.update(borrowerAddress_, borrower, loanId, false);
 
         // update pool global interest rate state
         _updateInterestParams(poolState, newLup_);
@@ -500,7 +500,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 poolState.rate,
                 newLup_
             );
-            loans.update(msg.sender, borrower, loanId);
+            loans.update(msg.sender, borrower, loanId, Auctions.isActive(auctions, borrowerAddress_));
 
             pledgedCollateral = poolState.collateral;
             _updateInterestParams(poolState, newLup_);
@@ -541,11 +541,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // update loan state, no need to stamp borrower t0Np in repay action
         uint256 loanId = loans.indices[borrowerAddress_];
-        if (Auctions.isActive(auctions, borrowerAddress_)) {
-            loans.borrowers[borrowerAddress_] = borrower_;
-        } else {
-            loans.update(borrowerAddress_, borrower_, loanId);
-        }
+        loans.update(borrowerAddress_, borrower_, loanId, Auctions.isActive(auctions, borrowerAddress_));
 
         t0poolDebt -= t0repaidDebt_;
         _updateInterestParams(poolState_, newLup_);
