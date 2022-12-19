@@ -703,13 +703,11 @@ library Auctions {
         ) revert BorrowerOk();
 
         // calculate auction params
+        uint256 noOfLoans = Loans.noOfLoans(loans_) + auctions_.noOfAuctions;
         uint256 momp = _priceAt(
             Deposits.findIndexOfSum(
                 deposits_,
-                Maths.wdiv(
-                    poolState_.accruedDebt,
-                    (Loans.noOfLoans(loans_) + auctions_.noOfAuctions) * 1e18
-                )
+                Maths.wdiv(poolState_.accruedDebt, noOfLoans * 1e18)
             )
         );
         (uint256 bondFactor, uint256 bondSize) = _bondParams(
