@@ -195,6 +195,7 @@ library Auctions {
             }
 
             --params_.bucketDepth;
+
         }
 
         // if there's still debt and no collateral
@@ -399,7 +400,7 @@ library Auctions {
             result.bondChange,
             result.isRewarded
         );
-        return(result.collateralAmount, result.t0repayAmount);
+        return (result.collateralAmount, result.t0repayAmount);
     }
 
     /**

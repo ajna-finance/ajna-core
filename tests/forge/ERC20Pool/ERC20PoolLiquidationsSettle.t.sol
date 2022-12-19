@@ -159,7 +159,6 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 newLup:     9.721295865031779605 * 1e18
             }
         );
-        return;
 
         // Skip to make borrower undercollateralized
         skip(100 days);
@@ -370,6 +369,27 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
         // settle should affect first 3 buckets, reducing deposit and incrementing collateral
         skip(73 hours);
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_494.605770555946295771 * 1e18,
+                borrowerCollateral:        200 * 1e18,
+                borrowert0Np:              10.307611531622595991 * 1e18,
+                borrowerCollateralization: 0.204775134427989204 * 1e18
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        _i9_91,
+                lpBalance:    2_000 * 1e27,
+                collateral:   0,
+                deposit:      2_118.911507166546112000 * 1e18,
+                exchangeRate: 1.059455753583273056000 * 1e27
+            }
+        );
+
         _settle(
             {
                 from:        _lender,
@@ -378,6 +398,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 settledDebt: 9_361.437181302278117323 * 1e18
             }
         );
+
         _assertAuction(
             AuctionParams({
                 borrower:          _borrower2,
