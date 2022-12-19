@@ -309,9 +309,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
 
         // Add for tearDown
         borrowers.add(borrower);
-        // for (uint256 i=0; i < tokenIds.length; i++) {
-        //     borrowerPlegedNFTIds[borrower].add(tokenIds[i]);
-        // }
     }
 
     function _removeCollateral(
