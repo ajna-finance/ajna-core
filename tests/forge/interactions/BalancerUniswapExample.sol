@@ -135,15 +135,14 @@ contract BalancerUniswapPurchaser {
         // approve ajna pool to transfer flash loaned collateral
         collateral.approve(decoded.ajnaPool, loanAmount);
         // purchase USDC with 1 WETH from ajna
-        uint256 lps             = IAjnaPool(decoded.ajnaPool).addCollateral(loanAmount, decoded.bucketIndex);
-        (uint256 quoteAmount, ) = IAjnaPool(decoded.ajnaPool).removeQuoteToken(type(uint256).max, decoded.bucketIndex);
-        assert(lps                                 == 83008350.10362729922336157 * 1e27);   // LPS in bucket
-        assert(quoteAmount                         == 4995.19230769230769 * 1e18);          // Purchased quote amount
+        IAjnaPool(decoded.ajnaPool).addCollateral(loanAmount, decoded.bucketIndex);
+        uint256 removed = IAjnaPool(decoded.ajnaPool).removeQuoteToken(type(uint256).max, decoded.bucketIndex);
+        assert(removed                             == 4995.19230769230769 * 1e18);  // Purchased quote amount
         assert(quote.balanceOf(address(this))      == 4995.192307 * 1e6); // USDC balance after Ajna purchase
         assert(collateral.balanceOf(address(this)) == 0);                 // WETH balance after Ajna purchase
 
         // swap USDC to WETH on Uniswap, approve router to spend USDC purchased from ajna
-        quote.approve(address(router), quoteAmount);
+        quote.approve(address(router), removed);
 
         ISwapRouter.ExactInputSingleParams memory params =
             ISwapRouter.ExactInputSingleParams({

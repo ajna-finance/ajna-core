@@ -13,12 +13,12 @@ interface IAjnaPool {
     function addCollateral(
         uint256 amount,
         uint256 index
-    ) external returns (uint256 lpbChange);
+    ) external;
 
     function removeQuoteToken(
         uint256 maxAmount,
         uint256 index
-    ) external returns (uint256 quoteTokenAmount, uint256 lpAmount);
+    ) external returns (uint256 quoteTokenAmount);
 
     function collateralAddress() external pure returns (address);
 

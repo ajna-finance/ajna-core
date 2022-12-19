@@ -53,5 +53,4 @@ contract PurchaseQuoteWithExternalLiquidityTest is Test {
         purchaseContract.purchase(tokens, amounts, data);
         assertGt(weth.balanceOf(address(this)), 1e18); // could vary
     }
-
 }
