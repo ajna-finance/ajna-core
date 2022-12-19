@@ -290,7 +290,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
                timeRemaining:              0
            }
         );
-        
+
         _assertAuction(
            AuctionParams({
                borrower:          _borrower,
@@ -333,7 +333,6 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
                lpAwardKicker:    0.198343102933742890000000000 * 1e27
            }
         );
-
         _assertLenderLpBalance(
            {
                lender:      _taker,
@@ -359,7 +358,6 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
                exchangeRate: 1.000002994482624129000538562 * 1e27
            }
         );
-
         // reserves should remain the same after deposit take
         _assertReserveAuction(
            {
@@ -370,7 +368,6 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
                timeRemaining:              0
            }
         );
-
         _assertAuction(
            AuctionParams({
                borrower:          _borrower,

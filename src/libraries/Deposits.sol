@@ -262,7 +262,7 @@ library Deposits {
     ) internal view returns (uint256 depositValue_) {
         if (index_ >= SIZE) revert InvalidIndex();
 
-	depositValue_ = Maths.wmul(unscaledValueAt(deposits_, index_), scale(deposits_,index_));
+        depositValue_ = Maths.wmul(unscaledValueAt(deposits_, index_), scale(deposits_,index_));
     }
 
     function unscaledValueAt(
