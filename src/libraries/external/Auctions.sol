@@ -340,14 +340,14 @@ library Auctions {
         // if deposit take then price to use when calculating take is bucket price
         if (params_.depositTake) result.auctionPrice = result.bucketPrice;
 
-        int256  bpf
-          = _takeParameters(
-            liquidation,
+        int256 bpf = _bpf(
+            Maths.wmul(params_.t0debt, params_.inflator),
             params_.collateral,
-            params_.t0debt,
-            result.auctionPrice,
-            params_.inflator
+            liquidation.neutralPrice,
+            liquidation.bondFactor,
+            result.auctionPrice
         );
+
         result.kicker = liquidation.kicker;
         result.isRewarded = (bpf >= 0);
         result.bucketScale = Deposits.scale(deposits_, params_.index);
@@ -418,14 +418,14 @@ library Auctions {
         );
         result.kicker = liquidation.kicker;
 
-        int256 bpf
-          = _takeParameters(
-            liquidation,
+        int256 bpf = _bpf(
+            Maths.wmul(params_.t0debt, params_.inflator),
             params_.collateral,
-            params_.t0debt,
-            result.auctionPrice,
-            params_.inflator
+            liquidation.neutralPrice,
+            liquidation.bondFactor,
+            result.auctionPrice
         );
+
         result.isRewarded = (bpf >= 0);
 
         uint256 collateralBound = Maths.min(params_.collateral, params_.takeCollateral);
@@ -794,32 +794,6 @@ library Auctions {
         }
 
         return PRBMathSD59x18.mul(int256(bondFactor_), sign);
-    }
-
-    /**
-     *  @notice Utility function to calculate take's parameters.
-     *  @param  liquidation_  Liquidation struct holding auction details.
-     *  @param  t0debt_       Borrower t0 debt.
-     *  @param  price_        Price of take in auction (not nec. bucket price)
-     *  @param  poolInflator_ The pool's inflator, used to calculate borrower debt.
-     */
-    function _takeParameters(
-        Liquidation storage liquidation_,
-        uint256 collateral_,
-        uint256 t0debt_,
-        uint256 price_,
-        uint256 poolInflator_
-    ) internal view returns (
-        int256  bpf_
-    ) {
-        // calculate the bond payment factor
-        bpf_ = _bpf(
-            Maths.wmul(t0debt_, poolInflator_),
-            collateral_,
-            liquidation_.neutralPrice,
-            liquidation_.bondFactor,
-            price_
-        );
     }
 
     /**********************/
