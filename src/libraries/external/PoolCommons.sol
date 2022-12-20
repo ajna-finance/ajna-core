@@ -132,7 +132,6 @@ library PoolCommons {
                 htpIndex,
                 Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD // lender factor
             );
-
         }
     }
 
