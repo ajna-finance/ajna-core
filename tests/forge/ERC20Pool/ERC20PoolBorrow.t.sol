@@ -420,7 +420,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              expectedDebt,
                 borrowerCollateral:        60 * 1e18,
-                borrowert0Np:              369.605048076923077092 * 1e18,
+                borrowert0Np:              369.605048076923077093 * 1e18,
                 borrowerCollateralization: 8.483377444958217435 * 1e18
             }
         );
@@ -458,7 +458,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              expectedDebt,
                 borrowerCollateral:        50 * 1e18,
-                borrowert0Np:              445.838278846153846358 * 1e18,
+                borrowert0Np:              445.838278846153846359 * 1e18,
                 borrowerCollateralization: 7.057773002983275247 * 1e18
             }
         );
@@ -497,7 +497,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              expectedDebt,
                 borrowerCollateral:        50 * 1e18,
-                borrowert0Np:              448.381722115384615590 * 1e18,
+                borrowert0Np:              448.381722115384615591 * 1e18,
                 borrowerCollateralization: 7.044916376706357984 * 1e18
             }
         );
@@ -531,7 +531,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              expectedDebt,
                 borrowerCollateral:        50 * 1e18,
-                borrowert0Np:              451.179509711538461745 * 1e18,
+                borrowert0Np:              451.179509711538461746 * 1e18,
                 borrowerCollateralization: 7.030801136225104190 * 1e18
             }
         );
@@ -561,7 +561,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              expectedDebt,
                 borrowerCollateral:        50 * 1e18,
-                borrowert0Np:              451.179509711538461745 * 1e18,
+                borrowert0Np:              451.179509711538461746 * 1e18,
                 borrowerCollateralization: 7.015307034516347067 * 1e18
             }
         );
