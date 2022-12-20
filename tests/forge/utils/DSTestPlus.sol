@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-only
-
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.14;
 
 import '@std/Test.sol';
