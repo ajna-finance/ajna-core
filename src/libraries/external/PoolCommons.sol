@@ -100,26 +100,19 @@ library PoolCommons {
 
     /**
      *  @notice Calculates new pool interest and scale the fenwick tree to update amount of debt owed to lenders (saved in storage).
-     *  @param  debt_           Pool accrued debt.
-     *  @param  collateral_     Collateral pledged in pool.
      *  @param  thresholdPrice_ Current Pool Threshold Price.
-     *  @param  inflator_       Current pool inflator.
-     *  @param  interestRate_   Current pool interest rate.
      *  @param  elapsed_        Time elapsed since last inflator update.
      *  @return newInflator_   The new value of pool inflator.
      */
     function accrueInterest(
         DepositsState storage deposits_,
-        uint256 debt_,
-        uint256 collateral_,
+        PoolState calldata poolState_,
         uint256 thresholdPrice_,
-        uint256 inflator_,
-        uint256 interestRate_,
         uint256 elapsed_
     ) external returns (uint256 newInflator_) {
         // Scale the borrower inflator to update amount of interest owed by borrowers
-        uint256 pendingFactor = PRBMathUD60x18.exp((interestRate_ * elapsed_) / 365 days);
-        newInflator_ = Maths.wmul(inflator_, pendingFactor);
+        uint256 pendingFactor = PRBMathUD60x18.exp((poolState_.rate * elapsed_) / 365 days);
+        newInflator_ = Maths.wmul(poolState_.inflator, pendingFactor);
 
         uint256 htp = Maths.wmul(thresholdPrice_, newInflator_);
         // if HTP is under the lowest price bucket then accrue interest at max index (min price)
@@ -130,8 +123,8 @@ library PoolCommons {
 
         if (depositAboveHtp != 0) {
             uint256 newInterest = Maths.wmul(
-                _lenderInterestMargin(_utilization(deposits_, debt_, collateral_)),
-                Maths.wmul(pendingFactor - Maths.WAD, debt_)
+                _lenderInterestMargin(_utilization(deposits_, poolState_.accruedDebt, poolState_.collateral)),
+                Maths.wmul(pendingFactor - Maths.WAD, poolState_.accruedDebt)
             );
 
             Deposits.mult(

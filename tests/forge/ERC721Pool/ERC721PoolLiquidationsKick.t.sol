@@ -278,5 +278,22 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
                 borrower:   _borrower2
             }
         );
+
+        // check locked pool actions if auction kicked for more than 72 hours and auction head not cleared
+        skip(80 hours);
+        _assertRemoveLiquidityAuctionNotClearedRevert(
+            {
+                from:   _lender,
+                amount: 1_000 * 1e18,
+                index:  _i9_91
+            }
+        );
+        _assertRemoveCollateralAuctionNotClearedRevert(
+            {
+                from:   _lender,
+                amount: 10 * 1e18,
+                index:  _i9_91
+            }
+        );
     }
 }

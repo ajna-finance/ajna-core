@@ -88,7 +88,7 @@ contract FenwickTreeInstance is DSTestPlus {
         while (totalAmountDec > 0 && insertsDec > 0) {
 
             // Insert at random index
-            i = randomInRange(1, 8190);
+            i = randomInRange(1, MAX_FENWICK_INDEX);
 
             // If last iteration, insert remaining
             amount = insertsDec == 1 ? totalAmountDec : (totalAmountDec % insertsDec) * randomInRange(1_000, 1 * 1e10, true);
@@ -106,6 +106,5 @@ contract FenwickTreeInstance is DSTestPlus {
 
         assertEq(deposits.treeSum(), totalAmount);
     }
-
 }
 

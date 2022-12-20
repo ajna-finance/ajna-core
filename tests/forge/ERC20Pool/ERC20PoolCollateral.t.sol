@@ -20,10 +20,10 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         _bidder    = makeAddr("bidder");
 
         _mintCollateralAndApproveTokens(_borrower,  150 * 1e18);
-        _mintCollateralAndApproveTokens(_borrower2,  100 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower2, 100 * 1e18);
 
-        _mintQuoteAndApproveTokens(_lender,   200_000 * 1e18);
-        _mintQuoteAndApproveTokens(_bidder,  200_000 * 1e18);
+        _mintQuoteAndApproveTokens(_lender, 200_000 * 1e18);
+        _mintQuoteAndApproveTokens(_bidder, 200_000 * 1e18);
     }
 
     /**

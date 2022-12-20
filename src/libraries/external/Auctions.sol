@@ -5,13 +5,14 @@ pragma solidity 0.8.14;
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 
 import {
+    PoolState,
     DepositsState,
     AuctionsState,
     Liquidation,
     Kicker,
     ReserveAuctionState,
     SettleParams,
-    KickParams,
+    KickResult,
     BucketTakeParams,
     TakeParams,
     StartReserveAuctionParams
@@ -24,6 +25,19 @@ import '../Loans.sol';
 import '../../base/PoolHelper.sol';
 
 library Auctions {
+
+    struct KickWithDepositLocalVars {
+        uint256 bucketLPs;
+        uint256 bucketCollateral;
+        uint256 bucketPrice;
+        uint256 bucketUnscaledDeposit;
+        uint256 bucketScale;
+        uint256 bucketDeposit;
+        uint256 lenderLPs;
+        uint256 bucketRate;
+        uint256 amountToDebitFromDeposit;
+        uint256 redeemedLPs;
+    }
 
     struct TakeResult {
         uint256 quoteTokenAmount; // The quote token amount that taker should pay for collateral taken.
@@ -84,6 +98,22 @@ library Auctions {
         bool    isReward
     );
 
+    /**
+     *  @notice Emitted when lender kick and remove quote token from the pool.
+     *  @param  lender     Recipient that removed quote tokens.
+     *  @param  price      Price at which quote tokens were removed.
+     *  @param  amount     Amount of quote tokens removed from the pool.
+     *  @param  lpRedeemed Amount of LP exchanged for quote token.
+     *  @param  lup        LUP calculated after removal.
+     */
+    event RemoveQuoteToken(
+        address indexed lender,
+        uint256 indexed price,
+        uint256 amount,
+        uint256 lpRedeemed,
+        uint256 lup
+    );
+
     event ReserveAuction(
         uint256 claimableReservesRemaining,
         uint256 auctionPrice
@@ -106,6 +136,10 @@ library Auctions {
      */
     error AuctionPriceGtBucketPrice();
     /**
+     *  @notice Borrower has a healthy over-collateralized position.
+     */
+    error BorrowerOk();
+    /**
      *  @notice Bucket to arb must have more quote available in the bucket.
      */
     error InsufficientLiquidity();
@@ -125,6 +159,10 @@ library Auctions {
      *  @notice Actor is attempting to take or clear an inactive reserves auction.
      */
     error NoReservesAuction();
+    /**
+     *  @notice Actor is attempting to remove using a bucket with price below the LUP.
+     */
+    error PriceBelowLUP();
     /**
      *  @notice Take was called before 1 hour had passed from kick time.
      */
@@ -235,72 +273,112 @@ library Auctions {
 
     /**
      *  @notice Called to start borrower liquidation and to update the auctions queue.
-     *  @param  params_            Kick params.
-     *  @return kickAuctionAmount_ The amount that kicker should send to pool in order to kick auction.
-     *  @return kickPenalty_       The kick penalty (three months of interest).
+     *  @param  poolState_       Current state of the pool.
+     *  @param  borrowerAddress_ Address of the borrower to kick.
+     *  @return kickResult_      The result of the kick action.
      */
     function kick(
         AuctionsState storage auctions_,
-        KickParams calldata params_
-    ) external returns (uint256 kickAuctionAmount_, uint256 kickPenalty_) {
-        uint256 thresholdPrice = params_.debt  * Maths.WAD / params_.collateral;
-        uint256 bondFactor;
-        // bondFactor = min(30%, max(1%, (MOMP - thresholdPrice) / MOMP))
-        if (thresholdPrice >= params_.momp) {
-            bondFactor = 0.01 * 1e18;
+        DepositsState storage deposits_,
+        LoansState    storage loans_,
+        PoolState calldata poolState_,
+        address borrowerAddress_
+    ) external returns (
+        KickResult memory
+    ) {
+        return _kick(
+            auctions_,
+            deposits_,
+            loans_,
+            poolState_,
+            borrowerAddress_,
+            0
+        );
+    }
+
+    /**
+     *  @notice Called by lenders to kick loans using their deposits.
+     *  @param  poolState_           Current state of the pool.
+     *  @param  index_               The deposit index from where lender removes liquidity.
+     *  @return kickResult_ The result of the kick action.
+     */
+    function kickWithDeposit(
+        AuctionsState storage auctions_,
+        DepositsState storage deposits_,
+        mapping(uint256 => Bucket) storage buckets_,
+        LoansState    storage loans_,
+        PoolState memory poolState_,
+        uint256 index_
+    ) external returns (
+        KickResult memory kickResult_
+    ) {
+        Bucket storage bucket = buckets_[index_];
+        Lender storage lender = bucket.lenders[msg.sender];
+
+        KickWithDepositLocalVars memory vars;
+        if (bucket.bankruptcyTime < lender.depositTime) vars.lenderLPs = lender.lps;
+
+        vars.bucketLPs                = bucket.lps;
+        vars.bucketCollateral         = bucket.collateral;
+        vars.bucketPrice              = _priceAt(index_);
+        vars.bucketUnscaledDeposit    = Deposits.unscaledValueAt(deposits_, index_);
+        vars.bucketScale              = Deposits.scale(deposits_, index_);
+        vars.bucketDeposit            = Maths.wmul(vars.bucketUnscaledDeposit, vars.bucketScale);
+        // calculate max amount that can be removed (constrained by lender LPs in bucket, bucket deposit and the amount lender wants to remove)
+        vars.bucketRate               = Buckets.getExchangeRate(
+            vars.bucketCollateral,
+            vars.bucketLPs,
+            vars.bucketDeposit,
+            vars.bucketPrice
+        );
+        vars.amountToDebitFromDeposit = Maths.rayToWad(Maths.rmul(vars.lenderLPs, vars.bucketRate));                // calculate amount to remove based on lender LPs in bucket
+        if (vars.amountToDebitFromDeposit > vars.bucketDeposit) vars.amountToDebitFromDeposit = vars.bucketDeposit; // cap the amount to remove at bucket deposit
+
+        // revert if no amount that can be removed
+        if (vars.amountToDebitFromDeposit == 0) revert InsufficientLiquidity();
+
+        // kick top borrower
+        kickResult_ = _kick(
+            auctions_,
+            deposits_,
+            loans_,
+            poolState_,
+            Loans.getMax(loans_).borrower,
+            vars.amountToDebitFromDeposit
+        );
+
+        // amount to remove from deposit covers entire bond amount
+        if (vars.amountToDebitFromDeposit > kickResult_.amountToCoverBond) {
+            vars.amountToDebitFromDeposit = kickResult_.amountToCoverBond;                             // cap amount to remove from deposit at amount to cover bond
+
+            kickResult_.lup = _lup(deposits_, poolState_.accruedDebt + vars.amountToDebitFromDeposit); // recalculate the LUP with the amount to cover bond
+            kickResult_.amountToCoverBond = 0;                                                         // entire bond is covered from deposit, no additional amount to be send by lender
         } else {
-            bondFactor = Maths.min(
-                0.3 * 1e18,
-                Maths.max(
-                    0.01 * 1e18,
-                    1e18 - Maths.wdiv(thresholdPrice, params_.momp)
-                )
+            kickResult_.amountToCoverBond -= vars.amountToDebitFromDeposit;                            // lender should send additional amount to cover bond
+        }
+
+        // revert if the bucket price used to kick and remove is below new LUP
+        if (vars.bucketPrice < kickResult_.lup) revert PriceBelowLUP();
+
+        // remove amount from deposits
+        if (vars.amountToDebitFromDeposit == vars.bucketDeposit && vars.bucketCollateral == 0) {
+            // In this case we are redeeming the entire bucket exactly, and need to ensure bucket LPs are set to 0
+            vars.redeemedLPs = vars.bucketLPs;
+            Deposits.unscaledRemove(deposits_, index_, vars.bucketUnscaledDeposit);
+        } else {
+            vars.redeemedLPs = Maths.wrdivr(vars.amountToDebitFromDeposit, vars.bucketRate);
+            Deposits.unscaledRemove(
+                deposits_,
+                index_,
+                Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketScale)
             );
         }
 
-        // update kicker balances
-        uint256 bondSize = Maths.wmul(bondFactor,  params_.debt);
-        Kicker storage kicker = auctions_.kickers[msg.sender];
-        kicker.locked += bondSize;
-        uint256 kickerClaimable = kicker.claimable;
-        if (kickerClaimable >= bondSize) {
-            kicker.claimable -= bondSize;
-        } else {
-            kickAuctionAmount_ = bondSize - kickerClaimable;
-            kicker.claimable   = 0; 
-        }
-        // update totalBondEscrowed accumulator
-        auctions_.totalBondEscrowed += bondSize;
+        // remove bucket LPs coresponding to the amount removed from deposits
+        lender.lps -= vars.redeemedLPs;
+        bucket.lps -= vars.redeemedLPs;
 
-        // record liquidation info
-        Liquidation storage liquidation = auctions_.liquidations[ params_.borrower];
-        liquidation.kicker              = msg.sender;
-        liquidation.kickTime            = uint96(block.timestamp);
-        liquidation.kickMomp            = uint96(params_.momp);
-        liquidation.bondSize            = uint160(bondSize);
-        liquidation.bondFactor          = uint96(bondFactor);
-        liquidation.neutralPrice        = uint96(params_.neutralPrice);
-
-        if (auctions_.head != address(0)) {
-            // other auctions in queue, liquidation doesn't exist or overwriting.
-            auctions_.liquidations[auctions_.tail].next =  params_.borrower;
-            liquidation.prev = auctions_.tail;
-        } else {
-            // first auction in queue
-            auctions_.head = params_.borrower;
-        }
-
-        // update liquidation with the new ordering
-        auctions_.tail =  params_.borrower;
-
-        // when loan is kicked, penalty of three months of interest is added
-        kickPenalty_ = Maths.wmul(Maths.wdiv(params_.rate, 4 * 1e18), params_.debt );
-        emit Kick(
-            params_.borrower,
-            params_.debt + kickPenalty_,
-            params_.collateral,
-            bondSize
-        );
+        emit RemoveQuoteToken(msg.sender, index_, vars.amountToDebitFromDeposit, vars.redeemedLPs, kickResult_.lup);
     }
 
     /**
@@ -453,16 +531,16 @@ library Auctions {
         if (result.isRewarded) {
             // take is below neutralPrice, Kicker is rewarded
             result.bondChange = Maths.wmul(result.quoteTokenAmount, uint256(bpf));
-            liquidation.bondSize                += uint160(result.bondChange);
+            liquidation.bondSize                    += uint160(result.bondChange);
             auctions_.kickers[result.kicker].locked += result.bondChange;
-            auctions_.totalBondEscrowed              += result.bondChange;
+            auctions_.totalBondEscrowed             += result.bondChange;
 
         } else {
             // take is above neutralPrice, Kicker is penalized
             result.bondChange = Maths.min(liquidation.bondSize, Maths.wmul(result.quoteTokenAmount, uint256(-bpf)));
-            liquidation.bondSize                -= uint160(result.bondChange);
+            liquidation.bondSize                    -= uint160(result.bondChange);
             auctions_.kickers[result.kicker].locked -= result.bondChange;
-            auctions_.totalBondEscrowed              -= result.bondChange;
+            auctions_.totalBondEscrowed             -= result.bondChange;
         }
 
         emit Take(
@@ -520,7 +598,7 @@ library Auctions {
                 auctions_.liquidations[borrowerAddress_].kickMomp,
                 auctions_.liquidations[borrowerAddress_].kickTime
             );
-            bucketIndex_ = _indexOf(auctionPrice);
+            bucketIndex_ = auctionPrice > MIN_PRICE ? _indexOf(auctionPrice) : MAX_FENWICK_INDEX;
             lps_ = Buckets.addCollateral(
                 buckets_[bucketIndex_],
                 borrowerAddress_,
@@ -596,6 +674,173 @@ library Auctions {
     /***************************/
 
     /**
+     *  @notice Called to start borrower liquidation and to update the auctions queue.
+     *  @param  poolState_       Current state of the pool.
+     *  @param  borrowerAddress_ Address of the borrower to kick.
+     *  @param  additionalDebt_  Additional debt to be used when calculating proposed LUP.
+     *  @return kickResult_      The result of the kick action.
+     */
+    function _kick(
+        AuctionsState storage auctions_,
+        DepositsState storage deposits_,
+        LoansState    storage loans_,
+        PoolState memory poolState_,
+        address borrowerAddress_,
+        uint256 additionalDebt_
+    ) internal returns (
+        KickResult memory kickResult_
+    ) {
+        Borrower storage borrower = loans_.borrowers[borrowerAddress_];
+        kickResult_.kickedT0debt = borrower.t0debt;
+
+        uint256 borrowerDebt       = Maths.wmul(kickResult_.kickedT0debt, poolState_.inflator);
+        uint256 borrowerCollateral = borrower.collateral;
+
+        // add amount to remove to pool debt in order to calculate proposed LUP
+        kickResult_.lup = _lup(deposits_, poolState_.accruedDebt + additionalDebt_);
+        if (
+            _isCollateralized(borrowerDebt , borrowerCollateral, kickResult_.lup, poolState_.poolType)
+        ) revert BorrowerOk();
+
+        // calculate auction params
+        uint256 noOfLoans = Loans.noOfLoans(loans_) + auctions_.noOfAuctions;
+        uint256 momp = _priceAt(
+            Deposits.findIndexOfSum(
+                deposits_,
+                Maths.wdiv(poolState_.accruedDebt, noOfLoans * 1e18)
+            )
+        );
+        (uint256 bondFactor, uint256 bondSize) = _bondParams(
+            borrowerDebt,
+            borrowerCollateral,
+            momp
+        );
+        // when loan is kicked, penalty of three months of interest is added
+        kickResult_.kickPenalty   = Maths.wmul(Maths.wdiv(poolState_.rate, 4 * 1e18), borrowerDebt);
+        kickResult_.kickPenaltyT0 = Maths.wdiv(kickResult_.kickPenalty, poolState_.inflator);
+
+        // record liquidation info
+        uint256 neutralPrice = Maths.wmul(borrower.t0Np, poolState_.inflator);
+        _recordAuction(
+            auctions_,
+            borrowerAddress_,
+            bondSize,
+            bondFactor,
+            momp,
+            neutralPrice
+        );
+        // update kicker balances and get the difference needed to cover bond (after using any kick claimable funds if any)
+        kickResult_.amountToCoverBond = _updateKicker(auctions_, bondSize);
+
+        // remove kicked loan from heap
+        Loans.remove(loans_, borrowerAddress_, loans_.indices[borrowerAddress_]);
+
+        kickResult_.kickedT0debt += kickResult_.kickPenaltyT0;
+        borrower.t0debt =  kickResult_.kickedT0debt;
+
+        emit Kick(
+            borrowerAddress_,
+            borrowerDebt + kickResult_.kickPenalty,
+            borrower.collateral,
+            bondSize
+        );
+    }
+
+    /**
+     *  @notice Calculates bond parameters of an auction.
+     *  @param  debt_       Borrower's debt before entering in liquidation.
+     *  @param  collateral_ Borrower's collateral before entering in liquidation.
+     *  @param  momp_       Current pool momp.
+     */
+    function _bondParams(
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 momp_
+    ) internal pure returns (uint256 bondFactor_, uint256 bondSize_) {
+        uint256 thresholdPrice = debt_  * Maths.WAD / collateral_;
+        // bondFactor = min(30%, max(1%, (MOMP - thresholdPrice) / MOMP))
+        if (thresholdPrice >= momp_) {
+            bondFactor_ = 0.01 * 1e18;
+        } else {
+            bondFactor_ = Maths.min(
+                0.3 * 1e18,
+                Maths.max(
+                    0.01 * 1e18,
+                    1e18 - Maths.wdiv(thresholdPrice, momp_)
+                )
+            );
+        }
+
+        bondSize_ = Maths.wmul(bondFactor_,  debt_);
+    }
+
+    /**
+     *  @notice Updates kicker balances.
+     *  @param  bondSize_       Bond size to cover newly kicked auction.
+     *  @return bondDifference_ The amount that kicker should send to pool to cover auction bond.
+     */
+    function _updateKicker(
+        AuctionsState storage auctions_,
+        uint256 bondSize_
+    ) internal returns (uint256 bondDifference_){
+        Kicker storage kicker = auctions_.kickers[msg.sender];
+        kicker.locked += bondSize_;
+        uint256 kickerClaimable = kicker.claimable;
+        if (kickerClaimable >= bondSize_) {
+            kicker.claimable -= bondSize_;
+        } else {
+            bondDifference_  = bondSize_ - kickerClaimable;
+            kicker.claimable = 0;
+        }
+    }
+
+    /**
+     *  @notice Saves a new liquidation that was kicked.
+     *  @param  borrowerAddress_ Address of the borrower that is kicked.
+     *  @param  bondSize_        Bond size to cover newly kicked auction.
+     *  @param  bondFactor_      Bond factor of the newly kicked auction.
+     *  @param  momp_            Current pool MOMP.
+     *  @param  neutralPrice_    Current pool Neutral Price.
+     */
+    function _recordAuction(
+        AuctionsState storage auctions_,
+        address borrowerAddress_,
+        uint256 bondSize_,
+        uint256 bondFactor_,
+        uint256 momp_,
+        uint256 neutralPrice_
+    ) internal {
+        Liquidation storage liquidation = auctions_.liquidations[borrowerAddress_];
+        if (liquidation.kickTime != 0) revert AuctionActive();
+
+        // record liquidation info
+        liquidation.kicker              = msg.sender;
+        liquidation.kickTime            = uint96(block.timestamp);
+        liquidation.kickMomp            = uint96(momp_);
+        liquidation.bondSize            = uint160(bondSize_);
+        liquidation.bondFactor          = uint96(bondFactor_);
+        liquidation.neutralPrice        = uint96(neutralPrice_);
+
+        // increment number of active auctions
+        ++ auctions_.noOfAuctions;
+
+        // update totalBondEscrowed accumulator
+        auctions_.totalBondEscrowed += bondSize_;
+
+        // update auctions queue
+        if (auctions_.head != address(0)) {
+            // other auctions in queue, liquidation doesn't exist or overwriting.
+            auctions_.liquidations[auctions_.tail].next = borrowerAddress_;
+            liquidation.prev = auctions_.tail;
+        } else {
+            // first auction in queue
+            auctions_.head = borrowerAddress_;
+        }
+        // update liquidation with the new ordering
+        auctions_.tail = borrowerAddress_;
+    }
+
+    /**
      *  @notice Removes auction and repairs the queue order.
      *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from liquidationBondEscrowed.
      *  @param  borrower_ Auctioned borrower address.
@@ -610,9 +855,13 @@ library Auctions {
         kicker.locked    -= liquidation.bondSize;
         kicker.claimable += liquidation.bondSize;
 
+        // decrement number of active auctions
+        -- auctions_.noOfAuctions;
+
         // remove auction bond size from bond escrow accumulator 
         auctions_.totalBondEscrowed -= liquidation.bondSize;
 
+        // update auctions queue
         if (auctions_.head == borrower_ && auctions_.tail == borrower_) {
             // liquidation is the head and tail
             auctions_.head = address(0);
@@ -633,7 +882,6 @@ library Auctions {
             auctions_.liquidations[liquidation.prev].next = liquidation.next;
             auctions_.liquidations[liquidation.next].prev = liquidation.prev;
         }
-
         // delete liquidation
          delete auctions_.liquidations[borrower_];
     }
@@ -831,6 +1079,13 @@ library Auctions {
             Borrower storage borrower = loans_.borrowers[head];
             if (borrower.t0debt != 0 && borrower.collateral == 0) revert AuctionNotCleared();
         }
+    }
+
+    function _lup(
+        DepositsState storage deposits_,
+        uint256 debt_
+    ) internal view returns (uint256) {
+        return _priceAt(Deposits.findIndexOfSum(deposits_, debt_));
     }
 
 }
