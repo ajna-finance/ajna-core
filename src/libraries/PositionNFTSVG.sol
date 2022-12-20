@@ -6,54 +6,27 @@ import { Base64 } from '@base64-sol/base64.sol';
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import '@openzeppelin/contracts/utils/Strings.sol';
 
-import './interfaces/IPositionManager.sol';
+library PositionNFTSVG {
 
-import './PermitERC721.sol';
-
-abstract contract PositionNFT is ERC721, PermitERC721 {
     using Strings for uint256;
 
-    constructor(
-        string memory name_, string memory symbol_, string memory version_
-    ) PermitERC721(name_, symbol_, version_) {
+    /**
+     *  @notice Struct holding parameters for constructing the NFT token URI.
+     *  @param  tokenId The tokenId of the NFT.
+     *  @param  pool    The pool address.
+     *  @param  indexes The array of price buckets index with LP tokens to be tracked by the NFT.
+     */
+    struct ConstructTokenURIParams {
+        uint256 tokenId;
+        address pool;
+        uint256[] indexes;
     }
 
-    function constructTokenURI(IPositionManager.ConstructTokenURIParams memory params_) public view returns (string memory) {
-        string memory _name = string(
-            abi.encodePacked("Ajna Token #", Strings.toString(params_.tokenId))
-        );
-        string memory image = Base64.encode(bytes(_generateSVGofTokenById(params_.tokenId)));
-        // string memory description = "Ajna Positions NFT-V1";
-
-        // address tokenOwner = ownerOf(params_.tokenId);
-        // string memory ownerHexString = (uint256(uint160(tokenOwner))).toHexString(20);
-
-        return image;
-        // return
-        //     string(
-        //         abi.encodePacked(
-        //             "data:application/json;base64,",
-        //             Base64.encode(
-        //                 bytes(
-        //                     abi.encodePacked(
-        //                         '{"name":"',
-        //                         _name,
-        //                         '", "description":"',
-        //                         description,
-        //                         '"owner":"',
-        //                         ownerHexString,
-        //                         '", "image": "',
-        //                         "data:image/svg+xml;base64,",
-        //                         image,
-        //                         '"}'
-        //                     )
-        //                 )
-        //             )
-        //         )
-        //     );
+    function constructTokenURI(ConstructTokenURIParams memory params_) external view returns (string memory image_) {
+        // TODO: remove base64 encoding?
+        image_ = Base64.encode(bytes(_generateSVGofTokenById(params_.tokenId)));
     }
 
-    // TODO: finish implementing: https://github.com/scaffold-eth/scaffold-eth/blob/sipping-oe/packages/hardhat/contracts/OldEnglish.sol#L112-L234
     function _generateSVGofTokenById(uint256 tokenId_) internal pure returns (string memory svg_) {
         svg_ = string(
             abi.encodePacked(
@@ -143,6 +116,7 @@ abstract contract PositionNFT is ERC721, PermitERC721 {
         ));
     }
 
+    // TODO: pass this from position manager
     function _getPoolText(uint256 tokenId) internal pure returns (string memory) {
         return "ETH/DAI";
     }

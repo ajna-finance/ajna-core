@@ -15,17 +15,18 @@ import './interfaces/IPositionManager.sol';
 import '../erc20/interfaces/IERC20Pool.sol';
 import '../erc721/interfaces/IERC721Pool.sol';
 
+import './PermitERC721.sol';
 import './PoolHelper.sol';
-import './PositionNFT.sol';
 
-import '../libraries/Maths.sol';
 import '../libraries/Buckets.sol';
+import '../libraries/Maths.sol';
+import '../libraries/PositionNFTSVG.sol';
 
-contract PositionManager is IPositionManager, Multicall, PositionNFT, ReentrancyGuard {
+contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, ReentrancyGuard {
     using EnumerableSet for EnumerableSet.UintSet;
     using SafeERC20 for ERC20;
 
-    constructor() PositionNFT("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {}
+    constructor() PermitERC721("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {}
 
     /***********************/
     /*** State Variables ***/
@@ -184,8 +185,8 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, Reentrancy
     function tokenURI(uint256 tokenId_) public view override(ERC721) returns (string memory) {
         require(_exists(tokenId_));
 
-        ConstructTokenURIParams memory params = ConstructTokenURIParams(tokenId_, poolKey[tokenId_], positionPrices[tokenId_].values());
-        return constructTokenURI(params);
+        PositionNFTSVG.ConstructTokenURIParams memory params = PositionNFTSVG.ConstructTokenURIParams(tokenId_, poolKey[tokenId_], positionPrices[tokenId_].values());
+        return PositionNFTSVG.constructTokenURI(params);
     }
 
 }
