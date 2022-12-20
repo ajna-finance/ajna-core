@@ -2,7 +2,8 @@
 
 pragma solidity 0.8.14;
 
-import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import { IERC20 }    from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 import '@openzeppelin/contracts/utils/Checkpoints.sol';
 
@@ -19,6 +20,7 @@ import './IAjnaRewards.sol';
 contract AjnaRewards is IAjnaRewards {
 
     using Checkpoints for Checkpoints.History;
+    using SafeERC20   for IERC20;
 
     /***********************/
     /*** State Variables ***/
@@ -142,9 +144,9 @@ contract AjnaRewards is IAjnaRewards {
         // update last interaction block
         deposits[tokenId_].lastInteractionBlock = block.number;
 
-        // TODO: use safeTransfer
         // transfer rewards to sender
-        IERC20(ajnaToken).transfer(msg.sender, rewardsEarned);
+        if (rewardsEarned > IERC20(ajnaToken).balanceOf(address(this))) rewardsEarned = IERC20(ajnaToken).balanceOf(address(this));
+        IERC20(ajnaToken).safeTransfer(msg.sender, rewardsEarned);
     }
 
     function _calculateRewardsEarned(uint256 tokenId_) internal view returns (uint256 rewards_) {
