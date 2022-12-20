@@ -16,8 +16,6 @@ import { PoolCommons } from './libraries/external/PoolCommons.sol';
 
 import './IAjnaRewards.sol';
 
-import '@std/console.sol';
-
 contract AjnaRewards is IAjnaRewards {
 
     using Checkpoints for Checkpoints.History;
@@ -47,7 +45,7 @@ contract AjnaRewards is IAjnaRewards {
      * @dev Checkpoints for a given bucket are updated everytime any depositer staked in that bucket interacts with the rewards contract.
      * @dev poolAddress => bucketIndex => checkpoint => exchangeRate
      */
-    mapping (address => mapping(uint256 => Checkpoints.History)) internal poolBucketExchangeRateCheckpoints;
+    mapping(address => mapping(uint256 => Checkpoints.History)) internal poolBucketExchangeRateCheckpoints;
 
     struct Deposit {
         address owner;                            // owner of the LP NFT
@@ -60,7 +58,7 @@ contract AjnaRewards is IAjnaRewards {
     /*** Constructor ***/
     /*******************/
 
-    constructor (address ajnaToken_, IPositionManager positionManager_) {
+    constructor(address ajnaToken_, IPositionManager positionManager_) {
         ajnaToken = ajnaToken_;
         positionManager = positionManager_;
     }
