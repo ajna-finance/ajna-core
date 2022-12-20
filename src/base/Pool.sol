@@ -437,19 +437,18 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         }
 
         // update loan state
-        uint256 loanId = loans.indices[borrowerAddress_];
-        // stamp borrower t0Np
-        borrower.t0Np = _t0Np(
-            loanId,
-            borrower.t0debt,
-            borrower.collateral,
+        loans.update(
+            auctions,
+            deposits,
+            borrower,
+            borrowerAddress_,
             borrowerDebt,
-            poolState.inflator,
             poolState.rate,
-            newLup_
+            poolState.inflator,
+            newLup_,
+            inAuction,
+            true
         );
-
-        loans.update(borrowerAddress_, borrower, loanId, inAuction);
 
         // update pool global interest rate state
         _updateInterestParams(poolState, newLup_);
@@ -492,18 +491,18 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             poolState.collateral -= collateralAmountToPull_;
 
             // update loan state
-            uint256 loanId = loans.indices[borrowerAddress_];
-            // stamp borrower t0Np
-            borrower.t0Np = _t0Np(
-                loanId,
-                borrower.t0debt,
-                borrower.collateral,
+            loans.update(
+                auctions,
+                deposits,
+                borrower,
+                borrowerAddress_,
                 borrowerDebt,
-                poolState.inflator,
                 poolState.rate,
-                newLup_
+                poolState.inflator,
+                newLup_,
+                false, // cannot be in auction if able to pull collateral
+                true
             );
-            loans.update(msg.sender, borrower, loanId, false); // cannot be in auction if able to pull collateral
 
             pledgedCollateral = poolState.collateral;
             _updateInterestParams(poolState, newLup_);
@@ -546,8 +545,18 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         borrower_.t0debt -= t0repaidDebt_;
 
         // update loan state, no need to stamp borrower t0Np in repay action
-        uint256 loanId = loans.indices[borrowerAddress_];
-        loans.update(borrowerAddress_, borrower_, loanId, inAuction);
+        loans.update(
+            auctions,
+            deposits,
+            borrower_,
+            borrowerAddress_,
+            borrowerDebt,
+            poolState_.rate,
+            poolState_.inflator,
+            newLup_,
+            inAuction,
+            false
+        );
 
         t0poolDebt -= t0repaidDebt_;
         _updateInterestParams(poolState_, newLup_);
@@ -636,25 +645,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     function _getPoolQuoteTokenBalance() internal view returns (uint256) {
         return IERC20(_getArgAddress(QUOTE_ADDRESS)).balanceOf(address(this));
-    }
-
-    function _t0Np (
-        uint256 loanId_,
-        uint256 t0Debt_,
-        uint256 collateral_,
-        uint256 debt_,
-        uint256 inflator_,
-        uint256 rate_,
-        uint256 lup_
-    ) internal view returns (uint256 t0Np_) {
-        if (t0Debt_ != 0 && collateral_ != 0) {
-            // if loan id is 0 then it is a new loan, count it as part of total loans in pool
-            uint256 noOfLoans = loanId_ != 0 ? loans.loans.length - 1 : loans.loans.length;
-            uint256 thresholdPrice = debt_ * Maths.WAD / collateral_;
-            noOfLoans += auctions.noOfAuctions;
-            uint256 curMomp = _priceAt(deposits.findIndexOfSum(Maths.wdiv(debt_, noOfLoans * 1e18)));
-            t0Np_ = (1e18 + rate_) * curMomp * thresholdPrice / lup_ / inflator_;
-        }
     }
 
     function _lupIndex(uint256 debt_) internal view returns (uint256) {
