@@ -48,21 +48,22 @@ library Loans {
         bool inAuction_
     ) internal {
 
+        // loan not auctioned, update loan heap
         if (!inAuction_ ) {
-            // update loan heap
             if (borrower_.t0debt != 0 && borrower_.collateral != 0) {
-                _upsert(
-                    loans_,
-                    borrowerAddress_,
-                    loanIndex_,
-                    uint96(Maths.wdiv(borrower_.t0debt, borrower_.collateral))
-                );
+                uint96 thresholdPrice = uint96(Maths.wdiv(borrower_.t0debt, borrower_.collateral));
+                // revert if threshold price is zero
+                if (thresholdPrice == 0) revert ZeroThresholdPrice();
+
+                // update heap, insert if a new loan, update loan if already in heap
+                _upsert(loans_, borrowerAddress_, loanIndex_, thresholdPrice);
 
             } else if (loanIndex_ != 0) {
                 remove(loans_, borrowerAddress_, loanIndex_);
             }
         }
 
+        // update borrower details
         loans_.borrowers[borrowerAddress_] = borrower_;
     }
 
@@ -159,8 +160,6 @@ library Loans {
         uint256 id_,
         uint96 thresholdPrice_
     ) internal {
-        if (thresholdPrice_ == 0) revert ZeroThresholdPrice();
-
         // Loan exists, update in place.
         if (id_ != 0) {
             Loan memory currentLoan = loans_.loans[id_];
