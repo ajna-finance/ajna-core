@@ -200,8 +200,10 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         changePrank(from);
 
-        vm.expectEmit(true, true, false, true);
-        emit DrawDebt(from, amountToBorrow, collateralToPledge, newLup);
+        if (newLup != 0) {
+            vm.expectEmit(true, true, false, true);
+            emit DrawDebt(from, amountToBorrow, collateralToPledge, newLup);
+        }
 
         // pledge collateral
         if (collateralToPledge != 0) {
@@ -221,30 +223,14 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     }
 
     // Used when lup can't be known in advance
-    function _drawDebtNoCheckLup(
+    function _drawDebtNoLupCheck(
         address from,
         address borrower,
         uint256 amountToBorrow,
         uint256 limitIndex,
         uint256 collateralToPledge
     ) internal {
-        changePrank(from);
-
-        // pledge collateral
-        if (collateralToPledge != 0) {
-            vm.expectEmit(true, true, false, true);
-            emit Transfer(from, address(_pool), collateralToPledge / ERC20Pool(address(_pool)).collateralScale());
-        }
-
-        // borrow quote
-        if (amountToBorrow != 0) {
-            _assertTokenTransferEvent(address(_pool), from, amountToBorrow);
-        }
-
-        ERC20Pool(address(_pool)).drawDebt(borrower, amountToBorrow, limitIndex, collateralToPledge);
-
-        // add for tearDown
-        borrowers.add(borrower);
+        _drawDebt(from, borrower, amountToBorrow, limitIndex, collateralToPledge, 0);
     }
 
     function _pledgeCollateral(
@@ -328,8 +314,10 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         changePrank(from);
 
-        vm.expectEmit(true, true, false, true);
-        emit RepayDebt(borrower, amountRepaid, collateralToPull, newLup);
+        if (newLup != 0) {
+            vm.expectEmit(true, true, false, true);
+            emit RepayDebt(borrower, amountRepaid, collateralToPull, newLup);
+        }
 
         // repay checks
         if (amountToRepay != 0) {
@@ -351,19 +339,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         uint256 amountRepaid,
         uint256 collateralToPull
     ) internal {
-        changePrank(from);
-
-        // repay checks
-        if (amountToRepay != 0) {
-            _assertTokenTransferEvent(from, address(_pool), amountRepaid);
-        }
-
-        // pull checks
-        if (collateralToPull != 0) {
-            _assertCollateralTokenTransferEvent(address(_pool), from, collateralToPull);
-        }
-
-        ERC20Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull);
+        _repayDebt(from, borrower, amountToRepay, amountRepaid, collateralToPull, 0);
     }
 
     function _transferLpTokens(
@@ -583,13 +559,15 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         address borrower = makeAddr(string(abi.encodePacked("anonBorrower", _anonBorrowerCount)));
         vm.stopPrank();
         _mintCollateralAndApproveTokens(borrower,  collateralAmount);
-        _drawDebtNoCheckLup({
-            from: borrower,
-            borrower: borrower,
-            amountToBorrow: loanAmount,
-            limitIndex: limitIndex,
-            collateralToPledge: collateralAmount
-        });
+        _drawDebtNoLupCheck(
+            {
+                from:               borrower,
+                borrower:           borrower,
+                amountToBorrow:     loanAmount,
+                limitIndex:        limitIndex,
+                collateralToPledge: collateralAmount
+            }
+        );
     }
 
     function _mintQuoteAndApproveTokens(address operator_, uint256 mintAmount_) internal {

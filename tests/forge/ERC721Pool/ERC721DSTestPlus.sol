@@ -222,8 +222,10 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     ) internal {
         changePrank(from);
 
-        vm.expectEmit(true, true, false, true);
-        emit DrawDebtNFT(borrower, amountToBorrow, tokenIds, newLup);
+        if (newLup != 0) {
+            vm.expectEmit(true, true, false, true);
+            emit DrawDebtNFT(borrower, amountToBorrow, tokenIds, newLup);
+        }
 
         // pledge collateral
         if (tokenIds.length != 0) {
@@ -253,41 +255,14 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         }
     }
 
-    function _drawDebtNoCheckLup(
+    function _drawDebtNoLupCheck(
         address from,
         address borrower,
         uint256 amountToBorrow,
         uint256 limitIndex,
         uint256[] memory tokenIds
     ) internal {
-        changePrank(from);
-
-        // pledge collateral
-        if (tokenIds.length != 0) {
-            for (uint256 i = 0; i < tokenIds.length; i++) {
-                assertEq(_collateral.ownerOf(tokenIds[i]), from); // token is owned by pledger address
-                vm.expectEmit(true, true, false, true);
-                emit Transfer(from, address(_pool), tokenIds[i]);
-            }
-        }
-
-        // borrow quote
-        if (amountToBorrow != 0) {
-            _assertTokenTransferEvent(address(_pool), from, amountToBorrow);
-        }
-
-        ERC721Pool(address(_pool)).drawDebt(borrower, amountToBorrow, limitIndex, tokenIds);
-
-        // check tokenIds were transferred to the pool
-        for (uint256 i = 0; i < tokenIds.length; i++) {
-            assertEq(_collateral.ownerOf(tokenIds[i]), address(_pool));
-        }
-
-        // Add for tearDown
-        borrowers.add(borrower);
-        for (uint256 i=0; i < tokenIds.length; i++) {
-            borrowerPlegedNFTIds[borrower].add(tokenIds[i]);
-        }
+        _drawDebt(from, borrower, amountToBorrow, limitIndex, tokenIds, 0);
     }
 
     function _pledgeCollateral(
@@ -367,8 +342,11 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                 tokenIds[i] = tokenId;
             }
 
-            vm.expectEmit(true, true, false, true);
-            emit RepayDebt(borrower, amountRepaid, collateralToPull, newLup);
+            if (newLup != 0) {
+                vm.expectEmit(true, true, false, true);
+                emit RepayDebt(borrower, amountRepaid, collateralToPull, newLup);
+            }
+
             ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull);
 
             // post pull checks
@@ -385,8 +363,11 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         }
         else {
             // only repay, don't pull collateral
-            vm.expectEmit(true, true, false, true);
-            emit RepayDebt(borrower, amountRepaid, collateralToPull, newLup);
+            if (newLup != 0) {
+                vm.expectEmit(true, true, false, true);
+                emit RepayDebt(borrower, amountRepaid, collateralToPull, newLup);
+            }
+
             ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull);
         }
     }
@@ -398,41 +379,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         uint256 amountRepaid,
         uint256 collateralToPull
     ) internal {
-        changePrank(from);
-        // repay checks
-        if (amountToRepay != 0) {
-            _assertTokenTransferEvent(from, address(_pool), amountRepaid);
-        }
-
-        // pre pull checks
-        if (collateralToPull != 0) {
-            uint256[] memory tokenIds = new uint256[](collateralToPull);
-            (, uint256 noOfTokens, ) = _pool.borrowerInfo(from);
-            noOfTokens = noOfTokens / 1e18;
-            for (uint256 i = 0; i < collateralToPull; i++) {
-                uint256 tokenId = ERC721Pool(address(_pool)).borrowerTokenIds(from, --noOfTokens);
-                assertEq(_collateral.ownerOf(tokenId), address(_pool)); // token is owned by pool
-                tokenIds[i] = tokenId;
-            }
-
-            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull);
-
-            // post pull checks
-            if (collateralToPull != 0) {
-                for (uint256 i = 0; i < tokenIds.length; i++) {
-                    assertEq(_collateral.ownerOf(tokenIds[i]), address(from)); // token is owned by borrower after pull
-                }
- 
-                // Add for tearDown
-                for (uint256 i = 0; i < tokenIds.length; i++) {
-                    borrowerPlegedNFTIds[from].remove(tokenIds[i]);
-                }
-            }
-        }
-        else {
-            // only repay, don't pull collateral
-            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull);
-        }
+        _repayDebt(from, borrower, amountToRepay, amountRepaid, collateralToPull, 0);
     }
 
     function _take(
