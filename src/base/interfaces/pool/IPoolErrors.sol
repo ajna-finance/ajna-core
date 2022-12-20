@@ -11,6 +11,11 @@ interface IPoolErrors {
     /**************************/
 
     /**
+     *  @notice The action cannot be executed on an active auction.
+     */
+    error AuctionActive();
+
+    /**
      *  @notice Pool already initialized.
      */
     error AlreadyInitialized();
