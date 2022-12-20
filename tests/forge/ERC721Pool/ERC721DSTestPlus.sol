@@ -77,7 +77,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         changePrank(lender);
 
         // Redeem all lps of lender from all buckets as quote token and collateral token
-        for(uint256 j = 0; j < indexes.length(); j++){
+        for (uint256 j = 0; j < indexes.length(); j++) {
             uint256 lenderLpBalance;
             uint256 bucketIndex = indexes.at(j);
             (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
@@ -129,7 +129,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     function validateEmpty(
         EnumerableSet.UintSet storage buckets
     ) internal {
-        for(uint256 i = 0; i < buckets.length() ; i++){
+        for (uint256 i = 0; i < buckets.length() ; i++) {
             uint256 bucketIndex = buckets.at(i);
             (, uint256 quoteTokens, uint256 collateral, uint256 bucketLps, ,) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
 
@@ -147,15 +147,15 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
 
     modifier tearDown {
         _;
-        for(uint i = 0; i < borrowers.length(); i++ ){
+        for (uint i = 0; i < borrowers.length(); i++) {
             repayDebt(borrowers.at(i));
         }
 
-        for(uint i = 0; i < lenders.length(); i++ ){
-            redeemLenderLps(lenders.at(i),lendersDepositedIndex[lenders.at(i)]);
+        for (uint i = 0; i < lenders.length(); i++) {
+            redeemLenderLps(lenders.at(i), lendersDepositedIndex[lenders.at(i)]);
         }
-        
-        for(uint256 i = 0; i < bidders.length(); i++){
+
+        for( uint256 i = 0; i < bidders.length(); i++) {
             redeemLenderLps(bidders.at(i), bidderDepositedIndex[bidders.at(i)]);
         }
         validateEmpty(bucketsUsed);
