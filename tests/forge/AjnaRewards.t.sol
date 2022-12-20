@@ -394,12 +394,16 @@ contract AjnaRewardsTest is DSTestPlus {
         _ajnaRewards.claimRewards(tokenIdTwo);
         assertEq(_ajnaToken.balanceOf(_minterTwo), idTwoRewardsAtTwo);
 
-        // FIXME: this won't fire as checkpoints haven't loaded yet
-        // check rewards state
-        // uint256 remainingRewards = _ajnaRewards.calculateRewardsEarned(tokenIdOne);
-        // assertEq(remainingRewards, 0);
+        // check there are no remaining rewards available after claiming
+        vm.roll(block.number + 1);
+        uint256 remainingRewards = _ajnaRewards.calculateRewardsEarned(tokenIdOne);
+        assertEq(remainingRewards, 0);
 
-        // TODO: test depositor 3
+        remainingRewards = _ajnaRewards.calculateRewardsEarned(tokenIdTwo);
+        assertEq(remainingRewards, 0);
+
+        remainingRewards = _ajnaRewards.calculateRewardsEarned(tokenIdThree);
+        assertEq(remainingRewards, 0);
     }
 
     function testClaimRewardsMultipleDepositsDifferentBucketsMultipleAuctions() external {

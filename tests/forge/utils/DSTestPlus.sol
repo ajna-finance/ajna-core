@@ -205,6 +205,26 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.kick(borrower);
     }
 
+    function _kickWithDeposit(
+        address from,
+        uint256 index,
+        address borrower,
+        uint256 debt,
+        uint256 collateral,
+        uint256 bond,
+        uint256 removedFromDeposit,
+        uint256 transferAmount,
+        uint256 lup
+    ) internal {
+        changePrank(from);
+        vm.expectEmit(true, true, false, true);
+        emit Kick(borrower, debt, collateral, bond);
+        vm.expectEmit(true, true, false, true);
+        emit RemoveQuoteToken(from, index, removedFromDeposit, removedFromDeposit * 1e9, lup);
+        if(transferAmount != 0) _assertTokenTransferEvent(from, address(_pool), transferAmount);
+        _pool.kickWithDeposit(index);
+    }
+
     function _moveLiquidity(
         address from,
         uint256 amount,
@@ -372,12 +392,12 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(auctionKickTime,          state_.kickTime);
         assertEq(auctionKickMomp,          state_.kickMomp);
         assertEq(auctionTotalBondEscrowed, state_.totalBondEscrowed);
-        assertEq(auctionDebtInAuction,     state_.debtInAuction);
-        assertEq(auctionNeutralPrice,      state_.neutralPrice);
-        assertEq(borrowerThresholdPrice,   state_.thresholdPrice);
         assertEq(Auctions._auctionPrice(
             auctionKickMomp,
             auctionKickTime),              state_.auctionPrice);
+        assertEq(auctionDebtInAuction,     state_.debtInAuction);
+        assertEq(auctionNeutralPrice,      state_.neutralPrice);
+        assertEq(borrowerThresholdPrice,   state_.thresholdPrice);
     }
 
     function _assertPool(PoolParams memory state_) internal {
@@ -597,6 +617,16 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.addQuoteToken(amount, index);
     }
 
+    function _assertArbTakeNoAuction(
+        address from,
+        address borrower,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('NoAuction()'));
+        _pool.bucketTake(borrower, false, index);
+    }
+
     function _assertArbTakeAuctionInCooldownRevert(
         address from,
         address borrower,
@@ -811,6 +841,33 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         changePrank(from);
         vm.expectRevert(IPoolErrors.BorrowerOk.selector);
         _pool.kick(borrower);
+    }
+
+    function _assertKickWithInsufficientLiquidityRevert(
+        address from,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('InsufficientLiquidity()'));
+        _pool.kickWithDeposit(index);
+    }
+
+    function _assertKickWithBadProposedLupRevert(
+        address from,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('BorrowerOk()'));
+        _pool.kickWithDeposit(index);
+    }
+
+    function _assertKickPriceBelowProposedLupRevert(
+        address from,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('PriceBelowLUP()'));
+        _pool.kickWithDeposit(index);
     }
 
     function _assertRemoveCollateralAuctionNotClearedRevert(
