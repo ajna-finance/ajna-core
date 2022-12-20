@@ -15,6 +15,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
     address internal _lender1;
     address internal _lender2;
     address internal _lender3;
+    address internal _lender4;
 
     function setUp() external {
         _borrower1 = makeAddr("borrower1");
@@ -25,10 +26,12 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _lender1   = makeAddr("lender1");
         _lender2   = makeAddr("lender2");
         _lender3   = makeAddr("lender3");
+        _lender4   = makeAddr("lender4");
 
         _mintQuoteAndApproveTokens(_lender1, 150_000 * 1e18);
         _mintQuoteAndApproveTokens(_lender2, 150_000 * 1e18);
         _mintQuoteAndApproveTokens(_lender3, 150_000 * 1e18);
+        _mintQuoteAndApproveTokens(_lender4, 5_000 * 1e18);
 
         _mintCollateralAndApproveTokens(_lender1,   1_000 * 1e18);
         _mintCollateralAndApproveTokens(_lender3,   1_000 * 1e18);
@@ -53,7 +56,6 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 index:  2501
             }
         );
-
         _addInitialLiquidity(
             {
                 from:   _lender1,
@@ -1102,5 +1104,30 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 index:  7000
             }
         );
+
+        // asert failure when lender has LPs but insufficient quote token balance to post remaining bond
+        _addLiquidity(
+            {
+                from:    _lender4,
+                amount:  5_000 * 1e18,
+                index:   2499,
+                lpAward: 5_000 * 1e27,
+                newLup:  3_844.432207828138682757 * 1e18
+            }
+        );
+        // borrower draws more debt consuming entire deposit from bucket 2499
+        _drawDebt(
+            {
+                from:               _borrower1,
+                borrower:           _borrower1,
+                amountToBorrow:     15_000 * 1e18,
+                limitIndex:         5000,
+                collateralToPledge: 0,
+                newLup:             3_825.305679430983794766 * 1e18
+            }
+        );
+        changePrank(_lender4);
+        vm.expectRevert("ERC20: transfer amount exceeds balance");
+        _pool.kickWithDeposit(2499);
     }
 }

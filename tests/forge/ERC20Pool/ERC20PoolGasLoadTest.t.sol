@@ -290,7 +290,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         address kicker = makeAddr("kicker");
         _mintQuoteAndApproveTokens(kicker, type(uint256).max); // mint enough to cover bonds
 
-        vm.warp(8640000000);
+        vm.warp(100_000 days);
         vm.startPrank(kicker);
         for (uint256 i; i < LOANS_COUNT; i ++) {
             _pool.kick(_borrowers[i]);
@@ -306,7 +306,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         address kicker = makeAddr("kicker");
         _mintQuoteAndApproveTokens(kicker, type(uint256).max); // mint enough to cover bonds
 
-        vm.warp(8640000000);
+        vm.warp(100_000 days);
         vm.startPrank(kicker);
         for (uint256 i; i < LOANS_COUNT; i ++) {
             _pool.kick(_borrowers[LOANS_COUNT - 1 - i]);
@@ -324,7 +324,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
 
         vm.startPrank(kicker);
         _pool.addQuoteToken(500_000_000_000_000 * 1e18, 3_000);
-        vm.warp(8640000000);
+        vm.warp(100_000 days);
         _pool.kickWithDeposit(3_000); // worst case scenario, pool interest accrues
         skip(80 hours);
         _pool.settle(_borrowers[LOANS_COUNT - 1], 10);
@@ -358,7 +358,7 @@ contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
         address kicker = makeAddr("kicker");
         _mintQuoteAndApproveTokens(kicker, type(uint256).max); // mint enough to cover bonds
 
-        vm.warp(8640000000);
+        vm.warp(100_000 days);
         vm.startPrank(kicker);
         for (uint256 i; i < LOANS_COUNT; i ++) {
             _pool.kick(_borrowers[i]);
@@ -379,7 +379,7 @@ contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
         address kicker = makeAddr("kicker");
         _mintQuoteAndApproveTokens(kicker, type(uint256).max); // mint enough to cover bonds
 
-        vm.warp(8640000000);
+        vm.warp(100_000 days);
         vm.startPrank(kicker);
         for (uint256 i; i < LOANS_COUNT; i ++) {
             _pool.kick(_borrowers[LOANS_COUNT - 1 - i]);

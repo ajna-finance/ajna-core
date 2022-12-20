@@ -22,10 +22,10 @@ struct SettleParams {
 struct BucketTakeParams {
     address borrower;       // borrower address to take from
     uint256 collateral;     // borrower available collateral to take
-    uint256 t0debt;         // borrower t0 debt
-    uint256 inflator;       // current pool inflator
     bool    depositTake;    // deposit or arb take, used by bucket take
     uint256 index;          // bucket index, used by bucket take
+    uint256 inflator;       // current pool inflator
+    uint256 t0debt;         // borrower t0 debt
 }
 
 struct TakeParams {

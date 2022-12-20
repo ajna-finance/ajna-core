@@ -693,7 +693,7 @@ library Auctions {
         Borrower storage borrower = loans_.borrowers[borrowerAddress_];
         kickResult_.kickedT0debt = borrower.t0debt;
 
-        uint256 borrowerDebt = Maths.wmul(kickResult_.kickedT0debt, poolState_.inflator);
+        uint256 borrowerDebt       = Maths.wmul(kickResult_.kickedT0debt, poolState_.inflator);
         uint256 borrowerCollateral = borrower.collateral;
 
         // add amount to remove to pool debt in order to calculate proposed LUP
