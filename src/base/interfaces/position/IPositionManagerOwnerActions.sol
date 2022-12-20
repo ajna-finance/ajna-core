@@ -82,7 +82,7 @@ interface IPositionManagerOwnerActions {
      */
     function mint(
         MintParams calldata params
-    ) external payable returns (uint256 tokenId);
+    ) external returns (uint256 tokenId);
 
 
     /**

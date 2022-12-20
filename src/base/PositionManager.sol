@@ -105,7 +105,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, Reentrancy
         pool.transferLPTokens(owner, address(this), params_.indexes);
     }
 
-    function mint(MintParams calldata params_) external override payable returns (uint256 tokenId_) {
+    function mint(MintParams calldata params_) external override returns (uint256 tokenId_) {
         tokenId_ = _nextId++;
 
         // check that the params_.pool is a valid Ajna pool

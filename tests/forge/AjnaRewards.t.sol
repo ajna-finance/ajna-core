@@ -489,10 +489,77 @@ contract AjnaRewardsTest is DSTestPlus {
         emit WithdrawToken(_minterOne, address(_poolOne), tokenIdOne);
         _ajnaRewards.withdrawNFT(tokenIdOne);
         assertEq(_positionManager.ownerOf(tokenIdOne), _minterOne);
+        assertEq(_ajnaToken.balanceOf(_minterOne), 18.085912173086791740 * 1e18);
+        assertLt(_ajnaToken.balanceOf(_minterOne), tokensToBurn);
     }
 
     function testMultiplePools() external {
-        // TODO: implement this
+        skip(10);
+
+        // configure NFT position one
+        uint256[] memory depositIndexes = new uint256[](5);
+        depositIndexes[0] = 9;
+        depositIndexes[1] = 1;
+        depositIndexes[2] = 2;
+        depositIndexes[3] = 3;
+        depositIndexes[4] = 4;
+        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+            indexes: depositIndexes,
+            minter: _minterOne,
+            mintAmount: 1000 * 1e18,
+            pool: _poolOne
+        });
+
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+
+        // configure NFT position two
+        depositIndexes = new uint256[](4);
+        depositIndexes[0] = 5;
+        depositIndexes[1] = 1;
+        depositIndexes[2] = 3;
+        depositIndexes[3] = 12;
+        mintMemorializeParams = MintAndMemorializeParams({
+            indexes: depositIndexes,
+            minter: _minterTwo,
+            mintAmount: 1000 * 1e18,
+            pool: _poolTwo
+        });
+        uint256 tokenIdTwo = _mintAndMemorializePositionNFT(mintMemorializeParams);
+
+        // minterOne deposits their NFT into the rewards contract
+        _depositNFT(address(_poolOne), _minterOne, tokenIdOne);
+
+        // minterTwo deposits their NFT into the rewards contract
+        _depositNFT(address(_poolTwo), _minterTwo, tokenIdTwo);
+
+        // borrower takes actions providing reserves enabling reserve auctions
+        // bidder takes reserve auctions by providing ajna tokens to be burned
+        TriggerReserveAcutionParams memory triggerReserveAuctionParams = TriggerReserveAcutionParams({
+            borrowAmount: 300 * 1e18,
+            collateralToPledge: 10 * 1e18,
+            limitIndex: 3,
+            pool: _poolOne
+        });
+        uint256 tokensToBurn = _triggerReserveAuctions(triggerReserveAuctionParams);
+
+        // check only deposit owner can claim rewards
+        changePrank(_minterTwo);
+        vm.expectRevert(IAjnaRewards.NotOwnerOfToken.selector);
+        _ajnaRewards.claimRewards(tokenIdOne);
+
+        // check rewards earned in one pool shouldn't be claimable by depositors from another pool
+        assertEq(_ajnaToken.balanceOf(_minterTwo), 0);
+        _ajnaRewards.claimRewards(tokenIdTwo);
+        assertEq(_ajnaToken.balanceOf(_minterTwo), 0);
+
+        // check owner in pool with accrued interest can properly claim rewards
+        changePrank(_minterOne);
+        assertEq(_ajnaToken.balanceOf(_minterOne), 0);
+        vm.expectEmit(true, true, true, true);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, 18.085912173086791740 * 1e18);
+        _ajnaRewards.claimRewards(tokenIdOne);
+        assertGt(_ajnaToken.balanceOf(_minterOne), 0);
+        assertLt(_ajnaToken.balanceOf(_minterOne), tokensToBurn);
     }
 
     /********************/
