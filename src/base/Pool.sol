@@ -377,14 +377,17 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         newLup_ = _lup(poolState.accruedDebt);
 
         uint256 borrowerDebt = Maths.wmul(borrower.t0debt, poolState.inflator);
-
-        bool inAuction = Auctions.isActive(auctions, borrowerAddress_);
+        // loan can only be in auction when pledging more collateral
+        // if loan in auction and more debt to draw then borrower collateralization check should revert
+        bool inAuction;
 
         // pledge collateral to pool
         if (pledge_) {
             borrower.collateral  += collateralToPledge_;
             poolState.collateral += collateralToPledge_;
-
+            // load loan's auction state
+            inAuction = Auctions.isActive(auctions, borrowerAddress_);
+            // if loan is auctioned and becomes collateralized by newly pledged collateral then settle auction
             if (
                 inAuction
                 &&
@@ -394,6 +397,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 // borrower becomes collateralized, remove debt from pool accumulator and settle auction
                 t0DebtInAuction     -= borrower.t0debt;
                 borrower.collateral = _settleAuction(borrowerAddress_, borrower.collateral);
+                // auction was settled, reset inAuction flag
                 inAuction = false;
             }
             pledgedCollateral += collateralToPledge_;
