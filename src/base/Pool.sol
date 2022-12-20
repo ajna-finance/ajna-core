@@ -314,31 +314,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             deposits,
             buckets,
             loans,
-            poolState,
-            index_
-        );
-
-        poolState.accruedDebt += result.kickPenalty;
-        _updateInterestParams(poolState, result.lup);
-
-        t0DebtInAuction += result.kickedT0debt;
-        t0poolDebt      += result.kickPenaltyT0;
-
-        // transfer from kicker to pool the difference to cover bond
-        if(result.amountToCoverBond != 0) _transferQuoteTokenFrom(msg.sender, result.amountToCoverBond);
-    }
-
-    /*********************************/
-    /*** Reserve Auction Functions ***/
-    /*********************************/
-
-    function startClaimableReserveAuction() external override {
-        uint256 kickerAward = Auctions.startClaimableReserveAuction(
-            auctions,
-            reserveAuction,
-            StartReserveAuctionParams(
-                {
-                    poolSize:    deposits.treeSum(),
+            poolState, ,
                     poolDebt:    t0poolDebt,
                     poolBalance: _getPoolQuoteTokenBalance(),
                     inflator:    inflatorSnapshot
@@ -351,70 +327,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function takeReserves(uint256 maxAmount_) external override returns (uint256 amount_) {
         uint256 ajnaRequired;
         (amount_, ajnaRequired) = Auctions.takeReserves(
-            reserveAuction,
-            maxAmount_
-        );
-
-        IERC20Token ajnaToken = IERC20Token(_getArgAddress(AJNA_ADDRESS));
-        if (!ajnaToken.transferFrom(msg.sender, address(this), ajnaRequired)) revert ERC20TransferFailed();
-        ajnaToken.burn(ajnaRequired);
-        _transferQuoteToken(msg.sender, amount_);
-    }
-
-    /***********************************/
-    /*** Borrower Internal Functions ***/
-    /***********************************/
-
-    function _drawDebt(
-        address borrowerAddress_,
-        uint256 amountToBorrow_,
-        uint256 limitIndex_,
-        uint256 collateralToPledge_
-    ) internal returns (bool pledge_, bool borrow_, uint256 newLup_) {
-        PoolState memory poolState = _accruePoolInterest();
-        Borrower  memory borrower = loans.getBorrowerInfo(borrowerAddress_);
-
-        pledge_ = collateralToPledge_ != 0;
-        borrow_ = amountToBorrow_ != 0 || limitIndex_ != 0;
-        newLup_ = _lup(poolState.accruedDebt);
-
-        uint256 borrowerDebt = Maths.wmul(borrower.t0debt, poolState.inflator);
-
-        // pledge collateral to pool
-        if (pledge_) {
-            borrower.collateral  += collateralToPledge_;
-            poolState.collateral += collateralToPledge_;
-
-            if (
-                Auctions.isActive(auctions, borrowerAddress_)
-                &&
-                _isCollateralized(borrowerDebt, borrower.collateral, newLup_, poolState.poolType)
-            )
-            {
-                // borrower becomes collateralized, remove debt from pool accumulator and settle auction
-                t0DebtInAuction     -= borrower.t0debt;
-                borrower.collateral = _settleAuction(borrowerAddress_, borrower.collateral);
-            }
-            pledgedCollateral += collateralToPledge_;
-        }
-
-        // borrow against pledged collateral
-        // check both values to enable an intentional 0 borrow loan call to update borrower's loan state
-        if (borrow_) {
-            // only intended recipient can borrow quote
-            if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
-            // if borrower auctioned then it cannot draw more debt
-            Auctions.revertIfActive(auctions, msg.sender);
-
-            // add origination fee to the amount to borrow and add to borrower's debt
-            uint256 debtChange = Maths.wmul(amountToBorrow_, _feeRate(interestParams.interestRate) + Maths.WAD);
-            borrowerDebt += debtChange;
-            _checkMinDebt(poolState.accruedDebt, borrowerDebt);
-
-            // determine new lup index and revert if borrow happens at a price higher than the specified limit (lower index than lup index)
-            uint256 lupId = _lupIndex(poolState.accruedDebt + amountToBorrow_);
-            if (lupId > limitIndex_) revert LimitIndexReached();
-
+            reserveAuction,s
             // calculate new lup and check borrow action won't push borrower into a state of under-collateralization
             newLup_ = _priceAt(lupId);
             if (

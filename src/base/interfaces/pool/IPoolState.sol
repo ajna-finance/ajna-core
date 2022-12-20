@@ -198,7 +198,7 @@ struct InterestState {
     uint256 lupColEma;          // [WAD]
 }
 
-struct ReserveAuctionState {
+struct ReserveAuctioTnState {
     uint256 kicked;    // Time a Claimable Reserve Auction was last kicked.
     uint256 unclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
 }
@@ -272,6 +272,7 @@ struct Liquidation {
     address next;           // next liquidated borrower in auctions queue
     uint160 bondSize;       // liquidation bond size
     uint96  neutralPrice;   // Neutral Price when liquidation was started
+    bool    takeCalled;     // true if take has been called on auction
 }
 
 struct Kicker {
