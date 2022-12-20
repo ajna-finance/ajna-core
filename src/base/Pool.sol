@@ -270,7 +270,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         // slither-disable-next-line incorrect-equality
-        if (remainingt0Debt == 0) remainingCollateral= _settleAuction(params.borrower, remainingCollateral);
+        if (remainingt0Debt == 0) remainingCollateral = _settleAuction(params.borrower, remainingCollateral);
 
         uint256 t0settledDebt = params.t0debt - remainingt0Debt;
         t0poolDebt      -= t0settledDebt;
