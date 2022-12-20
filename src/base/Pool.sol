@@ -404,8 +404,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if (borrow_) {
             // only intended recipient can borrow quote
             if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
-            // if borrower auctioned then it cannot draw more debt
-            if (inAuction) revert AuctionActive();
 
             // add origination fee to the amount to borrow and add to borrower's debt
             uint256 debtChange = Maths.wmul(amountToBorrow_, _feeRate(interestParams.interestRate) + Maths.WAD);
@@ -417,6 +415,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             if (lupId > limitIndex_) revert LimitIndexReached();
 
             // calculate new lup and check borrow action won't push borrower into a state of under-collateralization
+            // this check also covers the scenario when loan is already auctioned
             newLup_ = _priceAt(lupId);
             if (
                 !_isCollateralized(borrowerDebt, borrower.collateral, newLup_, poolState.poolType)

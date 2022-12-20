@@ -634,14 +634,6 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             })
         );
 
-        // kick should fail if borrower in liquidation
-        _assertKickAuctionActiveRevert(
-            {
-                from:       _lender,
-                borrower:   _borrower
-            }
-        );
-
         // should not allow borrower to draw more debt if auction kicked
         _assertBorrowAuctionActiveRevert(
             {
