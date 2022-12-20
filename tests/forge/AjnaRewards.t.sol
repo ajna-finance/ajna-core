@@ -49,13 +49,11 @@ contract AjnaRewardsTest is DSTestPlus {
 
     struct TriggerReserveAcutionParams {
         uint256 borrowAmount;
-        uint256 collateralToPledge;
         uint256 limitIndex;
         ERC20Pool pool;
     }
 
     function setUp() external {
-
         vm.createSelectFork(vm.envString("ETH_RPC_URL"));
         vm.makePersistent(_ajna);
 
@@ -81,6 +79,11 @@ contract AjnaRewardsTest is DSTestPlus {
         _minterOne   = makeAddr("minterOne");
         _minterTwo   = makeAddr("minterTwo");
         _minterThree = makeAddr("minterThree");
+
+        // instantiate test bidder
+        _bidder    = makeAddr("bidder");
+        changePrank(_bidder);
+        deal(_ajna, _bidder, 900_000_000 * 10**18);
     }
 
     function _depositNFT(address pool_, address owner_, uint256 tokenId_) internal {
@@ -100,12 +103,6 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // check token was transferred to rewards contract
         assertEq(_positionManager.ownerOf(tokenId_), address(_ajnaRewards));
-    }
-
-    function _mintAndApproveAjnaTokens(address operator_, address pool_, uint256 mintAmount_) internal {
-        deal(_ajna, operator_, mintAmount_);
-        changePrank(operator_);
-        _ajnaToken.approve(pool_, type(uint256).max);
     }
 
     function _mintAndMemorializePositionNFT(MintAndMemorializeParams memory params_) internal returns (uint256 tokenId_) {
@@ -139,9 +136,8 @@ contract AjnaRewardsTest is DSTestPlus {
         _positionManager.memorializePositions(memorializeParams);
     }
 
-    // TODO: add support for multiple borrowers
     function _triggerReserveAuctions(TriggerReserveAcutionParams memory params_) internal returns (uint256 tokensToBurn_) {
-
+        // create a new borrower to write state required for reserve auctions
         address borrower = makeAddr("borrower");
 
         changePrank(borrower);
@@ -149,8 +145,7 @@ contract AjnaRewardsTest is DSTestPlus {
         Token collateral = Token(params_.pool.collateralAddress());
         Token quote = Token(params_.pool.quoteTokenAddress());
 
-        // TODO: deal tokens according to incoming params
-        deal(address(quote), borrower, 250_000 * 1e18);
+        deal(address(quote), borrower, params_.borrowAmount);
 
         // approve tokens
         collateral.approve(address(params_.pool), type(uint256).max);
@@ -169,13 +164,9 @@ contract AjnaRewardsTest is DSTestPlus {
         // don't pull any collateral, as such functionality is unrelated to reserve auctions
         params_.pool.repayDebt(borrower, Maths.wdiv(params_.borrowAmount, Maths.wad(2)), 0);
 
-        // TODO: move bidder to top level
-        // provide ajna tokens to bidder
-        _bidder    = makeAddr("bidder");
-        _mintAndApproveAjnaTokens(_bidder, address(params_.pool), 900_000_000 * 10**18);
-
         // start reserve auction
         changePrank(_bidder);
+        _ajnaToken.approve(address(params_.pool), type(uint256).max);
         params_.pool.startClaimableReserveAuction();
 
         // TODO: create meta method to simultaneously update timestamp and block
@@ -272,7 +263,6 @@ contract AjnaRewardsTest is DSTestPlus {
         // bidder takes reserve auctions by providing ajna tokens to be burned
         TriggerReserveAcutionParams memory triggerReserveAuctionParams = TriggerReserveAcutionParams({
             borrowAmount: 300 * 1e18,
-            collateralToPledge: 10 * 1e18,
             limitIndex: 3,
             pool: _poolOne
         });
@@ -327,7 +317,6 @@ contract AjnaRewardsTest is DSTestPlus {
         // borrower takes actions providing reserves enabling reserve auctions
         TriggerReserveAcutionParams memory triggerReserveAuctionParams = TriggerReserveAcutionParams({
             borrowAmount: 300 * 1e18,
-            collateralToPledge: 10 * 1e18,
             limitIndex: 3,
             pool: _poolOne
         });
@@ -352,7 +341,6 @@ contract AjnaRewardsTest is DSTestPlus {
         vm.roll(block.number + 10);
         triggerReserveAuctionParams = TriggerReserveAcutionParams({
             borrowAmount: 300 * 1e18,
-            collateralToPledge: 10 * 1e18,
             limitIndex: 3,
             pool: _poolOne
         });
@@ -478,7 +466,6 @@ contract AjnaRewardsTest is DSTestPlus {
 
         TriggerReserveAcutionParams memory triggerReserveAuctionParams = TriggerReserveAcutionParams({
             borrowAmount: 300 * 1e18,
-            collateralToPledge: 10 * 1e18,
             limitIndex: 2555,
             pool: _poolOne
         });
@@ -540,7 +527,6 @@ contract AjnaRewardsTest is DSTestPlus {
         // bidder takes reserve auctions by providing ajna tokens to be burned
         TriggerReserveAcutionParams memory triggerReserveAuctionParams = TriggerReserveAcutionParams({
             borrowAmount: 300 * 1e18,
-            collateralToPledge: 10 * 1e18,
             limitIndex: 3,
             pool: _poolOne
         });
@@ -626,14 +612,13 @@ contract AjnaRewardsTest is DSTestPlus {
         uint256 limitIndex = _findLowestIndexPrice(depositIndexes);
         TriggerReserveAcutionParams memory triggerReserveAuctionParams = TriggerReserveAcutionParams({
             borrowAmount: Maths.wdiv(mintAmount, Maths.wad(3)),
-            collateralToPledge: 10_000 * 1e18, // TODO: remove this as collateral to pledge is dynamically set in _triggerReserveAuctions
             limitIndex: limitIndex,
             pool: _poolOne
         });
 
         uint256 tokensToBurn = _triggerReserveAuctions(triggerReserveAuctionParams);
 
-        // TODO: determine why the tests work some of the times and not others
+        // TODO: determine why the tests work some of the times and not others in updating exchange rates
         // initial lender adds collateral to the bucket to ensure that the exchange rate updates
         changePrank(_minterOne);
         _poolOne.addCollateral(1 * 1e18, limitIndex);
