@@ -24,13 +24,13 @@ contract AjnaRewardsTest is DSTestPlus {
 
     ERC20           internal _ajnaToken;
 
-    AjnaRewards     internal _ajnaRewards;
-    PositionManager internal _positionManager;
+    AjnaRewards      internal _ajnaRewards;
+    ERC20PoolFactory internal _poolFactory;
+    PositionManager  internal _positionManager;
 
     Token           internal _collateralOne;
     Token           internal _quoteOne;
     ERC20Pool       internal _poolOne;
-
     Token           internal _collateralTwo;
     Token           internal _quoteTwo;
     ERC20Pool       internal _poolTwo;
@@ -61,17 +61,18 @@ contract AjnaRewardsTest is DSTestPlus {
         vm.makePersistent(_ajna);
 
         _ajnaToken       = ERC20(_ajna);
-        _positionManager = new PositionManager();
+        _poolFactory     = new ERC20PoolFactory(_ajna);
+        _positionManager = new PositionManager(_poolFactory, new ERC721PoolFactory(_ajna));
         _ajnaRewards     = new AjnaRewards(_ajna, _positionManager);
         _poolUtils       = new PoolInfoUtils();
 
         _collateralOne = new Token("Collateral 1", "C1");
         _quoteOne      = new Token("Quote 1", "Q1");
-        _poolOne       = ERC20Pool(new ERC20PoolFactory(_ajna).deployPool(address(_collateralOne), address(_quoteOne), 0.05 * 10**18));
+        _poolOne       = ERC20Pool(_poolFactory.deployPool(address(_collateralOne), address(_quoteOne), 0.05 * 10**18));
 
         _collateralTwo = new Token("Collateral 2", "C2");
         _quoteTwo      = new Token("Quote 2", "Q2");
-        _poolTwo       = ERC20Pool(new ERC20PoolFactory(_ajna).deployPool(address(_collateralTwo), address(_quoteTwo), 0.05 * 10**18));
+        _poolTwo       = ERC20Pool(_poolFactory.deployPool(address(_collateralTwo), address(_quoteTwo), 0.05 * 10**18));
 
         // provide initial ajna tokens to staking rewards contract
         deal(_ajna, address(_ajnaRewards), 100_000_000 * 1e18);
@@ -122,7 +123,7 @@ contract AjnaRewardsTest is DSTestPlus {
         collateral.approve(address(params_.pool), type(uint256).max);
         quote.approve(address(params_.pool), type(uint256).max);
 
-        IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(params_.minter, address(params_.pool));
+        IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(params_.minter, address(params_.pool), keccak256("ERC20_NON_SUBSET_HASH"));
         tokenId_ = _positionManager.mint(mintParams);
 
         for (uint256 i = 0; i < params_.indexes.length; i++) {
@@ -548,8 +549,6 @@ contract AjnaRewardsTest is DSTestPlus {
             mintAmount: mintAmount,
             pool: _poolOne
         });
-
-        emit log_uint(_poolUtils.indexToPrice(_findLowestIndexPrice(depositIndexes)));
 
         uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
         _depositNFT(address(_poolOne), _minterOne, tokenIdOne);

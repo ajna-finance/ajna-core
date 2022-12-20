@@ -15,6 +15,9 @@ import './interfaces/IPositionManager.sol';
 import '../erc20/interfaces/IERC20Pool.sol';
 import '../erc721/interfaces/IERC721Pool.sol';
 
+import '../erc20/ERC20PoolFactory.sol';
+import '../erc721/ERC721PoolFactory.sol';
+
 import './PoolHelper.sol';
 import './PositionNFT.sol';
 
@@ -25,7 +28,13 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, Reentrancy
     using EnumerableSet for EnumerableSet.UintSet;
     using SafeERC20 for ERC20;
 
-    constructor() PositionNFT("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {}
+    ERC20PoolFactory private immutable erc20PoolFactory;
+    ERC721PoolFactory private immutable erc721PoolFactory;
+
+    constructor(ERC20PoolFactory erc20Factory_, ERC721PoolFactory erc721Factory_) PositionNFT("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {
+        erc20PoolFactory = erc20Factory_;
+        erc721PoolFactory = erc721Factory_;
+    }
 
     /***********************/
     /*** State Variables ***/
@@ -99,8 +108,8 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, Reentrancy
     function mint(MintParams calldata params_) external override payable returns (uint256 tokenId_) {
         tokenId_ = _nextId++;
 
-        // TODO: check that the params_.pool is a valid pool
-        if (!_isAjnaPool(params_.pool)) revert NotAjnaPool();
+        // check that the params_.pool is a valid Ajna pool
+        if (!_isAjnaPool(params_.pool, params_.poolSubsetHash)) revert NotAjnaPool();
 
         // record which pool the tokenId was minted in
         poolKey[tokenId_] = params_.pool;
@@ -172,10 +181,16 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, Reentrancy
         return uint256(nonces[tokenId_]++);
     }
 
-    // TODO: finish implementing
-    function _isAjnaPool(address pool_) internal view returns (bool) {
-        // return pool_ == address(ajnaPool);
-        return true;
+    /** @dev Used for checking that a provided pool address was deployed by an Ajna factory */
+    function _isAjnaPool(address pool_, bytes32 subsetHash_) internal view returns (bool) {
+        address collateralAddress = IPool(pool_).collateralAddress();
+        address quoteAddress = IPool(pool_).quoteTokenAddress();
+
+        address erc20DeployedPoolAddress = erc20PoolFactory.deployedPools(subsetHash_, collateralAddress, quoteAddress);
+        address erc721DeployedPoolAddress = erc721PoolFactory.deployedPools(subsetHash_, collateralAddress, quoteAddress);
+
+        if (pool_ == erc20DeployedPoolAddress || pool_ == erc721DeployedPoolAddress) return true;
+        return false;
     }
 
     /**********************/

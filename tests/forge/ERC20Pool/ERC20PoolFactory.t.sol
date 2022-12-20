@@ -10,9 +10,8 @@ import 'src/erc20/ERC20PoolFactory.sol';
 contract ERC20PoolFactoryTest is ERC20HelperContract {
     address immutable poolAddress = 0x918ebA623C6291984Eeea4EE07335c3DDa03c0d3;
 
-    ERC20PoolFactory internal _poolFactory;
-
     function setUp() external {
+        // deploy new pool factory for factory tests
         _poolFactory = new ERC20PoolFactory(_ajna);
     }
 

@@ -15,7 +15,7 @@ abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract 
     PositionManager  internal _positionManager;
 
     constructor() ERC20HelperContract() {
-        _positionManager = new PositionManager();
+        _positionManager = new PositionManager(_poolFactory, new ERC721PoolFactory(_ajna));
     }
 
     function _mintQuoteAndApproveManagerTokens(address operator_, uint256 mintAmount_) internal {
@@ -31,7 +31,7 @@ abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract 
      *  @dev Abstract away NFT Minting logic for use by multiple tests.
      */
     function _mintNFT(address minter_, address lender_, address pool_) internal returns (uint256 tokenId) {
-        IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(lender_, pool_);
+        IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(lender_, pool_, keccak256("ERC20_NON_SUBSET_HASH"));
         
         changePrank(minter_);
         return _positionManager.mint(mintParams);
@@ -2457,7 +2457,7 @@ abstract contract PositionManagerERC721PoolHelperContract is ERC721HelperContrac
     PositionManager  internal _positionManager;
 
     constructor() ERC721HelperContract() {
-        _positionManager = new PositionManager();
+        _positionManager = new PositionManager(new ERC20PoolFactory(_ajna), _poolFactory);
         _pool = _deployCollectionPool();
     }
 
@@ -2473,8 +2473,8 @@ abstract contract PositionManagerERC721PoolHelperContract is ERC721HelperContrac
     /**
      *  @dev Abstract away NFT Minting logic for use by multiple tests.
      */
-    function _mintNFT(address minter_, address lender_, address pool_) internal returns (uint256 tokenId) {
-        IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(lender_, pool_);
+    function _mintNFT(address minter_, address lender_, address pool_, bytes32 subsetHash_) internal returns (uint256 tokenId) {
+        IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(lender_, pool_, subsetHash_);
         
         changePrank(minter_);
         return _positionManager.mint(mintParams);
@@ -2520,7 +2520,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         );
 
         // mint an NFT to later memorialize existing positions into
-        uint256 tokenId = _mintNFT(testAddress1, testAddress1, address(_pool));
+        uint256 tokenId = _mintNFT(testAddress1, testAddress1, address(_pool), keccak256("ERC721_NON_SUBSET_HASH"));
 
         // check LPs
         _assertLenderLpBalance(
