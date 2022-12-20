@@ -444,7 +444,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             borrowerAddress_,
             borrowerDebt,
             poolState.rate,
-            poolState.inflator,
             newLup_,
             inAuction,
             true
@@ -498,7 +497,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 borrowerAddress_,
                 borrowerDebt,
                 poolState.rate,
-                poolState.inflator,
                 newLup_,
                 false, // cannot be in auction if able to pull collateral
                 true
@@ -552,7 +550,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             borrowerAddress_,
             borrowerDebt,
             poolState_.rate,
-            poolState_.inflator,
             newLup_,
             inAuction,
             false

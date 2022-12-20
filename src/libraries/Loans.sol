@@ -40,7 +40,6 @@ library Loans {
      *  @param borrowerAddress_ Borrower's address to update.
      *  @param borrowerDebt_    Borrower's current debt.
      *  @param poolRate_        Pool's current rate.
-     *  @param poolInflator_    Pool's current inflator.
      *  @param lup_             Current LUP.
      *  @param inAuction_       Whether the loan is in auction or not.
      *  @param t0NpUpdate_      Whether the neutral price of borrower should be updated or not.
@@ -53,7 +52,6 @@ library Loans {
         address borrowerAddress_,
         uint256 borrowerDebt_,
         uint256 poolRate_,
-        uint256 poolInflator_,
         uint256 lup_,
         bool inAuction_,
         bool t0NpUpdate_
@@ -82,16 +80,15 @@ library Loans {
         // update t0 neutral price of borrower
         if (t0NpUpdate_) {
             if (t0ThresholdPrice != 0) {
-                uint256 noOfLoans = loans_.loans.length - 1 + auctions_.noOfAuctions;
-                uint256 thresholdPrice = borrowerDebt_ * Maths.WAD / borrower_.collateral;
-                uint256 curMomp   = _priceAt(Deposits.findIndexOfSum(deposits_, Maths.wdiv(borrowerDebt_, noOfLoans * 1e18)));
-                borrower_.t0Np    = (1e18 + poolRate_) * curMomp * thresholdPrice / lup_ / poolInflator_;
+                uint256 loansInPool = loans_.loans.length - 1 + auctions_.noOfAuctions;
+                uint256 curMomp = _priceAt(Deposits.findIndexOfSum(deposits_, Maths.wdiv(borrowerDebt_, loansInPool * 1e18)));
+                borrower_.t0Np  = (1e18 + poolRate_) * curMomp * t0ThresholdPrice / lup_ / 1e18;
             } else {
                 borrower_.t0Np = 0;
             }
         }
 
-        // update borrower details
+        // save borrower state
         loans_.borrowers[borrowerAddress_] = borrower_;
     }
 
