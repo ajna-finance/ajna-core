@@ -16,7 +16,6 @@ import { Token }      from './utils/Tokens.sol';
 
 contract AjnaRewardsTest is DSTestPlus {
 
-    // address          internal _ajna = 0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079;
     address         internal _bidder;
     address         internal _minterOne;
     address         internal _minterTwo;

@@ -68,6 +68,8 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
     /**
      *  @notice Tests base NFT minting functionality.
+     *          Reverts:
+     *              Attempts to mint an NFT associated with an invalid pool.
      */
     function testMint() external {
         uint256 mintAmount  = 50 * 1e18;
@@ -79,7 +81,6 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // test emitted Mint event
         vm.expectEmit(true, true, true, true);
         emit Mint(testAddress, address(_pool), 1);
-
         uint256 tokenId = _mintNFT(testAddress, testAddress, address(_pool));
 
         require(tokenId != 0, "tokenId nonce not incremented");
@@ -90,6 +91,14 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         assertEq(owner, testAddress);
         assertEq(lpTokens, 0);
+
+        // deploy a new factory to simulate creating a pool outside of expected factories
+        ERC20PoolFactory invalidFactory = new ERC20PoolFactory(_ajna);
+        address invalidPool = invalidFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
+
+        // check can't mint an NFT associated with a non ajna pool
+        vm.expectRevert(IPositionManager.NotAjnaPool.selector);
+        _mintNFT(testAddress, testAddress, invalidPool);
     }
 
     /**
