@@ -38,6 +38,7 @@ library Auctions {
         uint256 bondChange;               // The change made on the bond size (beeing reward or penalty).
         address kicker;                   // Address of auction kicker.
         bool    isRewarded;               // True if kicker is rewarded (auction price lower than neutral price), false if penalized (auction price greater than neutral price).
+        int256 bpf;
     }
 
     /**
@@ -353,27 +354,30 @@ library Auctions {
         result.isRewarded = (bpf >= 0);
         result.bucketScale = Deposits.scale(deposits_, params_.index);
 
-        (result.collateralAmount,
-         result.t0RepayAmount,
-         result.unscaledQuoteTokenAmount,
-         result.scaledQuoteTokenAmount) = calculateTakeFlows(params_.collateral,
-                                                             result.auctionPrice,
-                                                             bpf,
-                                                             params_.t0debt,
-                                                             result.debt,
-                                                             params_.inflator,
-                                                             result.unscaledDeposit,
-                                                             result.bucketScale
-                                                            );
+        (
+            result.collateralAmount,
+            result.t0RepayAmount,
+            result.unscaledQuoteTokenAmount,
+            result.scaledQuoteTokenAmount
+        ) = _calculateTakeFlows(
+            params_.collateral,
+            result.auctionPrice,
+            bpf,
+            params_.t0debt,
+            result.debt,
+            params_.inflator,
+            result.unscaledDeposit,
+            result.bucketScale
+        );
 
-        if (!result.isRewarded) {
+        if (result.isRewarded) {
+            result.bondChange = Maths.wmul(result.scaledQuoteTokenAmount, uint256(bpf)); // will be rewarded as LPBs
+        } else {
             // take is above neutralPrice, Kicker is penalized
             result.bondChange = Maths.min(liquidation.bondSize, Maths.wmul(result.scaledQuoteTokenAmount, uint256(-bpf)));
             liquidation.bondSize                    -= uint160(result.bondChange);
             auctions_.kickers[result.kicker].locked -= result.bondChange;
-            auctions_.totalBondEscrowed              -= result.bondChange;
-        } else {
-            result.bondChange = Maths.wmul(result.scaledQuoteTokenAmount, uint256(bpf)); // will be rewarded as LPBs
+            auctions_.totalBondEscrowed             -= result.bondChange;
         }
 
         _rewardBucketTake(
@@ -407,57 +411,40 @@ library Auctions {
         AuctionsState storage auctions_,
         TakeParams calldata params_
     ) external returns (uint256, uint256, uint256, uint256) {
+
         Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
-
-        uint256 kickTime = liquidation.kickTime;
-        if (kickTime == 0) revert NoAuction();
-        if (block.timestamp - kickTime <= 1 hours) revert TakeNotPastCooldown();
-
-        TakeResult memory result;
-        result.auctionPrice = _auctionPrice(
-            liquidation.kickMomp,
-            kickTime
-        );
-        result.kicker = liquidation.kicker;
-        result.debt   = Maths.wmul(params_.t0debt, params_.inflator);
-
-        int256 bpf = _bpf(
-            result.debt,
-            params_.collateral,
-            liquidation.neutralPrice,
-            liquidation.bondFactor,
-            result.auctionPrice
-        );
-
-        result.isRewarded = (bpf >= 0);
+        TakeResult memory result = _validateTake(liquidation, params_);
 
         uint256 collateralBound = Maths.min(params_.collateral, params_.takeCollateral);
         result.unscaledDeposit = type(uint256).max;   // In the case of take, the taker binds the collateral qty but not the quote token qty
         // ugly to get take work like a bucket take -- this is the max amount of quote token from the take that could go to
         // reduce the debt of the borrower -- analagous to the amount of deposit in the bucket for a bucket take
 
-        (result.collateralAmount,
-         result.t0RepayAmount,
-         result.unscaledQuoteTokenAmount,) = calculateTakeFlows(collateralBound,
-                                                                result.auctionPrice,
-                                                                bpf,
-                                                                params_.t0debt,
-                                                                result.debt,
-                                                                params_.inflator,
-                                                                result.unscaledDeposit,
-                                                                Maths.WAD
-                                                               );
+        (
+            result.collateralAmount,
+            result.t0RepayAmount,
+            result.unscaledQuoteTokenAmount,
+        ) = _calculateTakeFlows(
+            collateralBound,
+            result.auctionPrice,
+            result.bpf,
+            params_.t0debt,
+            result.debt,
+            params_.inflator,
+            result.unscaledDeposit,
+            Maths.WAD
+        );
+
         if (result.isRewarded) {
             // take is below neutralPrice, Kicker is rewarded
-            result.unscaledQuoteTokenAmount = Maths.wdiv(result.unscaledQuoteTokenAmount, Maths.WAD - uint256(bpf));            
-            result.bondChange = Maths.wmul(Maths.wmul(result.auctionPrice, result.collateralAmount), uint256(bpf));
+            result.unscaledQuoteTokenAmount = Maths.wdiv(result.unscaledQuoteTokenAmount, Maths.WAD - uint256(result.bpf));            
+            result.bondChange = Maths.wmul(Maths.wmul(result.auctionPrice, result.collateralAmount), uint256(result.bpf));
             liquidation.bondSize                     += uint160(result.bondChange);
             auctions_.kickers[result.kicker].locked  += result.bondChange;
             auctions_.totalBondEscrowed              += result.bondChange;
-
         } else {
             // take is above neutralPrice, Kicker is penalized
-            result.bondChange = Maths.min(liquidation.bondSize, Maths.wmul(result.unscaledQuoteTokenAmount, uint256(-bpf)));
+            result.bondChange = Maths.min(liquidation.bondSize, Maths.wmul(result.unscaledQuoteTokenAmount, uint256(-result.bpf)));
             liquidation.bondSize                     -= uint160(result.bondChange);
             auctions_.kickers[result.kicker].locked  -= result.bondChange;
             auctions_.totalBondEscrowed              -= result.bondChange;
@@ -476,6 +463,28 @@ library Auctions {
             result.t0RepayAmount,
             result.auctionPrice
         );
+    }
+
+    function _validateTake(
+        Liquidation memory liquidation_,
+        TakeParams calldata params_
+    ) internal view returns (TakeResult memory takeResult_) {
+
+        uint256 kickTime = liquidation_.kickTime;
+        if (kickTime == 0) revert NoAuction();
+        if (block.timestamp - kickTime <= 1 hours) revert TakeNotPastCooldown();
+
+        takeResult_.debt         = Maths.wmul(params_.t0debt, params_.inflator);
+        takeResult_.auctionPrice = _auctionPrice(liquidation_.kickMomp, kickTime);
+        takeResult_.bpf          = _bpf(
+            takeResult_.debt,
+            params_.collateral,
+            liquidation_.neutralPrice,
+            liquidation_.bondFactor,
+            takeResult_.auctionPrice
+        );
+        takeResult_.kicker       = liquidation_.kicker;
+        takeResult_.isRewarded   = (takeResult_.bpf  >= 0);
     }
 
    /**
@@ -606,18 +615,21 @@ library Auctions {
      *  @return t0debtPaid               t0 equivalent amount of debt repaid in take
      *  @return unscaledQuoteTokenPaid   Unscaled amount of quote token paid (used to decrement deposit)
      */
-    function calculateTakeFlows(uint256 totalCollateral,
-                                uint256 price,
-                                int256  bpf,
-                                uint256 t0debt,
-                                uint256 debt,
-                                uint256 inflator,
-                                uint256 unscaledQuoteToken,
-                                uint256 quoteTokenScale
-        ) internal pure returns (uint256 collateral,   
-                                 uint256 t0debtPaid,
-                                 uint256 unscaledQuoteTokenPaid,
-                                 uint256 scaledQuoteTokenPaid) {
+    function _calculateTakeFlows(
+        uint256 totalCollateral,
+        uint256 price,
+        int256  bpf,
+        uint256 t0debt,
+        uint256 debt,
+        uint256 inflator,
+        uint256 unscaledQuoteToken,
+        uint256 quoteTokenScale
+    ) internal pure returns (
+        uint256 collateral,
+        uint256 t0debtPaid,
+        uint256 unscaledQuoteTokenPaid,
+        uint256 scaledQuoteTokenPaid
+    ) {
         // price is the current auction price, which is the price paid by the LENDER for collateral
         // from the borrower point of view, the price is actually (1-bpf) * price, as the rewards to the
         // bond holder are effectively paid for by the borrower.
@@ -742,7 +754,7 @@ library Auctions {
         emit BucketTakeLPAwarded(
             msg.sender,
             result_.kicker,
-            totalLPsReward-kickerLPsReward,
+            totalLPsReward - kickerLPsReward,
             kickerLPsReward
         );
     }
