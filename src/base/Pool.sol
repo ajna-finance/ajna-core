@@ -383,8 +383,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // pledge collateral to pool
         if (pledge_) {
+            // add new amount of collateral to pledge to borrower balance
             borrower.collateral  += collateralToPledge_;
-            poolState.collateral += collateralToPledge_;
+
             // load loan's auction state
             inAuction = Auctions.isActive(auctions, borrowerAddress_);
             // if loan is auctioned and becomes collateralized by newly pledged collateral then settle auction
@@ -400,7 +401,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 // auction was settled, reset inAuction flag
                 inAuction = false;
             }
-            pledgedCollateral += collateralToPledge_;
+
+            // add new amount of collateral to pledge to pool balance
+            poolState.collateral += collateralToPledge_;
+            pledgedCollateral    += collateralToPledge_;
         }
 
         // borrow against pledged collateral
@@ -412,6 +416,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             // add origination fee to the amount to borrow and add to borrower's debt
             uint256 debtChange = Maths.wmul(amountToBorrow_, _feeRate(interestParams.interestRate) + Maths.WAD);
             borrowerDebt += debtChange;
+
+            // check that drawing debt doesn't leave borrower debt under min debt amount
             _checkMinDebt(poolState.accruedDebt, borrowerDebt);
 
             // determine new lup index and revert if borrow happens at a price higher than the specified limit (lower index than lup index)
@@ -425,11 +431,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 !_isCollateralized(borrowerDebt, borrower.collateral, newLup_, poolState.poolType)
             ) revert BorrowerUnderCollateralized();
 
-            // check borrow won't push pool into a state of under-collateralization
             poolState.accruedDebt += debtChange;
-            if (
-                !_isCollateralized(poolState.accruedDebt, poolState.collateral, newLup_, poolState.poolType)
-            ) revert PoolUnderCollateralized();
 
             uint256 t0DebtChange = Maths.wdiv(debtChange, poolState.inflator);
             borrower.t0debt += t0DebtChange;
