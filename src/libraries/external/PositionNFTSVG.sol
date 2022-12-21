@@ -26,13 +26,13 @@ library PositionNFTSVG {
 
     function constructTokenURI(ConstructTokenURIParams memory params_) external view returns (string memory image_) {
         // TODO: remove base64 encoding?
-        image_ = Base64.encode(bytes(_generateSVGofTokenById(params_)));
+        image_ = _generateSVGofTokenById(params_);
     }
 
     function _generateSVGofTokenById(ConstructTokenURIParams memory params_) internal pure returns (string memory svg_) {
         svg_ = string(
             abi.encodePacked(
-                '<svg fill="none" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"',
+                '<svg fill="none" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">',
                     _generateBackground(),
                     _generateSVGDefs(),
                     _generatePoolTag(params_.collateralTokenSymbol, params_.quoteTokenSymbol),
@@ -101,10 +101,10 @@ library PositionNFTSVG {
 
     function _generatePoolTag(string memory collateral_, string memory quote_) private pure returns (string memory poolTag_) {
         poolTag_ = string(abi.encodePacked(
-            '<text x="32px" y="46px" fill="white" font-family="\'andale mono\', Courier New", monospace" font-size="18px">',
+            '<text x="32px" y="46px" fill="white" font-family="\'andale mono\', \'Courier New\', monospace" font-size="18px">',
             abi.encodePacked(
                 collateral_,
-                ' / ',
+                '/',
                 quote_
             ),
             '</text>'
@@ -115,9 +115,9 @@ library PositionNFTSVG {
         tokenIdTag_ = string(abi.encodePacked(
             '<g style="transform:translate(32px, 456px)">',
                 '<rect width="92px" height="26px" rx="8px" ry="8px" fill="rgba(0,0,0,0.8)"/>',
-                '<text x="12px" y="17px" fill="violet" font-family="\'andale mono\', Courier New", monospace" font-size="12px">',
+                '<text x="12px" y="17px" fill="violet" font-family="\'andale mono\', \'Courier New\', monospace" font-size="12px">',
                     '<tspan fill="rgba(255,255,255,0.6)">ID: </tspan>',
-                    abi.encodePacked(tokenId_),
+                    Strings.toString(tokenId_),
                 '</text>',
             '</g>'
         ));

@@ -2447,6 +2447,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // TODO: expand this test to check string matches an expected hardcoded string
         string memory uriString = _positionManager.tokenURI(tokenId);
+        emit log(uriString);
         assertGt(bytes(uriString).length, 0);
     }
 
