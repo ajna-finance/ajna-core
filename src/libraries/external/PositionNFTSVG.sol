@@ -22,7 +22,7 @@ library PositionNFTSVG {
         uint256[] indexes;
     }
 
-    function constructTokenURI(ConstructTokenURIParams memory params_) external view returns (string memory image_) {
+    function constructTokenURI(ConstructTokenURIParams memory params_) external pure returns (string memory image_) {
         image_ = _generateSVGofTokenById(params_);
     }
 
