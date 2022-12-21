@@ -464,9 +464,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         bool repay = maxQuoteTokenAmountToRepay_ != 0;
         bool pull  = collateralAmountToPull_ != 0;
+
         uint256 borrowerDebt = Maths.wmul(borrower.t0debt, poolState.inflator);
         // loan can only be in auction when repaying debt
-        // if loan in auction and pull collateral then borrower collateralization check should revert
+        // if loan in auction and pull collateral attempted then borrower collateralization check should revert
         bool inAuction;
 
         if (repay) {
@@ -501,8 +502,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             }
 
             borrower.t0debt -= t0repaidDebt;
-
-            t0poolDebt -= t0repaidDebt;
+            t0poolDebt      -= t0repaidDebt;
         }
 
         if (pull) {
@@ -517,8 +517,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
             borrower.collateral  -= collateralAmountToPull_;
             poolState.collateral -= collateralAmountToPull_;
-
-            pledgedCollateral = poolState.collateral;
+            pledgedCollateral    = poolState.collateral;
         }
 
         // update loan state
@@ -534,6 +533,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             inAuction,
             pull // stamp borrower t0Np only for pull collateral action
         );
+
+        // update pool global interest rate state
         _updateInterestParams(poolState, newLup_);
     }
 
