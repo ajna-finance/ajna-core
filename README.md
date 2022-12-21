@@ -108,6 +108,22 @@ pip install solc-select && solc-select install 0.8.14 && solc-select use 0.8.14
 make analyze
 ```
 
+## Licensing
+Ajna is under [BUSL license](https://github.com/ajna-finance/contracts/blob/develop/LICENSE) with the 
+following exceptions:
+- To facilitate integrations, public-facing interfaces are licensed under `MIT`, as indicated in their SPDX headers.
+- As a derivative work of [ds-math](https://github.com/dapphub/ds-math/), `Maths.sol` is licensed under `GPL-3.0-or-later`, as indicated in its SPDX header.
+- Unit and integration tests under `tests` folder remain unlicensed, unless their file header specifies otherwise.
+
+Ajna Labs, LLC shall retain rights to this BUSL license until dissolution, at which point the license shall be 
+transferred to the Ajna Foundation.  Licensor reserves the right to specify Additional Use Grants at their discretion 
+and to facilitate changes enacted by the Grant Coordination process.
+
+The Change License is hereby specified as _GNU Affero General Public License v3.0 or later_ (`AGPL-3.0-or-later`).
+Licensor may modify this change license prior to the change date by updating this file in the `master` branch of [source control](https://github.com/ajna-finance/contracts/tree/master).
+
+The Change Date is hereby specified as April 1, 2026.  Licensor may modify this change date by updating this file in the `master` branch of [source control](https://github.com/ajna-finance/contracts/tree/master).
+
 ## Deployment
 
 A deployment script has been created to automate deployment of libraries and factory contracts.
