@@ -113,6 +113,7 @@ Ajna is under [BUSL license](https://github.com/ajna-finance/contracts/blob/deve
 following exceptions:
 - To facilitate integrations, public-facing interfaces are licensed under `MIT`, as indicated in their SPDX headers.
 - As a derivative work of [ds-math](https://github.com/dapphub/ds-math/), `Maths.sol` is licensed under `GPL-3.0-or-later`, as indicated in its SPDX header.
+- As a derivative work of [SafeERC20Namer](https://github.com/Uniswap/solidity-lib/blob/master/contracts/libraries/SafeERC20Namer.sol), `SafeTokenNamer.sol` is licensed under `GPL-3.0-or-later`, as indicated in its SPDX header.
 - Unit and integration tests under `tests` folder remain unlicensed, unless their file header specifies otherwise.
 
 Ajna Labs, LLC shall retain rights to this BUSL license until dissolution, at which point the license shall be 
