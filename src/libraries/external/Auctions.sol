@@ -477,7 +477,7 @@ library Auctions {
             result.bondChange,
             result.isRewarded
         );
-        return(result.collateralAmount, result.t0repayAmount);
+        return (result.collateralAmount, result.t0repayAmount);
     }
 
     /**
@@ -1036,19 +1036,6 @@ library Auctions {
     /**********************/
     /*** View Functions ***/
     /**********************/
-
-    /**
-     *  @notice Check if there is an ongoing auction for current borrower and revert if such.
-     *  @dev    Used to prevent an auctioned borrower to draw more debt or while in liquidation.
-     *  @dev    Used to prevent kick on an auctioned borrower.
-     *  @param  borrower_ Borrower address to check auction status for.
-     */
-    function revertIfActive(
-        AuctionsState storage auctions_,
-        address borrower_
-    ) internal view {
-        if (isActive(auctions_, borrower_)) revert AuctionActive();
-    }
 
     /**
      *  @notice Returns true if borrower is in auction.

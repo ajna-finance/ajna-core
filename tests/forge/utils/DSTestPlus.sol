@@ -173,9 +173,6 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal virtual {
         changePrank(from);
         _pool.bucketTake(borrower, true, index);
-
-        // Add for tearDown
-        bucketsUsed.add(index);
     }
 
     function _settle(
@@ -188,6 +185,12 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         vm.expectEmit(true, true, false, true);
         emit Settle(borrower, settledDebt);
         _pool.settle(borrower, maxDepth);
+
+        // Added for tearDown
+        // Borrowers may receive LP in 7388 during settle if 0 deposit in book
+        lenders.add(borrower);
+        lendersDepositedIndex[borrower].add(7388);
+        bucketsUsed.add(7388);
     }
 
     function _kick(

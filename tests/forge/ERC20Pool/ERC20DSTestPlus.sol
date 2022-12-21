@@ -70,7 +70,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         changePrank(lender);
 
         // Redeem all lps of lender from all buckets as quote token and collateral token
-        for(uint j = 0; j < indexes.length(); j++ ){
+        for (uint j = 0; j < indexes.length(); j++) {
             uint256 bucketIndex = indexes.at(j);
             (, uint256 bucketQuote, uint256 bucketCollateral, , ,) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
             (uint256 lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
@@ -99,7 +99,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     function validateEmpty(
         EnumerableSet.UintSet storage buckets
     ) internal {
-        for(uint256 i = 0; i < buckets.length(); i++){
+        for (uint256 i = 0; i < buckets.length(); i++) {
             uint256 bucketIndex = buckets.at(i);
             (, uint256 quoteTokens, uint256 collateral, uint256 bucketLps, ,) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
 
@@ -117,15 +117,15 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
 
     modifier tearDown {
         _;
-        for(uint i = 0; i < borrowers.length(); i++ ){
+        for(uint i = 0; i < borrowers.length(); i++) {
             repayDebt(borrowers.at(i));
         }
 
-        for(uint i = 0; i < lenders.length(); i++ ){
+        for(uint i = 0; i < lenders.length(); i++) {
             redeemLendersLp(lenders.at(i), lendersDepositedIndex[lenders.at(i)]);
         }
 
-        for(uint i = 0; i < bidders.length(); i++ ){
+        for(uint i = 0; i < bidders.length(); i++ ) {
             redeemLendersLp(bidders.at(i), bidderDepositedIndex[bidders.at(i)]);
         }
         validateEmpty(bucketsUsed);
@@ -496,7 +496,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         uint256 indexLimit
     ) internal override {
         changePrank(from);
-        vm.expectRevert(abi.encodeWithSignature('AuctionActive()'));
+        vm.expectRevert(IPoolErrors.BorrowerUnderCollateralized.selector);
         ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
     }
 

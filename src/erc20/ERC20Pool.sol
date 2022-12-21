@@ -10,8 +10,6 @@ import './interfaces/IERC20Taker.sol';
 import '../base/FlashloanablePool.sol';
 
 contract ERC20Pool is IERC20Pool, FlashloanablePool {
-    using Deposits  for DepositsState;
-    using Loans     for LoansState;
     using SafeERC20 for IERC20;
 
     /*****************/
@@ -36,7 +34,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         interestParams.interestRate       = uint208(rate_);
         interestParams.interestRateUpdate = uint48(block.timestamp);
 
-        loans.init();
+        Loans.init(loans);
 
         // increment initializations count to ensure these values can't be updated
         poolInitializations += 1;
@@ -196,7 +194,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         bytes calldata data_
     ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
-        Borrower  memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
+        Borrower  memory borrower  = Loans.getBorrowerInfo(loans, borrowerAddress_);
         // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
         if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral();
 
@@ -218,11 +216,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             params
         );
 
-        borrower.collateral  -= collateralAmount;
-        poolState.collateral -= collateralAmount;
-
-        _payLoan(t0repayAmount, poolState, params.borrower, borrower);
-        pledgedCollateral = poolState.collateral;
+        _takeFromLoan(poolState, borrower, params.borrower, collateralAmount, t0repayAmount);
 
         _transferCollateral(callee_, collateralAmount);
 

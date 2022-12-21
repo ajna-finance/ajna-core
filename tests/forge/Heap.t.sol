@@ -232,17 +232,6 @@ contract HeapTest is DSTestPlus {
         assertEq(_loans.getTotalTps(),    7);
     }
 
-    function testHeapUpsertRequireChecks() public {
-        address b1 = makeAddr("b1");
-        vm.expectRevert(abi.encodeWithSignature('ZeroThresholdPrice()'));
-        _loans.upsertTp(b1, 0);
-
-        _loans.upsertTp(b1, 100 * 1e18);
-
-        vm.expectRevert(abi.encodeWithSignature('ZeroThresholdPrice()'));
-        _loans.upsertTp(b1, 0);
-    }
-
     function testLoadHeapFuzzy(uint256 inserts_) public {
 
         // test adding different TPs

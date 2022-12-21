@@ -131,7 +131,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 borrower:                  _borrower2,
                 borrowerDebt:              7_987.673076923076926760 * 1e18,
                 borrowerCollateral:        1_000 * 1e18,
-                borrowert0Np:              8.471136974495192173 * 1e18,
+                borrowert0Np:              8.471136974495192174 * 1e18,
                 borrowerCollateralization: 1.217037273735858713 * 1e18
             }
         );

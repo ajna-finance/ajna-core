@@ -202,7 +202,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
 
     }
 
-    function testKickAndSettleSubsetPoolFractionalCollateral() external { //FIXME: tearDown fails with Arithmetic over/underflow
+    function testKickAndSettleSubsetPoolFractionalCollateral() external {
 
         // settle borrower 2
         _assertAuction(
@@ -321,9 +321,79 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_lender),        104_000 * 1e18);
         assertEq(_quote.balanceOf(_borrower),      5_100 * 1e18);
         assertEq(_quote.balanceOf(_borrower2),     13_000 * 1e18);
+
+        // lender adds liquidity in min bucket and merge / removes 2 NFTs
+        _addLiquidity(
+            {
+                from:    _lender,
+                amount:  100 * 1e18,
+                index:   MAX_FENWICK_INDEX,
+                lpAward: 100.000000000000000000546226400 * 1e27,
+                newLup:  MAX_PRICE
+            }
+        );
+        uint256[] memory removalIndexes = new uint256[](3);
+        removalIndexes[0] = 2500;
+        removalIndexes[1] = 2501;
+        removalIndexes[2] = MAX_FENWICK_INDEX;
+        _mergeOrRemoveCollateral(
+            {
+                from:                    _lender,
+                toIndex:                 MAX_FENWICK_INDEX,
+                noOfNFTsToRemove:        2,
+                collateralMerged:        2 * 1e18,
+                removeCollateralAtIndex: removalIndexes,
+                toIndexLps:              0
+            }
+        );
+        // lender merge and claim one more NFT
+        removalIndexes = new uint256[](2);
+        removalIndexes[0] = 2500;
+        removalIndexes[1] = MAX_FENWICK_INDEX;
+        _mergeOrRemoveCollateral(
+            {
+                from:                    _lender,
+                toIndex:                 MAX_FENWICK_INDEX,
+                noOfNFTsToRemove:        1,
+                collateralMerged:        1 * 1e18,
+                removeCollateralAtIndex: removalIndexes,
+                toIndexLps:              0
+            }
+        );
+        // lender claims one more settled NFT
+        _pool.removeCollateral(1, MAX_FENWICK_INDEX);
+
+        // borrower pulls one NFT
+        _repayDebt({
+            from:             _borrower2,
+            borrower:         _borrower2,
+            amountToRepay:    0,
+            amountRepaid:     0,
+            collateralToPull: 1,
+            newLup:           MAX_PRICE
+        });
+
+        // check lender is owner of 3 NFTs (2 pledged by first borrower, one pledged by 2nd borrower)
+        assertEq(_collateral.ownerOf(1), _lender);
+        assertEq(_collateral.ownerOf(3), _lender);
+        assertEq(_collateral.ownerOf(53), _lender);
+        assertEq(_collateral.ownerOf(73), address(_lender));
+
+        // check borrower 2 owner of 1 NFT
+        assertEq(_collateral.ownerOf(51), _borrower2);
+
+        _assertBucket(
+            {
+                index:        2500,
+                lpBalance:    0,
+                collateral:   0,
+                deposit:      1861.636634299022017158 * 1e18, // TODO: figure out why still deposit and no lp balance, add tearDown to test after
+                exchangeRate: 1 * 1e27
+            }
+        );
     }
 
-    function testKickAndSettleSubsetPoolByRepay() external { //FIXME: tearDown fails with Arithmetic over/underflow
+    function testKickAndSettleSubsetPoolByRepay() external tearDown {
         // before auction settle: NFTs pledged by auctioned borrower are owned by the pool
         assertEq(_collateral.ownerOf(51), address(_pool));
         assertEq(_collateral.ownerOf(53), address(_pool));

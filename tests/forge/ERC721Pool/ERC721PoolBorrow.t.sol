@@ -399,7 +399,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
                 encumberedCollateral: 0,
                 poolDebt:             0,
                 actualUtilization:    0,
-                targetUtilization:    0.000000452724663788 * 1e18,
+                targetUtilization:    0.166838815388013307 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
@@ -409,8 +409,8 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         );
         _assertEMAs(
             {
-                debtEma:   116.548760023014994270 * 1e18,
-                lupColEma: 257_438_503.676217090117659874 * 1e18
+                debtEma:   128.680263773096486341 * 1e18,
+                lupColEma: 771.284928353319164825 * 1e18
             }
         );
 

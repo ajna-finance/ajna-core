@@ -131,7 +131,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 borrower:                  _borrower2,
                 borrowerDebt:              7_987.673076923076926760 * 1e18,
                 borrowerCollateral:        1_000 * 1e18,
-                borrowert0Np:              8.471136974495192173 * 1e18,
+                borrowert0Np:              8.471136974495192174 * 1e18,
                 borrowerCollateralization: 1.217037273735858713 * 1e18
             }
         );
@@ -148,8 +148,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
     }
     
-    // FIXME: Removed tearDown because of borrower2 being left in a state post auction of no debt or collateral, so not trigger repay or pull and no way of removing the loan from the loan book.
-    function testSettleOnAuctionKicked72HoursAgoAndPartiallyTaken() external {
+    function testSettleOnAuctionKicked72HoursAgoAndPartiallyTaken() external tearDown {
         // Borrower2 borrows
         _borrow(
             {
@@ -369,6 +368,27 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
         // settle should affect first 3 buckets, reducing deposit and incrementing collateral
         skip(73 hours);
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_494.605770555946295771 * 1e18,
+                borrowerCollateral:        200 * 1e18,
+                borrowert0Np:              10.307611531622595991 * 1e18,
+                borrowerCollateralization: 0.204775134427989204 * 1e18
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        _i9_91,
+                lpBalance:    2_000 * 1e27,
+                collateral:   0,
+                deposit:      2_118.911507166546112000 * 1e18,
+                exchangeRate: 1.059455753583273056000 * 1e27
+            }
+        );
+
         _settle(
             {
                 from:        _lender,
@@ -377,6 +397,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 settledDebt: 9_361.437181302278117323 * 1e18
             }
         );
+
         _assertAuction(
             AuctionParams({
                 borrower:          _borrower2,
@@ -420,15 +441,17 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 exchangeRate: 1 * 1e27
             }
         );
+
         _assertBucket(
             {
                 index:        _i9_72,
                 lpBalance:    11_000 * 1e27,
                 collateral:   0,
-                deposit:      8_775.731868287982080143 * 1e18,
-                exchangeRate: 0.797793806207998370922090909 * 1e27
+                deposit:      8_775.721258848371782184 * 1e18,
+                exchangeRate: 0.797792841713488343834909090 * 1e27
             }
         );
+
         _assertBucket(
             {
                 index:        _i9_62,
@@ -441,17 +464,17 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  48.148343567549191135 * 1e18,
+                htp:                  9.910303333009215085 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             63_775.731868287982080143 * 1e18,
+                poolSize:             63_775.721258848371782184 * 1e18,
                 pledgedCollateral:    2 * 1e18,
                 encumberedCollateral: 2.010288427770370775 * 1e18,
                 poolDebt:             19.542608580405342754 * 1e18,
                 actualUtilization:    0,
                 targetUtilization:    2.100039410123873900 * 1e18,
-                minDebtAmount:        0.977130429020267138 * 1e18,
-                loans:                2,
-                maxBorrower:          address(_borrower2),
+                minDebtAmount:        1.954260858040534275 * 1e18,
+                loans:                1,
+                maxBorrower:          address(_borrower),
                 interestRate:         0.0405 * 1e18,
                 interestRateUpdate:   _startTime + 83 hours + 100 days
             })

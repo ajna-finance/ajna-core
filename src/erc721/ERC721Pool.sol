@@ -8,8 +8,6 @@ import '../base/FlashloanablePool.sol';
 import './interfaces/IERC721NonStandard.sol';
 
 contract ERC721Pool is IERC721Pool, FlashloanablePool {
-    using Deposits for DepositsState;
-    using Loans    for LoansState;
 
     /*****************/
     /*** Constants ***/
@@ -54,7 +52,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             }
         }
 
-        loans.init();
+        Loans.init(loans);
 
         // increment initializations count to ensure these values can't be updated
         poolInitializations += 1;
@@ -202,7 +200,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         bytes calldata data_
     ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
-        Borrower  memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
+        Borrower  memory borrower  = Loans.getBorrowerInfo(loans, borrowerAddress_);
         // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
         if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral();
 
@@ -235,9 +233,6 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             excessQuoteToken = Maths.wmul(collateralTaken - collateralAmount, auctionPrice);
         }
 
-        borrower.collateral  -= collateralTaken;
-        poolState.collateral -= collateralTaken;
-
         // transfer rounded collateral from pool to taker
         uint256[] memory tokensTaken = _transferFromPoolToAddress(callee_, borrowerTokenIds[params.borrower], collateralTaken / 1e18);
 
@@ -255,8 +250,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         // transfer from pool to borrower the excess of quote tokens after rounding collateral auctioned
         if (excessQuoteToken != 0) _transferQuoteToken(params.borrower, excessQuoteToken);
 
-        _payLoan(t0repayAmount, poolState, params.borrower, borrower);
-        pledgedCollateral = poolState.collateral;
+        _takeFromLoan(poolState, borrower, params.borrower, collateralTaken, t0repayAmount);
     }
 
 

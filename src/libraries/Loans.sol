@@ -2,8 +2,9 @@
 
 pragma solidity 0.8.14;
 
-import { Borrower, LoansState, Loan } from '../base/interfaces/IPool.sol';
+import { Borrower, AuctionsState, DepositsState, LoansState, Loan } from '../base/interfaces/IPool.sol';
 
+import './Deposits.sol';
 import './Maths.sol';
 
 library Loans {
@@ -35,29 +36,59 @@ library Loans {
     /**
      *  @notice Updates a loan: updates heap (upsert if TP not 0, remove otherwise) and borrower balance.
      *  @param loans_ Holds tree loan data.
-     *  @param borrowerAddress_ Borrower's address to update.
      *  @param borrower_        Borrower struct with borrower details.
-     *  @param loanIndex_       Current index of the loan (can be 0 if new loan to be inserted in heap)
+     *  @param borrowerAddress_ Borrower's address to update.
+     *  @param borrowerDebt_    Borrower's current debt.
+     *  @param poolRate_        Pool's current rate.
+     *  @param lup_             Current LUP.
+     *  @param inAuction_       Whether the loan is in auction or not.
+     *  @param t0NpUpdate_      Whether the neutral price of borrower should be updated or not.
      */
     function update(
         LoansState storage loans_,
-        address borrowerAddress_,
+        AuctionsState storage auctions_,
+        DepositsState storage deposits_,
         Borrower memory borrower_,
-        uint256 loanIndex_
+        address borrowerAddress_,
+        uint256 borrowerDebt_,
+        uint256 poolRate_,
+        uint256 lup_,
+        bool inAuction_,
+        bool t0NpUpdate_
     ) internal {
-        // update loan heap
-        if (borrower_.t0debt != 0 && borrower_.collateral != 0) {
-            _upsert(
-                loans_,
-                borrowerAddress_,
-                loanIndex_,
-                uint96(Maths.wdiv(borrower_.t0debt, borrower_.collateral))
-            );
 
-        } else if (loanIndex_ != 0) {
-            remove(loans_, borrowerAddress_, loanIndex_);
+        bool activeBorrower = borrower_.t0debt != 0 && borrower_.collateral != 0;
+        uint256 t0ThresholdPrice = activeBorrower ? Maths.wdiv(borrower_.t0debt, borrower_.collateral) : 0;
+
+        // loan not in auction, update threshold price and position in heap
+        if (!inAuction_ ) {
+            // get the loan id inside the heap
+            uint256 loanId = loans_.indices[borrowerAddress_];
+            if (activeBorrower) {
+                // revert if threshold price is zero
+                if (t0ThresholdPrice == 0) revert ZeroThresholdPrice();
+
+                // update heap, insert if a new loan, update loan if already in heap
+                _upsert(loans_, borrowerAddress_, loanId, uint96(t0ThresholdPrice));
+
+            // if loan is in heap and borrwer is no longer active (no debt, no collateral) then remove loan from heap
+            } else if (loanId != 0) {
+                remove(loans_, borrowerAddress_, loanId);
+            }
         }
 
+        // update t0 neutral price of borrower
+        if (t0NpUpdate_) {
+            if (t0ThresholdPrice != 0) {
+                uint256 loansInPool = loans_.loans.length - 1 + auctions_.noOfAuctions;
+                uint256 curMomp = _priceAt(Deposits.findIndexOfSum(deposits_, Maths.wdiv(borrowerDebt_, loansInPool * 1e18)));
+                borrower_.t0Np  = (1e18 + poolRate_) * curMomp * t0ThresholdPrice / lup_ / 1e18;
+            } else {
+                borrower_.t0Np = 0;
+            }
+        }
+
+        // save borrower state
         loans_.borrowers[borrowerAddress_] = borrower_;
     }
 
@@ -154,8 +185,6 @@ library Loans {
         uint256 id_,
         uint96 thresholdPrice_
     ) internal {
-        if (thresholdPrice_ == 0) revert ZeroThresholdPrice();
-
         // Loan exists, update in place.
         if (id_ != 0) {
             Loan memory currentLoan = loans_.loans[id_];

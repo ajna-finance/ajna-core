@@ -131,7 +131,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 borrower:                  _borrower2,
                 borrowerDebt:              7_987.673076923076926760 * 1e18,
                 borrowerCollateral:        1_000 * 1e18,
-                borrowert0Np:              8.471136974495192173 * 1e18,
+                borrowert0Np:              8.471136974495192174 * 1e18,
                 borrowerCollateralization: 1.217037273735858713 * 1e18
             }
         );
@@ -225,7 +225,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 borrower:                  _borrower2,
                 borrowerDebt:              8_097.846143253778448241 * 1e18,
                 borrowerCollateral:        1_000 * 1e18,
-                borrowert0Np:              8.471136974495192173 * 1e18,
+                borrowert0Np:              8.471136974495192174 * 1e18,
                 borrowerCollateralization: 1.200479200648987171 * 1e18
             }
         );
@@ -632,14 +632,6 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 thresholdPrice:    9.889228225930806740 * 1e18,
                 neutralPrice:      10.255495938002318100 * 1e18
             })
-        );
-
-        // kick should fail if borrower in liquidation
-        _assertKickAuctionActiveRevert(
-            {
-                from:       _lender,
-                borrower:   _borrower
-            }
         );
 
         // should not allow borrower to draw more debt if auction kicked
