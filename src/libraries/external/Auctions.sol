@@ -844,7 +844,7 @@ library Auctions {
             collateral_             = Maths.wdiv(debt_, borrowerPrice);
             t0debtPaid_             = t0debt_;
             unscaledQuoteTokenPaid_ = Maths.wdiv(debt_, quoteTokenScale_);
-            scaledQuoteTokenPaid_   = debt_;
+            scaledQuoteTokenPaid_   = (bpf_ > 0) ? Maths.wdiv(debt_, Maths.WAD - uint256(bpf_)) : debt_;
         } else {
             // collateral available is constraint
             collateral_             = totalCollateral_;
