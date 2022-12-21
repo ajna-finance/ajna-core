@@ -1,8 +1,10 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 pragma solidity 0.8.14;
 
-import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import '@openzeppelin/contracts/utils/Strings.sol';
+
+import { Base64 } from '@base64-sol/base64.sol';
 
 library PositionNFTSVG {
 
@@ -19,12 +21,45 @@ library PositionNFTSVG {
         string quoteTokenSymbol;
         uint256 tokenId;
         address pool;
+        address owner;
         uint256[] indexes;
     }
 
-    function constructTokenURI(ConstructTokenURIParams memory params_) external pure returns (string memory image_) {
-        image_ = _generateSVGofTokenById(params_);
+    function constructTokenURI(ConstructTokenURIParams memory params_) external pure returns (string memory) {
+        // set token metadata
+        string memory description = "Ajna Positions NFT-V1";
+        string memory image = _generateSVGofTokenById(params_);
+        string memory name = string(
+            abi.encodePacked("Ajna Token #", Strings.toString(params_.tokenId))
+        );
+        string memory ownerHexString = (uint256(uint160(params_.owner))).toHexString(20);
+
+        // encode metadata as JSON object in base64
+        return string(
+            abi.encodePacked(
+                "data:application/json;base64,",
+                Base64.encode(
+                    bytes(
+                        abi.encodePacked(
+                            '{"name":"',
+                            name,
+                            '", "description":"',
+                            description,
+                            '", "image":"',
+                            image,
+                            '", "owner":"',
+                            ownerHexString,
+                            '"}'
+                        )
+                    )
+                )
+            )
+        );
     }
+
+    /**********************************/
+    /*** Image Generation Functions ***/
+    /**********************************/
 
     function _generateSVGofTokenById(ConstructTokenURIParams memory params_) internal pure returns (string memory svg_) {
         svg_ = string(

@@ -195,6 +195,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             quoteTokenSymbol: SafeTokenNamer.tokenSymbol(quoteTokenAddress),
             tokenId: tokenId_,
             pool: poolKey[tokenId_],
+            owner: ownerOf(tokenId_),
             indexes: positionPrices[tokenId_].values()
         });
         return PositionNFTSVG.constructTokenURI(params);
