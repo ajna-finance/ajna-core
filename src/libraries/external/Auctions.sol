@@ -485,6 +485,7 @@ library Auctions {
             result.collateralAmount,
             result.t0RepayAmount,
             result.unscaledQuoteTokenAmount,
+            result.scaledQuoteTokenAmount
         ) = _calculateTakeFlows(
             collateralBound,
             result.auctionPrice,
@@ -498,7 +499,6 @@ library Auctions {
 
         if (result.isRewarded) {
             // take is below neutralPrice, Kicker is rewarded
-            result.unscaledQuoteTokenAmount = Maths.wdiv(result.unscaledQuoteTokenAmount, Maths.WAD - uint256(result.bpf));
             result.bondChange = Maths.wmul(Maths.wmul(result.auctionPrice, result.collateralAmount), uint256(result.bpf));
             liquidation.bondSize                     += uint160(result.bondChange);
             auctions_.kickers[result.kicker].locked  += result.bondChange;
@@ -513,14 +513,14 @@ library Auctions {
 
         emit Take(
             params_.borrower,
-            result.unscaledQuoteTokenAmount,
+            result.scaledQuoteTokenAmount,
             result.collateralAmount,
             result.bondChange,
             result.isRewarded
         );
         return (
             result.collateralAmount,
-            result.unscaledQuoteTokenAmount,
+            result.scaledQuoteTokenAmount,
             result.t0RepayAmount,
             result.auctionPrice
         );
