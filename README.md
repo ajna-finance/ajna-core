@@ -122,7 +122,7 @@ and to facilitate changes enacted by the Grant Coordination process.
 The Change License is hereby specified as _GNU Affero General Public License v3.0 or later_ (`AGPL-3.0-or-later`).
 Licensor may modify this change license prior to the change date by updating this file in the `master` branch of [source control](https://github.com/ajna-finance/contracts/tree/master).
 
-The Change Date is hereby specified as April 1, 2024.  Licensor may modify this change date by updating this file in the `master` branch of [source control](https://github.com/ajna-finance/contracts/tree/master).
+The Change Date is hereby specified as April 1, 2026.  Licensor may modify this change date by updating this file in the `master` branch of [source control](https://github.com/ajna-finance/contracts/tree/master).
 
 ## Deployment
 
