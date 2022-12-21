@@ -462,10 +462,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
         Borrower  memory borrower = Loans.getBorrowerInfo(loans, borrowerAddress_);
 
-        // bool repay = maxQuoteTokenAmountToRepay_ != 0;
-        // bool pull  = collateralAmountToPull_ != 0;
+        bool repay = maxQuoteTokenAmountToRepay_ != 0;
+        bool pull  = collateralAmountToPull_ != 0;
+        uint256 borrowerDebt = Maths.wmul(borrower.t0debt, poolState.inflator);
+        // loan can only be in auction when repaying debt
+        // if loan in auction and pull collateral then borrower collateralization check should revert
+        bool inAuction;
 
-        if (maxQuoteTokenAmountToRepay_ != 0) {
+        if (repay) {
             if (borrower.t0debt == 0) revert NoDebt();
 
             uint256 t0repaidDebt = Maths.min(
@@ -474,13 +478,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             );
             quoteTokenToRepay_    = Maths.wmul(t0repaidDebt, poolState.inflator);
             poolState.accruedDebt -= quoteTokenToRepay_;
+            borrowerDebt          -= quoteTokenToRepay_;
 
-            uint256 borrowerDebt = Maths.wmul(borrower.t0debt, poolState.inflator) - quoteTokenToRepay_;
             // check that paying the loan doesn't leave borrower debt under min debt amount
             _checkMinDebt(poolState.accruedDebt, borrowerDebt);
 
             newLup_ = _lup(poolState.accruedDebt);
-            bool inAuction = Auctions.isActive(auctions, borrowerAddress_);
+            inAuction = Auctions.isActive(auctions, borrowerAddress_);
 
             if (inAuction) {
                 if (_isCollateralized(borrowerDebt, borrower.collateral, newLup_, poolState.poolType)) {
@@ -497,31 +501,16 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             }
 
             borrower.t0debt -= t0repaidDebt;
-            // update loan state, no need to stamp borrower t0Np in repay action
-            Loans.update(
-                loans,
-                auctions,
-                deposits,
-                borrower,
-                borrowerAddress_,
-                borrowerDebt,
-                poolState.rate,
-                newLup_,
-                inAuction,
-                false
-            );
 
             t0poolDebt -= t0repaidDebt;
         }
 
-        if (collateralAmountToPull_ != 0) {
+        if (pull) {
             // only intended recipient can pull collateral
             if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
 
-            uint256 borrowerDebt = Maths.wmul(borrower.t0debt, poolState.inflator);
-
             // calculate LUP only if it wasn't calculated by repay action
-            if (maxQuoteTokenAmountToRepay_ == 0) newLup_ = _lup(poolState.accruedDebt);
+            if (!repay) newLup_ = _lup(poolState.accruedDebt);
 
             uint256 encumberedCollateral = borrower.t0debt != 0 ? Maths.wdiv(borrowerDebt, newLup_) : 0;
             if (borrower.collateral - encumberedCollateral < collateralAmountToPull_) revert InsufficientCollateral();
@@ -529,22 +518,22 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             borrower.collateral  -= collateralAmountToPull_;
             poolState.collateral -= collateralAmountToPull_;
 
-            // update loan state
-            Loans.update(
-                loans,
-                auctions,
-                deposits,
-                borrower,
-                borrowerAddress_,
-                borrowerDebt,
-                poolState.rate,
-                newLup_,
-                false, // cannot be in auction if able to pull collateral
-                true
-            );
-
             pledgedCollateral = poolState.collateral;
         }
+
+        // update loan state
+        Loans.update(
+            loans,
+            auctions,
+            deposits,
+            borrower,
+            borrowerAddress_,
+            borrowerDebt,
+            poolState.rate,
+            newLup_,
+            inAuction,
+            pull // stamp borrower t0Np only for pull collateral action
+        );
         _updateInterestParams(poolState, newLup_);
     }
 
