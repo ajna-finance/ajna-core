@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import { Base64 } from '@base64-sol/base64.sol';
-
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import '@openzeppelin/contracts/utils/Strings.sol';
 
@@ -25,7 +23,6 @@ library PositionNFTSVG {
     }
 
     function constructTokenURI(ConstructTokenURIParams memory params_) external view returns (string memory image_) {
-        // TODO: remove base64 encoding?
         image_ = _generateSVGofTokenById(params_);
     }
 
