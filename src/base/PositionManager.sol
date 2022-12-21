@@ -3,6 +3,7 @@
 pragma solidity 0.8.14;
 
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import '@openzeppelin/contracts/utils/Multicall.sol';
@@ -185,8 +186,24 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     function tokenURI(uint256 tokenId_) public view override(ERC721) returns (string memory) {
         require(_exists(tokenId_));
 
-        PositionNFTSVG.ConstructTokenURIParams memory params = PositionNFTSVG.ConstructTokenURIParams(tokenId_, poolKey[tokenId_], positionPrices[tokenId_].values());
+        address collateralTokenAddress = IPool(poolKey[tokenId_]).collateralAddress();
+        address quoteTokenAddress = IPool(poolKey[tokenId_]).quoteTokenAddress();
+
+        PositionNFTSVG.ConstructTokenURIParams memory params = PositionNFTSVG.ConstructTokenURIParams({
+            collateralTokenSymbol: _getTokenSymbol(collateralTokenAddress),
+            quoteTokenSymbol: _getTokenSymbol(quoteTokenAddress),
+            tokenId: tokenId_,
+            pool: poolKey[tokenId_],
+            indexes: positionPrices[tokenId_].values()
+        });
         return PositionNFTSVG.constructTokenURI(params);
+    }
+
+    // TODO: move this into a library and check for edge cases
+    function _getTokenSymbol(address token_) internal view returns (string memory) {
+        // 0x95d89b41 = bytes4(keccak256("symbol()"))
+        (bool success, bytes memory data) = token_.staticcall(abi.encodeWithSelector(0x95d89b41));
+        return abi.decode(data, (string));
     }
 
 }

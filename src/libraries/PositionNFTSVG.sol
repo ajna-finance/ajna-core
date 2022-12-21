@@ -17,6 +17,8 @@ library PositionNFTSVG {
      *  @param  indexes The array of price buckets index with LP tokens to be tracked by the NFT.
      */
     struct ConstructTokenURIParams {
+        string collateralTokenSymbol;
+        string quoteTokenSymbol;
         uint256 tokenId;
         address pool;
         uint256[] indexes;
@@ -24,17 +26,17 @@ library PositionNFTSVG {
 
     function constructTokenURI(ConstructTokenURIParams memory params_) external view returns (string memory image_) {
         // TODO: remove base64 encoding?
-        image_ = Base64.encode(bytes(_generateSVGofTokenById(params_.tokenId)));
+        image_ = Base64.encode(bytes(_generateSVGofTokenById(params_)));
     }
 
-    function _generateSVGofTokenById(uint256 tokenId_) internal pure returns (string memory svg_) {
+    function _generateSVGofTokenById(ConstructTokenURIParams memory params_) internal pure returns (string memory svg_) {
         svg_ = string(
             abi.encodePacked(
                 '<svg fill="none" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"',
                     _generateBackground(),
                     _generateSVGDefs(),
-                    _generatePoolTag(tokenId_),
-                    _generateTokenIdTag(tokenId_),
+                    _generatePoolTag(params_.collateralTokenSymbol, params_.quoteTokenSymbol),
+                    _generateTokenIdTag(params_.tokenId),
                 "</svg>"
             )
         );
@@ -68,6 +70,7 @@ library PositionNFTSVG {
                 '<path d="m328 256s-26.5 30-72 30-72-30-72-30" stroke="#fff"/>'
         ));
 
+        // elements are broken up to avoid stack too deep errors
         background_ = string(abi.encodePacked(
             '<g clip-path="url(#c)">',
             backgroundTop,
@@ -96,10 +99,14 @@ library PositionNFTSVG {
         ));
     }
 
-    function _generatePoolTag(uint256 tokenId_) private pure returns (string memory poolTag_) {
+    function _generatePoolTag(string memory collateral_, string memory quote_) private pure returns (string memory poolTag_) {
         poolTag_ = string(abi.encodePacked(
             '<text x="32px" y="46px" fill="white" font-family="\'andale mono\', Courier New", monospace" font-size="18px">',
-                abi.encodePacked(_getPoolText(tokenId_)),
+            abi.encodePacked(
+                collateral_,
+                ' / ',
+                quote_
+            ),
             '</text>'
         ));
     }
@@ -114,11 +121,6 @@ library PositionNFTSVG {
                 '</text>',
             '</g>'
         ));
-    }
-
-    // TODO: pass this from position manager
-    function _getPoolText(uint256 tokenId) internal pure returns (string memory) {
-        return "ETH/DAI";
     }
 
 }
