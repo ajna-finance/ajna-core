@@ -490,9 +490,8 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 1, 18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      1, 18);
         uint256 bucketId            = bound(uint256(bucketId_),                    1, 7388);
-        // FIXME: Getting error of 1 RAY upon teardown when fuzzing quote token into the bucket.
-        uint256 quoteAmount         = bound(uint256(quoteAmount_),                 0, 0); //1e23 * 1e18);
-        uint256 collateralAmount    = bound(uint256(collateralAmount_),            0, 1e12 * 1e18);
+        uint256 quoteAmount         = bound(uint256(quoteAmount_),                 0, 1e22 * 1e18);
+        uint256 collateralAmount    = bound(uint256(collateralAmount_),            1e8, 1e12 * 1e18);
         _collateralPrecision        = uint256(10) ** boundColPrecision;
         _quotePrecision             = uint256(10) ** boundQuotePrecision;
         init(boundColPrecision, boundQuotePrecision);
@@ -543,6 +542,66 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             assertEq(lpBalance, 0);
         } else {
             assertGt(lpBalance, 0);
+        }
+    }
+
+    function testFuzzedDepositTwoLendersSameBucket(
+        uint8   collateralPrecisionDecimals_, 
+        uint8   quotePrecisionDecimals_,
+        uint16  bucketId_,
+        uint256 quoteAmount1_,
+        uint256 quoteAmount2_
+    ) external virtual tearDown {
+        // setup fuzzy bounds and initialize the pool
+        uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 1, 18);
+        uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      1, 18);
+        uint256 bucketId            = bound(uint256(bucketId_),                    1, 7388);
+        uint256 quoteAmount1        = bound(uint256(quoteAmount1_),                0, 1e22 * 1e18);
+        uint256 quoteAmount2        = bound(uint256(quoteAmount2_),                0, 1e22 * 1e18);
+        _quotePrecision             = uint256(10) ** boundQuotePrecision;
+        init(boundColPrecision, boundQuotePrecision);
+
+        // mint and run approvals, ignoring amounts already init approved above
+        deal(address(_quote), _lender, quoteAmount1 * _quotePrecision);
+        changePrank(_lender);
+        _quote.approve(address(_pool), quoteAmount1 * _quotePrecision);
+        address lender2 = makeAddr("lender2");
+        deal(address(_quote), lender2, quoteAmount2 * _quotePrecision);
+        changePrank(lender2);
+        _quote.approve(address(_pool), quoteAmount2 * _quotePrecision);
+
+        // deposit lender1 quote token and sanity check LPs
+        _addInitialLiquidity(_lender, quoteAmount1, bucketId);
+        uint256 time;
+        uint256 lpBalance1;
+        (lpBalance1, time) = _pool.lenderInfo(bucketId, _lender);
+        if (quoteAmount1 != 0) {
+            assertGt(lpBalance1, 0);
+        } else {
+            assertEq(lpBalance1, 0);
+        }
+        assertGt(time, _startTime);
+
+        // deposit lender2 quote token and sanity check LPs
+        _addInitialLiquidity(lender2, quoteAmount2, bucketId);
+        uint256 lpBalance2;
+        (lpBalance2, time) = _pool.lenderInfo(bucketId, lender2);
+        if (quoteAmount2 != 0) {
+            assertGt(lpBalance2, 0);
+        } else {
+            assertEq(lpBalance2, 0);
+        }
+        assertGt(time, _startTime);
+
+        // check bucket
+        uint256 curDeposit;
+        uint256 bucketLPs;
+        (, curDeposit, , bucketLPs,,) = _poolUtils.bucketInfo(address(_pool), bucketId);
+        assertEq(curDeposit, quoteAmount1 + quoteAmount2);
+        if (curDeposit == 0) {
+            assertEq(bucketLPs, 0);
+        } else {
+            assertEq(bucketLPs, lpBalance1 + lpBalance2);
         }
     }
 
