@@ -21,7 +21,7 @@ import './PoolHelper.sol';
 
 import '../libraries/Buckets.sol';
 import '../libraries/Maths.sol';
-import '../libraries/PositionNFTSVG.sol';
+import '../libraries/external/PositionNFTSVG.sol';
 
 contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, ReentrancyGuard {
     using EnumerableSet for EnumerableSet.UintSet;
