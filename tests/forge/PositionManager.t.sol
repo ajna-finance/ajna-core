@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20Pool/ERC20DSTestPlus.sol';
