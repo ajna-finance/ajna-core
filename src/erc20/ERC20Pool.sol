@@ -216,11 +216,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             params
         );
 
-        borrower.collateral  -= collateralAmount;
-        poolState.collateral -= collateralAmount;
-
-        _payLoan(t0repayAmount, poolState, params.borrower, borrower);
-        pledgedCollateral = poolState.collateral;
+        _takeFromLoan(poolState, borrower, params.borrower, collateralAmount, t0repayAmount);
 
         _transferCollateral(callee_, collateralAmount);
 
