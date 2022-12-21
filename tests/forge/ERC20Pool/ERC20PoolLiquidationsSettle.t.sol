@@ -673,7 +673,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         );
     }
 
-    function testSettleAuctionReverts() external {
+    function testSettleAuctionReverts() external tearDown {
         // Borrower2 borrows
         _borrow(
             {

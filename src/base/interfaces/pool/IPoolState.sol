@@ -18,16 +18,16 @@ interface IPoolState {
      *  @return neutralPrice      Neutral Price of auction.
      */
     function auctionInfo(address borrower)
-    external
-    view
-    returns (
-        address kicker,
-        uint256 bondFactor,
-        uint256 bondSize,
-        uint256 kickTime,
-        uint256 kickPrice,
-        uint256 neutralPrice
-    );
+        external
+        view
+        returns (
+            address kicker,
+            uint256 bondFactor,
+            uint256 bondSize,
+            uint256 kickTime,
+            uint256 kickPrice,
+            uint256 neutralPrice
+        );
 
     /**
      *  @notice Returns pool related debt values.
@@ -204,6 +204,7 @@ struct ReserveAuctionState {
 }
 
 struct PoolState {
+    uint8   poolType;             // pool type, can be ERC20 or ERC721
     uint256 accruedDebt;          // total debt in pool, accrued in current block
     uint256 collateral;           // total collateral pledged in pool
     uint256 inflator;             // current pool inflator
@@ -254,6 +255,7 @@ struct Borrower {
 /*** Auctions State ***/
 
 struct AuctionsState {
+    uint96  noOfAuctions;
     address head;
     address tail;
     uint256 totalBondEscrowed; // [WAD]

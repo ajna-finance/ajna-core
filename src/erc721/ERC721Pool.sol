@@ -145,7 +145,6 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256 noOfNFTsToRemove_,
         uint256 toIndex_
     ) external override returns (uint256 collateralMerged_, uint256 bucketLPs_) {
-
         PoolState memory poolState = _accruePoolInterest();
         uint256 collateralAmount = Maths.wad(noOfNFTsToRemove_);
         

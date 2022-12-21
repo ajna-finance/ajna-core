@@ -778,6 +778,15 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
 
     function testArbTakeReverts() external tearDown {
 
+        // should revert if borrower not auctioned
+        _assertArbTakeNoAuction(
+            {
+                from:     _lender,
+                borrower: _borrower2,
+                index:    _i9_91
+            }
+        );
+
         // should revert if auction in grace period
         _assertArbTakeAuctionInCooldownRevert(
             {

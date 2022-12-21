@@ -81,26 +81,3 @@ interface IPoolLenderActions {
         uint256[] calldata indexes
     ) external;
 }
-
-/*********************/
-/*** Param Structs ***/
-/*********************/
-
-struct MoveQuoteParams {
-    uint256 maxAmountToMove; // max amount to move between deposits
-    uint256 fromIndex;       // the deposit index from where amount is moved
-    uint256 toIndex;         // the deposit index where amount is moved to
-    uint256 ptp;             // the Pool Threshold Price (used to determine if penalty should be applied
-    uint256 htp;             // the Highest Threshold Price in pool
-    uint256 poolDebt;        // the current debt of the pool
-    uint256 rate;            // the interest rate in pool (used to calculate penalty)
-    }
-
-struct RemoveQuoteParams {
-    uint256 maxAmount; // max amount to be removed
-    uint256 index;     // the deposit index from where amount is removed
-    uint256 ptp;       // the Pool Threshold Price (used to determine if penalty should be applied)
-    uint256 htp;       // the Highest Threshold Price in pool
-    uint256 poolDebt;  // the current debt of the pool
-    uint256 rate;      // the interest rate in pool (used to calculate penalty)
-}

@@ -10,6 +10,7 @@ import './pool/IPoolState.sol';
 import './pool/IPoolDerivedState.sol';
 import './pool/IPoolEvents.sol';
 import './pool/IPoolErrors.sol';
+import './pool/IPoolInternals.sol';
 import './IERC3156FlashLender.sol';
 
 /**
