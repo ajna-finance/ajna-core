@@ -21,6 +21,7 @@ import './PoolHelper.sol';
 
 import '../libraries/Buckets.sol';
 import '../libraries/Maths.sol';
+import '../libraries/SafeERC20Namer.sol';
 import '../libraries/external/PositionNFTSVG.sol';
 
 contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, ReentrancyGuard {
@@ -190,20 +191,13 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         address quoteTokenAddress = IPool(poolKey[tokenId_]).quoteTokenAddress();
 
         PositionNFTSVG.ConstructTokenURIParams memory params = PositionNFTSVG.ConstructTokenURIParams({
-            collateralTokenSymbol: _getTokenSymbol(collateralTokenAddress),
-            quoteTokenSymbol: _getTokenSymbol(quoteTokenAddress),
+            collateralTokenSymbol: SafeERC20Namer.tokenSymbol(collateralTokenAddress),
+            quoteTokenSymbol: SafeERC20Namer.tokenSymbol(quoteTokenAddress),
             tokenId: tokenId_,
             pool: poolKey[tokenId_],
             indexes: positionPrices[tokenId_].values()
         });
         return PositionNFTSVG.constructTokenURI(params);
-    }
-
-    // TODO: move this into a library and check for edge cases
-    function _getTokenSymbol(address token_) internal view returns (string memory) {
-        // 0x95d89b41 = bytes4(keccak256("symbol()"))
-        (bool success, bytes memory data) = token_.staticcall(abi.encodeWithSelector(0x95d89b41));
-        return abi.decode(data, (string));
     }
 
 }
