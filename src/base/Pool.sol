@@ -536,6 +536,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _updateInterestParams(poolState, newLup_);
     }
 
+    /***********************************/
+    /*** Auctions Internal Functions ***/
+    /***********************************/
+
     /**
      *  @notice Updates loan with result of a take action. Settles auction if borrower becomes collateralized.
      *  @notice Saves loan state, t0 debt and collateral pledged pool accumulators and updates pool interest state.
@@ -601,17 +605,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         pledgedCollateral = poolState_.collateral;
     }
 
-    function _checkMinDebt(uint256 accruedDebt_,  uint256 borrowerDebt_) internal view {
-        if (borrowerDebt_ != 0) {
-            uint256 loansCount = Loans.noOfLoans(loans);
-            if (
-                loansCount >= 10
-                &&
-                (borrowerDebt_ < _minDebtAmount(accruedDebt_, loansCount))
-            ) revert AmountLTMinDebt();
-        }
-    }
-
     /******************************/
     /*** Pool Virtual Functions ***/
     /******************************/
@@ -671,6 +664,17 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         } else if (poolState_.accruedDebt == 0) {
             inflatorSnapshot           = uint208(Maths.WAD);
             lastInflatorSnapshotUpdate = uint48(block.timestamp);
+        }
+    }
+
+    function _checkMinDebt(uint256 accruedDebt_,  uint256 borrowerDebt_) internal view {
+        if (borrowerDebt_ != 0) {
+            uint256 loansCount = Loans.noOfLoans(loans);
+            if (
+                loansCount >= 10
+                &&
+                (borrowerDebt_ < _minDebtAmount(accruedDebt_, loansCount))
+            ) revert AmountLTMinDebt();
         }
     }
 
