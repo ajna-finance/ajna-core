@@ -401,8 +401,8 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         ERC721Pool(address(_pool)).mergeOrRemoveCollateral(removeCollateralAtIndex, noOfNFTsToRemove, toIndex);
 
         // Add for tearDown
-        bidders.add(from);
-        bidderDepositedIndex[from].add(toIndex);
+        lenders.add(from);
+        lendersDepositedIndex[from].add(toIndex);
         bucketsUsed.add(toIndex);
     }
 

@@ -502,8 +502,11 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         }
         // handle borrowers awarded LP from liquidation
         for(uint i = 0; i < borrowers.length(); i++ ){
-            (curLpBalance, ) = _pool.lenderInfo(index, borrowers.at(i));
-            lenderLps += curLpBalance;
+            address borrower = borrowers.at(i);
+            if (!lenders.contains(borrower)) {
+                (curLpBalance, ) = _pool.lenderInfo(index, borrowers.at(i));
+                lenderLps += curLpBalance;
+            }
         }
 
         assertEq(lenderLps, lpBalance);
