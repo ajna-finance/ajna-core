@@ -499,13 +499,13 @@ library Auctions {
 
         if (result.isRewarded) {
             // take is below neutralPrice, Kicker is rewarded
-            result.bondChange = Maths.wmul(Maths.wmul(result.auctionPrice, result.collateralAmount), uint256(result.bpf));
+            result.bondChange = Maths.wmul(result.scaledQuoteTokenAmount, uint256(result.bpf));
             liquidation.bondSize                     += uint160(result.bondChange);
             auctions_.kickers[result.kicker].locked  += result.bondChange;
             auctions_.totalBondEscrowed              += result.bondChange;
         } else {
             // take is above neutralPrice, Kicker is penalized
-            result.bondChange = Maths.min(liquidation.bondSize, Maths.wmul(result.unscaledQuoteTokenAmount, uint256(-result.bpf)));
+            result.bondChange = Maths.min(liquidation.bondSize, Maths.wmul(result.scaledQuoteTokenAmount, uint256(-result.bpf)));
             liquidation.bondSize                     -= uint160(result.bondChange);
             auctions_.kickers[result.kicker].locked  -= result.bondChange;
             auctions_.totalBondEscrowed              -= result.bondChange;
@@ -806,8 +806,8 @@ library Auctions {
      *  @param  quoteTokenScale_        Scale of Fenwick tree, or 1 for take.
      *  @return collateral_             Collateral purchased in auction.
      *  @return t0debtPaid_             t0 equivalent amount of debt repaid in take.
-     *  @return unscaledQuoteTokenPaid_ Unscaled amount of quote token paid (used to decrement deposit).
-     *  @return scaledQuoteTokenPaid_   Scaled amount of quote token paid.
+     *  @return unscaledQuoteTokenPaid_ Unscaled amount of quote token paid (used to decrement deposit, or whatever is paid in qt in take).
+     *  @return scaledQuoteTokenPaid_   Scaled amount of quote token paid - same as current debt reduction
      */
     function _calculateTakeFlows(
         uint256 totalCollateral_,
