@@ -430,7 +430,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             borrowerDebt += debtChange;
 
             // check that drawing debt doesn't leave borrower debt under min debt amount
-            _checkMinDebt(poolState.accruedDebt, borrowerDebt);
+            _revertOnMinDebt(poolState.accruedDebt, borrowerDebt);
 
             // determine new lup index and revert if borrow happens at a price higher than the specified limit (lower index than lup index)
             uint256 lupId = _lupIndex(poolState.accruedDebt + amountToBorrow_);
@@ -498,7 +498,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             borrowerDebt          -= quoteTokenToRepay_;
 
             // check that paying the loan doesn't leave borrower debt under min debt amount
-            _checkMinDebt(poolState.accruedDebt, borrowerDebt);
+            _revertOnMinDebt(poolState.accruedDebt, borrowerDebt);
 
             newLup_ = _lup(poolState.accruedDebt);
             inAuction = Auctions.isActive(auctions, borrowerAddress_);
@@ -584,27 +584,30 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         borrower_.collateral  -= collateralAmount_; // collateral is removed from the loan
         poolState_.collateral -= collateralAmount_; // collateral is removed from pledged collateral accumulator
 
-        uint256 repaidDebt   = Maths.wmul(t0repaidDebt_, poolState_.inflator);
-        uint256 borrowerDebt = Maths.wmul(borrower_.t0debt, poolState_.inflator) - repaidDebt;
-
-        poolState_.accruedDebt -= repaidDebt;
+        uint256 borrowerDebt = Maths.wmul(borrower_.t0debt, poolState_.inflator);
+        {
+            uint256 repaidDebt   = Maths.wmul(t0repaidDebt_, poolState_.inflator);
+            borrowerDebt -= repaidDebt;
+            poolState_.accruedDebt -= repaidDebt;
+        }
 
         // check that taking from loan doesn't leave borrower debt under min debt amount
-        _checkMinDebt(poolState_.accruedDebt, borrowerDebt);
+        _revertOnMinDebt(poolState_.accruedDebt, borrowerDebt);
 
         uint256 newLup = _lup(poolState_.accruedDebt);
         bool inAuction = true;
 
+        uint256 t0DebtInAuctionChange;
         if (_isCollateralized(borrowerDebt, borrower_.collateral, newLup, poolState_.poolType)) {
             // borrower becomes re-collateralized
             // remove entire borrower debt from pool auctions debt accumulator
-            t0DebtInAuction -= borrower_.t0debt;
+            t0DebtInAuctionChange = borrower_.t0debt;
             // settle auction and update borrower's collateral with value after settlement
             borrower_.collateral = _settleAuction(borrowerAddress_, borrower_.collateral);
             inAuction = false;
         } else {
             // partial repay, remove only the paid debt from pool auctions debt accumulator
-            t0DebtInAuction -= t0repaidDebt_;
+            t0DebtInAuctionChange = t0repaidDebt_;
         }
         
         borrower_.t0debt -= t0repaidDebt_;
@@ -625,6 +628,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // update pool accumulators state
         t0poolDebt -= t0repaidDebt_;
+        t0DebtInAuction -= t0DebtInAuctionChange;
         pledgedCollateral = poolState_.collateral;
 
         // update pool interest rate state
@@ -693,7 +697,23 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         }
     }
 
-    function _checkMinDebt(uint256 accruedDebt_,  uint256 borrowerDebt_) internal view {
+    /**
+     *  @notice Called by LPB removal functions assess whether or not LPB is locked.
+     *  @param  index_    The deposit index from which LPB is attempting to be removed.
+     *  @param  inflator_ The pool inflator used to properly assess t0 debt in auctions.
+     */
+    function _revertIfAuctionDebtLocked(
+        uint256 index_,
+        uint256 inflator_
+    ) internal view {
+        uint256 t0AuctionDebt = t0DebtInAuction;
+        if (t0AuctionDebt != 0 ) {
+            // deposit in buckets within liquidation debt from the top-of-book down are frozen.
+            if (index_ <= Deposits.findIndexOfSum(deposits, Maths.wmul(t0AuctionDebt, inflator_))) revert RemoveDepositLockedByAuctionDebt();
+        } 
+    }
+
+    function _revertOnMinDebt(uint256 accruedDebt_,  uint256 borrowerDebt_) internal view {
         if (borrowerDebt_ != 0) {
             uint256 loansCount = Loans.noOfLoans(loans);
             if (
@@ -850,21 +870,5 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             reserveAuction.unclaimed,
             reserveAuction.kicked
         );
-    }
-
-    /**
-     *  @notice Called by LPB removal functions assess whether or not LPB is locked.
-     *  @param  index_    The deposit index from which LPB is attempting to be removed.
-     *  @param  inflator_ The pool inflator used to properly assess t0 debt in auctions.
-     */
-    function _revertIfAuctionDebtLocked(
-        uint256 index_,
-        uint256 inflator_
-    ) internal view {
-        uint256 t0AuctionDebt = t0DebtInAuction;
-        if (t0AuctionDebt != 0 ) {
-            // deposit in buckets within liquidation debt from the top-of-book down are frozen.
-            if (index_ <= Deposits.findIndexOfSum(deposits, Maths.wmul(t0AuctionDebt, inflator_))) revert RemoveDepositLockedByAuctionDebt();
-        } 
     }
 }
