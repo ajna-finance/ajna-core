@@ -322,6 +322,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_borrower2),     13_000 * 1e18);
 
         // lender adds liquidity in min bucket and merge / removes 2 NFTs
+        // MWC:  why is this done?  lender should not need to add qt to merge the nfts and withdraw
         _addLiquidity(
             {
                 from:    _lender,
@@ -373,6 +374,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
         });
 
         // check lender is owner of 3 NFTs (2 pledged by first borrower, one pledged by 2nd borrower)
+        // MWC: I don't understaned this -- looks like MergeOrRemove was called with a single NFT????
         assertEq(_collateral.ownerOf(1), _lender);
         assertEq(_collateral.ownerOf(3), _lender);
         assertEq(_collateral.ownerOf(53), _lender);
@@ -384,10 +386,10 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
         _assertBucket(
             {
                 index:        2500,
-                lpBalance:    0,
+                lpBalance:    1861033884081553473424658049737,
                 collateral:   0,
                 deposit:      1861.636634299022017158 * 1e18, // TODO: figure out why still deposit and no lp balance, add tearDown to test after
-                exchangeRate: 1 * 1e27
+                exchangeRate: 1000323879227898104329913835
             }
         );
     }
