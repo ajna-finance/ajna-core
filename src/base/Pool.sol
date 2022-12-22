@@ -278,8 +278,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         // update pool interest rate state
         poolState.collateral -= settledCollateral;
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
-
-        emit Settle(params.borrower, t0settledDebt);
     }
 
     function kick(address borrowerAddress_) external override {

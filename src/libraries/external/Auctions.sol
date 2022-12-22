@@ -123,6 +123,17 @@ library Auctions {
     );
 
     /**
+     *  @notice Emitted when an actor settles debt in a completed liquidation
+     *  @param  borrower   Identifies the loan under liquidation.
+     *  @param  settledDebt Amount of pool debt settled in this transaction.
+     *  @dev    When amountRemaining_ == 0, the auction has been completed cleared and removed from the queue.
+     */
+    event Settle(
+        address indexed borrower,
+        uint256 settledDebt
+    );
+
+    /**
      *  @notice The action cannot be executed on an active auction.
      */
     error AuctionActive();
@@ -192,6 +203,8 @@ library Auctions {
         if (kickTime == 0) revert NoAuction();
 
         if ((block.timestamp - kickTime < 72 hours) && (params_.collateral != 0)) revert AuctionNotClearable();
+
+        uint256 initialDebt = params_.t0debt;
 
         // auction has debt to cover with remaining collateral
         while (params_.bucketDepth != 0 && params_.t0debt != 0 && params_.collateral != 0) {
@@ -270,6 +283,8 @@ library Auctions {
                 --params_.bucketDepth;
             }
         }
+
+        emit Settle(params_.borrower, initialDebt - params_.t0debt);
 
         return (params_.collateral, params_.t0debt);
     }
