@@ -394,6 +394,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             // add new amount of collateral to pledge to borrower balance
             borrower.collateral  += collateralToPledge_;
 
+            uint256 t0DebtInAuctionChange;
             // load loan's auction state
             inAuction = Auctions.isActive(auctions, borrowerAddress_);
             // if loan is auctioned and becomes collateralized by newly pledged collateral then settle auction
@@ -404,15 +405,18 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             )
             {
                 // borrower becomes collateralized, remove debt from pool accumulator and settle auction
-                t0DebtInAuction     -= borrower.t0debt;
-                borrower.collateral = _settleAuction(borrowerAddress_, borrower.collateral);
+                t0DebtInAuctionChange = borrower.t0debt;
+                borrower.collateral   = _settleAuction(borrowerAddress_, borrower.collateral);
                 // auction was settled, reset inAuction flag
                 inAuction = false;
             }
 
             // add new amount of collateral to pledge to pool balance
             poolState.collateral += collateralToPledge_;
-            pledgedCollateral    += collateralToPledge_;
+
+            // update pool accumulators state
+            t0DebtInAuction   -= t0DebtInAuctionChange;
+            pledgedCollateral += collateralToPledge_;
         }
 
         // borrow against pledged collateral
@@ -443,7 +447,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
             uint256 t0DebtChange = Maths.wdiv(debtChange, poolState.inflator);
             borrower.t0debt += t0DebtChange;
-            t0poolDebt      += t0DebtChange;
+
+            // update pool accumulators state
+            t0poolDebt += t0DebtChange;
         }
 
         // update loan state
@@ -497,22 +503,26 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             newLup_ = _lup(poolState.accruedDebt);
             inAuction = Auctions.isActive(auctions, borrowerAddress_);
 
+            uint256 t0DebtInAuctionChange;
             if (inAuction) {
                 if (_isCollateralized(borrowerDebt, borrower.collateral, newLup_, poolState.poolType)) {
                     // borrower becomes re-collateralized
                     // remove entire borrower debt from pool auctions debt accumulator
-                    t0DebtInAuction -= borrower.t0debt;
+                    t0DebtInAuctionChange = borrower.t0debt;
                     // settle auction and update borrower's collateral with value after settlement
-                    borrower.collateral = _settleAuction(borrowerAddress_, borrower.collateral);
+                    borrower.collateral   = _settleAuction(borrowerAddress_, borrower.collateral);
                     inAuction = false;
                 } else {
                     // partial repay, remove only the paid debt from pool auctions debt accumulator
-                    t0DebtInAuction -= t0repaidDebt;
+                    t0DebtInAuctionChange = t0repaidDebt;
                 }
             }
 
             borrower.t0debt -= t0repaidDebt;
-            t0poolDebt      -= t0repaidDebt;
+
+            // update pool accumulators state
+            t0poolDebt -= t0repaidDebt;
+            t0DebtInAuction -= t0DebtInAuctionChange;
         }
 
         if (pull) {
@@ -527,7 +537,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
             borrower.collateral  -= collateralAmountToPull_;
             poolState.collateral -= collateralAmountToPull_;
-            pledgedCollateral    = poolState.collateral;
+
+            // update pool accumulators state
+            pledgedCollateral = poolState.collateral;
         }
 
         // update loan state
@@ -611,6 +623,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             false
         );
 
+        // update pool accumulators state
         t0poolDebt -= t0repaidDebt_;
         pledgedCollateral = poolState_.collateral;
 
