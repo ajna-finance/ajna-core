@@ -24,6 +24,8 @@ import '../Loans.sol';
 
 import '../../base/PoolHelper.sol';
 
+import '@std/console.sol';
+
 library Auctions {
 
     struct KickWithDepositLocalVars {
@@ -405,7 +407,7 @@ library Auctions {
         if (block.timestamp - kickTime <= 1 hours) revert TakeNotPastCooldown();
 
         // if first take apply penalty to borrower
-        uint256 borrowerDebt = _applyTakePenalty(liquidation.takeCalled, params_.inflator, params_.t0debt);
+        uint256 borrowerDebt = _applyTakePenalty(params_.t0debt, params_.inflator,liquidation.alreadyTaken);
 
         TakeResult memory result;
         result.bucketPrice  = _priceAt(params_.index);
@@ -424,7 +426,7 @@ library Auctions {
         ) = _takeParameters(
             liquidation,
             params_.collateral,
-            params_.t0debt,
+            borrowerDebt,
             price,
             params_.inflator
         );
@@ -502,7 +504,7 @@ library Auctions {
         if (block.timestamp - kickTime <= 1 hours) revert TakeNotPastCooldown();
 
         // if first take apply penalty to borrower
-        uint256 borrowerDebt = _applyTakePenalty(liquidation.takeCalled, params_.inflator, params_.t0debt);
+        uint256 borrowerDebt = _applyTakePenalty(params_.t0debt, params_.inflator, liquidation.alreadyTaken);
 
         TakeResult memory result;
         result.auctionPrice = _auctionPrice(
@@ -516,7 +518,6 @@ library Auctions {
         ) = _takeParameters(
             liquidation,
             params_.collateral,
-            params_.t0debt,
             borrowerDebt,
             result.auctionPrice,
             params_.inflator
@@ -680,9 +681,9 @@ library Auctions {
     /***  Internal Functions ***/
     /***************************/
 
-    function _takePenalty(uint256 t0Debt_, uint256 poolInflator_, bool alreadyTaken_) internal pure returns (uint256 borrowerDebt_) {
+    function _applyTakePenalty(uint256 t0Debt_, uint256 poolInflator_, bool alreadyTaken_) internal pure returns (uint256 borrowerDebt_) {
         borrowerDebt_ = Maths.wmul(t0Debt_, poolInflator_);
-        if (!alreadyTaken) borrowerDebt_ = Maths.wmul(borrowerDebt_, 0.07 * 1e18);
+        if (!alreadyTaken_) borrowerDebt_ += Maths.wmul(borrowerDebt_, 0.07 * 1e18);
     }
 
 
@@ -711,6 +712,11 @@ library Auctions {
 
         // add amount to remove to pool debt in order to calculate proposed LUP
         kickResult_.lup = _lup(deposits_, poolState_.accruedDebt + additionalDebt_);
+
+        console.log("lup", kickResult_.lup);
+        console.log("borrowerDebt", borrowerDebt);
+        console.log("borrowerCollateral", borrowerCollateral);
+
         if (
             _isCollateralized(borrowerDebt , borrowerCollateral, kickResult_.lup, poolState_.poolType)
         ) revert BorrowerOk();
@@ -1017,16 +1023,14 @@ library Auctions {
      *  @notice Utility function to calculate take's parameters.
      *  @param  liquidation_  Liquidation struct holding auction details.
      *  @param  collateral_   Borrower collateral.
-     *  @param  t0Debt_       Borrower t0 debt.
+     *  @param  borrowerDebt_ Borrower t0 debt.
      *  @param  poolInflator_ The pool's inflator, used to calculate borrower debt.
-     *  @return borrowerDebt_ The debt of auctioned borrower.
      *  @return bpf_          The bond penalty factor.
      *  @return factor_       The take factor, calculated based on bond penalty factor.
      */
     function _takeParameters(
         Liquidation storage liquidation_,
         uint256 collateral_,
-        uint256 t0Debt_,
         uint256 borrowerDebt_,
         uint256 price_,
         uint256 poolInflator_

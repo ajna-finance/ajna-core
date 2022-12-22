@@ -503,6 +503,11 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(debt,        borrowerDebt);
         assertEq(col,         borrowerCollateral);
         assertEq(t0Np,        borrowert0Np);
+
+        console.log("inside assertborrower borrwerDebt", borrowerDebt); 
+        console.log("inside assertborrower borrowerCol", borrowerCollateral);
+        console.log("inside assertborrower lup", lup);
+
         assertEq(
             _collateralization(
                 borrowerDebt,

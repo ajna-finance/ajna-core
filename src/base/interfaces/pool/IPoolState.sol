@@ -198,7 +198,7 @@ struct InterestState {
     uint256 lupColEma;          // [WAD]
 }
 
-struct ReserveAuctioTnState {
+struct ReserveAuctionState {
     uint256 kicked;    // Time a Claimable Reserve Auction was last kicked.
     uint256 unclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
 }

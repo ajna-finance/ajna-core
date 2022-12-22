@@ -155,7 +155,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
     }
 
-    function testTakeCollateralSubsetPool() external tearDown {
+    function testTakeCollateralSubsetPool() external {
 
         // Skip to make borrower undercollateralized
         skip(1000 days);
@@ -308,9 +308,9 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
                 from:            _lender,
                 borrower:        _borrower,
                 maxCollateral:   2,
-                bondChange:      0.227287198298417188 * 1e18,
-                givenAmount:     23.013419918237986289 * 1e18,
-                collateralTaken: 1.160279871836327850 * 1e18, // not a rounded collateral, difference of 2 - 1.16 collateral should go to borrower in quote tokens at auction price
+                bondChange:      0.011439906409990047 * 1e18,
+                givenAmount:     1.610939394276659040 * 1e18,
+                collateralTaken: 0.081219591028542949 * 1e18, // not a rounded collateral, difference of 2 - 1.16 collateral should go to borrower in quote tokens at auction price
                 isReward:        false
             }
         );
@@ -387,7 +387,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
                 from:            _lender,
                 borrower:        _borrower,
                 maxCollateral:   1,
-                bondChange:      0.198343696868718242 * 1e18,
+                bondChange:      0.140851563829836675 * 1e18,
                 givenAmount:     19.834369686871824160 * 1e18,
                 collateralTaken: 1 * 1e18,
                 isReward:        false
