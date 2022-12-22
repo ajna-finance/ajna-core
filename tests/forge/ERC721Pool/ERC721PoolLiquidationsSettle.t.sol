@@ -386,10 +386,10 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
         _assertBucket(
             {
                 index:        2500,
-                lpBalance:    1861033884081553473424658049737,
+                lpBalance:    1_861.033884081553473424658049737 * 1e27,
                 collateral:   0,
                 deposit:      1861.636634299022017158 * 1e18, // TODO: figure out why still deposit and no lp balance, add tearDown to test after
-                exchangeRate: 1000323879227898104329913835
+                exchangeRate: 1.000323879227898104329913835 * 1e27
             }
         );
     }
