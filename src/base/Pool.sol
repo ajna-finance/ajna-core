@@ -410,7 +410,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
 
             // add origination fee to the amount to borrow and add to borrower's debt
-            uint256 debtChange = Maths.wmul(amountToBorrow_, _feeRate(interestParams.interestRate) + Maths.WAD);
+            uint256 debtChange = Maths.wmul(amountToBorrow_, _feeRate(poolState.rate) + Maths.WAD);
             borrowerDebt += debtChange;
 
             // check that drawing debt doesn't leave borrower debt under min debt amount
