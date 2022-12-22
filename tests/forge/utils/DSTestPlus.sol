@@ -101,6 +101,21 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _addLiquidity(from, amount, index, amount * 1e9, MAX_PRICE);
     }
 
+    // Adds liquidity with interest rate update
+    function _addLiquidityNoEventCheck(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        _pool.addQuoteToken(amount, index);
+
+        // Add for tearDown
+        lenders.add(from);
+        lendersDepositedIndex[from].add(index);
+        bucketsUsed.add(index);
+    }
+
     function _addLiquidity(
         address from,
         uint256 amount,

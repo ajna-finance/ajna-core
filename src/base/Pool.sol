@@ -98,10 +98,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         uint256 newLup = _lup(poolState.accruedDebt);
 
+        emit AddQuoteToken(msg.sender, index_, quoteTokenAmountToAdd_, bucketLPs_, newLup);
+
         // update pool interest rate state
         _updateInterestParams(poolState, newLup);
-
-        emit AddQuoteToken(msg.sender, index_, quoteTokenAmountToAdd_, bucketLPs_, newLup);
 
         // move quote token amount from lender to pool
         _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToAdd_);
