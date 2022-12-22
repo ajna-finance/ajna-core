@@ -3,6 +3,7 @@
 pragma solidity 0.8.14;
 
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import '@openzeppelin/contracts/utils/Multicall.sol';
@@ -15,17 +16,19 @@ import './interfaces/IPositionManager.sol';
 import '../erc20/interfaces/IERC20Pool.sol';
 import '../erc721/interfaces/IERC721Pool.sol';
 
+import './PermitERC721.sol';
 import './PoolHelper.sol';
-import './PositionNFT.sol';
 
-import '../libraries/Maths.sol';
 import '../libraries/Buckets.sol';
+import '../libraries/Maths.sol';
+import '../libraries/SafeTokenNamer.sol';
+import '../libraries/external/PositionNFTSVG.sol';
 
-contract PositionManager is IPositionManager, Multicall, PositionNFT, ReentrancyGuard {
+contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, ReentrancyGuard {
     using EnumerableSet for EnumerableSet.UintSet;
     using SafeERC20 for ERC20;
 
-    constructor() PositionNFT("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {}
+    constructor() PermitERC721("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {}
 
     /***********************/
     /*** State Variables ***/
@@ -184,8 +187,18 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, Reentrancy
     function tokenURI(uint256 tokenId_) public view override(ERC721) returns (string memory) {
         require(_exists(tokenId_));
 
-        ConstructTokenURIParams memory params = ConstructTokenURIParams(tokenId_, poolKey[tokenId_], positionPrices[tokenId_].values());
-        return constructTokenURI(params);
+        address collateralTokenAddress = IPool(poolKey[tokenId_]).collateralAddress();
+        address quoteTokenAddress = IPool(poolKey[tokenId_]).quoteTokenAddress();
+
+        PositionNFTSVG.ConstructTokenURIParams memory params = PositionNFTSVG.ConstructTokenURIParams({
+            collateralTokenSymbol: SafeTokenNamer.tokenSymbol(collateralTokenAddress),
+            quoteTokenSymbol: SafeTokenNamer.tokenSymbol(quoteTokenAddress),
+            tokenId: tokenId_,
+            pool: poolKey[tokenId_],
+            owner: ownerOf(tokenId_),
+            indexes: positionPrices[tokenId_].values()
+        });
+        return PositionNFTSVG.constructTokenURI(params);
     }
 
 }
