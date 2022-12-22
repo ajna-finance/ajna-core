@@ -1163,6 +1163,14 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             deal(address(_quote), _lender, mintAmount_);
             indexes[i] = _randomIndex();
             _pool.addQuoteToken(mintAmount_, indexes[i]);
+
+            _assertBucket({
+                index:      indexes[i],
+                lpBalance:  mintAmount_ * 1e9,
+                collateral: 0,
+                deposit:    mintAmount_,
+                exchangeRate: 1e27
+            });
         }
 
         // borrower draw a random amount of debt
@@ -1179,18 +1187,30 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             collateralToPledge: requiredCollateral
         });
 
+        // check buckets after borrow
+        for (uint256 i = 0; i < numIndexes; ++i) {
+            _assertBucket({
+                index:      indexes[i],
+                lpBalance:  mintAmount_ * 1e9,
+                collateral: 0,
+                deposit:    mintAmount_,
+                exchangeRate: 1e27
+            });
+        }
+
         // check borrower info
         (uint256 debtTime1, uint256 collateral, uint256 t0np) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
         assertGt(debtTime1, borrowAmount); // check that initial fees accrued
         // assertEq(debtTime1, Maths.wmul(borrowAmount, _borrowFee()));
         assertEq(collateral, requiredCollateral);
 
-        // check htp and lup
-        uint256 tp = Maths.wdiv(debtTime1, collateral);
-        assertEq(_htp(), tp);
+        // check pool state
+        assertEq(_htp(), Maths.wdiv(debtTime1, collateral));
         assertLt(_htp(), _poolUtils.lup(address(_pool)));
+        // (uint256 minDebt, uint256 poolCollateralization, uint256 poolActualUtilization, uint256 poolTargetUtilization) = _poolUtils.poolUtilizationInfo(address(_pool));
+        // assertEq(minDebt, 0);
 
-        // check lup never goes below the lowest index price
+        // TODO: check lup never goes below the lowest index price
         // assert(_poolUtils.lup(address(_pool)) <= _poolUtils.indexToPrice(limitIndex));
 
         // TODO: add support for random number and length of skips
@@ -1199,6 +1219,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         (uint256 debtTime2, , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
         assertGt(debtTime2, debtTime1); // check that fees accrued
+
+        // TODO: calculate new lup after repay based upon current index prices, and if will exceed current limit, what the next one is
 
         // repay all debt and withdraw collateral
         deal(address(_quote), _borrower, debtTime2);
@@ -1210,7 +1232,18 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             collateralToPull: requiredCollateral
         });
 
-        // check state after repayment
+        // TODO: check buckets after repay
+        // for (uint256 i = 0; i < numIndexes; ++i) {
+        //     _assertBucket({
+        //         index:      indexes[i],
+        //         lpBalance:  mintAmount_ * 1e9,
+        //         collateral: 0,
+        //         deposit:    mintAmount_,
+        //         exchangeRate: 1e27
+        //     });
+        // }
+
+        // check borrower state after repayment
         (debtTime2, , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
         assertEq(debtTime2, 0);
 
