@@ -1147,4 +1147,76 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         );
         assertEq(_quote.balanceOf(_lender), 169_990.384615384615380000 * 1e18); // no tokens paid as penalty
     }
+
+    /********************/
+    /*** FUZZ TESTING ***/
+    /********************/
+
+    function testDrawRepayDebtFuzzy(uint256 numIndexes, uint256 mintAmount_) external tearDown {
+        numIndexes = bound(numIndexes, 3, 20); // number of indexes to add liquidity to
+        mintAmount_ = bound(mintAmount_, 1 * 1e18, 100_000 * 1e18);
+
+        // lender adds liquidity to random indexes
+        changePrank(_lender);
+        uint256[] memory indexes = new uint256[](numIndexes);
+        for (uint256 i = 0; i < numIndexes; ++i) {
+            deal(address(_quote), _lender, mintAmount_);
+            indexes[i] = _randomIndex();
+            _pool.addQuoteToken(mintAmount_, indexes[i]);
+        }
+
+        // borrower draw a random amount of debt
+        changePrank(_borrower);
+        uint256 limitIndex = _findLowestIndexPrice(indexes);
+        uint256 borrowAmount = Maths.wdiv(mintAmount_, Maths.wad(3));
+        uint256 requiredCollateral = _requiredCollateral(borrowAmount, limitIndex);
+        deal(address(_collateral), _borrower, requiredCollateral);
+        _drawDebtNoLupCheck({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToBorrow:     borrowAmount,
+            limitIndex:         limitIndex,
+            collateralToPledge: requiredCollateral
+        });
+
+        // check borrower info
+        (uint256 debtTime1, uint256 collateral, uint256 t0np) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
+        assertGt(debtTime1, borrowAmount); // check that initial fees accrued
+        // assertEq(debtTime1, Maths.wmul(borrowAmount, _borrowFee()));
+        assertEq(collateral, requiredCollateral);
+
+        // check htp and lup
+        uint256 tp = Maths.wdiv(debtTime1, collateral);
+        assertEq(_htp(), tp);
+        assertLt(_htp(), _poolUtils.lup(address(_pool)));
+
+        // check lup never goes below the lowest index price
+        // assert(_poolUtils.lup(address(_pool)) <= _poolUtils.indexToPrice(limitIndex));
+
+        // TODO: add support for random number and length of skips
+        // pass time to allow interest to accumulate
+        skip(1 days);
+
+        (uint256 debtTime2, , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
+        assertGt(debtTime2, debtTime1); // check that fees accrued
+
+        // repay all debt and withdraw collateral
+        deal(address(_quote), _borrower, debtTime2);
+        _repayDebtNoLupCheck({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    debtTime2,
+            amountRepaid:     debtTime2,
+            collateralToPull: requiredCollateral
+        });
+
+        // check state after repayment
+        (debtTime2, , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
+        assertEq(debtTime2, 0);
+
+        // check pool state
+        assertEq(_htp(), 0);
+        assertEq(_poolUtils.lup(address(_pool)), MAX_PRICE);
+    }
+
 }

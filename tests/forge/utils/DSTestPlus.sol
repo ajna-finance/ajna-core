@@ -1106,4 +1106,50 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         return rand;
     }
 
+    // returns a random index between 1 and 7388
+    function _randomIndex() internal returns (uint256 index_) {
+        // calculate a random index between 1 and 7388
+        index_ = 1 + uint256(keccak256(abi.encodePacked(block.number, block.difficulty))) % 7387;
+        vm.roll(block.number + 1);
+    }
+
+    // find the bucket index in array corresponding to the highest bucket price
+    function _findHighestIndexPrice(uint256[] memory indexes) internal pure returns (uint256 highestIndex_) {
+        highestIndex_ = 7388;
+        // highest index corresponds to lowest price
+        for (uint256 i = 0; i < indexes.length; ++i) {
+            if (indexes[i] < highestIndex_) {
+                highestIndex_ = indexes[i];
+            }
+        }
+    }
+
+    // find the bucket index in array corresponding to the lowest bucket price
+    function _findLowestIndexPrice(uint256[] memory indexes) internal pure returns (uint256 lowestIndex_) {
+        lowestIndex_ = 1;
+        // lowest index corresponds to highest price
+        for (uint256 i = 0; i < indexes.length; ++i) {
+            if (indexes[i] > lowestIndex_) {
+                lowestIndex_ = indexes[i];
+            }
+        }
+    }
+
+    // calculate required collateral to borrow a given amount at a given limitIndex
+    function _requiredCollateral(uint256 borrowAmount, uint256 indexPrice) internal view returns (uint256 requiredCollateral_) {
+        // calculate the required collateral based upon the borrow amount and index price
+        (uint256 interestRate, ) = _pool.interestRateInfo();
+        uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient
+        uint256 expectedDebt = Maths.wmul(borrowAmount, _feeRate(newInterestRate) + Maths.WAD);
+        requiredCollateral_ = Maths.wdiv(expectedDebt, _poolUtils.indexToPrice(indexPrice)) + Maths.WAD;
+    }
+
+    // calculate the fee that will be charged a borrower
+    function _borrowFee() internal view returns (uint256 feeRate_) {
+        (uint256 interestRate, ) = _pool.interestRateInfo();
+        uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient
+        // calculate the fee rate based upon the interest rate
+        feeRate_ = _feeRate(newInterestRate) + Maths.WAD;
+    }
+
 }
