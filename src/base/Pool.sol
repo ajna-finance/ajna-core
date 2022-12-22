@@ -711,15 +711,22 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 bondSize,
         uint256 kickTime,
         uint256 kickMomp,
-        uint256 neutralPrice
+        uint256 neutralPrice,
+        address head,
+        address next,
+        address prev
     ) {
+        Liquidation memory liquidation = auctions.liquidations[borrower_];
         return (
-            auctions.liquidations[borrower_].kicker,
-            auctions.liquidations[borrower_].bondFactor,
-            auctions.liquidations[borrower_].bondSize,
-            auctions.liquidations[borrower_].kickTime,
-            auctions.liquidations[borrower_].kickMomp,
-            auctions.liquidations[borrower_].neutralPrice
+            liquidation.kicker,
+            liquidation.bondFactor,
+            liquidation.bondSize,
+            liquidation.kickTime,
+            liquidation.kickMomp,
+            liquidation.neutralPrice,
+            auctions.head,
+            liquidation.next,
+            liquidation.prev
         );
     }
 
@@ -808,6 +815,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         address lender_
     ) external view override returns (uint256, uint256) {
         return Buckets.getLenderInfo(buckets, index_, lender_);
+    }
+
+    function loanInfo(
+        uint256 loanId_
+    ) external view override returns (address, uint256) {
+        return (
+            Loans.getByIndex(loans, loanId_).borrower,
+            Loans.getByIndex(loans, loanId_).thresholdPrice
+        );
     }
 
     function loansInfo() external view override returns (address, uint256, uint256) {

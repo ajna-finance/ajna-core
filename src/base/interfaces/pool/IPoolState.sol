@@ -9,13 +9,16 @@ interface IPoolState {
 
     /**
      *  @notice Returns details of an auction for a given borrower address.
-     *  @param  borrower          Address of the borrower that is liquidated.
-     *  @return kicker            Address of the kicker that is kicking the auction.
-     *  @return bondFactor        The factor used for calculating bond size.
-     *  @return bondSize          The bond amount in quote token terms.
-     *  @return kickTime          Time the liquidation was initiated.
-     *  @return kickPrice         Highest Price Bucket at time of liquidation.
-     *  @return neutralPrice      Neutral Price of auction.
+     *  @param  borrower     Address of the borrower that is liquidated.
+     *  @return kicker       Address of the kicker that is kicking the auction.
+     *  @return bondFactor   The factor used for calculating bond size.
+     *  @return bondSize     The bond amount in quote token terms.
+     *  @return kickTime     Time the liquidation was initiated.
+     *  @return kickPrice    Highest Price Bucket at time of liquidation.
+     *  @return neutralPrice Neutral Price of auction.
+     *  @return head         Address of the head auction.
+     *  @return next         Address of the next auction in queue.
+     *  @return prev         Address of the prev auction in queue.
      */
     function auctionInfo(address borrower)
         external
@@ -26,7 +29,10 @@ interface IPoolState {
             uint256 bondSize,
             uint256 kickTime,
             uint256 kickPrice,
-            uint256 neutralPrice
+            uint256 neutralPrice,
+            address head,
+            address next,
+            address prev
         );
 
     /**
@@ -145,6 +151,22 @@ interface IPoolState {
         returns (
             uint256 lpBalance,
             uint256 lastQuoteDeposit
+    );
+
+    /**
+     *  @notice Returns information about a loan in the pool.
+     *  @param  loanId Loan's id within loan heap. Max loan is position 1.
+     *  @return borrower       Borrower address at the given position.
+     *  @return thresholdPrice Borrower threshold price in pool.
+     */
+    function loanInfo(
+        uint256 loanId
+    )
+        external
+        view
+        returns (
+            address borrower,
+            uint256 thresholdPrice
     );
 
     /**

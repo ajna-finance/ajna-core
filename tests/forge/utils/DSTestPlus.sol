@@ -377,7 +377,9 @@ abstract contract DSTestPlus is Test, IPoolEvents {
             uint256 auctionBondSize,
             uint256 auctionKickTime,
             uint256 auctionKickMomp,
-            uint256 auctionNeutralPrice
+            uint256 auctionNeutralPrice,
+            ,
+            ,
         ) = _pool.auctionInfo(state_.borrower);
 
         (uint256 borrowerDebt, uint256 borrowerCollateral , ) = _poolUtils.borrowerInfo(address(_pool), state_.borrower);
