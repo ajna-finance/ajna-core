@@ -272,7 +272,7 @@ struct Liquidation {
     address next;           // next liquidated borrower in auctions queue
     uint160 bondSize;       // liquidation bond size
     uint96  neutralPrice;   // Neutral Price when liquidation was started
-    bool    takeCalled;     // true if take has been called on auction
+    bool    alreadyTaken;   // true if take has been called on auction
 }
 
 struct Kicker {

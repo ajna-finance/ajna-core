@@ -404,6 +404,9 @@ library Auctions {
         if (kickTime == 0) revert NoAuction();
         if (block.timestamp - kickTime <= 1 hours) revert TakeNotPastCooldown();
 
+        // if first take apply penalty to borrower
+        uint256 borrowerDebt = _applyTakePenalty(liquidation.takeCalled, params_.inflator, params_.t0debt);
+
         TakeResult memory result;
         result.bucketPrice  = _priceAt(params_.index);
         result.auctionPrice = _auctionPrice(
@@ -412,11 +415,10 @@ library Auctions {
         );
         // cannot arb with a price lower than the auction price
         if (result.auctionPrice > result.bucketPrice) revert AuctionPriceGtBucketPrice();
-
+        
         // if deposit take then price to use when calculating take is bucket price
         uint256 price = params_.depositTake ? result.bucketPrice : result.auctionPrice;
         (
-            uint256 borrowerDebt,
             int256  bpf,
             uint256 factor
         ) = _takeParameters(
@@ -429,7 +431,6 @@ library Auctions {
         result.kicker = liquidation.kicker;
         result.isRewarded = (bpf >= 0);
 
-        // TODO: add take penalty check and apply
 
         // Determine how much of the loan will be repaid
         if (borrowerDebt >= bucketDeposit) {
@@ -500,6 +501,9 @@ library Auctions {
         if (kickTime == 0) revert NoAuction();
         if (block.timestamp - kickTime <= 1 hours) revert TakeNotPastCooldown();
 
+        // if first take apply penalty to borrower
+        uint256 borrowerDebt = _applyTakePenalty(liquidation.takeCalled, params_.inflator, params_.t0debt);
+
         TakeResult memory result;
         result.auctionPrice = _auctionPrice(
             liquidation.kickMomp,
@@ -507,19 +511,18 @@ library Auctions {
         );
         result.kicker = liquidation.kicker;
         (
-            uint256 borrowerDebt,
             int256 bpf,
             uint256 factor
         ) = _takeParameters(
             liquidation,
             params_.collateral,
             params_.t0debt,
+            borrowerDebt,
             result.auctionPrice,
             params_.inflator
         );
         result.isRewarded = (bpf >= 0);
         
-        // TODO: add take penalty check and apply
 
         // determine how much of the loan will be repaid
         result.collateralAmount = Maths.min(params_.collateral, params_.takeCollateral);
@@ -676,6 +679,12 @@ library Auctions {
     /***************************/
     /***  Internal Functions ***/
     /***************************/
+
+    function _takePenalty(uint256 t0Debt_, uint256 poolInflator_, bool alreadyTaken_) internal pure returns (uint256 borrowerDebt_) {
+        borrowerDebt_ = Maths.wmul(t0Debt_, poolInflator_);
+        if (!alreadyTaken) borrowerDebt_ = Maths.wmul(borrowerDebt_, 0.07 * 1e18);
+    }
+
 
     /**
      *  @notice Called to start borrower liquidation and to update the auctions queue.
@@ -1018,15 +1027,15 @@ library Auctions {
         Liquidation storage liquidation_,
         uint256 collateral_,
         uint256 t0Debt_,
+        uint256 borrowerDebt_,
         uint256 price_,
         uint256 poolInflator_
     ) internal view returns (
-        uint256 borrowerDebt_,
         int256  bpf_,
         uint256 factor_
     ) {
         // calculate the bond payment factor
-        borrowerDebt_ = Maths.wmul(t0Debt_, poolInflator_);
+        //borrowerDebt_ = Maths.wmul(t0Debt_, poolInflator_);
         bpf_ = _bpf(
             borrowerDebt_,
             collateral_,
