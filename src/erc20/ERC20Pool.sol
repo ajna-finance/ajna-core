@@ -154,6 +154,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             index_
         );
 
+        // update pool interest rate state
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
         emit AddCollateral(msg.sender, index_, collateralAmountToAdd_, bucketLPs_);
@@ -176,6 +177,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             index_
         );
 
+        // update pool interest rate state
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
         emit RemoveCollateral(msg.sender, index_, collateralAmount_, lpAmount_);

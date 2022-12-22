@@ -97,9 +97,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         uint256 newLup = _lup(poolState.accruedDebt);
+
+        // update pool interest rate state
         _updateInterestParams(poolState, newLup);
 
         emit AddQuoteToken(msg.sender, index_, quoteTokenAmountToAdd_, bucketLPs_, newLup);
+
         // move quote token amount from lender to pool
         _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToAdd_);
     }
@@ -139,6 +142,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             )
         );
 
+        // update pool interest rate state
         _updateInterestParams(poolState, newLup);
     }
 
@@ -169,6 +173,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             )
         );
 
+        // update pool interest rate state
         _updateInterestParams(poolState, newLup);
 
         // move quote token amount from pool to lender
@@ -261,16 +266,19 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         // slither-disable-next-line incorrect-equality
         if (remainingt0Debt == 0) remainingCollateral = _settleAuction(params.borrower, remainingCollateral);
 
-        uint256 t0settledDebt = params.t0debt - remainingt0Debt;
-        t0poolDebt      -= t0settledDebt;
-        t0DebtInAuction -= t0settledDebt;
-
-        poolState.collateral -= params.collateral - remainingCollateral;
-
+        // update borrower state
         borrower.t0debt     = remainingt0Debt;
         borrower.collateral = remainingCollateral;
 
-        pledgedCollateral = poolState.collateral;
+        // update pool accumulators state
+        uint256 t0settledDebt = params.t0debt - remainingt0Debt;
+        t0poolDebt      -= t0settledDebt;
+        t0DebtInAuction -= t0settledDebt;
+        uint256 settledCollateral = params.collateral - remainingCollateral;
+        pledgedCollateral -= settledCollateral;
+
+        // update pool interest rate state
+        poolState.collateral -= settledCollateral;
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
         emit Settle(params.borrower, t0settledDebt);
@@ -288,11 +296,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             borrowerAddress_
         );
 
-        poolState.accruedDebt += result.kickPenalty;
-        _updateInterestParams(poolState, result.lup);
-
+        // update pool accumulators state
         t0DebtInAuction += result.kickedT0debt;
         t0poolDebt      += result.kickPenaltyT0;
+
+        // update pool interest rate state
+        poolState.accruedDebt += result.kickPenalty;
+        _updateInterestParams(poolState, result.lup);
 
         if(result.amountToCoverBond != 0) _transferQuoteTokenFrom(msg.sender, result.amountToCoverBond);
     }
@@ -312,11 +322,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             index_
         );
 
-        poolState.accruedDebt += result.kickPenalty;
-        _updateInterestParams(poolState, result.lup);
-
+        // update pool accumulators state
         t0DebtInAuction += result.kickedT0debt;
         t0poolDebt      += result.kickPenaltyT0;
+
+        // update pool interest rate state
+        poolState.accruedDebt += result.kickPenalty;
+        _updateInterestParams(poolState, result.lup);
 
         // transfer from kicker to pool the difference to cover bond
         if(result.amountToCoverBond != 0) _transferQuoteTokenFrom(msg.sender, result.amountToCoverBond);
@@ -448,7 +460,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             true
         );
 
-        // update pool global interest rate state
+        // update pool interest rate state
         _updateInterestParams(poolState, newLup_);
     }
 
@@ -532,7 +544,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             pull // stamp borrower t0Np only for pull collateral action
         );
 
-        // update pool global interest rate state
+        // update pool interest rate state
         _updateInterestParams(poolState, newLup_);
     }
 
@@ -600,9 +612,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         t0poolDebt -= t0repaidDebt_;
-        _updateInterestParams(poolState_, newLup);
-
         pledgedCollateral = poolState_.collateral;
+
+        // update pool interest rate state
+        _updateInterestParams(poolState_, newLup);
     }
 
     /******************************/

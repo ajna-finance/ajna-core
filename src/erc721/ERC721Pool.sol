@@ -131,6 +131,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             index_
         );
 
+        // update pool interest rate state
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
         emit AddCollateralNFT(msg.sender, index_, tokenIdsToAdd_, bucketLPs_);
@@ -158,6 +159,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         );
 
         emit MergeOrRemoveCollateralNFT(msg.sender, collateralMerged_, bucketLPs_);
+
+        // update pool interest rate state
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
         if (collateralMerged_ == collateralAmount) {
@@ -183,6 +186,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             index_
         );
 
+        // update pool interest rate state
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
         emit RemoveCollateral(msg.sender, index_, noOfNFTsToRemove_, lpAmount_);
