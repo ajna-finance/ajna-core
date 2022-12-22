@@ -522,17 +522,6 @@ library Auctions {
         );
     }
 
-   /**
-     *  @notice Performs ERC20 auction settlement.
-     *  @param  borrower_ Borrower address to settle.
-     */
-    function settleERC20Auction(
-        AuctionsState storage auctions_,
-        address borrower_
-    ) external {
-        _removeAuction(auctions_, borrower_);
-    }
-
     /**
      *  @notice Performs NFT auction settlement by rounding down borrower's collateral amount and by moving borrower's token ids to pool claimable array.
      *  @param borrowerTokens_     Array of borrower NFT token ids.

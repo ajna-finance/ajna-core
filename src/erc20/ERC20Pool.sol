@@ -245,7 +245,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         address borrowerAddress_,
         uint256 borrowerCollateral_
     ) internal override returns (uint256) {
-        Auctions.settleERC20Auction(auctions, borrowerAddress_);
+        Auctions._removeAuction(auctions, borrowerAddress_);
         emit AuctionSettle(borrowerAddress_, borrowerCollateral_);
         return borrowerCollateral_;
     }
