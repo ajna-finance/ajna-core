@@ -478,6 +478,8 @@ library Auctions {
 
         Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
         TakeResult memory result = _validateTake(liquidation, params_.t0debt, params_.collateral, params_.inflator);
+        result.unscaledDeposit = type(uint256).max;
+        result.bucketScale = Maths.WAD;
 
         uint256 collateralBound = Maths.min(params_.collateral, params_.takeCollateral);
 
@@ -830,30 +832,30 @@ library Auctions {
         // price is the current auction price, which is the price paid by the LENDER for collateral
         // from the borrower point of view, the price is actually (1-bpf) * price, as the rewards to the
         // bond holder are effectively paid for by the borrower.
-        uint256 borrowerPrice = (bpf_ > 0) ? Maths.wmul(Maths.WAD - uint256(bpf_), price_) : price_;
+        uint256 borrowerPrice = (result_.bpf > 0) ? Maths.wmul(Maths.WAD - uint256(result_.bpf), result_.price) : result_.price;
 
         // If there is no unscaled quote token bound, then we pass in max, but that cannot be scaled without an overflow.  So we check in the line below.
-        scaledQuoteTokenPaid_ = (unscaledQuoteToken_ != type(uint256).max) ? Maths.wmul(unscaledQuoteToken_, quoteTokenScale_) : type(uint256).max;
+        scaledQuoteTokenPaid_ = (result_.unscaledDeposit != type(uint256).max) ? Maths.wmul(result_.unscaledDeposit, result_.bucketScale) : type(uint256).max;
 
         uint256 borrowerCollateralValue = Maths.wmul(totalCollateral_, borrowerPrice);
         
-        if (scaledQuoteTokenPaid_ <= debt_ && scaledQuoteTokenPaid_ <= borrowerCollateralValue) {
+        if (scaledQuoteTokenPaid_ <= result_.debt && scaledQuoteTokenPaid_ <= borrowerCollateralValue) {
             // quote token used to purchase is constraining factor
             collateral_             = Maths.wdiv(scaledQuoteTokenPaid_, borrowerPrice);
-            t0debtPaid_             = Maths.wdiv(scaledQuoteTokenPaid_, inflator_);
-            unscaledQuoteTokenPaid_ = unscaledQuoteToken_;
-        } else if (debt_ <= borrowerCollateralValue) {
+            t0debtPaid_             = Maths.wdiv(scaledQuoteTokenPaid_, result_.inflator);
+            unscaledQuoteTokenPaid_ = result_.unscaledDeposit;
+        } else if (result_.debt <= borrowerCollateralValue) {
             // borrower debt is constraining factor
-            collateral_             = Maths.wdiv(debt_, borrowerPrice);
-            t0debtPaid_             = t0debt_;
-            unscaledQuoteTokenPaid_ = Maths.wdiv(debt_, quoteTokenScale_);
-            scaledQuoteTokenPaid_   = (bpf_ > 0) ? Maths.wdiv(debt_, Maths.WAD - uint256(bpf_)) : debt_;
+            collateral_             = Maths.wdiv(result_.debt, borrowerPrice);
+            t0debtPaid_             = result_.t0debt;
+            unscaledQuoteTokenPaid_ = Maths.wdiv(result_.debt, result_.quoteTokenScale);
+            scaledQuoteTokenPaid_   = (result_.bpf > 0) ? Maths.wdiv(result_.debt, Maths.WAD - uint256(result_.bpf)) : result_.debt;
         } else {
             // collateral available is constraint
             collateral_             = totalCollateral_;
-            t0debtPaid_             = Maths.wdiv(borrowerCollateralValue, inflator_);
-            unscaledQuoteTokenPaid_ = Maths.wdiv(borrowerCollateralValue, quoteTokenScale_);
-            scaledQuoteTokenPaid_   = Maths.wmul(collateral_, price_);
+            t0debtPaid_             = Maths.wdiv(borrowerCollateralValue, result_.inflator);
+            unscaledQuoteTokenPaid_ = Maths.wdiv(borrowerCollateralValue, result_.quoteTokenScale_);
+            scaledQuoteTokenPaid_   = Maths.wmul(collateral_, result_.price);
         }
     }
 
