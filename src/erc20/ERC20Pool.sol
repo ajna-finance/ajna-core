@@ -154,10 +154,11 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             index_
         );
 
+        emit AddCollateral(msg.sender, index_, collateralAmountToAdd_, bucketLPs_);
+
         // update pool interest rate state
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
-        emit AddCollateral(msg.sender, index_, collateralAmountToAdd_, bucketLPs_);
         // move required collateral from sender to pool
         _transferCollateralFrom(msg.sender, collateralAmountToAdd_);
     }

@@ -131,10 +131,11 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             index_
         );
 
+        emit AddCollateralNFT(msg.sender, index_, tokenIdsToAdd_, bucketLPs_);
+
         // update pool interest rate state
         _updateInterestParams(poolState, _lup(poolState.accruedDebt));
 
-        emit AddCollateralNFT(msg.sender, index_, tokenIdsToAdd_, bucketLPs_);
         // move required collateral from sender to pool
         _transferFromSenderToPool(bucketTokenIds, tokenIdsToAdd_);
     }
