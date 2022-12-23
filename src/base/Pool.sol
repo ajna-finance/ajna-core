@@ -373,7 +373,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         borrow_ = amountToBorrow_ != 0 || limitIndex_ != 0;
         newLup_ = _lup(poolState.accruedDebt);
 
-        uint256 borrowerDebt = Maths.wmul(borrower.t0Debt, poolState.inflator);
+        uint256 borrowerAccruedDebt = Maths.wmul(borrower.t0Debt, poolState.inflator);
         // loan can only be in auction when pledging more collateral
         // if loan in auction and more debt to draw then borrower collateralization check should revert
         bool inAuction;
@@ -390,7 +390,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             if (
                 inAuction
                 &&
-                _isCollateralized(borrowerDebt, borrower.collateral, newLup_, poolState.poolType)
+                _isCollateralized(borrowerAccruedDebt, borrower.collateral, newLup_, poolState.poolType)
             )
             {
                 // borrower becomes collateralized, remove debt from pool accumulator and settle auction
@@ -416,10 +416,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
             // add origination fee to the amount to borrow and add to borrower's debt
             uint256 debtChange = Maths.wmul(amountToBorrow_, _feeRate(poolState.rate) + Maths.WAD);
-            borrowerDebt += debtChange;
+            borrowerAccruedDebt += debtChange;
 
             // check that drawing debt doesn't leave borrower debt under min debt amount
-            _revertOnMinDebt(poolState.accruedDebt, borrowerDebt);
+            _revertOnMinDebt(poolState.accruedDebt, borrowerAccruedDebt);
 
             // determine new lup index and revert if borrow happens at a price higher than the specified limit (lower index than lup index)
             uint256 lupId = _lupIndex(poolState.accruedDebt + amountToBorrow_);
@@ -429,7 +429,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             // this check also covers the scenario when loan is already auctioned
             newLup_ = _priceAt(lupId);
             if (
-                !_isCollateralized(borrowerDebt, borrower.collateral, newLup_, poolState.poolType)
+                !_isCollateralized(borrowerAccruedDebt, borrower.collateral, newLup_, poolState.poolType)
             ) revert BorrowerUnderCollateralized();
 
             poolState.accruedDebt += debtChange;
@@ -448,7 +448,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             deposits,
             borrower,
             borrowerAddress_,
-            borrowerDebt,
+            borrowerAccruedDebt,
             poolState.rate,
             newLup_,
             inAuction,
@@ -470,7 +470,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         bool repay = maxQuoteTokenAmountToRepay_ != 0;
         bool pull  = collateralAmountToPull_ != 0;
 
-        uint256 borrowerDebt = Maths.wmul(borrower.t0Debt, poolState.inflator);
+        uint256 borrowerAccruedDebt = Maths.wmul(borrower.t0Debt, poolState.inflator);
         // loan can only be in auction when repaying debt
         // if loan in auction and pull collateral attempted then borrower collateralization check should revert
         bool inAuction;
@@ -484,17 +484,17 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             );
             quoteTokenToRepay_    = Maths.wmul(t0RepaidDebt, poolState.inflator);
             poolState.accruedDebt -= quoteTokenToRepay_;
-            borrowerDebt          -= quoteTokenToRepay_;
+            borrowerAccruedDebt   -= quoteTokenToRepay_;
 
             // check that paying the loan doesn't leave borrower debt under min debt amount
-            _revertOnMinDebt(poolState.accruedDebt, borrowerDebt);
+            _revertOnMinDebt(poolState.accruedDebt, borrowerAccruedDebt);
 
             newLup_ = _lup(poolState.accruedDebt);
             inAuction = Auctions.isActive(auctions, borrowerAddress_);
 
             uint256 t0DebtInAuctionChange;
             if (inAuction) {
-                if (_isCollateralized(borrowerDebt, borrower.collateral, newLup_, poolState.poolType)) {
+                if (_isCollateralized(borrowerAccruedDebt, borrower.collateral, newLup_, poolState.poolType)) {
                     // borrower becomes re-collateralized
                     // remove entire borrower debt from pool auctions debt accumulator
                     t0DebtInAuctionChange = borrower.t0Debt;
@@ -521,7 +521,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             // calculate LUP only if it wasn't calculated by repay action
             if (!repay) newLup_ = _lup(poolState.accruedDebt);
 
-            uint256 encumberedCollateral = borrower.t0Debt != 0 ? Maths.wdiv(borrowerDebt, newLup_) : 0;
+            uint256 encumberedCollateral = borrower.t0Debt != 0 ? Maths.wdiv(borrowerAccruedDebt, newLup_) : 0;
             if (borrower.collateral - encumberedCollateral < collateralAmountToPull_) revert InsufficientCollateral();
 
             borrower.collateral  -= collateralAmountToPull_;
@@ -538,7 +538,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             deposits,
             borrower,
             borrowerAddress_,
-            borrowerDebt,
+            borrowerAccruedDebt,
             poolState.rate,
             newLup_,
             inAuction,
@@ -573,21 +573,21 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         borrower_.collateral  -= collateralAmount_; // collateral is removed from the loan
         poolState_.collateral -= collateralAmount_; // collateral is removed from pledged collateral accumulator
 
-        uint256 borrowerDebt = Maths.wmul(borrower_.t0Debt, poolState_.inflator);
+        uint256 borrowerAccruedDebt = Maths.wmul(borrower_.t0Debt, poolState_.inflator);
         {
-            uint256 repaidDebt   = Maths.wmul(t0RepaidDebt_, poolState_.inflator);
-            borrowerDebt -= repaidDebt;
+            uint256 repaidDebt = Maths.wmul(t0RepaidDebt_, poolState_.inflator);
+            borrowerAccruedDebt     -= repaidDebt;
             poolState_.accruedDebt -= repaidDebt;
         }
 
         // check that taking from loan doesn't leave borrower debt under min debt amount
-        _revertOnMinDebt(poolState_.accruedDebt, borrowerDebt);
+        _revertOnMinDebt(poolState_.accruedDebt, borrowerAccruedDebt);
 
         uint256 newLup = _lup(poolState_.accruedDebt);
         bool inAuction = true;
 
         uint256 t0DebtInAuctionChange;
-        if (_isCollateralized(borrowerDebt, borrower_.collateral, newLup, poolState_.poolType)) {
+        if (_isCollateralized(borrowerAccruedDebt, borrower_.collateral, newLup, poolState_.poolType)) {
             // borrower becomes re-collateralized
             // remove entire borrower debt from pool auctions debt accumulator
             t0DebtInAuctionChange = borrower_.t0Debt;
@@ -608,7 +608,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             deposits,
             borrower_,
             borrowerAddress_,
-            borrowerDebt,
+            borrowerAccruedDebt,
             poolState_.rate,
             newLup,
             inAuction,
@@ -702,13 +702,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         } 
     }
 
-    function _revertOnMinDebt(uint256 accruedDebt_,  uint256 borrowerDebt_) internal view {
-        if (borrowerDebt_ != 0) {
+    function _revertOnMinDebt(uint256 poolAccruedDebt_, uint256 borrowerAccruedDebt_) internal view {
+        if (borrowerAccruedDebt_ != 0) {
             uint256 loansCount = Loans.noOfLoans(loans);
             if (
                 loansCount >= 10
                 &&
-                (borrowerDebt_ < _minDebtAmount(accruedDebt_, loansCount))
+                (borrowerAccruedDebt_ < _minDebtAmount(poolAccruedDebt_, loansCount))
             ) revert AmountLTMinDebt();
         }
     }
@@ -725,12 +725,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         return IERC20(_getArgAddress(QUOTE_ADDRESS)).balanceOf(address(this));
     }
 
-    function _lupIndex(uint256 debt_) internal view returns (uint256) {
-        return Deposits.findIndexOfSum(deposits, debt_);
+    function _lupIndex(uint256 accruedDebt_) internal view returns (uint256) {
+        return Deposits.findIndexOfSum(deposits, accruedDebt_);
     }
 
-    function _lup(uint256 debt_) internal view returns (uint256) {
-        return _priceAt(_lupIndex(debt_));
+    function _lup(uint256 accruedDebt_) internal view returns (uint256) {
+        return _priceAt(_lupIndex(accruedDebt_));
     }
 
     /**************************/

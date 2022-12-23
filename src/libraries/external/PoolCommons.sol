@@ -183,10 +183,10 @@ library PoolCommons {
      */
     function utilization(
         DepositsState storage deposits,
-        uint256 debt_,
+        uint256 poolAccruedDebt_,
         uint256 collateral_
     ) external view returns (uint256 utilization_) {
-        return _utilization(deposits, debt_, collateral_);
+        return _utilization(deposits, poolAccruedDebt_, collateral_);
     }
 
     /**************************/
@@ -195,24 +195,24 @@ library PoolCommons {
 
     /**
      *  @notice Calculates pool utilization based on pool size, accrued debt and collateral pledged in pool .
-     *  @param  debt_        Pool accrued debt.
-     *  @param  collateral_  Amount of collateral pledged in pool.
-     *  @return utilization_ Pool utilization value.
+     *  @param  poolAccruedDebt_ Pool accrued debt.
+     *  @param  collateral_      Amount of collateral pledged in pool.
+     *  @return utilization_     Pool utilization value.
      */
     function _utilization(
         DepositsState storage deposits,
-        uint256 debt_,
+        uint256 poolAccruedDebt_,
         uint256 collateral_
     ) internal view returns (uint256 utilization_) {
         if (collateral_ != 0) {
-            uint256 ptp = _ptp(debt_, collateral_);
+            uint256 ptp = _ptp(poolAccruedDebt_, collateral_);
 
             if (ptp != 0) {
                 uint256 depositAbove = ptp >= MIN_PRICE ? Deposits.prefixSum(deposits, _indexOf(ptp)) 
                     : Deposits.treeSum(deposits);
 
                 if (depositAbove != 0) utilization_ = Maths.wdiv(
-                    debt_,
+                    poolAccruedDebt_,
                     depositAbove
                 );
             }

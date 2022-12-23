@@ -150,7 +150,7 @@ library LenderActions {
         DepositsState storage deposits_,
         uint256 quoteTokenAmountToAdd_,
         uint256 index_,
-        uint256 poolDebt_
+        uint256 poolAccruedDebt_
     ) external returns (uint256 bucketLPs_, uint256 lup_) {
         if (index_ == 0 || index_ > MAX_FENWICK_INDEX) revert InvalidIndex();
 
@@ -179,7 +179,7 @@ library LenderActions {
         // update bucket LPs
         bucket.lps += bucketLPs_;
 
-        lup_ = _lup(deposits_, poolDebt_);
+        lup_ = _lup(deposits_, poolAccruedDebt_);
         emit AddQuoteToken(msg.sender, index_, quoteTokenAmountToAdd_, bucketLPs_, lup_);
     }
 
@@ -584,8 +584,8 @@ library LenderActions {
 
     function _lup(
         DepositsState storage deposits_,
-        uint256 debt_
+        uint256 accruedDebt_
     ) internal view returns (uint256) {
-        return _priceAt(Deposits.findIndexOfSum(deposits_, debt_));
+        return _priceAt(Deposits.findIndexOfSum(deposits_, accruedDebt_));
     }
 }
