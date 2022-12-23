@@ -47,7 +47,7 @@ interface IPoolState {
      *  @notice Mapping of borrower addresses to {Borrower} structs.
      *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
      *  @param  borrower   Address of the borrower.
-     *  @return t0debt     Amount of debt borrower would have had if their loan was the first debt drawn from the pool
+     *  @return t0Debt     Amount of debt borrower would have had if their loan was the first debt drawn from the pool
      *  @return collateral Amount of collateral that the borrower has deposited, in collateral token.
      *  @return t0Np       Np / borrowerInflatorSnapshot
      */
@@ -55,7 +55,7 @@ interface IPoolState {
         external
         view
         returns (
-            uint256 t0debt,
+            uint256 t0Debt,
             uint256 collateral,
             uint256 t0Np
         );
@@ -233,7 +233,7 @@ struct ReserveAuctionState {
 struct PoolBalancesState {
     uint256 pledgedCollateral; // [WAD]
     uint256 t0DebtInAuction;   // Total debt in auction used to restrict LPB holder from withdrawing [WAD]
-    uint256 t0poolDebt;        // Pool debt as if the whole amount was incurred upon the first loan. [WAD]
+    uint256 t0Debt;        // Pool debt as if the whole amount was incurred upon the first loan. [WAD]
 }
 
 struct PoolState {
@@ -280,7 +280,7 @@ struct Loan {
 }
 
 struct Borrower {
-    uint256 t0debt;           // [WAD] Borrower debt time-adjusted as if it was incurred upon first loan of pool.
+    uint256 t0Debt;           // [WAD] Borrower debt time-adjusted as if it was incurred upon first loan of pool.
     uint256 collateral;       // [WAD] Collateral deposited by borrower.
     uint256 t0Np;             // [WAD] Neutral Price time-adjusted as if it was incurred upon first loan of pool.
 }

@@ -205,7 +205,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             {
                 borrower:       borrowerAddress_,
                 collateral:     borrower.collateral,
-                t0debt:         borrower.t0debt,
+                t0Debt:         borrower.t0Debt,
                 takeCollateral: collateral_,
                 inflator:       poolState.inflator
             }
@@ -213,13 +213,13 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         (
             uint256 collateralAmount,
             uint256 quoteTokenAmount,
-            uint256 t0repayAmount,
+            uint256 t0RepayAmount,
         ) = Auctions.take(
             auctions,
             params
         );
 
-        _takeFromLoan(poolState, borrower, params.borrower, collateralAmount, t0repayAmount);
+        _takeFromLoan(poolState, borrower, params.borrower, collateralAmount, t0RepayAmount);
 
         _transferCollateral(callee_, collateralAmount);
 

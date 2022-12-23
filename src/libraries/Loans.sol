@@ -57,8 +57,8 @@ library Loans {
         bool t0NpUpdate_
     ) internal {
 
-        bool activeBorrower = borrower_.t0debt != 0 && borrower_.collateral != 0;
-        uint256 t0ThresholdPrice = activeBorrower ? Maths.wdiv(borrower_.t0debt, borrower_.collateral) : 0;
+        bool activeBorrower = borrower_.t0Debt != 0 && borrower_.collateral != 0;
+        uint256 t0ThresholdPrice = activeBorrower ? Maths.wdiv(borrower_.t0Debt, borrower_.collateral) : 0;
 
         // loan not in auction, update threshold price and position in heap
         if (!inAuction_ ) {
