@@ -214,7 +214,7 @@ interface IPoolState {
 /*** Pool State ***/
 
 struct InflatorState {
-    uint208 inflator;           // [WAD]
+    uint208 inflator;       // [WAD]
     uint48  inflatorUpdate; // [SEC]
 }
 
@@ -228,6 +228,12 @@ struct InterestState {
 struct ReserveAuctionState {
     uint256 kicked;    // Time a Claimable Reserve Auction was last kicked.
     uint256 unclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
+}
+
+struct PoolBalancesState {
+    uint256 pledgedCollateral; // [WAD]
+    uint256 t0DebtInAuction;   // Total debt in auction used to restrict LPB holder from withdrawing [WAD]
+    uint256 t0poolDebt;        // Pool debt as if the whole amount was incurred upon the first loan. [WAD]
 }
 
 struct PoolState {
