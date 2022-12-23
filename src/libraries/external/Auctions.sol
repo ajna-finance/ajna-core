@@ -422,13 +422,9 @@ library Auctions {
             result.scaledQuoteTokenAmount
         ) = _calculateTakeFlows(
             params_.collateral,
-            result.auctionPrice,
-            result.bpf,
             params_.t0debt,
-            result.debt,
             params_.inflator,
-            result.unscaledDeposit,
-            result.bucketScale
+            result
         );
 
         if (result.isRewarded) {
@@ -493,13 +489,9 @@ library Auctions {
             result.scaledQuoteTokenAmount
         ) = _calculateTakeFlows(
             collateralBound,
-            result.auctionPrice,
-            result.bpf,
             params_.t0debt,
-            result.debt,
             params_.inflator,
-            type(uint256).max,
-            Maths.WAD
+            result
         );
 
         if (result.isRewarded) {
@@ -802,27 +794,19 @@ library Auctions {
     /**
      *  @notice Computes the flows of collateral, quote token between the borrower, lender and kicker.
      *  @param  totalCollateral_        Total collateral in loan.
-     *  @param  price_                  Auction price.
-     *  @param  bpf_                    Bond payoff/penalty factor.
      *  @param  t0debt_                 t0 equivalent debt in loan.
-     *  @param  debt_                   Current debt in loan.
      *  @param  inflator_               Current pool inflator.
-     *  @param  unscaledQuoteToken_     Unscaled value in deposit Fenwick tree, or C*p/(1-bpf) in case of take().
-     *  @param  quoteTokenScale_        Scale of Fenwick tree, or 1 for take.
+     *  @param  result_                 TakeParams for the take/buckettake
      *  @return collateral_             Collateral purchased in auction.
      *  @return t0debtPaid_             t0 equivalent amount of debt repaid in take.
      *  @return unscaledQuoteTokenPaid_ Unscaled amount of quote token paid (used to decrement deposit, or whatever is paid in qt in take).
      *  @return scaledQuoteTokenPaid_   Scaled amount of quote token paid - same as current debt reduction
      */
     function _calculateTakeFlows(
-        uint256 totalCollateral_,
-        uint256 price_,
-        int256  bpf_,
-        uint256 t0debt_,
-        uint256 debt_,
-        uint256 inflator_,
-        uint256 unscaledQuoteToken_,
-        uint256 quoteTokenScale_
+        uint256           totalCollateral_,
+        uint256           t0debt_,
+        uint256           inflator_,
+        TakeResult memory result_
     ) internal pure returns (
         uint256 collateral_,
         uint256 t0debtPaid_,
@@ -832,7 +816,7 @@ library Auctions {
         // price is the current auction price, which is the price paid by the LENDER for collateral
         // from the borrower point of view, the price is actually (1-bpf) * price, as the rewards to the
         // bond holder are effectively paid for by the borrower.
-        uint256 borrowerPrice = (result_.bpf > 0) ? Maths.wmul(Maths.WAD - uint256(result_.bpf), result_.price) : result_.price;
+        uint256 borrowerPrice = (result_.bpf > 0) ? Maths.wmul(Maths.WAD - uint256(result_.bpf), result_.auctionPrice) : result_.auctionPrice;
 
         // If there is no unscaled quote token bound, then we pass in max, but that cannot be scaled without an overflow.  So we check in the line below.
         scaledQuoteTokenPaid_ = (result_.unscaledDeposit != type(uint256).max) ? Maths.wmul(result_.unscaledDeposit, result_.bucketScale) : type(uint256).max;
@@ -842,20 +826,20 @@ library Auctions {
         if (scaledQuoteTokenPaid_ <= result_.debt && scaledQuoteTokenPaid_ <= borrowerCollateralValue) {
             // quote token used to purchase is constraining factor
             collateral_             = Maths.wdiv(scaledQuoteTokenPaid_, borrowerPrice);
-            t0debtPaid_             = Maths.wdiv(scaledQuoteTokenPaid_, result_.inflator);
+            t0debtPaid_             = Maths.wdiv(scaledQuoteTokenPaid_, inflator_);
             unscaledQuoteTokenPaid_ = result_.unscaledDeposit;
         } else if (result_.debt <= borrowerCollateralValue) {
             // borrower debt is constraining factor
             collateral_             = Maths.wdiv(result_.debt, borrowerPrice);
-            t0debtPaid_             = result_.t0debt;
-            unscaledQuoteTokenPaid_ = Maths.wdiv(result_.debt, result_.quoteTokenScale);
+            t0debtPaid_             = t0debt_;
+            unscaledQuoteTokenPaid_ = Maths.wdiv(result_.debt, result_.bucketScale);
             scaledQuoteTokenPaid_   = (result_.bpf > 0) ? Maths.wdiv(result_.debt, Maths.WAD - uint256(result_.bpf)) : result_.debt;
         } else {
             // collateral available is constraint
             collateral_             = totalCollateral_;
-            t0debtPaid_             = Maths.wdiv(borrowerCollateralValue, result_.inflator);
-            unscaledQuoteTokenPaid_ = Maths.wdiv(borrowerCollateralValue, result_.quoteTokenScale_);
-            scaledQuoteTokenPaid_   = Maths.wmul(collateral_, result_.price);
+            t0debtPaid_             = Maths.wdiv(borrowerCollateralValue, inflator_);
+            unscaledQuoteTokenPaid_ = Maths.wdiv(borrowerCollateralValue, result_.bucketScale);
+            scaledQuoteTokenPaid_   = Maths.wmul(collateral_, result_.auctionPrice);
         }
     }
 
