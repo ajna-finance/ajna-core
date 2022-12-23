@@ -308,9 +308,9 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
                 from:            _lender,
                 borrower:        _borrower,
                 maxCollateral:   2,
-                bondChange:      0.011439906409990047 * 1e18,
-                givenAmount:     1.610939394276659040 * 1e18,
-                collateralTaken: 0.081219591028542949 * 1e18, // not a rounded collateral, difference of 2 - 1.16 collateral should go to borrower in quote tokens at auction price
+                bondChange:      0.227287198298417188 * 1e18,
+                givenAmount:     24.624359312514645329 * 1e18,
+                collateralTaken: 1.241499462864870800 * 1e18, // not a rounded collateral, difference of 2 - 1.16 collateral should go to borrower in quote tokens at auction price
                 isReward:        false
             }
         );
@@ -372,8 +372,8 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         assertEq(_collateral.ownerOf(3), _lender);
         assertEq(_collateral.ownerOf(1), _lender);
         // after take: check quote token balances of taker and borrower
-        assertEq(_quote.balanceOf(_lender), 46_960.103973427957934489 * 1e18);
-        assertEq(_quote.balanceOf(_borrower), 136.455319455505662034 * 1e18); // borrower gets quote tokens from the difference of rounded collateral (2) and needed collateral (1.16) at auction price (19.8) = 16.6 additional tokens
+        assertEq(_quote.balanceOf(_lender), 46_960.103973427957934499 * 1e18);
+        assertEq(_quote.balanceOf(_borrower), 134.844380061229002984 * 1e18); // borrower gets quote tokens from the difference of rounded collateral (2) and needed collateral (1.16) at auction price (19.8) = 16.6 additional tokens
 
         vm.revertTo(snapshot);
 
@@ -387,7 +387,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
                 from:            _lender,
                 borrower:        _borrower,
                 maxCollateral:   1,
-                bondChange:      0.140851563829836675 * 1e18,
+                bondChange:      0.198343696868718242 * 1e18,
                 givenAmount:     19.834369686871824160 * 1e18,
                 collateralTaken: 1 * 1e18,
                 isReward:        false

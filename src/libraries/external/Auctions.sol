@@ -713,10 +713,6 @@ library Auctions {
         // add amount to remove to pool debt in order to calculate proposed LUP
         kickResult_.lup = _lup(deposits_, poolState_.accruedDebt + additionalDebt_);
 
-        console.log("lup", kickResult_.lup);
-        console.log("borrowerDebt", borrowerDebt);
-        console.log("borrowerCollateral", borrowerCollateral);
-
         if (
             _isCollateralized(borrowerDebt , borrowerCollateral, kickResult_.lup, poolState_.poolType)
         ) revert BorrowerOk();

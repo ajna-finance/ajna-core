@@ -125,7 +125,7 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         // call take using taker contract
         bytes memory data = abi.encode(address(_ajnaPool));
         vm.expectEmit(true, true, false, true);
-        emit Take(_borrower, 13.885812040442529856 * 1e18, 2 * 1e18, 0.048098828668656612 * 1e18, true);
+        emit Take(_borrower, 13.885812040442529856 * 1e18, 2 * 1e18, 0.138858120404425299 * 1e18, true);
         _ajnaPool.take(_borrower, takeAmount, address(taker), data);
 
         // confirm we earned some quote token
