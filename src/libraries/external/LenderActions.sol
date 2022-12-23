@@ -461,18 +461,16 @@ library LenderActions {
 
         // determine how much LP would be required to remove the requested amount
         uint256 collateralValue = Maths.wmul(bucketPrice, bucketCollateral);
-        uint256 lpsForAllCollateral = Maths.wmul(Maths.wdiv(collateralValue, collateralValue + bucketDeposit), bucketLPs); 
-        uint256 requiredLPs = Maths.wmul(lpsForAllCollateral, Maths.wdiv(collateralAmount_, bucketCollateral));
+        uint256 lpsForAllCollateral = Maths.rmul(Maths.wadToRay(Maths.wdiv(collateralValue, collateralValue + bucketDeposit)), bucketLPs); 
+        uint256 requiredLPs = Maths.rmul(lpsForAllCollateral, Maths.wwdivr(collateralAmount_, bucketCollateral));
         
         // limit withdrawal by the lender's LPB
         if (requiredLPs <= lenderLpBalance) {
             // withdraw collateralAmount_ as is
             lpAmount_ = requiredLPs;
         } else {
-            uint256 lpPerCollateral = Maths.wdiv(lpsForAllCollateral, bucketCollateral);
-            uint256 numOfCollateral = lenderLpBalance / lpsForAllCollateral; // integer division, round down
-            collateralAmount_ = Maths.WAD * numOfCollateral;
-            lpAmount_ = lpPerCollateral * numOfCollateral;
+            lpAmount_ = lenderLpBalance;
+            collateralAmount_ = Maths.wmul(Maths.rrdivw(lenderLpBalance,lpsForAllCollateral), bucketCollateral);
         }
 
         // update lender LPs balance
