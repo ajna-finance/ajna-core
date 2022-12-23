@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-only
-
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.14;
 
 import '@std/Test.sol';
@@ -173,9 +172,6 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal virtual {
         changePrank(from);
         _pool.bucketTake(borrower, true, index);
-
-        // Add for tearDown
-        bucketsUsed.add(index);
     }
 
     function _settle(
@@ -188,6 +184,12 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         vm.expectEmit(true, true, false, true);
         emit Settle(borrower, settledDebt);
         _pool.settle(borrower, maxDepth);
+
+        // Added for tearDown
+        // Borrowers may receive LP in 7388 during settle if 0 deposit in book
+        lenders.add(borrower);
+        lendersDepositedIndex[borrower].add(7388);
+        bucketsUsed.add(7388);
     }
 
     function _kick(
@@ -375,7 +377,9 @@ abstract contract DSTestPlus is Test, IPoolEvents {
             uint256 auctionBondSize,
             uint256 auctionKickTime,
             uint256 auctionKickMomp,
-            uint256 auctionNeutralPrice
+            uint256 auctionNeutralPrice,
+            ,
+            ,
         ) = _pool.auctionInfo(state_.borrower);
 
         (uint256 borrowerDebt, uint256 borrowerCollateral , ) = _poolUtils.borrowerInfo(address(_pool), state_.borrower);
@@ -481,6 +485,33 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(availableCollateral, collateral);
         assertEq(curDeposit,          deposit);
         assertEq(rate,                exchangeRate);
+
+        _validateBucketLp(index, lpBalance);
+    }
+
+
+    function _validateBucketLp(
+        uint256 index,
+        uint256 lpBalance
+    ) internal {
+        uint256 lenderLps = 0;
+
+        uint256 curLpBalance;
+        // sum up LP across lenders
+        for(uint i = 0; i < lenders.length(); i++ ){
+            (curLpBalance, ) = _pool.lenderInfo(index, lenders.at(i));
+            lenderLps += curLpBalance;
+        }
+        // handle borrowers awarded LP from liquidation
+        for(uint i = 0; i < borrowers.length(); i++ ){
+            address borrower = borrowers.at(i);
+            if (!lenders.contains(borrower)) {
+                (curLpBalance, ) = _pool.lenderInfo(index, borrowers.at(i));
+                lenderLps += curLpBalance;
+            }
+        }
+
+        assertEq(lenderLps, lpBalance);
     }
 
     function _assertBorrower(

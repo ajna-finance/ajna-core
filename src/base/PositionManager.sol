@@ -1,8 +1,9 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: BUSL-1.1
 
 pragma solidity 0.8.14;
 
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import '@openzeppelin/contracts/utils/Multicall.sol';
@@ -18,20 +19,22 @@ import '../erc721/interfaces/IERC721Pool.sol';
 import '../erc20/ERC20PoolFactory.sol';
 import '../erc721/ERC721PoolFactory.sol';
 
+import './PermitERC721.sol';
 import './PoolHelper.sol';
-import './PositionNFT.sol';
 
-import '../libraries/Maths.sol';
 import '../libraries/Buckets.sol';
+import '../libraries/Maths.sol';
+import '../libraries/SafeTokenNamer.sol';
+import '../libraries/external/PositionNFTSVG.sol';
 
-contract PositionManager is IPositionManager, Multicall, PositionNFT, ReentrancyGuard {
+contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, ReentrancyGuard {
     using EnumerableSet for EnumerableSet.UintSet;
     using SafeERC20 for ERC20;
 
     ERC20PoolFactory private immutable erc20PoolFactory;
     ERC721PoolFactory private immutable erc721PoolFactory;
 
-    constructor(ERC20PoolFactory erc20Factory_, ERC721PoolFactory erc721Factory_) PositionNFT("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {
+    constructor(ERC20PoolFactory erc20Factory_, ERC721PoolFactory erc721Factory_) PermitERC721("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {
         erc20PoolFactory = erc20Factory_;
         erc721PoolFactory = erc721Factory_;
     }
@@ -212,8 +215,18 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, Reentrancy
     function tokenURI(uint256 tokenId_) public view override(ERC721) returns (string memory) {
         require(_exists(tokenId_));
 
-        ConstructTokenURIParams memory params = ConstructTokenURIParams(tokenId_, poolKey[tokenId_], positionPrices[tokenId_].values());
-        return constructTokenURI(params);
+        address collateralTokenAddress = IPool(poolKey[tokenId_]).collateralAddress();
+        address quoteTokenAddress = IPool(poolKey[tokenId_]).quoteTokenAddress();
+
+        PositionNFTSVG.ConstructTokenURIParams memory params = PositionNFTSVG.ConstructTokenURIParams({
+            collateralTokenSymbol: SafeTokenNamer.tokenSymbol(collateralTokenAddress),
+            quoteTokenSymbol: SafeTokenNamer.tokenSymbol(quoteTokenAddress),
+            tokenId: tokenId_,
+            pool: poolKey[tokenId_],
+            owner: ownerOf(tokenId_),
+            indexes: positionPrices[tokenId_].values()
+        });
+        return PositionNFTSVG.constructTokenURI(params);
     }
 
 }
