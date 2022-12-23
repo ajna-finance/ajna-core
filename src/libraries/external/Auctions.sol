@@ -816,7 +816,7 @@ library Auctions {
         // price is the current auction price, which is the price paid by the LENDER for collateral
         // from the borrower point of view, the price is actually (1-bpf) * price, as the rewards to the
         // bond holder are effectively paid for by the borrower.
-        uint256 borrowerPayoffFactor = Maths.WAD - uint256(result_.bpf)
+        uint256 borrowerPayoffFactor = (result_.isRewarded) ? Maths.WAD - uint256(result_.bpf) : Maths.WAD;
         uint256 borrowerPrice = (result_.isRewarded) ? Maths.wmul(borrowerPayoffFactor, result_.auctionPrice) : result_.auctionPrice;
 
         // If there is no unscaled quote token bound, then we pass in max, but that cannot be scaled without an overflow.  So we check in the line below.
@@ -834,7 +834,7 @@ library Auctions {
             collateral_             = Maths.wdiv(result_.debt, borrowerPrice);
             t0debtPaid_             = t0debt_;
             unscaledQuoteTokenPaid_ = Maths.wdiv(result_.debt, result_.bucketScale);
-            scaledQuoteTokenPaid_   = (result_.bpf > 0) ? Maths.wdiv(borrowerPayoffFactor, result_.debt) : result_.debt;
+            scaledQuoteTokenPaid_   = (result_.isRewarded) ? Maths.wdiv(result_.debt, borrowerPayoffFactor) : result_.debt;
         } else {
             // collateral available is constraint
             collateral_             = totalCollateral_;
