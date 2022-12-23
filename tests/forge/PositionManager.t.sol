@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.14;
 
+import { Base64 } from '@base64-sol/base64.sol';
+
 import { ERC20HelperContract } from './ERC20Pool/ERC20DSTestPlus.sol';
 import { ERC721HelperContract } from './ERC721Pool/ERC721DSTestPlus.sol';
 
 import 'src/base/interfaces/IPositionManager.sol';
 import 'src/base/PositionManager.sol';
+import 'src/libraries/SafeTokenNamer.sol';
 
 import './utils/ContractNFTRecipient.sol';
 
-// TODO: test this against ERC721Pool
 abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract {
 
     PositionManager  internal _positionManager;
@@ -2436,6 +2438,14 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // mint NFT
         uint256 tokenId = _mintNFT(testAddress, testAddress, address(_pool));
 
+        // check retrieval of pool token symbols
+        address collateralTokenAddress = IPool(_positionManager.poolKey(tokenId)).collateralAddress();
+        address quoteTokenAddress = IPool(_positionManager.poolKey(tokenId)).quoteTokenAddress();
+        assertEq(SafeTokenNamer.tokenSymbol(collateralTokenAddress), "C");
+        assertEq(SafeTokenNamer.tokenSymbol(quoteTokenAddress), "Q");
+        assertEq(SafeTokenNamer.tokenName(collateralTokenAddress), "Collateral");
+        assertEq(SafeTokenNamer.tokenName(quoteTokenAddress), "Quote");
+
         // allow position manager to take ownership of the position
         _pool.approveLpOwnership(address(_positionManager), indexes[0], 3_000 * 1e27);
 
@@ -2445,9 +2455,15 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
         _positionManager.memorializePositions(memorializeParams);
 
-        // TODO: expand this test to check string matches an expected hardcoded string
         string memory uriString = _positionManager.tokenURI(tokenId);
+        emit log(uriString);
         assertGt(bytes(uriString).length, 0);
+
+        // FIXME: split out uri string from encoding metadata, and parse resulting json object
+        // decode uri string and check attributes
+        // bytes memory data = Base64.decode(uriString);
+        // DecodeTokenURIParams memory decodedURI = abi.decode(data, (DecodeTokenURIParams));
+        // assertEq(decodedURI.name, "Ajna Token #1");
     }
 
 }
