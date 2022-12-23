@@ -247,7 +247,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 bucketDepth: maxDepth_
             }
         );
-        (uint256 remainingCollateral, uint256 remainingt0Debt) = Auctions.settlePoolDebt(
+        (uint256 remainingCollateral, uint256 t0RemainingDebt) = Auctions.settlePoolDebt(
             auctions,
             buckets,
             deposits,
@@ -255,14 +255,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         // slither-disable-next-line incorrect-equality
-        if (remainingt0Debt == 0) remainingCollateral = _settleAuction(params.borrower, remainingCollateral);
+        if (t0RemainingDebt == 0) remainingCollateral = _settleAuction(params.borrower, remainingCollateral);
 
         // update borrower state
-        borrower.t0Debt     = remainingt0Debt;
+        borrower.t0Debt     = t0RemainingDebt;
         borrower.collateral = remainingCollateral;
 
         // update pool accumulators state
-        uint256 t0SettledDebt = params.t0Debt - remainingt0Debt;
+        uint256 t0SettledDebt = params.t0Debt - t0RemainingDebt;
         poolBalances.t0Debt          -= t0SettledDebt;
         poolBalances.t0DebtInAuction -= t0SettledDebt;
         uint256 settledCollateral = params.collateral - remainingCollateral;
