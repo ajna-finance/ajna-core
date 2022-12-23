@@ -431,7 +431,6 @@ library Auctions {
         result.kicker = liquidation.kicker;
         result.isRewarded = (bpf >= 0);
 
-
         // Determine how much of the loan will be repaid
         if (borrowerDebt >= bucketDeposit) {
             // Debt in loan exceeds or equal to bucket deposit
@@ -521,7 +520,7 @@ library Auctions {
             params_.inflator
         );
         result.isRewarded = (bpf >= 0);
-        
+
         // determine how much of the loan will be repaid
         result.collateralAmount = Maths.min(params_.collateral, params_.takeCollateral);
         result.quoteTokenAmount = Maths.wmul(result.auctionPrice, result.collateralAmount);
