@@ -23,9 +23,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.UintSet;
 
-    mapping(address => EnumerableSet.UintSet) bidderDepositedIndex;
-    EnumerableSet.AddressSet bidders;
-
     event Transfer(address indexed from, address indexed to, uint256 value);
 
     /*****************/
@@ -126,9 +123,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
             redeemLendersLp(lenders.at(i), lendersDepositedIndex[lenders.at(i)]);
         }
 
-        for(uint i = 0; i < bidders.length(); i++ ) {
-            redeemLendersLp(bidders.at(i), bidderDepositedIndex[bidders.at(i)]);
-        }
         validateEmpty(bucketsUsed);
     }
 
@@ -167,8 +161,8 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         emit Transfer(from, address(_pool), amount / ERC20Pool(address(_pool)).collateralScale());
 
         // Add for tearDown
-        bidders.add(from);
-        bidderDepositedIndex[from].add(index);
+        lenders.add(from);
+        lendersDepositedIndex[from].add(index);
         bucketsUsed.add(index); 
 
         return ERC20Pool(address(_pool)).addCollateral(amount, index);
@@ -359,10 +353,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
             if(lenders.contains(from)){
                 lenders.add(to);
                 lendersDepositedIndex[to].add(indexes[i]);
-            }
-            else{
-                bidders.add(to);
-                bidderDepositedIndex[to].add(indexes[i]);
             }
         }
     }
