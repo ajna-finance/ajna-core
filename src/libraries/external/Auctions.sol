@@ -405,7 +405,16 @@ library Auctions {
         if (block.timestamp - kickTime <= 1 hours) revert TakeNotPastCooldown();
 
         // if first take apply penalty to borrower
-        uint256 borrowerDebt = _applyTakePenalty(params_.t0debt, params_.inflator,liquidation.alreadyTaken);
+        uint256 borrowerDebt;
+        (
+            borrowerDebt,
+            liquidation.alreadyTaken
+        ) = _applyTakePenalty(
+            params_.t0debt,
+            params_.inflator,
+            liquidation.alreadyTaken
+        );
+
 
         TakeResult memory result;
         result.bucketPrice  = _priceAt(params_.index);
@@ -501,7 +510,15 @@ library Auctions {
         if (block.timestamp - kickTime <= 1 hours) revert TakeNotPastCooldown();
 
         // if first take apply penalty to borrower
-        uint256 borrowerDebt = _applyTakePenalty(params_.t0debt, params_.inflator, liquidation.alreadyTaken);
+        uint256 borrowerDebt;
+        (
+            borrowerDebt,
+            liquidation.alreadyTaken
+        ) = _applyTakePenalty(
+            params_.t0debt,
+            params_.inflator,
+            liquidation.alreadyTaken
+        );
 
         TakeResult memory result;
         result.auctionPrice = _auctionPrice(
@@ -677,9 +694,12 @@ library Auctions {
     /***  Internal Functions ***/
     /***************************/
 
-    function _applyTakePenalty(uint256 t0Debt_, uint256 poolInflator_, bool alreadyTaken_) internal pure returns (uint256 borrowerDebt_) {
+    function _applyTakePenalty(uint256 t0Debt_, uint256 poolInflator_, bool alreadyTaken_) internal pure returns (uint256 borrowerDebt_, bool taken_) {
         borrowerDebt_ = Maths.wmul(t0Debt_, poolInflator_);
-        if (!alreadyTaken_) borrowerDebt_ += Maths.wmul(borrowerDebt_, 0.07 * 1e18);
+        if (!alreadyTaken_) {
+            borrowerDebt_ += Maths.wmul(borrowerDebt_, 0.07 * 1e18);
+            taken_        =  true;
+        }
     }
 
 
