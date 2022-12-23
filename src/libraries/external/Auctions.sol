@@ -24,8 +24,6 @@ import '../Loans.sol';
 
 import '../../base/PoolHelper.sol';
 
-import '@std/console.sol';
-
 library Auctions {
 
     struct KickWithDepositLocalVars {
@@ -417,7 +415,7 @@ library Auctions {
         );
         // cannot arb with a price lower than the auction price
         if (result.auctionPrice > result.bucketPrice) revert AuctionPriceGtBucketPrice();
-        
+
         // if deposit take then price to use when calculating take is bucket price
         uint256 price = params_.depositTake ? result.bucketPrice : result.auctionPrice;
         (
@@ -524,7 +522,6 @@ library Auctions {
         );
         result.isRewarded = (bpf >= 0);
         
-
         // determine how much of the loan will be repaid
         result.collateralAmount = Maths.min(params_.collateral, params_.takeCollateral);
         result.quoteTokenAmount = Maths.wmul(result.auctionPrice, result.collateralAmount);
@@ -1035,7 +1032,6 @@ library Auctions {
         uint256 factor_
     ) {
         // calculate the bond payment factor
-        //borrowerDebt_ = Maths.wmul(t0Debt_, poolInflator_);
         bpf_ = _bpf(
             borrowerDebt_,
             collateral_,

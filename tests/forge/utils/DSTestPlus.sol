@@ -503,7 +503,6 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(debt,        borrowerDebt);
         assertEq(col,         borrowerCollateral);
         assertEq(t0Np,        borrowert0Np);
-
         assertEq(
             _collateralization(
                 borrowerDebt,

@@ -406,7 +406,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         );
     }
 
-    function testArbTakeDebtRestrict() external {
+    function testArbTakeDebtRestrict() external tearDown {
 
         skip(5 hours);
 
@@ -623,7 +623,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         );
     }
 
-    function testArbTakeGTNeutralPrice() external {
+    function testArbTakeGTNeutralPrice() external tearDown {
 
         skip(3 hours);
 

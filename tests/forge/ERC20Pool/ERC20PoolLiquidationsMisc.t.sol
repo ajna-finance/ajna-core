@@ -158,7 +158,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
     }
 
 
-    function testLenderForcedExit() external {
+    function testLenderForcedExit() external tearDown {
 
         skip(25 hours);
         
@@ -470,7 +470,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
         );
 
         // draw debt is called to trigger accrual of pool interest that will push the lup back up
-        IERC20Pool(address(_pool)).drawDebt(_lender, 0, 0, 0); 
+        IERC20Pool(address(_pool)).drawDebt(_lender, 0, 0, 0);
 
         _assertPool(
             PoolParams({
