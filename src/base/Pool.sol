@@ -38,9 +38,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*** State Variables ***/
     /***********************/
 
-    uint208 internal inflatorSnapshot;           // [WAD]
-    uint48  internal lastInflatorSnapshotUpdate; // [SEC]
-
+    InflatorState       internal inflatorParams;
     InterestState       internal interestParams;
     ReserveAuctionState internal reserveAuction;
 
@@ -343,7 +341,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                     poolSize:    Deposits.treeSum(deposits),
                     poolDebt:    t0poolDebt,
                     poolBalance: _getPoolQuoteTokenBalance(),
-                    inflator:    inflatorSnapshot
+                    inflator:    inflatorParams.inflator
                 }
             )
         );
@@ -653,7 +651,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function _accruePoolInterest() internal returns (PoolState memory poolState_) {
         uint256 t0Debt        = t0poolDebt;
         poolState_.collateral = pledgedCollateral;
-        poolState_.inflator   = inflatorSnapshot;
+        poolState_.inflator   = inflatorParams.inflator;
         poolState_.rate       = interestParams.interestRate;
         poolState_.poolType   = _getArgUint8(POOL_TYPE);
 
@@ -661,7 +659,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             // Calculate prior pool debt
             poolState_.accruedDebt = Maths.wmul(t0Debt, poolState_.inflator);
 
-            uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
+            uint256 elapsed = block.timestamp - inflatorParams.inflatorUpdate;
             poolState_.isNewInterestAccrued = elapsed != 0;
 
             if (poolState_.isNewInterestAccrued) {
@@ -684,12 +682,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // update pool inflator
         if (poolState_.isNewInterestAccrued) {
-            inflatorSnapshot           = uint208(poolState_.inflator);
-            lastInflatorSnapshotUpdate = uint48(block.timestamp);
+            inflatorParams.inflator       = uint208(poolState_.inflator);
+            inflatorParams.inflatorUpdate = uint48(block.timestamp);
         // slither-disable-next-line incorrect-equality
         } else if (poolState_.accruedDebt == 0) {
-            inflatorSnapshot           = uint208(Maths.WAD);
-            lastInflatorSnapshotUpdate = uint48(block.timestamp);
+            inflatorParams.inflator       = uint208(Maths.WAD);
+            inflatorParams.inflatorUpdate = uint48(block.timestamp);
         }
     }
 
@@ -796,14 +794,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     function debtInfo() external view returns (uint256, uint256, uint256) {
         uint256 pendingInflator = PoolCommons.pendingInflator(
-            inflatorSnapshot,
-            lastInflatorSnapshotUpdate,
+            inflatorParams.inflator,
+            inflatorParams.inflatorUpdate,
             interestParams.interestRate
         );
         return (
             Maths.wmul(t0poolDebt, pendingInflator),
-            Maths.wmul(t0poolDebt, inflatorSnapshot),
-            Maths.wmul(t0DebtInAuction, inflatorSnapshot)
+            Maths.wmul(t0poolDebt, inflatorParams.inflator),
+            Maths.wmul(t0DebtInAuction, inflatorParams.inflator)
         );
     }
 
@@ -831,8 +829,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     function inflatorInfo() external view override returns (uint256, uint256) {
         return (
-            inflatorSnapshot,
-            lastInflatorSnapshotUpdate
+            inflatorParams.inflator,
+            inflatorParams.inflatorUpdate
         );
     }
 
@@ -871,7 +869,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function loansInfo() external view override returns (address, uint256, uint256) {
         return (
             Loans.getMax(loans).borrower,
-            Maths.wmul(Loans.getMax(loans).thresholdPrice, inflatorSnapshot),
+            Maths.wmul(Loans.getMax(loans).thresholdPrice, inflatorParams.inflator),
             Loans.noOfLoans(loans)
         );
     }

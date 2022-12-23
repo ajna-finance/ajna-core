@@ -35,8 +35,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     ) external override {
         if (poolInitializations != 0) revert AlreadyInitialized();
 
-        inflatorSnapshot           = uint208(10**18);
-        lastInflatorSnapshotUpdate = uint48(block.timestamp);
+        inflatorParams.inflator       = uint208(10**18);
+        inflatorParams.inflatorUpdate = uint48(block.timestamp);
 
         interestParams.interestRate       = uint208(rate_);
         interestParams.interestRateUpdate = uint48(block.timestamp);

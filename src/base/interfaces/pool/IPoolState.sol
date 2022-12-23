@@ -213,6 +213,11 @@ interface IPoolState {
 
 /*** Pool State ***/
 
+struct InflatorState {
+    uint208 inflator;           // [WAD]
+    uint48  inflatorUpdate; // [SEC]
+}
+
 struct InterestState {
     uint208 interestRate;       // [WAD]
     uint48  interestRateUpdate; // [SEC]
