@@ -36,6 +36,19 @@ contract AjnaRewards is IAjnaRewards {
      */
     uint256 internal constant REWARD_FACTOR = 0.500000000000000000 * 1e18;
 
+    uint256 internal UPDATE_CLAIM_REWARD = 0.050000000000000000 * 1e18;
+
+    /**
+     * @notice Number of blocks after a burn event in which buckets exchange rates can be updated.
+     */
+    uint256 internal constant UPDATE_PERIOD = 100800;
+
+    /**
+     * @notice Track the total amount of rewards that have been claimed for a given burn event.
+     * @dev burnEvent => tokens claimed
+     */
+    mapping(uint256 => uint256) burnEventRewardsClaimed
+
     /**
      * @notice Mapping of LP NFTs staked in the Ajna Rewards contract.
      * @dev tokenID => Deposit
@@ -48,6 +61,10 @@ contract AjnaRewards is IAjnaRewards {
      * @dev poolAddress => bucketIndex => checkpoint => exchangeRate
      */
     mapping(address => mapping(uint256 => Checkpoints.History)) internal poolBucketExchangeRateCheckpoints;
+
+    // mapping tracking the last time a bucket exchange rate was updated for a given pool
+    // poolAddress => bucketIndex => burnBlock => bool
+    mapping(address => mapping(uint256 => mapping(uint256 => bool))) internal poolBucketLastUpdate;
 
     struct Deposit {
         address owner;                            // owner of the LP NFT
@@ -136,8 +153,20 @@ contract AjnaRewards is IAjnaRewards {
     /*** Internal Functions ***/
     /**************************/
 
+    // check that less than 80% of the tokens for a given burn event have been claimed
+    function _checkRewardsClaimed(uint256 burnBlock_, uint256 additionalRewardsEarned_) internal returns (bool) {
+        uint256 totalTokensBurned; // TODO: figure out how to access this info
+        return burnEventRewardsClaimed[burnBlock] + rewardsEarned > totalTokensBurned;
+    }
+
     function _claimRewards(uint256 tokenId_) internal {
         uint256 rewardsEarned = _calculateRewardsEarned(tokenId_);
+
+        // TODO: figure out how to access the burn block
+        if (_chechRewardsClaimed(burnBlock, rewardsEarned)) revert MaxTokensAlreadyClaimed();
+
+        // update total tokens claimed tracker
+        burnEventRewardsClaimed[burnBlock] += rewardsEarned;
 
         emit ClaimRewards(msg.sender, deposits[tokenId_].ajnaPool, tokenId_, rewardsEarned);
 
@@ -199,7 +228,7 @@ contract AjnaRewards is IAjnaRewards {
         totalInterestEarned_ = totalInterestLatest - totalInterestAtBlock;
     }
 
-    // TODO: use deposits object instead of tokenId?
+    // TODO: REMOVE THIS
     function _updateExchangeRates(uint256 tokenId_) internal {
         address ajnaPool = PositionManager(address(positionManager)).poolKey(tokenId_);
 
@@ -209,6 +238,32 @@ contract AjnaRewards is IAjnaRewards {
             // push the lenders exchange rate into the checkpoint history
             uint256 bucketExchangeRate = IPool(ajnaPool).bucketExchangeRate(positionPrices[i]);
             poolBucketExchangeRateCheckpoints[ajnaPool][positionPrices[i]].push(bucketExchangeRate);
+
+            // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    function updateBucketExchangeRates(address pool_, uint256[] calldata indexes_, uint256 burnBlock_) external {
+        // check that the provided burn block is valid, and within the allowed time period
+        (uint256 burnBlock, ,) = IPool(pool_).burnInfoAtBlock(burnBlock_);
+        if (burnBlock != burnBlock_) revert InvalidBurnBlock(); // TODO: check if this is necessary
+        if (block.number > burnBlock_ + UPDATE_PERIOD) revert ExchangeRateUpdateTooLate();
+
+        for (uint256 i = 0; i < indexes_.length; ) {
+            // check bucket hasn't already been updated
+            if (poolBucketLastUpdateBlock[pool_][indexes_[i]][burnBlock_]) revert ExchangeRateAlreadyUpdated();
+
+            // push the lenders exchange rate into the checkpoint history
+            uint256 bucketExchangeRate = IPool(pool_).bucketExchangeRate(indexes_[i]);
+            poolBucketExchangeRateCheckpoints[pool_][indexes_[i]].push(bucketExchangeRate);
+
+            // record that a given burn block was used to update exchange rates, can only update once
+            poolBucketLastUpdateBlock[pool_][indexes_[i]][burnBlock_] = true;
+
+            // TODO: claim rewards that have accrued to a bucket
 
             // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
             unchecked {

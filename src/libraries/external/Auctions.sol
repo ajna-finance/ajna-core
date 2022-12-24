@@ -645,6 +645,13 @@ library Auctions {
         return history_.getAtBlock(blockNumber_);
     }
 
+    function getLastBurn(
+        Checkpoints.History storage history_
+    ) external view returns (uint256) {
+        return history_.latest();
+    }
+
+    // TODO: replace with getLastBurn() + 1
     function getNewBurnEventId(
         Checkpoints.History storage history_
     ) external view returns (uint256) {

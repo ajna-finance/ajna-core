@@ -61,14 +61,16 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     Checkpoints.History internal _burnEventCheckpoints;
 
-    // TODO: remove this struct entirely in favor of writing totalAjnaBurned to the checkpoint
     // tracks ajna token burn events
     struct BurnEvent {
+        uint256 blockNumber;   // block in which the burn event occured, used as checkpoints won't return block of a checkpoint
         uint256 totalInterest; // current pool interest accumulator `PoolCommons.accrueInterest().newInterest
-        uint256 totalBurned; // burn amount accumulator
+        uint256 totalBurned;   // burn amount accumulator
     }
     // mapping burnEventId => BurnEvent
     mapping (uint256 => BurnEvent) internal burnEvents;
+    uint256[] burnEventIds; // array of burn event ids
+
     uint256 totalAjnaBurned; // total ajna burned in the pool
     uint256 totalInterestEarned; // total interest earned by all lenders in the pool
 
@@ -341,6 +343,16 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*********************************/
 
     function startClaimableReserveAuction() external override {
+        // check that at least two weeks have passed since the last reserve auction completed
+        uint256 lastBurnBlock = burnEvents[Auctions.getLastBurn(_burnEventCheckpoints)].blockNumber;
+        if (block.number < lastBurnBlock + 100800) {
+            revert ReserveAuctionTooSoon();
+        }
+        // TODO: replace id and checkpointing system with a simple array
+        uint256 burnEventId = burnEventIds.length + 1;
+        burnEvents[burnEventId].blockNumber = block.number;
+        burnEventIds.push(burnEventId);
+
         uint256 kickerAward = Auctions.startClaimableReserveAuction(
             auctions,
             reserveAuction,
@@ -368,15 +380,19 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if (!ajnaToken.transferFrom(msg.sender, address(this), ajnaRequired)) revert ERC20TransferFailed();
         ajnaToken.burn(ajnaRequired);
 
-        // record burn event information to enable querying by staking rewards
+        // accumulate additional ajna burned
         totalAjnaBurned += ajnaRequired;
-        BurnEvent memory burnEvent = BurnEvent({
-            totalInterest: totalInterestEarned,
-            totalBurned: totalAjnaBurned
-        });
-        uint256 burnEventId = Auctions.getNewBurnEventId(_burnEventCheckpoints);
-        burnEvents[burnEventId] = burnEvent;
-        Auctions.addCheckpoint(_burnEventCheckpoints, burnEventId);
+
+        // TODO: this should work...
+        // TODO: 1) create a new checkpoint for the first takeReserves call, with block set to first take reserves. 
+        // TODO: 2) Each time takeReserves is called, update the values stored at the checkpointed pointer
+            // TODO: 3) remove Checkpoints usage
+
+        // record burn event information to enable querying by staking rewards
+        // TODO: if existing checkpoint is less than 2 weeks old, update it instead of creating a new one
+        uint256 burnEventId = burnEventIds[burnEventIds.length - 1];
+        burnEvents[burnEventId].totalInterest = totalInterestEarned;
+        burnEvents[burnEventId].totalBurned = totalAjnaBurned;
 
         // transfer quote token to caller
         _transferQuoteToken(msg.sender, amount_);
@@ -796,11 +812,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
-    function burnInfoAtBlock(uint256 blockNumber_) external view returns (uint256, uint256) {
+    function burnInfoAtBlock(uint256 blockNumber_) external view returns (uint256, uint256, uint256) {
         uint256 burnEventId = Auctions.getBurnAtBlock(_burnEventCheckpoints, blockNumber_);
         BurnEvent memory burnEvent = burnEvents[burnEventId];
 
         return (
+            burnEvent.burnBlock,
             burnEvent.totalInterest,
             burnEvent.totalBurned
         );
