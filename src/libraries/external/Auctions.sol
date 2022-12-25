@@ -404,18 +404,6 @@ library Auctions {
         if (kickTime == 0) revert NoAuction();
         if (block.timestamp - kickTime <= 1 hours) revert TakeNotPastCooldown();
 
-        // if first take apply penalty to borrower
-        uint256 borrowerDebt;
-        (
-            borrowerDebt,
-            liquidation.alreadyTaken
-        ) = _applyTakePenalty(
-            params_.t0debt,
-            params_.inflator,
-            liquidation.alreadyTaken
-        );
-
-
         TakeResult memory result;
         result.bucketPrice  = _priceAt(params_.index);
         result.auctionPrice = _auctionPrice(
@@ -427,13 +415,15 @@ library Auctions {
 
         // if deposit take then price to use when calculating take is bucket price
         uint256 price = params_.depositTake ? result.bucketPrice : result.auctionPrice;
+
         (
+            uint256 borrowerDebt,
             int256  bpf,
             uint256 factor
         ) = _takeParameters(
             liquidation,
             params_.collateral,
-            borrowerDebt,
+            params_.t0debt,
             price,
             params_.inflator
         );
@@ -509,30 +499,21 @@ library Auctions {
         if (kickTime == 0) revert NoAuction();
         if (block.timestamp - kickTime <= 1 hours) revert TakeNotPastCooldown();
 
-        // if first take apply penalty to borrower
-        uint256 borrowerDebt;
-        (
-            borrowerDebt,
-            liquidation.alreadyTaken
-        ) = _applyTakePenalty(
-            params_.t0debt,
-            params_.inflator,
-            liquidation.alreadyTaken
-        );
-
         TakeResult memory result;
         result.auctionPrice = _auctionPrice(
             liquidation.kickMomp,
             kickTime
         );
         result.kicker = liquidation.kicker;
+
         (
+            uint256 borrowerDebt,
             int256 bpf,
             uint256 factor
         ) = _takeParameters(
             liquidation,
             params_.collateral,
-            borrowerDebt,
+            params_.t0debt,
             result.auctionPrice,
             params_.inflator
         );
@@ -693,14 +674,6 @@ library Auctions {
     /***************************/
     /***  Internal Functions ***/
     /***************************/
-
-    function _applyTakePenalty(uint256 t0Debt_, uint256 poolInflator_, bool alreadyTaken_) internal pure returns (uint256 borrowerDebt_, bool taken_) {
-        borrowerDebt_ = Maths.wmul(t0Debt_, poolInflator_);
-        if (!alreadyTaken_) {
-            borrowerDebt_ += Maths.wmul(borrowerDebt_, 0.07 * 1e18);
-            taken_        =  true;
-        }
-    }
 
 
     /**
@@ -1037,19 +1010,29 @@ library Auctions {
      *  @param  collateral_   Borrower collateral.
      *  @param  borrowerDebt_ Borrower t0 debt.
      *  @param  poolInflator_ The pool's inflator, used to calculate borrower debt.
+     *  @return borrowerDebt_ Debt of the borrower at the time of take.
      *  @return bpf_          The bond penalty factor.
      *  @return factor_       The take factor, calculated based on bond penalty factor.
      */
     function _takeParameters(
         Liquidation storage liquidation_,
         uint256 collateral_,
-        uint256 borrowerDebt_,
+        uint256 t0Debt_,
         uint256 price_,
         uint256 poolInflator_
-    ) internal view returns (
+    ) internal returns (
+        uint256 borrowerDebt_,
         int256  bpf_,
         uint256 factor_
     ) {
+        borrowerDebt_ = Maths.wmul(t0Debt_, poolInflator_);
+
+        // increase borrower debt by 7% if first take
+        if (!liquidation_.alreadyTaken) {
+            borrowerDebt_ = Maths.wmul(borrowerDebt_, 1.07 * 1e18);
+            liquidation_.alreadyTaken = true;
+        }
+
         // calculate the bond payment factor
         bpf_ = _bpf(
             borrowerDebt_,
