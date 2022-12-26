@@ -257,13 +257,11 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         vm.expectEmit(true, true, false, true);
         emit UpdateInterestRate(0.05 * 1e18, 0.045 * 1e18);
-        _addLiquidity(
+        _addLiquidityNoEventCheck(
             {
                 from:    _lender1,
                 amount:  1_000 * 1e18,
-                index:   2873,
-                lpAward: 999.969800213715631476604245327 * 1e27,
-                newLup:  601.252968524772188572 * 1e18
+                index:   2873
             }
         );
 

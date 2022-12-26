@@ -101,6 +101,21 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _addLiquidity(from, amount, index, amount * 1e9, MAX_PRICE);
     }
 
+    // Adds liquidity with interest rate update
+    function _addLiquidityNoEventCheck(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        _pool.addQuoteToken(amount, index);
+
+        // Add for tearDown
+        lenders.add(from);
+        lendersDepositedIndex[from].add(index);
+        bucketsUsed.add(index);
+    }
+
     function _addLiquidity(
         address from,
         uint256 amount,
@@ -485,6 +500,33 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(availableCollateral, collateral);
         assertEq(curDeposit,          deposit);
         assertEq(rate,                exchangeRate);
+
+        _validateBucketLp(index, lpBalance);
+    }
+
+
+    function _validateBucketLp(
+        uint256 index,
+        uint256 lpBalance
+    ) internal {
+        uint256 lenderLps = 0;
+
+        uint256 curLpBalance;
+        // sum up LP across lenders
+        for(uint i = 0; i < lenders.length(); i++ ){
+            (curLpBalance, ) = _pool.lenderInfo(index, lenders.at(i));
+            lenderLps += curLpBalance;
+        }
+        // handle borrowers awarded LP from liquidation
+        for(uint i = 0; i < borrowers.length(); i++ ){
+            address borrower = borrowers.at(i);
+            if (!lenders.contains(borrower)) {
+                (curLpBalance, ) = _pool.lenderInfo(index, borrowers.at(i));
+                lenderLps += curLpBalance;
+            }
+        }
+
+        assertEq(lenderLps, lpBalance);
     }
 
     function _assertBorrower(

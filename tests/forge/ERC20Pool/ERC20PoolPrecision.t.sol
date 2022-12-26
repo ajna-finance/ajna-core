@@ -491,7 +491,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      1, 18);
         uint256 bucketId            = bound(uint256(bucketId_),                    1, 7388);
         uint256 quoteAmount         = bound(uint256(quoteAmount_),                 0, 1e22 * 1e18);
-        uint256 collateralAmount    = bound(uint256(collateralAmount_),            1e8, 1e12 * 1e18);
+        uint256 collateralAmount    = bound(uint256(collateralAmount_),            1e9, 1e12 * 1e18);
         _collateralPrecision        = uint256(10) ** boundColPrecision;
         _quotePrecision             = uint256(10) ** boundQuotePrecision;
         init(boundColPrecision, boundQuotePrecision);
@@ -622,8 +622,8 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         emit Transfer(from, address(_pool), amount / ERC20Pool(address(_pool)).collateralScale());
 
         // Add for tearDown
-        bidders.add(from);
-        bidderDepositedIndex[from].add(index);
+        lenders.add(from);
+        lendersDepositedIndex[from].add(index);
         bucketsUsed.add(index); 
 
         return ERC20Pool(address(_pool)).addCollateral(amount, index);

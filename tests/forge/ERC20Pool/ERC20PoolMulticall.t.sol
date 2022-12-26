@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.14;
 
+import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
 import 'src/erc20/ERC20Pool.sol';
@@ -10,10 +12,13 @@ import 'src/base/interfaces/pool/IPoolErrors.sol';
 
 contract ERC20PoolMulticallTest is ERC20HelperContract {
 
+    using EnumerableSet for EnumerableSet.AddressSet;
+
     address internal _lender;
 
     function setUp() external {
-        _lender    = makeAddr("lender");
+        _lender = makeAddr("lender");
+        lenders.add(_lender);
 
         _mintQuoteAndApproveTokens(_lender,   200_000 * 1e18);
     }
