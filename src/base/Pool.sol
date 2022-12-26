@@ -435,12 +435,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 !_isCollateralized(borrowerDebt, borrower.collateral, newLup_, poolState.poolType)
             ) revert BorrowerUnderCollateralized();
 
-            poolState.debt += debtChange;
-
             uint256 t0DebtChange = Maths.wdiv(debtChange, poolState.inflator);
             borrower.t0Debt += t0DebtChange;
 
             // update pool balances state
+            poolState.debt      += debtChange;
             poolBalances.t0Debt += t0DebtChange;
         }
 
