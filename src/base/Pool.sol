@@ -405,7 +405,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             poolState.collateral += collateralToPledge_;
 
             // update pool balances state
-            poolBalances.t0DebtInAuction   -= t0DebtInAuctionChange;
+            if (t0DebtInAuctionChange != 0) {
+                poolBalances.t0DebtInAuction -= t0DebtInAuctionChange;
+            }
             poolBalances.pledgedCollateral += collateralToPledge_;
         }
 
@@ -511,8 +513,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             borrower.t0Debt -= t0RepaidDebt;
 
             // update pool balances state
-            poolBalances.t0Debt          -= t0RepaidDebt;
-            poolBalances.t0DebtInAuction -= t0DebtInAuctionChange;
+            poolBalances.t0Debt -= t0RepaidDebt;
+            if (t0DebtInAuctionChange != 0) {
+                poolBalances.t0DebtInAuction -= t0DebtInAuctionChange;
+            }
         }
 
         if (pull) {
