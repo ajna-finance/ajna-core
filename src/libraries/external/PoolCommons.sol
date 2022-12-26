@@ -52,7 +52,7 @@ library PoolCommons {
     ) external {
         // update pool EMAs for target utilization calculation
         uint256 curDebtEma = Maths.wmul(
-                poolState_.accruedDebt,
+                poolState_.debt,
                     EMA_7D_RATE_FACTOR
             ) + Maths.wmul(interestParams_.debtEma, LAMBDA_EMA_7D
         );
@@ -66,11 +66,11 @@ library PoolCommons {
         interestParams_.lupColEma = curLupColEma;
 
         // update pool interest rate
-        if (poolState_.accruedDebt != 0) {
+        if (poolState_.debt != 0) {
             int256 mau = int256(                                       // meaningful actual utilization
                 _utilization(
                     deposits_,
-                    poolState_.accruedDebt,
+                    poolState_.debt,
                     poolState_.collateral
                 )
             );
@@ -124,8 +124,8 @@ library PoolCommons {
 
         if (depositAboveHtp != 0) {
             uint256 newInterest = Maths.wmul(
-                _lenderInterestMargin(_utilization(deposits_, poolState_.accruedDebt, poolState_.collateral)),
-                Maths.wmul(pendingFactor - Maths.WAD, poolState_.accruedDebt)
+                _lenderInterestMargin(_utilization(deposits_, poolState_.debt, poolState_.collateral)),
+                Maths.wmul(pendingFactor - Maths.WAD, poolState_.debt)
             );
 
             Deposits.mult(
@@ -183,10 +183,10 @@ library PoolCommons {
      */
     function utilization(
         DepositsState storage deposits,
-        uint256 debt_,
+        uint256 poolDebt_,
         uint256 collateral_
     ) external view returns (uint256 utilization_) {
-        return _utilization(deposits, debt_, collateral_);
+        return _utilization(deposits, poolDebt_, collateral_);
     }
 
     /**************************/
@@ -195,24 +195,24 @@ library PoolCommons {
 
     /**
      *  @notice Calculates pool utilization based on pool size, accrued debt and collateral pledged in pool .
-     *  @param  debt_        Pool accrued debt.
+     *  @param  poolDebt_    Pool accrued debt.
      *  @param  collateral_  Amount of collateral pledged in pool.
      *  @return utilization_ Pool utilization value.
      */
     function _utilization(
         DepositsState storage deposits,
-        uint256 debt_,
+        uint256 poolDebt_,
         uint256 collateral_
     ) internal view returns (uint256 utilization_) {
         if (collateral_ != 0) {
-            uint256 ptp = _ptp(debt_, collateral_);
+            uint256 ptp = _ptp(poolDebt_, collateral_);
 
             if (ptp != 0) {
                 uint256 depositAbove = ptp >= MIN_PRICE ? Deposits.prefixSum(deposits, _indexOf(ptp)) 
                     : Deposits.treeSum(deposits);
 
                 if (depositAbove != 0) utilization_ = Maths.wdiv(
-                    debt_,
+                    poolDebt_,
                     depositAbove
                 );
             }
