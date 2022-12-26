@@ -688,6 +688,25 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
     }
 
     function testKickWithDepositAllBorrowersAndSettle() external tearDown {
+        // assert loans positions in heap
+        address borrower;
+        uint256 thresholdPrice;
+        (borrower, thresholdPrice) = _pool.loanInfo(1);
+        assertEq(borrower, _borrower1);
+        assertEq(thresholdPrice, 20.019230769230769240 * 1e18);
+        (borrower, thresholdPrice) = _pool.loanInfo(2);
+        assertEq(borrower, _borrower2);
+        assertEq(thresholdPrice, 20.019230769230769240 * 1e18);
+        (borrower, thresholdPrice) = _pool.loanInfo(3);
+        assertEq(borrower, _borrower3);
+        assertEq(thresholdPrice, 20.019230769230769240 * 1e18);
+        (borrower, thresholdPrice) = _pool.loanInfo(4);
+        assertEq(borrower, _borrower4);
+        assertEq(thresholdPrice, 20.019230769230769240 * 1e18);
+        (borrower, thresholdPrice) = _pool.loanInfo(5);
+        assertEq(borrower, _borrower5);
+        assertEq(thresholdPrice, 20.019230769230769240 * 1e18);
+
         // kick borrower 1
         _kickWithDeposit(
             {
@@ -702,6 +721,32 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 lup:                3_844.432207828138682757 * 1e18
             }
         );
+        (borrower, thresholdPrice) = _pool.loanInfo(1);
+        assertEq(borrower, _borrower5);
+        assertEq(thresholdPrice, 20.019230769230769240 * 1e18);
+        (borrower, thresholdPrice) = _pool.loanInfo(2);
+        assertEq(borrower, _borrower2);
+        assertEq(thresholdPrice, 20.019230769230769240 * 1e18);
+        (borrower, thresholdPrice) = _pool.loanInfo(3);
+        assertEq(borrower, _borrower3);
+        assertEq(thresholdPrice, 20.019230769230769240 * 1e18);
+        (borrower, thresholdPrice) = _pool.loanInfo(4);
+        assertEq(borrower, _borrower4);
+        assertEq(thresholdPrice, 20.019230769230769240 * 1e18);
+        (borrower, thresholdPrice) = _pool.loanInfo(5);
+        assertEq(borrower, address(0));
+        assertEq(thresholdPrice, 0);
+
+        address head;
+        address next;
+        address prev;
+        (, , , , , , head, next, prev) = _pool.auctionInfo(address(0));
+        assertEq(head, _borrower1);
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
+        assertEq(head, _borrower1);
+        assertEq(next, address(0));
+        assertEq(prev, address(0));
+
         // kick borrower 5
         _kickWithDeposit(
             {
@@ -716,6 +761,31 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 lup:                99836282890
             }
         );
+        (borrower, thresholdPrice) = _pool.loanInfo(1);
+        assertEq(borrower, _borrower4);
+        assertEq(thresholdPrice, 20.019230769230769240 * 1e18);
+        (borrower, thresholdPrice) = _pool.loanInfo(2);
+        assertEq(borrower, _borrower2);
+        assertEq(thresholdPrice, 20.019230769230769240 * 1e18);
+        (borrower, thresholdPrice) = _pool.loanInfo(3);
+        assertEq(borrower, _borrower3);
+        assertEq(thresholdPrice, 20.019230769230769240 * 1e18);
+        (borrower, thresholdPrice) = _pool.loanInfo(4);
+        assertEq(borrower, address(0));
+        assertEq(thresholdPrice, 0);
+        (borrower, thresholdPrice) = _pool.loanInfo(5);
+        assertEq(borrower, address(0));
+        assertEq(thresholdPrice, 0);
+
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
+        assertEq(head, _borrower1);
+        assertEq(next, _borrower5);
+        assertEq(prev, address(0));
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower5);
+        assertEq(head, _borrower1);
+        assertEq(next, address(0));
+        assertEq(prev, _borrower1);
+
         // kick borrower 4
         _kickWithDeposit(
             {
@@ -730,6 +800,35 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 lup:                99836282890
             }
         );
+        (borrower, thresholdPrice) = _pool.loanInfo(1);
+        assertEq(borrower, _borrower3);
+        assertEq(thresholdPrice, 20.019230769230769240 * 1e18);
+        (borrower, thresholdPrice) = _pool.loanInfo(2);
+        assertEq(borrower, _borrower2);
+        assertEq(thresholdPrice, 20.019230769230769240 * 1e18);
+        (borrower, thresholdPrice) = _pool.loanInfo(3);
+        assertEq(borrower, address(0));
+        assertEq(thresholdPrice, 0);
+        (borrower, thresholdPrice) = _pool.loanInfo(4);
+        assertEq(borrower, address(0));
+        assertEq(thresholdPrice, 0);
+        (borrower, thresholdPrice) = _pool.loanInfo(5);
+        assertEq(borrower, address(0));
+        assertEq(thresholdPrice, 0);
+
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
+        assertEq(head, _borrower1);
+        assertEq(next, _borrower5);
+        assertEq(prev, address(0));
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower5);
+        assertEq(head, _borrower1);
+        assertEq(next, _borrower4);
+        assertEq(prev, _borrower1);
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower4);
+        assertEq(head, _borrower1);
+        assertEq(next, address(0));
+        assertEq(prev, _borrower5);
+
         // kick borrower 3
         _kickWithDeposit(
             {
@@ -744,6 +843,39 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 lup:                99836282890
             }
         );
+        (borrower, thresholdPrice) = _pool.loanInfo(1);
+        assertEq(borrower, _borrower2);
+        assertEq(thresholdPrice, 20.019230769230769240 * 1e18);
+        (borrower, thresholdPrice) = _pool.loanInfo(2);
+        assertEq(borrower, address(0));
+        assertEq(thresholdPrice, 0);
+        (borrower, thresholdPrice) = _pool.loanInfo(3);
+        assertEq(borrower, address(0));
+        assertEq(thresholdPrice, 0);
+        (borrower, thresholdPrice) = _pool.loanInfo(4);
+        assertEq(borrower, address(0));
+        assertEq(thresholdPrice, 0);
+        (borrower, thresholdPrice) = _pool.loanInfo(5);
+        assertEq(borrower, address(0));
+        assertEq(thresholdPrice, 0);
+
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
+        assertEq(head, _borrower1);
+        assertEq(next, _borrower5);
+        assertEq(prev, address(0));
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower5);
+        assertEq(head, _borrower1);
+        assertEq(next, _borrower4);
+        assertEq(prev, _borrower1);
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower4);
+        assertEq(head, _borrower1);
+        assertEq(next, _borrower3);
+        assertEq(prev, _borrower5);
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower3);
+        assertEq(head, _borrower1);
+        assertEq(next, address(0));
+        assertEq(prev, _borrower4);
+
         // kick borrower 2
         _kickWithDeposit(
             {
@@ -758,6 +890,43 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 lup:                99836282890
             }
         );
+        (borrower, thresholdPrice) = _pool.loanInfo(1);
+        assertEq(borrower, address(0));
+        assertEq(thresholdPrice, 0);
+        (borrower, thresholdPrice) = _pool.loanInfo(2);
+        assertEq(borrower, address(0));
+        assertEq(thresholdPrice, 0);
+        (borrower, thresholdPrice) = _pool.loanInfo(3);
+        assertEq(borrower, address(0));
+        assertEq(thresholdPrice, 0);
+        (borrower, thresholdPrice) = _pool.loanInfo(4);
+        assertEq(borrower, address(0));
+        assertEq(thresholdPrice, 0);
+        (borrower, thresholdPrice) = _pool.loanInfo(5);
+        assertEq(borrower, address(0));
+        assertEq(thresholdPrice, 0);
+
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
+        assertEq(head, _borrower1);
+        assertEq(next, _borrower5);
+        assertEq(prev, address(0));
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower5);
+        assertEq(head, _borrower1);
+        assertEq(next, _borrower4);
+        assertEq(prev, _borrower1);
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower4);
+        assertEq(head, _borrower1);
+        assertEq(next, _borrower3);
+        assertEq(prev, _borrower5);
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower3);
+        assertEq(head, _borrower1);
+        assertEq(next, _borrower2);
+        assertEq(prev, _borrower4);
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower2);
+        assertEq(head, _borrower1);
+        assertEq(next, address(0));
+        assertEq(prev, _borrower3);
+
         // assert pool after kicking all borrowers
         _assertPool(
             PoolParams({
@@ -820,6 +989,26 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 neutralPrice:      0
             })
         );
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
+        assertEq(head, _borrower1);
+        assertEq(next, _borrower5);
+        assertEq(prev, address(0));
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower5);
+        assertEq(head, _borrower1);
+        assertEq(next, _borrower4);
+        assertEq(prev, _borrower1);
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower4);
+        assertEq(head, _borrower1);
+        assertEq(next, _borrower3);
+        assertEq(prev, _borrower5);
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower3);
+        assertEq(head, _borrower1);
+        assertEq(next, address(0));
+        assertEq(prev, _borrower4);
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower2);
+        assertEq(head, _borrower1);
+        assertEq(next, address(0));
+        assertEq(prev, address(0));
 
         // settle borrower 4
         _assertAuction(
@@ -862,6 +1051,26 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 neutralPrice:      0
             })
         );
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
+        assertEq(head, _borrower1);
+        assertEq(next, _borrower5);
+        assertEq(prev, address(0));
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower5);
+        assertEq(head, _borrower1);
+        assertEq(next, _borrower3);
+        assertEq(prev, _borrower1);
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower4);
+        assertEq(head, _borrower1);
+        assertEq(next, address(0));
+        assertEq(prev, address(0));
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower3);
+        assertEq(head, _borrower1);
+        assertEq(next, address(0));
+        assertEq(prev, _borrower5);
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower2);
+        assertEq(head, _borrower1);
+        assertEq(next, address(0));
+        assertEq(prev, address(0));
 
         // settle borrower 1
         _assertAuction(
@@ -904,6 +1113,26 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 neutralPrice:      0
             })
         );
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
+        assertEq(head, _borrower5);
+        assertEq(next, address(0));
+        assertEq(prev, address(0));
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower5);
+        assertEq(head, _borrower5);
+        assertEq(next, _borrower3);
+        assertEq(prev, address(0));
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower4);
+        assertEq(head, _borrower5);
+        assertEq(next, address(0));
+        assertEq(prev, address(0));
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower3);
+        assertEq(head, _borrower5);
+        assertEq(next, address(0));
+        assertEq(prev, _borrower5);
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower2);
+        assertEq(head, _borrower5);
+        assertEq(next, address(0));
+        assertEq(prev, address(0));
 
         // settle borrower 5
         _assertAuction(
@@ -946,6 +1175,26 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 neutralPrice:      0
             })
         );
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
+        assertEq(head, _borrower3);
+        assertEq(next, address(0));
+        assertEq(prev, address(0));
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower5);
+        assertEq(head, _borrower3);
+        assertEq(next, address(0));
+        assertEq(prev, address(0));
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower4);
+        assertEq(head, _borrower3);
+        assertEq(next, address(0));
+        assertEq(prev, address(0));
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower3);
+        assertEq(head, _borrower3);
+        assertEq(next, address(0));
+        assertEq(prev, address(0));
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower2);
+        assertEq(head, _borrower3);
+        assertEq(next, address(0));
+        assertEq(prev, address(0));
 
         // settle borrower 3
         _assertAuction(
@@ -988,6 +1237,26 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 neutralPrice:      0
             })
         );
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
+        assertEq(head, address(0));
+        assertEq(next, address(0));
+        assertEq(prev, address(0));
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower5);
+        assertEq(head, address(0));
+        assertEq(next, address(0));
+        assertEq(prev, address(0));
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower4);
+        assertEq(head, address(0));
+        assertEq(next, address(0));
+        assertEq(prev, address(0));
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower3);
+        assertEq(head, address(0));
+        assertEq(next, address(0));
+        assertEq(prev, address(0));
+        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower2);
+        assertEq(head, address(0));
+        assertEq(next, address(0));
+        assertEq(prev, address(0));
 
         // assert pool after settle
         _assertPool(

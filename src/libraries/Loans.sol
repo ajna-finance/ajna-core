@@ -35,14 +35,14 @@ library Loans {
 
     /**
      *  @notice Updates a loan: updates heap (upsert if TP not 0, remove otherwise) and borrower balance.
-     *  @param loans_ Holds tree loan data.
-     *  @param borrower_        Borrower struct with borrower details.
-     *  @param borrowerAddress_ Borrower's address to update.
-     *  @param borrowerDebt_    Borrower's current debt.
-     *  @param poolRate_        Pool's current rate.
-     *  @param lup_             Current LUP.
-     *  @param inAuction_       Whether the loan is in auction or not.
-     *  @param t0NpUpdate_      Whether the neutral price of borrower should be updated or not.
+     *  @param loans_               Holds tree loan data.
+     *  @param borrower_            Borrower struct with borrower details.
+     *  @param borrowerAddress_     Borrower's address to update.
+     *  @param borrowerAccruedDebt_ Borrower's current debt.
+     *  @param poolRate_            Pool's current rate.
+     *  @param lup_                 Current LUP.
+     *  @param inAuction_           Whether the loan is in auction or not.
+     *  @param t0NpUpdate_          Whether the neutral price of borrower should be updated or not.
      */
     function update(
         LoansState storage loans_,
@@ -50,15 +50,15 @@ library Loans {
         DepositsState storage deposits_,
         Borrower memory borrower_,
         address borrowerAddress_,
-        uint256 borrowerDebt_,
+        uint256 borrowerAccruedDebt_,
         uint256 poolRate_,
         uint256 lup_,
         bool inAuction_,
         bool t0NpUpdate_
     ) internal {
 
-        bool activeBorrower = borrower_.t0debt != 0 && borrower_.collateral != 0;
-        uint256 t0ThresholdPrice = activeBorrower ? Maths.wdiv(borrower_.t0debt, borrower_.collateral) : 0;
+        bool activeBorrower = borrower_.t0Debt != 0 && borrower_.collateral != 0;
+        uint256 t0ThresholdPrice = activeBorrower ? Maths.wdiv(borrower_.t0Debt, borrower_.collateral) : 0;
 
         // loan not in auction, update threshold price and position in heap
         if (!inAuction_ ) {
@@ -81,7 +81,7 @@ library Loans {
         if (t0NpUpdate_) {
             if (t0ThresholdPrice != 0) {
                 uint256 loansInPool = loans_.loans.length - 1 + auctions_.noOfAuctions;
-                uint256 curMomp = _priceAt(Deposits.findIndexOfSum(deposits_, Maths.wdiv(borrowerDebt_, loansInPool * 1e18)));
+                uint256 curMomp = _priceAt(Deposits.findIndexOfSum(deposits_, Maths.wdiv(borrowerAccruedDebt_, loansInPool * 1e18)));
                 borrower_.t0Np  = (1e18 + poolRate_) * curMomp * t0ThresholdPrice / lup_ / 1e18;
             } else {
                 borrower_.t0Np = 0;

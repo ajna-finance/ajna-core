@@ -69,6 +69,22 @@ library LenderActions {
     }
 
     /**
+     *  @notice Emitted when lender adds quote token to the pool.
+     *  @param  lender    Recipient that added quote tokens.
+     *  @param  price     Price at which quote tokens were added.
+     *  @param  amount    Amount of quote tokens added to the pool.
+     *  @param  lpAwarded Amount of LP awarded for the deposit. 
+     *  @param  lup       LUP calculated after deposit.
+     */
+    event AddQuoteToken(
+        address indexed lender,
+        uint256 indexed price,
+        uint256 amount,
+        uint256 lpAwarded,
+        uint256 lup
+    );
+
+    /**
      *  @notice Emitted when lender moves quote token from a bucket price to another.
      *  @param  lender         Recipient that moved quote tokens.
      *  @param  from           Price bucket from which quote tokens were moved.
@@ -133,8 +149,9 @@ library LenderActions {
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
         uint256 quoteTokenAmountToAdd_,
-        uint256 index_
-    ) external returns (uint256 bucketLPs_) {
+        uint256 index_,
+        uint256 poolDebt_
+    ) external returns (uint256 bucketLPs_, uint256 lup_) {
         if (index_ == 0 || index_ > MAX_FENWICK_INDEX) revert InvalidIndex();
 
         Bucket storage bucket = buckets_[index_];
@@ -161,6 +178,9 @@ library LenderActions {
         lender.depositTime = block.timestamp;
         // update bucket LPs
         bucket.lps += bucketLPs_;
+
+        lup_ = _lup(deposits_, poolDebt_);
+        emit AddQuoteToken(msg.sender, index_, quoteTokenAmountToAdd_, bucketLPs_, lup_);
     }
 
     function moveQuoteToken(
@@ -197,7 +217,7 @@ library LenderActions {
             params_.fromIndex
         );
 
-        vars.ptp = _ptp(poolState_.accruedDebt, poolState_.collateral);
+        vars.ptp = _ptp(poolState_.debt, poolState_.collateral);
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
         if (vars.fromBucketDepositTime != 0 && block.timestamp - vars.fromBucketDepositTime < 1 days) {
             if (vars.fromBucketPrice > vars.ptp && vars.toBucketPrice < vars.ptp) {
@@ -216,7 +236,7 @@ library LenderActions {
         // add deposit removed from initial bucket to destination bucket
         Deposits.add(deposits_, params_.toIndex, vars.amountToMove);
 
-        lup_ = _lup(deposits_, poolState_.accruedDebt);
+        lup_ = _lup(deposits_, poolState_.debt);
         vars.htp = Maths.wmul(params_.thresholdPrice, poolState_.inflator);
         // check loan book's htp against new lup, revert if move drives LUP below HTP
         if (params_.fromIndex < params_.toIndex) if(vars.htp > lup_) revert LUPBelowHTP();
@@ -272,12 +292,12 @@ library LenderActions {
 
         // apply early withdrawal penalty if quote token is removed from above the PTP
         if (depositTime != 0 && block.timestamp - depositTime < 1 days) {
-            if (price > _ptp(poolState_.accruedDebt, poolState_.collateral)) {
+            if (price > _ptp(poolState_.debt, poolState_.collateral)) {
                 removedAmount_ = Maths.wmul(removedAmount_, Maths.WAD - _feeRate(poolState_.rate));
             }
         }
 
-        lup_ = _lup(deposits_, poolState_.accruedDebt);
+        lup_ = _lup(deposits_, poolState_.debt);
         uint256 htp = Maths.wmul(params_.thresholdPrice, poolState_.inflator);
         // check loan book's htp against new lup
         if (htp > lup_) revert LUPBelowHTP();

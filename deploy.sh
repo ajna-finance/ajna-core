@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# load environment variables from .env file
+set -o allexport
+source .env
+set +o allexport
+
 echo Deploying to chain with AJNA token address ${AJNA_TOKEN:?}
 
 read -p "Enter keystore password: " -s password
@@ -9,7 +14,7 @@ linkage=()
 
 echo
 echo Deploying libraries...
-libraries=( Auctions LenderActions PoolCommons )
+libraries=( Auctions LenderActions PoolCommons PositionNFTSVG )
 for contract in "${libraries[@]}"
 do
     createlib="forge create --rpc-url ${ETH_RPC_URL:?} --keystore ${DEPLOY_KEY:?} --password ${password:?} \

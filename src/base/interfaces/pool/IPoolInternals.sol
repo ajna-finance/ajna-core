@@ -13,7 +13,7 @@ pragma solidity 0.8.14;
 struct SettleParams {
     address borrower;    // borrower address to settle
     uint256 collateral;  // remaining collateral pledged by borrower that can be used to settle debt
-    uint256 t0debt;      // borrower t0 debt to settle 
+    uint256 t0Debt;      // borrower t0 debt to settle 
     uint256 reserves;    // current reserves in pool
     uint256 inflator;    // current pool inflator
     uint256 bucketDepth; // number of buckets to use when settle debt
@@ -25,13 +25,13 @@ struct BucketTakeParams {
     bool    depositTake;    // deposit or arb take, used by bucket take
     uint256 index;          // bucket index, used by bucket take
     uint256 inflator;       // current pool inflator
-    uint256 t0debt;         // borrower t0 debt
+    uint256 t0Debt;         // borrower t0 debt
 }
 
 struct TakeParams {
     address borrower;       // borrower address to take from
     uint256 collateral;     // borrower available collateral to take
-    uint256 t0debt;         // borrower t0 debt
+    uint256 t0Debt;         // borrower t0 debt
     uint256 takeCollateral; // desired amount to take
     uint256 inflator;       // current pool inflator
 }
@@ -39,8 +39,8 @@ struct TakeParams {
 struct KickResult {
     uint256 amountToCoverBond; // amount of bond that needs to be covered
     uint256 kickPenalty;       // kick penalty
-    uint256 kickPenaltyT0;     // t0 kick penalty
-    uint256 kickedT0debt;      // new t0 debt after kick
+    uint256 t0KickPenalty;     // t0 kick penalty
+    uint256 t0KickedDebt;      // new t0 debt after kick
     uint256 lup;               // current lup
 }
 

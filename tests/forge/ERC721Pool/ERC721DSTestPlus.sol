@@ -30,9 +30,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
 
     mapping(uint256 => uint256) NFTidToIndex;
 
-    mapping(address => EnumerableSet.UintSet) bidderDepositedIndex;
-    EnumerableSet.AddressSet bidders;
-
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
 
     /*****************/
@@ -154,10 +151,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         for (uint i = 0; i < lenders.length(); i++) {
             redeemLenderLps(lenders.at(i), lendersDepositedIndex[lenders.at(i)]);
         }
-
-        for( uint256 i = 0; i < bidders.length(); i++) {
-            redeemLenderLps(bidders.at(i), bidderDepositedIndex[bidders.at(i)]);
-        }
+        
         validateEmpty(bucketsUsed);
     }
 
@@ -187,8 +181,8 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         }
 
         // Add for tearDown
-        bidders.add(from);
-        bidderDepositedIndex[from].add(index);
+        lenders.add(from);
+        lendersDepositedIndex[from].add(index);
         bucketsUsed.add(index); 
     }
 
@@ -407,8 +401,8 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         ERC721Pool(address(_pool)).mergeOrRemoveCollateral(removeCollateralAtIndex, noOfNFTsToRemove, toIndex);
 
         // Add for tearDown
-        bidders.add(from);
-        bidderDepositedIndex[from].add(toIndex);
+        lenders.add(from);
+        lendersDepositedIndex[from].add(toIndex);
         bucketsUsed.add(toIndex);
     }
 
