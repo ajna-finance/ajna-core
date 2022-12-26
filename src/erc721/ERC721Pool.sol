@@ -35,11 +35,11 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     ) external override {
         if (poolInitializations != 0) revert AlreadyInitialized();
 
-        inflatorParams.inflator       = uint208(10**18);
-        inflatorParams.inflatorUpdate = uint48(block.timestamp);
+        inflatorState.inflator       = uint208(10**18);
+        inflatorState.inflatorUpdate = uint48(block.timestamp);
 
-        interestParams.interestRate       = uint208(rate_);
-        interestParams.interestRateUpdate = uint48(block.timestamp);
+        interestState.interestRate       = uint208(rate_);
+        interestState.interestRateUpdate = uint48(block.timestamp);
 
         uint256 noOfTokens = tokenIds_.length;
         if (noOfTokens != 0) {
@@ -134,7 +134,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         emit AddCollateralNFT(msg.sender, index_, tokenIdsToAdd_, bucketLPs_);
 
         // update pool interest rate state
-        _updateInterestParams(poolState, _lup(poolState.accruedDebt));
+        _updateInterestState(poolState, _lup(poolState.debt));
 
         // move required collateral from sender to pool
         _transferFromSenderToPool(bucketTokenIds, tokenIdsToAdd_);
@@ -162,7 +162,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         emit MergeOrRemoveCollateralNFT(msg.sender, collateralMerged_, bucketLPs_);
 
         // update pool interest rate state
-        _updateInterestParams(poolState, _lup(poolState.accruedDebt));
+        _updateInterestState(poolState, _lup(poolState.debt));
 
         if (collateralMerged_ == collateralAmount) {
             // Total collateral in buckets meets the requested removal amount, noOfNFTsToRemove_
@@ -188,7 +188,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         );
 
         // update pool interest rate state
-        _updateInterestParams(poolState, _lup(poolState.accruedDebt));
+        _updateInterestState(poolState, _lup(poolState.debt));
 
         emit RemoveCollateral(msg.sender, index_, noOfNFTsToRemove_, lpAmount_);
         _transferFromPoolToAddress(msg.sender, bucketTokenIds, noOfNFTsToRemove_);
