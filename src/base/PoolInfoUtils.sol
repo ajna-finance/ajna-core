@@ -300,7 +300,7 @@ contract PoolInfoUtils {
     ) external view returns (uint256 quoteAmount_) {
         IPool pool = IPool(ajnaPool_);
         (uint256 bucketLPs_, uint256 bucketCollateral , , uint256 bucketDeposit, ) = pool.bucketInfo(index_);
-        (quoteAmount_, ) = _lpsToQuoteToken(
+        quoteAmount_ = _lpsToQuoteToken(
             bucketLPs_,
             bucketCollateral,
             bucketDeposit,

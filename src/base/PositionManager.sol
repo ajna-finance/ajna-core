@@ -115,7 +115,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         address owner = ownerOf(params_.tokenId);
 
         (uint256 bucketLPs, uint256 bucketCollateral, , uint256 bucketDeposit, ) = IPool(params_.pool).bucketInfo(params_.fromIndex);
-        (uint256 maxQuote, ) = _lpsToQuoteToken(
+        uint256 maxQuote = _lpsToQuoteToken(
             bucketLPs,
             bucketCollateral,
             bucketDeposit,
