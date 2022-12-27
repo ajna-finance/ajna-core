@@ -351,9 +351,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             maxAmount_
         );
 
-        IERC20Token ajnaToken = IERC20Token(_getArgAddress(AJNA_ADDRESS));
-        if (!ajnaToken.transferFrom(msg.sender, address(this), ajnaRequired)) revert ERC20TransferFailed();
-        ajnaToken.burn(ajnaRequired);
+        IERC20(_getArgAddress(AJNA_ADDRESS)).safeTransferFrom(msg.sender, address(this), ajnaRequired);
+        IERC20Token(_getArgAddress(AJNA_ADDRESS)).burn(ajnaRequired);
         _transferQuoteToken(msg.sender, amount_);
     }
 

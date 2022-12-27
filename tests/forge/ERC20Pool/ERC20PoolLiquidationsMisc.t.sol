@@ -287,6 +287,16 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             }
         );
 
+        // lender cannot move funds
+        _assertMoveDepositLockedByAuctionDebtRevert(
+            {
+                from:      _lender,
+                amount:    10.0 * 1e18,
+                fromIndex: _i9_72,
+                toIndex:   _i9_81 
+            }
+        );
+
         skip(3 hours);
 
         _assertBorrower(

@@ -810,6 +810,15 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         // to be overidden by ERC20/ERC721DSTestPlus 
     }
 
+    function _assertBorrowBorrowerNotSenderRevert(
+        address from,
+        address borrower,
+        uint256,
+        uint256
+    ) internal virtual {
+        // to be overidden by ERC20/ERC721DSTestPlus 
+    }
+
     function _assertBorrowLimitIndexRevert(
         address from,
         uint256,
@@ -1063,6 +1072,17 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InvalidIndex.selector);
         _pool.moveQuoteToken(amount, fromIndex, 0);
+    }
+
+    function _assertMoveDepositLockedByAuctionDebtRevert(
+        address from,
+        uint256 amount,
+        uint256 fromIndex,
+        uint256 toIndex
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.RemoveDepositLockedByAuctionDebt.selector);
+        _pool.moveQuoteToken(amount, fromIndex, toIndex);
     }
 
     function _assertTakeAuctionInCooldownRevert(
