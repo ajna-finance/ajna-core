@@ -51,7 +51,7 @@ library Auctions {
         bool    isRewarded;               // True if kicker is rewarded (auction price lower than neutral price), false if penalized (auction price greater than neutral price).
         address kicker;                   // Address of auction kicker.
         uint256 quoteTokenAmount;         // The quote token amount that taker should pay for collateral taken.
-        uint256 scaledQuoteTokenAmount;   // The quote token amount that taker should pay for collateral taken.
+        uint256 scaledQuoteTokenAmount;   // Unscaled quantity in Fenwick tree and before 1-bpf factor, paid for collateral
         uint256 t0RepayAmount;            // The amount of debt (quote tokens) that is recovered / repayed by take t0 terms.
         uint256 unscaledDeposit;          // Unscaled bucket quantity
         uint256 unscaledQuoteTokenAmount; // The unscaled token amount that taker should pay for collateral taken.
@@ -492,6 +492,8 @@ library Auctions {
 
         Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
         TakeResult memory result = _validateTake(liquidation, params_.t0Debt, params_.collateral, params_.inflator);
+        // These are placeholder max values passed to calculateTakeFlows because there is no explicit bound on the
+        // quote token amount in take calls (as opposed to bucketTake)
         result.unscaledDeposit = type(uint256).max;
         result.bucketScale = Maths.WAD;
 
