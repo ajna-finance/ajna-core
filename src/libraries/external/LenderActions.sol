@@ -472,36 +472,25 @@ library LenderActions {
         if (bucket.bankruptcyTime < lender.depositTime) lenderLpBalance = lender.lps;
         if (lenderLpBalance == 0) revert NoClaim();                  // revert if no LP to redeem
 
-        uint256 bucketPrice = _priceAt(index_);
-        uint256 bucketLPs   = bucket.lps;
-        uint256 exchangeRate = Buckets.getExchangeRate(
-            bucketCollateral,
-            bucketLPs,
-            Deposits.valueAt(deposits_, index_),
-            bucketPrice
-        );
+        uint256 bucketPrice   = _priceAt(index_);
+        uint256 bucketLPs     = bucket.lps;
+        uint256 bucketDeposit = Deposits.valueAt(deposits_, index_);
 
         // limit amount by what is available in the bucket
         collateralAmount_ = Maths.min(maxAmount_, bucketCollateral);
 
         // determine how much LP would be required to remove the requested amount
-        uint256 requiredLPs;
-        if (collateralAmount_ == bucketCollateral && bucketLPs == lenderLpBalance) {
-            requiredLPs = bucketLPs;
-        } else {
-            requiredLPs = (collateralAmount_ * bucketPrice * 1e18 + exchangeRate / 2) / exchangeRate;
-        }
-
+        uint256 collateralValue     = Maths.wmul(bucketPrice, bucketCollateral);
+        uint256 lpsForAllCollateral = Maths.rmul(bucketLPs, Maths.wwdivr(collateralValue, collateralValue + bucketDeposit)); 
+        uint256 requiredLPs         = Maths.rmul(lpsForAllCollateral, Maths.wwdivr(collateralAmount_, bucketCollateral));
+        
         // limit withdrawal by the lender's LPB
-        if (requiredLPs < lenderLpBalance) {
+        if (requiredLPs <= lenderLpBalance) {
+            // withdraw collateralAmount_ as is
             lpAmount_ = requiredLPs;
         } else {
             lpAmount_ = lenderLpBalance;
-            if (lpAmount_ == bucketLPs) {
-                collateralAmount_ = bucketCollateral;
-            } else {
-                collateralAmount_ = ((lpAmount_ * exchangeRate + 1e18 / 2) / 1e18 + bucketPrice / 2) / bucketPrice;
-            }
+            collateralAmount_ = Maths.wmul(Maths.rrdivw(lenderLpBalance,lpsForAllCollateral), bucketCollateral);
         }
 
         // update lender LPs balance

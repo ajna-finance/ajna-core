@@ -307,7 +307,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         );
 
         // bidder withdraws unused collateral
-        uint256 expectedCollateral = 0.066443194797165080 * 1e18;
+        uint256 expectedCollateral = 0.066443194797165079 * 1e18;
         _removeAllCollateral(
             {
                 from:     _bidder,
@@ -328,7 +328,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         skip(7200);
 
         // lender exchanges their LP for collateral
-        expectedCollateral = 1.992953578100502457 * 1e18;
+        expectedCollateral = 1.992953578100502458 * 1e18;
         _removeAllCollateral(
             {
                 from:     _lender,
