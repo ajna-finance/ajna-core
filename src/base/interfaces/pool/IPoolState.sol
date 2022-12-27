@@ -233,7 +233,7 @@ struct ReserveAuctionState {
 struct PoolBalancesState {
     uint256 pledgedCollateral; // [WAD]
     uint256 t0DebtInAuction;   // Total debt in auction used to restrict LPB holder from withdrawing [WAD]
-    uint256 t0Debt;        // Pool debt as if the whole amount was incurred upon the first loan. [WAD]
+    uint256 t0Debt;            // Pool debt as if the whole amount was incurred upon the first loan. [WAD]
 }
 
 struct PoolState {

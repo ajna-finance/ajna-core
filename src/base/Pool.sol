@@ -211,6 +211,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             collateralAmount,
             t0RepayAmount,
             borrower.t0Debt
+            
         ) = Auctions.bucketTake(
             auctions,
             deposits,
@@ -226,7 +227,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 }
             )
         );
-        console.log("t0Post", borrower.t0Debt);
 
         _takeFromLoan(poolState, borrower, borrowerAddress_, collateralAmount, t0RepayAmount);
     }
@@ -267,9 +267,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         borrower.collateral = remainingCollateral;
 
         // update pool balances state
+        console.log("here");
         uint256 t0SettledDebt        = params.t0Debt - t0RemainingDebt;
+        console.log("poolBalances.t0Debt", poolBalances.t0Debt);
+        console.log("poolBalacnes.t0SettledDebt", t0SettledDebt);
         poolBalances.t0Debt          -= t0SettledDebt;
+        console.log("here02 ");
         poolBalances.t0DebtInAuction -= t0SettledDebt;
+        console.log("here03 ");
 
         uint256 settledCollateral      = params.collateral - remainingCollateral;
         poolBalances.pledgedCollateral -= settledCollateral;

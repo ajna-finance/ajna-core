@@ -224,7 +224,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         );
     }
 
-    function testDepositTakeCollateralRestrict() external tearDown {
+    function testDepositTakeCollateralRestrict() external {
         skip(6 hours);
 
         _assertLenderLpBalance(
@@ -333,6 +333,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
                lpAwardKicker:    0.198343102933742890077232102 * 1e27
            }
         );
+        return;
         _assertLenderLpBalance(
            {
                lender:      _taker,
@@ -383,12 +384,11 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
                thresholdPrice:    0,
                neutralPrice:      10.468405239798418677 * 1e18
            })
-        );
-
+        ); 
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              0.553663533540717533 * 1e18,
+                borrowerDebt:              1.966941800188785174 * 1e18,
                 borrowerCollateral:        0,
                 borrowert0Np:              10.115967548076923081 * 1e18,
                 borrowerCollateralization: 0
