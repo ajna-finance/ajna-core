@@ -11,6 +11,11 @@ library Deposits {
     uint256 internal constant SIZE = 8192;
 
     /**
+     *  @notice Invalid deposit index.
+     */
+    error InvalidIndex();
+
+    /**
      *  @notice increase a value in the FenwickTree at an index.
      *  @dev    Starts at leaf/target and moved up towards root
      *  @param  index_     The deposit index.
@@ -21,18 +26,33 @@ library Deposits {
         uint256 index_,
         uint256 addAmount_
     ) internal {
+        Deposits.unscaledAdd(deposits_, index_, Maths.wdiv(addAmount_, scale(deposits_, index_)));
+    }
+
+    /**
+     *  @notice increase a value in the FenwickTree at an index.
+     *  @dev    Starts at leaf/target and moved up towards root
+     *  @param  index_             The deposit index.
+     *  @param  unscaledAddAmount_ The unscaled amount to increase deposit by.
+     */    
+    function unscaledAdd(
+        DepositsState storage deposit_,
+        uint256 index_,
+        uint256 unscaledAddAmount_
+    ) internal {
+        if (index_ >= SIZE) revert InvalidIndex();
+
         ++index_;
-        addAmount_ = Maths.wdiv(addAmount_, scale(deposits_, index_));
 
         while (index_ <= SIZE) {
-            uint256 value    = deposits_.values[index_];
-            uint256 scaling  = deposits_.scaling[index_];
-            uint256 newValue = value + addAmount_;
+            uint256 value    = deposit_.values[index_];
+            uint256 scaling  = deposit_.scaling[index_];
+            uint256 newValue = value + unscaledAddAmount_;
             // Note: we can't just multiply addAmount_ by scaling[i_] due to rounding
-            // We need to track the precice change in deposits_.values[i_] in order to ensure
+            // We need to track the precice change in values[i_] in order to ensure
             // obliterated indices remain zero after subsequent adding to related indices
-            if (scaling != 0) addAmount_ = Maths.wmul(newValue, scaling) - Maths.wmul(value, scaling);
-            deposits_.values[index_] = newValue;
+            if (scaling != 0) unscaledAddAmount_ = Maths.wmul(newValue, scaling) - Maths.wmul(value, scaling);
+            deposit_.values[index_] = newValue;
             index_ += lsb(index_);
         }
     }
