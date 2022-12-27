@@ -593,6 +593,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         {
             uint256 repaidDebt = Maths.wmul(t0RepaidDebt_, poolState_.inflator);
             borrowerDebt       -= repaidDebt;
+            poolState_.debt    += Maths.wmul(t0DebtPenalty_, poolState_.inflator);
             poolState_.debt    -= (repaidDebt + Maths.wmul(t0DebtPenalty_, poolState_.inflator));
         }
 
@@ -632,6 +633,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         // update pool balances state
+        poolBalances.t0Debt            += t0DebtPenalty_;
         poolBalances.t0Debt            -= (t0RepaidDebt_ + t0DebtPenalty_);
         poolBalances.t0DebtInAuction   -= t0DebtInAuctionChange;
         poolBalances.pledgedCollateral =  poolState_.collateral;
