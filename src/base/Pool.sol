@@ -6,7 +6,6 @@ import '@clones/Clone.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/utils/Multicall.sol';
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { Checkpoints } from '@openzeppelin/contracts/utils/Checkpoints.sol';
 import { IERC20 }      from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import './interfaces/IPool.sol';
@@ -58,8 +57,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     mapping(uint256 => Bucket) internal buckets;   // deposit index -> bucket
     DepositsState              internal deposits;
     LoansState                 internal loans;
-
-    Checkpoints.History internal _burnEventCheckpoints;
 
     // tracks ajna token burn events
     struct BurnEvent {
@@ -344,11 +341,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     function startClaimableReserveAuction() external override {
         // check that at least two weeks have passed since the last reserve auction completed
-        uint256 lastBurnBlock = burnEvents[Auctions.getLastBurn(_burnEventCheckpoints)].blockNumber;
+        // TODO: check that we're tracking completed not just started?
+        uint256 lastBurnBlock = burnEvents[burnEventIds.length].blockNumber;
         if (block.number < lastBurnBlock + 100800) {
             revert ReserveAuctionTooSoon();
         }
-        // TODO: replace id and checkpointing system with a simple array
+
+        // record start of new burn event
         uint256 burnEventId = burnEventIds.length + 1;
         burnEvents[burnEventId].blockNumber = block.number;
         burnEventIds.push(burnEventId);
@@ -383,14 +382,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         // accumulate additional ajna burned
         totalAjnaBurned += ajnaRequired;
 
-        // TODO: this should work...
-        // TODO: 1) create a new checkpoint for the first takeReserves call, with block set to first take reserves. 
-        // TODO: 2) Each time takeReserves is called, update the values stored at the checkpointed pointer
-            // TODO: 3) remove Checkpoints usage
-
         // record burn event information to enable querying by staking rewards
-        // TODO: if existing checkpoint is less than 2 weeks old, update it instead of creating a new one
-        uint256 burnEventId = burnEventIds[burnEventIds.length - 1];
+        uint256 burnEventId = burnEventIds[burnEventIds.length];
         burnEvents[burnEventId].totalInterest = totalInterestEarned;
         burnEvents[burnEventId].totalBurned = totalAjnaBurned;
 
@@ -812,18 +805,23 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
-    function burnInfoAtBlock(uint256 blockNumber_) external view returns (uint256, uint256, uint256) {
-        uint256 burnEventId = Auctions.getBurnAtBlock(_burnEventCheckpoints, blockNumber_);
+    function currentBurnId() external view returns (uint256) {
+        return burnEventIds.length;
+    }
+
+    function burnInfo(uint256 burnEventId_) external view returns (uint256, uint256, uint256) {
+        uint256 burnEventId = burnEventIds[burnEventId_];
         BurnEvent memory burnEvent = burnEvents[burnEventId];
 
         return (
-            burnEvent.burnBlock,
+            burnEvent.blockNumber,
             burnEvent.totalInterest,
             burnEvent.totalBurned
         );
     }
 
     function burnInfoLatest() external view returns (uint256, uint256) {
+        // TODO: add last burn block
         return (
             totalInterestEarned,
             totalAjnaBurned
