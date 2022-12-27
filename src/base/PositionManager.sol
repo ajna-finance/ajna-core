@@ -21,8 +21,9 @@ import './PoolHelper.sol';
 
 import '../libraries/Buckets.sol';
 import '../libraries/Maths.sol';
-import '../libraries/SafeTokenNamer.sol';
 import '../libraries/external/PositionNFTSVG.sol';
+
+import { tokenSymbol } from '../libraries/SafeTokenNamer.sol';
 
 contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, ReentrancyGuard {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -193,8 +194,8 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         address quoteTokenAddress = IPool(poolKey[tokenId_]).quoteTokenAddress();
 
         PositionNFTSVG.ConstructTokenURIParams memory params = PositionNFTSVG.ConstructTokenURIParams({
-            collateralTokenSymbol: SafeTokenNamer.tokenSymbol(collateralTokenAddress),
-            quoteTokenSymbol: SafeTokenNamer.tokenSymbol(quoteTokenAddress),
+            collateralTokenSymbol: tokenSymbol(collateralTokenAddress),
+            quoteTokenSymbol: tokenSymbol(quoteTokenAddress),
             tokenId: tokenId_,
             pool: poolKey[tokenId_],
             owner: ownerOf(tokenId_),
