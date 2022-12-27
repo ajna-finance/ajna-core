@@ -249,6 +249,7 @@ contract FenwickTreeGasLoadTest is DSTestPlus {
 
     function testLoadFenwickTreeGasExercisefindIndexOfSumOnAllDeposits() public {
         for (uint256 i; i < MAX_FENWICK_INDEX; i++) {
+            // 100 quote tokens are deposited into each bucket, and there are 7388 buckets.
             assertEq(_tree.findIndexOfSum(738_800 * 1e18 - i * 100 * 1e18), MAX_FENWICK_INDEX - i - 1);
         }
     }
