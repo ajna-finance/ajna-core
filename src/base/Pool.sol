@@ -851,8 +851,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function lenderInfo(
         uint256 index_,
         address lender_
-    ) external view override returns (uint256, uint256) {
-        return Buckets.getLenderInfo(buckets, index_, lender_);
+    ) external view override returns (uint256 lpBalance_, uint256 depositTime_) {
+        depositTime_ = buckets[index_].lenders[lender_].depositTime;
+        if (buckets[index_].bankruptcyTime < depositTime_) lpBalance_ = buckets[index_].lenders[lender_].lps;
     }
 
     function loanInfo(

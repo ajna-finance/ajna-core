@@ -312,18 +312,18 @@ contract PoolInfoUtils {
 
     /**
      *  @notice Calculate the amount of collateral tokens in bucket for a given amount of LP Tokens.
-     *  @param  lpTokens_    The number of lpTokens to calculate amounts for.
-     *  @param  index_       The price bucket index for which the value should be calculated.
-     *  @return collateralAmount The exact amount of collateral tokens that can be exchanged for the given LP Tokens, WAD units.
+     *  @param  lpTokens_         The number of lpTokens to calculate amounts for.
+     *  @param  index_            The price bucket index for which the value should be calculated.
+     *  @return collateralAmount_ The exact amount of collateral tokens that can be exchanged for the given LP Tokens, WAD units.
      */
     function lpsToCollateral(
         address ajnaPool_,
         uint256 lpTokens_,
         uint256 index_
-    ) external view returns (uint256 collateralAmount) {
+    ) external view returns (uint256 collateralAmount_) {
         IPool pool = IPool(ajnaPool_);
         (uint256 bucketLPs_, uint256 bucketCollateral , , uint256 bucketDeposit, ) = pool.bucketInfo(index_);
-        (collateralAmount, ) = Buckets.lpsToCollateral(
+        collateralAmount_ = _lpsToCollateral(
             bucketCollateral,
             bucketLPs_,
             bucketDeposit,
@@ -377,4 +377,30 @@ contract PoolInfoUtils {
         uint256 lupColEma_
     ) pure returns (uint256) {
         return (debtEma_ != 0 && lupColEma_ != 0) ? Maths.wdiv(debtEma_, lupColEma_) : Maths.WAD;
+    }
+
+    /**
+     *  @notice Returns the amount of collateral calculated for the given amount of LPs.
+     *  @param  bucketCollateral_ Amount of collateral in bucket.
+     *  @param  bucketLPs_        Amount of LPs in bucket.
+     *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs.
+     *  @param  lenderLPsBalance_ The amount of LPs to calculate collateral for.
+     *  @param  bucketPrice_      Bucket price.
+     *  @return collateralAmount_ Amount of collateral calculated for the given LPs amount.
+     */
+    function _lpsToCollateral(
+        uint256 bucketCollateral_,
+        uint256 bucketLPs_,
+        uint256 deposit_,
+        uint256 lenderLPsBalance_,
+        uint256 bucketPrice_
+    ) pure returns (uint256 collateralAmount_) {
+        // max collateral to lps
+        uint256 rate = Buckets.getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_);
+
+        collateralAmount_ = Maths.rwdivw(Maths.rmul(lenderLPsBalance_, rate), bucketPrice_);
+        if (collateralAmount_ > bucketCollateral_) {
+            // user is owed more collateral than is available in the bucket
+            collateralAmount_ = bucketCollateral_;
+        }
     }
