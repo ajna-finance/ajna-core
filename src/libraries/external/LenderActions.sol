@@ -159,7 +159,9 @@ library LenderActions {
         // cannot deposit in the same block when bucket becomes insolvent
         if (bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
 
-        uint256 bucketDeposit = Deposits.valueAt(deposits_, index_);
+        uint256 unscaledBucketDeposit = Deposits.unscaledValueAt(deposits_, index_);
+        uint256 bucketScale           = Deposits.scale(deposits_, index_);
+        uint256 bucketDeposit         = Maths.wmul(bucketScale, unscaledBucketDeposit);
         uint256 bucketPrice   = _priceAt(index_);
         bucketLPs_ = Buckets.quoteTokensToLPs(
             bucket.collateral,
@@ -169,7 +171,7 @@ library LenderActions {
             bucketPrice
         );
 
-        Deposits.add(deposits_, index_, quoteTokenAmountToAdd_);
+        Deposits.unscaledAdd(deposits_, index_, Maths.wdiv(quoteTokenAmountToAdd_, bucketScale));
 
         // update lender LPs
         Lender storage lender = bucket.lenders[msg.sender];
