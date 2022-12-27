@@ -278,7 +278,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             })
         );
 
-        // lender cannot withdraw
+        // lender cannot withdraw - deposit in buckets within liquidation debt from the top-of-book down are frozen
         _assertRemoveDepositLockedByAuctionDebtRevert(
             {
                 from:     _lender,
@@ -296,6 +296,11 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
                 toIndex:   _i9_81 
             }
         );
+
+        // lender can add / remove liquidity in buckets that are not within liquidation debt
+        changePrank(_lender1);
+        _pool.addQuoteToken(2_000 * 1e18, 5000);
+        _pool.removeQuoteToken(2_000 * 1e18, 5000);
 
         skip(3 hours);
 
