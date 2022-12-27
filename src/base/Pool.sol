@@ -207,11 +207,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         uint256 collateralAmount;
         uint256 t0RepayAmount;
+        uint256 t0DebtPenalty;
         (
             collateralAmount,
             t0RepayAmount,
-            borrower.t0Debt
-            
+            borrower.t0Debt,
+            t0DebtPenalty 
         ) = Auctions.bucketTake(
             auctions,
             deposits,
@@ -228,7 +229,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             )
         );
 
-        _takeFromLoan(poolState, borrower, borrowerAddress_, collateralAmount, t0RepayAmount);
+        _takeFromLoan(poolState, borrower, borrowerAddress_, collateralAmount, t0RepayAmount, t0DebtPenalty);
     }
 
     function settle(
@@ -581,7 +582,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         Borrower memory borrower_,
         address borrowerAddress_,
         uint256 collateralAmount_,
-        uint256 t0RepaidDebt_
+        uint256 t0RepaidDebt_,
+        uint256 t0DebtPenalty_
     ) internal {
 
         borrower_.collateral  -= collateralAmount_; // collateral is removed from the loan
@@ -591,7 +593,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         {
             uint256 repaidDebt = Maths.wmul(t0RepaidDebt_, poolState_.inflator);
             borrowerDebt       -= repaidDebt;
-            poolState_.debt    -= repaidDebt;
+            poolState_.debt    -= (repaidDebt + Maths.wmul(t0DebtPenalty_, poolState_.inflator));
         }
 
         // check that taking from loan doesn't leave borrower debt under min debt amount
@@ -630,9 +632,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         // update pool balances state
-        poolBalances.t0Debt            -= t0RepaidDebt_;
+        poolBalances.t0Debt            -= (t0RepaidDebt_ + t0DebtPenalty_);
         poolBalances.t0DebtInAuction   -= t0DebtInAuctionChange;
-        poolBalances.pledgedCollateral = poolState_.collateral;
+        poolBalances.pledgedCollateral =  poolState_.collateral;
 
         // update pool interest rate state
         _updateInterestState(poolState_, newLup);

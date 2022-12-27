@@ -221,12 +221,14 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             uint256 collateralAmount;
             uint256 quoteTokenAmount;
             uint256 t0RepayAmount;
+            uint256 t0DebtPenalty;
             uint256 auctionPrice;
         (
             collateralAmount,
             quoteTokenAmount,
             t0RepayAmount,
             borrower.t0Debt,
+            t0DebtPenalty,
             auctionPrice
         ) = Auctions.take(
             auctions,
@@ -260,7 +262,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         // transfer from pool to borrower the excess of quote tokens after rounding collateral auctioned
         if (excessQuoteToken != 0) _transferQuoteToken(params.borrower, excessQuoteToken);
 
-        _takeFromLoan(poolState, borrower, params.borrower, collateralTaken, t0RepayAmount);
+        _takeFromLoan(poolState, borrower, params.borrower, collateralTaken, t0RepayAmount, t0DebtPenalty);
     }
 
 

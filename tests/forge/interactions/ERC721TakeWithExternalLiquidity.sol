@@ -94,7 +94,7 @@ contract ERC721TakeWithExternalLiquidityTest is Test {
         // call take using taker contract
         bytes memory data = abi.encode(address(_ajnaPool));
         vm.expectEmit(true, true, false, true);
-        uint256 quoteTokenPaid = 502.49483121458538752 * 1e18;
+        uint256 quoteTokenPaid = 502.494831214585387520 * 1e18;
         uint256 collateralPurchased = 2 * 1e18;
         uint256 bondChange = 5.024948312145853875 * 1e18;
         emit Take(_borrower, quoteTokenPaid, collateralPurchased, bondChange, true);
