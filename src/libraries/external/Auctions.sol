@@ -23,6 +23,7 @@ import '../Deposits.sol';
 import '../Loans.sol';
 
 import '../../base/PoolHelper.sol';
+import '@std/console.sol';
 
 library Auctions {
 
@@ -421,9 +422,12 @@ library Auctions {
         TakeResult memory result;
         
         // If first take apply 7% debt penalty to borrower debt
+        console.log("params_.t0Debt", params_.t0Debt);
         result.t0Debt = _applyTakePenalty(liquidation, params_.t0Debt);
+        console.log("result.t0Debt", result.t0Debt);
         
-        result = _validateTake(liquidation, params_.t0Debt, params_.collateral, params_.inflator);
+        result = _validateTake(liquidation, result.t0Debt, params_.collateral, params_.inflator);
+        console.log("result.t0Debt", result.t0Debt);
 
         result.bucketPrice  = _priceAt(params_.index);
         // cannot arb with a price lower than the auction price
@@ -506,7 +510,7 @@ library Auctions {
         // If first take apply 7% debt penalty to borrower debt
         result.t0Debt = _applyTakePenalty(liquidation, params_.t0Debt);
 
-        result = _validateTake(liquidation, params_.t0Debt, params_.collateral, params_.inflator);
+        result = _validateTake(liquidation, result.t0Debt, params_.collateral, params_.inflator);
 
 
         // determine how much of the loan will be repaid

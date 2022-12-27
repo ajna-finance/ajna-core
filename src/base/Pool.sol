@@ -19,6 +19,7 @@ import '../libraries/Loans.sol';
 import '../libraries/external/Auctions.sol';
 import '../libraries/external/LenderActions.sol';
 import '../libraries/external/PoolCommons.sol';
+import '@std/console.sol';
 
 abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     using SafeERC20 for IERC20;
@@ -225,6 +226,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 }
             )
         );
+        console.log("t0Post", borrower.t0Debt);
 
         _takeFromLoan(poolState, borrower, borrowerAddress_, collateralAmount, t0RepayAmount);
     }
