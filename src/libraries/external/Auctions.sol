@@ -50,7 +50,6 @@ library Auctions {
         uint256 factor;                   // The take factor, calculated based on bond penalty factor.
         bool    isRewarded;               // True if kicker is rewarded (auction price lower than neutral price), false if penalized (auction price greater than neutral price).
         address kicker;                   // Address of auction kicker.
-        uint256 quoteTokenAmount;         // The quote token amount that taker should pay for collateral taken.
         uint256 scaledQuoteTokenAmount;   // Unscaled quantity in Fenwick tree and before 1-bpf factor, paid for collateral
         uint256 t0RepayAmount;            // The amount of debt (quote tokens) that is recovered / repayed by take t0 terms.
         uint256 unscaledDeposit;          // Unscaled bucket quantity
