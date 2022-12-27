@@ -82,7 +82,8 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         uint256 indexesLength = params_.indexes.length;
         for (uint256 i = 0; i < indexesLength; ) {
             // record price at which a position has added liquidity
-            if (!positionPrice.contains(params_.indexes[i])) if(!positionPrice.add(params_.indexes[i])) revert AddLiquidityFailed();
+            // slither-disable-next-line unused-return
+            positionPrice.add(params_.indexes[i]);
 
             // update PositionManager accounting
             (uint256 lpBalance,) = pool.lenderInfo(params_.indexes[i], owner);
@@ -125,7 +126,8 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         // update prices set at which a position has liquidity
         EnumerableSet.UintSet storage positionPrice = positionPrices[params_.tokenId];
         if (!positionPrice.remove(params_.fromIndex)) revert RemoveLiquidityFailed();
-        if (!positionPrice.contains(params_.toIndex)) if(!positionPrice.add(params_.toIndex)) revert AddLiquidityFailed();
+        // slither-disable-next-line unused-return
+        positionPrice.add(params_.toIndex);
 
         // move quote tokens in pool
         emit MoveLiquidity(owner, params_.tokenId);
