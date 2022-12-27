@@ -300,7 +300,7 @@ contract PoolInfoUtils {
     ) external view returns (uint256 quoteAmount_) {
         IPool pool = IPool(ajnaPool_);
         (uint256 bucketLPs_, uint256 bucketCollateral , , uint256 bucketDeposit, ) = pool.bucketInfo(index_);
-        (quoteAmount_, ) = Buckets.lpsToQuoteToken(
+        (quoteAmount_, ) = _lpsToQuoteToken(
             bucketLPs_,
             bucketCollateral,
             bucketDeposit,
@@ -377,30 +377,4 @@ contract PoolInfoUtils {
         uint256 lupColEma_
     ) pure returns (uint256) {
         return (debtEma_ != 0 && lupColEma_ != 0) ? Maths.wdiv(debtEma_, lupColEma_) : Maths.WAD;
-    }
-
-    /**
-     *  @notice Returns the amount of collateral calculated for the given amount of LPs.
-     *  @param  bucketCollateral_ Amount of collateral in bucket.
-     *  @param  bucketLPs_        Amount of LPs in bucket.
-     *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs.
-     *  @param  lenderLPsBalance_ The amount of LPs to calculate collateral for.
-     *  @param  bucketPrice_      Bucket price.
-     *  @return collateralAmount_ Amount of collateral calculated for the given LPs amount.
-     */
-    function _lpsToCollateral(
-        uint256 bucketCollateral_,
-        uint256 bucketLPs_,
-        uint256 deposit_,
-        uint256 lenderLPsBalance_,
-        uint256 bucketPrice_
-    ) pure returns (uint256 collateralAmount_) {
-        // max collateral to lps
-        uint256 rate = Buckets.getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_);
-
-        collateralAmount_ = Maths.rwdivw(Maths.rmul(lenderLPsBalance_, rate), bucketPrice_);
-        if (collateralAmount_ > bucketCollateral_) {
-            // user is owed more collateral than is available in the bucket
-            collateralAmount_ = bucketCollateral_;
-        }
     }
