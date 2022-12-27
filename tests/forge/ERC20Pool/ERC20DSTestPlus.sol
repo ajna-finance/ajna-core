@@ -372,6 +372,15 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         ERC20Pool(address(_pool)).addCollateral(amount, index);
     }
 
+    function _assertAddCollateralAtIndex0Revert(
+        address from,
+        uint256 amount
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.InvalidIndex.selector);
+        ERC20Pool(address(_pool)).addCollateral(amount, 0);
+    }
+
     function _assertDeployWith0xAddressRevert(
         address poolFactory,
         address collateral,

@@ -663,6 +663,15 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.addQuoteToken(amount, index);
     }
 
+    function _assertAddLiquidityAtIndex0Revert(
+        address from,
+        uint256 amount
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.InvalidIndex.selector);
+        _pool.addQuoteToken(amount, 0);
+    }
+
     function _assertArbTakeNoAuction(
         address from,
         address borrower,
@@ -1044,6 +1053,16 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         changePrank(from);
         vm.expectRevert(IPoolErrors.MoveToSamePrice.selector);
         _pool.moveQuoteToken(amount, fromIndex, toIndex);
+    }
+
+    function _assertMoveLiquidityToIndex0Revert(
+        address from,
+        uint256 amount,
+        uint256 fromIndex
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.InvalidIndex.selector);
+        _pool.moveQuoteToken(amount, fromIndex, 0);
     }
 
     function _assertTakeAuctionInCooldownRevert(
