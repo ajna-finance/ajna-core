@@ -55,6 +55,8 @@ interface IAjnaRewards {
      */
     event DepositToken(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
 
+    event UpdateExchangeRates(address indexed caller, address indexed ajnaPool, uint256[] indexesUpdated, uint256 rewardsClaimed);
+
     /**
      *  @notice Emitted when lender withdraws their LP NFT from the rewards contract.
      *  @param  owner    Owner of the staked NFT.

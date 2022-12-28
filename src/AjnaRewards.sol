@@ -17,6 +17,8 @@ import { PoolCommons } from './libraries/external/PoolCommons.sol';
 
 import './IAjnaRewards.sol';
 
+import '@std/console.sol';
+
 contract AjnaRewards is IAjnaRewards {
 
     using Checkpoints for Checkpoints.History;
@@ -29,6 +31,9 @@ contract AjnaRewards is IAjnaRewards {
     address public immutable ajnaToken; // address of the AJNA token
 
     IPositionManager public immutable positionManager; // address of the PositionManager contract
+
+    uint256 internal constant REWARD_CAP = 0.800000000000000000 * 1e18;
+    uint256 internal constant UPDATE_CAP = 0.100000000000000000 * 1e18;
 
     /**
      * @notice Reward factor by which to scale the total rewards earned.
@@ -48,6 +53,12 @@ contract AjnaRewards is IAjnaRewards {
      * @dev burnEvent => tokens claimed
      */
     mapping(uint256 => uint256) public burnEventRewardsClaimed;
+
+    /**
+     * @notice Track the total amount of rewards that have been claimed for a given burn event's bucket updates.
+     * @dev burnEvent => tokens claimed
+     */
+    mapping(uint256 => uint256) public burnEventUpdateRewardsClaimed;
 
     /**
      * @notice Mapping of LP NFTs staked in the Ajna Rewards contract.
@@ -176,6 +187,7 @@ contract AjnaRewards is IAjnaRewards {
 
             (, , , uint256 bucketDeposit, ) = IPool(pool_).bucketInfo(indexes_[i]);
 
+            // TODO: handle the case of interest earned being 0?
             // calculate rewards earned for updating a bucket
             uint256 burnFactor = Maths.wmul((curTotalBurned - prevTotalBurned), bucketDeposit);
             uint256 interestFactor = Maths.wdiv(Maths.WAD - Maths.wdiv(prevBucketExchangeRate, curBucketExchangeRate), (curTotalInterest - prevTotalInterest));
@@ -187,9 +199,14 @@ contract AjnaRewards is IAjnaRewards {
             }
         }
 
-        // TODO: check update reward accumulated is less than cap
+        // check update reward accumulated is less than cap
+        if (burnEventUpdateRewardsClaimed[curBurnId] + updateReward > Maths.wmul(UPDATE_CAP, (curTotalBurned - prevTotalBurned))) revert MaxTokensAlreadyClaimed();
+
+        // update total tokens claimed tracker
+        burnEventUpdateRewardsClaimed[curBurnId] += updateReward;
 
         // transfer rewards to sender
+        emit UpdateExchangeRates(msg.sender, pool_, indexes_, updateReward);
         IERC20(ajnaToken).safeTransfer(msg.sender, updateReward);
     }
 
@@ -199,7 +216,7 @@ contract AjnaRewards is IAjnaRewards {
 
     // check that less than 80% of the tokens for a given burn event have been claimed
     function _checkRewardsClaimed(uint256 burnEventId_, uint256 rewardsEarned_, uint256 totalBurned_) internal view returns (bool) {
-        return burnEventRewardsClaimed[burnEventId_] + rewardsEarned_ > totalBurned_;
+        return burnEventRewardsClaimed[burnEventId_] + rewardsEarned_ > Maths.wmul(REWARD_CAP, totalBurned_);
     }
 
     function _claimRewards(uint256 tokenId_) internal {
