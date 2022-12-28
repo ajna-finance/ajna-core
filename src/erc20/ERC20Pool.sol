@@ -28,11 +28,11 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     ) external override {
         if (poolInitializations != 0) revert AlreadyInitialized();
 
-        inflatorSnapshot           = uint208(10**18);
-        lastInflatorSnapshotUpdate = uint48(block.timestamp);
+        inflatorState.inflator       = uint208(10**18);
+        inflatorState.inflatorUpdate = uint48(block.timestamp);
 
-        interestParams.interestRate       = uint208(rate_);
-        interestParams.interestRateUpdate = uint48(block.timestamp);
+        interestState.interestRate       = uint208(rate_);
+        interestState.interestRateUpdate = uint48(block.timestamp);
 
         Loans.init(loans);
 
@@ -154,9 +154,11 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             index_
         );
 
-        _updateInterestParams(poolState, _lup(poolState.accruedDebt));
-
         emit AddCollateral(msg.sender, index_, collateralAmountToAdd_, bucketLPs_);
+
+        // update pool interest rate state
+        _updateInterestState(poolState, _lup(poolState.debt));
+
         // move required collateral from sender to pool
         _transferCollateralFrom(msg.sender, collateralAmountToAdd_);
     }
@@ -176,7 +178,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             index_
         );
 
-        _updateInterestParams(poolState, _lup(poolState.accruedDebt));
+        // update pool interest rate state
+        _updateInterestState(poolState, _lup(poolState.debt));
 
         emit RemoveCollateral(msg.sender, index_, collateralAmount_, lpAmount_);
         // move collateral from pool to lender
@@ -202,7 +205,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             {
                 borrower:       borrowerAddress_,
                 collateral:     borrower.collateral,
-                t0debt:         borrower.t0debt,
+                t0Debt:         borrower.t0Debt,
                 takeCollateral: collateral_,
                 inflator:       poolState.inflator
             }
@@ -210,13 +213,13 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         (
             uint256 collateralAmount,
             uint256 quoteTokenAmount,
-            uint256 t0repayAmount,
+            uint256 t0RepayAmount,
         ) = Auctions.take(
             auctions,
             params
         );
 
-        _takeFromLoan(poolState, borrower, params.borrower, collateralAmount, t0repayAmount);
+        _takeFromLoan(poolState, borrower, params.borrower, collateralAmount, t0RepayAmount);
 
         _transferCollateral(callee_, collateralAmount);
 
@@ -245,7 +248,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         address borrowerAddress_,
         uint256 borrowerCollateral_
     ) internal override returns (uint256) {
-        Auctions.settleERC20Auction(auctions, borrowerAddress_);
+        Auctions._removeAuction(auctions, borrowerAddress_);
         emit AuctionSettle(borrowerAddress_, borrowerCollateral_);
         return borrowerCollateral_;
     }

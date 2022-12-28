@@ -28,7 +28,7 @@ contract FenwickTreeInstance is DSTestPlus {
     }
 
     function remove(uint256 i_, uint256 x_) public {
-        deposits.remove(i_, x_, deposits.valueAt(i_));
+        deposits.unscaledRemove(i_, Maths.wdiv(x_, deposits.scale(i_)));
     }
 
     function mult(uint256 i_, uint256 f_) public {
@@ -56,8 +56,8 @@ contract FenwickTreeInstance is DSTestPlus {
     }
 
     function obliterate(uint256 i_) public {
-        uint256 deposit = deposits.valueAt(i_);
-	    deposits.remove(i_, deposit, deposit);
+        uint256 deposit = deposits.unscaledValueAt(i_);
+        deposits.unscaledRemove(i_, deposit);
     }
 
     function valueAt(uint256 i_) external view returns (uint256 s_) {
