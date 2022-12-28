@@ -49,7 +49,7 @@ library Deposits {
             uint256 scaling  = deposit_.scaling[index_];
             uint256 newValue = value + unscaledAddAmount_;
             // Note: we can't just multiply addAmount_ by scaling[i_] due to rounding
-            // We need to track the precice change in values[i_] in order to ensure
+            // We need to track the precise change in values[i_] in order to ensure
             // obliterated indices remain zero after subsequent adding to related indices
             if (scaling != 0) unscaledAddAmount_ = Maths.wmul(newValue, scaling) - Maths.wmul(value, scaling);
             deposit_.values[index_] = newValue;
