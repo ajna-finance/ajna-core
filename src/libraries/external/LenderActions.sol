@@ -190,7 +190,7 @@ library LenderActions {
         DepositsState storage deposits_,
         PoolState calldata poolState_,
         MoveQuoteParams calldata params_
-    ) external returns (uint256 fromBucketRedeemedLPs_, uint256 toBucketRedeemedLPs_, uint256 lup_) {
+    ) external returns (uint256 fromBucketRedeemedLPs_, uint256 toBucketLPs_, uint256 lup_) {
         if (params_.fromIndex == params_.toIndex) revert MoveToSamePrice();
         if (params_.toIndex == 0 || params_.toIndex > MAX_FENWICK_INDEX) revert InvalidIndex();
 
@@ -219,7 +219,7 @@ library LenderActions {
             params_.fromIndex
         );
 
-        vars.ptp = _ptp(poolState_.debt, poolState_.collateral);
+        vars.ptp = _ptp(poolState_.debt, poolState_.collateral);  // TODO: this should be HTP???
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
         if (vars.fromBucketDepositTime != 0 && block.timestamp - vars.fromBucketDepositTime < 1 days) {
             if (vars.fromBucketPrice > vars.ptp && vars.toBucketPrice < vars.ptp) {
@@ -227,19 +227,23 @@ library LenderActions {
             }
         }
 
-        toBucketRedeemedLPs_ = Buckets.quoteTokensToLPs(
+        uint256 unscaledToBucketDeposit = Deposits.unscaledValueAt(deposits_, params_.toIndex);
+        uint256 toBucketScale           = Deposits.scale(deposits_, params_.toIndex);
+        uint256 toBucketDeposit         = Maths.wmul(toBucketScale, unscaledToBucketDeposit);
+        vars.toBucketPrice              = _priceAt(params_.toIndex);
+        toBucketLPs_ = Buckets.quoteTokensToLPs(
             toBucket.collateral,
             toBucket.lps,
-            Deposits.valueAt(deposits_, params_.toIndex),
+            toBucketDeposit,
             vars.amountToMove,
             vars.toBucketPrice
         );
 
-        // add deposit removed from initial bucket to destination bucket
-        Deposits.add(deposits_, params_.toIndex, vars.amountToMove);
+        Deposits.unscaledAdd(deposits_, params_.toIndex, Maths.wdiv(vars.amountToMove, toBucketScale));
 
         lup_ = _lup(deposits_, poolState_.debt);
         vars.htp = Maths.wmul(params_.thresholdPrice, poolState_.inflator);
+
         // check loan book's htp against new lup, revert if move drives LUP below HTP
         if (params_.fromIndex < params_.toIndex) if(vars.htp > lup_) revert LUPBelowHTP();
 
@@ -247,14 +251,14 @@ library LenderActions {
         fromBucketLender.lps -= fromBucketRedeemedLPs_;
         // update lender LPs balance and deposit time in target bucket
         Lender storage toBucketLender = toBucket.lenders[msg.sender];
-        if (vars.toBucketBankruptcyTime >= toBucketLender.depositTime) toBucketLender.lps = toBucketRedeemedLPs_;
-        else toBucketLender.lps += toBucketRedeemedLPs_;
+        if (vars.toBucketBankruptcyTime >= toBucketLender.depositTime) toBucketLender.lps = toBucketLPs_;
+        else toBucketLender.lps += toBucketLPs_;
         // set deposit time to the greater of the lender's from bucket and the target bucket's last bankruptcy timestamp + 1 so deposit won't get invalidated
         toBucketLender.depositTime = Maths.max(vars.fromBucketDepositTime, vars.toBucketBankruptcyTime + 1);
 
         // update buckets LPs balance
         fromBucket.lps -= fromBucketRedeemedLPs_;
-        toBucket.lps   += toBucketRedeemedLPs_;
+        toBucket.lps   += toBucketLPs_;
 
         emit MoveQuoteToken(
             msg.sender,
@@ -262,7 +266,7 @@ library LenderActions {
             params_.toIndex,
             vars.amountToMove,
             fromBucketRedeemedLPs_,
-            toBucketRedeemedLPs_,
+            toBucketLPs_,
             lup_
         );
     }
