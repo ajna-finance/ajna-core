@@ -500,6 +500,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _quotePrecision             = uint256(10) ** boundQuotePrecision;
         init(boundColPrecision, boundQuotePrecision);
 
+        assertEq(ERC20Pool(address(_pool)).collateralScale(), 10 ** (18 - boundColPrecision));
+        assertEq(_pool.quoteTokenScale(), 10 ** (18 - boundQuotePrecision));
+
         // mint and run approvals, ignoring amounts already init approved above
         changePrank(_lender);
         deal(address(_quote), _lender, quoteAmount * _quotePrecision);
@@ -516,15 +519,26 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             exchangeRate: 1e27
         });
 
+        uint256 lpBalance;
+        uint256 time;
+        bool    reverted;
+
         // deposit quote token and sanity check lender LPs
-        _addInitialLiquidity(_lender, quoteAmount, bucketId);
-        (uint256 lpBalance, uint256 time) = _pool.lenderInfo(bucketId, _lender);
+        if (quoteAmount != 0 && quoteAmount < _pool.quoteTokenScale()) {
+            vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
+            _pool.addQuoteToken(quoteAmount, bucketId);
+            quoteAmount = 0;
+            reverted = true;
+        } else {
+            _addInitialLiquidity(_lender, quoteAmount, bucketId);
+        }
+        (lpBalance, time) = _pool.lenderInfo(bucketId, _lender);
         if (quoteAmount != 0) {
             assertGt(lpBalance, 0);
         } else {
             assertEq(lpBalance, 0);
         }
-        assertGt(time, _startTime);
+        if (!reverted) assertGt(time, _startTime);
 
         // deposit collateral and sanity check bidder LPs
         _addCollateralWithoutCheckingLP(_bidder, collateralAmount, bucketId);

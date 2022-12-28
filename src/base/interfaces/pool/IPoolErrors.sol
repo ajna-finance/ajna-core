@@ -41,6 +41,11 @@ interface IPoolErrors {
     error CannotMergeToHigherPrice();
 
     /**
+     *  @notice User attempted a deposit which does not exceed the dust amount, or a withdrawal which leaves behind less than the dust amount.
+     */
+    error DustAmountNotExceeded();
+
+    /**
      *  @notice Callback invoked by flashLoan function did not return the expected hash (see ERC-3156 spec).
      */
     error FlashloanCallbackFailed();

@@ -94,6 +94,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         return _getArgUint256(QUOTE_SCALE);
     }
 
+    function quoteTokenDust() external pure override returns (uint256) {
+        return _getArgUint256(QUOTE_SCALE);
+    }
+
+
     /*********************************/
     /*** Lender External Functions ***/
     /*********************************/
@@ -102,6 +107,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 quoteTokenAmountToAdd_,
         uint256 index_
     ) external override returns (uint256 bucketLPs_) {
+        if (quoteTokenAmountToAdd_ != 0 && quoteTokenAmountToAdd_ < _getArgUint256(QUOTE_SCALE)) 
+            revert DustAmountNotExceeded();
+
         PoolState memory poolState = _accruePoolInterest();
 
         uint256 newLup;
