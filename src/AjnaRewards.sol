@@ -183,16 +183,17 @@ contract AjnaRewards is IAjnaRewards {
      *  @param  indexes_ List of bucket indexes to be updated.
      */
     function updateBucketExchangeRatesAndClaim(address pool_, uint256[] calldata indexes_) external {
-        // check that the provided burn block is valid, and within the allowed time period
+        // retrieve accumulator values to calculate rewards accrued
         uint256 curBurnId = IPool(pool_).currentBurnId();
-        (uint256 curBurnBlock, uint256 curTotalInterest, uint256 curTotalBurned) = IPool(pool_).burnInfo(curBurnId);
+        (uint256 curBurnBlock, uint256 totalBurned, uint256 totalInterestEarned) = _getPoolAccumulators(pool_, curBurnId, curBurnId - 1);
+
+        // check that the update is being performed within the allowed time period
         if (block.number > curBurnBlock + UPDATE_PERIOD) revert ExchangeRateUpdateTooLate();
 
-        // retrieve previous accumulator values to calculate rewards accrued
-        (, uint256 prevTotalInterest, uint256 prevTotalBurned) = IPool(pool_).burnInfo(curBurnId - 1);
+        // TODO: handle the case of interest earned being 0?
+        // if (totalInterestEarned == 0) revert NoInterestEarned();
 
         uint256 updateReward;
-
         for (uint256 i = 0; i < indexes_.length; ) {
             // check bucket hasn't already been updated
             if (poolBucketBurnExchangeRates[pool_][indexes_[i]][curBurnId] != 0) revert ExchangeRateAlreadyUpdated();
@@ -206,10 +207,9 @@ contract AjnaRewards is IAjnaRewards {
 
             (, , , uint256 bucketDeposit, ) = IPool(pool_).bucketInfo(indexes_[i]);
 
-            // TODO: handle the case of interest earned being 0?
             // calculate rewards earned for updating a bucket
-            uint256 burnFactor = Maths.wmul((curTotalBurned - prevTotalBurned), bucketDeposit);
-            uint256 interestFactor = Maths.wdiv(Maths.WAD - Maths.wdiv(prevBucketExchangeRate, curBucketExchangeRate), (curTotalInterest - prevTotalInterest));
+            uint256 burnFactor = Maths.wmul(totalBurned, bucketDeposit);
+            uint256 interestFactor = Maths.wdiv(Maths.WAD - Maths.wdiv(prevBucketExchangeRate, curBucketExchangeRate), totalInterestEarned);
             updateReward += Maths.wmul(UPDATE_CLAIM_REWARD, Maths.wmul(burnFactor, interestFactor));
 
             // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
@@ -219,7 +219,7 @@ contract AjnaRewards is IAjnaRewards {
         }
 
         // check update reward accumulated is less than cap
-        if (burnEventUpdateRewardsClaimed[curBurnId] + updateReward > Maths.wmul(UPDATE_CAP, (curTotalBurned - prevTotalBurned))) revert MaxTokensAlreadyClaimed();
+        if (burnEventUpdateRewardsClaimed[curBurnId] + updateReward > Maths.wmul(UPDATE_CAP, totalBurned)) revert MaxTokensAlreadyClaimed();
 
         // update total tokens claimed tracker
         burnEventUpdateRewardsClaimed[curBurnId] += updateReward;
@@ -272,7 +272,7 @@ contract AjnaRewards is IAjnaRewards {
 
         // retrieve total interest accumulated by the pool over the claim period, and total tokens burned over that period
         uint256 totalInterestEarned;
-        (totalBurned_, totalInterestEarned) = _getPoolAccumulators(ajnaPool, currentBurnEventId, lastInteractionBurnEvent);
+        (, totalBurned_, totalInterestEarned) = _getPoolAccumulators(ajnaPool, currentBurnEventId, lastInteractionBurnEvent);
 
         // calculate rewards earned
         if (totalInterestEarned == 0) return (0, totalBurned_);
@@ -320,12 +320,13 @@ contract AjnaRewards is IAjnaRewards {
      *  @param  currentBurnEventId_ ID of the latest burn event.
      *  @param  lastBurnEventId_    ID of the burn event to use as checkpoint since which values should have accumulated.
      */
-    function _getPoolAccumulators(address pool_, uint256 currentBurnEventId_, uint256 lastBurnEventId_) internal view returns (uint256 ajnaTokensBurned_, uint256 totalInterestEarned_) {
-        (, uint256 totalInterestLatest, uint256 totalBurnedLatest) = IPool(pool_).burnInfo(currentBurnEventId_);
+    function _getPoolAccumulators(address pool_, uint256 currentBurnEventId_, uint256 lastBurnEventId_) internal view returns (uint256, uint256, uint256) {
+        (uint256 currentBurnBlock_, uint256 totalInterestLatest, uint256 totalBurnedLatest) = IPool(pool_).burnInfo(currentBurnEventId_);
         (, uint256 totalInterestAtBlock, uint256 totalBurnedAtBlock) = IPool(pool_).burnInfo(lastBurnEventId_);
 
-        ajnaTokensBurned_ = totalBurnedLatest - totalBurnedAtBlock;
-        totalInterestEarned_ = totalInterestLatest - totalInterestAtBlock;
+        uint256 ajnaTokensBurned_ = totalBurnedLatest - totalBurnedAtBlock;
+        uint256 totalInterestEarned_ = totalInterestLatest - totalInterestAtBlock;
+        return (currentBurnBlock_, ajnaTokensBurned_, totalInterestEarned_);
     }
 
     /**
