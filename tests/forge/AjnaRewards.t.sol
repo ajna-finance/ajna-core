@@ -247,7 +247,7 @@ contract AjnaRewardsTest is DSTestPlus {
         assertEq(interactionBurnEvent, 0);
     }
 
-    function testClaimRewards() external {
+    function testUpdateExchangeRatesAndClaimRewards() external {
         skip(10);
 
         // configure NFT position
@@ -285,17 +285,23 @@ contract AjnaRewardsTest is DSTestPlus {
         _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
         assertGt(_ajnaToken.balanceOf(_updater), 0);
 
+        // check can't update buckets for a reward twice
+        vm.expectRevert(IAjnaRewards.ExchangeRateAlreadyUpdated.selector);
+        _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
+
         // check only deposit owner can claim rewards
         vm.expectRevert(IAjnaRewards.NotOwnerOfToken.selector);
         _ajnaRewards.claimRewards(tokenIdOne);
 
-        // TODO: check interest accrued by calling calculateRewardsEarned
+        // check rewards earned
+        uint256 rewardsEarned = _ajnaRewards.calculateRewardsEarned(tokenIdOne);
+        assertEq(rewardsEarned, 18.085912173086791740 * 1e18);
 
         // claim rewards accrued since deposit
         changePrank(_minterOne);
         assertEq(_ajnaToken.balanceOf(_minterOne), 0);
         vm.expectEmit(true, true, true, true);
-        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, 18.085912173086791740 * 1e18);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, rewardsEarned);
         _ajnaRewards.claimRewards(tokenIdOne);
         assertGt(_ajnaToken.balanceOf(_minterOne), 0);
 
@@ -308,6 +314,12 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // assert rewards claimed is less than ajna tokens burned
         assertLt(_ajnaToken.balanceOf(_minterOne), tokensToBurn);
+
+        // check can't call update exchange rate after the update period has elapsed
+        vm.roll(block.number + 100801);
+        changePrank(_updater);
+        vm.expectRevert(IAjnaRewards.ExchangeRateUpdateTooLate.selector);
+        _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
     }
 
     function testClaimRewardsMultipleDepositsSameBucketsMultipleAuctions() external {
