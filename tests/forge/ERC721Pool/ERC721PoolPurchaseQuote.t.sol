@@ -267,7 +267,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 from:       _borrower,
                 amount:     24_000 * 1e18,
                 indexLimit: 2_351,
-                newLup:     8_164.085273480993906521 * 1e18
+                newLup:     8_123.467933811934300919 * 1e18
             }
         );
         assertEq(_lup(), _priceAt(2351));
