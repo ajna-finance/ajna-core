@@ -351,9 +351,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             maxAmount_
         );
 
-        IERC20Token ajnaToken = IERC20Token(_getArgAddress(AJNA_ADDRESS));
-        if (!ajnaToken.transferFrom(msg.sender, address(this), ajnaRequired)) revert ERC20TransferFailed();
-        ajnaToken.burn(ajnaRequired);
+        IERC20(_getArgAddress(AJNA_ADDRESS)).safeTransferFrom(msg.sender, address(this), ajnaRequired);
+        IERC20Token(_getArgAddress(AJNA_ADDRESS)).burn(ajnaRequired);
         _transferQuoteToken(msg.sender, amount_);
     }
 
@@ -852,8 +851,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function lenderInfo(
         uint256 index_,
         address lender_
-    ) external view override returns (uint256, uint256) {
-        return Buckets.getLenderInfo(buckets, index_, lender_);
+    ) external view override returns (uint256 lpBalance_, uint256 depositTime_) {
+        depositTime_ = buckets[index_].lenders[lender_].depositTime;
+        if (buckets[index_].bankruptcyTime < depositTime_) lpBalance_ = buckets[index_].lenders[lender_].lps;
     }
 
     function loanInfo(

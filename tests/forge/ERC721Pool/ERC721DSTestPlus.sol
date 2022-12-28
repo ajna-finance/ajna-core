@@ -87,7 +87,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
             if (bucketCollateral % 1e18 != 0) {
                 revert("Collateral needs to be reconstituted from other buckets");
             }
-            uint256 noOfBucketNftsRedeemable = Maths.wadToIntRoundingDown(bucketCollateral);
+            uint256 noOfBucketNftsRedeemable = _wadToIntRoundingDown(bucketCollateral);
 
             // Calculating redeemable Quote and Collateral Token for Lenders lps
             uint256 lpsAsCollateral = _poolUtils.lpsToCollateral(address(_pool), lenderLpBalance, bucketIndex);
@@ -111,7 +111,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                 }
 
                 // First redeem LP for collateral
-                uint256 noOfNftsToRemove = Maths.min(Maths.wadToIntRoundingDown(lpsAsCollateral), noOfBucketNftsRedeemable);
+                uint256 noOfNftsToRemove = Maths.min(_wadToIntRoundingDown(lpsAsCollateral), noOfBucketNftsRedeemable);
                 (, lpsRedeemed) = _pool.removeCollateral(noOfNftsToRemove, bucketIndex);
             }
 
@@ -628,3 +628,10 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
         _ajnaToken.approve(address(_pool), type(uint256).max);
     }
 }
+
+    /**
+     * @notice Convert a WAD to an integer, rounding down
+     */
+    function _wadToIntRoundingDown(uint256 a) pure returns (uint256) {
+        return Maths.wdiv(a, 10 ** 18) / 10 ** 18;
+    }
