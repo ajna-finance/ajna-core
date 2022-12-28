@@ -52,6 +52,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     uint256 internal poolInitializations;
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 
+    struct TakeFromLoanLocalVars {
+        uint256 borrowerDebt;
+        uint256 repaidDebt;
+        uint256 newLup;
+        uint256 t0DebtInAuctionChange;
+        uint256 t0PoolDebt;
+        bool    inAuction;
+    }
+
     /******************/
     /*** Immutables ***/
     /******************/
@@ -589,31 +598,29 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         borrower_.collateral  -= collateralAmount_; // collateral is removed from the loan
         poolState_.collateral -= collateralAmount_; // collateral is removed from pledged collateral accumulator
 
-        uint256 borrowerDebt = Maths.wmul(borrower_.t0Debt, poolState_.inflator);
-        {
-            uint256 repaidDebt = Maths.wmul(t0RepaidDebt_, poolState_.inflator);
-            borrowerDebt       -= repaidDebt;
-            poolState_.debt    += Maths.wmul(t0DebtPenalty_, poolState_.inflator);
-            poolState_.debt    -= (repaidDebt + Maths.wmul(t0DebtPenalty_, poolState_.inflator));
-        }
+        TakeFromLoanLocalVars memory vars;
+        vars.borrowerDebt = Maths.wmul(borrower_.t0Debt, poolState_.inflator);
+        vars.repaidDebt   = Maths.wmul(t0RepaidDebt_, poolState_.inflator);
+        vars.borrowerDebt -= vars.repaidDebt;
+        poolState_.debt   -= vars.repaidDebt;
+        if (t0DebtPenalty_ != 0) poolState_.debt += Maths.wmul(t0DebtPenalty_, poolState_.inflator);
 
         // check that taking from loan doesn't leave borrower debt under min debt amount
-        _revertOnMinDebt(poolState_.debt, borrowerDebt);
+        _revertOnMinDebt(poolState_.debt, vars.borrowerDebt);
 
-        uint256 newLup = _lup(poolState_.debt);
-        bool inAuction = true;
+        vars.newLup = _lup(poolState_.debt);
+        vars.inAuction = true;
 
-        uint256 t0DebtInAuctionChange;
-        if (_isCollateralized(borrowerDebt, borrower_.collateral, newLup, poolState_.poolType)) {
+        if (_isCollateralized(vars.borrowerDebt, borrower_.collateral, vars.newLup, poolState_.poolType)) {
             // borrower becomes re-collateralized
             // remove entire borrower debt from pool auctions debt accumulator
-            t0DebtInAuctionChange = borrower_.t0Debt;
+            vars.t0DebtInAuctionChange = borrower_.t0Debt;
             // settle auction and update borrower's collateral with value after settlement
             borrower_.collateral = _settleAuction(borrowerAddress_, borrower_.collateral);
-            inAuction = false;
+            vars.inAuction = false;
         } else {
             // partial repay, remove only the paid debt from pool auctions debt accumulator
-            t0DebtInAuctionChange = t0RepaidDebt_;
+            vars.t0DebtInAuctionChange = t0RepaidDebt_;
         }
         
         borrower_.t0Debt -= t0RepaidDebt_;
@@ -625,21 +632,22 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             deposits,
             borrower_,
             borrowerAddress_,
-            borrowerDebt,
+            vars.borrowerDebt,
             poolState_.rate,
-            newLup,
-            inAuction,
+            vars.newLup,
+            vars.inAuction,
             false
         );
 
         // update pool balances state
-        poolBalances.t0Debt            += t0DebtPenalty_;
-        poolBalances.t0Debt            -= (t0RepaidDebt_ + t0DebtPenalty_);
-        poolBalances.t0DebtInAuction   -= t0DebtInAuctionChange;
+        vars.t0PoolDebt = poolBalances.t0Debt - t0RepaidDebt_;
+        if (t0DebtPenalty_ != 0) vars.t0PoolDebt += t0DebtPenalty_;
+        poolBalances.t0Debt            = vars.t0PoolDebt;
+        poolBalances.t0DebtInAuction   -= vars.t0DebtInAuctionChange;
         poolBalances.pledgedCollateral =  poolState_.collateral;
 
         // update pool interest rate state
-        _updateInterestState(poolState_, newLup);
+        _updateInterestState(poolState_, vars.newLup);
     }
 
     /******************************/
