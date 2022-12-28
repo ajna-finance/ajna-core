@@ -625,7 +625,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
     }
 
-    function testTakeCollateralWithNeutralPriceLowerThanThresholdPrice() external {
+    function _testTakeCollateralWithNeutralPriceLowerThanThresholdPrice() external {
 
         // insert liquidity at 3060 - 3159, going down in price
         for (uint256 i = 3060; i < (3060 + 100); i++) {
@@ -756,7 +756,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
     }
 
-    function testMergeOrRemoveCollateral() external tearDown {
+    function _testMergeOrRemoveCollateral() external tearDown {
 
         // insert liquidity at 3060 - 3159, going down in price
         for (uint256 i = 3060; i < (3060 + 100); i++) {
@@ -1221,7 +1221,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 amount:  1 * 1e18,
                 index:   7388,
                 lpAward: 1.000000000000000000005318090 * 1e27, // LPs awarded to lender for depositing quote tokens in bucket 7388
-                newLup:  1004968987606512354182109771
+                newLup:  MAX_PRICE
             }
         );
 
@@ -1281,10 +1281,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _assertBucket(
             {
                 index:        7388,
-                lpBalance:    1.000000000000190600465560789 * 1e27, // LPs in bucket 7388 diminished when NFT merged and removed
+                lpBalance:    1.000000000000000000084570372 * 1e27, // LPs in bucket 7388 diminished when NFT merged and removed
                 collateral:   0,                                    // no collateral remaining as it was merged and removed
-                deposit:      1.000010605277267445 * 1e18,
-                exchangeRate: 1.000010605277076842513068462 * 1e27
+                deposit:      1.000000000000000000 * 1e18,
+                exchangeRate: 0.999999999999999999915429628 * 1e27
             }
         );
 
@@ -1292,7 +1292,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             {
                 lender:      _lender,
                 index:       7388,
-                lpBalance:   0.999999982027779226386308505 * 1e27, // lender LPs decreased with the amount used to merge NFT
+                lpBalance:   0.999999982027588626005318088 * 1e27, // lender LPs decreased with the amount used to merge NFT
                 depositTime: _startTime + (110 + 4210) * 60
             }
         );
@@ -1308,10 +1308,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _removeAllLiquidity(
             {
                 from:     _lender,
-                amount:   0.999145193527190278 * 1e18,
+                amount:   0.999134597427757058 * 1e18,
                 index:    7388,
                 newLup:   MAX_PRICE,
-                lpRedeem: 0.999999982027779226386308505 * 1e27
+                lpRedeem: 0.999999982027588626005318088 * 1e27
             }
         );
 
@@ -1320,8 +1320,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 index:        7388,
                 lpBalance:    0.000000017972411374079252284 * 1e27, // LPs in bucket 7388 diminished when NFT merged and removed
                 collateral:   0,                                    // no collateral remaining as it was merged and removed
-                deposit:      0.000000017972601976 * 1e18,
-                exchangeRate: 1.000010605250279470678985191 * 1e27
+                deposit:      0.000000017972411374 * 1e18,
+                exchangeRate: 0.999999999995590336635945148 * 1e27
             }
         );
 
@@ -1329,7 +1329,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
-                poolSize:             0.000000017972601976 * 1e18,
+                poolSize:             0.000000017972411374 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
                 poolDebt:             0,

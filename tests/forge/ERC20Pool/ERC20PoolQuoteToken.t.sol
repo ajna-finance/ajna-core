@@ -516,9 +516,9 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         _addLiquidity(
             {
                 from:    _lender,
-                amount:  10_000 * 1e18,
+                amount:  11_000 * 1e18,
                 index:   4550,
-                lpAward: 10_000 * 1e27,
+                lpAward: 11_000 * 1e27,
                 newLup:  MAX_PRICE
             }
         );
@@ -527,7 +527,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             from: _borrower,
             borrower: _borrower,
             amountToBorrow: 10_000 * 1e18,
-            limitIndex: 4_551,
+            limitIndex: 7000,
             collateralToPledge: 3_500_000 * 1e18,
             newLup: 0.140143083210662942 * 1e18
         });
@@ -553,9 +553,9 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         _addLiquidity(
             {
                 from:    _lender,
-                amount:  40_000 * 1e18,
+                amount:  41_000 * 1e18,
                 index:   4549,
-                lpAward: 40_000 * 1e27,
+                lpAward: 41_000 * 1e27,
                 newLup:  MAX_PRICE
             }
         );
@@ -607,7 +607,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             {
                 from:       _borrower,
                 amount:     70_000 * 1e18,
-                indexLimit: 4_551,
+                indexLimit: 7_000,
                 newLup:     0.139445853940958153 * 1e18
             }
         );
@@ -642,7 +642,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 amount:  20_000 * 1e18,
                 index:   4550,
                 lpAward: 20_000 * 1e27,
-                newLup:  0.139445853940958153 * 1e18
+                newLup:  _priceAt(4550)
             }
         );
 
@@ -653,7 +653,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:     _lender,
                 amount:   10_000 * 1e18,
                 index:    4990,
-                newLup:   _priceAt(4551),
+                newLup:   _priceAt(4550),
                 lpRedeem: 10_000 * 1e27
             }
         );

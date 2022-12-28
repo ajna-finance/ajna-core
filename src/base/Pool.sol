@@ -380,8 +380,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // pledge collateral to pool
         if (pledge_) {
-            // add new amount of collateral to pledge to borrower balance
+            // add new amount of collateral to pledge to borrower and pool balance
             borrower.collateral  += collateralToPledge_;
+            poolState.collateral += collateralToPledge_;
 
             uint256 t0DebtInAuctionChange;
             // load loan's auction state
@@ -399,9 +400,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 // auction was settled, reset inAuction flag
                 inAuction = false;
             }
-
-            // add new amount of collateral to pledge to pool balance
-            poolState.collateral += collateralToPledge_;
 
             // update pool balances state
             if (t0DebtInAuctionChange != 0) {
@@ -423,8 +421,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             // check that drawing debt doesn't leave borrower debt under min debt amount
             _revertOnMinDebt(poolState.debt, borrowerDebt);
 
+            // add debt change to pool's debt
+            poolState.debt += debtChange;
             // determine new lup index and revert if borrow happens at a price higher than the specified limit (lower index than lup index)
-            uint256 lupId = _lupIndex(poolState.debt + amountToBorrow_);
+            uint256 lupId = _lupIndex(poolState.debt);
             if (lupId > limitIndex_) revert LimitIndexReached();
 
             // calculate new lup and check borrow action won't push borrower into a state of under-collateralization
@@ -438,7 +438,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             borrower.t0Debt += t0DebtChange;
 
             // update pool balances state
-            poolState.debt      += debtChange;
             poolBalances.t0Debt += t0DebtChange;
         }
 
@@ -464,7 +463,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
         uint256 collateralAmountToPull_
-    ) internal returns (uint256 quoteTokenToRepay_, uint256 newLup_) {
+    ) internal returns (uint256 repaidDebt_, uint256 newLup_) {
         PoolState memory poolState = _accruePoolInterest();
         Borrower  memory borrower = Loans.getBorrowerInfo(loans, borrowerAddress_);
 
@@ -483,9 +482,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 borrower.t0Debt,
                 Maths.wdiv(maxQuoteTokenAmountToRepay_, poolState.inflator)
             );
-            quoteTokenToRepay_ = Maths.wmul(t0RepaidDebt, poolState.inflator);
-            poolState.debt     -= quoteTokenToRepay_;
-            borrowerDebt       -= quoteTokenToRepay_;
+            repaidDebt_ = Maths.wmul(t0RepaidDebt, poolState.inflator);
+            // remove amount of repaid debt from borrower and pool debt
+            borrowerDebt   -= repaidDebt_;
+            poolState.debt -= repaidDebt_;
 
             // check that paying the loan doesn't leave borrower debt under min debt amount
             _revertOnMinDebt(poolState.debt, borrowerDebt);
@@ -527,6 +527,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             uint256 encumberedCollateral = borrower.t0Debt != 0 ? Maths.wdiv(borrowerDebt, newLup_) : 0;
             if (borrower.collateral - encumberedCollateral < collateralAmountToPull_) revert InsufficientCollateral();
 
+            // remove collateral from borrower and pool pledged collateral
             borrower.collateral  -= collateralAmountToPull_;
             poolState.collateral -= collateralAmountToPull_;
 
