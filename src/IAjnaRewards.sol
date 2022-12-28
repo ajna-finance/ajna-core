@@ -10,6 +10,11 @@ interface IAjnaRewards {
     /**************/
 
     /**
+     *  @notice User attempted to claim rewards multiple times.
+     */
+     error AlreadyClaimed();
+
+    /**
      *  @notice User attempted to record updated exchange rates after an update already occured for the bucket.
      */
     error ExchangeRateAlreadyUpdated();
@@ -32,7 +37,7 @@ interface IAjnaRewards {
     /**
      *  @notice User attempted to interact with an NFT they aren't the owner of.
      */
-    error NotOwnerOfToken();
+    error NotOwnerOfDeposit();
 
     /**************/
     /*** Events ***/

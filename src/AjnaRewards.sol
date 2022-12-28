@@ -57,6 +57,11 @@ contract AjnaRewards is IAjnaRewards {
     uint256 internal constant UPDATE_PERIOD = 100800;
 
     /**
+     * @notice Track whether a depositor has claimed rewards for a given burn event.
+     * @dev tokenID => burnEvent => has claimed
+     */
+    mapping(uint256 => mapping(uint256 => bool)) public hasClaimedForToken;
+    /**
      * @notice Track the total amount of rewards that have been claimed for a given burn event.
      * @dev burnEvent => tokens claimed
      */
@@ -105,7 +110,9 @@ contract AjnaRewards is IAjnaRewards {
      *  @param  tokenId_ ID of the staked LP NFT.
      */
     function claimRewards(uint256 tokenId_) external {
-        if (msg.sender != deposits[tokenId_].owner) revert NotOwnerOfToken();
+        if (msg.sender != deposits[tokenId_].owner) revert NotOwnerOfDeposit();
+
+        if (hasClaimedForToken[tokenId_][IPool(deposits[tokenId_].ajnaPool).currentBurnId()]) revert AlreadyClaimed();
 
         _claimRewards(tokenId_);
     }
@@ -119,7 +126,7 @@ contract AjnaRewards is IAjnaRewards {
         address ajnaPool = PositionManager(address(positionManager)).poolKey(tokenId_);
 
         // check that msg.sender is owner of tokenId
-        if (IERC721(address(positionManager)).ownerOf(tokenId_) != msg.sender) revert NotOwnerOfToken();
+        if (IERC721(address(positionManager)).ownerOf(tokenId_) != msg.sender) revert NotOwnerOfDeposit();
 
         Deposit storage deposit = deposits[tokenId_];
         deposit.owner = msg.sender;
@@ -155,7 +162,7 @@ contract AjnaRewards is IAjnaRewards {
      *  @param  tokenId_ ID of the staked LP NFT.
      */
     function withdrawNFT(uint256 tokenId_) external {
-        if (msg.sender != deposits[tokenId_].owner) revert NotOwnerOfToken();
+        if (msg.sender != deposits[tokenId_].owner) revert NotOwnerOfDeposit();
 
         address ajnaPool = deposits[tokenId_].ajnaPool;
 
@@ -181,7 +188,6 @@ contract AjnaRewards is IAjnaRewards {
         (uint256 curBurnBlock, uint256 curTotalInterest, uint256 curTotalBurned) = IPool(pool_).burnInfo(curBurnId);
         if (block.number > curBurnBlock + UPDATE_PERIOD) revert ExchangeRateUpdateTooLate();
 
-        // TODO: use _getPoolAccumulators() to get the current accumulators
         // retrieve previous accumulator values to calculate rewards accrued
         (, uint256 prevTotalInterest, uint256 prevTotalBurned) = IPool(pool_).burnInfo(curBurnId - 1);
 
@@ -269,7 +275,6 @@ contract AjnaRewards is IAjnaRewards {
         (totalBurned_, totalInterestEarned) = _getPoolAccumulators(ajnaPool, currentBurnEventId, lastInteractionBurnEvent);
 
         // calculate rewards earned
-        // TODO: check this return
         if (totalInterestEarned == 0) return (0, totalBurned_);
         rewards_ = Maths.wmul(REWARD_FACTOR, Maths.wmul(Maths.wdiv(interestEarned, totalInterestEarned), totalBurned_));
     }
@@ -295,8 +300,9 @@ contract AjnaRewards is IAjnaRewards {
 
         if (_checkRewardsClaimed(burnEventId, rewardsEarned, totalBurned)) revert MaxTokensAlreadyClaimed();
 
-        // update total tokens claimed tracker
+        // update token claim trackers
         burnEventRewardsClaimed[burnEventId] += rewardsEarned;
+        hasClaimedForToken[tokenId_][burnEventId] = true;
 
         emit ClaimRewards(msg.sender, deposits[tokenId_].ajnaPool, tokenId_, rewardsEarned);
 
@@ -349,9 +355,7 @@ contract AjnaRewards is IAjnaRewards {
      *  @return rewards_ The amount of rewards earned by the NFT.
      */
     function calculateRewardsEarned(uint256 tokenId_) external view returns (uint256 rewards_) {
-        // TODO: update return value to return both of these?
-        uint256 totalBurned_;
-        (rewards_, totalBurned_) = _calculateRewardsEarned(tokenId_);
+        (rewards_, ) = _calculateRewardsEarned(tokenId_);
     }
 
     /**

@@ -81,10 +81,21 @@ interface IPoolState {
             uint256 bucketScale
         );
 
+    /**
+     *  @notice Mapping of burnEventId to {BurnEvent} structs.
+     *  @dev    Reserve auctions correspond to burn events.
+     *  @param  burnEventId_  Id of the current reserve auction.
+     *  @return burnBlock     Block in which a reserve auction started.
+     *  @return totalInterest Total interest as of the reserve auction.
+     *  @return totalBurned   Total ajna tokens burned as of the reserve auction.
+     */
     function burnInfo(uint256 burnEventId_) external view returns (uint256, uint256, uint256);
 
-    function burnInfoLatest() external view returns (uint256, uint256);
-
+    /**
+     *  @notice Returns the latest burnId of reserve auctions.
+     *  @dev    If a reserve auction is active, it refers to the current reserve auction. If no reserve auction is active, it refers to the last reserve auction.
+     *  @return burnId Current burnID.
+     */
     function currentBurnId() external view returns (uint256);
 
     /**

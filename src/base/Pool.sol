@@ -854,14 +854,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
-    function burnInfoLatest() external view returns (uint256, uint256) {
-        // TODO: add last burn block
-        return (
-            totalInterestEarned,
-            totalAjnaBurned
-        );
-    }
-
     function debtInfo() external view returns (uint256, uint256, uint256) {
         uint256 pendingInflator = PoolCommons.pendingInflator(
             inflatorState.inflator,
