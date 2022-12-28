@@ -81,9 +81,11 @@ interface IPoolState {
             uint256 bucketScale
         );
 
-    function burnInfoAtBlock(uint256 blockNumber) external view returns (uint256, uint256);
+    function burnInfo(uint256 burnEventId_) external view returns (uint256, uint256, uint256);
 
     function burnInfoLatest() external view returns (uint256, uint256);
+
+    function currentBurnId() external view returns (uint256);
 
     /**
      *  @notice Returns information about the pool EMA (Exponential Moving Average) variables.

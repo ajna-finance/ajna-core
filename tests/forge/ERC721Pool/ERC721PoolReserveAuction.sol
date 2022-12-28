@@ -397,6 +397,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
 
         // after more interest accumulates, borrower repays remaining debt
         skip(4 weeks);
+        vm.roll(block.number + 201_600);
 
         _repayDebt({
             from:             _borrower,

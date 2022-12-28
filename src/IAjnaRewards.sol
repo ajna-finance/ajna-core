@@ -10,6 +10,26 @@ interface IAjnaRewards {
     /**************/
 
     /**
+     *  @notice User attempted to record updated exchange rates after an update already occured for the bucket.
+     */
+    error ExchangeRateAlreadyUpdated();
+
+    /**
+     *  @notice User attempted to record updated exchange rates outside of the allowed period.
+     */
+    error ExchangeRateUpdateTooLate();
+
+    /**
+     *  @notice User attempted to record updated exchange rates for a burn event that didn't occur.
+     */
+    error InvalidBurnBlock();
+
+    /**
+     *  @notice Claim event would result in exceeding token claim cap of 80%.
+     */
+    error MaxTokensAlreadyClaimed();
+
+    /**
      *  @notice User attempted to interact with an NFT they aren't the owner of.
      */
     error NotOwnerOfToken();
@@ -34,6 +54,8 @@ interface IAjnaRewards {
      *  @param  tokenId  ID of the staked NFT.
      */
     event DepositToken(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
+
+    event UpdateExchangeRates(address indexed caller, address indexed ajnaPool, uint256[] indexesUpdated, uint256 rewardsClaimed);
 
     /**
      *  @notice Emitted when lender withdraws their LP NFT from the rewards contract.

@@ -6,7 +6,6 @@ import '@clones/Clone.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/utils/Multicall.sol';
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { Checkpoints } from '@openzeppelin/contracts/utils/Checkpoints.sol';
 import { IERC20 }      from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import './interfaces/IPool.sol';
@@ -59,16 +58,16 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     DepositsState              internal deposits;
     LoansState                 internal loans;
 
-    Checkpoints.History internal _burnEventCheckpoints;
-
-    // TODO: remove this struct entirely in favor of writing totalAjnaBurned to the checkpoint
     // tracks ajna token burn events
     struct BurnEvent {
+        uint256 blockNumber;   // block in which the burn event occured, used as checkpoints won't return block of a checkpoint
         uint256 totalInterest; // current pool interest accumulator `PoolCommons.accrueInterest().newInterest
-        uint256 totalBurned; // burn amount accumulator
+        uint256 totalBurned;   // burn amount accumulator
     }
     // mapping burnEventId => BurnEvent
     mapping (uint256 => BurnEvent) internal burnEvents;
+    uint256 latestBurnEventId; // latest burn event id
+
     uint256 totalAjnaBurned; // total ajna burned in the pool
     uint256 totalInterestEarned; // total interest earned by all lenders in the pool
 
@@ -341,6 +340,17 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*********************************/
 
     function startClaimableReserveAuction() external override {
+        // check that at least two weeks have passed since the last reserve auction completed
+        // TODO: check that we're tracking completed not just started?
+        uint256 lastBurnBlock = burnEvents[latestBurnEventId].blockNumber;
+        if (block.number < lastBurnBlock + 100800) {
+            revert ReserveAuctionTooSoon();
+        }
+
+        // record start of new burn event
+        latestBurnEventId += 1;
+        burnEvents[latestBurnEventId].blockNumber = block.number;
+
         uint256 kickerAward = Auctions.startClaimableReserveAuction(
             auctions,
             reserveAuction,
@@ -368,15 +378,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if (!ajnaToken.transferFrom(msg.sender, address(this), ajnaRequired)) revert ERC20TransferFailed();
         ajnaToken.burn(ajnaRequired);
 
-        // record burn event information to enable querying by staking rewards
+        // accumulate additional ajna burned
         totalAjnaBurned += ajnaRequired;
-        BurnEvent memory burnEvent = BurnEvent({
-            totalInterest: totalInterestEarned,
-            totalBurned: totalAjnaBurned
-        });
-        uint256 burnEventId = Auctions.getNewBurnEventId(_burnEventCheckpoints);
-        burnEvents[burnEventId] = burnEvent;
-        Auctions.addCheckpoint(_burnEventCheckpoints, burnEventId);
+
+        // record burn event information to enable querying by staking rewards
+        uint256 burnEventId = latestBurnEventId;
+        burnEvents[burnEventId].totalInterest = totalInterestEarned;
+        burnEvents[burnEventId].totalBurned = totalAjnaBurned;
 
         // transfer quote token to caller
         _transferQuoteToken(msg.sender, amount_);
@@ -796,17 +804,22 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
-    function burnInfoAtBlock(uint256 blockNumber_) external view returns (uint256, uint256) {
-        uint256 burnEventId = Auctions.getBurnAtBlock(_burnEventCheckpoints, blockNumber_);
-        BurnEvent memory burnEvent = burnEvents[burnEventId];
+    function currentBurnId() external view returns (uint256) {
+        return latestBurnEventId;
+    }
+
+    function burnInfo(uint256 burnEventId_) external view returns (uint256, uint256, uint256) {
+        BurnEvent memory burnEvent = burnEvents[burnEventId_];
 
         return (
+            burnEvent.blockNumber,
             burnEvent.totalInterest,
             burnEvent.totalBurned
         );
     }
 
     function burnInfoLatest() external view returns (uint256, uint256) {
+        // TODO: add last burn block
         return (
             totalInterestEarned,
             totalAjnaBurned
