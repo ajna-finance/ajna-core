@@ -188,26 +188,25 @@ library Deposits {
         ++sumIndex_; // Translate from 0 -> 1 indexed array
 
         uint256 sc    = Maths.WAD;
-        uint256 j     = SIZE;      // Binary index, 1 << 13
-        uint256 ii    = 0;         // Binary index offset
-        uint256 index = SIZE;
+        uint256 j     = SIZE;      // iterate from MSB to LSB
+        uint256 index = 0;         // build up sumIndex bit by bit
+        uint256 indexLSB = lsb(sumIndex_);
         
-        while (j > 0 && index <= SIZE) {
+        while (j >= indexLSB) {
+            if (index+j > SIZE) continue;
+            uint256 scaled = deposits_.scaling[index+j];
 
-            uint256 scaled = deposits_.scaling[index];
-            uint256 value  = deposits_.values[index];
-
-            // If requested node is in current range, compute sum with running multiplier.
             if (sumIndex_ & j != 0) {
+                // node index+j of tree is included in sum
+                uint256 value  = deposits_.values[index+j];
                 sum_ += scaled != 0 ? Maths.wmul(Maths.wmul(sc, scaled), value) : Maths.wmul(sc, value);
+                index += j;
+                if (index==sumIndex_) break;
             } else {
+                // node is not included in sum, but its scale needs to be included for subsequent sums
                 if (scaled != 0) sc = Maths.wmul(sc, scaled);
             }
-
-            // Increase binary index offset to point next node in range.
-            ii = ii + (sumIndex_ & j);
             j = j >> 1;
-            index = ii + j;
         }
     }
 
