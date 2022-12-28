@@ -419,11 +419,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             // add origination fee to the amount to borrow and add to borrower's debt
             uint256 debtChange = Maths.wmul(amountToBorrow_, _feeRate(poolState.rate) + Maths.WAD);
             borrowerDebt   += debtChange;
-            poolState.debt += debtChange;
 
             // check that drawing debt doesn't leave borrower debt under min debt amount
             _revertOnMinDebt(poolState.debt, borrowerDebt);
 
+            // add debt change to pool's debt
+            poolState.debt += debtChange;
             // determine new lup index and revert if borrow happens at a price higher than the specified limit (lower index than lup index)
             uint256 lupId = _lupIndex(poolState.debt);
             if (lupId > limitIndex_) revert LimitIndexReached();
