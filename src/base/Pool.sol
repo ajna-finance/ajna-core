@@ -424,12 +424,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             _revertOnMinDebt(poolState.debt, borrowerDebt);
 
             // determine new lup index and revert if borrow happens at a price higher than the specified limit (lower index than lup index)
-            uint256 lupId = _lupIndex(poolState.debt + amountToBorrow_);
+            uint256 lupId = _lupIndex(poolState.debt + debtChange);
             if (lupId > limitIndex_) revert LimitIndexReached();
 
             // calculate new lup and check borrow action won't push borrower into a state of under-collateralization
             // this check also covers the scenario when loan is already auctioned
             newLup_ = _priceAt(lupId);
+
             if (
                 !_isCollateralized(borrowerDebt, borrower.collateral, newLup_, poolState.poolType)
             ) revert BorrowerUnderCollateralized();
