@@ -19,7 +19,12 @@ interface IPositionManagerDerivedState {
         uint256 index
     ) external view returns (uint256 lpTokens);
 
-    function getPositionPrices(uint256 tokenId_) external view returns (uint256[] memory);
+    /**
+     *  @notice Returns an array of price indexes in which an NFT has liquidity.
+     *  @param  tokenId  Unique ID of token.
+     *  @return Array of price indexes.
+    */
+    function getPositionIndexes(uint256 tokenId) external view returns (uint256[] memory);
 
     /**
      *  @notice Checks if a given tokenId has a given position price

@@ -129,7 +129,7 @@ contract AjnaRewards is IAjnaRewards {
         deposit.lastInteractionBurn = curBurnId;
 
         // update the exchange rate for each bucket the NFT is in
-        uint256[] memory positionIndexes = positionManager.getPositionPrices(tokenId_);
+        uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
         for (uint256 i = 0; i < positionIndexes.length; ) {
             uint256 curBucketExchangeRate = IPool(ajnaPool).bucketExchangeRate(positionIndexes[i]);
             poolBucketBurnExchangeRates[ajnaPool][positionIndexes[i]][curBurnId] = curBucketExchangeRate;
@@ -236,7 +236,7 @@ contract AjnaRewards is IAjnaRewards {
      */
     function _calculateRewardsEarned(uint256 tokenId_) internal view returns (uint256 rewards_, uint256 totalBurned_) {
         Deposit storage deposit = deposits[tokenId_];
-        uint256[] memory positionIndexes = positionManager.getPositionPrices(tokenId_); //TODO: rename this in position manager
+        uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
 
         address ajnaPool = deposit.ajnaPool;
         uint256 interestEarned = 0;
@@ -327,7 +327,7 @@ contract AjnaRewards is IAjnaRewards {
      *  @param  tokenId_ ID of the staked LP NFT.
      */
     function _setPositionLPs(uint256 tokenId_) internal {
-        uint256[] memory positionIndexes = positionManager.getPositionPrices(tokenId_);
+        uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
 
         for (uint256 i = 0; i < positionIndexes.length; ) {
             deposits[tokenId_].lpsAtDeposit[positionIndexes[i]] = positionManager.getLPTokens(tokenId_, positionIndexes[i]);
