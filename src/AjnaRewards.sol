@@ -32,7 +32,14 @@ contract AjnaRewards is IAjnaRewards {
 
     IPositionManager public immutable positionManager; // address of the PositionManager contract
 
+    /**
+     * @notice Maximum percentage of tokens burned that can be claimed as Ajna token lp nft rewards.
+     */
     uint256 internal constant REWARD_CAP = 0.800000000000000000 * 1e18;
+
+    /**
+     * @notice Maximum percentage of tokens burned that can be claimed as Ajna token update rewards.
+     */
     uint256 internal constant UPDATE_CAP = 0.100000000000000000 * 1e18;
 
     /**
@@ -41,6 +48,9 @@ contract AjnaRewards is IAjnaRewards {
      */
     uint256 internal constant REWARD_FACTOR = 0.500000000000000000 * 1e18;
 
+    /**
+     * @notice Reward factor by which to scale rewards earned for updating a buckets exchange rate.
+     */
     uint256 internal UPDATE_CLAIM_REWARD = 0.050000000000000000 * 1e18;
 
     /**
@@ -91,6 +101,16 @@ contract AjnaRewards is IAjnaRewards {
     /**************************/
     /*** External Functions ***/
     /**************************/
+
+    /**
+     *  @notice Claim ajna token rewards that have accrued to a staked LP NFT.
+     *  @param  tokenId_ ID of the staked LP NFT.
+     */
+    function claimRewards(uint256 tokenId_) external {
+        if (msg.sender != deposits[tokenId_].owner) revert NotOwnerOfToken();
+
+        _claimRewards(tokenId_);
+    }
 
     /**
      *  @notice Deposit a LP NFT into the rewards contract.
@@ -152,16 +172,11 @@ contract AjnaRewards is IAjnaRewards {
     }
 
     /**
-     *  @notice Claim ajna token rewards that have accrued to a staked LP NFT.
-     *  @param  tokenId_ ID of the staked LP NFT.
+     *  @notice Update the exchange rate of a list of buckets.
+     *  @dev    Caller can claim 5% of the rewards that have accumulated to each bucket since the last burn event, if it hasn't already been updated.
+     *  @param  pool_    Address of the pool whose exchange rates are being updated.
+     *  @param  indexes_ List of bucket indexes to be updated.
      */
-    function claimRewards(uint256 tokenId_) external {
-        if (msg.sender != deposits[tokenId_].owner) revert NotOwnerOfToken();
-
-        _claimRewards(tokenId_);
-    }
-
-    // TODO: check we're only updating one block back
     function updateBucketExchangeRatesAndClaim(address pool_, uint256[] calldata indexes_) external {
         // check that the provided burn block is valid, and within the allowed time period
         uint256 curBurnId = IPool(pool_).currentBurnId();
@@ -214,30 +229,13 @@ contract AjnaRewards is IAjnaRewards {
     /*** Internal Functions ***/
     /**************************/
 
-    // check that less than 80% of the tokens for a given burn event have been claimed
-    function _checkRewardsClaimed(uint256 burnEventId_, uint256 rewardsEarned_, uint256 totalBurned_) internal view returns (bool) {
-        return burnEventRewardsClaimed[burnEventId_] + rewardsEarned_ > Maths.wmul(REWARD_CAP, totalBurned_);
-    }
-
-    function _claimRewards(uint256 tokenId_) internal {
-        uint256 burnEventId   = IPool(deposits[tokenId_].ajnaPool).currentBurnId();
-        (uint256 rewardsEarned, uint256 totalBurned) = _calculateRewardsEarned(tokenId_);
-
-        if (_checkRewardsClaimed(burnEventId, rewardsEarned, totalBurned)) revert MaxTokensAlreadyClaimed();
-
-        // update total tokens claimed tracker
-        burnEventRewardsClaimed[burnEventId] += rewardsEarned;
-
-        emit ClaimRewards(msg.sender, deposits[tokenId_].ajnaPool, tokenId_, rewardsEarned);
-
-        // update last interaction burn event
-        deposits[tokenId_].lastInteractionBurn = burnEventId;
-
-        // transfer rewards to sender
-        if (rewardsEarned > IERC20(ajnaToken).balanceOf(address(this))) rewardsEarned = IERC20(ajnaToken).balanceOf(address(this));
-        IERC20(ajnaToken).safeTransfer(msg.sender, rewardsEarned);
-    }
-
+    /**
+     *  @notice Calculate the amount of rewards that have been accumulated by a deposited NFT.
+     *  @dev    Rewards are calculated as the difference in exchange rates between the last interaction burn event and the current burn event.
+     *  @param  tokenId_ ID of the staked LP NFT.
+     *  @return rewards_ Amount of rewards earned by the NFT.
+     *  @return totalBurned_ Total amount of AJNA burned in the pool since the NFT's last interaction burn event.
+     */
     function _calculateRewardsEarned(uint256 tokenId_) internal view returns (uint256 rewards_, uint256 totalBurned_) {
         Deposit storage deposit = deposits[tokenId_];
         uint256[] memory positionIndexes = positionManager.getPositionPrices(tokenId_); //TODO: rename this in position manager
@@ -279,6 +277,40 @@ contract AjnaRewards is IAjnaRewards {
     }
 
     /**
+     *  @notice Check that less than 80% of the tokens for a given burn event have been claimed.
+     *  @param  burnEventId_ ID of the burn event to check claims against.
+     *  @param  rewardsEarned_ Amount of rewards earned by the NFT.
+     *  @param  totalBurned_ Total amount of AJNA burned in the pool since the NFT's last interaction burn event.
+     *  @return True if the rewards earned by the NFT would exceed the cap, false otherwise.
+     */
+    function _checkRewardsClaimed(uint256 burnEventId_, uint256 rewardsEarned_, uint256 totalBurned_) internal view returns (bool) {
+        return burnEventRewardsClaimed[burnEventId_] + rewardsEarned_ > Maths.wmul(REWARD_CAP, totalBurned_);
+    }
+
+    /**
+     *  @notice Claim rewards that have been accumulated by a deposited NFT.
+     *  @param  tokenId_ ID of the staked LP NFT.
+     */
+    function _claimRewards(uint256 tokenId_) internal {
+        uint256 burnEventId   = IPool(deposits[tokenId_].ajnaPool).currentBurnId();
+        (uint256 rewardsEarned, uint256 totalBurned) = _calculateRewardsEarned(tokenId_);
+
+        if (_checkRewardsClaimed(burnEventId, rewardsEarned, totalBurned)) revert MaxTokensAlreadyClaimed();
+
+        // update total tokens claimed tracker
+        burnEventRewardsClaimed[burnEventId] += rewardsEarned;
+
+        emit ClaimRewards(msg.sender, deposits[tokenId_].ajnaPool, tokenId_, rewardsEarned);
+
+        // update last interaction burn event
+        deposits[tokenId_].lastInteractionBurn = burnEventId;
+
+        // transfer rewards to sender
+        if (rewardsEarned > IERC20(ajnaToken).balanceOf(address(this))) rewardsEarned = IERC20(ajnaToken).balanceOf(address(this));
+        IERC20(ajnaToken).safeTransfer(msg.sender, rewardsEarned);
+    }
+
+    /**
      *  @notice Retrieve the total ajna tokens burned and total interest earned by a pool since a given block.
      *  @param  pool_               Address of the Ajna pool to retrieve accumulators of.
      *  @param  currentBurnEventId_ ID of the latest burn event.
@@ -292,6 +324,10 @@ contract AjnaRewards is IAjnaRewards {
         totalInterestEarned_ = totalInterestLatest - totalInterestAtBlock;
     }
 
+    /**
+     *  @notice Record the LP balance associated with an NFT on deposit.
+     *  @param  tokenId_ ID of the staked LP NFT.
+     */
     function _setPositionLPs(uint256 tokenId_) internal {
         uint256[] memory positionIndexes = positionManager.getPositionPrices(tokenId_);
 
@@ -305,10 +341,15 @@ contract AjnaRewards is IAjnaRewards {
         }
     }
 
-    /**********************/
-    /*** View Functions ***/
-    /**********************/
+    /*******************************/
+    /*** External View Functions ***/
+    /*******************************/
 
+    /**
+     *  @notice Calculate the amount of rewards that have been accumulated by a deposited NFT.
+     *  @param  tokenId_ ID of the staked LP NFT.
+     *  @return rewards_ The amount of rewards earned by the NFT.
+     */
     function calculateRewardsEarned(uint256 tokenId_) external view returns (uint256 rewards_) {
         // TODO: update return value to return both of these?
         uint256 totalBurned_;
