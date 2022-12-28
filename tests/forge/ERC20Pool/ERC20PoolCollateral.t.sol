@@ -235,6 +235,14 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         // test setup
         _mintCollateralAndApproveTokens(_bidder,  100 * 1e18);
 
+        // should revert if adding collateral at index 0
+        _assertAddCollateralAtIndex0Revert(
+            {
+                from:   _bidder,
+                amount: 4 * 1e18
+            }
+        );
+
         // actor deposits collateral into a bucket
         _addCollateral(
             {
@@ -411,7 +419,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(address(_pool)),      0);
     }
 
-    function testRemoveCollateralRequireChecks() external tearDown {
+    function testRemoveCollateralReverts() external tearDown {
         uint256 testIndex = 6348;
 
         // should revert if no collateral in the bucket

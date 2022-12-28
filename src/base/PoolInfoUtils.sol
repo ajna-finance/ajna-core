@@ -300,7 +300,7 @@ contract PoolInfoUtils {
     ) external view returns (uint256 quoteAmount_) {
         IPool pool = IPool(ajnaPool_);
         (uint256 bucketLPs_, uint256 bucketCollateral , , uint256 bucketDeposit, ) = pool.bucketInfo(index_);
-        (quoteAmount_, ) = Buckets.lpsToQuoteToken(
+        quoteAmount_ = _lpsToQuoteToken(
             bucketLPs_,
             bucketCollateral,
             bucketDeposit,
@@ -312,18 +312,18 @@ contract PoolInfoUtils {
 
     /**
      *  @notice Calculate the amount of collateral tokens in bucket for a given amount of LP Tokens.
-     *  @param  lpTokens_    The number of lpTokens to calculate amounts for.
-     *  @param  index_       The price bucket index for which the value should be calculated.
-     *  @return collateralAmount The exact amount of collateral tokens that can be exchanged for the given LP Tokens, WAD units.
+     *  @param  lpTokens_         The number of lpTokens to calculate amounts for.
+     *  @param  index_            The price bucket index for which the value should be calculated.
+     *  @return collateralAmount_ The exact amount of collateral tokens that can be exchanged for the given LP Tokens, WAD units.
      */
     function lpsToCollateral(
         address ajnaPool_,
         uint256 lpTokens_,
         uint256 index_
-    ) external view returns (uint256 collateralAmount) {
+    ) external view returns (uint256 collateralAmount_) {
         IPool pool = IPool(ajnaPool_);
         (uint256 bucketLPs_, uint256 bucketCollateral , , uint256 bucketDeposit, ) = pool.bucketInfo(index_);
-        (collateralAmount, ) = Buckets.lpsToCollateral(
+        collateralAmount_ = _lpsToCollateral(
             bucketCollateral,
             bucketLPs_,
             bucketDeposit,

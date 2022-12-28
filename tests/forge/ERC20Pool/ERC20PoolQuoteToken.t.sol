@@ -33,6 +33,14 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
     function testPoolDepositQuoteToken() external tearDown {
         assertEq(_hpb(), MIN_PRICE);
 
+        // should revert if trying to deposit at index 0
+        _assertAddLiquidityAtIndex0Revert(
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18
+            }
+        );
+
         // test 10_000 deposit at price of 3_010.892022197881557845
         _addInitialLiquidity(
             {
@@ -538,7 +546,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
      *              Attempts to remove more quote tokens than available from lpBalance.
      *              Attempts to remove quote token when doing so would drive lup below htp.
      */
-    function testPoolRemoveQuoteTokenRequireChecks() external tearDown {
+    function testPoolRemoveQuoteTokenReverts() external tearDown {
         _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_borrower) + 3_500_000 * 1e18);
         _mintCollateralAndApproveTokens(_lender, 1 * 1e18);
         // lender adds initial quote token
@@ -1042,7 +1050,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
      *              Attempts to move quote token from bucket with available collateral.
      *              Attempts to move quote token when doing so would drive lup below htp.
      */
-    function testPoolMoveQuoteTokenRequireChecks() external tearDown {
+    function testPoolMoveQuoteTokenReverts() external tearDown {
         // test setup
         _mintCollateralAndApproveTokens(_lender1, _collateral.balanceOf(_lender1) + 100_000 * 1e18);
         _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_lender1) + 1_500_000 * 1e18);
@@ -1092,6 +1100,15 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 amount:    5_000 * 1e18,
                 fromIndex: 4549,
                 toIndex:   4549
+            }
+        );
+
+        // should revert if moving quote token to index 0
+        _assertMoveLiquidityToIndex0Revert(
+            {
+                from:      _lender,
+                amount:    5_000 * 1e18,
+                fromIndex: 4549
             }
         );
 

@@ -24,8 +24,9 @@ import './PoolHelper.sol';
 
 import '../libraries/Buckets.sol';
 import '../libraries/Maths.sol';
-import '../libraries/SafeTokenNamer.sol';
 import '../libraries/external/PositionNFTSVG.sol';
+
+import { tokenSymbol } from '../libraries/SafeTokenNamer.sol';
 
 contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, ReentrancyGuard {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -91,7 +92,8 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         uint256 indexesLength = params_.indexes.length;
         for (uint256 i = 0; i < indexesLength; ) {
             // record price at which a position has added liquidity
-            if (!positionIndex.contains(params_.indexes[i])) if(!positionIndex.add(params_.indexes[i])) revert AddLiquidityFailed();
+            // slither-disable-next-line unused-return
+            positionIndex.add(params_.indexes[i]);
 
             // update PositionManager accounting
             (uint256 lpBalance,) = pool.lenderInfo(params_.indexes[i], owner);
@@ -125,7 +127,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         address owner = ownerOf(params_.tokenId);
 
         (uint256 bucketLPs, uint256 bucketCollateral, , uint256 bucketDeposit, ) = IPool(params_.pool).bucketInfo(params_.fromIndex);
-        (uint256 maxQuote, ) = Buckets.lpsToQuoteToken(
+        uint256 maxQuote = _lpsToQuoteToken(
             bucketLPs,
             bucketCollateral,
             bucketDeposit,
@@ -134,10 +136,11 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             _priceAt(params_.fromIndex)
         );
 
-        // update price indexes set at which a position has liquidity
+        // update prices set at which a position has liquidity
         EnumerableSet.UintSet storage positionIndex = positionIndexes[params_.tokenId];
         if (!positionIndex.remove(params_.fromIndex)) revert RemoveLiquidityFailed();
-        if (!positionIndex.contains(params_.toIndex)) if(!positionIndex.add(params_.toIndex)) revert AddLiquidityFailed();
+        // slither-disable-next-line unused-return
+        positionIndex.add(params_.toIndex);
 
         // move quote tokens in pool
         emit MoveLiquidity(owner, params_.tokenId);
@@ -219,8 +222,8 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         address quoteTokenAddress = IPool(poolKey[tokenId_]).quoteTokenAddress();
 
         PositionNFTSVG.ConstructTokenURIParams memory params = PositionNFTSVG.ConstructTokenURIParams({
-            collateralTokenSymbol: SafeTokenNamer.tokenSymbol(collateralTokenAddress),
-            quoteTokenSymbol: SafeTokenNamer.tokenSymbol(quoteTokenAddress),
+            collateralTokenSymbol: tokenSymbol(collateralTokenAddress),
+            quoteTokenSymbol: tokenSymbol(quoteTokenAddress),
             tokenId: tokenId_,
             pool: poolKey[tokenId_],
             owner: ownerOf(tokenId_),
