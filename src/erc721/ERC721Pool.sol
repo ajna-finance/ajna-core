@@ -33,6 +33,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256 auctionPrice;
         uint256 excessQuoteToken;
         uint256 collateralTaken;
+        uint256[] tokensTaken;
     }
 
     /****************************/
@@ -252,7 +253,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         }
 
         // transfer rounded collateral from pool to taker
-        uint256[] memory tokensTaken = _transferFromPoolToAddress(
+        vars.tokensTaken = _transferFromPoolToAddress(
             callee_,
             borrowerTokenIds[params.borrower],
             vars.collateralTaken / 1e18
@@ -260,7 +261,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
         if (data_.length != 0) {
             IERC721Taker(callee_).atomicSwapCallback(
-                tokensTaken, 
+                vars.tokensTaken,
                 vars.quoteTokenAmount / _getArgUint256(QUOTE_SCALE), 
                 data_
             );
