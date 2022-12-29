@@ -187,7 +187,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             RemoveQuoteParams({
                 maxAmount:      maxAmount_,
                 index:          index_,
-                thresholdPrice: Loans.getMax(loans).thresholdPrice
+                thresholdPrice: Loans.getMax(loans).thresholdPrice,
+                dustLimit:      _getArgUint256(QUOTE_SCALE)
             })
         );
 

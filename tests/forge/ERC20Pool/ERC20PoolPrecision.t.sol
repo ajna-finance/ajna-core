@@ -519,11 +519,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             exchangeRate: 1e27
         });
 
-        uint256 lpBalance;
-        uint256 time;
-        bool    reverted;
 
         // deposit quote token and sanity check lender LPs
+        bool reverted;
         if (quoteAmount != 0 && quoteAmount < _pool.quoteTokenScale()) {
             vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
             _pool.addQuoteToken(quoteAmount, bucketId);
@@ -532,7 +530,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         } else {
             _addInitialLiquidity(_lender, quoteAmount, bucketId);
         }
-        (lpBalance, time) = _pool.lenderInfo(bucketId, _lender);
+        (uint256 lpBalance, uint256 time) = _pool.lenderInfo(bucketId, _lender);
         if (quoteAmount != 0) {
             assertGt(lpBalance, 0);
         } else {
@@ -589,19 +587,33 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _quote.approve(address(_pool), quoteAmount2 * _quotePrecision);
 
         // deposit lender1 quote token and sanity check LPs
-        _addInitialLiquidity(_lender, quoteAmount1, bucketId);
-        uint256 time;
-        uint256 lpBalance1;
-        (lpBalance1, time) = _pool.lenderInfo(bucketId, _lender);
+        bool reverted1;
+        if (quoteAmount1 != 0 && quoteAmount1 < _pool.quoteTokenScale()) {
+            vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
+            _pool.addQuoteToken(quoteAmount1, bucketId);
+            quoteAmount1 = 0;
+            reverted1 = true;
+        } else {
+            _addInitialLiquidity(_lender, quoteAmount1, bucketId);
+        }
+        (uint256 lpBalance1, uint256 time) = _pool.lenderInfo(bucketId, _lender);
         if (quoteAmount1 != 0) {
             assertGt(lpBalance1, 0);
         } else {
             assertEq(lpBalance1, 0);
         }
-        assertGt(time, _startTime);
+        if (!reverted1) assertGt(time, _startTime);
 
         // deposit lender2 quote token and sanity check LPs
-        _addInitialLiquidity(lender2, quoteAmount2, bucketId);
+        bool reverted2;
+        if (quoteAmount2 != 0 && quoteAmount2 < _pool.quoteTokenScale()) {
+            vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
+            _pool.addQuoteToken(quoteAmount2, bucketId);
+            quoteAmount2 = 0;
+            reverted2 = true;
+        } else {
+            _addInitialLiquidity(lender2, quoteAmount2, bucketId);
+        }
         uint256 lpBalance2;
         (lpBalance2, time) = _pool.lenderInfo(bucketId, lender2);
         if (quoteAmount2 != 0) {
@@ -609,7 +621,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         } else {
             assertEq(lpBalance2, 0);
         }
-        assertGt(time, _startTime);
+        if (!reverted2) assertGt(time, _startTime);
 
         // check bucket
         uint256 curDeposit;

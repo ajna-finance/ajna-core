@@ -53,10 +53,12 @@ struct MoveQuoteParams {
     uint256 fromIndex;       // the deposit index from where amount is moved
     uint256 toIndex;         // the deposit index where amount is moved to
     uint256 thresholdPrice;  // max threshold price in pool
+    // uint256 dustLimit;       // quote token dust limit of the pool
 }
 
 struct RemoveQuoteParams {
     uint256 maxAmount;      // max amount to be removed
     uint256 index;          // the deposit index from where amount is removed
     uint256 thresholdPrice; // max threshold price in pool
+    uint256 dustLimit;       // quote token dust limit of the pool
 }
