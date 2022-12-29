@@ -521,15 +521,17 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             // only intended recipient can pull collateral
             if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
 
-            // calculate LUP only if it wasn't calculated by repay action
-            if (!repay) newLup_ = _lup(poolState.debt);
-
-            uint256 encumberedCollateral = borrower.t0Debt != 0 ? Maths.wdiv(borrowerDebt, newLup_) : 0;
-            if (borrower.collateral - encumberedCollateral < collateralAmountToPull_) revert InsufficientCollateral();
+            // revert if borrower tries to pull more collateral than pledged
+            if (borrower.collateral < collateralAmountToPull_) revert InsufficientCollateral();
 
             // remove collateral from borrower and pool pledged collateral
             borrower.collateral  -= collateralAmountToPull_;
             poolState.collateral -= collateralAmountToPull_;
+
+            // calculate LUP only if it wasn't calculated by repay action
+            if (!repay) newLup_ = _lup(poolState.debt);
+            // revert if pull leaves borrower undercollateralized
+            if (Maths.wmul(borrower.collateral, newLup_) < borrowerDebt) revert InsufficientCollateral();
 
             // update pool balances state
             poolBalances.pledgedCollateral = poolState.collateral;

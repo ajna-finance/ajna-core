@@ -429,7 +429,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         );
 
         // remove all of the remaining unencumbered collateral
-        uint256 unencumberedCollateral = col - _encumberedCollateral(debt, _lup());
+        uint256 unencumberedCollateral = 48.3444467990746069 * 1e18;
 
         _repayDebtNoLupCheck({
             from:             _borrower,
@@ -446,19 +446,19 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
         // check pool state
         debt = 5_009.615384615384620000 * 1e18;
-        col  = 1.655553200925393083 * 1e18;
+        col  = 1.655553200925393100 * 1e18;
         _assertBorrower(
             {
                 borrower:                  _borrower,
                 borrowerDebt:              debt,
                 borrowerCollateral:        col,
-                borrowert0Np:              3_192.373538835858843381 * 1e18,
-                borrowerCollateralization: 1 * 1e18
+                borrowert0Np:              3_192.373538835858810600 * 1e18,
+                borrowerCollateralization: 1.000000000000000010 * 1e18
             }
         );
         _assertPoolPrices(
             {
-                htp:      3_025.946482308870941594 * 1e18,
+                htp:      3_025.946482308870910522 * 1e18,
                 htpIndex: 2549,
                 hpb:      3_025.946482308870940904 * 1e18,
                 hpbIndex: 2549,
@@ -470,7 +470,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             {
                 noOfLoans:         1,
                 maxBorrower:       _borrower,
-                maxThresholdPrice: 3_025.946482308870941594 * 1e18
+                maxThresholdPrice: 3_025.946482308870910522 * 1e18
             }
         );
         (poolDebt,,) = _pool.debtInfo();
@@ -603,10 +603,6 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         } else {
             assertEq(bucketLPs, lpBalance1 + lpBalance2);
         }
-    }
-
-    function _encumberedCollateral(uint256 debt_, uint256 price_) internal pure returns (uint256 encumberance_) {
-        encumberance_ =  price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
     }
 
     function _addCollateralWithoutCheckingLP(
