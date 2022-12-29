@@ -2441,10 +2441,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // check retrieval of pool token symbols
         address collateralTokenAddress = IPool(_positionManager.poolKey(tokenId)).collateralAddress();
         address quoteTokenAddress = IPool(_positionManager.poolKey(tokenId)).quoteTokenAddress();
-        assertEq(SafeTokenNamer.tokenSymbol(collateralTokenAddress), "C");
-        assertEq(SafeTokenNamer.tokenSymbol(quoteTokenAddress), "Q");
-        assertEq(SafeTokenNamer.tokenName(collateralTokenAddress), "Collateral");
-        assertEq(SafeTokenNamer.tokenName(quoteTokenAddress), "Quote");
+        assertEq(tokenSymbol(collateralTokenAddress), "C");
+        assertEq(tokenSymbol(quoteTokenAddress), "Q");
+        assertEq(tokenName(collateralTokenAddress), "Collateral");
+        assertEq(tokenName(quoteTokenAddress), "Quote");
 
         // allow position manager to take ownership of the position
         _pool.approveLpOwnership(address(_positionManager), indexes[0], 3_000 * 1e27);

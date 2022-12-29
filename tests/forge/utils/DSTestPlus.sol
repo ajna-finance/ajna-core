@@ -663,6 +663,15 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.addQuoteToken(amount, index);
     }
 
+    function _assertAddLiquidityAtIndex0Revert(
+        address from,
+        uint256 amount
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.InvalidIndex.selector);
+        _pool.addQuoteToken(amount, 0);
+    }
+
     function _assertArbTakeNoAuction(
         address from,
         address borrower,
@@ -795,6 +804,15 @@ abstract contract DSTestPlus is Test, IPoolEvents {
 
     function _assertBorrowAuctionActiveRevert(
         address from,
+        uint256,
+        uint256
+    ) internal virtual {
+        // to be overidden by ERC20/ERC721DSTestPlus 
+    }
+
+    function _assertBorrowBorrowerNotSenderRevert(
+        address from,
+        address borrower,
         uint256,
         uint256
     ) internal virtual {
@@ -1043,6 +1061,27 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.MoveToSamePrice.selector);
+        _pool.moveQuoteToken(amount, fromIndex, toIndex);
+    }
+
+    function _assertMoveLiquidityToIndex0Revert(
+        address from,
+        uint256 amount,
+        uint256 fromIndex
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.InvalidIndex.selector);
+        _pool.moveQuoteToken(amount, fromIndex, 0);
+    }
+
+    function _assertMoveDepositLockedByAuctionDebtRevert(
+        address from,
+        uint256 amount,
+        uint256 fromIndex,
+        uint256 toIndex
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.RemoveDepositLockedByAuctionDebt.selector);
         _pool.moveQuoteToken(amount, fromIndex, toIndex);
     }
 
