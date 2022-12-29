@@ -1713,7 +1713,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 settledDebt: 9_241.589415329770722522 * 1e18
             }
         );
-        return;
+
         _assertAuction(
             AuctionParams({
                 borrower:          _borrower2,
@@ -1746,7 +1746,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 borrowerCollateralization: 1 * 1e18
             }
         );
-        return;
+
         _assertBucket(
             {
                 index:        _i9_91,

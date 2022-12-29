@@ -224,7 +224,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         );
     }
 
-    function testDepositTakeCollateralRestrict() external {
+    function testDepositTakeCollateralRestrict() external tearDown {
         skip(6 hours);
 
         _assertLenderLpBalance(
@@ -333,7 +333,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
                lpAwardKicker:    0.198343102933742890000000000 * 1e27
            }
         );
-        return;
+
         _assertLenderLpBalance(
            {
                lender:      _taker,

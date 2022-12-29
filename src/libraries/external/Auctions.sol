@@ -1062,7 +1062,7 @@ library Auctions {
         // if first take borrower debt is increased by 7% penalty
         takeResult_.t0Debt = t0Debt_;
         if (!liquidation_.alreadyTaken) {
-            takeResult_.t0DebtPenalty = Maths.wmul(t0Debt_, 1.07 * 1e18);
+            takeResult_.t0DebtPenalty = Maths.wmul(t0Debt_, 0.07 * 1e18);
             takeResult_.t0Debt += takeResult_.t0DebtPenalty; 
             liquidation_.alreadyTaken = true;
         }
