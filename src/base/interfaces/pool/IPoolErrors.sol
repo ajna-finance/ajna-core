@@ -120,11 +120,6 @@ interface IPoolErrors {
     error NoReserves();
 
     /**
-     *  @notice Underlying ERC20 transfer failed.
-     */
-    error ERC20TransferFailed();
-
-    /**
      *  @notice Borrower is attempting to borrow an amount of quote tokens that will push the pool into under-collateralization.
      */
     error PoolUnderCollateralized();

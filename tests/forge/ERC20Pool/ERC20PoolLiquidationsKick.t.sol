@@ -423,6 +423,36 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             }
         );
 
+        uint256 snapshot = vm.snapshot();
+        // kicker not saved if partial debt paid only
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    0.0001 * 1e18,
+            amountRepaid:     0.0001 * 1e18,
+            collateralToPull: 0,
+            newLup:           9.721295865031779605 * 1e18
+        });
+
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            true,
+                kicker:            address(_lender),
+                bondSize:          0.195007546732047806 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          _startTime + 850 days,
+                kickMomp:          9.818751856078723036 * 1e18,
+                totalBondEscrowed: 0.195007546732047806 * 1e18,
+                auctionPrice:      314.200059394519137152 * 1e18,
+                debtInAuction:     19.720038163278334392 * 1e18,
+                thresholdPrice:    9.860019081639167196 * 1e18,
+                neutralPrice:      11.249003021186918284 * 1e18
+            })
+        );
+        vm.revertTo(snapshot);
+
+        // kicker saved if enough debt paid
         _repayDebt({
             from:             _borrower,
             borrower:         _borrower,

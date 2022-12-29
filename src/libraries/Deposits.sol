@@ -11,11 +11,6 @@ library Deposits {
     uint256 internal constant SIZE = 8192;
 
     /**
-     *  @notice Invalid deposit index.
-     */
-    error InvalidIndex();
-
-    /**
      *  @notice increase a value in the FenwickTree at an index.
      *  @dev    Starts at leaf/target and moved up towards root
      *  @param  index_     The deposit index.
@@ -36,23 +31,21 @@ library Deposits {
      *  @param  unscaledAddAmount_ The unscaled amount to increase deposit by.
      */    
     function unscaledAdd(
-        DepositsState storage deposit_,
+        DepositsState storage deposits_,
         uint256 index_,
         uint256 unscaledAddAmount_
     ) internal {
-        if (index_ >= SIZE) revert InvalidIndex();
-
         ++index_;
 
         while (index_ <= SIZE) {
-            uint256 value    = deposit_.values[index_];
-            uint256 scaling  = deposit_.scaling[index_];
+            uint256 value    = deposits_.values[index_];
+            uint256 scaling  = deposits_.scaling[index_];
             uint256 newValue = value + unscaledAddAmount_;
             // Note: we can't just multiply addAmount_ by scaling[i_] due to rounding
-            // We need to track the precise change in values[i_] in order to ensure
+            // We need to track the precice change in values[i_] in order to ensure
             // obliterated indices remain zero after subsequent adding to related indices
             if (scaling != 0) unscaledAddAmount_ = Maths.wmul(newValue, scaling) - Maths.wmul(value, scaling);
-            deposit_.values[index_] = newValue;
+            deposits_.values[index_] = newValue;
             index_ += lsb(index_);
         }
     }
@@ -62,7 +55,8 @@ library Deposits {
      *  @dev    Used in lup calculation
      *  @param  targetSum_     The sum to find index for.
      *  @return sumIndex_      Smallest index where prefixsum greater than the sum
-     *  @return sumIndexSum_   Sum at index FOLLOWING sumIndex_ 
+     *  @return sumIndexSum_   Sum at index FOLLOWING sumIndex_
+     *  @return sumIndexScale_ Scale of bucket FOLLOWING sumIndex_
      */    
     function findIndexAndSumOfSum(
         DepositsState storage deposits_,
@@ -193,7 +187,7 @@ library Deposits {
         uint256 indexLSB = lsb(sumIndex_);
         
         while (j >= indexLSB) {
-            if (index+j > SIZE) continue;
+            if (index + j > SIZE) continue;
             uint256 scaled = deposits_.scaling[index+j];
 
             if (sumIndex_ & j != 0) {
@@ -201,7 +195,7 @@ library Deposits {
                 uint256 value  = deposits_.values[index+j];
                 sum_ += scaled != 0 ? Maths.wmul(Maths.wmul(sc, scaled), value) : Maths.wmul(sc, value);
                 index += j;
-                if (index==sumIndex_) break;
+                if (index == sumIndex_) break;
             } else {
                 // node is not included in sum, but its scale needs to be included for subsequent sums
                 if (scaled != 0) sc = Maths.wmul(sc, scaled);
