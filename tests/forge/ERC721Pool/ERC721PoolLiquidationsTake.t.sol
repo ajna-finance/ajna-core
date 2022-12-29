@@ -377,7 +377,6 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         vm.revertTo(snapshot);
 
 
-        return;
         /****************************************/
         /* Take partial collateral tokens (1) ***/
         /****************************************/
@@ -387,39 +386,38 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
                 from:            _lender,
                 borrower:        _borrower,
                 maxCollateral:   1,
-                bondChange:      0.227287198298417188 * 1e18,
-                givenAmount:     23.013419918237986289 * 1e18,
-                collateralTaken: 0.964310482216318687 * 1e18,
+                bondChange:      0.168752135153387434 * 1e18,
+                givenAmount:     16.875213515338743424 * 1e18,
+                collateralTaken: 1.0 * 1e18,
                 isReward:        false
             }
         );
 
-        return;
         _assertPool(
             PoolParams({
-                htp:                  6.582554958364903034 * 1e18,
+                htp:                  7.039638132896536973 * 1e18,
                 lup:                  9.917184843435912074 * 1e18,
-                poolSize:             73_000.000878382806067000 * 1e18,
+                poolSize:             73_000.000966222327608000 * 1e18,
                 pledgedCollateral:    4 * 1e18,
-                encumberedCollateral: 2.056855848178945039 * 1e18,
-                poolDebt:             20.398219642692751196 * 1e18,
-                actualUtilization:    0.000279427662976004 * 1e18,
+                encumberedCollateral: 2.355252979574012614 * 1e18,
+                poolDebt:             23.357479151488669701 * 1e18,
+                actualUtilization:    0.000319965463593574 * 1e18,
                 targetUtilization:    0.811350329890505142 * 1e18,
-                minDebtAmount:        1.019910982134637560 * 1e18,
+                minDebtAmount:        1.167873957574433485 * 1e18,
                 loans:                2,
-                maxBorrower:          address(_borrower2),
+                maxBorrower:          address(_borrower),
                 interestRate:         0.045 * 1e18,
-                interestRateUpdate:   block.timestamp - 5 hours
+                interestRateUpdate:   block.timestamp - 5.5 hours
             })
         );
 
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              3.179050231366162129 * 1e18,
+                borrowerDebt:              6.138265512786588329 * 1e18,
                 borrowerCollateral:        1 * 1e18,
                 borrowert0Np:              10.404995192307692312 * 1e18,
-                borrowerCollateralization: 3.119543298054183364 * 1e18
+                borrowerCollateralization: 1.615633084423845291 * 1e18
             }
         );
 
@@ -435,7 +433,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    3.179050231366162129 * 1e18,
+                thresholdPrice:    6.138265512786588329 * 1e18,
                 neutralPrice:      0
             })
         );
@@ -452,7 +450,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         assertEq(_collateral.ownerOf(3), _lender);
         assertEq(_collateral.ownerOf(1), address(_pool));
         // after take: check quote token balances of taker and borrower
-        assertEq(_quote.balanceOf(_lender), 46_979.938343114829758652 * 1e18);
+        assertEq(_quote.balanceOf(_lender), 46_982.897499286362839388 * 1e18);
         assertEq(_quote.balanceOf(_borrower), 119.8 * 1e18); // no additional tokens as there is no rounding of collateral taken (1)
     }
 
