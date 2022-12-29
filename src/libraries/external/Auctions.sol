@@ -549,18 +549,6 @@ library Auctions {
         );
     }
 
-    function _applyTakePenalty(
-        Liquidation storage liquidation_,
-        uint256 t0BorrowerDebt_
-    ) internal returns (uint256 t0Debt_) {
-        // first take apply 7% debt penalty to borrower debt
-        t0Debt_ = t0BorrowerDebt_;
-        if (!liquidation_.alreadyTaken) {
-            t0Debt_ = Maths.wmul(t0Debt_, 1.07 * 1e18);
-            liquidation_.alreadyTaken = true;
-        }
-    }
-
     /**
      *  @notice Performs NFT auction settlement by rounding down borrower's collateral amount and by moving borrower's token ids to pool claimable array.
      *  @param borrowerTokens_     Array of borrower NFT token ids.
@@ -1062,6 +1050,7 @@ library Auctions {
         // if first take borrower debt is increased by 7% penalty
         takeResult_.t0Debt = t0Debt_;
         if (!liquidation_.alreadyTaken) {
+            // if first take then apply penalty of 7%
             takeResult_.t0DebtPenalty = Maths.wmul(t0Debt_, 0.07 * 1e18);
             takeResult_.t0Debt += takeResult_.t0DebtPenalty; 
             liquidation_.alreadyTaken = true;
