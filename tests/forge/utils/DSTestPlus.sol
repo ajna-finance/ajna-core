@@ -413,6 +413,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(auctionTotalBondEscrowed, state_.totalBondEscrowed);
         assertEq(Auctions._auctionPrice(
             auctionKickMomp,
+            auctionNeutralPrice,
             auctionKickTime),              state_.auctionPrice);
         assertEq(auctionDebtInAuction,     state_.debtInAuction);
         assertEq(auctionNeutralPrice,      state_.neutralPrice);

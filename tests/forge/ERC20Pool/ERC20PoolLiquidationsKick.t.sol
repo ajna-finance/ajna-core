@@ -240,7 +240,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 kickTime:          block.timestamp,
                 kickMomp:          9.818751856078723036 * 1e18,
                 totalBondEscrowed: 0.195342779771472726 * 1e18,
-                auctionPrice:      314.200059394519137152 * 1e18,
+                auctionPrice:      328.175870016074179200 * 1e18,
                 debtInAuction:     19.778456451861613480 * 1e18,
                 thresholdPrice:    9.889228225930806740 * 1e18,
                 neutralPrice:      10.255495938002318100 * 1e18
@@ -297,7 +297,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         );
     }
 
-    function testKickAndSaveByRepay() external tearDown {
+    function testKickAndSaveByRepay() external {
 
         // Skip to make borrower undercollateralized
         skip(100 days);
@@ -349,7 +349,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 kickTime:          block.timestamp,
                 kickMomp:          9.818751856078723036 * 1e18,
                 totalBondEscrowed: 0.195342779771472726 * 1e18,
-                auctionPrice:      314.200059394519137152 * 1e18,
+                auctionPrice:      328.175870016074179200 * 1e18,
                 debtInAuction:     19.778456451861613480 * 1e18,
                 thresholdPrice:    9.889228225930806740 * 1e18,
                 neutralPrice:      10.255495938002318100 * 1e18
@@ -515,7 +515,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 kickTime:          block.timestamp,
                 kickMomp:          9.818751856078723036 * 1e18,
                 totalBondEscrowed: 0.195342779771472726 * 1e18,
-                auctionPrice:      314.200059394519137152 * 1e18,
+                auctionPrice:      328.175870016074179200 * 1e18,
                 debtInAuction:     19.778456451861613480 * 1e18,
                 thresholdPrice:    9.889228225930806740 * 1e18,
                 neutralPrice:      10.255495938002318100 * 1e18
@@ -575,7 +575,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         );
     }
 
-    function testKickActiveAuctionReverts() external tearDown {
+    function testKickActiveAuctionReverts() external {
 
         // Skip to make borrower undercollateralized
         skip(100 days);
@@ -627,7 +627,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 kickTime:          block.timestamp,
                 kickMomp:          9.818751856078723036 * 1e18,
                 totalBondEscrowed: 0.195342779771472726 * 1e18,
-                auctionPrice:      314.200059394519137152 * 1e18,
+                auctionPrice:      328.175870016074179200 * 1e18,
                 debtInAuction:     19.778456451861613480 * 1e18,
                 thresholdPrice:    9.889228225930806740 * 1e18,
                 neutralPrice:      10.255495938002318100 * 1e18
