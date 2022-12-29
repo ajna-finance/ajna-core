@@ -18,7 +18,7 @@ contract AjnaTokenTest is DSTestPlus {
     }
 
     function invariantMetadata() external {
-        assertEq(_token.name(),     "Ajna");
+        assertEq(_token.name(),     "AjnaToken");
         assertEq(_token.symbol(),   "AJNA");
         assertEq(_token.decimals(), 18);
     }
