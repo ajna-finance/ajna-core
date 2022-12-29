@@ -219,7 +219,7 @@ library LenderActions {
             params_.fromIndex
         );
 
-        vars.ptp = _ptp(poolState_.debt, poolState_.collateral);  // TODO: this should be HTP???
+        vars.ptp = _ptp(poolState_.debt, poolState_.collateral);
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
         if (vars.fromBucketDepositTime != 0 && block.timestamp - vars.fromBucketDepositTime < 1 days) {
             if (vars.fromBucketPrice > vars.ptp && vars.toBucketPrice < vars.ptp) {
@@ -243,7 +243,6 @@ library LenderActions {
 
         lup_ = _lup(deposits_, poolState_.debt);
         vars.htp = Maths.wmul(params_.thresholdPrice, poolState_.inflator);
-
         // check loan book's htp against new lup, revert if move drives LUP below HTP
         if (params_.fromIndex < params_.toIndex) if(vars.htp > lup_) revert LUPBelowHTP();
 
