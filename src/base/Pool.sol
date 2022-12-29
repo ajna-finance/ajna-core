@@ -637,7 +637,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         // update pool balances state
         vars.t0PoolDebt      = poolBalances.t0Debt;
         vars.t0DebtInAuction = poolBalances.t0DebtInAuction;
-
         if (t0DebtPenalty_ != 0) {
             vars.t0PoolDebt      += t0DebtPenalty_;
             vars.t0DebtInAuction += t0DebtPenalty_;
