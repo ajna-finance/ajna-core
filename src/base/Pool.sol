@@ -52,13 +52,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 
     struct TakeFromLoanLocalVars {
-        uint256 borrowerDebt;
-        uint256 repaidDebt;
-        uint256 newLup;
-        uint256 t0DebtInAuctionChange;
-        uint256 t0PoolDebt;
-        uint256 t0DebtInAuction;
-        bool    inAuction;
+        uint256 borrowerDebt;          // borrower's accrued debt
+        bool    inAuction;             // true if loan still in auction after auction is taken, false otherwise
+        uint256 newLup;                // LUP after auction is taken
+        uint256 repaidDebt;            // debt repaid when auction is taken
+        uint256 t0DebtInAuction;       // t0 pool debt in auction
+        uint256 t0DebtInAuctionChange; // t0 change amount of debt after auction is taken
+        uint256 t0PoolDebt;            // t0 pool debt
     }
 
     /******************/
@@ -580,6 +580,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @param  borrowerAddress_  Address of the borrower whose loan is taken.
      *  @param  collateralAmount_ Collateral amount that was taken from borrower.
      *  @param  t0RepaidDebt_     Amount of t0 debt repaid by take action.
+     *  @param  t0DebtPenalty_    Amount of t0 penalty if intial take (7% from t0 debt).
     */
     function _takeFromLoan(
         PoolState memory poolState_,

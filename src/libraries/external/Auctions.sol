@@ -23,7 +23,6 @@ import '../Deposits.sol';
 import '../Loans.sol';
 
 import '../../base/PoolHelper.sol';
-import '@std/console.sol';
 
 library Auctions {
 
@@ -53,8 +52,8 @@ library Auctions {
         address kicker;                   // Address of auction kicker.
         uint256 scaledQuoteTokenAmount;   // Unscaled quantity in Fenwick tree and before 1-bpf factor, paid for collateral
         uint256 t0RepayAmount;            // The amount of debt (quote tokens) that is recovered / repayed by take t0 terms.
-        uint256 t0Debt;
-        uint256 t0DebtPenalty;
+        uint256 t0Debt;                   // Borrower's t0 debt.
+        uint256 t0DebtPenalty;            // Borrower's t0 penalty - 7% from current debt if intial take, 0 otherwise.
         uint256 unscaledDeposit;          // Unscaled bucket quantity
         uint256 unscaledQuoteTokenAmount; // The unscaled token amount that taker should pay for collateral taken.
     }
@@ -410,6 +409,7 @@ library Auctions {
      *  @param  params_ Struct containing take action details.
      *  @return Collateral amount taken.
      *  @return T0 debt amount repaid.
+     *  @return T0 penalty debt.
     */
     function bucketTake(
         AuctionsState storage auctions_,
@@ -487,6 +487,7 @@ library Auctions {
      *  @return Collateral amount taken.
      *  @return Quote token to be received from taker.
      *  @return T0 debt amount repaid.
+     *  @return T0 penalty debt.
      *  @return Auction price.
     */
     function take(

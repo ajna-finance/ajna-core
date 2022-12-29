@@ -26,14 +26,14 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     uint256[]                     public bucketTokenIds;   // array of tokenIds added in pool buckets
 
     struct TakeLocalVars {
-        uint256 collateralAmount;
-        uint256 quoteTokenAmount;
-        uint256 t0RepayAmount;
-        uint256 t0DebtPenalty;
-        uint256 auctionPrice;
-        uint256 excessQuoteToken;
-        uint256 collateralTaken;
-        uint256[] tokensTaken;
+        uint256 auctionPrice;     // price of auction that is taken
+        uint256 collateralAmount; // collateral amount in taken auction
+        uint256 collateralTaken;  // amount of collateral taken
+        uint256 excessQuoteToken; // difference of quote token that borrower receives for fractional NFT
+        uint256 quoteTokenAmount; // amount of quote tokens that taker should provide
+        uint256 t0DebtPenalty;    // t0 initial take penalty (7% from borrower's debt)
+        uint256 t0RepayAmount;    // t0 debt repaid when auction is taken
+        uint256[] tokensTaken;    // token ids taken
     }
 
     /****************************/
