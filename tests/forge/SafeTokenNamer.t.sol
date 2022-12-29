@@ -8,13 +8,13 @@ import 'src/libraries/SafeTokenNamer.sol';
 
 contract SafeTokenNamerTest is DSTestPlus {
 
-    Token           internal _ercCollateralOne;
-    Token           internal _ercQuoteOne;
+    Token internal _ercCollateralOne;
+    Token internal _ercQuoteOne;
 
-    Token           internal _ercCollateralTwo;
-    Token           internal _ercQuoteTwo;
+    Token internal _ercCollateralTwo;
+    Token internal _ercQuoteTwo;
 
-    Token           internal _tokenLong;
+    Token internal _tokenLong;
 
     NFTCollateralToken internal _nftCollateralOne;
 
@@ -33,34 +33,34 @@ contract SafeTokenNamerTest is DSTestPlus {
     }
 
     function testERC20Name() external {
-        assertEq(SafeTokenNamer.tokenName(address(_ercCollateralOne)), "Collateral 1");
-        assertEq(SafeTokenNamer.tokenName(address(_ercCollateralTwo)), "Collateral 2");
+        assertEq(tokenName(address(_ercCollateralOne)), "Collateral 1");
+        assertEq(tokenName(address(_ercCollateralTwo)), "Collateral 2");
 
-        assertEq(SafeTokenNamer.tokenName(address(_tokenLong)), "TOKEN <TESTING LOTS OF CHARACTERS!!> 3");
+        assertEq(tokenName(address(_tokenLong)), "TOKEN <TESTING LOTS OF CHARACTERS!!> 3");
     }
 
     function testERC20Symbol() external {
-        assertEq(SafeTokenNamer.tokenSymbol(address(_ercCollateralOne)), "C1");
-        assertEq(SafeTokenNamer.tokenSymbol(address(_ercCollateralTwo)), "C2");
+        assertEq(tokenSymbol(address(_ercCollateralOne)), "C1");
+        assertEq(tokenSymbol(address(_ercCollateralTwo)), "C2");
         
-        assertEq(SafeTokenNamer.tokenSymbol(address(_tokenLong)), "TESTING_LONG_TOKEN_SYMBOL");
+        assertEq(tokenSymbol(address(_tokenLong)), "TESTING_LONG_TOKEN_SYMBOL");
     }
 
     function testERC721Name() external {
-        assertEq(SafeTokenNamer.tokenName(address(_nftCollateralOne)), "NFTCollateral");
+        assertEq(tokenName(address(_nftCollateralOne)), "NFTCollateral");
     }
 
     function testERC721Symbol() external {
-        assertEq(SafeTokenNamer.tokenSymbol(address(_nftCollateralOne)), "NFTC");
+        assertEq(tokenSymbol(address(_nftCollateralOne)), "NFTC");
     }
 
     function testMoonCatsMetadata() external {
-        assertEq(SafeTokenNamer.tokenName(0x7C40c393DC0f283F318791d746d894DdD3693572), "Wrapped MoonCatsRescue");
-        assertEq(SafeTokenNamer.tokenSymbol(0x7C40c393DC0f283F318791d746d894DdD3693572), "WMCR");
+        assertEq(tokenName(0x7C40c393DC0f283F318791d746d894DdD3693572), "Wrapped MoonCatsRescue");
+        assertEq(tokenSymbol(0x7C40c393DC0f283F318791d746d894DdD3693572), "WMCR");
     }
 
     function testWETHMetadata() external {
-        assertEq(SafeTokenNamer.tokenName(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2), "Wrapped Ether");
-        assertEq(SafeTokenNamer.tokenSymbol(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2), "WETH");
+        assertEq(tokenName(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2), "Wrapped Ether");
+        assertEq(tokenSymbol(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2), "WETH");
     }
 }

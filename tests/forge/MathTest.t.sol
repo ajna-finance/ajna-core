@@ -39,8 +39,6 @@ contract MathTest is DSTestPlus {
         assertEq(debt * 1e18 / price,       10.98202093218880245 * 1e18);
         assertEq(Maths.wwdivr(debt, price), 10.982020932188802450191601163 * 1e27);
 
-        assertEq(Maths.wrdivw(20 * 1e18, 10.982020932188802450191601163 * 1e27), 1.821158430082671857 * 1e18);
-
         uint256 exchangeRate = 1.09232010 * 1e27;
         assertEq(Maths.rdiv(Maths.wadToRay(debt), exchangeRate), Maths.wrdivr(debt, exchangeRate));
 
@@ -58,19 +56,8 @@ contract MathTest is DSTestPlus {
         assertEq(Maths.rdiv(1 * 1e27, 3 * 1e27),  0.333333333333333333333333333 * 1e27);
     }
 
-    function testWadToIntRoundingDown() external {
-        uint256 testNum1  = 11_000.143012091382543917 * 1e18;
-        uint256 testNum2  = 1_001.6501589292607751220 * 1e18;
-        uint256 testNum3  = 0.6501589292607751220 * 1e18;
-
-        assertEq(Maths.wadToIntRoundingDown(testNum1), 11_000);
-        assertEq(Maths.wadToIntRoundingDown(testNum2), 1_001);
-        assertEq(Maths.wadToIntRoundingDown(testNum3), 0);
-    }
-
     function testScaleConversions() external {
         assertEq(Maths.wad(153), 153 * 1e18);
-        assertEq(Maths.ray(2009), 2009 * 1e27);
     } 
 
     function testExp() external {
