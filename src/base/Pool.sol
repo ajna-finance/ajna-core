@@ -371,9 +371,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             maxAmount_
         );
 
-        IERC20Token ajnaToken = IERC20Token(_getArgAddress(AJNA_ADDRESS));
-        if (!ajnaToken.transferFrom(msg.sender, address(this), ajnaRequired)) revert ERC20TransferFailed();
-        ajnaToken.burn(ajnaRequired);
+        IERC20(_getArgAddress(AJNA_ADDRESS)).safeTransferFrom(msg.sender, address(this), ajnaRequired);
+        IERC20Token(_getArgAddress(AJNA_ADDRESS)).burn(ajnaRequired);
         _transferQuoteToken(msg.sender, amount_);
     }
 
@@ -439,13 +438,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
             // add origination fee to the amount to borrow and add to borrower's debt
             uint256 debtChange = Maths.wmul(amountToBorrow_, _feeRate(poolState.rate) + Maths.WAD);
-            borrowerDebt += debtChange;
+            borrowerDebt   += debtChange;
 
             // check that drawing debt doesn't leave borrower debt under min debt amount
             _revertOnMinDebt(poolState.debt, borrowerDebt);
 
+            // add debt change to pool's debt
+            poolState.debt += debtChange;
             // determine new lup index and revert if borrow happens at a price higher than the specified limit (lower index than lup index)
-            uint256 lupId = _lupIndex(poolState.debt + amountToBorrow_);
+            uint256 lupId = _lupIndex(poolState.debt);
             if (lupId > limitIndex_) revert LimitIndexReached();
 
             // calculate new lup and check borrow action won't push borrower into a state of under-collateralization
@@ -459,7 +460,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             borrower.t0Debt += t0DebtChange;
 
             // update pool balances state
-            poolState.debt      += debtChange;
             poolBalances.t0Debt += t0DebtChange;
         }
 
@@ -874,8 +874,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function lenderInfo(
         uint256 index_,
         address lender_
-    ) external view override returns (uint256, uint256) {
-        return Buckets.getLenderInfo(buckets, index_, lender_);
+    ) external view override returns (uint256 lpBalance_, uint256 depositTime_) {
+        depositTime_ = buckets[index_].lenders[lender_].depositTime;
+        if (buckets[index_].bankruptcyTime < depositTime_) lpBalance_ = buckets[index_].lenders[lender_].lps;
     }
 
     function loanInfo(

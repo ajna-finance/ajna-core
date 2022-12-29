@@ -4,14 +4,13 @@ pragma solidity 0.8.14;
 
 // produces token descriptors from inconsistent or absent ERC20 symbol implementations that can return string or bytes32
 // this library will always produce a string symbol to represent the token
-library SafeTokenNamer {
 
     /**********************/
     /*** View Functions ***/
     /**********************/
 
     // attempts to extract the token symbol. if it does not implement symbol, returns a symbol derived from the address
-    function tokenSymbol(address token) internal view returns (string memory symbol_) {
+    function tokenSymbol(address token) view returns (string memory symbol_) {
         // 0x95d89b41 = bytes4(keccak256("symbol()"))
         symbol_ = _callAndParseStringReturn(token, 0x95d89b41);
         if (bytes(symbol_).length == 0) {
@@ -21,7 +20,7 @@ library SafeTokenNamer {
     }
 
     // attempts to extract the token name. if it does not implement name, returns a name derived from the address
-    function tokenName(address token) internal view returns (string memory name_) {
+    function tokenName(address token) view returns (string memory name_) {
         // 0x06fdde03 = bytes4(keccak256("name()"))
         name_ = _callAndParseStringReturn(token, 0x06fdde03);
         if (bytes(name_).length == 0) {
@@ -35,7 +34,7 @@ library SafeTokenNamer {
     /*************************/
 
     // calls an external view token contract method that returns a symbol or name, and parses the output into a string
-    function _callAndParseStringReturn(address token, bytes4 selector) private view returns (string memory) {
+    function _callAndParseStringReturn(address token, bytes4 selector) view returns (string memory) {
         (bool success, bytes memory data) = token.staticcall(abi.encodeWithSelector(selector));
         // if not implemented, or returns empty data, return empty string
         if (!success || data.length == 0) {
@@ -55,7 +54,7 @@ library SafeTokenNamer {
     /*** Type Conversion Functions ***/
     /*********************************/
 
-    function _bytes32ToString(bytes32 x) private pure returns (string memory) {
+    function _bytes32ToString(bytes32 x) pure returns (string memory) {
         bytes memory bytesString = new bytes(32);
         uint256 charCount = 0;
         for (uint256 j = 0; j < 32; j++) {
@@ -73,7 +72,7 @@ library SafeTokenNamer {
     }
 
     // converts an address to the uppercase hex string, extracting only len bytes (up to 20, multiple of 2)
-    function _toAsciiString(address addr, uint256 len) private pure returns (string memory) {
+    function _toAsciiString(address addr, uint256 len) pure returns (string memory) {
         require(len % 2 == 0 && len > 0 && len <= 40, 'SafeERC20Namer: INVALID_LEN');
 
         bytes memory s = new bytes(len);
@@ -94,11 +93,10 @@ library SafeTokenNamer {
     // hi and lo are only 4 bits and between 0 and 16
     // this method converts those values to the unicode/ascii code point for the hex representation
     // uses upper case for the characters
-    function _char(uint8 b) private pure returns (bytes1 c) {
+    function _char(uint8 b) pure returns (bytes1 c) {
         if (b < 10) {
             return bytes1(b + 0x30);
         } else {
             return bytes1(b + 0x37);
         }
     }
-}
