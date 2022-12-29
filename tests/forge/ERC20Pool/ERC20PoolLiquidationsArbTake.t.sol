@@ -579,7 +579,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
                totalBondEscrowed: 0,
                auctionPrice:      0,
                debtInAuction:     0,
-               thresholdPrice:    3.865989855920480453 * 1e18,
+               thresholdPrice:    4.986016873599893513 * 1e18,
                neutralPrice:      0
            })
         );
@@ -597,10 +597,10 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              4.778964466685025779 * 1e18,
+                borrowerDebt:              6.163491979352977583 * 1e18,
                 borrowerCollateral:        1.236155459478609739 * 1e18,
                 borrowert0Np:              10.115967548076923081 * 1e18,
-                borrowerCollateralization: 2.514568384121424074 * 1e18
+                borrowerCollateralization: 1.949711786276612577 * 1e18
             }
         );
 
