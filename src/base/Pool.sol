@@ -19,7 +19,6 @@ import '../libraries/Loans.sol';
 import '../libraries/external/Auctions.sol';
 import '../libraries/external/LenderActions.sol';
 import '../libraries/external/PoolCommons.sol';
-import '@std/console.sol';
 
 abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     using SafeERC20 for IERC20;
@@ -58,6 +57,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 newLup;
         uint256 t0DebtInAuctionChange;
         uint256 t0PoolDebt;
+        uint256 t0DebtInAuction;
         bool    inAuction;
     }
 
@@ -277,14 +277,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         borrower.collateral = remainingCollateral;
 
         // update pool balances state
-        console.log("here");
         uint256 t0SettledDebt        = params.t0Debt - t0RemainingDebt;
-        console.log("poolBalances.t0Debt", poolBalances.t0Debt);
-        console.log("poolBalacnes.t0SettledDebt", t0SettledDebt);
         poolBalances.t0Debt          -= t0SettledDebt;
-        console.log("here02 ");
         poolBalances.t0DebtInAuction -= t0SettledDebt;
-        console.log("here03 ");
 
         uint256 settledCollateral      = params.collateral - remainingCollateral;
         poolBalances.pledgedCollateral -= settledCollateral;
@@ -625,7 +620,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         
         borrower_.t0Debt -= t0RepaidDebt_;
 
-        // update loan state, no nee to stamp borrower t0Np in take loan action
+        // update loan state, no need to stamp borrower t0Np in take loan action
         Loans.update(
             loans,
             auctions,
@@ -640,10 +635,18 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         // update pool balances state
-        vars.t0PoolDebt = poolBalances.t0Debt - t0RepaidDebt_;
-        if (t0DebtPenalty_ != 0) vars.t0PoolDebt += t0DebtPenalty_;
+        vars.t0PoolDebt      = poolBalances.t0Debt;
+        vars.t0DebtInAuction = poolBalances.t0DebtInAuction;
+
+        if (t0DebtPenalty_ != 0) {
+            vars.t0PoolDebt      += t0DebtPenalty_;
+            vars.t0DebtInAuction += t0DebtPenalty_;
+        }
+        vars.t0PoolDebt      -= t0RepaidDebt_;
+        vars.t0DebtInAuction -= vars.t0DebtInAuctionChange;
+
         poolBalances.t0Debt            = vars.t0PoolDebt;
-        poolBalances.t0DebtInAuction   -= vars.t0DebtInAuctionChange;
+        poolBalances.t0DebtInAuction   = vars.t0DebtInAuction;
         poolBalances.pledgedCollateral =  poolState_.collateral;
 
         // update pool interest rate state
