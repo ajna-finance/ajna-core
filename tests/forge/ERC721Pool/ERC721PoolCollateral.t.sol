@@ -781,8 +781,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 kickMomp:          0.000000099836282890 * 1e18,
                 totalBondEscrowed: 5.907892673985352325 * 1e18,
                 auctionPrice:      0.000001792999017408 * 1e18,
-                debtInAuction:     398.175166053326982732 * 1e18,
-                thresholdPrice:    353.419769378907522596 * 1e18,
+                debtInAuction:     440.047837359276195226 * 1e18,
+                thresholdPrice:    390.585899007005452745 * 1e18,
                 neutralPrice:      310.164365384230997074 * 1e18
             })
         );
@@ -793,8 +793,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 lup:                  99836282890,
                 poolSize:             0,
                 pledgedCollateral:    1.126635238184529558 * 1e18,
-                encumberedCollateral: 3_988_281_159.185763258458189579 * 1e18,
-                poolDebt:             398.175166053326982732 * 1e18,
+                encumberedCollateral: 4407694523.684566590197496885 * 1e18,
+                poolDebt:             440.047837359276195226 * 1e18,
                 actualUtilization:    0,
                 targetUtilization:    2995775262.849776174319954472 * 1e18,
                 minDebtAmount:        0,
@@ -812,10 +812,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              398.175166053326982732 * 1e18,
+                borrowerDebt:              440.047837359276195226 * 1e18,
                 borrowerCollateral:        1.126635238184529558 * 1e18,
                 borrowert0Np:              78.825721153846153882 * 1e18,
-                borrowerCollateralization: 0.000000000282486413 * 1e18,
+                borrowerCollateralization: 0.000000000255606470 * 1e18,
                 tokenIds:                  borrowerTokenIds
             }
         );
@@ -842,10 +842,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              398.175164053471666441 * 1e18,
+                borrowerDebt:              440.047835359420878935 * 1e18,
                 borrowerCollateral:        0.126635238184529558 * 1e18,
                 borrowert0Np:              78.825721153846153882 * 1e18,
-                borrowerCollateralization: 0.000000000031751833 * 1e18,
+                borrowerCollateralization: 0.000000000028730493 * 1e18,
                 tokenIds:                  borrowerTokenIds
             }
         );
@@ -868,8 +868,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 kickMomp:          0.000000099836282890 * 1e18,
                 totalBondEscrowed: 5.907892694185911075 * 1e18,
                 auctionPrice:      0 * 1e18,
-                debtInAuction:     398.175164053471666441 * 1e18,
-                thresholdPrice:    3_145.653785975876615400 * 1e18,
+                debtInAuction:     440.047835359420878935 * 1e18,
+                thresholdPrice:    3_476.455249536758299449 * 1e18,
                 neutralPrice:      310.164365384230997074 * 1e18
             })
         );
@@ -879,7 +879,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 from:        _lender,
                 borrower:    _borrower,
                 maxDepth:    10,
-                settledDebt: 101.191776614139391870 * 1e18
+                settledDebt: 111.833248969908622644 * 1e18
             }
         );
 
@@ -1156,7 +1156,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 encumberedCollateral: 0,
                 poolDebt:             0,
                 actualUtilization:    0,
-                targetUtilization:    5198455118.579866783232899344 * 1e18,
+                targetUtilization:    5430092091.236962546297487185 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),

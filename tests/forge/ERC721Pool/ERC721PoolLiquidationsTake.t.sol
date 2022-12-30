@@ -417,7 +417,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              4.789989625642821169 * 1e18,
                 borrowerCollateral:        1 * 1e18,
-                borrowert0Np:              10.404995192307692312 * 1e18,
+                borrowert0Np:              4.364628796139473736 * 1e18,
                 borrowerCollateralization: 2.070397979641765177 * 1e18
             }
         );

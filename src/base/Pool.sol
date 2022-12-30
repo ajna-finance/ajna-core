@@ -621,7 +621,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         
         borrower_.t0Debt -= t0RepaidDebt_;
 
-        // update loan state, no need to stamp borrower t0Np in take loan action
+        // update loan state, stamp borrower t0Np only when exiting from auction
         Loans.update(
             loans,
             auctions,
@@ -632,7 +632,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             poolState_.rate,
             vars.newLup,
             vars.inAuction,
-            false
+            !vars.inAuction // stamp borrower t0Np if exiting from auction
         );
 
         // update pool balances state
