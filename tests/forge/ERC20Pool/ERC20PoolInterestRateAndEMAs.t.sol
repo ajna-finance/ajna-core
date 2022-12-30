@@ -328,7 +328,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         while (i < 77) {
             // trigger an interest accumulation
             skip(12 hours);
-            _borrow(
+            _borrowZeroAmount(
                 {
                     from:       _borrower,
                     amount:     0,
@@ -405,7 +405,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         while (i < 196) {
             // trigger an interest accumulation
             skip(12 hours);
-            _borrow(
+            _borrowZeroAmount(
                 {
                     from:       _borrower,
                     amount:     0,

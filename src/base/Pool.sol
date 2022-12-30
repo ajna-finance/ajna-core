@@ -391,12 +391,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 amountToBorrow_,
         uint256 limitIndex_,
         uint256 collateralToPledge_
-    ) internal returns (bool pledge_, bool borrow_, uint256 newLup_) {
+    ) internal returns (uint256 newLup_) {
         PoolState memory poolState = _accruePoolInterest();
         Borrower  memory borrower = Loans.getBorrowerInfo(loans, borrowerAddress_);
 
-        pledge_ = collateralToPledge_ != 0;
-        borrow_ = amountToBorrow_ != 0 || limitIndex_ != 0;
         newLup_ = _lup(poolState.debt);
 
         uint256 borrowerDebt = Maths.wmul(borrower.t0Debt, poolState.inflator);
@@ -405,7 +403,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         bool inAuction;
 
         // pledge collateral to pool
-        if (pledge_) {
+        if (collateralToPledge_ != 0) {
             // add new amount of collateral to pledge to borrower balance
             borrower.collateral  += collateralToPledge_;
 
@@ -438,7 +436,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // borrow against pledged collateral
         // check both values to enable an intentional 0 borrow loan call to update borrower's loan state
-        if (borrow_) {
+        if (amountToBorrow_ != 0 || limitIndex_ != 0) {
             // only intended recipient can borrow quote
             if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
 

@@ -713,4 +713,188 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         _pool.withdrawBonds();
         assertEq(_quote.balanceOf(_lender), 46_998.772748375624805866 * 1e18);
     }
+
+    function testTakeCollateralSubsetPoolAndSettleByRepayAndPledge() external tearDown {
+        // Skip to make borrower undercollateralized
+        skip(1000 days);
+
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    11.364359914920859402 * 1e18,
+                neutralPrice:      0
+            })
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              22.728719829841718804 * 1e18,
+                borrowerCollateral:        2 * 1e18,
+                borrowert0Np:              10.404995192307692312 * 1e18,
+                borrowerCollateralization: 0.872656701977127996 * 1e18
+            }
+        );
+
+        _kick(
+            {
+                from:           _lender,
+                borrower:       _borrower,
+                debt:           23.012828827714740289 * 1e18,
+                collateral:     2 * 1e18,
+                bond:           0.227287198298417188 * 1e18,
+                transferAmount: 0.227287198298417188 * 1e18
+            }
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              23.012828827714740289 * 1e18,
+                borrowerCollateral:        2 * 1e18,
+                borrowert0Np:              10.404995192307692312 * 1e18,
+                borrowerCollateralization: 0.861883162446546169 * 1e18
+            }
+        );
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          0.227287198298417188 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp,
+                kickMomp:          9.917184843435912074 * 1e18,
+                totalBondEscrowed: 0.227287198298417188 * 1e18,
+                auctionPrice:      317.349914989949186368 * 1e18,
+                debtInAuction:     23.012828827714740289 * 1e18,
+                thresholdPrice:    11.506414413857370144 * 1e18,
+                neutralPrice:      11.932577910666902372 * 1e18
+            })
+        );
+
+        // skip enough time to accumulate debt and take to not settle auction
+        skip(50 hours);
+
+        _take(
+            {
+                from:            _lender,
+                borrower:        _borrower,
+                maxCollateral:   1,
+                bondChange:      0.000000000000005636 * 1e18,
+                givenAmount:     0.000000000000563616 * 1e18,
+                collateralTaken: 1 * 1e18,
+                isReward:        true
+            }
+        );
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          0.227287198298422824 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp - 50 hours,
+                kickMomp:          9.917184843435912074 * 1e18,
+                totalBondEscrowed: 0.227287198298422824 * 1e18,
+                auctionPrice:      0.000000000000563616 * 1e18,
+                debtInAuction:     24.630052245331466811 * 1e18,
+                thresholdPrice:    24.630052245331466811 * 1e18,
+                neutralPrice:      11.932577910666902372 * 1e18
+            })
+        );
+
+        uint256 snapshot = vm.snapshot();
+        // borrower repays debt in order to exit from auction
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    25 * 1e18,
+            amountRepaid:     24.630052245331466811 * 1e18,
+            collateralToPull: 0,
+            newLup:           _priceAt(3696)
+        });
+
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    0,
+                neutralPrice:      0
+            })
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              0,
+                borrowerCollateral:        1 * 1e18,
+                borrowert0Np:              0,
+                borrowerCollateralization: 1 * 1e18
+            }
+        );
+        vm.revertTo(snapshot);
+
+        // borrower repays part of debt, but not enough to exit from auction
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    5 * 1e18,
+            amountRepaid:     5 * 1e18,
+            collateralToPull: 0,
+            newLup:           _priceAt(3696)
+        });
+        // borrower pledge one more NFT to exit from auction
+        uint256[] memory tokenIdsToAdd = new uint256[](1);
+        tokenIdsToAdd[0] = 5;
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                tokenIds: tokenIdsToAdd
+            }
+        );
+
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    9.815026122665733405 * 1e18,
+                neutralPrice:      0
+            })
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              19.630052245331466810 * 1e18,
+                borrowerCollateral:        2 * 1e18,
+                borrowert0Np:              8.902861174861706971 * 1e18,
+                borrowerCollateralization: 1.010408400292920733 * 1e18
+            }
+        );
+    }
 }
