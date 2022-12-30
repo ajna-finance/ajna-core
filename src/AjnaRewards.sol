@@ -112,6 +112,7 @@ contract AjnaRewards is IAjnaRewards {
     function claimRewards(uint256 tokenId_) external {
         if (msg.sender != deposits[tokenId_].owner) revert NotOwnerOfDeposit();
 
+        // TODO: limit claiming until after the burn event has completed? Need to ensure a user can claim rewards that accumulated after an early claim. currently prevented
         if (hasClaimedForToken[tokenId_][IPool(deposits[tokenId_].ajnaPool).currentBurnId()]) revert AlreadyClaimed();
 
         _claimRewards(tokenId_);
@@ -198,13 +199,25 @@ contract AjnaRewards is IAjnaRewards {
             // check bucket hasn't already been updated
             if (poolBucketBurnExchangeRates[pool_][indexes_[i]][curBurnId] != 0) revert ExchangeRateAlreadyUpdated();
 
-            // record a buckets exchange rate for a given burn event
+            // record a buckets exchange rate
             uint256 curBucketExchangeRate = IPool(pool_).bucketExchangeRate(indexes_[i]);
             poolBucketBurnExchangeRates[pool_][indexes_[i]][curBurnId] = curBucketExchangeRate;
 
-            // claim rewards that have accrued to a bucket
+            // retrieve the exchange rate of the previous burn event
             uint256 prevBucketExchangeRate = poolBucketBurnExchangeRates[pool_][indexes_[i]][curBurnId - 1];
 
+            // set reward to 0 for a bucket if the previous update was missed
+            if (prevBucketExchangeRate == 0) {
+                updateReward += 0;
+
+                // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
+                unchecked {
+                    ++i;
+                }
+                continue;
+            }
+
+            // retrieve current deposit in a bucket
             (, , , uint256 bucketDeposit, ) = IPool(pool_).bucketInfo(indexes_[i]);
 
             // calculate rewards earned for updating a bucket
@@ -251,17 +264,37 @@ contract AjnaRewards is IAjnaRewards {
 
         // calculate accrued interest as determined by the difference in exchange rates between the last interaction block and the current block
         for (uint256 i = 0; i < positionIndexes.length; ) {
-            uint256 lastClaimedExchangeRate = poolBucketBurnExchangeRates[ajnaPool][positionIndexes[i]][lastInteractionBurnEvent];
-            uint256 currentExchangeRate = poolBucketBurnExchangeRates[ajnaPool][positionIndexes[i]][currentBurnEventId];
 
-            uint256 quoteAtLastClaimed = Maths.rayToWad(Maths.rmul(lastClaimedExchangeRate, deposit.lpsAtDeposit[positionIndexes[i]]));
-            uint256 quoteAtCurrentRate = Maths.rayToWad(Maths.rmul(currentExchangeRate, deposit.lpsAtDeposit[positionIndexes[i]]));
+            // iterate through all burn periods to check exchange for buckets over time
+            for (uint256 id = lastInteractionBurnEvent; id < currentBurnEventId; ) {
+                uint256 prevExchangeRate = poolBucketBurnExchangeRates[ajnaPool][positionIndexes[i]][id];
+                uint256 currentExchangeRate = poolBucketBurnExchangeRates[ajnaPool][positionIndexes[i]][id + 1];
 
-            if (quoteAtCurrentRate > quoteAtLastClaimed) {
-                interestEarned += quoteAtCurrentRate - quoteAtLastClaimed;
-            }
-            else {
-                interestEarned -= quoteAtLastClaimed - quoteAtCurrentRate;
+                // don't accrue interest earned if an update didn't occur in a given burn period
+                if (prevExchangeRate == 0 || currentExchangeRate == 0) {
+                    interestEarned += 0;
+
+                    // TODO: explicate this
+                    unchecked {
+                        ++id;
+                    }
+                    continue;
+                }
+
+                uint256 quoteAtPrev = Maths.rayToWad(Maths.rmul(prevExchangeRate, deposit.lpsAtDeposit[positionIndexes[i]]));
+                uint256 quoteAtCurrentRate = Maths.rayToWad(Maths.rmul(currentExchangeRate, deposit.lpsAtDeposit[positionIndexes[i]]));
+
+                if (quoteAtCurrentRate > quoteAtPrev) {
+                    interestEarned += quoteAtCurrentRate - quoteAtPrev;
+                }
+                else {
+                    interestEarned -= quoteAtPrev - quoteAtCurrentRate;
+                }
+
+                // TODO: explicate this
+                unchecked {
+                    ++id;
+                }
             }
 
             // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
