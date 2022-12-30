@@ -107,6 +107,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 quoteTokenAmountToAdd_,
         uint256 index_
     ) external override returns (uint256 bucketLPs_) {
+        // TODO: add dustLimit to a new AddQuoteParams and check this in LenderActions
         if (quoteTokenAmountToAdd_ != 0 && quoteTokenAmountToAdd_ < _getArgUint256(QUOTE_SCALE)) 
             revert DustAmountNotExceeded();
 
@@ -158,7 +159,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 maxAmountToMove: maxAmountToMove_,
                 fromIndex:       fromIndex_,
                 toIndex:         toIndex_,
-                thresholdPrice:  Loans.getMax(loans).thresholdPrice
+                thresholdPrice:  Loans.getMax(loans).thresholdPrice,
+                dustLimit:       _getArgUint256(QUOTE_SCALE)
             })
         );
 

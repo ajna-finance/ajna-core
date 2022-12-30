@@ -215,9 +215,13 @@ library LenderActions {
         DepositsState storage deposits_,
         PoolState calldata poolState_,
         MoveQuoteParams calldata params_
-    ) external returns (uint256 fromBucketRedeemedLPs_, uint256 toBucketLPs_, uint256 lup_) {
-        if (params_.fromIndex == params_.toIndex)                        revert MoveToSamePrice();
-        if (params_.toIndex == 0 || params_.toIndex > MAX_FENWICK_INDEX) revert InvalidIndex();
+    ) external returns (uint256 fromBucketRedeemedLPs_, uint256 toBucketRedeemedLPs_, uint256 lup_) {
+        if (params_.fromIndex == params_.toIndex)
+            revert MoveToSamePrice();
+        if (params_.maxAmountToMove != 0 && params_.maxAmountToMove < params_.dustLimit)
+            revert DustAmountNotExceeded();
+        if (params_.toIndex == 0 || params_.toIndex > MAX_FENWICK_INDEX) 
+            revert InvalidIndex();
 
         Bucket storage toBucket = buckets_[params_.toIndex];
 
@@ -246,7 +250,7 @@ library LenderActions {
                     bucketCollateral:  fromBucket.collateral,
                     price:             vars.fromBucketPrice,
                     index:             params_.fromIndex,
-                    dustLimit:         0  // TODO: pass dust limit through MoveQuoteParams
+                    dustLimit:         params_.dustLimit
                 }
             )
         );
