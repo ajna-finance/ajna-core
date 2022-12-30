@@ -107,19 +107,20 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 quoteTokenAmountToAdd_,
         uint256 index_
     ) external override returns (uint256 bucketLPs_) {
-        // TODO: add dustLimit to a new AddQuoteParams and check this in LenderActions
-        if (quoteTokenAmountToAdd_ != 0 && quoteTokenAmountToAdd_ < _getArgUint256(QUOTE_SCALE)) 
-            revert DustAmountNotExceeded();
-
         PoolState memory poolState = _accruePoolInterest();
 
         uint256 newLup;
         (bucketLPs_, newLup) = LenderActions.addQuoteToken(
             buckets,
             deposits,
-            quoteTokenAmountToAdd_,
-            index_,
-            poolState.debt
+            AddQuoteParams(
+                {
+                    amount:    quoteTokenAmountToAdd_,
+                    index:     index_,
+                    poolDebt:  poolState.debt,
+                    dustLimit: _getArgUint256(QUOTE_SCALE)
+                } 
+            )
         );
 
         // update pool interest rate state

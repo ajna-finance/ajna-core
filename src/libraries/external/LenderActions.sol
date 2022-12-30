@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.14;
 
-import { MoveQuoteParams, RemoveQuoteParams, PoolState } from '../../base/interfaces/IPool.sol';
+import { AddQuoteParams, MoveQuoteParams, RemoveQuoteParams, PoolState } from '../../base/interfaces/IPool.sol';
 
 import '../Deposits.sol';
 import '../Buckets.sol';
@@ -167,33 +167,32 @@ library LenderActions {
     function addQuoteToken(
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
-        uint256 quoteTokenAmountToAdd_,
-        uint256 index_,
-        uint256 poolDebt_
+        AddQuoteParams calldata params_
     ) external returns (uint256 bucketLPs_, uint256 lup_) {
-        if (index_ == 0 || index_ > MAX_FENWICK_INDEX) revert InvalidIndex();
+        if (params_.index == 0 || params_.index > MAX_FENWICK_INDEX) revert InvalidIndex();
+        if (params_.amount != 0 && params_.amount < params_.dustLimit) revert DustAmountNotExceeded();
 
-        Bucket storage bucket = buckets_[index_];
+        Bucket storage bucket = buckets_[params_.index];
 
         uint256 bankruptcyTime = bucket.bankruptcyTime;
 
         // cannot deposit in the same block when bucket becomes insolvent
         if (bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
 
-        uint256 unscaledBucketDeposit = Deposits.unscaledValueAt(deposits_, index_);
-        uint256 bucketScale           = Deposits.scale(deposits_, index_);
+        uint256 unscaledBucketDeposit = Deposits.unscaledValueAt(deposits_, params_.index);
+        uint256 bucketScale           = Deposits.scale(deposits_, params_.index);
         uint256 bucketDeposit         = Maths.wmul(bucketScale, unscaledBucketDeposit);
-        uint256 bucketPrice           = _priceAt(index_);
+        uint256 bucketPrice           = _priceAt(params_.index);
 
         bucketLPs_ = Buckets.quoteTokensToLPs(
             bucket.collateral,
             bucket.lps,
             bucketDeposit,
-            quoteTokenAmountToAdd_,
+            params_.amount,
             bucketPrice
         );
 
-        Deposits.unscaledAdd(deposits_, index_, Maths.wdiv(quoteTokenAmountToAdd_, bucketScale));
+        Deposits.unscaledAdd(deposits_, params_.index, Maths.wdiv(params_.amount, bucketScale));
 
         // update lender LPs
         Lender storage lender = bucket.lenders[msg.sender];
@@ -206,8 +205,8 @@ library LenderActions {
         // update bucket LPs
         bucket.lps += bucketLPs_;
 
-        lup_ = _lup(deposits_, poolDebt_);
-        emit AddQuoteToken(msg.sender, index_, quoteTokenAmountToAdd_, bucketLPs_, lup_);
+        lup_ = _lup(deposits_, params_.poolDebt);
+        emit AddQuoteToken(msg.sender, params_.index, params_.amount, bucketLPs_, lup_);
     }
 
     function moveQuoteToken(

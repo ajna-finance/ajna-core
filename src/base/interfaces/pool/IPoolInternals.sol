@@ -48,6 +48,13 @@ struct KickResult {
 /*** Liquidity Management Param Structs ***/
 /******************************************/
 
+struct AddQuoteParams {
+    uint256 amount;          // amount to be added
+    uint256 index;           // the index in which to deposit
+    uint256 poolDebt;        // current debt of the pool
+    uint256 dustLimit;       // quote token dust limit of the pool
+}
+
 struct MoveQuoteParams {
     uint256 maxAmountToMove; // max amount to move between deposits
     uint256 fromIndex;       // the deposit index from where amount is moved
@@ -57,8 +64,8 @@ struct MoveQuoteParams {
 }
 
 struct RemoveQuoteParams {
-    uint256 maxAmount;      // max amount to be removed
-    uint256 index;          // the deposit index from where amount is removed
-    uint256 thresholdPrice; // max threshold price in pool
+    uint256 maxAmount;       // max amount to be removed
+    uint256 index;           // the deposit index from where amount is removed
+    uint256 thresholdPrice;  // max threshold price in pool
     uint256 dustLimit;       // quote token dust limit of the pool
 }
