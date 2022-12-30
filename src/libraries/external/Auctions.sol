@@ -52,6 +52,8 @@ library Auctions {
         address kicker;                   // Address of auction kicker.
         uint256 scaledQuoteTokenAmount;   // Unscaled quantity in Fenwick tree and before 1-bpf factor, paid for collateral
         uint256 t0RepayAmount;            // The amount of debt (quote tokens) that is recovered / repayed by take t0 terms.
+        uint256 t0Debt;                   // Borrower's t0 debt.
+        uint256 t0DebtPenalty;            // Borrower's t0 penalty - 7% from current debt if intial take, 0 otherwise.
         uint256 unscaledDeposit;          // Unscaled bucket quantity
         uint256 unscaledQuoteTokenAmount; // The unscaled token amount that taker should pay for collateral taken.
     }
@@ -420,18 +422,19 @@ library Auctions {
      *  @param  params_ Struct containing take action details.
      *  @return Collateral amount taken.
      *  @return T0 debt amount repaid.
+     *  @return T0 penalty debt.
     */
     function bucketTake(
         AuctionsState storage auctions_,
         DepositsState storage deposits_,
         mapping(uint256 => Bucket) storage buckets_,
         BucketTakeParams calldata params_
-    ) external returns (uint256, uint256) {
+    ) external returns (uint256, uint256, uint256, uint256) {
         if (params_.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
 
         Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
 
-        TakeResult memory result = _validateTake(liquidation, params_.t0Debt, params_.collateral, params_.inflator);
+        TakeResult memory result = _prepareTake(liquidation, params_.t0Debt, params_.collateral, params_.inflator);
 
         result.unscaledDeposit = Deposits.unscaledValueAt(deposits_, params_.index);
 
@@ -489,7 +492,9 @@ library Auctions {
 
         return (
             result.collateralAmount,
-            result.t0RepayAmount
+            result.t0RepayAmount,
+            result.t0Debt,
+            result.t0DebtPenalty
         );
     }
 
@@ -499,16 +504,15 @@ library Auctions {
      *  @return Collateral amount taken.
      *  @return Quote token to be received from taker.
      *  @return T0 debt amount repaid.
+     *  @return T0 penalty debt.
      *  @return Auction price.
     */
     function take(
         AuctionsState storage auctions_,
         TakeParams calldata params_
-    ) external returns (uint256, uint256, uint256, uint256) {
-
+    ) external returns (uint256, uint256, uint256, uint256, uint256, uint256) {
         Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
-
-        TakeResult memory result = _validateTake(liquidation, params_.t0Debt, params_.collateral, params_.inflator);
+        TakeResult  memory  result      = _prepareTake(liquidation, params_.t0Debt, params_.collateral, params_.inflator);
 
         // These are placeholder max values passed to calculateTakeFlows because there is no explicit bound on the
         // quote token amount in take calls (as opposed to bucketTake)
@@ -558,6 +562,8 @@ library Auctions {
             result.collateralAmount,
             result.scaledQuoteTokenAmount,
             result.t0RepayAmount,
+            result.t0Debt,
+            result.t0DebtPenalty,
             result.auctionPrice
         );
     }
@@ -676,6 +682,7 @@ library Auctions {
     /***************************/
     /***  Internal Functions ***/
     /***************************/
+
 
     /**
      *  @notice Called to start borrower liquidation and to update the auctions queue.
@@ -1033,7 +1040,7 @@ library Auctions {
      *  @param collateral_   Borrower collateral.
      *  @param neutralPrice_ NP of auction.
      *  @param bondFactor_   Factor used to determine bondSize.
-     *  @param price_        Auction price at the time of call.
+     *  @param auctionPrice_ Auction price at the time of call.
      *  @return bpf_         Factor used in determining bond Reward (positive) or penalty (negative).
      */
     function _bpf(
@@ -1041,7 +1048,7 @@ library Auctions {
         uint256 collateral_,
         uint256 neutralPrice_,
         uint256 bondFactor_,
-        uint256 price_
+        uint256 auctionPrice_
     ) internal pure returns (int256) {
         int256 thresholdPrice = int256(Maths.wdiv(debt_, collateral_));
 
@@ -1053,13 +1060,13 @@ library Auctions {
                 Maths.maxInt(
                     -1 * 1e18,
                     PRBMathSD59x18.div(
-                        int256(neutralPrice_) - int256(price_),
+                        int256(neutralPrice_) - int256(auctionPrice_),
                         int256(neutralPrice_) - thresholdPrice
                     )
                 )
             );
         } else {
-            int256 val = int256(neutralPrice_) - int256(price_);
+            int256 val = int256(neutralPrice_) - int256(auctionPrice_);
             if (val < 0 )      sign = -1e18;
             else if (val != 0) sign = 1e18;
         }
@@ -1070,23 +1077,31 @@ library Auctions {
     /**
      *  @notice Utility function to validate take and calculate take's parameters.
      *  @param  liquidation_ Liquidation struct holding auction details.
-     *  @param  t0Debt       Borrower t0 debt.
+     *  @param  t0Debt_       Borrower t0 debt.
      *  @param  collateral_  Borrower collateral.
      *  @param  inflator_    The pool's inflator, used to calculate borrower debt.
      *  @return takeResult_  The result of take action.
      */
-    function _validateTake(
-        Liquidation memory liquidation_,
-        uint256 t0Debt,
+    function _prepareTake(
+        Liquidation storage liquidation_,
+        uint256 t0Debt_,
         uint256 collateral_,
         uint256 inflator_
-    ) internal view returns (TakeResult memory takeResult_) {
+    ) internal returns (TakeResult memory takeResult_) {
 
         uint256 kickTime = liquidation_.kickTime;
         if (kickTime == 0) revert NoAuction();
         if (block.timestamp - kickTime <= 1 hours) revert TakeNotPastCooldown();
 
-        takeResult_.borrowerDebt = Maths.wmul(t0Debt, inflator_);
+        takeResult_.t0Debt = t0Debt_;
+        // if first take borrower debt is increased by 7% penalty
+        if (!liquidation_.alreadyTaken) {
+            takeResult_.t0DebtPenalty = Maths.wmul(t0Debt_, 0.07 * 1e18);
+            takeResult_.t0Debt += takeResult_.t0DebtPenalty;
+            liquidation_.alreadyTaken = true;
+        }
+
+        takeResult_.borrowerDebt = Maths.wmul(takeResult_.t0Debt, inflator_);
         takeResult_.auctionPrice = _auctionPrice(liquidation_.kickMomp, kickTime);
 
         takeResult_.bpf = _bpf(
@@ -1096,7 +1111,6 @@ library Auctions {
             liquidation_.bondFactor,
             takeResult_.auctionPrice
         );
-
         takeResult_.factor     = uint256(1e18 - Maths.maxInt(0, takeResult_.bpf));
         takeResult_.kicker     = liquidation_.kicker;
         takeResult_.isRewarded = (takeResult_.bpf  >= 0);

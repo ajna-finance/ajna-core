@@ -58,11 +58,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         uint256 limitIndex_,
         uint256 collateralToPledge_
     ) external {
-        (
-            bool pledge,
-            bool borrow,
-            uint256 newLup
-        ) = _drawDebt(
+        uint256 newLup = _drawDebt(
             borrowerAddress_,
             amountToBorrow_,
             limitIndex_,
@@ -72,9 +68,9 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         emit DrawDebt(borrowerAddress_, amountToBorrow_, collateralToPledge_, newLup);
 
         // move collateral from sender to pool
-        if (pledge) _transferCollateralFrom(msg.sender, collateralToPledge_);
+        if (collateralToPledge_ != 0) _transferCollateralFrom(msg.sender, collateralToPledge_);
         // move borrowed amount from pool to sender
-        if (borrow) _transferQuoteToken(msg.sender, amountToBorrow_);
+        if (amountToBorrow_ != 0) _transferQuoteToken(msg.sender, amountToBorrow_);
     }
 
     function repayDebt(
@@ -209,16 +205,23 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             inflator:       poolState.inflator
         });
 
+        uint256 collateralAmount;
+        uint256 quoteTokenAmount;
+        uint256 t0RepayAmount;
+        uint256 t0DebtPenalty;
+
         (
-            uint256 collateralAmount,
-            uint256 quoteTokenAmount,
-            uint256 t0RepayAmount,
+            collateralAmount,
+            quoteTokenAmount,
+            t0RepayAmount,
+            borrower.t0Debt,
+            t0DebtPenalty,
         ) = Auctions.take(
             auctions,
             params
         );
 
-        _takeFromLoan(poolState, borrower, params.borrower, collateralAmount, t0RepayAmount);
+        _takeFromLoan(poolState, borrower, params.borrower, collateralAmount, t0RepayAmount, t0DebtPenalty);
 
         _transferCollateral(callee_, collateralAmount);
 

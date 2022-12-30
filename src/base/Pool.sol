@@ -53,6 +53,27 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 
+    struct RepayDebtLocalVars {
+        uint256 borrowerDebt;          // borrower's accrued debt
+        bool    inAuction;             // true if loan still in auction after repay, false otherwise
+        uint256 newLup;                // LUP after auction is taken
+        bool    pull;                  // true if pull action
+        bool    repay;                 // true if repay action
+        bool    stampT0Np;             // true if loan's t0 neutral price should be restamped (when exiting auction)
+        uint256 t0DebtInAuctionChange; // t0 change amount of debt after repayment
+        uint256 t0RepaidDebt;          // t0 debt repaid
+    }
+
+    struct TakeFromLoanLocalVars {
+        uint256 borrowerDebt;          // borrower's accrued debt
+        bool    inAuction;             // true if loan still in auction after auction is taken, false otherwise
+        uint256 newLup;                // LUP after auction is taken
+        uint256 repaidDebt;            // debt repaid when auction is taken
+        uint256 t0DebtInAuction;       // t0 pool debt in auction
+        uint256 t0DebtInAuctionChange; // t0 change amount of debt after auction is taken
+        uint256 t0PoolDebt;            // t0 pool debt
+    }
+
     /******************/
     /*** Immutables ***/
     /******************/
@@ -201,9 +222,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
         Borrower  memory borrower  = Loans.getBorrowerInfo(loans, borrowerAddress_);
 
+        uint256 collateralAmount;
+        uint256 t0RepayAmount;
+        uint256 t0DebtPenalty;
         (
-            uint256 collateralAmount,
-            uint256 t0RepayAmount
+            collateralAmount,
+            t0RepayAmount,
+            borrower.t0Debt,
+            t0DebtPenalty
         ) = Auctions.bucketTake(
             auctions,
             deposits,
@@ -218,7 +244,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             })
         );
 
-        _takeFromLoan(poolState, borrower, borrowerAddress_, collateralAmount, t0RepayAmount);
+        _takeFromLoan(poolState, borrower, borrowerAddress_, collateralAmount, t0RepayAmount, t0DebtPenalty);
     }
 
     function settle(
@@ -362,12 +388,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 amountToBorrow_,
         uint256 limitIndex_,
         uint256 collateralToPledge_
-    ) internal returns (bool pledge_, bool borrow_, uint256 newLup_) {
+    ) internal returns (uint256 newLup_) {
         PoolState memory poolState = _accruePoolInterest();
         Borrower  memory borrower  = Loans.getBorrowerInfo(loans, borrowerAddress_);
 
-        pledge_ = collateralToPledge_ != 0;
-        borrow_ = amountToBorrow_ != 0 || limitIndex_ != 0;
         newLup_ = _lup(poolState.debt);
 
         uint256 borrowerDebt = Maths.wmul(borrower.t0Debt, poolState.inflator);
@@ -376,7 +400,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         bool inAuction;
 
         // pledge collateral to pool
-        if (pledge_) {
+        if (collateralToPledge_ != 0) {
             // add new amount of collateral to pledge to borrower balance
             borrower.collateral  += collateralToPledge_;
 
@@ -411,7 +435,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // borrow against pledged collateral
         // check both values to enable an intentional 0 borrow loan call to update borrower's loan state
-        if (borrow_) {
+        if (amountToBorrow_ != 0 || limitIndex_ != 0) {
             // only intended recipient can borrow quote
             if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
 
@@ -472,69 +496,69 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
         Borrower  memory borrower  = Loans.getBorrowerInfo(loans, borrowerAddress_);
 
-        bool repay = maxQuoteTokenAmountToRepay_ != 0;
-        bool pull  = collateralAmountToPull_ != 0;
+        RepayDebtLocalVars memory vars;
 
-        uint256 borrowerDebt = Maths.wmul(borrower.t0Debt, poolState.inflator);
+        vars.repay        = maxQuoteTokenAmountToRepay_ != 0;
+        vars.pull         = collateralAmountToPull_ != 0;
+        vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState.inflator);
 
-        // loan can only be in auction when repaying debt
-        // if loan in auction and pull collateral attempted then borrower collateralization check should revert
-        bool inAuction;
-
-        if (repay) {
+        if (vars.repay) {
             if (borrower.t0Debt == 0) revert NoDebt();
 
-            uint256 t0RepaidDebt = Maths.min(
+            vars.t0RepaidDebt = Maths.min(
                 borrower.t0Debt,
                 Maths.wdiv(maxQuoteTokenAmountToRepay_, poolState.inflator)
             );
+            quoteTokenToRepay_ = Maths.wmul(vars.t0RepaidDebt, poolState.inflator);
 
-            quoteTokenToRepay_ = Maths.wmul(t0RepaidDebt, poolState.inflator);
-
-            poolState.debt -= quoteTokenToRepay_;
-            borrowerDebt   -= quoteTokenToRepay_;
+            poolState.debt    -= quoteTokenToRepay_;
+            vars.borrowerDebt -= quoteTokenToRepay_;
 
             // check that paying the loan doesn't leave borrower debt under min debt amount
-            _revertOnMinDebt(poolState.debt, borrowerDebt);
+            _revertOnMinDebt(poolState.debt, vars.borrowerDebt);
 
-            newLup_   = _lup(poolState.debt);
-            inAuction = Auctions.isActive(auctions, borrowerAddress_);
+            newLup_        = _lup(poolState.debt);
+            vars.inAuction = Auctions.isActive(auctions, borrowerAddress_);
 
-            uint256 t0DebtInAuctionChange;
-            if (inAuction) {
-                if (_isCollateralized(borrowerDebt, borrower.collateral, newLup_, poolState.poolType)) {
+            if (vars.inAuction) {
+                if (_isCollateralized(vars.borrowerDebt, borrower.collateral, newLup_, poolState.poolType)) {
                     // borrower becomes re-collateralized
                     // remove entire borrower debt from pool auctions debt accumulator
-                    t0DebtInAuctionChange = borrower.t0Debt;
+                    vars.t0DebtInAuctionChange = borrower.t0Debt;
 
                     // settle auction and update borrower's collateral with value after settlement
                     borrower.collateral = _settleAuction(borrowerAddress_, borrower.collateral);
-                    inAuction = false;
+
+                    vars.inAuction = false;
+                    vars.stampT0Np = true;  // stamp borrower t0Np when exiting from auction
                 } else {
                     // partial repay, remove only the paid debt from pool auctions debt accumulator
-                    t0DebtInAuctionChange = t0RepaidDebt;
+                    vars.t0DebtInAuctionChange = vars.t0RepaidDebt;
                 }
             }
 
-            borrower.t0Debt -= t0RepaidDebt;
+            borrower.t0Debt -= vars.t0RepaidDebt;
 
             // update pool balances state
-            poolBalances.t0Debt -= t0RepaidDebt;
-            if (t0DebtInAuctionChange != 0) {
-                poolBalances.t0DebtInAuction -= t0DebtInAuctionChange;
+            poolBalances.t0Debt -= vars.t0RepaidDebt;
+            if (vars.t0DebtInAuctionChange != 0) {
+                poolBalances.t0DebtInAuction -= vars.t0DebtInAuctionChange;
             }
         }
 
-        if (pull) {
+        if (vars.pull) {
             // only intended recipient can pull collateral
             if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
 
             // calculate LUP only if it wasn't calculated by repay action
-            if (!repay) newLup_ = _lup(poolState.debt);
+            if (!vars.repay) newLup_ = _lup(poolState.debt);
 
-            uint256 encumberedCollateral = borrower.t0Debt != 0 ? Maths.wdiv(borrowerDebt, newLup_) : 0;
+            uint256 encumberedCollateral = borrower.t0Debt != 0 ? Maths.wdiv(vars.borrowerDebt, newLup_) : 0;
 
             if (borrower.collateral - encumberedCollateral < collateralAmountToPull_) revert InsufficientCollateral();
+
+            // stamp borrower t0Np when pull collateral action
+            vars.stampT0Np = true;
 
             borrower.collateral  -= collateralAmountToPull_;
             poolState.collateral -= collateralAmountToPull_;
@@ -550,11 +574,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             deposits,
             borrower,
             borrowerAddress_,
-            borrowerDebt,
+            vars.borrowerDebt,
             poolState.rate,
             newLup_,
-            inAuction,
-            pull // stamp borrower t0Np only for pull collateral action
+            vars.inAuction,
+            vars.stampT0Np
         );
 
         // update pool interest rate state
@@ -573,70 +597,83 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @param  borrowerAddress_  Address of the borrower whose loan is taken.
      *  @param  collateralAmount_ Collateral amount that was taken from borrower.
      *  @param  t0RepaidDebt_     Amount of t0 debt repaid by take action.
+     *  @param  t0DebtPenalty_    Amount of t0 penalty if intial take (7% from t0 debt).
     */
     function _takeFromLoan(
         PoolState memory poolState_,
         Borrower memory borrower_,
         address borrowerAddress_,
         uint256 collateralAmount_,
-        uint256 t0RepaidDebt_
+        uint256 t0RepaidDebt_,
+        uint256 t0DebtPenalty_
     ) internal {
 
         borrower_.collateral  -= collateralAmount_; // collateral is removed from the loan
         poolState_.collateral -= collateralAmount_; // collateral is removed from pledged collateral accumulator
 
-        uint256 borrowerDebt = Maths.wmul(borrower_.t0Debt, poolState_.inflator);
-        {
-            uint256 repaidDebt = Maths.wmul(t0RepaidDebt_, poolState_.inflator);
+        TakeFromLoanLocalVars memory vars;
 
-            borrowerDebt    -= repaidDebt;
-            poolState_.debt -= repaidDebt;
-        }
+        vars.borrowerDebt = Maths.wmul(borrower_.t0Debt, poolState_.inflator);
+        vars.repaidDebt   = Maths.wmul(t0RepaidDebt_,    poolState_.inflator);
+
+        vars.borrowerDebt -= vars.repaidDebt;
+        poolState_.debt   -= vars.repaidDebt;
+
+        if (t0DebtPenalty_ != 0) poolState_.debt += Maths.wmul(t0DebtPenalty_, poolState_.inflator);
 
         // check that taking from loan doesn't leave borrower debt under min debt amount
-        _revertOnMinDebt(poolState_.debt, borrowerDebt);
+        _revertOnMinDebt(poolState_.debt, vars.borrowerDebt);
 
-        uint256 newLup = _lup(poolState_.debt);
+        vars.newLup    = _lup(poolState_.debt);
+        vars.inAuction = true;
 
-        bool inAuction = true;
-
-        uint256 t0DebtInAuctionChange;
-        if (_isCollateralized(borrowerDebt, borrower_.collateral, newLup, poolState_.poolType)) {
+        if (_isCollateralized(vars.borrowerDebt, borrower_.collateral, vars.newLup, poolState_.poolType)) {
             // borrower becomes re-collateralized
             // remove entire borrower debt from pool auctions debt accumulator
-            t0DebtInAuctionChange = borrower_.t0Debt;
+            vars.t0DebtInAuctionChange = borrower_.t0Debt;
+
             // settle auction and update borrower's collateral with value after settlement
             borrower_.collateral = _settleAuction(borrowerAddress_, borrower_.collateral);
-            inAuction = false;
+            vars.inAuction = false;
         } else {
             // partial repay, remove only the paid debt from pool auctions debt accumulator
-            t0DebtInAuctionChange = t0RepaidDebt_;
+            vars.t0DebtInAuctionChange = t0RepaidDebt_;
         }
 
         borrower_.t0Debt -= t0RepaidDebt_;
 
-        // update loan state, no need to stamp borrower t0Np in take loan action
+        // update loan state, stamp borrower t0Np only when exiting from auction
         Loans.update(
             loans,
             auctions,
             deposits,
             borrower_,
             borrowerAddress_,
-            borrowerDebt,
+            vars.borrowerDebt,
             poolState_.rate,
-            newLup,
-            inAuction,
-            false
+            vars.newLup,
+            vars.inAuction,
+            !vars.inAuction // stamp borrower t0Np if exiting from auction
         );
 
         // update pool balances state
-        poolBalances.t0Debt          -= t0RepaidDebt_;
-        poolBalances.t0DebtInAuction -= t0DebtInAuctionChange;
+        vars.t0PoolDebt      = poolBalances.t0Debt;
+        vars.t0DebtInAuction = poolBalances.t0DebtInAuction;
 
-        poolBalances.pledgedCollateral = poolState_.collateral;
+        if (t0DebtPenalty_ != 0) {
+            vars.t0PoolDebt      += t0DebtPenalty_;
+            vars.t0DebtInAuction += t0DebtPenalty_;
+        }
+
+        vars.t0PoolDebt      -= t0RepaidDebt_;
+        vars.t0DebtInAuction -= vars.t0DebtInAuctionChange;
+
+        poolBalances.t0Debt            = vars.t0PoolDebt;
+        poolBalances.t0DebtInAuction   = vars.t0DebtInAuction;
+        poolBalances.pledgedCollateral =  poolState_.collateral;
 
         // update pool interest rate state
-        _updateInterestState(poolState_, newLup);
+        _updateInterestState(poolState_, vars.newLup);
     }
 
     /******************************/

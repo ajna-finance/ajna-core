@@ -406,7 +406,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              19.500754673204780610 * 1e18,
                 borrowerCollateral:        2 * 1e18,
-                borrowert0Np:              10.115967548076923081 * 1e18,
+                borrowert0Np:              9.347497433934260033 * 1e18,
                 borrowerCollateralization: 0.997017400397270737 * 1e18
             }
         );
@@ -447,7 +447,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 auctionPrice:      314.200059394519137152 * 1e18,
                 debtInAuction:     19.720038163278334392 * 1e18,
                 thresholdPrice:    9.860019081639167196 * 1e18,
-                neutralPrice:      11.249003021186918284 * 1e18
+                neutralPrice:      10.394460675672373487 * 1e18
             })
         );
         vm.revertTo(snapshot);
