@@ -25,6 +25,17 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     mapping(address => uint256[]) public borrowerTokenIds; // borrower address => array of tokenIds pledged by borrower
     uint256[]                     public bucketTokenIds;   // array of tokenIds added in pool buckets
 
+    struct TakeLocalVars {
+        uint256 auctionPrice;     // price of auction that is taken
+        uint256 collateralAmount; // collateral amount in taken auction
+        uint256 collateralTaken;  // amount of collateral taken
+        uint256 excessQuoteToken; // difference of quote token that borrower receives for fractional NFT
+        uint256 quoteTokenAmount; // amount of quote tokens that taker should provide
+        uint256 t0DebtPenalty;    // t0 initial take penalty (7% from borrower's debt)
+        uint256 t0RepayAmount;    // t0 debt repaid when auction is taken
+        uint256[] tokensTaken;    // token ids taken
+    }
+
     /****************************/
     /*** Initialize Functions ***/
     /****************************/
@@ -218,44 +229,51 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
                 inflator:       poolState.inflator
             }
         );
+
+        TakeLocalVars memory vars;
         (
-            uint256 collateralAmount,
-            uint256 quoteTokenAmount,
-            uint256 t0RepayAmount,
-            uint256 auctionPrice
+            vars.collateralAmount,
+            vars.quoteTokenAmount,
+            vars.t0RepayAmount,
+            borrower.t0Debt,
+            vars.t0DebtPenalty,
+            vars.auctionPrice
         ) = Auctions.take(
             auctions,
             params
         );
 
-        uint256 excessQuoteToken = 0;
         // slither-disable-next-line divide-before-multiply
-        uint256 collateralTaken = (collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
-        if (collateralTaken != collateralAmount && borrower.collateral >= collateralTaken + 1e18) { // collateral taken not a round number
-            collateralTaken += 1e18; // round up collateral to take
+        vars.collateralTaken = (vars.collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
+        if (vars.collateralTaken != vars.collateralAmount && borrower.collateral >= vars.collateralTaken + 1e18) { // collateral taken not a round number
+            vars.collateralTaken += 1e18; // round up collateral to take
             // taker should send additional quote tokens to cover difference between collateral needed to be taken and rounded collateral, at auction price
             // borrower will get quote tokens for the difference between rounded collateral and collateral taken to cover debt
-            excessQuoteToken = Maths.wmul(collateralTaken - collateralAmount, auctionPrice);
+            vars.excessQuoteToken = Maths.wmul(vars.collateralTaken - vars.collateralAmount, vars.auctionPrice);
         }
 
         // transfer rounded collateral from pool to taker
-        uint256[] memory tokensTaken = _transferFromPoolToAddress(callee_, borrowerTokenIds[params.borrower], collateralTaken / 1e18);
+        vars.tokensTaken = _transferFromPoolToAddress(
+            callee_,
+            borrowerTokenIds[params.borrower],
+            vars.collateralTaken / 1e18
+        );
 
         if (data_.length != 0) {
             IERC721Taker(callee_).atomicSwapCallback(
-                tokensTaken, 
-                quoteTokenAmount / _getArgUint256(QUOTE_SCALE), 
+                vars.tokensTaken,
+                vars.quoteTokenAmount / _getArgUint256(QUOTE_SCALE), 
                 data_
             );
         }
 
         // transfer from taker to pool the amount of quote tokens needed to cover collateral auctioned (including excess for rounded collateral)
-        _transferQuoteTokenFrom(callee_, quoteTokenAmount + excessQuoteToken);
+        _transferQuoteTokenFrom(callee_, vars.quoteTokenAmount + vars.excessQuoteToken);
 
         // transfer from pool to borrower the excess of quote tokens after rounding collateral auctioned
-        if (excessQuoteToken != 0) _transferQuoteToken(params.borrower, excessQuoteToken);
+        if (vars.excessQuoteToken != 0) _transferQuoteToken(params.borrower, vars.excessQuoteToken);
 
-        _takeFromLoan(poolState, borrower, params.borrower, collateralTaken, t0RepayAmount);
+        _takeFromLoan(poolState, borrower, params.borrower, vars.collateralTaken, vars.t0RepayAmount, vars.t0DebtPenalty);
     }
 
 
