@@ -45,6 +45,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _pool       = ERC20Pool(new ERC20PoolFactory(_ajna).deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
         _poolUtils  = new PoolInfoUtils();
 
+        _collateralPrecision = uint256(10) ** collateralPrecisionDecimals_;
+        _quotePrecision = uint256(10) ** quotePrecisionDecimals_;
+        
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _borrower3 = makeAddr("borrower2");
@@ -85,9 +88,6 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         // setup fuzzy bounds and initialize the pool
         uint256 boundColPrecision = bound(uint256(collateralPrecisionDecimals_), 1, 18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_), 1, 18);
-        _collateralPrecision = uint256(10) ** boundColPrecision;
-        _quotePrecision = uint256(10) ** boundQuotePrecision;
-
         init(boundColPrecision, boundQuotePrecision);
 
         uint256 start = block.timestamp;
@@ -218,9 +218,6 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         // setup fuzzy bounds and initialize the pool
         uint256 boundColPrecision = bound(uint256(collateralPrecisionDecimals_), 1, 18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_), 1, 18);
-        _collateralPrecision = uint256(10) ** boundColPrecision;
-        _quotePrecision = uint256(10) ** boundQuotePrecision;
-
         init(boundColPrecision, boundQuotePrecision);
 
         uint256 start = block.timestamp;
@@ -504,8 +501,6 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint256 bucketId            = bound(uint256(bucketId_),                    1,   7388);
         uint256 quoteAmount         = bound(uint256(quoteAmount_),                 0,   MAX_DEPOSIT);
         uint256 collateralAmount    = bound(uint256(collateralAmount_),            1e9, MAX_COLLATERAL);
-        _collateralPrecision        = uint256(10) ** boundColPrecision;
-        _quotePrecision             = uint256(10) ** boundQuotePrecision;
         init(boundColPrecision, boundQuotePrecision);
 
         assertEq(ERC20Pool(address(_pool)).collateralScale(), 10 ** (18 - boundColPrecision));
@@ -582,7 +577,6 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint256 bucketId            = bound(uint256(bucketId_),                    1, 7388);
         uint256 quoteAmount1        = bound(uint256(quoteAmount1_),                0, MAX_DEPOSIT);
         uint256 quoteAmount2        = bound(uint256(quoteAmount2_),                0, MAX_DEPOSIT);
-        _quotePrecision             = uint256(10) ** boundQuotePrecision;
         init(boundColPrecision, boundQuotePrecision);
 
         // mint and run approvals, ignoring amounts already init approved above
@@ -656,7 +650,6 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint256 fromBucketId        = bound(uint256(fromBucketId_),                1, 7388);
         uint256 toBucketId          = bound(uint256(toBucketId_),                  1, 7388);
         uint256 amountToMove        = bound(uint256(amountToMove_),                0, _lenderDepositNormalized);
-        _quotePrecision             = uint256(10) ** boundQuotePrecision;
         init(boundColPrecision, boundQuotePrecision);
 
         _addInitialLiquidity(
