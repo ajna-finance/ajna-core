@@ -995,7 +995,7 @@ library Auctions {
      *  @param collateral_   Borrower collateral.
      *  @param neutralPrice_ NP of auction.
      *  @param bondFactor_   Factor used to determine bondSize.
-     *  @param price_        Auction price at the time of call.
+     *  @param auctionPrice_ Auction price at the time of call.
      *  @return bpf_         Factor used in determining bond Reward (positive) or penalty (negative).
      */
     function _bpf(
@@ -1003,7 +1003,7 @@ library Auctions {
         uint256 collateral_,
         uint256 neutralPrice_,
         uint256 bondFactor_,
-        uint256 price_
+        uint256 auctionPrice_
     ) internal pure returns (int256) {
         int256 thresholdPrice = int256(Maths.wdiv(debt_, collateral_));
 
@@ -1015,13 +1015,13 @@ library Auctions {
                     Maths.maxInt(
                         -1 * 1e18,
                         PRBMathSD59x18.div(
-                            int256(neutralPrice_) - int256(price_),
+                            int256(neutralPrice_) - int256(auctionPrice_),
                             int256(neutralPrice_) - thresholdPrice
                         )
                     )
             );
         } else {
-            int256 val = int256(neutralPrice_) - int256(price_);
+            int256 val = int256(neutralPrice_) - int256(auctionPrice_);
             if (val < 0 )      sign = -1e18;
             else if (val != 0) sign = 1e18;
         }
