@@ -101,6 +101,8 @@ contract AjnaRewards is IAjnaRewards {
         positionManager = positionManager_;
     }
 
+    // TODO: line up recording time and auction delay
+
     /**************************/
     /*** External Functions ***/
     /**************************/
@@ -109,13 +111,13 @@ contract AjnaRewards is IAjnaRewards {
      *  @notice Claim ajna token rewards that have accrued to a staked LP NFT.
      *  @param  tokenId_ ID of the staked LP NFT.
      */
-    function claimRewards(uint256 tokenId_) external {
+    function claimRewards(uint256 tokenId_, uint256 burnIdToStartClaim_) external {
         if (msg.sender != deposits[tokenId_].owner) revert NotOwnerOfDeposit();
 
         // TODO: limit claiming until after the burn event has completed? Need to ensure a user can claim rewards that accumulated after an early claim. currently prevented
         if (hasClaimedForToken[tokenId_][IPool(deposits[tokenId_].ajnaPool).currentBurnId()]) revert AlreadyClaimed();
 
-        _claimRewards(tokenId_);
+        _claimRewards(tokenId_, burnIdToStartClaim_);
     }
 
     /**
@@ -168,7 +170,7 @@ contract AjnaRewards is IAjnaRewards {
         address ajnaPool = deposits[tokenId_].ajnaPool;
 
         // claim rewards, if any
-        _claimRewards(tokenId_);
+        _claimRewards(tokenId_, IPool(ajnaPool).currentBurnId());
 
         delete deposits[tokenId_];
 
@@ -231,6 +233,7 @@ contract AjnaRewards is IAjnaRewards {
             }
         }
 
+        // TODO: 0 out rewards instead of reverting
         // check update reward accumulated is less than cap
         if (burnEventUpdateRewardsClaimed[curBurnId] + updateReward > Maths.wmul(UPDATE_CAP, totalBurned)) revert MaxTokensAlreadyClaimed();
 
@@ -251,47 +254,53 @@ contract AjnaRewards is IAjnaRewards {
      *  @dev    Rewards are calculated as the difference in exchange rates between the last interaction burn event and the current burn event.
      *  @param  tokenId_ ID of the staked LP NFT.
      *  @return rewards_ Amount of rewards earned by the NFT.
-     *  @return totalBurned_ Total amount of AJNA burned in the pool since the NFT's last interaction burn event.
      */
-    function _calculateRewardsEarned(uint256 tokenId_) internal view returns (uint256 rewards_, uint256 totalBurned_) {
+    function _calculateRewardsEarned(uint256 tokenId_, uint256 burnIdToStartClaim_, bool isClaim_) internal returns (uint256 rewards_) {
         Deposit storage deposit = deposits[tokenId_];
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
 
         address ajnaPool = deposit.ajnaPool;
-        uint256 interestEarned = 0;
-        uint256 currentBurnEventId = IPool(ajnaPool).currentBurnId();
-        uint256 lastInteractionBurnEvent = deposit.lastInteractionBurn;
 
         // calculate accrued interest as determined by the difference in exchange rates between the last interaction block and the current block
         for (uint256 i = 0; i < positionIndexes.length; ) {
 
             // iterate through all burn periods to check exchange for buckets over time
-            for (uint256 id = lastInteractionBurnEvent; id < currentBurnEventId; ) {
-                uint256 prevExchangeRate = poolBucketBurnExchangeRates[ajnaPool][positionIndexes[i]][id];
-                uint256 currentExchangeRate = poolBucketBurnExchangeRates[ajnaPool][positionIndexes[i]][id + 1];
+            for (uint256 id = deposit.lastInteractionBurn; id < burnIdToStartClaim_; ) {
 
-                // don't accrue interest earned if an update didn't occur in a given burn period
-                if (prevExchangeRate == 0 || currentExchangeRate == 0) {
-                    interestEarned += 0;
+                // calculate change in exchange rates in a deposits buckets
+                uint256 interestEarned = _calculateExchangeRateInterestEarned(ajnaPool, id, positionIndexes[i], deposit);
 
-                    // TODO: explicate this
+                if (interestEarned == 0) {
+                    // id is bounded by the number of reserve auctions that have occured in the pool, preventing overflow / underflow
                     unchecked {
                         ++id;
                     }
+                    // no interest will be earned in this period, continue onto the next period
                     continue;
                 }
 
-                uint256 quoteAtPrev = Maths.rayToWad(Maths.rmul(prevExchangeRate, deposit.lpsAtDeposit[positionIndexes[i]]));
-                uint256 quoteAtCurrentRate = Maths.rayToWad(Maths.rmul(currentExchangeRate, deposit.lpsAtDeposit[positionIndexes[i]]));
+                // retrieve total interest accumulated by the pool over the claim period, and total tokens burned over that period
+                (, uint256 totalBurnedInPeriod, uint256 totalInterestEarnedInPeriod) = _getPoolAccumulators(ajnaPool, id + 1, id);
 
-                if (quoteAtCurrentRate > quoteAtPrev) {
-                    interestEarned += quoteAtCurrentRate - quoteAtPrev;
+                // calculate rewards earned
+                uint256 newRewards = Maths.wmul(REWARD_FACTOR, Maths.wmul(Maths.wdiv(interestEarned, totalInterestEarnedInPeriod), totalBurnedInPeriod));
+
+                if (totalInterestEarnedInPeriod == 0 || _checkRewardsClaimed(id + 1, newRewards, totalBurnedInPeriod)) {
+                    // rewards are 0 for a period if no global interest is earned, or if rewards would exceep cap
+                    rewards_ += 0;
                 }
                 else {
-                    interestEarned -= quoteAtPrev - quoteAtCurrentRate;
+                    // accumulate additional rewards earned for this period
+                    rewards_ += newRewards;
                 }
 
-                // TODO: explicate this
+                if (isClaim_) {
+                    // update token claim trackers
+                    burnEventRewardsClaimed[id + 1] += newRewards;
+                    hasClaimedForToken[tokenId_][id + 1] = true;
+                }
+
+                // id is bounded by the number of reserve auctions that have occured in the pool, preventing overflow / underflow
                 unchecked {
                     ++id;
                 }
@@ -302,14 +311,25 @@ contract AjnaRewards is IAjnaRewards {
                 ++i;
             }
         }
+    }
 
-        // retrieve total interest accumulated by the pool over the claim period, and total tokens burned over that period
-        uint256 totalInterestEarned;
-        (, totalBurned_, totalInterestEarned) = _getPoolAccumulators(ajnaPool, currentBurnEventId, lastInteractionBurnEvent);
+    function _calculateExchangeRateInterestEarned(address pool_, uint256 burnEventId_, uint256 bucketIndex_, Deposit storage deposit_) internal view returns (uint256 interestEarned_) {
+        uint256 prevExchangeRate = poolBucketBurnExchangeRates[pool_][bucketIndex_][burnEventId_];
+        uint256 currentExchangeRate = poolBucketBurnExchangeRates[pool_][bucketIndex_][burnEventId_ + 1];
 
-        // calculate rewards earned
-        if (totalInterestEarned == 0) return (0, totalBurned_);
-        rewards_ = Maths.wmul(REWARD_FACTOR, Maths.wmul(Maths.wdiv(interestEarned, totalInterestEarned), totalBurned_));
+        if (prevExchangeRate == 0 || currentExchangeRate == 0) {
+            return 0;
+        }
+
+        uint256 quoteAtPrev = Maths.rayToWad(Maths.rmul(prevExchangeRate, deposit_.lpsAtDeposit[bucketIndex_]));
+        uint256 quoteAtCurrentRate = Maths.rayToWad(Maths.rmul(currentExchangeRate, deposit_.lpsAtDeposit[bucketIndex_]));
+
+        if (quoteAtCurrentRate > quoteAtPrev) {
+            interestEarned_ += quoteAtCurrentRate - quoteAtPrev;
+        }
+        else {
+            interestEarned_ -= quoteAtPrev - quoteAtCurrentRate;
+        }
     }
 
     /**
@@ -327,20 +347,14 @@ contract AjnaRewards is IAjnaRewards {
      *  @notice Claim rewards that have been accumulated by a deposited NFT.
      *  @param  tokenId_ ID of the staked LP NFT.
      */
-    function _claimRewards(uint256 tokenId_) internal {
-        uint256 burnEventId   = IPool(deposits[tokenId_].ajnaPool).currentBurnId();
-        (uint256 rewardsEarned, uint256 totalBurned) = _calculateRewardsEarned(tokenId_);
+    function _claimRewards(uint256 tokenId_, uint256 burnIdToStartClaim_) internal {
+        uint256 rewardsEarned = _calculateRewardsEarned(tokenId_, burnIdToStartClaim_, true);
 
-        if (_checkRewardsClaimed(burnEventId, rewardsEarned, totalBurned)) revert MaxTokensAlreadyClaimed();
-
-        // update token claim trackers
-        burnEventRewardsClaimed[burnEventId] += rewardsEarned;
-        hasClaimedForToken[tokenId_][burnEventId] = true;
-
+        // TODO: add id of burn events claimed
         emit ClaimRewards(msg.sender, deposits[tokenId_].ajnaPool, tokenId_, rewardsEarned);
 
         // update last interaction burn event
-        deposits[tokenId_].lastInteractionBurn = burnEventId;
+        deposits[tokenId_].lastInteractionBurn = burnIdToStartClaim_;
 
         // transfer rewards to sender
         if (rewardsEarned > IERC20(ajnaToken).balanceOf(address(this))) rewardsEarned = IERC20(ajnaToken).balanceOf(address(this));
@@ -388,8 +402,8 @@ contract AjnaRewards is IAjnaRewards {
      *  @param  tokenId_ ID of the staked LP NFT.
      *  @return rewards_ The amount of rewards earned by the NFT.
      */
-    function calculateRewardsEarned(uint256 tokenId_) external view returns (uint256 rewards_) {
-        (rewards_, ) = _calculateRewardsEarned(tokenId_);
+    function calculateRewardsEarned(uint256 tokenId_, uint256 burnIdToStartClaim_) external returns (uint256 rewards_) {
+        rewards_ = _calculateRewardsEarned(tokenId_, burnIdToStartClaim_, false);
     }
 
     /**
