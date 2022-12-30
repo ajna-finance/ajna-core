@@ -185,6 +185,22 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         borrowers.add(from);
     }
 
+    function _borrowZeroAmount(
+        address from,
+        uint256 amount,
+        uint256 indexLimit,
+        uint256 newLup
+    ) internal {
+        changePrank(from);
+        vm.expectEmit(true, true, false, true);
+        emit DrawDebt(from, amount, 0, newLup);
+
+        ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
+
+        // Add for tearDown
+        borrowers.add(from);
+    }
+
     function _drawDebt(
         address from,
         address borrower,
