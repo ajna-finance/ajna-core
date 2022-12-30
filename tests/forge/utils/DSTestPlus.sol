@@ -675,6 +675,16 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.addQuoteToken(amount, 0);
     }
 
+    function _assertAddLiquidityDustRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
+        _pool.addQuoteToken(amount, index);
+    }
+
     function _assertArbTakeNoAuction(
         address from,
         address borrower,

@@ -525,9 +525,8 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
         // deposit quote token and sanity check lender LPs
         bool reverted;
-        if (quoteAmount != 0 && quoteAmount < _pool.quoteTokenScale()) {
-            vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
-            _pool.addQuoteToken(quoteAmount, bucketId);
+        if (quoteAmount != 0 && quoteAmount < _pool.quoteTokenDust()) {
+            _assertAddLiquidityDustRevert(_lender, quoteAmount, bucketId);
             quoteAmount = 0;
             reverted = true;
         } else {
@@ -591,8 +590,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         // deposit lender1 quote token and sanity check LPs
         bool reverted1;
         if (quoteAmount1 != 0 && quoteAmount1 < _pool.quoteTokenScale()) {
-            vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
-            _pool.addQuoteToken(quoteAmount1, bucketId);
+            _assertAddLiquidityDustRevert(_lender, quoteAmount1, bucketId);
             quoteAmount1 = 0;
             reverted1 = true;
         } else {
@@ -609,8 +607,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         // deposit lender2 quote token and sanity check LPs
         bool reverted2;
         if (quoteAmount2 != 0 && quoteAmount2 < _pool.quoteTokenScale()) {
-            vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
-            _pool.addQuoteToken(quoteAmount2, bucketId);
+            _assertAddLiquidityDustRevert(lender2, quoteAmount2, bucketId);
             quoteAmount2 = 0;
             reverted2 = true;
         } else {
