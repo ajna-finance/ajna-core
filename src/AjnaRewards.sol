@@ -101,8 +101,6 @@ contract AjnaRewards is IAjnaRewards {
         positionManager = positionManager_;
     }
 
-    // TODO: line up recording time and auction delay
-
     /**************************/
     /*** External Functions ***/
     /**************************/
@@ -114,7 +112,6 @@ contract AjnaRewards is IAjnaRewards {
     function claimRewards(uint256 tokenId_, uint256 burnIdToStartClaim_) external {
         if (msg.sender != deposits[tokenId_].owner) revert NotOwnerOfDeposit();
 
-        // TODO: limit claiming until after the burn event has completed? Need to ensure a user can claim rewards that accumulated after an early claim. currently prevented
         if (hasClaimedForToken[tokenId_][IPool(deposits[tokenId_].ajnaPool).currentBurnId()]) revert AlreadyClaimed();
 
         _claimRewards(tokenId_, burnIdToStartClaim_);
@@ -193,9 +190,6 @@ contract AjnaRewards is IAjnaRewards {
         // check that the update is being performed within the allowed time period
         if (block.number > curBurnBlock + UPDATE_PERIOD) revert ExchangeRateUpdateTooLate();
 
-        // TODO: handle the case of interest earned being 0?
-        // if (totalInterestEarned == 0) revert NoInterestEarned();
-
         uint256 updateReward;
         for (uint256 i = 0; i < indexes_.length; ) {
             // check bucket hasn't already been updated
@@ -233,9 +227,12 @@ contract AjnaRewards is IAjnaRewards {
             }
         }
 
-        // TODO: 0 out rewards instead of reverting
         // check update reward accumulated is less than cap
-        if (burnEventUpdateRewardsClaimed[curBurnId] + updateReward > Maths.wmul(UPDATE_CAP, totalBurned)) revert MaxTokensAlreadyClaimed();
+        if (burnEventUpdateRewardsClaimed[curBurnId] + updateReward > Maths.wmul(UPDATE_CAP, totalBurned)) {
+            // set update reward to difference between cap and reward
+            updateReward = Maths.wmul(UPDATE_CAP, totalBurned) - burnEventUpdateRewardsClaimed[curBurnId];
+            burnEventUpdateRewardsClaimed[curBurnId] += updateReward;
+        }
 
         // update total tokens claimed tracker
         burnEventUpdateRewardsClaimed[curBurnId] += updateReward;
@@ -252,7 +249,9 @@ contract AjnaRewards is IAjnaRewards {
     /**
      *  @notice Calculate the amount of rewards that have been accumulated by a deposited NFT.
      *  @dev    Rewards are calculated as the difference in exchange rates between the last interaction burn event and the current burn event.
-     *  @param  tokenId_ ID of the staked LP NFT.
+     *  @param  tokenId_            ID of the staked LP NFT.
+     *  @param  burnIdToStartClaim_ ID of the burn period from which to start the calculations, decrementing down.
+     *  @param  isClaim_            Boolean checking whether the newly calculated rewards should be written to state as part of a claim.
      *  @return rewards_ Amount of rewards earned by the NFT.
      */
     function _calculateRewardsEarned(uint256 tokenId_, uint256 burnIdToStartClaim_, bool isClaim_) internal returns (uint256 rewards_) {
@@ -313,6 +312,14 @@ contract AjnaRewards is IAjnaRewards {
         }
     }
 
+    /**
+     *  @notice Calculate the amount of interest that has accrued to a lender in a bucket based upon their LPs.
+     *  @param  pool_           Address of the pool whose exchange rates are being checked.
+     *  @param  burnEventId_    ID of the burn event to check the exchange rate for.
+     *  @param  bucketIndex_    Index of the bucket to check the exchange rate for.
+     *  @param  deposit_        Deposit struct of the NFT.
+     *  @return interestEarned_ The amount of interest accrued.
+     */
     function _calculateExchangeRateInterestEarned(address pool_, uint256 burnEventId_, uint256 bucketIndex_, Deposit storage deposit_) internal view returns (uint256 interestEarned_) {
         uint256 prevExchangeRate = poolBucketBurnExchangeRates[pool_][bucketIndex_][burnEventId_];
         uint256 currentExchangeRate = poolBucketBurnExchangeRates[pool_][bucketIndex_][burnEventId_ + 1];
@@ -345,7 +352,8 @@ contract AjnaRewards is IAjnaRewards {
 
     /**
      *  @notice Claim rewards that have been accumulated by a deposited NFT.
-     *  @param  tokenId_ ID of the staked LP NFT.
+     *  @param  tokenId_            ID of the staked LP NFT.
+     *  @param  burnIdToStartClaim_ ID of the burn period from which to start the calculations, decrementing down.
      */
     function _claimRewards(uint256 tokenId_, uint256 burnIdToStartClaim_) internal {
         uint256 rewardsEarned = _calculateRewardsEarned(tokenId_, burnIdToStartClaim_, true);
@@ -366,6 +374,9 @@ contract AjnaRewards is IAjnaRewards {
      *  @param  pool_               Address of the Ajna pool to retrieve accumulators of.
      *  @param  currentBurnEventId_ ID of the latest burn event.
      *  @param  lastBurnEventId_    ID of the burn event to use as checkpoint since which values should have accumulated.
+     *  @return currentBurnBlock_   Block number of the latest burn event.
+     *  @return ajnaTokensBurned_   Total ajna tokens burned by the pool since the last burn event.
+     *  @return totalInterestEarned_ Total interest earned by the pool since the last burn event.
      */
     function _getPoolAccumulators(address pool_, uint256 currentBurnEventId_, uint256 lastBurnEventId_) internal view returns (uint256, uint256, uint256) {
         (uint256 currentBurnBlock_, uint256 totalInterestLatest, uint256 totalBurnedLatest) = IPool(pool_).burnInfo(currentBurnEventId_);
@@ -399,7 +410,8 @@ contract AjnaRewards is IAjnaRewards {
 
     /**
      *  @notice Calculate the amount of rewards that have been accumulated by a deposited NFT.
-     *  @param  tokenId_ ID of the staked LP NFT.
+     *  @param  tokenId_            ID of the staked LP NFT.
+     *  @param  burnIdToStartClaim_ ID of the burn period from which to start the calculations, decrementing down.
      *  @return rewards_ The amount of rewards earned by the NFT.
      */
     function calculateRewardsEarned(uint256 tokenId_, uint256 burnIdToStartClaim_) external returns (uint256 rewards_) {
