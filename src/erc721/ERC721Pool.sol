@@ -28,7 +28,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     /****************************/
     /*** Initialize Functions ***/
     /****************************/
-    
+
     function initialize(
         uint256[] memory tokenIds_,
         uint256 rate_
@@ -147,7 +147,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     ) external override returns (uint256 collateralMerged_, uint256 bucketLPs_) {
         PoolState memory poolState = _accruePoolInterest();
         uint256 collateralAmount = Maths.wad(noOfNFTsToRemove_);
-        
+
         (
             collateralMerged_,
             bucketLPs_
@@ -209,15 +209,14 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
         if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral();
 
-        TakeParams memory params = TakeParams(
-            {
-                borrower:       borrowerAddress_,
-                collateral:     borrower.collateral,
-                t0Debt:         borrower.t0Debt,
-                takeCollateral: Maths.wad(collateral_),
-                inflator:       poolState.inflator
-            }
-        );
+        TakeParams memory params = TakeParams({
+            borrower:       borrowerAddress_,
+            collateral:     borrower.collateral,
+            t0Debt:         borrower.t0Debt,
+            takeCollateral: Maths.wad(collateral_),
+            inflator:       poolState.inflator
+        });
+
         (
             uint256 collateralAmount,
             uint256 quoteTokenAmount,
@@ -243,8 +242,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
         if (data_.length != 0) {
             IERC721Taker(callee_).atomicSwapCallback(
-                tokensTaken, 
-                quoteTokenAmount / _getArgUint256(QUOTE_SCALE), 
+                tokensTaken,
+                quoteTokenAmount / _getArgUint256(QUOTE_SCALE),
                 data_
             );
         }
@@ -301,13 +300,14 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256[] storage poolTokens_,
         uint256[] calldata tokenIds_
     ) internal {
-        bool subset = _getArgUint256(SUBSET) != 0;
+        bool subset   = _getArgUint256(SUBSET) != 0;
         uint8 nftType = _getArgUint8(NFT_TYPE);
+
         for (uint256 i = 0; i < tokenIds_.length;) {
             uint256 tokenId = tokenIds_[i];
             if (subset && !tokenIdsAllowed[tokenId]) revert OnlySubset();
             poolTokens_.push(tokenId);
-            
+
             if (nftType == uint8(NFTTypes.STANDARD_ERC721)){
                 _transferNFT(msg.sender, address(this), tokenId);
             }
@@ -340,7 +340,9 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256[] memory tokensTransferred = new uint256[](amountToRemove_);
 
         uint256 noOfNFTsInPool = poolTokens_.length;
+
         uint8 nftType = _getArgUint8(NFT_TYPE);
+
         for (uint256 i = 0; i < amountToRemove_;) {
             uint256 tokenId = poolTokens_[--noOfNFTsInPool]; // start with transferring the last token added in bucket
             poolTokens_.pop();
@@ -351,15 +353,13 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             else if (nftType == uint8(NFTTypes.CRYPTOKITTIES)) {
                 ICryptoKitties(_getArgAddress(COLLATERAL_ADDRESS)).transfer(toAddress_, tokenId);
             }
-            else{
+            else {
                 ICryptoPunks(_getArgAddress(COLLATERAL_ADDRESS)).transferPunk(toAddress_, tokenId);
             }
 
             tokensTransferred[i] = tokenId;
 
-            unchecked {
-                ++i;
-            }
+            unchecked { ++i; }
         }
 
         return tokensTransferred;

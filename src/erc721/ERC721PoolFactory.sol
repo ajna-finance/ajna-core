@@ -23,7 +23,8 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
     constructor(address ajna_) {
         if (ajna_ == address(0)) revert DeployWithZeroAddress();
 
-        ajna           = ajna_;
+        ajna = ajna_;
+
         implementation = new ERC721Pool();
     }
 
@@ -34,14 +35,14 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
 
         NFTTypes nftType;
         // CryptoPunks NFTs
-        if ( collateral_ == 0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB ) {
+        if (collateral_ == 0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB ) {
             nftType = NFTTypes.CRYPTOPUNKS;
         }
         // CryptoKitties and CryptoFighters NFTs
-        else if ( collateral_ == 0x06012c8cf97BEaD5deAe237070F9587f8E7A266d || collateral_ ==  0x87d598064c736dd0C712D329aFCFAA0Ccc1921A1 ){
+        else if (collateral_ == 0x06012c8cf97BEaD5deAe237070F9587f8E7A266d || collateral_ ==  0x87d598064c736dd0C712D329aFCFAA0Ccc1921A1) {
             nftType = NFTTypes.CRYPTOKITTIES;
         }
-        // All other NFTs that support the EIP721 standard 
+        // All other NFTs that support the EIP721 standard
         else {
             // Here 0x80ac58cd is the ERC721 interface Id
             bool supportsERC721Interface = IERC165(collateral_).supportsInterface(0x80ac58cd);
@@ -63,16 +64,19 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
         );
 
         ERC721Pool pool = ERC721Pool(address(implementation).clone(data));
+
         pool_ = address(pool);
+
         deployedPools[getNFTSubsetHash(tokenIds_)][collateral_][quote_] = pool_;
+
         emit PoolCreated(pool_);
 
         pool.initialize(tokenIds_, interestRate_);
     }
 
-    /*********************************/
+    /*******************************/
     /*** Pool Creation Functions ***/
-    /*********************************/
+    /*******************************/
 
     function getNFTSubsetHash(uint256[] memory tokenIds_) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(tokenIds_));
