@@ -420,7 +420,7 @@ library Auctions {
         if (params_.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
 
         Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
-        TakeResult memory result = _validateTake(liquidation, params_.t0Debt, params_.collateral, params_.inflator);
+        TakeResult memory result = _prepareTake(liquidation, params_.t0Debt, params_.collateral, params_.inflator);
 
         result.unscaledDeposit = Deposits.unscaledValueAt(deposits_, params_.index);
         if (result.unscaledDeposit == 0) revert InsufficientLiquidity(); // revert if no quote tokens in arbed bucket
@@ -495,7 +495,7 @@ library Auctions {
         TakeParams calldata params_
     ) external returns (uint256, uint256, uint256, uint256, uint256, uint256) {
         Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
-        TakeResult memory result = _validateTake(liquidation, params_.t0Debt, params_.collateral, params_.inflator);
+        TakeResult memory result = _prepareTake(liquidation, params_.t0Debt, params_.collateral, params_.inflator);
         // These are placeholder max values passed to calculateTakeFlows because there is no explicit bound on the
         // quote token amount in take calls (as opposed to bucketTake)
         result.unscaledDeposit = type(uint256).max;
@@ -1037,7 +1037,7 @@ library Auctions {
      *  @param  inflator_    The pool's inflator, used to calculate borrower debt.
      *  @return takeResult_  The result of take action.
      */
-    function _validateTake(
+    function _prepareTake(
         Liquidation storage liquidation_,
         uint256 t0Debt_,
         uint256 collateral_,
@@ -1048,10 +1048,9 @@ library Auctions {
         if (kickTime == 0) revert NoAuction();
         if (block.timestamp - kickTime <= 1 hours) revert TakeNotPastCooldown();
 
-        // if first take borrower debt is increased by 7% penalty
         takeResult_.t0Debt = t0Debt_;
+        // if first take borrower debt is increased by 7% penalty
         if (!liquidation_.alreadyTaken) {
-            // if first take then apply penalty of 7%
             takeResult_.t0DebtPenalty = Maths.wmul(t0Debt_, 0.07 * 1e18);
             takeResult_.t0Debt += takeResult_.t0DebtPenalty; 
             liquidation_.alreadyTaken = true;
