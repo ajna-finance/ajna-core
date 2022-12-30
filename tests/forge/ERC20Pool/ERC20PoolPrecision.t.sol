@@ -82,6 +82,8 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
         init(boundColPrecision, boundQuotePrecision);
 
+        uint256 start = block.timestamp;
+
         // deposit 50_000 quote tokens into each of 3 buckets
         _addInitialLiquidity(
             {
@@ -144,7 +146,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                 lender:      _lender,
                 index:       2549,
                 lpBalance:   50_000 * 1e27,
-                depositTime: 1 days
+                depositTime: start
             }
         );
 
@@ -199,7 +201,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                 lender:      _lender,
                 index:       2549,
                 lpBalance:   25_000 * _lpPoolPrecision,
-                depositTime: 1 days
+                depositTime: start
             }
         );
     }
@@ -212,6 +214,8 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _quotePrecision = uint256(10) ** boundQuotePrecision;
 
         init(boundColPrecision, boundQuotePrecision);
+
+        uint256 start = block.timestamp;
 
         _addInitialLiquidity(
             {
@@ -285,7 +289,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                 lender:      _lender,
                 index:       2549,
                 lpBalance:   50_000 * _lpPoolPrecision,
-                depositTime: 1 days
+                depositTime: start
             }
         );
 
@@ -355,7 +359,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                 lender:      _lender,
                 index:       2549,
                 lpBalance:   50_000 * _lpPoolPrecision,
-                depositTime: 1 days
+                depositTime: start
             }
         );
 
@@ -424,7 +428,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                 lender:      _lender,
                 index:       2549,
                 lpBalance:   50_000 * _lpPoolPrecision,
-                depositTime: 1 days
+                depositTime: start
             }
         );
 
@@ -480,7 +484,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
     }
 
     function testFuzzedDepositTwoActorSameBucket(
-        uint8   collateralPrecisionDecimals_, 
+        uint8   collateralPrecisionDecimals_,
         uint8   quotePrecisionDecimals_,
         uint16  bucketId_,
         uint256 quoteAmount_,
@@ -546,7 +550,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
     }
 
     function testFuzzedDepositTwoLendersSameBucket(
-        uint8   collateralPrecisionDecimals_, 
+        uint8   collateralPrecisionDecimals_,
         uint8   quotePrecisionDecimals_,
         uint16  bucketId_,
         uint256 quoteAmount1_,
@@ -624,7 +628,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         // Add for tearDown
         lenders.add(from);
         lendersDepositedIndex[from].add(index);
-        bucketsUsed.add(index); 
+        bucketsUsed.add(index);
 
         return ERC20Pool(address(_pool)).addCollateral(amount, index);
     }
