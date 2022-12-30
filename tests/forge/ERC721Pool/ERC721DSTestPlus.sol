@@ -263,14 +263,14 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     ) internal {
         changePrank(from);
 
-        vm.expectEmit(true, true, false, true);
-        emit DrawDebtNFT(borrower, 0, tokenIds, _poolUtils.lup(address(_pool)));
-
         for (uint256 i = 0; i < tokenIds.length; i++) {
             assertEq(_collateral.ownerOf(tokenIds[i]), from); // token is owned by pledger address
             vm.expectEmit(true, true, false, true);
             emit Transfer(from, address(_pool), tokenIds[i]);
         }
+
+        vm.expectEmit(true, true, false, true);
+        emit DrawDebtNFT(borrower, 0, tokenIds, _poolUtils.lup(address(_pool)));
 
         ERC721Pool(address(_pool)).drawDebt(borrower, 0, 0, tokenIds);
 

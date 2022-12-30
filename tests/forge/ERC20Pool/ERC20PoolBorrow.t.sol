@@ -465,7 +465,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         _assertLenderInterest(liquidityAdded, 86.113113158840750000 * 1e18);
 
         skip(10 days);
-        _borrow(
+        _borrowZeroAmount(
             {
                 from:       _borrower,
                 amount:     0,
