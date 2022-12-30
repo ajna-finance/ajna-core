@@ -57,7 +57,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 newLup;                // LUP after auction is taken
         bool    pull;                  // true if pull action
         bool    repay;                 // true if repay action
-        bool    restampT0Np;           // true if loan's t0 neutral price should be restamped (when exiting auction)
+        bool    stampT0Np;             // true if loan's t0 neutral price should be restamped (when exiting auction)
         uint256 t0DebtInAuctionChange; // t0 change amount of debt after repayment
         uint256 t0RepaidDebt;          // t0 debt repaid
     }
@@ -526,7 +526,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                     borrower.collateral   = _settleAuction(borrowerAddress_, borrower.collateral);
 
                     vars.inAuction   = false;
-                    vars.restampT0Np = true;  // stamp borrower t0Np when exiting from auction
+                    vars.stampT0Np = true;  // stamp borrower t0Np when exiting from auction
                 } else {
                     // partial repay, remove only the paid debt from pool auctions debt accumulator
                     vars.t0DebtInAuctionChange = vars.t0RepaidDebt;
@@ -553,7 +553,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             if (borrower.collateral - encumberedCollateral < collateralAmountToPull_) revert InsufficientCollateral();
 
             // stamp borrower t0Np when pull collateral action
-            vars.restampT0Np = true;
+            vars.stampT0Np = true;
 
             borrower.collateral  -= collateralAmountToPull_;
             poolState.collateral -= collateralAmountToPull_;
@@ -573,7 +573,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             poolState.rate,
             newLup_,
             vars.inAuction,
-            vars.restampT0Np
+            vars.stampT0Np
         );
 
         // update pool interest rate state
