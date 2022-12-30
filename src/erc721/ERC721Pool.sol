@@ -87,8 +87,11 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256 limitIndex_,
         uint256[] calldata tokenIdsToPledge_
     ) external {
+        // move collateral from sender to pool to be properly accounted if auction settled
+        if (tokenIdsToPledge_.length != 0) _transferFromSenderToPool(borrowerTokenIds[borrowerAddress_], tokenIdsToPledge_);
+
         (
-            bool pledge,
+            ,
             bool borrow,
             uint256 newLup
         ) = _drawDebt(
@@ -100,8 +103,6 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
         emit DrawDebtNFT(borrowerAddress_, amountToBorrow_, tokenIdsToPledge_, newLup);
 
-        // move collateral from sender to pool
-        if (pledge) _transferFromSenderToPool(borrowerTokenIds[borrowerAddress_], tokenIdsToPledge_);
         // move borrowed amount from pool to sender
         if (borrow) _transferQuoteToken(msg.sender, amountToBorrow_);
     }
