@@ -198,10 +198,6 @@ contract AjnaRewards is IAjnaRewards {
             // record a buckets exchange rate
             uint256 curBucketExchangeRate = IPool(pool_).bucketExchangeRate(indexes_[i]);
             poolBucketBurnExchangeRates[pool_][indexes_[i]][curBurnId] = curBucketExchangeRate;
-
-            console.log("block time: ", block.timestamp);
-            console.log("Recording bucket index: ", indexes_[i]);
-            console.log("Recording interest rate: ", curBucketExchangeRate);
             
             // retrieve the exchange rate of the previous burn event
             uint256 prevBucketExchangeRate = poolBucketBurnExchangeRates[pool_][indexes_[i]][curBurnId - 1];
@@ -219,8 +215,6 @@ contract AjnaRewards is IAjnaRewards {
 
             // retrieve current deposit in a bucket
             (, , , uint256 bucketDeposit, ) = IPool(pool_).bucketInfo(indexes_[i]);
-
-            console.log("Current deposit: ", bucketDeposit);
 
             // calculate rewards earned for updating a bucket
             uint256 burnFactor = Maths.wmul(totalBurned, bucketDeposit);
@@ -289,22 +283,14 @@ contract AjnaRewards is IAjnaRewards {
 
                 // calculate rewards earned
                 uint256 newRewards = Maths.wmul(REWARD_FACTOR, Maths.wmul(Maths.wdiv(interestEarned, totalInterestEarnedInPeriod), totalBurnedInPeriod));
-                console.log("interestEarned: ", interestEarned);
-                console.log("totalInterest:  ", totalInterestEarnedInPeriod);
-                console.log("totalBurned:    ", totalBurnedInPeriod);
 
-                
-                if (totalInterestEarnedInPeriod == 0 || _checkRewardsClaimed(id + 1, newRewards, totalBurnedInPeriod)) {
-                    // rewards are 0 for a period if no global interest is earned, or if rewards would exceep cap
-                    // TODO: we should let them get as much as possible
-                    rewards_ += 0;
-                    console.log("Cap hit. newRewards:  ", newRewards);
-                    console.log("Cap hit. totalBurned: ", totalBurnedInPeriod);
+                if (_checkRewardsClaimed(id + 1, newRewards, totalBurnedInPeriod)) {
+                    // set claim reward to difference between cap and reward
+                    newRewards = Maths.wmul(REWARD_CAP, totalBurnedInPeriod) - burnEventRewardsClaimed[id + 1];
+                    rewards_ += newRewards;
                 }
                 else {
                     // accumulate additional rewards earned for this period
-                    console.log("Cap not hit. newRewards:  ", newRewards);
-                    console.log("Cap not hit. totalBurned: ", totalBurnedInPeriod);
                     rewards_ += newRewards;
                 }
 

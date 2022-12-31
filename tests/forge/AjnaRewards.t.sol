@@ -354,9 +354,9 @@ contract AjnaRewardsTest is DSTestPlus {
     function testClaimRewardsCap() external {
         skip(10);
         
-        /****************************/
-        /*** Lenders Deposit NFTs ***/
-        /****************************/
+        /***************************/
+        /*** Lender Deposits NFT ***/
+        /***************************/
         
         // set deposit indexes
         uint256[] memory depositIndexes = new uint256[](2);
@@ -385,12 +385,8 @@ contract AjnaRewardsTest is DSTestPlus {
         // borrower1 borrows
         (address borrower1, uint256 collateralToPledge) = _createTestBorrower(_poolOne, string("borrower1"), 10_000 * 1e18, 2770);
         changePrank(borrower1);
-
-        console.log("About to borrow.");
         
         _poolOne.drawDebt(borrower1, 5 * 1e18, 2770, collateralToPledge);
-
-        console.log("Borrowed.");
 
         // pass time to allow interest to accrue
         skip(2 hours);
@@ -403,8 +399,6 @@ contract AjnaRewardsTest is DSTestPlus {
         /*** First Reserve Auction ***/
         /*****************************/
 
-        console.log("Starting reserve auction.");
-
         // start reserve auction
         changePrank(_bidder);
         _ajnaToken.approve(address(_poolOne), type(uint256).max);
@@ -412,9 +406,7 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // borrower1 now takes out more debt to accumulate more interest
         changePrank(borrower1);
-        console.log("Starting second borrow.");
         _poolOne.drawDebt(borrower1, 2_000 * 1e18, 2770, 0);
-        console.log("Borrowed second.");
 
         // allow time to pass for the reserve price to decrease
         skip(24 hours);
@@ -423,19 +415,23 @@ contract AjnaRewardsTest is DSTestPlus {
             ,
             ,
             uint256 curClaimableReservesRemaining,
-            ,
+            uint256 curAuctionPrice,
         ) = _poolUtils.poolReservesInfo(address(_poolOne));
-
-        console.log("claimable: ", curClaimableReservesRemaining);
         
+        uint256 tokensBurned = Maths.wmul(curClaimableReservesRemaining, curAuctionPrice);
+
         // take claimable reserves
         changePrank(_bidder);
         _poolOne.takeReserves(curClaimableReservesRemaining);
 
-        console.log("Taken.");
-
+        // recorder updates the change in exchange rates in the first index
+        changePrank(_updater);
+        assertEq(_ajnaToken.balanceOf(_updater), 0);
+        vm.expectEmit(true, true, true, true);
+        emit UpdateExchangeRates(_updater, address(_poolOne), depositIndex1, .007104599616026695 * 1e18);
         _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndex1);
-        
+        assertEq(_ajnaToken.balanceOf(_updater), .007104599616026695 * 1e18);
+
         // skip more time to allow more interest to accrue
         skip(10 days);
 
@@ -444,27 +440,28 @@ contract AjnaRewardsTest is DSTestPlus {
         (debt, , ) = _poolOne.borrowerInfo(borrower1);
         _poolOne.repayDebt(borrower1, debt, 0);
 
-        // recorder updates the change in exchange rates
-        changePrank(_updater);
-        assertEq(_ajnaToken.balanceOf(_updater), 0);
+        // recorder updates the change in exchange rates in the second index
+        changePrank(_updater2);
+        assertEq(_ajnaToken.balanceOf(_updater2), 0);
         vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(_updater, address(_poolOne), depositIndexes, 32.330930083095968924 * 1e18);
+        emit UpdateExchangeRates(_updater2, address(_poolOne), depositIndex2, .021313798854781108 * 1e18);
         _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndex2);
-        assertEq(_ajnaToken.balanceOf(_updater), 32.330930083095968924 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_updater2), .021313798854781108 * 1e18);
 
-        /******************************************/
-        /*** Lenders Withdraw And Claim Rewards ***/
-        /******************************************/
-
-        console.log("After record, before claim:");
+        /*******************************************/
+        /*** Lender Withdraws And Claims Rewards ***/
+        /*******************************************/
         
-        // _minterOne withdraws and claims rewards
+        // _minterOne withdraws and claims rewards, rewards should be set to the difference between total claimed and cap
         changePrank(_minterOne);
         vm.expectEmit(true, true, true, true);
-        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, 291.997420113166846408 * 1e18);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, .227347187766462422 * 1e18);
         vm.expectEmit(true, true, true, true);
         emit WithdrawToken(_minterOne, address(_poolOne), tokenIdOne);
         _ajnaRewards.withdrawNFT(tokenIdOne);
+        assertEq(_ajnaToken.balanceOf(_minterOne), .227347187766462422 * 1e18);
+
+        // TODO: check reward amount vs expected from burn
     }
 
     function testMultiPeriodRewardsSingleClaim() external {
