@@ -105,7 +105,6 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         vm.expectEmit(true, true, false, true);
         emit Take(_borrower, 14.503461444385064128 * 1e18, 2.0 * 1e18, 0.145034614443850641 * 1e18, true);
         taker.take(tokens, amounts, data);
-        return;
 
         assertGt(usdc.balanceOf(address(this)), 0); // could vary
     }

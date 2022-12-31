@@ -333,7 +333,6 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
                lpAwardKicker:    0.198343053438495848000000000 * 1e27
            }
         );
-        return;
 
         _assertLenderLpBalance(
            {
