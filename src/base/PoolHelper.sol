@@ -24,11 +24,11 @@ import '../libraries/Maths.sol';
     uint256 constant MAX_FENWICK_INDEX =  7_388;
 
     uint256 constant MIN_PRICE = 99_836_282_890;
-    uint256 constant MAX_PRICE = 1_004_968_987.606512354182109771 * 10 ** 18;
+    uint256 constant MAX_PRICE = 1_004_968_987.606512354182109771 * 1e18;
     /**
         @dev step amounts in basis points. This is a constant across pools at .005, achieved by dividing WAD by 10,000
      */
-    int256 constant FLOAT_STEP_INT = 1.005 * 10 ** 18;
+    int256 constant FLOAT_STEP_INT = 1.005 * 1e18;
 
     /**
      *  @notice Calculates the price for a given Fenwick index
@@ -116,7 +116,7 @@ import '../libraries/Maths.sol';
         uint256 interestRate_
     ) pure returns (uint256) {
         // greater of the current annualized interest rate divided by 52 (one week of interest) or 5 bps
-        return Maths.max(Maths.wdiv(interestRate_, 52 * 10**18), 0.0005 * 10**18);
+        return Maths.max(Maths.wdiv(interestRate_, 52 * 1e18), 0.0005 * 1e18);
     }
 
     /**

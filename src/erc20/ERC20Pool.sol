@@ -28,7 +28,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     ) external override {
         if (poolInitializations != 0) revert AlreadyInitialized();
 
-        inflatorState.inflator       = uint208(10**18);
+        inflatorState.inflator       = uint208(1e18);
         inflatorState.inflatorUpdate = uint48(block.timestamp);
 
         interestState.interestRate       = uint208(rate_);

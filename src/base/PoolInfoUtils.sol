@@ -66,8 +66,8 @@ contract PoolInfoUtils {
         if (bucketLPs_ == 0) {
             exchangeRate_ = Maths.RAY;
         } else {
-            uint256 bucketSize = quoteTokens_ * 10**18 + price_ * collateral_;  // 10^36 + // 10^36
-            exchangeRate_ = bucketSize * 10**18 / bucketLPs_; // 10^27
+            uint256 bucketSize = quoteTokens_ * 1e18 + price_ * collateral_;  // 10^36 + // 10^36
+            exchangeRate_ = bucketSize * 1e18 / bucketLPs_; // 10^27
         }
     }
 
