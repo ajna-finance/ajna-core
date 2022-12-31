@@ -95,6 +95,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             Maths.wad(tokenIdsToPledge_.length)
         );
 
+        emit DrawDebtNFT(borrowerAddress_, amountToBorrow_, tokenIdsToPledge_, newLup);
+
         if (tokenIdsToPledge_.length != 0) {
             // update pool balances state
             if (t0DebtInAuctionChange != 0) {
@@ -107,8 +109,6 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         }
 
         if (settledCollateral != 0) _cleanupAuction(borrowerAddress_, settledCollateral);
-
-        emit DrawDebtNFT(borrowerAddress_, amountToBorrow_, tokenIdsToPledge_, newLup);
 
         // move borrowed amount from pool to sender
         if (amountToBorrow_ != 0) {
@@ -214,10 +214,11 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             index_
         );
 
+        emit RemoveCollateral(msg.sender, index_, noOfNFTsToRemove_, lpAmount_);
+
         // update pool interest rate state
         _updateInterestState(poolState, _lup(poolState.debt));
 
-        emit RemoveCollateral(msg.sender, index_, noOfNFTsToRemove_, lpAmount_);
         _transferFromPoolToAddress(msg.sender, bucketTokenIds, noOfNFTsToRemove_);
     }
 
