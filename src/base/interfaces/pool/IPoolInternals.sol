@@ -60,3 +60,12 @@ struct RemoveQuoteParams {
     uint256 index;          // the deposit index from where amount is removed
     uint256 thresholdPrice; // max threshold price in pool
 }
+
+struct DrawDebtResult {
+    uint256 newLup;
+    uint256 settledCollateral;
+    uint256 t0DebtInAuctionChange;
+    uint256 t0DebtChange;
+    uint256 poolCollateral;
+    uint256 poolDebt;
+}

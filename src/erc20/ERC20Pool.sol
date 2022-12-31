@@ -59,7 +59,11 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         uint256 collateralToPledge_
     ) external {
         PoolState memory poolState = _accruePoolInterest();
-        DrawDebtResult memory result = _drawDebt(
+        DrawDebtResult memory result = BorrowerActions.drawDebt(
+            auctions,
+            buckets,
+            deposits,
+            loans,
             poolState,
             borrowerAddress_,
             amountToBorrow_,

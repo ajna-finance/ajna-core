@@ -17,6 +17,7 @@ import '../libraries/Deposits.sol';
 import '../libraries/Loans.sol';
 
 import '../libraries/external/Auctions.sol';
+import '../libraries/external/BorrowerActions.sol';
 import '../libraries/external/LenderActions.sol';
 import '../libraries/external/PoolCommons.sol';
 
@@ -50,22 +51,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     uint256 internal poolInitializations;
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
-
-    struct DrawDebtLocalVars {
-        uint256 borrowerDebt;          // borrower's accrued debt
-        bool    inAuction;             // true if loan still in auction after repay, false otherwise
-        uint256 lupId;                // LUP after auction is taken
-        uint256 debtChange;                  // true if pull action
-    }
-
-    struct DrawDebtResult {
-        uint256 newLup;
-        uint256 settledCollateral;
-        uint256 t0DebtInAuctionChange;
-        uint256 t0DebtChange;
-        uint256 poolCollateral;
-        uint256 poolDebt;
-    }
 
     struct RepayDebtLocalVars {
         uint256 borrowerDebt;          // borrower's accrued debt
@@ -353,96 +338,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /***********************************/
     /*** Borrower Internal Functions ***/
     /***********************************/
-
-    function _drawDebt(
-        PoolState memory poolState_,
-        address borrowerAddress_,
-        uint256 amountToBorrow_,
-        uint256 limitIndex_,
-        uint256 collateralToPledge_
-    ) internal returns (
-        DrawDebtResult memory result_
-    ) {
-        Borrower  memory borrower = Loans.getBorrowerInfo(loans, borrowerAddress_);
-
-        result_.poolDebt       = poolState_.debt;
-        result_.newLup         = _lup(result_.poolDebt);
-        result_.poolCollateral = poolState_.collateral;
-
-        DrawDebtLocalVars memory vars;
-        vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
-
-        // pledge collateral to pool
-        if (collateralToPledge_ != 0) {
-            // add new amount of collateral to pledge to borrower balance
-            borrower.collateral  += collateralToPledge_;
-
-            // load loan's auction state
-            vars.inAuction = Auctions.isActive(auctions, borrowerAddress_);
-            // if loan is auctioned and becomes collateralized by newly pledged collateral then settle auction
-            if (
-                vars.inAuction
-                &&
-                _isCollateralized(vars.borrowerDebt, borrower.collateral, result_.newLup, poolState_.poolType)
-            )
-            {
-                // borrower becomes collateralized, remove debt from pool accumulator and settle auction
-                result_.t0DebtInAuctionChange = borrower.t0Debt;
-
-                result_.settledCollateral = _settleAuction(borrowerAddress_, borrower.collateral);
-                borrower.collateral       = result_.settledCollateral;
-                // auction was settled, reset inAuction flag
-                vars.inAuction = false;
-            }
-
-            // add new amount of collateral to pledge to pool balance
-            result_.poolCollateral += collateralToPledge_;
-        }
-
-        // borrow against pledged collateral
-        // check both values to enable an intentional 0 borrow loan call to update borrower's loan state
-        if (amountToBorrow_ != 0 || limitIndex_ != 0) {
-            // only intended recipient can borrow quote
-            if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
-
-            // add origination fee to the amount to borrow and add to borrower's debt
-            vars.debtChange   = Maths.wmul(amountToBorrow_, _feeRate(poolState_.rate) + Maths.WAD);
-            vars.borrowerDebt += vars.debtChange;
-
-            // check that drawing debt doesn't leave borrower debt under min debt amount
-            _revertOnMinDebt(result_.poolDebt, vars.borrowerDebt);
-
-            // add debt change to pool's debt
-            result_.poolDebt += vars.debtChange;
-            // determine new lup index and revert if borrow happens at a price higher than the specified limit (lower index than lup index)
-            vars.lupId = _lupIndex(result_.poolDebt);
-            if (vars.lupId > limitIndex_) revert LimitIndexReached();
-
-            // calculate new lup and check borrow action won't push borrower into a state of under-collateralization
-            // this check also covers the scenario when loan is already auctioned
-            result_.newLup = _priceAt(vars.lupId);
-            if (
-                !_isCollateralized(vars.borrowerDebt, borrower.collateral, result_.newLup, poolState_.poolType)
-            ) revert BorrowerUnderCollateralized();
-
-            result_.t0DebtChange = Maths.wdiv(vars.debtChange, poolState_.inflator);
-            borrower.t0Debt += result_.t0DebtChange;
-        }
-
-        // update loan state
-        Loans.update(
-            loans,
-            auctions,
-            deposits,
-            borrower,
-            borrowerAddress_,
-            vars.borrowerDebt,
-            poolState_.rate,
-            result_.newLup,
-            vars.inAuction,
-            true
-        );
-    }
 
     function _repayDebt(
         address borrowerAddress_,
