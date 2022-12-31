@@ -39,15 +39,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*** State Variables ***/
     /***********************/
 
+    AuctionsState       internal auctions;
+    DepositsState       internal deposits;
+    LoansState          internal loans;
     InflatorState       internal inflatorState;
     InterestState       internal interestState;
     PoolBalancesState   internal poolBalances;
     ReserveAuctionState internal reserveAuction;
 
-    AuctionsState              internal auctions;
     mapping(uint256 => Bucket) internal buckets;   // deposit index -> bucket
-    DepositsState              internal deposits;
-    LoansState                 internal loans;
 
     uint256 internal poolInitializations;
 
