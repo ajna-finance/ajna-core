@@ -632,7 +632,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         );
     }
 
-    function testDepositTakeGTNeutralPrice() external {
+    function testDepositTakeGTNeutralPrice() external tearDown {
 
         skip(3 hours);
 
@@ -786,7 +786,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         );
     }
 
-    function testDepositTakeReverts() external {
+    function testDepositTakeReverts() external tearDown {
 
         // should revert if auction in grace period
         _assertDepositTakeAuctionInCooldownRevert(

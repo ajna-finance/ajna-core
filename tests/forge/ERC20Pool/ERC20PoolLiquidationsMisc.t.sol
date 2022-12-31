@@ -158,7 +158,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
     }
 
 
-    function testLenderForcedExit() external {
+    function testLenderForcedExit() external tearDown {
 
         skip(25 hours);
         

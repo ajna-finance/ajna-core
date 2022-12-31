@@ -155,7 +155,7 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
     }
 
-    function testKickSubsetPool() external {
+    function testKickSubsetPool() external tearDown {
 
         // Skip to make borrower undercollateralized
         skip(1000 days);

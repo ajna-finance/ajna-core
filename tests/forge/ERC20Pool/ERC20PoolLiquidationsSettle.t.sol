@@ -148,7 +148,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
     }
     
-    function testSettleOnAuctionKicked72HoursAgoAndPartiallyTaken() external {
+    function testSettleOnAuctionKicked72HoursAgoAndPartiallyTaken() external tearDown {
         // Borrower2 borrows
         _borrow(
             {
