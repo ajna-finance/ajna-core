@@ -649,6 +649,11 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(auctionPrice, expectedPrice_);
     }
 
+    function _assertReserveAuctionTooSoon() internal {
+        vm.expectRevert(IPoolErrors.ReserveAuctionTooSoon.selector);
+        _pool.startClaimableReserveAuction();
+    }
+
     /**********************/
     /*** Revert asserts ***/
     /**********************/
