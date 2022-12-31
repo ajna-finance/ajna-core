@@ -88,22 +88,36 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256[] calldata tokenIdsToPledge_
     ) external {
 
-        (uint256 newLup, uint256 settledCollateral) = _drawDebt(
+        (uint256 newLup, uint256 settledCollateral, uint256 t0DebtInAuctionChange, uint256 t0DebtChange) = _drawDebt(
             borrowerAddress_,
             amountToBorrow_,
             limitIndex_,
             Maths.wad(tokenIdsToPledge_.length)
         );
 
-        // move collateral from sender to pool
-        if (tokenIdsToPledge_.length != 0) _transferFromSenderToPool(borrowerTokenIds[borrowerAddress_], tokenIdsToPledge_);
+        if (tokenIdsToPledge_.length != 0) {
+            // update pool balances state
+            if (t0DebtInAuctionChange != 0) {
+                poolBalances.t0DebtInAuction -= t0DebtInAuctionChange;
+            }
+            poolBalances.pledgedCollateral += Maths.wad(tokenIdsToPledge_.length);
+
+            // move collateral from sender to pool
+            _transferFromSenderToPool(borrowerTokenIds[borrowerAddress_], tokenIdsToPledge_);
+        }
 
         if (settledCollateral != 0) _cleanupAuction(borrowerAddress_, settledCollateral);
 
         emit DrawDebtNFT(borrowerAddress_, amountToBorrow_, tokenIdsToPledge_, newLup);
 
         // move borrowed amount from pool to sender
-        if (amountToBorrow_ != 0) _transferQuoteToken(msg.sender, amountToBorrow_);
+        if (amountToBorrow_ != 0) {
+            // update pool balances state
+            poolBalances.t0Debt += t0DebtChange;
+
+            // move borrowed amount from pool to sender
+            _transferQuoteToken(msg.sender, amountToBorrow_);
+        }
     }
 
     function repayDebt(

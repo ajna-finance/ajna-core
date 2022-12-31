@@ -58,7 +58,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         uint256 limitIndex_,
         uint256 collateralToPledge_
     ) external {
-        (uint256 newLup, ) = _drawDebt(
+        (uint256 newLup, , uint256 t0DebtInAuctionChange, uint256 t0DebtChange) = _drawDebt(
             borrowerAddress_,
             amountToBorrow_,
             limitIndex_,
@@ -67,10 +67,25 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         emit DrawDebt(borrowerAddress_, amountToBorrow_, collateralToPledge_, newLup);
 
-        // move collateral from sender to pool
-        if (collateralToPledge_ != 0) _transferCollateralFrom(msg.sender, collateralToPledge_);
-        // move borrowed amount from pool to sender
-        if (amountToBorrow_ != 0) _transferQuoteToken(msg.sender, amountToBorrow_);
+        if (collateralToPledge_ != 0) {
+            // update pool balances state
+            if (t0DebtInAuctionChange != 0) {
+                poolBalances.t0DebtInAuction -= t0DebtInAuctionChange;
+            }
+            poolBalances.pledgedCollateral += collateralToPledge_;
+
+            // move collateral from sender to pool
+            _transferCollateralFrom(msg.sender, collateralToPledge_);
+        }
+
+        if (amountToBorrow_ != 0) {
+            // update pool balances state
+            poolBalances.t0Debt += t0DebtChange;
+
+            // move borrowed amount from pool to sender
+            _transferQuoteToken(msg.sender, amountToBorrow_);
+        }
+
     }
 
     function repayDebt(
