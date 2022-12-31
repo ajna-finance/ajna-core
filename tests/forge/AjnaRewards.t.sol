@@ -194,10 +194,8 @@ contract AjnaRewardsTest is DSTestPlus {
         _ajnaToken.approve(address(params_.pool), type(uint256).max);
         params_.pool.startClaimableReserveAuction();
 
-        // TODO: create meta method to simultaneously update timestamp and block
         // allow time to pass for the reserve price to decrease
         skip(24 hours);
-        vm.roll(block.number + BLOCKS_IN_DAY);
 
         (
             ,
@@ -347,7 +345,7 @@ contract AjnaRewardsTest is DSTestPlus {
         assertLt(_ajnaToken.balanceOf(_minterOne), Maths.wmul(tokensToBurn, 0.800000000000000000 * 1e18));
 
         // check can't call update exchange rate after the update period has elapsed
-        vm.roll(block.number + 100801);
+        skip(2 weeks);
         changePrank(_updater);
         vm.expectRevert(IAjnaRewards.ExchangeRateUpdateTooLate.selector);
         _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
@@ -447,7 +445,6 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // allow time to pass for the reserve price to decrease
         skip(24 hours);
-        vm.roll(block.number + BLOCKS_IN_DAY);
 
         (
             ,
@@ -496,7 +493,6 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // pass time to allow second auction to start
         skip(5 days);
-        vm.roll(block.number + BLOCKS_IN_DAY * 15);
 
         // start reserve auction
         changePrank(_bidder);
@@ -504,7 +500,6 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // allow time to pass for the reserve price to decrease
         skip(24 hours);
-        vm.roll(block.number + BLOCKS_IN_DAY);
 
         (
             ,
@@ -634,9 +629,6 @@ contract AjnaRewardsTest is DSTestPlus {
         /*** Second Reserve Auction ***/
         /******************************/
 
-        // skip time to next reserve auction
-        vm.roll(block.number + 100801);
-
         // trigger second reserve auction
         triggerReserveAuctionParams = TriggerReserveAcutionParams({
             borrowAmount: 1_500 * 1e18,
@@ -661,9 +653,6 @@ contract AjnaRewardsTest is DSTestPlus {
         /*****************************/
         /*** Third Reserve Auction ***/
         /*****************************/
-
-        // skip time to next reserve auction
-        vm.roll(block.number + 100801);
 
         // trigger third reserve auction
         triggerReserveAuctionParams = TriggerReserveAcutionParams({
@@ -702,9 +691,6 @@ contract AjnaRewardsTest is DSTestPlus {
         /*** Fourth Reserve Auction ***/
         /******************************/
 
-        // skip time to next reserve auction
-        vm.roll(block.number + 100801);
-
         // triger fourth reserve auction
         triggerReserveAuctionParams = TriggerReserveAcutionParams({
             borrowAmount: 1_500 * 1e18,
@@ -732,9 +718,6 @@ contract AjnaRewardsTest is DSTestPlus {
         /*****************************/
         /*** Fifth Reserve Auction ***/
         /*****************************/
-
-        // skip time to next reserve auction
-        vm.roll(block.number + 100801);
 
         // triger fourth reserve auction
         triggerReserveAuctionParams = TriggerReserveAcutionParams({
@@ -816,7 +799,6 @@ contract AjnaRewardsTest is DSTestPlus {
         assertGt(idOneRewardsAtOne, 0);
 
         // borrower takes actions providing reserves enabling additional reserve auctions
-        vm.roll(block.number + 10);
         triggerReserveAuctionParams = TriggerReserveAcutionParams({
             borrowAmount: 300 * 1e18,
             limitIndex: 3,
@@ -829,8 +811,7 @@ contract AjnaRewardsTest is DSTestPlus {
         // vm.expectRevert(abi.encodeWithSignature('ReserveAuctionTooSoon()'));
         // _triggerReserveAuctions(triggerReserveAuctionParams);
 
-        // roll blocks pass cooldown period to enable next reserve auction
-        vm.roll(block.number + 110_000);
+        // conduct second reserve auction
         uint256 auctionTwoTokensToBurn = _triggerReserveAuctions(triggerReserveAuctionParams);
 
         // third depositor deposits an NFT representing the same positions into the rewards contract
@@ -870,7 +851,6 @@ contract AjnaRewardsTest is DSTestPlus {
         assertEq(_ajnaToken.balanceOf(_minterTwo), idTwoRewardsAtTwo);
 
         // check there are no remaining rewards available after claiming
-        vm.roll(block.number + 1);
         uint256 remainingRewards = _ajnaRewards.calculateRewardsEarned(tokenIdOne, _poolOne.currentBurnId());
         assertEq(remainingRewards, 0);
 
@@ -914,8 +894,6 @@ contract AjnaRewardsTest is DSTestPlus {
         changePrank(nonOwner);
         vm.expectRevert(IAjnaRewards.NotOwnerOfDeposit.selector);
         _ajnaRewards.withdrawNFT(tokenIdOne);
-
-        vm.roll(block.number + 1);
 
         // check owner can withdraw the NFT
         changePrank(_minterOne);

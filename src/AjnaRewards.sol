@@ -52,9 +52,9 @@ contract AjnaRewards is IAjnaRewards {
     uint256 internal UPDATE_CLAIM_REWARD = 0.050000000000000000 * 1e18;
 
     /**
-     * @notice Number of blocks after a burn event in which buckets exchange rates can be updated.
+     * @notice Time period after a burn event in which buckets exchange rates can be updated.
      */
-    uint256 internal constant UPDATE_PERIOD = 100800;
+    uint256 internal constant UPDATE_PERIOD = 2 weeks;
 
     /**
      * @notice Track whether a depositor has claimed rewards for a given burn event.
@@ -185,10 +185,10 @@ contract AjnaRewards is IAjnaRewards {
     function updateBucketExchangeRatesAndClaim(address pool_, uint256[] calldata indexes_) external {
         // retrieve accumulator values to calculate rewards accrued
         uint256 curBurnId = IPool(pool_).currentBurnId();
-        (uint256 curBurnBlock, uint256 totalBurned, uint256 totalInterestEarned) = _getPoolAccumulators(pool_, curBurnId, curBurnId - 1);
+        (uint256 curBurnTime, uint256 totalBurned, uint256 totalInterestEarned) = _getPoolAccumulators(pool_, curBurnId, curBurnId - 1);
 
         // check that the update is being performed within the allowed time period
-        if (block.number > curBurnBlock + UPDATE_PERIOD) revert ExchangeRateUpdateTooLate();
+        if (block.timestamp > curBurnTime + UPDATE_PERIOD) revert ExchangeRateUpdateTooLate();
 
         uint256 updateReward;
         for (uint256 i = 0; i < indexes_.length; ) {
@@ -371,20 +371,20 @@ contract AjnaRewards is IAjnaRewards {
 
     /**
      *  @notice Retrieve the total ajna tokens burned and total interest earned by a pool since a given block.
-     *  @param  pool_               Address of the Ajna pool to retrieve accumulators of.
-     *  @param  currentBurnEventId_ ID of the latest burn event.
-     *  @param  lastBurnEventId_    ID of the burn event to use as checkpoint since which values should have accumulated.
-     *  @return currentBurnBlock_   Block number of the latest burn event.
-     *  @return ajnaTokensBurned_   Total ajna tokens burned by the pool since the last burn event.
+     *  @param  pool_                Address of the Ajna pool to retrieve accumulators of.
+     *  @param  currentBurnEventId_  ID of the latest burn event.
+     *  @param  lastBurnEventId_     ID of the burn event to use as checkpoint since which values should have accumulated.
+     *  @return currentBurnTime_     Timestamp of the latest burn event.
+     *  @return ajnaTokensBurned_    Total ajna tokens burned by the pool since the last burn event.
      *  @return totalInterestEarned_ Total interest earned by the pool since the last burn event.
      */
     function _getPoolAccumulators(address pool_, uint256 currentBurnEventId_, uint256 lastBurnEventId_) internal view returns (uint256, uint256, uint256) {
-        (uint256 currentBurnBlock_, uint256 totalInterestLatest, uint256 totalBurnedLatest) = IPool(pool_).burnInfo(currentBurnEventId_);
+        (uint256 currentBurnTime_, uint256 totalInterestLatest, uint256 totalBurnedLatest) = IPool(pool_).burnInfo(currentBurnEventId_);
         (, uint256 totalInterestAtBlock, uint256 totalBurnedAtBlock) = IPool(pool_).burnInfo(lastBurnEventId_);
 
         uint256 ajnaTokensBurned_ = totalBurnedLatest - totalBurnedAtBlock;
         uint256 totalInterestEarned_ = totalInterestLatest - totalInterestAtBlock;
-        return (currentBurnBlock_, ajnaTokensBurned_, totalInterestEarned_);
+        return (currentBurnTime_, ajnaTokensBurned_, totalInterestEarned_);
     }
 
     /**

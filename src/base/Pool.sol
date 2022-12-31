@@ -50,8 +50,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     // tracks ajna token burn events
     struct BurnEvent {
-        uint256 blockNumber;   // block in which the burn event occured, used as checkpoints won't return block of a checkpoint
-        uint256 totalInterest; // current pool interest accumulator `PoolCommons.accrueInterest().newInterest
+        uint256 timestamp;     // time at which the burn event occured
+        uint256 totalInterest; // current pool interest accumulator `PoolCommons.accrueInterest().newInterest`
         uint256 totalBurned;   // burn amount accumulator
     }
     // mapping burnEventId => BurnEvent
@@ -367,15 +367,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     function startClaimableReserveAuction() external override {
         // check that at least two weeks have passed since the last reserve auction completed
-        // TODO: check that we're tracking completed not just started?
-        uint256 lastBurnBlock = burnEvents[latestBurnEventId].blockNumber;
-        if (block.number < lastBurnBlock + 100800) {
+        // TODO: check that we're tracking completed not just started? -> add 72 hour delay?
+        uint256 lastBurnTimestamp = burnEvents[latestBurnEventId].timestamp;
+        if (block.timestamp < lastBurnTimestamp + 2 weeks) {
             revert ReserveAuctionTooSoon();
         }
 
         // record start of new burn event
         latestBurnEventId += 1;
-        burnEvents[latestBurnEventId].blockNumber = block.number;
+        burnEvents[latestBurnEventId].timestamp = block.timestamp;
 
         uint256 kickerAward = Auctions.startClaimableReserveAuction(
             auctions,
@@ -884,7 +884,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         BurnEvent memory burnEvent = burnEvents[burnEventId_];
 
         return (
-            burnEvent.blockNumber,
+            burnEvent.timestamp,
             burnEvent.totalInterest,
             burnEvent.totalBurned
         );
