@@ -87,15 +87,18 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256 limitIndex_,
         uint256[] calldata tokenIdsToPledge_
     ) external {
-        // move collateral from sender to pool to be properly accounted if auction settled
-        if (tokenIdsToPledge_.length != 0) _transferFromSenderToPool(borrowerTokenIds[borrowerAddress_], tokenIdsToPledge_);
 
-        uint256 newLup = _drawDebt(
+        (uint256 newLup, uint256 settledCollateral) = _drawDebt(
             borrowerAddress_,
             amountToBorrow_,
             limitIndex_,
             Maths.wad(tokenIdsToPledge_.length)
         );
+
+        // move collateral from sender to pool
+        if (tokenIdsToPledge_.length != 0) _transferFromSenderToPool(borrowerTokenIds[borrowerAddress_], tokenIdsToPledge_);
+
+        if (settledCollateral != 0) _cleanupAuction(borrowerAddress_, settledCollateral);
 
         emit DrawDebtNFT(borrowerAddress_, amountToBorrow_, tokenIdsToPledge_, newLup);
 
@@ -108,7 +111,9 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256 maxQuoteTokenAmountToRepay_,
         uint256 noOfNFTsToPull_
     ) external {
-        (uint256 quoteTokenToRepay, uint256 newLup) = _repayDebt(borrowerAddress_, maxQuoteTokenAmountToRepay_, Maths.wad(noOfNFTsToPull_));
+        (uint256 quoteTokenToRepay, uint256 newLup, uint256 settledCollateral) = _repayDebt(borrowerAddress_, maxQuoteTokenAmountToRepay_, Maths.wad(noOfNFTsToPull_));
+
+        if (settledCollateral != 0) _cleanupAuction(borrowerAddress_, settledCollateral);
 
         emit RepayDebt(borrowerAddress_, quoteTokenToRepay, noOfNFTsToPull_, newLup);
 
@@ -249,6 +254,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             vars.excessQuoteToken = Maths.wmul(vars.collateralTaken - vars.collateralAmount, vars.auctionPrice);
         }
 
+        uint256 settledCollateral = _takeFromLoan(poolState, borrower, params.borrower, vars.collateralTaken, vars.t0RepayAmount, vars.t0DebtPenalty);
+
         // transfer rounded collateral from pool to taker
         vars.tokensTaken = _transferFromPoolToAddress(
             callee_,
@@ -264,13 +271,13 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             );
         }
 
+        if (settledCollateral != 0) _cleanupAuction(borrowerAddress_, settledCollateral);
+
         // transfer from taker to pool the amount of quote tokens needed to cover collateral auctioned (including excess for rounded collateral)
         _transferQuoteTokenFrom(callee_, vars.quoteTokenAmount + vars.excessQuoteToken);
 
         // transfer from pool to borrower the excess of quote tokens after rounding collateral auctioned
         if (vars.excessQuoteToken != 0) _transferQuoteToken(params.borrower, vars.excessQuoteToken);
-
-        _takeFromLoan(poolState, borrower, params.borrower, vars.collateralTaken, vars.t0RepayAmount, vars.t0DebtPenalty);
     }
 
 
@@ -292,13 +299,29 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             auctions,
             buckets,
             deposits,
-            borrowerTokenIds[borrowerAddress_],
-            bucketTokenIds,
             borrowerAddress_,
             borrowerCollateral_
         );
         emit AuctionNFTSettle(borrowerAddress_, floorCollateral, lps, bucketIndex);
         return floorCollateral;
+    }
+
+    function _cleanupAuction(
+        address borrowerAddress_,
+        uint256 borrowerCollateral_
+    ) internal override {
+        // rebalance borrower's collateral, transfer difference to floor collateral from borrower to pool claimable array
+        uint256[] storage borrowerTokens = borrowerTokenIds[borrowerAddress_];
+        uint256 noOfTokensPledged    = borrowerTokens.length;
+        uint256 noOfTokensToTransfer = noOfTokensPledged - borrowerCollateral_ / 1e18;
+        for (uint256 i = 0; i < noOfTokensToTransfer;) {
+            uint256 tokenId = borrowerTokens[--noOfTokensPledged]; // start with moving the last token pledged by borrower
+            borrowerTokens.pop();                                  // remove token id from borrower
+            bucketTokenIds.push(tokenId);                          // add token id to pool claimable tokens
+            unchecked {
+                ++i;
+            }
+        }
     }
 
 

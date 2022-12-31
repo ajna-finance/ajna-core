@@ -281,7 +281,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         // slither-disable-next-line incorrect-equality
-        if (t0RemainingDebt == 0) remainingCollateral = _settleAuction(params.borrower, remainingCollateral);
+        if (t0RemainingDebt == 0) {
+            remainingCollateral = _settleAuction(params.borrower, remainingCollateral);
+            _cleanupAuction(params.borrower, remainingCollateral);
+        }
 
         // update borrower state
         borrower.t0Debt     = t0RemainingDebt;
@@ -391,7 +394,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 amountToBorrow_,
         uint256 limitIndex_,
         uint256 collateralToPledge_
-    ) internal returns (uint256 newLup_) {
+    ) internal returns (uint256 newLup_, uint256 settledCollateral_) {
         PoolState memory poolState = _accruePoolInterest();
         Borrower  memory borrower = Loans.getBorrowerInfo(loans, borrowerAddress_);
 
@@ -419,7 +422,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             {
                 // borrower becomes collateralized, remove debt from pool accumulator and settle auction
                 t0DebtInAuctionChange = borrower.t0Debt;
-                borrower.collateral   = _settleAuction(borrowerAddress_, borrower.collateral);
+
+                settledCollateral_ = _settleAuction(borrowerAddress_, borrower.collateral);
+                borrower.collateral = settledCollateral_;
                 // auction was settled, reset inAuction flag
                 inAuction = false;
             }
@@ -489,7 +494,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
         uint256 collateralAmountToPull_
-    ) internal returns (uint256 quoteTokenToRepay_, uint256 newLup_) {
+    ) internal returns (uint256 quoteTokenToRepay_, uint256 newLup_, uint256 settledCollateral_) {
         PoolState memory poolState = _accruePoolInterest();
         Borrower  memory borrower = Loans.getBorrowerInfo(loans, borrowerAddress_);
 
@@ -521,7 +526,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                     // remove entire borrower debt from pool auctions debt accumulator
                     vars.t0DebtInAuctionChange = borrower.t0Debt;
                     // settle auction and update borrower's collateral with value after settlement
-                    borrower.collateral   = _settleAuction(borrowerAddress_, borrower.collateral);
+                    settledCollateral_ = _settleAuction(borrowerAddress_, borrower.collateral);
+                    borrower.collateral = settledCollateral_;
 
                     vars.inAuction   = false;
                     vars.stampT0Np = true;  // stamp borrower t0Np when exiting from auction
@@ -599,7 +605,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 collateralAmount_,
         uint256 t0RepaidDebt_,
         uint256 t0DebtPenalty_
-    ) internal {
+    ) internal returns (uint256 settledCollateral_) {
 
         borrower_.collateral  -= collateralAmount_; // collateral is removed from the loan
         poolState_.collateral -= collateralAmount_; // collateral is removed from pledged collateral accumulator
@@ -622,13 +628,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             // remove entire borrower debt from pool auctions debt accumulator
             vars.t0DebtInAuctionChange = borrower_.t0Debt;
             // settle auction and update borrower's collateral with value after settlement
-            borrower_.collateral = _settleAuction(borrowerAddress_, borrower_.collateral);
+            settledCollateral_   = _settleAuction(borrowerAddress_, borrower_.collateral);
+            borrower_.collateral = settledCollateral_;
             vars.inAuction = false;
         } else {
             // partial repay, remove only the paid debt from pool auctions debt accumulator
             vars.t0DebtInAuctionChange = t0RepaidDebt_;
         }
-        
+
         borrower_.t0Debt -= t0RepaidDebt_;
 
         // update loan state, stamp borrower t0Np only when exiting from auction
@@ -677,6 +684,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         address borrowerAddress_,
         uint256 borrowerCollateral_
     ) internal virtual returns (uint256);
+
+    function _cleanupAuction(
+        address borrowerAddress_,
+        uint256 borrowerCollateral_
+    ) internal virtual;
 
     /*****************************/
     /*** Pool Helper Functions ***/

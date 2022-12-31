@@ -552,8 +552,6 @@ library Auctions {
 
     /**
      *  @notice Performs NFT auction settlement by rounding down borrower's collateral amount and by moving borrower's token ids to pool claimable array.
-     *  @param borrowerTokens_     Array of borrower NFT token ids.
-     *  @param poolTokens_         Array of claimable NFT token ids in pool.
      *  @param borrowerAddress_    Address of the borrower that exits auction.
      *  @param borrowerCollateral_ Borrower collateral amount before auction exit (could be fragmented as result of partial takes).
      *  @return floorCollateral_   Rounded down collateral, the number of NFT tokens borrower can pull after auction exit.
@@ -564,8 +562,6 @@ library Auctions {
         AuctionsState storage auctions_,
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
-        uint256[] storage borrowerTokens_,
-        uint256[] storage poolTokens_,
         address borrowerAddress_,
         uint256 borrowerCollateral_
     ) external returns (uint256 floorCollateral_, uint256 lps_, uint256 bucketIndex_) {
@@ -587,18 +583,6 @@ library Auctions {
                 fractionalCollateral,
                 _priceAt(bucketIndex_)
             );
-        }
-
-        // rebalance borrower's collateral, transfer difference to floor collateral from borrower to pool claimable array
-        uint256 noOfTokensPledged    = borrowerTokens_.length;
-        uint256 noOfTokensToTransfer = noOfTokensPledged - floorCollateral_ / 1e18;
-        for (uint256 i = 0; i < noOfTokensToTransfer;) {
-            uint256 tokenId = borrowerTokens_[--noOfTokensPledged]; // start with moving the last token pledged by borrower
-            borrowerTokens_.pop();                                  // remove token id from borrower
-            poolTokens_.push(tokenId);                              // add token id to pool claimable tokens
-            unchecked {
-                ++i;
-            }
         }
 
         _removeAuction(auctions_, borrowerAddress_);

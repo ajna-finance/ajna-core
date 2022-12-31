@@ -58,7 +58,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         uint256 limitIndex_,
         uint256 collateralToPledge_
     ) external {
-        uint256 newLup = _drawDebt(
+        (uint256 newLup, ) = _drawDebt(
             borrowerAddress_,
             amountToBorrow_,
             limitIndex_,
@@ -78,7 +78,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         uint256 maxQuoteTokenAmountToRepay_,
         uint256 collateralAmountToPull_
     ) external {
-        (uint256 quoteTokenToRepay, uint256 newLup) = _repayDebt(borrowerAddress_, maxQuoteTokenAmountToRepay_, collateralAmountToPull_);
+        (uint256 quoteTokenToRepay, uint256 newLup, ) = _repayDebt(borrowerAddress_, maxQuoteTokenAmountToRepay_, collateralAmountToPull_);
 
         emit RepayDebt(borrowerAddress_, quoteTokenToRepay, collateralAmountToPull_, newLup);
 
@@ -253,6 +253,12 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         Auctions._removeAuction(auctions, borrowerAddress_);
         emit AuctionSettle(borrowerAddress_, borrowerCollateral_);
         return borrowerCollateral_;
+    }
+
+    function _cleanupAuction(
+        address borrowerAddress_,
+        uint256 borrowerCollateral_
+    ) internal override {
     }
 
     /************************/
