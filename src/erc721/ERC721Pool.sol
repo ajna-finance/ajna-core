@@ -87,20 +87,26 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256 limitIndex_,
         uint256[] calldata tokenIdsToPledge_
     ) external {
-
-        (uint256 newLup, uint256 settledCollateral, uint256 t0DebtInAuctionChange, uint256 t0DebtChange) = _drawDebt(
+        PoolState memory poolState = _accruePoolInterest();
+        DrawDebtResult memory result = _drawDebt(
+            poolState,
             borrowerAddress_,
             amountToBorrow_,
             limitIndex_,
             Maths.wad(tokenIdsToPledge_.length)
         );
 
-        emit DrawDebtNFT(borrowerAddress_, amountToBorrow_, tokenIdsToPledge_, newLup);
+        emit DrawDebtNFT(borrowerAddress_, amountToBorrow_, tokenIdsToPledge_, result.newLup);
+
+        // update pool interest rate state
+        poolState.debt       = result.poolDebt;
+        poolState.collateral = result.poolCollateral;
+        _updateInterestState(poolState, result.newLup);
 
         if (tokenIdsToPledge_.length != 0) {
             // update pool balances state
-            if (t0DebtInAuctionChange != 0) {
-                poolBalances.t0DebtInAuction -= t0DebtInAuctionChange;
+            if (result.t0DebtInAuctionChange != 0) {
+                poolBalances.t0DebtInAuction -= result.t0DebtInAuctionChange;
             }
             poolBalances.pledgedCollateral += Maths.wad(tokenIdsToPledge_.length);
 
@@ -108,12 +114,12 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             _transferFromSenderToPool(borrowerTokenIds[borrowerAddress_], tokenIdsToPledge_);
         }
 
-        if (settledCollateral != 0) _cleanupAuction(borrowerAddress_, settledCollateral);
+        if (result.settledCollateral != 0) _cleanupAuction(borrowerAddress_, result.settledCollateral);
 
         // move borrowed amount from pool to sender
         if (amountToBorrow_ != 0) {
             // update pool balances state
-            poolBalances.t0Debt += t0DebtChange;
+            poolBalances.t0Debt += result.t0DebtChange;
 
             // move borrowed amount from pool to sender
             _transferQuoteToken(msg.sender, amountToBorrow_);

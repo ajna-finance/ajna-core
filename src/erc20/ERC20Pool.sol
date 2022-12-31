@@ -58,19 +58,26 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         uint256 limitIndex_,
         uint256 collateralToPledge_
     ) external {
-        (uint256 newLup, , uint256 t0DebtInAuctionChange, uint256 t0DebtChange) = _drawDebt(
+        PoolState memory poolState = _accruePoolInterest();
+        DrawDebtResult memory result = _drawDebt(
+            poolState,
             borrowerAddress_,
             amountToBorrow_,
             limitIndex_,
             collateralToPledge_
         );
 
-        emit DrawDebt(borrowerAddress_, amountToBorrow_, collateralToPledge_, newLup);
+        emit DrawDebt(borrowerAddress_, amountToBorrow_, collateralToPledge_, result.newLup);
+
+        // update pool interest rate state
+        poolState.debt       = result.poolDebt;
+        poolState.collateral = result.poolCollateral;
+        _updateInterestState(poolState, result.newLup);
 
         if (collateralToPledge_ != 0) {
             // update pool balances state
-            if (t0DebtInAuctionChange != 0) {
-                poolBalances.t0DebtInAuction -= t0DebtInAuctionChange;
+            if (result.t0DebtInAuctionChange != 0) {
+                poolBalances.t0DebtInAuction -= result.t0DebtInAuctionChange;
             }
             poolBalances.pledgedCollateral += collateralToPledge_;
 
@@ -80,7 +87,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         if (amountToBorrow_ != 0) {
             // update pool balances state
-            poolBalances.t0Debt += t0DebtChange;
+            poolBalances.t0Debt += result.t0DebtChange;
 
             // move borrowed amount from pool to sender
             _transferQuoteToken(msg.sender, amountToBorrow_);
