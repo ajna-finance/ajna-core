@@ -198,7 +198,7 @@ contract AjnaRewards is IAjnaRewards {
             // record a buckets exchange rate
             uint256 curBucketExchangeRate = IPool(pool_).bucketExchangeRate(indexes_[i]);
             poolBucketBurnExchangeRates[pool_][indexes_[i]][curBurnId] = curBucketExchangeRate;
-
+            
             // retrieve the exchange rate of the previous burn event
             uint256 prevBucketExchangeRate = poolBucketBurnExchangeRates[pool_][indexes_[i]][curBurnId - 1];
 
@@ -284,9 +284,10 @@ contract AjnaRewards is IAjnaRewards {
                 // calculate rewards earned
                 uint256 newRewards = Maths.wmul(REWARD_FACTOR, Maths.wmul(Maths.wdiv(interestEarned, totalInterestEarnedInPeriod), totalBurnedInPeriod));
 
-                if (totalInterestEarnedInPeriod == 0 || _checkRewardsClaimed(id + 1, newRewards, totalBurnedInPeriod)) {
-                    // rewards are 0 for a period if no global interest is earned, or if rewards would exceep cap
-                    rewards_ += 0;
+                if (_checkRewardsClaimed(id + 1, newRewards, totalBurnedInPeriod)) {
+                    // set claim reward to difference between cap and reward
+                    newRewards = Maths.wmul(REWARD_CAP, totalBurnedInPeriod) - burnEventRewardsClaimed[id + 1];
+                    rewards_ += newRewards;
                 }
                 else {
                     // accumulate additional rewards earned for this period
