@@ -211,6 +211,57 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     /*** Pool External Functions ***/
     /*******************************/
 
+    function settle(
+        address borrowerAddress_,
+        uint256 maxDepth_
+    ) external override {
+        PoolState memory poolState = _accruePoolInterest();
+
+        uint256 assets = Maths.wmul(poolBalances.t0Debt, poolState.inflator) + _getPoolQuoteTokenBalance();
+        uint256 liabilities = Deposits.treeSum(deposits) + auctions.totalBondEscrowed + reserveAuction.unclaimed;
+
+        Borrower storage borrower = loans.borrowers[borrowerAddress_];
+
+        SettleParams memory params = SettleParams(
+            {
+                borrower:    borrowerAddress_,
+                collateral:  borrower.collateral,
+                t0Debt:      borrower.t0Debt,
+                reserves:    (assets > liabilities) ? (assets-liabilities) : 0,
+                inflator:    poolState.inflator,
+                bucketDepth: maxDepth_
+            }
+        );
+        (uint256 remainingCollateral, uint256 t0RemainingDebt) = Auctions.settlePoolDebt(
+            auctions,
+            buckets,
+            deposits,
+            params
+        );
+
+        // slither-disable-next-line incorrect-equality
+        if (t0RemainingDebt == 0) {
+            remainingCollateral = _settleAuction(params.borrower, remainingCollateral);
+            _cleanupAuction(params.borrower, remainingCollateral);
+        }
+
+        // update borrower state
+        borrower.t0Debt     = t0RemainingDebt;
+        borrower.collateral = remainingCollateral;
+
+        // update pool balances state
+        uint256 t0SettledDebt        = params.t0Debt - t0RemainingDebt;
+        poolBalances.t0Debt          -= t0SettledDebt;
+        poolBalances.t0DebtInAuction -= t0SettledDebt;
+
+        uint256 settledCollateral      = params.collateral - remainingCollateral;
+        poolBalances.pledgedCollateral -= settledCollateral;
+
+        // update pool interest rate state
+        poolState.collateral -= settledCollateral;
+        _updateInterestState(poolState, _lup(poolState.debt));
+    }
+
     function take(
         address        borrowerAddress_,
         uint256        collateral_,
@@ -306,10 +357,14 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         return floorCollateral;
     }
 
+    /**************************/
+    /*** Internal Functions ***/
+    /**************************/
+
     function _cleanupAuction(
         address borrowerAddress_,
         uint256 borrowerCollateral_
-    ) internal override {
+    ) internal {
         // rebalance borrower's collateral, transfer difference to floor collateral from borrower to pool claimable array
         uint256[] storage borrowerTokens = borrowerTokenIds[borrowerAddress_];
         uint256 noOfTokensPledged    = borrowerTokens.length;
@@ -323,11 +378,6 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             }
         }
     }
-
-
-    /**************************/
-    /*** Internal Functions ***/
-    /**************************/
 
     /**
      *  @notice Helper function for transferring multiple NFT tokens from msg.sender to pool.

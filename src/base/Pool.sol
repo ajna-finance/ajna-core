@@ -252,57 +252,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _takeFromLoan(poolState, borrower, borrowerAddress_, collateralAmount, t0RepayAmount, t0DebtPenalty);
     }
 
-    function settle(
-        address borrowerAddress_,
-        uint256 maxDepth_
-    ) external override {
-        PoolState memory poolState = _accruePoolInterest();
-
-        uint256 assets = Maths.wmul(poolBalances.t0Debt, poolState.inflator) + _getPoolQuoteTokenBalance();
-        uint256 liabilities = Deposits.treeSum(deposits) + auctions.totalBondEscrowed + reserveAuction.unclaimed;
-
-        Borrower storage borrower = loans.borrowers[borrowerAddress_];
-
-        SettleParams memory params = SettleParams(
-            {
-                borrower:    borrowerAddress_,
-                collateral:  borrower.collateral,
-                t0Debt:      borrower.t0Debt,
-                reserves:    (assets > liabilities) ? (assets-liabilities) : 0,
-                inflator:    poolState.inflator,
-                bucketDepth: maxDepth_
-            }
-        );
-        (uint256 remainingCollateral, uint256 t0RemainingDebt) = Auctions.settlePoolDebt(
-            auctions,
-            buckets,
-            deposits,
-            params
-        );
-
-        // slither-disable-next-line incorrect-equality
-        if (t0RemainingDebt == 0) {
-            remainingCollateral = _settleAuction(params.borrower, remainingCollateral);
-            _cleanupAuction(params.borrower, remainingCollateral);
-        }
-
-        // update borrower state
-        borrower.t0Debt     = t0RemainingDebt;
-        borrower.collateral = remainingCollateral;
-
-        // update pool balances state
-        uint256 t0SettledDebt        = params.t0Debt - t0RemainingDebt;
-        poolBalances.t0Debt          -= t0SettledDebt;
-        poolBalances.t0DebtInAuction -= t0SettledDebt;
-
-        uint256 settledCollateral      = params.collateral - remainingCollateral;
-        poolBalances.pledgedCollateral -= settledCollateral;
-
-        // update pool interest rate state
-        poolState.collateral -= settledCollateral;
-        _updateInterestState(poolState, _lup(poolState.debt));
-    }
-
     function kick(address borrowerAddress_) external override {
         PoolState memory poolState = _accruePoolInterest();
 
@@ -684,11 +633,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         address borrowerAddress_,
         uint256 borrowerCollateral_
     ) internal virtual returns (uint256);
-
-    function _cleanupAuction(
-        address borrowerAddress_,
-        uint256 borrowerCollateral_
-    ) internal virtual;
 
     /*****************************/
     /*** Pool Helper Functions ***/
