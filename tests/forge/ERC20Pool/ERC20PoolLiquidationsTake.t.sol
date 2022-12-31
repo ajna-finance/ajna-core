@@ -1145,7 +1145,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
     }
 
-    function testTakeLoanDebtConstraintBpfPosResidual() external {
+    function testTakeLoanDebtConstraintBpfPosResidual() external tearDown {
 
         // Increase neutralPrice so it exceeds TP
         _addLiquidity(

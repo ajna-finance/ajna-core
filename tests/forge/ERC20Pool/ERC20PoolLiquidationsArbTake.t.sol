@@ -510,7 +510,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         );
     }
 
-    function testArbTakeDepositRestrict() external {
+    function testArbTakeDepositRestrict() external tearDown {
 
         skip(5 hours);
 
@@ -776,7 +776,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         );
     }
 
-    function testArbTakeReverts() external {
+    function testArbTakeReverts() external tearDown {
 
         // should revert if borrower not auctioned
         _assertArbTakeNoAuction(

@@ -35,6 +35,7 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"));
         _ajnaPool = ERC20Pool(new ERC20PoolFactory(AJNA).deployPool(WETH, USDC, 0.05 * 10**18));
 
+        // create lenders and borrowers
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");

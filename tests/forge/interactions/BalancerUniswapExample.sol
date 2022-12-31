@@ -2,7 +2,6 @@
 pragma solidity ^0.8.14;
 
 import './Interfaces.sol';
-import '@std/console.sol';
 
 contract BalancerUniswapTaker {
     error NotBalancer();
