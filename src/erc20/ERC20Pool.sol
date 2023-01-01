@@ -319,8 +319,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             params
         );
 
-        borrower.collateral  -= collateralAmount; // collateral is removed from the loan
-        poolState.collateral -= collateralAmount; // collateral is removed from pledged collateral accumulator
+        borrower.collateral -= collateralAmount; // collateral is removed from the loan
 
         TakeFromLoanResult memory result = _takeFromLoan(poolState, borrower, params.borrower, t0RepayAmount, t0DebtPenalty);
 
@@ -336,10 +335,11 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         poolBalances.t0Debt            = t0PoolDebt;
         poolBalances.t0DebtInAuction   = t0DebtInAuction;
-        poolBalances.pledgedCollateral = poolState.collateral;
+        poolBalances.pledgedCollateral -= collateralAmount;
 
         // update pool interest rate state
-        poolState.debt = result.poolDebt;
+        poolState.debt       = result.poolDebt;
+        poolState.collateral -= collateralAmount;
         _updateInterestState(poolState, result.newLup);
 
         _transferCollateral(callee_, collateralAmount);

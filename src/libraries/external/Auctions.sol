@@ -14,6 +14,7 @@ import {
     SettleParams,
     KickResult,
     BucketTakeParams,
+    BucketTakeResult,
     TakeParams,
     StartReserveAuctionParams
 } from '../../base/interfaces/IPool.sol';
@@ -57,6 +58,23 @@ library Auctions {
         uint256 unscaledDeposit;          // Unscaled bucket quantity
         uint256 unscaledQuoteTokenAmount; // The unscaled token amount that taker should pay for collateral taken.
         uint256 excessQuoteToken; // difference of quote token that borrower receives for fractional NFT
+    }
+
+    struct TakeFromLoanResult {
+        uint256 settledCollateral;
+        uint256 poolDebt;
+        uint256 newLup;
+        uint256 t0DebtInAuctionChange;
+    }
+
+    struct TakeFromLoanLocalVars {
+        uint256 borrowerDebt;          // borrower's accrued debt
+        bool    inAuction;             // true if loan still in auction after auction is taken, false otherwise
+        uint256 newLup;                // LUP after auction is taken
+        uint256 repaidDebt;            // debt repaid when auction is taken
+        uint256 t0DebtInAuction;       // t0 pool debt in auction
+        uint256 t0DebtInAuctionChange; // t0 change amount of debt after auction is taken
+        uint256 t0PoolDebt;            // t0 pool debt
     }
 
     event AuctionNFTSettle(
@@ -151,6 +169,10 @@ library Auctions {
         uint256 settledDebt
     );
 
+    /**
+     *  @notice Borrower is attempting to create or modify a loan such that their loan's quote token would be less than the pool's minimum debt amount.
+     */
+    error AmountLTMinDebt();
     /**
      *  @notice The action cannot be executed on an active auction.
      */
@@ -436,19 +458,138 @@ library Auctions {
         emit RemoveQuoteToken(msg.sender, index_, vars.amountToDebitFromDeposit, vars.redeemedLPs, kickResult_.lup);
     }
 
-    /**
-     *  @notice Performs bucket take collateral on an auction and rewards taker and kicker (if case).
-     *  @param  params_ Struct containing take action details.
-     *  @return Collateral amount taken.
-     *  @return T0 debt amount repaid.
-     *  @return T0 penalty debt.
-    */
+    // /**
+    //  *  @notice Performs bucket take collateral on an auction and rewards taker and kicker (if case).
+    //  *  @param  params_ Struct containing take action details.
+    //  *  @return Collateral amount taken.
+    //  *  @return T0 debt amount repaid.
+    //  *  @return T0 penalty debt.
+    // */
     function bucketTake(
         AuctionsState storage auctions_,
-        DepositsState storage deposits_,
         mapping(uint256 => Bucket) storage buckets_,
-        BucketTakeParams calldata params_
-    ) external returns (uint256, uint256, uint256, uint256) {
+        DepositsState storage deposits_,
+        LoansState storage loans_,
+        PoolState calldata poolState_,
+        address borrowerAddress_,
+        bool    depositTake_,
+        uint256 index_
+    ) external returns (BucketTakeResult memory result_) {
+        Borrower memory borrower = Loans.getBorrowerInfo(loans_, borrowerAddress_);
+        (
+            result_.collateralAmount,
+            result_.t0RepayAmount,
+            borrower.t0Debt,
+            result_.t0DebtPenalty 
+        ) = _takeBucket(
+            auctions_,
+            buckets_,
+            deposits_,
+            BucketTakeParams(
+                {
+                    borrower:    borrowerAddress_,
+                    collateral:  borrower.collateral,
+                    t0Debt:      borrower.t0Debt,
+                    inflator:    poolState_.inflator,
+                    depositTake: depositTake_,
+                    index:       index_
+                }
+            )
+        );
+        borrower.collateral -= result_.collateralAmount;
+
+        TakeFromLoanResult memory result = _takeLoan(
+            auctions_,
+            buckets_,
+            deposits_,
+            loans_,
+            poolState_,
+            borrower,
+            borrowerAddress_,
+            result_.t0RepayAmount,
+            result_.t0DebtPenalty
+        );
+        result_.poolDebt = result.poolDebt;
+        result_.newLup = result.newLup;
+        result_.t0DebtInAuctionChange = result.t0DebtInAuctionChange;
+
+    }
+
+    function _takeLoan(
+        AuctionsState storage auctions_,
+        mapping(uint256 => Bucket) storage buckets_,
+        DepositsState storage deposits_,
+        LoansState storage loans_,
+        PoolState memory poolState_,
+        Borrower memory borrower_,
+        address borrowerAddress_,
+        uint256 t0RepaidDebt_,
+        uint256 t0DebtPenalty_
+    ) internal returns (TakeFromLoanResult memory result_) {
+
+        TakeFromLoanLocalVars memory vars;
+        vars.borrowerDebt = Maths.wmul(borrower_.t0Debt, poolState_.inflator);
+        vars.repaidDebt   = Maths.wmul(t0RepaidDebt_, poolState_.inflator);
+        vars.borrowerDebt -= vars.repaidDebt;
+        result_.poolDebt = poolState_.debt - vars.repaidDebt;
+        if (t0DebtPenalty_ != 0) result_.poolDebt += Maths.wmul(t0DebtPenalty_, poolState_.inflator);
+
+        // check that taking from loan doesn't leave borrower debt under min debt amount
+        _revertOnMinDebt(loans_, result_.poolDebt, vars.borrowerDebt);
+
+        result_.newLup = _lup(deposits_, result_.poolDebt);
+        vars.inAuction = true;
+
+        if (_isCollateralized(vars.borrowerDebt, borrower_.collateral, result_.newLup, poolState_.poolType)) {
+            // borrower becomes re-collateralized
+            // remove entire borrower debt from pool auctions debt accumulator
+            result_.t0DebtInAuctionChange = borrower_.t0Debt;
+            // settle auction and update borrower's collateral with value after settlement
+            if (poolState_.poolType == uint8(PoolType.ERC721)) {
+                uint256 lps;
+                uint256 bucketIndex;
+                (result_.settledCollateral, lps, bucketIndex) = settleNFTAuction(
+                    auctions_,
+                    buckets_,
+                    deposits_,
+                    borrowerAddress_,
+                    borrower_.collateral
+                );
+                borrower_.collateral = result_.settledCollateral;
+                emit AuctionNFTSettle(borrowerAddress_, result_.settledCollateral, lps, bucketIndex);
+            } else {
+                Auctions._removeAuction(auctions_, borrowerAddress_);
+                emit AuctionSettle(borrowerAddress_, borrower_.collateral);
+            }
+            vars.inAuction = false;
+        } else {
+            // partial repay, remove only the paid debt from pool auctions debt accumulator
+            result_.t0DebtInAuctionChange = t0RepaidDebt_;
+        }
+
+        borrower_.t0Debt -= t0RepaidDebt_;
+
+        // update loan state, stamp borrower t0Np only when exiting from auction
+        Loans.update(
+            loans_,
+            auctions_,
+            deposits_,
+            borrower_,
+            borrowerAddress_,
+            vars.borrowerDebt,
+            poolState_.rate,
+            result_.newLup,
+            vars.inAuction,
+            !vars.inAuction // stamp borrower t0Np if exiting from auction
+        );
+    }
+
+    function _takeBucket(
+        AuctionsState storage auctions_,
+        mapping(uint256 => Bucket) storage buckets_,
+        DepositsState storage deposits_,
+        BucketTakeParams memory params_
+    ) internal returns (uint256, uint256, uint256, uint256) {
         if (params_.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
 
         Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
@@ -1132,6 +1273,17 @@ library Auctions {
         uint256 debt_
     ) internal view returns (uint256) {
         return _priceAt(Deposits.findIndexOfSum(deposits_, debt_));
+    }
+
+    function _revertOnMinDebt(LoansState storage loans_, uint256 poolDebt_, uint256 borrowerDebt_) internal view {
+        if (borrowerDebt_ != 0) {
+            uint256 loansCount = Loans.noOfLoans(loans_);
+            if (
+                loansCount >= 10
+                &&
+                (borrowerDebt_ < _minDebtAmount(poolDebt_, loansCount))
+            ) revert AmountLTMinDebt();
+        }
     }
 
 }

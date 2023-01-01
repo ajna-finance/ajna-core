@@ -220,53 +220,35 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     ) external override {
 
         PoolState memory poolState = _accruePoolInterest();
-        Borrower  memory borrower = Loans.getBorrowerInfo(loans, borrowerAddress_);
 
-        uint256 collateralAmount;
-        uint256 t0RepayAmount;
-        uint256 t0DebtPenalty;
-        (
-            collateralAmount,
-            t0RepayAmount,
-            borrower.t0Debt,
-            t0DebtPenalty 
-        ) = Auctions.bucketTake(
+        BucketTakeResult memory result = Auctions.bucketTake(
             auctions,
-            deposits,
             buckets,
-            BucketTakeParams(
-                {
-                    borrower:    borrowerAddress_,
-                    collateral:  borrower.collateral,
-                    t0Debt:      borrower.t0Debt,
-                    inflator:    poolState.inflator,
-                    depositTake: depositTake_,
-                    index:       index_
-                }
-            )
+            deposits,
+            loans,
+            poolState,
+            borrowerAddress_,
+            depositTake_,
+            index_
         );
-
-        borrower.collateral  -= collateralAmount; // collateral is removed from the loan
-        poolState.collateral -= collateralAmount; // collateral is removed from pledged collateral accumulator
-
-        TakeFromLoanResult memory result = _takeFromLoan(poolState, borrower, borrowerAddress_, t0RepayAmount, t0DebtPenalty);
 
         // update pool balances state
         uint256 t0PoolDebt      = poolBalances.t0Debt;
         uint256 t0DebtInAuction = poolBalances.t0DebtInAuction;
-        if (t0DebtPenalty != 0) {
-            t0PoolDebt      += t0DebtPenalty;
-            t0DebtInAuction += t0DebtPenalty;
+        if (result.t0DebtPenalty != 0) {
+            t0PoolDebt      += result.t0DebtPenalty;
+            t0DebtInAuction += result.t0DebtPenalty;
         }
-        t0PoolDebt      -= t0RepayAmount;
+        t0PoolDebt      -= result.t0RepayAmount;
         t0DebtInAuction -= result.t0DebtInAuctionChange;
 
         poolBalances.t0Debt            = t0PoolDebt;
         poolBalances.t0DebtInAuction   = t0DebtInAuction;
-        poolBalances.pledgedCollateral =  poolState.collateral;
+        poolBalances.pledgedCollateral -= result.collateralAmount;
 
         // update pool interest rate state
-        poolState.debt = result.poolDebt;
+        poolState.debt       = result.poolDebt;
+        poolState.collateral -= result.collateralAmount;
         _updateInterestState(poolState, result.newLup);
     }
 

@@ -29,6 +29,16 @@ struct BucketTakeParams {
     uint256 t0Debt;         // borrower t0 debt  
 }
 
+struct BucketTakeResult {
+    uint256 collateralAmount;
+    uint256 t0RepayAmount;
+    uint256 t0DebtPenalty;
+    uint256 settledCollateral;
+    uint256 poolDebt;
+    uint256 newLup;
+    uint256 t0DebtInAuctionChange;
+}
+
 struct TakeParams {
     address borrower;       // borrower address to take from
     uint256 collateral;     // borrower available collateral to take
