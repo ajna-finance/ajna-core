@@ -213,45 +213,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*** Liquidation Functions ***/
     /*****************************/
 
-    function bucketTake(
-        address borrowerAddress_,
-        bool    depositTake_,
-        uint256 index_
-    ) external override {
-
-        PoolState memory poolState = _accruePoolInterest();
-
-        BucketTakeResult memory result = Auctions.bucketTake(
-            auctions,
-            buckets,
-            deposits,
-            loans,
-            poolState,
-            borrowerAddress_,
-            depositTake_,
-            index_
-        );
-
-        // update pool balances state
-        uint256 t0PoolDebt      = poolBalances.t0Debt;
-        uint256 t0DebtInAuction = poolBalances.t0DebtInAuction;
-        if (result.t0DebtPenalty != 0) {
-            t0PoolDebt      += result.t0DebtPenalty;
-            t0DebtInAuction += result.t0DebtPenalty;
-        }
-        t0PoolDebt      -= result.t0RepayAmount;
-        t0DebtInAuction -= result.t0DebtInAuctionChange;
-
-        poolBalances.t0Debt            = t0PoolDebt;
-        poolBalances.t0DebtInAuction   = t0DebtInAuction;
-        poolBalances.pledgedCollateral -= result.collateralAmount;
-
-        // update pool interest rate state
-        poolState.debt       = result.poolDebt;
-        poolState.collateral -= result.collateralAmount;
-        _updateInterestState(poolState, result.newLup);
-    }
-
     function kick(address borrowerAddress_) external override {
         PoolState memory poolState = _accruePoolInterest();
 
