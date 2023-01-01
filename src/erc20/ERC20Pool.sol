@@ -355,25 +355,6 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         _transferQuoteTokenFrom(callee_, quoteTokenAmount);
     }
 
-    /*******************************/
-    /*** Pool Override Functions ***/
-    /*******************************/
-
-   /**
-     *  @notice Settle an ERC20 pool auction, remove from auction queue and emit event.
-     *  @param borrowerAddress_    Address of the borrower that exits auction.
-     *  @param borrowerCollateral_ Borrower collateral amount before auction exit.
-     *  @return floorCollateral_   Remaining borrower collateral after auction exit.
-     */
-    function _settleAuction(
-        address borrowerAddress_,
-        uint256 borrowerCollateral_
-    ) internal override returns (uint256) {
-        Auctions._removeAuction(auctions, borrowerAddress_);
-        emit AuctionSettle(borrowerAddress_, borrowerCollateral_);
-        return borrowerCollateral_;
-    }
-
     /************************/
     /*** Helper Functions ***/
     /************************/

@@ -391,8 +391,22 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             // remove entire borrower debt from pool auctions debt accumulator
             result_.t0DebtInAuctionChange = borrower_.t0Debt;
             // settle auction and update borrower's collateral with value after settlement
-            result_.settledCollateral = _settleAuction(borrowerAddress_, borrower_.collateral);
-            borrower_.collateral      = result_.settledCollateral;
+            if (poolState_.poolType == uint8(PoolType.ERC721)) {
+                uint256 lps;
+                uint256 bucketIndex;
+                (result_.settledCollateral, lps, bucketIndex) = Auctions.settleNFTAuction(
+                    auctions,
+                    buckets,
+                    deposits,
+                    borrowerAddress_,
+                    borrower_.collateral
+                );
+                borrower_.collateral = result_.settledCollateral;
+                emit AuctionNFTSettle(borrowerAddress_, result_.settledCollateral, lps, bucketIndex);
+            } else {
+                Auctions._removeAuction(auctions, borrowerAddress_);
+                emit AuctionSettle(borrowerAddress_, borrower_.collateral);
+            }
             vars.inAuction = false;
         } else {
             // partial repay, remove only the paid debt from pool auctions debt accumulator
@@ -414,23 +428,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             vars.inAuction,
             !vars.inAuction // stamp borrower t0Np if exiting from auction
         );
-
     }
-
-    /******************************/
-    /*** Pool Virtual Functions ***/
-    /******************************/
-
-    /**
-     *  @notice Settle an auction when it exits the auction queue (implemented by each pool accordingly).
-     *  @param  borrowerAddress_    Address of the borrower that exits auction.
-     *  @param  borrowerCollateral_ Borrower collateral amount before auction exit.
-     *  @return Remaining borrower collateral after auction exit.
-     */
-    function _settleAuction(
-        address borrowerAddress_,
-        uint256 borrowerCollateral_
-    ) internal virtual returns (uint256);
 
     /*****************************/
     /*** Pool Helper Functions ***/

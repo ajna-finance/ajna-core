@@ -195,4 +195,16 @@ interface IPoolEvents {
         uint256 oldRate,
         uint256 newRate
     );
+
+    event AuctionNFTSettle(
+        address indexed borrower,
+        uint256 collateral,
+        uint256 lps,
+        uint256 index
+    );
+
+    event AuctionSettle(
+        address indexed borrower,
+        uint256 collateral
+    );
 }
