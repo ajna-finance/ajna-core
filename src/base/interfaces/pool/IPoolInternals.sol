@@ -48,6 +48,18 @@ struct TakeParams {
     uint256 poolType;    // number of buckets to use when settle debt  
 }
 
+struct TakeResult {
+    uint256 collateralAmount;
+    uint256 quoteTokenAmount;
+    uint256 t0RepayAmount;
+    uint256 t0DebtPenalty;
+    uint256 excessQuoteToken;
+    uint256 settledCollateral;
+    uint256 poolDebt;
+    uint256 newLup;
+    uint256 t0DebtInAuctionChange;
+}
+
 struct KickResult {
     uint256 amountToCoverBond; // amount of bond that needs to be covered
     uint256 kickPenalty;       // kick penalty

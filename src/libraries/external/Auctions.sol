@@ -16,6 +16,7 @@ import {
     BucketTakeParams,
     BucketTakeResult,
     TakeParams,
+    TakeResult,
     StartReserveAuctionParams
 } from '../../base/interfaces/IPool.sol';
 
@@ -515,189 +516,64 @@ library Auctions {
 
     }
 
-    function _takeLoan(
+    // /**
+    //  *  @notice Performs take collateral on an auction and updates bond size and kicker balance accordingly.
+    //  *  @param  params_ Struct containing take action params details.
+    //  *  @return Collateral amount taken.
+    //  *  @return Quote token to be received from taker.
+    //  *  @return T0 debt amount repaid.
+    //  *  @return T0 penalty debt.
+    //  *  @return Excess quote token that can result after a take (NFT case).
+    // */
+    function take(
         AuctionsState storage auctions_,
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
         LoansState storage loans_,
-        PoolState memory poolState_,
-        Borrower memory borrower_,
+        PoolState calldata poolState_,
         address borrowerAddress_,
-        uint256 t0RepaidDebt_,
-        uint256 t0DebtPenalty_
-    ) internal returns (TakeFromLoanResult memory result_) {
+        uint256 collateral_
+    ) external returns (TakeResult memory result_) {
+        Borrower memory borrower = Loans.getBorrowerInfo(loans_, borrowerAddress_);
+        // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
+        if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral();
 
-        TakeFromLoanLocalVars memory vars;
-        vars.borrowerDebt = Maths.wmul(borrower_.t0Debt, poolState_.inflator);
-        vars.repaidDebt   = Maths.wmul(t0RepaidDebt_, poolState_.inflator);
-        vars.borrowerDebt -= vars.repaidDebt;
-        result_.poolDebt = poolState_.debt - vars.repaidDebt;
-        if (t0DebtPenalty_ != 0) result_.poolDebt += Maths.wmul(t0DebtPenalty_, poolState_.inflator);
-
-        // check that taking from loan doesn't leave borrower debt under min debt amount
-        _revertOnMinDebt(loans_, result_.poolDebt, vars.borrowerDebt);
-
-        result_.newLup = _lup(deposits_, result_.poolDebt);
-        vars.inAuction = true;
-
-        if (_isCollateralized(vars.borrowerDebt, borrower_.collateral, result_.newLup, poolState_.poolType)) {
-            // borrower becomes re-collateralized
-            // remove entire borrower debt from pool auctions debt accumulator
-            result_.t0DebtInAuctionChange = borrower_.t0Debt;
-            // settle auction and update borrower's collateral with value after settlement
-            if (poolState_.poolType == uint8(PoolType.ERC721)) {
-                uint256 lps;
-                uint256 bucketIndex;
-                (result_.settledCollateral, lps, bucketIndex) = settleNFTAuction(
-                    auctions_,
-                    buckets_,
-                    deposits_,
-                    borrowerAddress_,
-                    borrower_.collateral
-                );
-                borrower_.collateral = result_.settledCollateral;
-                emit AuctionNFTSettle(borrowerAddress_, result_.settledCollateral, lps, bucketIndex);
-            } else {
-                Auctions._removeAuction(auctions_, borrowerAddress_);
-                emit AuctionSettle(borrowerAddress_, borrower_.collateral);
-            }
-            vars.inAuction = false;
-        } else {
-            // partial repay, remove only the paid debt from pool auctions debt accumulator
-            result_.t0DebtInAuctionChange = t0RepaidDebt_;
-        }
-
-        borrower_.t0Debt -= t0RepaidDebt_;
-
-        // update loan state, stamp borrower t0Np only when exiting from auction
-        Loans.update(
-            loans_,
+        (
+            result_.collateralAmount,
+            result_.quoteTokenAmount,
+            result_.t0RepayAmount,
+            borrower.t0Debt,
+            result_.t0DebtPenalty,
+            result_.excessQuoteToken
+        ) = _take(
             auctions_,
-            deposits_,
-            borrower_,
-            borrowerAddress_,
-            vars.borrowerDebt,
-            poolState_.rate,
-            result_.newLup,
-            vars.inAuction,
-            !vars.inAuction // stamp borrower t0Np if exiting from auction
+            TakeParams(
+                {
+                    borrower:       borrowerAddress_,
+                    collateral:     borrower.collateral,
+                    t0Debt:         borrower.t0Debt,
+                    takeCollateral: collateral_,
+                    inflator:       poolState_.inflator,
+                    poolType:       poolState_.poolType
+                }
+            )
         );
-    }
+        borrower.collateral -= result_.collateralAmount;
 
-    function _takeBucket(
-        AuctionsState storage auctions_,
-        mapping(uint256 => Bucket) storage buckets_,
-        DepositsState storage deposits_,
-        BucketTakeParams memory params_
-    ) internal returns (uint256, uint256, uint256, uint256) {
-        if (params_.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
-
-        Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
-        TakeLocalVars memory vars = _prepareTake(liquidation, params_.t0Debt, params_.collateral, params_.inflator);
-
-        vars.unscaledDeposit = Deposits.unscaledValueAt(deposits_, params_.index);
-        if (vars.unscaledDeposit == 0) revert InsufficientLiquidity(); // revert if no quote tokens in arbed bucket
-
-        vars.bucketPrice  = _priceAt(params_.index);
-        // cannot arb with a price lower than the auction price
-        if (vars.auctionPrice > vars.bucketPrice) revert AuctionPriceGtBucketPrice();
-        
-        // if deposit take then price to use when calculating take is bucket price
-        if (params_.depositTake) vars.auctionPrice = vars.bucketPrice;
-
-        vars.bucketScale = Deposits.scale(deposits_, params_.index);
-        vars = _calculateTakeFlowsAndBondChange(
-            params_.collateral,
-            params_.t0Debt,
-            params_.inflator,
-            vars
-        );
-        _rewardBucketTake(
+        TakeFromLoanResult memory result = _takeLoan(
             auctions_,
-            deposits_,
             buckets_,
-            liquidation,
-            params_.index,
-            params_.depositTake,
-            vars
+            deposits_,
+            loans_,
+            poolState_,
+            borrower,
+            borrowerAddress_,
+            result_.t0RepayAmount,
+            result_.t0DebtPenalty
         );
-
-        emit BucketTake(
-            params_.borrower,
-            params_.index,
-            vars.scaledQuoteTokenAmount,
-            vars.collateralAmount,
-            vars.bondChange,
-            vars.isRewarded
-        );
-
-        return (
-            vars.collateralAmount,
-            vars.t0RepayAmount,
-            vars.t0Debt,
-            vars.t0DebtPenalty
-        );
-    }
-
-    /**
-     *  @notice Performs take collateral on an auction and updates bond size and kicker balance accordingly.
-     *  @param  params_ Struct containing take action params details.
-     *  @return Collateral amount taken.
-     *  @return Quote token to be received from taker.
-     *  @return T0 debt amount repaid.
-     *  @return T0 penalty debt.
-     *  @return Excess quote token that can result after a take (NFT case).
-    */
-    function take(
-        AuctionsState storage auctions_,
-        TakeParams calldata params_
-    ) external returns (uint256, uint256, uint256, uint256, uint256, uint256) {
-        Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
-        TakeLocalVars memory vars = _prepareTake(liquidation, params_.t0Debt, params_.collateral, params_.inflator);
-        // These are placeholder max values passed to calculateTakeFlows because there is no explicit bound on the
-        // quote token amount in take calls (as opposed to bucketTake)
-        vars.unscaledDeposit = type(uint256).max;
-        vars.bucketScale = Maths.WAD;
-
-        // In the case of take, the taker binds the collateral qty but not the quote token qty
-        // ugly to get take work like a bucket take -- this is the max amount of quote token from the take that could go to
-        // reduce the debt of the borrower -- analagous to the amount of deposit in the bucket for a bucket take
-        vars = _calculateTakeFlowsAndBondChange(
-            Maths.min(params_.collateral, params_.takeCollateral),
-            params_.t0Debt,
-            params_.inflator,
-            vars
-        );
-        _rewardTake(auctions_, liquidation, vars);
-
-        emit Take(
-            params_.borrower,
-            vars.scaledQuoteTokenAmount,
-            vars.collateralAmount,
-            vars.bondChange,
-            vars.isRewarded
-        );
-
-        if (params_.poolType == uint8(PoolType.ERC721)) {
-            // slither-disable-next-line divide-before-multiply
-            uint256 collateralTaken = (vars.collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
-            if (collateralTaken != vars.collateralAmount && params_.collateral >= collateralTaken + 1e18) { // collateral taken not a round number
-                collateralTaken += 1e18; // round up collateral to take
-                // taker should send additional quote tokens to cover difference between collateral needed to be taken and rounded collateral, at auction price
-                // borrower will get quote tokens for the difference between rounded collateral and collateral taken to cover debt
-                vars.excessQuoteToken = Maths.wmul(collateralTaken - vars.collateralAmount, vars.auctionPrice);
-            }
-            vars.collateralAmount = collateralTaken;
-        }
-
-        return (
-            vars.collateralAmount,
-            vars.scaledQuoteTokenAmount,
-            vars.t0RepayAmount,
-            vars.t0Debt,
-            vars.t0DebtPenalty,
-            vars.excessQuoteToken
-        );
+        result_.poolDebt = result.poolDebt;
+        result_.newLup = result.newLup;
+        result_.t0DebtInAuctionChange = result.t0DebtInAuctionChange;
     }
 
     /**
@@ -788,7 +664,6 @@ library Auctions {
     /***  Internal Functions ***/
     /***************************/
 
-
     /**
      *  @notice Called to start borrower liquidation and to update the auctions queue.
      *  @param  poolState_       Current state of the pool.
@@ -859,6 +734,182 @@ library Auctions {
             borrowerDebt + kickResult_.kickPenalty,
             borrower.collateral,
             bondSize
+        );
+    }
+
+    function _take(
+        AuctionsState storage auctions_,
+        TakeParams memory params_
+    ) internal returns (uint256, uint256, uint256, uint256, uint256, uint256) {
+        Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
+        TakeLocalVars memory vars = _prepareTake(liquidation, params_.t0Debt, params_.collateral, params_.inflator);
+        // These are placeholder max values passed to calculateTakeFlows because there is no explicit bound on the
+        // quote token amount in take calls (as opposed to bucketTake)
+        vars.unscaledDeposit = type(uint256).max;
+        vars.bucketScale = Maths.WAD;
+
+        // In the case of take, the taker binds the collateral qty but not the quote token qty
+        // ugly to get take work like a bucket take -- this is the max amount of quote token from the take that could go to
+        // reduce the debt of the borrower -- analagous to the amount of deposit in the bucket for a bucket take
+        vars = _calculateTakeFlowsAndBondChange(
+            Maths.min(params_.collateral, params_.takeCollateral),
+            params_.t0Debt,
+            params_.inflator,
+            vars
+        );
+        _rewardTake(auctions_, liquidation, vars);
+
+        emit Take(
+            params_.borrower,
+            vars.scaledQuoteTokenAmount,
+            vars.collateralAmount,
+            vars.bondChange,
+            vars.isRewarded
+        );
+
+        if (params_.poolType == uint8(PoolType.ERC721)) {
+            // slither-disable-next-line divide-before-multiply
+            uint256 collateralTaken = (vars.collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
+            if (collateralTaken != vars.collateralAmount && params_.collateral >= collateralTaken + 1e18) { // collateral taken not a round number
+                collateralTaken += 1e18; // round up collateral to take
+                // taker should send additional quote tokens to cover difference between collateral needed to be taken and rounded collateral, at auction price
+                // borrower will get quote tokens for the difference between rounded collateral and collateral taken to cover debt
+                vars.excessQuoteToken = Maths.wmul(collateralTaken - vars.collateralAmount, vars.auctionPrice);
+            }
+            vars.collateralAmount = collateralTaken;
+        }
+
+        return (
+            vars.collateralAmount,
+            vars.scaledQuoteTokenAmount,
+            vars.t0RepayAmount,
+            vars.t0Debt,
+            vars.t0DebtPenalty,
+            vars.excessQuoteToken
+        );
+    }
+
+    function _takeBucket(
+        AuctionsState storage auctions_,
+        mapping(uint256 => Bucket) storage buckets_,
+        DepositsState storage deposits_,
+        BucketTakeParams memory params_
+    ) internal returns (uint256, uint256, uint256, uint256) {
+        if (params_.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
+
+        Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
+        TakeLocalVars memory vars = _prepareTake(liquidation, params_.t0Debt, params_.collateral, params_.inflator);
+
+        vars.unscaledDeposit = Deposits.unscaledValueAt(deposits_, params_.index);
+        if (vars.unscaledDeposit == 0) revert InsufficientLiquidity(); // revert if no quote tokens in arbed bucket
+
+        vars.bucketPrice  = _priceAt(params_.index);
+        // cannot arb with a price lower than the auction price
+        if (vars.auctionPrice > vars.bucketPrice) revert AuctionPriceGtBucketPrice();
+        
+        // if deposit take then price to use when calculating take is bucket price
+        if (params_.depositTake) vars.auctionPrice = vars.bucketPrice;
+
+        vars.bucketScale = Deposits.scale(deposits_, params_.index);
+        vars = _calculateTakeFlowsAndBondChange(
+            params_.collateral,
+            params_.t0Debt,
+            params_.inflator,
+            vars
+        );
+        _rewardBucketTake(
+            auctions_,
+            deposits_,
+            buckets_,
+            liquidation,
+            params_.index,
+            params_.depositTake,
+            vars
+        );
+
+        emit BucketTake(
+            params_.borrower,
+            params_.index,
+            vars.scaledQuoteTokenAmount,
+            vars.collateralAmount,
+            vars.bondChange,
+            vars.isRewarded
+        );
+
+        return (
+            vars.collateralAmount,
+            vars.t0RepayAmount,
+            vars.t0Debt,
+            vars.t0DebtPenalty
+        );
+    }
+
+    function _takeLoan(
+        AuctionsState storage auctions_,
+        mapping(uint256 => Bucket) storage buckets_,
+        DepositsState storage deposits_,
+        LoansState storage loans_,
+        PoolState memory poolState_,
+        Borrower memory borrower_,
+        address borrowerAddress_,
+        uint256 t0RepaidDebt_,
+        uint256 t0DebtPenalty_
+    ) internal returns (TakeFromLoanResult memory result_) {
+
+        TakeFromLoanLocalVars memory vars;
+        vars.borrowerDebt = Maths.wmul(borrower_.t0Debt, poolState_.inflator);
+        vars.repaidDebt   = Maths.wmul(t0RepaidDebt_, poolState_.inflator);
+        vars.borrowerDebt -= vars.repaidDebt;
+        result_.poolDebt = poolState_.debt - vars.repaidDebt;
+        if (t0DebtPenalty_ != 0) result_.poolDebt += Maths.wmul(t0DebtPenalty_, poolState_.inflator);
+
+        // check that taking from loan doesn't leave borrower debt under min debt amount
+        _revertOnMinDebt(loans_, result_.poolDebt, vars.borrowerDebt);
+
+        result_.newLup = _lup(deposits_, result_.poolDebt);
+        vars.inAuction = true;
+
+        if (_isCollateralized(vars.borrowerDebt, borrower_.collateral, result_.newLup, poolState_.poolType)) {
+            // borrower becomes re-collateralized
+            // remove entire borrower debt from pool auctions debt accumulator
+            result_.t0DebtInAuctionChange = borrower_.t0Debt;
+            // settle auction and update borrower's collateral with value after settlement
+            if (poolState_.poolType == uint8(PoolType.ERC721)) {
+                uint256 lps;
+                uint256 bucketIndex;
+                (result_.settledCollateral, lps, bucketIndex) = settleNFTAuction(
+                    auctions_,
+                    buckets_,
+                    deposits_,
+                    borrowerAddress_,
+                    borrower_.collateral
+                );
+                borrower_.collateral = result_.settledCollateral;
+                emit AuctionNFTSettle(borrowerAddress_, result_.settledCollateral, lps, bucketIndex);
+            } else {
+                Auctions._removeAuction(auctions_, borrowerAddress_);
+                emit AuctionSettle(borrowerAddress_, borrower_.collateral);
+            }
+            vars.inAuction = false;
+        } else {
+            // partial repay, remove only the paid debt from pool auctions debt accumulator
+            result_.t0DebtInAuctionChange = t0RepaidDebt_;
+        }
+
+        borrower_.t0Debt -= t0RepaidDebt_;
+
+        // update loan state, stamp borrower t0Np only when exiting from auction
+        Loans.update(
+            loans_,
+            auctions_,
+            deposits_,
+            borrower_,
+            borrowerAddress_,
+            vars.borrowerDebt,
+            poolState_.rate,
+            result_.newLup,
+            vars.inAuction,
+            !vars.inAuction // stamp borrower t0Np if exiting from auction
         );
     }
 

@@ -290,69 +290,47 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         bytes calldata data_
     ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
-        Borrower  memory borrower  = Loans.getBorrowerInfo(loans, borrowerAddress_);
-        // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
-        if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral();
 
-        TakeParams memory params = TakeParams(
-            {
-                borrower:       borrowerAddress_,
-                collateral:     borrower.collateral,
-                t0Debt:         borrower.t0Debt,
-                takeCollateral: collateral_,
-                inflator:       poolState.inflator,
-                poolType:       poolState.poolType
-            }
-        );
-        uint256 collateralAmount;
-        uint256 quoteTokenAmount;
-        uint256 t0RepayAmount;
-        uint256 t0DebtPenalty;
-        (
-            collateralAmount,
-            quoteTokenAmount,
-            t0RepayAmount,
-            borrower.t0Debt,
-            t0DebtPenalty,
-        ) = Auctions.take(
+        TakeResult memory result = Auctions.take(
             auctions,
-            params
+            buckets,
+            deposits,
+            loans,
+            poolState,
+            borrowerAddress_,
+            collateral_
         );
-
-        borrower.collateral -= collateralAmount; // collateral is removed from the loan
-
-        TakeFromLoanResult memory result = _takeFromLoan(poolState, borrower, params.borrower, t0RepayAmount, t0DebtPenalty);
 
         // update pool balances state
         uint256 t0PoolDebt      = poolBalances.t0Debt;
         uint256 t0DebtInAuction = poolBalances.t0DebtInAuction;
-        if (t0DebtPenalty != 0) {
-            t0PoolDebt      += t0DebtPenalty;
-            t0DebtInAuction += t0DebtPenalty;
+        if (result.t0DebtPenalty != 0) {
+            t0PoolDebt      += result.t0DebtPenalty;
+            t0DebtInAuction += result.t0DebtPenalty;
         }
-        t0PoolDebt      -= t0RepayAmount;
+        t0PoolDebt      -= result.t0RepayAmount;
         t0DebtInAuction -= result.t0DebtInAuctionChange;
 
         poolBalances.t0Debt            = t0PoolDebt;
         poolBalances.t0DebtInAuction   = t0DebtInAuction;
-        poolBalances.pledgedCollateral -= collateralAmount;
+        poolBalances.pledgedCollateral -= result.collateralAmount;
 
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
-        poolState.collateral -= collateralAmount;
+        poolState.collateral -= result.collateralAmount;
         _updateInterestState(poolState, result.newLup);
 
-        _transferCollateral(callee_, collateralAmount);
+        _transferCollateral(callee_, result.collateralAmount);
 
         if (data_.length != 0) {
             IERC20Taker(callee_).atomicSwapCallback(
-                collateralAmount / _getArgUint256(COLLATERAL_SCALE), 
-                quoteTokenAmount / _getArgUint256(QUOTE_SCALE), 
+                result.collateralAmount / _getArgUint256(COLLATERAL_SCALE), 
+                result.quoteTokenAmount / _getArgUint256(QUOTE_SCALE), 
                 data_
             );
         }
 
-        _transferQuoteTokenFrom(callee_, quoteTokenAmount);
+        _transferQuoteTokenFrom(callee_, result.quoteTokenAmount);
     }
 
     function bucketTake(

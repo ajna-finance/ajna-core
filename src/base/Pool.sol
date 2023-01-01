@@ -52,23 +52,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     uint256 internal poolInitializations;
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 
-    struct TakeFromLoanLocalVars {
-        uint256 borrowerDebt;          // borrower's accrued debt
-        bool    inAuction;             // true if loan still in auction after auction is taken, false otherwise
-        uint256 newLup;                // LUP after auction is taken
-        uint256 repaidDebt;            // debt repaid when auction is taken
-        uint256 t0DebtInAuction;       // t0 pool debt in auction
-        uint256 t0DebtInAuctionChange; // t0 change amount of debt after auction is taken
-        uint256 t0PoolDebt;            // t0 pool debt
-    }
-
-    struct TakeFromLoanResult {
-        uint256 settledCollateral;
-        uint256 poolDebt;
-        uint256 newLup;
-        uint256 t0DebtInAuctionChange;
-    }
-
     /******************/
     /*** Immutables ***/
     /******************/
@@ -293,84 +276,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         IERC20(_getArgAddress(AJNA_ADDRESS)).safeTransferFrom(msg.sender, address(this), ajnaRequired);
         IERC20Token(_getArgAddress(AJNA_ADDRESS)).burn(ajnaRequired);
         _transferQuoteToken(msg.sender, amount_);
-    }
-
-    /***********************************/
-    /*** Auctions Internal Functions ***/
-    /***********************************/
-
-    /**
-     *  @notice Updates loan with result of a take action. Settles auction if borrower becomes collateralized.
-     *  @notice Saves loan state, t0 debt and collateral pledged pool accumulators and updates pool interest state.
-     *  @param  poolState_        Current state of the pool.
-     *  @param  borrower_         Details of the borrower whose loan is taken.
-     *  @param  borrowerAddress_  Address of the borrower whose loan is taken.
-     *  @param  t0RepaidDebt_     Amount of t0 debt repaid by take action.
-     *  @param  t0DebtPenalty_    Amount of t0 penalty if intial take (7% from t0 debt).
-    */
-    function _takeFromLoan(
-        PoolState memory poolState_,
-        Borrower memory borrower_,
-        address borrowerAddress_,
-        uint256 t0RepaidDebt_,
-        uint256 t0DebtPenalty_
-    ) internal returns (TakeFromLoanResult memory result_) {
-
-        TakeFromLoanLocalVars memory vars;
-        vars.borrowerDebt = Maths.wmul(borrower_.t0Debt, poolState_.inflator);
-        vars.repaidDebt   = Maths.wmul(t0RepaidDebt_, poolState_.inflator);
-        vars.borrowerDebt -= vars.repaidDebt;
-        result_.poolDebt = poolState_.debt - vars.repaidDebt;
-        if (t0DebtPenalty_ != 0) result_.poolDebt += Maths.wmul(t0DebtPenalty_, poolState_.inflator);
-
-        // check that taking from loan doesn't leave borrower debt under min debt amount
-        _revertOnMinDebt(result_.poolDebt, vars.borrowerDebt);
-
-        result_.newLup = _lup(result_.poolDebt);
-        vars.inAuction = true;
-
-        if (_isCollateralized(vars.borrowerDebt, borrower_.collateral, result_.newLup, poolState_.poolType)) {
-            // borrower becomes re-collateralized
-            // remove entire borrower debt from pool auctions debt accumulator
-            result_.t0DebtInAuctionChange = borrower_.t0Debt;
-            // settle auction and update borrower's collateral with value after settlement
-            if (poolState_.poolType == uint8(PoolType.ERC721)) {
-                uint256 lps;
-                uint256 bucketIndex;
-                (result_.settledCollateral, lps, bucketIndex) = Auctions.settleNFTAuction(
-                    auctions,
-                    buckets,
-                    deposits,
-                    borrowerAddress_,
-                    borrower_.collateral
-                );
-                borrower_.collateral = result_.settledCollateral;
-                emit AuctionNFTSettle(borrowerAddress_, result_.settledCollateral, lps, bucketIndex);
-            } else {
-                Auctions._removeAuction(auctions, borrowerAddress_);
-                emit AuctionSettle(borrowerAddress_, borrower_.collateral);
-            }
-            vars.inAuction = false;
-        } else {
-            // partial repay, remove only the paid debt from pool auctions debt accumulator
-            result_.t0DebtInAuctionChange = t0RepaidDebt_;
-        }
-
-        borrower_.t0Debt -= t0RepaidDebt_;
-
-        // update loan state, stamp borrower t0Np only when exiting from auction
-        Loans.update(
-            loans,
-            auctions,
-            deposits,
-            borrower_,
-            borrowerAddress_,
-            vars.borrowerDebt,
-            poolState_.rate,
-            result_.newLup,
-            vars.inAuction,
-            !vars.inAuction // stamp borrower t0Np if exiting from auction
-        );
     }
 
     /*****************************/

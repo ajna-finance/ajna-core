@@ -25,17 +25,6 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     mapping(address => uint256[]) public borrowerTokenIds; // borrower address => array of tokenIds pledged by borrower
     uint256[]                     public bucketTokenIds;   // array of tokenIds added in pool buckets
 
-    struct TakeLocalVars {
-        uint256 auctionPrice;     // price of auction that is taken
-        uint256 collateralAmount; // collateral amount in taken auction
-        uint256 collateralTaken;  // amount of collateral taken
-        uint256 excessQuoteToken; // difference of quote token that borrower receives for fractional NFT
-        uint256 quoteTokenAmount; // amount of quote tokens that taker should provide
-        uint256 t0DebtPenalty;    // t0 initial take penalty (7% from borrower's debt)
-        uint256 t0RepayAmount;    // t0 debt repaid when auction is taken
-        uint256[] tokensTaken;    // token ids taken
-    }
-
     /****************************/
     /*** Initialize Functions ***/
     /****************************/
@@ -318,68 +307,47 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         bytes calldata data_
     ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
-        Borrower  memory borrower  = Loans.getBorrowerInfo(loans, borrowerAddress_);
-        // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
-        if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral();
 
-        TakeParams memory params = TakeParams(
-            {
-                borrower:       borrowerAddress_,
-                collateral:     borrower.collateral,
-                t0Debt:         borrower.t0Debt,
-                takeCollateral: Maths.wad(collateral_),
-                inflator:       poolState.inflator,
-                poolType:       poolState.poolType
-            }
-        );
-
-        TakeLocalVars memory vars;
-        (
-            vars.collateralAmount,
-            vars.quoteTokenAmount,
-            vars.t0RepayAmount,
-            borrower.t0Debt,
-            vars.t0DebtPenalty,
-            vars.excessQuoteToken
-        ) = Auctions.take(
+        TakeResult memory result = Auctions.take(
             auctions,
-            params
+            buckets,
+            deposits,
+            loans,
+            poolState,
+            borrowerAddress_,
+            Maths.wad(collateral_)
         );
-
-        borrower.collateral  -= vars.collateralAmount; // collateral is removed from the loan
-        poolState.collateral -= vars.collateralAmount; // collateral is removed from pledged collateral accumulator
-
-        TakeFromLoanResult memory result = _takeFromLoan(poolState, borrower, params.borrower, vars.t0RepayAmount, vars.t0DebtPenalty);
 
         // update pool balances state
         uint256 t0PoolDebt      = poolBalances.t0Debt;
         uint256 t0DebtInAuction = poolBalances.t0DebtInAuction;
-        if (vars.t0DebtPenalty != 0) {
-            t0PoolDebt      += vars.t0DebtPenalty;
-            t0DebtInAuction += vars.t0DebtPenalty;
+        if (result.t0DebtPenalty != 0) {
+            t0PoolDebt      += result.t0DebtPenalty;
+            t0DebtInAuction += result.t0DebtPenalty;
         }
-        t0PoolDebt      -= vars.t0RepayAmount;
+        t0PoolDebt      -= result.t0RepayAmount;
         t0DebtInAuction -= result.t0DebtInAuctionChange;
 
         poolBalances.t0Debt            = t0PoolDebt;
         poolBalances.t0DebtInAuction   = t0DebtInAuction;
-        poolBalances.pledgedCollateral =  poolState.collateral;
+        poolBalances.pledgedCollateral -= result.collateralAmount;
 
         // update pool interest rate state
-        poolState.debt = result.poolDebt;
+        poolState.debt       = result.poolDebt;
+        poolState.collateral -= result.collateralAmount;
         _updateInterestState(poolState, result.newLup);
 
         // transfer rounded collateral from pool to taker
-        vars.tokensTaken = _transferFromPoolToAddress(
+        uint256[] memory tokensTaken = _transferFromPoolToAddress(
             callee_,
-            borrowerTokenIds[params.borrower],
-            vars.collateralAmount / 1e18
+            borrowerTokenIds[borrowerAddress_],
+            result.collateralAmount / 1e18
         );
 
         if (data_.length != 0) {
             IERC721Taker(callee_).atomicSwapCallback(
-                vars.tokensTaken,
-                vars.quoteTokenAmount / _getArgUint256(QUOTE_SCALE), 
+                tokensTaken,
+                result.quoteTokenAmount / _getArgUint256(QUOTE_SCALE), 
                 data_
             );
         }
@@ -387,10 +355,10 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         if (result.settledCollateral != 0) _cleanupAuction(borrowerAddress_, result.settledCollateral);
 
         // transfer from taker to pool the amount of quote tokens needed to cover collateral auctioned (including excess for rounded collateral)
-        _transferQuoteTokenFrom(callee_, vars.quoteTokenAmount + vars.excessQuoteToken);
+        _transferQuoteTokenFrom(callee_, result.quoteTokenAmount + result.excessQuoteToken);
 
         // transfer from pool to borrower the excess of quote tokens after rounding collateral auctioned
-        if (vars.excessQuoteToken != 0) _transferQuoteToken(params.borrower, vars.excessQuoteToken);
+        if (result.excessQuoteToken != 0) _transferQuoteToken(borrowerAddress_, result.excessQuoteToken);
     }
 
     function bucketTake(
