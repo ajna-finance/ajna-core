@@ -107,7 +107,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             _transferFromSenderToPool(borrowerTokenIds[borrowerAddress_], tokenIdsToPledge_);
         }
 
-        if (result.settledCollateral != 0) _cleanupAuction(borrowerAddress_, result.settledCollateral);
+        if (result.settledCollateral != 0) _settleCollateral(borrowerAddress_, result.settledCollateral);
 
         // move borrowed amount from pool to sender
         if (amountToBorrow_ != 0) {
@@ -138,7 +138,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
         emit RepayDebt(borrowerAddress_, result.quoteTokenToRepay, noOfNFTsToPull_, result.newLup);
 
-        if (result.settledCollateral != 0) _cleanupAuction(borrowerAddress_, result.settledCollateral);
+        if (result.settledCollateral != 0) _settleCollateral(borrowerAddress_, result.settledCollateral);
 
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
@@ -280,7 +280,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
         // slither-disable-next-line incorrect-equality
         if (t0RemainingDebt == 0) {
-            _cleanupAuction(params.borrower, remainingCollateral);
+            _settleCollateral(params.borrower, remainingCollateral);
         }
 
         // update borrower state
@@ -352,7 +352,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             );
         }
 
-        if (result.settledCollateral != 0) _cleanupAuction(borrowerAddress_, result.settledCollateral);
+        if (result.settledCollateral != 0) _settleCollateral(borrowerAddress_, result.settledCollateral);
 
         // transfer from taker to pool the amount of quote tokens needed to cover collateral auctioned (including excess for rounded collateral)
         _transferQuoteTokenFrom(callee_, result.quoteTokenAmount + result.excessQuoteToken);
@@ -399,21 +399,21 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         poolState.collateral -= result.collateralAmount;
         _updateInterestState(poolState, result.newLup);
 
-        if (result.settledCollateral != 0) _cleanupAuction(borrowerAddress_, result.settledCollateral);
+        if (result.settledCollateral != 0) _settleCollateral(borrowerAddress_, result.settledCollateral);
     }
 
     /**************************/
     /*** Internal Functions ***/
     /**************************/
 
-    function _cleanupAuction(
+    function _settleCollateral(
         address borrowerAddress_,
         uint256 borrowerCollateral_
     ) internal {
         // rebalance borrower's collateral, transfer difference to floor collateral from borrower to pool claimable array
         uint256[] storage borrowerTokens = borrowerTokenIds[borrowerAddress_];
         uint256 noOfTokensPledged    = borrowerTokens.length;
-        uint256 noOfTokensToTransfer = noOfTokensPledged - borrowerCollateral_ / 1e18;
+        uint256 noOfTokensToTransfer = borrowerCollateral_ != 0 ? noOfTokensPledged - borrowerCollateral_ / 1e18 : noOfTokensPledged;
         for (uint256 i = 0; i < noOfTokensToTransfer;) {
             uint256 tokenId = borrowerTokens[--noOfTokensPledged]; // start with moving the last token pledged by borrower
             borrowerTokens.pop();                                  // remove token id from borrower
