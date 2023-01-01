@@ -281,7 +281,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
 
         // kick auctions
-        (KickResult memory result) = Auctions.kickWithDeposit(
+        KickResult memory result = Auctions.kickWithDeposit(
             auctions,
             deposits,
             buckets,

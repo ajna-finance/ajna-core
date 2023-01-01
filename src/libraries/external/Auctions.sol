@@ -40,7 +40,7 @@ library Auctions {
         uint256 redeemedLPs;
     }
 
-    struct TakeResult {
+    struct TakeLocalVars {
         uint256 auctionPrice;             // The price of auction.
         uint256 bondChange;               // The change made on the bond size (beeing reward or penalty).
         uint256 borrowerDebt;             // The accrued debt of auctioned borrower.
@@ -593,24 +593,24 @@ library Auctions {
         if (params_.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
 
         Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
-        TakeResult memory result = _prepareTake(liquidation, params_.t0Debt, params_.collateral, params_.inflator);
+        TakeLocalVars memory vars = _prepareTake(liquidation, params_.t0Debt, params_.collateral, params_.inflator);
 
-        result.unscaledDeposit = Deposits.unscaledValueAt(deposits_, params_.index);
-        if (result.unscaledDeposit == 0) revert InsufficientLiquidity(); // revert if no quote tokens in arbed bucket
+        vars.unscaledDeposit = Deposits.unscaledValueAt(deposits_, params_.index);
+        if (vars.unscaledDeposit == 0) revert InsufficientLiquidity(); // revert if no quote tokens in arbed bucket
 
-        result.bucketPrice  = _priceAt(params_.index);
+        vars.bucketPrice  = _priceAt(params_.index);
         // cannot arb with a price lower than the auction price
-        if (result.auctionPrice > result.bucketPrice) revert AuctionPriceGtBucketPrice();
+        if (vars.auctionPrice > vars.bucketPrice) revert AuctionPriceGtBucketPrice();
         
         // if deposit take then price to use when calculating take is bucket price
-        if (params_.depositTake) result.auctionPrice = result.bucketPrice;
+        if (params_.depositTake) vars.auctionPrice = vars.bucketPrice;
 
-        result.bucketScale = Deposits.scale(deposits_, params_.index);
-        result = _calculateTakeFlowsAndBondChange(
+        vars.bucketScale = Deposits.scale(deposits_, params_.index);
+        vars = _calculateTakeFlowsAndBondChange(
             params_.collateral,
             params_.t0Debt,
             params_.inflator,
-            result
+            vars
         );
         _rewardBucketTake(
             auctions_,
@@ -619,23 +619,23 @@ library Auctions {
             liquidation,
             params_.index,
             params_.depositTake,
-            result
+            vars
         );
 
         emit BucketTake(
             params_.borrower,
             params_.index,
-            result.scaledQuoteTokenAmount,
-            result.collateralAmount,
-            result.bondChange,
-            result.isRewarded
+            vars.scaledQuoteTokenAmount,
+            vars.collateralAmount,
+            vars.bondChange,
+            vars.isRewarded
         );
 
         return (
-            result.collateralAmount,
-            result.t0RepayAmount,
-            result.t0Debt,
-            result.t0DebtPenalty
+            vars.collateralAmount,
+            vars.t0RepayAmount,
+            vars.t0Debt,
+            vars.t0DebtPenalty
         );
     }
 
@@ -653,50 +653,50 @@ library Auctions {
         TakeParams calldata params_
     ) external returns (uint256, uint256, uint256, uint256, uint256, uint256) {
         Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
-        TakeResult memory result = _prepareTake(liquidation, params_.t0Debt, params_.collateral, params_.inflator);
+        TakeLocalVars memory vars = _prepareTake(liquidation, params_.t0Debt, params_.collateral, params_.inflator);
         // These are placeholder max values passed to calculateTakeFlows because there is no explicit bound on the
         // quote token amount in take calls (as opposed to bucketTake)
-        result.unscaledDeposit = type(uint256).max;
-        result.bucketScale = Maths.WAD;
+        vars.unscaledDeposit = type(uint256).max;
+        vars.bucketScale = Maths.WAD;
 
         // In the case of take, the taker binds the collateral qty but not the quote token qty
         // ugly to get take work like a bucket take -- this is the max amount of quote token from the take that could go to
         // reduce the debt of the borrower -- analagous to the amount of deposit in the bucket for a bucket take
-        result = _calculateTakeFlowsAndBondChange(
+        vars = _calculateTakeFlowsAndBondChange(
             Maths.min(params_.collateral, params_.takeCollateral),
             params_.t0Debt,
             params_.inflator,
-            result
+            vars
         );
-        _rewardTake(auctions_, liquidation, result);
+        _rewardTake(auctions_, liquidation, vars);
 
         emit Take(
             params_.borrower,
-            result.scaledQuoteTokenAmount,
-            result.collateralAmount,
-            result.bondChange,
-            result.isRewarded
+            vars.scaledQuoteTokenAmount,
+            vars.collateralAmount,
+            vars.bondChange,
+            vars.isRewarded
         );
 
         if (params_.poolType == uint8(PoolType.ERC721)) {
             // slither-disable-next-line divide-before-multiply
-            uint256 collateralTaken = (result.collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
-            if (collateralTaken != result.collateralAmount && params_.collateral >= collateralTaken + 1e18) { // collateral taken not a round number
+            uint256 collateralTaken = (vars.collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
+            if (collateralTaken != vars.collateralAmount && params_.collateral >= collateralTaken + 1e18) { // collateral taken not a round number
                 collateralTaken += 1e18; // round up collateral to take
                 // taker should send additional quote tokens to cover difference between collateral needed to be taken and rounded collateral, at auction price
                 // borrower will get quote tokens for the difference between rounded collateral and collateral taken to cover debt
-                result.excessQuoteToken = Maths.wmul(collateralTaken - result.collateralAmount, result.auctionPrice);
+                vars.excessQuoteToken = Maths.wmul(collateralTaken - vars.collateralAmount, vars.auctionPrice);
             }
-            result.collateralAmount = collateralTaken;
+            vars.collateralAmount = collateralTaken;
         }
 
         return (
-            result.collateralAmount,
-            result.scaledQuoteTokenAmount,
-            result.t0RepayAmount,
-            result.t0Debt,
-            result.t0DebtPenalty,
-            result.excessQuoteToken
+            vars.collateralAmount,
+            vars.scaledQuoteTokenAmount,
+            vars.t0RepayAmount,
+            vars.t0Debt,
+            vars.t0DebtPenalty,
+            vars.excessQuoteToken
         );
     }
 
@@ -915,54 +915,54 @@ library Auctions {
      *  @param  totalCollateral_        Total collateral in loan.
      *  @param  t0Debt_                 t0 equivalent debt in loan.
      *  @param  inflator_               Current pool inflator.
-     *  @param  result_                 TakeParams for the take/buckettake
+     *  @param  vars                    TakeParams for the take/buckettake
      */
     function _calculateTakeFlowsAndBondChange(
-        uint256           totalCollateral_,
-        uint256           t0Debt_,
-        uint256           inflator_,
-        TakeResult memory result_
+        uint256              totalCollateral_,
+        uint256              t0Debt_,
+        uint256              inflator_,
+        TakeLocalVars memory vars
     ) internal pure returns (
-        TakeResult memory
+        TakeLocalVars memory
     ) {
         // price is the current auction price, which is the price paid by the LENDER for collateral
         // from the borrower point of view, the price is actually (1-bpf) * price, as the rewards to the
         // bond holder are effectively paid for by the borrower.
-        uint256 borrowerPayoffFactor = (result_.isRewarded) ? Maths.WAD - uint256(result_.bpf) : Maths.WAD;
-        uint256 borrowerPrice = (result_.isRewarded) ? Maths.wmul(borrowerPayoffFactor, result_.auctionPrice) : result_.auctionPrice;
+        uint256 borrowerPayoffFactor = (vars.isRewarded) ? Maths.WAD - uint256(vars.bpf) : Maths.WAD;
+        uint256 borrowerPrice = (vars.isRewarded) ? Maths.wmul(borrowerPayoffFactor, vars.auctionPrice) : vars.auctionPrice;
 
         // If there is no unscaled quote token bound, then we pass in max, but that cannot be scaled without an overflow.  So we check in the line below.
-        result_.scaledQuoteTokenAmount = (result_.unscaledDeposit != type(uint256).max) ? Maths.wmul(result_.unscaledDeposit, result_.bucketScale) : type(uint256).max;
+        vars.scaledQuoteTokenAmount = (vars.unscaledDeposit != type(uint256).max) ? Maths.wmul(vars.unscaledDeposit, vars.bucketScale) : type(uint256).max;
 
         uint256 borrowerCollateralValue = Maths.wmul(totalCollateral_, borrowerPrice);
         
-        if (result_.scaledQuoteTokenAmount <= result_.borrowerDebt && result_.scaledQuoteTokenAmount <= borrowerCollateralValue) {
+        if (vars.scaledQuoteTokenAmount <= vars.borrowerDebt && vars.scaledQuoteTokenAmount <= borrowerCollateralValue) {
             // quote token used to purchase is constraining factor
-            result_.collateralAmount         = Maths.wdiv(result_.scaledQuoteTokenAmount, borrowerPrice);
-            result_.t0RepayAmount            = Maths.wdiv(result_.scaledQuoteTokenAmount, inflator_);
-            result_.unscaledQuoteTokenAmount = result_.unscaledDeposit;
-        } else if (result_.borrowerDebt <= borrowerCollateralValue) {
+            vars.collateralAmount         = Maths.wdiv(vars.scaledQuoteTokenAmount, borrowerPrice);
+            vars.t0RepayAmount            = Maths.wdiv(vars.scaledQuoteTokenAmount, inflator_);
+            vars.unscaledQuoteTokenAmount = vars.unscaledDeposit;
+        } else if (vars.borrowerDebt <= borrowerCollateralValue) {
             // borrower debt is constraining factor
-            result_.collateralAmount = Maths.wdiv(result_.borrowerDebt, borrowerPrice);
-            result_.t0RepayAmount            = t0Debt_;
-            result_.unscaledQuoteTokenAmount = Maths.wdiv(result_.borrowerDebt, result_.bucketScale);
-            result_.scaledQuoteTokenAmount   = (result_.isRewarded) ? Maths.wdiv(result_.borrowerDebt, borrowerPayoffFactor) : result_.borrowerDebt;
+            vars.collateralAmount = Maths.wdiv(vars.borrowerDebt, borrowerPrice);
+            vars.t0RepayAmount            = t0Debt_;
+            vars.unscaledQuoteTokenAmount = Maths.wdiv(vars.borrowerDebt, vars.bucketScale);
+            vars.scaledQuoteTokenAmount   = (vars.isRewarded) ? Maths.wdiv(vars.borrowerDebt, borrowerPayoffFactor) : vars.borrowerDebt;
         } else {
             // collateral available is constraint
-            result_.collateralAmount         = totalCollateral_;
-            result_.t0RepayAmount            = Maths.wdiv(borrowerCollateralValue, inflator_);
-            result_.unscaledQuoteTokenAmount = Maths.wdiv(borrowerCollateralValue, result_.bucketScale);
-            result_.scaledQuoteTokenAmount   = Maths.wmul(result_.collateralAmount, result_.auctionPrice);
+            vars.collateralAmount         = totalCollateral_;
+            vars.t0RepayAmount            = Maths.wdiv(borrowerCollateralValue, inflator_);
+            vars.unscaledQuoteTokenAmount = Maths.wdiv(borrowerCollateralValue, vars.bucketScale);
+            vars.scaledQuoteTokenAmount   = Maths.wmul(vars.collateralAmount, vars.auctionPrice);
         }
 
-        if (result_.isRewarded) {
-            result_.bondChange = Maths.wmul(result_.scaledQuoteTokenAmount, uint256(result_.bpf)); // will be rewarded as LPBs
+        if (vars.isRewarded) {
+            vars.bondChange = Maths.wmul(vars.scaledQuoteTokenAmount, uint256(vars.bpf)); // will be rewarded as LPBs
         } else {
             // take is above neutralPrice, Kicker is penalized
-            result_.bondChange = Maths.wmul(result_.scaledQuoteTokenAmount, uint256(-result_.bpf));
+            vars.bondChange = Maths.wmul(vars.scaledQuoteTokenAmount, uint256(-vars.bpf));
         }
 
-        return result_;
+        return vars;
     }
 
     /**
@@ -1060,27 +1060,27 @@ library Auctions {
     function _rewardTake(
         AuctionsState storage auctions_,
         Liquidation storage liquidation_,
-        TakeResult memory result_
+        TakeLocalVars memory vars
     ) internal {
-        if (result_.isRewarded) {
+        if (vars.isRewarded) {
             // take is below neutralPrice, Kicker is rewarded
-            liquidation_.bondSize                    += uint160(result_.bondChange);
-            auctions_.kickers[result_.kicker].locked += result_.bondChange;
-            auctions_.totalBondEscrowed              += result_.bondChange;
+            liquidation_.bondSize                 += uint160(vars.bondChange);
+            auctions_.kickers[vars.kicker].locked += vars.bondChange;
+            auctions_.totalBondEscrowed           += vars.bondChange;
         } else {
             // take is above neutralPrice, Kicker is penalized
-            result_.bondChange = Maths.min(liquidation_.bondSize, result_.bondChange);
-            liquidation_.bondSize                    -= uint160(result_.bondChange);
-            auctions_.kickers[result_.kicker].locked -= result_.bondChange;
-            auctions_.totalBondEscrowed              -= result_.bondChange;
+            vars.bondChange = Maths.min(liquidation_.bondSize, vars.bondChange);
+            liquidation_.bondSize                 -= uint160(vars.bondChange);
+            auctions_.kickers[vars.kicker].locked -= vars.bondChange;
+            auctions_.totalBondEscrowed           -= vars.bondChange;
         }
     }
 
     /**
      *  @notice Rewards actors of a bucket take action.
-     *  @param  deposits_      Deposits state
-     *  @param  bucketIndex_   Bucket index.
-     *  @param  result_        Struct containing take action result details.
+     *  @param  deposits_    Deposits state
+     *  @param  bucketIndex_ Bucket index.
+     *  @param  vars         Struct containing take action result details.
      */
     function _rewardBucketTake(
         AuctionsState storage auctions_,
@@ -1089,52 +1089,52 @@ library Auctions {
         Liquidation storage liquidation_,
         uint256 bucketIndex_,
         bool depositTake_,
-        TakeResult memory result_
+        TakeLocalVars memory vars
     ) internal {
         Bucket storage bucket = buckets_[bucketIndex_];
 
         uint256 bucketExchangeRate = Buckets.getUnscaledExchangeRate(
             bucket.collateral,
             bucket.lps,
-            result_.unscaledDeposit,
-            result_.bucketScale,
-            result_.bucketPrice
+            vars.unscaledDeposit,
+            vars.bucketScale,
+            vars.bucketPrice
         );
 
         uint256 bankruptcyTime = bucket.bankruptcyTime;
         uint256 totalLPsReward;
         // if arb take - taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
         if (!depositTake_) {
-            uint256 takerReward = Maths.wmul(result_.collateralAmount, result_.bucketPrice - result_.auctionPrice);
-            uint256 takerRewardUnscaledQuoteToken = Maths.wdiv(takerReward, result_.bucketScale);
+            uint256 takerReward = Maths.wmul(vars.collateralAmount, vars.bucketPrice - vars.auctionPrice);
+            uint256 takerRewardUnscaledQuoteToken = Maths.wdiv(takerReward, vars.bucketScale);
             totalLPsReward = Maths.wrdivr(takerRewardUnscaledQuoteToken, bucketExchangeRate);
             Buckets.addLenderLPs(bucket, bankruptcyTime, msg.sender, totalLPsReward);
         }
 
         uint256 kickerLPsReward;
         // the bondholder/kicker is awarded bond change worth of LPB in the bucket
-        if (result_.isRewarded) {
-            kickerLPsReward = Maths.wrdivr(Maths.wdiv(result_.bondChange, result_.bucketScale), bucketExchangeRate);
+        if (vars.isRewarded) {
+            kickerLPsReward = Maths.wrdivr(Maths.wdiv(vars.bondChange, vars.bucketScale), bucketExchangeRate);
             totalLPsReward += kickerLPsReward;
-            Buckets.addLenderLPs(bucket, bankruptcyTime, result_.kicker, kickerLPsReward);
+            Buckets.addLenderLPs(bucket, bankruptcyTime, vars.kicker, kickerLPsReward);
         } else {
             // take is above neutralPrice, Kicker is penalized
-            result_.bondChange = Maths.min(liquidation_.bondSize, result_.bondChange);
-            liquidation_.bondSize                    -= uint160(result_.bondChange);
-            auctions_.kickers[result_.kicker].locked -= result_.bondChange;
-            auctions_.totalBondEscrowed              -= result_.bondChange;
+            vars.bondChange = Maths.min(liquidation_.bondSize, vars.bondChange);
+            liquidation_.bondSize                 -= uint160(vars.bondChange);
+            auctions_.kickers[vars.kicker].locked -= vars.bondChange;
+            auctions_.totalBondEscrowed           -= vars.bondChange;
         }
 
-        Deposits.unscaledRemove(deposits_, bucketIndex_, result_.unscaledQuoteTokenAmount); // remove quote tokens from bucket’s deposit
+        Deposits.unscaledRemove(deposits_, bucketIndex_, vars.unscaledQuoteTokenAmount); // remove quote tokens from bucket’s deposit
 
         // total rewarded LPs are added to the bucket LP balance
         bucket.lps += totalLPsReward;
         // collateral is added to the bucket’s claimable collateral
-        bucket.collateral += result_.collateralAmount;
+        bucket.collateral += vars.collateralAmount;
 
         emit BucketTakeLPAwarded(
             msg.sender,
-            result_.kicker,
+            vars.kicker,
             totalLPsReward - kickerLPsReward,
             kickerLPsReward
         );
@@ -1195,42 +1195,42 @@ library Auctions {
     /**
      *  @notice Utility function to validate take and calculate take's parameters.
      *  @param  liquidation_ Liquidation struct holding auction details.
-     *  @param  t0Debt_       Borrower t0 debt.
+     *  @param  t0Debt_      Borrower t0 debt.
      *  @param  collateral_  Borrower collateral.
      *  @param  inflator_    The pool's inflator, used to calculate borrower debt.
-     *  @return takeResult_  The result of take action.
+     *  @return vars         The prepared vars for take action.
      */
     function _prepareTake(
         Liquidation storage liquidation_,
         uint256 t0Debt_,
         uint256 collateral_,
         uint256 inflator_
-    ) internal returns (TakeResult memory takeResult_) {
+    ) internal returns (TakeLocalVars memory vars) {
 
         uint256 kickTime = liquidation_.kickTime;
         if (kickTime == 0) revert NoAuction();
         if (block.timestamp - kickTime <= 1 hours) revert TakeNotPastCooldown();
 
-        takeResult_.t0Debt = t0Debt_;
+        vars.t0Debt = t0Debt_;
         // if first take borrower debt is increased by 7% penalty
         if (!liquidation_.alreadyTaken) {
-            takeResult_.t0DebtPenalty = Maths.wmul(t0Debt_, 0.07 * 1e18);
-            takeResult_.t0Debt += takeResult_.t0DebtPenalty; 
+            vars.t0DebtPenalty = Maths.wmul(t0Debt_, 0.07 * 1e18);
+            vars.t0Debt += vars.t0DebtPenalty; 
             liquidation_.alreadyTaken = true;
         }
 
-        takeResult_.borrowerDebt = Maths.wmul(takeResult_.t0Debt, inflator_);
-        takeResult_.auctionPrice = _auctionPrice(liquidation_.kickMomp, kickTime);
-        takeResult_.bpf          = _bpf(
-            takeResult_.borrowerDebt,
+        vars.borrowerDebt = Maths.wmul(vars.t0Debt, inflator_);
+        vars.auctionPrice = _auctionPrice(liquidation_.kickMomp, kickTime);
+        vars.bpf          = _bpf(
+            vars.borrowerDebt,
             collateral_,
             liquidation_.neutralPrice,
             liquidation_.bondFactor,
-            takeResult_.auctionPrice
+            vars.auctionPrice
         );
-        takeResult_.factor     = uint256(1e18 - Maths.maxInt(0, takeResult_.bpf));
-        takeResult_.kicker     = liquidation_.kicker;
-        takeResult_.isRewarded = (takeResult_.bpf  >= 0);
+        vars.factor     = uint256(1e18 - Maths.maxInt(0, vars.bpf));
+        vars.kicker     = liquidation_.kicker;
+        vars.isRewarded = (vars.bpf  >= 0);
     }
 
     /**********************/
