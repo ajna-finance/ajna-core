@@ -215,9 +215,9 @@ contract AjnaRewards is IAjnaRewards {
             (, , , uint256 bucketDeposit, ) = IPool(pool_).bucketInfo(indexes_[i]);
 
             // calculate rewards earned for updating a bucket
-            uint256 burnFactor = Maths.wmul(totalBurned, bucketDeposit);
+            uint256 burnFactor     = Maths.wmul(totalBurned, bucketDeposit);
             uint256 interestFactor = Maths.wdiv(Maths.WAD - Maths.wdiv(prevBucketExchangeRate, curBucketExchangeRate), totalInterestEarned);
-            updateReward += Maths.wmul(UPDATE_CLAIM_REWARD, Maths.wmul(burnFactor, interestFactor));
+            updateReward           += Maths.wmul(UPDATE_CLAIM_REWARD, Maths.wmul(burnFactor, interestFactor));
 
             // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
             unchecked {
@@ -332,8 +332,7 @@ contract AjnaRewards is IAjnaRewards {
 
         if (quoteAtCurrentRate > quoteAtPrev) {
             interestEarned_ += quoteAtCurrentRate - quoteAtPrev;
-        }
-        else {
+        } else {
             interestEarned_ -= quoteAtPrev - quoteAtCurrentRate;
         }
     }

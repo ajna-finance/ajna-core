@@ -50,6 +50,13 @@ interface IAjnaRewards {
      */
     event DepositToken(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
 
+    /**
+     *  @notice Emitted when someone records the latest exchange rate for a bucket in a pool, and claims the associated reward.
+     *  @param  caller          Address of the recorder. The address which will receive an update reward, if applicable.
+     *  @param  ajnaPool        Address of the Ajna pool whose exchange rates are being updated.
+     *  @param  indexesUpdated  Array of bucket indexes whose exchange rates are being updated.
+     *  @param  rewardsClaimed  Amount of ajna tokens claimed by the recorder as a reward for updating each bucket index.
+     */
     event UpdateExchangeRates(address indexed caller, address indexed ajnaPool, uint256[] indexesUpdated, uint256 rewardsClaimed);
 
     /**

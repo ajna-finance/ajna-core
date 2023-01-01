@@ -365,7 +365,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     function startClaimableReserveAuction() external override {
         // check that at least two weeks have passed since the last reserve auction completed
-        // TODO: check that we're tracking completed not just started? -> add 72 hour delay?
         uint256 lastBurnTimestamp = burnEvents[latestBurnEventId].timestamp;
         if (block.timestamp < lastBurnTimestamp + 2 weeks || block.timestamp - reserveAuction.kicked <= 72 hours) {
             revert ReserveAuctionTooSoon();
