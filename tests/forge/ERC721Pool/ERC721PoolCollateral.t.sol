@@ -5,7 +5,6 @@ import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 
 import 'src/base/PoolInfoUtils.sol';
 import 'src/base/PoolHelper.sol';
-import '@std/console.sol';
 
 contract ERC721PoolCollateralTest is ERC721HelperContract {
 
