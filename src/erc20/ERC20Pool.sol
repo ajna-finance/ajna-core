@@ -28,7 +28,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     ) external override {
         if (poolInitializations != 0) revert AlreadyInitialized();
 
-        inflatorState.inflator       = uint208(10**18);
+        inflatorState.inflator       = uint208(1e18);
         inflatorState.inflatorUpdate = uint48(block.timestamp);
 
         interestState.interestRate       = uint208(rate_);
@@ -105,9 +105,9 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         if (token_ == _getArgAddress(QUOTE_ADDRESS)) return _flashLoanQuoteToken(receiver_, token_, amount_, data_);
 
         if (token_ == _getArgAddress(COLLATERAL_ADDRESS)) {
-            _transferCollateral(address(receiver_), amount_);            
-            
-            if (receiver_.onFlashLoan(msg.sender, token_, amount_, 0, data_) != 
+            _transferCollateral(address(receiver_), amount_);
+
+            if (receiver_.onFlashLoan(msg.sender, token_, amount_, 0, data_) !=
                 keccak256("ERC3156FlashBorrower.onFlashLoan")) revert FlashloanCallbackFailed();
 
             _transferCollateralFrom(address(receiver_), amount_);
@@ -197,19 +197,19 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
         if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral();
 
-        TakeParams memory params = TakeParams(
-            {
-                borrower:       borrowerAddress_,
-                collateral:     borrower.collateral,
-                t0Debt:         borrower.t0Debt,
-                takeCollateral: collateral_,
-                inflator:       poolState.inflator
-            }
-        );
+        TakeParams memory params = TakeParams({
+            borrower:       borrowerAddress_,
+            collateral:     borrower.collateral,
+            t0Debt:         borrower.t0Debt,
+            takeCollateral: collateral_,
+            inflator:       poolState.inflator
+        });
+
         uint256 collateralAmount;
         uint256 quoteTokenAmount;
         uint256 t0RepayAmount;
         uint256 t0DebtPenalty;
+
         (
             collateralAmount,
             quoteTokenAmount,
@@ -227,8 +227,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         if (data_.length != 0) {
             IERC20Taker(callee_).atomicSwapCallback(
-                collateralAmount / _getArgUint256(COLLATERAL_SCALE), 
-                quoteTokenAmount / _getArgUint256(QUOTE_SCALE), 
+                collateralAmount / _getArgUint256(COLLATERAL_SCALE),
+                quoteTokenAmount / _getArgUint256(QUOTE_SCALE),
                 data_
             );
         }
