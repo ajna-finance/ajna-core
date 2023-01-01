@@ -68,8 +68,10 @@ library Buckets {
         uint256 lpsAmount_
     ) internal {
         Lender storage lender = bucket_.lenders[lender_];
+
         if (bankruptcyTime_ >= lender.depositTime) lender.lps = lpsAmount_;
         else lender.lps += lpsAmount_;
+
         lender.depositTime = block.timestamp;
     }
 
@@ -94,7 +96,8 @@ library Buckets {
         uint256 bucketPrice_
     ) internal pure returns (uint256 lps_) {
         uint256 rate = getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_);
-        lps_         = (collateral_ * bucketPrice_ * 1e18 + rate / 2) / rate;
+
+        lps_ = (collateral_ * bucketPrice_ * 1e18 + rate / 2) / rate;
     }
 
     /**
@@ -132,8 +135,9 @@ library Buckets {
         uint256 bucketDeposit_,
         uint256 bucketPrice_
     ) internal pure returns (uint256) {
-        return bucketLPs_ == 0 ? Maths.RAY :
-            (bucketDeposit_ * 1e18 + bucketPrice_ * bucketCollateral_) * 1e18 / bucketLPs_;
+        return bucketLPs_ == 0
+            ? Maths.RAY
+            : (bucketDeposit_ * 1e18 + bucketPrice_ * bucketCollateral_) * 1e18 / bucketLPs_;
             // 10^36 * 1e18 / 10^27 = 10^54 / 10^27 = 10^27
     }
 
@@ -152,8 +156,9 @@ library Buckets {
         uint256 bucketScale_,
         uint256 bucketPrice_
     ) internal pure returns (uint256) {
-        return bucketLPs_ == 0 ? Maths.RAY :
-            (bucketUnscaledDeposit_ + bucketPrice_ * bucketCollateral_ / bucketScale_ ) * 10**36 / bucketLPs_;
+        return bucketLPs_ == 0
+            ? Maths.RAY
+            : (bucketUnscaledDeposit_ + bucketPrice_ * bucketCollateral_ / bucketScale_ ) * 10**36 / bucketLPs_;
             // 10^18 * 1e36 / 10^27 = 10^54 / 10^27 = 10^27
     }
 }

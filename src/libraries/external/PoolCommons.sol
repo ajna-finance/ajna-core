@@ -21,11 +21,11 @@ library PoolCommons {
     uint256 internal constant CUBIC_ROOT_1000000 = 100 * 1e18;
     uint256 internal constant ONE_THIRD          = 0.333333333333333334 * 1e18;
 
-    uint256 internal constant INCREASE_COEFFICIENT = 1.1 * 10**18;
-    uint256 internal constant DECREASE_COEFFICIENT = 0.9 * 10**18;
-    uint256 internal constant LAMBDA_EMA_7D      = 0.905723664263906671 * 1e18; // Lambda used for interest EMAs calculated as exp(-1/7   * ln2)
-    uint256 internal constant EMA_7D_RATE_FACTOR = 1e18 - LAMBDA_EMA_7D;
-    int256  internal constant PERCENT_102        = 1.02 * 10**18;
+    uint256 internal constant INCREASE_COEFFICIENT = 1.1 * 1e18;
+    uint256 internal constant DECREASE_COEFFICIENT = 0.9 * 1e18;
+    uint256 internal constant LAMBDA_EMA_7D        = 0.905723664263906671 * 1e18; // Lambda used for interest EMAs calculated as exp(-1/7   * ln2)
+    uint256 internal constant EMA_7D_RATE_FACTOR   = 1e18 - LAMBDA_EMA_7D;
+    int256  internal constant PERCENT_102          = 1.02 * 1e18;
 
     /**
      *  @notice Emitted when pool interest rate is updated.
@@ -51,16 +51,14 @@ library PoolCommons {
         uint256 lup_
     ) external {
         // update pool EMAs for target utilization calculation
-        uint256 curDebtEma = Maths.wmul(
-                poolState_.debt,
-                    EMA_7D_RATE_FACTOR
-            ) + Maths.wmul(interestParams_.debtEma, LAMBDA_EMA_7D
+        uint256 curDebtEma =
+            Maths.wmul(poolState_.debt,         EMA_7D_RATE_FACTOR) +
+            Maths.wmul(interestParams_.debtEma, LAMBDA_EMA_7D
         );
-        uint256 curLupColEma = Maths.wmul(
-                Maths.wmul(lup_, poolState_.collateral),
-                EMA_7D_RATE_FACTOR
-            ) + Maths.wmul(interestParams_.lupColEma, LAMBDA_EMA_7D
-        );
+
+        uint256 curLupColEma =
+            Maths.wmul(Maths.wmul(lup_, poolState_.collateral), EMA_7D_RATE_FACTOR) +
+            Maths.wmul(interestParams_.lupColEma,               LAMBDA_EMA_7D);
 
         interestParams_.debtEma   = curDebtEma;
         interestParams_.lupColEma = curLupColEma;
@@ -76,20 +74,24 @@ library PoolCommons {
             );
 
             int256 tu = (curDebtEma != 0 && curLupColEma != 0) ? int256(Maths.wdiv(curDebtEma, curLupColEma)) : int(Maths.WAD);
-            
+
             if (!poolState_.isNewInterestAccrued) poolState_.rate = interestParams_.interestRate;
+
             // raise rates if 4*(tu-1.02*mau) < (tu+1.02*mau-1)^2-1
             // decrease rates if 4*(tu-mau) > 1-(tu+mau-1)^2
-            int256 mau102 = mau * PERCENT_102 / 10**18;
+            int256 mau102 = mau * PERCENT_102 / 1e18;
 
             uint256 newInterestRate = poolState_.rate;
-            if (4 * (tu - mau102) < ((tu + mau102 - 10**18) ** 2) / 10**18 - 10**18) {
+
+            if (4 * (tu - mau102) < ((tu + mau102 - 1e18) ** 2) / 1e18 - 1e18) {
                 newInterestRate = Maths.wmul(poolState_.rate, INCREASE_COEFFICIENT);
-            } else if (4 * (tu - mau) > 10**18 - ((tu + mau - 10**18) ** 2) / 10**18) {
+            }
+            else if (4 * (tu - mau) > 1e18 - ((tu + mau - 1e18) ** 2) / 1e18) {
                 newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
             }
 
             newInterestRate = Maths.min(500 * 1e18, Maths.max(0.001 * 1e18, newInterestRate));
+
             if (poolState_.rate != newInterestRate) {
                 interestParams_.interestRate       = uint208(newInterestRate);
                 interestParams_.interestRateUpdate = uint48(block.timestamp);
@@ -113,9 +115,11 @@ library PoolCommons {
     ) external returns (uint256 newInflator_) {
         // Scale the borrower inflator to update amount of interest owed by borrowers
         uint256 pendingFactor = PRBMathUD60x18.exp((poolState_.rate * elapsed_) / 365 days);
+
         newInflator_ = Maths.wmul(poolState_.inflator, pendingFactor);
 
         uint256 htp = Maths.wmul(thresholdPrice_, newInflator_);
+
         // if HTP is under the lowest price bucket then accrue interest at max index (min price)
         uint256 htpIndex = (htp >= MIN_PRICE) ? _indexOf(htp) : MAX_FENWICK_INDEX;
 
@@ -208,7 +212,7 @@ library PoolCommons {
             uint256 ptp = _ptp(poolDebt_, collateral_);
 
             if (ptp != 0) {
-                uint256 depositAbove = ptp >= MIN_PRICE ? Deposits.prefixSum(deposits, _indexOf(ptp)) 
+                uint256 depositAbove = ptp >= MIN_PRICE ? Deposits.prefixSum(deposits, _indexOf(ptp))
                     : Deposits.treeSum(deposits);
 
                 if (depositAbove != 0) utilization_ = Maths.wdiv(

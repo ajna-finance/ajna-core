@@ -202,7 +202,7 @@ library Auctions {
         AuctionsState storage auctions_,
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
-        SettleParams memory params_
+        SettleParams memory  params_
     ) external returns (uint256, uint256) {
         uint256 kickTime = auctions_.liquidations[params_.borrower].kickTime;
         if (kickTime == 0) revert NoAuction();
@@ -217,6 +217,7 @@ library Auctions {
             uint256 unscaledDeposit = Deposits.unscaledValueAt(deposits_, index);
             uint256 scale           = Deposits.scale(deposits_, index);
             uint256 price           = _priceAt(index);
+
             uint256 collateralUsed;
 
             if (unscaledDeposit != 0) {
@@ -226,21 +227,30 @@ library Auctions {
 
                 if (scaledDeposit >= debt && maxSettleableDebt >= debt) {                   // enough deposit in bucket and collateral avail to settle entire debt
                     unscaledDeposit = Maths.wdiv(debt, scale);                              // remove only what's needed to settle the debt
-                    params_.t0Debt    = 0;                                                  // no remaining debt to settle
-                    collateralUsed     = Maths.wdiv(debt, price);
-                } else if (maxSettleableDebt >= scaledDeposit) {                            // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
-                    params_.t0Debt     -= Maths.wdiv(scaledDeposit, params_.inflator);      // subtract from debt the corresponding t0 amount of deposit
-                    collateralUsed     = Maths.wdiv(scaledDeposit, price);
-                } else {                                                                    // constrained by collateral available
-                    unscaledDeposit    = Maths.wdiv(maxSettleableDebt, scale);
-                    params_.t0Debt     -= Maths.wdiv(maxSettleableDebt, params_.inflator);
-                    collateralUsed     = params_.collateral;
+                    params_.t0Debt  = 0;                                                    // no remaining debt to settle
+                    collateralUsed  = Maths.wdiv(debt, price);
                 }
 
-                params_.collateral         -= collateralUsed;                // move settled collateral from loan into bucket
+                else if (maxSettleableDebt >= scaledDeposit) {                              // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
+                    params_.t0Debt -= Maths.wdiv(scaledDeposit, params_.inflator);          // subtract from debt the corresponding t0 amount of deposit
+
+                    collateralUsed = Maths.wdiv(scaledDeposit, price);
+                }
+
+                else {                                                                      // constrained by collateral available
+                    params_.t0Debt -= Maths.wdiv(maxSettleableDebt, params_.inflator);
+
+                    unscaledDeposit = Maths.wdiv(maxSettleableDebt, scale);
+                    collateralUsed  = params_.collateral;
+                }
+
+                params_.collateral         -= collateralUsed;  // move settled collateral from loan into bucket
                 buckets_[index].collateral += collateralUsed;
+
                 Deposits.unscaledRemove(deposits_, index, unscaledDeposit); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
-            } else {
+            }
+
+            else {
                 // Deposits in the tree is zero, insert entire collateral into lowest bucket 7388
                 Buckets.addCollateral(
                     buckets_[index],
@@ -262,9 +272,9 @@ library Auctions {
 
             // if there's still debt after settling from reserves then start to forgive amount from next HPB
             while (params_.bucketDepth != 0 && params_.t0Debt != 0) { // loop through remaining buckets if there's still debt to settle
-                uint256 index   = Deposits.findIndexOfSum(deposits_, 1);
+                uint256 index           = Deposits.findIndexOfSum(deposits_, 1);
                 uint256 unscaledDeposit = Deposits.unscaledValueAt(deposits_, index);
-                uint256 scale        = Deposits.scale(deposits_, index);
+                uint256 scale           = Deposits.scale(deposits_, index);
 
                 uint256 depositToRemove = Maths.wmul(scale, unscaledDeposit);
                 uint256 debt            = Maths.wmul(params_.t0Debt, params_.inflator);
@@ -272,13 +282,12 @@ library Auctions {
                 if (depositToRemove >= debt) {                                          // enough deposit in bucket to settle entire debt
                     Deposits.unscaledRemove(deposits_, index, Maths.wdiv(debt, scale));
                     params_.t0Debt  = 0;                                                // no remaining debt to settle
-
                 } else {                                                                // not enough deposit to settle entire debt, we settle only deposit amount
                     params_.t0Debt -= Maths.wdiv(depositToRemove, params_.inflator);    // subtract from remaining debt the corresponding t0 amount of deposit
 
                     Deposits.unscaledRemove(deposits_, index, unscaledDeposit);         // Remove all deposit from bucket
                     Bucket storage hpbBucket = buckets_[index];
-                    
+
                     if (hpbBucket.collateral == 0) {                                    // existing LPB and LP tokens for the bucket shall become unclaimable.
                         hpbBucket.lps = 0;
                         hpbBucket.bankruptcyTime = block.timestamp;
@@ -329,7 +338,7 @@ library Auctions {
         AuctionsState storage auctions_,
         DepositsState storage deposits_,
         mapping(uint256 => Bucket) storage buckets_,
-        LoansState    storage loans_,
+        LoansState storage loans_,
         PoolState memory poolState_,
         uint256 index_
     ) external returns (
@@ -339,22 +348,26 @@ library Auctions {
         Lender storage lender = bucket.lenders[msg.sender];
 
         KickWithDepositLocalVars memory vars;
+
         if (bucket.bankruptcyTime < lender.depositTime) vars.lenderLPs = lender.lps;
 
-        vars.bucketLPs                = bucket.lps;
-        vars.bucketCollateral         = bucket.collateral;
-        vars.bucketPrice              = _priceAt(index_);
-        vars.bucketUnscaledDeposit    = Deposits.unscaledValueAt(deposits_, index_);
-        vars.bucketScale              = Deposits.scale(deposits_, index_);
-        vars.bucketDeposit            = Maths.wmul(vars.bucketUnscaledDeposit, vars.bucketScale);
+        vars.bucketLPs             = bucket.lps;
+        vars.bucketCollateral      = bucket.collateral;
+        vars.bucketPrice           = _priceAt(index_);
+        vars.bucketUnscaledDeposit = Deposits.unscaledValueAt(deposits_, index_);
+        vars.bucketScale           = Deposits.scale(deposits_, index_);
+        vars.bucketDeposit         = Maths.wmul(vars.bucketUnscaledDeposit, vars.bucketScale);
+
         // calculate max amount that can be removed (constrained by lender LPs in bucket, bucket deposit and the amount lender wants to remove)
-        vars.bucketRate               = Buckets.getExchangeRate(
+        vars.bucketRate = Buckets.getExchangeRate(
             vars.bucketCollateral,
             vars.bucketLPs,
             vars.bucketDeposit,
             vars.bucketPrice
         );
-        vars.amountToDebitFromDeposit = Maths.rayToWad(Maths.rmul(vars.lenderLPs, vars.bucketRate));                // calculate amount to remove based on lender LPs in bucket
+
+        vars.amountToDebitFromDeposit = Maths.rayToWad(Maths.rmul(vars.lenderLPs, vars.bucketRate));  // calculate amount to remove based on lender LPs in bucket
+
         if (vars.amountToDebitFromDeposit > vars.bucketDeposit) vars.amountToDebitFromDeposit = vars.bucketDeposit; // cap the amount to remove at bucket deposit
 
         // revert if no amount that can be removed
@@ -420,15 +433,18 @@ library Auctions {
         if (params_.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
 
         Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
+
         TakeResult memory result = _prepareTake(liquidation, params_.t0Debt, params_.collateral, params_.inflator);
 
         result.unscaledDeposit = Deposits.unscaledValueAt(deposits_, params_.index);
+
         if (result.unscaledDeposit == 0) revert InsufficientLiquidity(); // revert if no quote tokens in arbed bucket
 
         result.bucketPrice  = _priceAt(params_.index);
+
         // cannot arb with a price lower than the auction price
         if (result.auctionPrice > result.bucketPrice) revert AuctionPriceGtBucketPrice();
-        
+
         // if deposit take then price to use when calculating take is bucket price
         if (params_.depositTake) result.auctionPrice = result.bucketPrice;
 
@@ -451,6 +467,7 @@ library Auctions {
         } else {
             // take is above neutralPrice, Kicker is penalized
             result.bondChange = Maths.min(liquidation.bondSize, Maths.wmul(result.scaledQuoteTokenAmount, uint256(-result.bpf)));
+
             liquidation.bondSize                    -= uint160(result.bondChange);
             auctions_.kickers[result.kicker].locked -= result.bondChange;
             auctions_.totalBondEscrowed             -= result.bondChange;
@@ -495,11 +512,12 @@ library Auctions {
         TakeParams calldata params_
     ) external returns (uint256, uint256, uint256, uint256, uint256, uint256) {
         Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
-        TakeResult memory result = _prepareTake(liquidation, params_.t0Debt, params_.collateral, params_.inflator);
+        TakeResult  memory  result      = _prepareTake(liquidation, params_.t0Debt, params_.collateral, params_.inflator);
+
         // These are placeholder max values passed to calculateTakeFlows because there is no explicit bound on the
         // quote token amount in take calls (as opposed to bucketTake)
         result.unscaledDeposit = type(uint256).max;
-        result.bucketScale = Maths.WAD;
+        result.bucketScale     = Maths.WAD;
 
         uint256 collateralBound = Maths.min(params_.collateral, params_.takeCollateral);
 
@@ -521,15 +539,15 @@ library Auctions {
         if (result.isRewarded) {
             // take is below neutralPrice, Kicker is rewarded
             result.bondChange = Maths.wmul(result.scaledQuoteTokenAmount, uint256(result.bpf));
-            liquidation.bondSize                     += uint160(result.bondChange);
-            auctions_.kickers[result.kicker].locked  += result.bondChange;
-            auctions_.totalBondEscrowed              += result.bondChange;
+            liquidation.bondSize                    += uint160(result.bondChange);
+            auctions_.kickers[result.kicker].locked += result.bondChange;
+            auctions_.totalBondEscrowed             += result.bondChange;
         } else {
             // take is above neutralPrice, Kicker is penalized
             result.bondChange = Maths.min(liquidation.bondSize, Maths.wmul(result.scaledQuoteTokenAmount, uint256(-result.bpf)));
-            liquidation.bondSize                     -= uint160(result.bondChange);
-            auctions_.kickers[result.kicker].locked  -= result.bondChange;
-            auctions_.totalBondEscrowed              -= result.bondChange;
+            liquidation.bondSize                    -= uint160(result.bondChange);
+            auctions_.kickers[result.kicker].locked -= result.bondChange;
+            auctions_.totalBondEscrowed             -= result.bondChange;
         }
 
         emit Take(
@@ -575,11 +593,14 @@ library Auctions {
         if (floorCollateral_ != borrowerCollateral_) {
             // cover borrower's fractional amount with LPs in auction price bucket
             uint256 fractionalCollateral = borrowerCollateral_ - floorCollateral_;
+
             uint256 auctionPrice = _auctionPrice(
                 auctions_.liquidations[borrowerAddress_].kickMomp,
                 auctions_.liquidations[borrowerAddress_].kickTime
             );
+
             bucketIndex_ = auctionPrice > MIN_PRICE ? _indexOf(auctionPrice) : MAX_FENWICK_INDEX;
+
             lps_ = Buckets.addCollateral(
                 buckets_[bucketIndex_],
                 borrowerAddress_,
@@ -592,13 +613,13 @@ library Auctions {
         // rebalance borrower's collateral, transfer difference to floor collateral from borrower to pool claimable array
         uint256 noOfTokensPledged    = borrowerTokens_.length;
         uint256 noOfTokensToTransfer = noOfTokensPledged - floorCollateral_ / 1e18;
+
         for (uint256 i = 0; i < noOfTokensToTransfer;) {
             uint256 tokenId = borrowerTokens_[--noOfTokensPledged]; // start with moving the last token pledged by borrower
             borrowerTokens_.pop();                                  // remove token id from borrower
             poolTokens_.push(tokenId);                              // add token id to pool claimable tokens
-            unchecked {
-                ++i;
-            }
+
+            unchecked { ++i; }
         }
 
         _removeAuction(auctions_, borrowerAddress_);
@@ -614,6 +635,7 @@ library Auctions {
         StartReserveAuctionParams calldata params_
     ) external returns (uint256 kickerAward_) {
         uint256 curUnclaimedAuctionReserve = reserveAuction_.unclaimed;
+
         uint256 claimable = _claimableReserves(
             Maths.wmul(params_.poolDebt, params_.inflator),
             params_.poolSize,
@@ -621,12 +643,16 @@ library Auctions {
             curUnclaimedAuctionReserve,
             params_.poolBalance
         );
+
         kickerAward_ = Maths.wmul(0.01 * 1e18, claimable);
+
         curUnclaimedAuctionReserve += claimable - kickerAward_;
+
         if (curUnclaimedAuctionReserve == 0) revert NoReserves();
 
         reserveAuction_.unclaimed = curUnclaimedAuctionReserve;
         reserveAuction_.kicked    = block.timestamp;
+
         emit ReserveAuction(curUnclaimedAuctionReserve, _reserveAuctionPrice(block.timestamp));
     }
 
@@ -644,10 +670,13 @@ library Auctions {
             ajnaRequired_ = Maths.wmul(amount_, price);
 
             unclaimed -= amount_;
+
             reserveAuction_.unclaimed = unclaimed;
 
             emit ReserveAuction(unclaimed, price);
-        } else revert NoReservesAuction();
+        } else {
+            revert NoReservesAuction();
+        }
     }
 
     /***************************/
@@ -673,6 +702,7 @@ library Auctions {
         KickResult memory kickResult_
     ) {
         Borrower storage borrower = loans_.borrowers[borrowerAddress_];
+
         kickResult_.t0KickedDebt = borrower.t0Debt;
 
         uint256 borrowerDebt       = Maths.wmul(kickResult_.t0KickedDebt, poolState_.inflator);
@@ -680,23 +710,27 @@ library Auctions {
 
         // add amount to remove to pool debt in order to calculate proposed LUP
         kickResult_.lup = _lup(deposits_, poolState_.debt + additionalDebt_);
-        if (
-            _isCollateralized(borrowerDebt , borrowerCollateral, kickResult_.lup, poolState_.poolType)
-        ) revert BorrowerOk();
+
+        if (_isCollateralized(borrowerDebt , borrowerCollateral, kickResult_.lup, poolState_.poolType)) {
+            revert BorrowerOk();
+        }
 
         // calculate auction params
         uint256 noOfLoans = Loans.noOfLoans(loans_) + auctions_.noOfAuctions;
+
         uint256 momp = _priceAt(
             Deposits.findIndexOfSum(
                 deposits_,
                 Maths.wdiv(poolState_.debt, noOfLoans * 1e18)
             )
         );
+
         (uint256 bondFactor, uint256 bondSize) = _bondParams(
             borrowerDebt,
             borrowerCollateral,
             momp
         );
+
         // when loan is kicked, penalty of three months of interest is added
         kickResult_.kickPenalty   = Maths.wmul(Maths.wdiv(poolState_.rate, 4 * 1e18), borrowerDebt);
         kickResult_.t0KickPenalty = Maths.wdiv(kickResult_.kickPenalty, poolState_.inflator);
@@ -711,6 +745,7 @@ library Auctions {
             momp,
             neutralPrice
         );
+
         // update kicker balances and get the difference needed to cover bond (after using any kick claimable funds if any)
         kickResult_.amountToCoverBond = _updateKicker(auctions_, bondSize);
 
@@ -718,7 +753,8 @@ library Auctions {
         Loans.remove(loans_, borrowerAddress_, loans_.indices[borrowerAddress_]);
 
         kickResult_.t0KickedDebt += kickResult_.t0KickPenalty;
-        borrower.t0Debt =  kickResult_.t0KickedDebt;
+
+        borrower.t0Debt = kickResult_.t0KickedDebt;
 
         emit Kick(
             borrowerAddress_,
@@ -740,6 +776,7 @@ library Auctions {
         uint256 momp_
     ) internal pure returns (uint256 bondFactor_, uint256 bondSize_) {
         uint256 thresholdPrice = borrowerDebt_  * Maths.WAD / collateral_;
+
         // bondFactor = min(30%, max(1%, (MOMP - thresholdPrice) / MOMP))
         if (thresholdPrice >= momp_) {
             bondFactor_ = 0.01 * 1e18;
@@ -766,8 +803,11 @@ library Auctions {
         uint256 bondSize_
     ) internal returns (uint256 bondDifference_){
         Kicker storage kicker = auctions_.kickers[msg.sender];
+
         kicker.locked += bondSize_;
+
         uint256 kickerClaimable = kicker.claimable;
+
         if (kickerClaimable >= bondSize_) {
             kicker.claimable -= bondSize_;
         } else {
@@ -801,14 +841,14 @@ library Auctions {
         // price is the current auction price, which is the price paid by the LENDER for collateral
         // from the borrower point of view, the price is actually (1-bpf) * price, as the rewards to the
         // bond holder are effectively paid for by the borrower.
-        uint256 borrowerPayoffFactor = (result_.isRewarded) ? Maths.WAD - uint256(result_.bpf) : Maths.WAD;
-        uint256 borrowerPrice = (result_.isRewarded) ? Maths.wmul(borrowerPayoffFactor, result_.auctionPrice) : result_.auctionPrice;
+        uint256 borrowerPayoffFactor = (result_.isRewarded) ? Maths.WAD - uint256(result_.bpf)                       : Maths.WAD;
+        uint256 borrowerPrice        = (result_.isRewarded) ? Maths.wmul(borrowerPayoffFactor, result_.auctionPrice) : result_.auctionPrice;
 
         // If there is no unscaled quote token bound, then we pass in max, but that cannot be scaled without an overflow.  So we check in the line below.
         scaledQuoteTokenPaid_ = (result_.unscaledDeposit != type(uint256).max) ? Maths.wmul(result_.unscaledDeposit, result_.bucketScale) : type(uint256).max;
 
         uint256 borrowerCollateralValue = Maths.wmul(totalCollateral_, borrowerPrice);
-        
+
         if (scaledQuoteTokenPaid_ <= result_.borrowerDebt && scaledQuoteTokenPaid_ <= borrowerCollateralValue) {
             // quote token used to purchase is constraining factor
             collateral_             = Maths.wdiv(scaledQuoteTokenPaid_, borrowerPrice);
@@ -849,15 +889,15 @@ library Auctions {
         if (liquidation.kickTime != 0) revert AuctionActive();
 
         // record liquidation info
-        liquidation.kicker              = msg.sender;
-        liquidation.kickTime            = uint96(block.timestamp);
-        liquidation.kickMomp            = uint96(momp_);
-        liquidation.bondSize            = uint160(bondSize_);
-        liquidation.bondFactor          = uint96(bondFactor_);
-        liquidation.neutralPrice        = uint96(neutralPrice_);
+        liquidation.kicker       = msg.sender;
+        liquidation.kickTime     = uint96(block.timestamp);
+        liquidation.kickMomp     = uint96(momp_);
+        liquidation.bondSize     = uint160(bondSize_);
+        liquidation.bondFactor   = uint96(bondFactor_);
+        liquidation.neutralPrice = uint96(neutralPrice_);
 
         // increment number of active auctions
-        ++ auctions_.noOfAuctions;
+        ++auctions_.noOfAuctions;
 
         // update totalBondEscrowed accumulator
         auctions_.totalBondEscrowed += bondSize_;
@@ -887,13 +927,14 @@ library Auctions {
         Liquidation memory liquidation = auctions_.liquidations[borrower_];
         // update kicker balances
         Kicker storage kicker = auctions_.kickers[liquidation.kicker];
+
         kicker.locked    -= liquidation.bondSize;
         kicker.claimable += liquidation.bondSize;
 
         // decrement number of active auctions
         -- auctions_.noOfAuctions;
 
-        // remove auction bond size from bond escrow accumulator 
+        // remove auction bond size from bond escrow accumulator
         auctions_.totalBondEscrowed -= liquidation.bondSize;
 
         // update auctions queue
@@ -901,24 +942,24 @@ library Auctions {
             // liquidation is the head and tail
             auctions_.head = address(0);
             auctions_.tail = address(0);
-
-        } else if(auctions_.head == borrower_) {
+        }
+        else if(auctions_.head == borrower_) {
             // liquidation is the head
             auctions_.liquidations[liquidation.next].prev = address(0);
             auctions_.head = liquidation.next;
-
-        } else if(auctions_.tail == borrower_) {
+        }
+        else if(auctions_.tail == borrower_) {
             // liquidation is the tail
             auctions_.liquidations[liquidation.prev].next = address(0);
             auctions_.tail = liquidation.prev;
-
-        } else {
+        }
+        else {
             // liquidation is in the middle
             auctions_.liquidations[liquidation.prev].next = liquidation.next;
             auctions_.liquidations[liquidation.next].prev = liquidation.prev;
         }
         // delete liquidation
-         delete auctions_.liquidations[borrower_];
+        delete auctions_.liquidations[borrower_];
     }
 
     /**
@@ -948,8 +989,9 @@ library Auctions {
         uint256 totalLPsReward;
         // if arb take - taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
         if (!depositTake_) {
-            uint256 takerReward = Maths.wmul(result_.collateralAmount, result_.bucketPrice - result_.auctionPrice);
-            uint256 takerRewardUnscaledQuoteToken = Maths.wdiv(takerReward, result_.bucketScale);
+            uint256 takerReward                   = Maths.wmul(result_.collateralAmount, result_.bucketPrice - result_.auctionPrice);
+            uint256 takerRewardUnscaledQuoteToken = Maths.wdiv(takerReward,              result_.bucketScale);
+
             totalLPsReward = Maths.wrdivr(takerRewardUnscaledQuoteToken, bucketExchangeRate);
             Buckets.addLenderLPs(bucket, bankruptcyTime, msg.sender, totalLPsReward);
         }
@@ -957,8 +999,8 @@ library Auctions {
         uint256 kickerLPsReward;
         // the bondholder/kicker is awarded bond change worth of LPB in the bucket
         if (result_.isRewarded) {
-            kickerLPsReward = Maths.wrdivr(Maths.wdiv(result_.bondChange, result_.bucketScale), bucketExchangeRate);
-            totalLPsReward += kickerLPsReward;
+            kickerLPsReward  = Maths.wrdivr(Maths.wdiv(result_.bondChange, result_.bucketScale), bucketExchangeRate);
+            totalLPsReward  += kickerLPsReward;
             Buckets.addLenderLPs(bucket, bankruptcyTime, result_.kicker, kickerLPsReward);
         }
 
@@ -966,6 +1008,7 @@ library Auctions {
 
         // total rewarded LPs are added to the bucket LP balance
         bucket.lps += totalLPsReward;
+
         // collateral is added to the bucket’s claimable collateral
         bucket.collateral += result_.collateralAmount;
 
@@ -982,9 +1025,11 @@ library Auctions {
         uint256 kickTime_
     ) internal view returns (uint256 price_) {
         uint256 elapsedHours = Maths.wdiv((block.timestamp - kickTime_) * 1e18, 1 hours * 1e18);
+
         elapsedHours -= Maths.min(elapsedHours, 1e18);  // price locked during cure period
 
         int256 timeAdjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours));
+
         price_ = 32 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
     }
 
@@ -1011,14 +1056,14 @@ library Auctions {
         if (thresholdPrice < int256(neutralPrice_)) {
             // BPF = BondFactor * min(1, max(-1, (neutralPrice - price) / (neutralPrice - thresholdPrice)))
             sign = Maths.minInt(
-                    1e18,
-                    Maths.maxInt(
-                        -1 * 1e18,
-                        PRBMathSD59x18.div(
-                            int256(neutralPrice_) - int256(auctionPrice_),
-                            int256(neutralPrice_) - thresholdPrice
-                        )
+                1e18,
+                Maths.maxInt(
+                    -1 * 1e18,
+                    PRBMathSD59x18.div(
+                        int256(neutralPrice_) - int256(auctionPrice_),
+                        int256(neutralPrice_) - thresholdPrice
                     )
+                )
             );
         } else {
             int256 val = int256(neutralPrice_) - int256(auctionPrice_);
@@ -1052,13 +1097,14 @@ library Auctions {
         // if first take borrower debt is increased by 7% penalty
         if (!liquidation_.alreadyTaken) {
             takeResult_.t0DebtPenalty = Maths.wmul(t0Debt_, 0.07 * 1e18);
-            takeResult_.t0Debt += takeResult_.t0DebtPenalty; 
+            takeResult_.t0Debt += takeResult_.t0DebtPenalty;
             liquidation_.alreadyTaken = true;
         }
 
         takeResult_.borrowerDebt = Maths.wmul(takeResult_.t0Debt, inflator_);
         takeResult_.auctionPrice = _auctionPrice(liquidation_.kickMomp, kickTime);
-        takeResult_.bpf          = _bpf(
+
+        takeResult_.bpf = _bpf(
             takeResult_.borrowerDebt,
             collateral_,
             liquidation_.neutralPrice,
@@ -1097,6 +1143,7 @@ library Auctions {
     ) internal view {
         address head     = auctions_.head;
         uint256 kickTime = auctions_.liquidations[head].kickTime;
+
         if (kickTime != 0) {
             if (block.timestamp - kickTime > 72 hours) revert AuctionNotCleared();
 

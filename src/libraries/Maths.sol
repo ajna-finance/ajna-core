@@ -4,15 +4,15 @@ pragma solidity 0.8.14;
 
 library Maths {
 
-    uint256 internal constant WAD = 10**18;
+    uint256 internal constant WAD = 1e18;
     uint256 internal constant RAY = 10**27;
 
     function wmul(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (x * y + 10**18 / 2) / 10**18;
+        return (x * y + 1e18 / 2) / 1e18;
     }
 
     function wdiv(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (x * 10**18 + y / 2) / y;
+        return (x * 1e18 + y / 2) / y;
     }
 
     function max(uint256 x, uint256 y) internal pure returns (uint256) {
@@ -24,7 +24,7 @@ library Maths {
     }
 
     function wad(uint256 x) internal pure returns (uint256) {
-        return x * 10**18;
+        return x * 1e18;
     }
 
     function rmul(uint256 x, uint256 y) internal pure returns (uint256) {
