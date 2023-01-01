@@ -58,6 +58,18 @@ library Auctions {
         uint256 unscaledQuoteTokenAmount; // The unscaled token amount that taker should pay for collateral taken.
     }
 
+    event AuctionNFTSettle(
+        address indexed borrower,
+        uint256 collateral,
+        uint256 lps,
+        uint256 index
+    );
+
+    event AuctionSettle(
+        address indexed borrower,
+        uint256 collateral
+    );
+
     /**
      *  @notice Emitted when an actor uses quote token to arb higher-priced deposit off the book.
      *  @param  borrower    Identifies the loan being liquidated.
@@ -290,6 +302,25 @@ library Auctions {
         }
 
         emit Settle(params_.borrower, t0DebtInitial - params_.t0Debt);
+
+        if (params_.t0Debt == 0) {
+            // settle auction
+            if (params_.poolType == uint8(PoolType.ERC721)) {
+                uint256 lps;
+                uint256 bucketIndex;
+                (params_.collateral, lps, bucketIndex) = settleNFTAuction(
+                    auctions_,
+                    buckets_,
+                    deposits_,
+                    params_.borrower,
+                    params_.collateral
+                );
+                emit AuctionNFTSettle(params_.borrower, params_.collateral, lps, bucketIndex);
+            } else {
+                _removeAuction(auctions_, params_.borrower);
+                emit AuctionSettle(params_.borrower, params_.collateral);
+            }
+        }
 
         return (params_.collateral, params_.t0Debt);
     }
@@ -564,7 +595,7 @@ library Auctions {
         DepositsState storage deposits_,
         address borrowerAddress_,
         uint256 borrowerCollateral_
-    ) external returns (uint256 floorCollateral_, uint256 lps_, uint256 bucketIndex_) {
+    ) public returns (uint256 floorCollateral_, uint256 lps_, uint256 bucketIndex_) {
         floorCollateral_ = (borrowerCollateral_ / Maths.WAD) * Maths.WAD; // floor collateral of borrower
 
         // if there's fraction of NFTs remaining then reward difference to borrower as LPs in auction price bucket

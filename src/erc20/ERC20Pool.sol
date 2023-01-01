@@ -255,7 +255,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
                 t0Debt:      borrower.t0Debt,
                 reserves:    (assets > liabilities) ? (assets-liabilities) : 0,
                 inflator:    poolState.inflator,
-                bucketDepth: maxDepth_
+                bucketDepth: maxDepth_,
+                poolType:    poolState.poolType
             }
         );
         (uint256 remainingCollateral, uint256 t0RemainingDebt) = Auctions.settlePoolDebt(
@@ -264,11 +265,6 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             deposits,
             params
         );
-
-        // slither-disable-next-line incorrect-equality
-        if (t0RemainingDebt == 0) {
-            remainingCollateral = _settleAuction(params.borrower, remainingCollateral);
-        }
 
         // update borrower state
         borrower.t0Debt     = t0RemainingDebt;

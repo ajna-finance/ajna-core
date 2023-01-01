@@ -17,6 +17,7 @@ struct SettleParams {
     uint256 reserves;    // current reserves in pool
     uint256 inflator;    // current pool inflator
     uint256 bucketDepth; // number of buckets to use when settle debt
+    uint256 poolType;    // number of buckets to use when settle debt
 }
 
 struct BucketTakeParams {
