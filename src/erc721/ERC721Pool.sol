@@ -135,17 +135,41 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256 maxQuoteTokenAmountToRepay_,
         uint256 noOfNFTsToPull_
     ) external {
-        (uint256 quoteTokenToRepay, uint256 newLup, uint256 settledCollateral) = _repayDebt(borrowerAddress_, maxQuoteTokenAmountToRepay_, Maths.wad(noOfNFTsToPull_));
+        PoolState memory poolState = _accruePoolInterest();
+        RepayDebtResult memory result = BorrowerActions.repayDebt(
+            auctions,
+            buckets,
+            deposits,
+            loans,
+            poolState,
+            borrowerAddress_,
+            maxQuoteTokenAmountToRepay_,
+            Maths.wad(noOfNFTsToPull_)
+        );
 
-        if (settledCollateral != 0) _cleanupAuction(borrowerAddress_, settledCollateral);
+        emit RepayDebt(borrowerAddress_, result.quoteTokenToRepay, noOfNFTsToPull_, result.newLup);
 
-        emit RepayDebt(borrowerAddress_, quoteTokenToRepay, noOfNFTsToPull_, newLup);
+        if (result.settledCollateral != 0) _cleanupAuction(borrowerAddress_, result.settledCollateral);
 
-        if (quoteTokenToRepay != 0) {
+        // update pool interest rate state
+        poolState.debt       = result.poolDebt;
+        poolState.collateral = result.poolCollateral;
+        _updateInterestState(poolState, result.newLup);
+
+        if (result.quoteTokenToRepay != 0) {
+            // update pool balances state
+            poolBalances.t0Debt -= result.t0RepaidDebt;
+            if (result.t0DebtInAuctionChange != 0) {
+                poolBalances.t0DebtInAuction -= result.t0DebtInAuctionChange;
+            }
+
             // move amount to repay from sender to pool
-            _transferQuoteTokenFrom(msg.sender, quoteTokenToRepay);
+            _transferQuoteTokenFrom(msg.sender, result.quoteTokenToRepay);
         }
         if (noOfNFTsToPull_ != 0) {
+            // update pool balances state
+            poolBalances.pledgedCollateral = result.poolCollateral;
+
             // move collateral from pool to sender
             _transferFromPoolToAddress(msg.sender, borrowerTokenIds[msg.sender], noOfNFTsToPull_);
         }

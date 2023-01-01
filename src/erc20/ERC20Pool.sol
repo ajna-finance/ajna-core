@@ -104,15 +104,39 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         uint256 maxQuoteTokenAmountToRepay_,
         uint256 collateralAmountToPull_
     ) external {
-        (uint256 quoteTokenToRepay, uint256 newLup, ) = _repayDebt(borrowerAddress_, maxQuoteTokenAmountToRepay_, collateralAmountToPull_);
+        PoolState memory poolState = _accruePoolInterest();
+        RepayDebtResult memory result = BorrowerActions.repayDebt(
+            auctions,
+            buckets,
+            deposits,
+            loans,
+            poolState,
+            borrowerAddress_,
+            maxQuoteTokenAmountToRepay_,
+            collateralAmountToPull_
+        );
 
-        emit RepayDebt(borrowerAddress_, quoteTokenToRepay, collateralAmountToPull_, newLup);
+        emit RepayDebt(borrowerAddress_, result.quoteTokenToRepay, collateralAmountToPull_, result.newLup);
 
-        if (quoteTokenToRepay != 0) {
+        // update pool interest rate state
+        poolState.debt       = result.poolDebt;
+        poolState.collateral = result.poolCollateral;
+        _updateInterestState(poolState, result.newLup);
+
+        if (result.quoteTokenToRepay != 0) {
+            // update pool balances state
+            poolBalances.t0Debt -= result.t0RepaidDebt;
+            if (result.t0DebtInAuctionChange != 0) {
+                poolBalances.t0DebtInAuction -= result.t0DebtInAuctionChange;
+            }
+
             // move amount to repay from sender to pool
-            _transferQuoteTokenFrom(msg.sender, quoteTokenToRepay);
+            _transferQuoteTokenFrom(msg.sender, result.quoteTokenToRepay);
         }
         if (collateralAmountToPull_ != 0) {
+            // update pool balances state
+            poolBalances.pledgedCollateral = result.poolCollateral;
+
             // move collateral from pool to sender
             _transferCollateral(msg.sender, collateralAmountToPull_);
         }

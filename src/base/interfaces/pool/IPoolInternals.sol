@@ -69,3 +69,13 @@ struct DrawDebtResult {
     uint256 poolCollateral;
     uint256 poolDebt;
 }
+
+struct RepayDebtResult {
+    uint256 newLup;
+    uint256 settledCollateral;
+    uint256 t0DebtInAuctionChange;
+    uint256 t0RepaidDebt;
+    uint256 poolCollateral;
+    uint256 poolDebt;
+    uint256 quoteTokenToRepay;
+}
