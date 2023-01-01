@@ -30,26 +30,29 @@ contract AuctionsTest is DSTestPlus {
      */
     function testAuctionPrice() external {
         skip(6238);
-        uint256 referencePrice = 8_678.5 * 1e18;
-        uint256 kickTime = block.timestamp;
-        assertEq(Auctions._auctionPrice(referencePrice, kickTime), 277_712 * 1e18);
+
+        uint256 momp         = 8_678.5 * 1e18;
+        uint256 neutralPrice = 8_600.0 * 1e18;
+        uint256 kickTime     = block.timestamp;
+
+        assertEq(Auctions._auctionPrice(momp, neutralPrice, kickTime), 277_712 * 1e18);
         skip(1444); // price should not change in the first hour
-        assertEq(Auctions._auctionPrice(referencePrice, kickTime), 277_712 * 1e18);
+        assertEq(Auctions._auctionPrice(momp, neutralPrice, kickTime), 277_712 * 1e18);
 
         skip(5756);     // 2 hours
-        assertEq(Auctions._auctionPrice(referencePrice, kickTime), 138_856 * 1e18);
+        assertEq(Auctions._auctionPrice(momp, neutralPrice, kickTime), 138_856 * 1e18);
         skip(2394);     // 2 hours, 39 minutes, 54 seconds
-        assertEq(Auctions._auctionPrice(referencePrice, kickTime), 87_574.910740335995562528 * 1e18);
+        assertEq(Auctions._auctionPrice(momp, neutralPrice, kickTime), 87_574.910740335995562528 * 1e18);
         skip(2586);     // 3 hours, 23 minutes
-        assertEq(Auctions._auctionPrice(referencePrice, kickTime), 53_227.960156860514117568 * 1e18);
+        assertEq(Auctions._auctionPrice(momp, neutralPrice, kickTime), 53_227.960156860514117568 * 1e18);
         skip(3);        // 3 seconds later
-        assertEq(Auctions._auctionPrice(referencePrice, kickTime), 53_197.223359425583052544 * 1e18);
+        assertEq(Auctions._auctionPrice(momp, neutralPrice, kickTime), 53_197.223359425583052544 * 1e18);
         skip(20153);    // 8 hours, 35 minutes, 53 seconds
-        assertEq(Auctions._auctionPrice(referencePrice, kickTime), 1_098.26293050754894624 * 1e18);
+        assertEq(Auctions._auctionPrice(momp, neutralPrice, kickTime), 1_098.26293050754894624 * 1e18);
         skip(97264);    // 36 hours
-        assertEq(Auctions._auctionPrice(referencePrice, kickTime), 0.00000808248283696 * 1e18);
+        assertEq(Auctions._auctionPrice(momp, neutralPrice, kickTime), 0.00000808248283696 * 1e18);
         skip(129600);   // 72 hours
-        assertEq(Auctions._auctionPrice(referencePrice, kickTime), 0);
+        assertEq(Auctions._auctionPrice(momp, neutralPrice, kickTime), 0);
     }
 
     /**

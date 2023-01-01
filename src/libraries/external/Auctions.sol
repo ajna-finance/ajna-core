@@ -596,6 +596,7 @@ library Auctions {
 
             uint256 auctionPrice = _auctionPrice(
                 auctions_.liquidations[borrowerAddress_].kickMomp,
+                auctions_.liquidations[borrowerAddress_].neutralPrice,
                 auctions_.liquidations[borrowerAddress_].kickTime
             );
 
@@ -1021,14 +1022,16 @@ library Auctions {
     }
 
     function _auctionPrice(
-        uint256 referencePrice,
+        uint256 kickMomp_,
+        uint256 neutralPrice_,
         uint256 kickTime_
     ) internal view returns (uint256 price_) {
         uint256 elapsedHours = Maths.wdiv((block.timestamp - kickTime_) * 1e18, 1 hours * 1e18);
 
         elapsedHours -= Maths.min(elapsedHours, 1e18);  // price locked during cure period
 
-        int256 timeAdjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours));
+        int256 timeAdjustment  = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours)); 
+        uint256 referencePrice = Maths.max(kickMomp_, neutralPrice_); 
 
         price_ = 32 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
     }
@@ -1101,13 +1104,13 @@ library Auctions {
             liquidation_.alreadyTaken = true;
         }
 
+        uint256 neutralPrice     = liquidation_.neutralPrice;
         takeResult_.borrowerDebt = Maths.wmul(takeResult_.t0Debt, inflator_);
-        takeResult_.auctionPrice = _auctionPrice(liquidation_.kickMomp, kickTime);
-
-        takeResult_.bpf = _bpf(
+        takeResult_.auctionPrice = _auctionPrice(liquidation_.kickMomp, neutralPrice, kickTime);
+        takeResult_.bpf          = _bpf(
             takeResult_.borrowerDebt,
             collateral_,
-            liquidation_.neutralPrice,
+            neutralPrice,
             liquidation_.bondFactor,
             takeResult_.auctionPrice
         );

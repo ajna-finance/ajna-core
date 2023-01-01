@@ -35,7 +35,7 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"));
         _ajnaPool = ERC20Pool(new ERC20PoolFactory(AJNA).deployPool(WETH, USDC, 0.05 * 10**18));
 
-        // create some lenders and borrowers
+        // create lenders and borrowers
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
@@ -104,7 +104,7 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
             })
         );
         vm.expectEmit(true, true, false, true);
-        emit Take(_borrower, 13.885812040442529856 * 1e18, 2 * 1e18, 0.138858120404425299 * 1e18, true);
+        emit Take(_borrower, 14.503461444385064128 * 1e18, 2.0 * 1e18, 0.145034614443850641 * 1e18, true);
         taker.take(tokens, amounts, data);
 
         assertGt(usdc.balanceOf(address(this)), 0); // could vary
@@ -125,7 +125,7 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         // call take using taker contract
         bytes memory data = abi.encode(address(_ajnaPool));
         vm.expectEmit(true, true, false, true);
-        emit Take(_borrower, 13.885812040442529856 * 1e18, 2 * 1e18, 0.138858120404425299 * 1e18, true);
+        emit Take(_borrower, 14.503461444385064128 * 1e18, 2.0 * 1e18, 0.145034614443850641 * 1e18, true);
         _ajnaPool.take(_borrower, takeAmount, address(taker), data);
 
         // confirm we earned some quote token
