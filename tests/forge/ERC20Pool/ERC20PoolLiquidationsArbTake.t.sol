@@ -406,7 +406,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         );
     }
 
-    function testArbTakeDebtRestrict() external {
+    function testArbTakeDebtRestrict() external tearDown {
 
         skip(5 hours);
 
