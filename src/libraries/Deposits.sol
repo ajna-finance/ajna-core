@@ -31,21 +31,21 @@ library Deposits {
      *  @param  unscaledAddAmount_ The unscaled amount to increase deposit by.
      */    
     function unscaledAdd(
-        DepositsState storage deposit_,
+        DepositsState storage deposits_,
         uint256 index_,
         uint256 unscaledAddAmount_
     ) internal {
         ++index_;
 
         while (index_ <= SIZE) {
-            uint256 value    = deposit_.values[index_];
-            uint256 scaling  = deposit_.scaling[index_];
+            uint256 value    = deposits_.values[index_];
+            uint256 scaling  = deposits_.scaling[index_];
             uint256 newValue = value + unscaledAddAmount_;
             // Note: we can't just multiply addAmount_ by scaling[i_] due to rounding
             // We need to track the precice change in values[i_] in order to ensure
             // obliterated indices remain zero after subsequent adding to related indices
             if (scaling != 0) unscaledAddAmount_ = Maths.wmul(newValue, scaling) - Maths.wmul(value, scaling);
-            deposit_.values[index_] = newValue;
+            deposits_.values[index_] = newValue;
             index_ += lsb(index_);
         }
     }

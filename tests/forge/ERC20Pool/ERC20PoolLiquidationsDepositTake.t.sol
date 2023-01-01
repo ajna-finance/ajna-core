@@ -477,7 +477,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              1.413271006675619050 * 1e18,
                 borrowerCollateral:        1.985648457205370548 * 1e18,
-                borrowert0Np:              10.115967548076923081 * 1e18,
+                borrowert0Np:              0.718712376637648488 * 1e18,
                 borrowerCollateralization: 2114.898406606768008479 * 1e18
             }
         );
@@ -608,7 +608,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              6.602856816327319769 * 1e18,
                 borrowerCollateral:        1.990034968812238781 * 1e18,
-                borrowert0Np:              10.115967548076923081 * 1e18,
+                borrowert0Np:              3.417963776167124997 * 1e18,
                 borrowerCollateralization: 2.929901291475173000 * 1e18
             }
         );
@@ -764,7 +764,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              1.413256486842604529 * 1e18,
                 borrowerCollateral:        1.997843295418292444 * 1e18,
-                borrowert0Np:              10.115967548076923081 * 1e18,
+                borrowert0Np:              736.017209642761013404 * 1e18,
                 borrowerCollateralization: 13.742463556719065681 * 1e18
             }
         );

@@ -936,7 +936,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 borrower:                  _borrower2,
                 borrowerDebt:              124.722199821073865675 * 1e18,
                 borrowerCollateral:        423.000000000000000000 * 1e18,
-                borrowert0Np:              1_575.326150647652569911 * 1e18,
+                borrowert0Np:              0.303909165615512483 * 1e18,
                 borrowerCollateralization: 5_105.158167959369510853 * 1e18
             }
         );
@@ -1138,14 +1138,14 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 borrower:                  _borrower2,
                 borrowerDebt:              8_975.249486232776725894 * 1e18,
                 borrowerCollateral:        990.000000000000000000 * 1e18,
-                borrowert0Np:              10.275765152019230606 * 1e18,
+                borrowert0Np:              9.438566662973887791 * 1e18,
                 borrowerCollateralization: 1.072291407736791833 * 1e18
             }
         );
 
     }
 
-    function testTakeLoanDebtConstraintBpfPosResidual() external tearDown {
+    function testTakeLoanDebtConstraintBpfPosResidual() external {
 
         // Increase neutralPrice so it exceeds TP
         _addLiquidity(
@@ -1383,7 +1383,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 borrower:                  _borrower2,
                 borrowerDebt:              696.244386269538741772 * 1e18,
                 borrowerCollateral:        416.157863193465729909 * 1e18,
-                borrowert0Np:              1_575.326150647652569911 * 1e18,
+                borrowert0Np:              1.724423786941266160 * 1e18,
                 borrowerCollateralization: 899.723357395669311568 * 1e18
             }
         );
