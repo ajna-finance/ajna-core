@@ -1104,12 +1104,13 @@ library Auctions {
             liquidation_.alreadyTaken = true;
         }
 
+        uint256 neutralPrice     = liquidation_.neutralPrice;
         takeResult_.borrowerDebt = Maths.wmul(takeResult_.t0Debt, inflator_);
-        takeResult_.auctionPrice = _auctionPrice(liquidation_.kickMomp, liquidation_.neutralPrice, kickTime);
+        takeResult_.auctionPrice = _auctionPrice(liquidation_.kickMomp, neutralPrice, kickTime);
         takeResult_.bpf          = _bpf(
             takeResult_.borrowerDebt,
             collateral_,
-            liquidation_.neutralPrice,
+            neutralPrice,
             liquidation_.bondFactor,
             takeResult_.auctionPrice
         );
