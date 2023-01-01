@@ -62,6 +62,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 t0PoolDebt;            // t0 pool debt
     }
 
+    struct TakeFromLoanResult {
+        uint256 settledCollateral;
+        uint256 poolDebt;
+        uint256 newLup;
+        uint256 t0DebtInAuctionChange;
+    }
+
     /******************/
     /*** Immutables ***/
     /******************/
@@ -239,7 +246,28 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             )
         );
 
-        _takeFromLoan(poolState, borrower, borrowerAddress_, collateralAmount, t0RepayAmount, t0DebtPenalty);
+        borrower.collateral  -= collateralAmount; // collateral is removed from the loan
+        poolState.collateral -= collateralAmount; // collateral is removed from pledged collateral accumulator
+
+        TakeFromLoanResult memory result = _takeFromLoan(poolState, borrower, borrowerAddress_, t0RepayAmount, t0DebtPenalty);
+
+        // update pool balances state
+        uint256 t0PoolDebt      = poolBalances.t0Debt;
+        uint256 t0DebtInAuction = poolBalances.t0DebtInAuction;
+        if (t0DebtPenalty != 0) {
+            t0PoolDebt      += t0DebtPenalty;
+            t0DebtInAuction += t0DebtPenalty;
+        }
+        t0PoolDebt      -= t0RepayAmount;
+        t0DebtInAuction -= result.t0DebtInAuctionChange;
+
+        poolBalances.t0Debt            = t0PoolDebt;
+        poolBalances.t0DebtInAuction   = t0DebtInAuction;
+        poolBalances.pledgedCollateral =  poolState.collateral;
+
+        // update pool interest rate state
+        poolState.debt = result.poolDebt;
+        _updateInterestState(poolState, result.newLup);
     }
 
     function kick(address borrowerAddress_) external override {
@@ -334,7 +362,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @param  poolState_        Current state of the pool.
      *  @param  borrower_         Details of the borrower whose loan is taken.
      *  @param  borrowerAddress_  Address of the borrower whose loan is taken.
-     *  @param  collateralAmount_ Collateral amount that was taken from borrower.
      *  @param  t0RepaidDebt_     Amount of t0 debt repaid by take action.
      *  @param  t0DebtPenalty_    Amount of t0 penalty if intial take (7% from t0 debt).
     */
@@ -342,38 +369,34 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState_,
         Borrower memory borrower_,
         address borrowerAddress_,
-        uint256 collateralAmount_,
         uint256 t0RepaidDebt_,
         uint256 t0DebtPenalty_
-    ) internal returns (uint256 settledCollateral_) {
-
-        borrower_.collateral  -= collateralAmount_; // collateral is removed from the loan
-        poolState_.collateral -= collateralAmount_; // collateral is removed from pledged collateral accumulator
+    ) internal returns (TakeFromLoanResult memory result_) {
 
         TakeFromLoanLocalVars memory vars;
         vars.borrowerDebt = Maths.wmul(borrower_.t0Debt, poolState_.inflator);
         vars.repaidDebt   = Maths.wmul(t0RepaidDebt_, poolState_.inflator);
         vars.borrowerDebt -= vars.repaidDebt;
-        poolState_.debt   -= vars.repaidDebt;
-        if (t0DebtPenalty_ != 0) poolState_.debt += Maths.wmul(t0DebtPenalty_, poolState_.inflator);
+        result_.poolDebt = poolState_.debt - vars.repaidDebt;
+        if (t0DebtPenalty_ != 0) result_.poolDebt += Maths.wmul(t0DebtPenalty_, poolState_.inflator);
 
         // check that taking from loan doesn't leave borrower debt under min debt amount
-        _revertOnMinDebt(poolState_.debt, vars.borrowerDebt);
+        _revertOnMinDebt(result_.poolDebt, vars.borrowerDebt);
 
-        vars.newLup = _lup(poolState_.debt);
+        result_.newLup = _lup(result_.poolDebt);
         vars.inAuction = true;
 
-        if (_isCollateralized(vars.borrowerDebt, borrower_.collateral, vars.newLup, poolState_.poolType)) {
+        if (_isCollateralized(vars.borrowerDebt, borrower_.collateral, result_.newLup, poolState_.poolType)) {
             // borrower becomes re-collateralized
             // remove entire borrower debt from pool auctions debt accumulator
-            vars.t0DebtInAuctionChange = borrower_.t0Debt;
+            result_.t0DebtInAuctionChange = borrower_.t0Debt;
             // settle auction and update borrower's collateral with value after settlement
-            settledCollateral_   = _settleAuction(borrowerAddress_, borrower_.collateral);
-            borrower_.collateral = settledCollateral_;
+            result_.settledCollateral = _settleAuction(borrowerAddress_, borrower_.collateral);
+            borrower_.collateral      = result_.settledCollateral;
             vars.inAuction = false;
         } else {
             // partial repay, remove only the paid debt from pool auctions debt accumulator
-            vars.t0DebtInAuctionChange = t0RepaidDebt_;
+            result_.t0DebtInAuctionChange = t0RepaidDebt_;
         }
 
         borrower_.t0Debt -= t0RepaidDebt_;
@@ -387,27 +410,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             borrowerAddress_,
             vars.borrowerDebt,
             poolState_.rate,
-            vars.newLup,
+            result_.newLup,
             vars.inAuction,
             !vars.inAuction // stamp borrower t0Np if exiting from auction
         );
 
-        // update pool balances state
-        vars.t0PoolDebt      = poolBalances.t0Debt;
-        vars.t0DebtInAuction = poolBalances.t0DebtInAuction;
-        if (t0DebtPenalty_ != 0) {
-            vars.t0PoolDebt      += t0DebtPenalty_;
-            vars.t0DebtInAuction += t0DebtPenalty_;
-        }
-        vars.t0PoolDebt      -= t0RepaidDebt_;
-        vars.t0DebtInAuction -= vars.t0DebtInAuctionChange;
-
-        poolBalances.t0Debt            = vars.t0PoolDebt;
-        poolBalances.t0DebtInAuction   = vars.t0DebtInAuction;
-        poolBalances.pledgedCollateral =  poolState_.collateral;
-
-        // update pool interest rate state
-        _updateInterestState(poolState_, vars.newLup);
     }
 
     /******************************/

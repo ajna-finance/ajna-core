@@ -26,7 +26,7 @@ struct BucketTakeParams {
     bool    depositTake;    // deposit or arb take, used by bucket take
     uint256 index;          // bucket index, used by bucket take
     uint256 inflator;       // current pool inflator
-    uint256 t0Debt;         // borrower t0 debt
+    uint256 t0Debt;         // borrower t0 debt  
 }
 
 struct TakeParams {
@@ -35,6 +35,7 @@ struct TakeParams {
     uint256 t0Debt;         // borrower t0 debt
     uint256 takeCollateral; // desired amount to take
     uint256 inflator;       // current pool inflator
+    uint256 poolType;    // number of buckets to use when settle debt  
 }
 
 struct KickResult {

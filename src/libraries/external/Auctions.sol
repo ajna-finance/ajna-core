@@ -56,6 +56,7 @@ library Auctions {
         uint256 t0DebtPenalty;            // Borrower's t0 penalty - 7% from current debt if intial take, 0 otherwise.
         uint256 unscaledDeposit;          // Unscaled bucket quantity
         uint256 unscaledQuoteTokenAmount; // The unscaled token amount that taker should pay for collateral taken.
+        uint256 excessQuoteToken; // difference of quote token that borrower receives for fractional NFT
     }
 
     event AuctionNFTSettle(
@@ -519,7 +520,7 @@ library Auctions {
      *  @return Quote token to be received from taker.
      *  @return T0 debt amount repaid.
      *  @return T0 penalty debt.
-     *  @return Auction price.
+     *  @return Excess quote token that can result after a take (NFT case).
     */
     function take(
         AuctionsState storage auctions_,
@@ -571,13 +572,25 @@ library Auctions {
             result.isRewarded
         );
 
+        if (params_.poolType == uint8(PoolType.ERC721)) {
+            // slither-disable-next-line divide-before-multiply
+            uint256 collateralTaken = (result.collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
+            if (collateralTaken != result.collateralAmount && params_.collateral >= collateralTaken + 1e18) { // collateral taken not a round number
+                collateralTaken += 1e18; // round up collateral to take
+                // taker should send additional quote tokens to cover difference between collateral needed to be taken and rounded collateral, at auction price
+                // borrower will get quote tokens for the difference between rounded collateral and collateral taken to cover debt
+                result.excessQuoteToken = Maths.wmul(collateralTaken - result.collateralAmount, result.auctionPrice);
+            }
+            result.collateralAmount = collateralTaken;
+        }
+
         return (
             result.collateralAmount,
             result.scaledQuoteTokenAmount,
             result.t0RepayAmount,
             result.t0Debt,
             result.t0DebtPenalty,
-            result.auctionPrice
+            result.excessQuoteToken
         );
     }
 

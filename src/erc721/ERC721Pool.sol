@@ -328,7 +328,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
                 collateral:     borrower.collateral,
                 t0Debt:         borrower.t0Debt,
                 takeCollateral: Maths.wad(collateral_),
-                inflator:       poolState.inflator
+                inflator:       poolState.inflator,
+                poolType:       poolState.poolType
             }
         );
 
@@ -339,28 +340,40 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             vars.t0RepayAmount,
             borrower.t0Debt,
             vars.t0DebtPenalty,
-            vars.auctionPrice
+            vars.excessQuoteToken
         ) = Auctions.take(
             auctions,
             params
         );
 
-        // slither-disable-next-line divide-before-multiply
-        vars.collateralTaken = (vars.collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
-        if (vars.collateralTaken != vars.collateralAmount && borrower.collateral >= vars.collateralTaken + 1e18) { // collateral taken not a round number
-            vars.collateralTaken += 1e18; // round up collateral to take
-            // taker should send additional quote tokens to cover difference between collateral needed to be taken and rounded collateral, at auction price
-            // borrower will get quote tokens for the difference between rounded collateral and collateral taken to cover debt
-            vars.excessQuoteToken = Maths.wmul(vars.collateralTaken - vars.collateralAmount, vars.auctionPrice);
-        }
+        borrower.collateral  -= vars.collateralAmount; // collateral is removed from the loan
+        poolState.collateral -= vars.collateralAmount; // collateral is removed from pledged collateral accumulator
 
-        uint256 settledCollateral = _takeFromLoan(poolState, borrower, params.borrower, vars.collateralTaken, vars.t0RepayAmount, vars.t0DebtPenalty);
+        TakeFromLoanResult memory result = _takeFromLoan(poolState, borrower, params.borrower, vars.t0RepayAmount, vars.t0DebtPenalty);
+
+        // update pool balances state
+        uint256 t0PoolDebt      = poolBalances.t0Debt;
+        uint256 t0DebtInAuction = poolBalances.t0DebtInAuction;
+        if (vars.t0DebtPenalty != 0) {
+            t0PoolDebt      += vars.t0DebtPenalty;
+            t0DebtInAuction += vars.t0DebtPenalty;
+        }
+        t0PoolDebt      -= vars.t0RepayAmount;
+        t0DebtInAuction -= result.t0DebtInAuctionChange;
+
+        poolBalances.t0Debt            = t0PoolDebt;
+        poolBalances.t0DebtInAuction   = t0DebtInAuction;
+        poolBalances.pledgedCollateral =  poolState.collateral;
+
+        // update pool interest rate state
+        poolState.debt = result.poolDebt;
+        _updateInterestState(poolState, result.newLup);
 
         // transfer rounded collateral from pool to taker
         vars.tokensTaken = _transferFromPoolToAddress(
             callee_,
             borrowerTokenIds[params.borrower],
-            vars.collateralTaken / 1e18
+            vars.collateralAmount / 1e18
         );
 
         if (data_.length != 0) {
@@ -371,7 +384,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             );
         }
 
-        if (settledCollateral != 0) _cleanupAuction(borrowerAddress_, settledCollateral);
+        if (result.settledCollateral != 0) _cleanupAuction(borrowerAddress_, result.settledCollateral);
 
         // transfer from taker to pool the amount of quote tokens needed to cover collateral auctioned (including excess for rounded collateral)
         _transferQuoteTokenFrom(callee_, vars.quoteTokenAmount + vars.excessQuoteToken);
