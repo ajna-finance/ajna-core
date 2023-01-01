@@ -6,8 +6,8 @@ import './interfaces/IPoolFactory.sol';
 
 abstract contract PoolDeployer {
 
-    uint256 public constant MIN_RATE = 0.01 * 10**18;
-    uint256 public constant MAX_RATE = 0.1 * 10**18;
+    uint256 public constant MIN_RATE = 0.01 * 1e18;
+    uint256 public constant MAX_RATE = 0.1  * 1e18;
 
     address public ajna;
 

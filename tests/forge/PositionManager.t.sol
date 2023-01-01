@@ -2227,7 +2227,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             }
         );
 
-        // minter cannot move liquidity on behalf of lender (is not approved) 
+        // minter cannot move liquidity on behalf of lender (is not approved)
         IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
             tokenId, address(_pool), 2550, 2551
         );
@@ -2241,7 +2241,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         vm.expectRevert(IPositionManager.NoAuth.selector);
         _positionManager.reedemPositions(reedemParams);
 
-        // minter cannot burn positions NFT on behalf of lender (is not approved) 
+        // minter cannot burn positions NFT on behalf of lender (is not approved)
         IPositionManagerOwnerActions.BurnParams memory burnParams = IPositionManagerOwnerActions.BurnParams(
             tokenId, address(_pool)
         );
@@ -2465,7 +2465,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.memorializePositions(memorializeParams);
 
         string memory uriString = _positionManager.tokenURI(tokenId);
-        emit log(uriString);
+        // emit log(uriString);
         assertGt(bytes(uriString).length, 0);
 
         // FIXME: split out uri string from encoding metadata, and parse resulting json object
@@ -2916,7 +2916,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         changePrank(testAddress1);
         vm.expectRevert(IPositionManager.NoAuth.selector);
         _positionManager.burn(burnParams);
-        
+
         // Indexes that have non zero position
         uint256[] memory newIndexes = new uint256[](2);
         newIndexes[0] = indexes[1];

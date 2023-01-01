@@ -15,7 +15,7 @@ library Deposits {
      *  @dev    Starts at leaf/target and moved up towards root
      *  @param  index_     The deposit index.
      *  @param  addAmount_ The amount to increase deposit by.
-     */    
+     */
     function add(
         DepositsState storage deposits_,
         uint256 index_,
@@ -29,7 +29,7 @@ library Deposits {
      *  @dev    Starts at leaf/target and moved up towards root
      *  @param  index_             The deposit index.
      *  @param  unscaledAddAmount_ The unscaled amount to increase deposit by.
-     */    
+     */
     function unscaledAdd(
         DepositsState storage deposits_,
         uint256 index_,
@@ -41,11 +41,14 @@ library Deposits {
             uint256 value    = deposits_.values[index_];
             uint256 scaling  = deposits_.scaling[index_];
             uint256 newValue = value + unscaledAddAmount_;
+
             // Note: we can't just multiply addAmount_ by scaling[i_] due to rounding
             // We need to track the precice change in values[i_] in order to ensure
             // obliterated indices remain zero after subsequent adding to related indices
             if (scaling != 0) unscaledAddAmount_ = Maths.wmul(newValue, scaling) - Maths.wmul(value, scaling);
+
             deposits_.values[index_] = newValue;
+
             index_ += lsb(index_);
         }
     }
@@ -57,27 +60,33 @@ library Deposits {
      *  @return sumIndex_      Smallest index where prefixsum greater than the sum
      *  @return sumIndexSum_   Sum at index FOLLOWING sumIndex_
      *  @return sumIndexScale_ Scale of bucket FOLLOWING sumIndex_
-     */    
+     */
     function findIndexAndSumOfSum(
         DepositsState storage deposits_,
         uint256 targetSum_
     ) internal view returns (uint256 sumIndex_, uint256 sumIndexSum_, uint256 sumIndexScale_) {
-        uint256 i             = 4096; // 1 << (_numBits - 1) = 1 << (13 - 1) = 4096
-        uint256 sc            = Maths.WAD;
+        uint256 i  = 4096; // 1 << (_numBits - 1) = 1 << (13 - 1) = 4096
+        uint256 sc = Maths.WAD;
+
         uint256 lowerIndexSum;
 
         while (i > 0) {
-            uint256 value       = deposits_.values[sumIndex_ + i];
-            uint256 scaling     = deposits_.scaling[sumIndex_ + i];
-            uint256 scaledValue = lowerIndexSum + (scaling != 0 ?  Maths.wmul(Maths.wmul(sc, scaling), value) : Maths.wmul(sc, value));
+            uint256 value   = deposits_.values[sumIndex_ + i];
+            uint256 scaling = deposits_.scaling[sumIndex_ + i];
+
+            uint256 scaledValue =
+                lowerIndexSum +
+                (scaling != 0 ?  Maths.wmul(Maths.wmul(sc, scaling), value) : Maths.wmul(sc, value));
+
             if (scaledValue  < targetSum_) {
-                if (sumIndex_+i <= MAX_FENWICK_INDEX) {
+                if (sumIndex_ + i <= MAX_FENWICK_INDEX) {
                     sumIndex_ += i;
                     lowerIndexSum = scaledValue;
                 }
             } else {
                 if (scaling != 0) sc = Maths.wmul(sc, scaling);
-                sumIndexSum_ = scaledValue;
+
+                sumIndexSum_   = scaledValue;
                 sumIndexScale_ = sc;
             }
             i = i >> 1;
@@ -89,7 +98,7 @@ library Deposits {
      *  @dev    Used in lup calculation
      *  @param  sum_      The sum to find index for.
      *  @return sumIndex_ Smallest index where prefixsum greater than the sum
-     */    
+     */
     function findIndexOfSum(
         DepositsState storage deposits_,
         uint256 sum_
@@ -101,7 +110,7 @@ library Deposits {
      *  @notice Get least significant bit (LSB) of intiger, i_.
      *  @dev    Used primarily to decrement the binary index in loops, iterating over range parents.
      *  @param  i_  The integer with which to return the LSB.
-     */    
+     */
     function lsb(
         uint256 i_
     ) internal pure returns (uint256 lsb_) {
@@ -116,8 +125,8 @@ library Deposits {
      *  @dev    Starts at passed in node and increments through range parent nodes, and ends at 8192.
      *  @param  index_  The index to start scaling from.
      *  @param  factor_  The factor to scale the values by.
-     */    
-    // TODO: add check to ensure scaling factor is at least a WAD? 
+     */
+    // TODO: add check to ensure scaling factor is at least a WAD?
     function mult(
         DepositsState storage deposits_,
         uint256 index_,
@@ -134,7 +143,7 @@ library Deposits {
         // Case 1:     the bit of index_ is set to 1.  In this case, the entire subtree below index_
         //             is scaled.  So, we include factor_ into scaleing[index_], and remember in sum how much
         //             we increased the subtree by, so that we can use it in case we encounter 0 bits (below).
-        // Case 2:     The bit of index_ is set to 0.  In this case, consider the subtree below the node 
+        // Case 2:     The bit of index_ is set to 0.  In this case, consider the subtree below the node
         //             index_+bit. The subtree below that is not entirely scaled, but it does contain the
         //             subtree what was scaled earlier.  Therefore: we need to increment it's stored value
         //             (in sum) which was set in a prior interation in case 1.
@@ -142,14 +151,16 @@ library Deposits {
             if((bit & index_) != 0) {
                 value   = deposits_.values[index_];
                 scaling = deposits_.scaling[index_];
-            
+
                 // Calc sum, will only be stored in range parents of starting node, index_
                 if (scaling != 0) {
                     // Note: we can't just multiply by factor_ - 1 in the following line, as rounding will
                     // cause obliterated indices to have nonzero values.  Need to track the actual
                     // precise delta in the value array
                     uint256 scaledFactor = Maths.wmul(factor_, scaling);
+
                     sum += Maths.wmul(scaledFactor, value) - Maths.wmul(scaling, value);
+
                     // Apply scaling to all range parents less then starting node, index_
                     deposits_.scaling[index_] = scaledFactor;
                 } else {
@@ -160,11 +171,13 @@ library Deposits {
                 index_ -= bit;
             } else {
                 uint256 superRangeIndex = index_ + bit;
-                value = (deposits_.values[superRangeIndex] += sum);
+
+                value   = (deposits_.values[superRangeIndex] += sum);
                 scaling = deposits_.scaling[superRangeIndex];
+
                 // again, in following line, need to be careful due to rounding
                 if (scaling != 0) sum = Maths.wmul(value, scaling) - Maths.wmul(value - sum, scaling);
-            } 
+            }
             bit = bit << 1;
         }
     }
@@ -174,7 +187,7 @@ library Deposits {
      *  @dev    Starts at tree root and decrements through range parent nodes summing from index i_'s range to index 0.
      *  @param  sumIndex_  The index to receive the prefix sum.
      *  @param  sum_       The prefix sum from current index downwards.
-     */    
+     */
     function prefixSum(
         DepositsState storage deposits_,
         uint256 sumIndex_
@@ -184,17 +197,20 @@ library Deposits {
         uint256 sc    = Maths.WAD;
         uint256 j     = SIZE;      // iterate from MSB to LSB
         uint256 index = 0;         // build up sumIndex bit by bit
+
         uint256 indexLSB = lsb(sumIndex_);
-        
+
         while (j >= indexLSB) {
             if (index + j > SIZE) continue;
             uint256 scaled = deposits_.scaling[index+j];
 
             if (sumIndex_ & j != 0) {
                 // node index+j of tree is included in sum
-                uint256 value  = deposits_.values[index+j];
-                sum_ += scaled != 0 ? Maths.wmul(Maths.wmul(sc, scaled), value) : Maths.wmul(sc, value);
+                uint256 value = deposits_.values[index+j];
+
+                sum_  += scaled != 0 ? Maths.wmul(Maths.wmul(sc, scaled), value) : Maths.wmul(sc, value);
                 index += j;
+
                 if (index == sumIndex_) break;
             } else {
                 // node is not included in sum, but its scale needs to be included for subsequent sums
@@ -209,7 +225,7 @@ library Deposits {
      *  @dev    Starts at leaf/target and moved up towards root
      *  @param  index_             The deposit index.
      *  @param  unscaledRemoveAmount_   Unscaled amount to decrease deposit by.
-     */    
+     */
     function unscaledRemove(
         DepositsState storage deposits_,
         uint256 index_,
@@ -218,13 +234,15 @@ library Deposits {
         ++index_;
 
         while (index_ <= SIZE) {
-            uint256 value    = (deposits_.values[index_] -= unscaledRemoveAmount_);
-            uint256 scaling  = deposits_.scaling[index_];
+            uint256 value   = (deposits_.values[index_] -= unscaledRemoveAmount_);
+            uint256 scaling = deposits_.scaling[index_];
+
             // On the line below, it would be tempting to replace this with:
             // unscaledRemoveAmount_ = Maths.wmul(unscaledRemoveAmount, scaling).  This will introduce nonzero values up
             // the tree due to rounding.  It's important to compute the actual change in deposits_.values[index_]
             // and propogate that upwards.
             if (scaling != 0) unscaledRemoveAmount_ = Maths.wmul(value + unscaledRemoveAmount_, scaling) - Maths.wmul(value,  scaling);
+
             index_ += lsb(index_);
         }
     }
@@ -234,13 +252,13 @@ library Deposits {
      *  @dev    Starts at leaf/target and moved up towards root
      *  @param  index_  The deposit index.
      *  @return scaled_ Scaled value.
-     */   
+     */
     function scale(
         DepositsState storage deposits_,
         uint256 index_
     ) internal view returns (uint256 scaled_) {
 	    ++index_;
-        
+
         scaled_ = Maths.WAD;
         while (index_ <= SIZE) {
             uint256 scaling = deposits_.scaling[index_];
@@ -251,12 +269,12 @@ library Deposits {
 
     /**
      *  @notice Returns sum of all deposits.
-     */ 
+     */
     function treeSum(
         DepositsState storage deposits_
     ) internal view returns (uint256) {
         uint256 scaling = deposits_.scaling[SIZE];
-        if (scaling==0) scaling = Maths.WAD;
+        if (scaling == 0) scaling = Maths.WAD;
         return Maths.wmul(scaling,deposits_.values[SIZE]);
     }
 
@@ -264,7 +282,7 @@ library Deposits {
      *  @notice Returns deposit value for a given deposit index.
      *  @param  index_        The deposit index.
      *  @return depositValue_ Value of the deposit.
-     */  
+     */
     function valueAt(
         DepositsState storage deposits_,
         uint256 index_
@@ -284,6 +302,7 @@ library Deposits {
         while (j & index_ == 0) {
             uint256 value   = deposits_.values[index_ - j];
             uint256 scaling = deposits_.scaling[index_ - j];
+
             unscaledDepositValue_ -= scaling != 0 ? Maths.wmul(scaling, value) : value;
             j = j << 1;
         }

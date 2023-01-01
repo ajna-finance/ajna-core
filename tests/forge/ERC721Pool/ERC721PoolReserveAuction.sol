@@ -189,6 +189,9 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
             }
         );
 
+        // check that you can't start a new auction if a previous auction is active
+        _assertReserveAuctionTooSoon();
+
         // pass time to allow the price to decrease
         skip(24 hours);
 
@@ -209,8 +212,6 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
 
         // check that you can't start a new auction unless two weeks have passed
         _assertReserveAuctionTooSoon();
-
-
     }
 
     function testClaimableReserveAuction() external {

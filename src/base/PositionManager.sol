@@ -90,6 +90,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
         IPool pool = IPool(poolKey[params_.tokenId]);
         uint256 indexesLength = params_.indexes.length;
+
         for (uint256 i = 0; i < indexesLength; ) {
             // record price at which a position has added liquidity
             // slither-disable-next-line unused-return
@@ -100,9 +101,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             lps[params_.tokenId][params_.indexes[i]] += lpBalance;
 
             // increment call counter in gas efficient way by skipping safemath checks
-            unchecked {
-                ++i;
-            }
+            unchecked { ++i; }
         }
 
         // update pool lp token accounting and transfer ownership of lp tokens to PositionManager contract
@@ -157,6 +156,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
         IPool pool = IPool(poolKey[params_.tokenId]);
         uint256 indexesLength = params_.indexes.length;
+
         for (uint256 i = 0; i < indexesLength; ) {
             // remove price index at which a position has added liquidity
             if (!positionIndex.remove(params_.indexes[i])) revert RemoveLiquidityFailed();
@@ -168,9 +168,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             pool.approveLpOwnership(owner, params_.indexes[i], lpAmount);
 
             // increment call counter in gas efficient way by skipping safemath checks
-            unchecked {
-                ++i;
-            }
+            unchecked { ++i; }
         }
 
         // update pool lp token accounting and transfer ownership of lp tokens from PositionManager contract
@@ -219,7 +217,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         require(_exists(tokenId_));
 
         address collateralTokenAddress = IPool(poolKey[tokenId_]).collateralAddress();
-        address quoteTokenAddress = IPool(poolKey[tokenId_]).quoteTokenAddress();
+        address quoteTokenAddress      = IPool(poolKey[tokenId_]).quoteTokenAddress();
 
         PositionNFTSVG.ConstructTokenURIParams memory params = PositionNFTSVG.ConstructTokenURIParams({
             collateralTokenSymbol: tokenSymbol(collateralTokenAddress),
@@ -229,6 +227,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             owner: ownerOf(tokenId_),
             indexes: positionIndexes[tokenId_].values()
         });
+
         return PositionNFTSVG.constructTokenURI(params);
     }
 
