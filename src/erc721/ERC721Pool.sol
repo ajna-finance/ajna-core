@@ -107,7 +107,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             _transferFromSenderToPool(borrowerTokenIds[borrowerAddress_], tokenIdsToPledge_);
         }
 
-        if (result.settledCollateral != 0) _settleCollateral(borrowerAddress_, result.settledCollateral);
+        if (result.remainingCollateral != 0) _settleCollateral(borrowerAddress_, result.remainingCollateral);
 
         // move borrowed amount from pool to sender
         if (amountToBorrow_ != 0) {
@@ -138,7 +138,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
         emit RepayDebt(borrowerAddress_, result.quoteTokenToRepay, noOfNFTsToPull_, result.newLup);
 
-        if (result.settledCollateral != 0) _settleCollateral(borrowerAddress_, result.settledCollateral);
+        if (result.remainingCollateral != 0) _settleCollateral(borrowerAddress_, result.remainingCollateral);
 
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
@@ -352,7 +352,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             );
         }
 
-        if (result.settledCollateral != 0) _settleCollateral(borrowerAddress_, result.settledCollateral);
+        if (result.remainingCollateral != 0) _settleCollateral(borrowerAddress_, result.remainingCollateral);
 
         // transfer from taker to pool the amount of quote tokens needed to cover collateral auctioned (including excess for rounded collateral)
         _transferQuoteTokenFrom(callee_, result.quoteTokenAmount + result.excessQuoteToken);
@@ -399,7 +399,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         poolState.collateral -= result.collateralAmount;
         _updateInterestState(poolState, result.newLup);
 
-        if (result.settledCollateral != 0) _settleCollateral(borrowerAddress_, result.settledCollateral);
+        if (result.remainingCollateral != 0) _settleCollateral(borrowerAddress_, result.remainingCollateral);
     }
 
     /**************************/

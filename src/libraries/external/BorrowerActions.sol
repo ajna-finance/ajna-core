@@ -123,15 +123,15 @@ library BorrowerActions {
                 if (poolState_.poolType == uint8(PoolType.ERC721)) {
                     uint256 lps;
                     uint256 bucketIndex;
-                    (result_.settledCollateral, lps, bucketIndex) = Auctions.settleNFTAuction(
+                    (result_.remainingCollateral, lps, bucketIndex) = Auctions.settleNFTAuction(
                         auctions_,
                         buckets_,
                         deposits_,
                         borrowerAddress_,
                         borrower.collateral
                     );
-                    borrower.collateral = result_.settledCollateral;
-                    emit AuctionNFTSettle(borrowerAddress_, result_.settledCollateral, lps, bucketIndex);
+                    borrower.collateral = result_.remainingCollateral;
+                    emit AuctionNFTSettle(borrowerAddress_, result_.remainingCollateral, lps, bucketIndex);
                 } else {
                     Auctions._removeAuction(auctions_, borrowerAddress_);
                     emit AuctionSettle(borrowerAddress_, borrower.collateral);
@@ -240,15 +240,15 @@ library BorrowerActions {
                     if (poolState_.poolType == uint8(PoolType.ERC721)) {
                         uint256 lps;
                         uint256 bucketIndex;
-                        (result_.settledCollateral, lps, bucketIndex) = Auctions.settleNFTAuction(
+                        (result_.remainingCollateral, lps, bucketIndex) = Auctions.settleNFTAuction(
                             auctions_,
                             buckets_,
                             deposits_,
                             borrowerAddress_,
                             borrower.collateral
                         );
-                        borrower.collateral = result_.settledCollateral;
-                        emit AuctionNFTSettle(borrowerAddress_, result_.settledCollateral, lps, bucketIndex);
+                        borrower.collateral = result_.remainingCollateral;
+                        emit AuctionNFTSettle(borrowerAddress_, result_.remainingCollateral, lps, bucketIndex);
                     } else {
                         Auctions._removeAuction(auctions_, borrowerAddress_);
                         emit AuctionSettle(borrowerAddress_, borrower.collateral);

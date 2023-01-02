@@ -33,7 +33,7 @@ struct BucketTakeResult {
     uint256 collateralAmount;
     uint256 t0RepayAmount;
     uint256 t0DebtPenalty;
-    uint256 settledCollateral;
+    uint256 remainingCollateral;
     uint256 poolDebt;
     uint256 newLup;
     uint256 t0DebtInAuctionChange;
@@ -54,7 +54,7 @@ struct TakeResult {
     uint256 t0RepayAmount;
     uint256 t0DebtPenalty;
     uint256 excessQuoteToken;
-    uint256 settledCollateral;
+    uint256 remainingCollateral;
     uint256 poolDebt;
     uint256 newLup;
     uint256 t0DebtInAuctionChange;
@@ -87,7 +87,7 @@ struct RemoveQuoteParams {
 
 struct DrawDebtResult {
     uint256 newLup;
-    uint256 settledCollateral;
+    uint256 remainingCollateral;
     uint256 t0DebtInAuctionChange;
     uint256 t0DebtChange;
     uint256 poolCollateral;
@@ -96,7 +96,7 @@ struct DrawDebtResult {
 
 struct RepayDebtResult {
     uint256 newLup;
-    uint256 settledCollateral;
+    uint256 remainingCollateral;
     uint256 t0DebtInAuctionChange;
     uint256 t0RepaidDebt;
     uint256 poolCollateral;

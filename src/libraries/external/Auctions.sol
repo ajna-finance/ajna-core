@@ -62,7 +62,7 @@ library Auctions {
     }
 
     struct TakeFromLoanResult {
-        uint256 settledCollateral;
+        uint256 remainingCollateral;
         uint256 poolDebt;
         uint256 newLup;
         uint256 t0DebtInAuctionChange;
@@ -877,15 +877,15 @@ library Auctions {
             if (poolState_.poolType == uint8(PoolType.ERC721)) {
                 uint256 lps;
                 uint256 bucketIndex;
-                (result_.settledCollateral, lps, bucketIndex) = settleNFTAuction(
+                (result_.remainingCollateral, lps, bucketIndex) = settleNFTAuction(
                     auctions_,
                     buckets_,
                     deposits_,
                     borrowerAddress_,
                     borrower_.collateral
                 );
-                borrower_.collateral = result_.settledCollateral;
-                emit AuctionNFTSettle(borrowerAddress_, result_.settledCollateral, lps, bucketIndex);
+                borrower_.collateral = result_.remainingCollateral;
+                emit AuctionNFTSettle(borrowerAddress_, result_.remainingCollateral, lps, bucketIndex);
             } else {
                 Auctions._removeAuction(auctions_, borrowerAddress_);
                 emit AuctionSettle(borrowerAddress_, borrower_.collateral);
