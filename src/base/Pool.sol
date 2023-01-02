@@ -55,9 +55,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 totalInterest; // current pool interest accumulator `PoolCommons.accrueInterest().newInterest`
         uint256 totalBurned;   // burn amount accumulator
     }
-    // mapping burnEventId => BurnEvent
+    // mapping burnEventEpoch => BurnEvent
     mapping (uint256 => BurnEvent) internal burnEvents;
-    uint256 latestBurnEventId; // latest burn event id
+    uint256 latestBurnEventEpoch; // latest burn event epoch
 
     uint256 totalAjnaBurned; // total ajna burned in the pool
     uint256 totalInterestEarned; // total interest earned by all lenders in the pool
@@ -365,14 +365,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     function startClaimableReserveAuction() external override {
         // check that at least two weeks have passed since the last reserve auction completed
-        uint256 lastBurnTimestamp = burnEvents[latestBurnEventId].timestamp;
+        uint256 lastBurnTimestamp = burnEvents[latestBurnEventEpoch].timestamp;
         if (block.timestamp < lastBurnTimestamp + 2 weeks || block.timestamp - reserveAuction.kicked <= 72 hours) {
             revert ReserveAuctionTooSoon();
         }
 
         // record start of new burn event
-        latestBurnEventId += 1;
-        burnEvents[latestBurnEventId].timestamp = block.timestamp;
+        latestBurnEventEpoch += 1;
+        burnEvents[latestBurnEventEpoch].timestamp = block.timestamp;
 
         uint256 kickerAward = Auctions.startClaimableReserveAuction(
             auctions,
@@ -398,9 +398,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         totalAjnaBurned += ajnaRequired;
 
         // record burn event information to enable querying by staking rewards
-        uint256 burnEventId = latestBurnEventId;
-        burnEvents[burnEventId].totalInterest = totalInterestEarned;
-        burnEvents[burnEventId].totalBurned = totalAjnaBurned;
+        uint256 burnEventEpoch = latestBurnEventEpoch;
+        burnEvents[burnEventEpoch].totalInterest = totalInterestEarned;
+        burnEvents[burnEventEpoch].totalBurned = totalAjnaBurned;
 
         // burn required number of ajna tokens to take quote from reserves
         IERC20(_getArgAddress(AJNA_ADDRESS)).safeTransferFrom(msg.sender, address(this), ajnaRequired);
@@ -888,12 +888,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
-    function currentBurnId() external view returns (uint256) {
-        return latestBurnEventId;
+    function currentBurnEpoch() external view returns (uint256) {
+        return latestBurnEventEpoch;
     }
 
-    function burnInfo(uint256 burnEventId_) external view returns (uint256, uint256, uint256) {
-        BurnEvent memory burnEvent = burnEvents[burnEventId_];
+    function burnInfo(uint256 burnEventEpoch_) external view returns (uint256, uint256, uint256) {
+        BurnEvent memory burnEvent = burnEvents[burnEventEpoch_];
 
         return (
             burnEvent.timestamp,
