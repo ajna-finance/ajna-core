@@ -37,6 +37,7 @@ struct BucketTakeResult {
     uint256 poolDebt;
     uint256 newLup;
     uint256 t0DebtInAuctionChange;
+    bool    settledAuction;
 }
 
 struct TakeParams {
@@ -58,6 +59,7 @@ struct TakeResult {
     uint256 poolDebt;
     uint256 newLup;
     uint256 t0DebtInAuctionChange;
+    bool    settledAuction;
 }
 
 struct KickResult {
@@ -92,6 +94,7 @@ struct DrawDebtResult {
     uint256 t0DebtChange;
     uint256 poolCollateral;
     uint256 poolDebt;
+    bool    settledAuction;
 }
 
 struct RepayDebtResult {
@@ -102,4 +105,5 @@ struct RepayDebtResult {
     uint256 poolCollateral;
     uint256 poolDebt;
     uint256 quoteTokenToRepay;
+    bool    settledAuction;
 }

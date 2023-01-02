@@ -117,7 +117,9 @@ library BorrowerActions {
                 _isCollateralized(vars.borrowerDebt, borrower.collateral, result_.newLup, poolState_.poolType)
             )
             {
-                // borrower becomes collateralized, remove debt from pool accumulator and settle auction
+                // borrower becomes collateralized
+                result_.settledAuction = true;
+                // remove debt from pool accumulator and settle auction
                 result_.t0DebtInAuctionChange = borrower.t0Debt;
 
                 if (poolState_.poolType == uint8(PoolType.ERC721)) {
@@ -233,6 +235,7 @@ library BorrowerActions {
             if (vars.inAuction) {
                 if (_isCollateralized(vars.borrowerDebt, borrower.collateral, result_.newLup, poolState_.poolType)) {
                     // borrower becomes re-collateralized
+                    result_.settledAuction = true;
                     // remove entire borrower debt from pool auctions debt accumulator
                     result_.t0DebtInAuctionChange = borrower.t0Debt;
 

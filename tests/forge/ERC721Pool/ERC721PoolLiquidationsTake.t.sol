@@ -298,85 +298,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
             }
         );
 
-        /**************************************/
-        /*** Take all collateral tokens (2) ***/
-        /**************************************/
         uint256 snapshot = vm.snapshot();
-
-        _take(
-            {
-                from:            _lender,
-                borrower:        _borrower,
-                maxCollateral:   2,
-                bondChange:      0.227287198298417188 * 1e18,
-                givenAmount:     24.624359312514645329 * 1e18,
-                collateralTaken: 1.241499462864870800 * 1e18, // not a rounded collateral, difference of 2 - 1.16 collateral should go to borrower in quote tokens at auction price
-                isReward:        false
-            }
-        );
-
-        _assertPool(
-            PoolParams({
-                htp:                  6.582554958364903034 * 1e18,
-                lup:                  9.917184843435912074 * 1e18,
-                poolSize:             73_000.000878382806067000 * 1e18,
-                pledgedCollateral:    3.0 * 1e18,
-                encumberedCollateral: 1.898735286563375238 * 1e18,
-                poolDebt:             18.830108805603248108 * 1e18,
-                actualUtilization:    0.000257946692863388 * 1e18,
-                targetUtilization:    0.811350329890505142 * 1e18,
-                minDebtAmount:        1.883010880560324811 * 1e18,
-                loans:                1,
-                maxBorrower:          address(_borrower2),
-                interestRate:         0.045 * 1e18,
-                interestRateUpdate:   block.timestamp - 5 hours
-            })
-        );
-
-        _assertBorrower(
-            {
-                borrower:                  _borrower,
-                borrowerDebt:              1.610939394276659040 * 1e18,
-                borrowerCollateral:        0,
-                borrowert0Np:              10.404995192307692312 * 1e18,
-                borrowerCollateralization: 0
-            }
-        );
-
-        _assertAuction(
-            AuctionParams({
-                borrower:          _borrower,
-                active:            true,
-                kicker:            address(_lender),
-                bondSize:          0,
-                bondFactor:        0.01 * 1e18,
-                kickTime:          _startTime + 1000 days,
-                kickMomp:          9.917184843435912074 * 1e18,
-                totalBondEscrowed: 0,
-                auctionPrice:      19.834369686871824160 * 1e18,
-                debtInAuction:     1.610939394276659040 * 1e18,
-                thresholdPrice:    0,
-                neutralPrice:      11.932577910666902372 * 1e18
-            })
-        );
-
-        _assertKicker(
-            {
-                kicker:    address(0),
-                claimable: 0,
-                locked:    0 * 1e18
-            }
-        );
-
-        // after take: NFTs pledged by liquidated borrower are owned by the taker
-        assertEq(_collateral.ownerOf(3), _lender);
-        assertEq(_collateral.ownerOf(1), _lender);
-        // after take: check quote token balances of taker and borrower
-        assertEq(_quote.balanceOf(_lender), 46_960.103973427957934499 * 1e18);
-        assertEq(_quote.balanceOf(_borrower), 134.844380061229002984 * 1e18); // borrower gets quote tokens from the difference of rounded collateral (2) and needed collateral (1.16) at auction price (19.8) = 16.6 additional tokens
-
-        vm.revertTo(snapshot);
-
 
         /****************************************/
         /* Take partial collateral tokens (1) ***/
@@ -453,6 +375,84 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         // after take: check quote token balances of taker and borrower
         assertEq(_quote.balanceOf(_lender), 46_979.938343114829758652 * 1e18);
         assertEq(_quote.balanceOf(_borrower), 119.8 * 1e18); // no additional tokens as there is no rounding of collateral taken (1)
+
+        vm.revertTo(snapshot);
+
+        /**************************************/
+        /*** Take all collateral tokens (2) ***/
+        /**************************************/
+
+        _take(
+            {
+                from:            _lender,
+                borrower:        _borrower,
+                maxCollateral:   2,
+                bondChange:      0.227287198298417188 * 1e18,
+                givenAmount:     24.624359312514645329 * 1e18,
+                collateralTaken: 1.241499462864870800 * 1e18, // not a rounded collateral, difference of 2 - 1.16 collateral should go to borrower in quote tokens at auction price
+                isReward:        false
+            }
+        );
+
+        _assertPool(
+            PoolParams({
+                htp:                  6.582554958364903034 * 1e18,
+                lup:                  9.917184843435912074 * 1e18,
+                poolSize:             73_000.000878382806067000 * 1e18,
+                pledgedCollateral:    3.0 * 1e18,
+                encumberedCollateral: 1.898735286563375238 * 1e18,
+                poolDebt:             18.830108805603248108 * 1e18,
+                actualUtilization:    0.000257946692863388 * 1e18,
+                targetUtilization:    0.811350329890505142 * 1e18,
+                minDebtAmount:        1.883010880560324811 * 1e18,
+                loans:                1,
+                maxBorrower:          address(_borrower2),
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   block.timestamp - 5 hours
+            })
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              1.610939394276659040 * 1e18,
+                borrowerCollateral:        0,
+                borrowert0Np:              10.404995192307692312 * 1e18,
+                borrowerCollateralization: 0
+            }
+        );
+
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            true,
+                kicker:            address(_lender),
+                bondSize:          0,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          _startTime + 1000 days,
+                kickMomp:          9.917184843435912074 * 1e18,
+                totalBondEscrowed: 0,
+                auctionPrice:      19.834369686871824160 * 1e18,
+                debtInAuction:     1.610939394276659040 * 1e18,
+                thresholdPrice:    0,
+                neutralPrice:      11.932577910666902372 * 1e18
+            })
+        );
+
+        _assertKicker(
+            {
+                kicker:    address(0),
+                claimable: 0,
+                locked:    0 * 1e18
+            }
+        );
+
+        // after take: NFTs pledged by liquidated borrower are owned by the taker
+        assertEq(_collateral.ownerOf(3), _lender);
+        assertEq(_collateral.ownerOf(1), _lender);
+        // after take: check quote token balances of taker and borrower
+        assertEq(_quote.balanceOf(_lender), 46_960.103973427957934499 * 1e18);
+        assertEq(_quote.balanceOf(_borrower), 134.844380061229002984 * 1e18); // borrower gets quote tokens from the difference of rounded collateral (2) and needed collateral (1.16) at auction price (19.8) = 16.6 additional tokens
     }
 
     function testTakeCollateralAndSettleSubsetPool() external tearDown {

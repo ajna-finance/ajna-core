@@ -107,7 +107,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             _transferFromSenderToPool(borrowerTokenIds[borrowerAddress_], tokenIdsToPledge_);
         }
 
-        if (result.remainingCollateral != 0) _settleCollateral(borrowerAddress_, result.remainingCollateral);
+        if (result.settledAuction) _rebalanceTokens(borrowerAddress_, result.remainingCollateral);
 
         // move borrowed amount from pool to sender
         if (amountToBorrow_ != 0) {
@@ -138,7 +138,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
         emit RepayDebt(borrowerAddress_, result.quoteTokenToRepay, noOfNFTsToPull_, result.newLup);
 
-        if (result.remainingCollateral != 0) _settleCollateral(borrowerAddress_, result.remainingCollateral);
+        if (result.settledAuction) _rebalanceTokens(borrowerAddress_, result.remainingCollateral);
 
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
@@ -279,9 +279,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         );
 
         // slither-disable-next-line incorrect-equality
-        if (t0RemainingDebt == 0) {
-            _settleCollateral(params.borrower, remainingCollateral);
-        }
+        if (t0RemainingDebt == 0) _rebalanceTokens(params.borrower, remainingCollateral);
 
         // update borrower state
         borrower.t0Debt     = t0RemainingDebt;
@@ -352,7 +350,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             );
         }
 
-        if (result.remainingCollateral != 0) _settleCollateral(borrowerAddress_, result.remainingCollateral);
+        if (result.settledAuction) _rebalanceTokens(borrowerAddress_, result.remainingCollateral);
 
         // transfer from taker to pool the amount of quote tokens needed to cover collateral auctioned (including excess for rounded collateral)
         _transferQuoteTokenFrom(callee_, result.quoteTokenAmount + result.excessQuoteToken);
@@ -399,14 +397,14 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         poolState.collateral -= result.collateralAmount;
         _updateInterestState(poolState, result.newLup);
 
-        if (result.remainingCollateral != 0) _settleCollateral(borrowerAddress_, result.remainingCollateral);
+        if (result.settledAuction) _rebalanceTokens(borrowerAddress_, result.remainingCollateral);
     }
 
     /**************************/
     /*** Internal Functions ***/
     /**************************/
 
-    function _settleCollateral(
+    function _rebalanceTokens(
         address borrowerAddress_,
         uint256 borrowerCollateral_
     ) internal {

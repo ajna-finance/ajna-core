@@ -66,6 +66,7 @@ library Auctions {
         uint256 poolDebt;
         uint256 newLup;
         uint256 t0DebtInAuctionChange;
+        bool    settledAuction;
     }
 
     struct TakeFromLoanLocalVars {
@@ -513,7 +514,7 @@ library Auctions {
         result_.poolDebt = result.poolDebt;
         result_.newLup = result.newLup;
         result_.t0DebtInAuctionChange = result.t0DebtInAuctionChange;
-
+        result_.settledAuction = result.settledAuction;
     }
 
     // /**
@@ -574,6 +575,7 @@ library Auctions {
         result_.poolDebt = result.poolDebt;
         result_.newLup = result.newLup;
         result_.t0DebtInAuctionChange = result.t0DebtInAuctionChange;
+        result_.settledAuction = result.settledAuction;
     }
 
     /**
@@ -871,6 +873,7 @@ library Auctions {
 
         if (_isCollateralized(vars.borrowerDebt, borrower_.collateral, result_.newLup, poolState_.poolType)) {
             // borrower becomes re-collateralized
+            result_.settledAuction = true;
             // remove entire borrower debt from pool auctions debt accumulator
             result_.t0DebtInAuctionChange = borrower_.t0Debt;
             // settle auction and update borrower's collateral with value after settlement
