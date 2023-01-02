@@ -13,9 +13,7 @@ import {
     ReserveAuctionState,
     SettleParams,
     KickResult,
-    BucketTakeParams,
     BucketTakeResult,
-    TakeParams,
     TakeResult,
     StartReserveAuctionParams
 } from '../../base/interfaces/IPool.sol';
@@ -30,17 +28,26 @@ import '../../base/PoolHelper.sol';
 
 library Auctions {
 
+    struct BucketTakeParams {
+        address borrower;    // borrower address to take from
+        uint256 collateral;  // borrower available collateral to take
+        bool    depositTake; // deposit or arb take, used by bucket take
+        uint256 index;       // bucket index, used by bucket take
+        uint256 inflator;    // current pool inflator
+        uint256 t0Debt;      // borrower t0 debt
+    }
+
     struct KickWithDepositLocalVars {
-        uint256 bucketLPs;
-        uint256 bucketCollateral;
-        uint256 bucketPrice;
-        uint256 bucketUnscaledDeposit;
-        uint256 bucketScale;
-        uint256 bucketDeposit;
-        uint256 lenderLPs;
-        uint256 bucketRate;
-        uint256 amountToDebitFromDeposit;
-        uint256 redeemedLPs;
+        uint256 amountToDebitFromDeposit; // the amount of quote tokens used to kick and debited from lender deposit
+        uint256 bucketCollateral;         // amount of collateral in bucket
+        uint256 bucketDeposit;            // amount of quote tokens in bucket
+        uint256 bucketLPs;                // LPs of the bucket
+        uint256 bucketPrice;              // bucket price
+        uint256 bucketRate;               // bucket exchange rate
+        uint256 bucketScale;              // bucket scales
+        uint256 bucketUnscaledDeposit;    // unscaled amount of quote tokens in bucket
+        uint256 lenderLPs;                // LPs of lender in bucket
+        uint256 redeemedLPs;              // LPs used by kick action
     }
 
     struct TakeLocalVars {
@@ -51,6 +58,7 @@ library Auctions {
         uint256 bucketPrice;              // The bucket price.
         uint256 bucketScale;              // The bucket scale.
         uint256 collateralAmount;         // The amount of collateral taken.
+        uint256 excessQuoteToken;         // Difference of quote token that borrower receives after taeke (for fractional NFT only)
         uint256 factor;                   // The take factor, calculated based on bond penalty factor.
         bool    isRewarded;               // True if kicker is rewarded (auction price lower than neutral price), false if penalized (auction price greater than neutral price).
         address kicker;                   // Address of auction kicker.
@@ -60,15 +68,14 @@ library Auctions {
         uint256 t0DebtPenalty;            // Borrower's t0 penalty - 7% from current debt if intial take, 0 otherwise.
         uint256 unscaledDeposit;          // Unscaled bucket quantity
         uint256 unscaledQuoteTokenAmount; // The unscaled token amount that taker should pay for collateral taken.
-        uint256 excessQuoteToken; // difference of quote token that borrower receives for fractional NFT
     }
 
     struct TakeFromLoanResult {
-        uint256 remainingCollateral;
-        uint256 poolDebt;
-        uint256 newLup;
-        uint256 t0DebtInAuctionChange;
-        bool    settledAuction;
+        uint256 newLup;                // LUP after auction is taken and loan info updated
+        uint256 poolDebt;              // accrued pool debt after auction is taken
+        uint256 remainingCollateral;   // borrower remaining collateral after auction is taken
+        bool    settledAuction;        // true if auction was settled by take auction
+        uint256 t0DebtInAuctionChange; // t0 change amount of debt after auction is taken
     }
 
     struct TakeFromLoanLocalVars {
@@ -81,16 +88,37 @@ library Auctions {
         uint256 t0PoolDebt;            // t0 pool debt
     }
 
+    struct TakeParams {
+        address borrower;       // borrower address to take from
+        uint256 collateral;     // borrower available collateral to take
+        uint256 t0Debt;         // borrower t0 debt
+        uint256 takeCollateral; // desired amount to take
+        uint256 inflator;       // current pool inflator
+        uint256 poolType;       // pool type (ERC20 or NFT)
+    }
+
+    /**
+     *  @notice Emitted when an ERC20 auction is settled.
+     *  @param  borrower    Identifies the loan being settled.
+     *  @param  collateral  Amount of remaining borrower collateral after auction is settled.
+     */
+    event AuctionSettle(
+        address indexed borrower,
+        uint256 collateral
+    );
+
+    /**
+     *  @notice Emitted when an ERC721 auction is settled.
+     *  @param  borrower   Identifies the loan being settled.
+     *  @param  collateral Amount of remaining borrower collateral after auction is settled (rounded down).
+     *  @param  lps        LPs given to the borrower to compensate fractional collateral (if any).
+     *  @param  index      Index of the bucket with compensated LPs.
+     */
     event AuctionNFTSettle(
         address indexed borrower,
         uint256 collateral,
         uint256 lps,
         uint256 index
-    );
-
-    event AuctionSettle(
-        address indexed borrower,
-        uint256 collateral
     );
 
     /**
@@ -324,21 +352,14 @@ library Auctions {
 
         if (params_.t0Debt == 0) {
             // settle auction
-            if (params_.poolType == uint8(PoolType.ERC721)) {
-                uint256 lps;
-                uint256 bucketIndex;
-                (params_.collateral, lps, bucketIndex) = settleNFTAuction(
-                    auctions_,
-                    buckets_,
-                    deposits_,
-                    params_.borrower,
-                    params_.collateral
-                );
-                emit AuctionNFTSettle(params_.borrower, params_.collateral, lps, bucketIndex);
-            } else {
-                _removeAuction(auctions_, params_.borrower);
-                emit AuctionSettle(params_.borrower, params_.collateral);
-            }
+            params_.collateral = _settleAuction(
+                auctions_,
+                buckets_,
+                deposits_,
+                params_.borrower,
+                params_.collateral,
+                params_.poolType
+            );
         }
 
         return (params_.collateral, params_.t0Debt);
@@ -454,13 +475,13 @@ library Auctions {
         emit RemoveQuoteToken(msg.sender, index_, vars.amountToDebitFromDeposit, vars.redeemedLPs, kickResult_.lup);
     }
 
-    // /**
-    //  *  @notice Performs bucket take collateral on an auction and rewards taker and kicker (if case).
-    //  *  @param  params_ Struct containing take action details.
-    //  *  @return Collateral amount taken.
-    //  *  @return T0 debt amount repaid.
-    //  *  @return T0 penalty debt.
-    // */
+    /**
+     *  @notice Performs bucket take collateral on an auction, rewards taker and kicker (if case) and updates loan info (settles auction if case).
+     *  @param  borrowerAddress_ Borrower address to take.
+     *  @param  depositTake_     If true then the take will happen at an auction price equal with bucket price. Auction price is used otherwise.
+     *  @param  index_           Index of a bucket, likely the HPB, in which collateral will be deposited.
+     *  @return result_          BucketTakeResult struct containing details of take.
+    */
     function bucketTake(
         AuctionsState storage auctions_,
         mapping(uint256 => Bucket) storage buckets_,
@@ -511,15 +532,12 @@ library Auctions {
         result_.settledAuction = result.settledAuction;
     }
 
-    // /**
-    //  *  @notice Performs take collateral on an auction and updates bond size and kicker balance accordingly.
-    //  *  @param  params_ Struct containing take action params details.
-    //  *  @return Collateral amount taken.
-    //  *  @return Quote token to be received from taker.
-    //  *  @return T0 debt amount repaid.
-    //  *  @return T0 penalty debt.
-    //  *  @return Excess quote token that can result after a take (NFT case).
-    // */
+    /**
+     *  @notice Performs take collateral on an auction, rewards taker and kicker (if case) and updates loan info (settles auction if case).
+     *  @param  borrowerAddress_ Borrower address to take.
+     *  @param  collateral_      Max amount of collateral that will be taken from the auction (max number of NFTs in case of ERC721 pool).
+     *  @return result_          TakeResult struct containing details of take.
+    */
     function take(
         AuctionsState storage auctions_,
         mapping(uint256 => Bucket) storage buckets_,
@@ -572,21 +590,48 @@ library Auctions {
         result_.settledAuction = result.settledAuction;
     }
 
+    function _settleAuction(
+        AuctionsState storage auctions_,
+        mapping(uint256 => Bucket) storage buckets_,
+        DepositsState storage deposits_,
+        address borrowerAddress_,
+        uint256 borrowerCollateral_,
+        uint256 poolType_
+    ) internal returns (uint256 remainingCollateral_) {
+        if (poolType_ == uint8(PoolType.ERC721)) {
+            uint256 lps;
+            uint256 bucketIndex;
+            (remainingCollateral_, lps, bucketIndex) = _settleNFTCollateral(
+                auctions_,
+                buckets_,
+                deposits_,
+                borrowerAddress_,
+                borrowerCollateral_
+            );
+            emit AuctionNFTSettle(borrowerAddress_, remainingCollateral_, lps, bucketIndex);
+        } else {
+            remainingCollateral_ = borrowerCollateral_;
+            emit AuctionSettle(borrowerAddress_, remainingCollateral_);
+        }
+
+        _removeAuction(auctions_, borrowerAddress_);
+    }
+
     /**
-     *  @notice Performs NFT auction settlement by rounding down borrower's collateral amount and by moving borrower's token ids to pool claimable array.
+     *  @notice Performs NFT collateral settlement by rounding down borrower's collateral amount and by moving borrower's token ids to pool claimable array.
      *  @param borrowerAddress_    Address of the borrower that exits auction.
      *  @param borrowerCollateral_ Borrower collateral amount before auction exit (could be fragmented as result of partial takes).
      *  @return floorCollateral_   Rounded down collateral, the number of NFT tokens borrower can pull after auction exit.
      *  @return lps_               LPs given to the borrower to compensate fractional collateral (if any).
      *  @return bucketIndex_       Index of the bucket with LPs to compensate.
      */
-    function settleNFTAuction(
+    function _settleNFTCollateral(
         AuctionsState storage auctions_,
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
         address borrowerAddress_,
         uint256 borrowerCollateral_
-    ) public returns (uint256 floorCollateral_, uint256 lps_, uint256 bucketIndex_) {
+    ) internal returns (uint256 floorCollateral_, uint256 lps_, uint256 bucketIndex_) {
         floorCollateral_ = (borrowerCollateral_ / Maths.WAD) * Maths.WAD; // floor collateral of borrower
 
         // if there's fraction of NFTs remaining then reward difference to borrower as LPs in auction price bucket
@@ -606,8 +651,6 @@ library Auctions {
                 _priceAt(bucketIndex_)
             );
         }
-
-        _removeAuction(auctions_, borrowerAddress_);
     }
 
     /***********************/
@@ -733,6 +776,16 @@ library Auctions {
         );
     }
 
+    /**
+     *  @notice Performs take collateral on an auction and updates bond size and kicker balance accordingly.
+     *  @param  params_ Struct containing take action params details.
+     *  @return Collateral amount taken.
+     *  @return Quote token to be received from taker.
+     *  @return T0 debt amount repaid.
+     *  @return T0 borrower debt (including penalty).
+     *  @return T0 penalty debt.
+     *  @return Excess quote token that can result after a take (NFT case).
+    */
     function _take(
         AuctionsState storage auctions_,
         TakeParams memory params_
@@ -785,6 +838,14 @@ library Auctions {
         );
     }
 
+    /**
+     *  @notice Performs bucket take collateral on an auction and rewards taker and kicker (if case).
+     *  @param  params_ Struct containing take action details.
+     *  @return Collateral amount taken.
+     *  @return T0 debt amount repaid.
+     *  @return T0 borrower debt (including penalty).
+     *  @return T0 penalty debt.
+    */
     function _takeBucket(
         AuctionsState storage auctions_,
         mapping(uint256 => Bucket) storage buckets_,
@@ -867,27 +928,20 @@ library Auctions {
 
         if (_isCollateralized(vars.borrowerDebt, borrower_.collateral, result_.newLup, poolState_.poolType)) {
             // borrower becomes re-collateralized
+            vars.inAuction = false;
             result_.settledAuction = true;
             // remove entire borrower debt from pool auctions debt accumulator
             result_.t0DebtInAuctionChange = borrower_.t0Debt;
             // settle auction and update borrower's collateral with value after settlement
-            if (poolState_.poolType == uint8(PoolType.ERC721)) {
-                uint256 lps;
-                uint256 bucketIndex;
-                (result_.remainingCollateral, lps, bucketIndex) = settleNFTAuction(
-                    auctions_,
-                    buckets_,
-                    deposits_,
-                    borrowerAddress_,
-                    borrower_.collateral
-                );
-                borrower_.collateral = result_.remainingCollateral;
-                emit AuctionNFTSettle(borrowerAddress_, result_.remainingCollateral, lps, bucketIndex);
-            } else {
-                Auctions._removeAuction(auctions_, borrowerAddress_);
-                emit AuctionSettle(borrowerAddress_, borrower_.collateral);
-            }
-            vars.inAuction = false;
+            result_.remainingCollateral = _settleAuction(
+                auctions_,
+                buckets_,
+                deposits_,
+                borrowerAddress_,
+                borrower_.collateral,
+                poolState_.poolType
+            );
+            borrower_.collateral = result_.remainingCollateral;
         } else {
             // partial repay, remove only the paid debt from pool auctions debt accumulator
             result_.t0DebtInAuctionChange = t0RepaidDebt_;

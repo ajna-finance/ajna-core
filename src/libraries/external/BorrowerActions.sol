@@ -23,16 +23,16 @@ import '../Loans.sol';
 library BorrowerActions {
 
     struct DrawDebtLocalVars {
-        uint256 borrowerDebt;
-        bool    inAuction;
-        uint256 lupId;
-        uint256 debtChange;
+        uint256 borrowerDebt; // borrower's accrued debt
+        uint256 debtChange;   // additional debt resulted from draw debt action
+        bool    inAuction;    // true if loan is auctioned
+        uint256 lupId;        // id of new LUP
     }
 
     struct RepayDebtLocalVars {
         uint256 borrowerDebt;          // borrower's accrued debt
         bool    inAuction;             // true if loan still in auction after repay, false otherwise
-        uint256 newLup;                // LUP after auction is taken
+        uint256 newLup;                // LUP after repay debt action
         bool    pull;                  // true if pull action
         bool    repay;                 // true if repay action
         bool    stampT0Np;             // true if loan's t0 neutral price should be restamped (when exiting auction)
@@ -44,39 +44,23 @@ library BorrowerActions {
      *  @notice Recipient of borrowed quote tokens doesn't match the caller of the drawDebt function.
      */
     error BorrowerNotSender();
-
     /**
      *  @notice Borrower is attempting to borrow more quote token than they have collateral for.
      */
     error BorrowerUnderCollateralized();
-
     /**
      *  @notice User is attempting to move or pull more collateral than is available.
      */
     error InsufficientCollateral();
-
     /**
      *  @notice Borrower is attempting to borrow more quote token than is available before the supplied limitIndex.
      */
     error LimitIndexReached();
-
     /**
      *  @notice Borrower has no debt to liquidate.
      *  @notice Borrower is attempting to repay when they have no outstanding debt.
      */
     error NoDebt();
-
-    event AuctionNFTSettle(
-        address indexed borrower,
-        uint256 collateral,
-        uint256 lps,
-        uint256 index
-    );
-
-    event AuctionSettle(
-        address indexed borrower,
-        uint256 collateral
-    );
 
     function drawDebt(
         AuctionsState storage auctions_,
@@ -115,29 +99,20 @@ library BorrowerActions {
             )
             {
                 // borrower becomes collateralized
+                vars.inAuction = false;
                 result_.settledAuction = true;
                 // remove debt from pool accumulator and settle auction
                 result_.t0DebtInAuctionChange = borrower.t0Debt;
-
-                if (poolState_.poolType == uint8(PoolType.ERC721)) {
-                    uint256 lps;
-                    uint256 bucketIndex;
-                    (result_.remainingCollateral, lps, bucketIndex) = Auctions.settleNFTAuction(
-                        auctions_,
-                        buckets_,
-                        deposits_,
-                        borrowerAddress_,
-                        borrower.collateral
-                    );
-                    borrower.collateral = result_.remainingCollateral;
-                    emit AuctionNFTSettle(borrowerAddress_, result_.remainingCollateral, lps, bucketIndex);
-                } else {
-                    Auctions._removeAuction(auctions_, borrowerAddress_);
-                    emit AuctionSettle(borrowerAddress_, borrower.collateral);
-                }
-
-                // auction was settled, reset inAuction flag
-                vars.inAuction = false;
+                // settle auction and update borrower's collateral with value after settlement
+                result_.remainingCollateral = Auctions._settleAuction(
+                    auctions_,
+                    buckets_,
+                    deposits_,
+                    borrowerAddress_,
+                    borrower.collateral,
+                    poolState_.poolType
+                );
+                borrower.collateral = result_.remainingCollateral;
             }
 
             // add new amount of collateral to pledge to pool balance
@@ -232,30 +207,21 @@ library BorrowerActions {
             if (vars.inAuction) {
                 if (_isCollateralized(vars.borrowerDebt, borrower.collateral, result_.newLup, poolState_.poolType)) {
                     // borrower becomes re-collateralized
+                    vars.inAuction = false;
+                    vars.stampT0Np = true;  // stamp borrower t0Np when exiting from auction
                     result_.settledAuction = true;
                     // remove entire borrower debt from pool auctions debt accumulator
                     result_.t0DebtInAuctionChange = borrower.t0Debt;
-
                     // settle auction and update borrower's collateral with value after settlement
-                    if (poolState_.poolType == uint8(PoolType.ERC721)) {
-                        uint256 lps;
-                        uint256 bucketIndex;
-                        (result_.remainingCollateral, lps, bucketIndex) = Auctions.settleNFTAuction(
-                            auctions_,
-                            buckets_,
-                            deposits_,
-                            borrowerAddress_,
-                            borrower.collateral
-                        );
-                        borrower.collateral = result_.remainingCollateral;
-                        emit AuctionNFTSettle(borrowerAddress_, result_.remainingCollateral, lps, bucketIndex);
-                    } else {
-                        Auctions._removeAuction(auctions_, borrowerAddress_);
-                        emit AuctionSettle(borrowerAddress_, borrower.collateral);
-                    }
-
-                    vars.inAuction   = false;
-                    vars.stampT0Np = true;  // stamp borrower t0Np when exiting from auction
+                    result_.remainingCollateral = Auctions._settleAuction(
+                        auctions_,
+                        buckets_,
+                        deposits_,
+                        borrowerAddress_,
+                        borrower.collateral,
+                        poolState_.poolType
+                    );
+                    borrower.collateral = result_.remainingCollateral;
                 } else {
                     // partial repay, remove only the paid debt from pool auctions debt accumulator
                     result_.t0DebtInAuctionChange = result_.t0RepaidDebt;
