@@ -258,43 +258,38 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256 assets = Maths.wmul(poolBalances.t0Debt, poolState.inflator) + _getPoolQuoteTokenBalance();
         uint256 liabilities = Deposits.treeSum(deposits) + auctions.totalBondEscrowed + reserveAuction.unclaimed;
 
-        Borrower storage borrower = loans.borrowers[borrowerAddress_];
-
         SettleParams memory params = SettleParams(
             {
                 borrower:    borrowerAddress_,
-                collateral:  borrower.collateral,
-                t0Debt:      borrower.t0Debt,
                 reserves:    (assets > liabilities) ? (assets-liabilities) : 0,
                 inflator:    poolState.inflator,
                 bucketDepth: maxDepth_,
                 poolType:    poolState.poolType
             }
         );
-        (uint256 remainingCollateral, uint256 t0RemainingDebt) = Auctions.settlePoolDebt(
+        (
+            uint256 collateralRemaining,
+            uint256 t0DebtRemaining,
+            uint256 collateralSettled,
+            uint256 t0DebtSettled
+        ) = Auctions.settlePoolDebt(
             auctions,
             buckets,
             deposits,
+            loans,
             params
         );
 
         // slither-disable-next-line incorrect-equality
-        if (t0RemainingDebt == 0) _rebalanceTokens(params.borrower, remainingCollateral);
-
-        // update borrower state
-        borrower.t0Debt     = t0RemainingDebt;
-        borrower.collateral = remainingCollateral;
+        if (t0DebtRemaining == 0) _rebalanceTokens(params.borrower, collateralRemaining);
 
         // update pool balances state
-        uint256 t0SettledDebt        = params.t0Debt - t0RemainingDebt;
-        poolBalances.t0Debt          -= t0SettledDebt;
-        poolBalances.t0DebtInAuction -= t0SettledDebt;
-
-        uint256 settledCollateral      = params.collateral - remainingCollateral;
-        poolBalances.pledgedCollateral -= settledCollateral;
+        poolBalances.t0Debt            -= t0DebtSettled;
+        poolBalances.t0DebtInAuction   -= t0DebtSettled;
+        poolBalances.pledgedCollateral -= collateralSettled;
 
         // update pool interest rate state
-        poolState.collateral -= settledCollateral;
+        poolState.collateral -= collateralSettled;
         _updateInterestState(poolState, _lup(poolState.debt));
     }
 

@@ -50,6 +50,18 @@ library Auctions {
         uint256 redeemedLPs;              // LPs used by kick action
     }
 
+    struct SettleLocalVars {
+        uint256 index;
+        uint256 unscaledDeposit;
+        uint256 scale;
+        uint256 price;
+        uint256 collateralUsed;
+        uint256 debt;
+        uint256 maxSettleableDebt;
+        uint256 scaledDeposit;
+        uint256 depositToRemove;
+    }
+
     struct TakeLocalVars {
         uint256 auctionPrice;             // The price of auction.
         uint256 bondChange;               // The change made on the bond size (beeing reward or penalty).
@@ -254,89 +266,100 @@ library Auctions {
      *  @notice Settles the debt of the given loan / borrower.
      *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from liquidationBondEscrowed.
      *  @param  params_ Settle params
-     *  @return The amount of borrower collateral left after settle.
-     *  @return The amount of borrower debt left after settle.
+     *  @return collateralRemaining_ The amount of borrower collateral left after settle.
+     *  @return t0DebtRemaining_     The amount of t0 debt left after settle.
+     *  @return collateralSettled_   The amount of collateral settled.
+     *  @return t0DebtSettled_       The amount of t0 debt settled.
      */
     function settlePoolDebt(
         AuctionsState storage auctions_,
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
+        LoansState storage loans_,
         SettleParams memory params_
-    ) external returns (uint256, uint256) {
+    ) external returns (
+        uint256 collateralRemaining_,
+        uint256 t0DebtRemaining_,
+        uint256 collateralSettled_,
+        uint256 t0DebtSettled_
+    ) {
         uint256 kickTime = auctions_.liquidations[params_.borrower].kickTime;
         if (kickTime == 0) revert NoAuction();
 
-        if ((block.timestamp - kickTime < 72 hours) && (params_.collateral != 0)) revert AuctionNotClearable();
+        Borrower memory borrower = loans_.borrowers[params_.borrower];
+        if ((block.timestamp - kickTime < 72 hours) && (borrower.collateral != 0)) revert AuctionNotClearable();
 
-        uint256 t0DebtInitial = params_.t0Debt;
+        t0DebtSettled_     = borrower.t0Debt;
+        collateralSettled_ = borrower.collateral;
 
         // auction has debt to cover with remaining collateral
-        while (params_.bucketDepth != 0 && params_.t0Debt != 0 && params_.collateral != 0) {
-            uint256 index           = Deposits.findIndexOfSum(deposits_, 1);
-            uint256 unscaledDeposit = Deposits.unscaledValueAt(deposits_, index);
-            uint256 scale           = Deposits.scale(deposits_, index);
-            uint256 price           = _priceAt(index);
-            uint256 collateralUsed;
+        while (params_.bucketDepth != 0 && borrower.t0Debt != 0 && borrower.collateral != 0) {
+            SettleLocalVars memory vars;
+            vars.index           = Deposits.findIndexOfSum(deposits_, 1);
+            vars.unscaledDeposit = Deposits.unscaledValueAt(deposits_, vars.index);
+            vars.scale           = Deposits.scale(deposits_, vars.index);
+            vars.price           = _priceAt(vars.index);
 
-            if (unscaledDeposit != 0) {
-                uint256 debt              = Maths.wmul(params_.t0Debt, params_.inflator);   // current debt to be settled
-                uint256 maxSettleableDebt = Maths.wmul(params_.collateral, price);          // max debt that can be settled with existing collateral
-                uint256 scaledDeposit     = Maths.wmul(scale, unscaledDeposit);
+            if (vars.unscaledDeposit != 0) {
+                vars.debt              = Maths.wmul(borrower.t0Debt, params_.inflator);   // current debt to be settled
+                vars.maxSettleableDebt = Maths.wmul(borrower.collateral, vars.price);          // max debt that can be settled with existing collateral
+                vars.scaledDeposit     = Maths.wmul(vars.scale, vars.unscaledDeposit);
 
-                if (scaledDeposit >= debt && maxSettleableDebt >= debt) {                   // enough deposit in bucket and collateral avail to settle entire debt
-                    unscaledDeposit = Maths.wdiv(debt, scale);                              // remove only what's needed to settle the debt
-                    params_.t0Debt    = 0;                                                  // no remaining debt to settle
-                    collateralUsed     = Maths.wdiv(debt, price);
-                } else if (maxSettleableDebt >= scaledDeposit) {                            // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
-                    params_.t0Debt     -= Maths.wdiv(scaledDeposit, params_.inflator);      // subtract from debt the corresponding t0 amount of deposit
-                    collateralUsed     = Maths.wdiv(scaledDeposit, price);
+                if (vars.scaledDeposit >= vars.debt && vars.maxSettleableDebt >= vars.debt) {                   // enough deposit in bucket and collateral avail to settle entire debt
+                    vars.unscaledDeposit = Maths.wdiv(vars.debt, vars.scale);                              // remove only what's needed to settle the debt
+                    borrower.t0Debt      = 0;                                                  // no remaining debt to settle
+                    vars.collateralUsed  = Maths.wdiv(vars.debt, vars.price);
+                } else if (vars.maxSettleableDebt >= vars.scaledDeposit) {                            // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
+                    borrower.t0Debt     -= Maths.wdiv(vars.scaledDeposit, params_.inflator);      // subtract from debt the corresponding t0 amount of deposit
+                    vars.collateralUsed = Maths.wdiv(vars.scaledDeposit, vars.price);
                 } else {                                                                    // constrained by collateral available
-                    unscaledDeposit    = Maths.wdiv(maxSettleableDebt, scale);
-                    params_.t0Debt     -= Maths.wdiv(maxSettleableDebt, params_.inflator);
-                    collateralUsed     = params_.collateral;
+                    vars.unscaledDeposit = Maths.wdiv(vars.maxSettleableDebt, vars.scale);
+                    borrower.t0Debt      -= Maths.wdiv(vars.maxSettleableDebt, params_.inflator);
+                    vars.collateralUsed  = borrower.collateral;
                 }
 
-                params_.collateral         -= collateralUsed;                // move settled collateral from loan into bucket
-                buckets_[index].collateral += collateralUsed;
-                Deposits.unscaledRemove(deposits_, index, unscaledDeposit); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
+                borrower.collateral             -= vars.collateralUsed;                // move settled collateral from loan into bucket
+                buckets_[vars.index].collateral += vars.collateralUsed;
+
+                Deposits.unscaledRemove(deposits_, vars.index, vars.unscaledDeposit); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
             } else {
                 // Deposits in the tree is zero, insert entire collateral into lowest bucket 7388
                 Buckets.addCollateral(
-                    buckets_[index],
+                    buckets_[vars.index],
                     params_.borrower,
                     0,  // zero deposit in bucket
-                    params_.collateral,
-                    price
+                    borrower.collateral,
+                    vars.price
                 );
-                params_.collateral = 0; // entire collateral added into bucket
+                borrower.collateral = 0; // entire collateral added into bucket
             }
 
             --params_.bucketDepth;
         }
 
         // if there's still debt and no collateral
-        if (params_.t0Debt != 0 && params_.collateral == 0) {
+        if (borrower.t0Debt != 0 && borrower.collateral == 0) {
             // settle debt from reserves -- round reserves down however
-            params_.t0Debt -= Maths.min(params_.t0Debt, (params_.reserves / params_.inflator) * 1e18);
+            borrower.t0Debt -= Maths.min(borrower.t0Debt, (params_.reserves / params_.inflator) * 1e18);
 
             // if there's still debt after settling from reserves then start to forgive amount from next HPB
-            while (params_.bucketDepth != 0 && params_.t0Debt != 0) { // loop through remaining buckets if there's still debt to settle
-                uint256 index   = Deposits.findIndexOfSum(deposits_, 1);
-                uint256 unscaledDeposit = Deposits.unscaledValueAt(deposits_, index);
-                uint256 scale        = Deposits.scale(deposits_, index);
+            while (params_.bucketDepth != 0 && borrower.t0Debt != 0) { // loop through remaining buckets if there's still debt to settle
+                SettleLocalVars memory vars;
+                vars.index           = Deposits.findIndexOfSum(deposits_, 1);
+                vars.unscaledDeposit = Deposits.unscaledValueAt(deposits_, vars.index);
+                vars.scale           = Deposits.scale(deposits_, vars.index);
+                vars.depositToRemove = Maths.wmul(vars.scale, vars.unscaledDeposit);
+                vars.debt            = Maths.wmul(borrower.t0Debt, params_.inflator);
 
-                uint256 depositToRemove = Maths.wmul(scale, unscaledDeposit);
-                uint256 debt            = Maths.wmul(params_.t0Debt, params_.inflator);
-
-                if (depositToRemove >= debt) {                                          // enough deposit in bucket to settle entire debt
-                    Deposits.unscaledRemove(deposits_, index, Maths.wdiv(debt, scale));
-                    params_.t0Debt  = 0;                                                // no remaining debt to settle
+                if (vars.depositToRemove >= vars.debt) {                                          // enough deposit in bucket to settle entire debt
+                    Deposits.unscaledRemove(deposits_, vars.index, Maths.wdiv(vars.debt, vars.scale));
+                    borrower.t0Debt  = 0;                                                // no remaining debt to settle
 
                 } else {                                                                // not enough deposit to settle entire debt, we settle only deposit amount
-                    params_.t0Debt -= Maths.wdiv(depositToRemove, params_.inflator);    // subtract from remaining debt the corresponding t0 amount of deposit
+                    borrower.t0Debt -= Maths.wdiv(vars.depositToRemove, params_.inflator);    // subtract from remaining debt the corresponding t0 amount of deposit
 
-                    Deposits.unscaledRemove(deposits_, index, unscaledDeposit);         // Remove all deposit from bucket
-                    Bucket storage hpbBucket = buckets_[index];
+                    Deposits.unscaledRemove(deposits_, vars.index, vars.unscaledDeposit);         // Remove all deposit from bucket
+                    Bucket storage hpbBucket = buckets_[vars.index];
                     
                     if (hpbBucket.collateral == 0) {                                    // existing LPB and LP tokens for the bucket shall become unclaimable.
                         hpbBucket.lps = 0;
@@ -348,21 +371,29 @@ library Auctions {
             }
         }
 
-        emit Settle(params_.borrower, t0DebtInitial - params_.t0Debt);
+        
+        t0DebtRemaining_ = borrower.t0Debt;
+        t0DebtSettled_   -= t0DebtRemaining_;
 
-        if (params_.t0Debt == 0) {
+        emit Settle(params_.borrower, t0DebtSettled_);
+
+        if (borrower.t0Debt == 0) {
             // settle auction
-            params_.collateral = _settleAuction(
+            borrower.collateral = _settleAuction(
                 auctions_,
                 buckets_,
                 deposits_,
                 params_.borrower,
-                params_.collateral,
+                borrower.collateral,
                 params_.poolType
             );
         }
 
-        return (params_.collateral, params_.t0Debt);
+        collateralRemaining_ = borrower.collateral;
+        collateralSettled_   -= collateralRemaining_;
+
+        // update borrower state
+        loans_.borrowers[params_.borrower] = borrower;
     }
 
     /**

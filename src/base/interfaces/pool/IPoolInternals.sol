@@ -31,8 +31,6 @@ struct KickResult {
 
 struct SettleParams {
     address borrower;    // borrower address to settle
-    uint256 collateral;  // remaining collateral pledged by borrower that can be used to settle debt
-    uint256 t0Debt;      // borrower t0 debt to settle 
     uint256 reserves;    // current reserves in pool
     uint256 inflator;    // current pool inflator
     uint256 bucketDepth; // number of buckets to use when settle debt
