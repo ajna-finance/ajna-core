@@ -10,6 +10,8 @@ import {
     RepayDebtResult
 } from '../../base/interfaces/IPool.sol';
 
+import { _revertOnMinDebt } from '../../base/RevertsHelper.sol';
+
 import './Auctions.sol';
 import '../Buckets.sol';
 import '../Deposits.sol';
@@ -37,11 +39,6 @@ library BorrowerActions {
         uint256 t0DebtInAuctionChange; // t0 change amount of debt after repayment
         uint256 t0RepaidDebt;          // t0 debt repaid
     }
-
-    /**
-     *  @notice Borrower is attempting to create or modify a loan such that their loan's quote token would be less than the pool's minimum debt amount.
-     */
-    error AmountLTMinDebt();
 
     /**
      *  @notice Recipient of borrowed quote tokens doesn't match the caller of the drawDebt function.
@@ -312,17 +309,6 @@ library BorrowerActions {
         uint256 debt_
     ) internal view returns (uint256) {
         return _priceAt(_lupIndex(deposits_, debt_));
-    }
-
-    function _revertOnMinDebt(LoansState storage loans_, uint256 poolDebt_, uint256 borrowerDebt_) internal view {
-        if (borrowerDebt_ != 0) {
-            uint256 loansCount = Loans.noOfLoans(loans_);
-            if (
-                loansCount >= 10
-                &&
-                (borrowerDebt_ < _minDebtAmount(poolDebt_, loansCount))
-            ) revert AmountLTMinDebt();
-        }
     }
 
 }

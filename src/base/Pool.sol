@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import './interfaces/IPool.sol';
 
 import './PoolHelper.sol';
+import { _revertIfAuctionClearable, _revertIfAuctionDebtLocked } from './RevertsHelper.sol';
 
 import '../libraries/Buckets.sol';
 import '../libraries/Deposits.sol';
@@ -113,7 +114,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 toIndex_
     ) external override returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
         PoolState memory poolState = _accruePoolInterest();
-        _revertIfAuctionDebtLocked(fromIndex_, poolState.inflator);
+        _revertIfAuctionDebtLocked(deposits, poolBalances, fromIndex_, poolState.inflator);
 
         uint256 newLup;
         (
@@ -142,10 +143,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 maxAmount_,
         uint256 index_
     ) external override returns (uint256 removedAmount_, uint256 redeemedLPs_) {
-        Auctions.revertIfAuctionClearable(auctions, loans);
+        _revertIfAuctionClearable(auctions, loans);
 
         PoolState memory poolState = _accruePoolInterest();
-        _revertIfAuctionDebtLocked(index_, poolState.inflator);
+        _revertIfAuctionDebtLocked(deposits, poolBalances, index_, poolState.inflator);
 
         uint256 newLup;
         (
@@ -323,22 +324,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             inflatorState.inflator       = uint208(Maths.WAD);
             inflatorState.inflatorUpdate = uint48(block.timestamp);
         }
-    }
-
-    /**
-     *  @notice Called by LPB removal functions assess whether or not LPB is locked.
-     *  @param  index_    The deposit index from which LPB is attempting to be removed.
-     *  @param  inflator_ The pool inflator used to properly assess t0 debt in auctions.
-     */
-    function _revertIfAuctionDebtLocked(
-        uint256 index_,
-        uint256 inflator_
-    ) internal view {
-        uint256 t0AuctionDebt = poolBalances.t0DebtInAuction;
-        if (t0AuctionDebt != 0 ) {
-            // deposit in buckets within liquidation debt from the top-of-book down are frozen.
-            if (index_ <= Deposits.findIndexOfSum(deposits, Maths.wmul(t0AuctionDebt, inflator_))) revert RemoveDepositLockedByAuctionDebt();
-        } 
     }
 
     function _transferQuoteTokenFrom(address from_, uint256 amount_) internal {

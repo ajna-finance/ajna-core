@@ -213,7 +213,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         uint256 maxAmount_,
         uint256 index_
     ) external override returns (uint256 collateralAmount_, uint256 lpAmount_) {
-        Auctions.revertIfAuctionClearable(auctions, loans);
+        _revertIfAuctionClearable(auctions, loans);
 
         PoolState memory poolState = _accruePoolInterest();
 

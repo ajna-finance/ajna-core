@@ -20,7 +20,7 @@ import {
     StartReserveAuctionParams
 } from '../../base/interfaces/IPool.sol';
 
-import './BorrowerActions.sol';
+import { _revertOnMinDebt } from '../../base/RevertsHelper.sol';
 
 import '../Buckets.sol';
 import '../Deposits.sol';
@@ -181,10 +181,6 @@ library Auctions {
      *  @notice Attempted auction to clear doesn't meet conditions.
      */
     error AuctionNotClearable();
-    /**
-     *  @notice Head auction should be cleared prior of executing this action.
-     */
-    error AuctionNotCleared();
     /**
      *  @notice The auction price is greater than the arbed bucket price.
      */
@@ -864,7 +860,7 @@ library Auctions {
         if (t0DebtPenalty_ != 0) result_.poolDebt += Maths.wmul(t0DebtPenalty_, poolState_.inflator);
 
         // check that taking from loan doesn't leave borrower debt under min debt amount
-        BorrowerActions._revertOnMinDebt(loans_, result_.poolDebt, vars.borrowerDebt);
+        _revertOnMinDebt(loans_, result_.poolDebt, vars.borrowerDebt);
 
         result_.newLup = _lup(deposits_, result_.poolDebt);
         vars.inAuction = true;
@@ -1300,24 +1296,6 @@ library Auctions {
         address borrower_
     ) internal view returns (bool) {
         return auctions_.liquidations[borrower_].kickTime != 0;
-    }
-
-    /**
-     *  @notice Check if head auction is clearable (auction is kicked and 72 hours passed since kick time or auction still has debt but no remaining collateral).
-     *  @notice Revert if auction is clearable
-     */
-    function revertIfAuctionClearable(
-        AuctionsState storage auctions_,
-        LoansState    storage loans_
-    ) internal view {
-        address head     = auctions_.head;
-        uint256 kickTime = auctions_.liquidations[head].kickTime;
-        if (kickTime != 0) {
-            if (block.timestamp - kickTime > 72 hours) revert AuctionNotCleared();
-
-            Borrower storage borrower = loans_.borrowers[head];
-            if (borrower.t0Debt != 0 && borrower.collateral == 0) revert AuctionNotCleared();
-        }
     }
 
     function _lup(
