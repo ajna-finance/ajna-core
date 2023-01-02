@@ -28,27 +28,27 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     /****************************/
     /*** Initialize Functions ***/
     /****************************/
-    
+
     function initialize(
         uint256[] memory tokenIds_,
         uint256 rate_
     ) external override {
         if (poolInitializations != 0) revert AlreadyInitialized();
 
-        inflatorState.inflator       = uint208(10**18);
+        inflatorState.inflator       = uint208(1e18);
         inflatorState.inflatorUpdate = uint48(block.timestamp);
 
         interestState.interestRate       = uint208(rate_);
         interestState.interestRateUpdate = uint48(block.timestamp);
 
         uint256 noOfTokens = tokenIds_.length;
+
         if (noOfTokens != 0) {
             // add subset of tokenIds allowed in the pool
             for (uint256 id = 0; id < noOfTokens;) {
                 tokenIdsAllowed[tokenIds_[id]] = true;
-                unchecked {
-                    ++id;
-                }
+
+                unchecked { ++id; }
             }
         }
 
@@ -77,6 +77,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256[] calldata tokenIdsToPledge_
     ) external {
         PoolState memory poolState = _accruePoolInterest();
+
         DrawDebtResult memory result = BorrowerActions.drawDebt(
             auctions,
             buckets,
@@ -125,6 +126,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256 noOfNFTsToPull_
     ) external {
         PoolState memory poolState = _accruePoolInterest();
+
         RepayDebtResult memory result = BorrowerActions.repayDebt(
             auctions,
             buckets,
@@ -197,7 +199,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     ) external override returns (uint256 collateralMerged_, uint256 bucketLPs_) {
         PoolState memory poolState = _accruePoolInterest();
         uint256 collateralAmount = Maths.wad(noOfNFTsToRemove_);
-        
+
         (
             collateralMerged_,
             bucketLPs_
@@ -314,10 +316,12 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         // update pool balances state
         uint256 t0PoolDebt      = poolBalances.t0Debt;
         uint256 t0DebtInAuction = poolBalances.t0DebtInAuction;
+
         if (result.t0DebtPenalty != 0) {
             t0PoolDebt      += result.t0DebtPenalty;
             t0DebtInAuction += result.t0DebtPenalty;
         }
+
         t0PoolDebt      -= result.t0RepayAmount;
         t0DebtInAuction -= result.t0DebtInAuctionChange;
 
@@ -376,10 +380,12 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         // update pool balances state
         uint256 t0PoolDebt      = poolBalances.t0Debt;
         uint256 t0DebtInAuction = poolBalances.t0DebtInAuction;
+
         if (result.t0DebtPenalty != 0) {
             t0PoolDebt      += result.t0DebtPenalty;
             t0DebtInAuction += result.t0DebtPenalty;
         }
+
         t0PoolDebt      -= result.t0RepayAmount;
         t0DebtInAuction -= result.t0DebtInAuctionChange;
 
@@ -405,15 +411,16 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     ) internal {
         // rebalance borrower's collateral, transfer difference to floor collateral from borrower to pool claimable array
         uint256[] storage borrowerTokens = borrowerTokenIds[borrowerAddress_];
+
         uint256 noOfTokensPledged    = borrowerTokens.length;
         uint256 noOfTokensToTransfer = borrowerCollateral_ != 0 ? noOfTokensPledged - borrowerCollateral_ / 1e18 : noOfTokensPledged;
+
         for (uint256 i = 0; i < noOfTokensToTransfer;) {
             uint256 tokenId = borrowerTokens[--noOfTokensPledged]; // start with moving the last token pledged by borrower
             borrowerTokens.pop();                                  // remove token id from borrower
             bucketTokenIds.push(tokenId);                          // add token id to pool claimable tokens
-            unchecked {
-                ++i;
-            }
+
+            unchecked { ++i; }
         }
     }
 
@@ -427,13 +434,14 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256[] storage poolTokens_,
         uint256[] calldata tokenIds_
     ) internal {
-        bool subset = _getArgUint256(SUBSET) != 0;
+        bool subset   = _getArgUint256(SUBSET) != 0;
         uint8 nftType = _getArgUint8(NFT_TYPE);
+
         for (uint256 i = 0; i < tokenIds_.length;) {
             uint256 tokenId = tokenIds_[i];
             if (subset && !tokenIdsAllowed[tokenId]) revert OnlySubset();
             poolTokens_.push(tokenId);
-            
+
             if (nftType == uint8(NFTTypes.STANDARD_ERC721)){
                 _transferNFT(msg.sender, address(this), tokenId);
             }
@@ -444,9 +452,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
                 ICryptoPunks(_getArgAddress(COLLATERAL_ADDRESS)).buyPunk(tokenId);
             }
 
-            unchecked {
-                ++i;
-            }
+            unchecked { ++i; }
         }
     }
 
@@ -466,7 +472,9 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256[] memory tokensTransferred = new uint256[](amountToRemove_);
 
         uint256 noOfNFTsInPool = poolTokens_.length;
+
         uint8 nftType = _getArgUint8(NFT_TYPE);
+
         for (uint256 i = 0; i < amountToRemove_;) {
             uint256 tokenId = poolTokens_[--noOfNFTsInPool]; // start with transferring the last token added in bucket
             poolTokens_.pop();
@@ -477,15 +485,13 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             else if (nftType == uint8(NFTTypes.CRYPTOKITTIES)) {
                 ICryptoKitties(_getArgAddress(COLLATERAL_ADDRESS)).transfer(toAddress_, tokenId);
             }
-            else{
+            else {
                 ICryptoPunks(_getArgAddress(COLLATERAL_ADDRESS)).transferPunk(toAddress_, tokenId);
             }
 
             tokensTransferred[i] = tokenId;
 
-            unchecked {
-                ++i;
-            }
+            unchecked { ++i; }
         }
 
         return tokensTransferred;

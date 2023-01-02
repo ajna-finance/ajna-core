@@ -28,7 +28,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     ) external override {
         if (poolInitializations != 0) revert AlreadyInitialized();
 
-        inflatorState.inflator       = uint208(10**18);
+        inflatorState.inflator       = uint208(1e18);
         inflatorState.inflatorUpdate = uint48(block.timestamp);
 
         interestState.interestRate       = uint208(rate_);
@@ -59,6 +59,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         uint256 collateralToPledge_
     ) external {
         PoolState memory poolState = _accruePoolInterest();
+
         DrawDebtResult memory result = BorrowerActions.drawDebt(
             auctions,
             buckets,
@@ -105,6 +106,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         uint256 collateralAmountToPull_
     ) external {
         PoolState memory poolState = _accruePoolInterest();
+
         RepayDebtResult memory result = BorrowerActions.repayDebt(
             auctions,
             buckets,
@@ -155,9 +157,9 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         if (token_ == _getArgAddress(QUOTE_ADDRESS)) return _flashLoanQuoteToken(receiver_, token_, amount_, data_);
 
         if (token_ == _getArgAddress(COLLATERAL_ADDRESS)) {
-            _transferCollateral(address(receiver_), amount_);            
-            
-            if (receiver_.onFlashLoan(msg.sender, token_, amount_, 0, data_) != 
+            _transferCollateral(address(receiver_), amount_);
+
+            if (receiver_.onFlashLoan(msg.sender, token_, amount_, 0, data_) !=
                 keccak256("ERC3156FlashBorrower.onFlashLoan")) revert FlashloanCallbackFailed();
 
             _transferCollateralFrom(address(receiver_), amount_);
@@ -244,7 +246,9 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         PoolState memory poolState = _accruePoolInterest();
 
         uint256 assets = Maths.wmul(poolBalances.t0Debt, poolState.inflator) + _getPoolQuoteTokenBalance();
+
         uint256 liabilities = Deposits.treeSum(deposits) + auctions.totalBondEscrowed + reserveAuction.unclaimed;
+
         (
             ,
             ,
@@ -255,15 +259,13 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             buckets,
             deposits,
             loans,
-            SettleParams(
-                {
-                    borrower:    borrowerAddress_,
-                    reserves:    (assets > liabilities) ? (assets - liabilities) : 0,
-                    inflator:    poolState.inflator,
-                    bucketDepth: maxDepth_,
-                    poolType:    poolState.poolType
-                }
-            )
+            SettleParams({
+                borrower:    borrowerAddress_,
+                reserves:    (assets > liabilities) ? (assets - liabilities) : 0,
+                inflator:    poolState.inflator,
+                bucketDepth: maxDepth_,
+                poolType:    poolState.poolType
+            })
         );
 
         // update pool balances state
@@ -297,10 +299,12 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         // update pool balances state
         uint256 t0PoolDebt      = poolBalances.t0Debt;
         uint256 t0DebtInAuction = poolBalances.t0DebtInAuction;
+
         if (result.t0DebtPenalty != 0) {
             t0PoolDebt      += result.t0DebtPenalty;
             t0DebtInAuction += result.t0DebtPenalty;
         }
+
         t0PoolDebt      -= result.t0RepayAmount;
         t0DebtInAuction -= result.t0DebtInAuctionChange;
 
@@ -348,10 +352,12 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         // update pool balances state
         uint256 t0PoolDebt      = poolBalances.t0Debt;
         uint256 t0DebtInAuction = poolBalances.t0DebtInAuction;
+
         if (result.t0DebtPenalty != 0) {
             t0PoolDebt      += result.t0DebtPenalty;
             t0DebtInAuction += result.t0DebtPenalty;
         }
+
         t0PoolDebt      -= result.t0RepayAmount;
         t0DebtInAuction -= result.t0DebtInAuctionChange;
 

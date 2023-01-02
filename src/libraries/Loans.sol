@@ -58,6 +58,7 @@ library Loans {
     ) internal {
 
         bool activeBorrower = borrower_.t0Debt != 0 && borrower_.collateral != 0;
+
         uint256 t0ThresholdPrice = activeBorrower ? Maths.wdiv(borrower_.t0Debt, borrower_.collateral) : 0;
 
         // loan not in auction, update threshold price and position in heap
@@ -81,8 +82,9 @@ library Loans {
         if (t0NpUpdate_) {
             if (t0ThresholdPrice != 0) {
                 uint256 loansInPool = loans_.loans.length - 1 + auctions_.noOfAuctions;
-                uint256 curMomp = _priceAt(Deposits.findIndexOfSum(deposits_, Maths.wdiv(borrowerAccruedDebt_, loansInPool * 1e18)));
-                borrower_.t0Np  = (1e18 + poolRate_) * curMomp * t0ThresholdPrice / lup_ / 1e18;
+                uint256 curMomp     = _priceAt(Deposits.findIndexOfSum(deposits_, Maths.wdiv(borrowerAccruedDebt_, loansInPool * 1e18)));
+
+                borrower_.t0Np = (1e18 + poolRate_) * curMomp * t0ThresholdPrice / lup_ / 1e18;
             } else {
                 borrower_.t0Np = 0;
             }

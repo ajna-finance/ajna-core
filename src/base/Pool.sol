@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import './interfaces/IPool.sol';
 
 import './PoolHelper.sol';
-import { _revertIfAuctionClearable, _revertIfAuctionDebtLocked } from './RevertsHelper.sol';
+import './RevertsHelper.sol';
 
 import '../libraries/Buckets.sol';
 import '../libraries/Deposits.sol';
@@ -23,6 +23,7 @@ import '../libraries/external/LenderActions.sol';
 import '../libraries/external/PoolCommons.sol';
 
 abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
+
     using SafeERC20 for IERC20;
 
     /*****************/
@@ -40,17 +41,18 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*** State Variables ***/
     /***********************/
 
-    InflatorState              internal inflatorState;
-    InterestState              internal interestState;
-    PoolBalancesState          internal poolBalances;
-    ReserveAuctionState        internal reserveAuction;
+    AuctionsState       internal auctions;
+    DepositsState       internal deposits;
+    LoansState          internal loans;
+    InflatorState       internal inflatorState;
+    InterestState       internal interestState;
+    PoolBalancesState   internal poolBalances;
+    ReserveAuctionState internal reserveAuction;
 
-    AuctionsState              internal auctions;
     mapping(uint256 => Bucket) internal buckets;   // deposit index -> bucket
-    DepositsState              internal deposits;
-    LoansState                 internal loans;
 
     uint256 internal poolInitializations;
+
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 
     /******************/
@@ -72,7 +74,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function quoteTokenScale() external pure override returns (uint256) {
         return _getArgUint256(QUOTE_SCALE);
     }
-
 
     /*********************************/
     /*** Lender External Functions ***/
@@ -114,6 +115,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 toIndex_
     ) external override returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
         PoolState memory poolState = _accruePoolInterest();
+
         _revertIfAuctionDebtLocked(deposits, poolBalances, fromIndex_, poolState.inflator);
 
         uint256 newLup;
@@ -125,14 +127,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             buckets,
             deposits,
             poolState,
-            MoveQuoteParams(
-                {
-                    maxAmountToMove: maxAmountToMove_,
-                    fromIndex:       fromIndex_,
-                    toIndex:         toIndex_,
-                    thresholdPrice:  Loans.getMax(loans).thresholdPrice
-                }
-            )
+            MoveQuoteParams({
+                maxAmountToMove: maxAmountToMove_,
+                fromIndex:       fromIndex_,
+                toIndex:         toIndex_,
+                thresholdPrice:  Loans.getMax(loans).thresholdPrice
+            })
         );
 
         // update pool interest rate state
@@ -146,6 +146,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _revertIfAuctionClearable(auctions, loans);
 
         PoolState memory poolState = _accruePoolInterest();
+
         _revertIfAuctionDebtLocked(deposits, poolBalances, index_, poolState.inflator);
 
         uint256 newLup;
@@ -157,13 +158,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             buckets,
             deposits,
             poolState,
-            RemoveQuoteParams(
-                {
-                    maxAmount:      maxAmount_,
-                    index:          index_,
-                    thresholdPrice: Loans.getMax(loans).thresholdPrice
-                }
-            )
+            RemoveQuoteParams({
+                maxAmount:      maxAmount_,
+                index:          index_,
+                thresholdPrice: Loans.getMax(loans).thresholdPrice
+            })
         );
 
         // update pool interest rate state
@@ -255,14 +254,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 kickerAward = Auctions.startClaimableReserveAuction(
             auctions,
             reserveAuction,
-            StartReserveAuctionParams(
-                {
-                    poolSize:    Deposits.treeSum(deposits),
-                    poolDebt:    poolBalances.t0Debt,
-                    poolBalance: _getPoolQuoteTokenBalance(),
-                    inflator:    inflatorState.inflator
-                }
-            )
+            StartReserveAuctionParams({
+                poolSize:    Deposits.treeSum(deposits),
+                poolDebt:    poolBalances.t0Debt,
+                poolBalance: _getPoolQuoteTokenBalance(),
+                inflator:    inflatorState.inflator
+            })
         );
         _transferQuoteToken(msg.sender, kickerAward);
     }
@@ -275,7 +272,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         IERC20(_getArgAddress(AJNA_ADDRESS)).safeTransferFrom(msg.sender, address(this), ajnaRequired);
+
         IERC20Token(_getArgAddress(AJNA_ADDRESS)).burn(ajnaRequired);
+
         _transferQuoteToken(msg.sender, amount_);
     }
 
@@ -295,6 +294,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             poolState_.debt = Maths.wmul(t0Debt, poolState_.inflator);
 
             uint256 elapsed = block.timestamp - inflatorState.inflatorUpdate;
+
             poolState_.isNewInterestAccrued = elapsed != 0;
 
             if (poolState_.isNewInterestAccrued) {
@@ -352,7 +352,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     function auctionInfo(
         address borrower_
-    ) external 
+    ) external
     view override returns (
         address kicker,
         uint256 bondFactor,
