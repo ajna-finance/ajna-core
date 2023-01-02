@@ -51,15 +51,15 @@ library Auctions {
     }
 
     struct SettleLocalVars {
-        uint256 index;
-        uint256 unscaledDeposit;
-        uint256 scale;
-        uint256 price;
-        uint256 collateralUsed;
-        uint256 debt;
-        uint256 maxSettleableDebt;
-        uint256 scaledDeposit;
-        uint256 depositToRemove;
+        uint256 collateralUsed;    // collateral used to settle debt
+        uint256 debt;              // debt to settle
+        uint256 depositToRemove;   // deposit used by settle auction
+        uint256 index;             // index of settling bucket
+        uint256 maxSettleableDebt; // max amount that can be settled with existing collateral
+        uint256 price;             // price of settling bucket
+        uint256 scaledDeposit;     // scaled amount of quote tokens in bucket
+        uint256 scale;             // scale of settling bucket
+        uint256 unscaledDeposit;   // unscaled amount of quote tokens in bucket
     }
 
     struct TakeLocalVars {
@@ -110,9 +110,9 @@ library Auctions {
     }
 
     /**
-     *  @notice Emitted when an ERC20 auction is settled.
-     *  @param  borrower    Identifies the loan being settled.
-     *  @param  collateral  Amount of remaining borrower collateral after auction is settled.
+     *  @notice Emitted when auction is completed.
+     *  @param  borrower   Address of borrower that exits auction.
+     *  @param  collateral Borrower's remaining collateral when auction completed.
      */
     event AuctionSettle(
         address indexed borrower,
@@ -120,11 +120,11 @@ library Auctions {
     );
 
     /**
-     *  @notice Emitted when an ERC721 auction is settled.
-     *  @param  borrower   Identifies the loan being settled.
-     *  @param  collateral Amount of remaining borrower collateral after auction is settled (rounded down).
-     *  @param  lps        LPs given to the borrower to compensate fractional collateral (if any).
-     *  @param  index      Index of the bucket with compensated LPs.
+     *  @notice Emitted when NFT auction is completed.
+     *  @param  borrower   Address of borrower that exits auction.
+     *  @param  collateral Borrower's remaining collateral when auction completed.
+     *  @param  lps        Amount of LPs given to the borrower to compensate fractional collateral (if any).
+     *  @param  index      Index of the bucket with LPs to compensate fractional collateral.
      */
     event AuctionNFTSettle(
         address indexed borrower,
@@ -1094,7 +1094,8 @@ library Auctions {
         }
 
         if (vars.isRewarded) {
-            vars.bondChange = Maths.wmul(vars.scaledQuoteTokenAmount, uint256(vars.bpf)); // will be rewarded as LPBs
+            // take is above neutralPrice, Kicker is rewarded
+            vars.bondChange = Maths.wmul(vars.scaledQuoteTokenAmount, uint256(vars.bpf));
         } else {
             // take is above neutralPrice, Kicker is penalized
             vars.bondChange = Maths.wmul(vars.scaledQuoteTokenAmount, uint256(-vars.bpf));
