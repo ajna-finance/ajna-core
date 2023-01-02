@@ -70,7 +70,7 @@ library Auctions {
         uint256 bucketPrice;              // The bucket price.
         uint256 bucketScale;              // The bucket scale.
         uint256 collateralAmount;         // The amount of collateral taken.
-        uint256 excessQuoteToken;         // Difference of quote token that borrower receives after taeke (for fractional NFT only)
+        uint256 excessQuoteToken;         // Difference of quote token that borrower receives after take (for fractional NFT only)
         uint256 factor;                   // The take factor, calculated based on bond penalty factor.
         bool    isRewarded;               // True if kicker is rewarded (auction price lower than neutral price), false if penalized (auction price greater than neutral price).
         address kicker;                   // Address of auction kicker.

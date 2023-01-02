@@ -338,12 +338,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         return IERC20(_getArgAddress(QUOTE_ADDRESS)).balanceOf(address(this));
     }
 
-    function _lupIndex(uint256 debt_) internal view returns (uint256) {
-        return Deposits.findIndexOfSum(deposits, debt_);
-    }
-
     function _lup(uint256 debt_) internal view returns (uint256) {
-        return _priceAt(_lupIndex(debt_));
+        return _priceAt(Deposits.findIndexOfSum(deposits, debt_));
     }
 
     /**************************/
