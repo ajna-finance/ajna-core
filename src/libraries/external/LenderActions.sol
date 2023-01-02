@@ -214,7 +214,7 @@ library LenderActions {
         DepositsState storage deposits_,
         PoolState calldata poolState_,
         MoveQuoteParams calldata params_
-    ) external returns (uint256 fromBucketRedeemedLPs_, uint256 toBucketRedeemedLPs_, uint256 lup_) {
+    ) external returns (uint256 fromBucketRedeemedLPs_, uint256 toBucketLPs_, uint256 lup_) {
         if (params_.fromIndex == params_.toIndex)
             revert MoveToSamePrice();
         if (params_.maxAmountToMove != 0 && params_.maxAmountToMove < params_.dustLimit)
