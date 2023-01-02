@@ -107,12 +107,12 @@ contract AjnaRewards is IAjnaRewards {
      *  @notice Claim ajna token rewards that have accrued to a staked LP NFT.
      *  @param  tokenId_ ID of the staked LP NFT.
      */
-    function claimRewards(uint256 tokenId_, uint256 burnIdToStartClaim_) external {
+    function claimRewards(uint256 tokenId_, uint256 burnEpochToStartClaim_) external {
         if (msg.sender != stakes[tokenId_].owner) revert NotOwnerOfDeposit();
 
-        if (hasClaimedForToken[tokenId_][burnIdToStartClaim_]) revert AlreadyClaimed();
+        if (hasClaimedForToken[tokenId_][burnEpochToStartClaim_]) revert AlreadyClaimed();
 
-        _claimRewards(tokenId_, burnIdToStartClaim_);
+        _claimRewards(tokenId_, burnEpochToStartClaim_);
     }
 
     /**
@@ -189,7 +189,12 @@ contract AjnaRewards is IAjnaRewards {
         uint256 updateReward;
         for (uint256 i = 0; i < indexes_.length; ) {
             // check bucket hasn't already been updated
-            if (poolBucketBurnExchangeRates[pool_][indexes_[i]][curBurnEpoch] != 0) revert ExchangeRateAlreadyUpdated();
+            // if it has, skip to the next bucket
+            if (poolBucketBurnExchangeRates[pool_][indexes_[i]][curBurnEpoch] != 0) {
+                // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
+                unchecked { ++i; }
+                continue;
+            }
 
             // record a buckets exchange rate
             uint256 curBucketExchangeRate = IPool(pool_).bucketExchangeRate(indexes_[i]);
@@ -199,12 +204,12 @@ contract AjnaRewards is IAjnaRewards {
             uint256 prevBucketExchangeRate = poolBucketBurnExchangeRates[pool_][indexes_[i]][curBurnEpoch - 1];
 
             // set reward to 0 for a bucket if the previous update was missed
+            // prevents excess rewards from being provided from using a 0 value as an input to the interestFactor calculation below.
             if (prevBucketExchangeRate == 0) {
                 updateReward += 0;
 
                 // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
                 unchecked { ++i; }
-
                 continue;
             }
 
@@ -320,13 +325,15 @@ contract AjnaRewards is IAjnaRewards {
             return 0;
         }
 
+        // calculate the equivalent amount of quote tokens given the stakes lp balance,
+        // and the exchange rate at the previous and current burn events
         uint256 quoteAtPrev = Maths.rayToWad(Maths.rmul(prevExchangeRate, lpsInBucket));
         uint256 quoteAtCurrentRate = Maths.rayToWad(Maths.rmul(currentExchangeRate, lpsInBucket));
 
         if (quoteAtCurrentRate > quoteAtPrev) {
-            interestEarned_ += quoteAtCurrentRate - quoteAtPrev;
+            interestEarned_ = quoteAtCurrentRate - quoteAtPrev;
         } else {
-            interestEarned_ -= quoteAtPrev - quoteAtCurrentRate;
+            interestEarned_ = quoteAtPrev - quoteAtCurrentRate;
         }
     }
 
@@ -406,12 +413,12 @@ contract AjnaRewards is IAjnaRewards {
 
     /**
      *  @notice Calculate the amount of rewards that have been accumulated by a staked NFT.
-     *  @param  tokenId_            ID of the staked LP NFT.
-     *  @param  burnIdToStartClaim_ ID of the burn period from which to start the calculations, decrementing down.
+     *  @param  tokenId_               ID of the staked LP NFT.
+     *  @param  burnEpochToStartClaim_ The burn period from which to start the calculations, decrementing down.
      *  @return rewards_ The amount of rewards earned by the NFT.
      */
-    function calculateRewards(uint256 tokenId_, uint256 burnIdToStartClaim_) external returns (uint256 rewards_) {
-        rewards_ = _calculateRewards(tokenId_, burnIdToStartClaim_, false);
+    function calculateRewards(uint256 tokenId_, uint256 burnEpochToStartClaim_) external returns (uint256 rewards_) {
+        rewards_ = _calculateRewards(tokenId_, burnEpochToStartClaim_, false);
     }
 
     /**

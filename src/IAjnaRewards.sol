@@ -15,11 +15,6 @@ interface IAjnaRewards {
      error AlreadyClaimed();
 
     /**
-     *  @notice User attempted to record updated exchange rates after an update already occured for the bucket.
-     */
-    error ExchangeRateAlreadyUpdated();
-
-    /**
      *  @notice User attempted to record updated exchange rates outside of the allowed period.
      */
     error ExchangeRateUpdateTooLate();

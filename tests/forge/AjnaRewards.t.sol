@@ -52,7 +52,7 @@ contract AjnaRewardsTest is DSTestPlus {
         ERC20Pool pool;
     }
 
-    struct TriggerReserveAcutionParams {
+    struct TriggerReserveAuctionParams {
         uint256 borrowAmount;
         uint256 limitIndex;
         ERC20Pool pool;
@@ -172,7 +172,7 @@ contract AjnaRewardsTest is DSTestPlus {
         _positionManager.memorializePositions(memorializeParams);
     }
 
-    function _triggerReserveAuctions(TriggerReserveAcutionParams memory params_) internal returns (uint256 tokensToBurn_) {
+    function _triggerReserveAuctions(TriggerReserveAuctionParams memory params_) internal returns (uint256 tokensToBurn_) {
         // create a new borrower to write state required for reserve auctions
         address borrower = makeAddr("borrower");
 
@@ -305,7 +305,7 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // borrower takes actions providing reserves enabling reserve auctions
         // bidder takes reserve auctions by providing ajna tokens to be burned
-        TriggerReserveAcutionParams memory triggerReserveAuctionParams = TriggerReserveAcutionParams({
+        TriggerReserveAuctionParams memory triggerReserveAuctionParams = TriggerReserveAuctionParams({
             borrowAmount: 300 * 1e18,
             limitIndex: 3,
             pool: _poolOne
@@ -319,10 +319,6 @@ contract AjnaRewardsTest is DSTestPlus {
         emit UpdateExchangeRates(_updater, address(_poolOne), depositIndexes, 1.808591217308675030 * 1e18);
         _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
         assertEq(_ajnaToken.balanceOf(_updater), 1.808591217308675030 * 1e18);
-
-        // check can't update buckets for a reward twice
-        vm.expectRevert(IAjnaRewards.ExchangeRateAlreadyUpdated.selector);
-        _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
 
         // check only deposit owner can claim rewards
         uint256 currentBurnEpoch = _poolOne.currentBurnEpoch();
@@ -509,7 +505,7 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // borrower takes actions providing reserves enabling reserve auctions
         // bidder takes reserve auctions by providing ajna tokens to be burned
-        TriggerReserveAcutionParams memory triggerReserveAuctionParams = TriggerReserveAcutionParams({
+        TriggerReserveAuctionParams memory triggerReserveAuctionParams = TriggerReserveAuctionParams({
             borrowAmount: 1_500 * 1e18,
             limitIndex: 6000,
             pool: _poolOne
@@ -533,7 +529,7 @@ contract AjnaRewardsTest is DSTestPlus {
         /******************************/
 
         // trigger second reserve auction
-        triggerReserveAuctionParams = TriggerReserveAcutionParams({
+        triggerReserveAuctionParams = TriggerReserveAuctionParams({
             borrowAmount: 1_500 * 1e18,
             limitIndex: 6000,
             pool: _poolOne
@@ -558,7 +554,7 @@ contract AjnaRewardsTest is DSTestPlus {
         /*****************************/
 
         // trigger third reserve auction
-        triggerReserveAuctionParams = TriggerReserveAcutionParams({
+        triggerReserveAuctionParams = TriggerReserveAuctionParams({
             borrowAmount: 1_500 * 1e18,
             limitIndex: 6000,
             pool: _poolOne
@@ -595,7 +591,7 @@ contract AjnaRewardsTest is DSTestPlus {
         /******************************/
 
         // triger fourth reserve auction
-        triggerReserveAuctionParams = TriggerReserveAcutionParams({
+        triggerReserveAuctionParams = TriggerReserveAuctionParams({
             borrowAmount: 1_500 * 1e18,
             limitIndex: 6000,
             pool: _poolOne
@@ -623,7 +619,7 @@ contract AjnaRewardsTest is DSTestPlus {
         /*****************************/
 
         // triger fourth reserve auction
-        triggerReserveAuctionParams = TriggerReserveAcutionParams({
+        triggerReserveAuctionParams = TriggerReserveAuctionParams({
             borrowAmount: 1_500 * 1e18,
             limitIndex: 6000,
             pool: _poolOne
@@ -686,7 +682,7 @@ contract AjnaRewardsTest is DSTestPlus {
         /*****************************/
 
         // borrower takes actions providing reserves enabling reserve auctions
-        TriggerReserveAcutionParams memory triggerReserveAuctionParams = TriggerReserveAcutionParams({
+        TriggerReserveAuctionParams memory triggerReserveAuctionParams = TriggerReserveAuctionParams({
             borrowAmount: 300 * 1e18,
             limitIndex: 3,
             pool: _poolOne
@@ -717,7 +713,7 @@ contract AjnaRewardsTest is DSTestPlus {
         assertGt(idOneRewardsAtOne, 0);
 
         // borrower takes actions providing reserves enabling additional reserve auctions
-        triggerReserveAuctionParams = TriggerReserveAcutionParams({
+        triggerReserveAuctionParams = TriggerReserveAuctionParams({
             borrowAmount: 300 * 1e18,
             limitIndex: 3,
             pool: _poolOne
@@ -855,7 +851,7 @@ contract AjnaRewardsTest is DSTestPlus {
         uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
         _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
 
-        TriggerReserveAcutionParams memory triggerReserveAuctionParams = TriggerReserveAcutionParams({
+        TriggerReserveAuctionParams memory triggerReserveAuctionParams = TriggerReserveAuctionParams({
             borrowAmount: 300 * 1e18,
             limitIndex: 2555,
             pool: _poolOne
@@ -930,7 +926,7 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // borrower takes actions providing reserves enabling reserve auctions
         // bidder takes reserve auctions by providing ajna tokens to be burned
-        TriggerReserveAcutionParams memory triggerReserveAuctionParams = TriggerReserveAcutionParams({
+        TriggerReserveAuctionParams memory triggerReserveAuctionParams = TriggerReserveAuctionParams({
             borrowAmount: 300 * 1e18,
             limitIndex: 3,
             pool: _poolOne
@@ -1043,7 +1039,7 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // calculates a limit index leaving one index above the htp to accrue interest
         uint256 limitIndex = _findSecondLowestIndexPrice(depositIndexes);
-        TriggerReserveAcutionParams memory triggerReserveAuctionParams = TriggerReserveAcutionParams({
+        TriggerReserveAuctionParams memory triggerReserveAuctionParams = TriggerReserveAuctionParams({
             borrowAmount: Maths.wdiv(mintAmount, Maths.wad(3)),
             limitIndex: limitIndex,
             pool: _poolOne
