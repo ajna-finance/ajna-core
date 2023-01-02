@@ -73,9 +73,9 @@ contract AjnaRewards is IAjnaRewards {
 
     /**
      * @notice Mapping of LP NFTs staked in the Ajna Rewards contract.
-     * @dev tokenID => Deposit
+     * @dev tokenID => Stake
      */
-    mapping(uint256 => Deposit) public deposits;
+    mapping(uint256 => Stake) public stakes;
 
     /**
      * @notice Mapping of per pool bucket exchange rates at a given burn event.
@@ -83,11 +83,11 @@ contract AjnaRewards is IAjnaRewards {
      */
     mapping(address => mapping(uint256 => mapping(uint256 => uint256))) internal poolBucketBurnExchangeRates;
 
-    struct Deposit {
+    struct Stake {
         address owner;                            // owner of the LP NFT
         address ajnaPool;                         // address of the Ajna pool the NFT corresponds to
-        uint256 lastInteractionBurnEpoch;         // last burn event the deposit interacted with the rewards contract
-        mapping(uint256 => uint256) lpsAtDeposit; // total pool deposits in each of the buckets a position is in
+        uint256 lastInteractionBurnEpoch;         // last burn event the stake interacted with the rewards contract
+        mapping(uint256 => uint256) lpsAtDeposit; // the LP NFT's balance in each bucket at the time of staking
     }
 
     /*******************/
@@ -108,30 +108,30 @@ contract AjnaRewards is IAjnaRewards {
      *  @param  tokenId_ ID of the staked LP NFT.
      */
     function claimRewards(uint256 tokenId_, uint256 burnIdToStartClaim_) external {
-        if (msg.sender != deposits[tokenId_].owner) revert NotOwnerOfDeposit();
+        if (msg.sender != stakes[tokenId_].owner) revert NotOwnerOfDeposit();
 
-        if (hasClaimedForToken[tokenId_][IPool(deposits[tokenId_].ajnaPool).currentBurnEpoch()]) revert AlreadyClaimed();
+        if (hasClaimedForToken[tokenId_][IPool(stakes[tokenId_].ajnaPool).currentBurnEpoch()]) revert AlreadyClaimed();
 
         _claimRewards(tokenId_, burnIdToStartClaim_);
     }
 
     /**
-     *  @notice Deposit a LP NFT into the rewards contract.
+     *  @notice Stake a LP NFT into the rewards contract.
      *  @dev    Underlying NFT LP positions cannot change while staked. Retrieves exchange rates for each bucket the NFT is associated with.
      *  @param  tokenId_ ID of the LP NFT to stake in the AjnaRewards contract.
      */
-    function depositNFT(uint256 tokenId_) external {
+    function stakeToken(uint256 tokenId_) external {
         address ajnaPool = PositionManager(address(positionManager)).poolKey(tokenId_);
 
         // check that msg.sender is owner of tokenId
         if (IERC721(address(positionManager)).ownerOf(tokenId_) != msg.sender) revert NotOwnerOfDeposit();
 
-        Deposit storage deposit = deposits[tokenId_];
-        deposit.owner = msg.sender;
-        deposit.ajnaPool = ajnaPool;
-        // record the burnId at which the deposit occurs
+        Stake storage stake = stakes[tokenId_];
+        stake.owner = msg.sender;
+        stake.ajnaPool = ajnaPool;
+        // record the burnId at which the staking occurs
         uint256 curBurnEpoch = IPool(ajnaPool).currentBurnEpoch();
-        deposit.lastInteractionBurnEpoch = curBurnEpoch;
+        stake.lastInteractionBurnEpoch = curBurnEpoch;
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
         for (uint256 i = 0; i < positionIndexes.length; ) {
@@ -140,13 +140,13 @@ contract AjnaRewards is IAjnaRewards {
             poolBucketBurnExchangeRates[ajnaPool][positionIndexes[i]][curBurnEpoch] = curBucketExchangeRate;
 
             // record the number of lp tokens in each bucket the NFT is in
-            deposit.lpsAtDeposit[positionIndexes[i]] = positionManager.getLPTokens(tokenId_, positionIndexes[i]);
+            stake.lpsAtDeposit[positionIndexes[i]] = positionManager.getLPTokens(tokenId_, positionIndexes[i]);
 
             // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
             unchecked { ++i; }
         }
 
-        emit DepositToken(msg.sender, ajnaPool, tokenId_);
+        emit StakeToken(msg.sender, ajnaPool, tokenId_);
 
         // transfer LP NFT to this contract
         IERC721(address(positionManager)).safeTransferFrom(msg.sender, address(this), tokenId_);
@@ -157,18 +157,18 @@ contract AjnaRewards is IAjnaRewards {
      *  @dev    If rewards are available, claim all available rewards before withdrawal.
      *  @param  tokenId_ ID of the staked LP NFT.
      */
-    function withdrawNFT(uint256 tokenId_) external {
-        if (msg.sender != deposits[tokenId_].owner) revert NotOwnerOfDeposit();
+    function unstakeToken(uint256 tokenId_) external {
+        if (msg.sender != stakes[tokenId_].owner) revert NotOwnerOfDeposit();
 
-        address ajnaPool = deposits[tokenId_].ajnaPool;
+        address ajnaPool = stakes[tokenId_].ajnaPool;
 
         // claim rewards, if any
         _claimRewards(tokenId_, IPool(ajnaPool).currentBurnEpoch());
 
-        delete deposits[tokenId_];
+        delete stakes[tokenId_];
 
         // transfer LP NFT from contract to sender
-        emit WithdrawToken(msg.sender, ajnaPool, tokenId_);
+        emit UnstakeToken(msg.sender, ajnaPool, tokenId_);
         IERC721(address(positionManager)).safeTransferFrom(address(this), msg.sender, tokenId_);
     }
 
@@ -240,7 +240,7 @@ contract AjnaRewards is IAjnaRewards {
     /**************************/
 
     /**
-     *  @notice Calculate the amount of rewards that have been accumulated by a deposited NFT.
+     *  @notice Calculate the amount of rewards that have been accumulated by a staked NFT.
      *  @dev    Rewards are calculated as the difference in exchange rates between the last interaction burn event and the current burn event.
      *  @param  tokenId_               ID of the staked LP NFT.
      *  @param  burnEpochToStartClaim_ The burn period from which to start the calculations, decrementing down.
@@ -248,19 +248,19 @@ contract AjnaRewards is IAjnaRewards {
      *  @return rewards_ Amount of rewards earned by the NFT.
      */
     function _calculateRewardsEarned(uint256 tokenId_, uint256 burnEpochToStartClaim_, bool isClaim_) internal returns (uint256 rewards_) {
-        Deposit storage deposit = deposits[tokenId_];
+        Stake storage stake = stakes[tokenId_];
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
 
-        address ajnaPool = deposit.ajnaPool;
+        address ajnaPool = stake.ajnaPool;
 
         // calculate accrued interest as determined by the difference in exchange rates between the last interaction block and the current block
         for (uint256 i = 0; i < positionIndexes.length; ) {
 
             // iterate through all burn periods to check exchange for buckets over time
-            for (uint256 epoch = deposit.lastInteractionBurnEpoch; epoch < burnEpochToStartClaim_; ) {
+            for (uint256 epoch = stake.lastInteractionBurnEpoch; epoch < burnEpochToStartClaim_; ) {
 
-                // calculate change in exchange rates in a deposits buckets
-                uint256 interestEarned = _calculateExchangeRateInterestEarned(ajnaPool, epoch, positionIndexes[i], deposit);
+                // calculate change in exchange rates in a stakes buckets
+                uint256 interestEarned = _calculateExchangeRateInterestEarned(ajnaPool, epoch, positionIndexes[i], stake);
 
                 if (interestEarned == 0) {
                     // epoch is bounded by the number of reserve auctions that have occured in the pool, preventing overflow / underflow
@@ -308,10 +308,10 @@ contract AjnaRewards is IAjnaRewards {
      *  @param  pool_           Address of the pool whose exchange rates are being checked.
      *  @param  burnEventEpoch_ The burn event to check the exchange rate for.
      *  @param  bucketIndex_    Index of the bucket to check the exchange rate for.
-     *  @param  deposit_        Deposit struct of the NFT.
+     *  @param  deposit_        Stake struct of the NFT.
      *  @return interestEarned_ The amount of interest accrued.
      */
-    function _calculateExchangeRateInterestEarned(address pool_, uint256 burnEventEpoch_, uint256 bucketIndex_, Deposit storage deposit_) internal view returns (uint256 interestEarned_) {
+    function _calculateExchangeRateInterestEarned(address pool_, uint256 burnEventEpoch_, uint256 bucketIndex_, Stake storage deposit_) internal view returns (uint256 interestEarned_) {
         uint256 prevExchangeRate = poolBucketBurnExchangeRates[pool_][bucketIndex_][burnEventEpoch_];
         uint256 currentExchangeRate = poolBucketBurnExchangeRates[pool_][bucketIndex_][burnEventEpoch_ + 1];
         uint256 lpsInBucket = deposit_.lpsAtDeposit[bucketIndex_];
@@ -342,17 +342,17 @@ contract AjnaRewards is IAjnaRewards {
     }
 
     /**
-     *  @notice Claim rewards that have been accumulated by a deposited NFT.
+     *  @notice Claim rewards that have been accumulated by a staked NFT.
      *  @param  tokenId_               ID of the staked LP NFT.
      *  @param  burnEpochToStartClaim_ The burn period from which to start the calculations, decrementing down.
      */
     function _claimRewards(uint256 tokenId_, uint256 burnEpochToStartClaim_) internal {
         uint256 rewardsEarned = _calculateRewardsEarned(tokenId_, burnEpochToStartClaim_, true);
 
-        emit ClaimRewards(msg.sender, deposits[tokenId_].ajnaPool, tokenId_, _getBurnEpochsClaimed(deposits[tokenId_].lastInteractionBurnEpoch, burnEpochToStartClaim_), rewardsEarned);
+        emit ClaimRewards(msg.sender, stakes[tokenId_].ajnaPool, tokenId_, _getBurnEpochsClaimed(stakes[tokenId_].lastInteractionBurnEpoch, burnEpochToStartClaim_), rewardsEarned);
 
         // update last interaction burn event
-        deposits[tokenId_].lastInteractionBurnEpoch = burnEpochToStartClaim_;
+        stakes[tokenId_].lastInteractionBurnEpoch = burnEpochToStartClaim_;
 
         // transfer rewards to sender
         if (rewardsEarned > IERC20(ajnaToken).balanceOf(address(this))) rewardsEarned = IERC20(ajnaToken).balanceOf(address(this));
@@ -405,7 +405,7 @@ contract AjnaRewards is IAjnaRewards {
     /*******************************/
 
     /**
-     *  @notice Calculate the amount of rewards that have been accumulated by a deposited NFT.
+     *  @notice Calculate the amount of rewards that have been accumulated by a staked NFT.
      *  @param  tokenId_            ID of the staked LP NFT.
      *  @param  burnIdToStartClaim_ ID of the burn period from which to start the calculations, decrementing down.
      *  @return rewards_ The amount of rewards earned by the NFT.
@@ -415,15 +415,15 @@ contract AjnaRewards is IAjnaRewards {
     }
 
     /**
-     *  @notice Retrieve information about a given deposit.
-     *  @param  tokenId_  ID of the NFT deposited into the rewards contract to retrieve information about.
-     *  @return The owner of a given NFT deposit.
+     *  @notice Retrieve information about a given stake.
+     *  @param  tokenId_  ID of the NFT staked in the rewards contract to retrieve information about.
+     *  @return The owner of a given NFT stake.
      *  @return The Pool the NFT represents positions in.
      *  @return The last burn epoch in which the owner of the NFT interacted with the rewards contract.
      */
     function getDepositInfo(uint256 tokenId_) external view returns (address, address, uint256) {
-        Deposit storage deposit = deposits[tokenId_];
-        return (deposit.owner, deposit.ajnaPool, deposit.lastInteractionBurnEpoch);
+        Stake storage stake = stakes[tokenId_];
+        return (stake.owner, stake.ajnaPool, stake.lastInteractionBurnEpoch);
     }
 
     /************************/

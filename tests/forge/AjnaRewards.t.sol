@@ -39,9 +39,9 @@ contract AjnaRewardsTest is DSTestPlus {
     ERC20Pool       internal _poolTwo;
 
     event ClaimRewards(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId, uint256[] epochsClaimed, uint256 amount);
-    event DepositToken(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
+    event StakeToken(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
     event UpdateExchangeRates(address indexed caller, address indexed ajnaPool, uint256[] indexesUpdated, uint256 rewardsClaimed);
-    event WithdrawToken(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
+    event UnstakeToken(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
 
     uint256 constant BLOCKS_IN_DAY = 7200;
 
@@ -117,14 +117,14 @@ contract AjnaRewardsTest is DSTestPlus {
         deal(address(collateral), borrower_, collateralToPledge_);
     }
 
-    function _depositNFT(address pool_, address owner_, uint256 tokenId_) internal {
+    function _stakeToken(address pool_, address owner_, uint256 tokenId_) internal {
         changePrank(owner_);
 
         // approve and deposit NFT into rewards contract
         _positionManager.approve(address(_ajnaRewards), tokenId_);
         vm.expectEmit(true, true, true, true);
-        emit DepositToken(owner_, address(pool_), tokenId_);
-        _ajnaRewards.depositNFT(tokenId_);
+        emit StakeToken(owner_, address(pool_), tokenId_);
+        _ajnaRewards.stakeToken(tokenId_);
 
         // check token was transferred to rewards contract
         assertEq(_positionManager.ownerOf(tokenId_), address(_ajnaRewards));
@@ -227,7 +227,7 @@ contract AjnaRewardsTest is DSTestPlus {
         // TODO: finish implementing this -> use for differential testing
     }
 
-    function testDepositToken() external {
+    function testStakeToken() external {
         skip(10);
 
         // configure NFT position one
@@ -263,10 +263,10 @@ contract AjnaRewardsTest is DSTestPlus {
         // check only owner of an NFT can deposit it into the rewards contract
         changePrank(_minterTwo);
         vm.expectRevert(IAjnaRewards.NotOwnerOfDeposit.selector);
-        _ajnaRewards.depositNFT(tokenIdOne);
+        _ajnaRewards.stakeToken(tokenIdOne);
 
         // minterOne deposits their NFT into the rewards contract
-        _depositNFT(address(_poolOne), _minterOne, tokenIdOne);
+        _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
         // check deposit state
         (address owner, address pool, uint256 interactionBurnEvent) = _ajnaRewards.getDepositInfo(tokenIdOne);
         assertEq(owner, _minterOne);
@@ -274,7 +274,7 @@ contract AjnaRewardsTest is DSTestPlus {
         assertEq(interactionBurnEvent, 0);
 
         // minterTwo deposits their NFT into the rewards contract
-        _depositNFT(address(_poolTwo), _minterTwo, tokenIdTwo);
+        _stakeToken(address(_poolTwo), _minterTwo, tokenIdTwo);
         // check deposit state
         (owner, pool, interactionBurnEvent) = _ajnaRewards.getDepositInfo(tokenIdTwo);
         assertEq(owner, _minterTwo);
@@ -301,7 +301,7 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // mint memorialize and deposit NFT
         uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
-        _depositNFT(address(_poolOne), _minterOne, tokenIdOne);
+        _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
 
         // borrower takes actions providing reserves enabling reserve auctions
         // bidder takes reserve auctions by providing ajna tokens to be burned
@@ -387,7 +387,7 @@ contract AjnaRewardsTest is DSTestPlus {
             });
         uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
         changePrank(_minterOne);
-        _depositNFT(address(_poolOne), _minterOne, tokenIdOne);
+        _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
         
         /************************************/
         /*** Borrower One Accrue Interest ***/
@@ -468,8 +468,8 @@ contract AjnaRewardsTest is DSTestPlus {
         vm.expectEmit(true, true, true, true);
         emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 0), .227347187766462422 * 1e18);
         vm.expectEmit(true, true, true, true);
-        emit WithdrawToken(_minterOne, address(_poolOne), tokenIdOne);
-        _ajnaRewards.withdrawNFT(tokenIdOne);
+        emit UnstakeToken(_minterOne, address(_poolOne), tokenIdOne);
+        _ajnaRewards.unstakeToken(tokenIdOne);
         assertEq(_ajnaToken.balanceOf(_minterOne), .227347187766462422 * 1e18);
 
         // TODO: check reward amount vs expected from burn
@@ -501,7 +501,7 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // mint memorialize and deposit NFT
         uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
-        _depositNFT(address(_poolOne), _minterOne, tokenIdOne);
+        _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
 
         /*****************************/
         /*** First Reserve Auction ***/
@@ -679,7 +679,7 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // mint memorialize and deposit NFT
         uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
-        _depositNFT(address(_poolOne), _minterOne, tokenIdOne);
+        _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
 
         /*****************************/
         /*** First Reserve Auction ***/
@@ -705,7 +705,7 @@ contract AjnaRewardsTest is DSTestPlus {
             pool: _poolOne
         });
         uint256 tokenIdTwo = _mintAndMemorializePositionNFT(mintMemorializeParams);
-        _depositNFT(address(_poolOne), _minterTwo, tokenIdTwo);
+        _stakeToken(address(_poolOne), _minterTwo, tokenIdTwo);
 
         /******************************/
         /*** Second Reserve Auction ***/
@@ -744,7 +744,7 @@ contract AjnaRewardsTest is DSTestPlus {
             pool: _poolOne
         });
         uint256 tokenIdThree = _mintAndMemorializePositionNFT(mintMemorializeParams);
-        _depositNFT(address(_poolOne), _minterThree, tokenIdThree);
+        _stakeToken(address(_poolOne), _minterThree, tokenIdThree);
 
         /***********************/
         /*** Rewards Claimed ***/
@@ -793,7 +793,7 @@ contract AjnaRewardsTest is DSTestPlus {
 
     }
 
-    function testWithdrawToken() external {
+    function testUnstakeToken() external {
         skip(10);
 
         address nonOwner = makeAddr("nonOwner");
@@ -814,18 +814,18 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // mint memorialize and deposit NFT
         uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
-        _depositNFT(address(_poolOne), _minterOne, tokenIdOne);
+        _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
 
         // only owner should be able to withdraw the NFT
         changePrank(nonOwner);
         vm.expectRevert(IAjnaRewards.NotOwnerOfDeposit.selector);
-        _ajnaRewards.withdrawNFT(tokenIdOne);
+        _ajnaRewards.unstakeToken(tokenIdOne);
 
         // check owner can withdraw the NFT
         changePrank(_minterOne);
         vm.expectEmit(true, true, true, true);
-        emit WithdrawToken(_minterOne, address(_poolOne), tokenIdOne);
-        _ajnaRewards.withdrawNFT(tokenIdOne);
+        emit UnstakeToken(_minterOne, address(_poolOne), tokenIdOne);
+        _ajnaRewards.unstakeToken(tokenIdOne);
         assertEq(_positionManager.ownerOf(tokenIdOne), _minterOne);
 
         // deposit information should have been deleted on withdrawal
@@ -853,7 +853,7 @@ contract AjnaRewardsTest is DSTestPlus {
         });
 
         uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
-        _depositNFT(address(_poolOne), _minterOne, tokenIdOne);
+        _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
 
         TriggerReserveAcutionParams memory triggerReserveAuctionParams = TriggerReserveAcutionParams({
             borrowAmount: 300 * 1e18,
@@ -876,8 +876,8 @@ contract AjnaRewardsTest is DSTestPlus {
         vm.expectEmit(true, true, true, true);
         emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 0), 18.085912173086791760 * 1e18);
         vm.expectEmit(true, true, true, true);
-        emit WithdrawToken(_minterOne, address(_poolOne), tokenIdOne);
-        _ajnaRewards.withdrawNFT(tokenIdOne);
+        emit UnstakeToken(_minterOne, address(_poolOne), tokenIdOne);
+        _ajnaRewards.unstakeToken(tokenIdOne);
         assertEq(_positionManager.ownerOf(tokenIdOne), _minterOne);
         assertEq(_ajnaToken.balanceOf(_minterOne), 18.085912173086791760 * 1e18);
         assertLt(_ajnaToken.balanceOf(_minterOne), tokensToBurn);
@@ -923,10 +923,10 @@ contract AjnaRewardsTest is DSTestPlus {
         uint256 tokenIdTwo = _mintAndMemorializePositionNFT(mintMemorializeParams);
 
         // minterOne deposits their NFT into the rewards contract
-        _depositNFT(address(_poolOne), _minterOne, tokenIdOne);
+        _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
 
         // minterTwo deposits their NFT into the rewards contract
-        _depositNFT(address(_poolTwo), _minterTwo, tokenIdTwo);
+        _stakeToken(address(_poolTwo), _minterTwo, tokenIdTwo);
 
         // borrower takes actions providing reserves enabling reserve auctions
         // bidder takes reserve auctions by providing ajna tokens to be burned
@@ -1039,7 +1039,7 @@ contract AjnaRewardsTest is DSTestPlus {
         });
 
         uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
-        _depositNFT(address(_poolOne), _minterOne, tokenIdOne);
+        _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
 
         // calculates a limit index leaving one index above the htp to accrue interest
         uint256 limitIndex = _findSecondLowestIndexPrice(depositIndexes);
