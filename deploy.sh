@@ -14,7 +14,7 @@ linkage=()
 
 echo
 echo Deploying libraries...
-libraries=( Auctions LenderActions PoolCommons PositionNFTSVG )
+libraries=( Auctions LenderActions BorrowerActions PoolCommons PositionNFTSVG )
 for contract in "${libraries[@]}"
 do
     createlib="forge create --rpc-url ${ETH_RPC_URL:?} --keystore ${DEPLOY_KEY:?} --password ${password:?} \
