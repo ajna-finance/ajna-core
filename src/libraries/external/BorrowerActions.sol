@@ -75,7 +75,7 @@ library BorrowerActions {
     ) external returns (
         DrawDebtResult memory result_
     ) {
-        Borrower memory borrower = Loans.getBorrowerInfo(loans_, borrowerAddress_);
+        Borrower memory borrower = loans_.borrowers[borrowerAddress_];
 
         result_.poolDebt       = poolState_.debt;
         result_.newLup         = _lup(deposits_, result_.poolDebt);
@@ -176,7 +176,7 @@ library BorrowerActions {
     ) external returns (
         RepayDebtResult memory result_
     ) {
-        Borrower memory borrower = Loans.getBorrowerInfo(loans_, borrowerAddress_);
+        Borrower memory borrower = loans_.borrowers[borrowerAddress_];
 
         RepayDebtLocalVars memory vars;
         vars.repay        = maxQuoteTokenAmountToRepay_ != 0;

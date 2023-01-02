@@ -208,19 +208,6 @@ library Loans {
     /**********************/
 
     /**
-     *  @notice Returns borrower struct.
-     *  @param loans_ Holds tree loan data.
-     *  @param borrowerAddress_ Borrower's address.
-     *  @return Borrower struct containing borrower info.
-     */
-    function getBorrowerInfo(
-        LoansState storage loans_,
-        address borrowerAddress_
-    ) internal view returns (Borrower memory) {
-        return loans_.borrowers[borrowerAddress_];
-    }
-
-    /**
      *  @notice Retreives Loan by index, i_.
      *  @param loans_ Holds tree loan data.
      *  @param i_    Index to retreive Loan.

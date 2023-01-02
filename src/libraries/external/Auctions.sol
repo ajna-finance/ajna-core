@@ -528,7 +528,7 @@ library Auctions {
         bool    depositTake_,
         uint256 index_
     ) external returns (BucketTakeResult memory result_) {
-        Borrower memory borrower = Loans.getBorrowerInfo(loans_, borrowerAddress_);
+        Borrower memory borrower = loans_.borrowers[borrowerAddress_];
         (
             result_.collateralAmount,
             result_.t0RepayAmount,
@@ -583,7 +583,7 @@ library Auctions {
         address borrowerAddress_,
         uint256 collateral_
     ) external returns (TakeResult memory result_) {
-        Borrower memory borrower = Loans.getBorrowerInfo(loans_, borrowerAddress_);
+        Borrower memory borrower = loans_.borrowers[borrowerAddress_];
         // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
         if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral();
 
