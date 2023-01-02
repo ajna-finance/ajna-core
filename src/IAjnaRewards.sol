@@ -35,12 +35,13 @@ interface IAjnaRewards {
 
     /**
      *  @notice Emitted when lender claims rewards that have accrued to their deposit.
-     *  @param  owner    Owner of the staked NFT.
-     *  @param  ajnaPool Address of the Ajna pool the NFT corresponds to.
-     *  @param  tokenId  ID of the staked NFT.
-     *  @param  amount   The amount of AJNA tokens claimed by the depositor.
+     *  @param  owner         Owner of the staked NFT.
+     *  @param  ajnaPool      Address of the Ajna pool the NFT corresponds to.
+     *  @param  tokenId       ID of the staked NFT.
+     *  @param  epochsClaimed Array of burn epochs claimed.
+     *  @param  amount        The amount of AJNA tokens claimed by the depositor.
      */
-    event ClaimRewards(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId, uint256 amount);
+    event ClaimRewards(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId, uint256[] epochsClaimed, uint256 amount);
 
     /**
      *  @notice Emitted when lender deposits their LP NFT into the rewards contract.

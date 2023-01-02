@@ -133,20 +133,18 @@ contract AjnaRewards is IAjnaRewards {
         uint256 curBurnId = IPool(ajnaPool).currentBurnId();
         deposit.lastInteractionBurn = curBurnId;
 
-        // update the exchange rate for each bucket the NFT is in
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
         for (uint256 i = 0; i < positionIndexes.length; ) {
+            // update the exchange rate for each bucket the NFT is in
             uint256 curBucketExchangeRate = IPool(ajnaPool).bucketExchangeRate(positionIndexes[i]);
             poolBucketBurnExchangeRates[ajnaPool][positionIndexes[i]][curBurnId] = curBucketExchangeRate;
 
-            // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
-            unchecked {
-                ++i;
-            }
-        }
+            // record the number of lp tokens in each bucket the NFT is in
+            deposit.lpsAtDeposit[positionIndexes[i]] = positionManager.getLPTokens(tokenId_, positionIndexes[i]);
 
-        // record the number of lp tokens in each bucket the NFT is in
-        _setPositionLPs(tokenId_);
+            // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
+            unchecked { ++i; }
+        }
 
         emit DepositToken(msg.sender, ajnaPool, tokenId_);
 
@@ -205,9 +203,8 @@ contract AjnaRewards is IAjnaRewards {
                 updateReward += 0;
 
                 // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
-                unchecked {
-                    ++i;
-                }
+                unchecked { ++i; }
+
                 continue;
             }
 
@@ -220,9 +217,7 @@ contract AjnaRewards is IAjnaRewards {
             updateReward           += Maths.wmul(UPDATE_CLAIM_REWARD, Maths.wmul(burnFactor, interestFactor));
 
             // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
-            unchecked {
-                ++i;
-            }
+            unchecked { ++i; }
         }
 
         // check update reward accumulated is less than cap
@@ -269,9 +264,8 @@ contract AjnaRewards is IAjnaRewards {
 
                 if (interestEarned == 0) {
                     // id is bounded by the number of reserve auctions that have occured in the pool, preventing overflow / underflow
-                    unchecked {
-                        ++id;
-                    }
+                    unchecked { ++id; }
+
                     // no interest will be earned in this period, continue onto the next period
                     continue;
                 }
@@ -299,9 +293,7 @@ contract AjnaRewards is IAjnaRewards {
                 }
 
                 // id is bounded by the number of reserve auctions that have occured in the pool, preventing overflow / underflow
-                unchecked {
-                    ++id;
-                }
+                unchecked { ++id; }
             }
 
             // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
@@ -356,8 +348,7 @@ contract AjnaRewards is IAjnaRewards {
     function _claimRewards(uint256 tokenId_, uint256 burnIdToStartClaim_) internal {
         uint256 rewardsEarned = _calculateRewardsEarned(tokenId_, burnIdToStartClaim_, true);
 
-        // TODO: add id of burn events claimed
-        emit ClaimRewards(msg.sender, deposits[tokenId_].ajnaPool, tokenId_, rewardsEarned);
+        emit ClaimRewards(msg.sender, deposits[tokenId_].ajnaPool, tokenId_, _getBurnEpochsClaimed(deposits[tokenId_].lastInteractionBurn, burnIdToStartClaim_), rewardsEarned);
 
         // update last interaction burn event
         deposits[tokenId_].lastInteractionBurn = burnIdToStartClaim_;
@@ -365,6 +356,29 @@ contract AjnaRewards is IAjnaRewards {
         // transfer rewards to sender
         if (rewardsEarned > IERC20(ajnaToken).balanceOf(address(this))) rewardsEarned = IERC20(ajnaToken).balanceOf(address(this));
         IERC20(ajnaToken).safeTransfer(msg.sender, rewardsEarned);
+    }
+
+    /**
+     *  @notice Retrieve an array of burn epochs from which a depositor has claimed rewards.
+     *  @param  lastInteractionBurn_ ID of the last burn period in which a depositor interacted with the rewards contract.
+     *  @param  burnIdToStartClaim_  ID of the most recent burn period from a depostor earned rewards.
+     *  @return burnEpochsClaimed_   Array of burn epochs from which a depositor has claimed rewards.
+     */
+    function _getBurnEpochsClaimed(uint256 lastInteractionBurn_, uint256 burnIdToStartClaim_) internal pure returns (uint256[] memory burnEpochsClaimed_) {
+        uint256 numEpochsClaimed = burnIdToStartClaim_ - lastInteractionBurn_;
+        burnEpochsClaimed_ = new uint256[](numEpochsClaimed);
+
+        uint256 i;
+        uint256 claimEpoch = lastInteractionBurn_ + 1;
+        while (claimEpoch <= burnIdToStartClaim_) {
+            burnEpochsClaimed_[i] = claimEpoch;
+
+            // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
+            unchecked {
+                ++i;
+                ++claimEpoch;
+            }
+        }
     }
 
     /**
@@ -383,23 +397,6 @@ contract AjnaRewards is IAjnaRewards {
         uint256 ajnaTokensBurned_ = totalBurnedLatest - totalBurnedAtBlock;
         uint256 totalInterestEarned_ = totalInterestLatest - totalInterestAtBlock;
         return (currentBurnTime_, ajnaTokensBurned_, totalInterestEarned_);
-    }
-
-    /**
-     *  @notice Record the LP balance associated with an NFT on deposit.
-     *  @param  tokenId_ ID of the staked LP NFT.
-     */
-    function _setPositionLPs(uint256 tokenId_) internal {
-        uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
-
-        for (uint256 i = 0; i < positionIndexes.length; ) {
-            deposits[tokenId_].lpsAtDeposit[positionIndexes[i]] = positionManager.getLPTokens(tokenId_, positionIndexes[i]);
-
-            // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
-            unchecked {
-                ++i;
-            }
-        }
     }
 
     /*******************************/
