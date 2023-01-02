@@ -110,7 +110,7 @@ contract AjnaRewards is IAjnaRewards {
     function claimRewards(uint256 tokenId_, uint256 burnIdToStartClaim_) external {
         if (msg.sender != stakes[tokenId_].owner) revert NotOwnerOfDeposit();
 
-        if (hasClaimedForToken[tokenId_][IPool(stakes[tokenId_].ajnaPool).currentBurnEpoch()]) revert AlreadyClaimed();
+        if (hasClaimedForToken[tokenId_][burnIdToStartClaim_]) revert AlreadyClaimed();
 
         _claimRewards(tokenId_, burnIdToStartClaim_);
     }
@@ -247,7 +247,7 @@ contract AjnaRewards is IAjnaRewards {
      *  @param  isClaim_               Boolean checking whether the newly calculated rewards should be written to state as part of a claim.
      *  @return rewards_ Amount of rewards earned by the NFT.
      */
-    function _calculateRewardsEarned(uint256 tokenId_, uint256 burnEpochToStartClaim_, bool isClaim_) internal returns (uint256 rewards_) {
+    function _calculateRewards(uint256 tokenId_, uint256 burnEpochToStartClaim_, bool isClaim_) internal returns (uint256 rewards_) {
         Stake storage stake = stakes[tokenId_];
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
 
@@ -347,7 +347,7 @@ contract AjnaRewards is IAjnaRewards {
      *  @param  burnEpochToStartClaim_ The burn period from which to start the calculations, decrementing down.
      */
     function _claimRewards(uint256 tokenId_, uint256 burnEpochToStartClaim_) internal {
-        uint256 rewardsEarned = _calculateRewardsEarned(tokenId_, burnEpochToStartClaim_, true);
+        uint256 rewardsEarned = _calculateRewards(tokenId_, burnEpochToStartClaim_, true);
 
         emit ClaimRewards(msg.sender, stakes[tokenId_].ajnaPool, tokenId_, _getBurnEpochsClaimed(stakes[tokenId_].lastInteractionBurnEpoch, burnEpochToStartClaim_), rewardsEarned);
 
@@ -410,8 +410,8 @@ contract AjnaRewards is IAjnaRewards {
      *  @param  burnIdToStartClaim_ ID of the burn period from which to start the calculations, decrementing down.
      *  @return rewards_ The amount of rewards earned by the NFT.
      */
-    function calculateRewardsEarned(uint256 tokenId_, uint256 burnIdToStartClaim_) external returns (uint256 rewards_) {
-        rewards_ = _calculateRewardsEarned(tokenId_, burnIdToStartClaim_, false);
+    function calculateRewards(uint256 tokenId_, uint256 burnIdToStartClaim_) external returns (uint256 rewards_) {
+        rewards_ = _calculateRewards(tokenId_, burnIdToStartClaim_, false);
     }
 
     /**
