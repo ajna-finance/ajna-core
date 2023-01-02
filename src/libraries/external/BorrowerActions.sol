@@ -90,7 +90,7 @@ library BorrowerActions {
             borrower.collateral  += collateralToPledge_;
 
             // load loan's auction state
-            vars.inAuction = Auctions.isActive(auctions_, borrowerAddress_);
+            vars.inAuction = _inAuction(auctions_, borrowerAddress_);
             // if loan is auctioned and becomes collateralized by newly pledged collateral then settle auction
             if (
                 vars.inAuction
@@ -202,7 +202,7 @@ library BorrowerActions {
             _revertOnMinDebt(loans_, result_.poolDebt, vars.borrowerDebt);
 
             result_.newLup = _lup(deposits_, result_.poolDebt);
-            vars.inAuction = Auctions.isActive(auctions_, borrowerAddress_);
+            vars.inAuction = _inAuction(auctions_, borrowerAddress_);
 
             if (vars.inAuction) {
                 if (_isCollateralized(vars.borrowerDebt, borrower.collateral, result_.newLup, poolState_.poolType)) {
@@ -261,6 +261,19 @@ library BorrowerActions {
             vars.inAuction,
             vars.stampT0Np
         );
+    }
+
+    /**
+     *  @notice Returns true if borrower is in auction.
+     *  @dev    Used to accuratley increment and decrement t0DebtInAuction.
+     *  @param  borrower_ Borrower address to check auction status for.
+     *  @return  active_ Boolean, based on if borrower is in auction.
+     */
+    function _inAuction(
+        AuctionsState storage auctions_,
+        address borrower_
+    ) internal view returns (bool) {
+        return auctions_.liquidations[borrower_].kickTime != 0;
     }
 
     function _lupIndex(

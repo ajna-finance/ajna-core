@@ -221,16 +221,6 @@ library Loans {
     }
 
     /**
-     *  @notice Retreives Loan by borrower address.
-     *  @param loans_     Holds tree loans data.
-     *  @param borrower_ Borrower address that is being updated or inserted.
-     *  @return Loan     Loan struct containing loans info.
-     */
-    function getById(LoansState storage loans_, address borrower_) internal view returns(Loan memory) {
-        return getByIndex(loans_, loans_.indices[borrower_]);
-    }
-
-    /**
      *  @notice Retreives Loan by index, i_.
      *  @param loans_ Holds tree loan data.
      *  @param i_    Index to retreive Loan.

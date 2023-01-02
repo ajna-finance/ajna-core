@@ -245,7 +245,6 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         uint256 assets = Maths.wmul(poolBalances.t0Debt, poolState.inflator) + _getPoolQuoteTokenBalance();
         uint256 liabilities = Deposits.treeSum(deposits) + auctions.totalBondEscrowed + reserveAuction.unclaimed;
-
         (
             ,
             ,

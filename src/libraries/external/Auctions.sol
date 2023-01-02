@@ -1370,19 +1370,6 @@ library Auctions {
     /*** View Functions ***/
     /**********************/
 
-    /**
-     *  @notice Returns true if borrower is in auction.
-     *  @dev    Used to accuratley increment and decrement t0DebtInAuction.
-     *  @param  borrower_ Borrower address to check auction status for.
-     *  @return  active_ Boolean, based on if borrower is in auction.
-     */
-    function isActive(
-        AuctionsState storage auctions_,
-        address borrower_
-    ) internal view returns (bool) {
-        return auctions_.liquidations[borrower_].kickTime != 0;
-    }
-
     function _lup(
         DepositsState storage deposits_,
         uint256 debt_
