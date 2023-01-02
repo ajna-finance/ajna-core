@@ -20,6 +20,8 @@ import {
     StartReserveAuctionParams
 } from '../../base/interfaces/IPool.sol';
 
+import './BorrowerActions.sol';
+
 import '../Buckets.sol';
 import '../Deposits.sol';
 import '../Loans.sol';
@@ -171,10 +173,6 @@ library Auctions {
         uint256 settledDebt
     );
 
-    /**
-     *  @notice Borrower is attempting to create or modify a loan such that their loan's quote token would be less than the pool's minimum debt amount.
-     */
-    error AmountLTMinDebt();
     /**
      *  @notice The action cannot be executed on an active auction.
      */
@@ -866,7 +864,7 @@ library Auctions {
         if (t0DebtPenalty_ != 0) result_.poolDebt += Maths.wmul(t0DebtPenalty_, poolState_.inflator);
 
         // check that taking from loan doesn't leave borrower debt under min debt amount
-        _revertOnMinDebt(loans_, result_.poolDebt, vars.borrowerDebt);
+        BorrowerActions._revertOnMinDebt(loans_, result_.poolDebt, vars.borrowerDebt);
 
         result_.newLup = _lup(deposits_, result_.poolDebt);
         vars.inAuction = true;
@@ -1327,17 +1325,6 @@ library Auctions {
         uint256 debt_
     ) internal view returns (uint256) {
         return _priceAt(Deposits.findIndexOfSum(deposits_, debt_));
-    }
-
-    function _revertOnMinDebt(LoansState storage loans_, uint256 poolDebt_, uint256 borrowerDebt_) internal view {
-        if (borrowerDebt_ != 0) {
-            uint256 loansCount = Loans.noOfLoans(loans_);
-            if (
-                loansCount >= 10
-                &&
-                (borrowerDebt_ < _minDebtAmount(poolDebt_, loansCount))
-            ) revert AmountLTMinDebt();
-        }
     }
 
 }
