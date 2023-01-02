@@ -192,7 +192,6 @@ library BorrowerActions {
         vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
 
         result_.poolDebt       = poolState_.debt;
-        result_.newLup         = _lup(deposits_, result_.poolDebt);
         result_.poolCollateral = poolState_.collateral;
 
         if (vars.repay) {
