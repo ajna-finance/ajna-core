@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.14;
 
-import "forge-std/console2.sol";
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { ERC20DSTestPlus }     from './ERC20DSTestPlus.sol';
@@ -92,7 +91,6 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         if (lupIndex == 0) lupIndex = _startBucketId;
         uint256 lup = _priceAt(lupIndex);
         _collateralPledged = Maths.wmul(Maths.wdiv(debtToDraw_, lup), collateralization_);
-        console2.log("need %s collateral to draw %s debt at lup %s", _collateralPledged, debtToDraw_, lup);
 
         // mint and approve collateral tokens
         changePrank(borrower_);
@@ -140,7 +138,6 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         uint256 auctionCollateral;
         uint256 auctionPrice;        
         for (uint i=0; i<72; ++i) {
-            console2.log("after %s hours, price is %s", i, auctionPrice);
             (auctionPrice, , auctionCollateral) = _advanceAuction(1 hours);
             if (auctionPrice < _priceAt(_startBucketId)) break;
         }
@@ -148,7 +145,6 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         // Test take
         assertEq(auctionCollateral, collateralPledged);
         uint256 collateralToTake = Maths.wdiv(auctionCollateral, 3 * 1e18);
-        console2.log("taking %s at price %s", collateralToTake, auctionPrice);
         _take(collateralToTake, _bidder);
         
         // Test depositTake
@@ -164,8 +160,52 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         _settle();
     }
 
-    // TODO: testKickWithDeposit
+     function testLiquidationKickWithDeposit(
+        uint8  collateralPrecisionDecimals_, 
+        uint8  quotePrecisionDecimals_,
+        uint16 startBucketId_) external virtual
+    {
+        uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 18, 18);
+        uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      1,  18);
+        uint256 startBucketId       = bound(uint256(startBucketId_),               1,  7388 - BUCKETS_WITH_DEPOSIT);
+        init(boundColPrecision, boundQuotePrecision);
+        addLiquidity(startBucketId);
 
+        // Draw debt from all four buckets
+        (uint256 collateralPledged) = drawDebt(_borrower, 151_000 * 1e18, 1.02 * 1e18);
+        assertGt(_borrowerCollateralization(_borrower), 1e18);
+
+        // Wait until borrower is undercollateralized
+        skip(9 weeks);
+        assertLt(_borrowerCollateralization(_borrower), 1e18);
+
+        // Kick off an auction and wait the grace period
+        _kickWithDeposit(_lender, _startBucketId);
+        skip(1 hours);
+
+        // Wait until price drops below utilized portion of book
+        uint256 auctionCollateral;
+        uint256 auctionPrice;        
+        for (uint i=0; i<72; ++i) {
+            (auctionPrice, , auctionCollateral) = _advanceAuction(1 hours);
+            if (auctionPrice < _priceAt(_startBucketId)) break;
+        }
+
+        // Test arbTake and depositTake in same block
+        _arbTake(_startBucketId, _bidder);
+        _depositTake(_startBucketId + 1);
+
+        // Take remainder of collateral
+        (auctionPrice, , auctionCollateral) = _advanceAuction(33 minutes);
+        _take(auctionCollateral, _bidder);
+        uint256 auctionDebt;
+        (, auctionDebt, auctionCollateral) = _advanceAuction(0);
+        assertEq(auctionCollateral, 0);
+
+        // Settle the auction
+        if (auctionDebt != 0) skip(72 hours);
+        _settle();
+    }
 
     /************************/
     /*** Auction Wrappers ***/
@@ -174,6 +214,29 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
     function _kick(address borrower, address kicker) internal {
         changePrank(kicker);
         _pool.kick(borrower);
+        _checkAuctionStateUponKick(kicker);
+    }
+
+    function _kickWithDeposit(address lender, uint256 bucketId) internal {
+        (uint256 lastLenderLPs, ) = _pool.lenderInfo(bucketId, lender);
+        (, uint256 lastBucketDeposit, , uint256 lastBucketLPs, , ) = _poolUtils.bucketInfo(address(_pool), bucketId);
+
+        changePrank(lender);
+        _pool.kickWithDeposit(bucketId);
+        _checkAuctionStateUponKick(lender);
+
+        // confirm user has redeemed some of their LPs to post liquidation bond
+        (uint256 lenderLPs, ) = _pool.lenderInfo(bucketId, lender);
+        assertLt(lenderLPs, lastLenderLPs);
+
+        // confirm deposit has been removed from bucket
+        (, uint256 bucketDeposit, , uint256 bucketLPs, , ) = _poolUtils.bucketInfo(address(_pool), bucketId);
+        assertLt(bucketDeposit, lastBucketDeposit);
+        assertLt(bucketLPs, lastBucketLPs);
+    }
+
+    function _checkAuctionStateUponKick(address kicker) internal {
+        uint timeSinceStart = block.timestamp - _startTime;
         (
             address auctionKicker,
             uint256 auctionBondFactor,
@@ -189,7 +252,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         assertLe(auctionBondFactor,   0.3  * 1e18);
         assertGt(auctionBondSize,     0);
         assertLt(auctionBondSize,     _pool.depositSize());
-        assertEq(auctionKickTime,     _startTime + 6 weeks);
+        assertEq(auctionKickTime,     _startTime + timeSinceStart);
         assertGt(auctionKickMomp,     _priceAt(_startBucketId + BUCKETS_WITH_DEPOSIT));
         assertLt(auctionKickMomp,     _priceAt(_startBucketId));
         assertGt(auctionNeutralPrice, _priceAt(_startBucketId));
@@ -198,6 +261,8 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
 
     function _take(uint256 collateralToTake, address bidder) internal {
         (uint256 lastAuctionDebt, uint256 lastAuctionCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+        assertGt(lastAuctionDebt,       0);
+        assertGt(lastAuctionCollateral, 0);
 
         changePrank(bidder);
         _pool.take(_borrower, collateralToTake, bidder, new bytes(0));
@@ -209,15 +274,17 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
 
     function _depositTake(uint256 bucketId) internal {
         (uint256 lastAuctionDebt, uint256 lastAuctionCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
-        (, uint256 lastBucketDeposit, uint256 lastBucketCollateral, uint256 lastBucketLps, , ) = _poolUtils.bucketInfo(address(_pool), bucketId);
-        uint256 lastKickerLps = _kickerLps(bucketId);
+        assertGt(lastAuctionDebt,       0);
+        assertGt(lastAuctionCollateral, 0);
+        (, uint256 lastBucketDeposit, uint256 lastBucketCollateral, uint256 lastBucketLPs, , ) = _poolUtils.bucketInfo(address(_pool), bucketId);
+        uint256 lastKickerLPs = _kickerLPs(bucketId);
         assertGt(lastAuctionDebt,       0);
         assertGt(lastAuctionCollateral, 0);
 
         _pool.bucketTake(_borrower, true, bucketId);
 
         // confirm auction debt and collateral have decremented
-        uint256 bucketLps;
+        uint256 bucketLPs;
         {
             (uint256 auctionDebt, uint256 auctionCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
             assertLt(auctionDebt,       lastAuctionDebt);
@@ -227,7 +294,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
             // confirm bucket deposit was exchanged for collateral
             uint256 bucketDeposit;
             uint256 bucketCollateral;
-            (, bucketDeposit, bucketCollateral, bucketLps, , ) = _poolUtils.bucketInfo(address(_pool), bucketId);
+            (, bucketDeposit, bucketCollateral, bucketLPs, , ) = _poolUtils.bucketInfo(address(_pool), bucketId);
             assertLt(bucketDeposit, lastBucketDeposit);
             assertEq(bucketCollateral, lastBucketCollateral + collateralTaken);
         }
@@ -236,10 +303,10 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         (address kicker, , , uint256 kickTime, uint256 kickMomp, uint256 neutralPrice, , , ) = _pool.auctionInfo(_borrower);
         uint256 auctionPrice = Auctions._auctionPrice(kickMomp, neutralPrice, kickTime);
         if (auctionPrice < neutralPrice) {
-            uint256 kickerLps = _kickerLps(bucketId);
-            assertGt(kickerLps, lastKickerLps);
-            uint256 kickerLpChange = kickerLps - lastKickerLps;            
-            assertEq(bucketLps, lastBucketLps + kickerLpChange);
+            uint256 kickerLPs = _kickerLPs(bucketId);
+            assertGt(kickerLPs, lastKickerLPs);
+            uint256 kickerLpChange = kickerLPs - lastKickerLPs;            
+            assertEq(bucketLPs, lastBucketLPs + kickerLpChange);
         }
 
         // Add for tearDown
@@ -253,7 +320,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         assertGt(lastAuctionDebt,       0);
         assertGt(lastAuctionCollateral, 0);
         (, uint256 lastBucketDeposit, uint256 lastBucketCollateral, , , ) = _poolUtils.bucketInfo(address(_pool), bucketId);
-        (uint256 lastBidderLps, ) = _pool.lenderInfo(bucketId, bidder);
+        (uint256 lastBidderLPs, ) = _pool.lenderInfo(bucketId, bidder);
         uint256 lastBidderQuoteBalance = _quote.balanceOf(bidder);
 
         changePrank(bidder);
@@ -267,8 +334,8 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
 
         // confirm bidder was awarded LPs without spending any quote token
         {
-            (uint256 bidderLps, ) = _pool.lenderInfo(bucketId, bidder);
-            assertGt(bidderLps, lastBidderLps);
+            (uint256 bidderLPs, ) = _pool.lenderInfo(bucketId, bidder);
+            assertGt(bidderLPs, lastBidderLPs);
             assertEq(_quote.balanceOf(bidder), lastBidderQuoteBalance);
         }
 
@@ -334,9 +401,9 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         return _collateralization(debt, collateral, _lup());
     }
 
-    function _kickerLps(uint256 bucketId) internal view returns (uint256) {
+    function _kickerLPs(uint256 bucketId) internal view returns (uint256) {
         (address kicker, , , , , , , , ) = _pool.auctionInfo(_borrower);
-        (uint256 kickerLps, ) = _pool.lenderInfo(bucketId, kicker);
-        return kickerLps;
+        (uint256 kickerLPs, ) = _pool.lenderInfo(bucketId, kicker);
+        return kickerLPs;
     }
 }
