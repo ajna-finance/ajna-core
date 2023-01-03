@@ -358,6 +358,13 @@ contract AjnaRewards is IAjnaRewards {
         return (currentBurnTime_, ajnaTokensBurned_, totalInterestEarned_);
     }
 
+    /**
+     *  @notice Update the exchange rate of a list of buckets.
+     *  @dev    Called as part of stakeToken, unstakeToken, and claimRewards, as well as updateBucketExchangeRatesAndClaim.
+     *  @dev    Caller can claim 5% of the rewards that have accumulated to each bucket since the last burn event, if it hasn't already been updated.
+     *  @param  pool_    Address of the pool whose exchange rates are being updated.
+     *  @param  indexes_ List of bucket indexes to be updated.
+     */
     function _updateBucketExchangeRates(address pool_, uint256[] memory indexes_) internal returns (uint256 updateReward_) {
         // get the current burn epoch from the given pool
         uint256 curBurnEpoch = IPool(pool_).currentBurnEpoch();
@@ -380,7 +387,7 @@ contract AjnaRewards is IAjnaRewards {
                 // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
                 unchecked { ++i; }
             }
-            // TODO: emit UpdateExchangeRates()
+            emit UpdateExchangeRates(msg.sender, pool_, indexes_, 0);
             // no rewards are available to claim before reserve auctions start
             return 0;
         }
@@ -442,7 +449,8 @@ contract AjnaRewards is IAjnaRewards {
             burnEventUpdateRewardsClaimed[curBurnEpoch] += updateReward_;
         }
 
-        // TODO: check if at least 1 bucket has been updated?
+        // emit event with the list of indexes updated
+        // some of the indexes may have been previously updated
         emit UpdateExchangeRates(msg.sender, pool_, indexes_, updateReward_);
     }
 
