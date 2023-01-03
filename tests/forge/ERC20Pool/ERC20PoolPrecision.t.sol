@@ -456,7 +456,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                 borrower:                  _borrower,
                 borrowerDebt:              debt,
                 borrowerCollateral:        col,
-                borrowert0Np:              3_192.373538835858843381 * 1e18,
+                borrowert0Np:              3_162.114074012770133965 * 1e18,
                 borrowerCollateralization: 1 * 1e18
             }
         );

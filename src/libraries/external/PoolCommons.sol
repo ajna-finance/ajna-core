@@ -50,21 +50,27 @@ library PoolCommons {
         PoolState memory poolState_,
         uint256 lup_
     ) external {
-        // update pool EMAs for target utilization calculation
-        uint256 curDebtEma =
-            Maths.wmul(poolState_.debt,         EMA_7D_RATE_FACTOR) +
-            Maths.wmul(interestParams_.debtEma, LAMBDA_EMA_7D
-        );
+        if (poolState_.debt != 0) { // TODO: interest rates should be updated even if debt is 0, EMAs should not
+            // update pool EMAs for target utilization calculation
+            uint256 curDebtEma =
+                Maths.wmul(poolState_.debt,         EMA_7D_RATE_FACTOR) +
+                Maths.wmul(interestParams_.debtEma, LAMBDA_EMA_7D
+            );
 
-        uint256 curLupColEma =
-            Maths.wmul(Maths.wmul(lup_, poolState_.collateral), EMA_7D_RATE_FACTOR) +
-            Maths.wmul(interestParams_.lupColEma,               LAMBDA_EMA_7D);
+            // lup * collateral EMA sample max value is 10 times current debt
+            uint256 maxLupColEma = Maths.wmul(poolState_.debt, Maths.wad(10));
 
-        interestParams_.debtEma   = curDebtEma;
-        interestParams_.lupColEma = curLupColEma;
+            // current lup * collateral value
+            uint256 lupCol = Maths.wmul(poolState_.collateral, lup_);
 
-        // update pool interest rate
-        if (poolState_.debt != 0) {
+            uint256 curLupColEma =
+                Maths.wmul(Maths.min(lupCol, maxLupColEma), EMA_7D_RATE_FACTOR) +
+                Maths.wmul(interestParams_.lupColEma,       LAMBDA_EMA_7D);
+
+            interestParams_.debtEma   = curDebtEma;
+            interestParams_.lupColEma = curLupColEma;
+
+            // update pool interest rate
             int256 mau = int256(                                       // meaningful actual utilization
                 _utilization(
                     deposits_,
