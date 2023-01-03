@@ -16,3 +16,6 @@
 [submodule "lib/base64"]
 	path = lib/base64
 	url = https://github.com/Brechtpd/base64
+[submodule "lib/clones-with-immutable-args"]
+	path = lib/clones-with-immutable-args
+	url = https://github.com/wighawag/clones-with-immutable-args.git
