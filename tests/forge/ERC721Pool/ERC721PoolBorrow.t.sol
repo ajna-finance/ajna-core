@@ -409,8 +409,8 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         );
         _assertEMAs(
             {
-                debtEma:   128.680263773096486341 * 1e18,
-                lupColEma: 771.284928353319164825 * 1e18
+                debtEma:   142.074529848655991542 * 1e18,
+                lupColEma: 851.567601449557349751 * 1e18
             }
         );
 

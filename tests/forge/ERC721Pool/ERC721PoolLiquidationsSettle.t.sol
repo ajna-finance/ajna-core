@@ -280,7 +280,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
                 encumberedCollateral: 0,
                 poolDebt:             0,
                 actualUtilization:    0,
-                targetUtilization:    0.000004568979952926 * 1e18,
+                targetUtilization:    0.437382306954677563 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
