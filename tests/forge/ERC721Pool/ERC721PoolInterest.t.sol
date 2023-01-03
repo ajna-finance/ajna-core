@@ -146,7 +146,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 borrower:                  _borrower,
                 borrowerDebt:              expectedDebt,
                 borrowerCollateral:        4 * 1e18,
-                borrowert0Np:              1_307.506009615384615987 * 1e18,
+                borrowert0Np:              1_751.682692307692308500 * 1e18,
                 borrowerCollateralization: 2.403434805679039390 * 1e18
             }
         );
@@ -619,7 +619,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 borrower:                  _borrower,
                 borrowerDebt:              expectedDebt,
                 borrowerCollateral:        4 * 1e18,
-                borrowert0Np:              1_295.346752298807585570 * 1e18,
+                borrowert0Np:              1_734.598566269106425655 * 1e18,
                 borrowerCollateralization: 2.403962065978217811 * 1e18
             }
         );
