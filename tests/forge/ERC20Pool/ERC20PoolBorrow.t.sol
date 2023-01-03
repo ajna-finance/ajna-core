@@ -420,7 +420,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              expectedDebt,
                 borrowerCollateral:        60 * 1e18,
-                borrowert0Np:              369.605048076923077093 * 1e18,
+                borrowert0Np:              441.424038461538461742 * 1e18,
                 borrowerCollateralization: 8.483377444958217435 * 1e18
             }
         );
@@ -465,7 +465,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         _assertLenderInterest(liquidityAdded, 86.113113158840750000 * 1e18);
 
         skip(10 days);
-        _borrow(
+        _borrowZeroAmount(
             {
                 from:       _borrower,
                 amount:     0,
@@ -531,7 +531,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              expectedDebt,
                 borrowerCollateral:        50 * 1e18,
-                borrowert0Np:              451.179509711538461746 * 1e18,
+                borrowert0Np:              448.381722115384615591 * 1e18,
                 borrowerCollateralization: 7.030801136225104190 * 1e18
             }
         );
@@ -561,7 +561,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              expectedDebt,
                 borrowerCollateral:        50 * 1e18,
-                borrowert0Np:              451.179509711538461746 * 1e18,
+                borrowert0Np:              448.381722115384615591 * 1e18,
                 borrowerCollateralization: 7.015307034516347067 * 1e18
             }
         );
@@ -575,13 +575,23 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
      *              Attempts to borrow when result would be borrower under collateralization.
      *              Attempts to borrow when result would be pool under collateralization.
      */
-    function testPoolBorrowRequireChecks() external tearDown {
+    function testPoolBorrowReverts() external tearDown {
         // should revert if borrower attempts to borrow with an out of bounds limitIndex
         _assertBorrowLimitIndexRevert(
             {
                 from:       _borrower,
                 amount:     1_000 * 1e18,
                 indexLimit: 1000
+            }
+        );
+
+        // should revert if borrower tries to borrow on behalf of different address
+        _assertBorrowBorrowerNotSenderRevert(
+            {
+                from:       _borrower,
+                borrower:   _borrower2,
+                amount:     1 * 1e18,
+                indexLimit: 7000
             }
         );
 
@@ -681,7 +691,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
      *              Attempts to repay without debt.
      *              Attempts to repay when bucket would be left with amount less than averge debt.
      */
-    function testPoolRepayRequireChecks() external tearDown {
+    function testPoolRepayReverts() external tearDown {
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 10_000 * 1e18);
 
         // should revert if borrower has no debt
@@ -689,6 +699,14 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             {
                 from:     _borrower,
                 borrower: _borrower,
+                amount:   10_000 * 1e18
+            }
+        );
+
+        _assertPullBorrowerNotSenderRevert(
+            {
+                from:     _borrower,
+                borrower: _borrower2,
                 amount:   10_000 * 1e18
             }
         );

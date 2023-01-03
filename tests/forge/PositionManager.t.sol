@@ -1,21 +1,23 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.14;
 
+import { Base64 } from '@base64-sol/base64.sol';
+
 import { ERC20HelperContract } from './ERC20Pool/ERC20DSTestPlus.sol';
 import { ERC721HelperContract } from './ERC721Pool/ERC721DSTestPlus.sol';
 
 import 'src/base/interfaces/IPositionManager.sol';
 import 'src/base/PositionManager.sol';
+import 'src/libraries/SafeTokenNamer.sol';
 
 import './utils/ContractNFTRecipient.sol';
 
-// TODO: test this against ERC721Pool
 abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract {
 
     PositionManager  internal _positionManager;
 
     constructor() ERC20HelperContract() {
-        _positionManager = new PositionManager();
+        _positionManager = new PositionManager(_poolFactory, new ERC721PoolFactory(_ajna));
     }
 
     function _mintQuoteAndApproveManagerTokens(address operator_, uint256 mintAmount_) internal {
@@ -31,7 +33,7 @@ abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract 
      *  @dev Abstract away NFT Minting logic for use by multiple tests.
      */
     function _mintNFT(address minter_, address lender_, address pool_) internal returns (uint256 tokenId) {
-        IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(lender_, pool_);
+        IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(lender_, pool_, keccak256("ERC20_NON_SUBSET_HASH"));
         
         changePrank(minter_);
         return _positionManager.mint(mintParams);
@@ -68,6 +70,8 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
     /**
      *  @notice Tests base NFT minting functionality.
+     *          Reverts:
+     *              Attempts to mint an NFT associated with an invalid pool.
      */
     function testMint() external {
         uint256 mintAmount  = 50 * 1e18;
@@ -79,7 +83,6 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // test emitted Mint event
         vm.expectEmit(true, true, true, true);
         emit Mint(testAddress, address(_pool), 1);
-
         uint256 tokenId = _mintNFT(testAddress, testAddress, address(_pool));
 
         require(tokenId != 0, "tokenId nonce not incremented");
@@ -90,6 +93,14 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         assertEq(owner, testAddress);
         assertEq(lpTokens, 0);
+
+        // deploy a new factory to simulate creating a pool outside of expected factories
+        ERC20PoolFactory invalidFactory = new ERC20PoolFactory(_ajna);
+        address invalidPool = invalidFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
+
+        // check can't mint an NFT associated with a non ajna pool
+        vm.expectRevert(IPositionManager.NotAjnaPool.selector);
+        _mintNFT(testAddress, testAddress, invalidPool);
     }
 
     /**
@@ -2216,7 +2227,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             }
         );
 
-        // minter cannot move liquidity on behalf of lender (is not approved) 
+        // minter cannot move liquidity on behalf of lender (is not approved)
         IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
             tokenId, address(_pool), 2550, 2551
         );
@@ -2230,7 +2241,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         vm.expectRevert(IPositionManager.NoAuth.selector);
         _positionManager.reedemPositions(reedemParams);
 
-        // minter cannot burn positions NFT on behalf of lender (is not approved) 
+        // minter cannot burn positions NFT on behalf of lender (is not approved)
         IPositionManagerOwnerActions.BurnParams memory burnParams = IPositionManagerOwnerActions.BurnParams(
             tokenId, address(_pool)
         );
@@ -2436,6 +2447,14 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // mint NFT
         uint256 tokenId = _mintNFT(testAddress, testAddress, address(_pool));
 
+        // check retrieval of pool token symbols
+        address collateralTokenAddress = IPool(_positionManager.poolKey(tokenId)).collateralAddress();
+        address quoteTokenAddress = IPool(_positionManager.poolKey(tokenId)).quoteTokenAddress();
+        assertEq(tokenSymbol(collateralTokenAddress), "C");
+        assertEq(tokenSymbol(quoteTokenAddress), "Q");
+        assertEq(tokenName(collateralTokenAddress), "Collateral");
+        assertEq(tokenName(quoteTokenAddress), "Quote");
+
         // allow position manager to take ownership of the position
         _pool.approveLpOwnership(address(_positionManager), indexes[0], 3_000 * 1e27);
 
@@ -2445,9 +2464,15 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
         _positionManager.memorializePositions(memorializeParams);
 
-        // TODO: expand this test to check string matches an expected hardcoded string
         string memory uriString = _positionManager.tokenURI(tokenId);
+        // emit log(uriString);
         assertGt(bytes(uriString).length, 0);
+
+        // FIXME: split out uri string from encoding metadata, and parse resulting json object
+        // decode uri string and check attributes
+        // bytes memory data = Base64.decode(uriString);
+        // DecodeTokenURIParams memory decodedURI = abi.decode(data, (DecodeTokenURIParams));
+        // assertEq(decodedURI.name, "Ajna Token #1");
     }
 
 }
@@ -2457,7 +2482,7 @@ abstract contract PositionManagerERC721PoolHelperContract is ERC721HelperContrac
     PositionManager  internal _positionManager;
 
     constructor() ERC721HelperContract() {
-        _positionManager = new PositionManager();
+        _positionManager = new PositionManager(new ERC20PoolFactory(_ajna), _poolFactory);
         _pool = _deployCollectionPool();
     }
 
@@ -2473,8 +2498,8 @@ abstract contract PositionManagerERC721PoolHelperContract is ERC721HelperContrac
     /**
      *  @dev Abstract away NFT Minting logic for use by multiple tests.
      */
-    function _mintNFT(address minter_, address lender_, address pool_) internal returns (uint256 tokenId) {
-        IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(lender_, pool_);
+    function _mintNFT(address minter_, address lender_, address pool_, bytes32 subsetHash_) internal returns (uint256 tokenId) {
+        IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(lender_, pool_, subsetHash_);
         
         changePrank(minter_);
         return _positionManager.mint(mintParams);
@@ -2520,7 +2545,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         );
 
         // mint an NFT to later memorialize existing positions into
-        uint256 tokenId = _mintNFT(testAddress1, testAddress1, address(_pool));
+        uint256 tokenId = _mintNFT(testAddress1, testAddress1, address(_pool), keccak256("ERC721_NON_SUBSET_HASH"));
 
         // check LPs
         _assertLenderLpBalance(
@@ -2891,7 +2916,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         changePrank(testAddress1);
         vm.expectRevert(IPositionManager.NoAuth.selector);
         _positionManager.burn(burnParams);
-        
+
         // Indexes that have non zero position
         uint256[] memory newIndexes = new uint256[](2);
         newIndexes[0] = indexes[1];

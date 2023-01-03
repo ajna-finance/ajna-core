@@ -30,9 +30,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
 
     mapping(uint256 => uint256) NFTidToIndex;
 
-    mapping(address => EnumerableSet.UintSet) bidderDepositedIndex;
-    EnumerableSet.AddressSet bidders;
-
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
 
     /*****************/
@@ -90,7 +87,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
             if (bucketCollateral % 1e18 != 0) {
                 revert("Collateral needs to be reconstituted from other buckets");
             }
-            uint256 noOfBucketNftsRedeemable = Maths.wadToIntRoundingDown(bucketCollateral);
+            uint256 noOfBucketNftsRedeemable = _wadToIntRoundingDown(bucketCollateral);
 
             // Calculating redeemable Quote and Collateral Token for Lenders lps
             uint256 lpsAsCollateral = _poolUtils.lpsToCollateral(address(_pool), lenderLpBalance, bucketIndex);
@@ -114,7 +111,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                 }
 
                 // First redeem LP for collateral
-                uint256 noOfNftsToRemove = Maths.min(Maths.wadToIntRoundingDown(lpsAsCollateral), noOfBucketNftsRedeemable);
+                uint256 noOfNftsToRemove = Maths.min(_wadToIntRoundingDown(lpsAsCollateral), noOfBucketNftsRedeemable);
                 (, lpsRedeemed) = _pool.removeCollateral(noOfNftsToRemove, bucketIndex);
             }
 
@@ -154,10 +151,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         for (uint i = 0; i < lenders.length(); i++) {
             redeemLenderLps(lenders.at(i), lendersDepositedIndex[lenders.at(i)]);
         }
-
-        for( uint256 i = 0; i < bidders.length(); i++) {
-            redeemLenderLps(bidders.at(i), bidderDepositedIndex[bidders.at(i)]);
-        }
+        
         validateEmpty(bucketsUsed);
     }
 
@@ -187,8 +181,8 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         }
 
         // Add for tearDown
-        bidders.add(from);
-        bidderDepositedIndex[from].add(index);
+        lenders.add(from);
+        lendersDepositedIndex[from].add(index);
         bucketsUsed.add(index); 
     }
 
@@ -407,8 +401,8 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         ERC721Pool(address(_pool)).mergeOrRemoveCollateral(removeCollateralAtIndex, noOfNFTsToRemove, toIndex);
 
         // Add for tearDown
-        bidders.add(from);
-        bidderDepositedIndex[from].add(toIndex);
+        lenders.add(from);
+        lendersDepositedIndex[from].add(toIndex);
         bucketsUsed.add(toIndex);
     }
 
@@ -458,6 +452,17 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     ) internal {
         uint256[] memory tokenIds;
         vm.expectRevert(IPoolFactory.PoolInterestRateInvalid.selector);
+        ERC721PoolFactory(poolFactory).deployPool(collateral, quote, tokenIds, interestRate);
+    }
+
+    function _assertDeployWithNonNFTRevert(
+        address poolFactory,
+        address collateral,
+        address quote,
+        uint256 interestRate
+    ) internal {
+        uint256[] memory tokenIds;
+        vm.expectRevert(abi.encodeWithSignature('NFTNotSupported()'));
         ERC721PoolFactory(poolFactory).deployPool(collateral, quote, tokenIds, interestRate);
     }
 
@@ -590,6 +595,8 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
 
     uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
 
+    ERC721PoolFactory internal _poolFactory;
+
     constructor() {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"));
 
@@ -601,19 +608,21 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
         vm.makePersistent(_ajna);
         _poolUtils  = new PoolInfoUtils();
         vm.makePersistent(address(_poolUtils));
+        _poolFactory = new ERC721PoolFactory(_ajna);
+        vm.makePersistent(address(_poolFactory));
     }
 
     function _deployCollectionPool() internal returns (ERC721Pool) {
         _startTime = block.timestamp;
         uint256[] memory tokenIds;
-        address contractAddress = new ERC721PoolFactory(_ajna).deployPool(address(_collateral), address(_quote), tokenIds, 0.05 * 10**18);
+        address contractAddress = _poolFactory.deployPool(address(_collateral), address(_quote), tokenIds, 0.05 * 10**18);
         vm.makePersistent(contractAddress);
         return ERC721Pool(contractAddress);
     }
 
     function _deploySubsetPool(uint256[] memory subsetTokenIds_) internal returns (ERC721Pool) {
         _startTime = block.timestamp;
-        return ERC721Pool(new ERC721PoolFactory(_ajna).deployPool(address(_collateral), address(_quote), subsetTokenIds_, 0.05 * 10**18));
+        return ERC721Pool(_poolFactory.deployPool(address(_collateral), address(_quote), subsetTokenIds_, 0.05 * 10**18));
     }
 
     function _mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) internal {
@@ -634,3 +643,10 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
         _ajnaToken.approve(address(_pool), type(uint256).max);
     }
 }
+
+    /**
+     * @notice Convert a WAD to an integer, rounding down
+     */
+    function _wadToIntRoundingDown(uint256 a) pure returns (uint256) {
+        return Maths.wdiv(a, 10 ** 18) / 10 ** 18;
+    }

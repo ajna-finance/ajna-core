@@ -69,6 +69,22 @@ library LenderActions {
     }
 
     /**
+     *  @notice Emitted when lender adds quote token to the pool.
+     *  @param  lender    Recipient that added quote tokens.
+     *  @param  price     Price at which quote tokens were added.
+     *  @param  amount    Amount of quote tokens added to the pool.
+     *  @param  lpAwarded Amount of LP awarded for the deposit.
+     *  @param  lup       LUP calculated after deposit.
+     */
+    event AddQuoteToken(
+        address indexed lender,
+        uint256 indexed price,
+        uint256 amount,
+        uint256 lpAwarded,
+        uint256 lup
+    );
+
+    /**
      *  @notice Emitted when lender moves quote token from a bucket price to another.
      *  @param  lender         Recipient that moved quote tokens.
      *  @param  from           Price bucket from which quote tokens were moved.
@@ -118,8 +134,10 @@ library LenderActions {
         uint256 index_
     ) external returns (uint256 bucketLPs_) {
         if (index_ == 0 || index_ > MAX_FENWICK_INDEX) revert InvalidIndex();
+
         uint256 bucketDeposit = Deposits.valueAt(deposits_, index_);
         uint256 bucketPrice   = _priceAt(index_);
+
         bucketLPs_ = Buckets.addCollateral(
             buckets_[index_],
             msg.sender,
@@ -133,17 +151,23 @@ library LenderActions {
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
         uint256 quoteTokenAmountToAdd_,
-        uint256 index_
-    ) external returns (uint256 bucketLPs_) {
+        uint256 index_,
+        uint256 poolDebt_
+    ) external returns (uint256 bucketLPs_, uint256 lup_) {
         if (index_ == 0 || index_ > MAX_FENWICK_INDEX) revert InvalidIndex();
 
         Bucket storage bucket = buckets_[index_];
+
         uint256 bankruptcyTime = bucket.bankruptcyTime;
+
         // cannot deposit in the same block when bucket becomes insolvent
         if (bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
 
-        uint256 bucketDeposit = Deposits.valueAt(deposits_, index_);
-        uint256 bucketPrice   = _priceAt(index_);
+        uint256 unscaledBucketDeposit = Deposits.unscaledValueAt(deposits_, index_);
+        uint256 bucketScale           = Deposits.scale(deposits_, index_);
+        uint256 bucketDeposit         = Maths.wmul(bucketScale, unscaledBucketDeposit);
+        uint256 bucketPrice           = _priceAt(index_);
+
         bucketLPs_ = Buckets.quoteTokensToLPs(
             bucket.collateral,
             bucket.lps,
@@ -152,15 +176,21 @@ library LenderActions {
             bucketPrice
         );
 
-        Deposits.add(deposits_, index_, quoteTokenAmountToAdd_);
+        Deposits.unscaledAdd(deposits_, index_, Maths.wdiv(quoteTokenAmountToAdd_, bucketScale));
 
         // update lender LPs
         Lender storage lender = bucket.lenders[msg.sender];
+
         if (bankruptcyTime >= lender.depositTime) lender.lps = bucketLPs_;
         else lender.lps += bucketLPs_;
+
         lender.depositTime = block.timestamp;
+
         // update bucket LPs
         bucket.lps += bucketLPs_;
+
+        lup_ = _lup(deposits_, poolDebt_);
+        emit AddQuoteToken(msg.sender, index_, quoteTokenAmountToAdd_, bucketLPs_, lup_);
     }
 
     function moveQuoteToken(
@@ -168,23 +198,25 @@ library LenderActions {
         DepositsState storage deposits_,
         PoolState calldata poolState_,
         MoveQuoteParams calldata params_
-    ) external returns (uint256 fromBucketRedeemedLPs_, uint256 toBucketRedeemedLPs_, uint256 lup_) {
-        if (params_.fromIndex == params_.toIndex) revert MoveToSamePrice();
+    ) external returns (uint256 fromBucketRedeemedLPs_, uint256 toBucketLPs_, uint256 lup_) {
+        if (params_.fromIndex == params_.toIndex)                        revert MoveToSamePrice();
         if (params_.toIndex == 0 || params_.toIndex > MAX_FENWICK_INDEX) revert InvalidIndex();
 
         Bucket storage toBucket = buckets_[params_.toIndex];
 
         MoveQuoteLocalVars memory vars;
         vars.toBucketBankruptcyTime = toBucket.bankruptcyTime;
+
         // cannot move in the same block when target bucket becomes insolvent
         if (vars.toBucketBankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
 
-        Bucket storage fromBucket = buckets_[params_.fromIndex];
+        Bucket storage fromBucket       = buckets_[params_.fromIndex];
         Lender storage fromBucketLender = fromBucket.lenders[msg.sender];
 
         vars.fromBucketPrice       = _priceAt(params_.fromIndex);
         vars.toBucketPrice         = _priceAt(params_.toIndex);
         vars.fromBucketDepositTime = fromBucketLender.depositTime;
+
         if (fromBucket.bankruptcyTime < vars.fromBucketDepositTime) vars.fromBucketLPs = fromBucketLender.lps;
 
         (vars.amountToMove, fromBucketRedeemedLPs_) = _removeMaxDeposit(
@@ -197,7 +229,8 @@ library LenderActions {
             params_.fromIndex
         );
 
-        vars.ptp = _ptp(poolState_.accruedDebt, poolState_.collateral);
+        vars.ptp = _ptp(poolState_.debt, poolState_.collateral);
+
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
         if (vars.fromBucketDepositTime != 0 && block.timestamp - vars.fromBucketDepositTime < 1 days) {
             if (vars.fromBucketPrice > vars.ptp && vars.toBucketPrice < vars.ptp) {
@@ -205,34 +238,41 @@ library LenderActions {
             }
         }
 
-        toBucketRedeemedLPs_ = Buckets.quoteTokensToLPs(
+        uint256 unscaledToBucketDeposit = Deposits.unscaledValueAt(deposits_, params_.toIndex);
+        uint256 toBucketScale           = Deposits.scale(deposits_, params_.toIndex);
+        uint256 toBucketDeposit         = Maths.wmul(toBucketScale, unscaledToBucketDeposit);
+        vars.toBucketPrice              = _priceAt(params_.toIndex);
+        toBucketLPs_ = Buckets.quoteTokensToLPs(
             toBucket.collateral,
             toBucket.lps,
-            Deposits.valueAt(deposits_, params_.toIndex),
+            toBucketDeposit,
             vars.amountToMove,
             vars.toBucketPrice
         );
 
-        // add deposit removed from initial bucket to destination bucket
-        Deposits.add(deposits_, params_.toIndex, vars.amountToMove);
+        Deposits.unscaledAdd(deposits_, params_.toIndex, Maths.wdiv(vars.amountToMove, toBucketScale));
 
-        lup_ = _lup(deposits_, poolState_.accruedDebt);
+        lup_     = _lup(deposits_, poolState_.debt);
         vars.htp = Maths.wmul(params_.thresholdPrice, poolState_.inflator);
+
         // check loan book's htp against new lup, revert if move drives LUP below HTP
         if (params_.fromIndex < params_.toIndex) if(vars.htp > lup_) revert LUPBelowHTP();
 
         // update lender LPs balance in from bucket
         fromBucketLender.lps -= fromBucketRedeemedLPs_;
+
         // update lender LPs balance and deposit time in target bucket
         Lender storage toBucketLender = toBucket.lenders[msg.sender];
-        if (vars.toBucketBankruptcyTime >= toBucketLender.depositTime) toBucketLender.lps = toBucketRedeemedLPs_;
-        else toBucketLender.lps += toBucketRedeemedLPs_;
+
+        if (vars.toBucketBankruptcyTime >= toBucketLender.depositTime) toBucketLender.lps = toBucketLPs_;
+        else toBucketLender.lps += toBucketLPs_;
+
         // set deposit time to the greater of the lender's from bucket and the target bucket's last bankruptcy timestamp + 1 so deposit won't get invalidated
         toBucketLender.depositTime = Maths.max(vars.fromBucketDepositTime, vars.toBucketBankruptcyTime + 1);
 
         // update buckets LPs balance
         fromBucket.lps -= fromBucketRedeemedLPs_;
-        toBucket.lps   += toBucketRedeemedLPs_;
+        toBucket.lps   += toBucketLPs_;
 
         emit MoveQuoteToken(
             msg.sender,
@@ -240,7 +280,7 @@ library LenderActions {
             params_.toIndex,
             vars.amountToMove,
             fromBucketRedeemedLPs_,
-            toBucketRedeemedLPs_,
+            toBucketLPs_,
             lup_
         );
     }
@@ -251,15 +291,18 @@ library LenderActions {
         PoolState calldata poolState_,
         RemoveQuoteParams calldata params_
     ) external returns (uint256 removedAmount_, uint256 redeemedLPs_, uint256 lup_) {
-
         Bucket storage bucket = buckets_[params_.index];
         Lender storage lender = bucket.lenders[msg.sender];
+
         uint256 depositTime = lender.depositTime;
+
         uint256 lenderLPs;
+
         if (bucket.bankruptcyTime < lender.depositTime) lenderLPs = lender.lps;
         if (lenderLPs == 0) revert NoClaim();      // revert if no LP to claim
 
         uint256 price = _priceAt(params_.index);
+
         (removedAmount_, redeemedLPs_) = _removeMaxDeposit(
             deposits_,
             params_.maxAmount,
@@ -272,13 +315,15 @@ library LenderActions {
 
         // apply early withdrawal penalty if quote token is removed from above the PTP
         if (depositTime != 0 && block.timestamp - depositTime < 1 days) {
-            if (price > _ptp(poolState_.accruedDebt, poolState_.collateral)) {
+            if (price > _ptp(poolState_.debt, poolState_.collateral)) {
                 removedAmount_ = Maths.wmul(removedAmount_, Maths.WAD - _feeRate(poolState_.rate));
             }
         }
 
-        lup_ = _lup(deposits_, poolState_.accruedDebt);
+        lup_ = _lup(deposits_, poolState_.debt);
+
         uint256 htp = Maths.wmul(params_.thresholdPrice, poolState_.inflator);
+
         // check loan book's htp against new lup
         if (htp > lup_) revert LUPBelowHTP();
 
@@ -296,11 +341,14 @@ library LenderActions {
         uint256 index_
     ) external returns (uint256 lpAmount_) {
         Bucket storage bucket = buckets_[index_];
+
         uint256 bucketCollateral = bucket.collateral;
+
         if (amount_ > bucketCollateral) revert InsufficientCollateral();
 
         uint256 bucketPrice = _priceAt(index_);
         uint256 bucketLPs   = bucket.lps;
+
         lpAmount_ = Buckets.collateralToLPs(
             bucketCollateral,
             bucketLPs,
@@ -310,12 +358,14 @@ library LenderActions {
         );
 
         Lender storage lender = bucket.lenders[msg.sender];
+
         uint256 lenderLpBalance;
         if (bucket.bankruptcyTime < lender.depositTime) lenderLpBalance = lender.lps;
         if (lenderLpBalance == 0 || lpAmount_ > lenderLpBalance) revert InsufficientLPs();
 
         // update lender LPs balance
         lender.lps -= lpAmount_;
+
         // update bucket LPs and collateral balance
         bucket.lps        -= Maths.min(bucketLPs, lpAmount_);
         bucket.collateral -= Maths.min(bucketCollateral, amount_);
@@ -342,7 +392,6 @@ library LenderActions {
         uint256 collateralAmount_,
         uint256 toIndex_
     ) external returns (uint256 collateralToMerge_, uint256 bucketLPs_) {
-
         uint256 i;
         uint256 fromIndex;
         uint256 collateralRemoved;
@@ -351,8 +400,8 @@ library LenderActions {
 
         // Loop over buckets, exit if collateralAmount is reached or max noOfBuckets is reached
         while (collateralToMerge_ < collateralAmount_ && i < noOfBuckets) {
-
             fromIndex = removalIndexes_[i];
+
             if (fromIndex > toIndex_) revert CannotMergeToHigherPrice();
 
             (collateralRemoved, ) = _removeMaxCollateral(
@@ -362,18 +411,18 @@ library LenderActions {
                 fromIndex
             );
 
-            collateralToMerge_   += collateralRemoved;
-            collateralRemaining  =  collateralRemaining - collateralRemoved;
+            collateralToMerge_ += collateralRemoved;
 
-            unchecked {
-                ++i;
-            }
+            collateralRemaining = collateralRemaining - collateralRemoved;
+
+            unchecked { ++i; }
         }
 
         if (collateralToMerge_ != collateralAmount_) {
             // Merge totalled collateral to specified bucket, toIndex_
             uint256 toBucketDeposit = Deposits.valueAt(deposits_, toIndex_);
             uint256 toBucketPrice   = _priceAt(toIndex_);
+
             bucketLPs_ = Buckets.addCollateral(
                 buckets_[toIndex_],
                 msg.sender,
@@ -399,6 +448,7 @@ library LenderActions {
         uint256[] calldata indexes_
     ) external {
         uint256 indexesLength = indexes_.length;
+
         uint256 tokensTransferred;
 
         for (uint256 i = 0; i < indexesLength; ) {
@@ -409,8 +459,11 @@ library LenderActions {
 
             Bucket storage bucket = buckets_[index];
             Lender storage lender = bucket.lenders[owner_];
+
             uint256 lenderDepositTime = lender.depositTime;
+
             uint256 lenderLpBalance;
+
             if (bucket.bankruptcyTime < lenderDepositTime) lenderLpBalance = lender.lps;
 
             if (transferAmount == 0 || transferAmount != lenderLpBalance) revert NoAllowance();
@@ -419,16 +472,17 @@ library LenderActions {
 
             // move lp tokens to the new owner address
             Lender storage newLender = bucket.lenders[newOwner_];
-            newLender.lps         += transferAmount;
+
+            newLender.lps += transferAmount;
+
             newLender.depositTime = Maths.max(lenderDepositTime, newLender.depositTime);
+
             // reset owner lp balance for this index
             delete bucket.lenders[owner_];
 
             tokensTransferred += transferAmount;
 
-            unchecked {
-                ++i;
-            }
+            unchecked { ++i; }
         }
         emit TransferLPTokens(owner_, newOwner_, indexes_, tokensTransferred);
     }
@@ -444,48 +498,41 @@ library LenderActions {
         uint256 index_
     ) internal returns (uint256 collateralAmount_, uint256 lpAmount_) {
         Bucket storage bucket = buckets_[index_];
+
         uint256 bucketCollateral = bucket.collateral;
         if (bucketCollateral == 0) revert InsufficientCollateral(); // revert if there's no collateral in bucket
 
         Lender storage lender = bucket.lenders[msg.sender];
+
         uint256 lenderLpBalance;
+
         if (bucket.bankruptcyTime < lender.depositTime) lenderLpBalance = lender.lps;
         if (lenderLpBalance == 0) revert NoClaim();                  // revert if no LP to redeem
 
-        uint256 bucketPrice = _priceAt(index_);
-        uint256 bucketLPs   = bucket.lps;
-        uint256 exchangeRate = Buckets.getExchangeRate(
-            bucketCollateral,
-            bucketLPs,
-            Deposits.valueAt(deposits_, index_),
-            bucketPrice
-        );
+        uint256 bucketPrice   = _priceAt(index_);
+        uint256 bucketLPs     = bucket.lps;
+        uint256 bucketDeposit = Deposits.valueAt(deposits_, index_);
 
         // limit amount by what is available in the bucket
         collateralAmount_ = Maths.min(maxAmount_, bucketCollateral);
 
         // determine how much LP would be required to remove the requested amount
-        uint256 requiredLPs;
-        if (collateralAmount_ == bucketCollateral && bucketLPs == lenderLpBalance) {
-            requiredLPs = bucketLPs;
-        } else {
-            requiredLPs = (collateralAmount_ * bucketPrice * 1e18 + exchangeRate / 2) / exchangeRate;
-        }
+        uint256 collateralValue     = Maths.wmul(bucketPrice, bucketCollateral);
+        uint256 lpsForAllCollateral = Maths.rmul(bucketLPs, Maths.wwdivr(collateralValue, collateralValue + bucketDeposit));
+        uint256 requiredLPs         = Maths.rmul(lpsForAllCollateral, Maths.wwdivr(collateralAmount_, bucketCollateral));
 
         // limit withdrawal by the lender's LPB
-        if (requiredLPs < lenderLpBalance) {
+        if (requiredLPs <= lenderLpBalance) {
+            // withdraw collateralAmount_ as is
             lpAmount_ = requiredLPs;
         } else {
-            lpAmount_ = lenderLpBalance;
-            if (lpAmount_ == bucketLPs) {
-                collateralAmount_ = bucketCollateral;
-            } else {
-                collateralAmount_ = ((lpAmount_ * exchangeRate + 1e18 / 2) / 1e18 + bucketPrice / 2) / bucketPrice;
-            }
+            lpAmount_         = lenderLpBalance;
+            collateralAmount_ = Maths.wmul(Maths.rrdivw(lenderLpBalance,lpsForAllCollateral), bucketCollateral);
         }
 
         // update lender LPs balance
-        lender.lps        -= lpAmount_;
+        lender.lps -= lpAmount_;
+
         // update bucket LPs and collateral balance
         bucket.lps        -= Maths.min(bucketLPs, lpAmount_);
         bucket.collateral -= Maths.min(bucketCollateral, collateralAmount_);
@@ -535,23 +582,24 @@ library LenderActions {
         uint256 unscaledRemovedAmount;
         uint256 unscaledLpConstraint = Maths.rmul(lpConstraint_, unscaledExchangeRate);
         if (
-            depositConstraint_ < Maths.wmul(unscaledDepositAvailable, depositScale)
-            &&
+            depositConstraint_ < Maths.wmul(unscaledDepositAvailable, depositScale) &&
             Maths.wwdivr(depositConstraint_, depositScale) < unscaledLpConstraint
         ) {
             // depositConstraint_ is binding constraint
             unscaledRemovedAmount = Maths.wdiv(depositConstraint_, depositScale);
             redeemedLPs_          = Maths.wrdivr(unscaledRemovedAmount, unscaledExchangeRate);
-        } else if (Maths.wadToRay(unscaledDepositAvailable) < unscaledLpConstraint) {
+        }
+        else if (Maths.wadToRay(unscaledDepositAvailable) < unscaledLpConstraint) {
             // unscaledDeposit is binding constraint
             unscaledRemovedAmount = unscaledDepositAvailable;
             redeemedLPs_          = Maths.wrdivr(unscaledRemovedAmount, unscaledExchangeRate);
-        } else {
+        }
+        else {
             // redeeming all LPs
             redeemedLPs_          = lpConstraint_;
             unscaledRemovedAmount = Maths.rayToWad(Maths.rmul(redeemedLPs_, unscaledExchangeRate));
         }
-        
+
         // If clearing out the bucket deposit, ensure it's zeroed out
         if (redeemedLPs_ == bucketLPs_) {
             unscaledRemovedAmount = unscaledDepositAvailable;

@@ -3,13 +3,14 @@
 pragma solidity 0.8.14;
 
 import { ClonesWithImmutableArgs } from '@clones/ClonesWithImmutableArgs.sol';
-import '@openzeppelin/contracts/utils/introspection/IERC165.sol';
+import { IERC165 } from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 
-import '../base/interfaces/IPoolFactory.sol';
-import '../base/PoolDeployer.sol';
+import { IERC721PoolFactory }    from 'src/erc721/interfaces/IERC721PoolFactory.sol';
+import { IERC20Token, PoolType } from 'src/base/interfaces/IPool.sol';
+import { NFTTypes }              from 'src/erc721/interfaces/IERC721NonStandard.sol';
 
-import './interfaces/IERC721PoolFactory.sol';
-import './ERC721Pool.sol';
+import { ERC721Pool }   from 'src/erc721/ERC721Pool.sol';
+import { PoolDeployer } from 'src/base/PoolDeployer.sol';
 
 contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
 
@@ -23,7 +24,8 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
     constructor(address ajna_) {
         if (ajna_ == address(0)) revert DeployWithZeroAddress();
 
-        ajna           = ajna_;
+        ajna = ajna_;
+
         implementation = new ERC721Pool();
     }
 
@@ -34,20 +36,22 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
 
         NFTTypes nftType;
         // CryptoPunks NFTs
-        if ( collateral_ == 0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB ) {
+        if (collateral_ == 0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB ) {
             nftType = NFTTypes.CRYPTOPUNKS;
         }
         // CryptoKitties and CryptoFighters NFTs
-        else if ( collateral_ == 0x06012c8cf97BEaD5deAe237070F9587f8E7A266d || collateral_ ==  0x87d598064c736dd0C712D329aFCFAA0Ccc1921A1 ){
+        else if (collateral_ == 0x06012c8cf97BEaD5deAe237070F9587f8E7A266d || collateral_ ==  0x87d598064c736dd0C712D329aFCFAA0Ccc1921A1) {
             nftType = NFTTypes.CRYPTOKITTIES;
         }
-        // All other NFTs that support the EIP721 standard 
+        // All other NFTs that support the EIP721 standard
         else {
             // Here 0x80ac58cd is the ERC721 interface Id
-            bool supportsERC721Interface = IERC165(collateral_).supportsInterface(0x80ac58cd);
-
             // Neither a standard NFT nor a non-standard supported NFT(punk, kitty or fighter)
-            if (!supportsERC721Interface) revert NFTNotSupported();
+            try IERC165(collateral_).supportsInterface(0x80ac58cd) returns (bool supportsERC721Interface) {
+                if (!supportsERC721Interface) revert NFTNotSupported();
+            } catch {
+                revert NFTNotSupported();
+            }
 
             nftType = NFTTypes.STANDARD_ERC721;
         }
@@ -63,18 +67,24 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
         );
 
         ERC721Pool pool = ERC721Pool(address(implementation).clone(data));
+
         pool_ = address(pool);
+
+        // Track the newly deployed pool
         deployedPools[getNFTSubsetHash(tokenIds_)][collateral_][quote_] = pool_;
+        deployedPoolsList.push(pool_);
+
         emit PoolCreated(pool_);
 
         pool.initialize(tokenIds_, interestRate_);
     }
 
-    /*********************************/
+    /*******************************/
     /*** Pool Creation Functions ***/
-    /*********************************/
+    /*******************************/
 
     function getNFTSubsetHash(uint256[] memory tokenIds_) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(tokenIds_));
+        if (tokenIds_.length == 0) return ERC721_NON_SUBSET_HASH;
+        else return keccak256(abi.encodePacked(tokenIds_));
     }
 }

@@ -23,9 +23,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.UintSet;
 
-    mapping(address => EnumerableSet.UintSet) bidderDepositedIndex;
-    EnumerableSet.AddressSet bidders;
-
     event Transfer(address indexed from, address indexed to, uint256 value);
 
     /*****************/
@@ -126,9 +123,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
             redeemLendersLp(lenders.at(i), lendersDepositedIndex[lenders.at(i)]);
         }
 
-        for(uint i = 0; i < bidders.length(); i++ ) {
-            redeemLendersLp(bidders.at(i), bidderDepositedIndex[bidders.at(i)]);
-        }
         validateEmpty(bucketsUsed);
     }
 
@@ -167,8 +161,8 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         emit Transfer(from, address(_pool), amount / ERC20Pool(address(_pool)).collateralScale());
 
         // Add for tearDown
-        bidders.add(from);
-        bidderDepositedIndex[from].add(index);
+        lenders.add(from);
+        lendersDepositedIndex[from].add(index);
         bucketsUsed.add(index); 
 
         return ERC20Pool(address(_pool)).addCollateral(amount, index);
@@ -184,6 +178,22 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         vm.expectEmit(true, true, false, true);
         emit DrawDebt(from, amount, 0, newLup);
         _assertTokenTransferEvent(address(_pool), from, amount);
+
+        ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
+
+        // Add for tearDown
+        borrowers.add(from);
+    }
+
+    function _borrowZeroAmount(
+        address from,
+        uint256 amount,
+        uint256 indexLimit,
+        uint256 newLup
+    ) internal {
+        changePrank(from);
+        vm.expectEmit(true, true, false, true);
+        emit DrawDebt(from, amount, 0, newLup);
 
         ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
 
@@ -360,10 +370,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
                 lenders.add(to);
                 lendersDepositedIndex[to].add(indexes[i]);
             }
-            else{
-                bidders.add(to);
-                bidderDepositedIndex[to].add(indexes[i]);
-            }
         }
     }
 
@@ -380,6 +386,15 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('BucketBankruptcyBlock()'));
         ERC20Pool(address(_pool)).addCollateral(amount, index);
+    }
+
+    function _assertAddCollateralAtIndex0Revert(
+        address from,
+        uint256 amount
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.InvalidIndex.selector);
+        ERC20Pool(address(_pool)).addCollateral(amount, 0);
     }
 
     function _assertDeployWith0xAddressRevert(
@@ -429,6 +444,16 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         changePrank(from);
         vm.expectRevert(IPoolErrors.NoDebt.selector);
         ERC20Pool(address(_pool)).repayDebt(borrower, amount, 0);
+    }
+
+    function _assertPullBorrowerNotSenderRevert(
+        address from,
+        address borrower,
+        uint256 amount
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.BorrowerNotSender.selector);
+        ERC20Pool(address(_pool)).repayDebt(borrower, 0, amount);
     }
 
     function _assertRepayMinDebtRevert(
@@ -501,6 +526,17 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
     }
 
+    function _assertBorrowBorrowerNotSenderRevert(
+        address from,
+        address borrower,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal override {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.BorrowerNotSender.selector);
+        ERC20Pool(address(_pool)).drawDebt(borrower, amount, indexLimit, 0);
+    }
+
     function _assertBorrowLimitIndexRevert(
         address from,
         uint256 amount,
@@ -543,13 +579,16 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     Token internal _collateral;
     Token internal _quote;
 
+    ERC20PoolFactory internal _poolFactory;
+
     constructor() {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"));
-        _collateral = new Token("Collateral", "C");
-        _quote      = new Token("Quote", "Q");
-        _pool       = ERC20Pool(new ERC20PoolFactory(_ajna).deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
-        _poolUtils  = new PoolInfoUtils();
-        _startTime  = block.timestamp;
+        _collateral  = new Token("Collateral", "C");
+        _quote       = new Token("Quote", "Q");
+        _poolFactory = new ERC20PoolFactory(_ajna);
+        _pool        = ERC20Pool(_poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
+        _poolUtils   = new PoolInfoUtils();
+        _startTime   = block.timestamp;
     }
 
     /**

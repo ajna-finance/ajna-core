@@ -9,13 +9,16 @@ interface IPoolState {
 
     /**
      *  @notice Returns details of an auction for a given borrower address.
-     *  @param  borrower          Address of the borrower that is liquidated.
-     *  @return kicker            Address of the kicker that is kicking the auction.
-     *  @return bondFactor        The factor used for calculating bond size.
-     *  @return bondSize          The bond amount in quote token terms.
-     *  @return kickTime          Time the liquidation was initiated.
-     *  @return kickPrice         Highest Price Bucket at time of liquidation.
-     *  @return neutralPrice      Neutral Price of auction.
+     *  @param  borrower     Address of the borrower that is liquidated.
+     *  @return kicker       Address of the kicker that is kicking the auction.
+     *  @return bondFactor   The factor used for calculating bond size.
+     *  @return bondSize     The bond amount in quote token terms.
+     *  @return kickTime     Time the liquidation was initiated.
+     *  @return kickPrice    Highest Price Bucket at time of liquidation.
+     *  @return neutralPrice Neutral Price of auction.
+     *  @return head         Address of the head auction.
+     *  @return next         Address of the next auction in queue.
+     *  @return prev         Address of the prev auction in queue.
      */
     function auctionInfo(address borrower)
         external
@@ -26,7 +29,10 @@ interface IPoolState {
             uint256 bondSize,
             uint256 kickTime,
             uint256 kickPrice,
-            uint256 neutralPrice
+            uint256 neutralPrice,
+            address head,
+            address next,
+            address prev
         );
 
     /**
@@ -41,7 +47,7 @@ interface IPoolState {
      *  @notice Mapping of borrower addresses to {Borrower} structs.
      *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
      *  @param  borrower   Address of the borrower.
-     *  @return t0debt     Amount of debt borrower would have had if their loan was the first debt drawn from the pool
+     *  @return t0Debt     Amount of debt borrower would have had if their loan was the first debt drawn from the pool
      *  @return collateral Amount of collateral that the borrower has deposited, in collateral token.
      *  @return t0Np       Np / borrowerInflatorSnapshot
      */
@@ -49,7 +55,7 @@ interface IPoolState {
         external
         view
         returns (
-            uint256 t0debt,
+            uint256 t0Debt,
             uint256 collateral,
             uint256 t0Np
         );
@@ -74,6 +80,23 @@ interface IPoolState {
             uint256 bucketDeposit,
             uint256 bucketScale
         );
+
+    /**
+     *  @notice Mapping of burnEventEpoch to {BurnEvent} structs.
+     *  @dev    Reserve auctions correspond to burn events.
+     *  @param  burnEventEpoch_  Id of the current reserve auction.
+     *  @return burnBlock        Block in which a reserve auction started.
+     *  @return totalInterest    Total interest as of the reserve auction.
+     *  @return totalBurned      Total ajna tokens burned as of the reserve auction.
+     */
+    function burnInfo(uint256 burnEventEpoch_) external view returns (uint256, uint256, uint256);
+
+    /**
+     *  @notice Returns the latest burnEventEpoch of reserve auctions.
+     *  @dev    If a reserve auction is active, it refers to the current reserve auction. If no reserve auction is active, it refers to the last reserve auction.
+     *  @return burnEventEpoch Current burnEventEpoch.
+     */
+    function currentBurnEpoch() external view returns (uint256);
 
     /**
      *  @notice Returns information about the pool EMA (Exponential Moving Average) variables.
@@ -148,6 +171,22 @@ interface IPoolState {
     );
 
     /**
+     *  @notice Returns information about a loan in the pool.
+     *  @param  loanId Loan's id within loan heap. Max loan is position 1.
+     *  @return borrower       Borrower address at the given position.
+     *  @return thresholdPrice Borrower threshold price in pool.
+     */
+    function loanInfo(
+        uint256 loanId
+    )
+        external
+        view
+        returns (
+            address borrower,
+            uint256 thresholdPrice
+    );
+
+    /**
      *  @notice Returns information about pool loans.
      *  @return maxBorrower       Borrower address with highest threshold price.
      *  @return maxThresholdPrice Highest threshold price in pool.
@@ -191,6 +230,11 @@ interface IPoolState {
 
 /*** Pool State ***/
 
+struct InflatorState {
+    uint208 inflator;       // [WAD]
+    uint48  inflatorUpdate; // [SEC]
+}
+
 struct InterestState {
     uint208 interestRate;       // [WAD]
     uint48  interestRateUpdate; // [SEC]
@@ -203,9 +247,15 @@ struct ReserveAuctionState {
     uint256 unclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
 }
 
+struct PoolBalancesState {
+    uint256 pledgedCollateral; // [WAD]
+    uint256 t0DebtInAuction;   // Total debt in auction used to restrict LPB holder from withdrawing [WAD]
+    uint256 t0Debt;            // Pool debt as if the whole amount was incurred upon the first loan. [WAD]
+}
+
 struct PoolState {
     uint8   poolType;             // pool type, can be ERC20 or ERC721
-    uint256 accruedDebt;          // total debt in pool, accrued in current block
+    uint256 debt;                 // total debt in pool, accrued in current block
     uint256 collateral;           // total collateral pledged in pool
     uint256 inflator;             // current pool inflator
     bool    isNewInterestAccrued; // true if new interest already accrued in current block
@@ -247,7 +297,7 @@ struct Loan {
 }
 
 struct Borrower {
-    uint256 t0debt;           // [WAD] Borrower debt time-adjusted as if it was incurred upon first loan of pool.
+    uint256 t0Debt;           // [WAD] Borrower debt time-adjusted as if it was incurred upon first loan of pool.
     uint256 collateral;       // [WAD] Collateral deposited by borrower.
     uint256 t0Np;             // [WAD] Neutral Price time-adjusted as if it was incurred upon first loan of pool.
 }
@@ -272,6 +322,7 @@ struct Liquidation {
     address next;           // next liquidated borrower in auctions queue
     uint160 bondSize;       // liquidation bond size
     uint96  neutralPrice;   // Neutral Price when liquidation was started
+    bool    alreadyTaken;   // true if take has been called on auction
 }
 
 struct Kicker {

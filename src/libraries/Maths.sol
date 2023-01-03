@@ -4,15 +4,15 @@ pragma solidity 0.8.14;
 
 library Maths {
 
-    uint256 internal constant WAD = 10**18;
+    uint256 internal constant WAD = 1e18;
     uint256 internal constant RAY = 10**27;
 
     function wmul(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (x * y + 10**18 / 2) / 10**18;
+        return (x * y + 1e18 / 2) / 1e18;
     }
 
     function wdiv(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (x * 10**18 + y / 2) / y;
+        return (x * 1e18 + y / 2) / y;
     }
 
     function max(uint256 x, uint256 y) internal pure returns (uint256) {
@@ -24,11 +24,7 @@ library Maths {
     }
 
     function wad(uint256 x) internal pure returns (uint256) {
-        return x * 10**18;
-    }
-
-    function ray(uint256 x) internal pure returns (uint256) {
-        return x * 10**27;
+        return x * 1e18;
     }
 
     function rmul(uint256 x, uint256 y) internal pure returns (uint256) {
@@ -42,11 +38,6 @@ library Maths {
     /** @notice Divides a WAD by a RAY and returns a RAY */
     function wrdivr(uint256 x, uint256 y) internal pure returns (uint256) {
         return (x * 1e36 + y / 2) / y;
-    }
-
-    /** @notice Divides a WAD by a RAY and returns a WAD */
-    function wrdivw(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (x * 1e27 + y / 2) / y;
     }
 
     /** @notice Divides a WAD by a WAD and returns a RAY */
@@ -82,32 +73,6 @@ library Maths {
 
     function rayToWad(uint256 x) internal pure returns (uint256) {
         return (x + 10**9 / 2) / 10**9;
-    }
-
-    /**
-     * @notice Round up a fraction to the nearest integer
-     * @dev Doesn't check over or underflows
-     */
-    function divRoundingUp(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        assembly {
-            z := add(div(x, y), gt(mod(x, y), 0))
-        }
-    }
-
-    /**
-     * @notice Round up a fraction to the nearest integer
-     * @dev Based upon OZ Math.ceilDiv()
-     */
-    function divRoundingUpSafe(uint256 a, uint256 b) internal pure returns (uint256) {
-        // (a + b - 1) / b can overflow on addition, so we distribute.
-        return a / b + (a % b == 0 ? 0 : 1);
-    }
-
-    /**
-     * @notice Convert a WAD to an integer, rounding down
-     */
-    function wadToIntRoundingDown(uint256 a) internal pure returns (uint256) {
-        return wdiv(a, 10 ** 18) / 10 ** 18;
     }
 
     /*************************/

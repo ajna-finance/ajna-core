@@ -7,6 +7,10 @@ pragma solidity 0.8.14;
  */
 interface IPoolDerivedState {
 
+    function bucketExchangeRate(
+        uint256 index_
+    ) external view returns (uint256 exchangeRate_);
+
     /**
      *  @notice Returns the bucket index for a given debt amount.
      *  @param  debt_  The debt amount to calculate bucket index for.

@@ -6,6 +6,7 @@ import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 
 import { PoolType } from './interfaces/IPool.sol';
 
+import '../libraries/Buckets.sol';
 import '../libraries/Maths.sol';
 
     error BucketIndexOutOfBounds();
@@ -23,11 +24,11 @@ import '../libraries/Maths.sol';
     uint256 constant MAX_FENWICK_INDEX =  7_388;
 
     uint256 constant MIN_PRICE = 99_836_282_890;
-    uint256 constant MAX_PRICE = 1_004_968_987.606512354182109771 * 10**18;
+    uint256 constant MAX_PRICE = 1_004_968_987.606512354182109771 * 1e18;
     /**
         @dev step amounts in basis points. This is a constant across pools at .005, achieved by dividing WAD by 10,000
      */
-    int256 constant FLOAT_STEP_INT = 1.005 * 10**18;
+    int256 constant FLOAT_STEP_INT = 1.005 * 1e18;
 
     /**
      *  @notice Calculates the price for a given Fenwick index
@@ -35,7 +36,7 @@ import '../libraries/Maths.sol';
      *  @dev    Uses fixed-point math to get around lack of floating point numbers in EVM
      *  @dev    Price expected to be inputted as a 18 decimal WAD
      *  @dev    Fenwick index is converted to bucket index
-     *  @dev Fenwick index to bucket index conversion
+     *  @dev    Fenwick index to bucket index conversion
      *          1.00      : bucket index 0,     fenwick index 4146: 7388-4156-3232=0
      *          MAX_PRICE : bucket index 4156,  fenwick index 0:    7388-0-3232=4156.
      *          MIN_PRICE : bucket index -3232, fenwick index 7388: 7388-7388-3232=-3232.
@@ -115,7 +116,7 @@ import '../libraries/Maths.sol';
         uint256 interestRate_
     ) pure returns (uint256) {
         // greater of the current annualized interest rate divided by 52 (one week of interest) or 5 bps
-        return Maths.max(Maths.wdiv(interestRate_, 52 * 10**18), 0.0005 * 10**18);
+        return Maths.max(Maths.wdiv(interestRate_, 52 * 1e18), 0.0005 * 1e18);
     }
 
     /**
@@ -153,6 +154,59 @@ import '../libraries/Maths.sol';
         }
     }
 
+    /**
+     *  @notice Returns the amount of collateral calculated for the given amount of LPs.
+     *  @param  bucketCollateral_ Amount of collateral in bucket.
+     *  @param  bucketLPs_        Amount of LPs in bucket.
+     *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs.
+     *  @param  lenderLPsBalance_ The amount of LPs to calculate collateral for.
+     *  @param  bucketPrice_      Bucket price.
+     *  @return collateralAmount_ Amount of collateral calculated for the given LPs amount.
+     */
+    function _lpsToCollateral(
+        uint256 bucketCollateral_,
+        uint256 bucketLPs_,
+        uint256 deposit_,
+        uint256 lenderLPsBalance_,
+        uint256 bucketPrice_
+    ) pure returns (uint256 collateralAmount_) {
+        // max collateral to lps
+        uint256 rate = Buckets.getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_);
+
+        collateralAmount_ = Maths.rwdivw(Maths.rmul(lenderLPsBalance_, rate), bucketPrice_);
+
+        if (collateralAmount_ > bucketCollateral_) {
+            // user is owed more collateral than is available in the bucket
+            collateralAmount_ = bucketCollateral_;
+        }
+    }
+
+    /**
+     *  @notice Returns the amount of quote tokens calculated for the given amount of LPs.
+     *  @param  bucketLPs_        Amount of LPs in bucket.
+     *  @param  bucketCollateral_ Amount of collateral in bucket.
+     *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs.
+     *  @param  lenderLPsBalance_ The amount of LPs to calculate quote token amount for.
+     *  @param  maxQuoteToken_    The max quote token amount to calculate LPs for.
+     *  @param  bucketPrice_      Bucket price.
+     *  @return quoteTokenAmount_ Amount of quote tokens calculated for the given LPs amount.
+     */
+    function _lpsToQuoteToken(
+        uint256 bucketLPs_,
+        uint256 bucketCollateral_,
+        uint256 deposit_,
+        uint256 lenderLPsBalance_,
+        uint256 maxQuoteToken_,
+        uint256 bucketPrice_
+    ) pure returns (uint256 quoteTokenAmount_) {
+        uint256 rate = Buckets.getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_);
+
+        quoteTokenAmount_ = Maths.rayToWad(Maths.rmul(lenderLPsBalance_, rate));
+
+        if (quoteTokenAmount_ > deposit_)       quoteTokenAmount_ = deposit_;
+        if (quoteTokenAmount_ > maxQuoteToken_) quoteTokenAmount_ = maxQuoteToken_;
+    }
+
     /*********************************/
     /*** Reserve Auction Utilities ***/
     /*********************************/
@@ -167,6 +221,7 @@ import '../libraries/Maths.sol';
         uint256 quoteTokenBalance_
     ) pure returns (uint256 claimable_) {
         claimable_ = Maths.wmul(0.995 * 1e18, debt_) + quoteTokenBalance_;
+
         claimable_ -= Maths.min(claimable_, poolSize_ + totalBondEscrowed_ + reserveAuctionUnclaimed_);
     }
 
@@ -174,9 +229,10 @@ import '../libraries/Maths.sol';
         uint256 reserveAuctionKicked_
     ) view returns (uint256 _price) {
         if (reserveAuctionKicked_ != 0) {
-            uint256 secondsElapsed = block.timestamp - reserveAuctionKicked_;
-            uint256 hoursComponent = 1e27 >> secondsElapsed / 3600;
+            uint256 secondsElapsed   = block.timestamp - reserveAuctionKicked_;
+            uint256 hoursComponent   = 1e27 >> secondsElapsed / 3600;
             uint256 minutesComponent = Maths.rpow(MINUTE_HALF_LIFE, secondsElapsed % 3600 / 60);
+
             _price = Maths.rayToWad(1_000_000_000 * Maths.rmul(hoursComponent, minutesComponent));
         }
     }

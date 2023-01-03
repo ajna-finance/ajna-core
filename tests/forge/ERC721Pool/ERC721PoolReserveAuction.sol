@@ -169,6 +169,51 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         _assertReserveAuctionPrice(0.000000000000003270 * 1e18);
     }
 
+    function testReserveAuctionTiming() external {
+        // borrower repays all debt (auction for full reserves)
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    205_000 * 1e18,
+            amountRepaid:     179_590.373946590638353626 * 1e18,
+            collateralToPull: 0,
+            newLup:           MAX_PRICE
+        });
+
+        // kick off a new auction
+        _startClaimableReserveAuction(
+            {
+                from:              _bidder,
+                remainingReserves: 494.189491516041968090 * 1e18,
+                price:             1_000_000_000 * 1e18
+            }
+        );
+
+        // pass time to allow the price to decrease
+        skip(24 hours);
+
+        // check that you can't start a new auction if a previous auction is active
+        _assertReserveAuctionTooSoon();
+
+        (, uint256 unclaimed, ) = _pool.reservesInfo();
+
+        uint256 expectedPrice = 59.604644775390625 * 1e18;
+        _takeReserves(
+            {
+                from:              _bidder,
+                amount:            Maths.wdiv(unclaimed, Maths.wad(2)),
+                remainingReserves: Maths.wdiv(unclaimed, Maths.wad(2)),
+                price:             expectedPrice
+            }
+        );
+
+        // pass time to allow auction to complete
+        skip(48 hours);
+
+        // check that you can't start a new auction unless two weeks have passed
+        _assertReserveAuctionTooSoon();
+    }
+
     function testClaimableReserveAuction() external {
         // borrower repays all debt (auction for full reserves)
         _repayDebt({
@@ -397,6 +442,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
 
         // after more interest accumulates, borrower repays remaining debt
         skip(4 weeks);
+        vm.roll(block.number + 201_600);
 
         _repayDebt({
             from:             _borrower,

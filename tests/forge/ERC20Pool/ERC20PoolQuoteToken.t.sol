@@ -33,6 +33,14 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
     function testPoolDepositQuoteToken() external tearDown {
         assertEq(_hpb(), MIN_PRICE);
 
+        // should revert if trying to deposit at index 0
+        _assertAddLiquidityAtIndex0Revert(
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18
+            }
+        );
+
         // test 10_000 deposit at price of 3_010.892022197881557845
         _addInitialLiquidity(
             {
@@ -352,8 +360,8 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                interestRate:         0.05 * 1e18,
-                interestRateUpdate:   _startTime
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   _startTime + 1 days
             })
         );
 
@@ -435,8 +443,8 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                interestRate:         0.05 * 1e18,
-                interestRateUpdate:   _startTime
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   _startTime + 1 days
             })
         );
 
@@ -508,9 +516,9 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         _addLiquidity(
             {
                 from:    _lender,
-                amount:  10_000 * 1e18,
+                amount:  11_000 * 1e18,
                 index:   4550,
-                lpAward: 10_000 * 1e27,
+                lpAward: 11_000 * 1e27,
                 newLup:  MAX_PRICE
             }
         );
@@ -519,7 +527,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             from: _borrower,
             borrower: _borrower,
             amountToBorrow: 10_000 * 1e18,
-            limitIndex: 4_551,
+            limitIndex: 7000,
             collateralToPledge: 3_500_000 * 1e18,
             newLup: 0.140143083210662942 * 1e18
         });
@@ -538,16 +546,16 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
      *              Attempts to remove more quote tokens than available from lpBalance.
      *              Attempts to remove quote token when doing so would drive lup below htp.
      */
-    function testPoolRemoveQuoteTokenRequireChecks() external tearDown {
+    function testPoolRemoveQuoteTokenReverts() external tearDown {
         _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_borrower) + 3_500_000 * 1e18);
         _mintCollateralAndApproveTokens(_lender, 1 * 1e18);
         // lender adds initial quote token
         _addLiquidity(
             {
                 from:    _lender,
-                amount:  40_000 * 1e18,
+                amount:  41_000 * 1e18,
                 index:   4549,
-                lpAward: 40_000 * 1e27,
+                lpAward: 41_000 * 1e27,
                 newLup:  MAX_PRICE
             }
         );
@@ -599,7 +607,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             {
                 from:       _borrower,
                 amount:     70_000 * 1e18,
-                indexLimit: 4_551,
+                indexLimit: 7_000,
                 newLup:     0.139445853940958153 * 1e18
             }
         );
@@ -634,7 +642,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 amount:  20_000 * 1e18,
                 index:   4550,
                 lpAward: 20_000 * 1e27,
-                newLup:  0.139445853940958153 * 1e18
+                newLup:  _priceAt(4550)
             }
         );
 
@@ -645,7 +653,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 from:     _lender,
                 amount:   10_000 * 1e18,
                 index:    4990,
-                newLup:   _priceAt(4551),
+                newLup:   _priceAt(4550),
                 lpRedeem: 10_000 * 1e27
             }
         );
@@ -1042,7 +1050,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
      *              Attempts to move quote token from bucket with available collateral.
      *              Attempts to move quote token when doing so would drive lup below htp.
      */
-    function testPoolMoveQuoteTokenRequireChecks() external tearDown {
+    function testPoolMoveQuoteTokenReverts() external tearDown {
         // test setup
         _mintCollateralAndApproveTokens(_lender1, _collateral.balanceOf(_lender1) + 100_000 * 1e18);
         _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_lender1) + 1_500_000 * 1e18);
@@ -1092,6 +1100,15 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 amount:    5_000 * 1e18,
                 fromIndex: 4549,
                 toIndex:   4549
+            }
+        );
+
+        // should revert if moving quote token to index 0
+        _assertMoveLiquidityToIndex0Revert(
+            {
+                from:      _lender,
+                amount:    5_000 * 1e18,
+                fromIndex: 4549
             }
         );
 

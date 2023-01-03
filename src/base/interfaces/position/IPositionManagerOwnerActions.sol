@@ -8,19 +8,6 @@ pragma solidity 0.8.14;
 interface IPositionManagerOwnerActions {
 
     /**
-     *  @notice Struct holding parameters for constructing the NFT token URI.
-     *  @param  tokenId The tokenId of the NFT.
-     *  @param  pool    The pool address.
-     *  @param  indexes The array of price buckets index with LP tokens to be tracked by the NFT.
-     */
-    struct ConstructTokenURIParams {
-        uint256 tokenId;
-        address pool;
-        uint256[] indexes;
-    }
-
-
-    /**
      *  @notice Struct holding parameters for burning an NFT.
      *  @param  tokenId   The tokenId of the NFT to burn.
      *  @param  pool      The pool address to burn the token from.
@@ -65,12 +52,14 @@ interface IPositionManagerOwnerActions {
 
     /**
      *  @notice Struct holding mint parameters.
-     *  @param  recipient Lender address.
-     *  @param  pool      Pool address.
+     *  @param  recipient      Lender address.
+     *  @param  pool           Pool address.
+     *  @param  poolSubsetHash Hash of pool information used to track pool in the factory after deployment.
      */
     struct MintParams {
         address recipient;
         address pool;
+        bytes32 poolSubsetHash;
     }
 
     /**
@@ -80,7 +69,7 @@ interface IPositionManagerOwnerActions {
      */
     function mint(
         MintParams calldata params
-    ) external payable returns (uint256 tokenId);
+    ) external returns (uint256 tokenId);
 
 
     /**

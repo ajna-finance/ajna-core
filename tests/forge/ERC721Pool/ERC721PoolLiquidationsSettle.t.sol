@@ -201,7 +201,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
 
     }
 
-    function testKickAndSettleSubsetPoolFractionalCollateral() external {
+    function testKickAndSettleSubsetPoolFractionalCollateral() external tearDown {
 
         // settle borrower 2
         _assertAuction(
@@ -280,11 +280,11 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
                 encumberedCollateral: 0,
                 poolDebt:             0,
                 actualUtilization:    0,
-                targetUtilization:    33853304875.166890128186624582 * 1e18,
+                targetUtilization:    0.437382306954677563 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                interestRate:         0.055 * 1e18,
+                interestRate:         0.045 * 1e18,
                 interestRateUpdate:   _startTime + 80 hours
             })
         );
@@ -384,10 +384,10 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
         _assertBucket(
             {
                 index:        2500,
-                lpBalance:    0,
+                lpBalance:    1_861.033884081553472671582113012 * 1e27,
                 collateral:   0,
-                deposit:      1861.636634299022017158 * 1e18, // TODO: figure out why still deposit and no lp balance, add tearDown to test after
-                exchangeRate: 1 * 1e27
+                deposit:      1861.636634299022017158 * 1e18,
+                exchangeRate: 1.000323879227898104734699503 * 1e27
             }
         );
     }

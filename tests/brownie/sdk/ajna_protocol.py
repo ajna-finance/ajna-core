@@ -8,6 +8,7 @@ from brownie import (
     Auctions,
     PoolCommons,
     LenderActions,
+    BorrowerActions,
     Deposits,
     Maths,
     Loans,
@@ -33,6 +34,7 @@ class AjnaProtocol:
         self.deposits = Deposits.deploy({"from": self.deployer})
         self.pool_logic = PoolCommons.deploy({"from": self.deployer})
         self.lender_actions = LenderActions.deploy({"from": self.deployer})
+        self.borrower_actions = BorrowerActions.deploy({"from": self.deployer})
         self.maths = Maths.deploy({"from": self.deployer})
         self.loans = Loans.deploy({"from": self.deployer})
         self.auctions = Auctions.deploy({"from": self.deployer})
