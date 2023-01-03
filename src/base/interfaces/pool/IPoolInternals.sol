@@ -10,30 +10,15 @@ pragma solidity 0.8.14;
 /*** Auction Param Structs ***/
 /*****************************/
 
-struct SettleParams {
-    address borrower;    // borrower address to settle
-    uint256 collateral;  // remaining collateral pledged by borrower that can be used to settle debt
-    uint256 t0Debt;      // borrower t0 debt to settle 
-    uint256 reserves;    // current reserves in pool
-    uint256 inflator;    // current pool inflator
-    uint256 bucketDepth; // number of buckets to use when settle debt
-}
-
-struct BucketTakeParams {
-    address borrower;       // borrower address to take from
-    uint256 collateral;     // borrower available collateral to take
-    bool    depositTake;    // deposit or arb take, used by bucket take
-    uint256 index;          // bucket index, used by bucket take
-    uint256 inflator;       // current pool inflator
-    uint256 t0Debt;         // borrower t0 debt
-}
-
-struct TakeParams {
-    address borrower;       // borrower address to take from
-    uint256 collateral;     // borrower available collateral to take
-    uint256 t0Debt;         // borrower t0 debt
-    uint256 takeCollateral; // desired amount to take
-    uint256 inflator;       // current pool inflator
+struct BucketTakeResult {
+    uint256 collateralAmount;
+    uint256 t0RepayAmount;
+    uint256 t0DebtPenalty;
+    uint256 remainingCollateral;
+    uint256 poolDebt;
+    uint256 newLup;
+    uint256 t0DebtInAuctionChange;
+    bool    settledAuction;
 }
 
 struct KickResult {
@@ -42,6 +27,27 @@ struct KickResult {
     uint256 t0KickPenalty;     // t0 kick penalty
     uint256 t0KickedDebt;      // new t0 debt after kick
     uint256 lup;               // current lup
+}
+
+struct SettleParams {
+    address borrower;    // borrower address to settle
+    uint256 reserves;    // current reserves in pool
+    uint256 inflator;    // current pool inflator
+    uint256 bucketDepth; // number of buckets to use when settle debt
+    uint256 poolType;    // number of buckets to use when settle debt
+}
+
+struct TakeResult {
+    uint256 collateralAmount;
+    uint256 quoteTokenAmount;
+    uint256 t0RepayAmount;
+    uint256 t0DebtPenalty;
+    uint256 excessQuoteToken;
+    uint256 remainingCollateral;
+    uint256 poolDebt;
+    uint256 newLup;
+    uint256 t0DebtInAuctionChange;
+    bool    settledAuction;
 }
 
 /******************************************/
@@ -59,4 +65,29 @@ struct RemoveQuoteParams {
     uint256 maxAmount;      // max amount to be removed
     uint256 index;          // the deposit index from where amount is removed
     uint256 thresholdPrice; // max threshold price in pool
+}
+
+/*************************************/
+/*** Loan Management Param Structs ***/
+/*************************************/
+
+struct DrawDebtResult {
+    uint256 newLup;
+    uint256 remainingCollateral;
+    uint256 t0DebtInAuctionChange;
+    uint256 t0DebtChange;
+    uint256 poolCollateral;
+    uint256 poolDebt;
+    bool    settledAuction;
+}
+
+struct RepayDebtResult {
+    uint256 newLup;
+    uint256 remainingCollateral;
+    uint256 t0DebtInAuctionChange;
+    uint256 t0RepaidDebt;
+    uint256 poolCollateral;
+    uint256 poolDebt;
+    uint256 quoteTokenToRepay;
+    bool    settledAuction;
 }

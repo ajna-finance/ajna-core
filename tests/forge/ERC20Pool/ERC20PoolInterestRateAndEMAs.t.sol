@@ -98,7 +98,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 amountToBorrow:     46_000 * 1e18,
                 limitIndex:         4_300,
                 collateralToPledge: 100 * 1e18,
-                newLup:             2_981.007422784467321543 * 1e18
+                newLup:             0
             }
         );
 
