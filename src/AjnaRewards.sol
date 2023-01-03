@@ -26,28 +26,28 @@ contract AjnaRewards is IAjnaRewards {
 
     address public immutable ajnaToken; // address of the AJNA token
 
-    IPositionManager public immutable positionManager; // address of the PositionManager contract
+    IPositionManager public immutable positionManager; // The PositionManager contract
 
     /**
      * @notice Maximum percentage of tokens burned that can be claimed as Ajna token lp nft rewards.
      */
-    uint256 internal constant REWARD_CAP = 0.800000000000000000 * 1e18;
+    uint256 internal constant REWARD_CAP = 0.8 * 1e18;
 
     /**
      * @notice Maximum percentage of tokens burned that can be claimed as Ajna token update rewards.
      */
-    uint256 internal constant UPDATE_CAP = 0.100000000000000000 * 1e18;
+    uint256 internal constant UPDATE_CAP = 0.1 * 1e18;
 
     /**
      * @notice Reward factor by which to scale the total rewards earned.
      * @dev ensures that rewards issued to staked lenders in a given pool are less than the ajna tokens burned in that pool.
      */
-    uint256 internal constant REWARD_FACTOR = 0.500000000000000000 * 1e18;
+    uint256 internal constant REWARD_FACTOR = 0.5 * 1e18;
 
     /**
      * @notice Reward factor by which to scale rewards earned for updating a buckets exchange rate.
      */
-    uint256 internal UPDATE_CLAIM_REWARD = 0.050000000000000000 * 1e18;
+    uint256 internal UPDATE_CLAIM_REWARD = 0.05 * 1e18;
 
     /**
      * @notice Time period after a burn event in which buckets exchange rates can be updated.
