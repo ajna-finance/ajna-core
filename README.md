@@ -122,13 +122,7 @@ make analyze
 
 
 ## Licensing
-For purposes of the Business Service License: (i) the term “Licensor” means Ajna Labs, LLC, (ii) the term
-Licensed Work means Licensor’s proprietary software [marketed under the name _The Ajna Protocol™_ and
-useful for purposes of facilitating the lending and collateralization of block-chain enabled currencies],
-(iii) the term “Additional Use Grants” means a grant of rights in the Licensed Work that are not included
-in the Business Service License and are granted by Licensor pursuant to a separate agreement between
-Licensor and one or more third parties, and (iv) the term “Change Date” means April 1, 2026 or such
-other date as Licensor may specify on or before April 1, 2026.
+For purposes of the Business Service License: (i) the term “Licensor” means Ajna Labs, LLC, (ii) the term Licensed Work means Licensor’s proprietary software [marketed under the name _The Ajna Protocol™_ and useful for purposes of facilitating the lending and collateralization of block-chain enabled currencies], (iii) the term “Additional Use Grants” means a grant of rights in the Licensed Work that are not included in the Business Service License and are granted by Licensor pursuant to a separate agreement between Licensor and one or more third parties, and (iv) the term “Change Date” means April 1, 2026 or such other date as Licensor may specify on or before April 1, 2026.
 
 The licnesed work is under the [Business Service License](https://github.com/ajna-finance/contracts/blob/develop/LICENSE) ("BUSL license") with the 
 following exceptions:
@@ -141,14 +135,9 @@ Prior to the Change Date, Licensor intends to transfer ownership of the Licensed
 
 Licensor reserves the right to specify Additional Use Grants at their discretion and to facilitate changes enacted by the Grant Coordination process, provided always that Additional Use Grants shall not conflict with the Business License.
 
-Prior to the Change Date, Licensor shall elect the Change License governing the Licensed Work after the
-Change Date, which license shall be an [Open Source Initiative](https://opensource.org/licenses) 
-compliant license, provided always that the Change License shall be GPL Version 2.0 compatible. Once elected, Licensor may change its Change License designation at any time on or before the Change Date by updating this file in the master branch of [source control](https://github.com/ajna-finance/contracts/tree/master).
+Prior to the Change Date, Licensor shall elect the Change License governing the Licensed Work after the Change Date, which license shall be an [Open Source Initiative](https://opensource.org/licenses) compliant license, provided always that the Change License shall be GPL Version 2.0 compatible. Once elected, Licensor may change its Change License designation at any time on or before the Change Date by updating this file in the master branch of [source control](https://github.com/ajna-finance/contracts/tree/master).
 
-Modifications to, or notices of actions by Licensor, contemplated above or under the Business Service
-License shall be communicated by updating this file in the master branch of source control. All such
-updates are binding on Licensor and all licensees under the Business Service License upon the
-publication of the relevant update.
+Modifications to, or notices of actions by Licensor, contemplated above or under the Business Service License shall be communicated by updating this file in the master branch of source control. All such updates are binding on Licensor and all licensees under the Business Service License upon the publication of the relevant update.
 
 
 ## Deployment
