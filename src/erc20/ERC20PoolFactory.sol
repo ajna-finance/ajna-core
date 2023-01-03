@@ -4,10 +4,11 @@ pragma solidity 0.8.14;
 
 import { ClonesWithImmutableArgs } from '@clones/ClonesWithImmutableArgs.sol';
 
-import './interfaces/IERC20PoolFactory.sol';
-import '../base/PoolDeployer.sol';
+import { IERC20PoolFactory }     from 'src/erc20/interfaces/IERC20PoolFactory.sol';
+import { IERC20Token, PoolType } from 'src/base/interfaces/IPool.sol';
 
-import './ERC20Pool.sol';
+import { ERC20Pool }    from 'src/erc20/ERC20Pool.sol';
+import { PoolDeployer } from 'src/base/PoolDeployer.sol';
 
 contract ERC20PoolFactory is IERC20PoolFactory, PoolDeployer {
 
@@ -45,7 +46,9 @@ contract ERC20PoolFactory is IERC20PoolFactory, PoolDeployer {
 
         pool_ = address(pool);
 
+        // Track the newly deployed pool
         deployedPools[ERC20_NON_SUBSET_HASH][collateral_][quote_] = pool_;
+        deployedPoolsList.push(pool_);
 
         emit PoolCreated(pool_);
 
