@@ -236,3 +236,10 @@ import '../libraries/Maths.sol';
             _price = Maths.rayToWad(1_000_000_000 * Maths.rmul(hoursComponent, minutesComponent));
         }
     }
+
+    function _getTokenScaledAmount(
+        uint256 amount_,
+        uint256 tokenScale_
+    ) pure returns (uint256 scaledAmount_) {
+        scaledAmount_ = (amount_ / tokenScale_) * tokenScale_;
+    }

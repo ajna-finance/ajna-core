@@ -96,7 +96,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             deposits,
             poolState,
             AddQuoteParams({
-                amount: quoteTokenAmountToAdd_,
+                amount: _getTokenScaledAmount(quoteTokenAmountToAdd_, _getArgUint256(QUOTE_SCALE)),
                 index:  index_
             })
         );

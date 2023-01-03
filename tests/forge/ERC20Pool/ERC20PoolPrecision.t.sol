@@ -497,6 +497,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint256 quoteAmount         = bound(uint256(quoteAmount_),                 0,   maxQuoteAmountBound);
         init(boundColPrecision, boundQuotePrecision);
 
+        // Scaled Quote Token Amount
+        uint256 scaledQuoteAmount = (quoteAmount / 10 ** (18 - boundQuotePrecision)) * 10 ** (18 - boundQuotePrecision);
+
         assertEq(ERC20Pool(address(_pool)).collateralScale(), 10 ** (18 - boundColPrecision));
         assertEq(_pool.quoteTokenScale(), 10 ** (18 - boundQuotePrecision));
 
@@ -516,23 +519,18 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             exchangeRate: 1e27
         });
 
-
-        // deposit quote token and sanity check lender LPs
-        bool reverted;
-        if (quoteAmount != 0 && quoteAmount < _pool.quoteTokenDust()) {
-            _assertAddLiquidityDustRevert(_lender, quoteAmount, bucketId);
-            quoteAmount = 0;
-            reverted = true;
-        } else {
-            _addInitialLiquidity(_lender, quoteAmount, bucketId);
-        }
+        // addQuoteToken should add scaled quote token amount and lp
+        vm.expectEmit(true, true, false, true);
+        emit AddQuoteToken(_lender, bucketId, scaledQuoteAmount, scaledQuoteAmount * 1e9, MAX_PRICE);
+        _addLiquidityNoEventCheck(_lender, quoteAmount, bucketId);
+        
         (uint256 lpBalance, uint256 time) = _pool.lenderInfo(bucketId, _lender);
-        if (quoteAmount != 0) {
+        if (scaledQuoteAmount != 0) {
             assertGt(lpBalance, 0);
+            assertGt(time, _startTime);
         } else {
             assertEq(lpBalance, 0);
         }
-        if (!reverted) assertGt(time, _startTime);
 
         // deposit collateral and sanity check bidder LPs
         _addCollateralWithoutCheckingLP(_bidder, collateralAmount, bucketId);
@@ -548,9 +546,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint256 curDeposit;
         uint256 availableCollateral;
         (, curDeposit, availableCollateral, lpBalance,,) = _poolUtils.bucketInfo(address(_pool), bucketId);
-        assertEq(curDeposit, quoteAmount);
+        assertEq(curDeposit, scaledQuoteAmount);
         assertEq(availableCollateral, collateralAmount);
-        if (quoteAmount + collateralAmount == 0) {
+        if (scaledQuoteAmount + collateralAmount == 0) {
             assertEq(lpBalance, 0);
         } else {
             assertGt(lpBalance, 0);
@@ -574,6 +572,10 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint256 quoteAmount2        = bound(uint256(quoteAmount2_),                0, maxQuoteAmount2);
         init(boundColPrecision, boundQuotePrecision);
 
+        // Scaled Quote Amount
+        uint256 scaledQuoteAmount1 = (quoteAmount1 / 10 ** (18 - boundQuotePrecision)) * 10 ** (18 - boundQuotePrecision);
+        uint256 scaledQuoteAmount2 = (quoteAmount2 / 10 ** (18 - boundQuotePrecision)) * 10 ** (18 - boundQuotePrecision);
+
         // mint and run approvals, ignoring amounts already init approved above
         deal(address(_quote), _lender, quoteAmount1 * _quotePrecision);
         changePrank(_lender);
@@ -583,46 +585,38 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         changePrank(lender2);
         _quote.approve(address(_pool), quoteAmount2 * _quotePrecision);
 
-        // deposit lender1 quote token and sanity check LPs
-        bool reverted1;
-        if (quoteAmount1 != 0 && quoteAmount1 < _pool.quoteTokenScale()) {
-            _assertAddLiquidityDustRevert(_lender, quoteAmount1, bucketId);
-            quoteAmount1 = 0;
-            reverted1 = true;
-        } else {
-            _addInitialLiquidity(_lender, quoteAmount1, bucketId);
-        }
+        // addQuoteToken should add scaled quote token amount and lp
+        vm.expectEmit(true, true, false, true);
+        emit AddQuoteToken(_lender, bucketId, scaledQuoteAmount1, scaledQuoteAmount1 * 1e9, MAX_PRICE);
+        _addLiquidityNoEventCheck(_lender, quoteAmount1, bucketId);
+
         (uint256 lpBalance1, uint256 time) = _pool.lenderInfo(bucketId, _lender);
-        if (quoteAmount1 != 0) {
+        if (scaledQuoteAmount1 != 0) {
             assertGt(lpBalance1, 0);
+            assertGt(time, _startTime);
         } else {
             assertEq(lpBalance1, 0);
         }
-        if (!reverted1) assertGt(time, _startTime);
 
-        // deposit lender2 quote token and sanity check LPs
-        bool reverted2;
-        if (quoteAmount2 != 0 && quoteAmount2 < _pool.quoteTokenScale()) {
-            _assertAddLiquidityDustRevert(lender2, quoteAmount2, bucketId);
-            quoteAmount2 = 0;
-            reverted2 = true;
-        } else {
-            _addInitialLiquidity(lender2, quoteAmount2, bucketId);
-        }
+        // addQuoteToken should add scaled quote token amount and lp
+        vm.expectEmit(true, true, false, true);
+        emit AddQuoteToken(lender2, bucketId, scaledQuoteAmount2, scaledQuoteAmount2 * 1e9, MAX_PRICE);
+        _addLiquidityNoEventCheck(lender2, quoteAmount2, bucketId);
+
         uint256 lpBalance2;
         (lpBalance2, time) = _pool.lenderInfo(bucketId, lender2);
-        if (quoteAmount2 != 0) {
+        if (scaledQuoteAmount2 != 0) {
             assertGt(lpBalance2, 0);
+            assertGt(time, _startTime);
         } else {
             assertEq(lpBalance2, 0);
         }
-        if (!reverted2) assertGt(time, _startTime);
 
         // check bucket
         uint256 curDeposit;
         uint256 bucketLPs;
         (, curDeposit, , bucketLPs,,) = _poolUtils.bucketInfo(address(_pool), bucketId);
-        assertEq(curDeposit, quoteAmount1 + quoteAmount2);
+        assertEq(curDeposit, scaledQuoteAmount1 + scaledQuoteAmount2);
         if (curDeposit == 0) {
             assertEq(bucketLPs, 0);
         } else {
