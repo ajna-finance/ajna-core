@@ -414,11 +414,9 @@ contract AjnaRewards is IAjnaRewards {
             // retrieve the exchange rate of the previous burn event
             uint256 prevBucketExchangeRate = poolBucketBurnExchangeRates[pool_][indexes_[i]][curBurnEpoch - 1];
 
-            // set reward to 0 for a bucket if the previous update was missed
+            // skip reward calculation for a bucket if the previous update was missed
             // prevents excess rewards from being provided from using a 0 value as an input to the interestFactor calculation below.
             if (prevBucketExchangeRate == 0) {
-                updateReward_ += 0;
-
                 // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
                 unchecked { ++i; }
                 continue;
