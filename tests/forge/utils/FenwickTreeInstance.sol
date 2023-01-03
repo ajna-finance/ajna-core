@@ -24,7 +24,7 @@ contract FenwickTreeInstance is DSTestPlus {
     }
 
     function add(uint256 i_, uint256 x_) public {
-        deposits.add(i_, x_);
+        deposits.unscaledAdd(i_, Maths.wdiv(x_, deposits.scale(i_)));
     }
 
     function remove(uint256 i_, uint256 x_) public {
