@@ -41,7 +41,7 @@ library Deposits {
             // Compute the new value to be put in location index_
             uint256 newValue = value + unscaledAddAmount_;
 
-            // Updae unscaledAddAmount to propogate up the Fenwick tree
+            // Update unscaledAddAmount to propogate up the Fenwick tree
             // Note: we can't just multiply addAmount_ by scaling[i_] due to rounding
             // We need to track the precice change in values[i_] in order to ensure
             // obliterated indices remain zero after subsequent adding to related indices
@@ -94,7 +94,7 @@ library Deposits {
                 }
             } else {
                 // Target index has this bit set to 0
-                // scaling = =0 means scale factor == 1, otherwise scale factor == scaling
+                // scaling == 0 means scale factor == 1, otherwise scale factor == scaling
                 if (scaling != 0) runningScale = Maths.wmul(runningScale, scaling);
 
                 // Current scaledValue is <= targetSum_, it's a candidate value for sumIndexSum_
@@ -152,7 +152,7 @@ library Deposits {
         uint256 scaling;
         uint256 bit = lsb(index_);
 
-        // Starting with the lSB of index, we iteratively move up towards the MSB of SIZE
+        // Starting with the LSB of index, we iteratively move up towards the MSB of SIZE
         // Case 1:     the bit of index_ is set to 1.  In this case, the entire subtree below index_
         //             is scaled.  So, we include factor_ into scaleing[index_], and remember in sum how much
         //             we increased the subtree by, so that we can use it in case we encounter 0 bits (below).
@@ -182,7 +182,7 @@ library Deposits {
                     sum += Maths.wmul(factor_, value) - value;
                     deposits_.scaling[index_] = factor_;
                 }
-                // Uset the bit in index to continue traversing up the Fenwick tree
+                // Unset the bit in index to continue traversing up the Fenwick tree
                 index_ -= bit;
             } else {
                 // Case 1 above.  superRangeIndex is the index of the node to consider that
