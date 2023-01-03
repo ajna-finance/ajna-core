@@ -120,8 +120,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
     {
         uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 18, 18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      1,  18);
-        // FIXME: set lower bound to 1 once issue #470 is resolved
-        uint256 startBucketId       = bound(uint256(startBucketId_),               200,  7388 - BUCKETS_WITH_DEPOSIT);
+        uint256 startBucketId       = bound(uint256(startBucketId_),               1,  7388 - BUCKETS_WITH_DEPOSIT);
         init(boundColPrecision, boundQuotePrecision);
         addLiquidity(startBucketId);
 
