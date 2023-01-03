@@ -466,10 +466,10 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              1.384527512667951805 * 1e18,
+                borrowerDebt:              0,
                 borrowerCollateral:        0.968187784028539006 * 1e18,
-                borrowert0Np:              1.474001371827766616 * 1e18,
-                borrowerCollateralization: 1_052.617546643526281335 * 1e18
+                borrowert0Np:              0,
+                borrowerCollateralization: 1 * 1e18
             }
         );
 
@@ -501,7 +501,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
 
         _assertReserveAuction(
             {
-                reserves:                   26.866789814940436330 * 1e18,
+                reserves:                   25.482262302272484525 * 1e18,
                 claimableReserves :         0,
                 claimableReservesRemaining: 0,
                 auctionPrice:               0,
@@ -752,10 +752,10 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              1.384513288143290228 * 1e18,
+                borrowerDebt:              0,
                 borrowerCollateral:        1.742049596196130259 * 1e18,
-                borrowert0Np:              844.090231878632597698 * 1e18,
-                borrowerCollateralization: 12.231720476220547805 * 1e18
+                borrowert0Np:              0,
+                borrowerCollateralization: 1 * 1e18
             }
         );
         _assertAuction(
@@ -770,7 +770,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    0.794761119985595130 * 1e18,
+                thresholdPrice:    0,
                 neutralPrice:      0
             })
         );

@@ -45,10 +45,12 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
         // All other NFTs that support the EIP721 standard
         else {
             // Here 0x80ac58cd is the ERC721 interface Id
-            bool supportsERC721Interface = IERC165(collateral_).supportsInterface(0x80ac58cd);
-
             // Neither a standard NFT nor a non-standard supported NFT(punk, kitty or fighter)
-            if (!supportsERC721Interface) revert NFTNotSupported();
+            try IERC165(collateral_).supportsInterface(0x80ac58cd) returns (bool supportsERC721Interface) {
+                if (!supportsERC721Interface) revert NFTNotSupported();
+            } catch {
+                revert NFTNotSupported();
+            }
 
             nftType = NFTTypes.STANDARD_ERC721;
         }

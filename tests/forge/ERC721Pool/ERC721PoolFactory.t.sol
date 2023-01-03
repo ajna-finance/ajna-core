@@ -126,6 +126,18 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         );
     }
 
+    function testDeployERC721CollectionPoolWithNonNFTAddress() external {
+        // should revert if trying to deploy with non NFT
+        _assertDeployWithNonNFTRevert(
+            {
+                poolFactory:  address(_factory),
+                collateral:   address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2),
+                quote:        address(_quote),
+                interestRate: 0.05 * 10**18
+            }
+        );
+    }
+
     function testDeployERC721PoolMultipleTimes() external {
         // should revert if trying to deploy same pool one more time
         _assertDeployMultipleTimesRevert(
