@@ -171,7 +171,6 @@ library LenderActions {
         AddQuoteParams calldata params_
     ) external returns (uint256 bucketLPs_, uint256 lup_) {
         if (params_.index == 0 || params_.index > MAX_FENWICK_INDEX) revert InvalidIndex();
-        if (params_.amount != 0 && params_.amount < poolState_.quoteDustLimit) revert DustAmountNotExceeded();
 
         Bucket storage bucket = buckets_[params_.index];
 
