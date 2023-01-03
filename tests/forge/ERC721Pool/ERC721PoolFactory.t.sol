@@ -110,7 +110,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         
         // check tracking of deployed pools
         assertEq(_factory.getDeployedPoolsList().length,  3);
-        assertEq(_poolFactory.getNumberOfDeployedPools(), 3);
+        assertEq(_factory.getNumberOfDeployedPools(), 3);
     }
 
     function testDeployERC721CollectionPoolWithInvalidRate() external {
@@ -136,7 +136,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
 
         // check tracking of deployed pools
         assertEq(_factory.getDeployedPoolsList().length,  3);
-        assertEq(_poolFactory.getNumberOfDeployedPools(), 3);
+        assertEq(_factory.getNumberOfDeployedPools(), 3);
     }
 
     function testDeployERC721CollectionPoolWithNonNFTAddress() external {
@@ -220,7 +220,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
 
         // check tracking of deployed pools
         assertEq(_factory.getDeployedPoolsList().length,  3);
-        assertEq(_poolFactory.getNumberOfDeployedPools(), 3);
+        assertEq(_factory.getNumberOfDeployedPools(), 3);
     }
 
     function testDeployERC721SubsetPoolMultipleTimes() external {
@@ -233,7 +233,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
 
         // check tracking of deployed pools
         assertEq(_factory.getDeployedPoolsList().length,  4);
-        assertEq(_poolFactory.getNumberOfDeployedPools(), 4);
+        assertEq(_factory.getNumberOfDeployedPools(), 4);
         assertEq(_factory.getDeployedPoolsList()[3],     poolAddress);
         assertEq(_factory.deployedPoolsList(3),          poolAddress);
 
@@ -241,7 +241,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         _factory.deployPool(address(_collateral), address(_quote), tokenIdsTestSubset, 0.05 * 10**18);
 
         assertEq(_factory.getDeployedPoolsList().length,  4);
-        assertEq(_poolFactory.getNumberOfDeployedPools(), 4);
+        assertEq(_factory.getNumberOfDeployedPools(), 4);
     }
 
     function testDeployERC721SubsetPool() external {
