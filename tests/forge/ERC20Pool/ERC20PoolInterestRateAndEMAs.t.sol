@@ -91,14 +91,13 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         vm.expectEmit(true, true, false, true);
         emit UpdateInterestRate(0.05 * 1e18, 0.055 * 1e18);
-        _drawDebt(
+        _drawDebtNoLupCheck(
             {
                 from:               _borrower,
                 borrower:           _borrower,
                 amountToBorrow:     46_000 * 1e18,
                 limitIndex:         4_300,
-                collateralToPledge: 100 * 1e18,
-                newLup:             0
+                collateralToPledge: 100 * 1e18
             }
         );
 
@@ -119,17 +118,84 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 interestRateUpdate:   _startTime + 10 days
             })
         );
+        _assertEMAs(
+            {
+                debtEma:   4_340.881358710158802477 * 1e18,
+                lupColEma: 28_103.845662221475161347 * 1e18
+            }
+        );
 
+        skip(14 hours);
+
+        uint256 snapshot = vm.snapshot();
+        // force interest rate update by calling repay debt with 0 amounts
+        _repayDebtNoLupCheck({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    0,
+            amountRepaid:     0,
+            collateralToPull: 0
+        });
+
+        _assertPool(
+            PoolParams({
+                htp:                  461.913231889174987773 * 1e18,
+                lup:                  2_981.007422784467321543 * 1e18,
+                poolSize:             110_068.755413072118050000 * 1e18,
+                pledgedCollateral:    100 * 1e18,
+                encumberedCollateral: 15.470514425000097931 * 1e18,
+                poolDebt:             46_117.718335219467295955 * 1e18,
+                actualUtilization:    0.921087771300560413 * 1e18,
+                targetUtilization:    0.154587982299328870 * 1e18,
+                minDebtAmount:        4_611.771833521946729596 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.0605 * 1e18,
+                interestRateUpdate:   _startTime + 10 days + 14 hours
+            })
+        );
+        _assertEMAs(
+            {
+                debtEma:   8_279.448467499588505755 * 1e18,
+                lupColEma: 53_558.163735316008374982 * 1e18
+            }
+        );
+
+        vm.revertTo(snapshot);
         // repay entire loan
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 200 * 1e18);
         _repayDebt({
             from:             _borrower,
             borrower:         _borrower,
-            amountToRepay:    46_113.664786991249514684 * 1e18,
-            amountRepaid:     46_113.664786991249514684 * 1e18,
+            amountToRepay:    46_200 * 1e18,
+            amountRepaid:     46_117.718335219467295955 * 1e18,
             collateralToPull: 0,
             newLup:           MAX_PRICE
         });
+
+        _assertPool(
+            PoolParams({
+                htp:                  0,
+                lup:                  MAX_PRICE,
+                poolSize:             110_068.755413072118050000 * 1e18,
+                pledgedCollateral:    100 * 1e18,
+                encumberedCollateral: 0,
+                poolDebt:             0,
+                actualUtilization:    0,
+                targetUtilization:    0.000000414970390968 * 1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                interestRate:         0.055 * 1e18,
+                interestRateUpdate:   _startTime + 10 days
+            })
+        );
+        _assertEMAs(
+            {
+                debtEma:   3_931.638970345850893184 * 1e18,
+                lupColEma: 9_474_504_822.313410545888078900 * 1e18
+            }
+        );
     }
 
     function testOverutilizedPoolInterestRateIncrease() external tearDown {

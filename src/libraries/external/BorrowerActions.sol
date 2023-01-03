@@ -267,6 +267,11 @@ library BorrowerActions {
             result_.poolCollateral -= collateralAmountToPull_;
         }
 
+        // calculate LUP if repay is called with 0 amount
+        if (!vars.repay && !vars.pull) {
+            result_.newLup = _lup(deposits_, result_.poolDebt);
+        }
+
         // update loan state
         Loans.update(
             loans_,
