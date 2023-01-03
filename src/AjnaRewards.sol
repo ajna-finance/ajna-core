@@ -202,16 +202,15 @@ contract AjnaRewards is IAjnaRewards {
         Stake storage stake = stakes[tokenId_];
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
 
-        address ajnaPool = stake.ajnaPool;
-
         // calculate accrued interest as determined by the difference in exchange rates between the last interaction block and the current block
         for (uint256 i = 0; i < positionIndexes.length; ) {
 
             // iterate through all burn periods to check exchange for buckets over time
             for (uint256 epoch = stake.lastInteractionBurnEpoch; epoch < burnEpochToStartClaim_; ) {
+                uint256 nextEpoch = epoch + 1;
 
                 // calculate change in exchange rates in a stakes buckets
-                uint256 interestEarned = _calculateExchangeRateInterestEarned(ajnaPool, epoch, positionIndexes[i], stake);
+                uint256 interestEarned = _calculateExchangeRateInterestEarned(stake.ajnaPool, epoch, positionIndexes[i], stake);
 
                 if (interestEarned == 0) {
                     // epoch is bounded by the number of reserve auctions that have occured in the pool, preventing overflow / underflow
@@ -222,14 +221,14 @@ contract AjnaRewards is IAjnaRewards {
                 }
 
                 // retrieve total interest accumulated by the pool over the claim period, and total tokens burned over that period
-                (, uint256 totalBurnedInPeriod, uint256 totalInterestEarnedInPeriod) = _getPoolAccumulators(ajnaPool, epoch + 1, epoch);
+                (, uint256 totalBurnedInPeriod, uint256 totalInterestEarnedInPeriod) = _getPoolAccumulators(stake.ajnaPool, nextEpoch, epoch);
 
                 // calculate rewards earned
                 uint256 newRewards = Maths.wmul(REWARD_FACTOR, Maths.wmul(Maths.wdiv(interestEarned, totalInterestEarnedInPeriod), totalBurnedInPeriod));
 
-                if (_checkRewardsClaimed(epoch + 1, newRewards, totalBurnedInPeriod)) {
+                if (_checkRewardsClaimed(nextEpoch, newRewards, totalBurnedInPeriod)) {
                     // set claim reward to difference between cap and reward
-                    newRewards = Maths.wmul(REWARD_CAP, totalBurnedInPeriod) - burnEventRewardsClaimed[epoch + 1];
+                    newRewards = Maths.wmul(REWARD_CAP, totalBurnedInPeriod) - burnEventRewardsClaimed[nextEpoch];
                     rewards_ += newRewards;
                 }
                 else {
@@ -239,8 +238,8 @@ contract AjnaRewards is IAjnaRewards {
 
                 if (isClaim_) {
                     // update token claim trackers
-                    burnEventRewardsClaimed[epoch + 1] += newRewards;
-                    hasClaimedForToken[tokenId_][epoch + 1] = true;
+                    burnEventRewardsClaimed[nextEpoch] += newRewards;
+                    hasClaimedForToken[tokenId_][nextEpoch] = true;
                 }
 
                 // epoch is bounded by the number of reserve auctions that have occured in the pool, preventing overflow / underflow
