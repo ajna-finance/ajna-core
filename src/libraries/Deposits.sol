@@ -13,20 +13,6 @@ library Deposits {
     /**
      *  @notice increase a value in the FenwickTree at an index.
      *  @dev    Starts at leaf/target and moved up towards root
-     *  @param  index_     The deposit index.
-     *  @param  addAmount_ The amount to increase deposit by.
-     */
-    function add(
-        DepositsState storage deposits_,
-        uint256 index_,
-        uint256 addAmount_
-    ) internal {
-        Deposits.unscaledAdd(deposits_, index_, Maths.wdiv(addAmount_, scale(deposits_, index_)));
-    }
-
-    /**
-     *  @notice increase a value in the FenwickTree at an index.
-     *  @dev    Starts at leaf/target and moved up towards root
      *  @param  index_             The deposit index.
      *  @param  unscaledAddAmount_ The unscaled amount to increase deposit by.
      */

@@ -10,30 +10,15 @@ pragma solidity 0.8.14;
 /*** Auction Param Structs ***/
 /*****************************/
 
-struct SettleParams {
-    address borrower;    // borrower address to settle
-    uint256 collateral;  // remaining collateral pledged by borrower that can be used to settle debt
-    uint256 t0Debt;      // borrower t0 debt to settle 
-    uint256 reserves;    // current reserves in pool
-    uint256 inflator;    // current pool inflator
-    uint256 bucketDepth; // number of buckets to use when settle debt
-}
-
-struct BucketTakeParams {
-    address borrower;       // borrower address to take from
-    uint256 collateral;     // borrower available collateral to take
-    bool    depositTake;    // deposit or arb take, used by bucket take
-    uint256 index;          // bucket index, used by bucket take
-    uint256 inflator;       // current pool inflator
-    uint256 t0Debt;         // borrower t0 debt
-}
-
-struct TakeParams {
-    address borrower;       // borrower address to take from
-    uint256 collateral;     // borrower available collateral to take
-    uint256 t0Debt;         // borrower t0 debt
-    uint256 takeCollateral; // desired amount to take
-    uint256 inflator;       // current pool inflator
+struct BucketTakeResult {
+    uint256 collateralAmount;
+    uint256 t0RepayAmount;
+    uint256 t0DebtPenalty;
+    uint256 remainingCollateral;
+    uint256 poolDebt;
+    uint256 newLup;
+    uint256 t0DebtInAuctionChange;
+    bool    settledAuction;
 }
 
 struct KickResult {
@@ -44,6 +29,27 @@ struct KickResult {
     uint256 lup;               // current lup
 }
 
+struct SettleParams {
+    address borrower;    // borrower address to settle
+    uint256 reserves;    // current reserves in pool
+    uint256 inflator;    // current pool inflator
+    uint256 bucketDepth; // number of buckets to use when settle debt
+    uint256 poolType;    // number of buckets to use when settle debt
+}
+
+struct TakeResult {
+    uint256 collateralAmount;
+    uint256 quoteTokenAmount;
+    uint256 t0RepayAmount;
+    uint256 t0DebtPenalty;
+    uint256 excessQuoteToken;
+    uint256 remainingCollateral;
+    uint256 poolDebt;
+    uint256 newLup;
+    uint256 t0DebtInAuctionChange;
+    bool    settledAuction;
+}
+
 /******************************************/
 /*** Liquidity Management Param Structs ***/
 /******************************************/
@@ -51,21 +57,42 @@ struct KickResult {
 struct AddQuoteParams {
     uint256 amount;          // amount to be added
     uint256 index;           // the index in which to deposit
-    uint256 poolDebt;        // current debt of the pool
-    uint256 dustLimit;       // quote token dust limit of the pool
 }
 
 struct MoveQuoteParams {
-    uint256 maxAmountToMove; // max amount to move between deposits
     uint256 fromIndex;       // the deposit index from where amount is moved
+    uint256 maxAmountToMove; // max amount to move between deposits
     uint256 toIndex;         // the deposit index where amount is moved to
     uint256 thresholdPrice;  // max threshold price in pool
-    uint256 dustLimit;       // quote token dust limit of the pool
 }
 
 struct RemoveQuoteParams {
-    uint256 maxAmount;       // max amount to be removed
     uint256 index;           // the deposit index from where amount is removed
+    uint256 maxAmount;       // max amount to be removed
     uint256 thresholdPrice;  // max threshold price in pool
-    uint256 dustLimit;       // quote token dust limit of the pool
+}
+
+/*************************************/
+/*** Loan Management Param Structs ***/
+/*************************************/
+
+struct DrawDebtResult {
+    uint256 newLup;
+    uint256 poolCollateral;
+    uint256 poolDebt;
+    uint256 remainingCollateral;
+    bool    settledAuction;
+    uint256 t0DebtInAuctionChange;
+    uint256 t0DebtChange;
+}
+
+struct RepayDebtResult {
+    uint256 newLup;
+    uint256 poolCollateral;
+    uint256 poolDebt;
+    uint256 remainingCollateral;
+    bool    settledAuction;
+    uint256 t0DebtInAuctionChange;
+    uint256 t0RepaidDebt;
+    uint256 quoteTokenToRepay;
 }

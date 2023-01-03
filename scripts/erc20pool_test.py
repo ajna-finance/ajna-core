@@ -8,6 +8,7 @@ def main():
     Deposits.deploy({"from": accounts[0]})
     PoolCommons.deploy({"from": accounts[0]})
     LenderActions.deploy({"from": accounts[0]})
+    BorrowerActions.deploy({"from": accounts[0]})
     Auctions.deploy({"from": accounts[0]})
     erc20_pool_factory = ERC20PoolFactory.deploy({"from": accounts[0]})
 
