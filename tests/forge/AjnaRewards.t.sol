@@ -222,11 +222,6 @@ contract AjnaRewardsTest is DSTestPlus {
         tokensToBurn_ = Maths.wmul(curClaimableReservesRemaining, curAuctionPrice);
     }
 
-    // calculate the amount of tokens that are expected to be earned based upon current state
-    function _localRewardsEarned() internal {
-        // TODO: finish implementing this -> use for differential testing
-    }
-
     function testStakeToken() external {
         skip(10);
 
@@ -353,9 +348,14 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // check can't call update exchange rate after the update period has elapsed
         skip(2 weeks);
-        changePrank(_updater);
-        vm.expectRevert(IAjnaRewards.ExchangeRateUpdateTooLate.selector);
-        _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
+        // changePrank(_updater);
+        // vm.expectRevert(IAjnaRewards.ExchangeRateUpdateTooLate.selector);
+        uint256 updateRewards = _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
+        assertEq(updateRewards, 0);
+    }
+
+    function testUpdateExchangeRatesAndClaimRewardsAfterMultiReserveAuctions() external {
+        // TODO: implement this test checking handling of staking an NFT after multiple reserve auctions have already occured
     }
 
     function testClaimRewardsCap() external {
@@ -463,6 +463,8 @@ contract AjnaRewardsTest is DSTestPlus {
         changePrank(_minterOne);
         vm.expectEmit(true, true, true, true);
         emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 0), .227347187766462422 * 1e18);
+        vm.expectEmit(true, true, true, true);
+        emit UpdateExchangeRates(_minterOne, address(_poolOne), depositIndexes, 0);
         vm.expectEmit(true, true, true, true);
         emit UnstakeToken(_minterOne, address(_poolOne), tokenIdOne);
         _ajnaRewards.unstakeToken(tokenIdOne);
@@ -701,7 +703,9 @@ contract AjnaRewardsTest is DSTestPlus {
             pool: _poolOne
         });
         uint256 tokenIdTwo = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        // second depositor stakes NFT, generating an update reward
         _stakeToken(address(_poolOne), _minterTwo, tokenIdTwo);
+        assertEq(_ajnaToken.balanceOf(_minterTwo), 3.617182434617357230 * 1e18);
 
         /******************************/
         /*** Second Reserve Auction ***/
@@ -766,11 +770,11 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // minter two claims rewards accrued since deposit
         changePrank(_minterTwo);
-        assertEq(_ajnaToken.balanceOf(_minterTwo), 0);
+        assertEq(_ajnaToken.balanceOf(_minterTwo), 3.617182434617357230 * 1e18);
         vm.expectEmit(true, true, true, true);
         emit ClaimRewards(_minterTwo, address(_poolOne), tokenIdTwo, _epochsClaimedArray(1, 1), idTwoRewardsAtTwo);
         _ajnaRewards.claimRewards(tokenIdTwo, _poolOne.currentBurnEpoch());
-        assertEq(_ajnaToken.balanceOf(_minterTwo), idTwoRewardsAtTwo);
+        assertEq(_ajnaToken.balanceOf(_minterTwo), idTwoRewardsAtTwo + 3.617182434617357230 * 1e18);
 
         // check there are no remaining rewards available after claiming
         uint256 remainingRewards = _ajnaRewards.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
@@ -950,8 +954,9 @@ contract AjnaRewardsTest is DSTestPlus {
         assertEq(_ajnaToken.balanceOf(_minterOne), 0);
         vm.expectEmit(true, true, true, true);
         emit UpdateExchangeRates(_minterOne, address(_poolOne), depositIndexesOne, 1.808591217308675030 * 1e18);
-        _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexesOne);
-        assertGt(_ajnaToken.balanceOf(_minterOne), 0);
+        uint256 updateReward = _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexesOne);
+        assertEq(_ajnaToken.balanceOf(_minterOne), updateReward);
+        assertEq(_ajnaToken.balanceOf(_minterOne), 1.808591217308675030 * 1e18);
 
         // check owner in pool with accrued interest can properly claim rewards
         changePrank(_minterOne);
