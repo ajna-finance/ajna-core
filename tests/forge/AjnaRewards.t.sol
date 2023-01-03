@@ -353,9 +353,10 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // check can't call update exchange rate after the update period has elapsed
         skip(2 weeks);
-        changePrank(_updater);
-        vm.expectRevert(IAjnaRewards.ExchangeRateUpdateTooLate.selector);
-        _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
+        // changePrank(_updater);
+        // vm.expectRevert(IAjnaRewards.ExchangeRateUpdateTooLate.selector);
+        uint256 updateRewards = _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
+        assertEq(updateRewards, 0);
     }
 
     function testClaimRewardsCap() external {
@@ -463,6 +464,8 @@ contract AjnaRewardsTest is DSTestPlus {
         changePrank(_minterOne);
         vm.expectEmit(true, true, true, true);
         emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 0), .227347187766462422 * 1e18);
+        vm.expectEmit(true, true, true, true);
+        emit UpdateExchangeRates(_minterOne, address(_poolOne), depositIndexes, 0);
         vm.expectEmit(true, true, true, true);
         emit UnstakeToken(_minterOne, address(_poolOne), tokenIdOne);
         _ajnaRewards.unstakeToken(tokenIdOne);
@@ -950,8 +953,9 @@ contract AjnaRewardsTest is DSTestPlus {
         assertEq(_ajnaToken.balanceOf(_minterOne), 0);
         vm.expectEmit(true, true, true, true);
         emit UpdateExchangeRates(_minterOne, address(_poolOne), depositIndexesOne, 1.808591217308675030 * 1e18);
-        _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexesOne);
-        assertGt(_ajnaToken.balanceOf(_minterOne), 0);
+        uint256 updateReward = _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexesOne);
+        assertEq(_ajnaToken.balanceOf(_minterOne), updateReward);
+        assertEq(_ajnaToken.balanceOf(_minterOne), 1.808591217308675030 * 1e18);
 
         // check owner in pool with accrued interest can properly claim rewards
         changePrank(_minterOne);
