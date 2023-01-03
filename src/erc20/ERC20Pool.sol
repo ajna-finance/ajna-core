@@ -236,7 +236,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     }
 
     /*******************************/
-    /*** Pool External Functions ***/
+    /*** Pool Auctions Functions ***/
     /*******************************/
 
     function settle(
@@ -309,12 +309,12 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         t0PoolDebt      -= result.t0RepayAmount;
         t0DebtInAuction -= result.t0DebtInAuctionChange;
 
-        poolBalances.t0Debt            = t0PoolDebt;
-        poolBalances.t0DebtInAuction   = t0DebtInAuction;
+        poolBalances.t0Debt            =  t0PoolDebt;
+        poolBalances.t0DebtInAuction   =  t0DebtInAuction;
         poolBalances.pledgedCollateral -= result.collateralAmount;
 
         // update pool interest rate state
-        poolState.debt       = result.poolDebt;
+        poolState.debt       =  result.poolDebt;
         poolState.collateral -= result.collateralAmount;
         _updateInterestState(poolState, result.newLup);
 
@@ -362,8 +362,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         t0PoolDebt      -= result.t0RepayAmount;
         t0DebtInAuction -= result.t0DebtInAuctionChange;
 
-        poolBalances.t0Debt            = t0PoolDebt;
-        poolBalances.t0DebtInAuction   = t0DebtInAuction;
+        poolBalances.t0Debt            =  t0PoolDebt;
+        poolBalances.t0DebtInAuction   =  t0DebtInAuction;
         poolBalances.pledgedCollateral -= result.collateralAmount;
 
         // update pool interest rate state
