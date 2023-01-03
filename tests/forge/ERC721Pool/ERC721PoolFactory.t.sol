@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.14;
 
-import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
+import { ERC721HelperContract }      from './ERC721DSTestPlus.sol';
 import { NFTCollateralToken, Token } from '../utils/Tokens.sol';
 
-import 'src/erc721/ERC721Pool.sol';
-import 'src/erc721/ERC721PoolFactory.sol';
+import { ERC721Pool }        from 'src/erc721/ERC721Pool.sol';
+import { ERC721PoolFactory } from 'src/erc721/ERC721PoolFactory.sol';
+import { IPoolErrors }       from 'src/base/interfaces/pool/IPoolErrors.sol';
+import { IPoolFactory }      from 'src/base/interfaces/IPoolFactory.sol';
 
 contract ERC721PoolFactoryTest is ERC721HelperContract {
     address            internal _NFTCollectionPoolAddress;

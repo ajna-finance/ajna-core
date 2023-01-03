@@ -3,8 +3,10 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import 'src/erc20/ERC20Pool.sol';
-import 'src/erc20/ERC20PoolFactory.sol';
+import { ERC20Pool }        from 'src/erc20/ERC20Pool.sol';
+import { ERC20PoolFactory } from 'src/erc20/ERC20PoolFactory.sol';
+import { IPoolErrors }      from 'src/base/interfaces/pool/IPoolErrors.sol';
+import { IPoolFactory }     from 'src/base/interfaces/IPoolFactory.sol';
 
 contract ERC20PoolFactoryTest is ERC20HelperContract {
     address immutable poolAddress = 0xeCAF6d240E0AdcaD5FfE4306b7D4301Df130bC02;
