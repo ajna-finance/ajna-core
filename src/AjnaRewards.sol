@@ -16,8 +16,6 @@ import { PoolCommons } from './libraries/external/PoolCommons.sol';
 
 import './IAjnaRewards.sol';
 
-import '@std/console.sol';
-
 contract AjnaRewards is IAjnaRewards {
 
     using SafeERC20   for IERC20;
