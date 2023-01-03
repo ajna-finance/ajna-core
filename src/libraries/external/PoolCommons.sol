@@ -57,7 +57,7 @@ library PoolCommons {
 
         // meaningful actual utilization
         int256 mau;
-        // meaningful actual utilization * mau
+        // meaningful actual utilization * 1.02
         int256 mau102;
 
         if (poolState_.debt != 0) {
@@ -87,8 +87,6 @@ library PoolCommons {
             mau102 = mau * PERCENT_102 / 1e18;
 
         }
-
-        // update pool interest rate
 
         // calculate target utilization
         int256 tu = (curDebtEma != 0 && curLupColEma != 0) ? int256(Maths.wdiv(curDebtEma, curLupColEma)) : int(Maths.WAD);
