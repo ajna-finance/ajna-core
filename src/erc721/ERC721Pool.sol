@@ -29,6 +29,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     /*** Initialize Functions ***/
     /****************************/
 
+    /// @inheritdoc IERC721Pool
     function initialize(
         uint256[] memory tokenIds_,
         uint256 rate_
@@ -62,6 +63,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     /*** Immutables ***/
     /******************/
 
+    /// @inheritdoc IERC721PoolImmutables
     function isSubset() external pure override returns (bool) {
         return _getArgUint256(SUBSET) != 0;
     }
@@ -70,6 +72,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     /*** Borrower External Functions ***/
     /***********************************/
 
+    /// @inheritdoc IERC721PoolBorrowerActions
     function drawDebt(
         address borrowerAddress_,
         uint256 amountToBorrow_,
@@ -120,6 +123,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         }
     }
 
+    /// @inheritdoc IERC721PoolBorrowerActions
     function repayDebt(
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
@@ -170,6 +174,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     /*** Lender External Functions ***/
     /*********************************/
 
+    /// @inheritdoc IERC721PoolLenderActions
     function addCollateral(
         uint256[] calldata tokenIdsToAdd_,
         uint256 index_
@@ -192,6 +197,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         _transferFromSenderToPool(bucketTokenIds, tokenIdsToAdd_);
     }
 
+    /// @inheritdoc IERC721PoolLenderActions
     function mergeOrRemoveCollateral(
         uint256[] calldata removalIndexes_,
         uint256 noOfNFTsToRemove_,
@@ -223,6 +229,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
     }
 
+    /// @inheritdoc IPoolLenderActions
     function removeCollateral(
         uint256 noOfNFTsToRemove_,
         uint256 index_
@@ -251,6 +258,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     /*** Pool Auctions Functions ***/
     /*******************************/
 
+    /// @inheritdoc IPoolLiquidationActions
     function settle(
         address borrowerAddress_,
         uint256 maxDepth_
@@ -296,6 +304,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         _updateInterestState(poolState, _lup(poolState.debt));
     }
 
+    /// @inheritdoc IPoolLiquidationActions
     function take(
         address        borrowerAddress_,
         uint256        collateral_,
@@ -359,6 +368,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         if (result.excessQuoteToken != 0) _transferQuoteToken(borrowerAddress_, result.excessQuoteToken);
     }
 
+    /// @inheritdoc IPoolLiquidationActions
     function bucketTake(
         address borrowerAddress_,
         bool    depositTake_,
