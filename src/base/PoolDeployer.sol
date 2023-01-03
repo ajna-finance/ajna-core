@@ -52,4 +52,8 @@ abstract contract PoolDeployer {
         return deployedPoolsList;
     }
 
+    function getNumberOfDeployedPools() external view returns (uint256) {
+        return deployedPoolsList.length;
+    }
+
 }

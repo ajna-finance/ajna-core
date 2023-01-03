@@ -87,6 +87,7 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
 
         // check tracking of deployed pools
         assertEq(_poolFactory.getDeployedPoolsList().length, 2);
+        assertEq(_poolFactory.getNumberOfDeployedPools(),    2);
         assertEq(_poolFactory.getDeployedPoolsList()[0],     poolOne);
         assertEq(_poolFactory.deployedPoolsList(0),          poolOne);
         assertEq(_poolFactory.getDeployedPoolsList()[1],     poolTwo);
@@ -117,6 +118,7 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
 
         // check tracking of deployed pools
         assertEq(_poolFactory.getDeployedPoolsList().length, 1);
+        assertEq(_poolFactory.getNumberOfDeployedPools(),    1);
         assertEq(_poolFactory.getDeployedPoolsList()[0],     poolAddress);
         assertEq(_poolFactory.deployedPoolsList(0),          poolAddress);
     }
