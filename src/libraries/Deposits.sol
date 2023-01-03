@@ -317,7 +317,7 @@ library Deposits {
         // In a scaled Fenwick tree, sum is at the root node, but needs to be scaled
         uint256 scaling = deposits_.scaling[SIZE];
         // scaling == 0 means scale factor is actually 1
-        return (scaling != 0) ? Maths.wmul(scaling,deposits_.values[SIZE]) : deposits_.values[SIZE]; 
+        return (scaling != 0) ? Maths.wmul(scaling, deposits_.values[SIZE]) : deposits_.values[SIZE]; 
     }
 
     /**
