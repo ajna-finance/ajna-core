@@ -625,8 +625,8 @@ library LenderActions {
         // calculate scale amount remaining
         uint256 remaining = Maths.wmul(depositScale, unscaledDepositAvailable - unscaledRemovedAmount);
 
-        // abandon dust amounts
-        if (remaining < params_.dustLimit) {
+        // abandon dust amounts upon last withdrawal
+        if (remaining < params_.dustLimit && redeemedLPs_ == params_.bucketLPs) {
             unscaledRemovedAmount = unscaledDepositAvailable;
         }
 
