@@ -399,11 +399,11 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
                 lup:                  9.917184843435912074 * 1e18,
                 poolSize:             73_000.000966222327608000 * 1e18,
                 pledgedCollateral:    3.0 * 1e18,
-                encumberedCollateral: 1.898740163458216872 * 1e18,
-                poolDebt:             18.830157170670854594 * 1e18,
-                actualUtilization:    0.000257947355088169 * 1e18,
+                encumberedCollateral: 1.736300564176668638 * 1e18,
+                poolDebt:             17.219213638702081372 * 1e18,
+                actualUtilization:    0.000235879635764245 * 1e18,
                 targetUtilization:    0.811350329890505142 * 1e18,
-                minDebtAmount:        1.883015717067085459 * 1e18,
+                minDebtAmount:        1.721921363870208137 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower2),
                 interestRate:         0.045 * 1e18,
@@ -414,27 +414,27 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              1.610943531968773223 * 1e18,
+                borrowerDebt:              0,
                 borrowerCollateral:        0,
-                borrowert0Np:              10.404995192307692312 * 1e18,
-                borrowerCollateralization: 0
+                borrowert0Np:              0,
+                borrowerCollateralization: 1 * 1e18
             }
         );
 
         _assertAuction(
             AuctionParams({
                 borrower:          _borrower,
-                active:            true,
-                kicker:            address(_lender),
+                active:            false,
+                kicker:            address(0),
                 bondSize:          0,
-                bondFactor:        0.01 * 1e18,
-                kickTime:          _startTime + 1000 days,
-                kickMomp:          9.917184843435912074 * 1e18,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
                 totalBondEscrowed: 0,
-                auctionPrice:      16.875213515338743424 * 1e18,
-                debtInAuction:     1.610943531968773223 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     0,
                 thresholdPrice:    0,
-                neutralPrice:      11.932577910666902372 * 1e18
+                neutralPrice:      0
             })
         );
 

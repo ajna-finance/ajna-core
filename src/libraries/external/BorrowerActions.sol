@@ -27,6 +27,7 @@ library BorrowerActions {
         uint256 debtChange;   // additional debt resulted from draw debt action
         bool    inAuction;    // true if loan is auctioned
         uint256 lupId;        // id of new LUP
+        bool    stampT0Np;    // true if loan's t0 neutral price should be restamped (when drawing debt or pledge settles auction)
     }
 
     struct RepayDebtLocalVars {
@@ -35,7 +36,7 @@ library BorrowerActions {
         uint256 newLup;                // LUP after repay debt action
         bool    pull;                  // true if pull action
         bool    repay;                 // true if repay action
-        bool    stampT0Np;             // true if loan's t0 neutral price should be restamped (when exiting auction)
+        bool    stampT0Np;             // true if loan's t0 neutral price should be restamped (when repay settles auction or pull collateral)
         uint256 t0DebtInAuctionChange; // t0 change amount of debt after repayment
         uint256 t0RepaidDebt;          // t0 debt repaid
     }
@@ -99,6 +100,7 @@ library BorrowerActions {
             ) {
                 // borrower becomes collateralized
                 vars.inAuction = false;
+                vars.stampT0Np = true;  // stamp borrower t0Np when exiting from auction
 
                 result_.settledAuction = true;
 
@@ -151,6 +153,9 @@ library BorrowerActions {
                 revert BorrowerUnderCollateralized();
             }
 
+            // stamp borrower t0Np when draw debt
+            vars.stampT0Np = true;
+
             result_.t0DebtChange = Maths.wdiv(vars.debtChange, poolState_.inflator);
 
             borrower.t0Debt += result_.t0DebtChange;
@@ -167,7 +172,7 @@ library BorrowerActions {
             poolState_.rate,
             result_.newLup,
             vars.inAuction,
-            true
+            vars.stampT0Np
         );
     }
 
@@ -260,6 +265,11 @@ library BorrowerActions {
 
             borrower.collateral    -= collateralAmountToPull_;
             result_.poolCollateral -= collateralAmountToPull_;
+        }
+
+        // calculate LUP if repay is called with 0 amount
+        if (!vars.repay && !vars.pull) {
+            result_.newLup = _lup(deposits_, result_.poolDebt);
         }
 
         // update loan state
