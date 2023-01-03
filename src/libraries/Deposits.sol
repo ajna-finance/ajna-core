@@ -8,6 +8,7 @@ import '../base/PoolHelper.sol';
 
 library Deposits {
 
+    // Max index supported in the Fenwick tree
     uint256 internal constant SIZE = 8192;
 
     /**
@@ -21,20 +22,35 @@ library Deposits {
         uint256 index_,
         uint256 unscaledAddAmount_
     ) internal {
+        // price buckets are indexed starting at 0, Fenwick bit logic is more elegant starting at 1
         ++index_;
 
+        // unscaledAddAmount_ is the raw amount to add directly to the value at index_, unaffected by the scale array
+        // For example, to denote an amount of deposit added to the array, we would need to call unscaledAdd with
+        // (deposit amount) / scale(index).  There are two reasons for this:
+        // 1- scale(index) is often already known in the context of where unscaledAdd(..) is called, and we want to avoid
+        //    redundant iterations through the Fenwick tree.
+        // 2- We often need to precisely change the value in the tree, avoiding the rounding that dividing by scale(index).
+        //    This is more relevant to unscaledRemove(...), where we need to ensure the value is precisely set to 0, but we
+        //    also prefer it here for consistency.
+        
         while (index_ <= SIZE) {
             uint256 value    = deposits_.values[index_];
             uint256 scaling  = deposits_.scaling[index_];
+
+            // Compute the new value to be put in location index_
             uint256 newValue = value + unscaledAddAmount_;
 
+            // Update unscaledAddAmount to propogate up the Fenwick tree
             // Note: we can't just multiply addAmount_ by scaling[i_] due to rounding
             // We need to track the precice change in values[i_] in order to ensure
             // obliterated indices remain zero after subsequent adding to related indices
+            // if scaling==0, the actual scale value is 1, otherwise it is scaling
             if (scaling != 0) unscaledAddAmount_ = Maths.wmul(newValue, scaling) - Maths.wmul(value, scaling);
 
             deposits_.values[index_] = newValue;
 
+            // traverse upwards through tree via "update" route
             index_ += lsb(index_);
         }
     }
@@ -44,43 +60,54 @@ library Deposits {
      *  @dev    Used in lup calculation
      *  @param  targetSum_     The sum to find index for.
      *  @return sumIndex_      Smallest index where prefixsum greater than the sum
-     *  @return sumIndexSum_   Sum at index FOLLOWING sumIndex_
-     *  @return sumIndexScale_ Scale of bucket FOLLOWING sumIndex_
+     *  @return sumIndexSum_   Sum at index PRECEDING sumIndex_
+     *  @return sumIndexScale_ Scale of bucket PRECEDING sumIndex_
      */
     function findIndexAndSumOfSum(
         DepositsState storage deposits_,
         uint256 targetSum_
     ) internal view returns (uint256 sumIndex_, uint256 sumIndexSum_, uint256 sumIndexScale_) {
+        // i iterates over bits from MSB to LSB.  We check at each stage if the target sum is to the left or right of sumIndex_+i
         uint256 i  = 4096; // 1 << (_numBits - 1) = 1 << (13 - 1) = 4096
-        uint256 sc = Maths.WAD;
+        uint256 runningScale = Maths.WAD;
 
+        // We construct the target sumIndex_ bit by bit, from MSB to LSB.  lowerIndexSum_ always maintains the sum
+        // up to the current value of sumIndex_
         uint256 lowerIndexSum;
 
         while (i > 0) {
+            // Consider if the target index is less than or greater than sumIndex_ + i
             uint256 value   = deposits_.values[sumIndex_ + i];
             uint256 scaling = deposits_.scaling[sumIndex_ + i];
 
+            // Compute sum up to sumIndex_ + i
             uint256 scaledValue =
                 lowerIndexSum +
-                (scaling != 0 ?  Maths.wmul(Maths.wmul(sc, scaling), value) : Maths.wmul(sc, value));
+                (scaling != 0 ?  Maths.wmul(Maths.wmul(runningScale, scaling), value) : Maths.wmul(runningScale, value));
 
             if (scaledValue  < targetSum_) {
+                // Target value is too small, need to consider increasing sumIndex_ still
                 if (sumIndex_ + i <= MAX_FENWICK_INDEX) {
+                    // sumIndex_+i is in range of Fenwick prices.  Target index has this bit set to 1.  
                     sumIndex_ += i;
                     lowerIndexSum = scaledValue;
                 }
             } else {
-                if (scaling != 0) sc = Maths.wmul(sc, scaling);
+                // Target index has this bit set to 0
+                // scaling == 0 means scale factor == 1, otherwise scale factor == scaling
+                if (scaling != 0) runningScale = Maths.wmul(runningScale, scaling);
 
+                // Current scaledValue is <= targetSum_, it's a candidate value for sumIndexSum_
                 sumIndexSum_   = scaledValue;
-                sumIndexScale_ = sc;
+                sumIndexScale_ = runningScale;
             }
+            // Shift i to next less significant bit
             i = i >> 1;
         }
     }
 
     /**
-     *  @notice Finds index of passed sum
+     *  @notice Finds index of passed sum.  Helper function for findIndexAndSumOfSum
      *  @dev    Used in lup calculation
      *  @param  sum_      The sum to find index for.
      *  @return sumIndex_ Smallest index where prefixsum greater than the sum
@@ -109,15 +136,15 @@ library Deposits {
     /**
      *  @notice Scale values in the tree from the index provided, upwards.
      *  @dev    Starts at passed in node and increments through range parent nodes, and ends at 8192.
-     *  @param  index_  The index to start scaling from.
+     *  @param  index_   The index to start scaling from.
      *  @param  factor_  The factor to scale the values by.
      */
-    // TODO: add check to ensure scaling factor is at least a WAD?
     function mult(
         DepositsState storage deposits_,
         uint256 index_,
         uint256 factor_
     ) internal {
+        // price buckets are indexed starting at 0, Fenwick bit logic is more elegant starting at 1
         ++index_;
 
         uint256 sum;
@@ -125,7 +152,7 @@ library Deposits {
         uint256 scaling;
         uint256 bit = lsb(index_);
 
-        // Starting with the lSB of index, we iteratively move up towards the MSB of SIZE
+        // Starting with the LSB of index, we iteratively move up towards the MSB of SIZE
         // Case 1:     the bit of index_ is set to 1.  In this case, the entire subtree below index_
         //             is scaled.  So, we include factor_ into scaleing[index_], and remember in sum how much
         //             we increased the subtree by, so that we can use it in case we encounter 0 bits (below).
@@ -135,6 +162,7 @@ library Deposits {
         //             (in sum) which was set in a prior interation in case 1.
         while (bit <= SIZE) {
             if((bit & index_) != 0) {
+                // Case 1 as described above
                 value   = deposits_.values[index_];
                 scaling = deposits_.scaling[index_];
 
@@ -150,20 +178,25 @@ library Deposits {
                     // Apply scaling to all range parents less then starting node, index_
                     deposits_.scaling[index_] = scaledFactor;
                 } else {
+                    // this node's scale factor is 1
                     sum += Maths.wmul(factor_, value) - value;
                     deposits_.scaling[index_] = factor_;
                 }
-
+                // Unset the bit in index to continue traversing up the Fenwick tree
                 index_ -= bit;
             } else {
+                // Case 1 above.  superRangeIndex is the index of the node to consider that
+                //                contains the sub range that was already scaled in prior iteration
                 uint256 superRangeIndex = index_ + bit;
 
                 value   = (deposits_.values[superRangeIndex] += sum);
                 scaling = deposits_.scaling[superRangeIndex];
 
-                // again, in following line, need to be careful due to rounding
+                // Need to be careful due to rounding to propagate actual changes upwards in tree.
+                // sum is always equal to the actual value we changed deposits_.values[] by
                 if (scaling != 0) sum = Maths.wmul(value, scaling) - Maths.wmul(value - sum, scaling);
             }
+            // consider next most significant bit
             bit = bit << 1;
         }
     }
@@ -178,30 +211,40 @@ library Deposits {
         DepositsState storage deposits_,
         uint256 sumIndex_
     ) internal view returns (uint256 sum_) {
-        ++sumIndex_; // Translate from 0 -> 1 indexed array
+        // price buckets are indexed starting at 0, Fenwick bit logic is more elegant starting at 1
+        ++sumIndex_;
 
-        uint256 sc    = Maths.WAD;
-        uint256 j     = SIZE;      // iterate from MSB to LSB
-        uint256 index = 0;         // build up sumIndex bit by bit
+        uint256 runningScale = Maths.WAD; // Tracks scale(index_) as we move down Fenwick tree
+        uint256 j            = SIZE;      // bit that iterates from MSB to LSB
+        uint256 index        = 0;         // build up sumIndex bit by bit
 
+        // Used to terminate loop.  We don't need to consider final 0 bits of sumIndex_
         uint256 indexLSB = lsb(sumIndex_);
 
         while (j >= indexLSB) {
+            // Skip considering indices outside bounds of Fenwick tree
             if (index + j > SIZE) continue;
+
+            // We are considering whether to include node index_+j in the sum or not.  Either way, we need to scaling[index_+j],
+            // either to increment sum_ or to accumulate in runningScale
             uint256 scaled = deposits_.scaling[index+j];
 
             if (sumIndex_ & j != 0) {
                 // node index+j of tree is included in sum
                 uint256 value = deposits_.values[index+j];
 
-                sum_  += scaled != 0 ? Maths.wmul(Maths.wmul(sc, scaled), value) : Maths.wmul(sc, value);
+                // Accumulate in sum_, recall that scaled==0 means that the scale factor is actually 1
+                sum_  += scaled != 0 ? Maths.wmul(Maths.wmul(runningScale, scaled), value) : Maths.wmul(runningScale, value);
+                // Build up index bit by bit
                 index += j;
 
+                // terminate if we've already matched sumIndex_
                 if (index == sumIndex_) break;
             } else {
                 // node is not included in sum, but its scale needs to be included for subsequent sums
-                if (scaled != 0) sc = Maths.wmul(sc, scaled);
+                if (scaled != 0) runningScale = Maths.wmul(runningScale, scaled);
             }
+            // shift j to consider next less signficant bit
             j = j >> 1;
         }
     }
@@ -217,18 +260,26 @@ library Deposits {
         uint256 index_,
         uint256 unscaledRemoveAmount_
     ) internal {
+        // price buckets are indexed starting at 0, Fenwick bit logic is more elegant starting at 1
         ++index_;
 
+        // We operate with unscaledRemoveAmount_ here instead of a scaled quantity to avoid duplicate computation of scale factor
+        // (thus redundant iterations through the Fenwick tree), and ALSO so that we can set the value of a given deposit exactly
+        // to 0.
+        
         while (index_ <= SIZE) {
+            // Decrement deposits_ at index_ for removeAmount, storing new value in value
             uint256 value   = (deposits_.values[index_] -= unscaledRemoveAmount_);
             uint256 scaling = deposits_.scaling[index_];
 
+            // If scale factor != 1, we need to adjust unscaledRemoveAmount by scale factor to adjust values further up in tree
             // On the line below, it would be tempting to replace this with:
             // unscaledRemoveAmount_ = Maths.wmul(unscaledRemoveAmount, scaling).  This will introduce nonzero values up
             // the tree due to rounding.  It's important to compute the actual change in deposits_.values[index_]
             // and propogate that upwards.
             if (scaling != 0) unscaledRemoveAmount_ = Maths.wmul(value + unscaledRemoveAmount_, scaling) - Maths.wmul(value,  scaling);
 
+            // Traverse upward through the "update" path of the Fenwick tree
             index_ += lsb(index_);
         }
     }
@@ -243,11 +294,15 @@ library Deposits {
         DepositsState storage deposits_,
         uint256 index_
     ) internal view returns (uint256 scaled_) {
-	    ++index_;
+        // price buckets are indexed starting at 0, Fenwick bit logic is more elegant starting at 1
+        ++index_;
 
+        // start with scaled_1 = 1
         scaled_ = Maths.WAD;
         while (index_ <= SIZE) {
+            // Traverse up through Fenwick tree via "update" path, accumulating scale factors as we go
             uint256 scaling = deposits_.scaling[index_];
+            // scaling==0 means actual scale factor is 1
             if (scaling != 0) scaled_ = Maths.wmul(scaled_, scaling);
             index_ += lsb(index_);
         }
@@ -259,9 +314,10 @@ library Deposits {
     function treeSum(
         DepositsState storage deposits_
     ) internal view returns (uint256) {
+        // In a scaled Fenwick tree, sum is at the root node, but needs to be scaled
         uint256 scaling = deposits_.scaling[SIZE];
-        if (scaling == 0) scaling = Maths.WAD;
-        return Maths.wmul(scaling,deposits_.values[SIZE]);
+        // scaling == 0 means scale factor is actually 1
+        return (scaling != 0) ? Maths.wmul(scaling, deposits_.values[SIZE]) : deposits_.values[SIZE]; 
     }
 
     /**
@@ -273,6 +329,7 @@ library Deposits {
         DepositsState storage deposits_,
         uint256 index_
     ) internal view returns (uint256 depositValue_) {
+        // Get unscaled value at index and multiply by scale
         depositValue_ = Maths.wmul(unscaledValueAt(deposits_, index_), scale(deposits_,index_));
     }
 
@@ -280,9 +337,14 @@ library Deposits {
         DepositsState storage deposits_,
         uint256 index_
     ) internal view returns (uint256 unscaledDepositValue_) {
+        // In a scaled Fenwick tree, sum is at the root node, but needs to be scaled
         ++index_;
 
         uint256 j = 1;
+
+        // Returns the unscaled value at the node.  We consider the unscaled value for two reasons:
+        // 1- If we want to zero out deposit in bucket, we need to subtract the exact unscaled value
+        // 2- We may already have computed the scale factor, so we can avoid duplicate traversal
 
         unscaledDepositValue_ = deposits_.values[index_];
         while (j & index_ == 0) {
