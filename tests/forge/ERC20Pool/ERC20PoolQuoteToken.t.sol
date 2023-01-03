@@ -360,8 +360,8 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                interestRate:         0.05 * 1e18,
-                interestRateUpdate:   _startTime
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   _startTime + 1 days
             })
         );
 
@@ -443,8 +443,8 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                interestRate:         0.05 * 1e18,
-                interestRateUpdate:   _startTime
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   _startTime + 1 days
             })
         );
 

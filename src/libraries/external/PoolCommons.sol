@@ -50,11 +50,22 @@ library PoolCommons {
         PoolState memory poolState_,
         uint256 lup_
     ) external {
-        if (poolState_.debt != 0) { // TODO: interest rates should be updated even if debt is 0, EMAs should not
+
+        // current values of EMA samples
+        uint256 curDebtEma   = interestParams_.debtEma;
+        uint256 curLupColEma = interestParams_.lupColEma;
+
+        // meaningful actual utilization
+        int256 mau;
+        // meaningful actual utilization * 1.02
+        int256 mau102;
+
+        if (poolState_.debt != 0) {
             // update pool EMAs for target utilization calculation
-            uint256 curDebtEma =
-                Maths.wmul(poolState_.debt,         EMA_7D_RATE_FACTOR) +
-                Maths.wmul(interestParams_.debtEma, LAMBDA_EMA_7D
+
+            curDebtEma =
+                Maths.wmul(poolState_.debt,  EMA_7D_RATE_FACTOR) +
+                Maths.wmul(curDebtEma,       LAMBDA_EMA_7D
             );
 
             // lup * collateral EMA sample max value is 10 times current debt
@@ -63,47 +74,43 @@ library PoolCommons {
             // current lup * collateral value
             uint256 lupCol = Maths.wmul(poolState_.collateral, lup_);
 
-            uint256 curLupColEma =
+            curLupColEma =
                 Maths.wmul(Maths.min(lupCol, maxLupColEma), EMA_7D_RATE_FACTOR) +
-                Maths.wmul(interestParams_.lupColEma,       LAMBDA_EMA_7D);
+                Maths.wmul(curLupColEma,                    LAMBDA_EMA_7D);
 
+            // save EMA samples in storage
             interestParams_.debtEma   = curDebtEma;
             interestParams_.lupColEma = curLupColEma;
 
-            // update pool interest rate
-            int256 mau = int256(                                       // meaningful actual utilization
-                _utilization(
-                    deposits_,
-                    poolState_.debt,
-                    poolState_.collateral
-                )
-            );
+            // calculate meaningful actual utilization for interest rate update
+            mau    = int256(_utilization(deposits_, poolState_.debt, poolState_.collateral));
+            mau102 = mau * PERCENT_102 / 1e18;
 
-            int256 tu = (curDebtEma != 0 && curLupColEma != 0) ? int256(Maths.wdiv(curDebtEma, curLupColEma)) : int(Maths.WAD);
+        }
 
-            if (!poolState_.isNewInterestAccrued) poolState_.rate = interestParams_.interestRate;
+        // calculate target utilization
+        int256 tu = (curDebtEma != 0 && curLupColEma != 0) ? int256(Maths.wdiv(curDebtEma, curLupColEma)) : int(Maths.WAD);
 
-            // raise rates if 4*(tu-1.02*mau) < (tu+1.02*mau-1)^2-1
-            // decrease rates if 4*(tu-mau) > 1-(tu+mau-1)^2
-            int256 mau102 = mau * PERCENT_102 / 1e18;
+        if (!poolState_.isNewInterestAccrued) poolState_.rate = interestParams_.interestRate;
 
-            uint256 newInterestRate = poolState_.rate;
+        uint256 newInterestRate = poolState_.rate;
 
-            if (4 * (tu - mau102) < ((tu + mau102 - 1e18) ** 2) / 1e18 - 1e18) {
-                newInterestRate = Maths.wmul(poolState_.rate, INCREASE_COEFFICIENT);
-            }
-            else if (4 * (tu - mau) > 1e18 - ((tu + mau - 1e18) ** 2) / 1e18) {
-                newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
-            }
+        // raise rates if 4*(tu-1.02*mau) < (tu+1.02*mau-1)^2-1
+        if (4 * (tu - mau102) < ((tu + mau102 - 1e18) ** 2) / 1e18 - 1e18) {
+            newInterestRate = Maths.wmul(poolState_.rate, INCREASE_COEFFICIENT);
+        }
+        // decrease rates if 4*(tu-mau) > 1-(tu+mau-1)^2
+        else if (4 * (tu - mau) > 1e18 - ((tu + mau - 1e18) ** 2) / 1e18) {
+            newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
+        }
 
-            newInterestRate = Maths.min(500 * 1e18, Maths.max(0.001 * 1e18, newInterestRate));
+        newInterestRate = Maths.min(500 * 1e18, Maths.max(0.001 * 1e18, newInterestRate));
 
-            if (poolState_.rate != newInterestRate) {
-                interestParams_.interestRate       = uint208(newInterestRate);
-                interestParams_.interestRateUpdate = uint48(block.timestamp);
+        if (poolState_.rate != newInterestRate) {
+            interestParams_.interestRate       = uint208(newInterestRate);
+            interestParams_.interestRateUpdate = uint48(block.timestamp);
 
-                emit UpdateInterestRate(poolState_.rate, newInterestRate);
-            }
+            emit UpdateInterestRate(poolState_.rate, newInterestRate);
         }
     }
 
