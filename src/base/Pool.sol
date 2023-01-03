@@ -770,10 +770,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function _revertOnMinDebt(uint256 poolDebt_, uint256 borrowerDebt_) internal view {
         if (borrowerDebt_ != 0) {
             uint256 loansCount = Loans.noOfLoans(loans);
-            if (
-                loansCount >= 10 &&
-                (borrowerDebt_ < _minDebtAmount(poolDebt_, loansCount))
-            ) revert AmountLTMinDebt();
+            if (loansCount >= 10) {
+                if (borrowerDebt_ < _minDebtAmount(poolDebt_, loansCount)) revert AmountLTMinDebt();
+            } else {
+                if (borrowerDebt_ < _getArgUint256(QUOTE_SCALE))           revert DustAmountNotExceeded();
+            }
         }
     }
 
