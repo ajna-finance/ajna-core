@@ -45,7 +45,9 @@ contract ERC20PoolFactory is IERC20PoolFactory, PoolDeployer {
 
         pool_ = address(pool);
 
+        // Track the newly deployed pool
         deployedPools[ERC20_NON_SUBSET_HASH][collateral_][quote_] = pool_;
+        deployedPoolsList.push(pool_);
 
         emit PoolCreated(pool_);
 

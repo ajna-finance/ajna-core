@@ -69,7 +69,9 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
 
         pool_ = address(pool);
 
+        // Track the newly deployed pool
         deployedPools[getNFTSubsetHash(tokenIds_)][collateral_][quote_] = pool_;
+        deployedPoolsList.push(pool_);
 
         emit PoolCreated(pool_);
 
