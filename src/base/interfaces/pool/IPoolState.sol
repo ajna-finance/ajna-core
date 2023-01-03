@@ -329,3 +329,18 @@ struct Kicker {
     uint256 claimable; // kicker's claimable balance
     uint256 locked;    // kicker's balance of tokens locked in auction bonds
 }
+
+/*** Burn Events State ***/
+
+struct BurnState {
+    mapping (uint256 => BurnEvent) events; // mapping burnEventEpoch => BurnEvent
+    uint256 latestEventEpoch;              // latest burn event epoch
+    uint256 totalAjnaBurned;               // total ajna burned in the pool
+    uint256 totalInterestEarned;           // total interest earned by all lenders in the pool
+}
+
+struct BurnEvent {
+    uint256 timestamp;     // time at which the burn event occured
+    uint256 totalInterest; // current pool interest accumulator `PoolCommons.accrueInterest().newInterest`
+    uint256 totalBurned;   // burn amount accumulator
+}
