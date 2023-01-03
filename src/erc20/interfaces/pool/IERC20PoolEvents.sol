@@ -22,16 +22,6 @@ interface IERC20PoolEvents {
     );
 
     /**
-     *  @notice Emitted when auction is completed.
-     *  @param  borrower   Address of borrower that exits auction.
-     *  @param  collateral Borrower's remaining collateral when auction completed.
-     */
-    event AuctionSettle(
-        address indexed borrower,
-        uint256 collateral
-    );
-
-    /**
      *  @notice Emitted when borrower draws debt from the pool, or adds collateral to the pool.
      *  @param  borrower          The borrower to whom collateral was pledged, and/or debt was drawn for.
      *  @param  amountBorowed     Amount of quote tokens borrowed from the pool.

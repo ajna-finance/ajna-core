@@ -167,10 +167,11 @@ library LenderActions {
     function addQuoteToken(
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
+        PoolState calldata poolState_,
         AddQuoteParams calldata params_
     ) external returns (uint256 bucketLPs_, uint256 lup_) {
         if (params_.index == 0 || params_.index > MAX_FENWICK_INDEX) revert InvalidIndex();
-        if (params_.amount != 0 && params_.amount < params_.dustLimit) revert DustAmountNotExceeded();
+        if (params_.amount != 0 && params_.amount < poolState_.quoteDustLimit) revert DustAmountNotExceeded();
 
         Bucket storage bucket = buckets_[params_.index];
 
@@ -205,7 +206,7 @@ library LenderActions {
         // update bucket LPs
         bucket.lps += bucketLPs_;
 
-        lup_ = _lup(deposits_, params_.poolDebt);
+        lup_ = _lup(deposits_, poolState_.debt);
         emit AddQuoteToken(msg.sender, params_.index, params_.amount, bucketLPs_, lup_);
     }
 
@@ -217,7 +218,7 @@ library LenderActions {
     ) external returns (uint256 fromBucketRedeemedLPs_, uint256 toBucketLPs_, uint256 lup_) {
         if (params_.fromIndex == params_.toIndex)
             revert MoveToSamePrice();
-        if (params_.maxAmountToMove != 0 && params_.maxAmountToMove < params_.dustLimit)
+        if (params_.maxAmountToMove != 0 && params_.maxAmountToMove < poolState_.quoteDustLimit)
             revert DustAmountNotExceeded();
         if (params_.toIndex == 0 || params_.toIndex > MAX_FENWICK_INDEX) 
             revert InvalidIndex();
@@ -241,17 +242,15 @@ library LenderActions {
 
         (vars.amountToMove, fromBucketRedeemedLPs_) = _removeMaxDeposit(
             deposits_,
-            RemoveDepositParams(
-                {
-                    depositConstraint: params_.maxAmountToMove,
-                    lpConstraint:      vars.fromBucketLPs,
-                    bucketLPs:         fromBucket.lps,
-                    bucketCollateral:  fromBucket.collateral,
-                    price:             vars.fromBucketPrice,
-                    index:             params_.fromIndex,
-                    dustLimit:         params_.dustLimit
-                }
-            )
+            RemoveDepositParams({
+                depositConstraint: params_.maxAmountToMove,
+                lpConstraint:      vars.fromBucketLPs,
+                bucketLPs:         fromBucket.lps,
+                bucketCollateral:  fromBucket.collateral,
+                price:             vars.fromBucketPrice,
+                index:             params_.fromIndex,
+                dustLimit:         poolState_.quoteDustLimit
+            })
         );
 
         vars.ptp = _ptp(poolState_.debt, poolState_.collateral);
@@ -330,17 +329,15 @@ library LenderActions {
 
         (removedAmount_, redeemedLPs_) = _removeMaxDeposit(
             deposits_,
-            RemoveDepositParams(
-                {
-                    depositConstraint: params_.maxAmount,
-                    lpConstraint:      lenderLPs,
-                    bucketCollateral:  bucket.collateral,
-                    bucketLPs:         bucket.lps,
-                    price:             price,
-                    index:             params_.index,
-                    dustLimit:         params_.dustLimit
-                }
-            )
+            RemoveDepositParams({
+                depositConstraint: params_.maxAmount,
+                lpConstraint:      lenderLPs,
+                bucketCollateral:  bucket.collateral,
+                bucketLPs:         bucket.lps,
+                price:             price,
+                index:             params_.index,
+                dustLimit:         poolState_.quoteDustLimit
+            })
         );
 
         // apply early withdrawal penalty if quote token is removed from above the PTP
