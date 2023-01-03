@@ -888,7 +888,6 @@ library Auctions {
         // reduce the debt of the borrower -- analagous to the amount of deposit in the bucket for a bucket take
         vars = _calculateTakeFlowsAndBondChange(
             Maths.min(params_.collateral, params_.takeCollateral),
-            params_.t0Debt,
             params_.inflator,
             vars
         );
@@ -963,7 +962,6 @@ library Auctions {
 
         vars = _calculateTakeFlowsAndBondChange(
             params_.collateral,
-            params_.t0Debt,
             params_.inflator,
             vars
         );
@@ -1121,13 +1119,11 @@ library Auctions {
     /**
      *  @notice Computes the flows of collateral, quote token between the borrower, lender and kicker.
      *  @param  totalCollateral_        Total collateral in loan.
-     *  @param  t0Debt_                 t0 equivalent debt in loan.
      *  @param  inflator_               Current pool inflator.
      *  @param  vars                    TakeParams for the take/buckettake
      */
     function _calculateTakeFlowsAndBondChange(
         uint256              totalCollateral_,
-        uint256              t0Debt_,
         uint256              inflator_,
         TakeLocalVars memory vars
     ) internal pure returns (
@@ -1153,7 +1149,7 @@ library Auctions {
         } else if (vars.borrowerDebt <= borrowerCollateralValue) {
             // borrower debt is constraining factor
             vars.collateralAmount = Maths.wdiv(vars.borrowerDebt, borrowerPrice);
-            vars.t0RepayAmount            = t0Debt_;
+            vars.t0RepayAmount            = vars.t0Debt;
             vars.unscaledQuoteTokenAmount = Maths.wdiv(vars.borrowerDebt, vars.bucketScale);
 
             vars.scaledQuoteTokenAmount   = (vars.isRewarded) ? Maths.wdiv(vars.borrowerDebt, borrowerPayoffFactor) : vars.borrowerDebt;

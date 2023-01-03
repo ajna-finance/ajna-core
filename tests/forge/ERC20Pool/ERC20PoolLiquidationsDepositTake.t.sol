@@ -475,10 +475,10 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              1.413271006675619050 * 1e18,
+                borrowerDebt:              0,
                 borrowerCollateral:        1.985648457205370548 * 1e18,
-                borrowert0Np:              0.718712376637648488 * 1e18,
-                borrowerCollateralization: 2114.898406606768008479 * 1e18
+                borrowert0Np:              0,
+                borrowerCollateralization: 1 * 1e18
             }
         );
 
@@ -510,8 +510,8 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
 
         _assertReserveAuction(
             {
-                reserves:                   289.957215505583880921 * 1e18,
-                claimableReserves :         248.619279883654091927 * 1e18,
+                reserves:                   288.543944498908261870 * 1e18,
+                claimableReserves :         247.213075232011850972 * 1e18,
                 claimableReservesRemaining: 0,
                 auctionPrice:               0,
                 timeRemaining:              0
@@ -762,10 +762,10 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              1.413256486842604529 * 1e18,
+                borrowerDebt:              0,
                 borrowerCollateral:        1.997843295418292444 * 1e18,
-                borrowert0Np:              736.017209642761013404 * 1e18,
-                borrowerCollateralization: 13.742463556719065681 * 1e18
+                borrowert0Np:              0,
+                borrowerCollateralization: 1 * 1e18
             }
         );
         _assertAuction(
@@ -780,7 +780,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    0.707391060191589347 * 1e18,
+                thresholdPrice:    0,
                 neutralPrice:      0
             })
         );
