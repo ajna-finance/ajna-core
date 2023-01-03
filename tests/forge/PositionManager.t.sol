@@ -17,7 +17,7 @@ abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract 
     PositionManager  internal _positionManager;
 
     constructor() ERC20HelperContract() {
-        _positionManager = new PositionManager();
+        _positionManager = new PositionManager(_poolFactory, new ERC721PoolFactory(_ajna));
     }
 
     function _mintQuoteAndApproveManagerTokens(address operator_, uint256 mintAmount_) internal {
@@ -33,8 +33,8 @@ abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract 
      *  @dev Abstract away NFT Minting logic for use by multiple tests.
      */
     function _mintNFT(address minter_, address lender_, address pool_) internal returns (uint256 tokenId) {
-        IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(lender_, pool_);
-
+        IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(lender_, pool_, keccak256("ERC20_NON_SUBSET_HASH"));
+        
         changePrank(minter_);
         return _positionManager.mint(mintParams);
     }
@@ -70,6 +70,8 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
     /**
      *  @notice Tests base NFT minting functionality.
+     *          Reverts:
+     *              Attempts to mint an NFT associated with an invalid pool.
      */
     function testMint() external {
         uint256 mintAmount  = 50 * 1e18;
@@ -81,7 +83,6 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // test emitted Mint event
         vm.expectEmit(true, true, true, true);
         emit Mint(testAddress, address(_pool), 1);
-
         uint256 tokenId = _mintNFT(testAddress, testAddress, address(_pool));
 
         require(tokenId != 0, "tokenId nonce not incremented");
@@ -92,6 +93,14 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         assertEq(owner, testAddress);
         assertEq(lpTokens, 0);
+
+        // deploy a new factory to simulate creating a pool outside of expected factories
+        ERC20PoolFactory invalidFactory = new ERC20PoolFactory(_ajna);
+        address invalidPool = invalidFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
+
+        // check can't mint an NFT associated with a non ajna pool
+        vm.expectRevert(IPositionManager.NotAjnaPool.selector);
+        _mintNFT(testAddress, testAddress, invalidPool);
     }
 
     /**
@@ -2473,7 +2482,7 @@ abstract contract PositionManagerERC721PoolHelperContract is ERC721HelperContrac
     PositionManager  internal _positionManager;
 
     constructor() ERC721HelperContract() {
-        _positionManager = new PositionManager();
+        _positionManager = new PositionManager(new ERC20PoolFactory(_ajna), _poolFactory);
         _pool = _deployCollectionPool();
     }
 
@@ -2489,9 +2498,9 @@ abstract contract PositionManagerERC721PoolHelperContract is ERC721HelperContrac
     /**
      *  @dev Abstract away NFT Minting logic for use by multiple tests.
      */
-    function _mintNFT(address minter_, address lender_, address pool_) internal returns (uint256 tokenId) {
-        IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(lender_, pool_);
-
+    function _mintNFT(address minter_, address lender_, address pool_, bytes32 subsetHash_) internal returns (uint256 tokenId) {
+        IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(lender_, pool_, subsetHash_);
+        
         changePrank(minter_);
         return _positionManager.mint(mintParams);
     }
@@ -2536,7 +2545,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         );
 
         // mint an NFT to later memorialize existing positions into
-        uint256 tokenId = _mintNFT(testAddress1, testAddress1, address(_pool));
+        uint256 tokenId = _mintNFT(testAddress1, testAddress1, address(_pool), keccak256("ERC721_NON_SUBSET_HASH"));
 
         // check LPs
         _assertLenderLpBalance(

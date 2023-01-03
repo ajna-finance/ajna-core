@@ -112,7 +112,7 @@ library PoolCommons {
         PoolState calldata poolState_,
         uint256 thresholdPrice_,
         uint256 elapsed_
-    ) external returns (uint256 newInflator_) {
+    ) external returns (uint256 newInflator_, uint256 newInterest_) {
         // Scale the borrower inflator to update amount of interest owed by borrowers
         uint256 pendingFactor = PRBMathUD60x18.exp((poolState_.rate * elapsed_) / 365 days);
 
@@ -127,7 +127,7 @@ library PoolCommons {
         uint256 depositAboveHtp = Deposits.prefixSum(deposits_, htpIndex);
 
         if (depositAboveHtp != 0) {
-            uint256 newInterest = Maths.wmul(
+            newInterest_ = Maths.wmul(
                 _lenderInterestMargin(_utilization(deposits_, poolState_.debt, poolState_.collateral)),
                 Maths.wmul(pendingFactor - Maths.WAD, poolState_.debt)
             );
@@ -135,7 +135,7 @@ library PoolCommons {
             Deposits.mult(
                 deposits_,
                 htpIndex,
-                Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD // lender factor
+                Maths.wdiv(newInterest_, depositAboveHtp) + Maths.WAD // lender factor
             );
         }
     }

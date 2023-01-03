@@ -2,6 +2,7 @@
 pragma solidity 0.8.14;
 
 import "@std/Test.sol";
+import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 import { ERC20Pool }        from 'src/erc20/ERC20Pool.sol';
 import { ERC20PoolFactory } from 'src/erc20/ERC20PoolFactory.sol';

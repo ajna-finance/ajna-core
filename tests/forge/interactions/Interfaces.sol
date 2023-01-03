@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 interface IAjnaPool {
     function take(
         address        borrower,
@@ -53,14 +55,6 @@ interface ISwapRouter {
 
 interface INFTMarketPlace {
     function sellNFT(address collection, uint tokenId) external;
-}
-
-interface IERC20 {
-    function approve(address, uint256) external;
-
-    function balanceOf(address) external returns (uint256);
-
-    function transfer(address, uint256) external;
 }
 
 interface IWETH is IERC20 {

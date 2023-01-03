@@ -30,6 +30,11 @@ interface IPositionManager is
     error NoAuth();
 
     /**
+     * @notice User attempted to mint an NFT pointing to a pool that wasn't deployed by an Ajna factory.
+     */
+    error NotAjnaPool();
+
+    /**
      * @notice User failed to remove liquidity in an index from their NFT.
      */
     error RemoveLiquidityFailed();

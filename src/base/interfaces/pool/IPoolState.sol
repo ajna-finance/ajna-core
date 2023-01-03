@@ -82,6 +82,23 @@ interface IPoolState {
         );
 
     /**
+     *  @notice Mapping of burnEventEpoch to {BurnEvent} structs.
+     *  @dev    Reserve auctions correspond to burn events.
+     *  @param  burnEventEpoch_  Id of the current reserve auction.
+     *  @return burnBlock        Block in which a reserve auction started.
+     *  @return totalInterest    Total interest as of the reserve auction.
+     *  @return totalBurned      Total ajna tokens burned as of the reserve auction.
+     */
+    function burnInfo(uint256 burnEventEpoch_) external view returns (uint256, uint256, uint256);
+
+    /**
+     *  @notice Returns the latest burnEventEpoch of reserve auctions.
+     *  @dev    If a reserve auction is active, it refers to the current reserve auction. If no reserve auction is active, it refers to the last reserve auction.
+     *  @return burnEventEpoch Current burnEventEpoch.
+     */
+    function currentBurnEpoch() external view returns (uint256);
+
+    /**
      *  @notice Returns information about the pool EMA (Exponential Moving Average) variables.
      *  @return debtEma   Exponential debt moving average.
      *  @return lupColEma Exponential LUP * pledged collateral moving average.

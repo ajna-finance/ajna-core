@@ -595,6 +595,8 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
 
     uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
 
+    ERC721PoolFactory internal _poolFactory;
+
     constructor() {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"));
 
@@ -606,19 +608,21 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
         vm.makePersistent(_ajna);
         _poolUtils  = new PoolInfoUtils();
         vm.makePersistent(address(_poolUtils));
+        _poolFactory = new ERC721PoolFactory(_ajna);
+        vm.makePersistent(address(_poolFactory));
     }
 
     function _deployCollectionPool() internal returns (ERC721Pool) {
         _startTime = block.timestamp;
         uint256[] memory tokenIds;
-        address contractAddress = new ERC721PoolFactory(_ajna).deployPool(address(_collateral), address(_quote), tokenIds, 0.05 * 10**18);
+        address contractAddress = _poolFactory.deployPool(address(_collateral), address(_quote), tokenIds, 0.05 * 10**18);
         vm.makePersistent(contractAddress);
         return ERC721Pool(contractAddress);
     }
 
     function _deploySubsetPool(uint256[] memory subsetTokenIds_) internal returns (ERC721Pool) {
         _startTime = block.timestamp;
-        return ERC721Pool(new ERC721PoolFactory(_ajna).deployPool(address(_collateral), address(_quote), subsetTokenIds_, 0.05 * 10**18));
+        return ERC721Pool(_poolFactory.deployPool(address(_collateral), address(_quote), subsetTokenIds_, 0.05 * 10**18));
     }
 
     function _mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) internal {

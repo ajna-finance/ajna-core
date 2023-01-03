@@ -6,7 +6,7 @@ import '@clones/Clone.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/utils/Multicall.sol';
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC20 }      from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import './interfaces/IPool.sol';
 
@@ -17,10 +17,10 @@ import '../libraries/Buckets.sol';
 import '../libraries/Deposits.sol';
 import '../libraries/Loans.sol';
 
-import '../libraries/external/Auctions.sol';
-import '../libraries/external/BorrowerActions.sol';
-import '../libraries/external/LenderActions.sol';
-import '../libraries/external/PoolCommons.sol';
+import { Auctions }        from '../libraries/external/Auctions.sol';
+import { BorrowerActions } from '../libraries/external/BorrowerActions.sol';
+import { LenderActions }   from '../libraries/external/LenderActions.sol';
+import { PoolCommons }     from '../libraries/external/PoolCommons.sol';
 
 abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
@@ -51,6 +51,18 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     mapping(uint256 => Bucket) internal buckets;   // deposit index -> bucket
 
+    // tracks ajna token burn events
+    struct BurnEvent {
+        uint256 timestamp;     // time at which the burn event occured
+        uint256 totalInterest; // current pool interest accumulator `PoolCommons.accrueInterest().newInterest`
+        uint256 totalBurned;   // burn amount accumulator
+    }
+    // mapping burnEventEpoch => BurnEvent
+    mapping (uint256 => BurnEvent) internal burnEvents;
+    uint256 latestBurnEventEpoch; // latest burn event epoch
+
+    uint256 totalAjnaBurned; // total ajna burned in the pool
+    uint256 totalInterestEarned; // total interest earned by all lenders in the pool
     uint256 internal poolInitializations;
 
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
@@ -251,6 +263,16 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*********************************/
 
     function startClaimableReserveAuction() external override {
+        // check that at least two weeks have passed since the last reserve auction completed
+        uint256 lastBurnTimestamp = burnEvents[latestBurnEventEpoch].timestamp;
+        if (block.timestamp < lastBurnTimestamp + 2 weeks || block.timestamp - reserveAuction.kicked <= 72 hours) {
+            revert ReserveAuctionTooSoon();
+        }
+
+        // record start of new burn event
+        latestBurnEventEpoch += 1;
+        burnEvents[latestBurnEventEpoch].timestamp = block.timestamp;
+
         uint256 kickerAward = Auctions.startClaimableReserveAuction(
             auctions,
             reserveAuction,
@@ -271,10 +293,20 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             maxAmount_
         );
 
+        // accumulate additional ajna burned
+        totalAjnaBurned += ajnaRequired;
+
+        // record burn event information to enable querying by staking rewards
+        uint256 burnEventEpoch = latestBurnEventEpoch;
+        burnEvents[burnEventEpoch].totalInterest = totalInterestEarned;
+        burnEvents[burnEventEpoch].totalBurned = totalAjnaBurned;
+
+        // burn required number of ajna tokens to take quote from reserves
         IERC20(_getArgAddress(AJNA_ADDRESS)).safeTransferFrom(msg.sender, address(this), ajnaRequired);
 
         IERC20Token(_getArgAddress(AJNA_ADDRESS)).burn(ajnaRequired);
 
+        // transfer quote token to caller
         _transferQuoteToken(msg.sender, amount_);
     }
 
@@ -298,14 +330,18 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             poolState_.isNewInterestAccrued = elapsed != 0;
 
             if (poolState_.isNewInterestAccrued) {
-                poolState_.inflator = PoolCommons.accrueInterest(
+                (uint256 newInflator, uint256 newInterest) = PoolCommons.accrueInterest(
                     deposits,
                     poolState_,
                     Loans.getMax(loans).thresholdPrice,
                     elapsed
                 );
+                poolState_.inflator = newInflator;
                 // After debt owed to lenders has accrued, calculate current debt owed by borrowers
                 poolState_.debt = Maths.wmul(t0Debt, poolState_.inflator);
+
+                // update total interest earned accumulator with the newly accrued interest
+                totalInterestEarned += newInterest;
             }
         }
     }
@@ -393,6 +429,33 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             buckets[index_].bankruptcyTime,
             Deposits.valueAt(deposits, index_),
             Deposits.scale(deposits, index_)
+        );
+    }
+
+    function bucketExchangeRate(
+        uint256 index_
+    ) external view returns (uint256 exchangeRate_) {
+        Bucket storage bucket = buckets[index_];
+
+        exchangeRate_ = Buckets.getExchangeRate(
+            bucket.collateral,
+            bucket.lps,
+            Deposits.valueAt(deposits, index_),
+            _priceAt(index_)
+        );
+    }
+
+    function currentBurnEpoch() external view returns (uint256) {
+        return latestBurnEventEpoch;
+    }
+
+    function burnInfo(uint256 burnEventEpoch_) external view returns (uint256, uint256, uint256) {
+        BurnEvent memory burnEvent = burnEvents[burnEventEpoch_];
+
+        return (
+            burnEvent.timestamp,
+            burnEvent.totalInterest,
+            burnEvent.totalBurned
         );
     }
 

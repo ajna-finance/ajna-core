@@ -16,6 +16,9 @@ import './interfaces/IPositionManager.sol';
 import '../erc20/interfaces/IERC20Pool.sol';
 import '../erc721/interfaces/IERC721Pool.sol';
 
+import '../erc20/ERC20PoolFactory.sol';
+import '../erc721/ERC721PoolFactory.sol';
+
 import './PermitERC721.sol';
 import './PoolHelper.sol';
 
@@ -29,7 +32,13 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     using EnumerableSet for EnumerableSet.UintSet;
     using SafeERC20 for ERC20;
 
-    constructor() PermitERC721("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {}
+    ERC20PoolFactory private immutable erc20PoolFactory;
+    ERC721PoolFactory private immutable erc721PoolFactory;
+
+    constructor(ERC20PoolFactory erc20Factory_, ERC721PoolFactory erc721Factory_) PermitERC721("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {
+        erc20PoolFactory = erc20Factory_;
+        erc721PoolFactory = erc721Factory_;
+    }
 
     /***********************/
     /*** State Variables ***/
@@ -41,11 +50,11 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     /** @dev Mapping of tokenIds to nonce values used for permit */
     mapping(uint256 => uint96) public nonces;
 
-    /** @dev Mapping of tokenIds to pool lps */
+    /** @dev Mapping of tokenIds => bucket index => lpb */
     mapping(uint256 => mapping(uint256 => uint256)) public lps;
 
-    /** @dev Mapping of tokenIds to set of prices associated with a Position */
-    mapping(uint256 => EnumerableSet.UintSet) internal positionPrices;
+    /** @dev Mapping of tokenIds to set of price indexes associated with a Position */
+    mapping(uint256 => EnumerableSet.UintSet) internal positionIndexes;
 
     /** @dev The ID of the next token that will be minted. Skips 0 */
     uint176 private _nextId = 1;
@@ -66,7 +75,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     /************************/
 
     function burn(BurnParams calldata params_) external override payable mayInteract(params_.pool, params_.tokenId) {
-        if (positionPrices[params_.tokenId].length() != 0) revert LiquidityNotRemoved();
+        if (positionIndexes[params_.tokenId].length() != 0) revert LiquidityNotRemoved();
 
         delete nonces[params_.tokenId];
         delete poolKey[params_.tokenId];
@@ -77,7 +86,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
     function memorializePositions(MemorializePositionsParams calldata params_) external override {
         address owner = ownerOf(params_.tokenId);
-        EnumerableSet.UintSet storage positionPrice = positionPrices[params_.tokenId];
+        EnumerableSet.UintSet storage positionIndex = positionIndexes[params_.tokenId];
 
         IPool pool = IPool(poolKey[params_.tokenId]);
         uint256 indexesLength = params_.indexes.length;
@@ -85,7 +94,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         for (uint256 i = 0; i < indexesLength; ) {
             // record price at which a position has added liquidity
             // slither-disable-next-line unused-return
-            positionPrice.add(params_.indexes[i]);
+            positionIndex.add(params_.indexes[i]);
 
             // update PositionManager accounting
             (uint256 lpBalance,) = pool.lenderInfo(params_.indexes[i], owner);
@@ -100,8 +109,11 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         pool.transferLPTokens(owner, address(this), params_.indexes);
     }
 
-    function mint(MintParams calldata params_) external override payable returns (uint256 tokenId_) {
+    function mint(MintParams calldata params_) external override returns (uint256 tokenId_) {
         tokenId_ = _nextId++;
+
+        // check that the params_.pool is a valid Ajna pool
+        if (!_isAjnaPool(params_.pool, params_.poolSubsetHash)) revert NotAjnaPool();
 
         // record which pool the tokenId was minted in
         poolKey[tokenId_] = params_.pool;
@@ -124,11 +136,10 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         );
 
         // update prices set at which a position has liquidity
-        EnumerableSet.UintSet storage positionPrice = positionPrices[params_.tokenId];
-
-        if (!positionPrice.remove(params_.fromIndex)) revert RemoveLiquidityFailed();
+        EnumerableSet.UintSet storage positionIndex = positionIndexes[params_.tokenId];
+        if (!positionIndex.remove(params_.fromIndex)) revert RemoveLiquidityFailed();
         // slither-disable-next-line unused-return
-        positionPrice.add(params_.toIndex);
+        positionIndex.add(params_.toIndex);
 
         // move quote tokens in pool
         emit MoveLiquidity(owner, params_.tokenId);
@@ -141,14 +152,14 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
     function reedemPositions(RedeemPositionsParams calldata params_) external override mayInteract(params_.pool, params_.tokenId) {
         address owner = ownerOf(params_.tokenId);
-        EnumerableSet.UintSet storage positionPrice = positionPrices[params_.tokenId];
+        EnumerableSet.UintSet storage positionIndex = positionIndexes[params_.tokenId];
 
         IPool pool = IPool(poolKey[params_.tokenId]);
         uint256 indexesLength = params_.indexes.length;
 
         for (uint256 i = 0; i < indexesLength; ) {
-            // remove price at which a position has added liquidity
-            if (!positionPrice.remove(params_.indexes[i])) revert RemoveLiquidityFailed();
+            // remove price index at which a position has added liquidity
+            if (!positionIndex.remove(params_.indexes[i])) revert RemoveLiquidityFailed();
 
             // update PositionManager accounting
             uint256 lpAmount = lps[params_.tokenId][params_.indexes[i]];
@@ -174,6 +185,18 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         return uint256(nonces[tokenId_]++);
     }
 
+    /** @dev Used for checking that a provided pool address was deployed by an Ajna factory */
+    function _isAjnaPool(address pool_, bytes32 subsetHash_) internal view returns (bool) {
+        address collateralAddress = IPool(pool_).collateralAddress();
+        address quoteAddress = IPool(pool_).quoteTokenAddress();
+
+        address erc20DeployedPoolAddress = erc20PoolFactory.deployedPools(subsetHash_, collateralAddress, quoteAddress);
+        address erc721DeployedPoolAddress = erc721PoolFactory.deployedPools(subsetHash_, collateralAddress, quoteAddress);
+
+        if (pool_ == erc20DeployedPoolAddress || pool_ == erc721DeployedPoolAddress) return true;
+        return false;
+    }
+
     /**********************/
     /*** View Functions ***/
     /**********************/
@@ -182,8 +205,12 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         return lps[tokenId_][index_];
     }
 
+    function getPositionIndexes(uint256 tokenId_) external view override returns (uint256[] memory) {
+        return positionIndexes[tokenId_].values();
+    }
+
     function isIndexInPosition(uint256 tokenId_, uint256 index_) external override view returns (bool) {
-        return positionPrices[tokenId_].contains(index_);
+        return positionIndexes[tokenId_].contains(index_);
     }
 
     function tokenURI(uint256 tokenId_) public view override(ERC721) returns (string memory) {
@@ -198,7 +225,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             tokenId: tokenId_,
             pool: poolKey[tokenId_],
             owner: ownerOf(tokenId_),
-            indexes: positionPrices[tokenId_].values()
+            indexes: positionIndexes[tokenId_].values()
         });
 
         return PositionNFTSVG.constructTokenURI(params);

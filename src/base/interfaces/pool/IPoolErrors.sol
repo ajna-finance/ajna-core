@@ -128,4 +128,10 @@ interface IPoolErrors {
      *  @notice Lender is attempting to remove quote tokens from a bucket that exists above active auction debt from top-of-book downward.
      */
     error RemoveDepositLockedByAuctionDebt();
+
+    /**
+     * @notice User attempted to kick off a new auction less than 2 weeks since the last auction completed.
+     */
+    error ReserveAuctionTooSoon();
+
 }
