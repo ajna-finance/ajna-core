@@ -52,6 +52,10 @@ abstract contract PoolDeployer {
         return deployedPoolsList;
     }
 
+    /**
+     * @notice Returns the number of deployed pools that have been deployed by a factory.
+     * @return uint256 length of deployedPoolsList array.
+     */
     function getNumberOfDeployedPools() external view returns (uint256) {
         return deployedPoolsList.length;
     }

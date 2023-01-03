@@ -57,7 +57,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         _NFTSubsetTwoPool        = ERC721Pool(_NFTSubsetTwoPoolAddress);
 
         assertEq(_factory.getDeployedPoolsList().length,  3);
-        assertEq(_poolFactory.getNumberOfDeployedPools(), 3);
+        assertEq(_factory.getNumberOfDeployedPools(),     3);
     }
 
     function testInstantiateERC721FactoryWithZeroAddress() external {
