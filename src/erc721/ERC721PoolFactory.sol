@@ -3,13 +3,14 @@
 pragma solidity 0.8.14;
 
 import { ClonesWithImmutableArgs } from '@clones/ClonesWithImmutableArgs.sol';
-import '@openzeppelin/contracts/utils/introspection/IERC165.sol';
+import { IERC165 } from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 
-import '../base/interfaces/IPoolFactory.sol';
-import '../base/PoolDeployer.sol';
+import { IERC721PoolFactory }    from 'src/erc721/interfaces/IERC721PoolFactory.sol';
+import { IERC20Token, PoolType } from 'src/base/interfaces/IPool.sol';
+import { NFTTypes }              from 'src/erc721/interfaces/IERC721NonStandard.sol';
 
-import './interfaces/IERC721PoolFactory.sol';
-import './ERC721Pool.sol';
+import { ERC721Pool }   from 'src/erc721/ERC721Pool.sol';
+import { PoolDeployer } from 'src/base/PoolDeployer.sol';
 
 contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
 
@@ -69,7 +70,9 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
 
         pool_ = address(pool);
 
+        // Track the newly deployed pool
         deployedPools[getNFTSubsetHash(tokenIds_)][collateral_][quote_] = pool_;
+        deployedPoolsList.push(pool_);
 
         emit PoolCreated(pool_);
 

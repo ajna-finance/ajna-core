@@ -3,8 +3,10 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import 'src/erc20/ERC20Pool.sol';
-import 'src/erc20/ERC20PoolFactory.sol';
+import { ERC20Pool }        from 'src/erc20/ERC20Pool.sol';
+import { ERC20PoolFactory } from 'src/erc20/ERC20PoolFactory.sol';
+import { IPoolErrors }      from 'src/base/interfaces/pool/IPoolErrors.sol';
+import { IPoolFactory }     from 'src/base/interfaces/IPoolFactory.sol';
 
 contract ERC20PoolFactoryTest is ERC20HelperContract {
     address immutable poolAddress = 0xeCAF6d240E0AdcaD5FfE4306b7D4301Df130bC02;
@@ -61,10 +63,13 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
                 interestRate: 2 * 10**18
             }
         );
+        
+        // check tracking of deployed pools
+        assertEq(_poolFactory.getDeployedPoolsList().length, 0);
     }
 
     function testDeployERC20PoolMultipleTimes() external {
-        _poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
+        address poolOne = _poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
 
         // should revert if trying to deploy same pool one more time
         _assertDeployMultipleTimesRevert(
@@ -77,7 +82,16 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         );
 
         // should deploy different pool
-        _poolFactory.deployPool(address(_collateral), address(_collateral), 0.05 * 10**18);
+        address poolTwo = _poolFactory.deployPool(address(_collateral), address(_collateral), 0.05 * 10**18);
+        assertFalse(poolOne == poolTwo);
+
+        // check tracking of deployed pools
+        assertEq(_poolFactory.getDeployedPoolsList().length, 2);
+        assertEq(_poolFactory.getNumberOfDeployedPools(),    2);
+        assertEq(_poolFactory.getDeployedPoolsList()[0],     poolOne);
+        assertEq(_poolFactory.deployedPoolsList(0),          poolOne);
+        assertEq(_poolFactory.getDeployedPoolsList()[1],     poolTwo);
+        assertEq(_poolFactory.deployedPoolsList(1),          poolTwo);
     }
 
     function testDeployERC20Pool() external {
@@ -101,6 +115,12 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = pool.inflatorInfo();
         assertEq(poolInflatorSnapshot, 10**18);
         assertEq(lastInflatorUpdate,   _startTime + 333);
+
+        // check tracking of deployed pools
+        assertEq(_poolFactory.getDeployedPoolsList().length, 1);
+        assertEq(_poolFactory.getNumberOfDeployedPools(),    1);
+        assertEq(_poolFactory.getDeployedPoolsList()[0],     poolAddress);
+        assertEq(_poolFactory.deployedPoolsList(0),          poolAddress);
     }
 
     function testDeployERC20CompDaiPool() external {
