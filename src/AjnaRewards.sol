@@ -256,7 +256,7 @@ contract AjnaRewards is IAjnaRewards {
                     continue;
                 }
 
-                vars.newRewards = _calculateNewRewardsToNextEpoch(
+                vars.newRewards = _calculateNewRewards(
                     ajnaPool,
                     vars.interestEarned,
                     vars.nextEpoch,
@@ -324,7 +324,7 @@ contract AjnaRewards is IAjnaRewards {
      *  @param  epoch_          The current burn event epoch to calculate new rewards.
      *  @return newRewards_     New rewards between current and next burn event epoch.
      */
-    function _calculateNewRewardsToNextEpoch(
+    function _calculateNewRewards(
         address ajnaPool_,
         uint256 interestEarned_,
         uint256 nextEpoch_,
@@ -474,110 +474,131 @@ contract AjnaRewards is IAjnaRewards {
         // get the current burn epoch from the given pool
         uint256 curBurnEpoch = IPool(pool_).currentBurnEpoch();
 
-        // if the pool has not yet burned any tokens, return 0 after updating exchange rates
+        // only update exchange rates if the pool has not yet burned any tokens, no reward
         if (curBurnEpoch == 0) {
             for (uint256 i = 0; i < indexes_.length; ) {
 
-                uint256 bucketIndex      = indexes_[i];
-                uint256 burnExchangeRate = poolBucketBurnExchangeRates[pool_][bucketIndex][curBurnEpoch];
+                _updateBucketExchangeRate(
+                    pool_,
+                    indexes_[i],
+                    curBurnEpoch
+                );
 
-                // check bucket hasn't already been updated
-                // if it has, skip to the next bucket
-                if (burnExchangeRate != 0) {
+                // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
+                unchecked { ++i; }
+            }
+        }
+
+        else {
+            // retrieve accumulator values used to calculate rewards accrued
+            (
+                uint256 curBurnTime,
+                uint256 totalBurned,
+                uint256 totalInterestEarned
+            ) = _getPoolAccumulators(pool_, curBurnEpoch, curBurnEpoch - 1);
+
+            if (block.timestamp <= curBurnTime + UPDATE_PERIOD) {
+
+                // update exchange rates and calculate rewards if tokens were burned and within allowed time period
+                for (uint256 i = 0; i < indexes_.length; ) {
+
+                    // calculate rewards earned for updating a bucket
+                    updatedRewards_ += _updateBucketExchangeRateAndCalculateRewards(
+                        pool_,
+                        indexes_[i],
+                        curBurnEpoch,
+                        totalBurned,
+                        totalInterestEarned
+                    );
+
                     // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
                     unchecked { ++i; }
-                    continue;
                 }
 
-                uint256 curBucketExchangeRate = IPool(pool_).bucketExchangeRate(bucketIndex);
+                uint256 rewardsCap     = Maths.wmul(UPDATE_CAP, totalBurned);
+                uint256 rewardsClaimed = burnEventUpdateRewardsClaimed[curBurnEpoch];
 
-                // record a buckets exchange rate
-                poolBucketBurnExchangeRates[pool_][bucketIndex][curBurnEpoch] = curBucketExchangeRate;
+                // update total tokens claimed for updating exchange rates tracker
+                if (rewardsClaimed + updatedRewards_ >= rewardsCap) {
+                    // if update reward is greater than cap, set to remaining difference
+                    updatedRewards_ = rewardsCap - rewardsClaimed;
+                }
 
-                // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
-                unchecked { ++i; }
+                // accumulate the full amount of additional rewards
+                burnEventUpdateRewardsClaimed[curBurnEpoch] += updatedRewards_;
             }
-
-            emit UpdateExchangeRates(msg.sender, pool_, indexes_, 0);
-
-            // no rewards are available to claim before reserve auctions start
-            return 0;
         }
 
-        // retrieve accumulator values used to calculate rewards accrued
-        (
-            uint256 curBurnTime,
-            uint256 totalBurned,
-            uint256 totalInterestEarned
-        ) = _getPoolAccumulators(pool_, curBurnEpoch, curBurnEpoch - 1);
+        // emit event with the list of indexes updated
+        emit UpdateExchangeRates(msg.sender, pool_, indexes_, updatedRewards_);
+    }
 
-        // check that the update is being performed within the allowed time period
-        // if it isn't, return 0
-        if (block.timestamp > curBurnTime + UPDATE_PERIOD) {
-            return 0;
-        }
+    /**
+     *  @notice Update the exchange rate of a specific bucket.
+     *  @param  pool_        Address of the pool whose exchange rates are being updated.
+     *  @param  bucketIndex_ Bucket index to update exchange rate.
+     *  @param  burnEpoch_   Current burn epoch of the pool.
+     */
+    function _updateBucketExchangeRate(
+        address pool_,
+        uint256 bucketIndex_,
+        uint256 burnEpoch_
+    ) internal {
+        uint256 burnExchangeRate = poolBucketBurnExchangeRates[pool_][bucketIndex_][burnEpoch_];
 
-        for (uint256 i = 0; i < indexes_.length; ) {
-
-            uint256 bucketIndex      = indexes_[i];
-            uint256 burnExchangeRate = poolBucketBurnExchangeRates[pool_][bucketIndex][curBurnEpoch];
-
-            // check bucket hasn't already been updated
-            // if it has, skip to the next bucket
-            if (burnExchangeRate != 0) {
-                // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
-                unchecked { ++i; }
-                continue;
-            }
-
-            uint256 curBucketExchangeRate = IPool(pool_).bucketExchangeRate(bucketIndex);
+        // update bucket exchange rate at epoch only if it wasn't previously updated
+        if (burnExchangeRate == 0) {
+            uint256 curBucketExchangeRate = IPool(pool_).bucketExchangeRate(bucketIndex_);
 
             // record a buckets exchange rate
-            poolBucketBurnExchangeRates[pool_][bucketIndex][curBurnEpoch] = curBucketExchangeRate;
+            poolBucketBurnExchangeRates[pool_][bucketIndex_][burnEpoch_] = curBucketExchangeRate;
+        }
+    }
+
+    /**
+     *  @notice Update the exchange rate of a specific bucket and calculate rewards based on prev exchange rate.
+     *  @param  pool_           Address of the pool whose exchange rates are being updated.
+     *  @param  bucketIndex_    Bucket index to update exchange rate.
+     *  @param  burnEpoch_      Current burn epoch of the pool.
+     *  @param  totalBurned_    Total Ajna tokens burned in pool.
+     *  @param  interestEarned_ Total interest rate earned in pool.
+     */
+    function _updateBucketExchangeRateAndCalculateRewards(
+        address pool_,
+        uint256 bucketIndex_,
+        uint256 burnEpoch_,
+        uint256 totalBurned_,
+        uint256 interestEarned_
+    ) internal returns (uint256 rewards_) {
+        uint256 burnExchangeRate = poolBucketBurnExchangeRates[pool_][bucketIndex_][burnEpoch_];
+
+        // update bucket exchange rate at epoch only if it wasn't previously updated
+        if (burnExchangeRate == 0) {
+            uint256 curBucketExchangeRate = IPool(pool_).bucketExchangeRate(bucketIndex_);
+
+            // record a buckets exchange rate
+            poolBucketBurnExchangeRates[pool_][bucketIndex_][burnEpoch_] = curBucketExchangeRate;
 
             // retrieve the exchange rate of the previous burn event
-            uint256 prevBucketExchangeRate = poolBucketBurnExchangeRates[pool_][bucketIndex][curBurnEpoch - 1];
+            uint256 prevBucketExchangeRate = poolBucketBurnExchangeRates[pool_][bucketIndex_][burnEpoch_ - 1];
 
             // skip reward calculation for a bucket if the previous update was missed
             // prevents excess rewards from being provided from using a 0 value as an input to the interestFactor calculation below.
-            if (prevBucketExchangeRate == 0) {
-                // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
-                unchecked { ++i; }
-                continue;
+            if (prevBucketExchangeRate != 0) {
+                // retrieve current deposit at previous bucket
+                (, , , uint256 bucketDeposit, ) = IPool(pool_).bucketInfo(bucketIndex_);
+
+                uint256 burnFactor     = Maths.wmul(totalBurned_, bucketDeposit);
+
+                uint256 interestFactor = Maths.wdiv(
+                    Maths.WAD - Maths.wdiv(prevBucketExchangeRate, curBucketExchangeRate),
+                    interestEarned_
+                );
+
+                // calculate rewards earned for updating a bucket
+                rewards_ += Maths.wmul(UPDATE_CLAIM_REWARD, Maths.wmul(burnFactor, interestFactor));
             }
-
-            // retrieve current deposit in a bucket
-            (, , , uint256 bucketDeposit, ) = IPool(pool_).bucketInfo(bucketIndex);
-
-            uint256 burnFactor     = Maths.wmul(totalBurned, bucketDeposit);
-
-            uint256 interestFactor = Maths.wdiv(
-                Maths.WAD - Maths.wdiv(prevBucketExchangeRate, curBucketExchangeRate),
-                totalInterestEarned
-            );
-
-            // calculate rewards earned for updating a bucket
-            updatedRewards_ += Maths.wmul(UPDATE_CLAIM_REWARD, Maths.wmul(burnFactor, interestFactor));
-
-            // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
-            unchecked { ++i; }
         }
-
-        uint256 rewardsClaimed = burnEventUpdateRewardsClaimed[curBurnEpoch];
-        uint256 rewardsCap     = Maths.wmul(UPDATE_CAP, totalBurned);
-
-        // update total tokens claimed for updating exchange rates tracker
-        if (rewardsClaimed + updatedRewards_ >= rewardsCap) {
-            // if update reward is greater than cap, set to remaining difference
-            updatedRewards_ = rewardsCap - rewardsClaimed;
-        }
-
-        // accumulate the full amount of additional rewards
-        burnEventUpdateRewardsClaimed[curBurnEpoch] += updatedRewards_;
-
-        // emit event with the list of indexes updated
-        // some of the indexes may have been previously updated
-        emit UpdateExchangeRates(msg.sender, pool_, indexes_, updatedRewards_);
     }
 
     /*******************************/
