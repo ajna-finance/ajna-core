@@ -453,11 +453,15 @@ contract AjnaRewards is IAjnaRewards {
             uint256 totalBurnedAtBlock
         ) = IPool(pool_).burnInfo(lastBurnEventEpoch_);
 
+        uint256 totalBurned   = totalBurnedLatest   != 0 ? totalBurnedLatest   - totalBurnedAtBlock   : totalBurnedAtBlock;
+        uint256 totalInterest = totalInterestLatest != 0 ? totalInterestLatest - totalInterestAtBlock : totalInterestAtBlock;
+
         return (
             currentBurnTime,
-            totalBurnedLatest - totalBurnedAtBlock,
-            totalInterestLatest - totalInterestAtBlock
+            totalBurned,
+            totalInterest
         );
+
     }
 
     /**

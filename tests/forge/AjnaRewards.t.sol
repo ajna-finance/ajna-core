@@ -139,6 +139,9 @@ contract AjnaRewardsTest is DSTestPlus {
     ) internal {
 
         changePrank(minter);
+        // TODO: Add update exchange rate emits
+        // vm.expectEmit(true, true, true, true);
+        // emit UpdateExchangeRates(_minterOne, address(_poolOne), depositIndexes, 0);
         vm.expectEmit(true, true, true, true);
         emit ClaimRewards(minter, pool,  tokenId, claimedArray, reward);
         vm.expectEmit(true, true, true, true);
@@ -646,12 +649,29 @@ contract AjnaRewardsTest is DSTestPlus {
         _poolOne.takeReserves(curClaimableReservesRemaining);
 
         // recorder updates the change in exchange rates in the first index
-        changePrank(_updater);
-        assertEq(_ajnaToken.balanceOf(_updater), 0);
-        vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(_updater, address(_poolOne), depositIndex1, .007104599616026695 * 1e18);
-        _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndex1);
+        _updateExchangeRates({
+            updater:        _updater,
+            pool:           address(_poolOne),
+            depositIndexes: depositIndex1,
+            reward:         0.007104599616026695 * 1e18
+        });
         assertEq(_ajnaToken.balanceOf(_updater), .007104599616026695 * 1e18);
+
+        _assertBurn({
+            pool:      address(_poolOne),
+            epoch:     0,
+            timestamp: 0,
+            burned:    0,
+            interest:  0
+        });
+
+        _assertBurn({
+            pool:      address(_poolOne),
+            epoch:     1,
+            timestamp: block.timestamp - 24 hours,
+            burned:    0.284183984708078027 * 1e18,
+            interest:  0.000048563623809373 * 1e18
+        });
 
         // skip more time to allow more interest to accrue
         skip(10 days);
@@ -662,28 +682,27 @@ contract AjnaRewardsTest is DSTestPlus {
         _poolOne.repayDebt(borrower1, debt, 0);
 
         // recorder updates the change in exchange rates in the second index
-        changePrank(_updater2);
-        assertEq(_ajnaToken.balanceOf(_updater2), 0);
-        vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(_updater2, address(_poolOne), depositIndex2, .021313798854781108 * 1e18);
-        _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndex2);
+        _updateExchangeRates({
+            updater:        _updater2,
+            pool:           address(_poolOne),
+            depositIndexes: depositIndex2,
+            reward:         0.021313798854781108 * 1e18
+        });
         assertEq(_ajnaToken.balanceOf(_updater2), .021313798854781108 * 1e18);
 
         /*******************************************/
         /*** Lender Withdraws And Claims Rewards ***/
         /*******************************************/
         
+        
         // _minterOne withdraws and claims rewards, rewards should be set to the difference between total claimed and cap
-        changePrank(_minterOne);
-        vm.expectEmit(true, true, true, true);
-        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 0), .227347187766462422 * 1e18);
-        vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(_minterOne, address(_poolOne), depositIndexes, 0);
-        vm.expectEmit(true, true, true, true);
-        emit UnstakeToken(_minterOne, address(_poolOne), tokenIdOne);
-        _ajnaRewards.unstakeToken(tokenIdOne);
-        assertEq(_ajnaToken.balanceOf(_minterOne), .227347187766462422 * 1e18);
-
+        _unStakeToken({
+            minter:        _minterOne,
+            pool:           address(_poolOne),
+            tokenId:        tokenIdOne,
+            claimedArray:   _epochsClaimedArray(1, 0),
+            reward:         0.227347187766462422 * 1e18
+        });
         // TODO: check reward amount vs expected from burn
     }
 
