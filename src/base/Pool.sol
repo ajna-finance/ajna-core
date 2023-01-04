@@ -42,7 +42,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /***********************/
 
     AuctionsState       internal auctions;
-    BurnState           internal burnState;
     DepositsState       internal deposits;
     LoansState          internal loans;
     InflatorState       internal inflatorState;
@@ -254,8 +253,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function startClaimableReserveAuction() external override {
         // check that at least two weeks have passed since the last reserve auction completed
 
-        uint256 latestBurnEpoch   = burnState.latestEventEpoch;
-        uint256 lastBurnTimestamp = burnState.events[latestBurnEpoch].timestamp;
+        uint256 latestBurnEpoch   = reserveAuction.latestBurnEventEpoch;
+        uint256 lastBurnTimestamp = reserveAuction.burnEvents[latestBurnEpoch].timestamp;
 
         if (block.timestamp < lastBurnTimestamp + 2 weeks || block.timestamp - reserveAuction.kicked <= 72 hours) {
             revert ReserveAuctionTooSoon();
@@ -275,8 +274,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         // record start of new burn event
         latestBurnEpoch += 1;
 
-        burnState.latestEventEpoch = latestBurnEpoch;
-        burnState.events[latestBurnEpoch].timestamp = block.timestamp;
+        reserveAuction.latestBurnEventEpoch = latestBurnEpoch;
+        reserveAuction.burnEvents[latestBurnEpoch].timestamp = block.timestamp;
 
         _transferQuoteToken(msg.sender, kickerAward);
     }
@@ -288,16 +287,16 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             maxAmount_
         );
 
-        uint256 totalBurned = burnState.totalAjnaBurned + ajnaRequired;
+        uint256 totalBurned = reserveAuction.totalAjnaBurned + ajnaRequired;
         
         // accumulate additional ajna burned
-        burnState.totalAjnaBurned = totalBurned;
+        reserveAuction.totalAjnaBurned = totalBurned;
 
-        uint256 burnEventEpoch = burnState.latestEventEpoch;
+        uint256 burnEventEpoch = reserveAuction.latestBurnEventEpoch;
 
         // record burn event information to enable querying by staking rewards
-        BurnEvent storage burnEvent = burnState.events[burnEventEpoch];
-        burnEvent.totalInterest = burnState.totalInterestEarned;
+        BurnEvent storage burnEvent = reserveAuction.burnEvents[burnEventEpoch];
+        burnEvent.totalInterest = reserveAuction.totalInterestEarned;
         burnEvent.totalBurned   = totalBurned;
 
         // burn required number of ajna tokens to take quote from reserves
@@ -340,7 +339,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 poolState_.debt = Maths.wmul(t0Debt, poolState_.inflator);
 
                 // update total interest earned accumulator with the newly accrued interest
-                burnState.totalInterestEarned += newInterest;
+                reserveAuction.totalInterestEarned += newInterest;
             }
         }
     }
@@ -445,11 +444,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     function currentBurnEpoch() external view returns (uint256) {
-        return burnState.latestEventEpoch;
+        return reserveAuction.latestBurnEventEpoch;
     }
 
     function burnInfo(uint256 burnEventEpoch_) external view returns (uint256, uint256, uint256) {
-        BurnEvent memory burnEvent = burnState.events[burnEventEpoch_];
+        BurnEvent memory burnEvent = reserveAuction.burnEvents[burnEventEpoch_];
 
         return (
             burnEvent.timestamp,

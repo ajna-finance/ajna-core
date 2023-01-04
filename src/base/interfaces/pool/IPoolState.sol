@@ -242,11 +242,6 @@ struct InterestState {
     uint256 lupColEma;          // [WAD]
 }
 
-struct ReserveAuctionState {
-    uint256 kicked;    // Time a Claimable Reserve Auction was last kicked.
-    uint256 unclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
-}
-
 struct PoolBalancesState {
     uint256 pledgedCollateral; // [WAD]
     uint256 t0DebtInAuction;   // Total debt in auction used to restrict LPB holder from withdrawing [WAD]
@@ -330,13 +325,15 @@ struct Kicker {
     uint256 locked;    // kicker's balance of tokens locked in auction bonds
 }
 
-/*** Burn Events State ***/
+/*** Reserve Auction State ***/
 
-struct BurnState {
-    mapping (uint256 => BurnEvent) events; // mapping burnEventEpoch => BurnEvent
-    uint256 latestEventEpoch;              // latest burn event epoch
-    uint256 totalAjnaBurned;               // total ajna burned in the pool
-    uint256 totalInterestEarned;           // total interest earned by all lenders in the pool
+struct ReserveAuctionState {
+    uint256 kicked;                            // Time a Claimable Reserve Auction was last kicked.
+    uint256 unclaimed;                         // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
+    uint256 latestBurnEventEpoch;              // Latest burn event epoch.
+    uint256 totalAjnaBurned;                   // Total ajna burned in the pool.
+    uint256 totalInterestEarned;               // Total interest earned by all lenders in the pool.
+    mapping (uint256 => BurnEvent) burnEvents; // Mapping burnEventEpoch => BurnEvent.
 }
 
 struct BurnEvent {
