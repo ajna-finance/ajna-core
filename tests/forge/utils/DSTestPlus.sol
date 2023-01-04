@@ -505,8 +505,8 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(rate,                exchangeRate);
 
         _validateBucketLp(index, lpBalance);
+        _validateBucketQuantities(index);
     }
-
 
     function _validateBucketLp(
         uint256 index,
@@ -530,6 +530,24 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         }
 
         assertEq(lenderLps, lpBalance);
+    }
+
+    function _validateBucketQuantities(
+        uint256 index
+    ) internal {
+        (
+            ,
+            uint256 curDeposit,
+            uint256 availableCollateral,
+            uint256 lpAccumulator,
+            ,
+        ) = _poolUtils.bucketInfo(address(_pool), index);
+        if (lpAccumulator == 0) {
+            assertEq(curDeposit, 0);
+            assertEq(availableCollateral, 0);
+        } else {
+            assertTrue(curDeposit != 0 || availableCollateral != 0);
+        }
     }
 
     function _assertBorrower(
