@@ -2143,6 +2143,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 transferAmount: 98.533942419792216457 * 1e18
             }
         );
+
         _assertAuction(
             AuctionParams({
                 borrower:          _borrower2,
@@ -2194,7 +2195,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 borrower:        _borrower2,
                 maxCollateral:   1_001 * 1e18,
                 bondChange:      52248916226089081600,
-                givenAmount:     522.4891622608908160000 * 1e18,
+                givenAmount:     5_224.891622608908160000 * 1e18,
                 collateralTaken: 1_000 * 1e18,
                 isReward:        true
             }
@@ -2218,7 +2219,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             collateralToPull: 0,
             newLup:           9818751856078723036
             });
-        
+
         _assertBorrower(
             {
                 borrower:                  _borrower2,
