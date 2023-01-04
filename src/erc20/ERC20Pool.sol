@@ -66,6 +66,9 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     ) external {
         PoolState memory poolState = _accruePoolInterest();
 
+        // ensure the borrower is not credited with a fractional amount of collateral smaller than the token scale
+        collateralToPledge_ = _getTokenScaledAmount(collateralToPledge_, _collateralDust(0));
+
         DrawDebtResult memory result = BorrowerActions.drawDebt(
             auctions,
             buckets,

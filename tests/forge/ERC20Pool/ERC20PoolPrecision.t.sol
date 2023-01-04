@@ -77,6 +77,10 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         skip(1 days); // to avoid deposit time 0 equals bucket bankruptcy time
     }
 
+    /********************/
+    /*** Test Methods ***/
+    /********************/
+
     function testAddRemoveQuotePrecision(uint8 collateralPrecisionDecimals_, uint8 quotePrecisionDecimals_) external virtual tearDown {
         // setup fuzzy bounds and initialize the pool
         uint256 boundColPrecision = bound(uint256(collateralPrecisionDecimals_), 1, 18);
@@ -699,10 +703,10 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint16  bucketId_
     ) external tearDown {
         // setup fuzzy bounds and initialize the pool
-        uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 18, 18);
-        uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      1,  18);
-        uint256 bucketId            = bound(uint256(bucketId_),                    1,  7388);
-        init(boundColPrecision, boundQuotePrecision);
+        uint256 collateralDecimals = bound(uint256(collateralPrecisionDecimals_), 6, 18);  // TODO: lower bound 1, adjusting collateralization accordingly
+        uint256 quoteDecimals      = bound(uint256(quotePrecisionDecimals_),      1, 18);
+        uint256 bucketId           = bound(uint256(bucketId_),                    1, 7388);
+        init(collateralDecimals, quoteDecimals);
 
         _addInitialLiquidity({
             from:   _lender,
@@ -712,21 +716,19 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
         // 12 borrowers will take most of the liquidity; divide by 13 to leave room for origination fee
         uint256 debtToDraw         = Maths.wdiv(_lenderDepositNormalized, 13 * 1e18);
-        uint256 collateralToPledge = Maths.wmul(Maths.wdiv(debtToDraw, _priceAt(bucketId)), 1.01 * 1e18);
+        uint256 collateralToPledge = Maths.wmul(Maths.wdiv(debtToDraw, _priceAt(bucketId)), 1.1 * 1e18);
         address borrower;
         for (uint i=0; i<12; ++i) {
             borrower = makeAddr(string(abi.encodePacked("anonBorrower", i)));
 
             // mint and approve collateral tokens
-            changePrank(borrower);
-            deal(address(_collateral), borrower, collateralToPledge);  // TODO: denormalized for non-18-decimal collateral
-            _collateral.approve(address(_pool), collateralToPledge);
+            _mintAndApproveCollateral(borrower, collateralDecimals, collateralToPledge);
             // approve quote token to facilitate teardown
             _quote.approve(address(_pool), _lenderDepositDenormalized);
 
             // ensure illegitimate amounts revert
             if (i < 10) {
-                if (boundQuotePrecision < 18) {
+                if (quoteDecimals < 18) {
                     _assertBorrowDustRevert({
                         from:       _borrower,
                         amount:     1,
@@ -785,9 +787,50 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         assertEq(IERC20Pool(address(_pool)).collateralDust(7388), 1000000000000);
     }
 
-    function _encumberedCollateral(uint256 debt_, uint256 price_) internal pure returns (uint256 encumberance_) {
-        encumberance_ =  price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
+    function testDrawDebtPrecision(
+        uint8   collateralPrecisionDecimals_,
+        uint8   quotePrecisionDecimals_,
+        uint16  bucketId_
+    ) external tearDown {
+        // setup fuzzy bounds and initialize the pool
+        uint256 collateralDecimals = bound(uint256(collateralPrecisionDecimals_), 6, 18); // TODO: handle 1 with decimal-aware collateralization
+        uint256 quoteDecimals      = bound(uint256(quotePrecisionDecimals_),      1, 18);
+        uint256 bucketId           = bound(uint256(bucketId_),                    3000, 4000);
+        init(collateralDecimals, quoteDecimals);
+        uint256 collateralScale = 10 ** (18 - collateralDecimals);
+
+        // add liquidity to a single bucket
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: _lenderDepositNormalized,
+            index:  bucketId
+        });
+
+        // calculate amount of debt to draw to bring pool to ~50% utilization
+        uint256 debtToDraw         = Maths.wdiv(_lenderDepositNormalized, 2 * 1e18);
+        // determine amount of collateral required, with higher precision than the token
+        uint256 collateralToPledge = Maths.wmul(Maths.wdiv(debtToDraw, _priceAt(bucketId)), 1.1 * 1e18);
+        _mintAndApproveCollateral(_borrower, collateralDecimals, collateralToPledge);
+
+        // validate that dusty amount was not credited to the borrower
+        _drawDebt({
+            from:               _borrower, 
+            borrower:           _borrower,
+            amountToBorrow:     debtToDraw,
+            limitIndex:         bucketId,
+            collateralToPledge: collateralToPledge,
+            newLup:             _priceAt(bucketId)
+        });
+        (uint256 debtWithOrigFee, uint256 pledgedCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+        assertGt(debtWithOrigFee, debtToDraw);
+        // round the collateral amount to token precision
+        uint256 collateralRounded  = (collateralToPledge / collateralScale) * collateralScale;
+        assertEq(pledgedCollateral, collateralRounded);
     }
+
+    /**********************/
+    /*** Helper Methods ***/
+    /**********************/
 
     function _addCollateralWithoutCheckingLP(
         address from,
@@ -807,5 +850,20 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         bucketsUsed.add(index);
 
         return ERC20Pool(address(_pool)).addCollateral(amount, index);
+    }
+
+    function _encumberedCollateral(uint256 debt_, uint256 price_) internal pure returns (uint256 encumberance_) {
+        encumberance_ =  price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
+    }
+
+    function _mintAndApproveCollateral(
+        address recipient,
+        uint256 collateralDecimals,
+        uint256 normalizedAmount
+    ) internal {
+        changePrank(recipient);
+        uint256 denormalizationFactor = 10 ** (18 - collateralDecimals);
+        _collateral.approve(address(_pool), normalizedAmount / denormalizationFactor);
+        deal(address(_collateral), recipient, normalizedAmount / denormalizationFactor);
     }
 }

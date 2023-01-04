@@ -209,17 +209,18 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         uint256 collateralToPledge,
         uint256 newLup
     ) internal {
+        uint256 collateralScale = ERC20Pool(address(_pool)).collateralScale();
         changePrank(from);
 
         if (newLup != 0) {
             vm.expectEmit(true, true, false, true);
-            emit DrawDebt(from, amountToBorrow, collateralToPledge, newLup);
+            emit DrawDebt(from, amountToBorrow, (collateralToPledge / collateralScale) * collateralScale, newLup);
         }
 
         // pledge collateral
         if (collateralToPledge != 0) {
             vm.expectEmit(true, true, false, true);
-            emit Transfer(from, address(_pool), collateralToPledge / ERC20Pool(address(_pool)).collateralScale());
+            emit Transfer(from, address(_pool), collateralToPledge / collateralScale);
         }
 
         // borrow quote
