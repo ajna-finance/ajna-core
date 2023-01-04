@@ -248,7 +248,7 @@ contract AjnaRewards is IAjnaRewards {
                     vars.bucketLPs
                 );
 
-                // calculate and accumulate rewards if interested earned
+                // calculate and accumulate rewards if interest earned
                 if (vars.interestEarned != 0) {
 
                     vars.newRewards = _calculateNewRewards(
