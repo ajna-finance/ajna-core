@@ -136,7 +136,10 @@ contract AjnaRewards is IAjnaRewards {
 
         uint256 curBurnEpoch = IPool(ajnaPool).currentBurnEpoch();
 
-        // record the burnId at which the staking occurs
+        // record the staking epoch
+        stake.stakingEpoch = uint96(curBurnEpoch);
+
+        // initialize last time interaction at staking epoch
         stake.lastInteractionBurnEpoch = uint96(curBurnEpoch);
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
@@ -230,6 +233,7 @@ contract AjnaRewards is IAjnaRewards {
 
         address ajnaPool      = stakes[tokenId_].ajnaPool;
         uint256 lastBurnEpoch = stakes[tokenId_].lastInteractionBurnEpoch;
+        uint256 stakingEpoch  = stakes[tokenId_].stakingEpoch;
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
 
@@ -250,7 +254,7 @@ contract AjnaRewards is IAjnaRewards {
 
                 // for the first epoch use the bucket rate at the time of staking
                 // for all the other epochs use saved bucket rates
-                if (vars.epoch != lastBurnEpoch) {
+                if (vars.epoch != stakingEpoch) {
                     vars.bucketRate = poolBucketBurnExchangeRates[ajnaPool][vars.bucketIndex][vars.epoch];
                 }
 
