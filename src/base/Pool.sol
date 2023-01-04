@@ -447,12 +447,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function bucketInfo(
         uint256 index_
     ) external view override returns (uint256, uint256, uint256, uint256, uint256) {
+        uint256 scale = Deposits.scale(deposits, index_);
         return (
             buckets[index_].lps,
             buckets[index_].collateral,
             buckets[index_].bankruptcyTime,
-            Deposits.valueAt(deposits, index_),
-            Deposits.scale(deposits, index_)
+            Maths.wmul(scale, Deposits.unscaledValueAt(deposits, index_)),
+            scale
         );
     }
 
