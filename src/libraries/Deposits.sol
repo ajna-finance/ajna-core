@@ -2,9 +2,9 @@
 
 pragma solidity 0.8.14;
 
-import { DepositsState } from '../base/interfaces/IPool.sol';
+import { DepositsState } from 'src/base/interfaces/IPool.sol';
 
-import '../base/PoolHelper.sol';
+import 'src/base/PoolHelper.sol';
 
 library Deposits {
 

@@ -5,9 +5,9 @@ pragma solidity 0.8.14;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import './interfaces/IERC20Pool.sol';
-import './interfaces/IERC20Taker.sol';
-import '../base/FlashloanablePool.sol';
+import 'src/erc20/interfaces/IERC20Pool.sol';
+import 'src/erc20/interfaces/IERC20Taker.sol';
+import 'src/base/FlashloanablePool.sol';
 
 contract ERC20Pool is IERC20Pool, FlashloanablePool {
     using SafeERC20 for IERC20;

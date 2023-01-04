@@ -2,11 +2,11 @@
 
 pragma solidity 0.8.14;
 
-import { MoveQuoteParams, RemoveQuoteParams, PoolState } from '../../base/interfaces/IPool.sol';
+import { MoveQuoteParams, RemoveQuoteParams, PoolState } from 'src/base/interfaces/IPool.sol';
 
-import '../Deposits.sol';
-import '../Buckets.sol';
-import '../../base/PoolHelper.sol';
+import 'src/libraries/Deposits.sol';
+import 'src/libraries/Buckets.sol';
+import 'src/base/PoolHelper.sol';
 
 /**
     @notice External library containing logic for common lender actions.

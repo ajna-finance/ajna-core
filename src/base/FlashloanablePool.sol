@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.14;
 
-import '../base/Pool.sol';
+import 'src/base/Pool.sol';
 
 abstract contract FlashloanablePool is Pool {
     function flashLoan(

@@ -2,10 +2,10 @@
 
 pragma solidity 0.8.14;
 
-import './interfaces/IERC721Pool.sol';
-import './interfaces/IERC721Taker.sol';
-import '../base/FlashloanablePool.sol';
-import './interfaces/IERC721NonStandard.sol';
+import 'src/erc721/interfaces/IERC721Pool.sol';
+import 'src/erc721/interfaces/IERC721Taker.sol';
+import 'src/base/FlashloanablePool.sol';
+import 'src/erc721/interfaces/IERC721NonStandard.sol';
 
 contract ERC721Pool is IERC721Pool, FlashloanablePool {
 

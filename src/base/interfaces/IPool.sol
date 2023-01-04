@@ -2,16 +2,16 @@
 
 pragma solidity 0.8.14;
 
-import './pool/IPoolLenderActions.sol';
-import './pool/IPoolLiquidationActions.sol';
-import './pool/IPoolReserveAuctionActions.sol';
-import './pool/IPoolImmutables.sol';
-import './pool/IPoolState.sol';
-import './pool/IPoolDerivedState.sol';
-import './pool/IPoolEvents.sol';
-import './pool/IPoolErrors.sol';
-import './pool/IPoolInternals.sol';
-import './IERC3156FlashLender.sol';
+import 'src/base/interfaces/pool/IPoolLenderActions.sol';
+import 'src/base/interfaces/pool/IPoolLiquidationActions.sol';
+import 'src/base/interfaces/pool/IPoolReserveAuctionActions.sol';
+import 'src/base/interfaces/pool/IPoolImmutables.sol';
+import 'src/base/interfaces/pool/IPoolState.sol';
+import 'src/base/interfaces/pool/IPoolDerivedState.sol';
+import 'src/base/interfaces/pool/IPoolEvents.sol';
+import 'src/base/interfaces/pool/IPoolErrors.sol';
+import 'src/base/interfaces/pool/IPoolInternals.sol';
+import 'src/base/interfaces/IERC3156FlashLender.sol';
 
 /**
  * @title Base Pool

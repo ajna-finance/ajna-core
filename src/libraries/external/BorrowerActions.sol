@@ -8,14 +8,14 @@ import {
     AuctionsState,
     DrawDebtResult,
     RepayDebtResult
-} from '../../base/interfaces/IPool.sol';
+} from 'src/base/interfaces/IPool.sol';
 
-import { _revertOnMinDebt } from '../../base/RevertsHelper.sol';
+import { _revertOnMinDebt } from 'src/base/RevertsHelper.sol';
 
-import './Auctions.sol';
-import '../Buckets.sol';
-import '../Deposits.sol';
-import '../Loans.sol';
+import 'src/libraries/external/Auctions.sol';
+import 'src/libraries/Buckets.sol';
+import 'src/libraries/Deposits.sol';
+import 'src/libraries/Loans.sol';
 
 /**
     @notice External library containing logic for common borrower actions.

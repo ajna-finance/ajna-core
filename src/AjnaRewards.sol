@@ -6,15 +6,15 @@ import { IERC20 }    from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 
-import { IPool } from './base/interfaces/IPool.sol';
-import { IPositionManager } from './base/interfaces/IPositionManager.sol';
-import { PositionManager } from './base/PositionManager.sol';
+import { IPool } from 'src/base/interfaces/IPool.sol';
+import { IPositionManager } from 'src/base/interfaces/IPositionManager.sol';
+import { PositionManager } from 'src/base/PositionManager.sol';
 
-import './libraries/Maths.sol';
+import 'src/libraries/Maths.sol';
 
-import { PoolCommons } from './libraries/external/PoolCommons.sol';
+import { PoolCommons } from 'src/libraries/external/PoolCommons.sol';
 
-import './IAjnaRewards.sol';
+import 'src/IAjnaRewards.sol';
 
 contract AjnaRewards is IAjnaRewards {
 

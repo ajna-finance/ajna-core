@@ -8,19 +8,20 @@ import '@openzeppelin/contracts/utils/Multicall.sol';
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 }      from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import './interfaces/IPool.sol';
+import 'src/base/interfaces/IPool.sol';
 
-import './PoolHelper.sol';
-import './RevertsHelper.sol';
+import { _priceAt } from 'src/base/PoolHelper.sol';
+import { _revertIfAuctionDebtLocked, _revertIfAuctionClearable } from 'src/base/RevertsHelper.sol';
 
-import '../libraries/Buckets.sol';
-import '../libraries/Deposits.sol';
-import '../libraries/Loans.sol';
+import { Buckets } from 'src/libraries/Buckets.sol';
+import { Deposits } from 'src/libraries/Deposits.sol';
+import { Loans } from 'src/libraries/Loans.sol';
+import { Maths } from 'src/libraries/Maths.sol';
 
-import { Auctions }        from '../libraries/external/Auctions.sol';
-import { BorrowerActions } from '../libraries/external/BorrowerActions.sol';
-import { LenderActions }   from '../libraries/external/LenderActions.sol';
-import { PoolCommons }     from '../libraries/external/PoolCommons.sol';
+import { Auctions }        from 'src/libraries/external/Auctions.sol';
+import { BorrowerActions } from 'src/libraries/external/BorrowerActions.sol';
+import { LenderActions }   from 'src/libraries/external/LenderActions.sol';
+import { PoolCommons }     from 'src/libraries/external/PoolCommons.sol';
 
 abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 

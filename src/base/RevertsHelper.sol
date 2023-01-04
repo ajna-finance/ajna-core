@@ -2,10 +2,12 @@
 
 pragma solidity 0.8.14;
 
-import { AuctionsState, LoansState, PoolBalancesState } from './interfaces/pool/IPoolState.sol';
+import { AuctionsState, LoansState, PoolBalancesState, DepositsState, Borrower } from 'src/base/interfaces/pool/IPoolState.sol';
 
-import '../libraries/Loans.sol';
-import '../libraries/Deposits.sol';
+import { _minDebtAmount } from 'src/base/PoolHelper.sol';
+import { Loans } from 'src/libraries/Loans.sol';
+import { Deposits } from 'src/libraries/Deposits.sol';
+import { Maths } from 'src/libraries/Maths.sol';
     /**
      *  @notice Head auction should be cleared prior of executing this action.
      */

@@ -2,9 +2,9 @@
 
 pragma solidity 0.8.14;
 
-import './position/IPositionManagerOwnerActions.sol';
-import './position/IPositionManagerDerivedState.sol';
-import './position/IPositionManagerEvents.sol';
+import 'src/base/interfaces/position/IPositionManagerOwnerActions.sol';
+import 'src/base/interfaces/position/IPositionManagerDerivedState.sol';
+import 'src/base/interfaces/position/IPositionManagerEvents.sol';
 /**
  *  @title Position Manager Interface
  */

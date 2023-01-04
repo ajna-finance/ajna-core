@@ -16,15 +16,15 @@ import {
     BucketTakeResult,
     TakeResult,
     StartReserveAuctionParams
-} from '../../base/interfaces/IPool.sol';
+} from 'src/base/interfaces/IPool.sol';
 
-import { _revertOnMinDebt } from '../../base/RevertsHelper.sol';
+import { _revertOnMinDebt } from 'src/base/RevertsHelper.sol';
 
-import '../Buckets.sol';
-import '../Deposits.sol';
-import '../Loans.sol';
+import 'src/libraries/Buckets.sol';
+import 'src/libraries/Deposits.sol';
+import 'src/libraries/Loans.sol';
 
-import '../../base/PoolHelper.sol';
+import 'src/base/PoolHelper.sol';
 
 library Auctions {
 
