@@ -1201,7 +1201,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     function _randomIndex() internal returns (uint256 index_) {
         // calculate a random index between 1 and 7388
         index_ = 1 + uint256(keccak256(abi.encodePacked(block.number, block.difficulty))) % 7387;
-        vm.roll(block.number + 1);
+        vm.roll(block.number + 1); // advance block to ensure that the index price is different
     }
 
     // find the bucket index in array corresponding to the highest bucket price
@@ -1225,6 +1225,24 @@ abstract contract DSTestPlus is Test, IPoolEvents {
             }
         }
     }
+
+    // calculates a limit index leaving one index above the htp to accrue interest
+    function _findSecondLowestIndexPrice(uint256[] memory indexes) internal pure returns (uint256 secondLowestIndex_) {
+        secondLowestIndex_ = 1;
+        uint256 lowestIndex = secondLowestIndex_;
+
+        // lowest index corresponds to highest price
+        for (uint256 i = 0; i < indexes.length; ++i) {
+            if (indexes[i] > lowestIndex) {
+                secondLowestIndex_ = lowestIndex;
+                lowestIndex = indexes[i];
+            }
+            else if (indexes[i] > secondLowestIndex_) {
+                secondLowestIndex_ = indexes[i];
+            }
+        }
+    }
+
 
     // calculate required collateral to borrow a given amount at a given limitIndex
     function _requiredCollateral(uint256 borrowAmount, uint256 indexPrice) internal view returns (uint256 requiredCollateral_) {
