@@ -15,6 +15,7 @@ import './libraries/Maths.sol';
 import { PoolCommons } from './libraries/external/PoolCommons.sol';
 
 import './IAjnaRewards.sol';
+import '@std/console.sol';
 
 contract AjnaRewards is IAjnaRewards {
 
@@ -349,7 +350,6 @@ contract AjnaRewards is IAjnaRewards {
     function _getPoolAccumulators(address pool_, uint256 currentBurnEventEpoch_, uint256 lastBurnEventEpoch_) internal view returns (uint256, uint256, uint256) {
         (uint256 currentBurnTime_, uint256 totalInterestLatest, uint256 totalBurnedLatest) = IPool(pool_).burnInfo(currentBurnEventEpoch_);
         (, uint256 totalInterestAtBlock, uint256 totalBurnedAtBlock) = IPool(pool_).burnInfo(lastBurnEventEpoch_);
-
         uint256 ajnaTokensBurned_    = totalBurnedLatest - totalBurnedAtBlock;
         uint256 totalInterestEarned_ = totalInterestLatest - totalInterestAtBlock;
         return (currentBurnTime_, ajnaTokensBurned_, totalInterestEarned_);

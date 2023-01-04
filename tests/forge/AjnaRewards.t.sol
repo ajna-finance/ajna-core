@@ -13,6 +13,7 @@ import 'src/base/PoolInfoUtils.sol';
 
 import { DSTestPlus } from './utils/DSTestPlus.sol';
 import { Token }      from './utils/Tokens.sol';
+import '@std/console.sol';
 
 contract AjnaRewardsTest is DSTestPlus {
 
@@ -220,6 +221,40 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // calculate ajna tokens to burn in order to take the full auction amount
         tokensToBurn_ = Maths.wmul(curClaimableReservesRemaining, curAuctionPrice);
+    }
+
+    function _triggerReserveAuctionsNoTake(TriggerReserveAuctionParams memory params_) internal returns (uint256 tokensToBurn_) {
+        // create a new borrower to write state required for reserve auctions
+        address borrower = makeAddr("borrower");
+
+        changePrank(borrower);
+
+        Token collateral = Token(params_.pool.collateralAddress());
+        Token quote = Token(params_.pool.quoteTokenAddress());
+
+        deal(address(quote), borrower, params_.borrowAmount);
+
+        // approve tokens
+        collateral.approve(address(params_.pool), type(uint256).max);
+        quote.approve(address(params_.pool), type(uint256).max);
+
+        uint256 collateralToPledge = _requiredCollateral(params_.pool, params_.borrowAmount, params_.limitIndex);
+        deal(address(collateral), borrower, collateralToPledge);
+
+        // borrower drawsDebt from the pool
+        params_.pool.drawDebt(borrower, params_.borrowAmount, params_.limitIndex, collateralToPledge);
+
+        // allow time to pass for interest to accumulate
+        skip(26 weeks);
+
+        // borrower repays some of their debt, providing reserves to be claimed
+        // don't pull any collateral, as such functionality is unrelated to reserve auctions
+        params_.pool.repayDebt(borrower, Maths.wdiv(params_.borrowAmount, Maths.wad(2)), 0);
+
+        // start reserve auction
+        changePrank(_bidder);
+        _ajnaToken.approve(address(params_.pool), type(uint256).max);
+        params_.pool.startClaimableReserveAuction();
     }
 
     function testStakeToken() external {
@@ -887,6 +922,136 @@ contract AjnaRewardsTest is DSTestPlus {
         // check can't claim rewards twice
         vm.expectRevert(IAjnaRewards.NotOwnerOfDeposit.selector);
         _ajnaRewards.claimRewards(tokenIdOne, currentBurnEpoch);
+    }
+
+    function testWithdrawAndClaimRewardsNoExchangeRateUpdate() external {
+        skip(10);
+
+        // configure NFT position
+        uint256[] memory depositIndexes = new uint256[](5);
+        depositIndexes[0] = 2550;
+        depositIndexes[1] = 2551;
+        depositIndexes[2] = 2552;
+        depositIndexes[3] = 2553;
+        depositIndexes[4] = 2555;
+        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+            indexes: depositIndexes,
+            minter: _minterOne,
+            mintAmount: 1000 * 1e18,
+            pool: _poolOne
+        });
+
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+
+        // epoch 0 - 1 is checked for rewards
+        _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
+
+        TriggerReserveAuctionParams memory triggerReserveAuctionParams = TriggerReserveAuctionParams({
+            borrowAmount: 300 * 1e18,
+            limitIndex: 2555,
+            pool: _poolOne
+        });
+
+
+        // first reserve auction happens successfully -> epoch 1
+        uint256 tokensToBurn = _triggerReserveAuctions(triggerReserveAuctionParams);
+
+        // second reserve auction happens successfully -> epoch 2
+        tokensToBurn += _triggerReserveAuctions(triggerReserveAuctionParams);
+
+        // check owner can withdraw the NFT and rewards will be automatically claimed
+        changePrank(_minterOne);
+        vm.expectEmit(true, true, true, true);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(2, 0), 0);
+        vm.expectEmit(true, true, true, true);
+        emit UnstakeToken(_minterOne, address(_poolOne), tokenIdOne);
+        _ajnaRewards.unstakeToken(tokenIdOne);
+        assertEq(_positionManager.ownerOf(tokenIdOne), _minterOne);
+
+        // FIXME: This is incorrect, claimer should get a reward as exchange rate should be updated before claim
+        assertEq(_ajnaToken.balanceOf(_minterOne), 0);
+
+        assertLt(_ajnaToken.balanceOf(_minterOne), tokensToBurn);
+
+        uint256 currentBurnEpoch = _poolOne.currentBurnEpoch();
+
+        // check can't claim rewards twice
+        vm.expectRevert(IAjnaRewards.NotOwnerOfDeposit.selector);
+        _ajnaRewards.claimRewards(tokenIdOne, currentBurnEpoch);
+    }
+
+
+
+
+    function testWithdrawAndClaimRewardsNoReserveTake() external {
+
+        // healthy epoch, bad epoch
+
+        skip(10);
+
+        // configure NFT position
+        uint256[] memory depositIndexes = new uint256[](5);
+        depositIndexes[0] = 2550;
+        depositIndexes[1] = 2551;
+        depositIndexes[2] = 2552;
+        depositIndexes[3] = 2553;
+        depositIndexes[4] = 2555;
+        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+            indexes: depositIndexes,
+            minter: _minterOne,
+            mintAmount: 1000 * 1e18,
+            pool: _poolOne
+        });
+
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+
+        // epoch 0 - 1 is checked for rewards
+        _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
+
+        TriggerReserveAuctionParams memory triggerReserveAuctionParams = TriggerReserveAuctionParams({
+            borrowAmount: 300 * 1e18,
+            limitIndex: 2555,
+            pool: _poolOne
+        });
+
+
+        // first reserve auction happens successfully Staker should receive rewards epoch 0 - 1
+        uint256 tokensToBurn = _triggerReserveAuctions(triggerReserveAuctionParams);
+
+        //call update exchange rate to enable claiming rewards for epoch 0 - 1
+        changePrank(_updater);
+        assertEq(_ajnaToken.balanceOf(_updater), 0);
+        vm.expectEmit(true, true, true, true);
+        emit UpdateExchangeRates(_updater, address(_poolOne), depositIndexes, 1.808591217308675030 * 1e18);
+        _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
+
+        skip(2 weeks);
+
+        // first reserve auction happens successfully Staker should receive rewards epoch 0 - 1
+        _triggerReserveAuctionsNoTake(triggerReserveAuctionParams);
+
+        // allow time to pases where takeReserves can no longer be called
+        skip(73 hours);
+
+        (uint256 e1Timestamp, uint256 e1Interest, uint256 e1Burned) = IPool(_poolOne).burnInfo(1);
+        assertGt(e1Timestamp, 0); // GT assert -> non-zero value
+        assertEq(e1Interest, 6.466873982955353003 * 1e18); // takeReserves is called, all good
+        assertEq(e1Burned, 36.171824346173572302 * 1e18);  // takeReserves is called, all good
+
+        (uint256 e2Timestamp, uint256 e2Interest, uint256 e2Burned) = IPool(_poolOne).burnInfo(2);
+        assertGt(e2Timestamp, 0); // GT assert -> non-zero value
+        assertEq(e2Interest, 0);  // not stamped because this happens in takeReserves
+        assertEq(e2Burned, 0);    // not stamped because this happens in takeReserves
+
+        //_getPoolAccumulators in line 353 -> ajnaRewards.sol underflows
+        // because epoch 0 has burned Ajna and epoch 1 doesn't have any burned ajna
+        // this bug is especially nasty because any staker who stakes at or before the reserve auction without a take occurs
+        // will have their funds locked in the staking contract due to underflow revert locking them 
+        // FIXME: below should run without revert
+        // changePrank(_updater);
+        // vm.expectEmit(true, true, true, true);
+        // emit UpdateExchangeRates(_updater, address(_poolOne), depositIndexes, 1.808591217308675030 * 1e18);
+        // _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
     }
 
     function testMultiplePools() external {
