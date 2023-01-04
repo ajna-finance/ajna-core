@@ -18,7 +18,7 @@ interface IPositionManagerEvents {
     );
 
     /**
-     *  @notice Emitted when liquidity of the pool was increased.
+     *  @notice Emitted when liquidity of the pool was decreased.
      *  @param  lender Lender address.
      *  @param  price  The price at quote tokens were added.
      */
@@ -28,7 +28,7 @@ interface IPositionManagerEvents {
     );
 
     /**
-     *  @notice Emitted when liquidity of the pool was increased.
+     *  @notice Emitted when liquidity of the pool was decreased.
      *  @param  lender Lender address.
      *  @param  price  The price at quote tokens were added.
      */
