@@ -136,7 +136,7 @@ library BorrowerActions {
             vars.borrowerDebt += vars.debtChange;
 
             // check that drawing debt doesn't leave borrower debt under min debt amount
-            _revertOnMinDebt(loans_, result_.poolDebt, vars.borrowerDebt);
+            _revertOnMinDebt(loans_, result_.poolDebt, vars.borrowerDebt, poolState_.quoteDustLimit);
 
             // add debt change to pool's debt
             result_.poolDebt += vars.debtChange;
@@ -213,7 +213,7 @@ library BorrowerActions {
             vars.borrowerDebt -= result_.quoteTokenToRepay;
 
             // check that paying the loan doesn't leave borrower debt under min debt amount
-            _revertOnMinDebt(loans_, result_.poolDebt, vars.borrowerDebt);
+            _revertOnMinDebt(loans_, result_.poolDebt, vars.borrowerDebt, poolState_.quoteDustLimit);
 
             result_.newLup = _lup(deposits_, result_.poolDebt);
             vars.inAuction = _inAuction(auctions_, borrowerAddress_);

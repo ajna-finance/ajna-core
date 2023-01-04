@@ -18,6 +18,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.UintSet;
 
+    uint256 internal constant MAX_DEPOSIT     = 1e22 * 1e18;
+    uint256 internal constant MAX_COLLATERAL  = 1e12 * 1e18;
+
     uint256 internal _lpPoolPrecision         = 10**27;
     uint256 internal _quotePoolPrecision      = 10**18;
     uint256 internal _collateralPoolPrecision = 10**18;
@@ -26,9 +29,11 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
     address internal _borrower;
     address internal _borrower2;
-    address internal _borrower3;
     address internal _lender;
     address internal _bidder;
+
+    uint256 internal _lenderDepositDenormalized;
+    uint256 internal _lenderDepositNormalized;
 
     TokenWithNDecimals internal _collateral;
     TokenWithNDecimals internal _quote;
@@ -39,36 +44,35 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _pool       = ERC20Pool(new ERC20PoolFactory(_ajna).deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
         _poolUtils  = new PoolInfoUtils();
 
+        _collateralPrecision = uint256(10) ** collateralPrecisionDecimals_;
+        _quotePrecision = uint256(10) ** quotePrecisionDecimals_;
+        
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
-        _borrower3 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
         _bidder    = makeAddr("bidder");
 
         deal(address(_collateral), _bidder,  150 * _collateralPrecision);
         deal(address(_collateral), _borrower, 150 * _collateralPrecision);
         deal(address(_collateral), _borrower2, 200 * _collateralPrecision);
-        deal(address(_collateral), _borrower3, 200 * _collateralPrecision);
 
-        deal(address(_quote), _lender,  200_000 * _quotePrecision);
+        _lenderDepositDenormalized = 200_000 * _quotePrecision;
+        _lenderDepositNormalized = 200_000 * 1e18;
+        deal(address(_quote), _lender,  _lenderDepositDenormalized);
 
         vm.startPrank(_borrower);
         _collateral.approve(address(_pool), 150 * _collateralPrecision);
-        _quote.approve(address(_pool), 200_000 * _quotePrecision);
+        _quote.approve(address(_pool), _lenderDepositDenormalized);
 
         changePrank(_borrower2);
         _collateral.approve(address(_pool), 200 * _collateralPrecision);
-        _quote.approve(address(_pool), 200_000 * _quotePrecision);
-
-        changePrank(_borrower3);
-        _collateral.approve(address(_pool), 200 * _collateralPrecision);
-        _quote.approve(address(_pool), 200_000 * _quotePrecision);
+        _quote.approve(address(_pool), _lenderDepositDenormalized);
 
         changePrank(_bidder);
         _collateral.approve(address(_pool), 200_000 * _collateralPrecision);
 
         changePrank(_lender);
-        _quote.approve(address(_pool), 200_000 * _quotePrecision);
+        _quote.approve(address(_pool), _lenderDepositDenormalized);
 
         skip(1 days); // to avoid deposit time 0 equals bucket bankruptcy time
     }
@@ -77,9 +81,6 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         // setup fuzzy bounds and initialize the pool
         uint256 boundColPrecision = bound(uint256(collateralPrecisionDecimals_), 1, 18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_), 1, 18);
-        _collateralPrecision = uint256(10) ** boundColPrecision;
-        _quotePrecision = uint256(10) ** boundQuotePrecision;
-
         init(boundColPrecision, boundQuotePrecision);
 
         uint256 start = block.timestamp;
@@ -210,9 +211,6 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         // setup fuzzy bounds and initialize the pool
         uint256 boundColPrecision = bound(uint256(collateralPrecisionDecimals_), 1, 18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_), 1, 18);
-        _collateralPrecision = uint256(10) ** boundColPrecision;
-        _quotePrecision = uint256(10) ** boundQuotePrecision;
-
         init(boundColPrecision, boundQuotePrecision);
 
         uint256 start = block.timestamp;
@@ -483,22 +481,27 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         assertEq(_pool.pledgedCollateral(), col);
     }
 
-    function testFuzzedDepositTwoActorSameBucket(
+    function testDepositTwoActorSameBucket(
         uint8   collateralPrecisionDecimals_,
         uint8   quotePrecisionDecimals_,
         uint16  bucketId_,
         uint256 quoteAmount_,
         uint256 collateralAmount_
-    ) external virtual tearDown {
+    ) external tearDown {
         // setup fuzzy bounds and initialize the pool
-        uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 1, 18);
-        uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      1, 18);
-        uint256 bucketId            = bound(uint256(bucketId_),                    1, 7388);
-        uint256 quoteAmount         = bound(uint256(quoteAmount_),                 0, 1e22 * 1e18);
-        uint256 collateralAmount    = bound(uint256(collateralAmount_),            1e9, 1e12 * 1e18);
-        _collateralPrecision        = uint256(10) ** boundColPrecision;
-        _quotePrecision             = uint256(10) ** boundQuotePrecision;
+        uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 1,   18);
+        uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      1,   18);
+        uint256 bucketId            = bound(uint256(bucketId_),                    1,   7388);
+        uint256 collateralAmount    = bound(uint256(collateralAmount_),            1e9, MAX_COLLATERAL);
+        uint256 maxQuoteAmountBound = quoteAmount_ % 2 == 0 ? MAX_DEPOSIT : uint256(10) ** boundQuotePrecision;
+        uint256 quoteAmount         = bound(uint256(quoteAmount_),                 0,   maxQuoteAmountBound);
         init(boundColPrecision, boundQuotePrecision);
+
+        // Scaled Quote Token Amount
+        uint256 scaledQuoteAmount = (quoteAmount / 10 ** (18 - boundQuotePrecision)) * 10 ** (18 - boundQuotePrecision);
+
+        assertEq(ERC20Pool(address(_pool)).collateralScale(), 10 ** (18 - boundColPrecision));
+        assertEq(_pool.quoteTokenScale(), 10 ** (18 - boundQuotePrecision));
 
         // mint and run approvals, ignoring amounts already init approved above
         changePrank(_lender);
@@ -516,15 +519,18 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             exchangeRate: 1e27
         });
 
-        // deposit quote token and sanity check lender LPs
-        _addInitialLiquidity(_lender, quoteAmount, bucketId);
+        // addQuoteToken should add scaled quote token amount and lp
+        vm.expectEmit(true, true, false, true);
+        emit AddQuoteToken(_lender, bucketId, scaledQuoteAmount, scaledQuoteAmount * 1e9, MAX_PRICE);
+        _addLiquidityNoEventCheck(_lender, quoteAmount, bucketId);
+        
         (uint256 lpBalance, uint256 time) = _pool.lenderInfo(bucketId, _lender);
-        if (quoteAmount != 0) {
+        if (scaledQuoteAmount != 0) {
             assertGt(lpBalance, 0);
+            assertGt(time, _startTime);
         } else {
             assertEq(lpBalance, 0);
         }
-        assertGt(time, _startTime);
 
         // deposit collateral and sanity check bidder LPs
         _addCollateralWithoutCheckingLP(_bidder, collateralAmount, bucketId);
@@ -540,30 +546,35 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint256 curDeposit;
         uint256 availableCollateral;
         (, curDeposit, availableCollateral, lpBalance,,) = _poolUtils.bucketInfo(address(_pool), bucketId);
-        assertEq(curDeposit, quoteAmount);
+        assertEq(curDeposit, scaledQuoteAmount);
         assertEq(availableCollateral, collateralAmount);
-        if (quoteAmount + collateralAmount == 0) {
+        if (scaledQuoteAmount + collateralAmount == 0) {
             assertEq(lpBalance, 0);
         } else {
             assertGt(lpBalance, 0);
         }
     }
 
-    function testFuzzedDepositTwoLendersSameBucket(
+    function testDepositTwoLendersSameBucket(
         uint8   collateralPrecisionDecimals_,
         uint8   quotePrecisionDecimals_,
         uint16  bucketId_,
         uint256 quoteAmount1_,
         uint256 quoteAmount2_
-    ) external virtual tearDown {
+    ) external tearDown {
         // setup fuzzy bounds and initialize the pool
         uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 1, 18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      1, 18);
         uint256 bucketId            = bound(uint256(bucketId_),                    1, 7388);
-        uint256 quoteAmount1        = bound(uint256(quoteAmount1_),                0, 1e22 * 1e18);
-        uint256 quoteAmount2        = bound(uint256(quoteAmount2_),                0, 1e22 * 1e18);
-        _quotePrecision             = uint256(10) ** boundQuotePrecision;
+        uint256 maxQuoteAmount1 = quoteAmount1_ % 2 == 0 ? MAX_DEPOSIT : uint256(10) ** boundQuotePrecision;
+        uint256 maxQuoteAmount2 = quoteAmount2_ % 2 == 0 ? MAX_DEPOSIT : uint256(10) ** boundQuotePrecision;
+        uint256 quoteAmount1        = bound(uint256(quoteAmount1_),                0, maxQuoteAmount1);
+        uint256 quoteAmount2        = bound(uint256(quoteAmount2_),                0, maxQuoteAmount2);
         init(boundColPrecision, boundQuotePrecision);
+
+        // Scaled Quote Amount
+        uint256 scaledQuoteAmount1 = (quoteAmount1 / 10 ** (18 - boundQuotePrecision)) * 10 ** (18 - boundQuotePrecision);
+        uint256 scaledQuoteAmount2 = (quoteAmount2 / 10 ** (18 - boundQuotePrecision)) * 10 ** (18 - boundQuotePrecision);
 
         // mint and run approvals, ignoring amounts already init approved above
         deal(address(_quote), _lender, quoteAmount1 * _quotePrecision);
@@ -574,38 +585,170 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         changePrank(lender2);
         _quote.approve(address(_pool), quoteAmount2 * _quotePrecision);
 
-        // deposit lender1 quote token and sanity check LPs
-        _addInitialLiquidity(_lender, quoteAmount1, bucketId);
-        uint256 time;
-        uint256 lpBalance1;
-        (lpBalance1, time) = _pool.lenderInfo(bucketId, _lender);
-        if (quoteAmount1 != 0) {
+        // addQuoteToken should add scaled quote token amount and lp
+        vm.expectEmit(true, true, false, true);
+        emit AddQuoteToken(_lender, bucketId, scaledQuoteAmount1, scaledQuoteAmount1 * 1e9, MAX_PRICE);
+        _addLiquidityNoEventCheck(_lender, quoteAmount1, bucketId);
+
+        (uint256 lpBalance1, uint256 time) = _pool.lenderInfo(bucketId, _lender);
+        if (scaledQuoteAmount1 != 0) {
             assertGt(lpBalance1, 0);
+            assertGt(time, _startTime);
         } else {
             assertEq(lpBalance1, 0);
         }
-        assertGt(time, _startTime);
 
-        // deposit lender2 quote token and sanity check LPs
-        _addInitialLiquidity(lender2, quoteAmount2, bucketId);
+        // addQuoteToken should add scaled quote token amount and lp
+        vm.expectEmit(true, true, false, true);
+        emit AddQuoteToken(lender2, bucketId, scaledQuoteAmount2, scaledQuoteAmount2 * 1e9, MAX_PRICE);
+        _addLiquidityNoEventCheck(lender2, quoteAmount2, bucketId);
+
         uint256 lpBalance2;
         (lpBalance2, time) = _pool.lenderInfo(bucketId, lender2);
-        if (quoteAmount2 != 0) {
+        if (scaledQuoteAmount2 != 0) {
             assertGt(lpBalance2, 0);
+            assertGt(time, _startTime);
         } else {
             assertEq(lpBalance2, 0);
         }
-        assertGt(time, _startTime);
 
         // check bucket
         uint256 curDeposit;
         uint256 bucketLPs;
         (, curDeposit, , bucketLPs,,) = _poolUtils.bucketInfo(address(_pool), bucketId);
-        assertEq(curDeposit, quoteAmount1 + quoteAmount2);
+        assertEq(curDeposit, scaledQuoteAmount1 + scaledQuoteAmount2);
         if (curDeposit == 0) {
             assertEq(bucketLPs, 0);
         } else {
             assertEq(bucketLPs, lpBalance1 + lpBalance2);
+        }
+    }
+
+    function testMoveQuoteToken(
+        uint8   collateralPrecisionDecimals_, 
+        uint8   quotePrecisionDecimals_,
+        uint16  fromBucketId_,
+        uint16  toBucketId_,
+        uint256 amountToMove_
+    ) external tearDown {
+        // setup fuzzy bounds and initialize the pool
+        uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 1, 18);
+        uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      1, 18);
+        uint256 fromBucketId        = bound(uint256(fromBucketId_),                1, 7388);
+        uint256 toBucketId          = bound(uint256(toBucketId_),                  1, 7388);
+        uint256 amountToMove        = bound(uint256(amountToMove_),                0, _lenderDepositNormalized);
+        init(boundColPrecision, boundQuotePrecision);
+
+        _addInitialLiquidity(
+            {
+                from:   _lender,
+                amount: _lenderDepositNormalized,
+                index:  fromBucketId
+            }
+        );
+
+        if (fromBucketId == toBucketId) {
+            _assertMoveLiquidityToSamePriceRevert(
+                {
+                    from:      _lender,
+                    amount:    amountToMove,
+                    fromIndex: fromBucketId,
+                    toIndex:   toBucketId
+                }
+            );
+            return;
+        }
+
+        if (amountToMove != 0 && amountToMove < _pool.quoteTokenDust()) {
+            _assertMoveLiquidityDustRevert(
+                {
+                    from:      _lender,
+                    amount:    amountToMove,
+                    fromIndex: fromBucketId,
+                    toIndex:   toBucketId
+                }
+            );
+            return;
+        }
+
+        _moveLiquidity(
+            {
+                from:         _lender,
+                amount:       amountToMove,
+                fromIndex:    fromBucketId,
+                toIndex:      toBucketId,
+                lpRedeemFrom: amountToMove * 1e9,
+                lpAwardTo:    amountToMove * 1e9,
+                newLup:       MAX_PRICE
+            }
+        );
+
+        // validate from and to buckets have appropriate amounts of deposit and LPs
+        (, uint256 deposit,, uint256 lps,,) = _poolUtils.bucketInfo(address(_pool), fromBucketId);
+        uint256 remaining = _lenderDepositNormalized - amountToMove;
+        assertEq(deposit, remaining);
+        assertEq(lps, remaining * 1e9);
+        (, deposit,, lps,,) = _poolUtils.bucketInfo(address(_pool), toBucketId);
+        assertEq(deposit, amountToMove);
+        assertEq(lps, amountToMove * 1e9);
+    }
+
+    function testMinDebtAmount(
+        uint8   collateralPrecisionDecimals_,
+        uint8   quotePrecisionDecimals_,
+        uint16  bucketId_
+    ) external tearDown {
+        // setup fuzzy bounds and initialize the pool
+        uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 18, 18);
+        uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      1,  18);
+        uint256 bucketId            = bound(uint256(bucketId_),                    1,  7388);
+        init(boundColPrecision, boundQuotePrecision);
+
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: _lenderDepositNormalized,
+            index:  bucketId
+        });
+
+        // 12 borrowers will take most of the liquidity; divide by 13 to leave room for origination fee
+        uint256 debtToDraw         = Maths.wdiv(_lenderDepositNormalized, 13 * 1e18);
+        uint256 collateralToPledge = Maths.wmul(Maths.wdiv(debtToDraw, _priceAt(bucketId)), 1.01 * 1e18);
+        address borrower;
+        for (uint i=0; i<12; ++i) {
+            borrower = makeAddr(string(abi.encodePacked("anonBorrower", i)));
+
+            // mint and approve collateral tokens
+            changePrank(borrower);
+            deal(address(_collateral), borrower, collateralToPledge);  // TODO: denormalized for non-18-decimal collateral
+            _collateral.approve(address(_pool), collateralToPledge);
+            // approve quote token to facilitate teardown
+            _quote.approve(address(_pool), _lenderDepositDenormalized);
+
+            // ensure illegitimate amounts revert
+            if (i < 10) {
+                if (boundQuotePrecision < 18) {
+                    _assertBorrowDustRevert({
+                        from:       _borrower,
+                        amount:     1,
+                        indexLimit: bucketId
+                    });
+                }
+            } else {
+                _assertBorrowMinDebtRevert({
+                    from:       _borrower,
+                    amount:     Maths.wdiv(debtToDraw, 11 * 1e18),
+                    indexLimit: bucketId
+                });
+            }
+
+            // draw a legitimate amount of debt
+            _drawDebtNoLupCheck({
+                    from:               borrower,
+                    borrower:           borrower,
+                    amountToBorrow:     debtToDraw,
+                    limitIndex:         bucketId,
+                    collateralToPledge: collateralToPledge
+            });
         }
     }
 

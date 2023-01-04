@@ -1016,7 +1016,7 @@ library Auctions {
         if (t0DebtPenalty_ != 0) result_.poolDebt += Maths.wmul(t0DebtPenalty_, poolState_.inflator);
 
         // check that taking from loan doesn't leave borrower debt under min debt amount
-        _revertOnMinDebt(loans_, result_.poolDebt, vars.borrowerDebt);
+        _revertOnMinDebt(loans_, result_.poolDebt, vars.borrowerDebt, poolState_.quoteDustLimit);
 
         result_.newLup = _lup(deposits_, result_.poolDebt);
 

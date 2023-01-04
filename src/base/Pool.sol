@@ -75,6 +75,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         return _getArgUint256(QUOTE_SCALE);
     }
 
+    function quoteTokenDust() external pure override returns (uint256) {
+        return _getArgUint256(QUOTE_SCALE);
+    }
+
+
     /*********************************/
     /*** Lender External Functions ***/
     /*********************************/
@@ -89,9 +94,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         (bucketLPs_, newLup) = LenderActions.addQuoteToken(
             buckets,
             deposits,
-            quoteTokenAmountToAdd_,
-            index_,
-            poolState.debt
+            poolState,
+            AddQuoteParams({
+                amount: _getTokenScaledAmount(quoteTokenAmountToAdd_, poolState.quoteDustLimit),
+                index:  index_
+            })
         );
 
         // update pool interest rate state
@@ -313,11 +320,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*****************************/
 
     function _accruePoolInterest() internal returns (PoolState memory poolState_) {
-        uint256 t0Debt        = poolBalances.t0Debt;
-        poolState_.collateral = poolBalances.pledgedCollateral;
-        poolState_.inflator   = inflatorState.inflator;
-        poolState_.rate       = interestState.interestRate;
-        poolState_.poolType   = _getArgUint8(POOL_TYPE);
+        uint256 t0Debt = poolBalances.t0Debt;
+
+        poolState_.collateral     = poolBalances.pledgedCollateral;
+        poolState_.inflator       = inflatorState.inflator;
+        poolState_.rate           = interestState.interestRate;
+        poolState_.poolType       = _getArgUint8(POOL_TYPE);
+        poolState_.quoteDustLimit = _getArgUint256(QUOTE_SCALE);
 
         if (t0Debt != 0) {
             // Calculate prior pool debt

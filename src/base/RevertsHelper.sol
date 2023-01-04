@@ -15,6 +15,10 @@ import '../libraries/Deposits.sol';
      */
     error AmountLTMinDebt();
     /**
+     *  @notice User attempted a deposit which does not exceed the dust amount, or a withdrawal which leaves behind less than the dust amount.
+     */
+    error DustAmountNotExceeded();
+    /**
      *  @notice Lender is attempting to remove quote tokens from a bucket that exists above active auction debt from top-of-book downward.
      */
     error RemoveDepositLockedByAuctionDebt();
@@ -58,14 +62,15 @@ import '../libraries/Deposits.sol';
     function _revertOnMinDebt(
         LoansState storage loans_,
         uint256 poolDebt_,
-        uint256 borrowerDebt_
+        uint256 borrowerDebt_,
+        uint256 quoteDust_
     ) view {
         if (borrowerDebt_ != 0) {
             uint256 loansCount = Loans.noOfLoans(loans_);
-            if (
-                loansCount >= 10
-                &&
-                (borrowerDebt_ < _minDebtAmount(poolDebt_, loansCount))
-            ) revert AmountLTMinDebt();
+            if (loansCount >= 10) {
+                if (borrowerDebt_ < _minDebtAmount(poolDebt_, loansCount)) revert AmountLTMinDebt();
+            } else {
+                if (borrowerDebt_ < quoteDust_)                            revert DustAmountNotExceeded();
+            }
         }
     }

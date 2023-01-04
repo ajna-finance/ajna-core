@@ -557,6 +557,16 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
     }
 
+    function _assertBorrowDustRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
+        ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
+    }
+
     function _assertBorrowMinDebtRevert(
         address from,
         uint256 amount,
@@ -604,7 +614,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
                 from:               borrower,
                 borrower:           borrower,
                 amountToBorrow:     loanAmount,
-                limitIndex:        limitIndex,
+                limitIndex:         limitIndex,
                 collateralToPledge: collateralAmount
             }
         );
