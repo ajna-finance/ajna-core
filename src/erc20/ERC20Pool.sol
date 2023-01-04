@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.14;
 
+import "forge-std/console2.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -46,6 +47,14 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
     function collateralScale() external pure override returns (uint256) {
         return _getArgUint256(COLLATERAL_SCALE);
+    }
+
+    /// @inheritdoc IERC20PoolImmutables
+    function collateralDust(uint256 bucketIndex) external view override returns (uint256) {  // TODO: should be pure
+        uint256 pricePrecisionAdjustment = _getCollateralDustPricePrecisionAdjustment(bucketIndex);
+        uint256 scaleExponent            = 18 - IERC20Token(_getArgAddress(COLLATERAL_ADDRESS)).decimals();
+        console2.log("collateralDust for bucket %s with prec %s and scale %s", bucketIndex, pricePrecisionAdjustment, scaleExponent);
+        return 10 ** Maths.max(scaleExponent, pricePrecisionAdjustment);
     }
 
     /***********************************/

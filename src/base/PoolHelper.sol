@@ -243,3 +243,14 @@ import '../libraries/Maths.sol';
     ) pure returns (uint256 scaledAmount_) {
         scaledAmount_ = (amount_ / tokenScale_) * tokenScale_;
     }
+
+    function _getCollateralDustPricePrecisionAdjustment(
+        uint256 bucketIndex_
+    ) pure returns (uint256) {
+        // TODO: explain where this came from and/or find cleaner formula
+        int256 polynomialResult = 
+              (  -2.0844   * 1e11 * int256(bucketIndex_ ** 2)) 
+            + (   0.004553 * 1e18 * int256(bucketIndex_)     ) 
+               - 12.75     * 1e18;
+        return polynomialResult > 0 ? uint256(polynomialResult / 1e18) : 0;
+    }
