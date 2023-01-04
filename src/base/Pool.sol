@@ -113,6 +113,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToAdd_);
     }
 
+	//used to update the allowance of a specific LP share at a specific index for a given sender and new owner
     function approveLpOwnership(
         address allowedNewOwner_,
         uint256 index_,
