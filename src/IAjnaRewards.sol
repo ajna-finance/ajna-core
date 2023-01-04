@@ -71,7 +71,12 @@ interface IAjnaRewards {
         address ajnaPool;                         // address of the Ajna pool the NFT corresponds to
         uint96  lastInteractionBurnEpoch;         // last burn event the stake interacted with the rewards contract
         address owner;                            // owner of the LP NFT
-        mapping(uint256 => uint256) lpsAtDeposit; // the LP NFT's balance in each bucket at the time of staking
+        mapping(uint256 => BucketState) snapshot; // the LP NFT's balances and exchange rates in each bucket at the time of staking
+    }
+
+    struct BucketState {
+        uint256 lpsAtStakeTime;
+        uint256 rateAtStakeTime;
     }
 
 }
