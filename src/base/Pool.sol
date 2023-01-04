@@ -51,7 +51,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     mapping(uint256 => Bucket) internal buckets;   // deposit index -> bucket
 
-    uint256 internal poolInitializations;
+    bool internal poolInitializations;
 
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 
