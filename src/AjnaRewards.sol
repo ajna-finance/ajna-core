@@ -215,7 +215,7 @@ contract AjnaRewards is IAjnaRewards {
      *  @param  tokenId_               ID of the staked LP NFT.
      *  @param  burnEpochToStartClaim_ The burn period from which to start the calculations, decrementing down.
      *  @param  isClaim_               Boolean checking whether the newly calculated rewards should be written to state as part of a claim.
-     *  @return rewards_ Amount of rewards earned by the NFT.
+     *  @return rewards_               Amount of rewards earned by the NFT.
      */
     function _calculateRewards(
         uint256 tokenId_,
@@ -248,28 +248,24 @@ contract AjnaRewards is IAjnaRewards {
                     vars.bucketLPs
                 );
 
-                if (vars.interestEarned == 0) {
-                    // epoch is bounded by the number of reserve auctions that have occured in the pool, preventing overflow / underflow
-                    unchecked { ++vars.epoch; }
+                // calculate and accumulate rewards if interested earned
+                if (vars.interestEarned != 0) {
 
-                    // no interest will be earned in this period, continue onto the next period
-                    continue;
-                }
+                    vars.newRewards = _calculateNewRewards(
+                        ajnaPool,
+                        vars.interestEarned,
+                        vars.nextEpoch,
+                        vars.epoch
+                    );
 
-                vars.newRewards = _calculateNewRewards(
-                    ajnaPool,
-                    vars.interestEarned,
-                    vars.nextEpoch,
-                    vars.epoch
-                );
+                    // accumulate additional rewards earned for this period
+                    rewards_ += vars.newRewards;
 
-                // accumulate additional rewards earned for this period
-                rewards_ += vars.newRewards;
-
-                if (isClaim_) {
-                    // update token claim trackers
-                    burnEventRewardsClaimed[vars.nextEpoch] += vars.newRewards;
-                    hasClaimedForToken[tokenId_][vars.nextEpoch] = true;
+                    if (isClaim_) {
+                        // update token claim trackers
+                        burnEventRewardsClaimed[vars.nextEpoch] += vars.newRewards;
+                        hasClaimedForToken[tokenId_][vars.nextEpoch] = true;
+                    }
                 }
 
                 // epoch is bounded by the number of reserve auctions that have occured in the pool, preventing overflow / underflow
@@ -330,10 +326,12 @@ contract AjnaRewards is IAjnaRewards {
         uint256 nextEpoch_,
         uint256 epoch_
     ) internal view returns (uint256 newRewards_) {
-        // retrieve total interest accumulated by the pool over the claim period, and total tokens burned over that period
+
         (
             ,
+            // total interest accumulated by the pool over the claim period
             uint256 totalBurnedInPeriod,
+            // total tokens burned over the claim period
             uint256 totalInterestEarnedInPeriod
         ) = _getPoolAccumulators(ajnaPool_, nextEpoch_, epoch_);
 
@@ -350,7 +348,8 @@ contract AjnaRewards is IAjnaRewards {
 
         // Check rewards claimed - check that less than 80% of the tokens for a given burn event have been claimed.
         if (rewardsClaimed + newRewards_ > rewardsCapped) {
-        // set claim reward to difference between cap and reward
+
+            // set claim reward to difference between cap and reward
             newRewards_ = rewardsCapped - rewardsClaimed;
         }
     }
@@ -404,7 +403,7 @@ contract AjnaRewards is IAjnaRewards {
      *  @notice Retrieve an array of burn epochs from which a depositor has claimed rewards.
      *  @param  lastInteractionBurnEpoch_ The last burn period in which a depositor interacted with the rewards contract.
      *  @param  burnEpochToStartClaim_    The most recent burn period from a depostor earned rewards.
-     *  @return burnEpochsClaimed_   Array of burn epochs from which a depositor has claimed rewards.
+     *  @return burnEpochsClaimed_        Array of burn epochs from which a depositor has claimed rewards.
      */
     function _getBurnEpochsClaimed(
         uint256 lastInteractionBurnEpoch_,
@@ -474,7 +473,7 @@ contract AjnaRewards is IAjnaRewards {
         // get the current burn epoch from the given pool
         uint256 curBurnEpoch = IPool(pool_).currentBurnEpoch();
 
-        // only update exchange rates if the pool has not yet burned any tokens, no reward
+        // update exchange rates only if the pool has not yet burned any tokens without calculating any reward
         if (curBurnEpoch == 0) {
             for (uint256 i = 0; i < indexes_.length; ) {
 
@@ -502,7 +501,7 @@ contract AjnaRewards is IAjnaRewards {
                 // update exchange rates and calculate rewards if tokens were burned and within allowed time period
                 for (uint256 i = 0; i < indexes_.length; ) {
 
-                    // calculate rewards earned for updating a bucket
+                    // calculate rewards earned for updating bucket exchange rate
                     updatedRewards_ += _updateBucketExchangeRateAndCalculateRewards(
                         pool_,
                         indexes_[i],
@@ -518,7 +517,7 @@ contract AjnaRewards is IAjnaRewards {
                 uint256 rewardsCap     = Maths.wmul(UPDATE_CAP, totalBurned);
                 uint256 rewardsClaimed = burnEventUpdateRewardsClaimed[curBurnEpoch];
 
-                // update total tokens claimed for updating exchange rates tracker
+                // update total tokens claimed for updating bucket exchange rates tracker
                 if (rewardsClaimed + updatedRewards_ >= rewardsCap) {
                     // if update reward is greater than cap, set to remaining difference
                     updatedRewards_ = rewardsCap - rewardsClaimed;
@@ -529,7 +528,7 @@ contract AjnaRewards is IAjnaRewards {
             }
         }
 
-        // emit event with the list of indexes updated
+        // emit event with the list of bucket indexes updated
         emit UpdateExchangeRates(msg.sender, pool_, indexes_, updatedRewards_);
     }
 
@@ -550,7 +549,7 @@ contract AjnaRewards is IAjnaRewards {
         if (burnExchangeRate == 0) {
             uint256 curBucketExchangeRate = IPool(pool_).bucketExchangeRate(bucketIndex_);
 
-            // record a buckets exchange rate
+            // record bucket exchange rate at epoch
             poolBucketBurnExchangeRates[pool_][bucketIndex_][burnEpoch_] = curBucketExchangeRate;
         }
     }
@@ -576,26 +575,26 @@ contract AjnaRewards is IAjnaRewards {
         if (burnExchangeRate == 0) {
             uint256 curBucketExchangeRate = IPool(pool_).bucketExchangeRate(bucketIndex_);
 
-            // record a buckets exchange rate
+            // record bucket exchange rate at epoch
             poolBucketBurnExchangeRates[pool_][bucketIndex_][burnEpoch_] = curBucketExchangeRate;
 
-            // retrieve the exchange rate of the previous burn event
+            // retrieve the bucket exchange rate at the previous epoch
             uint256 prevBucketExchangeRate = poolBucketBurnExchangeRates[pool_][bucketIndex_][burnEpoch_ - 1];
 
-            // skip reward calculation for a bucket if the previous update was missed
+            // skip reward calculation if update at the previous epoch was missed
             // prevents excess rewards from being provided from using a 0 value as an input to the interestFactor calculation below.
             if (prevBucketExchangeRate != 0) {
-                // retrieve current deposit at previous bucket
+
+                // retrieve current deposit of the bucket
                 (, , , uint256 bucketDeposit, ) = IPool(pool_).bucketInfo(bucketIndex_);
 
                 uint256 burnFactor     = Maths.wmul(totalBurned_, bucketDeposit);
-
                 uint256 interestFactor = Maths.wdiv(
                     Maths.WAD - Maths.wdiv(prevBucketExchangeRate, curBucketExchangeRate),
                     interestEarned_
                 );
 
-                // calculate rewards earned for updating a bucket
+                // calculate rewards earned for updating bucket exchange rate 
                 rewards_ += Maths.wmul(UPDATE_CLAIM_REWARD, Maths.wmul(burnFactor, interestFactor));
             }
         }
