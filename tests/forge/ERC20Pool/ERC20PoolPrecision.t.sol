@@ -755,6 +755,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
     function testCollateralDustPricePrecisionAdjustment() external {
         // test the bucket price adjustment used for determining dust amount
+        assertEq(_getCollateralDustPricePrecisionAdjustment(0), 0);
         assertEq(_getCollateralDustPricePrecisionAdjustment(1), 0);
         assertEq(_getCollateralDustPricePrecisionAdjustment(4156), 2);
         assertEq(_getCollateralDustPricePrecisionAdjustment(4310), 3);
@@ -765,18 +766,21 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
         // check dust limits for 18-decimal collateral
         init(18, 18);
+        assertEq(IERC20Pool(address(_pool)).collateralDust(0),    1);
         assertEq(IERC20Pool(address(_pool)).collateralDust(1),    1);
         assertEq(IERC20Pool(address(_pool)).collateralDust(4166), 100);
         assertEq(IERC20Pool(address(_pool)).collateralDust(7388), 1000000000);
 
         // check dust limits for 12-decimal collateral
         init(12, 18);
+        assertEq(IERC20Pool(address(_pool)).collateralDust(0),    1000000);
         assertEq(IERC20Pool(address(_pool)).collateralDust(1),    1000000);
         assertEq(IERC20Pool(address(_pool)).collateralDust(6466), 10000000);
         assertEq(IERC20Pool(address(_pool)).collateralDust(7388), 1000000000);
 
         // check dust limits for 6-decimal collateral
         init(6, 18);
+        assertEq(IERC20Pool(address(_pool)).collateralDust(0),    1000000000000);
         assertEq(IERC20Pool(address(_pool)).collateralDust(1),    1000000000000);
         assertEq(IERC20Pool(address(_pool)).collateralDust(4156), 1000000000000);
         assertEq(IERC20Pool(address(_pool)).collateralDust(7388), 1000000000000);

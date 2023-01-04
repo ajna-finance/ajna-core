@@ -15,7 +15,7 @@ interface IERC20PoolImmutables {
 
     /**
      *  @notice Returns the minimum amount of collateral an actor may have in a bucket.
-     *  @param  bucketIndex The bucket index for which the dust limit is desired.
+     *  @param  bucketIndex The bucket index for which the dust limit is desired, or 0 for pledged collateral.
      *  @return The dust limit for `bucketIndex`.
      */
     function collateralDust(uint256 bucketIndex) external view returns (uint256);

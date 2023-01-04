@@ -50,11 +50,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     }
 
     /// @inheritdoc IERC20PoolImmutables
-    function collateralDust(uint256 bucketIndex) external view override returns (uint256) {  // TODO: should be pure
-        uint256 pricePrecisionAdjustment = _getCollateralDustPricePrecisionAdjustment(bucketIndex);
-        uint256 scaleExponent            = 18 - IERC20Token(_getArgAddress(COLLATERAL_ADDRESS)).decimals();
-        console2.log("collateralDust for bucket %s with prec %s and scale %s", bucketIndex, pricePrecisionAdjustment, scaleExponent);
-        return 10 ** Maths.max(scaleExponent, pricePrecisionAdjustment);
+    function collateralDust(uint256 bucketIndex) external view override returns (uint256) {
+        return _collateralDust(bucketIndex);
     }
 
     /***********************************/
@@ -392,4 +389,10 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     function _transferCollateral(address to_, uint256 amount_) internal {
         IERC20(_getArgAddress(COLLATERAL_ADDRESS)).safeTransfer(to_, amount_ / _getArgUint256(COLLATERAL_SCALE));
     }
+
+    function _collateralDust(uint256 bucketIndex) internal view returns (uint256) {
+        uint256 pricePrecisionAdjustment = _getCollateralDustPricePrecisionAdjustment(bucketIndex);
+        uint256 scaleExponent            = 18 - IERC20Token(_getArgAddress(COLLATERAL_ADDRESS)).decimals();
+        return 10 ** Maths.max(scaleExponent, pricePrecisionAdjustment);
+    } 
 }
