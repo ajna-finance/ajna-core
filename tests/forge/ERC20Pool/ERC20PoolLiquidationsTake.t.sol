@@ -2101,7 +2101,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
     }
 
     function testBucketZeroAssets() external  {
-
+        /*
         _addInitialLiquidity(
                              {
                              from:    _lender1,
@@ -2109,7 +2109,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                              index:  _i9_91
                              }
         );
-        /*
+        */
         _addLiquidity(
                       {
                       from:    _lender1,
@@ -2119,7 +2119,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                       newLup:  9721295865031779605
                       }
         );
-        */
+
         // Borrower2 borrows
         _borrow(
             {
