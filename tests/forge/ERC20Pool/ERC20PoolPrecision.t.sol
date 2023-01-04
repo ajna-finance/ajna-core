@@ -18,12 +18,11 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.UintSet;
 
-    uint256 internal constant MAX_DEPOSIT     = 1e22 * 1e18;
-    uint256 internal constant MAX_COLLATERAL  = 1e12 * 1e18;
+    uint256 internal constant MAX_DEPOSIT    = 1e22 * 1e18;
+    uint256 internal constant MAX_COLLATERAL = 1e12 * 1e18;
+    uint256 internal constant POOL_PRECISION = 1e18;
+    uint256 internal constant LP_PRECISION   = 1e27;
 
-    uint256 internal _lpPoolPrecision         = 10**27;
-    uint256 internal _quotePoolPrecision      = 10**18;
-    uint256 internal _collateralPoolPrecision = 10**18;
     uint256 internal _collateralPrecision;
     uint256 internal _quotePrecision;
 
@@ -90,21 +89,21 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _addInitialLiquidity(
             {
                 from:   _lender,
-                amount: 50_000 * _quotePoolPrecision,
+                amount: 50_000 * POOL_PRECISION,
                 index:  2549
             }
         );
         _addInitialLiquidity(
             {
                 from:   _lender,
-                amount: 50_000 * _quotePoolPrecision,
+                amount: 50_000 * POOL_PRECISION,
                 index:  2550
             }
         );
         _addInitialLiquidity(
             {
                 from:   _lender,
-                amount: 50_000 * _quotePoolPrecision,
+                amount: 50_000 * POOL_PRECISION,
                 index:  2551
             }
         );
@@ -131,7 +130,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                 maxThresholdPrice: 0
             }
         );
-        assertEq(_pool.depositSize(), 150_000 * _quotePoolPrecision);
+        assertEq(_pool.depositSize(), 150_000 * POOL_PRECISION);
 
         // check bucket balance
         _assertBucket(
@@ -139,8 +138,8 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                 index:        2549,
                 lpBalance:    50_000 * 1e27,
                 collateral:   0,
-                deposit:      50_000 * _quotePoolPrecision,
-                exchangeRate: 1 * _lpPoolPrecision
+                deposit:      50_000 * POOL_PRECISION,
+                exchangeRate: 1 * LP_PRECISION
             }
         );
         _assertLenderLpBalance(
@@ -157,7 +156,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _removeLiquidity(
             {
                 from:     _lender,
-                amount:   25_000 * _quotePoolPrecision,
+                amount:   25_000 * POOL_PRECISION,
                 index:    2549,
                 newLup:   MAX_PRICE,
                 lpRedeem: 25_000 * 1e27
@@ -186,7 +185,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                 maxThresholdPrice: 0
             }
         );
-        assertEq(_pool.depositSize(), 125_000 * _quotePoolPrecision);
+        assertEq(_pool.depositSize(), 125_000 * POOL_PRECISION);
 
         // check bucket balance
         _assertBucket(
@@ -194,7 +193,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                 index:        2549,
                 lpBalance:    25_000 * 1e27,
                 collateral:   0,
-                deposit:      25_000 * _quotePoolPrecision,
+                deposit:      25_000 * POOL_PRECISION,
                 exchangeRate: 1 * 1e27
             }
         );
@@ -202,7 +201,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             {
                 lender:      _lender,
                 index:       2549,
-                lpBalance:   25_000 * _lpPoolPrecision,
+                lpBalance:   25_000 * LP_PRECISION,
                 depositTime: start
             }
         );
@@ -219,21 +218,21 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _addInitialLiquidity(
             {
                 from:   _lender,
-                amount: 50_000 * _quotePoolPrecision,
+                amount: 50_000 * POOL_PRECISION,
                 index:  2549
             }
         );
         _addInitialLiquidity(
             {
                 from:   _lender,
-                amount: 50_000 * _quotePoolPrecision,
+                amount: 50_000 * POOL_PRECISION,
                 index:  2550
             }
         );
         _addInitialLiquidity(
             {
                 from:   _lender,
-                amount: 50_000 * _quotePoolPrecision,
+                amount: 50_000 * POOL_PRECISION,
                 index:  2551
             }
         );
@@ -243,7 +242,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             {
                 from:     _borrower,
                 borrower: _borrower,
-                amount:   50 * _collateralPoolPrecision
+                amount:   50 * POOL_PRECISION
             }
         );
 
@@ -271,23 +270,23 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                 maxThresholdPrice: 0
             }
         );
-        assertEq(_pool.depositSize(), 150_000 * _quotePoolPrecision);
+        assertEq(_pool.depositSize(), 150_000 * POOL_PRECISION);
 
         // check bucket balance
         _assertBucket(
             {
                 index:        2549,
-                lpBalance:    50_000 * _lpPoolPrecision,
+                lpBalance:    50_000 * LP_PRECISION,
                 collateral:   0,
-                deposit:      50_000 * _quotePoolPrecision,
-                exchangeRate: 1 * _lpPoolPrecision
+                deposit:      50_000 * POOL_PRECISION,
+                exchangeRate: 1 * LP_PRECISION
             }
         );
         _assertLenderLpBalance(
             {
                 lender:      _lender,
                 index:       2549,
-                lpBalance:   50_000 * _lpPoolPrecision,
+                lpBalance:   50_000 * LP_PRECISION,
                 depositTime: start
             }
         );
@@ -298,7 +297,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _borrow(
             {
                 from:       _borrower,
-                amount:     10_000 * _quotePoolPrecision,
+                amount:     10_000 * POOL_PRECISION,
                 indexLimit: 3_000,
                 newLup:     price
             }
@@ -340,24 +339,24 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             }
         );
         (uint256 poolDebt,,) = _pool.debtInfo();
-        assertEq(_pool.depositSize(),       150_000 * _quotePoolPrecision);
+        assertEq(_pool.depositSize(),       150_000 * POOL_PRECISION);
         assertEq(poolDebt,                  debt);
         assertEq(_pool.pledgedCollateral(), col);
 
         _assertBucket(
             {
                 index:        2549,
-                lpBalance:    50_000 * _lpPoolPrecision,
+                lpBalance:    50_000 * LP_PRECISION,
                 collateral:   0,
-                deposit:      50_000 * _quotePoolPrecision,
-                exchangeRate: 1 * _lpPoolPrecision
+                deposit:      50_000 * POOL_PRECISION,
+                exchangeRate: 1 * LP_PRECISION
             }
         );
         _assertLenderLpBalance(
             {
                 lender:      _lender,
                 index:       2549,
-                lpBalance:   50_000 * _lpPoolPrecision,
+                lpBalance:   50_000 * LP_PRECISION,
                 depositTime: start
             }
         );
@@ -366,8 +365,8 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _repayDebt({
             from:             _borrower,
             borrower:         _borrower,
-            amountToRepay:    5_000 * _quotePoolPrecision,
-            amountRepaid:     5_000 * _quotePoolPrecision,
+            amountToRepay:    5_000 * POOL_PRECISION,
+            amountRepaid:     5_000 * POOL_PRECISION,
             collateralToPull: 0,
             newLup:           3_025.946482308870940904 * 1e18
         });
@@ -416,7 +415,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _assertBucket(
             {
                 index:        2549,
-                lpBalance:    50_000 * _lpPoolPrecision,
+                lpBalance:    50_000 * LP_PRECISION,
                 collateral:   0,
                 deposit:      50_000 * 1e18,
                 exchangeRate: 1 * 1e27
@@ -426,7 +425,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             {
                 lender:      _lender,
                 index:       2549,
-                lpBalance:   50_000 * _lpPoolPrecision,
+                lpBalance:   50_000 * LP_PRECISION,
                 depositTime: start
             }
         );
