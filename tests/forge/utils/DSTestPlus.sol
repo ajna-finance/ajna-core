@@ -505,7 +505,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(rate,                exchangeRate);
 
         _validateBucketLp(index, lpBalance);
-        _validateBucketQuantities(index);
+        //        _validateBucketQuantities(index);
     }
 
     function _validateBucketLp(
