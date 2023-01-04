@@ -614,8 +614,6 @@ library Auctions {
         // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
         if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral();
 
-        console.log("Here1");
-        
         (
             result_.collateralAmount,
             result_.quoteTokenAmount,
@@ -634,10 +632,8 @@ library Auctions {
                 poolType:       poolState_.poolType
             })
         );
-        console.log("Here2");
 
         borrower.collateral -= result_.collateralAmount;
-        console.log("Here3");
 
         TakeFromLoanResult memory loanTakeResult = _takeLoan(
             auctions_,
@@ -650,14 +646,11 @@ library Auctions {
             result_.t0RepayAmount,
             result_.t0DebtPenalty
         );
-        console.log("Here4");
 
         result_.poolDebt              = loanTakeResult.poolDebt;
         result_.newLup                = loanTakeResult.newLup;
         result_.t0DebtInAuctionChange = loanTakeResult.t0DebtInAuctionChange;
         result_.settledAuction        = loanTakeResult.settledAuction;
-        console.log("Here4");
-
     }
 
     function _settleAuction(
@@ -1022,14 +1015,8 @@ library Auctions {
 
         if (t0DebtPenalty_ != 0) poolState_.debt += Maths.wmul(t0DebtPenalty_, poolState_.inflator);
 
-        console.log("in _takeLoan");
-        console.log("poolState.debt= ", poolState_.debt);
-        console.log("vars.repaidDebt= ", vars.repaidDebt);
-
         result_.poolDebt = poolState_.debt - vars.repaidDebt;
 
-        console.log("After subtraction");
-        
         // check that taking from loan doesn't leave borrower debt under min debt amount
         _revertOnMinDebt(loans_, result_.poolDebt, vars.borrowerDebt, poolState_.quoteDustLimit);
 
