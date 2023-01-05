@@ -653,6 +653,7 @@ library LenderActions {
         // abandon dust amounts upon last withdrawal
         if (remaining < params_.dustLimit && redeemedLPs_ == params_.bucketLPs) {
             unscaledRemovedAmount = unscaledDepositAvailable;
+            unscaledRemaining_ = 0;
         }
 
         Deposits.unscaledRemove(deposits_, params_.index, unscaledRemovedAmount); // update FenwickTree
