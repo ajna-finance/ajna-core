@@ -331,30 +331,28 @@ library LenderActions {
 
         uint256 depositTime = lender.depositTime;
 
-        uint256 lenderLPs;
+        RemoveDepositParams memory removeParams;
 
-        if (bucket.bankruptcyTime < lender.depositTime) lenderLPs = lender.lps;
-        if (lenderLPs == 0) revert NoClaim();      // revert if no LP to claim
+        if (bucket.bankruptcyTime < lender.depositTime) removeParams.lpConstraint = lender.lps;
 
-        uint256 price = _priceAt(params_.index);
+        if (removeParams.lpConstraint == 0) revert NoClaim(); // revert if no LP to claim
+
+        removeParams.depositConstraint = params_.maxAmount;
+        removeParams.price             = _priceAt(params_.index);
+        removeParams.bucketLPs         = bucket.lps;
+        removeParams.bucketCollateral  = bucket.collateral;
+        removeParams.index             = params_.index;
+        removeParams.dustLimit         = poolState_.quoteDustLimit;
 
         uint256 unscaledRemaining;
         (removedAmount_, redeemedLPs_, unscaledRemaining) = _removeMaxDeposit(
             deposits_,
-            RemoveDepositParams({
-                depositConstraint: params_.maxAmount,
-                lpConstraint:      lenderLPs,
-                bucketCollateral:  bucket.collateral,
-                bucketLPs:         bucket.lps,
-                price:             price,
-                index:             params_.index,
-                dustLimit:         poolState_.quoteDustLimit
-            })
+            removeParams
         );
 
         // apply early withdrawal penalty if quote token is removed from above the PTP
         if (depositTime != 0 && block.timestamp - depositTime < 1 days) {
-            if (price > _ptp(poolState_.debt, poolState_.collateral)) {
+            if (removeParams.price > _ptp(poolState_.debt, poolState_.collateral)) {
                 removedAmount_ = Maths.wmul(removedAmount_, Maths.WAD - _feeRate(poolState_.rate));
             }
         }
@@ -368,8 +366,16 @@ library LenderActions {
 
         // update lender and bucket LPs balances
         lender.lps -= redeemedLPs_;
-        bucket.lps -= redeemedLPs_;
-        _bankruptBucketIfEmpty(bucket, unscaledRemaining, params_.index);
+
+        uint256 lpsRemaining = removeParams.bucketLPs - redeemedLPs_;
+
+        if (removeParams.bucketCollateral == 0 && unscaledRemaining == 0 && lpsRemaining != 0) {
+            emit BucketBankruptcy(params_.index, lpsRemaining);
+            bucket.lps            = 0;
+            bucket.bankruptcyTime = block.timestamp;
+        } else {
+            bucket.lps = lpsRemaining;
+        }
 
         emit RemoveQuoteToken(msg.sender, params_.index, removedAmount_, redeemedLPs_, lup_);
     }
@@ -530,18 +536,6 @@ library LenderActions {
     /**************************/
     /*** Internal Functions ***/
     /**************************/
-
-    function _bankruptBucketIfEmpty(
-        Bucket storage bucket_, 
-        uint256 bucketDeposit_,
-        uint256 index_
-    ) internal {
-        if (bucket_.collateral == 0 && bucketDeposit_ == 0 && bucket_.lps != 0) {
-            emit BucketBankruptcy(index_, bucket_.lps);
-            bucket_.lps            = 0;
-            bucket_.bankruptcyTime = block.timestamp;
-        }
-    }
 
     function _removeMaxCollateral(
         mapping(uint256 => Bucket) storage buckets_,
