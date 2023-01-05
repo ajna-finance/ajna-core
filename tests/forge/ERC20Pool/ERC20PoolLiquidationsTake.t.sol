@@ -2098,7 +2098,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         );
     }
 
-    function testBucketZeroAssets() external tearDown {
+    function testTakeAuctionPriceLtNeutralPrice() external tearDown {
 
         _addLiquidity(
             {
