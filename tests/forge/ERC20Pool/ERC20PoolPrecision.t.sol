@@ -750,7 +750,16 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             });
         }
 
-        // TODO: test _assertRepayMinDebtRevert before tearDown
+        // have last borrower attempt an bad repay before tearDown
+        (uint256 minDebtAmount, , , ) = _poolUtils.poolUtilizationInfo(address(_pool));
+        assertGt(minDebtAmount, 1);
+        (uint256 debt, , ) = _poolUtils.borrowerInfo(address(_pool), borrower);
+        uint256 repayAmount = debt - minDebtAmount / 2;
+        _assertRepayMinDebtRevert({
+            from:     borrower,
+            borrower: borrower,
+            amount:   repayAmount
+        });
     }
 
     function testCollateralDustPricePrecisionAdjustment() external {
@@ -790,7 +799,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint8   collateralPrecisionDecimals_,
         uint8   quotePrecisionDecimals_,
         uint16  bucketId_
-    ) external  { //tearDown
+    ) external tearDown {
         // setup fuzzy bounds and initialize the pool
         uint256 collateralDecimals = bound(uint256(collateralPrecisionDecimals_), 1, 18);
         uint256 quoteDecimals      = bound(uint256(quotePrecisionDecimals_),      1, 18);
@@ -834,14 +843,26 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         if (_quoteDust != 1) {
             uint256 repaymentAmount = currentDebt - (_quoteDust / 2);
             _assertRepayDustRevert({
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   repaymentAmount
+                from:             _borrower,
+                borrower:         _borrower,
+                amountToRepay:    repaymentAmount,
+                collateralToPull: 0
             });
         }
         _repayDebtWithoutPullingCollateral(_borrower);
 
-        // TODO: ensure we cannot pull a dusty amount of collateral
+        // ensure we cannot pull a dusty amount of collateral
+        uint256 collateralDust = ERC20Pool(address(_pool)).collateralDust(0);
+        if (collateralDust != 1)
+        {
+            uint256 pullAmount = pledgedCollateral - (collateralDust / 2);
+            _assertRepayDustRevert({
+                from:             _borrower,
+                borrower:         _borrower,
+                amountToRepay:    0,
+                collateralToPull: pullAmount
+            });
+        }
     }
 
 
