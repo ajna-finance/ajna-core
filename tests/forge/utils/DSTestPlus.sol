@@ -1224,6 +1224,13 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     /*** Test utility functions ***/
     /******************************/
 
+    function _calculateLup(address pool_, uint256 debtAmount_) internal view returns (uint256 lup_) {
+        IPool pool = IPool(pool_);
+
+        uint256 lupIndex = pool.depositIndex(debtAmount_);
+        lup_ = _priceAt(lupIndex); 
+    }
+
     function randomInRange(uint256 min, uint256 max) public returns (uint256) {
         return randomInRange(min, max, false);
     }
