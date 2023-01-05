@@ -106,7 +106,6 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             // move borrowed amount from pool to sender
             _transferQuoteToken(msg.sender, amountToBorrow_);
         }
-
     }
 
     function repayDebt(
@@ -199,25 +198,29 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     /*********************************/
 
     function addCollateral(
-        uint256 collateralAmountToAdd_,
+        uint256 amountToAdd_,
         uint256 index_
     ) external override returns (uint256 bucketLPs_) {
         PoolState memory poolState = _accruePoolInterest();
 
+        // revert if the dust amount was not exceeded, but round on the scale amount
+        if (amountToAdd_ != 0 && amountToAdd_ < _collateralDust(index_)) revert DustAmountNotExceeded();
+        amountToAdd_ = _getTokenScaledAmount(amountToAdd_, _getArgUint256(COLLATERAL_SCALE));
+
         bucketLPs_ = LenderActions.addCollateral(
             buckets,
             deposits,
-            collateralAmountToAdd_,
+            amountToAdd_,
             index_
         );
 
-        emit AddCollateral(msg.sender, index_, collateralAmountToAdd_, bucketLPs_);
+        emit AddCollateral(msg.sender, index_, amountToAdd_, bucketLPs_);
 
         // update pool interest rate state
         _updateInterestState(poolState, _lup(poolState.debt));
 
         // move required collateral from sender to pool
-        _transferCollateralFrom(msg.sender, collateralAmountToAdd_);
+        _transferCollateralFrom(msg.sender, amountToAdd_);
     }
 
     function removeCollateral(

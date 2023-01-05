@@ -501,8 +501,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint256 quoteAmount         = bound(uint256(quoteAmount_),                 0,   maxQuoteAmountBound);
         init(boundColPrecision, boundQuotePrecision);
 
-        // Scaled Quote Token Amount
         uint256 scaledQuoteAmount = (quoteAmount / 10 ** (18 - boundQuotePrecision)) * 10 ** (18 - boundQuotePrecision);
+        uint256 scaledColAmount   = (collateralAmount / 10 ** (18 - boundColPrecision)) * 10 ** (18 - boundColPrecision);
+        uint256 colDustAmount     = ERC20Pool(address(_pool)).collateralDust(bucketId);
 
         assertEq(ERC20Pool(address(_pool)).collateralScale(), 10 ** (18 - boundColPrecision));
         assertEq(_pool.quoteTokenScale(), 10 ** (18 - boundQuotePrecision));
@@ -523,36 +524,41 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             exchangeRate: 1e27
         });
 
-        // addQuoteToken should add scaled quote token amount and lp
-        vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(_lender, bucketId, scaledQuoteAmount, scaledQuoteAmount * 1e9, MAX_PRICE);
-        _addLiquidityNoEventCheck(_lender, quoteAmount, bucketId);
-        
+        // addQuoteToken should add scaled quote token amount validate LP
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: quoteAmount,
+            index:  bucketId
+        });
         (uint256 lpBalance, uint256 time) = _pool.lenderInfo(bucketId, _lender);
         if (scaledQuoteAmount != 0) {
-            assertGt(lpBalance, 0);
+            assertEq(lpBalance, scaledQuoteAmount * 1e9);
             assertGt(time, _startTime);
         } else {
             assertEq(lpBalance, 0);
         }
 
         // deposit collateral and sanity check bidder LPs
-        _addCollateralWithoutCheckingLP(_bidder, collateralAmount, bucketId);
-        (lpBalance, time) = _pool.lenderInfo(bucketId, _bidder);
-        if (collateralAmount != 0) {
-            assertGt(lpBalance, 0);
+        if (collateralAmount != 0 && collateralAmount < colDustAmount) {
+            _assertAddCollateralDustRevert(_bidder, collateralAmount, bucketId);
         } else {
-            assertEq(lpBalance, 0);
+            _addCollateralWithoutCheckingLP(_bidder, collateralAmount, bucketId);
+            (lpBalance, time) = _pool.lenderInfo(bucketId, _bidder);
+            if (collateralAmount == 0) {
+                assertEq(lpBalance, 0);
+            } else if (collateralAmount < colDustAmount) {
+                assertGt(lpBalance, 0);
+                assertGt(time, _startTime);
+            }
         }
-        assertGt(time, _startTime);
 
         // check bucket
         uint256 curDeposit;
         uint256 availableCollateral;
         (, curDeposit, availableCollateral, lpBalance,,) = _poolUtils.bucketInfo(address(_pool), bucketId);
         assertEq(curDeposit, scaledQuoteAmount);
-        assertEq(availableCollateral, collateralAmount);
-        if (scaledQuoteAmount + collateralAmount == 0) {
+        assertEq(availableCollateral, scaledColAmount); // FIXME: needs to be scaled by the dust amount
+        if (scaledQuoteAmount + scaledColAmount == 0) {
             assertEq(lpBalance, 0);
         } else {
             assertGt(lpBalance, 0);
@@ -592,7 +598,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         // addQuoteToken should add scaled quote token amount and lp
         vm.expectEmit(true, true, false, true);
         emit AddQuoteToken(_lender, bucketId, scaledQuoteAmount1, scaledQuoteAmount1 * 1e9, MAX_PRICE);
-        _addLiquidityNoEventCheck(_lender, quoteAmount1, bucketId);
+        _addLiquidityNoEventCheck(_lender, quoteAmount1, bucketId); // TODO: use _addInitialLiquidity and remove explicit LP check below 
 
         (uint256 lpBalance1, uint256 time) = _pool.lenderInfo(bucketId, _lender);
         if (scaledQuoteAmount1 != 0) {
@@ -716,7 +722,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
         // 12 borrowers will take most of the liquidity; divide by 13 to leave room for origination fee
         uint256 debtToDraw         = Maths.wdiv(_lenderDepositNormalized, 13 * 1e18);
-        uint256 collateralToPledge = Maths.wmul(Maths.wdiv(debtToDraw, _priceAt(bucketId)), 1.1 * 1e18);
+        uint256 collateralToPledge = _calculateCollateralToPledge(debtToDraw, bucketId, 1.1 * 1e18);
         address borrower;
         for (uint i=0; i<12; ++i) {
             borrower = makeAddr(string(abi.encodePacked("anonBorrower", i)));
@@ -756,8 +762,8 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
     function testCollateralDustPricePrecisionAdjustment() external {
         // test the bucket price adjustment used for determining dust amount
-        assertEq(_getCollateralDustPricePrecisionAdjustment(0), 0);
-        assertEq(_getCollateralDustPricePrecisionAdjustment(1), 0);
+        assertEq(_getCollateralDustPricePrecisionAdjustment(0),    0);
+        assertEq(_getCollateralDustPricePrecisionAdjustment(1),    0);
         assertEq(_getCollateralDustPricePrecisionAdjustment(4156), 2);
         assertEq(_getCollateralDustPricePrecisionAdjustment(4310), 3);
         assertEq(_getCollateralDustPricePrecisionAdjustment(5260), 5);
@@ -809,7 +815,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         // calculate amount of debt to draw to bring pool to ~50% utilization
         uint256 debtToDraw         = Maths.wdiv(_lenderDepositNormalized, 2 * 1e18);
         // determine amount of collateral required, with higher precision than the token
-        uint256 collateralToPledge = Maths.wmul(Maths.wdiv(debtToDraw, _priceAt(bucketId)), 1.1 * 1e18);
+        uint256 collateralToPledge = _calculateCollateralToPledge(debtToDraw, bucketId, 1.1 * 1e18);
         _mintAndApproveCollateral(_borrower, collateralDecimals, collateralToPledge);
 
         // validate that dusty amount was not credited to the borrower
@@ -832,24 +838,13 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
     /*** Helper Methods ***/
     /**********************/
 
-    function _addCollateralWithoutCheckingLP(
-        address from,
-        uint256 amount,
-        uint256 index
-    ) internal returns (uint256) {
-        changePrank(from);
-        // CAUTION: this does not actually check topic1 and 2 as it should
-        vm.expectEmit(true, true, false, false);
-        emit AddCollateral(from, index, amount, 0);
-        vm.expectEmit(true, true, false, true);
-        emit Transfer(from, address(_pool), amount / ERC20Pool(address(_pool)).collateralScale());
-
-        // Add for tearDown
-        lenders.add(from);
-        lendersDepositedIndex[from].add(index);
-        bucketsUsed.add(index);
-
-        return ERC20Pool(address(_pool)).addCollateral(amount, index);
+    function _calculateCollateralToPledge(
+        uint256 debtToDraw,
+        uint256 newLupIndex,
+        uint256 desiredCollateralizationRatio
+    ) internal pure returns (uint256) {
+        // TODO: round up if smaller than decimal places of the collateral token
+        return Maths.wmul(Maths.wdiv(debtToDraw, _priceAt(newLupIndex)), desiredCollateralizationRatio);
     }
 
     function _encumberedCollateral(uint256 debt_, uint256 price_) internal pure returns (uint256 encumberance_) {

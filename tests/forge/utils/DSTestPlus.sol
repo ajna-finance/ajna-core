@@ -100,7 +100,9 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 amount,
         uint256 index
     ) internal {
-        _addLiquidity(from, amount, index, amount * 1e9, MAX_PRICE);
+        uint256 quoteTokenScale = IPool(address(_pool)).quoteTokenScale();
+        uint256 lpAmount        = (amount / quoteTokenScale) * quoteTokenScale * 1e9;
+        _addLiquidity(from, amount, index, lpAmount, MAX_PRICE);
     }
 
     // Adds liquidity with interest rate update
@@ -125,9 +127,11 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 lpAward,
         uint256 newLup
     ) internal {
+        uint256 quoteTokenScale = IPool(address(_pool)).quoteTokenScale();
         changePrank(from);
+
         vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(from, index, amount, lpAward, newLup);
+        emit AddQuoteToken(from, index, (amount / quoteTokenScale) * quoteTokenScale, lpAward, newLup);
         _assertTokenTransferEvent(from, address(_pool), amount);
         _pool.addQuoteToken(amount, index);
 
