@@ -332,11 +332,11 @@ library LenderActions {
         uint256 depositTime = lender.depositTime;
 
         uint256 lenderLPs;
-
         if (bucket.bankruptcyTime < lender.depositTime) lenderLPs = lender.lps;
         if (lenderLPs == 0) revert NoClaim();      // revert if no LP to claim
 
         uint256 price = _priceAt(params_.index);
+        uint256 collateralInBucket = bucket.collateral;
 
         uint256 unscaledRemaining;
         (removedAmount_, redeemedLPs_, unscaledRemaining) = _removeMaxDeposit(
@@ -344,7 +344,7 @@ library LenderActions {
             RemoveDepositParams({
                 depositConstraint: params_.maxAmount,
                 lpConstraint:      lenderLPs,
-                bucketCollateral:  bucket.collateral,
+                bucketCollateral:  collateralInBucket,
                 bucketLPs:         bucket.lps,
                 price:             price,
                 index:             params_.index,
@@ -368,8 +368,17 @@ library LenderActions {
 
         // update lender and bucket LPs balances
         lender.lps -= redeemedLPs_;
-        bucket.lps -= redeemedLPs_;
-        _bankruptBucketIfEmpty(bucket, unscaledRemaining, params_.index);
+
+        uint256 lpsInBucket  = bucket.lps;
+        uint256 lpsRemaining = lpsInBucket - redeemedLPs_;
+
+        if (collateralInBucket == 0 && unscaledRemaining == 0 && lpsRemaining != 0) {
+            emit BucketBankruptcy(params_.index, lpsRemaining);
+            bucket.lps            = 0;
+            bucket.bankruptcyTime = block.timestamp;
+        } else {
+            bucket.lps = lpsRemaining;
+        }
 
         emit RemoveQuoteToken(msg.sender, params_.index, removedAmount_, redeemedLPs_, lup_);
     }
@@ -530,18 +539,6 @@ library LenderActions {
     /**************************/
     /*** Internal Functions ***/
     /**************************/
-
-    function _bankruptBucketIfEmpty(
-        Bucket storage bucket_, 
-        uint256 bucketDeposit_,
-        uint256 index_
-    ) internal {
-        if (bucket_.collateral == 0 && bucketDeposit_ == 0 && bucket_.lps != 0) {
-            emit BucketBankruptcy(index_, bucket_.lps);
-            bucket_.lps            = 0;
-            bucket_.bankruptcyTime = block.timestamp;
-        }
-    }
 
     function _removeMaxCollateral(
         mapping(uint256 => Bucket) storage buckets_,

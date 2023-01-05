@@ -2254,7 +2254,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 from:     _lender,
                 amount:   1,
                 index:    _i9_91,
-                newLup:   9818751856078723036,
+                newLup:   9.818751856078723036 * 1e18,
                 lpRedeem: 2_000 * 1e27
             }
         );
