@@ -391,7 +391,6 @@ contract AjnaRewards is IAjnaRewards {
         // update last interaction burn event
         stake.lastInteractionBurnEpoch = uint96(burnEpochToStartClaim_);
 
-
         uint256 ajnaBalance = IERC20(ajnaToken).balanceOf(address(this));
 
         if (rewardsEarned > ajnaBalance) rewardsEarned = ajnaBalance;

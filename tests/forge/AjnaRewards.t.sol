@@ -130,18 +130,18 @@ contract AjnaRewardsTest is DSTestPlus {
         assertEq(_positionManager.ownerOf(tokenId_), address(_ajnaRewards));
     }
 
-    function _unStakeToken(
+    function _unstakeToken(
         address minter,
         address pool,
         uint256[] memory claimedArray,
         uint256 tokenId,
-        uint256 reward
+        uint256 reward,
+        uint256 updateRatesReward
     ) internal {
 
         changePrank(minter);
-        // TODO: Add update exchange rate emits
-        // vm.expectEmit(true, true, true, true);
-        // emit UpdateExchangeRates(_minterOne, address(_poolOne), depositIndexes, 0);
+        vm.expectEmit(true, true, true, true);
+        emit UpdateExchangeRates(_minterOne, address(_poolOne), _positionManager.getPositionIndexes(tokenId), updateRatesReward);
         vm.expectEmit(true, true, true, true);
         emit ClaimRewards(minter, pool,  tokenId, claimedArray, reward);
         vm.expectEmit(true, true, true, true);
@@ -153,6 +153,28 @@ contract AjnaRewardsTest is DSTestPlus {
         assertEq(_positionManager.ownerOf(tokenId), address(minter));
     }
 
+    function _triggerReserveAuctionsNoTake(TriggerReserveAuctionParams memory params_) internal {
+        // create a new borrower to write state required for reserve auctions
+        (
+            address borrower,
+            uint256 collateralToPledge
+        ) = _createTestBorrower(params_.pool, string("borrower"), params_.borrowAmount, params_.limitIndex);
+
+        // borrower drawsDebt from the pool
+        params_.pool.drawDebt(borrower, params_.borrowAmount, params_.limitIndex, collateralToPledge);
+
+        // allow time to pass for interest to accumulate
+        skip(26 weeks);
+
+        // borrower repays some of their debt, providing reserves to be claimed
+        // don't pull any collateral, as such functionality is unrelated to reserve auctions
+        params_.pool.repayDebt(borrower, Maths.wdiv(params_.borrowAmount, Maths.wad(2)), 0);
+
+        // start reserve auction
+        changePrank(_bidder);
+        _ajnaToken.approve(address(params_.pool), type(uint256).max);
+        params_.pool.startClaimableReserveAuction();
+    }
 
     function _assertBurn(
         address pool,
@@ -462,12 +484,13 @@ contract AjnaRewardsTest is DSTestPlus {
         tokensToBurn += _triggerReserveAuctions(triggerReserveAuctionParams);
 
         // check owner can withdraw the NFT and rewards will be automatically claimed
-        _unStakeToken({
-            minter:        _minterOne,
-            pool:           address(_poolOne),
-            tokenId:        tokenIdOne,
-            claimedArray:   _epochsClaimedArray(2, 0),
-            reward:         49.549902798107900845 * 1e18
+        _unstakeToken({
+            minter:            _minterOne,
+            pool:              address(_poolOne),
+            tokenId:           tokenIdOne,
+            claimedArray:      _epochsClaimedArray(2, 0),
+            reward:            49.549902798107900845 * 1e18,
+            updateRatesReward: 2.860362784092827595 * 1e18
         });
     }
 
@@ -504,7 +527,7 @@ contract AjnaRewardsTest is DSTestPlus {
 
 
         // first reserve auction happens successfully Staker should receive rewards epoch 0 - 1
-        uint256 tokensToBurn = _triggerReserveAuctions(triggerReserveAuctionParams);
+        _triggerReserveAuctions(triggerReserveAuctionParams);
 
         //call update exchange rate to enable claiming rewards for epoch 0 - 1
         _updateExchangeRates({
@@ -542,42 +565,6 @@ contract AjnaRewardsTest is DSTestPlus {
             reward:         2.556218432497364950 * 1e18
         });
     }
-
-    function _triggerReserveAuctionsNoTake(TriggerReserveAuctionParams memory params_) internal returns (uint256 tokensToBurn_) {
-        // create a new borrower to write state required for reserve auctions
-        address borrower = makeAddr("borrower");
-
-        changePrank(borrower);
-
-        Token collateral = Token(params_.pool.collateralAddress());
-        Token quote = Token(params_.pool.quoteTokenAddress());
-
-        deal(address(quote), borrower, params_.borrowAmount);
-
-        // approve tokens
-        collateral.approve(address(params_.pool), type(uint256).max);
-        quote.approve(address(params_.pool), type(uint256).max);
-
-        uint256 collateralToPledge = _requiredCollateral(params_.pool, params_.borrowAmount, params_.limitIndex);
-        deal(address(collateral), borrower, collateralToPledge);
-
-        // borrower drawsDebt from the pool
-        params_.pool.drawDebt(borrower, params_.borrowAmount, params_.limitIndex, collateralToPledge);
-
-        // allow time to pass for interest to accumulate
-        skip(26 weeks);
-
-        // borrower repays some of their debt, providing reserves to be claimed
-        // don't pull any collateral, as such functionality is unrelated to reserve auctions
-        params_.pool.repayDebt(borrower, Maths.wdiv(params_.borrowAmount, Maths.wad(2)), 0);
-
-        // start reserve auction
-        changePrank(_bidder);
-        _ajnaToken.approve(address(params_.pool), type(uint256).max);
-        params_.pool.startClaimableReserveAuction();
-    }
-
-
 
     function testUpdateExchangeRatesAndClaimRewardsAfterMultiReserveAuctions() external {
         // TODO: implement this test checking handling of staking an NFT after multiple reserve auctions have already occured
@@ -699,15 +686,15 @@ contract AjnaRewardsTest is DSTestPlus {
         /*******************************************/
         /*** Lender Withdraws And Claims Rewards ***/
         /*******************************************/
-        
-        
+
         // _minterOne withdraws and claims rewards, rewards should be set to the difference between total claimed and cap
-        _unStakeToken({
-            minter:        _minterOne,
-            pool:           address(_poolOne),
-            tokenId:        tokenIdOne,
-            claimedArray:   _epochsClaimedArray(1, 0),
-            reward:         0.227347187766462422 * 1e18
+        _unstakeToken({
+            minter:            _minterOne,
+            pool:              address(_poolOne),
+            tokenId:           tokenIdOne,
+            claimedArray:      _epochsClaimedArray(1, 0),
+            reward:            0.227347187766462422 * 1e18,
+            updateRatesReward: 0
         });
         // TODO: check reward amount vs expected from burn
     }
