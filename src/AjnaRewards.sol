@@ -82,13 +82,12 @@ contract AjnaRewards is IAjnaRewards {
     IPositionManager public immutable positionManager; // The PositionManager contract
 
     struct RewardsLocalVars {
-        uint256 bucketIndex;
-        uint256 bucketLPs;
-        uint256 bucketRate;
-        uint256 epoch;
-        uint256 nextEpoch;
-        uint256 interestEarned;
-        uint256 newRewards;
+        uint256 bucketIndex;    // index of current bucket to calculate rewards for
+        uint256 bucketRate;     // recorded exchange rate of current bucket
+        uint256 epoch;          // current epoch to calculate rewards for
+        uint256 nextEpoch;      // next epoch to calculate rewards for
+        uint256 interestEarned; // interest earned on current epoch for the current bucket
+        uint256 newRewards;     // calculated rewards
     }
 
     /*******************/
@@ -245,17 +244,19 @@ contract AjnaRewards is IAjnaRewards {
             vars.bucketIndex = positionIndexes[i];
 
             BucketState memory bucketSnapshot = stakes[tokenId_].snapshot[vars.bucketIndex];
-            vars.bucketLPs  = bucketSnapshot.lpsAtStakeTime;
-            vars.bucketRate = bucketSnapshot.rateAtStakeTime;
 
             // iterate through all burn periods to check exchange for buckets over time
             for (vars.epoch = lastBurnEpoch; vars.epoch < burnEpochToStartClaim_; ) {
                 vars.nextEpoch = vars.epoch + 1;
 
-                // for the first epoch use the bucket rate at the time of staking
-                // for all the other epochs use saved bucket rates
-                if (vars.epoch != stakingEpoch) {
-                    vars.bucketRate = poolBucketBurnExchangeRates[ajnaPool][vars.bucketIndex][vars.epoch];
+                vars.bucketRate = poolBucketBurnExchangeRates[ajnaPool][vars.bucketIndex][vars.epoch];
+
+                // for the epoch when token was staked use the min of the bucket rate at the time of staking and the recorded bucket rate
+                if (vars.epoch == stakingEpoch) {
+                    vars.bucketRate = Maths.min(
+                        bucketSnapshot.rateAtStakeTime,
+                        vars.bucketRate
+                    );
                 }
 
                 // calculate change in exchange rates in a stakes buckets
@@ -263,7 +264,7 @@ contract AjnaRewards is IAjnaRewards {
                     ajnaPool,
                     vars.nextEpoch,
                     vars.bucketIndex,
-                    vars.bucketLPs,
+                    bucketSnapshot.lpsAtStakeTime,
                     vars.bucketRate
                 );
 
