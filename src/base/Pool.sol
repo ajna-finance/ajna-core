@@ -271,15 +271,16 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     /// @inheritdoc IPoolReserveAuctionActions
     function startClaimableReserveAuction() external override {
-        // check that at least two weeks have passed since the last reserve auction completed
-
+        // retrieve timestamp of latest burn event and last burn timestamp
         uint256 latestBurnEpoch   = reserveAuction.latestBurnEventEpoch;
         uint256 lastBurnTimestamp = reserveAuction.burnEvents[latestBurnEpoch].timestamp;
 
+        // check that at least two weeks have passed since the last reserve auction completed, and that the auction was not kicked within the past 72 hours
         if (block.timestamp < lastBurnTimestamp + 2 weeks || block.timestamp - reserveAuction.kicked <= 72 hours) {
             revert ReserveAuctionTooSoon();
         }
 
+        // start a new claimable reserve auction, passing in relevant parameters such as the current pool size, debt, balance, and inflator value
         uint256 kickerAward = Auctions.startClaimableReserveAuction(
             auctions,
             reserveAuction,
@@ -291,12 +292,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             })
         );
 
-        // record start of new burn event
+        // increment latest burn event epoch and update burn event timestamp
         latestBurnEpoch += 1;
 
         reserveAuction.latestBurnEventEpoch = latestBurnEpoch;
         reserveAuction.burnEvents[latestBurnEpoch].timestamp = block.timestamp;
 
+        // transfer kicker award to msg.sender
         _transferQuoteToken(msg.sender, kickerAward);
     }
 
@@ -334,22 +336,28 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*****************************/
 
     function _accruePoolInterest() internal returns (PoolState memory poolState_) {
+	// retrieve t0Debt amount from poolBalances struct
         uint256 t0Debt = poolBalances.t0Debt;
 
+	// initialize fields of poolState_ struct with initial values
         poolState_.collateral     = poolBalances.pledgedCollateral;
         poolState_.inflator       = inflatorState.inflator;
         poolState_.rate           = interestState.interestRate;
         poolState_.poolType       = _getArgUint8(POOL_TYPE);
         poolState_.quoteDustLimit = _getArgUint256(QUOTE_SCALE);
 
+	// check if t0Debt is not equal to 0, indicating that there is debt to be tracked for the pool
         if (t0Debt != 0) {
             // Calculate prior pool debt
             poolState_.debt = Maths.wmul(t0Debt, poolState_.inflator);
 
+	    // calculate elapsed time since inflator was last updated
             uint256 elapsed = block.timestamp - inflatorState.inflatorUpdate;
 
+	    // set isNewInterestAccrued field to true if elapsed time is not 0, indicating that new interest may have accrued
             poolState_.isNewInterestAccrued = elapsed != 0;
 
+            // if new interest may have accrued, call accrueInterest function and update inflator and debt fields of poolState_ struct
             if (poolState_.isNewInterestAccrued) {
                 (uint256 newInflator, uint256 newInterest) = PoolCommons.accrueInterest(
                     deposits,
@@ -368,6 +376,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     function _updateInterestState(PoolState memory poolState_, uint256 lup_) internal {
+        // if it has been more than 12 hours since the last interest rate update, call updateInterestRate function
         if (block.timestamp - interestState.interestRateUpdate > 12 hours) {
             PoolCommons.updateInterestRate(interestState, deposits, poolState_, lup_);
         }
@@ -376,6 +385,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if (poolState_.isNewInterestAccrued) {
             inflatorState.inflator       = uint208(poolState_.inflator);
             inflatorState.inflatorUpdate = uint48(block.timestamp);
+        // if the debt in the current pool state is 0, also update the inflator and inflatorUpdate fields in inflatorState
         // slither-disable-next-line incorrect-equality
         } else if (poolState_.debt == 0) {
             inflatorState.inflator       = uint208(Maths.WAD);
