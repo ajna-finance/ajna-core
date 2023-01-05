@@ -363,11 +363,17 @@ contract AjnaRewards is IAjnaRewards {
         uint256 tokenId_,
         uint256 burnEpochToStartClaim_
     ) internal {
-        uint256 rewardsEarned = _calculateRewards(tokenId_, burnEpochToStartClaim_, true);
 
         Stake storage stake = stakes[tokenId_];
-
         address ajnaPool = stake.ajnaPool;
+
+        // update bucket exchange rates and claim associated rewards
+        uint256 rewardsEarned = _updateBucketExchangeRates(
+            ajnaPool,
+            positionManager.getPositionIndexes(tokenId_)
+        );
+
+        rewardsEarned += _calculateRewards(tokenId_, burnEpochToStartClaim_, true); 
 
         uint256[] memory burnEpochsClaimed = _getBurnEpochsClaimed(
             stake.lastInteractionBurnEpoch,
@@ -384,12 +390,6 @@ contract AjnaRewards is IAjnaRewards {
 
         // update last interaction burn event
         stake.lastInteractionBurnEpoch = uint96(burnEpochToStartClaim_);
-
-        // update bucket exchange rates and claim associated rewards
-        rewardsEarned += _updateBucketExchangeRates(
-            ajnaPool,
-            positionManager.getPositionIndexes(tokenId_)
-        );
 
         uint256 ajnaBalance = IERC20(ajnaToken).balanceOf(address(this));
 
@@ -452,11 +452,15 @@ contract AjnaRewards is IAjnaRewards {
             uint256 totalBurnedAtBlock
         ) = IPool(pool_).burnInfo(lastBurnEventEpoch_);
 
+        uint256 totalBurned   = totalBurnedLatest   != 0 ? totalBurnedLatest   - totalBurnedAtBlock   : totalBurnedAtBlock;
+        uint256 totalInterest = totalInterestLatest != 0 ? totalInterestLatest - totalInterestAtBlock : totalInterestAtBlock;
+
         return (
             currentBurnTime,
-            totalBurnedLatest - totalBurnedAtBlock,
-            totalInterestLatest - totalInterestAtBlock
+            totalBurned,
+            totalInterest
         );
+
     }
 
     /**
