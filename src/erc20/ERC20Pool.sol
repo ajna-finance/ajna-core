@@ -123,7 +123,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             poolState,
             borrowerAddress_,
             maxQuoteTokenAmountToRepay_,
-            collateralAmountToPull_
+            collateralAmountToPull_,
+            _collateralDust(0)
         );
 
         emit RepayDebt(borrowerAddress_, result.quoteTokenToRepay, collateralAmountToPull_, result.newLup);
@@ -397,7 +398,9 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     }
 
     function _collateralDust(uint256 bucketIndex) internal view returns (uint256) {
+        // price precision adjustment will always be 0 for encumbered collateral
         uint256 pricePrecisionAdjustment = _getCollateralDustPricePrecisionAdjustment(bucketIndex);
+        // difference between the normalized scale and the collateral token's scale
         uint256 scaleExponent            = 18 - IERC20Token(_getArgAddress(COLLATERAL_ADDRESS)).decimals();
         return 10 ** Maths.max(scaleExponent, pricePrecisionAdjustment);
     } 

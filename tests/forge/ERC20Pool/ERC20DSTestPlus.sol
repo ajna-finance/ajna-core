@@ -494,6 +494,16 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         ERC20Pool(address(_pool)).repayDebt(borrower, 0, amount);
     }
 
+    function _assertRepayDustRevert(
+        address from,
+        address borrower,
+        uint256 amount
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
+        ERC20Pool(address(_pool)).repayDebt(borrower, amount, 0);
+    }
+
     function _assertRepayMinDebtRevert(
         address from,
         address borrower,

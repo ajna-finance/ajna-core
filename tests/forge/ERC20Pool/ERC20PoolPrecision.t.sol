@@ -20,6 +20,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
     uint256 internal _collateralPrecision;
     uint256 internal _quotePrecision;
+    uint256 internal _quoteDust;
 
     address internal _borrower;
     address internal _borrower2;
@@ -36,10 +37,13 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _collateral = new TokenWithNDecimals("Collateral", "C", uint8(collateralPrecisionDecimals_));
         _quote      = new TokenWithNDecimals("Quote", "Q", uint8(quotePrecisionDecimals_));
         _pool       = ERC20Pool(new ERC20PoolFactory(_ajna).deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
+        vm.label(address(_pool), "ERC20Pool");
         _poolUtils  = new PoolInfoUtils();
 
         _collateralPrecision = uint256(10) ** collateralPrecisionDecimals_;
         _quotePrecision = uint256(10) ** quotePrecisionDecimals_;
+        _quoteDust      = _pool.quoteTokenDust();
+        assertEq(_quoteDust, 10 ** (18 - quotePrecisionDecimals_));
         
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
@@ -656,7 +660,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             return;
         }
 
-        if (amountToMove != 0 && amountToMove < _pool.quoteTokenDust()) {
+        if (amountToMove != 0 && amountToMove < _quoteDust) {
             _assertMoveLiquidityDustRevert(
                 {
                     from:      _lender,
@@ -690,7 +694,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         assertEq(lps, amountToMove * 1e9);
     }
 
-    function testMinDebtAmount(
+    function testDrawMinDebtAmount(
         uint8   collateralPrecisionDecimals_,
         uint8   quotePrecisionDecimals_,
         uint16  bucketId_
@@ -715,7 +719,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             borrower = makeAddr(string(abi.encodePacked("anonBorrower", i)));
 
             // mint and approve collateral tokens
-            _mintAndApproveCollateral(borrower, collateralDecimals, collateralToPledge);
+            _mintAndApproveCollateral(borrower, collateralToPledge);
             // approve quote token to facilitate teardown
             _quote.approve(address(_pool), _lenderDepositDenormalized);
 
@@ -745,6 +749,8 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                     collateralToPledge: collateralToPledge
             });
         }
+
+        // TODO: test _assertRepayMinDebtRevert before tearDown
     }
 
     function testCollateralDustPricePrecisionAdjustment() external {
@@ -784,11 +790,11 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint8   collateralPrecisionDecimals_,
         uint8   quotePrecisionDecimals_,
         uint16  bucketId_
-    ) external tearDown {
+    ) external  { //tearDown
         // setup fuzzy bounds and initialize the pool
         uint256 collateralDecimals = bound(uint256(collateralPrecisionDecimals_), 1, 18);
         uint256 quoteDecimals      = bound(uint256(quotePrecisionDecimals_),      1, 18);
-        uint256 bucketId           = bound(uint256(bucketId_),                    3000, 4000);
+        uint256 bucketId           = bound(uint256(bucketId_),                    1, 7388);
         init(collateralDecimals, quoteDecimals);
         uint256 collateralScale = 10 ** (18 - collateralDecimals);
 
@@ -803,7 +809,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint256 debtToDraw         = Maths.wdiv(_lenderDepositNormalized, 2 * 1e18);
         // determine amount of collateral required, with higher precision than the token
         uint256 collateralToPledge = _calculateCollateralToPledge(debtToDraw, bucketId, 1.1 * 1e18);
-        _mintAndApproveCollateral(_borrower, collateralDecimals, collateralToPledge);
+        _mintAndApproveCollateral(_borrower, collateralToPledge);
 
         // validate that dusty amount was not credited to the borrower
         _drawDebt({
@@ -814,12 +820,30 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             collateralToPledge: collateralToPledge,
             newLup:             _priceAt(bucketId)
         });
-        (uint256 debtWithOrigFee, uint256 pledgedCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
-        assertGt(debtWithOrigFee, debtToDraw);
+        (uint256 currentDebt, uint256 pledgedCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+        assertGt(currentDebt, debtToDraw);
         // round the collateral amount to token precision
         uint256 collateralRounded  = (collateralToPledge / collateralScale) * collateralScale;
         assertEq(pledgedCollateral, collateralRounded);
+
+        // accumulate some interest
+        skip(1 weeks);
+
+        // ensure we cannot repay a dusty amount of debt
+        (currentDebt, pledgedCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+        if (_quoteDust != 1) {
+            uint256 repaymentAmount = currentDebt - (_quoteDust / 2);
+            _assertRepayDustRevert({
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   repaymentAmount
+            });
+        }
+        _repayDebtWithoutPullingCollateral(_borrower);
+
+        // TODO: ensure we cannot pull a dusty amount of collateral
     }
+
 
     /**********************/
     /*** Helper Methods ***/
@@ -849,12 +873,36 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
     function _mintAndApproveCollateral(
         address recipient,
-        uint256 collateralDecimals,
         uint256 normalizedAmount
     ) internal {
         changePrank(recipient);
-        uint256 denormalizationFactor = 10 ** (18 - collateralDecimals);
+        uint256 denormalizationFactor = 10 ** (18 - _collateral.decimals());
         _collateral.approve(address(_pool), normalizedAmount / denormalizationFactor);
         deal(address(_collateral), recipient, normalizedAmount / denormalizationFactor);
+    }
+
+    function _mintAndApproveQuoteToken(
+        address recipient,
+        uint256 normalizedAmount
+    ) internal {
+        changePrank(recipient);
+        uint256 denormalizationFactor = 10 ** (18 - _quote.decimals());
+        deal(address(_quote), recipient, normalizedAmount / denormalizationFactor);
+        _quote.approve(address(_pool), normalizedAmount / denormalizationFactor);
+    }
+
+    function _repayDebtWithoutPullingCollateral(
+        address borrower
+    ) internal {
+        (uint256 debt, , ) = _poolUtils.borrowerInfo(address(_pool), borrower);
+        _mintAndApproveQuoteToken(borrower, debt);
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    debt,
+            amountRepaid:     debt,
+            collateralToPull: 0,
+            newLup:           MAX_PRICE
+        });
     }
 }

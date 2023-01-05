@@ -237,6 +237,7 @@ import '../libraries/Maths.sol';
         }
     }
 
+    // TODO: consider renaming _roundToScale
     function _getTokenScaledAmount(
         uint256 amount_,
         uint256 tokenScale_
@@ -247,7 +248,9 @@ import '../libraries/Maths.sol';
     function _getCollateralDustPricePrecisionAdjustment(
         uint256 bucketIndex_
     ) pure returns (uint256) {
-        // TODO: explain where this came from and/or find cleaner formula
+        // conditional is a gas optimization; formula also returns 0 in this case
+        if (bucketIndex_ == 0) return 0;
+        // formula comes from a least squares best fit to a curve constructed using empirically-obtained values
         int256 polynomialResult = 
               (  -2.0844   * 1e11 * int256(bucketIndex_ ** 2)) 
             + (   0.004553 * 1e18 * int256(bucketIndex_)     ) 

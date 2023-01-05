@@ -364,7 +364,8 @@ library LenderActions {
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
         uint256 amount_,
-        uint256 index_
+        uint256 index_,
+        uint256 dustLimit_
     ) external returns (uint256 lpAmount_) {
         Bucket storage bucket = buckets_[index_];
 
@@ -395,6 +396,9 @@ library LenderActions {
         // update bucket LPs and collateral balance
         bucket.lps        -= Maths.min(bucketLPs, lpAmount_);
         bucket.collateral -= Maths.min(bucketCollateral, amount_);
+
+        // ensure a lender does not leave an amount which breaks exchange rate or is below token scale
+        if (bucket.collateral != 0 && bucket.collateral < dustLimit_) revert DustAmountNotExceeded();
     }
 
     function removeMaxCollateral(
