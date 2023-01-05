@@ -82,12 +82,10 @@ library Auctions {
         uint256 unscaledQuoteTokenAmount; // The unscaled token amount that taker should pay for collateral taken.
     }
 
-    struct TakeFromLoanResult {
-        uint256 newLup;                // LUP after auction is taken and loan info updated
-        uint256 poolDebt;              // accrued pool debt after auction is taken
-        uint256 remainingCollateral;   // borrower remaining collateral after auction is taken
-        bool    settledAuction;        // true if auction was settled by take auction
-        uint256 t0DebtInAuctionChange; // t0 change amount of debt after auction is taken
+    struct TakeLoanLocalVars {
+        uint256 repaidDebt;   // the amount of debt repaid to th epool by take auction
+        uint256 borrowerDebt; // the amount of borrower debt
+        bool    inAuction;    // true if loan in auction
     }
 
     struct TakeFromLoanLocalVars {
@@ -546,7 +544,7 @@ library Auctions {
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
         LoansState storage loans_,
-        PoolState calldata poolState_,
+        PoolState memory poolState_,
         address borrowerAddress_,
         bool    depositTake_,
         uint256 index_
@@ -574,7 +572,16 @@ library Auctions {
 
         borrower.collateral -= result_.collateralAmount;
 
-        TakeFromLoanResult memory loanTakeResult = _takeLoan(
+        if (result_.t0DebtPenalty != 0) {
+            poolState_.debt += Maths.wmul(result_.t0DebtPenalty, poolState_.inflator);
+        }
+
+        (
+            result_.poolDebt,
+            result_.newLup,
+            result_.t0DebtInAuctionChange,
+            result_.settledAuction
+        ) = _takeLoan(
             auctions_,
             buckets_,
             deposits_,
@@ -582,14 +589,8 @@ library Auctions {
             poolState_,
             borrower,
             borrowerAddress_,
-            result_.t0RepayAmount,
-            result_.t0DebtPenalty
+            result_.t0RepayAmount
         );
-
-        result_.poolDebt              = loanTakeResult.poolDebt;
-        result_.newLup                = loanTakeResult.newLup;
-        result_.t0DebtInAuctionChange = loanTakeResult.t0DebtInAuctionChange;
-        result_.settledAuction        = loanTakeResult.settledAuction;
     }
 
     /**
@@ -603,7 +604,7 @@ library Auctions {
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
         LoansState storage loans_,
-        PoolState calldata poolState_,
+        PoolState memory poolState_,
         address borrowerAddress_,
         uint256 collateral_
     ) external returns (TakeResult memory result_) {
@@ -633,7 +634,16 @@ library Auctions {
 
         borrower.collateral -= result_.collateralAmount;
 
-        TakeFromLoanResult memory loanTakeResult = _takeLoan(
+        if (result_.t0DebtPenalty != 0) {
+            poolState_.debt += Maths.wmul(result_.t0DebtPenalty, poolState_.inflator);
+        }
+
+        (
+            result_.poolDebt,
+            result_.newLup,
+            result_.t0DebtInAuctionChange,
+            result_.settledAuction
+        ) = _takeLoan(
             auctions_,
             buckets_,
             deposits_,
@@ -641,14 +651,8 @@ library Auctions {
             poolState_,
             borrower,
             borrowerAddress_,
-            result_.t0RepayAmount,
-            result_.t0DebtPenalty
+            result_.t0RepayAmount
         );
-
-        result_.poolDebt              = loanTakeResult.poolDebt;
-        result_.newLup                = loanTakeResult.newLup;
-        result_.t0DebtInAuctionChange = loanTakeResult.t0DebtInAuctionChange;
-        result_.settledAuction        = loanTakeResult.settledAuction;
     }
 
     function _settleAuction(
@@ -993,6 +997,17 @@ library Auctions {
         );
     }
 
+    /**
+     *  @notice Performs update of an auctioned loan that was taken (using bucket or regular take).
+     *  @notice If borrower becomes recollateralized then auction is settled. Update loan's state.
+     *  @param  borrower_               The borrower details owning loan that is taken.
+     *  @param  borrowerAddress_        The address of the borrower.
+     *  @param  t0RepaidDebt_           T0 debt amount repaid by the take action.
+     *  @return poolDebt_               Accrued debt pool after debt is repaid.
+     *  @return newLup_                 The new LUP of pool (after debt is repaid).
+     *  @return t0DebtInAuctionChange_  The overall debt in auction change (remaining borrower debt if auction settled, repaid debt otherwise).
+     *  @return settledAuction_         True if auction is settled by the take action.
+    */
     function _takeLoan(
         AuctionsState storage auctions_,
         mapping(uint256 => Bucket) storage buckets_,
@@ -1001,38 +1016,40 @@ library Auctions {
         PoolState memory poolState_,
         Borrower memory borrower_,
         address borrowerAddress_,
-        uint256 t0RepaidDebt_,
-        uint256 t0DebtPenalty_
-    ) internal returns (TakeFromLoanResult memory result_) {
+        uint256 t0RepaidDebt_
+    ) internal returns (
+        uint256 poolDebt_,
+        uint256 newLup_,
+        uint256 t0DebtInAuctionChange_,
+        bool settledAuction_
+    ) {
 
-        TakeFromLoanLocalVars memory vars;
+        TakeLoanLocalVars memory vars;
 
-        vars.borrowerDebt =  Maths.wmul(borrower_.t0Debt, poolState_.inflator);
-        vars.repaidDebt   =  Maths.wmul(t0RepaidDebt_,    poolState_.inflator);
+        vars.repaidDebt   = Maths.wmul(t0RepaidDebt_,    poolState_.inflator);
+        vars.borrowerDebt = Maths.wmul(borrower_.t0Debt, poolState_.inflator);
+
         vars.borrowerDebt -= vars.repaidDebt;
-
-        result_.poolDebt = poolState_.debt - vars.repaidDebt;
-
-        if (t0DebtPenalty_ != 0) result_.poolDebt += Maths.wmul(t0DebtPenalty_, poolState_.inflator);
+        poolDebt_ = poolState_.debt - vars.repaidDebt;
 
         // check that taking from loan doesn't leave borrower debt under min debt amount
-        _revertOnMinDebt(loans_, result_.poolDebt, vars.borrowerDebt, poolState_.quoteDustLimit);
+        _revertOnMinDebt(loans_, poolDebt_, vars.borrowerDebt, poolState_.quoteDustLimit);
 
-        result_.newLup = _lup(deposits_, result_.poolDebt);
+        newLup_ = _lup(deposits_, poolDebt_);
 
         vars.inAuction = true;
 
-        if (_isCollateralized(vars.borrowerDebt, borrower_.collateral, result_.newLup, poolState_.poolType)) {
-            // borrower becomes re-collateralized
-            vars.inAuction = false;
+        if (_isCollateralized(vars.borrowerDebt, borrower_.collateral, newLup_, poolState_.poolType)) {
+            // settle auction if borrower becomes re-collateralized
 
-            result_.settledAuction = true;
+            vars.inAuction  = false;
+            settledAuction_ = true;
 
-            // remove entire borrower debt from pool auctions debt accumulator
-            result_.t0DebtInAuctionChange = borrower_.t0Debt;
+            // the overall debt in auction change is the total borrower debt exiting auction
+            t0DebtInAuctionChange_ = borrower_.t0Debt;
 
             // settle auction and update borrower's collateral with value after settlement
-            result_.remainingCollateral = _settleAuction(
+            borrower_.collateral = _settleAuction(
                 auctions_,
                 buckets_,
                 deposits_,
@@ -1040,11 +1057,9 @@ library Auctions {
                 borrower_.collateral,
                 poolState_.poolType
             );
-
-            borrower_.collateral = result_.remainingCollateral;
         } else {
-            // partial repay, remove only the paid debt from pool auctions debt accumulator
-            result_.t0DebtInAuctionChange = t0RepaidDebt_;
+            // the overall debt in auction change is the amount of partially repaid debt
+            t0DebtInAuctionChange_ = t0RepaidDebt_;
         }
 
         borrower_.t0Debt -= t0RepaidDebt_;
@@ -1058,7 +1073,7 @@ library Auctions {
             borrowerAddress_,
             vars.borrowerDebt,
             poolState_.rate,
-            result_.newLup,
+            newLup_,
             vars.inAuction,
             !vars.inAuction // stamp borrower t0Np if exiting from auction
         );
