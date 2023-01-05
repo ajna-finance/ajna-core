@@ -527,11 +527,6 @@ contract AjnaRewardsTest is DSTestPlus {
             interest:  6.466873982955353003 * 1e18
         });
 
-        (uint256 e2Timestamp, uint256 e2Interest, uint256 e2Burned) = IPool(_poolOne).burnInfo(2);
-        assertGt(e2Timestamp, 0); // GT assert -> non-zero value
-        assertEq(e2Interest, 0);  // not stamped because this happens in takeReserves
-        assertEq(e2Burned, 0);    // not stamped because this happens in takeReserves
-        
         _assertBurn({
             pool:      address(_poolOne),
             epoch:     2,
