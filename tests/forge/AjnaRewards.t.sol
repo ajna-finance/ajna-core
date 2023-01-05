@@ -422,10 +422,8 @@ contract AjnaRewardsTest is DSTestPlus {
             ,
             ,
             uint256 curClaimableReservesRemaining,
-            uint256 curAuctionPrice,
+            ,
         ) = _poolUtils.poolReservesInfo(address(_poolOne));
-        
-        uint256 tokensBurned = Maths.wmul(curClaimableReservesRemaining, curAuctionPrice);
 
         // take claimable reserves
         changePrank(_bidder);

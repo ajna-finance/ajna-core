@@ -23,6 +23,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     /*** Initialize Functions ***/
     /****************************/
 
+    /// @inheritdoc IERC20Pool
     function initialize(
         uint256 rate_
     ) external override {
@@ -44,6 +45,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     /*** Immutables ***/
     /******************/
 
+    /// @inheritdoc IERC20PoolImmutables
     function collateralScale() external pure override returns (uint256) {
         return _getArgUint256(COLLATERAL_SCALE);
     }
@@ -52,6 +54,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     /*** Borrower External Functions ***/
     /***********************************/
 
+    /// @inheritdoc IERC20PoolBorrowerActions
     function drawDebt(
         address borrowerAddress_,
         uint256 amountToBorrow_,
@@ -100,6 +103,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
     }
 
+    /// @inheritdoc IERC20PoolBorrowerActions
     function repayDebt(
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
@@ -148,6 +152,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     /*** Flashloan External Functions ***/
     /************************************/
 
+    /// @inheritdoc FlashloanablePool
     function flashLoan(
         IERC3156FlashBorrower receiver_,
         address token_,
@@ -169,6 +174,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         revert FlashloanUnavailableForToken();
     }
 
+    /// @inheritdoc FlashloanablePool
     function flashFee(
         address token_,
         uint256
@@ -177,6 +183,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         revert FlashloanUnavailableForToken();
     }
 
+    /// @inheritdoc FlashloanablePool
     function maxFlashLoan(
         address token_
     ) external view override(IERC3156FlashLender, FlashloanablePool) returns (uint256 maxLoan_) {
@@ -189,6 +196,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     /*** Lender External Functions ***/
     /*********************************/
 
+    /// @inheritdoc IERC20PoolLenderActions
     function addCollateral(
         uint256 collateralAmountToAdd_,
         uint256 index_
@@ -211,6 +219,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         _transferCollateralFrom(msg.sender, collateralAmountToAdd_);
     }
 
+    /// @inheritdoc IPoolLenderActions
     function removeCollateral(
         uint256 maxAmount_,
         uint256 index_
@@ -239,6 +248,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     /*** Pool Auctions Functions ***/
     /*******************************/
 
+    /// @inheritdoc IPoolLiquidationActions
     function settle(
         address borrowerAddress_,
         uint256 maxDepth_
@@ -279,6 +289,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         _updateInterestState(poolState, _lup(poolState.debt));
     }
 
+    /// @inheritdoc IPoolLiquidationActions
     function take(
         address        borrowerAddress_,
         uint256        collateral_,
@@ -331,6 +342,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         _transferQuoteTokenFrom(callee_, result.quoteTokenAmount);
     }
 
+    /// @inheritdoc IPoolLiquidationActions
     function bucketTake(
         address borrowerAddress_,
         bool    depositTake_,

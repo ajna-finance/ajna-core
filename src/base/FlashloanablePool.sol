@@ -5,6 +5,14 @@ pragma solidity 0.8.14;
 import '../base/Pool.sol';
 
 abstract contract FlashloanablePool is Pool {
+    /**
+     *  @notice Called by flashloan borrowers to borrow liquidity which must be repaid in the same transaction.
+     *  @param  receiver_ Address of the contract which implements the appropriate interface to receive tokens.
+     *  @param  token_    Address of the ERC20 token caller wants to borrow.
+     *  @param  amount_   The amount of tokens to borrow.
+     *  @param  data_     User-defined calldata passed to the receiver.
+     *  @return True if successful.
+     */
     function flashLoan(
         IERC3156FlashBorrower receiver_,
         address token_,
@@ -29,6 +37,9 @@ abstract contract FlashloanablePool is Pool {
         return true;
     }
 
+    /**
+     *  @notice Returns 0, as no fee is charged for flashloans.
+     */
     function flashFee(
         address token_,
         uint256
@@ -37,7 +48,12 @@ abstract contract FlashloanablePool is Pool {
         return 0;
     }
 
-    function maxFlashLoan(
+    /**
+     *  @notice Returns the amount of tokens available to be lent.
+     *  @param  token_   Address of the ERC20 token to be lent.
+     *  @return maxLoan_ The amount of `token_` that can be lent.
+     */
+     function maxFlashLoan(
         address token_
     ) external virtual view override returns (uint256 maxLoan_) {
         if (token_ == _getArgAddress(QUOTE_ADDRESS)) maxLoan_ = _getPoolQuoteTokenBalance();

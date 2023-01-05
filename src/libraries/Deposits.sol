@@ -252,7 +252,7 @@ library Deposits {
     /**
      *  @notice Decrease a node in the FenwickTree at an index.
      *  @dev    Starts at leaf/target and moved up towards root
-     *  @param  index_             The deposit index.
+     *  @param  index_                  The deposit index.
      *  @param  unscaledRemoveAmount_   Unscaled amount to decrease deposit by.
      */
     function unscaledRemove(

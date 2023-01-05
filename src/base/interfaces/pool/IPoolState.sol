@@ -242,11 +242,6 @@ struct InterestState {
     uint256 lupColEma;          // [WAD]
 }
 
-struct ReserveAuctionState {
-    uint256 kicked;    // Time a Claimable Reserve Auction was last kicked.
-    uint256 unclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
-}
-
 struct PoolBalancesState {
     uint256 pledgedCollateral; // [WAD]
     uint256 t0DebtInAuction;   // Total debt in auction used to restrict LPB holder from withdrawing [WAD]
@@ -260,6 +255,7 @@ struct PoolState {
     uint256 inflator;             // current pool inflator
     bool    isNewInterestAccrued; // true if new interest already accrued in current block
     uint256 rate;                 // pool's current interest rate
+    uint256 quoteDustLimit;       // quote token dust limit of the pool
 }
 
 /*** Buckets State ***/
@@ -328,4 +324,21 @@ struct Liquidation {
 struct Kicker {
     uint256 claimable; // kicker's claimable balance
     uint256 locked;    // kicker's balance of tokens locked in auction bonds
+}
+
+/*** Reserve Auction State ***/
+
+struct ReserveAuctionState {
+    uint256 kicked;                            // Time a Claimable Reserve Auction was last kicked.
+    uint256 unclaimed;                         // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
+    uint256 latestBurnEventEpoch;              // Latest burn event epoch.
+    uint256 totalAjnaBurned;                   // Total ajna burned in the pool.
+    uint256 totalInterestEarned;               // Total interest earned by all lenders in the pool.
+    mapping (uint256 => BurnEvent) burnEvents; // Mapping burnEventEpoch => BurnEvent.
+}
+
+struct BurnEvent {
+    uint256 timestamp;     // time at which the burn event occured
+    uint256 totalInterest; // current pool interest accumulator `PoolCommons.accrueInterest().newInterest`
+    uint256 totalBurned;   // burn amount accumulator
 }
