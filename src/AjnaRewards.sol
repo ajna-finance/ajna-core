@@ -249,14 +249,14 @@ contract AjnaRewards is IAjnaRewards {
             for (vars.epoch = lastBurnEpoch; vars.epoch < burnEpochToStartClaim_; ) {
                 vars.nextEpoch = vars.epoch + 1;
 
-                vars.bucketRate = poolBucketBurnExchangeRates[ajnaPool][vars.bucketIndex][vars.epoch];
+                if (vars.epoch != stakingEpoch) {
 
-                // for the epoch when token was staked use the min of the bucket rate at the time of staking and the recorded bucket rate
-                if (vars.epoch == stakingEpoch) {
-                    vars.bucketRate = Maths.min(
-                        bucketSnapshot.rateAtStakeTime,
-                        vars.bucketRate
-                    );
+                    // if staked in a previous epoch then use the initial exchange rate of epoch
+                    vars.bucketRate = poolBucketBurnExchangeRates[ajnaPool][vars.bucketIndex][vars.epoch];
+                } else {
+
+                    // if staked during the epoch then use the bucket rate at the time of staking
+                    vars.bucketRate = bucketSnapshot.rateAtStakeTime;
                 }
 
                 // calculate the amount of interest accrued in current epoch
@@ -319,19 +319,12 @@ contract AjnaRewards is IAjnaRewards {
 
             uint256 nextExchangeRate = poolBucketBurnExchangeRates[pool_][bucketIndex_][nextEventEpoch_];
 
-            // calculate interest earned only if current and next exchange rates are not 0
-            if (nextExchangeRate != 0) {
+            // calculate interest earned only if next exchange rate is higher than current exchange rate
+            if (nextExchangeRate > exchangeRate_) {
 
                 // calculate the equivalent amount of quote tokens given the stakes lp balance,
-                // and the exchange rate at the previous and current burn events
-                uint256 quoteAtCurrentRate = Maths.rayToWad(Maths.rmul(exchangeRate_,   bucketLPs));
-                uint256 quoteAtNextRate    = Maths.rayToWad(Maths.rmul(nextExchangeRate, bucketLPs));
-
-                if (quoteAtNextRate > quoteAtCurrentRate) {
-                    interestEarned_ = quoteAtNextRate - quoteAtCurrentRate;
-                } else {
-                    interestEarned_ = quoteAtCurrentRate - quoteAtNextRate;
-                }
+                // and the exchange rate at the next and current burn events
+                interestEarned_ = Maths.rayToWad(Maths.rmul(nextExchangeRate - exchangeRate_, bucketLPs));
             }
 
         }
