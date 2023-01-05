@@ -102,6 +102,16 @@ library LenderActions {
     );
 
     /**
+     *  @notice Emitted when LPs are forfeited as a result of the bucket losing all assets.
+     *  @param  index       The index of the bucket.
+     *  @param  lpForfeited Amount of LP no forfeited by lenders.
+     */
+    event BucketBankruptcy(
+        uint256 indexed index,
+        uint256 lpForfeited
+    );
+    
+    /**
      *  @notice Emitted when lender moves quote token from a bucket price to another.
      *  @param  lender         Recipient that moved quote tokens.
      *  @param  from           Price bucket from which quote tokens were moved.
@@ -359,7 +369,7 @@ library LenderActions {
         // update lender and bucket LPs balances
         lender.lps -= redeemedLPs_;
         bucket.lps -= redeemedLPs_;
-        _bankruptBucketIfEmpty(bucket, unscaledRemaining);
+        _bankruptBucketIfEmpty(bucket, unscaledRemaining, params_.index);
 
         emit RemoveQuoteToken(msg.sender, params_.index, removedAmount_, redeemedLPs_, lup_);
     }
@@ -523,12 +533,13 @@ library LenderActions {
 
     function _bankruptBucketIfEmpty(
         Bucket storage bucket_, 
-        uint256 bucketDeposit
+        uint256 bucketDeposit_,
+        uint256 index_
     ) internal {
-        if (bucket_.collateral == 0 && bucketDeposit == 0 && bucket_.lps != 0) {
+        if (bucket_.collateral == 0 && bucketDeposit_ == 0 && bucket_.lps != 0) {
+            emit BucketBankruptcy(index_, bucket_.lps);
             bucket_.lps            = 0;
             bucket_.bankruptcyTime = block.timestamp;
-            // TODO: emit event
         }
     }
 

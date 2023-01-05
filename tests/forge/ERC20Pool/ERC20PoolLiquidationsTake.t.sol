@@ -2247,6 +2247,8 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             }
         );
 
+        vm.expectEmit(true, true, false, true);
+        emit BucketBankruptcy(_i9_91, 1e27);
         _removeLiquidity(
             {
                 from:     _lender,
