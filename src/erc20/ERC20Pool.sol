@@ -67,7 +67,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         PoolState memory poolState = _accruePoolInterest();
 
         // ensure the borrower is not credited with a fractional amount of collateral smaller than the token scale
-        collateralToPledge_ = _getTokenScaledAmount(collateralToPledge_, _collateralDust(0));
+        collateralToPledge_ = _roundToScale(collateralToPledge_, _collateralDust(0));
 
         DrawDebtResult memory result = BorrowerActions.drawDebt(
             auctions,
@@ -206,7 +206,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         // revert if the dust amount was not exceeded, but round on the scale amount
         if (amountToAdd_ != 0 && amountToAdd_ < _collateralDust(index_)) revert DustAmountNotExceeded();
-        amountToAdd_ = _getTokenScaledAmount(amountToAdd_, _getArgUint256(COLLATERAL_SCALE));
+        amountToAdd_ = _roundToScale(amountToAdd_, _getArgUint256(COLLATERAL_SCALE));
 
         bucketLPs_ = LenderActions.addCollateral(
             buckets,
