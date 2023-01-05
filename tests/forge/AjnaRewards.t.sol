@@ -875,6 +875,75 @@ contract AjnaRewardsTest is DSTestPlus {
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
     }
 
+    function testEarlyAndLateStakerRewards() external {
+        skip(10);
+
+        uint256[] memory depositIndexes = new uint256[](5);
+        depositIndexes[0] = 2550;
+        depositIndexes[1] = 2551;
+        depositIndexes[2] = 2552;
+        depositIndexes[3] = 2553;
+        depositIndexes[4] = 2555;
+
+        // configure NFT position one and early stake
+        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+            indexes:    depositIndexes,
+            minter:     _minterOne,
+            mintAmount: 1000 * 1e18,
+            pool:       _poolOne
+        });
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
+
+        // configure NFT position two
+        mintMemorializeParams = MintAndMemorializeParams({
+            indexes:    depositIndexes,
+            minter:     _minterTwo,
+            mintAmount: 1000 * 1e18,
+            pool:       _poolOne
+        });
+        uint256 tokenIdTwo = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        _stakeToken(address(_poolOne), _minterTwo, tokenIdTwo);
+
+        _updateExchangeRates({
+            updater:        _updater,
+            pool:           address(_poolOne),
+            depositIndexes: depositIndexes,
+            reward:         0
+        });
+
+        // configure NFT position three
+        mintMemorializeParams = MintAndMemorializeParams({
+            indexes:    depositIndexes,
+            minter:     _minterThree,
+            mintAmount: 1000 * 1e18,
+            pool:       _poolOne
+        });
+        uint256 tokenIdThree = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        _stakeToken(address(_poolOne), _minterThree, tokenIdThree);
+
+        // trigger reserve auction and update rates
+        TriggerReserveAuctionParams memory triggerReserveAuctionParams = TriggerReserveAuctionParams({
+            borrowAmount: 300 * 1e18,
+            limitIndex:   2555,
+            pool:         _poolOne
+        });
+        _triggerReserveAuctions(triggerReserveAuctionParams);
+
+        // unstake and compare rewards
+        changePrank(_minterTwo);
+        _ajnaRewards.unstakeToken(tokenIdTwo);
+        uint256 minterTwoBalance = _ajnaToken.balanceOf(_minterTwo);
+        assertEq(minterTwoBalance, 8.036632107715560950 * 1e18);
+
+        changePrank(_minterThree);
+        _ajnaRewards.unstakeToken(tokenIdThree);
+        uint256 minterThreeBalance = _ajnaToken.balanceOf(_minterThree);
+        assertEq(minterThreeBalance, 6.182024698242731380 * 1e18);
+
+        assertGt(minterTwoBalance, minterThreeBalance);
+    }
+
     function testMultiPeriodRewardsMultiClaim() external {
 
     }
