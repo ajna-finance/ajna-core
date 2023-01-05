@@ -259,7 +259,7 @@ contract AjnaRewards is IAjnaRewards {
                     );
                 }
 
-                // calculate change in exchange rates in a stakes buckets
+                // calculate the amount of interest accrued in current epoch
                 vars.interestEarned = _calculateExchangeRateInterestEarned(
                     ajnaPool,
                     vars.nextEpoch,
@@ -315,19 +315,25 @@ contract AjnaRewards is IAjnaRewards {
         uint256 exchangeRate_
     ) internal view returns (uint256 interestEarned_) {
 
-        uint256 nextExchangeRate = poolBucketBurnExchangeRates[pool_][bucketIndex_][nextEventEpoch_];
+        if (exchangeRate_ != 0) {
 
-        if (exchangeRate_ != 0 && nextExchangeRate != 0) {
-            // calculate the equivalent amount of quote tokens given the stakes lp balance,
-            // and the exchange rate at the previous and current burn events
-            uint256 quoteAtCurrentRate = Maths.rayToWad(Maths.rmul(exchangeRate_,  bucketLPs));
-            uint256 quoteAtNextRate    = Maths.rayToWad(Maths.rmul(nextExchangeRate, bucketLPs));
+            uint256 nextExchangeRate = poolBucketBurnExchangeRates[pool_][bucketIndex_][nextEventEpoch_];
 
-            if (quoteAtNextRate > quoteAtCurrentRate) {
-                interestEarned_ = quoteAtNextRate - quoteAtCurrentRate;
-            } else {
-                interestEarned_ = quoteAtCurrentRate - quoteAtNextRate;
+            // calculate interest earned only if current and next exchange rates are not 0
+            if (nextExchangeRate != 0) {
+
+                // calculate the equivalent amount of quote tokens given the stakes lp balance,
+                // and the exchange rate at the previous and current burn events
+                uint256 quoteAtCurrentRate = Maths.rayToWad(Maths.rmul(exchangeRate_,   bucketLPs));
+                uint256 quoteAtNextRate    = Maths.rayToWad(Maths.rmul(nextExchangeRate, bucketLPs));
+
+                if (quoteAtNextRate > quoteAtCurrentRate) {
+                    interestEarned_ = quoteAtNextRate - quoteAtCurrentRate;
+                } else {
+                    interestEarned_ = quoteAtCurrentRate - quoteAtNextRate;
+                }
             }
+
         }
     }
 
