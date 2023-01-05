@@ -2260,10 +2260,10 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _assertBucket(
             {
                 index:        _i9_91,
-                lpBalance:    1 * 1e27, 
+                lpBalance:    0 * 1e27, 
                 collateral:   0,
                 deposit:      0,
-                exchangeRate: 0
+                exchangeRate: 1 * 1e27
             }
         );
     }

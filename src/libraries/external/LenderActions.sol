@@ -239,7 +239,7 @@ library LenderActions {
 
         if (fromBucket.bankruptcyTime < vars.fromBucketDepositTime) vars.fromBucketLPs = fromBucketLender.lps;
 
-        (vars.amountToMove, fromBucketRedeemedLPs_) = _removeMaxDeposit(
+        (vars.amountToMove, fromBucketRedeemedLPs_, ) = _removeMaxDeposit(
             deposits_,
             RemoveDepositParams({
                 depositConstraint: params_.maxAmountToMove,
@@ -297,6 +297,8 @@ library LenderActions {
         fromBucket.lps -= fromBucketRedeemedLPs_;
         toBucket.lps   += toBucketLPs_;
 
+        // TODO: call _bankruptBucketIfEmpty?
+
         emit MoveQuoteToken(
             msg.sender,
             params_.fromIndex,
@@ -326,7 +328,8 @@ library LenderActions {
 
         uint256 price = _priceAt(params_.index);
 
-        (removedAmount_, redeemedLPs_) = _removeMaxDeposit(
+        uint256 unscaledRemaining;
+        (removedAmount_, redeemedLPs_, unscaledRemaining) = _removeMaxDeposit(
             deposits_,
             RemoveDepositParams({
                 depositConstraint: params_.maxAmount,
@@ -356,6 +359,7 @@ library LenderActions {
         // update lender and bucket LPs balances
         lender.lps -= redeemedLPs_;
         bucket.lps -= redeemedLPs_;
+        _bankruptBucketIfEmpty(bucket, unscaledRemaining);
 
         emit RemoveQuoteToken(msg.sender, params_.index, removedAmount_, redeemedLPs_, lup_);
     }
@@ -517,6 +521,17 @@ library LenderActions {
     /*** Internal Functions ***/
     /**************************/
 
+    function _bankruptBucketIfEmpty(
+        Bucket storage bucket_, 
+        uint256 bucketDeposit
+    ) internal {
+        if (bucket_.collateral == 0 && bucketDeposit == 0 && bucket_.lps != 0) {
+            bucket_.lps            = 0;
+            bucket_.bankruptcyTime = block.timestamp;
+            // TODO: emit event
+        }
+    }
+
     function _removeMaxCollateral(
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
@@ -573,7 +588,7 @@ library LenderActions {
     function _removeMaxDeposit(
         DepositsState storage deposits_,
         RemoveDepositParams memory params_
-    ) internal returns (uint256 removedAmount_, uint256 redeemedLPs_) {
+    ) internal returns (uint256 removedAmount_, uint256 redeemedLPs_, uint256 unscaledRemaining_) {
 
         uint256 unscaledDepositAvailable = Deposits.unscaledValueAt(deposits_, params_.index);
         if (unscaledDepositAvailable == 0) revert InsufficientLiquidity(); // revert if there's no liquidity available to remove
@@ -603,13 +618,11 @@ library LenderActions {
             // depositConstraint is binding constraint
             unscaledRemovedAmount = Maths.wdiv(params_.depositConstraint, depositScale);
             redeemedLPs_          = Maths.wrdivr(unscaledRemovedAmount, unscaledExchangeRate);
-        }
-        else if (Maths.wadToRay(unscaledDepositAvailable) < unscaledLpConstraint) {
+        } else if (Maths.wadToRay(unscaledDepositAvailable) < unscaledLpConstraint) {
             // unscaledDeposit is binding constraint
             unscaledRemovedAmount = unscaledDepositAvailable;
             redeemedLPs_          = Maths.wrdivr(unscaledRemovedAmount, unscaledExchangeRate);
-        }
-        else {
+        } else {
             // redeeming all LPs
             redeemedLPs_          = params_.lpConstraint;
             unscaledRemovedAmount = Maths.rayToWad(Maths.rmul(redeemedLPs_, unscaledExchangeRate));
@@ -621,9 +634,10 @@ library LenderActions {
         }
 
         // calculate the scaled amount removed from deposits
-        removedAmount_ = Maths.wmul(depositScale, unscaledRemovedAmount);        
-        // calculate scale amount remaining
-        uint256 remaining = Maths.wmul(depositScale, unscaledDepositAvailable - unscaledRemovedAmount);
+        removedAmount_     = Maths.wmul(depositScale, unscaledRemovedAmount);        
+        // calculate amount remaining
+        unscaledRemaining_ = unscaledDepositAvailable - unscaledRemovedAmount;
+        uint256 remaining  = Maths.wmul(depositScale, unscaledRemaining_);
 
         // abandon dust amounts upon last withdrawal
         if (remaining < params_.dustLimit && redeemedLPs_ == params_.bucketLPs) {

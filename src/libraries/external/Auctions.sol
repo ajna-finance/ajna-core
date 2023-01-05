@@ -388,6 +388,7 @@ library Auctions {
                     if (hpbBucket.collateral == 0) {                                                   // existing LPB and LP tokens for the bucket shall become unclaimable.
                         hpbBucket.lps            = 0;
                         hpbBucket.bankruptcyTime = block.timestamp;
+                        // TODO: emit event
                     }
                 }
 
