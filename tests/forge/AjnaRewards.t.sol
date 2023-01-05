@@ -140,8 +140,12 @@ contract AjnaRewardsTest is DSTestPlus {
     ) internal {
 
         changePrank(minter);
-        vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(_minterOne, address(_poolOne), _positionManager.getPositionIndexes(tokenId), updateRatesReward);
+
+        if (updateRatesReward != 0) {
+            vm.expectEmit(true, true, true, true);
+            emit UpdateExchangeRates(_minterOne, address(_poolOne), _positionManager.getPositionIndexes(tokenId), updateRatesReward);
+        }
+
         vm.expectEmit(true, true, true, true);
         emit ClaimRewards(minter, pool,  tokenId, claimedArray, reward);
         vm.expectEmit(true, true, true, true);
@@ -873,6 +877,92 @@ contract AjnaRewardsTest is DSTestPlus {
         _ajnaRewards.claimRewards(tokenIdOne, _poolOne.currentBurnEpoch());
         assertEq(_ajnaToken.balanceOf(_minterOne), rewardsEarned);
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
+    }
+
+    function testEarlyAndLateStakerRewards() external {
+        skip(10);
+
+        uint256[] memory depositIndexes = new uint256[](5);
+        depositIndexes[0] = 2550;
+        depositIndexes[1] = 2551;
+        depositIndexes[2] = 2552;
+        depositIndexes[3] = 2553;
+        depositIndexes[4] = 2555;
+
+        // configure NFT position two
+        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+            indexes:    depositIndexes,
+            minter:     _minterTwo,
+            mintAmount: 1000 * 1e18,
+            pool:       _poolOne
+        });
+        uint256 tokenIdTwo = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        // bucket exchange rates are not changed at the time minter two stakes
+        assertEq(_poolOne.bucketExchangeRate(2550), 1e27);
+        assertEq(_poolOne.bucketExchangeRate(2551), 1e27);
+        assertEq(_poolOne.bucketExchangeRate(2552), 1e27);
+        assertEq(_poolOne.bucketExchangeRate(2553), 1e27);
+        assertEq(_poolOne.bucketExchangeRate(2555), 1e27);
+        _stakeToken(address(_poolOne), _minterTwo, tokenIdTwo);
+
+        // borrower borrows and change the exchange rates of buckets
+        (address borrower1, uint256 collateralToPledge) = _createTestBorrower(_poolOne, string("borrower1"), 10_000 * 1e18, 2770);
+        changePrank(borrower1);
+
+        _poolOne.drawDebt(borrower1, 5 * 1e18, 2770, collateralToPledge);
+
+        skip(1 days);
+
+        // configure NFT position three one day after early minter
+        mintMemorializeParams = MintAndMemorializeParams({
+            indexes:    depositIndexes,
+            minter:     _minterThree,
+            mintAmount: 1000 * 1e18,
+            pool:       _poolOne
+        });
+        uint256 tokenIdThree = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        // bucket exchange rates are higher at the time minter three stakes
+        assertEq(_poolOne.bucketExchangeRate(2550), 1.000000116565164638999999999 * 1e27);
+        assertEq(_poolOne.bucketExchangeRate(2551), 1.000000116565164638999999999 * 1e27);
+        assertEq(_poolOne.bucketExchangeRate(2552), 1.000000116565164638999999999 * 1e27);
+        assertEq(_poolOne.bucketExchangeRate(2553), 1.000000116565164638999999999 * 1e27);
+        assertEq(_poolOne.bucketExchangeRate(2555), 1.000000116565164638999999999 * 1e27);
+        _stakeToken(address(_poolOne), _minterThree, tokenIdThree);
+
+        skip(1 days);
+
+        // trigger reserve auction and update rates
+        TriggerReserveAuctionParams memory triggerReserveAuctionParams = TriggerReserveAuctionParams({
+            borrowAmount: 300 * 1e18,
+            limitIndex:   2555,
+            pool:         _poolOne
+        });
+        _triggerReserveAuctions(triggerReserveAuctionParams);
+
+        // unstake and compare rewards and balances of minter two and minter three
+        _unstakeToken({
+            minter:            _minterTwo,
+            pool:              address(_poolOne),
+            tokenId:           tokenIdTwo,
+            claimedArray:      _epochsClaimedArray(1, 0),
+            reward:            6.757003114621612065 * 1e18,
+            updateRatesReward: 0
+        });
+        uint256 minterTwoBalance = _ajnaToken.balanceOf(_minterTwo);
+        assertEq(minterTwoBalance, 6.757003114621612065 * 1e18);
+
+        _unstakeToken({
+            minter:            _minterThree,
+            pool:              address(_poolOne),
+            tokenId:           tokenIdThree,
+            claimedArray:      _epochsClaimedArray(1, 0),
+            reward:            5.629597976281608765 * 1e18,
+            updateRatesReward: 0
+        });
+        uint256 minterThreeBalance = _ajnaToken.balanceOf(_minterThree);
+        assertEq(minterThreeBalance, 5.629597976281608765 * 1e18);
+
+        assertGt(minterTwoBalance, minterThreeBalance);
     }
 
     function testMultiPeriodRewardsMultiClaim() external {

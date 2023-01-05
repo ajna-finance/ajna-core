@@ -82,12 +82,12 @@ contract AjnaRewards is IAjnaRewards {
     IPositionManager public immutable positionManager; // The PositionManager contract
 
     struct RewardsLocalVars {
-        uint256 bucketIndex;
-        uint256 bucketLPs;
-        uint256 epoch;
-        uint256 nextEpoch;
-        uint256 interestEarned;
-        uint256 newRewards;
+        uint256 bucketIndex;    // index of current bucket to calculate rewards for
+        uint256 bucketRate;     // recorded exchange rate of current bucket
+        uint256 epoch;          // current epoch to calculate rewards for
+        uint256 nextEpoch;      // next epoch to calculate rewards for
+        uint256 interestEarned; // interest earned on current epoch for the current bucket
+        uint256 newRewards;     // calculated rewards
     }
 
     /*******************/
@@ -135,7 +135,10 @@ contract AjnaRewards is IAjnaRewards {
 
         uint256 curBurnEpoch = IPool(ajnaPool).currentBurnEpoch();
 
-        // record the burnId at which the staking occurs
+        // record the staking epoch
+        stake.stakingEpoch = uint96(curBurnEpoch);
+
+        // initialize last time interaction at staking epoch
         stake.lastInteractionBurnEpoch = uint96(curBurnEpoch);
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
@@ -143,11 +146,15 @@ contract AjnaRewards is IAjnaRewards {
 
             uint256 bucketId = positionIndexes[i];
 
-            // record the number of lp tokens in each bucket the NFT is in
-            stake.lpsAtDeposit[bucketId] = positionManager.getLPTokens(
+            BucketState storage bucketState = stake.snapshot[bucketId];
+
+            // record the number of lp tokens in bucket at the time of staking
+            bucketState.lpsAtStakeTime = positionManager.getLPTokens(
                 tokenId_,
                 bucketId
             );
+            // record the bucket exchange rate at the time of staking
+            bucketState.rateAtStakeTime = IPool(ajnaPool).bucketExchangeRate(bucketId);
 
             // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
             unchecked { ++i; }
@@ -225,6 +232,7 @@ contract AjnaRewards is IAjnaRewards {
 
         address ajnaPool      = stakes[tokenId_].ajnaPool;
         uint256 lastBurnEpoch = stakes[tokenId_].lastInteractionBurnEpoch;
+        uint256 stakingEpoch  = stakes[tokenId_].stakingEpoch;
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
 
@@ -234,18 +242,30 @@ contract AjnaRewards is IAjnaRewards {
             RewardsLocalVars memory vars;
 
             vars.bucketIndex = positionIndexes[i];
-            vars.bucketLPs   = stakes[tokenId_].lpsAtDeposit[vars.bucketIndex];
+
+            BucketState memory bucketSnapshot = stakes[tokenId_].snapshot[vars.bucketIndex];
 
             // iterate through all burn periods to check exchange for buckets over time
             for (vars.epoch = lastBurnEpoch; vars.epoch < burnEpochToStartClaim_; ) {
                 vars.nextEpoch = vars.epoch + 1;
 
-                // calculate change in exchange rates in a stakes buckets
+                if (vars.epoch != stakingEpoch) {
+
+                    // if staked in a previous epoch then use the initial exchange rate of epoch
+                    vars.bucketRate = poolBucketBurnExchangeRates[ajnaPool][vars.bucketIndex][vars.epoch];
+                } else {
+
+                    // if staked during the epoch then use the bucket rate at the time of staking
+                    vars.bucketRate = bucketSnapshot.rateAtStakeTime;
+                }
+
+                // calculate the amount of interest accrued in current epoch
                 vars.interestEarned = _calculateExchangeRateInterestEarned(
                     ajnaPool,
-                    vars.epoch,
+                    vars.nextEpoch,
                     vars.bucketIndex,
-                    vars.bucketLPs
+                    bucketSnapshot.lpsAtStakeTime,
+                    vars.bucketRate
                 );
 
                 // calculate and accumulate rewards if interest earned
@@ -281,34 +301,32 @@ contract AjnaRewards is IAjnaRewards {
     /**
      *  @notice Calculate the amount of interest that has accrued to a lender in a bucket based upon their LPs.
      *  @param  pool_           Address of the pool whose exchange rates are being checked.
-     *  @param  burnEventEpoch_ The burn event to check the exchange rate for.
+     *  @param  nextEventEpoch_ The next event epoch to check the exchange rate for.
      *  @param  bucketIndex_    Index of the bucket to check the exchange rate for.
      *  @param  bucketLPs       Amount of LPs in bucket.
+     *  @param  exchangeRate_   Exchange rate in current epoch.
      *  @return interestEarned_ The amount of interest accrued.
      */
     function _calculateExchangeRateInterestEarned(
         address pool_,
-        uint256 burnEventEpoch_,
+        uint256 nextEventEpoch_,
         uint256 bucketIndex_,
-        uint256 bucketLPs
+        uint256 bucketLPs,
+        uint256 exchangeRate_
     ) internal view returns (uint256 interestEarned_) {
 
-        uint256 prevExchangeRate    = poolBucketBurnExchangeRates[pool_][bucketIndex_][burnEventEpoch_];
-        uint256 currentExchangeRate = poolBucketBurnExchangeRates[pool_][bucketIndex_][burnEventEpoch_ + 1];
+        if (exchangeRate_ != 0) {
 
-        if (prevExchangeRate == 0 || currentExchangeRate == 0) {
-            return 0;
-        }
+            uint256 nextExchangeRate = poolBucketBurnExchangeRates[pool_][bucketIndex_][nextEventEpoch_];
 
-        // calculate the equivalent amount of quote tokens given the stakes lp balance,
-        // and the exchange rate at the previous and current burn events
-        uint256 quoteAtPrev        = Maths.rayToWad(Maths.rmul(prevExchangeRate,    bucketLPs));
-        uint256 quoteAtCurrentRate = Maths.rayToWad(Maths.rmul(currentExchangeRate, bucketLPs));
+            // calculate interest earned only if next exchange rate is higher than current exchange rate
+            if (nextExchangeRate > exchangeRate_) {
 
-        if (quoteAtCurrentRate > quoteAtPrev) {
-            interestEarned_ = quoteAtCurrentRate - quoteAtPrev;
-        } else {
-            interestEarned_ = quoteAtPrev - quoteAtCurrentRate;
+                // calculate the equivalent amount of quote tokens given the stakes lp balance,
+                // and the exchange rate at the next and current burn events
+                interestEarned_ = Maths.rayToWad(Maths.rmul(nextExchangeRate - exchangeRate_, bucketLPs));
+            }
+
         }
     }
 
