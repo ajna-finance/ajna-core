@@ -2,10 +2,34 @@
 
 pragma solidity 0.8.14;
 
-import 'src/erc721/interfaces/IERC721Pool.sol';
-import 'src/erc721/interfaces/IERC721Taker.sol';
-import 'src/base/FlashloanablePool.sol';
-import 'src/erc721/interfaces/IERC721NonStandard.sol';
+import { IERC721Token, IPoolErrors } from 'src/base/interfaces/IPool.sol';
+import { PoolState }   from 'src/base/interfaces/pool/IPoolState.sol';
+import {
+    DrawDebtResult,
+    RepayDebtResult,
+    TakeResult,
+    BucketTakeResult,
+    SettleParams
+} from 'src/base/interfaces/pool/IPoolInternals.sol';
+import { IERC721Pool }  from 'src/erc721/interfaces/IERC721Pool.sol';
+import { IERC721Taker } from 'src/erc721/interfaces/IERC721Taker.sol';
+import {
+    ICryptoPunks,
+    ICryptoPunks,
+    ICryptoKitties,
+    NFTTypes
+} from 'src/erc721/interfaces/IERC721NonStandard.sol';
+
+import { FlashloanablePool }         from 'src/base/FlashloanablePool.sol';
+import { _revertIfAuctionClearable } from 'src/base/RevertsHelper.sol';
+
+import { Maths }    from 'src/libraries/Maths.sol';
+import { Deposits } from 'src/libraries/Deposits.sol';
+import { Loans }    from 'src/libraries/Loans.sol';
+
+import { Auctions }        from 'src/libraries/external/Auctions.sol';
+import { LenderActions }   from 'src/libraries/external/LenderActions.sol';
+import { BorrowerActions } from 'src/libraries/external/BorrowerActions.sol';
 
 contract ERC721Pool is IERC721Pool, FlashloanablePool {
 

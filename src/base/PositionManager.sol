@@ -2,26 +2,26 @@
 
 pragma solidity 0.8.14;
 
-import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
-import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
-import '@openzeppelin/contracts/utils/Multicall.sol';
-import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import { ERC20 }           from '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+import { IERC20 }          from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import { ERC721 }          from '@openzeppelin/contracts/token/ERC721/ERC721.sol';
+import { EnumerableSet }   from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+import { Multicall }       from '@openzeppelin/contracts/utils/Multicall.sol';
+import { ReentrancyGuard } from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import { SafeERC20 }       from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import { IPool } from 'src/base/interfaces/IPool.sol';
+import { IPool }            from 'src/base/interfaces/IPool.sol';
 import { IPositionManager } from 'src/base/interfaces/IPositionManager.sol';
 
-import { ERC20PoolFactory } from 'src/erc20/ERC20PoolFactory.sol';
+import { ERC20PoolFactory }  from 'src/erc20/ERC20PoolFactory.sol';
 import { ERC721PoolFactory } from 'src/erc721/ERC721PoolFactory.sol';
 
-import { PermitERC721 } from'src/base/PermitERC721.sol';
+import { PermitERC721 }               from 'src/base/PermitERC721.sol';
 import { _lpsToQuoteToken, _priceAt } from 'src/base/PoolHelper.sol';
 
-import { PositionNFTSVG } from 'src/libraries/external/PositionNFTSVG.sol';
-
 import { tokenSymbol } from 'src/libraries/SafeTokenNamer.sol';
+
+import { PositionNFTSVG } from 'src/libraries/external/PositionNFTSVG.sol';
 
 contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, ReentrancyGuard {
     using EnumerableSet for EnumerableSet.UintSet;

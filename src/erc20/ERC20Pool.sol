@@ -2,12 +2,35 @@
 
 pragma solidity 0.8.14;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC20 }    from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import 'src/erc20/interfaces/IERC20Pool.sol';
-import 'src/erc20/interfaces/IERC20Taker.sol';
-import 'src/base/FlashloanablePool.sol';
+import { IERC20Pool }  from 'src/erc20/interfaces/IERC20Pool.sol';
+import { IERC20Taker } from 'src/erc20/interfaces/IERC20Taker.sol';
+import {
+    IERC3156FlashLender,
+    IERC3156FlashBorrower
+} from 'src/base/interfaces/IERC3156FlashLender.sol';
+import { IERC20Token } from 'src/base/interfaces/IPool.sol';
+import { PoolState }   from 'src/base/interfaces/pool/IPoolState.sol';
+import {
+    DrawDebtResult,
+    RepayDebtResult,
+    TakeResult,
+    BucketTakeResult,
+    SettleParams
+} from 'src/base/interfaces/pool/IPoolInternals.sol';
+
+import { FlashloanablePool }         from 'src/base/FlashloanablePool.sol';
+import { _revertIfAuctionClearable } from 'src/base/RevertsHelper.sol';
+
+import { Loans }    from 'src/libraries/Loans.sol';
+import { Deposits } from 'src/libraries/Deposits.sol';
+import { Maths }    from 'src/libraries/Maths.sol';
+
+import { BorrowerActions } from 'src/libraries/external/BorrowerActions.sol';
+import { LenderActions }   from 'src/libraries/external/LenderActions.sol';
+import { Auctions }        from 'src/libraries/external/Auctions.sol';
 
 contract ERC20Pool is IERC20Pool, FlashloanablePool {
     using SafeERC20 for IERC20;

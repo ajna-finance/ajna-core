@@ -7,7 +7,7 @@ import 'src/erc721/ERC721Pool.sol';
 
 import 'src/libraries/Maths.sol';
 
-import { MAX_PRICE } from 'src/base/PoolHelper.sol';
+import { MAX_PRICE, _priceAt } from 'src/base/PoolHelper.sol';
 
 abstract contract ERC721PoolBorrowTest is ERC721HelperContract {
     address internal _borrower;

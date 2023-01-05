@@ -7,7 +7,7 @@ import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { PoolType } from 'src/base/interfaces/IPool.sol';
 
 import { Buckets } from 'src/libraries/Buckets.sol';
-import { Maths } from 'src/libraries/Maths.sol';
+import { Maths }   from 'src/libraries/Maths.sol';
 
     error BucketIndexOutOfBounds();
     error BucketPriceOutOfBounds();
