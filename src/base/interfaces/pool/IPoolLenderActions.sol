@@ -69,7 +69,7 @@ interface IPoolLenderActions {
     ) external returns (uint256 quoteTokenAmount, uint256 lpAmount);
 
     /**
-     *  @notice Called by lenders to transfers their LP tokens to a different address.
+     *  @notice Called by lenders to transfers their LP tokens to a different address. approveLpOwnership needs to be run first
      *  @dev    Used by PositionManager.memorializePositions().
      *  @param  owner    The original owner address of the position.
      *  @param  newOwner The new owner address of the position.

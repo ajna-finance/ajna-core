@@ -255,6 +255,7 @@ struct PoolState {
     uint256 inflator;             // current pool inflator
     bool    isNewInterestAccrued; // true if new interest already accrued in current block
     uint256 rate;                 // pool's current interest rate
+    uint256 quoteDustLimit;       // quote token dust limit of the pool
 }
 
 /*** Buckets State ***/

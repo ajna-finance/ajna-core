@@ -54,17 +54,22 @@ struct TakeResult {
 /*** Liquidity Management Param Structs ***/
 /******************************************/
 
+struct AddQuoteParams {
+    uint256 amount;          // amount to be added
+    uint256 index;           // the index in which to deposit
+}
+
 struct MoveQuoteParams {
-    uint256 maxAmountToMove; // max amount to move between deposits
     uint256 fromIndex;       // the deposit index from where amount is moved
+    uint256 maxAmountToMove; // max amount to move between deposits
     uint256 toIndex;         // the deposit index where amount is moved to
     uint256 thresholdPrice;  // max threshold price in pool
 }
 
 struct RemoveQuoteParams {
-    uint256 maxAmount;      // max amount to be removed
-    uint256 index;          // the deposit index from where amount is removed
-    uint256 thresholdPrice; // max threshold price in pool
+    uint256 index;           // the deposit index from where amount is removed
+    uint256 maxAmount;       // max amount to be removed
+    uint256 thresholdPrice;  // max threshold price in pool
 }
 
 /*************************************/
@@ -73,21 +78,21 @@ struct RemoveQuoteParams {
 
 struct DrawDebtResult {
     uint256 newLup;
-    uint256 remainingCollateral;
-    uint256 t0DebtInAuctionChange;
-    uint256 t0DebtChange;
     uint256 poolCollateral;
     uint256 poolDebt;
+    uint256 remainingCollateral;
     bool    settledAuction;
+    uint256 t0DebtInAuctionChange;
+    uint256 t0DebtChange;
 }
 
 struct RepayDebtResult {
     uint256 newLup;
-    uint256 remainingCollateral;
-    uint256 t0DebtInAuctionChange;
-    uint256 t0RepaidDebt;
     uint256 poolCollateral;
     uint256 poolDebt;
-    uint256 quoteTokenToRepay;
+    uint256 remainingCollateral;
     bool    settledAuction;
+    uint256 t0DebtInAuctionChange;
+    uint256 t0RepaidDebt;
+    uint256 quoteTokenToRepay;
 }

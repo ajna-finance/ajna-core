@@ -6,7 +6,7 @@ import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
 import { InterestState, PoolState, DepositsState } from 'src/base/interfaces/pool/IPoolState.sol';
 
-import { _indexOf, _ptp, MAX_FENWICK_INDEX, MIN_PRICE } from 'src/base/PoolHelper.sol';
+import { _indexOf, _ptp, MAX_FENWICK_INDEX, MIN_PRICE, MAX_PRICE } from 'src/base/PoolHelper.sol';
 
 import { Deposits } from 'src/libraries/Deposits.sol';
 import { Buckets }  from 'src/libraries/Buckets.sol';
@@ -226,8 +226,10 @@ library PoolCommons {
             uint256 ptp = _ptp(poolDebt_, collateral_);
 
             if (ptp != 0) {
-                uint256 depositAbove = ptp >= MIN_PRICE ? Deposits.prefixSum(deposits, _indexOf(ptp))
-                    : Deposits.treeSum(deposits);
+                uint256 depositAbove;
+                if      (ptp >= MAX_PRICE) depositAbove = 0;
+                else if (ptp >= MIN_PRICE) depositAbove = Deposits.prefixSum(deposits, _indexOf(ptp));
+                else                       depositAbove = Deposits.treeSum(deposits);
 
                 if (depositAbove != 0) utilization_ = Maths.wdiv(
                     poolDebt_,

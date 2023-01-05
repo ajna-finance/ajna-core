@@ -506,8 +506,8 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(rate,                exchangeRate);
 
         _validateBucketLp(index, lpBalance);
+        _validateBucketQuantities(index);
     }
-
 
     function _validateBucketLp(
         uint256 index,
@@ -531,6 +531,24 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         }
 
         assertEq(lenderLps, lpBalance);
+    }
+
+    function _validateBucketQuantities(
+        uint256 index
+    ) internal {
+        (
+            ,
+            uint256 curDeposit,
+            uint256 availableCollateral,
+            uint256 lpAccumulator,
+            ,
+        ) = _poolUtils.bucketInfo(address(_pool), index);
+        if (lpAccumulator == 0) {
+            assertEq(curDeposit, 0);
+            assertEq(availableCollateral, 0);
+        } else {
+            assertTrue(curDeposit != 0 || availableCollateral != 0);
+        }
     }
 
     function _assertBorrower(
@@ -679,6 +697,16 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InvalidIndex.selector);
         _pool.addQuoteToken(amount, 0);
+    }
+
+    function _assertAddLiquidityDustRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
+        _pool.addQuoteToken(amount, index);
     }
 
     function _assertArbTakeNoAuction(
@@ -1059,6 +1087,17 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.LUPBelowHTP.selector);
+        _pool.moveQuoteToken(amount, fromIndex, toIndex);
+    }
+
+    function _assertMoveLiquidityDustRevert(
+        address from,
+        uint256 amount,
+        uint256 fromIndex,
+        uint256 toIndex
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
         _pool.moveQuoteToken(amount, fromIndex, toIndex);
     }
 
