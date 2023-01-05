@@ -889,24 +889,8 @@ contract AjnaRewardsTest is DSTestPlus {
         depositIndexes[3] = 2553;
         depositIndexes[4] = 2555;
 
-        // configure NFT position one and early stake
-        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
-            indexes:    depositIndexes,
-            minter:     _minterOne,
-            mintAmount: 1000 * 1e18,
-            pool:       _poolOne
-        });
-        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
-        _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
-
-        assertEq(_poolOne.bucketExchangeRate(2550), 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2551), 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2552), 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2553), 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2555), 1e27);
-
         // configure NFT position two
-        mintMemorializeParams = MintAndMemorializeParams({
+        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
             indexes:    depositIndexes,
             minter:     _minterTwo,
             mintAmount: 1000 * 1e18,
@@ -938,11 +922,11 @@ contract AjnaRewardsTest is DSTestPlus {
         });
         uint256 tokenIdThree = _mintAndMemorializePositionNFT(mintMemorializeParams);
         // bucket exchange rates are higher at the time minter three stakes
-        assertEq(_poolOne.bucketExchangeRate(2550), 1.000000058280865719999999999 * 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2551), 1.000000058280865719999999999 * 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2552), 1.000000058280865719999999999 * 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2553), 1.000000058280865719999999999 * 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2555), 1.000000058280865719999999999 * 1e27);
+        assertEq(_poolOne.bucketExchangeRate(2550), 1.000000116565164638999999999 * 1e27);
+        assertEq(_poolOne.bucketExchangeRate(2551), 1.000000116565164638999999999 * 1e27);
+        assertEq(_poolOne.bucketExchangeRate(2552), 1.000000116565164638999999999 * 1e27);
+        assertEq(_poolOne.bucketExchangeRate(2553), 1.000000116565164638999999999 * 1e27);
+        assertEq(_poolOne.bucketExchangeRate(2555), 1.000000116565164638999999999 * 1e27);
         _stakeToken(address(_poolOne), _minterThree, tokenIdThree);
 
         skip(1 days);
@@ -961,22 +945,22 @@ contract AjnaRewardsTest is DSTestPlus {
             pool:              address(_poolOne),
             tokenId:           tokenIdTwo,
             claimedArray:      _epochsClaimedArray(1, 0),
-            reward:            4.921002106887218170 * 1e18,
+            reward:            6.757003114621612065 * 1e18,
             updateRatesReward: 0
         });
         uint256 minterTwoBalance = _ajnaToken.balanceOf(_minterTwo);
-        assertEq(minterTwoBalance, 4.921002106887218170 * 1e18);
+        assertEq(minterTwoBalance, 6.757003114621612065 * 1e18);
 
         _unstakeToken({
             minter:            _minterThree,
             pool:              address(_poolOne),
             tokenId:           tokenIdThree,
             claimedArray:      _epochsClaimedArray(1, 0),
-            reward:            3.784761770897208745 * 1e18,
+            reward:            5.629597976281608765 * 1e18,
             updateRatesReward: 0
         });
         uint256 minterThreeBalance = _ajnaToken.balanceOf(_minterThree);
-        assertEq(minterThreeBalance, 3.784761770897208745 * 1e18);
+        assertEq(minterThreeBalance, 5.629597976281608765 * 1e18);
 
         assertGt(minterTwoBalance, minterThreeBalance);
     }
