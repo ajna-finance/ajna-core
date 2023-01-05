@@ -2247,12 +2247,14 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             }
         );
 
+        vm.expectEmit(true, true, false, true);
+        emit BucketBankruptcy(_i9_91, 1e27);
         _removeLiquidity(
             {
                 from:     _lender,
                 amount:   1,
                 index:    _i9_91,
-                newLup:   9818751856078723036,
+                newLup:   9.818751856078723036 * 1e18,
                 lpRedeem: 2_000 * 1e27
             }
         );
@@ -2260,10 +2262,10 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _assertBucket(
             {
                 index:        _i9_91,
-                lpBalance:    1 * 1e27, 
+                lpBalance:    0 * 1e27, 
                 collateral:   0,
                 deposit:      0,
-                exchangeRate: 0
+                exchangeRate: 1 * 1e27
             }
         );
     }
