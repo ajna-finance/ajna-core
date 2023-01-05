@@ -65,7 +65,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
     function addLiquidity(uint256 startBucketId) internal {
         // ensure start bucket is in appropriate range
         assertGt(startBucketId, 0);
-        assertLt(startBucketId, 7385);
+        assertLt(startBucketId, 7388 - BUCKETS_WITH_DEPOSIT + 1);
         _startBucketId = startBucketId;
 
         // deposit 200k quote token across 4 buckets
