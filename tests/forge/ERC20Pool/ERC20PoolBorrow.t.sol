@@ -1209,54 +1209,52 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         // check buckets after borrow
         for (uint256 i = 0; i < numIndexes; ++i) {
             _assertBucket({
-                index:      indexes[i],
-                lpBalance:  mintAmount_ * 1e9,
-                collateral: 0,
-                deposit:    mintAmount_,
+                index:        indexes[i],
+                lpBalance:    mintAmount_ * 1e9,
+                collateral:   0,
+                deposit:      mintAmount_,
                 exchangeRate: 1e27
             });
         }
 
         // check borrower info
-        (uint256 debtTime1, , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
-        assertGt(debtTime1, borrowAmount); // check that initial fees accrued
+        (uint256 debt, , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
+        assertGt(debt, borrowAmount); // check that initial fees accrued
 
         // check pool state
         (uint256 minDebt, , uint256 poolActualUtilization, uint256 poolTargetUtilization) = _poolUtils.poolUtilizationInfo(address(_pool));
         _assertPool(
             PoolParams({
-                htp: Maths.wdiv(debtTime1, requiredCollateral),
-                lup: _poolUtils.lup(address(_pool)),
-                poolSize: (50_000 * 1e18) + (indexes.length * mintAmount_),
-                pledgedCollateral: requiredCollateral,
-                encumberedCollateral: Maths.wdiv(debtTime1, _poolUtils.lup(address(_pool))),
-                poolDebt: debtTime1,
-                actualUtilization: poolActualUtilization,
-                targetUtilization: poolTargetUtilization,
-                minDebtAmount: minDebt,
-                loans: 1,
-                maxBorrower: _borrower,
-                interestRate: 0.05 * 1e18,
-                interestRateUpdate: _startTime
+                htp:                  Maths.wdiv(debt, requiredCollateral),
+                lup:                  _poolUtils.lup(address(_pool)),
+                poolSize:             (50_000 * 1e18) + (indexes.length * mintAmount_),
+                pledgedCollateral:    requiredCollateral,
+                encumberedCollateral: Maths.wdiv(debt, _poolUtils.lup(address(_pool))),
+                poolDebt:             debt,
+                actualUtilization:    poolActualUtilization,
+                targetUtilization:    poolTargetUtilization,
+                minDebtAmount:        minDebt,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
             })
         );
         assertLt(_htp(), _poolUtils.lup(address(_pool)));
         assertGt(minDebt, 0);
-        assertEq(_poolUtils.lup(address(_pool)), _calculateLup(address(_pool), debtTime1));
+        assertEq(_poolUtils.lup(address(_pool)), _calculateLup(address(_pool), debt));
 
         // pass time to allow interest to accumulate
         skip(1 days);
 
-        (uint256 debtTime2, , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
-        assertGt(debtTime2, debtTime1); // check that fees accrued
-
         // repay all debt and withdraw collateral
-        deal(address(_quote), _borrower, debtTime2);
+        (debt, , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
+        deal(address(_quote), _borrower, debt);
         _repayDebt({
             from:             _borrower,
             borrower:         _borrower,
-            amountToRepay:    debtTime2,
-            amountRepaid:     debtTime2,
+            amountToRepay:    debt,
+            amountRepaid:     debt,
             collateralToPull: requiredCollateral,
             newLup:           _calculateLup(address(_pool), 0)
         });
@@ -1268,17 +1266,17 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             assertGt(exchangeRate, 1e27);
             assertEq(lpAccumulator, mintAmount_ * 1e9);
             _assertBucket({
-                index:      indexes[i],
-                lpBalance:  mintAmount_ * 1e9,
-                collateral: 0,
-                deposit:    deposit,
+                index:        indexes[i],
+                lpBalance:    mintAmount_ * 1e9,
+                collateral:   0,
+                deposit:      deposit,
                 exchangeRate: exchangeRate
             });
         }
 
         // check borrower state after repayment
-        (debtTime2, , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
-        assertEq(debtTime2, 0);
+        (debt, , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
+        assertEq(debt, 0);
 
         // check pool state
         assertEq(_htp(), 0);
