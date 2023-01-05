@@ -507,34 +507,45 @@ contract AjnaRewardsTest is DSTestPlus {
         uint256 tokensToBurn = _triggerReserveAuctions(triggerReserveAuctionParams);
 
         //call update exchange rate to enable claiming rewards for epoch 0 - 1
-        changePrank(_updater);
-        assertEq(_ajnaToken.balanceOf(_updater), 0);
-        vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(_updater, address(_poolOne), depositIndexes, 1.808591217308675030 * 1e18);
-        _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
+        _updateExchangeRates({
+            updater:        _updater,
+            pool:           address(_poolOne),
+            depositIndexes: depositIndexes,
+            reward:         1.808591217308675030 * 1e18
+        });
 
         skip(2 weeks);
 
         // first reserve auction happens successfully Staker should receive rewards epoch 0 - 1
         _triggerReserveAuctionsNoTake(triggerReserveAuctionParams);
 
-        // allow time to pases where takeReserves can no longer be called
-        skip(73 hours);
-
-        (uint256 e1Timestamp, uint256 e1Interest, uint256 e1Burned) = IPool(_poolOne).burnInfo(1);
-        assertGt(e1Timestamp, 0); // GT assert -> non-zero value
-        assertEq(e1Interest, 6.466873982955353003 * 1e18); // takeReserves is called, all good
-        assertEq(e1Burned, 36.171824346173572302 * 1e18);  // takeReserves is called, all good
+        _assertBurn({
+            pool:      address(_poolOne),
+            epoch:     1,
+            timestamp: block.timestamp - (2 weeks + 26 weeks + 24 hours),
+            burned:    36.171824346173572302 * 1e18,
+            interest:  6.466873982955353003 * 1e18
+        });
 
         (uint256 e2Timestamp, uint256 e2Interest, uint256 e2Burned) = IPool(_poolOne).burnInfo(2);
         assertGt(e2Timestamp, 0); // GT assert -> non-zero value
         assertEq(e2Interest, 0);  // not stamped because this happens in takeReserves
         assertEq(e2Burned, 0);    // not stamped because this happens in takeReserves
+        
+        _assertBurn({
+            pool:      address(_poolOne),
+            epoch:     2,
+            timestamp: block.timestamp,
+            burned:    0,
+            interest:  0
+        });
 
-        changePrank(_updater);
-        vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(_updater, address(_poolOne), depositIndexes, 2.556218432497364950 * 1e18);
-        _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
+        _updateExchangeRates({
+            updater:        _updater,
+            pool:           address(_poolOne),
+            depositIndexes: depositIndexes,
+            reward:         2.556218432497364950 * 1e18
+        });
     }
 
     function _triggerReserveAuctionsNoTake(TriggerReserveAuctionParams memory params_) internal returns (uint256 tokensToBurn_) {
