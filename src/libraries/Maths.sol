@@ -19,6 +19,10 @@ library Maths {
         return x >= y ? x : y;
     }
 
+    function smax(int256 x, int256 y) internal pure returns (int256) {
+        return x >= y ? x : y;
+    }
+
     function min(uint256 x, uint256 y) internal pure returns (uint256) {
         return x <= y ? x : y;
     }

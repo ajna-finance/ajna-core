@@ -768,8 +768,8 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         assertEq(_getCollateralDustPricePrecisionAdjustment(1),    0);
         assertEq(_getCollateralDustPricePrecisionAdjustment(4156), 2);
         assertEq(_getCollateralDustPricePrecisionAdjustment(4310), 3);
-        assertEq(_getCollateralDustPricePrecisionAdjustment(5260), 5);
-        assertEq(_getCollateralDustPricePrecisionAdjustment(6466), 7);
+        assertEq(_getCollateralDustPricePrecisionAdjustment(5260), 6);
+        assertEq(_getCollateralDustPricePrecisionAdjustment(6466), 8);
         assertEq(_getCollateralDustPricePrecisionAdjustment(6647), 8);
         assertEq(_getCollateralDustPricePrecisionAdjustment(7388), 9);
 
@@ -784,7 +784,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         init(12, 18);
         assertEq(IERC20Pool(address(_pool)).collateralDust(0),    1000000);
         assertEq(IERC20Pool(address(_pool)).collateralDust(1),    1000000);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(6466), 10000000);
+        assertEq(IERC20Pool(address(_pool)).collateralDust(6466), 100000000);
         assertEq(IERC20Pool(address(_pool)).collateralDust(7388), 1000000000);
 
         // check dust limits for 6-decimal collateral

@@ -247,13 +247,10 @@ import '../libraries/Maths.sol';
 
     function _getCollateralDustPricePrecisionAdjustment(
         uint256 bucketIndex_
-    ) pure returns (uint256) {
+    ) view returns (uint256) {
         // conditional is a gas optimization; formula also returns 0 in this case
         if (bucketIndex_ == 0) return 0;
-        // formula comes from a least squares best fit to a curve constructed using empirically-obtained values
-        int256 polynomialResult = 
-              (  -2.0844   * 1e11 * int256(bucketIndex_ ** 2)) 
-            + (   0.004553 * 1e18 * int256(bucketIndex_)     ) 
-               - 12.75     * 1e18;
-        return polynomialResult > 0 ? uint256(polynomialResult / 1e18) : 0;
+        int256 bucketOffset = Maths.smax(0, int256(bucketIndex_) - int256(3900)) * 1e18;
+        int256 result = PRBMathSD59x18.sqrt(PRBMathSD59x18.div(PRBMathSD59x18.abs(bucketOffset), int256(36 * 1e18)));
+        return result > 0 ? uint256(result / 1e18) : 0;
     }
