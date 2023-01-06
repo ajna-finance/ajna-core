@@ -22,6 +22,10 @@ import '../Loans.sol';
  */
 library BorrowerActions {
 
+    /*************************/
+    /*** Local Var Structs ***/
+    /*************************/
+
     struct DrawDebtLocalVars {
         uint256 borrowerDebt; // borrower's accrued debt
         uint256 debtChange;   // additional debt resulted from draw debt action
@@ -29,7 +33,6 @@ library BorrowerActions {
         uint256 lupId;        // id of new LUP
         bool    stampT0Np;    // true if loan's t0 neutral price should be restamped (when drawing debt or pledge settles auction)
     }
-
     struct RepayDebtLocalVars {
         uint256 borrowerDebt;          // borrower's accrued debt
         bool    inAuction;             // true if loan still in auction after repay, false otherwise
@@ -41,28 +44,22 @@ library BorrowerActions {
         uint256 t0RepaidDebt;          // t0 debt repaid
     }
 
-    /**
-     *  @notice Recipient of borrowed quote tokens doesn't match the caller of the drawDebt function.
-     */
+    /**************/
+    /*** Errors ***/
+    /**************/
+
+    // See `IPoolErrors` for descriptions
     error BorrowerNotSender();
-    /**
-     *  @notice Borrower is attempting to borrow more quote token than they have collateral for.
-     */
     error BorrowerUnderCollateralized();
-    /**
-     *  @notice User is attempting to move or pull more collateral than is available.
-     */
     error InsufficientCollateral();
-    /**
-     *  @notice Borrower is attempting to borrow more quote token than is available before the supplied limitIndex.
-     */
     error LimitIndexReached();
-    /**
-     *  @notice Borrower has no debt to liquidate.
-     *  @notice Borrower is attempting to repay when they have no outstanding debt.
-     */
     error NoDebt();
 
+    /***************************/
+    /***  External Functions ***/
+    /***************************/
+
+    // See `IERC20PoolBorrowerActions` and `IERC721PoolBorrowerActions` for descriptions
     function drawDebt(
         AuctionsState storage auctions_,
         mapping(uint256 => Bucket) storage buckets_,
@@ -176,6 +173,7 @@ library BorrowerActions {
         );
     }
 
+    // See `IERC20PoolBorrowerActions` and `IERC721PoolBorrowerActions` for descriptions
     function repayDebt(
         AuctionsState storage auctions_,
         mapping(uint256 => Bucket) storage buckets_,
@@ -286,6 +284,10 @@ library BorrowerActions {
             vars.stampT0Np
         );
     }
+
+    /**********************/
+    /*** View Functions ***/
+    /**********************/
 
     /**
      *  @notice Returns true if borrower is in auction.

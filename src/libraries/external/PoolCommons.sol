@@ -18,6 +18,11 @@ import '../../base/PoolHelper.sol';
             - pool utilization
  */
 library PoolCommons {
+
+    /*****************/
+    /*** Constants ***/
+    /*****************/
+
     uint256 internal constant CUBIC_ROOT_1000000 = 100 * 1e18;
     uint256 internal constant ONE_THIRD          = 0.333333333333333334 * 1e18;
 
@@ -27,15 +32,12 @@ library PoolCommons {
     uint256 internal constant EMA_7D_RATE_FACTOR   = 1e18 - LAMBDA_EMA_7D;
     int256  internal constant PERCENT_102          = 1.02 * 1e18;
 
-    /**
-     *  @notice Emitted when pool interest rate is updated.
-     *  @param  oldRate Old pool interest rate.
-     *  @param  newRate New pool interest rate.
-     */
-    event UpdateInterestRate(
-        uint256 oldRate,
-        uint256 newRate
-    );
+    /**************/
+    /*** Events ***/
+    /**************/
+
+    // See `IPoolEvents` for descriptions
+    event UpdateInterestRate(uint256 oldRate,uint256 newRate);
 
     /**************************/
     /*** External Functions ***/
@@ -152,6 +154,10 @@ library PoolCommons {
             );
         }
     }
+
+    /**************************/
+    /*** View Functions ***/
+    /**************************/
 
     /**
      *  @notice Calculates pool interest factor for a given interest rate and time elapsed since last inflator update.

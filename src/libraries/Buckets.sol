@@ -8,9 +8,11 @@ import './Maths.sol';
 
 library Buckets {
 
-    /**
-     *  @notice Operation cannot be executed in the same block when bucket becomes insolvent.
-     */
+    /**************/
+    /*** Events ***/
+    /**************/
+
+    // See `IPoolEvents` for descriptions
     error BucketBankruptcyBlock();
 
     /***********************************/

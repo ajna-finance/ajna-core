@@ -11,9 +11,11 @@ library Loans {
 
     uint256 constant ROOT_INDEX = 1;
 
-    /**
-     *  @notice The threshold price of the loan to be inserted in loans heap is zero.
-     */
+    /**************/
+    /*** Errors ***/
+    /**************/
+
+    // See `IPoolErrors` for descriptions
     error ZeroThresholdPrice();
 
     /***********************/

@@ -28,6 +28,10 @@ import '../../base/PoolHelper.sol';
 
 library Auctions {
 
+    /*******************************/
+    /*** Function Params Structs ***/
+    /*******************************/
+
     struct BucketTakeParams {
         address borrower;    // borrower address to take from
         uint256 collateral;  // borrower available collateral to take
@@ -36,6 +40,18 @@ library Auctions {
         uint256 inflator;    // current pool inflator
         uint256 t0Debt;      // borrower t0 debt
     }
+    struct TakeParams {
+        address borrower;       // borrower address to take from
+        uint256 collateral;     // borrower available collateral to take
+        uint256 t0Debt;         // borrower t0 debt
+        uint256 takeCollateral; // desired amount to take
+        uint256 inflator;       // current pool inflator
+        uint256 poolType;       // pool type (ERC20 or NFT)
+    }
+
+    /*************************/
+    /*** Local Var Structs ***/
+    /*************************/
 
     struct KickWithDepositLocalVars {
         uint256 amountToDebitFromDeposit; // the amount of quote tokens used to kick and debited from lender deposit
@@ -49,7 +65,6 @@ library Auctions {
         uint256 lenderLPs;                // LPs of lender in bucket
         uint256 redeemedLPs;              // LPs used by kick action
     }
-
     struct SettleLocalVars {
         uint256 collateralUsed;    // collateral used to settle debt
         uint256 debt;              // debt to settle
@@ -61,7 +76,6 @@ library Auctions {
         uint256 scale;             // scale of settling bucket
         uint256 unscaledDeposit;   // unscaled amount of quote tokens in bucket
     }
-
     struct TakeLocalVars {
         uint256 auctionPrice;             // The price of auction.
         uint256 bondChange;               // The change made on the bond size (beeing reward or penalty).
@@ -81,13 +95,11 @@ library Auctions {
         uint256 unscaledDeposit;          // Unscaled bucket quantity
         uint256 unscaledQuoteTokenAmount; // The unscaled token amount that taker should pay for collateral taken.
     }
-
     struct TakeLoanLocalVars {
         uint256 repaidDebt;   // the amount of debt repaid to th epool by take auction
         uint256 borrowerDebt; // the amount of borrower debt
         bool    inAuction;    // true if loan in auction
     }
-
     struct TakeFromLoanLocalVars {
         uint256 borrowerDebt;          // borrower's accrued debt
         bool    inAuction;             // true if loan still in auction after auction is taken, false otherwise
@@ -98,167 +110,36 @@ library Auctions {
         uint256 t0PoolDebt;            // t0 pool debt
     }
 
-    struct TakeParams {
-        address borrower;       // borrower address to take from
-        uint256 collateral;     // borrower available collateral to take
-        uint256 t0Debt;         // borrower t0 debt
-        uint256 takeCollateral; // desired amount to take
-        uint256 inflator;       // current pool inflator
-        uint256 poolType;       // pool type (ERC20 or NFT)
-    }
+    /**************/
+    /*** Events ***/
+    /**************/
 
-    /**
-     *  @notice Emitted when auction is completed.
-     *  @param  borrower   Address of borrower that exits auction.
-     *  @param  collateral Borrower's remaining collateral when auction completed.
-     */
-    event AuctionSettle(
-        address indexed borrower,
-        uint256 collateral
-    );
+    // See `IPoolEvents` for descriptions
+    event AuctionSettle(address indexed borrower, uint256 collateral);
+    event AuctionNFTSettle(address indexed borrower, uint256 collateral, uint256 lps, uint256 index);
+    event BucketTake(address indexed borrower, uint256 index, uint256 amount, uint256 collateral, uint256 bondChange, bool isReward);
+    event BucketTakeLPAwarded(address indexed taker, address indexed kicker, uint256 lpAwardedTaker, uint256 lpAwardedKicker);
+    event Kick(address indexed borrower, uint256 debt, uint256 collateral, uint256 bond);
+    event Take(address indexed borrower, uint256 amount, uint256 collateral, uint256 bondChange, bool isReward);
+    event RemoveQuoteToken(address indexed lender, uint256 indexed price, uint256 amount, uint256 lpRedeemed, uint256 lup);
+    event ReserveAuction(uint256 claimableReservesRemaining, uint256 auctionPrice);
+    event Settle(address indexed borrower, uint256 settledDebt);
 
-    /**
-     *  @notice Emitted when NFT auction is completed.
-     *  @param  borrower   Address of borrower that exits auction.
-     *  @param  collateral Borrower's remaining collateral when auction completed.
-     *  @param  lps        Amount of LPs given to the borrower to compensate fractional collateral (if any).
-     *  @param  index      Index of the bucket with LPs to compensate fractional collateral.
-     */
-    event AuctionNFTSettle(
-        address indexed borrower,
-        uint256 collateral,
-        uint256 lps,
-        uint256 index
-    );
+    /**************/
+    /*** Errors ***/
+    /**************/
 
-    /**
-     *  @notice Emitted when an actor uses quote token to arb higher-priced deposit off the book.
-     *  @param  borrower    Identifies the loan being liquidated.
-     *  @param  index       The index of the Highest Price Bucket used for this take.
-     *  @param  amount      Amount of quote token used to purchase collateral.
-     *  @param  collateral  Amount of collateral purchased with quote token.
-     *  @param  bondChange  Impact of this take to the liquidation bond.
-     *  @param  isReward    True if kicker was rewarded with `bondChange` amount, false if kicker was penalized.
-     *  @dev    amount / collateral implies the auction price.
-     */
-    event BucketTake(
-        address indexed borrower,
-        uint256 index,
-        uint256 amount,
-        uint256 collateral,
-        uint256 bondChange,
-        bool    isReward
-    );
-
-    /**
-     *  @notice Emitted when LPs are awarded to a taker or kicker in a bucket take.
-     *  @param  taker           Actor who invoked the bucket take.
-     *  @param  kicker          Actor who started the auction.
-     *  @param  lpAwardedTaker  Amount of LP awarded to the taker.
-     *  @param  lpAwardedKicker Amount of LP awarded to the actor who started the auction.
-     */
-    event BucketTakeLPAwarded(
-        address indexed taker,
-        address indexed kicker,
-        uint256 lpAwardedTaker,
-        uint256 lpAwardedKicker
-    );
-
-    event Kick(
-        address indexed borrower,
-        uint256 debt,
-        uint256 collateral,
-        uint256 bond
-    );
-
-    event Take(
-        address indexed borrower,
-        uint256 amount,
-        uint256 collateral,
-        uint256 bondChange,
-        bool    isReward
-    );
-
-    /**
-     *  @notice Emitted when lender kick and remove quote token from the pool.
-     *  @param  lender     Recipient that removed quote tokens.
-     *  @param  price      Price at which quote tokens were removed.
-     *  @param  amount     Amount of quote tokens removed from the pool.
-     *  @param  lpRedeemed Amount of LP exchanged for quote token.
-     *  @param  lup        LUP calculated after removal.
-     */
-    event RemoveQuoteToken(
-        address indexed lender,
-        uint256 indexed price,
-        uint256 amount,
-        uint256 lpRedeemed,
-        uint256 lup
-    );
-
-    /**
-     *  @notice Emitted when a Claimaible Reserve Auction is started or taken.
-     *  @return claimableReservesRemaining Amount of claimable reserves which has not yet been taken.
-     *  @return auctionPrice               Current price at which 1 quote token may be purchased, denominated in Ajna.
-     */
-    event ReserveAuction(
-        uint256 claimableReservesRemaining,
-        uint256 auctionPrice
-    );
-
-    /**
-     *  @notice Emitted when an actor settles debt in a completed liquidation
-     *  @param  borrower   Identifies the loan under liquidation.
-     *  @param  settledDebt Amount of pool debt settled in this transaction.
-     *  @dev    When amountRemaining_ == 0, the auction has been completed cleared and removed from the queue.
-     */
-    event Settle(
-        address indexed borrower,
-        uint256 settledDebt
-    );
-
-    /**
-     *  @notice The action cannot be executed on an active auction.
-     */
+    // See `IPoolErrors` for descriptions
     error AuctionActive();
-    /**
-     *  @notice Attempted auction to clear doesn't meet conditions.
-     */
     error AuctionNotClearable();
-    /**
-     *  @notice The auction price is greater than the arbed bucket price.
-     */
     error AuctionPriceGtBucketPrice();
-    /**
-     *  @notice Borrower has a healthy over-collateralized position.
-     */
     error BorrowerOk();
-    /**
-     *  @notice Bucket to arb must have more quote available in the bucket.
-     */
     error InsufficientLiquidity();
-    /**
-     *  @notice User is attempting to take more collateral than available.
-     */
     error InsufficientCollateral();
-    /**
-     *  @notice Actor is attempting to take or clear an inactive auction.
-     */
     error NoAuction();
-    /**
-     *  @notice No pool reserves are claimable.
-     */
     error NoReserves();
-    /**
-     *  @notice Actor is attempting to take or clear an inactive reserves auction.
-     */
     error NoReservesAuction();
-    /**
-     *  @notice Actor is attempting to remove using a bucket with price below the LUP.
-     */
     error PriceBelowLUP();
-    /**
-     *  @notice Take was called before 1 hour had passed from kick time.
-     */
     error TakeNotPastCooldown();
 
     /***************************/
@@ -655,6 +536,69 @@ library Auctions {
         );
     }
 
+    // See `IPoolReserveAuctionActions` for descriptions
+    function startClaimableReserveAuction(
+        AuctionsState storage auctions_,
+        ReserveAuctionState storage reserveAuction_,
+        StartReserveAuctionParams calldata params_
+    ) external returns (uint256 kickerAward_) {
+        uint256 curUnclaimedAuctionReserve = reserveAuction_.unclaimed;
+
+        uint256 claimable = _claimableReserves(
+            Maths.wmul(params_.poolDebt, params_.inflator),
+            params_.poolSize,
+            auctions_.totalBondEscrowed,
+            curUnclaimedAuctionReserve,
+            params_.poolBalance
+        );
+
+        kickerAward_ = Maths.wmul(0.01 * 1e18, claimable);
+
+        curUnclaimedAuctionReserve += claimable - kickerAward_;
+
+        if (curUnclaimedAuctionReserve == 0) revert NoReserves();
+
+        reserveAuction_.unclaimed = curUnclaimedAuctionReserve;
+        reserveAuction_.kicked    = block.timestamp;
+
+        emit ReserveAuction(curUnclaimedAuctionReserve, _reserveAuctionPrice(block.timestamp));
+    }
+
+    // See `IPoolReserveAuctionActions` for descriptions
+    function takeReserves(
+        ReserveAuctionState storage reserveAuction_,
+        uint256 maxAmount_
+    ) external returns (uint256 amount_, uint256 ajnaRequired_) {
+        uint256 kicked = reserveAuction_.kicked;
+
+        if (kicked != 0 && block.timestamp - kicked <= 72 hours) {
+            uint256 unclaimed = reserveAuction_.unclaimed;
+            uint256 price     = _reserveAuctionPrice(kicked);
+
+            amount_       = Maths.min(unclaimed, maxAmount_);
+            ajnaRequired_ = Maths.wmul(amount_, price);
+
+            unclaimed -= amount_;
+
+            reserveAuction_.unclaimed = unclaimed;
+
+            emit ReserveAuction(unclaimed, price);
+        } else {
+            revert NoReservesAuction();
+        }
+    }
+
+    /***************************/
+    /***  Internal Functions ***/
+    /***************************/
+
+    /**
+     *  @notice Performs auction settle based on pool type, emits settle event and removes auction from auctions queue.
+     *  @param  borrowerAddress_     Address of the borrower that exits auction.
+     *  @param  borrowerCollateral_  Borrower collateral amount before auction exit (in NFT could be fragmented as result of partial takes).
+     *  @param  poolType_            Type of the pool (can be ERC20 or NFT).
+     *  @return remainingCollateral_ Collateral remaining after auction is settled (same amount for ERC20 pool, rounded collateral for NFT pool).
+     */
     function _settleAuction(
         AuctionsState storage auctions_,
         mapping(uint256 => Bucket) storage buckets_,
@@ -725,64 +669,6 @@ library Auctions {
             );
         }
     }
-
-    /***********************/
-    /*** Reserve Auction ***/
-    /***********************/
-
-    function startClaimableReserveAuction(
-        AuctionsState storage auctions_,
-        ReserveAuctionState storage reserveAuction_,
-        StartReserveAuctionParams calldata params_
-    ) external returns (uint256 kickerAward_) {
-        uint256 curUnclaimedAuctionReserve = reserveAuction_.unclaimed;
-
-        uint256 claimable = _claimableReserves(
-            Maths.wmul(params_.poolDebt, params_.inflator),
-            params_.poolSize,
-            auctions_.totalBondEscrowed,
-            curUnclaimedAuctionReserve,
-            params_.poolBalance
-        );
-
-        kickerAward_ = Maths.wmul(0.01 * 1e18, claimable);
-
-        curUnclaimedAuctionReserve += claimable - kickerAward_;
-
-        if (curUnclaimedAuctionReserve == 0) revert NoReserves();
-
-        reserveAuction_.unclaimed = curUnclaimedAuctionReserve;
-        reserveAuction_.kicked    = block.timestamp;
-
-        emit ReserveAuction(curUnclaimedAuctionReserve, _reserveAuctionPrice(block.timestamp));
-    }
-
-    function takeReserves(
-        ReserveAuctionState storage reserveAuction_,
-        uint256 maxAmount_
-    ) external returns (uint256 amount_, uint256 ajnaRequired_) {
-        uint256 kicked = reserveAuction_.kicked;
-
-        if (kicked != 0 && block.timestamp - kicked <= 72 hours) {
-            uint256 unclaimed = reserveAuction_.unclaimed;
-            uint256 price     = _reserveAuctionPrice(kicked);
-
-            amount_       = Maths.min(unclaimed, maxAmount_);
-            ajnaRequired_ = Maths.wmul(amount_, price);
-
-            unclaimed -= amount_;
-
-            reserveAuction_.unclaimed = unclaimed;
-
-            emit ReserveAuction(unclaimed, price);
-        } else {
-            revert NoReservesAuction();
-        }
-    }
-
-    /***************************/
-    /***  Internal Functions ***/
-    /***************************/
 
     /**
      *  @notice Called to start borrower liquidation and to update the auctions queue.
@@ -1282,6 +1168,10 @@ library Auctions {
         delete auctions_.liquidations[borrower_];
     }
 
+    /**
+     *  @notice Rewards actors of a regular take action.
+     *  @param  vars  Struct containing take action result details.
+     */
     function _rewardTake(
         AuctionsState storage auctions_,
         Liquidation storage liquidation_,
@@ -1304,9 +1194,7 @@ library Auctions {
 
     /**
      *  @notice Rewards actors of a bucket take action.
-     *  @param  deposits_    Deposits state
-     *  @param  bucketIndex_ Bucket index.
-     *  @param  vars         Struct containing take action result details.
+     *  @param  vars Struct containing take action result details.
      */
     function _rewardBucketTake(
         AuctionsState storage auctions_,
@@ -1374,6 +1262,13 @@ library Auctions {
         );
     }
 
+    /**
+     *  @notice Calculates auction price.
+     *  @param  kickMomp_     MOMP recorded at the time of kick.
+     *  @param  neutralPrice_ Neutral Price of the auction.
+     *  @param  kickTime_     Time when auction was kicked.
+     *  @return price_        Calculated auction price.
+     */
     function _auctionPrice(
         uint256 kickMomp_,
         uint256 neutralPrice_,
