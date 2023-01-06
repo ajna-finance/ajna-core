@@ -45,9 +45,9 @@ interface IPoolLenderActions {
     ) external returns (uint256 lpbAmountFrom, uint256 lpbAmountTo);
 
     /**
-     *  @notice Called by lenders to claim unencumbered collateral from a price bucket.
-     *  @param  maxAmount        The amount of unencumbered collateral (or the number of NFT tokens) to claim.
-     *  @param  index            The bucket index from which unencumbered collateral will be removed.
+     *  @notice Called by lenders to claim collateral from a price bucket.
+     *  @param  maxAmount        The amount of collateral (or the number of NFT tokens) to claim.
+     *  @param  index            The bucket index from which collateral will be removed.
      *  @return collateralAmount The amount of collateral removed.
      *  @return lpAmount         The amount of LP used for removing collateral amount.
      */
@@ -69,7 +69,7 @@ interface IPoolLenderActions {
     ) external returns (uint256 quoteTokenAmount, uint256 lpAmount);
 
     /**
-     *  @notice Called by lenders to transfers their LP tokens to a different address.
+     *  @notice Called by lenders to transfers their LP tokens to a different address. approveLpOwnership needs to be run first
      *  @dev    Used by PositionManager.memorializePositions().
      *  @param  owner    The original owner address of the position.
      *  @param  newOwner The new owner address of the position.

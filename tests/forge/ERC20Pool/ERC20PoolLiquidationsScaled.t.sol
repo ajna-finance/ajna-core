@@ -67,7 +67,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
     function addLiquidity(uint256 startBucketId) internal {
         // ensure start bucket is in appropriate range
         assertGt(startBucketId, 0);
-        assertLt(startBucketId, 7388 - BUCKETS_WITH_DEPOSIT);
+        assertLt(startBucketId, 7388 - BUCKETS_WITH_DEPOSIT + 1);
         _startBucketId = startBucketId;
 
         // deposit 200k quote token across 4 buckets
@@ -125,8 +125,9 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
     function testLiquidationSingleBorrower(
         uint8  collateralPrecisionDecimals_, 
         uint8  quotePrecisionDecimals_,
-        uint16 startBucketId_) external tearDown
-    {
+        uint16 startBucketId_
+    ) external tearDown {
+
         uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 6,    18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      1,    18);
         uint256 startBucketId       = bound(uint256(startBucketId_),               2000, 5388);
@@ -225,8 +226,9 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
     function testLiquidationKickWithDeposit(
         uint8  collateralPrecisionDecimals_, 
         uint8  quotePrecisionDecimals_,
-        uint16 startBucketId_) external tearDown
-    {
+        uint16 startBucketId_
+    ) external tearDown {
+
         uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 12, 18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      1,  18);
         uint256 startBucketId       = bound(uint256(startBucketId_),               1,  7388 - BUCKETS_WITH_DEPOSIT);

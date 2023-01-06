@@ -8,7 +8,7 @@ pragma solidity 0.8.14;
 interface IERC20PoolEvents {
 
     /**
-     *  @notice Emitted when actor adds unencumbered collateral to a bucket.
+     *  @notice Emitted when actor adds claimable collateral to a bucket.
      *  @param  actor     Recipient that added collateral.
      *  @param  price     Price at which collateral were added.
      *  @param  amount    Amount of collateral added to the pool.

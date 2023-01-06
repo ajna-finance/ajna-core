@@ -59,18 +59,22 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*** Immutables ***/
     /******************/
 
+    /// @inheritdoc IPoolImmutables
     function poolType() external pure override returns (uint8) {
         return _getArgUint8(POOL_TYPE);
     }
 
+    /// @inheritdoc IPoolImmutables
     function collateralAddress() external pure override returns (address) {
         return _getArgAddress(COLLATERAL_ADDRESS);
     }
 
+    /// @inheritdoc IPoolImmutables
     function quoteTokenAddress() external pure override returns (address) {
         return _getArgAddress(QUOTE_ADDRESS);
     }
 
+    /// @inheritdoc IPoolImmutables
     function quoteTokenScale() external pure override returns (uint256) {
         return _getArgUint256(QUOTE_SCALE);
     }
@@ -84,6 +88,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*** Lender External Functions ***/
     /*********************************/
 
+    /// @inheritdoc IPoolLenderActions
     function addQuoteToken(
         uint256 quoteTokenAmountToAdd_,
         uint256 index_
@@ -108,6 +113,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToAdd_);
     }
 
+    /// @inheritdoc IPoolLenderActions
     function approveLpOwnership(
         address allowedNewOwner_,
         uint256 index_,
@@ -116,6 +122,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _lpTokenAllowances[msg.sender][allowedNewOwner_][index_] = lpsAmountToApprove_;
     }
 
+    /// @inheritdoc IPoolLenderActions
     function moveQuoteToken(
         uint256 maxAmountToMove_,
         uint256 fromIndex_,
@@ -146,6 +153,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _updateInterestState(poolState, newLup);
     }
 
+    /// @inheritdoc IPoolLenderActions
     function removeQuoteToken(
         uint256 maxAmount_,
         uint256 index_
@@ -179,6 +187,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _transferQuoteToken(msg.sender, removedAmount_);
     }
 
+    /// @inheritdoc IPoolLenderActions
     function transferLPTokens(
         address owner_,
         address newOwner_,
@@ -193,16 +202,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
-    function withdrawBonds() external {
-        uint256 claimable = auctions.kickers[msg.sender].claimable;
-        auctions.kickers[msg.sender].claimable = 0;
-        _transferQuoteToken(msg.sender, claimable);
-    }
-
     /*****************************/
     /*** Liquidation Functions ***/
     /*****************************/
 
+    /// @inheritdoc IPoolLiquidationActions
     function kick(address borrowerAddress_) external override {
         PoolState memory poolState = _accruePoolInterest();
 
@@ -226,6 +230,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if(result.amountToCoverBond != 0) _transferQuoteTokenFrom(msg.sender, result.amountToCoverBond);
     }
 
+    /// @inheritdoc IPoolLiquidationActions
     function kickWithDeposit(
         uint256 index_
     ) external override {
@@ -253,20 +258,29 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if(result.amountToCoverBond != 0) _transferQuoteTokenFrom(msg.sender, result.amountToCoverBond);
     }
 
+    /// @inheritdoc IPoolLiquidationActions
+    function withdrawBonds() external {
+        uint256 claimable = auctions.kickers[msg.sender].claimable;
+        auctions.kickers[msg.sender].claimable = 0;
+        _transferQuoteToken(msg.sender, claimable);
+    }
+
     /*********************************/
     /*** Reserve Auction Functions ***/
     /*********************************/
 
+    /// @inheritdoc IPoolReserveAuctionActions
     function startClaimableReserveAuction() external override {
-        // check that at least two weeks have passed since the last reserve auction completed
-
+        // retrieve timestamp of latest burn event and last burn timestamp
         uint256 latestBurnEpoch   = reserveAuction.latestBurnEventEpoch;
         uint256 lastBurnTimestamp = reserveAuction.burnEvents[latestBurnEpoch].timestamp;
 
+        // check that at least two weeks have passed since the last reserve auction completed, and that the auction was not kicked within the past 72 hours
         if (block.timestamp < lastBurnTimestamp + 2 weeks || block.timestamp - reserveAuction.kicked <= 72 hours) {
             revert ReserveAuctionTooSoon();
         }
 
+        // start a new claimable reserve auction, passing in relevant parameters such as the current pool size, debt, balance, and inflator value
         uint256 kickerAward = Auctions.startClaimableReserveAuction(
             auctions,
             reserveAuction,
@@ -278,15 +292,17 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             })
         );
 
-        // record start of new burn event
+        // increment latest burn event epoch and update burn event timestamp
         latestBurnEpoch += 1;
 
         reserveAuction.latestBurnEventEpoch = latestBurnEpoch;
         reserveAuction.burnEvents[latestBurnEpoch].timestamp = block.timestamp;
 
+        // transfer kicker award to msg.sender
         _transferQuoteToken(msg.sender, kickerAward);
     }
 
+    /// @inheritdoc IPoolReserveAuctionActions
     function takeReserves(uint256 maxAmount_) external override returns (uint256 amount_) {
         uint256 ajnaRequired;
         (amount_, ajnaRequired) = Auctions.takeReserves(
@@ -320,22 +336,28 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*****************************/
 
     function _accruePoolInterest() internal returns (PoolState memory poolState_) {
+	// retrieve t0Debt amount from poolBalances struct
         uint256 t0Debt = poolBalances.t0Debt;
 
+	// initialize fields of poolState_ struct with initial values
         poolState_.collateral     = poolBalances.pledgedCollateral;
         poolState_.inflator       = inflatorState.inflator;
         poolState_.rate           = interestState.interestRate;
         poolState_.poolType       = _getArgUint8(POOL_TYPE);
         poolState_.quoteDustLimit = _getArgUint256(QUOTE_SCALE);
 
+	// check if t0Debt is not equal to 0, indicating that there is debt to be tracked for the pool
         if (t0Debt != 0) {
             // Calculate prior pool debt
             poolState_.debt = Maths.wmul(t0Debt, poolState_.inflator);
 
+	    // calculate elapsed time since inflator was last updated
             uint256 elapsed = block.timestamp - inflatorState.inflatorUpdate;
 
+	    // set isNewInterestAccrued field to true if elapsed time is not 0, indicating that new interest may have accrued
             poolState_.isNewInterestAccrued = elapsed != 0;
 
+            // if new interest may have accrued, call accrueInterest function and update inflator and debt fields of poolState_ struct
             if (poolState_.isNewInterestAccrued) {
                 (uint256 newInflator, uint256 newInterest) = PoolCommons.accrueInterest(
                     deposits,
@@ -354,6 +376,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     function _updateInterestState(PoolState memory poolState_, uint256 lup_) internal {
+        // if it has been more than 12 hours since the last interest rate update, call updateInterestRate function
         if (block.timestamp - interestState.interestRateUpdate > 12 hours) {
             PoolCommons.updateInterestRate(interestState, deposits, poolState_, lup_);
         }
@@ -362,6 +385,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if (poolState_.isNewInterestAccrued) {
             inflatorState.inflator       = uint208(poolState_.inflator);
             inflatorState.inflatorUpdate = uint48(block.timestamp);
+        // if the debt in the current pool state is 0, also update the inflator and inflatorUpdate fields in inflatorState
         // slither-disable-next-line incorrect-equality
         } else if (poolState_.debt == 0) {
             inflatorState.inflator       = uint208(Maths.WAD);
@@ -389,6 +413,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*** External Functions ***/
     /**************************/
 
+    /// @inheritdoc IPoolState
     function auctionInfo(
         address borrower_
     ) external
@@ -417,6 +442,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
+    /// @inheritdoc IPoolState
     function borrowerInfo(
         address borrower_
     ) external view override returns (uint256, uint256, uint256) {
@@ -427,18 +453,21 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
+    /// @inheritdoc IPoolState
     function bucketInfo(
         uint256 index_
     ) external view override returns (uint256, uint256, uint256, uint256, uint256) {
+        uint256 scale = Deposits.scale(deposits, index_);
         return (
             buckets[index_].lps,
             buckets[index_].collateral,
             buckets[index_].bankruptcyTime,
-            Deposits.valueAt(deposits, index_),
-            Deposits.scale(deposits, index_)
+            Maths.wmul(scale, Deposits.unscaledValueAt(deposits, index_)),
+            scale
         );
     }
 
+    /// @inheritdoc IPoolDerivedState
     function bucketExchangeRate(
         uint256 index_
     ) external view returns (uint256 exchangeRate_) {
@@ -452,10 +481,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
+    /// @inheritdoc IPoolState
     function currentBurnEpoch() external view returns (uint256) {
         return reserveAuction.latestBurnEventEpoch;
     }
 
+    /// @inheritdoc IPoolState
     function burnInfo(uint256 burnEventEpoch_) external view returns (uint256, uint256, uint256) {
         BurnEvent memory burnEvent = reserveAuction.burnEvents[burnEventEpoch_];
 
@@ -466,6 +497,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
+    /// @inheritdoc IPoolState
     function debtInfo() external view returns (uint256, uint256, uint256) {
         uint256 pendingInflator = PoolCommons.pendingInflator(
             inflatorState.inflator,
@@ -479,14 +511,17 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
+    /// @inheritdoc IPoolDerivedState
     function depositIndex(uint256 debt_) external view override returns (uint256) {
         return Deposits.findIndexOfSum(deposits, debt_);
     }
 
+    /// @inheritdoc IPoolDerivedState
     function depositSize() external view override returns (uint256) {
         return Deposits.treeSum(deposits);
     }
 
+    /// @inheritdoc IPoolDerivedState
     function depositUtilization(
         uint256 debt_,
         uint256 collateral_
@@ -494,6 +529,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         return PoolCommons.utilization(deposits, debt_, collateral_);
     }
 
+    /// @inheritdoc IPoolState
     function emasInfo() external view override returns (uint256, uint256) {
         return (
             interestState.debtEma,
@@ -501,6 +537,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
+    /// @inheritdoc IPoolState
     function inflatorInfo() external view override returns (uint256, uint256) {
         return (
             inflatorState.inflator,
@@ -508,6 +545,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
+    /// @inheritdoc IPoolState
     function interestRateInfo() external view returns (uint256, uint256) {
         return (
             interestState.interestRate,
@@ -515,6 +553,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
+    /// @inheritdoc IPoolState
     function kickerInfo(
         address kicker_
     ) external view override returns (uint256, uint256) {
@@ -524,6 +563,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
+    /// @inheritdoc IPoolState
     function lenderInfo(
         uint256 index_,
         address lender_
@@ -532,6 +572,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if (buckets[index_].bankruptcyTime < depositTime_) lpBalance_ = buckets[index_].lenders[lender_].lps;
     }
 
+    /// @inheritdoc IPoolState
     function loanInfo(
         uint256 loanId_
     ) external view override returns (address, uint256) {
@@ -541,6 +582,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
+    /// @inheritdoc IPoolState
     function loansInfo() external view override returns (address, uint256, uint256) {
         return (
             Loans.getMax(loans).borrower,
@@ -549,10 +591,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
+    /// @inheritdoc IPoolState
     function pledgedCollateral() external view override returns (uint256) {
         return poolBalances.pledgedCollateral;
     }
 
+    /// @inheritdoc IPoolState
     function reservesInfo() external view override returns (uint256, uint256, uint256) {
         return (
             auctions.totalBondEscrowed,
