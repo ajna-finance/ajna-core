@@ -504,11 +504,6 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(curDeposit,          deposit);
         assertEq(rate,                exchangeRate);
 
-        console.log("deposit", deposit, curDeposit);
-        emit log_uint(lpBalance);
-        emit log_uint(lpAccumulator);
-        console.log("exchange rate", rate, exchangeRate);
-
         _validateBucketLp(index, lpBalance);
         _validateBucketQuantities(index);
     }
@@ -533,7 +528,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
                 lenderLps += curLpBalance;
             }
         }
-        console.log("lenders balance", lenderLps, lpBalance);
+
         assertEq(lenderLps, lpBalance);
     }
 
