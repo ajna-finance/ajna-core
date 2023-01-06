@@ -211,6 +211,49 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         );
     }
 
+    function testAddRemoveCollateralPrecision (
+        uint8   collateralPrecisionDecimals_,
+        uint8   quotePrecisionDecimals_,
+        uint16  bucketId_
+    ) external tearDown {
+        // setup fuzzy bounds and initialize the pool
+        uint256 collateralDecimals = bound(uint256(collateralPrecisionDecimals_), 1, 18);
+        uint256 quoteDecimals      = bound(uint256(quotePrecisionDecimals_),      1, 18);
+        uint256 bucketId           = bound(uint256(bucketId_),                    1, 7388);
+        init(collateralDecimals, quoteDecimals);
+        uint256 collateralDust = ERC20Pool(address(_pool)).collateralDust(bucketId);
+
+        // put some deposit in the bucket
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: _lenderDepositNormalized,
+            index:  bucketId
+        });
+
+        // add collateral to the bucket
+        _addCollateralWithoutCheckingLP(_bidder, 100 * 1e18, bucketId);
+        (uint256 bidderLpBalance, ) = _pool.lenderInfo(bucketId, _bidder);
+        assertGt(bidderLpBalance, 0);
+
+        // ensure dusty amounts are handled appropriately
+        if (collateralDust != 1) {
+            // ensure amount below the dust limit reverts
+            _assertAddCollateralDustRevert(_bidder, collateralDust / 2, bucketId);
+            // ensure amount above the dust limit is rounded to collateral scale
+            uint256 unscaledCollateralAmount = collateralDust + collateralDust / 2;
+            _addCollateralWithoutCheckingLP(_bidder, unscaledCollateralAmount, bucketId);
+        }
+
+        // remove collateral from the bucket
+        _removeCollateralWithoutLPCheck(_bidder, 50 * 1e18, bucketId);
+
+        // ensure removals prevent dust amounts
+        if (collateralDust != 1) {
+            (, , uint256 claimableCollateral, , , ) = _poolUtils.bucketInfo(address(_pool), bucketId);
+            _assertRemoveCollateralDustRevert(_bidder, claimableCollateral - collateralDust / 2, bucketId);
+        }
+    }
+
     function testBorrowRepayPrecision(uint8 collateralPrecisionDecimals_, uint8 quotePrecisionDecimals_) external virtual tearDown {
         // setup fuzzy bounds and initialize the pool
         uint256 boundColPrecision = bound(uint256(collateralPrecisionDecimals_), 1, 18);

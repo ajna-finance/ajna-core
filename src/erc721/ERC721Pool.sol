@@ -244,8 +244,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             buckets,
             deposits,
             collateralAmount_,
-            index_,
-            0
+            index_
         );
 
         emit RemoveCollateral(msg.sender, index_, noOfNFTsToRemove_, lpAmount_);

@@ -143,7 +143,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         address from,
         address to,
         uint256 amount
-    ) internal {
+    ) internal override {
         vm.expectEmit(true, true, false, true);
         emit Transfer(from, to, amount / ERC20Pool(address(_pool)).collateralScale());
     }
@@ -530,6 +530,16 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('AuctionNotCleared()'));
         ERC20Pool(address(_pool)).removeCollateral(type(uint256).max, index);
+    }
+
+    function _assertRemoveCollateralDustRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
+        ERC20Pool(address(_pool)).removeCollateral(amount, index);
     }
 
     function _assertTransferInvalidIndexRevert(

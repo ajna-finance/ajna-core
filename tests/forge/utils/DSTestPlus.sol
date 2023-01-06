@@ -308,9 +308,19 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         changePrank(from);
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(from, index, amount, lpRedeem);
-        _assertQuoteTokenTransferEvent(address(_pool), from, amount);
+        _assertCollateralTokenTransferEvent(address(_pool), from, amount);
         (, lpRedeemed_) = _pool.removeCollateral(amount, index);
         assertEq(lpRedeemed_, lpRedeem);
+    }
+
+    function _removeCollateralWithoutLPCheck(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal virtual returns (uint256 lpRedeemed_) {
+        changePrank(from);
+        _assertCollateralTokenTransferEvent(address(_pool), from, amount);
+        (, lpRedeemed_) = _pool.removeCollateral(amount, index);
     }
 
     function _removeLiquidity(
@@ -380,6 +390,14 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     }
 
     function _assertQuoteTokenTransferEvent(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual {
+        // to be overidden by ERC20 helper 
+    }
+
+    function _assertCollateralTokenTransferEvent(
         address from,
         address to,
         uint256 amount
