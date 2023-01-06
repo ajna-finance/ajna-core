@@ -3,12 +3,12 @@
 pragma solidity 0.8.14;
 
 import {
-    PoolState,
-    DepositsState,
     AuctionsState,
-    LoansState,
+    Borrower,
     Bucket,
-    Borrower
+    DepositsState,
+    LoansState,
+    PoolState
 } from 'src/base/interfaces/pool/IPoolState.sol';
 
 import { DrawDebtResult, RepayDebtResult } from 'src/base/interfaces/pool/IPoolInternals.sol';

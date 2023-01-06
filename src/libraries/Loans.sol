@@ -3,11 +3,11 @@
 pragma solidity 0.8.14;
 
 import {
-    Borrower,
     AuctionsState,
+    Borrower,
     DepositsState,
-    LoansState,
-    Loan
+    Loan,
+    LoansState
 } from 'src/base/interfaces/pool/IPoolState.sol';
 
 import { _priceAt } from 'src/base/PoolHelper.sol';

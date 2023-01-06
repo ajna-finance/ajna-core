@@ -6,22 +6,22 @@ import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 
 import { PoolType } from 'src/base/interfaces/IPool.sol';
 import {
-    PoolState,
-    DepositsState,
     AuctionsState,
-    LoansState,
-    ReserveAuctionState,
+    Borrower,
     Bucket,
+    DepositsState,
     Kicker,
     Lender,
     Liquidation,
-    Borrower
+    LoansState,
+    PoolState,
+    ReserveAuctionState
 } from 'src/base/interfaces/pool/IPoolState.sol';
 
 import {
-    SettleParams,
-    KickResult,
     BucketTakeResult,
+    KickResult,
+    SettleParams,
     TakeResult
 } from 'src/base/interfaces/pool/IPoolInternals.sol';
 
@@ -29,14 +29,14 @@ import { StartReserveAuctionParams } from 'src/base/interfaces/pool/IPoolReserve
 
 import { _revertOnMinDebt } from 'src/base/RevertsHelper.sol';
 import {
-    _indexOf,
-    _priceAt,
-    _isCollateralized,
-    _reserveAuctionPrice,
     _claimableReserves,
+    _indexOf,
+    _isCollateralized,
+    _priceAt,
+    _reserveAuctionPrice,
     MAX_FENWICK_INDEX,
-    MIN_PRICE,
-    MAX_PRICE
+    MAX_PRICE,
+    MIN_PRICE
 } from 'src/base/PoolHelper.sol';
 
 import { Buckets }  from 'src/libraries/Buckets.sol';

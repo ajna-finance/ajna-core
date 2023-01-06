@@ -5,13 +5,13 @@ pragma solidity 0.8.14;
 import { IPool, IERC20Token } from 'src/base/interfaces/IPool.sol';
 
 import {
-    _priceAt,
+    _claimableReserves,
+    _indexOf,
     _lpsToCollateral,
     _lpsToQuoteToken,
-    _indexOf,
     _minDebtAmount,
+    _priceAt,
     _reserveAuctionPrice,
-    _claimableReserves,
     MAX_FENWICK_INDEX,
     MIN_PRICE
 } from 'src/base/PoolHelper.sol';

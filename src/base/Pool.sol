@@ -8,26 +8,35 @@ import { Multicall }       from '@openzeppelin/contracts/utils/Multicall.sol';
 import { SafeERC20 }       from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 }          from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import { IPool, IPoolImmutables, IPoolLenderActions, IPoolState, IPoolLiquidationActions, IPoolReserveAuctionActions, IPoolDerivedState, IERC20Token } from 'src/base/interfaces/IPool.sol';
+import {
+    IERC20Token,
+    IPool,
+    IPoolDerivedState,
+    IPoolImmutables,
+    IPoolLenderActions,
+    IPoolLiquidationActions,
+    IPoolReserveAuctionActions,
+    IPoolState
+} from 'src/base/interfaces/IPool.sol';
 
 import {
-    PoolState,
     AuctionsState,
-    DepositsState,
-    LoansState,
-    InflatorState,
-    InterestState,
-    PoolBalancesState,
-    ReserveAuctionState,
     Bucket,
     BurnEvent,
-    Liquidation
+    DepositsState,
+    InflatorState,
+    InterestState,
+    Liquidation,
+    LoansState,
+    PoolBalancesState,
+    PoolState,
+    ReserveAuctionState
 } from 'src/base/interfaces/pool/IPoolState.sol';
 import {
+    AddQuoteParams,
     KickResult,
-    RemoveQuoteParams,
     MoveQuoteParams,
-    AddQuoteParams
+    RemoveQuoteParams
 } from 'src/base/interfaces/pool/IPoolInternals.sol';
 
 import { StartReserveAuctionParams } from 'src/base/interfaces/pool/IPoolReserveAuctionActions.sol';

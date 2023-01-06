@@ -4,10 +4,10 @@ pragma solidity 0.8.14;
 
 import {
     AuctionsState,
-    LoansState,
-    PoolBalancesState,
+    Borrower,
     DepositsState,
-    Borrower
+    LoansState,
+    PoolBalancesState
 } from 'src/base/interfaces/pool/IPoolState.sol';
 
 import { _minDebtAmount } from 'src/base/PoolHelper.sol';

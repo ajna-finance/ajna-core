@@ -5,22 +5,21 @@ pragma solidity 0.8.14;
 import { IERC721Token, IPoolErrors } from 'src/base/interfaces/IPool.sol';
 import { PoolState }   from 'src/base/interfaces/pool/IPoolState.sol';
 import {
+    BucketTakeResult,
     DrawDebtResult,
     RepayDebtResult,
-    TakeResult,
-    BucketTakeResult,
-    SettleParams
+    SettleParams,
+    TakeResult
 } from 'src/base/interfaces/pool/IPoolInternals.sol';
 import {
     IERC721Pool,
-    IERC721PoolImmutables,
     IERC721PoolBorrowerActions,
+    IERC721PoolImmutables,
     IERC721PoolLenderActions
 }  from 'src/erc721/interfaces/IERC721Pool.sol';
 import { IPoolLenderActions, IPoolLiquidationActions } from 'src/base/interfaces/IPool.sol';
 import { IERC721Taker } from 'src/erc721/interfaces/IERC721Taker.sol';
 import {
-    ICryptoPunks,
     ICryptoPunks,
     ICryptoKitties,
     NFTTypes

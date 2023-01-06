@@ -5,13 +5,13 @@ pragma solidity 0.8.14;
 import { AddQuoteParams, MoveQuoteParams, RemoveQuoteParams } from 'src/base/interfaces/pool/IPoolInternals.sol';
 
 import {
-    PoolState,
-    DepositsState,
     Bucket,
-    Lender
+    DepositsState,
+    Lender,
+    PoolState
 } from 'src/base/interfaces/pool/IPoolState.sol';
 
-import { _priceAt, _feeRate, _ptp, MAX_FENWICK_INDEX } from 'src/base/PoolHelper.sol';
+import { _feeRate, _priceAt, _ptp, MAX_FENWICK_INDEX } from 'src/base/PoolHelper.sol';
 
 import { Deposits } from 'src/libraries/Deposits.sol';
 import { Buckets }  from 'src/libraries/Buckets.sol';

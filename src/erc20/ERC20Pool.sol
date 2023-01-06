@@ -8,23 +8,23 @@ import { IERC20 }    from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {
     IERC20Pool,
     IERC20PoolBorrowerActions,
-    IERC20PoolLenderActions,
-    IERC20PoolImmutables
+    IERC20PoolImmutables,
+    IERC20PoolLenderActions
 }  from 'src/erc20/interfaces/IERC20Pool.sol';
 import { IPoolLenderActions, IPoolLiquidationActions } from 'src/base/interfaces/IPool.sol';
 import { IERC20Taker } from 'src/erc20/interfaces/IERC20Taker.sol';
 import {
-    IERC3156FlashLender,
-    IERC3156FlashBorrower
+    IERC3156FlashBorrower,
+    IERC3156FlashLender
 } from 'src/base/interfaces/IERC3156FlashLender.sol';
 import { IERC20Token } from 'src/base/interfaces/IPool.sol';
 import { PoolState }   from 'src/base/interfaces/pool/IPoolState.sol';
 import {
     DrawDebtResult,
-    RepayDebtResult,
-    TakeResult,
     BucketTakeResult,
-    SettleParams
+    RepayDebtResult,
+    SettleParams,
+    TakeResult
 } from 'src/base/interfaces/pool/IPoolInternals.sol';
 
 import { FlashloanablePool }         from 'src/base/FlashloanablePool.sol';
