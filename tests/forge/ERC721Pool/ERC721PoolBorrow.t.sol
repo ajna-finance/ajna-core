@@ -745,16 +745,16 @@ contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
         // borrower draw a random amount of debt
         changePrank(_borrower);
         uint256 limitIndex = _findLowestIndexPrice(indexes);
-        uint256 borrowAmount = Maths.wdiv(mintAmount_, Maths.wad(3));
-        uint256[] memory tokenIdsToAdd = _NFTTokenIdsToAdd(_borrower, _requiredCollateralNFT(borrowAmount, limitIndex));
+        // uint256 borrowAmount = Maths.wdiv(mintAmount_, Maths.wad(3)); // Commented out due to stack too deep error
+        uint256[] memory tokenIdsToAdd = _NFTTokenIdsToAdd(_borrower, _requiredCollateralNFT(Maths.wdiv(mintAmount_, Maths.wad(3)), limitIndex));
 
         _drawDebt({
             from:           _borrower,
             borrower:       _borrower,
-            amountToBorrow: borrowAmount,
+            amountToBorrow: Maths.wdiv(mintAmount_, Maths.wad(3)),
             limitIndex:     limitIndex,
             tokenIds:       tokenIdsToAdd,
-            newLup:         _calculateLup(address(_pool), borrowAmount)
+            newLup:         _calculateLup(address(_pool), Maths.wdiv(mintAmount_, Maths.wad(3)))
         });
 
         // check buckets after borrow
@@ -770,7 +770,9 @@ contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
 
         // check borrower info
         (uint256 debt, , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
-        assertGt(debt, borrowAmount); // check that initial fees accrued
+        assertGt(debt, Maths.wdiv(mintAmount_, Maths.wad(3))); // check that initial fees accrued
+        uint256 htp = Maths.wdiv(debt, Maths.wad(tokenIdsToAdd.length));
+        assertEq(htp, _htp());
 
         // check pool state
         (uint256 minDebt, , uint256 poolActualUtilization, uint256 poolTargetUtilization) = _poolUtils.poolUtilizationInfo(address(_pool));
@@ -815,7 +817,7 @@ contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
             (, uint256 deposit, , uint256 lpAccumulator, , uint256 exchangeRate) = _poolUtils.bucketInfo(address(_pool), limitIndex);
 
             // check that only deposits above the htp earned interest
-            if (_poolUtils.indexToPrice(indexes[i]) > Maths.wdiv(debt, Maths.wad(tokenIdsToAdd.length))) {
+            if (_poolUtils.indexToPrice(indexes[i]) > htp) {
                 assertGt(deposit, mintAmount_);
                 assertGt(exchangeRate, 1e27);
             } else {

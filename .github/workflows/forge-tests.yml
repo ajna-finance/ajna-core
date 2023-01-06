@@ -52,4 +52,4 @@ jobs:
           webhook_token: ${{ secrets.DISCORD_TOKEN }}
           message: https://github.com/ajna-finance/contracts/commit/${{ github.sha }}  ```${{ steps.forge-tests.outputs.gas-diff }} compared with last run in branch ${{ steps.gas.outputs.branch }}```
 
-    timeout-minutes: 10
+    timeout-minutes: 20

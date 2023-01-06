@@ -1201,16 +1201,16 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         // borrower draw a random amount of debt
         changePrank(_borrower);
         uint256 limitIndex = _findLowestIndexPrice(indexes);
-        uint256 borrowAmount = Maths.wdiv(mintAmount_, Maths.wad(3));
-        uint256 requiredCollateral = _requiredCollateral(borrowAmount, limitIndex);
+        // uint256 borrowAmount = Maths.wdiv(mintAmount_, Maths.wad(3)); // Commented out due to stack too deep error
+        uint256 requiredCollateral = _requiredCollateral(Maths.wdiv(mintAmount_, Maths.wad(3)), limitIndex);
         deal(address(_collateral), _borrower, requiredCollateral);
         _drawDebt({
             from:               _borrower,
             borrower:           _borrower,
-            amountToBorrow:     borrowAmount,
+            amountToBorrow:     Maths.wdiv(mintAmount_, Maths.wad(3)),
             limitIndex:         limitIndex,
             collateralToPledge: requiredCollateral,
-            newLup:             _calculateLup(address(_pool), borrowAmount)
+            newLup:             _calculateLup(address(_pool), Maths.wdiv(mintAmount_, Maths.wad(3)))
         });
 
         // check buckets after borrow
@@ -1226,7 +1226,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         // check borrower info
         (uint256 debt, , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
-        assertGt(debt, borrowAmount); // check that initial fees accrued
+        assertGt(debt, Maths.wdiv(mintAmount_, Maths.wad(3))); // check that initial fees accrued
         uint256 htp = Maths.wdiv(debt, requiredCollateral);
         assertEq(htp, _htp());
 
