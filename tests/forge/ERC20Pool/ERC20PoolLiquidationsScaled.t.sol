@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.14;
 
+import "forge-std/console2.sol";
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { ERC20DSTestPlus }     from './ERC20DSTestPlus.sol';
@@ -189,11 +190,24 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         skip(26 weeks);
         assertLt(_borrowerCollateralization(_borrower), 1e18);
 
-        // Kick off an auction and wait the grace period
+        // Kick off an auction and wait for a meaningful price
         _kick(_borrower, _bidder);
-        skip(1 hours);
+        skip(9 hours);
 
-        // TODO: test a take which leaves less than a dust amount of collateral
+        // TODO: if collateral precision higher than quote token precision, test a take which costs 0 quote token
+        uint256 collateralDust = ERC20Pool(address(_pool)).collateralDust(0);
+        uint256 takeAmount;
+        // if (boundColPrecision > boundQuotePrecision) {
+        //     takeAmount = collateralDust;
+        //     _assertTakeDustRevert(_bidder, _borrower, takeAmount);
+        // }
+
+        // test a take which leaves less than a dust amount of collateral
+        (, uint256 collateralAvailable, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+        if (collateralDust != 1) {
+            takeAmount = collateralAvailable - collateralDust / 2;
+            _assertTakeDustRevert(_bidder, _borrower, takeAmount);
+        }
     }
 
     function testLiquidationKickWithDeposit(
@@ -304,8 +318,8 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         _pool.take(_borrower, collateralToTake, bidder, new bytes(0));
 
         (uint256 auctionDebt, uint256 auctionCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
-        assertLt(auctionDebt,       lastAuctionDebt);
-        assertEq(auctionCollateral, lastAuctionCollateral - collateralToTake);
+        assertLt(auctionDebt, lastAuctionDebt);
+        assertLt(auctionCollateral, lastAuctionCollateral);
     }
 
     function _depositTake(uint256 bucketId) internal {

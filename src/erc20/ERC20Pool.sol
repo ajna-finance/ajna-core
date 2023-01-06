@@ -232,6 +232,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         PoolState memory poolState = _accruePoolInterest();
 
+        // TODO: Why doesn't this call LenderActions.removeCollateral?
         (collateralAmount_, lpAmount_) = LenderActions.removeMaxCollateral(
             buckets,
             deposits,
@@ -307,8 +308,11 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             loans,
             poolState,
             borrowerAddress_,
-            collateral_
+            collateral_,
+            _collateralDust(0)
         );
+        // prevent caller from requesting an amount of collateral which costs 0 quote token
+        if (result.quoteTokenAmount / _getArgUint256(QUOTE_SCALE) == 0) revert DustAmountNotExceeded();
 
         // update pool balances state
         uint256 t0PoolDebt      = poolBalances.t0Debt;

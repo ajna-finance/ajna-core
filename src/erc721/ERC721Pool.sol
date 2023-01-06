@@ -313,7 +313,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             loans,
             poolState,
             borrowerAddress_,
-            Maths.wad(collateral_)
+            Maths.wad(collateral_),
+            Maths.WAD
         );
 
         // update pool balances state
