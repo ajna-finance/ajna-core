@@ -611,7 +611,7 @@ library Auctions {
         PoolState memory poolState_,
         address borrowerAddress_,
         uint256 collateral_,
-        uint256 collateralDustLimit
+        uint256 collateralDustLimit_
     ) external returns (TakeResult memory result_) {
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
 
@@ -639,7 +639,7 @@ library Auctions {
 
         borrower.collateral -= result_.collateralAmount;
         // revert if the take leaves behind less collateral than the next bidder can take
-        if (borrower.collateral != 0 && borrower.collateral < collateralDustLimit) revert DustAmountNotExceeded();
+        if (borrower.collateral != 0 && borrower.collateral < collateralDustLimit_) revert DustAmountNotExceeded();
 
         if (result_.t0DebtPenalty != 0) {
             poolState_.debt += Maths.wmul(result_.t0DebtPenalty, poolState_.inflator);
