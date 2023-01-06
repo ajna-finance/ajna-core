@@ -80,10 +80,6 @@ contract MathTest is DSTestPlus {
         assertEq(Maths.max(3, 0), 3);
         assertEq(Maths.max(smallerWad, largerWad), largerWad);
 
-        assertEq(Maths.smax(-4, 2), 2);
-        assertEq(Maths.smax(-8, 0), 0);
-        assertEq(Maths.smax(-5, 3), 3);
-
         assertEq(Maths.min(2, 4), 2);
         assertEq(Maths.min(0, 9), 0);
         assertEq(Maths.min(smallerWad, largerWad), smallerWad);
