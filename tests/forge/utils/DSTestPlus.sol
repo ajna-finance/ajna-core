@@ -132,7 +132,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
 
         vm.expectEmit(true, true, false, true);
         emit AddQuoteToken(from, index, (amount / quoteTokenScale) * quoteTokenScale, lpAward, newLup);
-        _assertTokenTransferEvent(from, address(_pool), amount);
+        _assertQuoteTokenTransferEvent(from, address(_pool), amount);
         _pool.addQuoteToken(amount, index);
 
         // Add for tearDown
@@ -224,7 +224,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit Kick(borrower, debt, collateral, bond);
-        if(transferAmount != 0) _assertTokenTransferEvent(from, address(_pool), transferAmount);
+        if(transferAmount != 0) _assertQuoteTokenTransferEvent(from, address(_pool), transferAmount);
         _pool.kick(borrower);
     }
 
@@ -244,7 +244,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         emit Kick(borrower, debt, collateral, bond);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(from, index, removedFromDeposit, removedFromDeposit * 1e9, lup);
-        if(transferAmount != 0) _assertTokenTransferEvent(from, address(_pool), transferAmount);
+        if(transferAmount != 0) _assertQuoteTokenTransferEvent(from, address(_pool), transferAmount);
         _pool.kickWithDeposit(index);
     }
 
@@ -293,7 +293,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(from, index, amount, lpRedeem, newLup);
-        _assertTokenTransferEvent(address(_pool), from, amount);
+        _assertQuoteTokenTransferEvent(address(_pool), from, amount);
         (uint256 removedAmount, uint256 lpRedeemed) = _pool.removeQuoteToken(type(uint256).max, index);
         assertEq(removedAmount, amount);
         assertEq(lpRedeemed,    lpRedeem);
@@ -308,7 +308,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         changePrank(from);
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(from, index, amount, lpRedeem);
-        _assertTokenTransferEvent(address(_pool), from, amount);
+        _assertQuoteTokenTransferEvent(address(_pool), from, amount);
         (, lpRedeemed_) = _pool.removeCollateral(amount, index);
         assertEq(lpRedeemed_, lpRedeem);
     }
@@ -334,7 +334,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(from, index, amountRemoved, lpRedeem, newLup);
-        _assertTokenTransferEvent(address(_pool), from, amountRemoved);
+        _assertQuoteTokenTransferEvent(address(_pool), from, amountRemoved);
         (uint256 removedAmount, uint256 lpRedeemed) = _pool.removeQuoteToken(amount, index);
         assertEq(removedAmount, amountRemoved);
         assertEq(lpRedeemed,    lpRedeem);
@@ -363,7 +363,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit Take(borrower, givenAmount, collateralTaken, bondChange, isReward);
-        _assertTokenTransferEvent(from, address(_pool), givenAmount);
+        _assertQuoteTokenTransferEvent(from, address(_pool), givenAmount);
         _pool.take(borrower, maxCollateral, from, new bytes(0));
     }
 
@@ -379,7 +379,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.takeReserves(amount);
     }
 
-    function _assertTokenTransferEvent(
+    function _assertQuoteTokenTransferEvent(
         address from,
         address to,
         uint256 amount

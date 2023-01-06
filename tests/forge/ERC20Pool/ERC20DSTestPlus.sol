@@ -130,8 +130,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     /*** Actor actions asserts ***/
     /*****************************/
 
-    // FIXME: poorly named, as it assumes quote token scale
-    function _assertTokenTransferEvent(
+    function _assertQuoteTokenTransferEvent(
         address from,
         address to,
         uint256 amount
@@ -204,7 +203,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit DrawDebt(from, amount, 0, newLup);
-        _assertTokenTransferEvent(address(_pool), from, amount);
+        _assertQuoteTokenTransferEvent(address(_pool), from, amount);
 
         ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
 
@@ -252,7 +251,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
 
         // borrow quote
         if (amountToBorrow != 0) {
-            _assertTokenTransferEvent(address(_pool), from, amountToBorrow);
+            _assertQuoteTokenTransferEvent(address(_pool), from, amountToBorrow);
         }
 
         ERC20Pool(address(_pool)).drawDebt(borrower, amountToBorrow, limitIndex, collateralToPledge);
@@ -339,7 +338,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         emit AuctionSettle(borrower, collateral);
         vm.expectEmit(true, true, false, true);
         emit RepayDebt(borrower, repaid, 0, newLup);
-        _assertTokenTransferEvent(from, address(_pool), repaid);
+        _assertQuoteTokenTransferEvent(from, address(_pool), repaid);
         ERC20Pool(address(_pool)).repayDebt(borrower, amount, 0);
     }
 
@@ -360,7 +359,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
 
         // repay checks
         if (amountToRepay != 0) {
-            _assertTokenTransferEvent(from, address(_pool), amountRepaid);
+            _assertQuoteTokenTransferEvent(from, address(_pool), amountRepaid);
         }
 
         // pull checks
