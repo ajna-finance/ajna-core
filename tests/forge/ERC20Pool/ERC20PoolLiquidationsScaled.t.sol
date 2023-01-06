@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.14;
 
-import "forge-std/console2.sol";
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { ERC20DSTestPlus }     from './ERC20DSTestPlus.sol';
@@ -179,7 +178,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
     {
         uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 6,    18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      6,    18);
-        uint256 startBucketId       = bound(uint256(startBucketId_),               3000, 4000);//7388 - BUCKETS_WITH_DEPOSIT);
+        uint256 startBucketId       = bound(uint256(startBucketId_),               1000, 6388);
         init(boundColPrecision, boundQuotePrecision);
         addLiquidity(startBucketId);
         uint256 collateralDust = ERC20Pool(address(_pool)).collateralDust(0);

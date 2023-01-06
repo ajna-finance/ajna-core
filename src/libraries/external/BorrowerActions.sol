@@ -189,7 +189,7 @@ library BorrowerActions {
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
         uint256 collateralAmountToPull_,
-        uint256 collateralDustLimit
+        uint256 collateralDustLimit_
     ) external returns (
         RepayDebtResult memory result_
     ) {
@@ -273,7 +273,7 @@ library BorrowerActions {
             result_.poolCollateral -= collateralAmountToPull_;
 
             // ensure borrower does not leave behind a collateral balance which cannot be pulled
-            if (borrower.collateral != 0 && borrower.collateral < collateralDustLimit) revert DustAmountNotExceeded();
+            if (borrower.collateral != 0 && borrower.collateral < collateralDustLimit_) revert DustAmountNotExceeded();
         }
 
         // calculate LUP if repay is called with 0 amount
