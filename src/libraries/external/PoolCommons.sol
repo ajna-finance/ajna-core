@@ -129,12 +129,19 @@ library PoolCommons {
         // Scale the borrower inflator to update amount of interest owed by borrowers
         uint256 pendingFactor = PRBMathUD60x18.exp((poolState_.rate * elapsed_) / 365 days);
 
+        // calculate the highest threshold price
         newInflator_ = Maths.wmul(poolState_.inflator, pendingFactor);
-
         uint256 htp = Maths.wmul(thresholdPrice_, newInflator_);
 
-        // if HTP is under the lowest price bucket then accrue interest at max index (min price)
-        uint256 htpIndex = (htp >= MIN_PRICE) ? _indexOf(htp) : MAX_FENWICK_INDEX;
+        uint256 htpIndex;
+        if (htp > MAX_PRICE)
+            // if HTP is over the highest price bucket then no buckets earn interest
+            htpIndex = 1;
+        else if (htp < MIN_PRICE)
+            // if HTP is under the lowest price bucket then all buckets earn interest
+            htpIndex = MAX_FENWICK_INDEX;
+        else
+            htpIndex = _indexOf(htp);
 
         // Scale the fenwick tree to update amount of debt owed to lenders
         uint256 depositAboveHtp = Deposits.prefixSum(deposits_, htpIndex);
