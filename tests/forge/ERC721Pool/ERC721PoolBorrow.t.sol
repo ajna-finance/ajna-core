@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.14;
 
-import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
+import { ERC721HelperContract, ERC721FuzzyHelperContract } from './ERC721DSTestPlus.sol';
 
 import 'src/erc721/ERC721Pool.sol';
 
@@ -714,6 +714,35 @@ contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
         );
     }
 
+}
+
+contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
+
+    address internal _borrower;
+    address internal _borrower2;
+    address internal _borrower3;
+    address internal _lender;
+    address internal _lender2;
+
+    function setUp() external {
+        _borrower  = makeAddr("borrower");
+        _borrower2 = makeAddr("borrower2");
+        _borrower3 = makeAddr("borrower3");
+        _lender    = makeAddr("lender");
+        _lender2   = makeAddr("lender2");
+
+        // deploy collection pool
+        _pool = _deployCollectionPool();
+
+        _mintAndApproveQuoteTokens(_lender, 200_000 * 1e18);
+        _mintAndApproveCollateralTokens(_borrower, 52);
+        _mintAndApproveCollateralTokens(_borrower2, 10);
+        _mintAndApproveCollateralTokens(_borrower3, 13);
+
+        vm.prank(_borrower);
+        _quote.approve(address(_pool), 200_000 * 1e18);
+    }
+
     function testDrawRepayDebtFuzzy(uint256 numIndexes, uint256 mintAmount_) external tearDown {
         numIndexes = bound(numIndexes, 3, 5); // number of indexes to add liquidity to
         mintAmount_ = bound(mintAmount_, 1 * 1e18, 500 * 1e18);
@@ -843,4 +872,5 @@ contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
         assertEq(_htp(), 0);
         assertEq(_poolUtils.lup(address(_pool)), MAX_PRICE);
     }
+
 }
