@@ -307,6 +307,21 @@ contract PoolInfoUtils {
     }
 
     /**
+     *  @notice Calculates fee rate for a pool.
+     *  @notice Calculated as greater of the current annualized interest rate divided by 52 (one week of interest) or 5 bps.
+     *  @return Fee rate applied to the given interest rate.
+     */
+    function feeRate(
+        address ajnaPool_
+    ) external view returns (uint256) {
+        IPool pool = IPool(ajnaPool_);
+
+        (uint256 interestRate,) = pool.interestRateInfo();
+
+        return _feeRate(interestRate);
+    }
+
+    /**
      *  @notice Calculate the amount of quote tokens in bucket for a given amount of LP Tokens.
      *  @param  lpTokens_    The number of lpTokens to calculate amounts for.
      *  @param  index_       The price bucket index for which the value should be calculated.
