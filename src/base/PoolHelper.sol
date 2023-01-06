@@ -165,10 +165,10 @@ import '../libraries/Maths.sol';
         uint256 bucketIndex_
     ) pure returns (uint256) {
         // conditional is a gas optimization; formula also returns 0 in this case
-        if (bucketIndex_ == 0) return 0;
-        int256 bucketOffset = Maths.smax(0, int256(bucketIndex_) - int256(3900)) * 1e18;
-        int256 result = PRBMathSD59x18.sqrt(PRBMathSD59x18.div(PRBMathSD59x18.abs(bucketOffset), int256(36 * 1e18)));
-        return result > 0 ? uint256(result / 1e18) : 0;
+        if (bucketIndex_ <= 3900) return 0;
+        int256 bucketOffset = int256(bucketIndex_ - 3900);
+        int256 result = PRBMathSD59x18.sqrt(PRBMathSD59x18.div(bucketOffset * 1e18, int256(36 * 1e18)));
+        return uint256(result / 1e18);
     }
 
     /**
