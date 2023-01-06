@@ -5,8 +5,6 @@ import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
 import 'src/base/PoolHelper.sol';
 
-import '@std/console.sol';
-
 contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
     address internal _borrower;
@@ -2100,16 +2098,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         );
     }
 
-    function testBucketZeroAssets() external  {
-        /*
-        _addInitialLiquidity(
-                             {
-                             from:    _lender1,
-                             amount:  1 * 1e18,
-                             index:  _i9_91
-                             }
-        );
-        */
+    function testBucketZeroAssets() external {
         _addLiquidity(
             {
                 from:    _lender1,

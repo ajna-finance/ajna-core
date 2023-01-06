@@ -307,8 +307,6 @@ library LenderActions {
         fromBucket.lps -= fromBucketRedeemedLPs_;
         toBucket.lps   += toBucketLPs_;
 
-        // TODO: call _bankruptBucketIfEmpty?
-
         emit MoveQuoteToken(
             msg.sender,
             params_.fromIndex,

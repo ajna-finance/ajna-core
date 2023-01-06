@@ -26,8 +26,6 @@ import '../Loans.sol';
 
 import '../../base/PoolHelper.sol';
 
-import '@std/console.sol';
-
 library Auctions {
 
     struct BucketTakeParams {
@@ -138,7 +136,7 @@ library Auctions {
     /**
      *  @notice Emitted when LPs are forfeited as a result of the bucket losing all assets.
      *  @param  index       The index of the bucket.
-     *  @param  lpForfeited Amount of LP no forfeited by lenders.
+     *  @param  lpForfeited Amount of LP forfeited by lenders.
      */
     event BucketBankruptcy(
         uint256 indexed index,
