@@ -8,35 +8,26 @@ import { Multicall }       from '@openzeppelin/contracts/utils/Multicall.sol';
 import { SafeERC20 }       from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 }          from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {
-    IERC20Token,
-    IPool,
-    IPoolDerivedState,
-    IPoolImmutables,
-    IPoolLenderActions,
-    IPoolLiquidationActions,
-    IPoolReserveAuctionActions,
-    IPoolState
-} from 'src/base/interfaces/IPool.sol';
+import { IPool, IPoolImmutables, IPoolLenderActions, IPoolState, IPoolLiquidationActions, IPoolReserveAuctionActions, IPoolDerivedState, IERC20Token } from 'src/base/interfaces/IPool.sol';
 
 import {
+    PoolState,
     AuctionsState,
-    Bucket,
-    BurnEvent,
     DepositsState,
+    LoansState,
     InflatorState,
     InterestState,
-    Liquidation,
-    LoansState,
     PoolBalancesState,
-    PoolState,
-    ReserveAuctionState
+    ReserveAuctionState,
+    Bucket,
+    BurnEvent,
+    Liquidation
 } from 'src/base/interfaces/pool/IPoolState.sol';
 import {
-    AddQuoteParams,
     KickResult,
+    RemoveQuoteParams,
     MoveQuoteParams,
-    RemoveQuoteParams
+    AddQuoteParams
 } from 'src/base/interfaces/pool/IPoolInternals.sol';
 
 import { StartReserveAuctionParams } from 'src/base/interfaces/pool/IPoolReserveAuctionActions.sol';
@@ -83,7 +74,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     mapping(uint256 => Bucket) internal buckets;   // deposit index -> bucket
 
-    bool internal poolInitializations;
+    bool internal isPoolInitialized;
 
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 

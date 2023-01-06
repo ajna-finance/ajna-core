@@ -56,7 +56,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     function initialize(
         uint256 rate_
     ) external override {
-        if (poolInitializations) revert AlreadyInitialized();
+        if (isPoolInitialized) revert AlreadyInitialized();
 
         inflatorState.inflator       = uint208(1e18);
         inflatorState.inflatorUpdate = uint48(block.timestamp);
@@ -67,7 +67,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         Loans.init(loans);
 
         // increment initializations count to ensure these values can't be updated
-        poolInitializations = true;
+        isPoolInitialized = true;
     }
 
     /******************/
