@@ -2269,4 +2269,226 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             }
         );
     }
+
+    function testBucketTinyCollateral() external  {
+        _addCollateral(
+                      {
+                      from:    _lender1,
+                      amount:  1,
+                      index:   _i9_91,
+                      lpAward: 9917184843
+                      }
+        );
+        _addLiquidity(
+                      {
+                      from:    _lender1,
+                      amount:  1 * 1e18,
+                      index:   _i9_91,
+                      lpAward: 1 * 1e27,
+                      newLup:  9721295865031779605
+                      }
+        );
+
+        // Borrower2 borrows
+        _borrow(
+            {
+                from:       _borrower2,
+                amount:     1_730 * 1e18,
+                indexLimit: _i9_72,
+                newLup:     9.721295865031779605 * 1e18
+            }
+        );
+
+        // Skip to make borrower undercollateralized
+        skip(100 days);
+
+        _kick(
+            {
+                from:           _lender,
+                borrower:       _borrower2,
+                debt:           9_976.561670003961916237 * 1e18,
+                collateral:     1_000 * 1e18,
+                bond:           98.533942419792216457 * 1e18,
+                transferAmount: 98.533942419792216457 * 1e18
+            }
+        );
+
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower2,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          98.533942419792216457 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp,
+                kickMomp:          9.818751856078723036 * 1e18,
+                totalBondEscrowed: 98.533942419792216457 * 1e18,
+                auctionPrice:      334.393063846970122880 * 1e18,
+                debtInAuction:     9_976.561670003961916237 * 1e18,
+                thresholdPrice:    9.976561670003961916 * 1e18,
+                neutralPrice:      10.449783245217816340 * 1e18
+            })
+        );
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0,
+                locked:    98.533942419792216457 * 1e18
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_976.561670003961916237 * 1e18,
+                borrowerCollateral:        1_000 * 1e18,
+                borrowert0Np:              10.307611531622595991 * 1e18,
+                borrowerCollateralization: 0.974413448899967463 * 1e18
+            }
+        );
+
+        skip(7 hours);
+
+        _assertBucket(
+            {
+                index:        _i9_91,
+                lpBalance:    2_001.000000000000000009917184843 * 1e27, 
+                collateral:   1,
+                deposit:      2_119.781255869507381179 * 1e18,
+                exchangeRate: 1.059360947461023178999705800 * 1e27
+            }
+        );
+
+        _take(
+            {
+                from:            _lender,
+                borrower:        _borrower2,
+                maxCollateral:   1_001 * 1e18,
+                bondChange:      52248916226089081600,
+                givenAmount:     5_224.891622608908160000 * 1e18,
+                collateralTaken: 1_000 * 1e18,
+                isReward:        true
+            }
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              5_502.662145883213199450 * 1e18,
+                borrowerCollateral:        0 * 1e18,
+                borrowert0Np:              10.307611531622595991 * 1e18,
+                borrowerCollateralization: 0 * 1e18
+            }
+        );
+
+        _repayDebt({
+            from:             _borrower2,
+            borrower:         _borrower2,
+            amountToRepay:    2550.000000000000000000 * 1e18 - 12743748918425199963,
+            amountRepaid:     2550.000000000000000000 * 1e18 - 12743748918425199963,
+            collateralToPull: 0,
+            newLup:           9818751856078723036
+            });
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              2965405894801638399413,
+                borrowerCollateral:        0 * 1e18,
+                borrowert0Np:              10.307611531622595991 * 1e18,
+                borrowerCollateralization: 0 * 1e18
+            }
+        );
+        _settle(
+            {
+                from:        _lender,
+                borrower:    _borrower2,
+                maxDepth:    10,
+                settledDebt: 2924955682886877884176
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_91,
+                lpBalance:    2_001.000000000000000009917184843 * 1e27, 
+                collateral:   1,
+                deposit:      1,
+                exchangeRate: 5455864
+            }
+        );
+
+        _removeLiquidity(
+            {
+                from:     _lender,
+                amount:   1,
+                index:    _i9_91,
+                newLup:   9.818751856078723036 * 1e18,
+                lpRedeem: 200.100009984990498251025862726 * 1e27
+            }
+        );
+
+
+        // Bucket has 1 wei collateral, 0 deposit, 2 lenders with LP > 0
+        _assertBucket(
+            {
+                index:        _i9_91,
+                lpBalance:    1800899990015009501758891322117, 
+                collateral:   1,
+                deposit:      0,
+                exchangeRate: 5506793
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i9_91,
+                lpBalance:   1799899990015009501748974137274, 
+                depositTime: _startTime
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       _i9_91,
+                lpBalance:   1000000000000000009917184843, 
+                depositTime: _startTime
+            }
+        );
+
+        // Lender removes collateral redeeming all LP
+       _removeCollateral(
+            {
+                from:     _lender,
+                amount:   1,
+                index:    _i9_91,
+                lpRedeem: 1799899990015009501748974137274
+            }
+        );
+
+       // Bucket has 0 collateral, 0 deposit, 1 lender with LP > 0       
+        _assertBucket(
+            {
+                index:        _i9_91,
+                lpBalance:    1000000000000000009917184843,
+                collateral:   0,
+                deposit:      0,
+                exchangeRate: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i9_91,
+                lpBalance:   0, 
+                depositTime: _startTime
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       _i9_91,
+                lpBalance:   1000000000000000009917184843, 
+                depositTime: _startTime
+            }
+        );
+    }
 }
