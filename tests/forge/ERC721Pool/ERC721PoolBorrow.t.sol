@@ -744,8 +744,8 @@ contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
     }
 
     function testDrawRepayDebtFuzzy(uint256 numIndexes, uint256 mintAmount_) external tearDown {
-        numIndexes = bound(numIndexes, 3, 5); // number of indexes to add liquidity to
-        mintAmount_ = bound(mintAmount_, 1 * 1e18, 500 * 1e18);
+        numIndexes = bound(numIndexes, 3, 7); // number of indexes to add liquidity to
+        mintAmount_ = bound(mintAmount_, 1 * 1e18, 1_000 * 1e18);
 
         // lender adds liquidity to random indexes
         changePrank(_lender);
