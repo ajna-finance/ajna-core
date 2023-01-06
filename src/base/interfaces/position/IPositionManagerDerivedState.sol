@@ -8,11 +8,11 @@ pragma solidity 0.8.14;
 interface IPositionManagerDerivedState {
 
     /**
-     *  @notice Returns the lpTokens accrued to a given tokenId, price pairing.
+     *  @notice Returns the lpTokens accrued to a given tokenId, bucket pairing.
      *  @dev    Nested mappings aren't returned normally as part of the default getter for a mapping.
      *  @param  tokenId  Unique ID of token.
-     *  @param  index    Index of price bucket to check LP balance of.
-     *  @return lpTokens Balance of lpTokens in the price bucket for this position.
+     *  @param  index    Index of bucket to check LP balance of.
+     *  @return lpTokens Balance of lpTokens in the bucket for this position.
     */
     function getLPTokens(
         uint256 tokenId,
@@ -20,20 +20,22 @@ interface IPositionManagerDerivedState {
     ) external view returns (uint256 lpTokens);
 
     /**
-     *  @notice Returns an array of price indexes in which an NFT has liquidity.
+     *  @notice Returns an array of bucket indexes in which an NFT has liquidity.
      *  @param  tokenId  Unique ID of token.
-     *  @return Array of price indexes.
+     *  @return Array of bucket indexes.
     */
-    function getPositionIndexes(uint256 tokenId) external view returns (uint256[] memory);
+    function getPositionIndexes(
+        uint256 tokenId
+    ) external view returns (uint256[] memory);
 
     /**
-     *  @notice Checks if a given tokenId has a given position price
-     *  @param  tokenId          Unique ID of token.
-     *  @param  index            Index of price bucket to check if in position prices.
-     *  @return priceInPostition True if tokenId has the position price
+     *  @notice Checks if a given tokenId has a given position bucket
+     *  @param  tokenId           Unique ID of token.
+     *  @param  index             Index of bucket to check if in position buckets.
+     *  @return bucketInPosition  True if tokenId has the position bucket.
     */
     function isIndexInPosition(
         uint256 tokenId,
         uint256 index
-    ) external view returns (bool priceInPostition);
+    ) external view returns (bool bucketInPosition);
 }

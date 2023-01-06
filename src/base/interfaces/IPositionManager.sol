@@ -3,6 +3,7 @@
 pragma solidity 0.8.14;
 
 import './position/IPositionManagerOwnerActions.sol';
+import './position/IPositionManagerState.sol';
 import './position/IPositionManagerDerivedState.sol';
 import './position/IPositionManagerEvents.sol';
 /**
@@ -10,6 +11,7 @@ import './position/IPositionManagerEvents.sol';
  */
 interface IPositionManager is
     IPositionManagerOwnerActions,
+    IPositionManagerState,
     IPositionManagerDerivedState,
     IPositionManagerEvents
 {
