@@ -43,6 +43,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _collateralPrecision = uint256(10) ** collateralPrecisionDecimals_;
         _quotePrecision = uint256(10) ** quotePrecisionDecimals_;
         _quoteDust      = _pool.quoteTokenDust();
+        assertEq(_quoteDust, _pool.quoteTokenScale());
         assertEq(_quoteDust, 10 ** (18 - quotePrecisionDecimals_));
         
         _borrower  = makeAddr("borrower");

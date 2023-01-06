@@ -24,6 +24,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
     address            internal _borrower;
     address            internal _borrower2;
     uint256            internal _collateralPrecision;
+    uint256            internal _quoteTokenPrecision;
     address            internal _lender;
     TokenWithNDecimals internal _collateral;
     TokenWithNDecimals internal _quote;
@@ -40,14 +41,14 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         vm.label(address(_pool), "ERC20Pool");
         _poolUtils  = new PoolInfoUtils();
 
-        _collateralPrecision   = uint256(10) ** collateralPrecisionDecimals_;
-        uint256 quotePrecision = uint256(10) ** quotePrecisionDecimals_;
+        _collateralPrecision = uint256(10) ** collateralPrecisionDecimals_;
+        _quoteTokenPrecision = uint256(10) ** quotePrecisionDecimals_;
         
         _borrower  = makeAddr("borrower");
         _lender    = makeAddr("lender");
         _bidder    = makeAddr("bidder");
         
-        uint256 lenderDepositDenormalized = 200_000 * quotePrecision;
+        uint256 lenderDepositDenormalized = 200_000 * _quoteTokenPrecision;
 
         // give bidder quote token to cover liquidation bond
         vm.startPrank(_bidder);
@@ -174,13 +175,14 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
     function testDustyTake(
         uint8  collateralPrecisionDecimals_, 
         uint8  quotePrecisionDecimals_,
-        uint16 startBucketId_) external // TODO: tearDown
+        uint16 startBucketId_) external tearDown
     {
         uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 6,    18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      6,    18);
         uint256 startBucketId       = bound(uint256(startBucketId_),               3000, 4000);//7388 - BUCKETS_WITH_DEPOSIT);
         init(boundColPrecision, boundQuotePrecision);
         addLiquidity(startBucketId);
+        uint256 collateralDust = ERC20Pool(address(_pool)).collateralDust(0);
 
         // Borrow everything from the first bucket, with origination fee tapping into the second bucket
         drawDebt(_borrower, 50_000 * 1e18, 1.01 * 1e18);
@@ -190,17 +192,21 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         skip(26 weeks);
         assertLt(_borrowerCollateralization(_borrower), 1e18);
 
-        // Kick off an auction and wait for a meaningful price
+        // Kick an auction and wait for a meaningful price
         _kick(_borrower, _bidder);
-        skip(9 hours);
+        (uint256 auctionPrice, uint256 auctionDebt, uint256 auctionCollateral) = _advanceAuction(9 hours);
+        assertGt(auctionPrice, 0);
+        assertGt(auctionDebt, 0);
+        assertGt(auctionCollateral, collateralDust);
 
-        // TODO: if collateral precision higher than quote token precision, test a take which costs 0 quote token
-        uint256 collateralDust = ERC20Pool(address(_pool)).collateralDust(0);
+        // if collateral precision higher than quote token precision, test a take which costs 0 quote token
         uint256 takeAmount;
-        // if (boundColPrecision > boundQuotePrecision) {
-        //     takeAmount = collateralDust;
-        //     _assertTakeDustRevert(_bidder, _borrower, takeAmount);
-        // }
+        if (boundColPrecision > boundQuotePrecision) {
+            takeAmount = collateralDust;
+            uint256 costOfTake = _roundToScale(Maths.wmul(auctionPrice, takeAmount), _pool.quoteTokenScale());
+            if (costOfTake == 0)
+                _assertTakeDustRevert(_bidder, _borrower, takeAmount);
+        }
 
         // test a take which leaves less than a dust amount of collateral
         (, uint256 collateralAvailable, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
@@ -208,6 +214,13 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
             takeAmount = collateralAvailable - collateralDust / 2;
             _assertTakeDustRevert(_bidder, _borrower, takeAmount);
         }
+
+        // settle the auction without any legitimate takes
+        (auctionPrice, auctionDebt, auctionCollateral) = _advanceAuction(72 hours);
+        assertEq(auctionPrice, 0);
+        assertGt(auctionDebt, 0);
+        assertGt(auctionCollateral, collateralDust);
+        _settle();
     }
 
     function testLiquidationKickWithDeposit(
