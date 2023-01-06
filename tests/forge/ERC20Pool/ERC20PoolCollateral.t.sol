@@ -158,7 +158,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         );
         assertEq(_collateral.balanceOf(_borrower), 100 * 1e18);
 
-        // remove all of the remaining unencumbered collateral
+        // remove all of the remaining claimable collateral
         _repayDebtNoLupCheck({
             from:             _borrower,
             borrower:         _borrower,
@@ -199,7 +199,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
     /**
      *  @notice 1 borrower tests reverts in pullCollateral.
      *          Reverts:
-     *              Attempts to remove more than available unencumbered collateral.
+     *              Attempts to remove more than available claimable collateral.
      */
     function testPullCollateralRequireEnoughCollateral() external tearDown {
         _assertPullInsufficientCollateralRevert(

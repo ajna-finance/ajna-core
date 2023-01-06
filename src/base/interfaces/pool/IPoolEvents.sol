@@ -125,9 +125,9 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when lender claims unencumbered collateral.
+     *  @notice Emitted when lender claims collateral from a bucket.
      *  @param  claimer    Recipient that claimed collateral.
-     *  @param  price      Price at which unencumbered collateral was claimed.
+     *  @param  price      Price at which collateral was claimed.
      *  @param  amount     The amount of collateral (or number of NFT tokens) transferred to the claimer.
      *  @param  lpRedeemed Amount of LP exchanged for quote token.
      */
