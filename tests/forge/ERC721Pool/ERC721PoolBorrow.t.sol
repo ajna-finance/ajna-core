@@ -843,10 +843,10 @@ contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
 
         // check that deposit and exchange rate have increased as a result of accrued interest
         for (uint256 i = 0; i < numIndexes; ++i) {
-            (, uint256 deposit, , uint256 lpAccumulator, , uint256 exchangeRate) = _poolUtils.bucketInfo(address(_pool), limitIndex);
+            (, uint256 deposit, , uint256 lpAccumulator, , uint256 exchangeRate) = _poolUtils.bucketInfo(address(_pool), indexes[i]);
 
             // check that only deposits above the htp earned interest
-            if (_poolUtils.indexToPrice(indexes[i]) > htp) {
+            if (_poolUtils.indexToPrice(indexes[i]) >= htp) {
                 assertGt(deposit, mintAmount_);
                 assertGt(exchangeRate, 1e27);
             } else {
