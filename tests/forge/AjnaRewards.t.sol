@@ -273,7 +273,7 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // borrower repays some of their debt, providing reserves to be claimed
         // don't pull any collateral, as such functionality is unrelated to reserve auctions
-        params_.pool.repayDebt(borrower, Maths.wdiv(params_.borrowAmount, Maths.wad(2)), 0);
+        params_.pool.repayDebt(borrower, params_.borrowAmount, 0);
 
         // start reserve auction
         changePrank(_bidder);
@@ -386,9 +386,9 @@ contract AjnaRewardsTest is DSTestPlus {
         changePrank(_updater);
         assertEq(_ajnaToken.balanceOf(_updater), 0);
         vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(_updater, address(_poolOne), depositIndexes, 1.808591217308675030 * 1e18);
+        emit UpdateExchangeRates(_updater, address(_poolOne), depositIndexes, 4.021413654595047590 * 1e18);
         _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
-        assertEq(_ajnaToken.balanceOf(_updater), 1.808591217308675030 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_updater), 4.021413654595047590 * 1e18);
 
         // check only deposit owner can claim rewards
         uint256 currentBurnEpoch = _poolOne.currentBurnEpoch();
@@ -397,7 +397,7 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // check rewards earned
         uint256 rewardsEarned = _ajnaRewards.calculateRewards(tokenIdOne, currentBurnEpoch);
-        assertEq(rewardsEarned, 18.085912173086791760 * 1e18);
+        assertEq(rewardsEarned, 40.214136545950568150 * 1e18);
 
         // claim rewards accrued since deposit
         changePrank(_minterOne);
@@ -465,7 +465,7 @@ contract AjnaRewardsTest is DSTestPlus {
             updater:        _updater,
             pool:           address(_poolOne),
             depositIndexes: depositIndexes,
-            reward:         1.808591217308675030 * 1e18
+            reward:         4.021413654595047590 * 1e18
         });
 
         _assertBurn({
@@ -480,7 +480,7 @@ contract AjnaRewardsTest is DSTestPlus {
             pool:      address(_poolOne),
             epoch:     1,
             timestamp: block.timestamp - 24 hours,
-            burned:    36.171824346173572302 * 1e18,
+            burned:    80.428273091901111364 * 1e18,
             interest:  6.466873982955353003 * 1e18
         });
 
@@ -493,8 +493,8 @@ contract AjnaRewardsTest is DSTestPlus {
             pool:              address(_poolOne),
             tokenId:           tokenIdOne,
             claimedArray:      _epochsClaimedArray(2, 0),
-            reward:            49.549902798107900845 * 1e18,
-            updateRatesReward: 2.860362784092827595 * 1e18
+            reward:            80.793427892333608620 * 1e18,
+            updateRatesReward: 3.689026486034825940 * 1e18
         });
     }
 
@@ -538,7 +538,7 @@ contract AjnaRewardsTest is DSTestPlus {
             updater:        _updater,
             pool:           address(_poolOne),
             depositIndexes: depositIndexes,
-            reward:         1.808591217308675030 * 1e18
+            reward:         4.021413654595047590 * 1e18
         });
 
         skip(2 weeks);
@@ -550,7 +550,7 @@ contract AjnaRewardsTest is DSTestPlus {
             pool:      address(_poolOne),
             epoch:     1,
             timestamp: block.timestamp - (2 weeks + 26 weeks + 24 hours),
-            burned:    36.171824346173572302 * 1e18,
+            burned:    80.428273091901111364 * 1e18,
             interest:  6.466873982955353003 * 1e18
         });
 
@@ -566,7 +566,7 @@ contract AjnaRewardsTest is DSTestPlus {
             updater:        _updater,
             pool:           address(_poolOne),
             depositIndexes: depositIndexes,
-            reward:         2.556218432497364950 * 1e18
+            reward:         3.717337967548990180 * 1e18
         });
     }
 
@@ -748,12 +748,12 @@ contract AjnaRewardsTest is DSTestPlus {
         changePrank(_updater);
         assertEq(_ajnaToken.balanceOf(_updater), 0);
         vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(_updater, address(_poolOne), depositIndexes, 7.850216032003022257 * 1e18);
+        emit UpdateExchangeRates(_updater, address(_poolOne), depositIndexes, 18.914328218434904846 * 1e18);
         _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
-        assertEq(_ajnaToken.balanceOf(_updater), 7.850216032003022257 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_updater), 18.914328218434904846 * 1e18);
 
         uint256 rewardsEarned = _ajnaRewards.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarned, 78.502160320030238033 * 1e18);
+        assertEq(rewardsEarned, 189.143282184349085719 * 1e18);
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
         /******************************/
@@ -770,15 +770,15 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // call update exchange rate to enable claiming rewards
         changePrank(_updater);
-        assertEq(_ajnaToken.balanceOf(_updater), 7.850216032003022257 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_updater), 18.914328218434904846 * 1e18);
         vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(_updater, address(_poolOne), depositIndexes, 11.067266682269247786 * 1e18);
+        emit UpdateExchangeRates(_updater, address(_poolOne), depositIndexes, 16.506604032419374969 * 1e18);
         _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
-        assertEq(_ajnaToken.balanceOf(_updater), 18.917482714272270043 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_updater), 35.420932250854279815 * 1e18);
 
         // check available rewards
         rewardsEarned = _ajnaRewards.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarned, 189.174827142723173055 * 1e18);
+        assertEq(rewardsEarned, 354.209322508542220912 * 1e18);
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
         /*****************************/
@@ -795,7 +795,7 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // skip updating exchange rates and check available rewards
         uint256 rewardsEarnedNoUpdate = _ajnaRewards.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarnedNoUpdate, 189.174827142723173055 * 1e18);
+        assertEq(rewardsEarnedNoUpdate, 354.209322508542220912 * 1e18);
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
         // snapshot calling update exchange rate
@@ -805,13 +805,13 @@ contract AjnaRewardsTest is DSTestPlus {
         changePrank(_updater2);
         assertEq(_ajnaToken.balanceOf(_updater2), 0);
         vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(_updater2, address(_poolOne), depositIndexes, 11.288375322721084926 * 1e18);
+        emit UpdateExchangeRates(_updater2, address(_poolOne), depositIndexes, 13.556308765139461194 * 1e18);
         _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
-        assertEq(_ajnaToken.balanceOf(_updater2), 11.288375322721084926 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_updater2), 13.556308765139461194 * 1e18);
 
         // check available rewards
         rewardsEarned = _ajnaRewards.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarned, 302.058580369933599319 * 1e18);
+        assertEq(rewardsEarned, 489.772410159936903182 * 1e18);
         assertGt(rewardsEarned, rewardsEarnedNoUpdate);
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
@@ -832,7 +832,7 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // check rewards earned
         rewardsEarned = _ajnaRewards.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarned, 189.174827142723173055 * 1e18);
+        assertEq(rewardsEarned, 354.209322508542220912 * 1e18);
 
         // call update exchange rate
         changePrank(_updater2);
@@ -844,7 +844,7 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // check rewards earned won't increase since previous update was missed
         rewardsEarned = _ajnaRewards.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarned, 189.174827142723173055 * 1e18);
+        assertEq(rewardsEarned, 354.209322508542220912 * 1e18);
 
         /*****************************/
         /*** Fifth Reserve Auction ***/
@@ -862,12 +862,12 @@ contract AjnaRewardsTest is DSTestPlus {
         changePrank(_updater2);
         assertEq(_ajnaToken.balanceOf(_updater2), 0);
         vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(_updater2, address(_poolOne), depositIndexes, 12.907659732060585203 * 1e18);
+        emit UpdateExchangeRates(_updater2, address(_poolOne), depositIndexes, 10.978967849507124864 * 1e18);
         _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
-        assertEq(_ajnaToken.balanceOf(_updater2), 12.907659732060585203 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_updater2), 10.978967849507124864 * 1e18);
 
         rewardsEarned = _ajnaRewards.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarned, 318.251424463329156087 * 1e18);
+        assertEq(rewardsEarned, 463.999001003613678404 * 1e18);
 
         // claim all rewards accrued since deposit
         changePrank(_minterOne);
@@ -945,22 +945,22 @@ contract AjnaRewardsTest is DSTestPlus {
             pool:              address(_poolOne),
             tokenId:           tokenIdTwo,
             claimedArray:      _epochsClaimedArray(1, 0),
-            reward:            6.757003114621612065 * 1e18,
+            reward:            20.035397317001861785 * 1e18,
             updateRatesReward: 0
         });
         uint256 minterTwoBalance = _ajnaToken.balanceOf(_minterTwo);
-        assertEq(minterTwoBalance, 6.757003114621612065 * 1e18);
+        assertEq(minterTwoBalance, 20.035397317001861785 * 1e18);
 
         _unstakeToken({
             minter:            _minterThree,
             pool:              address(_poolOne),
             tokenId:           tokenIdThree,
             claimedArray:      _epochsClaimedArray(1, 0),
-            reward:            5.629597976281608765 * 1e18,
+            reward:            16.692493739675876000 * 1e18,
             updateRatesReward: 0
         });
         uint256 minterThreeBalance = _ajnaToken.balanceOf(_minterThree);
-        assertEq(minterThreeBalance, 5.629597976281608765 * 1e18);
+        assertEq(minterThreeBalance, 16.692493739675876000 * 1e18);
 
         assertGt(minterTwoBalance, minterThreeBalance);
     }
@@ -1021,16 +1021,24 @@ contract AjnaRewardsTest is DSTestPlus {
         uint256 tokenIdTwo = _mintAndMemorializePositionNFT(mintMemorializeParams);
         // second depositor stakes NFT, generating an update reward
         _stakeToken(address(_poolOne), _minterTwo, tokenIdTwo);
-        assertEq(_ajnaToken.balanceOf(_minterTwo), 3.617182434617357230 * 1e18);
-
-        /******************************/
-        /*** Second Reserve Auction ***/
-        /******************************/
+        assertEq(_ajnaToken.balanceOf(_minterTwo), 8.038657281009010230 * 1e18);
 
         // calculate rewards earned since exchange rates have been updated
         uint256 idOneRewardsAtOne = _ajnaRewards.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
         assertLt(idOneRewardsAtOne, auctionOneTokensToBurn);
         assertGt(idOneRewardsAtOne, 0);
+
+        // minter one claims rewards accrued since deposit
+        changePrank(_minterOne);
+        assertEq(_ajnaToken.balanceOf(_minterOne), 0);
+        vm.expectEmit(true, true, true, true);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 0), idOneRewardsAtOne);
+        _ajnaRewards.claimRewards(tokenIdOne, _poolOne.currentBurnEpoch());
+        assertEq(_ajnaToken.balanceOf(_minterOne), idOneRewardsAtOne);
+
+        /******************************/
+        /*** Second Reserve Auction ***/
+        /******************************/
 
         // borrower takes actions providing reserves enabling additional reserve auctions
         triggerReserveAuctionParams = TriggerReserveAuctionParams({
@@ -1070,27 +1078,26 @@ contract AjnaRewardsTest is DSTestPlus {
         uint256 idOneRewardsAtTwo = _ajnaRewards.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
         assertLt(idOneRewardsAtTwo, auctionTwoTokensToBurn);
         assertGt(idOneRewardsAtTwo, 0);
-        assertGt(idOneRewardsAtTwo, idOneRewardsAtOne);
 
         uint256 idTwoRewardsAtTwo = _ajnaRewards.calculateRewards(tokenIdTwo, _poolOne.currentBurnEpoch());
         assertLt(idOneRewardsAtTwo + idTwoRewardsAtTwo, auctionTwoTokensToBurn);
         assertGt(idTwoRewardsAtTwo, 0);
 
-        // minter one claims rewards accrued since deposit
+        // minter one claims rewards accrued after second auction
         changePrank(_minterOne);
-        assertEq(_ajnaToken.balanceOf(_minterOne), 0);
+        assertEq(_ajnaToken.balanceOf(_minterOne), idOneRewardsAtOne);
         vm.expectEmit(true, true, true, true);
-        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(2, 0), idOneRewardsAtTwo);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 1), idOneRewardsAtTwo);
         _ajnaRewards.claimRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(_ajnaToken.balanceOf(_minterOne), idOneRewardsAtTwo);
+        assertEq(_ajnaToken.balanceOf(_minterOne), idOneRewardsAtOne + idOneRewardsAtTwo);
 
         // minter two claims rewards accrued since deposit
         changePrank(_minterTwo);
-        assertEq(_ajnaToken.balanceOf(_minterTwo), 3.617182434617357230 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_minterTwo), 8.038657281009010230 * 1e18);
         vm.expectEmit(true, true, true, true);
         emit ClaimRewards(_minterTwo, address(_poolOne), tokenIdTwo, _epochsClaimedArray(1, 1), idTwoRewardsAtTwo);
         _ajnaRewards.claimRewards(tokenIdTwo, _poolOne.currentBurnEpoch());
-        assertEq(_ajnaToken.balanceOf(_minterTwo), idTwoRewardsAtTwo + 3.617182434617357230 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_minterTwo), idTwoRewardsAtTwo + 8.038657281009010230 * 1e18);
 
         // check there are no remaining rewards available after claiming
         uint256 remainingRewards = _ajnaRewards.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
@@ -1183,19 +1190,19 @@ contract AjnaRewardsTest is DSTestPlus {
         changePrank(_updater);
         assertEq(_ajnaToken.balanceOf(_updater), 0);
         vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(_updater, address(_poolOne), depositIndexes, 1.808591217308675030 * 1e18);
+        emit UpdateExchangeRates(_updater, address(_poolOne), depositIndexes, 4.021413654595047590 * 1e18);
         _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
         assertGt(_ajnaToken.balanceOf(_updater), 0);
 
         // check owner can withdraw the NFT and rewards will be automatically claimed
         changePrank(_minterOne);
         vm.expectEmit(true, true, true, true);
-        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 0), 18.085912173086791760 * 1e18);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 0), 40.214136545950568150 * 1e18);
         vm.expectEmit(true, true, true, true);
         emit UnstakeToken(_minterOne, address(_poolOne), tokenIdOne);
         _ajnaRewards.unstakeToken(tokenIdOne);
         assertEq(_positionManager.ownerOf(tokenIdOne), _minterOne);
-        assertEq(_ajnaToken.balanceOf(_minterOne), 18.085912173086791760 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_minterOne), 40.214136545950568150 * 1e18);
         assertLt(_ajnaToken.balanceOf(_minterOne), tokensToBurn);
 
         uint256 currentBurnEpoch = _poolOne.currentBurnEpoch();
@@ -1269,18 +1276,18 @@ contract AjnaRewardsTest is DSTestPlus {
         changePrank(_minterOne);
         assertEq(_ajnaToken.balanceOf(_minterOne), 0);
         vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(_minterOne, address(_poolOne), depositIndexesOne, 1.808591217308675030 * 1e18);
+        emit UpdateExchangeRates(_minterOne, address(_poolOne), depositIndexesOne, 4.021413654595047590 * 1e18);
         uint256 updateReward = _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexesOne);
         assertEq(_ajnaToken.balanceOf(_minterOne), updateReward);
-        assertEq(_ajnaToken.balanceOf(_minterOne), 1.808591217308675030 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_minterOne), 4.021413654595047590 * 1e18);
 
         // check owner in pool with accrued interest can properly claim rewards
         changePrank(_minterOne);
-        assertEq(_ajnaToken.balanceOf(_minterOne), 1.808591217308675030 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_minterOne), 4.021413654595047590 * 1e18);
         vm.expectEmit(true, true, true, true);
-        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 0), 18.085912173086791760 * 1e18);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 0), 40.214136545950568150 * 1e18);
         _ajnaRewards.claimRewards(tokenIdOne, currentBurnEpochPoolOne);
-        assertEq(_ajnaToken.balanceOf(_minterOne), 19.894503390395466790 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_minterOne), 44.235550200545615740 * 1e18);
         assertLt(_ajnaToken.balanceOf(_minterOne), tokensToBurn);
     }
 
@@ -1337,6 +1344,21 @@ contract AjnaRewardsTest is DSTestPlus {
         uint256 expectedDebt = Maths.wmul(borrowAmount, _feeRate(newInterestRate) + Maths.WAD);
         requiredCollateral_ = Maths.wdiv(expectedDebt, _poolUtils.indexToPrice(indexPrice)) + Maths.WAD;
     }
+    
+    // Helper function that returns a random subset from array
+    function _getRandomSubsetFromArray(uint256[] memory array) internal returns (uint256[] memory subsetArray) {
+        uint256[] memory copyOfArray = new uint256[](array.length);
+        for(uint j = 0; j < copyOfArray.length; j++){
+            copyOfArray[j] = array[j];
+        }
+        uint256 randomNoOfNfts = randomInRange(1, copyOfArray.length);
+        subsetArray = new uint256[](randomNoOfNfts);
+        for(uint256 i = 0; i < randomNoOfNfts; i++) {
+            uint256 randomIndex = randomInRange(0, copyOfArray.length - i - 1);
+            subsetArray[i] = copyOfArray[randomIndex];
+            copyOfArray[randomIndex] = copyOfArray[copyOfArray.length - i - 1];
+        }
+    }
 
     function testClaimRewardsFuzzy(uint256 indexes, uint256 mintAmount) external {
         indexes = bound(indexes, 3, 10); // number of indexes to add liquidity to
@@ -1389,6 +1411,75 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // assert rewards claimed is less than ajna tokens burned cap
         assertLt(_ajnaToken.balanceOf(_minterOne), Maths.wmul(tokensToBurn, 0.800000000000000000 * 1e18));
+    }
+
+    function testStakingRewardsFuzzy(uint256 deposits, uint256 reserveAuctions) external {
+        deposits        = bound(deposits, 3, 100); // number of deposits to make
+        reserveAuctions = bound(reserveAuctions, 1, 100); // number of reserve Auctions to complete
+
+        uint256[] memory tokenIds = new uint256[](deposits);
+
+        // configure NFT position
+        uint256[] memory depositIndexes = new uint256[](3);
+        for (uint256 j = 0; j < 3; ++j) {
+            depositIndexes[j] = _randomIndex();
+            vm.roll(block.number + 1); // advance block to ensure that the index price is different
+        }
+
+        // stake variable no of deposits
+        for(uint256 i = 0; i < deposits; ++i) {
+            // mint and memorilize Positions
+            MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+                indexes: depositIndexes,
+                minter: _minterOne,
+                mintAmount: 1_000_000_000 * 1e18,
+                pool: _poolOne
+            });
+
+            tokenIds[i] = _mintAndMemorializePositionNFT(mintMemorializeParams);
+            _stakeToken(address(_poolOne), _minterOne, tokenIds[i]);
+        }
+
+        uint256 updaterBalance = _ajnaToken.balanceOf(_updater);
+        uint256 minterBalance  = _ajnaToken.balanceOf(_minterOne);
+
+        // start variable no of reserve Auctions and claim rewards for random tokenIds in each epoch
+        for(uint i = 0; i < reserveAuctions; ++i) {
+            uint256 limitIndex = _findSecondLowestIndexPrice(depositIndexes);
+            TriggerReserveAuctionParams memory triggerReserveAuctionParams = TriggerReserveAuctionParams({
+                borrowAmount: 10_000 * 1e18,
+                limitIndex: limitIndex,
+                pool: _poolOne
+            });
+
+            // start and end new reserve auction 
+            _triggerReserveAuctions(triggerReserveAuctionParams);
+
+            // call update exchange rate to enable claiming rewards
+            changePrank(_updater);
+            assertEq(_ajnaToken.balanceOf(_updater), updaterBalance);
+            _ajnaRewards.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
+
+            // ensure updater gets reward for updating exchange rate
+            assertGt(_ajnaToken.balanceOf(_updater), updaterBalance);
+            updaterBalance = _ajnaToken.balanceOf(_updater);
+
+            // pick random NFTs from all NFTs to claim rewards
+            uint256[] memory randomNfts = _getRandomSubsetFromArray(tokenIds);
+
+            changePrank(_minterOne);
+            for(uint j = 0; j < randomNfts.length; j++) {
+                
+                uint256 rewardsEarned = _ajnaRewards.calculateRewards(randomNfts[j], _poolOne.currentBurnEpoch());
+                assertGt(rewardsEarned, 0);
+
+                _ajnaRewards.claimRewards(randomNfts[j], _poolOne.currentBurnEpoch());
+
+                // ensure user gets reward
+                assertGt( _ajnaToken.balanceOf(_minterOne), minterBalance);
+                minterBalance = _ajnaToken.balanceOf(_minterOne);
+            }
+        }
     }
 
 }

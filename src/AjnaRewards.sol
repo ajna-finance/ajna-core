@@ -168,7 +168,7 @@ contract AjnaRewards is IAjnaRewards {
         // calculate rewards for updating exchange rates, if any
         uint256 updateReward = _updateBucketExchangeRates(
             ajnaPool,
-            positionManager.getPositionIndexes(tokenId_)
+            positionIndexes
         );
 
         // transfer rewards to sender
