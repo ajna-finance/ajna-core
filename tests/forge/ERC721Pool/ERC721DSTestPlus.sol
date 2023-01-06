@@ -316,6 +316,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
 
         // repay checks
         if (amountToRepay != 0) {
+            _quote.approve(address(_pool), amountToRepay);
             _assertTokenTransferEvent(from, address(_pool), amountRepaid);
         }
 
@@ -420,7 +421,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
             borrowerCollateral,
             borrowert0Np,
             borrowerCollateralization
-            );
+        );
 
         uint256 nftCollateral = borrowerCollateral / 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
         if (nftCollateral != tokenIds.length) revert("ASRT_BORROWER: incorrect number of NFT tokenIds");
@@ -641,6 +642,31 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
         deal(_ajna, operator_, mintAmount_);
         vm.prank(operator_);
         _ajnaToken.approve(address(_pool), type(uint256).max);
+    }
+
+    function _approveAndRepayDebt(
+        address from,
+        address borrower,
+        uint256 amountToRepay,
+        uint256 amountRepaid,
+        uint256 collateralToPull,
+        uint256 newLup
+    ) internal {
+        changePrank(from);
+        _quote.approve(address(_pool), amountToRepay);
+        _repayDebt(from, borrower, amountToRepay, amountRepaid, collateralToPull, newLup);
+    }
+
+    function _approveAndRepayDebtNoLupCheck(
+        address from,
+        address borrower,
+        uint256 amountToRepay,
+        uint256 amountRepaid,
+        uint256 collateralToPull
+    ) internal {
+        changePrank(from);
+        _quote.approve(address(_pool), amountToRepay);
+        _repayDebtNoLupCheck(from, borrower, amountToRepay, amountRepaid, collateralToPull);
     }
 }
 
