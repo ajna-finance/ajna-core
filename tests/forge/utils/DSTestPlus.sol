@@ -1306,7 +1306,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         requiredCollateral_ = Maths.wdiv(expectedDebt, _poolUtils.indexToPrice(indexPrice));
     }
 
-    function _requiredCollateralNFT(uint256 borrowAmount, uint256 indexPrice) internal returns (uint256 requiredCollateral_) {
+    function _requiredCollateralNFT(uint256 borrowAmount, uint256 indexPrice) internal view returns (uint256 requiredCollateral_) {
         // calculate the required collateral based upon the borrow amount and index price
         (uint256 interestRate, ) = _pool.interestRateInfo();
         uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient

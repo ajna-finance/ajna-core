@@ -1227,6 +1227,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         // check borrower info
         (uint256 debt, , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
         assertGt(debt, borrowAmount); // check that initial fees accrued
+        uint256 htp = Maths.wdiv(debt, requiredCollateral);
+        assertEq(htp, _htp());
 
         // check pool state
         (uint256 minDebt, , uint256 poolActualUtilization, uint256 poolTargetUtilization) = _poolUtils.poolUtilizationInfo(address(_pool));
@@ -1269,8 +1271,16 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         // check that deposit and exchange rate have increased as a result of accrued interest
         for (uint256 i = 0; i < numIndexes; ++i) {
             (, uint256 deposit, , uint256 lpAccumulator, , uint256 exchangeRate) = _poolUtils.bucketInfo(address(_pool), limitIndex);
-            assertGt(deposit, mintAmount_);
-            assertGt(exchangeRate, 1e27);
+
+            // check that only deposits above the htp earned interest
+            if (_poolUtils.indexToPrice(indexes[i]) > htp) {
+                assertGt(deposit, mintAmount_);
+                assertGt(exchangeRate, 1e27);
+            } else {
+                assertEq(deposit, mintAmount_);
+                assertEq(exchangeRate, 1e27);
+            }
+
             assertEq(lpAccumulator, mintAmount_ * 1e9);
             _assertBucket({
                 index:        indexes[i],
