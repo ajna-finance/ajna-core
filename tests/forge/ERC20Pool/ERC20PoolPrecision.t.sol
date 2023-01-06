@@ -430,7 +430,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             }
         );
 
-        // remove all of the remaining unencumbered collateral
+        // remove all of the remaining claimable collateral
         uint256 unencumberedCollateral = col - _encumberedCollateral(debt, _lup());
 
         _repayDebtNoLupCheck({

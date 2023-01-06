@@ -1,5 +1,17 @@
 # Ajna contracts
 
+The Ajna protocol is a non-custodial, peer-to-peer, permissionless lending, borrowing and trading system that requires no governance or external price feeds to function. The protocol consists of pools: pairings of quote tokens provided by lenders and collateral tokens provided by borrowers. Ajna is capable of accepting fungible tokens as quote tokens and both fungible and non-fungible tokens as collateral tokens.
+
+## Limitations
+- The following types of tokens are incompatible with Ajna, and no countermeasures exist to explicitly prevent creating a pool with such tokens:
+	- Fungible tokens whose balance rebases.
+	- NFTs which charge a fee on transfer.
+	- Fungible tokens with more than 18 decimals or 0 decimals.
+- Special considerations have been made to support specific NFTs with nonstandard ERC721 implementations, including _CryptoPunks_ and _CryptoKitties_.  This support is limited to Ethereum mainnet.
+- Borrowers cannot draw debt from a pool in the same block as when the pool was created.
+- With the exception of quantized prices, pool inputs and most accumulators are not explicitly limited.  The pool will stop functioning when the bounds of a `uint256` need to be exceeded to process a request.
+
+
 ## Development
 ### Requirements
 - `python` 3.0+
@@ -108,22 +120,24 @@ pip install solc-select && solc-select install 0.8.14 && solc-select use 0.8.14
 make analyze
 ```
 
+
 ## Licensing
-Ajna is under [BUSL license](https://github.com/ajna-finance/contracts/blob/develop/LICENSE) with the 
-following exceptions:
+For purposes of the Business Service License: (i) the term “Licensor” means Ajna Labs, LLC, (ii) the term Licensed Work means Licensor’s proprietary software marketed under the name _The Ajna Protocol™_ and useful for purposes of facilitating the lending and borrowing of digital assets, (iii) the term “Additional Use Grants” means a grant of rights in the Licensed Work that are not included in the Business Service License and are granted by Licensor pursuant to a separate agreement between Licensor and one or more third parties, and (iv) the term “Change Date” means April 1, 2026 or such other date as Licensor may specify on or before April 1, 2026.
+
+The licnesed work is under the [Business Service License](https://github.com/ajna-finance/contracts/blob/develop/LICENSE) ("BUSL license") with but not limited to the following exceptions:
 - To facilitate integrations, public-facing interfaces are licensed under `MIT`, as indicated in their SPDX headers.
 - As a derivative work of [ds-math](https://github.com/dapphub/ds-math/), `Maths.sol` is licensed under `GPL-3.0-or-later`, as indicated in its SPDX header.
 - As a derivative work of [SafeERC20Namer](https://github.com/Uniswap/solidity-lib/blob/master/contracts/libraries/SafeERC20Namer.sol), `SafeTokenNamer.sol` is licensed under `GPL-3.0-or-later`, as indicated in its SPDX header.
 - Unit and integration tests under `tests` folder remain unlicensed, unless their file header specifies otherwise.
 
-Ajna Labs, LLC shall retain rights to this BUSL license until dissolution, at which point the license shall be 
-transferred to the Ajna Foundation.  Licensor reserves the right to specify Additional Use Grants at their discretion 
-and to facilitate changes enacted by the Grant Coordination process.
+Prior to the Change Date, Licensor intends to transfer ownership of the Licensed Work to a to-be-organized not-for-profit foundation or similar public benefit focused entity (the “Ajna Foundation”), whereupon the rights, duties and obligations of Licensor under the BUSL License shall, without further act or deed of the parties, be assigned to Ajna Foundation, which entity shall thereafter be, and assume all rights, duties and obligations of (but not the liabilities, if any, of), the Licensor under the Business Service License.
 
-The Change License is hereby specified as _GNU Affero General Public License v3.0 or later_ (`AGPL-3.0-or-later`).
-Licensor may modify this change license prior to the change date by updating this file in the `master` branch of [source control](https://github.com/ajna-finance/contracts/tree/master).
+Licensor reserves the right to specify Additional Use Grants at their discretion and to facilitate changes enacted by the Grant Coordination process, provided always that Additional Use Grants shall not conflict with the Business License.
 
-The Change Date is hereby specified as April 1, 2026.  Licensor may modify this change date by updating this file in the `master` branch of [source control](https://github.com/ajna-finance/contracts/tree/master).
+Prior to the Change Date, Licensor shall elect the Change License governing the Licensed Work after the Change Date, which license shall be an [Open Source Initiative](https://opensource.org/licenses) compliant license, provided always that the Change License shall be GPL Version 2.0 compatible. Once elected, Licensor may change its Change License designation at any time on or before the Change Date by updating this file in the master branch of [source control](https://github.com/ajna-finance/contracts/tree/master).
+
+Modifications to, or notices of actions by Licensor, contemplated above or under the Business Service License shall be communicated by updating this file in the master branch of source control. All such updates are binding on Licensor and all licensees under the Business Service License upon the publication of the relevant update.
+
 
 ## Deployment
 
