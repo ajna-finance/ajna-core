@@ -124,7 +124,7 @@ contract AjnaRewardsTest is DSTestPlus {
         _positionManager.approve(address(_ajnaRewards), tokenId_);
         vm.expectEmit(true, true, true, true);
         emit StakeToken(owner_, address(pool_), tokenId_);
-        _ajnaRewards.stakeToken(tokenId_);
+        _ajnaRewards.stake(tokenId_);
 
         // check token was transferred to rewards contract
         assertEq(_positionManager.ownerOf(tokenId_), address(_ajnaRewards));
@@ -150,7 +150,7 @@ contract AjnaRewardsTest is DSTestPlus {
         emit ClaimRewards(minter, pool,  tokenId, claimedArray, reward);
         vm.expectEmit(true, true, true, true);
         emit UnstakeToken(minter, address(pool), tokenId);
-        _ajnaRewards.unstakeToken(tokenId);
+        _ajnaRewards.unstake(tokenId);
         assertEq(_positionManager.ownerOf(tokenId), minter);
 
         // check token was transferred to rewards contract
@@ -333,12 +333,12 @@ contract AjnaRewardsTest is DSTestPlus {
         // check only owner of an NFT can deposit it into the rewards contract
         changePrank(_minterTwo);
         vm.expectRevert(IAjnaRewards.NotOwnerOfDeposit.selector);
-        _ajnaRewards.stakeToken(tokenIdOne);
+        _ajnaRewards.stake(tokenIdOne);
 
         // minterOne deposits their NFT into the rewards contract
         _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
         // check deposit state
-        (address owner, address pool, uint256 interactionBurnEvent) = _ajnaRewards.getDepositInfo(tokenIdOne);
+        (address owner, address pool, uint256 interactionBurnEvent) = _ajnaRewards.getStakeInfo(tokenIdOne);
         assertEq(owner, _minterOne);
         assertEq(pool, address(_poolOne));
         assertEq(interactionBurnEvent, 0);
@@ -346,7 +346,7 @@ contract AjnaRewardsTest is DSTestPlus {
         // minterTwo deposits their NFT into the rewards contract
         _stakeToken(address(_poolTwo), _minterTwo, tokenIdTwo);
         // check deposit state
-        (owner, pool, interactionBurnEvent) = _ajnaRewards.getDepositInfo(tokenIdTwo);
+        (owner, pool, interactionBurnEvent) = _ajnaRewards.getStakeInfo(tokenIdTwo);
         assertEq(owner, _minterTwo);
         assertEq(pool, address(_poolTwo));
         assertEq(interactionBurnEvent, 0);
@@ -412,7 +412,7 @@ contract AjnaRewardsTest is DSTestPlus {
         _ajnaRewards.claimRewards(tokenIdOne, currentBurnEpoch);
 
         // check deposit state
-        (address owner, address pool, uint256 interactionBurnEvent) = _ajnaRewards.getDepositInfo(tokenIdOne);
+        (address owner, address pool, uint256 interactionBurnEvent) = _ajnaRewards.getStakeInfo(tokenIdOne);
         assertEq(owner, _minterOne);
         assertEq(pool, address(_poolOne));
         assertEq(interactionBurnEvent, 1);
@@ -1135,17 +1135,17 @@ contract AjnaRewardsTest is DSTestPlus {
         // only owner should be able to withdraw the NFT
         changePrank(nonOwner);
         vm.expectRevert(IAjnaRewards.NotOwnerOfDeposit.selector);
-        _ajnaRewards.unstakeToken(tokenIdOne);
+        _ajnaRewards.unstake(tokenIdOne);
 
         // check owner can withdraw the NFT
         changePrank(_minterOne);
         vm.expectEmit(true, true, true, true);
         emit UnstakeToken(_minterOne, address(_poolOne), tokenIdOne);
-        _ajnaRewards.unstakeToken(tokenIdOne);
+        _ajnaRewards.unstake(tokenIdOne);
         assertEq(_positionManager.ownerOf(tokenIdOne), _minterOne);
 
         // deposit information should have been deleted on withdrawal
-        (address owner, address pool, uint256 interactionBlock) = _ajnaRewards.getDepositInfo(tokenIdOne);
+        (address owner, address pool, uint256 interactionBlock) = _ajnaRewards.getStakeInfo(tokenIdOne);
         assertEq(owner, address(0));
         assertEq(pool, address(0));
         assertEq(interactionBlock, 0);
@@ -1193,7 +1193,7 @@ contract AjnaRewardsTest is DSTestPlus {
         emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 0), 18.085912173086791760 * 1e18);
         vm.expectEmit(true, true, true, true);
         emit UnstakeToken(_minterOne, address(_poolOne), tokenIdOne);
-        _ajnaRewards.unstakeToken(tokenIdOne);
+        _ajnaRewards.unstake(tokenIdOne);
         assertEq(_positionManager.ownerOf(tokenIdOne), _minterOne);
         assertEq(_ajnaToken.balanceOf(_minterOne), 18.085912173086791760 * 1e18);
         assertLt(_ajnaToken.balanceOf(_minterOne), tokensToBurn);

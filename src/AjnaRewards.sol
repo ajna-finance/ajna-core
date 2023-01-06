@@ -16,7 +16,7 @@ import './IAjnaRewards.sol';
 
 contract AjnaRewards is IAjnaRewards {
 
-    using SafeERC20   for IERC20;
+    using SafeERC20 for IERC20;
 
     /*****************/
     /*** Constants ***/
@@ -48,31 +48,15 @@ contract AjnaRewards is IAjnaRewards {
     /*** State Variables ***/
     /***********************/
 
-    /**
-     * @notice Track whether a depositor has claimed rewards for a given burn event.
-     * @dev tokenID => burnEvent => has claimed
-     */
-    mapping(uint256 => mapping(uint256 => bool)) public hasClaimedForToken;
-    /**
-     * @notice Track the total amount of rewards that have been claimed for a given burn event.
-     * @dev burnEvent => tokens claimed
-     */
-    mapping(uint256 => uint256) public burnEventRewardsClaimed;
-    /**
-     * @notice Track the total amount of rewards that have been claimed for a given burn event's bucket updates.
-     * @dev burnEvent => tokens claimed
-     */
-    mapping(uint256 => uint256) public burnEventUpdateRewardsClaimed;
-    /**
-     * @notice Mapping of LP NFTs staked in the Ajna Rewards contract.
-     * @dev tokenID => Stake
-     */
-    mapping(uint256 => Stake) public stakes;
-    /**
-     * @notice Mapping of per pool bucket exchange rates at a given burn event.
-     * @dev poolAddress => bucketIndex => burnEventId => bucket exchange rate
-     */
-    mapping(address => mapping(uint256 => mapping(uint256 => uint256))) internal poolBucketBurnExchangeRates;
+    mapping(uint256 => mapping(uint256 => bool)) public override isEpochClaimed;       // tokenID => epoch => bool has claimed
+    mapping(uint256 => uint256)                  public override rewardsClaimed;       // epoch => tokens claimed
+    mapping(uint256 => uint256)                  public override updateRewardsClaimed; // epoch => tokens claimed
+
+
+    // Mapping of per pool bucket exchange rates at a given burn event.
+    mapping(address => mapping(uint256 => mapping(uint256 => uint256))) internal bucketExchangeRates; // poolAddress => bucketIndex => epoch => bucket exchange rate
+
+    mapping(uint256 => Stake) internal stakes;  // tokenID => Stake info
 
     /******************/
     /*** Immutables ***/
@@ -103,50 +87,46 @@ contract AjnaRewards is IAjnaRewards {
     /*** External Functions ***/
     /**************************/
 
-    /**
-     *  @notice Claim ajna token rewards that have accrued to a staked LP NFT.
-     *  @param  tokenId_ ID of the staked LP NFT.
-     */
+    /// @inheritdoc IAjnaRewards
     function claimRewards(
         uint256 tokenId_,
         uint256 burnEpochToStartClaim_
-    ) external {
+    ) external override {
         if (msg.sender != stakes[tokenId_].owner) revert NotOwnerOfDeposit();
 
-        if (hasClaimedForToken[tokenId_][burnEpochToStartClaim_]) revert AlreadyClaimed();
+        if (isEpochClaimed[tokenId_][burnEpochToStartClaim_]) revert AlreadyClaimed();
 
         _claimRewards(tokenId_, burnEpochToStartClaim_);
     }
 
-    /**
-     *  @notice Stake a LP NFT into the rewards contract.
-     *  @dev    Underlying NFT LP positions cannot change while staked. Retrieves exchange rates for each bucket the NFT is associated with.
-     *  @param  tokenId_ ID of the LP NFT to stake in the AjnaRewards contract.
-     */
-    function stakeToken(uint256 tokenId_) external {
+    /// @inheritdoc IAjnaRewards
+    function stake(
+        uint256 tokenId_
+    ) external override {
         address ajnaPool = PositionManager(address(positionManager)).poolKey(tokenId_);
 
         // check that msg.sender is owner of tokenId
         if (IERC721(address(positionManager)).ownerOf(tokenId_) != msg.sender) revert NotOwnerOfDeposit();
 
-        Stake storage stake = stakes[tokenId_];
-        stake.owner    = msg.sender;
-        stake.ajnaPool = ajnaPool;
+        Stake storage stakeInfo = stakes[tokenId_];
+        stakeInfo.owner    = msg.sender;
+        stakeInfo.ajnaPool = ajnaPool;
 
         uint256 curBurnEpoch = IPool(ajnaPool).currentBurnEpoch();
 
         // record the staking epoch
-        stake.stakingEpoch = uint96(curBurnEpoch);
+        stakeInfo.stakingEpoch = uint96(curBurnEpoch);
 
         // initialize last time interaction at staking epoch
-        stake.lastInteractionBurnEpoch = uint96(curBurnEpoch);
+        stakeInfo.lastInteractionBurnEpoch = uint96(curBurnEpoch);
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
+
         for (uint256 i = 0; i < positionIndexes.length; ) {
 
             uint256 bucketId = positionIndexes[i];
 
-            BucketState storage bucketState = stake.snapshot[bucketId];
+            BucketState storage bucketState = stakeInfo.snapshot[bucketId];
 
             // record the number of lp tokens in bucket at the time of staking
             bucketState.lpsAtStakeTime = positionManager.getLPTokens(
@@ -175,12 +155,10 @@ contract AjnaRewards is IAjnaRewards {
         IERC20(ajnaToken).safeTransfer(msg.sender, updateReward);
     }
 
-    /**
-     *  @notice Withdraw a staked LP NFT from the rewards contract.
-     *  @dev    If rewards are available, claim all available rewards before withdrawal.
-     *  @param  tokenId_ ID of the staked LP NFT.
-     */
-    function unstakeToken(uint256 tokenId_) external {
+    /// @inheritdoc IAjnaRewards
+    function unstake(
+        uint256 tokenId_
+    ) external override {
         if (msg.sender != stakes[tokenId_].owner) revert NotOwnerOfDeposit();
 
         address ajnaPool = stakes[tokenId_].ajnaPool;
@@ -196,20 +174,41 @@ contract AjnaRewards is IAjnaRewards {
         IERC721(address(positionManager)).safeTransferFrom(address(this), msg.sender, tokenId_);
     }
 
-    /**
-     *  @notice Update the exchange rate of a list of buckets.
-     *  @dev    Caller can claim 5% of the rewards that have accumulated to each bucket since the last burn event, if it hasn't already been updated.
-     *  @param  pool_    Address of the pool whose exchange rates are being updated.
-     *  @param  indexes_ List of bucket indexes to be updated.
-     */
+    /// @inheritdoc IAjnaRewards
     function updateBucketExchangeRatesAndClaim(
         address pool_,
         uint256[] calldata indexes_
-    ) external returns (uint256 updateReward) {
+    ) external override returns (uint256 updateReward) {
         updateReward = _updateBucketExchangeRates(pool_, indexes_);
 
         // transfer rewards to sender
         IERC20(ajnaToken).safeTransfer(msg.sender, updateReward);
+    }
+
+    /*******************************/
+    /*** External View Functions ***/
+    /*******************************/
+
+    /// @inheritdoc IAjnaRewards
+    function calculateRewards(
+        uint256 tokenId_,
+        uint256 burnEpochToStartClaim_
+    ) external override returns (uint256 rewards_) {
+        rewards_ = _calculateAndClaimRewards(
+            tokenId_,
+            burnEpochToStartClaim_,
+            false
+        );
+    }
+
+    /// @inheritdoc IAjnaRewards
+    function getStakeInfo(
+        uint256 tokenId_
+    ) external view override returns (address, address, uint256) {
+        return (
+            stakes[tokenId_].owner,
+            stakes[tokenId_].ajnaPool,
+            stakes[tokenId_].lastInteractionBurnEpoch);
     }
 
     /**************************/
@@ -224,7 +223,7 @@ contract AjnaRewards is IAjnaRewards {
      *  @param  isClaim_               Boolean checking whether the newly calculated rewards should be written to state as part of a claim.
      *  @return rewards_               Amount of rewards earned by the NFT.
      */
-    function _calculateRewards(
+    function _calculateAndClaimRewards(
         uint256 tokenId_,
         uint256 burnEpochToStartClaim_,
         bool isClaim_
@@ -252,7 +251,7 @@ contract AjnaRewards is IAjnaRewards {
                 if (vars.epoch != stakingEpoch) {
 
                     // if staked in a previous epoch then use the initial exchange rate of epoch
-                    vars.bucketRate = poolBucketBurnExchangeRates[ajnaPool][vars.bucketIndex][vars.epoch];
+                    vars.bucketRate = bucketExchangeRates[ajnaPool][vars.bucketIndex][vars.epoch];
                 } else {
 
                     // if staked during the epoch then use the bucket rate at the time of staking
@@ -283,8 +282,8 @@ contract AjnaRewards is IAjnaRewards {
 
                     if (isClaim_) {
                         // update token claim trackers
-                        burnEventRewardsClaimed[vars.nextEpoch] += vars.newRewards;
-                        hasClaimedForToken[tokenId_][vars.nextEpoch] = true;
+                        rewardsClaimed[vars.nextEpoch]           += vars.newRewards;
+                        isEpochClaimed[tokenId_][vars.nextEpoch] = true;
                     }
                 }
 
@@ -317,7 +316,7 @@ contract AjnaRewards is IAjnaRewards {
 
         if (exchangeRate_ != 0) {
 
-            uint256 nextExchangeRate = poolBucketBurnExchangeRates[pool_][bucketIndex_][nextEventEpoch_];
+            uint256 nextExchangeRate = bucketExchangeRates[pool_][bucketIndex_][nextEventEpoch_];
 
             // calculate interest earned only if next exchange rate is higher than current exchange rate
             if (nextExchangeRate > exchangeRate_) {
@@ -361,14 +360,14 @@ contract AjnaRewards is IAjnaRewards {
             )
         );
 
-        uint256 rewardsCapped  = Maths.wmul(REWARD_CAP, totalBurnedInPeriod);
-        uint256 rewardsClaimed = burnEventRewardsClaimed[nextEpoch_];
+        uint256 rewardsCapped         = Maths.wmul(REWARD_CAP, totalBurnedInPeriod);
+        uint256 rewardsClaimedInEpoch = rewardsClaimed[nextEpoch_];
 
         // Check rewards claimed - check that less than 80% of the tokens for a given burn event have been claimed.
-        if (rewardsClaimed + newRewards_ > rewardsCapped) {
+        if (rewardsClaimedInEpoch + newRewards_ > rewardsCapped) {
 
             // set claim reward to difference between cap and reward
-            newRewards_ = rewardsCapped - rewardsClaimed;
+            newRewards_ = rewardsCapped - rewardsClaimedInEpoch;
         }
     }
 
@@ -382,8 +381,9 @@ contract AjnaRewards is IAjnaRewards {
         uint256 burnEpochToStartClaim_
     ) internal {
 
-        Stake storage stake = stakes[tokenId_];
-        address ajnaPool = stake.ajnaPool;
+        Stake storage stakeInfo = stakes[tokenId_];
+
+        address ajnaPool = stakeInfo.ajnaPool;
 
         // update bucket exchange rates and claim associated rewards
         uint256 rewardsEarned = _updateBucketExchangeRates(
@@ -391,10 +391,10 @@ contract AjnaRewards is IAjnaRewards {
             positionManager.getPositionIndexes(tokenId_)
         );
 
-        rewardsEarned += _calculateRewards(tokenId_, burnEpochToStartClaim_, true); 
+        rewardsEarned += _calculateAndClaimRewards(tokenId_, burnEpochToStartClaim_, true); 
 
         uint256[] memory burnEpochsClaimed = _getBurnEpochsClaimed(
-            stake.lastInteractionBurnEpoch,
+            stakeInfo.lastInteractionBurnEpoch,
             burnEpochToStartClaim_
         );
 
@@ -407,7 +407,7 @@ contract AjnaRewards is IAjnaRewards {
         );
 
         // update last interaction burn event
-        stake.lastInteractionBurnEpoch = uint96(burnEpochToStartClaim_);
+        stakeInfo.lastInteractionBurnEpoch = uint96(burnEpochToStartClaim_);
 
         uint256 ajnaBalance = IERC20(ajnaToken).balanceOf(address(this));
 
@@ -536,17 +536,17 @@ contract AjnaRewards is IAjnaRewards {
                     unchecked { ++i; }
                 }
 
-                uint256 rewardsCap     = Maths.wmul(UPDATE_CAP, totalBurned);
-                uint256 rewardsClaimed = burnEventUpdateRewardsClaimed[curBurnEpoch];
+                uint256 rewardsCap            = Maths.wmul(UPDATE_CAP, totalBurned);
+                uint256 rewardsClaimedInEpoch = updateRewardsClaimed[curBurnEpoch];
 
                 // update total tokens claimed for updating bucket exchange rates tracker
-                if (rewardsClaimed + updatedRewards_ >= rewardsCap) {
+                if (rewardsClaimedInEpoch + updatedRewards_ >= rewardsCap) {
                     // if update reward is greater than cap, set to remaining difference
-                    updatedRewards_ = rewardsCap - rewardsClaimed;
+                    updatedRewards_ = rewardsCap - rewardsClaimedInEpoch;
                 }
 
                 // accumulate the full amount of additional rewards
-                burnEventUpdateRewardsClaimed[curBurnEpoch] += updatedRewards_;
+                updateRewardsClaimed[curBurnEpoch] += updatedRewards_;
             }
         }
 
@@ -565,14 +565,14 @@ contract AjnaRewards is IAjnaRewards {
         uint256 bucketIndex_,
         uint256 burnEpoch_
     ) internal {
-        uint256 burnExchangeRate = poolBucketBurnExchangeRates[pool_][bucketIndex_][burnEpoch_];
+        uint256 burnExchangeRate = bucketExchangeRates[pool_][bucketIndex_][burnEpoch_];
 
         // update bucket exchange rate at epoch only if it wasn't previously updated
         if (burnExchangeRate == 0) {
             uint256 curBucketExchangeRate = IPool(pool_).bucketExchangeRate(bucketIndex_);
 
             // record bucket exchange rate at epoch
-            poolBucketBurnExchangeRates[pool_][bucketIndex_][burnEpoch_] = curBucketExchangeRate;
+            bucketExchangeRates[pool_][bucketIndex_][burnEpoch_] = curBucketExchangeRate;
         }
     }
 
@@ -591,17 +591,17 @@ contract AjnaRewards is IAjnaRewards {
         uint256 totalBurned_,
         uint256 interestEarned_
     ) internal returns (uint256 rewards_) {
-        uint256 burnExchangeRate = poolBucketBurnExchangeRates[pool_][bucketIndex_][burnEpoch_];
+        uint256 burnExchangeRate = bucketExchangeRates[pool_][bucketIndex_][burnEpoch_];
 
         // update bucket exchange rate at epoch only if it wasn't previously updated
         if (burnExchangeRate == 0) {
             uint256 curBucketExchangeRate = IPool(pool_).bucketExchangeRate(bucketIndex_);
 
             // record bucket exchange rate at epoch
-            poolBucketBurnExchangeRates[pool_][bucketIndex_][burnEpoch_] = curBucketExchangeRate;
+            bucketExchangeRates[pool_][bucketIndex_][burnEpoch_] = curBucketExchangeRate;
 
             // retrieve the bucket exchange rate at the previous epoch
-            uint256 prevBucketExchangeRate = poolBucketBurnExchangeRates[pool_][bucketIndex_][burnEpoch_ - 1];
+            uint256 prevBucketExchangeRate = bucketExchangeRates[pool_][bucketIndex_][burnEpoch_ - 1];
 
             // skip reward calculation if update at the previous epoch was missed
             // prevents excess rewards from being provided from using a 0 value as an input to the interestFactor calculation below.
@@ -620,39 +620,6 @@ contract AjnaRewards is IAjnaRewards {
                 rewards_ += Maths.wmul(UPDATE_CLAIM_REWARD, Maths.wmul(burnFactor, interestFactor));
             }
         }
-    }
-
-    /*******************************/
-    /*** External View Functions ***/
-    /*******************************/
-
-    /**
-     *  @notice Calculate the amount of rewards that have been accumulated by a staked NFT.
-     *  @param  tokenId_               ID of the staked LP NFT.
-     *  @param  burnEpochToStartClaim_ The burn period from which to start the calculations, decrementing down.
-     *  @return rewards_ The amount of rewards earned by the NFT.
-     */
-    function calculateRewards(
-        uint256 tokenId_,
-        uint256 burnEpochToStartClaim_
-    ) external returns (uint256 rewards_) {
-        rewards_ = _calculateRewards(tokenId_, burnEpochToStartClaim_, false);
-    }
-
-    /**
-     *  @notice Retrieve information about a given stake.
-     *  @param  tokenId_  ID of the NFT staked in the rewards contract to retrieve information about.
-     *  @return The owner of a given NFT stake.
-     *  @return The Pool the NFT represents positions in.
-     *  @return The last burn epoch in which the owner of the NFT interacted with the rewards contract.
-     */
-    function getDepositInfo(
-        uint256 tokenId_
-    ) external view returns (address, address, uint256) {
-        return (
-            stakes[tokenId_].owner,
-            stakes[tokenId_].ajnaPool,
-            stakes[tokenId_].lastInteractionBurnEpoch);
     }
 
     /************************/
