@@ -774,7 +774,7 @@ contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
         // borrower draw a random amount of debt
         changePrank(_borrower);
         uint256 limitIndex = _findLowestIndexPrice(indexes);
-        uint256 borrowAmount = Maths.wdiv(mintAmount_, Maths.wad(3)); // Commented out due to stack too deep error
+        uint256 borrowAmount = Maths.wdiv(mintAmount_, Maths.wad(3));
         uint256[] memory tokenIdsToAdd = _NFTTokenIdsToAdd(_borrower, _requiredCollateralNFT(Maths.wdiv(mintAmount_, Maths.wad(3)), limitIndex));
 
         _drawDebt({
