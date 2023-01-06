@@ -6,15 +6,15 @@ import { IERC20 }    from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 
-import { IPool } from './base/interfaces/IPool.sol';
-import { IPositionManager } from './base/interfaces/IPositionManager.sol';
-import { PositionManager } from './base/PositionManager.sol';
+import { IPool }            from './interfaces/IPool.sol';
+import { IPositionManager } from './interfaces/IPositionManager.sol';
+import { PositionManager }  from './PositionManager.sol';
 
-import './libraries/Maths.sol';
+import '../libraries/Maths.sol';
 
-import './IAjnaRewards.sol';
+import './interfaces/IRewardsManager.sol';
 
-contract AjnaRewards is IAjnaRewards {
+contract RewardsManager is IRewardsManager {
 
     using SafeERC20 for IERC20;
 
@@ -52,7 +52,6 @@ contract AjnaRewards is IAjnaRewards {
     mapping(uint256 => uint256)                  public override rewardsClaimed;       // epoch => tokens claimed
     mapping(uint256 => uint256)                  public override updateRewardsClaimed; // epoch => tokens claimed
 
-
     // Mapping of per pool bucket exchange rates at a given burn event.
     mapping(address => mapping(uint256 => mapping(uint256 => uint256))) internal bucketExchangeRates; // poolAddress => bucketIndex => epoch => bucket exchange rate
 
@@ -64,6 +63,10 @@ contract AjnaRewards is IAjnaRewards {
 
     address          public immutable ajnaToken;       // address of the AJNA token
     IPositionManager public immutable positionManager; // The PositionManager contract
+
+    /*************************/
+    /*** Local struct vars ***/
+    /*************************/
 
     struct RewardsLocalVars {
         uint256 bucketIndex;    // index of current bucket to calculate rewards for
@@ -87,7 +90,7 @@ contract AjnaRewards is IAjnaRewards {
     /*** External Functions ***/
     /**************************/
 
-    /// @inheritdoc IAjnaRewards
+    /// @inheritdoc IRewardsManagerOwnerActions
     function claimRewards(
         uint256 tokenId_,
         uint256 burnEpochToStartClaim_
@@ -99,7 +102,7 @@ contract AjnaRewards is IAjnaRewards {
         _claimRewards(tokenId_, burnEpochToStartClaim_);
     }
 
-    /// @inheritdoc IAjnaRewards
+    /// @inheritdoc IRewardsManagerOwnerActions
     function stake(
         uint256 tokenId_
     ) external override {
@@ -155,7 +158,7 @@ contract AjnaRewards is IAjnaRewards {
         IERC20(ajnaToken).safeTransfer(msg.sender, updateReward);
     }
 
-    /// @inheritdoc IAjnaRewards
+    /// @inheritdoc IRewardsManagerOwnerActions
     function unstake(
         uint256 tokenId_
     ) external override {
@@ -174,7 +177,7 @@ contract AjnaRewards is IAjnaRewards {
         IERC721(address(positionManager)).safeTransferFrom(address(this), msg.sender, tokenId_);
     }
 
-    /// @inheritdoc IAjnaRewards
+    /// @inheritdoc IRewardsManagerOwnerActions
     function updateBucketExchangeRatesAndClaim(
         address pool_,
         uint256[] calldata indexes_
@@ -189,7 +192,7 @@ contract AjnaRewards is IAjnaRewards {
     /*** External View Functions ***/
     /*******************************/
 
-    /// @inheritdoc IAjnaRewards
+    /// @inheritdoc IRewardsManagerDerivedState
     function calculateRewards(
         uint256 tokenId_,
         uint256 burnEpochToStartClaim_
@@ -201,7 +204,7 @@ contract AjnaRewards is IAjnaRewards {
         );
     }
 
-    /// @inheritdoc IAjnaRewards
+    /// @inheritdoc IRewardsManagerDerivedState
     function getStakeInfo(
         uint256 tokenId_
     ) external view override returns (address, address, uint256) {

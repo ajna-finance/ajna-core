@@ -99,7 +99,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         address invalidPool = invalidFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
 
         // check can't mint an NFT associated with a non ajna pool
-        vm.expectRevert(IPositionManager.NotAjnaPool.selector);
+        vm.expectRevert(IPositionManagerErrors.NotAjnaPool.selector);
         _mintNFT(testAddress, testAddress, invalidPool);
     }
 
@@ -1002,7 +1002,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             tokenId, address(_pool), indexes
         );
         // redeem liquidity called by old owner
-        vm.expectRevert(IPositionManager.NoAuth.selector);
+        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
         _positionManager.reedemPositions(reedemParams);
 
         // check new owner can redeem positions
@@ -1171,7 +1171,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             tokenId, address(_pool), indexes
         );
         // redeem liquidity called by old owner
-        vm.expectRevert(IPositionManager.NoAuth.selector);
+        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
         _positionManager.reedemPositions(reedemParams);
 
         // check new owner can redeem positions
@@ -1328,12 +1328,12 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // construct BurnParams
         IPositionManagerOwnerActions.BurnParams memory burnParams = IPositionManagerOwnerActions.BurnParams(tokenId, address(_pool));
         // check that NFT cannot be burnt if it tracks postions
-        vm.expectRevert(IPositionManager.LiquidityNotRemoved.selector);
+        vm.expectRevert(IPositionManagerErrors.LiquidityNotRemoved.selector);
         _positionManager.burn(burnParams);
 
         // check that NFT cannot be burnt if not owner
         changePrank(notOwner);
-        vm.expectRevert(IPositionManager.NoAuth.selector);
+        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
         _positionManager.burn(burnParams);
 
         // redeem positions of testMinter
@@ -1373,7 +1373,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // move liquidity should fail because is not performed by owner
         changePrank(notOwner);
-        vm.expectRevert(IPositionManager.NoAuth.selector);
+        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
         _positionManager.moveLiquidity(moveLiquidityParams);
     }
 
@@ -1768,7 +1768,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             tokenId2, address(_pool), 1000, 2000
         );
         changePrank(address(testAddress2));
-        vm.expectRevert(IPositionManager.RemoveLiquidityFailed.selector);
+        vm.expectRevert(IPositionManagerErrors.RemoveLiquidityFailed.selector);
         _positionManager.moveLiquidity(moveLiquidityParams);
     }
 
@@ -1854,7 +1854,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // should fail if trying to redeem from different address but owner
         changePrank(notOwner);
-        vm.expectRevert(IPositionManager.NoAuth.selector);
+        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
         _positionManager.reedemPositions(reedemParams);
 
         // redeem from owner
@@ -1886,7 +1886,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
 
         // should fail if trying to redeem one more time
-        vm.expectRevert(IPositionManager.RemoveLiquidityFailed.selector);
+        vm.expectRevert(IPositionManagerErrors.RemoveLiquidityFailed.selector);
         _positionManager.reedemPositions(reedemParams);
     }
 
@@ -1905,7 +1905,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // should fail if trying to redeem empty position
         changePrank(testMinter);
-        vm.expectRevert(IPositionManager.RemoveLiquidityFailed.selector);
+        vm.expectRevert(IPositionManagerErrors.RemoveLiquidityFailed.selector);
         _positionManager.reedemPositions(reedemParams);
     }
 
@@ -2076,12 +2076,12 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // check old owner cannot redeem positions
-        vm.expectRevert(IPositionManager.NoAuth.selector);
+        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
         _positionManager.reedemPositions(reedemParams);
 
         // check position manager cannot redeem positions
         changePrank(address(_positionManager));
-        vm.expectRevert(IPositionManager.NoAuth.selector);
+        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
         _positionManager.reedemPositions(reedemParams);
 
         // redeem from new owner
@@ -2231,21 +2231,21 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
             tokenId, address(_pool), 2550, 2551
         );
-        vm.expectRevert(IPositionManager.NoAuth.selector);
+        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
         _positionManager.moveLiquidity(moveLiquidityParams);
 
         // minter cannot redeem positions on behalf of lender (is not approved)
         IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
-        vm.expectRevert(IPositionManager.NoAuth.selector);
+        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
         _positionManager.reedemPositions(reedemParams);
 
         // minter cannot burn positions NFT on behalf of lender (is not approved)
         IPositionManagerOwnerActions.BurnParams memory burnParams = IPositionManagerOwnerActions.BurnParams(
             tokenId, address(_pool)
         );
-        vm.expectRevert(IPositionManager.NoAuth.selector);
+        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
         _positionManager.burn(burnParams);
 
         // lender approves minter to interact with positions NFT on his behalf
@@ -2410,7 +2410,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         burnParams = IPositionManagerOwnerActions.BurnParams(
             tokenId, address(_pool)
         );
-        vm.expectRevert(IPositionManager.NoAuth.selector);
+        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
         _positionManager.burn(burnParams);
 
         // should revert if pool address is not the one associated with tokenId
@@ -2418,7 +2418,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         burnParams = IPositionManagerOwnerActions.BurnParams(
             tokenId, makeAddr("wrongPool")
         );
-        vm.expectRevert(IPositionManager.WrongPool.selector);
+        vm.expectRevert(IPositionManagerErrors.WrongPool.selector);
         _positionManager.burn(burnParams);
     }
 
@@ -2909,12 +2909,12 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         changePrank(testAddress2);
         IPositionManagerOwnerActions.BurnParams memory burnParams = IPositionManagerOwnerActions.BurnParams(tokenId, address(_pool));
         // check that NFT cannot be burnt if it tracks postions
-        vm.expectRevert(IPositionManager.LiquidityNotRemoved.selector);
+        vm.expectRevert(IPositionManagerErrors.LiquidityNotRemoved.selector);
         _positionManager.burn(burnParams);
 
         // check that NFT cannot be burnt if not owner
         changePrank(testAddress1);
-        vm.expectRevert(IPositionManager.NoAuth.selector);
+        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
         _positionManager.burn(burnParams);
 
         // Indexes that have non zero position
@@ -2928,7 +2928,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
             tokenId, address(_pool), newIndexes
         );
         // redeem liquidity called by old owner
-        vm.expectRevert(IPositionManager.NoAuth.selector);
+        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
         _positionManager.reedemPositions(reedemParams);
 
         // check new owner can redeem positions
