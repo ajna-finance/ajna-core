@@ -45,11 +45,11 @@ library PoolCommons {
 
     /**
      *  @notice Calculates new pool interest rate params (EMAs and interest rate value) and saves new values in storage.
-     *  @dev write state:
-     *       - interest debt and lup * collateral EMAs accumulators
-     *       - interest rate accumulator and interestRateUpdate state
-     *  @dev emit events:
-     *       - UpdateInterestRate
+     *  @dev    write state:
+     *              - interest debt and lup * collateral EMAs accumulators
+     *              - interest rate accumulator and interestRateUpdate state
+     *  @dev    emit events:
+     *              - UpdateInterestRate
      */
     function updateInterestRate(
         InterestState storage interestParams_,

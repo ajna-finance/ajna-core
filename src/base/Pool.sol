@@ -88,36 +88,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*** Lender External Functions ***/
     /*********************************/
 
-    /**
-     *  @dev external libraries call:
-     *       - PoolCommons.accrueInterest
-     *       - LenderActions.addQuoteToken
-     *       - PoolCommons.updateInterestRate     
-     *  @dev write state:
-     *       - _accruePoolInterest:
-     *         - PoolCommons.accrueInterest:
-     *           - Deposits.mult (scale Fenwick tree with new interest accrued):
-     *             - update scaling array state 
-     *         - increment reserveAuction.totalInterestEarned accumulator
-     *       - LenderActions.addQuoteToken:
-     *           - Deposits.unscaledAdd (add new amount in Fenwick tree):
-     *             - update values array state 
-     *         - increment bucket.lps accumulator
-     *         - increment lender.lps accumulator and lender.depositTime state
-     *       - _updateInterestState:
-     *         - PoolCommons.updateInterestRate:
-     *           - interest debt and lup * collateral EMAs accumulators
-     *           - interest rate accumulator and interestRateUpdate state
-     *  @dev reverts on:
-     *       - LenderActions.addQuoteToken:
-     *         - invalid bucket index InvalidIndex()
-     *         - same block when bucket becomes insolvent BucketBankruptcyBlock()
-     *  @dev emit events:
-     *       - LenderActions.addQuoteToken:
-     *         - AddQuoteToken
-     *       - PoolCommons.updateInterestRate:
-     *         - UpdateInterestRate
-     */
     /// @inheritdoc IPoolLenderActions
     function addQuoteToken(
         uint256 quoteTokenAmountToAdd_,
@@ -143,11 +113,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToAdd_);
     }
 
-    /**   
+    /**
+     *  @inheritdoc IPoolLenderActions
      *  @dev write state:
-     *       - _lpTokenAllowances mapping
+     *          - _lpTokenAllowances mapping
      */
-    /// @inheritdoc IPoolLenderActions
     function approveLpOwnership(
         address allowedNewOwner_,
         uint256 index_,
@@ -156,43 +126,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _lpTokenAllowances[msg.sender][allowedNewOwner_][index_] = lpsAmountToApprove_;
     }
 
-    /**
-     *  @dev external libraries call:
-     *       - PoolCommons.accrueInterest
-     *       - LenderActions.moveQuoteToken
-     *       - PoolCommons.updateInterestRate     
-     *  @dev write state:
-     *       - _accruePoolInterest:
-     *         - PoolCommons.accrueInterest:
-     *           - Deposits.mult (scale Fenwick tree with new interest accrued):
-     *             - update scaling array state 
-     *         - increment reserveAuction.totalInterestEarned accumulator
-     *       - LenderActions.moveQuoteToken:
-     *           - _removeMaxDeposit:
-     *             - Deposits.unscaledRemove (remove amount in Fenwick tree, from index):
-     *               - update values array state
-     *           - Deposits.unscaledAdd (add amount in Fenwick tree, to index):
-     *             - update values array state
-     *         - decrement lender.lps accumulator for from bucket
-     *         - increment lender.lps accumulator and lender.depositTime state for to bucket
-     *         - decrement bucket.lps accumulator for from bucket
-     *         - increment bucket.lps accumulator for to bucket
-     *       - _updateInterestState:
-     *         - PoolCommons.updateInterestRate:
-     *           - interest debt and lup * collateral EMAs accumulators
-     *           - interest rate accumulator and interestRateUpdate state
-     *  @dev reverts on:
-     *       - deposits locked RemoveDepositLockedByAuctionDebt()
-     *       - LenderActions.moveQuoteToken:
-     *         - same index MoveToSamePrice()
-     *         - dust amount DustAmountNotExceeded()
-     *         - invalid index InvalidIndex()
-     *  @dev emit events:
-     *       - LenderActions.moveQuoteToken:
-     *         - MoveQuoteToken
-     *       - PoolCommons.updateInterestRate:
-     *         - UpdateInterestRate
-     */
     /// @inheritdoc IPoolLenderActions
     function moveQuoteToken(
         uint256 maxAmountToMove_,
@@ -224,38 +157,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _updateInterestState(poolState, newLup);
     }
 
-    /**
-     *  @dev external libraries call:
-     *       - PoolCommons.accrueInterest
-     *       - LenderActions.removeQuoteToken
-     *       - PoolCommons.updateInterestRate     
-     *  @dev write state:
-     *       - _accruePoolInterest:
-     *         - PoolCommons.accrueInterest:
-     *           - Deposits.mult (scale Fenwick tree with new interest accrued):
-     *             - update scaling array state 
-     *         - increment reserveAuction.totalInterestEarned accumulator
-     *       - LenderActions.removeQuoteToken:
-     *           - _removeMaxDeposit:
-     *             - Deposits.unscaledRemove (remove amount in Fenwick tree):
-     *               - update values array state
-     *         - decrement lender.lps accumulator
-     *         - decrement bucket.lps accumulator
-     *       - _updateInterestState:
-     *         - PoolCommons.updateInterestRate:
-     *           - interest debt and lup * collateral EMAs accumulators
-     *           - interest rate accumulator and interestRateUpdate state
-     *  @dev reverts on:
-     *       - deposits locked RemoveDepositLockedByAuctionDebt()
-     *       - LenderActions.removeQuoteToken:
-     *         - no LPs NoClaim()
-     *         - LUP lower than HTP LUPBelowHTP()
-     *  @dev emit events:
-     *       - LenderActions.removeQuoteToken:
-     *         - RemoveQuoteToken
-     *       - PoolCommons.updateInterestRate:
-     *         - UpdateInterestRate
-     */
     /// @inheritdoc IPoolLenderActions
     function removeQuoteToken(
         uint256 maxAmount_,
@@ -290,22 +191,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _transferQuoteToken(msg.sender, removedAmount_);
     }
 
-    /**
-     *  @dev external libraries call:
-     *       - LenderActions.transferLPTokens    
-     *  @dev write state:
-     *       - LenderActions.transferLPTokens:
-     *         - delete allowance mapping
-     *         - increment new lender.lps accumulator and lender.depositTime state
-     *         - delete old lender from bucket -> lender mapping
-     *  @dev reverts on:
-     *       - LenderActions.transferLPTokens:
-     *         - invalid index InvalidIndex()
-     *         - no allowance NoAllowance()
-     *  @dev emit events:
-     *       - LenderActions.transferLPTokens:
-     *         - TransferLPTokens
-     */
     /// @inheritdoc IPoolLenderActions
     function transferLPTokens(
         address owner_,
@@ -325,7 +210,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*** Liquidation Functions ***/
     /*****************************/
 
-    /// @inheritdoc IPoolLiquidationActions
+    /**
+     *  @inheritdoc IPoolLiquidationActions
+     *  @dev write state:
+     *       - increment poolBalances.t0DebtInAuction and poolBalances.t0Debt accumulators
+     */
     function kick(address borrowerAddress_) external override {
         PoolState memory poolState = _accruePoolInterest();
 
@@ -349,7 +238,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if(result.amountToCoverBond != 0) _transferQuoteTokenFrom(msg.sender, result.amountToCoverBond);
     }
 
-    /// @inheritdoc IPoolLiquidationActions
+    /**
+     *  @inheritdoc IPoolLiquidationActions
+     *  @dev write state:
+     *       - increment poolBalances.t0DebtInAuction and poolBalances.t0Debt accumulators
+     */
     function kickWithDeposit(
         uint256 index_
     ) external override {
@@ -377,7 +270,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if(result.amountToCoverBond != 0) _transferQuoteTokenFrom(msg.sender, result.amountToCoverBond);
     }
 
-    /// @inheritdoc IPoolLiquidationActions
+    /**
+     *  @inheritdoc IPoolLiquidationActions
+     *  @dev write state:
+     *       - reset kicker's claimable accumulator
+     */
     function withdrawBonds() external {
         uint256 claimable = auctions.kickers[msg.sender].claimable;
         auctions.kickers[msg.sender].claimable = 0;
@@ -388,7 +285,16 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*** Reserve Auction Functions ***/
     /*********************************/
 
-    /// @inheritdoc IPoolReserveAuctionActions
+    /**
+     *  @inheritdoc IPoolReserveAuctionActions
+     *  @dev  write state:
+     *          - increment latestBurnEpoch counter
+     *          - update reserveAuction.latestBurnEventEpoch and burn event timestamp state
+     *  @dev reverts on:
+     *          - 2 weeks not passed ReserveAuctionTooSoon()
+     *  @dev emit events:
+     *          - ReserveAuction
+     */
     function startClaimableReserveAuction() external override {
         // retrieve timestamp of latest burn event and last burn timestamp
         uint256 latestBurnEpoch   = reserveAuction.latestBurnEventEpoch;
@@ -421,7 +327,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _transferQuoteToken(msg.sender, kickerAward);
     }
 
-    /// @inheritdoc IPoolReserveAuctionActions
+    /**
+     *  @inheritdoc IPoolReserveAuctionActions
+     *  @dev  write state:
+     *          - increment reserveAuction.totalAjnaBurned accumulator
+     *          - update burn event totalInterest and totalBurned accumulators
+     */
     function takeReserves(uint256 maxAmount_) external override returns (uint256 amount_) {
         uint256 ajnaRequired;
         (amount_, ajnaRequired) = Auctions.takeReserves(
@@ -457,12 +368,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /**
      *  @notice Accrues pool interest in current block and returns pool details.
      *  @dev    external libraries call:
-     *          - PoolCommons.accrueInterest   
+     *              - PoolCommons.accrueInterest   
      *  @dev    write state:
-     *          - PoolCommons.accrueInterest:
-     *             - Deposits.mult (scale Fenwick tree with new interest accrued):
-     *               - update scaling array state 
-     *          - increment reserveAuction.totalInterestEarned accumulator
+     *              - PoolCommons.accrueInterest:
+     *                  - Deposits.mult (scale Fenwick tree with new interest accrued):
+     *                      - update scaling array state 
+     *              - increment reserveAuction.totalInterestEarned accumulator
      *  @return poolState_ Struct containing pool details.
      */
     function _accruePoolInterest() internal returns (PoolState memory poolState_) {
@@ -507,14 +418,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     /**
      *  @notice Update interest rate and inflator of the pool.
-     *  @dev    external libraries call:.
-     *          - PoolCommons.updateInterestRate     
+     *  @dev    external libraries call:
+     *              - PoolCommons.updateInterestRate     
      *  @dev    write state:
-     *          - interest debt and lup * collateral EMAs accumulators
-     *          - interest rate accumulator and interestRateUpdate state
+     *              - interest debt and lup * collateral EMAs accumulators
+     *              - interest rate accumulator and interestRateUpdate state
      *  @dev    emit events:
-     *          - PoolCommons.updateInterestRate:
-     *            - UpdateInterestRate
+     *              - PoolCommons.updateInterestRate:
+     *                  - UpdateInterestRate
      *  @param  poolState_ Struct containing pool details.
      *  @param  lup_       Current LUP in pool.
      */

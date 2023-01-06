@@ -37,6 +37,12 @@ library Loans {
 
     /**
      *  @notice Updates a loan: updates heap (upsert if TP not 0, remove otherwise) and borrower balance.
+     *  @dev    write state:
+     *          - _upsert:
+     *            - insert or update loan in loans array
+     *          - remove:
+     *            - remove loan from loans array
+     *          - update borrower in address => borrower mapping
      *  @param loans_               Holds tree loan data.
      *  @param borrower_            Borrower struct with borrower details.
      *  @param borrowerAddress_     Borrower's address to update.
@@ -160,7 +166,7 @@ library Loans {
 
     /**
      *  @notice Removes loan for given borrower address.
-     *  @param loans_      Holds tree loan data.
+     *  @param loans_    Holds tree loan data.
      *  @param borrower_ Borrower address whose loan is being updated or inserted.
      *  @param id_       Loan id.
      */

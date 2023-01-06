@@ -59,7 +59,31 @@ library BorrowerActions {
     /***  External Functions ***/
     /***************************/
 
-    // See `IERC20PoolBorrowerActions` and `IERC721PoolBorrowerActions` for descriptions
+    /**
+     *  @notice See `IERC20PoolBorrowerActions` and `IERC721PoolBorrowerActions` for descriptions
+     *  @dev    write state:
+     *              - Auctions._settleAuction:
+     *                  - _removeAuction:
+     *                      - decrement kicker locked accumulator, increment kicker claimable accumumlator
+     *                      - decrement auctions count accumulator
+     *                      - decrement auctions.totalBondEscrowed accumulator
+     *                      - update auction queue state
+     *              - Loans.update:
+     *                  - _upsert:
+     *                      - insert or update loan in loans array
+     *                  - remove:
+     *                      - remove loan from loans array
+     *                  - update borrower in address => borrower mapping
+     *  @dev    reverts on:
+     *              - borrower not sender BorrowerNotSender()
+     *              - borrower debt less than pool min debt AmountLTMinDebt()
+     *              - limit price reached LimitIndexReached()
+     *              - borrower debt under dust limit DustAmountNotExceeded()
+     *              - borrower cannot draw more debt BorrowerUnderCollateralized()
+     *  @dev    emit events:
+     *              - Auctions._settleAuction:
+     *                  - AuctionNFTSettle or AuctionSettle
+     */
     function drawDebt(
         AuctionsState storage auctions_,
         mapping(uint256 => Bucket) storage buckets_,
@@ -173,7 +197,30 @@ library BorrowerActions {
         );
     }
 
-    // See `IERC20PoolBorrowerActions` and `IERC721PoolBorrowerActions` for descriptions
+    /**
+     *  @notice See `IERC20PoolBorrowerActions` and `IERC721PoolBorrowerActions` for descriptions
+     *  @dev    write state:
+     *              - Auctions._settleAuction:
+     *                  - _removeAuction:
+     *                      - decrement kicker locked accumulator, increment kicker claimable accumumlator
+     *                      - decrement auctions count accumulator
+     *                      - decrement auctions.totalBondEscrowed accumulator
+     *                      - update auction queue state
+     *              - Loans.update:
+     *                  - _upsert:
+     *                      - insert or update loan in loans array
+     *                  - remove:
+     *                      - remove loan from loans array
+     *                  - update borrower in address => borrower mapping
+     *  @dev    reverts on:
+     *              - no debt to repay NoDebt()
+     *              - borrower debt less than pool min debt AmountLTMinDebt()
+     *              - borrower not sender BorrowerNotSender()
+     *              - not enough collateral to pull InsufficientCollateral()
+     *  @dev    emit events:
+     *              - Auctions._settleAuction:
+     *                  - AuctionNFTSettle or AuctionSettle
+     */
     function repayDebt(
         AuctionsState storage auctions_,
         mapping(uint256 => Bucket) storage buckets_,

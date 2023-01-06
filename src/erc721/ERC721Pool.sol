@@ -72,7 +72,16 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    /// @inheritdoc IERC721PoolBorrowerActions
+    /**
+     *  @inheritdoc IERC721PoolBorrowerActions
+     *  @dev write state:
+     *          - decrement poolBalances.t0DebtInAuction accumulator
+     *          - increment poolBalances.pledgedCollateral accumulator
+     *          - increment poolBalances.t0Debt accumulator
+     *          - update borrowerTokenIds and bucketTokenIds arrays
+     *  @dev emit events:
+     *          - DrawDebtNFT
+     */
     function drawDebt(
         address borrowerAddress_,
         uint256 amountToBorrow_,
@@ -123,7 +132,16 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         }
     }
 
-    /// @inheritdoc IERC721PoolBorrowerActions
+    /**
+     *  @inheritdoc IERC721PoolBorrowerActions
+     *  @dev write state:
+     *          - decrement poolBalances.t0Debt accumulator
+     *          - decrement poolBalances.t0DebtInAuction accumulator
+     *          - decrement poolBalances.pledgedCollateral accumulator
+     *          - update borrowerTokenIds arrays
+     *  @dev emit events:
+     *          - RepayDebt
+     */
     function repayDebt(
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
@@ -175,32 +193,12 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     /*********************************/
 
     /**
-     *  @dev external libraries call:
-     *       - PoolCommons.accrueInterest
-     *       - LenderActions.addCollateral
-     *       - PoolCommons.updateInterestRate     
+     *  @inheritdoc IERC721PoolLenderActions
      *  @dev write state:
-     *       - _accruePoolInterest:
-     *         - PoolCommons.accrueInterest:
-     *           - Deposits.mult (scale Fenwick tree with new interest accrued):
-     *             - update scaling array state 
-     *         - increment reserveAuction.totalInterestEarned accumulator
-     *       - LenderActions.addCollateral:
-     *           - Buckets.addCollateral:
-     *             - increment bucket.collateral and bucket.lps accumulator
-     *             - addLenderLPs:
-     *               - increment lender.lps accumulator and lender.depositTime state
-     *       - _updateInterestState:
-     *         - PoolCommons.updateInterestRate:
-     *           - interest debt and lup * collateral EMAs accumulators
-     *           - interest rate accumulator and interestRateUpdate state
-     *  @dev reverts on:
-     *       - LenderActions.addCollateral:
-     *         - invalid bucket index InvalidIndex()
+     *          - update borrowerTokenIds arrays
      *  @dev emit events:
-     *       - AddCollateralNFT
+     *          - AddCollateralNFT
      */
-    /// @inheritdoc IERC721PoolLenderActions
     function addCollateral(
         uint256[] calldata tokenIdsToAdd_,
         uint256 index_
@@ -223,7 +221,13 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         _transferFromSenderToPool(bucketTokenIds, tokenIdsToAdd_);
     }
 
-    /// @inheritdoc IERC721PoolLenderActions
+    /**
+     *  @inheritdoc IERC721PoolLenderActions
+     *  @dev write state:
+     *          - update bucketTokenIds arrays
+     *  @dev emit events:
+     *          - MergeOrRemoveCollateralNFT
+     */
     function mergeOrRemoveCollateral(
         uint256[] calldata removalIndexes_,
         uint256 noOfNFTsToRemove_,
@@ -256,31 +260,12 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     }
 
     /**
-     *  @dev external libraries call:
-     *       - PoolCommons.accrueInterest
-     *       - LenderActions.removeCollateral
-     *       - PoolCommons.updateInterestRate     
+     *  @inheritdoc IPoolLenderActions
      *  @dev write state:
-     *       - _accruePoolInterest:
-     *         - PoolCommons.accrueInterest:
-     *           - Deposits.mult (scale Fenwick tree with new interest accrued):
-     *             - update scaling array state 
-     *         - increment reserveAuction.totalInterestEarned accumulator
-     *       - LenderActions.removeCollateral:
-     *           - decrement lender.lps accumulator
-     *           - decrement bucket.collateral and bucket.lps accumulator
-     *       - _updateInterestState:
-     *         - PoolCommons.updateInterestRate:
-     *           - interest debt and lup * collateral EMAs accumulators
-     *           - interest rate accumulator and interestRateUpdate state
-     *  @dev reverts on:
-     *       - LenderActions.removeCollateral:
-     *         - not enough collateral InsufficientCollateral()
-     *         - insufficient LPs InsufficientLPs()
+     *          - update bucketTokenIds arrays
      *  @dev emit events:
-     *       - RemoveCollateral
+     *          - RemoveCollateral
      */
-    /// @inheritdoc IPoolLenderActions
     function removeCollateral(
         uint256 noOfNFTsToRemove_,
         uint256 index_
@@ -309,7 +294,13 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     /*** Pool Auctions Functions ***/
     /*******************************/
 
-    /// @inheritdoc IPoolLiquidationActions
+    /**
+     *  @inheritdoc IPoolLiquidationActions
+     *  @dev write state:
+     *          - decrement poolBalances.t0Debt accumulator
+     *          - decrement poolBalances.t0DebtInAuction accumulator
+     *          - decrement poolBalances.pledgedCollateral accumulator
+     */
     function settle(
         address borrowerAddress_,
         uint256 maxDepth_
@@ -355,7 +346,13 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         _updateInterestState(poolState, _lup(poolState.debt));
     }
 
-    /// @inheritdoc IPoolLiquidationActions
+    /**
+     *  @inheritdoc IPoolLiquidationActions
+     *  @dev write state:
+     *          - decrement poolBalances.t0Debt accumulator
+     *          - decrement poolBalances.t0DebtInAuction accumulator
+     *          - decrement poolBalances.pledgedCollateral accumulator
+     */
     function take(
         address        borrowerAddress_,
         uint256        collateral_,
@@ -419,7 +416,13 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         if (result.excessQuoteToken != 0) _transferQuoteToken(borrowerAddress_, result.excessQuoteToken);
     }
 
-    /// @inheritdoc IPoolLiquidationActions
+    /**
+     *  @inheritdoc IPoolLiquidationActions
+     *  @dev write state:
+     *          - decrement poolBalances.t0Debt accumulator
+     *          - decrement poolBalances.t0DebtInAuction accumulator
+     *          - decrement poolBalances.pledgedCollateral accumulator
+     */
     function bucketTake(
         address borrowerAddress_,
         bool    depositTake_,
@@ -467,6 +470,15 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     /*** Internal Functions ***/
     /**************************/
 
+    /**
+     *  @notice Rebalance NFT token and transfer difference to floor collateral from borrower to pool claimable array
+     *  @dev    write state:
+     *              - update borrowerTokens and bucketTokenIds arrays
+     *  @dev    emit events:
+     *              - RemoveCollateral
+     *  @param  borrowerAddress_    Address of borrower.
+     *  @param  borrowerCollateral_ Current borrower collateral to be rebalanced.
+     */
     function _rebalanceTokens(
         address borrowerAddress_,
         uint256 borrowerCollateral_

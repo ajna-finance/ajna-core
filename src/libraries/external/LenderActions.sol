@@ -68,16 +68,16 @@ library LenderActions {
     /***  External Functions ***/
     /***************************/
 
-    /**   
-     *  @dev write state:
-     *       - Buckets.addCollateral:
-     *         - increment bucket.collateral and bucket.lps accumulator
-     *         - addLenderLPs:
-     *           - increment lender.lps accumulator and lender.depositTime state
-     *  @dev reverts on:
-     *       - invalid bucket index InvalidIndex()
+    /**
+     *  @notice See `IERC20PoolLenderActions` and `IERC721PoolLenderActions` for descriptions
+     *  @dev    write state:
+     *              - Buckets.addCollateral:
+     *                  - increment bucket.collateral and bucket.lps accumulator
+     *                  - addLenderLPs:
+     *                      - increment lender.lps accumulator and lender.depositTime state
+     *  @dev    reverts on:
+     *              - invalid bucket index InvalidIndex()
      */
-    // See `IERC20PoolLenderActions` and `IERC721PoolLenderActions` for descriptions
     function addCollateral(
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
@@ -98,19 +98,19 @@ library LenderActions {
         );
     }
 
-    /**    
-     *  @dev write state:
-     *       - Deposits.unscaledAdd (add new amount in Fenwick tree):
-     *         - update values array state 
-     *       - increment bucket.lps accumulator
-     *       - increment lender.lps accumulator and lender.depositTime state
-     *  @dev reverts on:
-     *       - invalid bucket index InvalidIndex()
-     *       - same block when bucket becomes insolvent BucketBankruptcyBlock()
-     *  @dev emit events:
-     *       - AddQuoteToken
+    /**
+     *  @notice See `IPoolLenderActions` for descriptions
+     *  @dev    write state:
+     *              - Deposits.unscaledAdd (add new amount in Fenwick tree):
+     *                  - update values array state 
+     *              - increment bucket.lps accumulator
+     *              - increment lender.lps accumulator and lender.depositTime state
+     *  @dev    reverts on:
+     *              - invalid bucket index InvalidIndex()
+     *              - same block when bucket becomes insolvent BucketBankruptcyBlock()
+     *  @dev    emit events:
+     *              - AddQuoteToken
      */
-    // See `IPoolLenderActions` for descriptions
     function addQuoteToken(
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
@@ -157,25 +157,25 @@ library LenderActions {
         emit AddQuoteToken(msg.sender, params_.index, params_.amount, bucketLPs_, lup_);
     }
 
-    /**    
-     *  @dev write state:
-     *       - _removeMaxDeposit:
-     *           - Deposits.unscaledRemove (remove amount in Fenwick tree, from index):
-     *             - update values array state
-     *       - Deposits.unscaledAdd (add amount in Fenwick tree, to index):
-     *           - update values array state
-     *       - decrement lender.lps accumulator for from bucket
-     *       - increment lender.lps accumulator and lender.depositTime state for to bucket
-     *       - decrement bucket.lps accumulator for from bucket
-     *       - increment bucket.lps accumulator for to bucket
-     *  @dev reverts on:
-     *       - same index MoveToSamePrice()
-     *       - dust amount DustAmountNotExceeded()
-     *       - invalid index InvalidIndex()
-     *  @dev emit events:
-     *       - MoveQuoteToken
+    /**
+     *  @notice See `IPoolLenderActions` for descriptions
+     *  @dev    write state:
+     *              - _removeMaxDeposit:
+     *                  - Deposits.unscaledRemove (remove amount in Fenwick tree, from index):
+     *                  - update values array state
+     *              - Deposits.unscaledAdd (add amount in Fenwick tree, to index):
+     *                  - update values array state
+     *              - decrement lender.lps accumulator for from bucket
+     *              - increment lender.lps accumulator and lender.depositTime state for to bucket
+     *              - decrement bucket.lps accumulator for from bucket
+     *              - increment bucket.lps accumulator for to bucket
+     *  @dev    reverts on:
+     *              - same index MoveToSamePrice()
+     *              - dust amount DustAmountNotExceeded()
+     *              - invalid index InvalidIndex()
+     *  @dev    emit events:
+     *              - MoveQuoteToken
      */
-    // See `IPoolLenderActions` for descriptions
     function moveQuoteToken(
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
@@ -275,20 +275,20 @@ library LenderActions {
         );
     }
 
-    /**    
-     *  @dev write state:
-     *       - _removeMaxDeposit:
-     *         - Deposits.unscaledRemove (remove amount in Fenwick tree):
-     *           - update values array state
-     *       - decrement lender.lps accumulator
-     *       - decrement bucket.lps accumulator
-     *  @dev reverts on:
-     *       - no LPs NoClaim()
-     *       - LUP lower than HTP LUPBelowHTP()
-     *  @dev emit events:
-     *       - RemoveQuoteToken
+    /**
+     *  @notice See `IPoolLenderActions` for descriptions
+     *  @dev    write state:
+     *          - _removeMaxDeposit:
+     *              - Deposits.unscaledRemove (remove amount in Fenwick tree):
+     *                  - update values array state
+     *              - decrement lender.lps accumulator
+     *              - decrement bucket.lps accumulator
+     *  @dev    reverts on:
+     *              - no LPs NoClaim()
+     *              - LUP lower than HTP LUPBelowHTP()
+     *  @dev    emit events:
+     *              - RemoveQuoteToken
      */
-    // See `IPoolLenderActions` for descriptions
     function removeQuoteToken(
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
@@ -342,14 +342,14 @@ library LenderActions {
     }
 
     /**
-     *  @dev write state:
-     *       - decrement lender.lps accumulator
-     *       - decrement bucket.collateral and bucket.lps accumulator
-     *  @dev reverts on:
-     *       - not enough collateral InsufficientCollateral()
-     *       - insufficient LPs InsufficientLPs()
+     *  @notice See `IPoolLenderActions` for descriptions
+     *  @dev    write state:
+     *              - decrement lender.lps accumulator
+     *              - decrement bucket.collateral and bucket.lps accumulator
+     *  @dev    reverts on:
+     *              - not enough collateral InsufficientCollateral()
+     *              - insufficient LPs InsufficientLPs()
      */
-    // See `IPoolLenderActions` for descriptions
     function removeCollateral(
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
@@ -390,12 +390,12 @@ library LenderActions {
     /**
      *  @notice Removes max collateral amount from a given bucket index.
      *  @dev    write state:
-     *          - _removeMaxCollateral:
-     *            - decrement lender.lps accumulator
-     *            - decrement bucket.collateral and bucket.lps accumulator
+     *              - _removeMaxCollateral:
+     *                  - decrement lender.lps accumulator
+     *                  - decrement bucket.collateral and bucket.lps accumulator
      *  @dev    reverts on:
-     *            - not enough collateral InsufficientCollateral()
-     *            - no claim NoClaim()
+     *              - not enough collateral InsufficientCollateral()
+     *              - no claim NoClaim()
      *  @return Amount of collateral that was removed.
      *  @return Amount of LPs redeemed for removed collateral amount.
      */
@@ -413,16 +413,16 @@ library LenderActions {
         );
     }
 
-    /**   
-     *  @dev write state:
-     *       - Buckets.addCollateral:
-     *         - increment bucket.collateral and bucket.lps accumulator
-     *         - addLenderLPs:
-     *           - increment lender.lps accumulator and lender.depositTime state
-     *  @dev reverts on:
-     *       - invalid merge index CannotMergeToHigherPrice()
+    /**
+     *  @notice See `IERC721PoolLenderActions` for descriptions
+     *  @dev    write state:
+     *              - Buckets.addCollateral:
+     *                  - increment bucket.collateral and bucket.lps accumulator
+     *                  - addLenderLPs:
+     *                      - increment lender.lps accumulator and lender.depositTime state
+     *  @dev    reverts on:
+     *              - invalid merge index CannotMergeToHigherPrice()
      */
-    // See `IERC721PoolLenderActions` for descriptions
     function mergeOrRemoveCollateral(
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
@@ -472,17 +472,17 @@ library LenderActions {
     }
 
     /**
+     *  @notice See `IPoolLenderActions` for descriptions
      *  @dev write state:
-     *       - delete allowance mapping
-     *       - increment new lender.lps accumulator and lender.depositTime state
-     *       - delete old lender from bucket -> lender mapping
+     *          - delete allowance mapping
+     *          - increment new lender.lps accumulator and lender.depositTime state
+     *          - delete old lender from bucket -> lender mapping
      *  @dev reverts on:
-     *       - invalid index InvalidIndex()
-     *       - no allowance NoAllowance()
+     *          - invalid index InvalidIndex()
+     *          - no allowance NoAllowance()
      *  @dev emit events:
-     *       - TransferLPTokens
+     *          - TransferLPTokens
      */
-    // See `IPoolLenderActions` for descriptions
     function transferLPTokens(
         mapping(uint256 => Bucket) storage buckets_,
         mapping(address => mapping(address => mapping(uint256 => uint256))) storage allowances_,
@@ -538,11 +538,11 @@ library LenderActions {
     /**
      *  @notice Removes max collateral amount from a given bucket index.
      *  @dev    write state:
-     *          - decrement lender.lps accumulator
-     *          - decrement bucket.collateral and bucket.lps accumulator
+     *              - decrement lender.lps accumulator
+     *              - decrement bucket.collateral and bucket.lps accumulator
      *  @dev    reverts on:
-     *          - not enough collateral InsufficientCollateral()
-     *          - no claim NoClaim()
+     *              - not enough collateral InsufficientCollateral()
+     *              - no claim NoClaim()
      *  @return collateralAmount_ Amount of collateral that was removed.
      *  @return lpAmount_         Amount of LPs redeemed for removed collateral amount.
      */
@@ -598,7 +598,7 @@ library LenderActions {
      *  @notice Removes the amount of quote tokens calculated for the given amount of LPs.
      *  @dev    write state:
      *          - Deposits.unscaledRemove (remove amount in Fenwick tree, from index):
-     *            - update values array state
+     *              - update values array state
      *  @return removedAmount_     Amount of scaled deposit removed.
      *  @return redeemedLPs_       Amount of bucket LPs corresponding for calculated unscaled deposit amount.
      */
