@@ -876,11 +876,10 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint256 desiredCollateralizationRatio
     ) internal returns (uint256) {
         assertGt(desiredCollateralizationRatio, 1e18);
-        uint256 colDustAmount = ERC20Pool(address(_pool)).collateralDust(newLupIndex);
         uint256 colScale      = ERC20Pool(address(_pool)).collateralScale();
         uint256 price         = _priceAt(newLupIndex);
         uint256 desiredPledge = Maths.wmul(Maths.wdiv(debtToDraw, price), desiredCollateralizationRatio);
-        uint256 scaledPledge  = Maths.max((desiredPledge / colScale) * colScale, colDustAmount);
+        uint256 scaledPledge  = (desiredPledge / colScale) * colScale;
 
         while (Maths.wdiv(Maths.wmul(scaledPledge, price), debtToDraw) < desiredCollateralizationRatio) {
             scaledPledge += colScale;

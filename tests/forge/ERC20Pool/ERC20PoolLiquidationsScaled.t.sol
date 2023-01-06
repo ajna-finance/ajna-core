@@ -36,6 +36,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         _collateral = new TokenWithNDecimals("Collateral", "C", uint8(collateralPrecisionDecimals_));
         _quote      = new TokenWithNDecimals("Quote", "Q", uint8(quotePrecisionDecimals_));
         _pool       = ERC20Pool(new ERC20PoolFactory(_ajna).deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
+        vm.label(address(_pool), "ERC20Pool");
         _poolUtils  = new PoolInfoUtils();
 
         _collateralPrecision   = uint256(10) ** collateralPrecisionDecimals_;
@@ -84,18 +85,27 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         assertEq(_pool.depositSize(), 200_000 * 1e18);
     }
 
-    function drawDebt(address borrower_, uint256 debtToDraw_, uint256 collateralization_) internal returns (
-        uint256 _collateralPledged
-    ) {
+    function drawDebt(
+        address borrower_, 
+        uint256 debtToDraw_, 
+        uint256 collateralization_
+    ) internal returns (uint256 collateralPledged_) {
+        // calculate desired amount of collateral
         ( , , , , , uint256 lupIndex) = _poolUtils.poolPricesInfo(address(_pool));
         if (lupIndex == 0) lupIndex = _startBucketId;
-        uint256 lup = _priceAt(lupIndex);
-        _collateralPledged = Maths.wmul(Maths.wdiv(debtToDraw_, lup), collateralization_);
+        uint256 price         = _priceAt(lupIndex);
+        uint256 colScale      = ERC20Pool(address(_pool)).collateralScale();
+        collateralPledged_    = Maths.wmul(Maths.wdiv(debtToDraw_, price), collateralization_);
+        collateralPledged_    = (collateralPledged_ / colScale) * colScale;
+        while (Maths.wdiv(Maths.wmul(collateralPledged_, price), debtToDraw_) < collateralization_) {
+            collateralPledged_ += colScale;
+        }
 
         // mint and approve collateral tokens
         changePrank(borrower_);
-        deal(address(_collateral), borrower_, _collateralPledged);  // TODO: denormalized for non-18-decimal collateral
-        _collateral.approve(address(_pool), _collateralPledged);
+        uint256 denormalizationFactor = 10 ** (18 - _collateral.decimals());
+        deal(address(_collateral), borrower_, collateralPledged_ / denormalizationFactor);
+        _collateral.approve(address(_pool), collateralPledged_ / denormalizationFactor);
 
         // pledge collateral and draw debt
         _drawDebtNoLupCheck({
@@ -103,7 +113,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
             borrower:           borrower_,
             amountToBorrow:     debtToDraw_,
             limitIndex:         lupIndex + BUCKETS_WITH_DEPOSIT,
-            collateralToPledge: _collateralPledged
+            collateralToPledge: collateralPledged_
         });
     }
 
@@ -116,9 +126,9 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         uint8  quotePrecisionDecimals_,
         uint16 startBucketId_) external tearDown
     {
-        uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 18, 18);
-        uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      1,  18);
-        uint256 startBucketId       = bound(uint256(startBucketId_),               1,  7388 - BUCKETS_WITH_DEPOSIT);
+        uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 6,    18);
+        uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      1,    18);
+        uint256 startBucketId       = bound(uint256(startBucketId_),               2000, 5388);
         init(boundColPrecision, boundQuotePrecision);
         addLiquidity(startBucketId);
 
@@ -127,7 +137,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         assertGt(_borrowerCollateralization(_borrower), 1e18);
 
         // Wait until borrower is undercollateralized
-        skip(6 weeks);
+        skip(9 weeks);
         assertLt(_borrowerCollateralization(_borrower), 1e18);
 
         // Kick off an auction and wait the grace period
@@ -143,7 +153,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         }
 
         // Test take
-        assertEq(auctionCollateral, collateralPledged);
+        assertEq(auctionCollateral, collateralPledged); 
         uint256 collateralToTake = Maths.wdiv(auctionCollateral, 3 * 1e18);
         _take(collateralToTake, _bidder);
         
@@ -160,12 +170,38 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         _settle();
     }
 
-     function testLiquidationKickWithDeposit(
+    function testDustyTake(
+        uint8  collateralPrecisionDecimals_, 
+        uint8  quotePrecisionDecimals_,
+        uint16 startBucketId_) external // TODO: tearDown
+    {
+        uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 6,    18);
+        uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      6,    18);
+        uint256 startBucketId       = bound(uint256(startBucketId_),               3000, 4000);//7388 - BUCKETS_WITH_DEPOSIT);
+        init(boundColPrecision, boundQuotePrecision);
+        addLiquidity(startBucketId);
+
+        // Borrow everything from the first bucket, with origination fee tapping into the second bucket
+        drawDebt(_borrower, 50_000 * 1e18, 1.01 * 1e18);
+        assertGt(_borrowerCollateralization(_borrower), 1e18);
+
+        // Wait until borrower is undercollateralized
+        skip(26 weeks);
+        assertLt(_borrowerCollateralization(_borrower), 1e18);
+
+        // Kick off an auction and wait the grace period
+        _kick(_borrower, _bidder);
+        skip(1 hours);
+
+        // TODO: test a take which leaves less than a dust amount of collateral
+    }
+
+    function testLiquidationKickWithDeposit(
         uint8  collateralPrecisionDecimals_, 
         uint8  quotePrecisionDecimals_,
         uint16 startBucketId_) external tearDown
     {
-        uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 18, 18);
+        uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 12, 18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      1,  18);
         uint256 startBucketId       = bound(uint256(startBucketId_),               1,  7388 - BUCKETS_WITH_DEPOSIT);
         init(boundColPrecision, boundQuotePrecision);
