@@ -45,6 +45,11 @@ library PoolCommons {
 
     /**
      *  @notice Calculates new pool interest rate params (EMAs and interest rate value) and saves new values in storage.
+     *  @dev write state:
+     *       - interest debt and lup * collateral EMAs accumulators
+     *       - interest rate accumulator and interestRateUpdate state
+     *  @dev emit events:
+     *       - UpdateInterestRate
      */
     function updateInterestRate(
         InterestState storage interestParams_,
@@ -118,6 +123,9 @@ library PoolCommons {
 
     /**
      *  @notice Calculates new pool interest and scale the fenwick tree to update amount of debt owed to lenders (saved in storage).
+     *  @dev write state:
+     *       - Deposits.mult (scale Fenwick tree with new interest accrued):
+     *         - update scaling array state 
      *  @param  thresholdPrice_ Current Pool Threshold Price.
      *  @param  elapsed_        Time elapsed since last inflator update.
      *  @return newInflator_   The new value of pool inflator.

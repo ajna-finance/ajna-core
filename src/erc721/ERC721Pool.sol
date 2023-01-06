@@ -174,6 +174,32 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     /*** Lender External Functions ***/
     /*********************************/
 
+    /**
+     *  @dev external libraries call:
+     *       - PoolCommons.accrueInterest
+     *       - LenderActions.addCollateral
+     *       - PoolCommons.updateInterestRate     
+     *  @dev write state:
+     *       - _accruePoolInterest:
+     *         - PoolCommons.accrueInterest:
+     *           - Deposits.mult (scale Fenwick tree with new interest accrued):
+     *             - update scaling array state 
+     *         - increment reserveAuction.totalInterestEarned accumulator
+     *       - LenderActions.addCollateral:
+     *           - Buckets.addCollateral:
+     *             - increment bucket.collateral and bucket.lps accumulator
+     *             - addLenderLPs:
+     *               - increment lender.lps accumulator and lender.depositTime state
+     *       - _updateInterestState:
+     *         - PoolCommons.updateInterestRate:
+     *           - interest debt and lup * collateral EMAs accumulators
+     *           - interest rate accumulator and interestRateUpdate state
+     *  @dev reverts on:
+     *       - LenderActions.addCollateral:
+     *         - invalid bucket index InvalidIndex()
+     *  @dev emit events:
+     *       - AddCollateralNFT
+     */
     /// @inheritdoc IERC721PoolLenderActions
     function addCollateral(
         uint256[] calldata tokenIdsToAdd_,
@@ -229,6 +255,31 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
     }
 
+    /**
+     *  @dev external libraries call:
+     *       - PoolCommons.accrueInterest
+     *       - LenderActions.removeCollateral
+     *       - PoolCommons.updateInterestRate     
+     *  @dev write state:
+     *       - _accruePoolInterest:
+     *         - PoolCommons.accrueInterest:
+     *           - Deposits.mult (scale Fenwick tree with new interest accrued):
+     *             - update scaling array state 
+     *         - increment reserveAuction.totalInterestEarned accumulator
+     *       - LenderActions.removeCollateral:
+     *           - decrement lender.lps accumulator
+     *           - decrement bucket.collateral and bucket.lps accumulator
+     *       - _updateInterestState:
+     *         - PoolCommons.updateInterestRate:
+     *           - interest debt and lup * collateral EMAs accumulators
+     *           - interest rate accumulator and interestRateUpdate state
+     *  @dev reverts on:
+     *       - LenderActions.removeCollateral:
+     *         - not enough collateral InsufficientCollateral()
+     *         - insufficient LPs InsufficientLPs()
+     *  @dev emit events:
+     *       - RemoveCollateral
+     */
     /// @inheritdoc IPoolLenderActions
     function removeCollateral(
         uint256 noOfNFTsToRemove_,

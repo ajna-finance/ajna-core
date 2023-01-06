@@ -196,6 +196,32 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     /*** Lender External Functions ***/
     /*********************************/
 
+    /**
+     *  @dev external libraries call:
+     *       - PoolCommons.accrueInterest
+     *       - LenderActions.addCollateral
+     *       - PoolCommons.updateInterestRate     
+     *  @dev write state:
+     *       - _accruePoolInterest:
+     *         - PoolCommons.accrueInterest:
+     *           - Deposits.mult (scale Fenwick tree with new interest accrued):
+     *             - update scaling array state 
+     *         - increment reserveAuction.totalInterestEarned accumulator
+     *       - LenderActions.addCollateral:
+     *           - Buckets.addCollateral:
+     *             - increment bucket.collateral and bucket.lps accumulator
+     *             - addLenderLPs:
+     *               - increment lender.lps accumulator and lender.depositTime state
+     *       - _updateInterestState:
+     *         - PoolCommons.updateInterestRate:
+     *           - interest debt and lup * collateral EMAs accumulators
+     *           - interest rate accumulator and interestRateUpdate state
+     *  @dev reverts on:
+     *       - LenderActions.addCollateral:
+     *         - invalid bucket index InvalidIndex()
+     *  @dev emit events:
+     *       - AddCollateral
+     */
     /// @inheritdoc IERC20PoolLenderActions
     function addCollateral(
         uint256 collateralAmountToAdd_,
@@ -219,6 +245,32 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         _transferCollateralFrom(msg.sender, collateralAmountToAdd_);
     }
 
+    /**
+     *  @dev external libraries call:
+     *       - PoolCommons.accrueInterest
+     *       - LenderActions.removeMaxCollateral
+     *       - PoolCommons.updateInterestRate     
+     *  @dev write state:
+     *       - _accruePoolInterest:
+     *         - PoolCommons.accrueInterest:
+     *           - Deposits.mult (scale Fenwick tree with new interest accrued):
+     *             - update scaling array state 
+     *         - increment reserveAuction.totalInterestEarned accumulator
+     *       - LenderActions.removeMaxCollateral:
+     *           - _removeMaxCollateral:
+     *             - decrement lender.lps accumulator
+     *             - decrement bucket.collateral and bucket.lps accumulator
+     *       - _updateInterestState:
+     *         - PoolCommons.updateInterestRate:
+     *           - interest debt and lup * collateral EMAs accumulators
+     *           - interest rate accumulator and interestRateUpdate state
+     *  @dev reverts on:
+     *       - LenderActions.removeMaxCollateral:
+     *         - not enough collateral InsufficientCollateral()
+     *         - no claim NoClaim()
+     *  @dev emit events:
+     *       - RemoveCollateral
+     */
     /// @inheritdoc IPoolLenderActions
     function removeCollateral(
         uint256 maxAmount_,
