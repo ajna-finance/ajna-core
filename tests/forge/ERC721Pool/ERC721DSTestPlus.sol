@@ -642,6 +642,17 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
         vm.prank(operator_);
         _ajnaToken.approve(address(_pool), type(uint256).max);
     }
+
+    // create an array of NFT's to add to a pool based upon the number of NFT's required for collateralization
+    function _NFTTokenIdsToAdd(address borrower_, uint256 requiredCollateral_) internal returns (uint256[] memory tokenIds_) {
+        changePrank(borrower_);
+        tokenIds_ = new uint256[](requiredCollateral_);
+        for (uint i = 0; i < requiredCollateral_; ++i) {
+            vm.stopPrank();
+            _mintAndApproveCollateralTokens(borrower_, 1);
+            tokenIds_[i] = _collateral.totalSupply();
+        }
+    }
 }
 
     /**

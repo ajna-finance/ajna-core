@@ -504,6 +504,11 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(curDeposit,          deposit);
         assertEq(rate,                exchangeRate);
 
+        console.log("deposit", deposit, curDeposit);
+        emit log_uint(lpBalance);
+        emit log_uint(lpAccumulator);
+        console.log("exchange rate", rate, exchangeRate);
+
         _validateBucketLp(index, lpBalance);
         _validateBucketQuantities(index);
     }
@@ -528,7 +533,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
                 lenderLps += curLpBalance;
             }
         }
-
+        console.log("lenders balance", lenderLps, lpBalance);
         assertEq(lenderLps, lpBalance);
     }
 
@@ -1250,6 +1255,13 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         vm.roll(block.number + 1); // advance block to ensure that the index price is different
     }
 
+    // returns a random index between 1 and a given maximum
+    // used for testing in NFT pools where higher indexes (and lower prices) would require so many NFTs that gas and memory limits would be exceeded
+    function _randomIndexWithMinimumPrice(uint256 minimumPrice_) internal returns (uint256 index_) {
+        index_ = 1 + uint256(keccak256(abi.encodePacked(block.number, block.difficulty))) % minimumPrice_;
+        vm.roll(block.number + 1); // advance block to ensure that the index price is different
+    }
+
     // find the bucket index in array corresponding to the highest bucket price
     function _findHighestIndexPrice(uint256[] memory indexes) internal pure returns (uint256 highestIndex_) {
         highestIndex_ = 7388;
@@ -1297,6 +1309,16 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient
         uint256 expectedDebt = Maths.wmul(borrowAmount, _feeRate(newInterestRate) + Maths.WAD);
         requiredCollateral_ = Maths.wdiv(expectedDebt, _poolUtils.indexToPrice(indexPrice));
+    }
+
+    function _requiredCollateralNFT(uint256 borrowAmount, uint256 indexPrice) internal returns (uint256 requiredCollateral_) {
+        // calculate the required collateral based upon the borrow amount and index price
+        (uint256 interestRate, ) = _pool.interestRateInfo();
+        uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient
+        uint256 expectedDebt = Maths.wmul(borrowAmount, _feeRate(newInterestRate) + Maths.WAD);
+
+        // get an integer amount rounding up
+        requiredCollateral_ = 1 + Maths.wdiv(expectedDebt, _poolUtils.indexToPrice(indexPrice)) / 1e18;
     }
 
     // calculate the fee that will be charged a borrower

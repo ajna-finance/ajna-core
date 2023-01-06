@@ -1170,7 +1170,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
     /*** FUZZ TESTING ***/
     /********************/
 
-    function testDrawRepayDebtFuzzy(uint256 numIndexes, uint256 mintAmount_) external {
+    function testDrawRepayDebtFuzzy(uint256 numIndexes, uint256 mintAmount_) external tearDown {
         numIndexes = bound(numIndexes, 3, 20); // number of indexes to add liquidity to
         mintAmount_ = bound(mintAmount_, 1 * 1e18, 100_000 * 1e18);
 
@@ -1180,7 +1180,14 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         for (uint256 i = 0; i < numIndexes; ++i) {
             deal(address(_quote), _lender, mintAmount_);
             indexes[i] = _randomIndex();
-            _pool.addQuoteToken(mintAmount_, indexes[i]);
+
+            _addLiquidity({
+                from:    _lender,
+                amount:  mintAmount_,
+                index:   indexes[i],
+                lpAward: mintAmount_ * 1e9,
+                newLup:  _calculateLup(address(_pool), 0)
+            });
 
             _assertBucket({
                 index:      indexes[i],
