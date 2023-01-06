@@ -1360,8 +1360,8 @@ contract ERC20PoolBorrowFuzzyTest is ERC20FuzzyHelperContract {
         for (uint256 i = 0; i < numIndexes; ++i) {
             (, uint256 deposit, , uint256 lpAccumulator, , uint256 exchangeRate) = _poolUtils.bucketInfo(address(_pool), indexes[i]);
 
-            // check that only deposits above the htp earned interest
-            if (_poolUtils.indexToPrice(indexes[i]) > htp) {
+            if (indexes[i] <= _poolUtils.priceToIndex(Maths.wdiv(debt, requiredCollateral))) {
+                // check that only deposits above the htp earned interest
                 assertGt(deposit, mintAmount_);
                 assertGt(exchangeRate, 1e27);
             } else {
