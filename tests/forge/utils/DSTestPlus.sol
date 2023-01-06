@@ -1296,7 +1296,6 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         }
     }
 
-
     // calculate required collateral to borrow a given amount at a given limitIndex
     function _requiredCollateral(uint256 borrowAmount, uint256 indexPrice) internal view returns (uint256 requiredCollateral_) {
         // calculate the required collateral based upon the borrow amount and index price
@@ -1304,16 +1303,6 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient
         uint256 expectedDebt = Maths.wmul(borrowAmount, _feeRate(newInterestRate) + Maths.WAD);
         requiredCollateral_ = Maths.wdiv(expectedDebt, _poolUtils.indexToPrice(indexPrice));
-    }
-
-    function _requiredCollateralNFT(uint256 borrowAmount, uint256 indexPrice) internal view returns (uint256 requiredCollateral_) {
-        // calculate the required collateral based upon the borrow amount and index price
-        (uint256 interestRate, ) = _pool.interestRateInfo();
-        uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient
-        uint256 expectedDebt = Maths.wmul(borrowAmount, _feeRate(newInterestRate) + Maths.WAD);
-
-        // get an integer amount rounding up
-        requiredCollateral_ = 1 + Maths.wdiv(expectedDebt, _poolUtils.indexToPrice(indexPrice)) / 1e18;
     }
 
     // calculate the fee that will be charged a borrower
