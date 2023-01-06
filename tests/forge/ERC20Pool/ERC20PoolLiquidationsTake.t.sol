@@ -2455,23 +2455,25 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         );
 
         // Lender removes collateral redeeming all LP
-       _removeCollateral(
+        vm.expectEmit(true, true, false, true);
+        emit BucketBankruptcy(_i9_91, 1.000000000000000009917184843 * 1e27);
+        _removeCollateral(
             {
                 from:     _lender,
                 amount:   1,
                 index:    _i9_91,
-                lpRedeem: 1799899990015009501748974137274
+                lpRedeem: 1799.899990015009501748974137274 * 1e27
             }
         );
 
-       // Bucket has 0 collateral, 0 deposit, 1 lender with LP > 0       
+        // Bucket has 0 collateral, 0 deposit, 1 lender with LP > 0       
         _assertBucket(
             {
                 index:        _i9_91,
-                lpBalance:    1000000000000000009917184843,
+                lpBalance:    0,
                 collateral:   0,
                 deposit:      0,
-                exchangeRate: 0
+                exchangeRate: 1e27
             }
         );
         _assertLenderLpBalance(
@@ -2486,7 +2488,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             {
                 lender:      _lender1,
                 index:       _i9_91,
-                lpBalance:   1000000000000000009917184843, 
+                lpBalance:   0, 
                 depositTime: _startTime
             }
         );
