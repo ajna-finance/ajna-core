@@ -27,9 +27,13 @@ import {
     TakeResult
 } from 'src/base/interfaces/pool/IPoolInternals.sol';
 
-import { FlashloanablePool }                                         from 'src/base/FlashloanablePool.sol';
-import { _getCollateralDustPricePrecisionAdjustment, _roundToScale } from 'src/base/PoolHelper.sol';
-import { _revertIfAuctionClearable }                                 from 'src/base/RevertsHelper.sol';
+import { FlashloanablePool }         from 'src/base/FlashloanablePool.sol';
+import { 
+    _getCollateralDustPricePrecisionAdjustment, 
+    _roundToScale,
+    _roundUpToScale
+} from 'src/base/PoolHelper.sol';
+import { _revertIfAuctionClearable } from 'src/base/RevertsHelper.sol';
 
 import { Loans }    from 'src/libraries/Loans.sol';
 import { Deposits } from 'src/libraries/Deposits.sol';
@@ -360,8 +364,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             collateral_,
             collateralDust
         );
-        // prevent caller from requesting an amount of collateral which costs 0 quote token
-        if (result.quoteTokenAmount / _getArgUint256(QUOTE_SCALE) == 0) revert DustAmountNotExceeded();
+        // round quote token up to cover the cost of purchasing the collateral
+        result.quoteTokenAmount = _roundUpToScale(result.quoteTokenAmount, _getArgUint256(QUOTE_SCALE));
 
         // update pool balances state
         uint256 t0PoolDebt      = poolBalances.t0Debt;
