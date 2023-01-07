@@ -6,10 +6,6 @@ pragma solidity 0.8.14;
  * @title Positions Manager Errors
  */
 interface IPositionManagerErrors {
-    /**
-     * @notice User failed to add liquidity in an index to their NFT.
-     */
-    error AddLiquidityFailed();
 
     /**
      * @notice User attempting to burn a LPB NFT before removing liquidity.

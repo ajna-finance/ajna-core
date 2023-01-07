@@ -9,11 +9,15 @@ import { IERC721 }   from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 import { IPool }            from './interfaces/IPool.sol';
 import { IPositionManager } from './interfaces/IPositionManager.sol';
 import { PositionManager }  from './PositionManager.sol';
-import { IRewardsManager }  from './interfaces/IRewardsManager.sol';
 
-import { IRewardsManagerOwnerActions } from './interfaces/rewards/IRewardsManagerOwnerActions.sol';
-import { IRewardsManagerDerivedState } from './interfaces/rewards/IRewardsManagerDerivedState.sol';
-import { Stake, BucketState }          from './interfaces/rewards/IRewardsManagerState.sol';
+import {
+    IRewardsManager,
+    IRewardsManagerOwnerActions,
+    IRewardsManagerState,
+    IRewardsManagerDerivedState
+} from './interfaces/IRewardsManager.sol';
+
+import { StakeInfo, BucketState } from './interfaces/rewards/IRewardsManagerState.sol';
 
 import { Maths } from '../libraries/Maths.sol';
 
@@ -58,7 +62,7 @@ contract RewardsManager is IRewardsManager {
     // Mapping of per pool bucket exchange rates at a given burn event.
     mapping(address => mapping(uint256 => mapping(uint256 => uint256))) internal bucketExchangeRates; // poolAddress => bucketIndex => epoch => bucket exchange rate
 
-    mapping(uint256 => Stake) internal stakes;  // tokenID => Stake info
+    mapping(uint256 => StakeInfo) internal stakes;  // tokenID => Stake info
 
     /******************/
     /*** Immutables ***/
@@ -73,11 +77,11 @@ contract RewardsManager is IRewardsManager {
 
     struct RewardsLocalVars {
         uint256 bucketIndex;    // index of current bucket to calculate rewards for
-        uint256 bucketRate;     // recorded exchange rate of current bucket
+        uint256 bucketRate;     // [RAY] recorded exchange rate of current bucket
         uint256 epoch;          // current epoch to calculate rewards for
         uint256 nextEpoch;      // next epoch to calculate rewards for
-        uint256 interestEarned; // interest earned on current epoch for the current bucket
-        uint256 newRewards;     // calculated rewards
+        uint256 interestEarned; // [WAD] interest earned on current epoch for the current bucket
+        uint256 newRewards;     // [WAD] calculated rewards
     }
 
     /*******************/
@@ -114,7 +118,7 @@ contract RewardsManager is IRewardsManager {
         // check that msg.sender is owner of tokenId
         if (IERC721(address(positionManager)).ownerOf(tokenId_) != msg.sender) revert NotOwnerOfDeposit();
 
-        Stake storage stakeInfo = stakes[tokenId_];
+        StakeInfo storage stakeInfo = stakes[tokenId_];
         stakeInfo.owner    = msg.sender;
         stakeInfo.ajnaPool = ajnaPool;
 
@@ -146,7 +150,7 @@ contract RewardsManager is IRewardsManager {
             unchecked { ++i; }
         }
 
-        emit StakeToken(msg.sender, ajnaPool, tokenId_);
+        emit Stake(msg.sender, ajnaPool, tokenId_);
 
         // transfer LP NFT to this contract
         IERC721(address(positionManager)).safeTransferFrom(msg.sender, address(this), tokenId_);
@@ -174,7 +178,7 @@ contract RewardsManager is IRewardsManager {
 
         delete stakes[tokenId_];
 
-        emit UnstakeToken(msg.sender, ajnaPool, tokenId_);
+        emit Unstake(msg.sender, ajnaPool, tokenId_);
 
         // transfer LP NFT from contract to sender
         IERC721(address(positionManager)).safeTransferFrom(address(this), msg.sender, tokenId_);
@@ -207,7 +211,7 @@ contract RewardsManager is IRewardsManager {
         );
     }
 
-    /// @inheritdoc IRewardsManagerDerivedState
+    /// @inheritdoc IRewardsManagerState
     function getStakeInfo(
         uint256 tokenId_
     ) external view override returns (address, address, uint256) {
@@ -385,7 +389,7 @@ contract RewardsManager is IRewardsManager {
         uint256 tokenId_,
         uint256 burnEpochToStartClaim_
     ) internal {
-        Stake storage stakeInfo = stakes[tokenId_];
+        StakeInfo storage stakeInfo = stakes[tokenId_];
 
         address ajnaPool = stakeInfo.ajnaPool;
 

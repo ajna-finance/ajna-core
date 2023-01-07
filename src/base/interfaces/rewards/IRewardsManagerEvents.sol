@@ -29,7 +29,7 @@ interface IRewardsManagerEvents {
      *  @param  ajnaPool Address of the Ajna pool the NFT corresponds to.
      *  @param  tokenId  ID of the staked NFT.
      */
-    event StakeToken(
+    event Stake(
         address indexed owner,
         address indexed ajnaPool,
         uint256 indexed tokenId
@@ -55,7 +55,7 @@ interface IRewardsManagerEvents {
      *  @param  ajnaPool Address of the Ajna pool the NFT corresponds to.
      *  @param  tokenId  ID of the staked NFT.
      */
-    event UnstakeToken(
+    event Unstake(
         address indexed owner,
         address indexed ajnaPool,
         uint256 indexed tokenId

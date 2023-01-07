@@ -41,9 +41,9 @@ contract RewardsManagerTest is DSTestPlus {
     ERC20Pool       internal _poolTwo;
 
     event ClaimRewards(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId, uint256[] epochsClaimed, uint256 amount);
-    event StakeToken(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
+    event Stake(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
     event UpdateExchangeRates(address indexed caller, address indexed ajnaPool, uint256[] indexesUpdated, uint256 rewardsClaimed);
-    event UnstakeToken(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
+    event Unstake(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
 
     uint256 constant BLOCKS_IN_DAY = 7200;
 
@@ -125,7 +125,7 @@ contract RewardsManagerTest is DSTestPlus {
         // approve and deposit NFT into rewards contract
         _positionManager.approve(address(_rewardsManager), tokenId_);
         vm.expectEmit(true, true, true, true);
-        emit StakeToken(owner_, address(pool_), tokenId_);
+        emit Stake(owner_, address(pool_), tokenId_);
         _rewardsManager.stake(tokenId_);
 
         // check token was transferred to rewards contract
@@ -151,7 +151,7 @@ contract RewardsManagerTest is DSTestPlus {
         vm.expectEmit(true, true, true, true);
         emit ClaimRewards(minter, pool,  tokenId, claimedArray, reward);
         vm.expectEmit(true, true, true, true);
-        emit UnstakeToken(minter, address(pool), tokenId);
+        emit Unstake(minter, address(pool), tokenId);
         _rewardsManager.unstake(tokenId);
         assertEq(_positionManager.ownerOf(tokenId), minter);
 
@@ -1142,7 +1142,7 @@ contract RewardsManagerTest is DSTestPlus {
         // check owner can withdraw the NFT
         changePrank(_minterOne);
         vm.expectEmit(true, true, true, true);
-        emit UnstakeToken(_minterOne, address(_poolOne), tokenIdOne);
+        emit Unstake(_minterOne, address(_poolOne), tokenIdOne);
         _rewardsManager.unstake(tokenIdOne);
         assertEq(_positionManager.ownerOf(tokenIdOne), _minterOne);
 
@@ -1194,7 +1194,7 @@ contract RewardsManagerTest is DSTestPlus {
         vm.expectEmit(true, true, true, true);
         emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 0), 18.085912173086791760 * 1e18);
         vm.expectEmit(true, true, true, true);
-        emit UnstakeToken(_minterOne, address(_poolOne), tokenIdOne);
+        emit Unstake(_minterOne, address(_poolOne), tokenIdOne);
         _rewardsManager.unstake(tokenIdOne);
         assertEq(_positionManager.ownerOf(tokenIdOne), _minterOne);
         assertEq(_ajnaToken.balanceOf(_minterOne), 18.085912173086791760 * 1e18);

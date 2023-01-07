@@ -36,13 +36,24 @@ interface IRewardsManagerState {
         uint256 epoch
     ) external view returns (uint256);
 
+    /**
+     *  @notice Retrieve information about a given stake.
+     *  @param  tokenId  ID of the NFT staked in the rewards contract to retrieve information about.
+     *  @return The owner of a given NFT stake.
+     *  @return The Pool the NFT represents positions in.
+     *  @return The last burn epoch in which the owner of the NFT interacted with the rewards contract.
+     */
+    function getStakeInfo(
+        uint256 tokenId
+    ) external view returns (address, address, uint256);
+
 }
 
 /*********************/
 /*** State Structs ***/
 /*********************/
 
-struct Stake {
+struct StakeInfo {
     address ajnaPool;                         // address of the Ajna pool the NFT corresponds to
     uint96  lastInteractionBurnEpoch;         // last burn event the stake interacted with the rewards contract
     address owner;                            // owner of the LP NFT
@@ -51,6 +62,6 @@ struct Stake {
 }
 
 struct BucketState {
-    uint256 lpsAtStakeTime;
-    uint256 rateAtStakeTime;
+    uint256 lpsAtStakeTime;  // [RAY] LP amount the NFT owner is entitled in current bucket at the time of staking
+    uint256 rateAtStakeTime; // [RAY] current bucket exchange rate at the time of staking (RAY)
 }

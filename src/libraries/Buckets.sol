@@ -12,7 +12,7 @@ library Buckets {
     /*** Events ***/
     /**************/
 
-    // See `IPoolEvents` for descriptions
+    // See `IPoolError` for descriptions
     error BucketBankruptcyBlock();
 
     /***********************************/

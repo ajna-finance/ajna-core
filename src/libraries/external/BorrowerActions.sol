@@ -39,21 +39,21 @@ library BorrowerActions {
     /*************************/
 
     struct DrawDebtLocalVars {
-        uint256 borrowerDebt; // borrower's accrued debt
-        uint256 debtChange;   // additional debt resulted from draw debt action
+        uint256 borrowerDebt; // [WAD] borrower's accrued debt
+        uint256 debtChange;   // [WAD] additional debt resulted from draw debt action
         bool    inAuction;    // true if loan is auctioned
         uint256 lupId;        // id of new LUP
         bool    stampT0Np;    // true if loan's t0 neutral price should be restamped (when drawing debt or pledge settles auction)
     }
     struct RepayDebtLocalVars {
-        uint256 borrowerDebt;          // borrower's accrued debt
+        uint256 borrowerDebt;          // [WAD] borrower's accrued debt
         bool    inAuction;             // true if loan still in auction after repay, false otherwise
-        uint256 newLup;                // LUP after repay debt action
+        uint256 newLup;                // [WAD] LUP after repay debt action
         bool    pull;                  // true if pull action
         bool    repay;                 // true if repay action
         bool    stampT0Np;             // true if loan's t0 neutral price should be restamped (when repay settles auction or pull collateral)
-        uint256 t0DebtInAuctionChange; // t0 change amount of debt after repayment
-        uint256 t0RepaidDebt;          // t0 debt repaid
+        uint256 t0DebtInAuctionChange; // [WAD] t0 change amount of debt after repayment
+        uint256 t0RepaidDebt;          // [WAD] t0 debt repaid
     }
 
     /**************/

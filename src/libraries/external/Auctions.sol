@@ -51,18 +51,18 @@ library Auctions {
 
     struct BucketTakeParams {
         address borrower;    // borrower address to take from
-        uint256 collateral;  // borrower available collateral to take
+        uint256 collateral;  // [WAD] borrower available collateral to take
         bool    depositTake; // deposit or arb take, used by bucket take
         uint256 index;       // bucket index, used by bucket take
-        uint256 inflator;    // current pool inflator
-        uint256 t0Debt;      // borrower t0 debt
+        uint256 inflator;    // [WAD] current pool inflator
+        uint256 t0Debt;      // [WAD] borrower t0 debt
     }
     struct TakeParams {
         address borrower;       // borrower address to take from
-        uint256 collateral;     // borrower available collateral to take
-        uint256 t0Debt;         // borrower t0 debt
-        uint256 takeCollateral; // desired amount to take
-        uint256 inflator;       // current pool inflator
+        uint256 collateral;     // [WAD] borrower available collateral to take
+        uint256 t0Debt;         // [WAD] borrower t0 debt
+        uint256 takeCollateral; // [WAD] desired amount to take
+        uint256 inflator;       // [WAD] current pool inflator
         uint256 poolType;       // pool type (ERC20 or NFT)
     }
 
@@ -71,60 +71,60 @@ library Auctions {
     /*************************/
 
     struct KickWithDepositLocalVars {
-        uint256 amountToDebitFromDeposit; // the amount of quote tokens used to kick and debited from lender deposit
-        uint256 bucketCollateral;         // amount of collateral in bucket
-        uint256 bucketDeposit;            // amount of quote tokens in bucket
-        uint256 bucketLPs;                // LPs of the bucket
-        uint256 bucketPrice;              // bucket price
-        uint256 bucketRate;               // bucket exchange rate
-        uint256 bucketScale;              // bucket scales
-        uint256 bucketUnscaledDeposit;    // unscaled amount of quote tokens in bucket
-        uint256 lenderLPs;                // LPs of lender in bucket
-        uint256 redeemedLPs;              // LPs used by kick action
+        uint256 amountToDebitFromDeposit; // [WAD] the amount of quote tokens used to kick and debited from lender deposit
+        uint256 bucketCollateral;         // [WAD] amount of collateral in bucket
+        uint256 bucketDeposit;            // [WAD] amount of quote tokens in bucket
+        uint256 bucketLPs;                // [RAY] LPs of the bucket
+        uint256 bucketPrice;              // [WAD] bucket price
+        uint256 bucketRate;               // [RAY] bucket exchange rate
+        uint256 bucketScale;              // [WAD] bucket scales
+        uint256 bucketUnscaledDeposit;    // [WAD] unscaled amount of quote tokens in bucket
+        uint256 lenderLPs;                // [RAY] LPs of lender in bucket
+        uint256 redeemedLPs;              // [RAY] LPs used by kick action
     }
     struct SettleLocalVars {
-        uint256 collateralUsed;    // collateral used to settle debt
-        uint256 debt;              // debt to settle
-        uint256 depositToRemove;   // deposit used by settle auction
+        uint256 collateralUsed;    // [WAD] collateral used to settle debt
+        uint256 debt;              // [WAD] debt to settle
+        uint256 depositToRemove;   // [WAD] deposit used by settle auction
         uint256 index;             // index of settling bucket
-        uint256 maxSettleableDebt; // max amount that can be settled with existing collateral
-        uint256 price;             // price of settling bucket
-        uint256 scaledDeposit;     // scaled amount of quote tokens in bucket
-        uint256 scale;             // scale of settling bucket
-        uint256 unscaledDeposit;   // unscaled amount of quote tokens in bucket
+        uint256 maxSettleableDebt; // [WAD] max amount that can be settled with existing collateral
+        uint256 price;             // [WAD] price of settling bucket
+        uint256 scaledDeposit;     // [WAD] scaled amount of quote tokens in bucket
+        uint256 scale;             // [WAD] scale of settling bucket
+        uint256 unscaledDeposit;   // [WAD] unscaled amount of quote tokens in bucket
     }
     struct TakeLocalVars {
-        uint256 auctionPrice;             // The price of auction.
-        uint256 bondChange;               // The change made on the bond size (beeing reward or penalty).
-        uint256 borrowerDebt;             // The accrued debt of auctioned borrower.
+        uint256 auctionPrice;             // [WAD] The price of auction.
+        uint256 bondChange;               // [WAD] The change made on the bond size (beeing reward or penalty).
+        uint256 borrowerDebt;             // [WAD] The accrued debt of auctioned borrower.
         int256  bpf;                      // The bond penalty factor.
-        uint256 bucketPrice;              // The bucket price.
-        uint256 bucketScale;              // The bucket scale.
-        uint256 collateralAmount;         // The amount of collateral taken.
-        uint256 excessQuoteToken;         // Difference of quote token that borrower receives after take (for fractional NFT only)
+        uint256 bucketPrice;              // [WAD] The bucket price.
+        uint256 bucketScale;              // [WAD] The bucket scale.
+        uint256 collateralAmount;         // [WAD] The amount of collateral taken.
+        uint256 excessQuoteToken;         // [WAD] Difference of quote token that borrower receives after take (for fractional NFT only)
         uint256 factor;                   // The take factor, calculated based on bond penalty factor.
         bool    isRewarded;               // True if kicker is rewarded (auction price lower than neutral price), false if penalized (auction price greater than neutral price).
         address kicker;                   // Address of auction kicker.
-        uint256 scaledQuoteTokenAmount;   // Unscaled quantity in Fenwick tree and before 1-bpf factor, paid for collateral
-        uint256 t0RepayAmount;            // The amount of debt (quote tokens) that is recovered / repayed by take t0 terms.
-        uint256 t0Debt;                   // Borrower's t0 debt.
-        uint256 t0DebtPenalty;            // Borrower's t0 penalty - 7% from current debt if intial take, 0 otherwise.
-        uint256 unscaledDeposit;          // Unscaled bucket quantity
-        uint256 unscaledQuoteTokenAmount; // The unscaled token amount that taker should pay for collateral taken.
+        uint256 scaledQuoteTokenAmount;   // [WAD] Unscaled quantity in Fenwick tree and before 1-bpf factor, paid for collateral
+        uint256 t0RepayAmount;            // [WAD] The amount of debt (quote tokens) that is recovered / repayed by take t0 terms.
+        uint256 t0Debt;                   // [WAD] Borrower's t0 debt.
+        uint256 t0DebtPenalty;            // [WAD] Borrower's t0 penalty - 7% from current debt if intial take, 0 otherwise.
+        uint256 unscaledDeposit;          // [WAD] Unscaled bucket quantity
+        uint256 unscaledQuoteTokenAmount; // [WAD] The unscaled token amount that taker should pay for collateral taken.
     }
     struct TakeLoanLocalVars {
-        uint256 repaidDebt;   // the amount of debt repaid to th epool by take auction
-        uint256 borrowerDebt; // the amount of borrower debt
+        uint256 repaidDebt;   // [WAD] the amount of debt repaid to th epool by take auction
+        uint256 borrowerDebt; // [WAD] the amount of borrower debt
         bool    inAuction;    // true if loan in auction
     }
     struct TakeFromLoanLocalVars {
-        uint256 borrowerDebt;          // borrower's accrued debt
+        uint256 borrowerDebt;          // [WAD] borrower's accrued debt
         bool    inAuction;             // true if loan still in auction after auction is taken, false otherwise
-        uint256 newLup;                // LUP after auction is taken
-        uint256 repaidDebt;            // debt repaid when auction is taken
-        uint256 t0DebtInAuction;       // t0 pool debt in auction
-        uint256 t0DebtInAuctionChange; // t0 change amount of debt after auction is taken
-        uint256 t0PoolDebt;            // t0 pool debt
+        uint256 newLup;                // [WAD] LUP after auction is taken
+        uint256 repaidDebt;            // [WAD] debt repaid when auction is taken
+        uint256 t0DebtInAuction;       // [WAD] t0 pool debt in auction
+        uint256 t0DebtInAuctionChange; // [WAD] t0 change amount of debt after auction is taken
+        uint256 t0PoolDebt;            // [WAD] t0 pool debt
     }
 
     /**************/

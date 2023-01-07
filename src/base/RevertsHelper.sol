@@ -16,7 +16,7 @@ import { Loans }    from '../libraries/Loans.sol';
 import { Deposits } from '../libraries/Deposits.sol';
 import { Maths }    from '../libraries/Maths.sol';
 
-    // See `IPoolEvents` for descriptions
+    // See `IPoolErrors` for descriptions
     error AuctionNotCleared();
     error AmountLTMinDebt();
     error DustAmountNotExceeded();

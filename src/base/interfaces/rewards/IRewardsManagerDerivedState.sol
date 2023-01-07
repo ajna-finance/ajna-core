@@ -18,15 +18,4 @@ interface IRewardsManagerDerivedState {
         uint256 startEpoch
     ) external returns (uint256);
 
-    /**
-     *  @notice Retrieve information about a given stake.
-     *  @param  tokenId  ID of the NFT staked in the rewards contract to retrieve information about.
-     *  @return The owner of a given NFT stake.
-     *  @return The Pool the NFT represents positions in.
-     *  @return The last burn epoch in which the owner of the NFT interacted with the rewards contract.
-     */
-    function getStakeInfo(
-        uint256 tokenId
-    ) external view returns (address, address, uint256);
-
 }

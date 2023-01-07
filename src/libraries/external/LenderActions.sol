@@ -30,23 +30,23 @@ library LenderActions {
     /*************************/
 
     struct MoveQuoteLocalVars {
-        uint256 amountToMove;
-        uint256 fromBucketPrice;
-        uint256 fromBucketLPs;
-        uint256 fromBucketDepositTime;
-        uint256 toBucketPrice;
-        uint256 toBucketBankruptcyTime;
-        uint256 ptp;
-        uint256 htp;
+        uint256 amountToMove;           // [WAD] Quote token amount to move between indexes.
+        uint256 fromBucketPrice;        // [WAD] Price of the bucket to move amount from.
+        uint256 fromBucketLPs;          // [RAY] Amount of LPs in the bucket to move amount from.
+        uint256 fromBucketDepositTime;  // Time of lender deposit in the bucket to move amount from.
+        uint256 toBucketPrice;          // [WAD] Price of the bucket to move amount to.
+        uint256 toBucketBankruptcyTime; // Time the bucket to move amount to was marked as insolvent.
+        uint256 ptp;                    // [WAD] Pool Threshold Price.
+        uint256 htp;                    // [WAD] Highest Threshold Price.
     }
     struct RemoveDepositParams {
-        uint256 depositConstraint;  // Constraint on deposit in quote token.
-        uint256 lpConstraint;       // Constraint in LPB terms.
-        uint256 bucketLPs;          // Total LPB in the bucket.
-        uint256 bucketCollateral;   // Claimable collateral in the bucket.
-        uint256 price;              // Price of bucket.
-        uint256 index;              // Bucket index.
-        uint256 dustLimit;          // Minimum amount of deposit which may reside in a bucket.
+        uint256 depositConstraint; // [WAD] Constraint on deposit in quote token.
+        uint256 lpConstraint;      // [RAY] Constraint in LPB terms.
+        uint256 bucketLPs;         // [RAY] Total LPB in the bucket.
+        uint256 bucketCollateral;  // [WAD] Claimable collateral in the bucket.
+        uint256 price;             // [WAD] Price of bucket.
+        uint256 index;             // Bucket index.
+        uint256 dustLimit;         // Minimum amount of deposit which may reside in a bucket.
     }
 
     /**************/
