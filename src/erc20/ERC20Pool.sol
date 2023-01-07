@@ -50,6 +50,11 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         return _getArgUint256(COLLATERAL_SCALE);
     }
 
+    /// @inheritdoc IERC20PoolImmutables
+    function collateralDust(uint256 bucketIndex) external view override returns (uint256) {
+        return _collateralDust(bucketIndex);
+    }
+
     /***********************************/
     /*** Borrower External Functions ***/
     /***********************************/
@@ -62,6 +67,9 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         uint256 collateralToPledge_
     ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
+
+        // ensure the borrower is not credited with a fractional amount of collateral smaller than the token scale
+        collateralToPledge_ = _roundToScale(collateralToPledge_, _collateralDust(0));
 
         DrawDebtResult memory result = BorrowerActions.drawDebt(
             auctions,
@@ -100,7 +108,6 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             // move borrowed amount from pool to sender
             _transferQuoteToken(msg.sender, amountToBorrow_);
         }
-
     }
 
     /// @inheritdoc IERC20PoolBorrowerActions
@@ -119,7 +126,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             poolState,
             borrowerAddress_,
             maxQuoteTokenAmountToRepay_,
-            collateralAmountToPull_
+            collateralAmountToPull_,
+            _collateralDust(0)
         );
 
         emit RepayDebt(borrowerAddress_, result.quoteTokenToRepay, collateralAmountToPull_, result.newLup);
@@ -198,25 +206,29 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
     /// @inheritdoc IERC20PoolLenderActions
     function addCollateral(
-        uint256 collateralAmountToAdd_,
+        uint256 amountToAdd_,
         uint256 index_
     ) external override nonReentrant returns (uint256 bucketLPs_) {
         PoolState memory poolState = _accruePoolInterest();
 
+        // revert if the dust amount was not exceeded, but round on the scale amount
+        if (amountToAdd_ != 0 && amountToAdd_ < _collateralDust(index_)) revert DustAmountNotExceeded();
+        amountToAdd_ = _roundToScale(amountToAdd_, _getArgUint256(COLLATERAL_SCALE));
+
         bucketLPs_ = LenderActions.addCollateral(
             buckets,
             deposits,
-            collateralAmountToAdd_,
+            amountToAdd_,
             index_
         );
 
-        emit AddCollateral(msg.sender, index_, collateralAmountToAdd_, bucketLPs_);
+        emit AddCollateral(msg.sender, index_, amountToAdd_, bucketLPs_);
 
         // update pool interest rate state
         _updateInterestState(poolState, _lup(poolState.debt));
 
         // move required collateral from sender to pool
-        _transferCollateralFrom(msg.sender, collateralAmountToAdd_);
+        _transferCollateralFrom(msg.sender, amountToAdd_);
     }
 
     /// @inheritdoc IPoolLenderActions
@@ -232,7 +244,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             buckets,
             deposits,
             maxAmount_,
-            index_
+            index_,
+            _collateralDust(index_)
         );
 
         emit RemoveCollateral(msg.sender, index_, collateralAmount_, lpAmount_);
@@ -305,8 +318,11 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             loans,
             poolState,
             borrowerAddress_,
-            collateral_
+            collateral_,
+            _collateralDust(0)
         );
+        // prevent caller from requesting an amount of collateral which costs 0 quote token
+        if (result.quoteTokenAmount / _getArgUint256(QUOTE_SCALE) == 0) revert DustAmountNotExceeded();
 
         // update pool balances state
         uint256 t0PoolDebt      = poolBalances.t0Debt;
@@ -395,4 +411,12 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     function _transferCollateral(address to_, uint256 amount_) internal {
         IERC20(_getArgAddress(COLLATERAL_ADDRESS)).safeTransfer(to_, amount_ / _getArgUint256(COLLATERAL_SCALE));
     }
+
+    function _collateralDust(uint256 bucketIndex) internal view returns (uint256) {
+        // price precision adjustment will always be 0 for encumbered collateral
+        uint256 pricePrecisionAdjustment = _getCollateralDustPricePrecisionAdjustment(bucketIndex);
+        // difference between the normalized scale and the collateral token's scale
+        uint256 scaleExponent            = 18 - IERC20Token(_getArgAddress(COLLATERAL_ADDRESS)).decimals();
+        return 10 ** Maths.max(scaleExponent, pricePrecisionAdjustment);
+    } 
 }

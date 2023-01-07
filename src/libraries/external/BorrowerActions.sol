@@ -50,6 +50,10 @@ library BorrowerActions {
      */
     error BorrowerUnderCollateralized();
     /**
+     *  @notice User attempted a deposit which does not exceed the dust amount, or a withdrawal which leaves behind less than the dust amount.
+     */
+    error DustAmountNotExceeded();
+    /**
      *  @notice User is attempting to move or pull more collateral than is available.
      */
     error InsufficientCollateral();
@@ -184,7 +188,8 @@ library BorrowerActions {
         PoolState calldata poolState_,
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
-        uint256 collateralAmountToPull_
+        uint256 collateralAmountToPull_,
+        uint256 collateralDustLimit_
     ) external returns (
         RepayDebtResult memory result_
     ) {
@@ -202,6 +207,7 @@ library BorrowerActions {
         if (vars.repay) {
             if (borrower.t0Debt == 0) revert NoDebt();
 
+            // FIXME: division overflows when passed type(uint256).max
             result_.t0RepaidDebt = Maths.min(
                 borrower.t0Debt,
                 Maths.wdiv(maxQuoteTokenAmountToRepay_, poolState_.inflator)
@@ -265,6 +271,9 @@ library BorrowerActions {
 
             borrower.collateral    -= collateralAmountToPull_;
             result_.poolCollateral -= collateralAmountToPull_;
+
+            // ensure borrower does not leave behind a collateral balance which cannot be pulled
+            if (borrower.collateral != 0 && borrower.collateral < collateralDustLimit_) revert DustAmountNotExceeded();
         }
 
         // calculate LUP if repay is called with 0 amount

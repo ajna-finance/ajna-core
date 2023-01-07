@@ -139,7 +139,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             poolState,
             borrowerAddress_,
             maxQuoteTokenAmountToRepay_,
-            Maths.wad(noOfNFTsToPull_)
+            Maths.wad(noOfNFTsToPull_),
+            0
         );
 
         emit RepayDebt(borrowerAddress_, result.quoteTokenToRepay, noOfNFTsToPull_, result.newLup);
@@ -320,7 +321,8 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
             loans,
             poolState,
             borrowerAddress_,
-            Maths.wad(collateral_)
+            Maths.wad(collateral_),
+            0
         );
 
         // update pool balances state

@@ -198,7 +198,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
 
         vm.expectEmit(true, true, false, true);
         emit DrawDebtNFT(from, amount, emptyArray, newLup);
-        _assertTokenTransferEvent(address(_pool), from, amount);
+        _assertQuoteTokenTransferEvent(address(_pool), from, amount);
 
         ERC721Pool(address(_pool)).drawDebt(from, amount, indexLimit, emptyArray);
 
@@ -232,7 +232,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
 
         // borrow quote
         if (amountToBorrow != 0) {
-            _assertTokenTransferEvent(address(_pool), from, amountToBorrow);
+            _assertQuoteTokenTransferEvent(address(_pool), from, amountToBorrow);
         }
 
         ERC721Pool(address(_pool)).drawDebt(borrower, amountToBorrow, limitIndex, tokenIds);
@@ -316,7 +316,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
 
         // repay checks
         if (amountToRepay != 0) {
-            _assertTokenTransferEvent(from, address(_pool), amountRepaid);
+            _assertQuoteTokenTransferEvent(from, address(_pool), amountRepaid);
         }
 
         // pre pull checks
