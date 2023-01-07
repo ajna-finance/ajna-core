@@ -182,7 +182,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         uint256 startBucketId       = bound(uint256(startBucketId_),               1000, 6388);
         init(boundColPrecision, boundQuotePrecision);
         addLiquidity(startBucketId);
-        uint256 collateralDust = ERC20Pool(address(_pool)).collateralDust(0);
+        uint256 collateralDust = ERC20Pool(address(_pool)).bucketCollateralDust(0);
 
         // Borrow everything from the first bucket, with origination fee tapping into the second bucket
         drawDebt(_borrower, 50_000 * 1e18, 1.01 * 1e18);

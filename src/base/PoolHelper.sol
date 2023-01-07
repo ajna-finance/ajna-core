@@ -156,19 +156,20 @@ import { Maths }   from 'src/libraries/Maths.sol';
 
     /**
      *  @notice Price precision adjustment used in calculating collateral dust for a bucket.
-     *          To ensure the accuracy of the exchange rate calculation, buckets with smaller prices require 
+     *          To ensure the accuracy of the exchange rate calculation, buckets with smaller prices require
      *          larger minimum amounts of collateral.  This formula imposes a lower bound independent of token scale.
-     *  @param  bucketIndex_ Index of the bucket, or 0 for encumbered collateral with no bucket affinity.
-     *  @return Unscaled integer of the minimum number of decimal places the dust limit requires.
+     *  @param  bucketIndex_              Index of the bucket, or 0 for encumbered collateral with no bucket affinity.
+     *  @return pricePrecisionAdjustment_ Unscaled integer of the minimum number of decimal places the dust limit requires.
      */
     function _getCollateralDustPricePrecisionAdjustment(
         uint256 bucketIndex_
-    ) pure returns (uint256) {
-        // conditional is a gas optimization; formula also returns 0 in this case
-        if (bucketIndex_ <= 3900) return 0;
-        int256 bucketOffset = int256(bucketIndex_ - 3900);
-        int256 result = PRBMathSD59x18.sqrt(PRBMathSD59x18.div(bucketOffset * 1e18, int256(36 * 1e18)));
-        return uint256(result / 1e18);
+    ) pure returns (uint256 pricePrecisionAdjustment_) {
+        // conditional is a gas optimization
+        if (bucketIndex_ > 3900) {
+            int256 bucketOffset = int256(bucketIndex_ - 3900);
+            int256 result = PRBMathSD59x18.sqrt(PRBMathSD59x18.div(bucketOffset * 1e18, int256(36 * 1e18)));
+            pricePrecisionAdjustment_ = uint256(result / 1e18);
+        }
     }
 
     /**
