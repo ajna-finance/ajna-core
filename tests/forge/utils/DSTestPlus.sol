@@ -1175,16 +1175,6 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.take(borrower, maxCollateral, from, new bytes(0));
     }
 
-    function _assertTakeDustRevert(
-        address from,
-        address borrower,
-        uint256 maxCollateral
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
-        _pool.take(borrower, maxCollateral, from, new bytes(0));
-    }
-
     function _assertTakeInsufficentCollateralRevert(
         address from,
         address borrower,
