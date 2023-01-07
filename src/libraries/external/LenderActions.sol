@@ -588,8 +588,9 @@ library LenderActions {
 
         // update bucket LPs and collateral balance
         bucketLPs         -= Maths.min(bucketLPs, lpAmount_);
-        bucket.collateral -= Maths.min(bucketCollateral, collateralAmount_);
-        if (bucket.collateral == 0 && bucketDeposit == 0 && bucketLPs != 0) {
+        bucketCollateral  -= Maths.min(bucketCollateral, collateralAmount_);
+        bucket.collateral  = bucketCollateral;
+        if (bucketCollateral == 0 && bucketDeposit == 0 && bucketLPs != 0) {
             emit BucketBankruptcy(index_, bucketLPs);
             bucket.lps            = 0;
             bucket.bankruptcyTime = block.timestamp;
