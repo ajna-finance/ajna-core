@@ -694,6 +694,48 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         _collateral.approve(address(_pool), type(uint256).max);
         vm.prank(operator_);
         _quote.approve(address(_pool), type(uint256).max);
-
     }
+
+}
+
+abstract contract ERC20FuzzyHelperContract is ERC20DSTestPlus {
+
+    using EnumerableSet for EnumerableSet.AddressSet;
+
+    uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
+
+    uint  internal _anonBorrowerCount = 0;
+    Token internal _collateral;
+    Token internal _quote;
+
+    ERC20PoolFactory internal _poolFactory;
+
+    constructor() {
+        _collateral  = new Token("Collateral", "C");
+        _quote       = new Token("Quote", "Q");
+        _poolFactory = new ERC20PoolFactory(_ajna);
+        _pool        = ERC20Pool(_poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
+        _poolUtils   = new PoolInfoUtils();
+        _startTime   = block.timestamp;
+    }
+
+    function _mintQuoteAndApproveTokens(address operator_, uint256 mintAmount_) internal {
+        deal(address(_quote), operator_, mintAmount_);
+
+        vm.prank(operator_);
+        _quote.approve(address(_pool), type(uint256).max);
+        vm.prank(operator_);
+        _collateral.approve(address(_pool), type(uint256).max);
+    }
+
+    function _mintCollateralAndApproveTokens(address operator_, uint256 mintAmount_) internal {
+        deal(address(_collateral), operator_, mintAmount_);
+
+        vm.prank(operator_);
+        _collateral.approve(address(_pool), type(uint256).max);
+        vm.prank(operator_);
+        _quote.approve(address(_pool), type(uint256).max);
+    }
+
+
 }

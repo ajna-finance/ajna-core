@@ -164,7 +164,7 @@ contract FenwickTreeTest is DSTestPlus {
 
         _tree.fuzzyFill(insertions_, totalAmount_, false);
 
-        uint256 scaleIndex = bound(scaleIndex_, 2, 8191);
+        uint256 scaleIndex = bound(scaleIndex_, 2, 7388);
         uint256 subIndex = randomInRange(0, scaleIndex - 1);
         uint256 factor = bound(factor_, 1 * 1e18, 5 * 1e18);
 

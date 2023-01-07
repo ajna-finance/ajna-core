@@ -1290,48 +1290,6 @@ contract AjnaRewardsTest is DSTestPlus {
     /*** FUZZ TESTING ***/
     /********************/
 
-    function _randomIndex() internal view returns (uint256) {
-        // calculate a random index between 1 and 7388
-        return 1 + uint256(keccak256(abi.encodePacked(block.number, block.difficulty))) % 7387;
-    }
-
-    function _findHighestIndexPrice(uint256[] memory indexes) internal pure returns (uint256 highestIndex_) {
-        highestIndex_ = 7388;
-        // highest index corresponds to lowest price
-        for (uint256 i = 0; i < indexes.length; ++i) {
-            if (indexes[i] < highestIndex_) {
-                highestIndex_ = indexes[i];
-            }
-        }
-    }
-
-    function _findLowestIndexPrice(uint256[] memory indexes) internal pure returns (uint256 lowestIndex_) {
-        lowestIndex_ = 1;
-        // lowest index corresponds to highest price
-        for (uint256 i = 0; i < indexes.length; ++i) {
-            if (indexes[i] > lowestIndex_) {
-                lowestIndex_ = indexes[i];
-            }
-        }
-    }
-
-    // calculates a limit index leaving one index above the htp to accrue interest
-    function _findSecondLowestIndexPrice(uint256[] memory indexes) internal pure returns (uint256 secondLowestIndex_) {
-        secondLowestIndex_ = 1;
-        uint256 lowestIndex = secondLowestIndex_;
-
-        // lowest index corresponds to highest price
-        for (uint256 i = 0; i < indexes.length; ++i) {
-            if (indexes[i] > lowestIndex) {
-                secondLowestIndex_ = lowestIndex;
-                lowestIndex = indexes[i];
-            }
-            else if (indexes[i] > secondLowestIndex_) {
-                secondLowestIndex_ = indexes[i];
-            }
-        }
-    }
-
     function _requiredCollateral(ERC20Pool pool_, uint256 borrowAmount, uint256 indexPrice) internal view returns (uint256 requiredCollateral_) {
         // calculate the required collateral based upon the borrow amount and index price
         (uint256 interestRate, ) = pool_.interestRateInfo();
@@ -1348,7 +1306,6 @@ contract AjnaRewardsTest is DSTestPlus {
         uint256[] memory depositIndexes = new uint256[](indexes);
         for (uint256 i = 0; i < indexes; ++i) {
             depositIndexes[i] = _randomIndex();
-            vm.roll(block.number + 1); // advance block to ensure that the index price is different
         }
         MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
             indexes: depositIndexes,
@@ -1356,8 +1313,9 @@ contract AjnaRewardsTest is DSTestPlus {
             mintAmount: mintAmount,
             pool: _poolOne
         });
-
         uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+
+        // stake NFT
         _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
 
         // calculates a limit index leaving one index above the htp to accrue interest

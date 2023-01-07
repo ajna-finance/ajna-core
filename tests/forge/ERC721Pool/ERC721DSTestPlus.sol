@@ -644,6 +644,73 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     }
 }
 
+abstract contract ERC721FuzzyHelperContract is ERC721DSTestPlus {
+
+    uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
+
+    ERC721PoolFactory internal _poolFactory;
+
+    constructor() {
+        _collateral = new NFTCollateralToken();
+        _quote      = new Token("Quote", "Q");
+        _ajnaToken  = ERC20(_ajna);
+        _poolUtils  = new PoolInfoUtils();
+        _poolFactory = new ERC721PoolFactory(_ajna);
+    }
+
+    function _deployCollectionPool() internal returns (ERC721Pool) {
+        _startTime = block.timestamp;
+        uint256[] memory tokenIds;
+        address contractAddress = _poolFactory.deployPool(address(_collateral), address(_quote), tokenIds, 0.05 * 10**18);
+        return ERC721Pool(contractAddress);
+    }
+
+    function _deploySubsetPool(uint256[] memory subsetTokenIds_) internal returns (ERC721Pool) {
+        _startTime = block.timestamp;
+        return ERC721Pool(_poolFactory.deployPool(address(_collateral), address(_quote), subsetTokenIds_, 0.05 * 10**18));
+    }
+
+    function _mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) internal {
+        deal(address(_quote), operator_, mintAmount_);
+        vm.prank(operator_);
+        _quote.approve(address(_pool), type(uint256).max);
+    }
+
+    function _mintAndApproveCollateralTokens(address operator_, uint256 mintAmount_) internal {
+        _collateral.mint(operator_, mintAmount_);
+        vm.prank(operator_);
+        _collateral.setApprovalForAll(address(_pool), true);
+    }
+
+    function _mintAndApproveAjnaTokens(address operator_, uint256 mintAmount_) internal {
+        deal(_ajna, operator_, mintAmount_);
+        vm.prank(operator_);
+        _ajnaToken.approve(address(_pool), type(uint256).max);
+    }
+
+    // create an array of NFT's to add to a pool based upon the number of NFT's required for collateralization
+    function _NFTTokenIdsToAdd(address borrower_, uint256 requiredCollateral_) internal returns (uint256[] memory tokenIds_) {
+        changePrank(borrower_);
+        tokenIds_ = new uint256[](requiredCollateral_);
+        for (uint i = 0; i < requiredCollateral_; ++i) {
+            vm.stopPrank();
+            _mintAndApproveCollateralTokens(borrower_, 1);
+            tokenIds_[i] = _collateral.totalSupply();
+        }
+    }
+
+    function _requiredCollateralNFT(uint256 borrowAmount, uint256 indexPrice) internal view returns (uint256 requiredCollateral_) {
+        // calculate the required collateral based upon the borrow amount and index price
+        (uint256 interestRate, ) = _pool.interestRateInfo();
+        uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient
+        uint256 expectedDebt = Maths.wmul(borrowAmount, _feeRate(newInterestRate) + Maths.WAD);
+
+        // get an integer amount rounding up
+        requiredCollateral_ = 1 + Maths.wdiv(expectedDebt, _poolUtils.indexToPrice(indexPrice)) / 1e18;
+    }
+
+}
+
     /**
      * @notice Convert a WAD to an integer, rounding down
      */
