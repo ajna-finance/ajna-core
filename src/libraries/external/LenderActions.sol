@@ -2,11 +2,20 @@
 
 pragma solidity 0.8.14;
 
-import { AddQuoteParams, MoveQuoteParams, RemoveQuoteParams, PoolState } from '../../base/interfaces/IPool.sol';
+import { AddQuoteParams, MoveQuoteParams, RemoveQuoteParams } from 'src/base/interfaces/pool/IPoolInternals.sol';
 
-import '../Deposits.sol';
-import '../Buckets.sol';
-import '../../base/PoolHelper.sol';
+import {
+    Bucket,
+    DepositsState,
+    Lender,
+    PoolState
+} from 'src/base/interfaces/pool/IPoolState.sol';
+
+import { _feeRate, _priceAt, _ptp, MAX_FENWICK_INDEX } from 'src/base/PoolHelper.sol';
+
+import { Deposits } from 'src/libraries/Deposits.sol';
+import { Buckets }  from 'src/libraries/Buckets.sol';
+import { Maths }    from 'src/libraries/Maths.sol';
 
 /**
     @notice External library containing logic for common lender actions.
@@ -401,13 +410,15 @@ library LenderActions {
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
         uint256 maxAmount_,
-        uint256 index_
+        uint256 index_,
+        uint256 dustLimit_
     ) external returns (uint256, uint256) {
         return _removeMaxCollateral(
             buckets_,
             deposits_,
             maxAmount_,
-            index_
+            index_,
+            dustLimit_
         );
     }
 
@@ -434,7 +445,8 @@ library LenderActions {
                 buckets_,
                 deposits_,
                 collateralRemaining,
-                fromIndex
+                fromIndex,
+                0
             );
 
             collateralToMerge_ += collateralRemoved;
@@ -521,7 +533,8 @@ library LenderActions {
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
         uint256 maxAmount_,
-        uint256 index_
+        uint256 index_,
+        uint256 dustLimit_
     ) internal returns (uint256 collateralAmount_, uint256 lpAmount_) {
         Bucket storage bucket = buckets_[index_];
 
@@ -562,6 +575,9 @@ library LenderActions {
         // update bucket LPs and collateral balance
         bucket.lps        -= Maths.min(bucketLPs, lpAmount_);
         bucket.collateral -= Maths.min(bucketCollateral, collateralAmount_);
+
+        // ensure a lender does not leave an amount which breaks exchange rate or is below token scale
+        if (bucket.collateral != 0 && bucket.collateral < dustLimit_) revert DustAmountNotExceeded();
     }
 
 

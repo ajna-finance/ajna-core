@@ -41,7 +41,7 @@ interface IPoolErrors {
     error CannotMergeToHigherPrice();
 
     /**
-     *  @notice User attempted a deposit which does not exceed the dust amount, or a withdrawal which leaves behind less than the dust amount.
+     *  @notice User attempted an operation which does not exceed the dust amount, or leaves behind less than the dust amount.
      */
     error DustAmountNotExceeded();
 

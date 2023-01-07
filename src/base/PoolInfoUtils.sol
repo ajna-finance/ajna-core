@@ -2,11 +2,26 @@
 
 pragma solidity 0.8.14;
 
-import './interfaces/IPool.sol';
+import { IPool, IERC20Token } from 'src/base/interfaces/IPool.sol';
 
-import '../libraries/external/Auctions.sol';
-import '../libraries/Buckets.sol';
-import '../libraries/external/PoolCommons.sol';
+import {
+    _claimableReserves,
+    _feeRate,
+    _indexOf,
+    _lpsToCollateral,
+    _lpsToQuoteToken,
+    _minDebtAmount,
+    _priceAt,
+    _reserveAuctionPrice,
+    MAX_FENWICK_INDEX,
+    MIN_PRICE
+} from 'src/base/PoolHelper.sol';
+
+import { Buckets } from 'src/libraries/Buckets.sol';
+import { Maths }   from 'src/libraries/Maths.sol';
+
+import { Auctions }    from 'src/libraries/external/Auctions.sol';
+import { PoolCommons } from 'src/libraries/external/PoolCommons.sol';
 
 contract PoolInfoUtils {
 
@@ -304,6 +319,31 @@ contract PoolInfoUtils {
         (uint256 inflatorSnapshot, )    = pool.inflatorInfo();
 
         return Maths.wmul(maxThresholdPrice, inflatorSnapshot);
+    }
+
+    function momp(
+        address ajnaPool_
+    ) external view returns (uint256) {
+        IPool pool = IPool(ajnaPool_);
+
+        (uint256 debt, , )       = pool.debtInfo();
+        ( , , uint256 noOfLoans) = pool.loansInfo();
+        return _priceAt(pool.depositIndex(Maths.wdiv(debt, noOfLoans * 1e18)));
+    }
+
+    /**
+     *  @notice Calculates fee rate for a pool.
+     *  @notice Calculated as greater of the current annualized interest rate divided by 52 (one week of interest) or 5 bps.
+     *  @return Fee rate applied to the given interest rate.
+     */
+    function feeRate(
+        address ajnaPool_
+    ) external view returns (uint256) {
+        IPool pool = IPool(ajnaPool_);
+
+        (uint256 interestRate,) = pool.interestRateInfo();
+
+        return _feeRate(interestRate);
     }
 
     /**
