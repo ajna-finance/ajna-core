@@ -4,15 +4,18 @@ pragma solidity 0.8.14;
 
 import { IERC20 }    from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
+import { IERC721 }   from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 
-import { IPool }            from './interfaces/IPool.sol';
-import { IPositionManager } from './interfaces/IPositionManager.sol';
-import { PositionManager }  from './PositionManager.sol';
+import { IPool }            from 'src/base/interfaces/IPool.sol';
+import { IPositionManager } from 'src/base/interfaces/IPositionManager.sol';
+import { PositionManager }  from 'src/base/PositionManager.sol';
+import { IRewardsManager }  from 'src/base/interfaces/IRewardsManager.sol';
 
-import '../libraries/Maths.sol';
+import { IRewardsManagerOwnerActions } from 'src/base/interfaces/rewards/IRewardsManagerOwnerActions.sol';
+import { IRewardsManagerDerivedState } from 'src/base/interfaces/rewards/IRewardsManagerDerivedState.sol';
+import { Stake, BucketState }          from 'src/base/interfaces/rewards/IRewardsManagerState.sol';
 
-import './interfaces/IRewardsManager.sol';
+import { Maths } from 'src/libraries/Maths.sol';
 
 contract RewardsManager is IRewardsManager {
 
@@ -346,7 +349,6 @@ contract RewardsManager is IRewardsManager {
         uint256 nextEpoch_,
         uint256 epoch_
     ) internal view returns (uint256 newRewards_) {
-
         (
             ,
             // total interest accumulated by the pool over the claim period
@@ -383,7 +385,6 @@ contract RewardsManager is IRewardsManager {
         uint256 tokenId_,
         uint256 burnEpochToStartClaim_
     ) internal {
-
         Stake storage stakeInfo = stakes[tokenId_];
 
         address ajnaPool = stakeInfo.ajnaPool;

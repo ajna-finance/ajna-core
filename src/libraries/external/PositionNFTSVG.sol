@@ -2,9 +2,8 @@
 
 pragma solidity 0.8.14;
 
-import '@openzeppelin/contracts/utils/Strings.sol';
-
-import { Base64 } from '@base64-sol/base64.sol';
+import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
+import { Base64 }  from '@base64-sol/base64.sol';
 
 library PositionNFTSVG {
 

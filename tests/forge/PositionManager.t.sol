@@ -10,6 +10,8 @@ import 'src/base/interfaces/IPositionManager.sol';
 import 'src/base/PositionManager.sol';
 import 'src/libraries/SafeTokenNamer.sol';
 
+import 'src/base/interfaces/pool/IPoolErrors.sol';
+
 import './utils/ContractNFTRecipient.sol';
 
 abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract {

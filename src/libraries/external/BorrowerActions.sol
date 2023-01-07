@@ -3,19 +3,25 @@
 pragma solidity 0.8.14;
 
 import {
-    PoolState,
-    DepositsState,
     AuctionsState,
-    DrawDebtResult,
-    RepayDebtResult
-} from '../../base/interfaces/IPool.sol';
+    Borrower,
+    Bucket,
+    DepositsState,
+    LoansState,
+    PoolState
+} from 'src/base/interfaces/pool/IPoolState.sol';
 
-import { _revertOnMinDebt } from '../../base/RevertsHelper.sol';
+import { DrawDebtResult, RepayDebtResult } from 'src/base/interfaces/pool/IPoolInternals.sol';
 
-import './Auctions.sol';
-import '../Buckets.sol';
-import '../Deposits.sol';
-import '../Loans.sol';
+import { _revertOnMinDebt }                      from 'src/base/RevertsHelper.sol';
+import { _feeRate, _priceAt, _isCollateralized } from 'src/base/PoolHelper.sol';
+
+import { Buckets }  from 'src/libraries/Buckets.sol';
+import { Deposits } from 'src/libraries/Deposits.sol';
+import { Loans }    from 'src/libraries/Loans.sol';
+import { Maths }    from 'src/libraries/Maths.sol';
+
+import { Auctions } from 'src/libraries/external/Auctions.sol';
 
 /**
     @notice External library containing logic for common borrower actions.
@@ -51,6 +57,7 @@ library BorrowerActions {
     // See `IPoolErrors` for descriptions
     error BorrowerNotSender();
     error BorrowerUnderCollateralized();
+    error DustAmountNotExceeded();
     error InsufficientCollateral();
     error LimitIndexReached();
     error NoDebt();
@@ -229,7 +236,8 @@ library BorrowerActions {
         PoolState calldata poolState_,
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
-        uint256 collateralAmountToPull_
+        uint256 collateralAmountToPull_,
+        uint256 collateralDustLimit_
     ) external returns (
         RepayDebtResult memory result_
     ) {
@@ -247,6 +255,7 @@ library BorrowerActions {
         if (vars.repay) {
             if (borrower.t0Debt == 0) revert NoDebt();
 
+            // FIXME: division overflows when passed type(uint256).max
             result_.t0RepaidDebt = Maths.min(
                 borrower.t0Debt,
                 Maths.wdiv(maxQuoteTokenAmountToRepay_, poolState_.inflator)
@@ -310,6 +319,9 @@ library BorrowerActions {
 
             borrower.collateral    -= collateralAmountToPull_;
             result_.poolCollateral -= collateralAmountToPull_;
+
+            // ensure borrower does not leave behind a collateral balance which cannot be pulled
+            if (borrower.collateral != 0 && borrower.collateral < collateralDustLimit_) revert DustAmountNotExceeded();
         }
 
         // calculate LUP if repay is called with 0 amount

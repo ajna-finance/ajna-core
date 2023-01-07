@@ -2,10 +2,18 @@
 
 pragma solidity 0.8.14;
 
-import { Borrower, AuctionsState, DepositsState, LoansState, Loan } from '../base/interfaces/IPool.sol';
+import {
+    AuctionsState,
+    Borrower,
+    DepositsState,
+    Loan,
+    LoansState
+} from 'src/base/interfaces/pool/IPoolState.sol';
 
-import './Deposits.sol';
-import './Maths.sol';
+import { _priceAt } from 'src/base/PoolHelper.sol';
+
+import { Deposits } from 'src/libraries/Deposits.sol';
+import { Maths }    from 'src/libraries/Maths.sol';
 
 library Loans {
 

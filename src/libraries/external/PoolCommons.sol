@@ -4,13 +4,14 @@ pragma solidity 0.8.14;
 
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
-import { InterestState, PoolState, DepositsState } from '../../base/interfaces/IPool.sol';
+import { InterestState, PoolState, DepositsState } from 'src/base/interfaces/pool/IPoolState.sol';
 
-import '../Deposits.sol';
-import '../Buckets.sol';
-import '../Loans.sol';
+import { _indexOf, _ptp, MAX_FENWICK_INDEX, MIN_PRICE, MAX_PRICE } from 'src/base/PoolHelper.sol';
 
-import '../../base/PoolHelper.sol';
+import { Deposits } from 'src/libraries/Deposits.sol';
+import { Buckets }  from 'src/libraries/Buckets.sol';
+import { Loans }    from 'src/libraries/Loans.sol';
+import { Maths }    from 'src/libraries/Maths.sol';
 
 /**
     @notice External library containing logic for common pool functionality:
