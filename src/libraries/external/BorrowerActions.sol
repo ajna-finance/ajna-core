@@ -63,7 +63,6 @@ library BorrowerActions {
     // See `IPoolErrors` for descriptions
     error BorrowerNotSender();
     error BorrowerUnderCollateralized();
-    error DustAmountNotExceeded();
     error InsufficientCollateral();
     error LimitIndexReached();
     error NoDebt();
@@ -91,7 +90,6 @@ library BorrowerActions {
      *              - borrower not sender BorrowerNotSender()
      *              - borrower debt less than pool min debt AmountLTMinDebt()
      *              - limit price reached LimitIndexReached()
-     *              - borrower debt under dust limit DustAmountNotExceeded()
      *              - borrower cannot draw more debt BorrowerUnderCollateralized()
      *  @dev    emit events:
      *              - Auctions._settleAuction:
@@ -242,8 +240,7 @@ library BorrowerActions {
         PoolState calldata poolState_,
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
-        uint256 collateralAmountToPull_,
-        uint256 collateralDustLimit_
+        uint256 collateralAmountToPull_
     ) external returns (
         RepayDebtResult memory result_
     ) {
@@ -325,9 +322,6 @@ library BorrowerActions {
 
             borrower.collateral    -= collateralAmountToPull_;
             result_.poolCollateral -= collateralAmountToPull_;
-
-            // ensure borrower does not leave behind a collateral balance which cannot be pulled
-            if (borrower.collateral != 0 && borrower.collateral < collateralDustLimit_) revert DustAmountNotExceeded();
         }
 
         // calculate LUP if repay is called with 0 amount

@@ -367,7 +367,6 @@
 	- BorrowerActions.drawDebt()
 		- borrower not sender BorrowerNotSender()
 		- borrower debt less than pool min debt AmountLTMinDebt()
-		- borrower debt under dust limit DustAmountNotExceeded()
 		- limit price reached LimitIndexReached()
 		- borrower cannot draw more debt BorrowerUnderCollateralized()
 
