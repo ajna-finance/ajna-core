@@ -222,7 +222,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint256 quoteDecimals      = bound(uint256(quotePrecisionDecimals_),      1, 18);
         uint256 bucketId           = bound(uint256(bucketId_),                    1, 7388);
         init(collateralDecimals, quoteDecimals);
-        uint256 collateralDust = ERC20Pool(address(_pool)).collateralDust(bucketId);
+        uint256 collateralDust = ERC20Pool(address(_pool)).bucketCollateralDust(bucketId);
 
         // put some deposit in the bucket
         _addInitialLiquidity({
@@ -515,7 +515,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
         uint256 scaledQuoteAmount = (quoteAmount / 10 ** (18 - boundQuotePrecision)) * 10 ** (18 - boundQuotePrecision);
         uint256 scaledColAmount   = (collateralAmount / 10 ** (18 - boundColPrecision)) * 10 ** (18 - boundColPrecision);
-        uint256 colDustAmount     = ERC20Pool(address(_pool)).collateralDust(bucketId);
+        uint256 colDustAmount     = ERC20Pool(address(_pool)).bucketCollateralDust(bucketId);
 
         assertEq(ERC20Pool(address(_pool)).collateralScale(), 10 ** (18 - boundColPrecision));
         assertEq(_pool.quoteTokenScale(), 10 ** (18 - boundQuotePrecision));
@@ -786,24 +786,24 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
         // check dust limits for 18-decimal collateral
         init(18, 18);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(0),    1);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(1),    1);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(4166), 100);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(7388), 1000000000);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(0),    1);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(1),    1);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(4166), 100);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(7388), 1000000000);
 
         // check dust limits for 12-decimal collateral
         init(12, 18);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(0),    1000000);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(1),    1000000);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(6466), 100000000);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(7388), 1000000000);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(0),    1000000);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(1),    1000000);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(6466), 100000000);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(7388), 1000000000);
 
         // check dust limits for 6-decimal collateral
         init(6, 18);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(0),    1000000000000);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(1),    1000000000000);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(4156), 1000000000000);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(7388), 1000000000000);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(0),    1000000000000);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(1),    1000000000000);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(4156), 1000000000000);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(7388), 1000000000000);
     }
 
     function testDrawDebtPrecision(
