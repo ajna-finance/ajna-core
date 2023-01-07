@@ -80,7 +80,6 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
             }
         );
 
-
         _drawDebt({
             from: _borrower,
             borrower: _borrower,
@@ -207,6 +206,10 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
     function testPoolInfoUtilsLenderInterestMargin() external {
         uint256 lenderInterestMargin = _poolUtils.lenderInterestMargin(address(_pool));
         assertEq(lenderInterestMargin, 0.874935776592563266 * 1e18);
+    }
+
+    function testMomp() external {
+        assertEq(_poolUtils.momp(address(_pool)), 2_981.007422784467321543 * 1e18);
     }
 
     function testPoolFeeRate() external {

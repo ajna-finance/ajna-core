@@ -27,8 +27,9 @@ import {
     TakeResult
 } from 'src/base/interfaces/pool/IPoolInternals.sol';
 
-import { FlashloanablePool }         from 'src/base/FlashloanablePool.sol';
-import { _revertIfAuctionClearable } from 'src/base/RevertsHelper.sol';
+import { FlashloanablePool }                                         from 'src/base/FlashloanablePool.sol';
+import { _getCollateralDustPricePrecisionAdjustment, _roundToScale } from 'src/base/PoolHelper.sol';
+import { _revertIfAuctionClearable }                                 from 'src/base/RevertsHelper.sol';
 
 import { Loans }    from 'src/libraries/Loans.sol';
 import { Deposits } from 'src/libraries/Deposits.sol';

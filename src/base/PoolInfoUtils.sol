@@ -6,6 +6,7 @@ import { IPool, IERC20Token } from 'src/base/interfaces/IPool.sol';
 
 import {
     _claimableReserves,
+    _feeRate,
     _indexOf,
     _lpsToCollateral,
     _lpsToQuoteToken,
@@ -318,6 +319,16 @@ contract PoolInfoUtils {
         (uint256 inflatorSnapshot, )    = pool.inflatorInfo();
 
         return Maths.wmul(maxThresholdPrice, inflatorSnapshot);
+    }
+
+    function momp(
+        address ajnaPool_
+    ) external view returns (uint256) {
+        IPool pool = IPool(ajnaPool_);
+
+        (uint256 debt, , )       = pool.debtInfo();
+        ( , , uint256 noOfLoans) = pool.loansInfo();
+        return _priceAt(pool.depositIndex(Maths.wdiv(debt, noOfLoans * 1e18)));
     }
 
     /**
