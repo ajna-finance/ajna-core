@@ -51,21 +51,21 @@ library Auctions {
     /*******************************/
 
     struct BucketTakeParams {
-        address borrower;    // borrower address to take from
-        uint256 collateral;  // [WAD] borrower available collateral to take
-        bool    depositTake; // deposit or arb take, used by bucket take
-        uint256 index;       // bucket index, used by bucket take
-        uint256 inflator;    // [WAD] current pool inflator
-        uint256 t0Debt;      // [WAD] borrower t0 debt
+        address borrower;        // borrower address to take from
+        uint256 collateral;      // [WAD] borrower available collateral to take
+        bool    depositTake;     // deposit or arb take, used by bucket take
+        uint256 index;           // bucket index, used by bucket take
+        uint256 inflator;        // [WAD] current pool inflator
+        uint256 t0Debt;          // [WAD] borrower t0 debt
         uint256 collateralScale; // precision of collateral token based on decimals
     }
     struct TakeParams {
-        address borrower;       // borrower address to take from
-        uint256 collateral;     // [WAD] borrower available collateral to take
-        uint256 t0Debt;         // [WAD] borrower t0 debt
-        uint256 takeCollateral; // [WAD] desired amount to take
-        uint256 inflator;       // [WAD] current pool inflator
-        uint256 poolType;       // pool type (ERC20 or NFT)
+        address borrower;        // borrower address to take from
+        uint256 collateral;      // [WAD] borrower available collateral to take
+        uint256 t0Debt;          // [WAD] borrower t0 debt
+        uint256 takeCollateral;  // [WAD] desired amount to take
+        uint256 inflator;        // [WAD] current pool inflator
+        uint256 poolType;        // pool type (ERC20 or NFT)
         uint256 collateralScale; // precision of collateral token based on decimals
     }
 
@@ -150,6 +150,7 @@ library Auctions {
     /**************/
 
     // See `IPoolErrors` for descriptions
+    event BucketBankruptcy(uint256 indexed index, uint256 lpForfeited);
     error AuctionActive();
     error AuctionNotClearable();
     error AuctionPriceGtBucketPrice();
@@ -181,6 +182,7 @@ library Auctions {
      *              - 72 hours didn't pass and auction still has collateral AuctionNotClearable()
      *  @dev    emit events:
      *              - Settle
+     *              - BucketBankruptcy
      *  @param  params_ Settle params
      *  @return collateralRemaining_ The amount of borrower collateral left after settle.
      *  @return t0DebtRemaining_     The amount of t0 debt left after settle.
@@ -295,6 +297,7 @@ library Auctions {
                     Bucket storage hpbBucket = buckets_[vars.index];
                     
                     if (hpbBucket.collateral == 0) {                                                   // existing LPB and LP tokens for the bucket shall become unclaimable.
+                        emit BucketBankruptcy(vars.index, hpbBucket.lps);
                         hpbBucket.lps            = 0;
                         hpbBucket.bankruptcyTime = block.timestamp;
                     }

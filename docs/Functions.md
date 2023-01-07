@@ -108,6 +108,7 @@
 	emit events:
 	- LenderActions.removeQuoteToken():
 		- RemoveQuoteToken
+		- BucketBankruptcy
 	- PoolCommons.updateInterestRate():
 		- UpdateInterestRate
 
@@ -325,6 +326,8 @@
 			- no claim NoClaim()
 
 	emit events:
+	- LenderActions.removeMaxCollateral():
+		- BucketBankruptcy
 	- RemoveCollateral
 	- PoolCommons.updateInterestRate():
 		- UpdateInterestRate
@@ -472,6 +475,7 @@
 		- Settle
 		- Auctions._settleAuction():
 			- AuctionNFTSettle or AuctionSettle
+		- BucketBankruptcy
 	- PoolCommons.updateInterestRate():
 		- UpdateInterestRate
 
