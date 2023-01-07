@@ -461,8 +461,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @dev    external libraries call:
      *              - PoolCommons.updateInterestRate     
      *  @dev    write state:
-     *              - interest debt and lup * collateral EMAs accumulators
-     *              - interest rate accumulator and interestRateUpdate state
+     *              - PoolCommons.updateInterestRate 
+     *                  - interest debt and lup * collateral EMAs accumulators
+     *                  - interest rate accumulator and interestRateUpdate state
+     *              - pool inflator and inflatorUpdate state
      *  @dev    emit events:
      *              - PoolCommons.updateInterestRate:
      *                  - UpdateInterestRate

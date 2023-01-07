@@ -22,6 +22,7 @@
 		- PoolCommons.updateInterestRate():
 			- interest debt and lup * collateral EMAs accumulators
 			- interest rate accumulator and interestRateUpdate state
+		- pool inflator and inflatorUpdate state
 
 	reverts on:
 	- LenderActions.addQuoteToken():
@@ -60,6 +61,7 @@
 		- PoolCommons.updateInterestRate():
 			- interest debt and lup * collateral EMAs accumulators
 			- interest rate accumulator and interestRateUpdate state
+		- pool inflator and inflatorUpdate state
 
 	reverts on:
 	- deposits locked RemoveDepositLockedByAuctionDebt()
@@ -96,6 +98,7 @@
 		- PoolCommons.updateInterestRate():
 			- interest debt and lup * collateral EMAs accumulators
 			- interest rate accumulator and interestRateUpdate state
+		- pool inflator and inflatorUpdate state
 
 	reverts on:
 	- deposits locked RemoveDepositLockedByAuctionDebt()
@@ -156,6 +159,7 @@
 		- PoolCommons.updateInterestRate():
 			- interest debt and lup * collateral EMAs accumulators
 			- interest rate accumulator and interestRateUpdate state
+		- pool inflator and inflatorUpdate state
 
 	reverts on:
 	- Auctions.kick():
@@ -201,6 +205,7 @@
 		- PoolCommons.updateInterestRate():
 			- interest debt and lup * collateral EMAs accumulators
 			- interest rate accumulator and interestRateUpdate state
+		- pool inflator and inflatorUpdate state
 
 	reverts on:
 	- Auctions.kickWithDeposit():
@@ -281,6 +286,7 @@
 		- PoolCommons.updateInterestRate():
 			- interest debt and lup * collateral EMAs accumulators
 			- interest rate accumulator and interestRateUpdate state
+		- pool inflator and inflatorUpdate state
 
 	reverts on:
 	- LenderActions.addCollateral():
@@ -311,6 +317,7 @@
 		- PoolCommons.updateInterestRate():
 			- interest debt and lup * collateral EMAs accumulators
 			- interest rate accumulator and interestRateUpdate state
+		- pool inflator and inflatorUpdate state
 
 	reverts on:
 		- LenderActions.removeMaxCollateral():
@@ -354,6 +361,7 @@
 		- PoolCommons.updateInterestRate():
 			- interest debt and lup * collateral EMAs accumulators
 			- interest rate accumulator and interestRateUpdate state
+		- pool inflator and inflatorUpdate state
 
 	reverts on:
 	- BorrowerActions.drawDebt()
@@ -403,6 +411,7 @@
 		- PoolCommons.updateInterestRate():
 			- interest debt and lup * collateral EMAs accumulators
 			- interest rate accumulator and interestRateUpdate state
+		- pool inflator and inflatorUpdate state
 
 	reverts on:
 	- BorrowerActions.repayDebt():
@@ -452,6 +461,7 @@
 		- PoolCommons.updateInterestRate():
 			- interest debt and lup * collateral EMAs accumulators
 			- interest rate accumulator and interestRateUpdate state
+		- pool inflator and inflatorUpdate state
 
 	reverts on:
 	- Auctions.settlePoolDebt():
@@ -506,6 +516,7 @@
 		- PoolCommons.updateInterestRate():
 			- interest debt and lup * collateral EMAs accumulators
 			- interest rate accumulator and interestRateUpdate state
+		- pool inflator and inflatorUpdate state
 
 	reverts on:
 	- Auctions.take():
@@ -568,6 +579,7 @@
 		- PoolCommons.updateInterestRate():
 			- interest debt and lup * collateral EMAs accumulators
 			- interest rate accumulator and interestRateUpdate state
+		- pool inflator and inflatorUpdate state
 
 	reverts on:
 	- Auctions.bucketTake():
@@ -609,6 +621,7 @@
 		- PoolCommons.updateInterestRate():
 			- interest debt and lup * collateral EMAs accumulators
 			- interest rate accumulator and interestRateUpdate state
+		- pool inflator and inflatorUpdate state
 
 	reverts on:
 	- LenderActions.addCollateral():
@@ -638,6 +651,7 @@
 		- PoolCommons.updateInterestRate():
 			- interest debt and lup * collateral EMAs accumulators
 			- interest rate accumulator and interestRateUpdate state
+		- pool inflator and inflatorUpdate state
 
 	reverts on:
 	- LenderActions.removeCollateral():
