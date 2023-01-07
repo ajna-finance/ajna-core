@@ -2,7 +2,8 @@
 
 pragma solidity 0.8.14;
 
-import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
+// import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
+import { ceil, div, exp2, fromSD59x18, log2, mul, SD59x18, sqrt, toSD59x18 } from "@prb-math/src/SD59x18.sol";
 
 import { PoolType } from './interfaces/IPool.sol';
 
@@ -51,14 +52,14 @@ import { Maths }   from '../libraries/Maths.sol';
         int256 bucketIndex = MAX_BUCKET_INDEX - int256(index_);
         if (bucketIndex < MIN_BUCKET_INDEX || bucketIndex > MAX_BUCKET_INDEX) revert BucketIndexOutOfBounds();
 
-        return uint256(
-            PRBMathSD59x18.exp2(
-                PRBMathSD59x18.mul(
-                    PRBMathSD59x18.fromInt(bucketIndex),
-                    PRBMathSD59x18.log2(FLOAT_STEP_INT)
+        return uint256(fromSD59x18(
+            exp2(
+                mul(
+                    toSD59x18(bucketIndex),
+                    log2(toSD59x18(FLOAT_STEP_INT))
                 )
             )
-        );
+        ));
     }
 
     /**
@@ -75,16 +76,18 @@ import { Maths }   from '../libraries/Maths.sol';
     ) pure returns (uint256) {
         if (price_ < MIN_PRICE || price_ > MAX_PRICE) revert BucketPriceOutOfBounds();
 
-        int256 index = PRBMathSD59x18.div(
-            PRBMathSD59x18.log2(int256(price_)),
-            PRBMathSD59x18.log2(FLOAT_STEP_INT)
+        int index = fromSD59x18(
+            div(
+                log2(toSD59x18(int256(price_))),
+                log2(toSD59x18(FLOAT_STEP_INT))
+            )
         );
 
-        int256 ceilIndex = PRBMathSD59x18.ceil(index);
+        int256 ceilIndex = fromSD59x18(ceil(toSD59x18(index)));
         if (index < 0 && ceilIndex - index > 0.5 * 1e18) {
-            return uint256(4157 - PRBMathSD59x18.toInt(ceilIndex));
+            return uint256(4157 - ceilIndex);
         }
-        return uint256(4156 - PRBMathSD59x18.toInt(ceilIndex));
+        return uint256(4156 - ceilIndex);
     }
 
     /**********************/
@@ -166,8 +169,8 @@ import { Maths }   from '../libraries/Maths.sol';
     ) pure returns (uint256 pricePrecisionAdjustment_) {
         // conditional is a gas optimization
         if (bucketIndex_ > 3900) {
-            int256 bucketOffset = int256(bucketIndex_ - 3900);
-            int256 result = PRBMathSD59x18.sqrt(PRBMathSD59x18.div(bucketOffset * 1e18, int256(36 * 1e18)));
+            SD59x18 bucketOffset = toSD59x18(int256(bucketIndex_ - 3900) * 1e18);
+            int256 result = fromSD59x18(sqrt(div(bucketOffset, toSD59x18(int256(36 * 1e18)))));
             pricePrecisionAdjustment_ = uint256(result / 1e18);
         }
     }

@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.14;
 
-import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
+import { exp, fromUD60x18, pow, toUD60x18 } from "@prb-math/src/UD60x18.sol";
 
 import { InterestState, PoolState, DepositsState } from '../../base/interfaces/pool/IPoolState.sol';
 
@@ -138,7 +138,7 @@ library PoolCommons {
         uint256 elapsed_
     ) external returns (uint256 newInflator_, uint256 newInterest_) {
         // Scale the borrower inflator to update amount of interest owed by borrowers
-        uint256 pendingFactor = PRBMathUD60x18.exp((poolState_.rate * elapsed_) / 365 days);
+        uint256 pendingFactor = fromUD60x18(exp(toUD60x18((poolState_.rate * elapsed_) / 365 days)));
 
         // calculate the highest threshold price
         newInflator_ = Maths.wmul(poolState_.inflator, pendingFactor);
@@ -185,7 +185,7 @@ library PoolCommons {
         uint256 interestRate_,
         uint256 elapsed_
     ) external pure returns (uint256) {
-        return PRBMathUD60x18.exp((interestRate_ * elapsed_) / 365 days);
+        return fromUD60x18(exp(toUD60x18((interestRate_ * elapsed_) / 365 days)));
     }
 
     /**
@@ -202,7 +202,7 @@ library PoolCommons {
     ) external view returns (uint256) {
         return Maths.wmul(
             inflatorSnapshot_,
-            PRBMathUD60x18.exp((interestRate_ * (block.timestamp - inflatorUpdate)) / 365 days)
+            fromUD60x18(exp(toUD60x18((interestRate_ * (block.timestamp - inflatorUpdate)) / 365 days)))
         );
     }
 
@@ -274,7 +274,13 @@ library PoolCommons {
             return 1e18;
         } else {
             // cubic root of the percentage of meaningful unutilized deposit
-            uint256 crpud = PRBMathUD60x18.pow(base, ONE_THIRD);
+            uint256 crpud = 
+                fromUD60x18(
+                    pow(
+                        toUD60x18(base),
+                        toUD60x18(ONE_THIRD)
+                    )
+                );
             return 1e18 - Maths.wmul(Maths.wdiv(crpud, CUBIC_ROOT_1000000), 0.15 * 1e18);
         }
     }

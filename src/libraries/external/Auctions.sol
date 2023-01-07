@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.14;
 
-import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
+import { div, mul, exp2, fromSD59x18, SD59x18, toSD59x18 } from "@prb-math/src/SD59x18.sol";
 
 import { PoolType } from '../../base/interfaces/IPool.sol';
 
@@ -1398,10 +1398,10 @@ library Auctions {
 
         elapsedHours -= Maths.min(elapsedHours, 1e18);  // price locked during cure period
 
-        int256 timeAdjustment  = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours)); 
+        SD59x18 timeAdjustment = mul(toSD59x18(-1 * 1e18), toSD59x18(int256(elapsedHours))); 
         uint256 referencePrice = Maths.max(kickMomp_, neutralPrice_); 
 
-        price_ = 32 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
+        price_ = 32 * Maths.wmul(referencePrice, uint256(fromSD59x18(exp2(timeAdjustment))));
     }
 
     /**
@@ -1430,9 +1430,11 @@ library Auctions {
                 1e18,
                 Maths.maxInt(
                     -1 * 1e18,
-                    PRBMathSD59x18.div(
-                        int256(neutralPrice_) - int256(auctionPrice_),
-                        int256(neutralPrice_) - thresholdPrice
+                    fromSD59x18(
+                        div(
+                            toSD59x18(int256(neutralPrice_) - int256(auctionPrice_)),
+                            toSD59x18(int256(neutralPrice_) - thresholdPrice)
+                        )
                     )
                 )
             );
@@ -1442,7 +1444,12 @@ library Auctions {
             else if (val != 0) sign = 1e18;
         }
 
-        return PRBMathSD59x18.mul(int256(bondFactor_), sign);
+        return fromSD59x18(
+                mul(
+                    toSD59x18(int256(bondFactor_)), 
+                    toSD59x18(sign)
+                )
+            );
     }
 
     /**

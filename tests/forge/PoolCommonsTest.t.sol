@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.14;
 
+import { exp, fromUD60x18, toUD60x18 } from '@prb-math/src/UD60x18.sol';
+
 import './utils/DSTestPlus.sol';
 
 import 'src/libraries/external/PoolCommons.sol';
@@ -15,7 +17,7 @@ contract PoolCommonsTest is DSTestPlus {
         skip(730 days);
         uint256 lastInflatorSnapshotUpdate = block.timestamp - 365 days; 
         uint256 interestRate = 0.1 * 1e18;
-        assertEq(PoolCommons.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate),   Maths.wmul(inflatorSnapshot,PRBMathUD60x18.exp(interestRate)));
+        assertEq(PoolCommons.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate),   Maths.wmul(inflatorSnapshot, fromUD60x18(exp(toUD60x18(interestRate)))));
         assertEq(PoolCommons.pendingInflator(inflatorSnapshot, block.timestamp - 1 hours, interestRate),    0.010000114155902715 * 1e18);
         assertEq(PoolCommons.pendingInflator(inflatorSnapshot, block.timestamp - 10 hours, interestRate),   0.010001141617671002 * 1e18);
         assertEq(PoolCommons.pendingInflator(inflatorSnapshot, block.timestamp - 1 days, interestRate),     0.010002740101366609 * 1e18);
