@@ -77,10 +77,10 @@ contract FenwickTreeInstance is DSTestPlus {
         uint256 amount;
 
         // Calculate total insertions 
-        uint256 insertsDec= bound(insertions_, 1000, 2000);
+        uint256 insertsDec = bound(insertions_, 1000, 2000);
 
         // Calculate total amount to insert
-        uint256 totalAmount = bound(amount_, 1 * 1e18, 9_000_000_000_000_000 * 1e18);
+        uint256 totalAmount    = bound(amount_, 1 * 1e18, 9_000_000_000_000_000 * 1e18);
         uint256 totalAmountDec = totalAmount;
 
 
