@@ -2,8 +2,8 @@
 pragma solidity ^0.8.14;
 
 import './Interfaces.sol';
-import 'src/base/interfaces/pool/IPoolLiquidationActions.sol';
-import 'src/erc721/interfaces/IERC721Taker.sol';
+import 'src/interfaces/pool/commons/IPoolLiquidationActions.sol';
+import 'src/interfaces/pool/erc721/IERC721Taker.sol';
 
 contract NFTTakeExample is IERC721Taker {
     INFTMarketPlace marketplace;

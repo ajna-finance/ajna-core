@@ -2,14 +2,14 @@
 
 pragma solidity 0.8.14;
 
-import { IPoolLenderActions }         from './pool/IPoolLenderActions.sol';
-import { IPoolLiquidationActions }    from './pool/IPoolLiquidationActions.sol';
-import { IPoolReserveAuctionActions } from './pool/IPoolReserveAuctionActions.sol';
-import { IPoolImmutables }            from './pool/IPoolImmutables.sol';
-import { IPoolState }                 from './pool/IPoolState.sol';
-import { IPoolDerivedState }          from './pool/IPoolDerivedState.sol';
-import { IPoolEvents }                from './pool/IPoolEvents.sol';
-import { IPoolErrors }                from './pool/IPoolErrors.sol';
+import { IPoolLenderActions }         from './commons/IPoolLenderActions.sol';
+import { IPoolLiquidationActions }    from './commons/IPoolLiquidationActions.sol';
+import { IPoolReserveAuctionActions } from './commons/IPoolReserveAuctionActions.sol';
+import { IPoolImmutables }            from './commons/IPoolImmutables.sol';
+import { IPoolState }                 from './commons/IPoolState.sol';
+import { IPoolDerivedState }          from './commons/IPoolDerivedState.sol';
+import { IPoolEvents }                from './commons/IPoolEvents.sol';
+import { IPoolErrors }                from './commons/IPoolErrors.sol';
 import { IERC3156FlashLender }        from './IERC3156FlashLender.sol';
 
 /**

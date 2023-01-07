@@ -3,7 +3,7 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import 'src/erc20/ERC20Pool.sol';
+import 'src/ERC20Pool.sol';
 
 contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 

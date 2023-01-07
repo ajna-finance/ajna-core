@@ -2,9 +2,9 @@
 pragma solidity 0.8.14;
 
 import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
-import 'src/erc721/ERC721Pool.sol';
+import 'src/ERC721Pool.sol';
 
-import { MAX_PRICE, _priceAt } from 'src/base/PoolHelper.sol';
+import { MAX_PRICE, _priceAt } from 'src/libraries/helpers/PoolHelper.sol';
 
 abstract contract ERC721PoolInterestTest is ERC721HelperContract {
     address internal _borrower;

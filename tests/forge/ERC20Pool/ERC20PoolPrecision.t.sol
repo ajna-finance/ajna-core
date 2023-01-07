@@ -4,13 +4,13 @@ pragma solidity 0.8.14;
 import { ERC20DSTestPlus }    from './ERC20DSTestPlus.sol';
 import { TokenWithNDecimals } from '../utils/Tokens.sol';
 
-import 'src/erc20/ERC20Pool.sol';
-import 'src/erc20/ERC20PoolFactory.sol';
+import 'src/ERC20Pool.sol';
+import 'src/ERC20PoolFactory.sol';
 
-import 'src/base/PoolInfoUtils.sol';
-import { MAX_PRICE } from 'src/base/PoolHelper.sol';
+import 'src/PoolInfoUtils.sol';
+import { MAX_PRICE } from 'src/libraries/helpers/PoolHelper.sol';
 
-import 'src/libraries/Maths.sol';
+import 'src/libraries/internal/Maths.sol';
 
 contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 

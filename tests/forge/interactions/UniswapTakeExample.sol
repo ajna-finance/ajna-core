@@ -2,8 +2,8 @@
 pragma solidity ^0.8.14;
 
 import './Interfaces.sol';
-import 'src/base/interfaces/pool/IPoolLiquidationActions.sol';
-import 'src/erc20/interfaces/IERC20Taker.sol';
+import 'src/interfaces/pool/commons/IPoolLiquidationActions.sol';
+import 'src/interfaces/pool/erc20/IERC20Taker.sol';
 
 contract UniswapTakeExample is IERC20Taker {
     ISwapRouter constant          router   = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
