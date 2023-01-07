@@ -60,7 +60,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         uint256 amountToBorrow_,
         uint256 limitIndex_,
         uint256 collateralToPledge_
-    ) external {
+    ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
         DrawDebtResult memory result = BorrowerActions.drawDebt(
@@ -108,7 +108,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
         uint256 collateralAmountToPull_
-    ) external {
+    ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
         RepayDebtResult memory result = BorrowerActions.repayDebt(
@@ -200,7 +200,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     function addCollateral(
         uint256 collateralAmountToAdd_,
         uint256 index_
-    ) external override returns (uint256 bucketLPs_) {
+    ) external override nonReentrant returns (uint256 bucketLPs_) {
         PoolState memory poolState = _accruePoolInterest();
 
         bucketLPs_ = LenderActions.addCollateral(
@@ -223,7 +223,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     function removeCollateral(
         uint256 maxAmount_,
         uint256 index_
-    ) external override returns (uint256 collateralAmount_, uint256 lpAmount_) {
+    ) external override nonReentrant returns (uint256 collateralAmount_, uint256 lpAmount_) {
         _revertIfAuctionClearable(auctions, loans);
 
         PoolState memory poolState = _accruePoolInterest();
@@ -252,7 +252,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     function settle(
         address borrowerAddress_,
         uint256 maxDepth_
-    ) external override {
+    ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
         uint256 assets = Maths.wmul(poolBalances.t0Debt, poolState.inflator) + _getPoolQuoteTokenBalance();
@@ -347,7 +347,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         address borrowerAddress_,
         bool    depositTake_,
         uint256 index_
-    ) external override {
+    ) external override nonReentrant {
 
         PoolState memory poolState = _accruePoolInterest();
 
