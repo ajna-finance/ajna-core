@@ -2,167 +2,95 @@
 
 pragma solidity 0.8.14;
 
-import { AddQuoteParams, MoveQuoteParams, RemoveQuoteParams } from 'src/base/interfaces/pool/IPoolInternals.sol';
-
+import {
+    AddQuoteParams,
+    MoveQuoteParams,
+    RemoveQuoteParams
+}                     from '../../base/interfaces/pool/IPoolInternals.sol';
 import {
     Bucket,
     DepositsState,
     Lender,
     PoolState
-} from 'src/base/interfaces/pool/IPoolState.sol';
+}                     from '../../base/interfaces/pool/IPoolState.sol';
 
-import { _feeRate, _priceAt, _ptp, MAX_FENWICK_INDEX } from 'src/base/PoolHelper.sol';
+import { _feeRate, _priceAt, _ptp, MAX_FENWICK_INDEX } from '../../base/PoolHelper.sol';
 
-import { Deposits } from 'src/libraries/Deposits.sol';
-import { Buckets }  from 'src/libraries/Buckets.sol';
-import { Maths }    from 'src/libraries/Maths.sol';
+import { Deposits } from '../Deposits.sol';
+import { Buckets }  from '../Buckets.sol';
+import { Maths }    from '../Maths.sol';
 
 /**
     @notice External library containing logic for common lender actions.
  */
 library LenderActions {
 
-    /**
-     *  @notice Operation cannot be executed in the same block when bucket becomes insolvent.
-     */
+    /*************************/
+    /*** Local Var Structs ***/
+    /*************************/
+
+    struct MoveQuoteLocalVars {
+        uint256 amountToMove;           // [WAD] Quote token amount to move between indexes.
+        uint256 fromBucketPrice;        // [WAD] Price of the bucket to move amount from.
+        uint256 fromBucketLPs;          // [RAY] Amount of LPs in the bucket to move amount from.
+        uint256 fromBucketDepositTime;  // Time of lender deposit in the bucket to move amount from.
+        uint256 toBucketPrice;          // [WAD] Price of the bucket to move amount to.
+        uint256 toBucketBankruptcyTime; // Time the bucket to move amount to was marked as insolvent.
+        uint256 ptp;                    // [WAD] Pool Threshold Price.
+        uint256 htp;                    // [WAD] Highest Threshold Price.
+    }
+    struct RemoveDepositParams {
+        uint256 depositConstraint; // [WAD] Constraint on deposit in quote token.
+        uint256 lpConstraint;      // [RAY] Constraint in LPB terms.
+        uint256 bucketLPs;         // [RAY] Total LPB in the bucket.
+        uint256 bucketCollateral;  // [WAD] Claimable collateral in the bucket.
+        uint256 price;             // [WAD] Price of bucket.
+        uint256 index;             // Bucket index.
+        uint256 dustLimit;         // Minimum amount of deposit which may reside in a bucket.
+    }
+
+    /**************/
+    /*** Events ***/
+    /**************/
+
+    // See `IPoolEvents` for descriptions
+    event AddQuoteToken(address indexed lender, uint256 indexed price, uint256 amount, uint256 lpAwarded, uint256 lup);
+    event BucketBankruptcy(uint256 indexed index, uint256 lpForfeited);
+    event MoveQuoteToken(address indexed lender, uint256 indexed from, uint256 indexed to, uint256 amount, uint256 lpRedeemedFrom, uint256 lpAwardedTo, uint256 lup);
+    event RemoveQuoteToken(address indexed lender, uint256 indexed price, uint256 amount, uint256 lpRedeemed, uint256 lup);
+    event TransferLPTokens(address owner, address newOwner, uint256[] indexes, uint256 lpTokens);
+
+    /**************/
+    /*** Errors ***/
+    /**************/
+
+    // See `IPoolErrors` for descriptions
     error BucketBankruptcyBlock();
-    /**
-     *  @notice User attempted to merge collateral from a lower price bucket into a higher price bucket.
-     */
     error CannotMergeToHigherPrice();
-    /**
-     *  @notice User attempted a deposit which does not exceed the dust amount, or a withdrawal which leaves behind less than the dust amount.
-     */
     error DustAmountNotExceeded();
-    /**
-     *  @notice Owner of the LP tokens must have approved the new owner prior to transfer.
-     */
     error NoAllowance();
-    /**
-     *  @notice When transferring LP tokens between indices, the new index must be a valid index.
-     */
     error InvalidIndex();
-    /**
-     *  @notice When moving quote token HTP must stay below LUP.
-     *  @notice When removing quote token HTP must stay below LUP.
-     */
     error LUPBelowHTP();
-    /**
-     *  @notice Lender must have non-zero LPB when attempting to remove quote token from the pool.
-     */
     error NoClaim();
-    /**
-     *  @notice Lender is attempting to remove more collateral they have claim to in the bucket.
-     */
     error InsufficientLPs();
-    /**
-     *  @notice Deposit must have more quote available than the lender is attempting to claim.
-     */
     error InsufficientLiquidity();
-    /**
-     *  @notice User is attempting to remove more collateral than available.
-     */
     error InsufficientCollateral();
-    /**
-     *  @notice From and to deposit indexes to move are the same.
-     */
     error MoveToSamePrice();
 
-    /**
-     *  @dev Struct to hold move quote token details, used to prevent stack too deep error.
-     */
-    struct MoveQuoteLocalVars {
-        uint256 amountToMove;
-        uint256 fromBucketPrice;
-        uint256 fromBucketLPs;
-        uint256 fromBucketDepositTime;
-        uint256 toBucketPrice;
-        uint256 toBucketBankruptcyTime;
-        uint256 ptp;
-        uint256 htp;
-    }
-    /**
-     *  @dev Struct to hold parameters to remove deposit from a bucket, used to prevent stack too deep error.
-     */
-    struct RemoveDepositParams {
-        uint256 depositConstraint;  // Constraint on deposit in quote token.
-        uint256 lpConstraint;       // Constraint in LPB terms.
-        uint256 bucketLPs;          // Total LPB in the bucket.
-        uint256 bucketCollateral;   // Claimable collateral in the bucket.
-        uint256 price;              // Price of bucket.
-        uint256 index;              // Bucket index.
-        uint256 dustLimit;          // Minimum amount of deposit which may reside in a bucket.
-    }
+    /***************************/
+    /***  External Functions ***/
+    /***************************/
 
     /**
-     *  @notice Emitted when lender adds quote token to the pool.
-     *  @param  lender    Recipient that added quote tokens.
-     *  @param  price     Price at which quote tokens were added.
-     *  @param  amount    Amount of quote tokens added to the pool.
-     *  @param  lpAwarded Amount of LP awarded for the deposit.
-     *  @param  lup       LUP calculated after deposit.
+     *  @notice See `IERC20PoolLenderActions` and `IERC721PoolLenderActions` for descriptions
+     *  @dev    write state:
+     *              - Buckets.addCollateral:
+     *                  - increment bucket.collateral and bucket.lps accumulator
+     *                  - addLenderLPs:
+     *                      - increment lender.lps accumulator and lender.depositTime state
+     *  @dev    reverts on:
+     *              - invalid bucket index InvalidIndex()
      */
-    event AddQuoteToken(
-        address indexed lender,
-        uint256 indexed price,
-        uint256 amount,
-        uint256 lpAwarded,
-        uint256 lup
-    );
-
-    /**
-     *  @notice Emitted when LPs are forfeited as a result of the bucket losing all assets.
-     *  @param  index       The index of the bucket.
-     *  @param  lpForfeited Amount of LP forfeited by lenders.
-     */
-    event BucketBankruptcy(
-        uint256 indexed index,
-        uint256 lpForfeited
-    );
-    
-    /**
-     *  @notice Emitted when lender moves quote token from a bucket price to another.
-     *  @param  lender         Recipient that moved quote tokens.
-     *  @param  from           Price bucket from which quote tokens were moved.
-     *  @param  to             Price bucket where quote tokens were moved.
-     *  @param  amount         Amount of quote tokens moved.
-     *  @param  lpRedeemedFrom Amount of LP removed from the `from` bucket.
-     *  @param  lpAwardedTo    Amount of LP credited to the `to` bucket.
-     *  @param  lup            LUP calculated after removal.
-     */
-    event MoveQuoteToken(
-        address indexed lender,
-        uint256 indexed from,
-        uint256 indexed to,
-        uint256 amount,
-        uint256 lpRedeemedFrom,
-        uint256 lpAwardedTo,
-        uint256 lup
-    );
-
-    /**
-     *  @notice Emitted when lender removes quote token from the pool.
-     *  @param  lender     Recipient that removed quote tokens.
-     *  @param  price      Price at which quote tokens were removed.
-     *  @param  amount     Amount of quote tokens removed from the pool.
-     *  @param  lpRedeemed Amount of LP exchanged for quote token.
-     *  @param  lup        LUP calculated after removal.
-     */
-    event RemoveQuoteToken(
-        address indexed lender,
-        uint256 indexed price,
-        uint256 amount,
-        uint256 lpRedeemed,
-        uint256 lup
-    );
-
-    event TransferLPTokens(
-        address owner,
-        address newOwner,
-        uint256[] indexes,
-        uint256 lpTokens
-    );
-
     function addCollateral(
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
@@ -183,6 +111,19 @@ library LenderActions {
         );
     }
 
+    /**
+     *  @notice See `IPoolLenderActions` for descriptions
+     *  @dev    write state:
+     *              - Deposits.unscaledAdd (add new amount in Fenwick tree):
+     *                  - update values array state 
+     *              - increment bucket.lps accumulator
+     *              - increment lender.lps accumulator and lender.depositTime state
+     *  @dev    reverts on:
+     *              - invalid bucket index InvalidIndex()
+     *              - same block when bucket becomes insolvent BucketBankruptcyBlock()
+     *  @dev    emit events:
+     *              - AddQuoteToken
+     */
     function addQuoteToken(
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
@@ -225,9 +166,29 @@ library LenderActions {
         bucket.lps += bucketLPs_;
 
         lup_ = _lup(deposits_, poolState_.debt);
+
         emit AddQuoteToken(msg.sender, params_.index, params_.amount, bucketLPs_, lup_);
     }
 
+    /**
+     *  @notice See `IPoolLenderActions` for descriptions
+     *  @dev    write state:
+     *              - _removeMaxDeposit:
+     *                  - Deposits.unscaledRemove (remove amount in Fenwick tree, from index):
+     *                  - update values array state
+     *              - Deposits.unscaledAdd (add amount in Fenwick tree, to index):
+     *                  - update values array state
+     *              - decrement lender.lps accumulator for from bucket
+     *              - increment lender.lps accumulator and lender.depositTime state for to bucket
+     *              - decrement bucket.lps accumulator for from bucket
+     *              - increment bucket.lps accumulator for to bucket
+     *  @dev    reverts on:
+     *              - same index MoveToSamePrice()
+     *              - dust amount DustAmountNotExceeded()
+     *              - invalid index InvalidIndex()
+     *  @dev    emit events:
+     *              - MoveQuoteToken
+     */
     function moveQuoteToken(
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
@@ -327,6 +288,21 @@ library LenderActions {
         );
     }
 
+    /**
+     *  @notice See `IPoolLenderActions` for descriptions
+     *  @dev    write state:
+     *          - _removeMaxDeposit:
+     *              - Deposits.unscaledRemove (remove amount in Fenwick tree):
+     *                  - update values array state
+     *              - decrement lender.lps accumulator
+     *              - decrement bucket.lps accumulator
+     *  @dev    reverts on:
+     *              - no LPs NoClaim()
+     *              - LUP lower than HTP LUPBelowHTP()
+     *  @dev    emit events:
+     *              - RemoveQuoteToken
+     *              - BucketBankruptcy
+     */
     function removeQuoteToken(
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
@@ -387,6 +363,15 @@ library LenderActions {
         emit RemoveQuoteToken(msg.sender, params_.index, removedAmount_, redeemedLPs_, lup_);
     }
 
+    /**
+     *  @notice See `IPoolLenderActions` for descriptions
+     *  @dev    write state:
+     *              - decrement lender.lps accumulator
+     *              - decrement bucket.collateral and bucket.lps accumulator
+     *  @dev    reverts on:
+     *              - not enough collateral InsufficientCollateral()
+     *              - insufficient LPs InsufficientLPs()
+     */
     function removeCollateral(
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
@@ -424,6 +409,18 @@ library LenderActions {
         bucket.collateral -= Maths.min(bucketCollateral, amount_);
     }
 
+    /**
+     *  @notice Removes max collateral amount from a given bucket index.
+     *  @dev    write state:
+     *              - _removeMaxCollateral:
+     *                  - decrement lender.lps accumulator
+     *                  - decrement bucket.collateral and bucket.lps accumulator
+     *  @dev    reverts on:
+     *              - not enough collateral InsufficientCollateral()
+     *              - no claim NoClaim()
+     *  @return Amount of collateral that was removed.
+     *  @return Amount of LPs redeemed for removed collateral amount.
+     */
     function removeMaxCollateral(
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
@@ -438,6 +435,16 @@ library LenderActions {
         );
     }
 
+    /**
+     *  @notice See `IERC721PoolLenderActions` for descriptions
+     *  @dev    write state:
+     *              - Buckets.addCollateral:
+     *                  - increment bucket.collateral and bucket.lps accumulator
+     *                  - addLenderLPs:
+     *                      - increment lender.lps accumulator and lender.depositTime state
+     *  @dev    reverts on:
+     *              - invalid merge index CannotMergeToHigherPrice()
+     */
     function mergeOrRemoveCollateral(
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
@@ -487,11 +494,16 @@ library LenderActions {
     }
 
     /**
-     *  @notice Called by lenders to transfers their LP tokens to a different address.
-     *  @dev    Used by PositionManager.memorializePositions().
-     *  @param  owner_    The original owner address of the position.
-     *  @param  newOwner_ The new owner address of the position.
-     *  @param  indexes_  Array of deposit indexes at which LP tokens were moved.
+     *  @notice See `IPoolLenderActions` for descriptions
+     *  @dev write state:
+     *          - delete allowance mapping
+     *          - increment new lender.lps accumulator and lender.depositTime state
+     *          - delete old lender from bucket -> lender mapping
+     *  @dev reverts on:
+     *          - invalid index InvalidIndex()
+     *          - no allowance NoAllowance()
+     *  @dev emit events:
+     *          - TransferLPTokens
      */
     function transferLPTokens(
         mapping(uint256 => Bucket) storage buckets_,
@@ -537,6 +549,7 @@ library LenderActions {
 
             unchecked { ++i; }
         }
+
         emit TransferLPTokens(owner_, newOwner_, indexes_, tokensTransferred);
     }
 
@@ -544,6 +557,19 @@ library LenderActions {
     /*** Internal Functions ***/
     /**************************/
 
+    /**
+     *  @notice Removes max collateral amount from a given bucket index.
+     *  @dev    write state:
+     *              - decrement lender.lps accumulator
+     *              - decrement bucket.collateral and bucket.lps accumulator
+     *  @dev    reverts on:
+     *              - not enough collateral InsufficientCollateral()
+     *              - no claim NoClaim()
+     *  @dev    emit events:
+     *              - BucketBankruptcy
+     *  @return collateralAmount_ Amount of collateral that was removed.
+     *  @return lpAmount_         Amount of LPs redeemed for removed collateral amount.
+     */
     function _removeMaxCollateral(
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
@@ -602,6 +628,9 @@ library LenderActions {
 
     /**
      *  @notice Removes the amount of quote tokens calculated for the given amount of LPs.
+     *  @dev    write state:
+     *          - Deposits.unscaledRemove (remove amount in Fenwick tree, from index):
+     *              - update values array state
      *  @return removedAmount_     Amount of scaled deposit removed.
      *  @return redeemedLPs_       Amount of bucket LPs corresponding for calculated unscaled deposit amount.
      */
@@ -667,6 +696,10 @@ library LenderActions {
 
         Deposits.unscaledRemove(deposits_, params_.index, unscaledRemovedAmount); // update FenwickTree
     }
+
+    /**********************/
+    /*** View Functions ***/
+    /**********************/
 
     function _lup(
         DepositsState storage deposits_,

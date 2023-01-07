@@ -231,31 +231,31 @@ interface IPoolState {
 /*** Pool State ***/
 
 struct InflatorState {
-    uint208 inflator;       // [WAD]
-    uint48  inflatorUpdate; // [SEC]
+    uint208 inflator;       // [WAD] pool's inflator
+    uint48  inflatorUpdate; // [SEC] last time pool's inflator was updated
 }
 
 struct InterestState {
-    uint208 interestRate;       // [WAD]
-    uint48  interestRateUpdate; // [SEC]
-    uint256 debtEma;            // [WAD]
-    uint256 lupColEma;          // [WAD]
+    uint208 interestRate;       // [WAD] pool's interest rate
+    uint48  interestRateUpdate; // [SEC] last time pool's interest rate was updated (not before 12 hours passed)
+    uint256 debtEma;            // [WAD] sample of debt EMA
+    uint256 lupColEma;          // [WAD] sample of LUP price * collateral EMA. capped at 10 times current pool debt
 }
 
 struct PoolBalancesState {
-    uint256 pledgedCollateral; // [WAD]
-    uint256 t0DebtInAuction;   // Total debt in auction used to restrict LPB holder from withdrawing [WAD]
-    uint256 t0Debt;            // Pool debt as if the whole amount was incurred upon the first loan. [WAD]
+    uint256 pledgedCollateral; // [WAD] total collateral pledged in pool
+    uint256 t0DebtInAuction;   // [WAD] Total debt in auction used to restrict LPB holder from withdrawing
+    uint256 t0Debt;            // [WAD] Pool debt as if the whole amount was incurred upon the first loan
 }
 
 struct PoolState {
     uint8   poolType;             // pool type, can be ERC20 or ERC721
-    uint256 debt;                 // total debt in pool, accrued in current block
-    uint256 collateral;           // total collateral pledged in pool
-    uint256 inflator;             // current pool inflator
+    uint256 debt;                 // [WAD] total debt in pool, accrued in current block
+    uint256 collateral;           // [WAD] total collateral pledged in pool
+    uint256 inflator;             // [WAD] current pool inflator
     bool    isNewInterestAccrued; // true if new interest already accrued in current block
-    uint256 rate;                 // pool's current interest rate
-    uint256 quoteDustLimit;       // quote token dust limit of the pool
+    uint256 rate;                 // [WAD] pool's current interest rate
+    uint256 quoteDustLimit;       // [WAD] quote token dust limit of the pool
 }
 
 /*** Buckets State ***/
@@ -293,52 +293,52 @@ struct Loan {
 }
 
 struct Borrower {
-    uint256 t0Debt;           // [WAD] Borrower debt time-adjusted as if it was incurred upon first loan of pool.
-    uint256 collateral;       // [WAD] Collateral deposited by borrower.
-    uint256 t0Np;             // [WAD] Neutral Price time-adjusted as if it was incurred upon first loan of pool.
+    uint256 t0Debt;     // [WAD] Borrower debt time-adjusted as if it was incurred upon first loan of pool.
+    uint256 collateral; // [WAD] Collateral deposited by borrower.
+    uint256 t0Np;       // [WAD] Neutral Price time-adjusted as if it was incurred upon first loan of pool.
 }
 
 /*** Auctions State ***/
 
 struct AuctionsState {
-    uint96  noOfAuctions;
-    address head;
-    address tail;
-    uint256 totalBondEscrowed; // [WAD]
-    mapping(address => Liquidation) liquidations;
-    mapping(address => Kicker)      kickers;
+    uint96  noOfAuctions;                         // total number of auctions in pool
+    address head;                                 // first address in auction queue
+    address tail;                                 // last address in auction queue
+    uint256 totalBondEscrowed;                    // [WAD] total amount of quote token posted as auction kick bonds
+    mapping(address => Liquidation) liquidations; // mapping of borrower address and auction details
+    mapping(address => Kicker)      kickers;      // mapping of kicker address and kicker balances
 }
 
 struct Liquidation {
-    address kicker;         // address that initiated liquidation
-    uint96  bondFactor;     // bond factor used to start liquidation
-    uint96  kickTime;       // timestamp when liquidation was started
-    address prev;           // previous liquidated borrower in auctions queue
-    uint96  kickMomp;       // Momp when liquidation was started
-    address next;           // next liquidated borrower in auctions queue
-    uint160 bondSize;       // liquidation bond size
-    uint96  neutralPrice;   // Neutral Price when liquidation was started
-    bool    alreadyTaken;   // true if take has been called on auction
+    address kicker;       // address that initiated liquidation
+    uint96  bondFactor;   // [WAD] bond factor used to start liquidation
+    uint96  kickTime;     // timestamp when liquidation was started
+    address prev;         // previous liquidated borrower in auctions queue
+    uint96  kickMomp;     // [WAD] Momp when liquidation was started
+    address next;         // next liquidated borrower in auctions queue
+    uint160 bondSize;     // [WAD] liquidation bond size
+    uint96  neutralPrice; // [WAD] Neutral Price when liquidation was started
+    bool    alreadyTaken; // true if take has been called on auction
 }
 
 struct Kicker {
-    uint256 claimable; // kicker's claimable balance
-    uint256 locked;    // kicker's balance of tokens locked in auction bonds
+    uint256 claimable; // [WAD] kicker's claimable balance
+    uint256 locked;    // [WAD] kicker's balance of tokens locked in auction bonds
 }
 
 /*** Reserve Auction State ***/
 
 struct ReserveAuctionState {
     uint256 kicked;                            // Time a Claimable Reserve Auction was last kicked.
-    uint256 unclaimed;                         // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
+    uint256 unclaimed;                         // [WAD] Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
     uint256 latestBurnEventEpoch;              // Latest burn event epoch.
-    uint256 totalAjnaBurned;                   // Total ajna burned in the pool.
-    uint256 totalInterestEarned;               // Total interest earned by all lenders in the pool.
+    uint256 totalAjnaBurned;                   // [WAD] Total ajna burned in the pool.
+    uint256 totalInterestEarned;               // [WAD] Total interest earned by all lenders in the pool.
     mapping (uint256 => BurnEvent) burnEvents; // Mapping burnEventEpoch => BurnEvent.
 }
 
 struct BurnEvent {
     uint256 timestamp;     // time at which the burn event occured
-    uint256 totalInterest; // current pool interest accumulator `PoolCommons.accrueInterest().newInterest`
-    uint256 totalBurned;   // burn amount accumulator
+    uint256 totalInterest; // [WAD] current pool interest accumulator `PoolCommons.accrueInterest().newInterest`
+    uint256 totalBurned;   // [WAD] burn amount accumulator
 }

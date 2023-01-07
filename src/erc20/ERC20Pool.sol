@@ -5,43 +5,48 @@ pragma solidity 0.8.14;
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 }    from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {
+import { 
     IERC20Pool,
     IERC20PoolBorrowerActions,
     IERC20PoolImmutables,
     IERC20PoolLenderActions
-}  from 'src/erc20/interfaces/IERC20Pool.sol';
-import { IPoolLenderActions, IPoolLiquidationActions } from 'src/base/interfaces/IPool.sol';
-import { IERC20Taker } from 'src/erc20/interfaces/IERC20Taker.sol';
+}                              from './interfaces/IERC20Pool.sol';
+import { IERC20Taker }         from './interfaces/IERC20Taker.sol';
+
+import {
+    IPoolLenderActions,
+    IPoolLiquidationActions,
+    IERC20Token
+}                            from '../base/interfaces/IPool.sol';
 import {
     IERC3156FlashBorrower,
     IERC3156FlashLender
-} from 'src/base/interfaces/IERC3156FlashLender.sol';
-import { IERC20Token } from 'src/base/interfaces/IPool.sol';
-import { PoolState }   from 'src/base/interfaces/pool/IPoolState.sol';
+}                            from '../base/interfaces/IERC3156FlashLender.sol';
+
 import {
     DrawDebtResult,
     BucketTakeResult,
     RepayDebtResult,
     SettleParams,
     TakeResult
-} from 'src/base/interfaces/pool/IPoolInternals.sol';
+}                    from '../base/interfaces/pool/IPoolInternals.sol';
+import { PoolState } from '../base/interfaces/pool/IPoolState.sol';
 
-import { FlashloanablePool }         from 'src/base/FlashloanablePool.sol';
-import { 
-    _getCollateralDustPricePrecisionAdjustment, 
+import {
+    _getCollateralDustPricePrecisionAdjustment,
     _roundToScale,
     _roundUpToScale
-} from 'src/base/PoolHelper.sol';
-import { _revertIfAuctionClearable } from 'src/base/RevertsHelper.sol';
+}                                               from '../base/PoolHelper.sol';
+import { FlashloanablePool }                    from '../base/FlashloanablePool.sol';
+import { _revertIfAuctionClearable }            from '../base/RevertsHelper.sol';
 
-import { Loans }    from 'src/libraries/Loans.sol';
-import { Deposits } from 'src/libraries/Deposits.sol';
-import { Maths }    from 'src/libraries/Maths.sol';
+import { Loans }    from '../libraries/Loans.sol';
+import { Deposits } from '../libraries/Deposits.sol';
+import { Maths }    from '../libraries/Maths.sol';
 
-import { BorrowerActions } from 'src/libraries/external/BorrowerActions.sol';
-import { LenderActions }   from 'src/libraries/external/LenderActions.sol';
-import { Auctions }        from 'src/libraries/external/Auctions.sol';
+import { BorrowerActions } from '../libraries/external/BorrowerActions.sol';
+import { LenderActions }   from '../libraries/external/LenderActions.sol';
+import { Auctions }        from '../libraries/external/Auctions.sol';
 
 contract ERC20Pool is IERC20Pool, FlashloanablePool {
     using SafeERC20 for IERC20;
@@ -93,7 +98,15 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    /// @inheritdoc IERC20PoolBorrowerActions
+    /**
+     *  @inheritdoc IERC20PoolBorrowerActions
+     *  @dev write state:
+     *          - decrement poolBalances.t0DebtInAuction accumulator
+     *          - increment poolBalances.pledgedCollateral accumulator
+     *          - increment poolBalances.t0Debt accumulator
+     *  @dev emit events:
+     *          - DrawDebt
+     */
     function drawDebt(
         address borrowerAddress_,
         uint256 amountToBorrow_,
@@ -144,7 +157,15 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         }
     }
 
-    /// @inheritdoc IERC20PoolBorrowerActions
+    /**
+     *  @inheritdoc IERC20PoolBorrowerActions
+     *  @dev write state:
+     *          - decrement poolBalances.t0Debt accumulator
+     *          - decrement poolBalances.t0DebtInAuction accumulator
+     *          - decrement poolBalances.pledgedCollateral accumulator
+     *  @dev emit events:
+     *          - RepayDebt
+     */
     function repayDebt(
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
@@ -241,7 +262,13 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     /*** Lender External Functions ***/
     /*********************************/
 
-    /// @inheritdoc IERC20PoolLenderActions
+    /**
+     *  @inheritdoc IERC20PoolLenderActions
+     *  @dev reverts on:
+     *          - DustAmountNotExceeded()
+     *  @dev emit events:
+     *          - AddCollateral
+     */
     function addCollateral(
         uint256 amountToAdd_,
         uint256 index_
@@ -268,7 +295,11 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         _transferCollateralFrom(msg.sender, amountToAdd_);
     }
 
-    /// @inheritdoc IPoolLenderActions
+    /**
+     *  @inheritdoc IPoolLenderActions
+     *  @dev emit events:
+     *          - RemoveCollateral
+     */
     function removeCollateral(
         uint256 maxAmount_,
         uint256 index_
@@ -300,7 +331,13 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     /*** Pool Auctions Functions ***/
     /*******************************/
 
-    /// @inheritdoc IPoolLiquidationActions
+    /**
+     *  @inheritdoc IPoolLiquidationActions
+     *  @dev write state:
+     *          - decrement poolBalances.t0Debt accumulator
+     *          - decrement poolBalances.t0DebtInAuction accumulator
+     *          - decrement poolBalances.pledgedCollateral accumulator
+     */
     function settle(
         address borrowerAddress_,
         uint256 maxDepth_
@@ -341,7 +378,13 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         _updateInterestState(poolState, _lup(poolState.debt));
     }
 
-    /// @inheritdoc IPoolLiquidationActions
+    /**
+     *  @inheritdoc IPoolLiquidationActions
+     *  @dev write state:
+     *          - decrement poolBalances.t0Debt accumulator
+     *          - decrement poolBalances.t0DebtInAuction accumulator
+     *          - decrement poolBalances.pledgedCollateral accumulator
+     */
     function take(
         address        borrowerAddress_,
         uint256        collateral_,
@@ -402,7 +445,13 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         _transferQuoteTokenFrom(callee_, result.quoteTokenAmount);
     }
 
-    /// @inheritdoc IPoolLiquidationActions
+    /**
+     *  @inheritdoc IPoolLiquidationActions
+     *  @dev write state:
+     *          - decrement poolBalances.t0Debt accumulator
+     *          - decrement poolBalances.t0DebtInAuction accumulator
+     *          - decrement poolBalances.pledgedCollateral accumulator
+     */
     function bucketTake(
         address borrowerAddress_,
         bool    depositTake_,

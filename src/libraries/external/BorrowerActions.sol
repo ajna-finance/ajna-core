@@ -9,66 +9,92 @@ import {
     DepositsState,
     LoansState,
     PoolState
-} from 'src/base/interfaces/pool/IPoolState.sol';
+}                   from '../../base/interfaces/pool/IPoolState.sol';
+import {
+    DrawDebtResult,
+    RepayDebtResult
+}                   from '../../base/interfaces/pool/IPoolInternals.sol';
 
-import { DrawDebtResult, RepayDebtResult } from 'src/base/interfaces/pool/IPoolInternals.sol';
+import {
+    _feeRate,
+    _priceAt,
+    _isCollateralized
+}                           from '../../base/PoolHelper.sol';
+import { _revertOnMinDebt } from '../../base/RevertsHelper.sol';
 
-import { _revertOnMinDebt }                      from 'src/base/RevertsHelper.sol';
-import { _feeRate, _priceAt, _isCollateralized } from 'src/base/PoolHelper.sol';
+import { Buckets }  from '../Buckets.sol';
+import { Deposits } from '../Deposits.sol';
+import { Loans }    from '../Loans.sol';
+import { Maths }    from '../Maths.sol';
 
-import { Buckets }  from 'src/libraries/Buckets.sol';
-import { Deposits } from 'src/libraries/Deposits.sol';
-import { Loans }    from 'src/libraries/Loans.sol';
-import { Maths }    from 'src/libraries/Maths.sol';
-
-import { Auctions } from 'src/libraries/external/Auctions.sol';
+import { Auctions } from './Auctions.sol';
 
 /**
     @notice External library containing logic for common borrower actions.
  */
 library BorrowerActions {
 
+    /*************************/
+    /*** Local Var Structs ***/
+    /*************************/
+
     struct DrawDebtLocalVars {
-        uint256 borrowerDebt; // borrower's accrued debt
-        uint256 debtChange;   // additional debt resulted from draw debt action
+        uint256 borrowerDebt; // [WAD] borrower's accrued debt
+        uint256 debtChange;   // [WAD] additional debt resulted from draw debt action
         bool    inAuction;    // true if loan is auctioned
         uint256 lupId;        // id of new LUP
         bool    stampT0Np;    // true if loan's t0 neutral price should be restamped (when drawing debt or pledge settles auction)
     }
-
     struct RepayDebtLocalVars {
-        uint256 borrowerDebt;          // borrower's accrued debt
+        uint256 borrowerDebt;          // [WAD] borrower's accrued debt
         bool    inAuction;             // true if loan still in auction after repay, false otherwise
-        uint256 newLup;                // LUP after repay debt action
+        uint256 newLup;                // [WAD] LUP after repay debt action
         bool    pull;                  // true if pull action
         bool    repay;                 // true if repay action
         bool    stampT0Np;             // true if loan's t0 neutral price should be restamped (when repay settles auction or pull collateral)
-        uint256 t0DebtInAuctionChange; // t0 change amount of debt after repayment
-        uint256 t0RepaidDebt;          // t0 debt repaid
+        uint256 t0DebtInAuctionChange; // [WAD] t0 change amount of debt after repayment
+        uint256 t0RepaidDebt;          // [WAD] t0 debt repaid
     }
 
-    /**
-     *  @notice Recipient of borrowed quote tokens doesn't match the caller of the drawDebt function.
-     */
+    /**************/
+    /*** Errors ***/
+    /**************/
+
+    // See `IPoolErrors` for descriptions
     error BorrowerNotSender();
-    /**
-     *  @notice Borrower is attempting to borrow more quote token than they have collateral for.
-     */
     error BorrowerUnderCollateralized();
-    /**
-     *  @notice User is attempting to move or pull more collateral than is available.
-     */
     error InsufficientCollateral();
-    /**
-     *  @notice Borrower is attempting to borrow more quote token than is available before the supplied limitIndex.
-     */
     error LimitIndexReached();
-    /**
-     *  @notice Borrower has no debt to liquidate.
-     *  @notice Borrower is attempting to repay when they have no outstanding debt.
-     */
     error NoDebt();
 
+    /***************************/
+    /***  External Functions ***/
+    /***************************/
+
+    /**
+     *  @notice See `IERC20PoolBorrowerActions` and `IERC721PoolBorrowerActions` for descriptions
+     *  @dev    write state:
+     *              - Auctions._settleAuction:
+     *                  - _removeAuction:
+     *                      - decrement kicker locked accumulator, increment kicker claimable accumumlator
+     *                      - decrement auctions count accumulator
+     *                      - decrement auctions.totalBondEscrowed accumulator
+     *                      - update auction queue state
+     *              - Loans.update:
+     *                  - _upsert:
+     *                      - insert or update loan in loans array
+     *                  - remove:
+     *                      - remove loan from loans array
+     *                  - update borrower in address => borrower mapping
+     *  @dev    reverts on:
+     *              - borrower not sender BorrowerNotSender()
+     *              - borrower debt less than pool min debt AmountLTMinDebt()
+     *              - limit price reached LimitIndexReached()
+     *              - borrower cannot draw more debt BorrowerUnderCollateralized()
+     *  @dev    emit events:
+     *              - Auctions._settleAuction:
+     *                  - AuctionNFTSettle or AuctionSettle
+     */
     function drawDebt(
         AuctionsState storage auctions_,
         mapping(uint256 => Bucket) storage buckets_,
@@ -182,6 +208,30 @@ library BorrowerActions {
         );
     }
 
+    /**
+     *  @notice See `IERC20PoolBorrowerActions` and `IERC721PoolBorrowerActions` for descriptions
+     *  @dev    write state:
+     *              - Auctions._settleAuction:
+     *                  - _removeAuction:
+     *                      - decrement kicker locked accumulator, increment kicker claimable accumumlator
+     *                      - decrement auctions count accumulator
+     *                      - decrement auctions.totalBondEscrowed accumulator
+     *                      - update auction queue state
+     *              - Loans.update:
+     *                  - _upsert:
+     *                      - insert or update loan in loans array
+     *                  - remove:
+     *                      - remove loan from loans array
+     *                  - update borrower in address => borrower mapping
+     *  @dev    reverts on:
+     *              - no debt to repay NoDebt()
+     *              - borrower debt less than pool min debt AmountLTMinDebt()
+     *              - borrower not sender BorrowerNotSender()
+     *              - not enough collateral to pull InsufficientCollateral()
+     *  @dev    emit events:
+     *              - Auctions._settleAuction:
+     *                  - AuctionNFTSettle or AuctionSettle
+     */
     function repayDebt(
         AuctionsState storage auctions_,
         mapping(uint256 => Bucket) storage buckets_,
@@ -293,6 +343,10 @@ library BorrowerActions {
             vars.stampT0Np
         );
     }
+
+    /**********************/
+    /*** View Functions ***/
+    /**********************/
 
     /**
      *  @notice Returns true if borrower is in auction.

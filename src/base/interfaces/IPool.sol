@@ -2,15 +2,15 @@
 
 pragma solidity 0.8.14;
 
-import { IPoolLenderActions }           from 'src/base/interfaces/pool/IPoolLenderActions.sol';
-import { IPoolLiquidationActions }      from 'src/base/interfaces/pool/IPoolLiquidationActions.sol';
-import { IPoolReserveAuctionActions }   from 'src/base/interfaces/pool/IPoolReserveAuctionActions.sol';
-import { IPoolImmutables }              from 'src/base/interfaces/pool/IPoolImmutables.sol';
-import { IPoolState }                   from 'src/base/interfaces/pool/IPoolState.sol';
-import { IPoolDerivedState }            from 'src/base/interfaces/pool/IPoolDerivedState.sol';
-import { IPoolEvents }                  from 'src/base/interfaces/pool/IPoolEvents.sol';
-import { IPoolErrors }                  from 'src/base/interfaces/pool/IPoolErrors.sol';
-import { IERC3156FlashLender }          from 'src/base/interfaces/IERC3156FlashLender.sol';
+import { IPoolLenderActions }         from './pool/IPoolLenderActions.sol';
+import { IPoolLiquidationActions }    from './pool/IPoolLiquidationActions.sol';
+import { IPoolReserveAuctionActions } from './pool/IPoolReserveAuctionActions.sol';
+import { IPoolImmutables }            from './pool/IPoolImmutables.sol';
+import { IPoolState }                 from './pool/IPoolState.sol';
+import { IPoolDerivedState }          from './pool/IPoolDerivedState.sol';
+import { IPoolEvents }                from './pool/IPoolEvents.sol';
+import { IPoolErrors }                from './pool/IPoolErrors.sol';
+import { IERC3156FlashLender }        from './IERC3156FlashLender.sol';
 
 /**
  * @title Base Pool

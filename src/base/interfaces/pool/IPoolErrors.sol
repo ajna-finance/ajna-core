@@ -11,6 +11,26 @@ interface IPoolErrors {
     /**************************/
 
     /**
+     *  @notice The action cannot be executed on an active auction.
+     */
+    error AuctionActive();
+
+    /**
+     *  @notice Attempted auction to clear doesn't meet conditions.
+     */
+    error AuctionNotClearable();
+
+    /**
+     *  @notice Head auction should be cleared prior of executing this action.
+     */
+    error AuctionNotCleared();
+
+    /**
+     *  @notice The auction price is greater than the arbed bucket price.
+     */
+    error AuctionPriceGtBucketPrice();
+
+    /**
      *  @notice Pool already initialized.
      */
     error AlreadyInitialized();
@@ -34,6 +54,11 @@ interface IPoolErrors {
      *  @notice Borrower is attempting to borrow more quote token than they have collateral for.
      */
     error BorrowerUnderCollateralized();
+
+    /**
+     *  @notice Operation cannot be executed in the same block when bucket becomes insolvent.
+     */
+    error BucketBankruptcyBlock();
 
     /**
      *  @notice User attempted to merge collateral from a lower price bucket into a higher price bucket.
@@ -104,6 +129,16 @@ interface IPoolErrors {
     error NoAllowance();
 
     /**
+     *  @notice Actor is attempting to take or clear an inactive auction.
+     */
+    error NoAuction();
+
+    /**
+     *  @notice No pool reserves are claimable.
+     */
+    error NoReserves();
+
+    /**
      *  @notice Actor is attempting to take or clear an inactive reserves auction.
      */
     error NoReservesAuction();
@@ -120,14 +155,14 @@ interface IPoolErrors {
     error NoDebt();
 
     /**
-     *  @notice No pool reserves are claimable.
-     */
-    error NoReserves();
-
-    /**
      *  @notice Borrower is attempting to borrow an amount of quote tokens that will push the pool into under-collateralization.
      */
     error PoolUnderCollateralized();
+
+    /**
+     *  @notice Actor is attempting to remove using a bucket with price below the LUP.
+     */
+    error PriceBelowLUP();
 
     /**
      *  @notice Lender is attempting to remove quote tokens from a bucket that exists above active auction debt from top-of-book downward.
@@ -138,5 +173,15 @@ interface IPoolErrors {
      * @notice User attempted to kick off a new auction less than 2 weeks since the last auction completed.
      */
     error ReserveAuctionTooSoon();
+
+    /**
+     *  @notice Take was called before 1 hour had passed from kick time.
+     */
+    error TakeNotPastCooldown();
+
+    /**
+     *  @notice The threshold price of the loan to be inserted in loans heap is zero.
+     */
+    error ZeroThresholdPrice();
 
 }

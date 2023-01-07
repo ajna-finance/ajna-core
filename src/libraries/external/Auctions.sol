@@ -4,7 +4,8 @@ pragma solidity 0.8.14;
 
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 
-import { PoolType } from 'src/base/interfaces/IPool.sol';
+import { PoolType } from '../../base/interfaces/IPool.sol';
+
 import {
     AuctionsState,
     Borrower,
@@ -16,18 +17,15 @@ import {
     LoansState,
     PoolState,
     ReserveAuctionState
-} from 'src/base/interfaces/pool/IPoolState.sol';
-
+}                                    from '../../base/interfaces/pool/IPoolState.sol';
 import {
     BucketTakeResult,
     KickResult,
     SettleParams,
     TakeResult
-} from 'src/base/interfaces/pool/IPoolInternals.sol';
+}                                    from '../../base/interfaces/pool/IPoolInternals.sol';
+import { StartReserveAuctionParams } from '../../base/interfaces/pool/IPoolReserveAuctionActions.sol';
 
-import { StartReserveAuctionParams } from 'src/base/interfaces/pool/IPoolReserveAuctionActions.sol';
-
-import { _revertOnMinDebt } from 'src/base/RevertsHelper.sol';
 import {
     _claimableReserves,
     _indexOf,
@@ -38,258 +36,131 @@ import {
     MAX_FENWICK_INDEX,
     MAX_PRICE,
     MIN_PRICE
-} from 'src/base/PoolHelper.sol';
+}                           from '../../base/PoolHelper.sol';
+import { _revertOnMinDebt } from '../../base/RevertsHelper.sol';
 
-import { Buckets }  from 'src/libraries/Buckets.sol';
-import { Deposits } from 'src/libraries/Deposits.sol';
-import { Loans }    from 'src/libraries/Loans.sol';
-import { Maths }    from 'src/libraries/Maths.sol';
+import { Buckets }  from '../Buckets.sol';
+import { Deposits } from '../Deposits.sol';
+import { Loans }    from '../Loans.sol';
+import { Maths }    from '../Maths.sol';
 
 library Auctions {
 
+    /*******************************/
+    /*** Function Params Structs ***/
+    /*******************************/
+
     struct BucketTakeParams {
         address borrower;        // borrower address to take from
-        uint256 collateral;      // borrower available collateral to take
+        uint256 collateral;      // [WAD] borrower available collateral to take
         bool    depositTake;     // deposit or arb take, used by bucket take
         uint256 index;           // bucket index, used by bucket take
-        uint256 inflator;        // current pool inflator
-        uint256 t0Debt;          // borrower t0 debt
+        uint256 inflator;        // [WAD] current pool inflator
+        uint256 t0Debt;          // [WAD] borrower t0 debt
         uint256 collateralScale; // precision of collateral token based on decimals
     }
-
-    struct KickWithDepositLocalVars {
-        uint256 amountToDebitFromDeposit; // the amount of quote tokens used to kick and debited from lender deposit
-        uint256 bucketCollateral;         // amount of collateral in bucket
-        uint256 bucketDeposit;            // amount of quote tokens in bucket
-        uint256 bucketLPs;                // LPs of the bucket
-        uint256 bucketPrice;              // bucket price
-        uint256 bucketRate;               // bucket exchange rate
-        uint256 bucketScale;              // bucket scales
-        uint256 bucketUnscaledDeposit;    // unscaled amount of quote tokens in bucket
-        uint256 lenderLPs;                // LPs of lender in bucket
-        uint256 redeemedLPs;              // LPs used by kick action
-    }
-
-    struct SettleLocalVars {
-        uint256 collateralUsed;    // collateral used to settle debt
-        uint256 debt;              // debt to settle
-        uint256 depositToRemove;   // deposit used by settle auction
-        uint256 index;             // index of settling bucket
-        uint256 maxSettleableDebt; // max amount that can be settled with existing collateral
-        uint256 price;             // price of settling bucket
-        uint256 scaledDeposit;     // scaled amount of quote tokens in bucket
-        uint256 scale;             // scale of settling bucket
-        uint256 unscaledDeposit;   // unscaled amount of quote tokens in bucket
-    }
-
-    struct TakeLocalVars {
-        uint256 auctionPrice;             // The price of auction.
-        uint256 bondChange;               // The change made on the bond size (beeing reward or penalty).
-        uint256 borrowerDebt;             // The accrued debt of auctioned borrower.
-        int256  bpf;                      // The bond penalty factor.
-        uint256 bucketPrice;              // The bucket price.
-        uint256 bucketScale;              // The bucket scale.
-        uint256 collateralAmount;         // The amount of collateral taken.
-        uint256 excessQuoteToken;         // Difference of quote token that borrower receives after take (for fractional NFT only)
-        uint256 factor;                   // The take factor, calculated based on bond penalty factor.
-        bool    isRewarded;               // True if kicker is rewarded (auction price lower than neutral price), false if penalized (auction price greater than neutral price).
-        address kicker;                   // Address of auction kicker.
-        uint256 scaledQuoteTokenAmount;   // Unscaled quantity in Fenwick tree and before 1-bpf factor, paid for collateral
-        uint256 t0RepayAmount;            // The amount of debt (quote tokens) that is recovered / repayed by take t0 terms.
-        uint256 t0Debt;                   // Borrower's t0 debt.
-        uint256 t0DebtPenalty;            // Borrower's t0 penalty - 7% from current debt if intial take, 0 otherwise.
-        uint256 unscaledDeposit;          // Unscaled bucket quantity
-        uint256 unscaledQuoteTokenAmount; // The unscaled token amount that taker should pay for collateral taken.
-    }
-
-    struct TakeLoanLocalVars {
-        uint256 repaidDebt;   // the amount of debt repaid to th epool by take auction
-        uint256 borrowerDebt; // the amount of borrower debt
-        bool    inAuction;    // true if loan in auction
-    }
-
-    struct TakeFromLoanLocalVars {
-        uint256 borrowerDebt;          // borrower's accrued debt
-        bool    inAuction;             // true if loan still in auction after auction is taken, false otherwise
-        uint256 newLup;                // LUP after auction is taken
-        uint256 repaidDebt;            // debt repaid when auction is taken
-        uint256 t0DebtInAuction;       // t0 pool debt in auction
-        uint256 t0DebtInAuctionChange; // t0 change amount of debt after auction is taken
-        uint256 t0PoolDebt;            // t0 pool debt
-    }
-
     struct TakeParams {
         address borrower;        // borrower address to take from
-        uint256 collateral;      // borrower available collateral to take
-        uint256 t0Debt;          // borrower t0 debt
-        uint256 takeCollateral;  // desired amount to take
-        uint256 inflator;        // current pool inflator
+        uint256 collateral;      // [WAD] borrower available collateral to take
+        uint256 t0Debt;          // [WAD] borrower t0 debt
+        uint256 takeCollateral;  // [WAD] desired amount to take
+        uint256 inflator;        // [WAD] current pool inflator
         uint256 poolType;        // pool type (ERC20 or NFT)
         uint256 collateralScale; // precision of collateral token based on decimals
     }
 
-    /**
-     *  @notice Emitted when auction is completed.
-     *  @param  borrower   Address of borrower that exits auction.
-     *  @param  collateral Borrower's remaining collateral when auction completed.
-     */
-    event AuctionSettle(
-        address indexed borrower,
-        uint256 collateral
-    );
+    /*************************/
+    /*** Local Var Structs ***/
+    /*************************/
 
-    /**
-     *  @notice Emitted when NFT auction is completed.
-     *  @param  borrower   Address of borrower that exits auction.
-     *  @param  collateral Borrower's remaining collateral when auction completed.
-     *  @param  lps        Amount of LPs given to the borrower to compensate fractional collateral (if any).
-     *  @param  index      Index of the bucket with LPs to compensate fractional collateral.
-     */
-    event AuctionNFTSettle(
-        address indexed borrower,
-        uint256 collateral,
-        uint256 lps,
-        uint256 index
-    );
+    struct KickWithDepositLocalVars {
+        uint256 amountToDebitFromDeposit; // [WAD] the amount of quote tokens used to kick and debited from lender deposit
+        uint256 bucketCollateral;         // [WAD] amount of collateral in bucket
+        uint256 bucketDeposit;            // [WAD] amount of quote tokens in bucket
+        uint256 bucketLPs;                // [RAY] LPs of the bucket
+        uint256 bucketPrice;              // [WAD] bucket price
+        uint256 bucketRate;               // [RAY] bucket exchange rate
+        uint256 bucketScale;              // [WAD] bucket scales
+        uint256 bucketUnscaledDeposit;    // [WAD] unscaled amount of quote tokens in bucket
+        uint256 lenderLPs;                // [RAY] LPs of lender in bucket
+        uint256 redeemedLPs;              // [RAY] LPs used by kick action
+    }
+    struct SettleLocalVars {
+        uint256 collateralUsed;    // [WAD] collateral used to settle debt
+        uint256 debt;              // [WAD] debt to settle
+        uint256 depositToRemove;   // [WAD] deposit used by settle auction
+        uint256 index;             // index of settling bucket
+        uint256 maxSettleableDebt; // [WAD] max amount that can be settled with existing collateral
+        uint256 price;             // [WAD] price of settling bucket
+        uint256 scaledDeposit;     // [WAD] scaled amount of quote tokens in bucket
+        uint256 scale;             // [WAD] scale of settling bucket
+        uint256 unscaledDeposit;   // [WAD] unscaled amount of quote tokens in bucket
+    }
+    struct TakeLocalVars {
+        uint256 auctionPrice;             // [WAD] The price of auction.
+        uint256 bondChange;               // [WAD] The change made on the bond size (beeing reward or penalty).
+        uint256 borrowerDebt;             // [WAD] The accrued debt of auctioned borrower.
+        int256  bpf;                      // The bond penalty factor.
+        uint256 bucketPrice;              // [WAD] The bucket price.
+        uint256 bucketScale;              // [WAD] The bucket scale.
+        uint256 collateralAmount;         // [WAD] The amount of collateral taken.
+        uint256 excessQuoteToken;         // [WAD] Difference of quote token that borrower receives after take (for fractional NFT only)
+        uint256 factor;                   // The take factor, calculated based on bond penalty factor.
+        bool    isRewarded;               // True if kicker is rewarded (auction price lower than neutral price), false if penalized (auction price greater than neutral price).
+        address kicker;                   // Address of auction kicker.
+        uint256 scaledQuoteTokenAmount;   // [WAD] Unscaled quantity in Fenwick tree and before 1-bpf factor, paid for collateral
+        uint256 t0RepayAmount;            // [WAD] The amount of debt (quote tokens) that is recovered / repayed by take t0 terms.
+        uint256 t0Debt;                   // [WAD] Borrower's t0 debt.
+        uint256 t0DebtPenalty;            // [WAD] Borrower's t0 penalty - 7% from current debt if intial take, 0 otherwise.
+        uint256 unscaledDeposit;          // [WAD] Unscaled bucket quantity
+        uint256 unscaledQuoteTokenAmount; // [WAD] The unscaled token amount that taker should pay for collateral taken.
+    }
+    struct TakeLoanLocalVars {
+        uint256 repaidDebt;   // [WAD] the amount of debt repaid to th epool by take auction
+        uint256 borrowerDebt; // [WAD] the amount of borrower debt
+        bool    inAuction;    // true if loan in auction
+    }
+    struct TakeFromLoanLocalVars {
+        uint256 borrowerDebt;          // [WAD] borrower's accrued debt
+        bool    inAuction;             // true if loan still in auction after auction is taken, false otherwise
+        uint256 newLup;                // [WAD] LUP after auction is taken
+        uint256 repaidDebt;            // [WAD] debt repaid when auction is taken
+        uint256 t0DebtInAuction;       // [WAD] t0 pool debt in auction
+        uint256 t0DebtInAuctionChange; // [WAD] t0 change amount of debt after auction is taken
+        uint256 t0PoolDebt;            // [WAD] t0 pool debt
+    }
 
-    /**
-     *  @notice Emitted when LPs are forfeited as a result of the bucket losing all assets.
-     *  @param  index       The index of the bucket.
-     *  @param  lpForfeited Amount of LP forfeited by lenders.
-     */
-    event BucketBankruptcy(
-        uint256 indexed index,
-        uint256 lpForfeited
-    );
+    /**************/
+    /*** Events ***/
+    /**************/
 
-    /**
-     *  @notice Emitted when an actor uses quote token to arb higher-priced deposit off the book.
-     *  @param  borrower    Identifies the loan being liquidated.
-     *  @param  index       The index of the Highest Price Bucket used for this take.
-     *  @param  amount      Amount of quote token used to purchase collateral.
-     *  @param  collateral  Amount of collateral purchased with quote token.
-     *  @param  bondChange  Impact of this take to the liquidation bond.
-     *  @param  isReward    True if kicker was rewarded with `bondChange` amount, false if kicker was penalized.
-     *  @dev    amount / collateral implies the auction price.
-     */
-    event BucketTake(
-        address indexed borrower,
-        uint256 index,
-        uint256 amount,
-        uint256 collateral,
-        uint256 bondChange,
-        bool    isReward
-    );
+    // See `IPoolEvents` for descriptions
+    event AuctionSettle(address indexed borrower, uint256 collateral);
+    event AuctionNFTSettle(address indexed borrower, uint256 collateral, uint256 lps, uint256 index);
+    event BucketTake(address indexed borrower, uint256 index, uint256 amount, uint256 collateral, uint256 bondChange, bool isReward);
+    event BucketTakeLPAwarded(address indexed taker, address indexed kicker, uint256 lpAwardedTaker, uint256 lpAwardedKicker);
+    event Kick(address indexed borrower, uint256 debt, uint256 collateral, uint256 bond);
+    event Take(address indexed borrower, uint256 amount, uint256 collateral, uint256 bondChange, bool isReward);
+    event RemoveQuoteToken(address indexed lender, uint256 indexed price, uint256 amount, uint256 lpRedeemed, uint256 lup);
+    event ReserveAuction(uint256 claimableReservesRemaining, uint256 auctionPrice);
+    event Settle(address indexed borrower, uint256 settledDebt);
 
-    /**
-     *  @notice Emitted when LPs are awarded to a taker or kicker in a bucket take.
-     *  @param  taker           Actor who invoked the bucket take.
-     *  @param  kicker          Actor who started the auction.
-     *  @param  lpAwardedTaker  Amount of LP awarded to the taker.
-     *  @param  lpAwardedKicker Amount of LP awarded to the actor who started the auction.
-     */
-    event BucketTakeLPAwarded(
-        address indexed taker,
-        address indexed kicker,
-        uint256 lpAwardedTaker,
-        uint256 lpAwardedKicker
-    );
+    /**************/
+    /*** Errors ***/
+    /**************/
 
-    event Kick(
-        address indexed borrower,
-        uint256 debt,
-        uint256 collateral,
-        uint256 bond
-    );
-
-    event Take(
-        address indexed borrower,
-        uint256 amount,
-        uint256 collateral,
-        uint256 bondChange,
-        bool    isReward
-    );
-
-    /**
-     *  @notice Emitted when lender kick and remove quote token from the pool.
-     *  @param  lender     Recipient that removed quote tokens.
-     *  @param  price      Price at which quote tokens were removed.
-     *  @param  amount     Amount of quote tokens removed from the pool.
-     *  @param  lpRedeemed Amount of LP exchanged for quote token.
-     *  @param  lup        LUP calculated after removal.
-     */
-    event RemoveQuoteToken(
-        address indexed lender,
-        uint256 indexed price,
-        uint256 amount,
-        uint256 lpRedeemed,
-        uint256 lup
-    );
-
-    /**
-     *  @notice Emitted when a Claimaible Reserve Auction is started or taken.
-     *  @return claimableReservesRemaining Amount of claimable reserves which has not yet been taken.
-     *  @return auctionPrice               Current price at which 1 quote token may be purchased, denominated in Ajna.
-     */
-    event ReserveAuction(
-        uint256 claimableReservesRemaining,
-        uint256 auctionPrice
-    );
-
-    /**
-     *  @notice Emitted when an actor settles debt in a completed liquidation
-     *  @param  borrower   Identifies the loan under liquidation.
-     *  @param  settledDebt Amount of pool debt settled in this transaction.
-     *  @dev    When amountRemaining_ == 0, the auction has been completed cleared and removed from the queue.
-     */
-    event Settle(
-        address indexed borrower,
-        uint256 settledDebt
-    );
-
-    /**
-     *  @notice The action cannot be executed on an active auction.
-     */
+    // See `IPoolErrors` for descriptions
+    event BucketBankruptcy(uint256 indexed index, uint256 lpForfeited);
     error AuctionActive();
-    /**
-     *  @notice Attempted auction to clear doesn't meet conditions.
-     */
     error AuctionNotClearable();
-    /**
-     *  @notice The auction price is greater than the arbed bucket price.
-     */
     error AuctionPriceGtBucketPrice();
-    /**
-     *  @notice Borrower has a healthy over-collateralized position.
-     */
     error BorrowerOk();
-    /**
-     *  @notice Bucket to arb must have more quote available in the bucket.
-     */
     error InsufficientLiquidity();
-    /**
-     *  @notice User is attempting to take more collateral than available.
-     */
     error InsufficientCollateral();
-    /**
-     *  @notice Actor is attempting to take or clear an inactive auction.
-     */
     error NoAuction();
-    /**
-     *  @notice No pool reserves are claimable.
-     */
     error NoReserves();
-    /**
-     *  @notice Actor is attempting to take or clear an inactive reserves auction.
-     */
     error NoReservesAuction();
-    /**
-     *  @notice Actor is attempting to remove using a bucket with price below the LUP.
-     */
     error PriceBelowLUP();
-    /**
-     *  @notice Take was called before 1 hour had passed from kick time.
-     */
     error TakeNotPastCooldown();
 
     /***************************/
@@ -298,7 +169,20 @@ library Auctions {
 
     /**
      *  @notice Settles the debt of the given loan / borrower.
-     *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from liquidationBondEscrowed.
+     *  @dev    write state:
+     *          - Deposits.unscaledRemove() (remove amount in Fenwick tree, from index):
+     *              - update values array state
+     *          - Buckets.addCollateral:
+     *              - increment bucket.collateral and bucket.lps accumulator
+     *              - addLenderLPs:
+     *                  - increment lender.lps accumulator and lender.depositTime state
+     *          - update borrower state
+     *  @dev    reverts on:
+     *              - loan is not in auction NoAuction()
+     *              - 72 hours didn't pass and auction still has collateral AuctionNotClearable()
+     *  @dev    emit events:
+     *              - Settle
+     *              - BucketBankruptcy
      *  @param  params_ Settle params
      *  @return collateralRemaining_ The amount of borrower collateral left after settle.
      *  @return t0DebtRemaining_     The amount of t0 debt left after settle.
@@ -474,6 +358,13 @@ library Auctions {
 
     /**
      *  @notice Called by lenders to kick loans using their deposits.
+     *  @dev    write state:
+     *              - Deposits.unscaledRemove (remove amount in Fenwick tree, from index):
+     *                  - update values array state
+     *              - decrement lender.lps accumulator
+     *              - decrement bucket.lps accumulator
+     *  @dev    emit events:
+     *              - RemoveQuoteToken
      *  @param  poolState_           Current state of the pool.
      *  @param  index_               The deposit index from where lender removes liquidity.
      *  @return kickResult_ The result of the kick action.
@@ -566,6 +457,8 @@ library Auctions {
 
     /**
      *  @notice Performs bucket take collateral on an auction, rewards taker and kicker (if case) and updates loan info (settles auction if case).
+     *  @dev    reverts on:
+     *              - insufficient collateral InsufficientCollateral()
      *  @param  borrowerAddress_ Borrower address to take.
      *  @param  depositTake_     If true then the take will happen at an auction price equal with bucket price. Auction price is used otherwise.
      *  @param  index_           Index of a bucket, likely the HPB, in which collateral will be deposited.
@@ -583,6 +476,8 @@ library Auctions {
         uint256 collateralScale_
     ) external returns (BucketTakeResult memory result_) {
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
+
+        if (borrower.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
 
         (
             result_.collateralAmount,
@@ -629,6 +524,8 @@ library Auctions {
 
     /**
      *  @notice Performs take collateral on an auction, rewards taker and kicker (if case) and updates loan info (settles auction if case).
+     *  @dev    reverts on:
+     *              - insufficient collateral InsufficientCollateral()
      *  @param  borrowerAddress_ Borrower address to take.
      *  @param  collateral_      Max amount of collateral that will be taken from the auction (max number of NFTs in case of ERC721 pool).
      *  @return result_          TakeResult struct containing details of take.
@@ -691,6 +588,88 @@ library Auctions {
         );
     }
 
+    /**
+     *  @notice See `IPoolReserveAuctionActions` for descriptions.
+     *  @dev    write state:
+     *              - update reserveAuction.unclaimed accumulator
+     *              - update reserveAuction.kicked timestamp state
+     *  @dev    reverts on:
+     *          - no reserves to claim NoReserves()
+     *  @dev    emit events:
+     *              - ReserveAuction
+     */
+    function startClaimableReserveAuction(
+        AuctionsState storage auctions_,
+        ReserveAuctionState storage reserveAuction_,
+        StartReserveAuctionParams calldata params_
+    ) external returns (uint256 kickerAward_) {
+        uint256 curUnclaimedAuctionReserve = reserveAuction_.unclaimed;
+
+        uint256 claimable = _claimableReserves(
+            Maths.wmul(params_.poolDebt, params_.inflator),
+            params_.poolSize,
+            auctions_.totalBondEscrowed,
+            curUnclaimedAuctionReserve,
+            params_.poolBalance
+        );
+
+        kickerAward_ = Maths.wmul(0.01 * 1e18, claimable);
+
+        curUnclaimedAuctionReserve += claimable - kickerAward_;
+
+        if (curUnclaimedAuctionReserve == 0) revert NoReserves();
+
+        reserveAuction_.unclaimed = curUnclaimedAuctionReserve;
+        reserveAuction_.kicked    = block.timestamp;
+
+        emit ReserveAuction(curUnclaimedAuctionReserve, _reserveAuctionPrice(block.timestamp));
+    }
+
+    /**
+     *  @notice See `IPoolReserveAuctionActions` for descriptions.
+     *  @dev    write state:
+     *              - decrement reserveAuction.unclaimed accumulator
+     *  @dev    reverts on:
+     *              - not kicked or 72 hours didn't pass NoReservesAuction()
+     *  @dev    emit events:
+     *              - ReserveAuction
+     */
+    function takeReserves(
+        ReserveAuctionState storage reserveAuction_,
+        uint256 maxAmount_
+    ) external returns (uint256 amount_, uint256 ajnaRequired_) {
+        uint256 kicked = reserveAuction_.kicked;
+
+        if (kicked != 0 && block.timestamp - kicked <= 72 hours) {
+            uint256 unclaimed = reserveAuction_.unclaimed;
+            uint256 price     = _reserveAuctionPrice(kicked);
+
+            amount_       = Maths.min(unclaimed, maxAmount_);
+            ajnaRequired_ = Maths.wmul(amount_, price);
+
+            unclaimed -= amount_;
+
+            reserveAuction_.unclaimed = unclaimed;
+
+            emit ReserveAuction(unclaimed, price);
+        } else {
+            revert NoReservesAuction();
+        }
+    }
+
+    /***************************/
+    /***  Internal Functions ***/
+    /***************************/
+
+    /**
+     *  @notice Performs auction settle based on pool type, emits settle event and removes auction from auctions queue.
+     *  @dev    emit events:
+     *              - AuctionNFTSettle or AuctionSettle
+     *  @param  borrowerAddress_     Address of the borrower that exits auction.
+     *  @param  borrowerCollateral_  Borrower collateral amount before auction exit (in NFT could be fragmented as result of partial takes).
+     *  @param  poolType_            Type of the pool (can be ERC20 or NFT).
+     *  @return remainingCollateral_ Collateral remaining after auction is settled (same amount for ERC20 pool, rounded collateral for NFT pool).
+     */
     function _settleAuction(
         AuctionsState storage auctions_,
         mapping(uint256 => Bucket) storage buckets_,
@@ -762,66 +741,21 @@ library Auctions {
         }
     }
 
-    /***********************/
-    /*** Reserve Auction ***/
-    /***********************/
-
-    function startClaimableReserveAuction(
-        AuctionsState storage auctions_,
-        ReserveAuctionState storage reserveAuction_,
-        StartReserveAuctionParams calldata params_
-    ) external returns (uint256 kickerAward_) {
-        uint256 curUnclaimedAuctionReserve = reserveAuction_.unclaimed;
-
-        uint256 claimable = _claimableReserves(
-            Maths.wmul(params_.poolDebt, params_.inflator),
-            params_.poolSize,
-            auctions_.totalBondEscrowed,
-            curUnclaimedAuctionReserve,
-            params_.poolBalance
-        );
-
-        kickerAward_ = Maths.wmul(0.01 * 1e18, claimable);
-
-        curUnclaimedAuctionReserve += claimable - kickerAward_;
-
-        if (curUnclaimedAuctionReserve == 0) revert NoReserves();
-
-        reserveAuction_.unclaimed = curUnclaimedAuctionReserve;
-        reserveAuction_.kicked    = block.timestamp;
-
-        emit ReserveAuction(curUnclaimedAuctionReserve, _reserveAuctionPrice(block.timestamp));
-    }
-
-    function takeReserves(
-        ReserveAuctionState storage reserveAuction_,
-        uint256 maxAmount_
-    ) external returns (uint256 amount_, uint256 ajnaRequired_) {
-        uint256 kicked = reserveAuction_.kicked;
-
-        if (kicked != 0 && block.timestamp - kicked <= 72 hours) {
-            uint256 unclaimed = reserveAuction_.unclaimed;
-            uint256 price     = _reserveAuctionPrice(kicked);
-
-            amount_       = Maths.min(unclaimed, maxAmount_);
-            ajnaRequired_ = Maths.wmul(amount_, price);
-
-            unclaimed -= amount_;
-
-            reserveAuction_.unclaimed = unclaimed;
-
-            emit ReserveAuction(unclaimed, price);
-        } else {
-            revert NoReservesAuction();
-        }
-    }
-
-    /***************************/
-    /***  Internal Functions ***/
-    /***************************/
-
     /**
      *  @notice Called to start borrower liquidation and to update the auctions queue.
+     *  @dev    write state:
+     *              - _recordAuction:
+     *                  - borrower -> liquidation mapping update
+     *                  - increment auctions count accumulator
+     *                  - increment auctions.totalBondEscrowed accumulator
+     *                  - updates auction queue state
+     *              - _updateKicker:
+     *                  - update locked and claimable kicker accumulators
+     *              - Loans.remove:
+     *                  - delete borrower from indices => borrower address mapping
+     *                  - remove loan from loans array
+     *  @dev    emit events:
+     *              - Kick
      *  @param  poolState_       Current state of the pool.
      *  @param  borrowerAddress_ Address of the borrower to kick.
      *  @param  additionalDebt_  Additional debt to be used when calculating proposed LUP.
@@ -902,6 +836,8 @@ library Auctions {
 
     /**
      *  @notice Performs take collateral on an auction and updates bond size and kicker balance accordingly.
+     *  @dev    emit events:
+     *              - Take
      *  @param  params_ Struct containing take action params details.
      *  @return Collateral amount taken.
      *  @return Quote token to be received from taker.
@@ -969,6 +905,8 @@ library Auctions {
 
     /**
      *  @notice Performs bucket take collateral on an auction and rewards taker and kicker (if case).
+     *  @dev    emit events:
+     *              - BucketTake
      *  @param  params_ Struct containing take action details.
      *  @return Collateral amount taken.
      *  @return T0 debt amount repaid.
@@ -981,7 +919,6 @@ library Auctions {
         DepositsState storage deposits_,
         BucketTakeParams memory params_
     ) internal returns (uint256, uint256, uint256, uint256) {
-        if (params_.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
 
         Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
 
@@ -1038,6 +975,8 @@ library Auctions {
     /**
      *  @notice Performs update of an auctioned loan that was taken (using bucket or regular take).
      *  @notice If borrower becomes recollateralized then auction is settled. Update loan's state.
+     *  @dev    reverts on:
+     *              - borrower debt less than pool min debt AmountLTMinDebt()
      *  @param  borrower_               The borrower details owning loan that is taken.
      *  @param  borrowerAddress_        The address of the borrower.
      *  @param  t0RepaidDebt_           T0 debt amount repaid by the take action.
@@ -1148,6 +1087,8 @@ library Auctions {
 
     /**
      *  @notice Updates kicker balances.
+     *  @dev    write state:
+     *              - update locked and claimable kicker accumulators
      *  @param  bondSize_       Bond size to cover newly kicked auction.
      *  @return bondDifference_ The amount that kicker should send to pool to cover auction bond.
      */
@@ -1230,6 +1171,11 @@ library Auctions {
 
     /**
      *  @notice Saves a new liquidation that was kicked.
+     *  @dev    write state:
+     *              - borrower -> liquidation mapping update
+     *              - increment auctions count accumulator
+     *              - increment auctions.totalBondEscrowed accumulator
+     *              - updates auction queue state
      *  @param  borrowerAddress_ Address of the borrower that is kicked.
      *  @param  bondSize_        Bond size to cover newly kicked auction.
      *  @param  bondFactor_      Bond factor of the newly kicked auction.
@@ -1277,6 +1223,11 @@ library Auctions {
     /**
      *  @notice Removes auction and repairs the queue order.
      *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from liquidationBondEscrowed.
+     *  @dev    write state:
+     *              - decrement kicker locked accumulator, increment kicker claimable accumumlator
+     *              - decrement auctions count accumulator
+     *              - decrement auctions.totalBondEscrowed accumulator
+     *              - update auction queue state
      *  @param  borrower_ Auctioned borrower address.
      */
     function _removeAuction(
@@ -1321,6 +1272,14 @@ library Auctions {
         delete auctions_.liquidations[borrower_];
     }
 
+    /**
+     *  @notice Rewards actors of a regular take action.
+     *  @dev    write state:
+     *              - update liquidation bond size accumulator
+     *              - update kicker's locked balance accumulator
+     *              - update auctions.totalBondEscrowed accumulator
+     *  @param  vars  Struct containing take action result details.
+     */
     function _rewardTake(
         AuctionsState storage auctions_,
         Liquidation storage liquidation_,
@@ -1343,9 +1302,19 @@ library Auctions {
 
     /**
      *  @notice Rewards actors of a bucket take action.
-     *  @param  deposits_    Deposits state
-     *  @param  bucketIndex_ Bucket index.
-     *  @param  vars         Struct containing take action result details.
+     *  @dev    write state:
+     *              - Buckets.addLenderLPs:
+     *                  - increment taker lender.lps accumulator and lender.depositTime state
+     *                  - increment kicker lender.lps accumulator and lender.depositTime state
+     *              - update liquidation bond size accumulator
+     *              - update kicker's locked balance accumulator
+     *              - update auctions.totalBondEscrowed accumulator
+     *              - Deposits.unscaledRemove() (remove amount in Fenwick tree, from index):
+     *                  - update values array state
+     *              - increment bucket.collateral and bucket.lps accumulator
+     *  @dev    emit events:
+     *              - BucketTakeLPAwarded
+     *  @param  vars Struct containing take action result details.
      */
     function _rewardBucketTake(
         AuctionsState storage auctions_,
@@ -1413,6 +1382,13 @@ library Auctions {
         );
     }
 
+    /**
+     *  @notice Calculates auction price.
+     *  @param  kickMomp_     MOMP recorded at the time of kick.
+     *  @param  neutralPrice_ Neutral Price of the auction.
+     *  @param  kickTime_     Time when auction was kicked.
+     *  @return price_        Calculated auction price.
+     */
     function _auctionPrice(
         uint256 kickMomp_,
         uint256 neutralPrice_,
@@ -1430,7 +1406,7 @@ library Auctions {
 
     /**
      *  @notice Calculates bond penalty factor.
-     *  @dev Called in kick and take.
+     *  @dev    Called in kick and take.
      *  @param debt_         Borrower debt.
      *  @param collateral_   Borrower collateral.
      *  @param neutralPrice_ NP of auction.
@@ -1471,6 +1447,11 @@ library Auctions {
 
     /**
      *  @notice Utility function to validate take and calculate take's parameters.
+     *  @dev    write state:
+     *              - update liquidation.alreadyTaken state
+     *  @dev    reverts on:
+     *              - loan is not in auction NoAuction()
+     *              - in 1 hour cool down period TakeNotPastCooldown()
      *  @param  liquidation_ Liquidation struct holding auction details.
      *  @param  t0Debt_      Borrower t0 debt.
      *  @param  collateral_  Borrower collateral.

@@ -8,28 +8,18 @@ import {
     DepositsState,
     LoansState,
     PoolBalancesState
-} from 'src/base/interfaces/pool/IPoolState.sol';
+} from './interfaces/pool/IPoolState.sol';
 
-import { _minDebtAmount } from 'src/base/PoolHelper.sol';
+import { _minDebtAmount } from './PoolHelper.sol';
 
-import { Loans }    from 'src/libraries/Loans.sol';
-import { Deposits } from 'src/libraries/Deposits.sol';
-import { Maths }    from 'src/libraries/Maths.sol';
-    /**
-     *  @notice Head auction should be cleared prior of executing this action.
-     */
+import { Loans }    from '../libraries/Loans.sol';
+import { Deposits } from '../libraries/Deposits.sol';
+import { Maths }    from '../libraries/Maths.sol';
+
+    // See `IPoolErrors` for descriptions
     error AuctionNotCleared();
-    /**
-     *  @notice Borrower is attempting to create or modify a loan such that their loan's quote token would be less than the pool's minimum debt amount.
-     */
     error AmountLTMinDebt();
-    /**
-     *  @notice User attempted a deposit which does not exceed the dust amount, or a withdrawal which leaves behind less than the dust amount.
-     */
     error DustAmountNotExceeded();
-    /**
-     *  @notice Lender is attempting to remove quote tokens from a bucket that exists above active auction debt from top-of-book downward.
-     */
     error RemoveDepositLockedByAuctionDebt();
 
     /**

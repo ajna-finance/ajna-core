@@ -55,21 +55,21 @@ struct TakeResult {
 /******************************************/
 
 struct AddQuoteParams {
-    uint256 amount;          // amount to be added
+    uint256 amount;          // [WAD] amount to be added
     uint256 index;           // the index in which to deposit
 }
 
 struct MoveQuoteParams {
     uint256 fromIndex;       // the deposit index from where amount is moved
-    uint256 maxAmountToMove; // max amount to move between deposits
+    uint256 maxAmountToMove; // [WAD] max amount to move between deposits
     uint256 toIndex;         // the deposit index where amount is moved to
-    uint256 thresholdPrice;  // max threshold price in pool
+    uint256 thresholdPrice;  // [WAD] max threshold price in pool
 }
 
 struct RemoveQuoteParams {
     uint256 index;           // the deposit index from where amount is removed
-    uint256 maxAmount;       // max amount to be removed
-    uint256 thresholdPrice;  // max threshold price in pool
+    uint256 maxAmount;       // [WAD] max amount to be removed
+    uint256 thresholdPrice;  // [WAD] max threshold price in pool
 }
 
 /*************************************/
@@ -77,22 +77,22 @@ struct RemoveQuoteParams {
 /*************************************/
 
 struct DrawDebtResult {
-    uint256 newLup;
-    uint256 poolCollateral;
-    uint256 poolDebt;
-    uint256 remainingCollateral;
-    bool    settledAuction;
-    uint256 t0DebtInAuctionChange;
-    uint256 t0DebtChange;
+    uint256 newLup;                // [WAD] new pool LUP after draw debt
+    uint256 poolCollateral;        // [WAD] total amount of collateral in pool after pledge collateral
+    uint256 poolDebt;              // [WAD] total accrued debt in pool after draw debt
+    uint256 remainingCollateral;   // [WAD] amount of borrower collateral after draw debt (for NFT can be diminished if auction settled)
+    bool    settledAuction;        // true if collateral pledged settles auction
+    uint256 t0DebtInAuctionChange; // [WAD] change of t0 pool debt in auction after pledge collateral
+    uint256 t0DebtChange;          // [WAD] change of total t0 pool debt after after draw debt
 }
 
 struct RepayDebtResult {
-    uint256 newLup;
-    uint256 poolCollateral;
-    uint256 poolDebt;
-    uint256 remainingCollateral;
-    bool    settledAuction;
-    uint256 t0DebtInAuctionChange;
-    uint256 t0RepaidDebt;
-    uint256 quoteTokenToRepay;
+    uint256 newLup;                // [WAD] new pool LUP after draw debt
+    uint256 poolCollateral;        // [WAD] total amount of collateral in pool after pull collateral
+    uint256 poolDebt;              // [WAD] total accrued debt in pool after repay debt
+    uint256 remainingCollateral;   // [WAD] amount of borrower collateral after pull collateral
+    bool    settledAuction;        // true if repay debt settles auction
+    uint256 t0DebtInAuctionChange; // [WAD] change of t0 pool debt in auction after repay debt
+    uint256 t0RepaidDebt;          // [WAD] amount of t0 repaid debt
+    uint256 quoteTokenToRepay;     // [WAD] quote token amount to be transferred from sender to pool
 }
