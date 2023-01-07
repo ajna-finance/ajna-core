@@ -60,6 +60,9 @@ Caveats:
 make all
 ```
 
+### Implementation notes
+Pool external calls carry the `nonReentrant` modifier to prevent invocation from `flashLoan` and `take` callbacks.
+
 ## Tests
 ### Forge tests
 - run tests without the gas load tests (good for checking validity)

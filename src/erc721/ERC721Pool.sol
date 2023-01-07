@@ -78,7 +78,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256 amountToBorrow_,
         uint256 limitIndex_,
         uint256[] calldata tokenIdsToPledge_
-    ) external {
+    ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
         DrawDebtResult memory result = BorrowerActions.drawDebt(
@@ -128,7 +128,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
         uint256 noOfNFTsToPull_
-    ) external {
+    ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
         RepayDebtResult memory result = BorrowerActions.repayDebt(
@@ -178,7 +178,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     function addCollateral(
         uint256[] calldata tokenIdsToAdd_,
         uint256 index_
-    ) external override returns (uint256 bucketLPs_) {
+    ) external override nonReentrant returns (uint256 bucketLPs_) {
         PoolState memory poolState = _accruePoolInterest();
 
         bucketLPs_ = LenderActions.addCollateral(
@@ -202,7 +202,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256[] calldata removalIndexes_,
         uint256 noOfNFTsToRemove_,
         uint256 toIndex_
-    ) external override returns (uint256 collateralMerged_, uint256 bucketLPs_) {
+    ) external override nonReentrant returns (uint256 collateralMerged_, uint256 bucketLPs_) {
         PoolState memory poolState = _accruePoolInterest();
         uint256 collateralAmount = Maths.wad(noOfNFTsToRemove_);
 
@@ -233,7 +233,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     function removeCollateral(
         uint256 noOfNFTsToRemove_,
         uint256 index_
-    ) external override returns (uint256 collateralAmount_, uint256 lpAmount_) {
+    ) external override nonReentrant returns (uint256 collateralAmount_, uint256 lpAmount_) {
         _revertIfAuctionClearable(auctions, loans);
 
         PoolState memory poolState = _accruePoolInterest();
@@ -262,7 +262,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     function settle(
         address borrowerAddress_,
         uint256 maxDepth_
-    ) external override {
+    ) external nonReentrant override {
         PoolState memory poolState = _accruePoolInterest();
 
         uint256 assets = Maths.wmul(poolBalances.t0Debt, poolState.inflator) + _getPoolQuoteTokenBalance();
@@ -373,7 +373,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         address borrowerAddress_,
         bool    depositTake_,
         uint256 index_
-    ) external override {
+    ) external override nonReentrant {
 
         PoolState memory poolState = _accruePoolInterest();
 
