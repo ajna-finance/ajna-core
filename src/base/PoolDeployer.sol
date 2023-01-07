@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.14;
 
-import { IPoolFactory } from 'src/base/interfaces/IPoolFactory.sol';
+import { IPoolFactory } from './interfaces/IPoolFactory.sol';
 
 abstract contract PoolDeployer {
 

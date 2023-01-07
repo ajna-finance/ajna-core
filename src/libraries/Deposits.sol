@@ -2,11 +2,11 @@
 
 pragma solidity 0.8.14;
 
-import { DepositsState } from 'src/base/interfaces/pool/IPoolState.sol';
+import { DepositsState } from '../base/interfaces/pool/IPoolState.sol';
 
-import { _priceAt, MAX_FENWICK_INDEX } from 'src/base/PoolHelper.sol';
+import { _priceAt, MAX_FENWICK_INDEX } from '../base/PoolHelper.sol';
 
-import { Maths } from 'src/libraries/Maths.sol';
+import { Maths } from './Maths.sol';
 
 library Deposits {
 

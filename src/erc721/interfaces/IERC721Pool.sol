@@ -2,14 +2,14 @@
 
 pragma solidity 0.8.14;
 
-import { IPool } from 'src/base/interfaces/IPool.sol';
+import { IPool } from '../../base/interfaces/IPool.sol';
 
-import { IERC721PoolBorrowerActions } from 'src/erc721/interfaces/pool/IERC721PoolBorrowerActions.sol';
-import { IERC721PoolLenderActions }   from 'src/erc721/interfaces/pool/IERC721PoolLenderActions.sol';
-import { IERC721PoolImmutables }      from 'src/erc721/interfaces/pool/IERC721PoolImmutables.sol';
-import { IERC721PoolState }           from 'src/erc721/interfaces/pool/IERC721PoolState.sol';
-import { IERC721PoolEvents }          from 'src/erc721/interfaces/pool/IERC721PoolEvents.sol';
-import { IERC721PoolErrors }          from 'src/erc721/interfaces/pool/IERC721PoolErrors.sol';
+import { IERC721PoolBorrowerActions } from './pool/IERC721PoolBorrowerActions.sol';
+import { IERC721PoolLenderActions }   from './pool/IERC721PoolLenderActions.sol';
+import { IERC721PoolImmutables }      from './pool/IERC721PoolImmutables.sol';
+import { IERC721PoolState }           from './pool/IERC721PoolState.sol';
+import { IERC721PoolEvents }          from './pool/IERC721PoolEvents.sol';
+import { IERC721PoolErrors }          from './pool/IERC721PoolErrors.sol';
 
 /**
  * @title ERC721 Pool

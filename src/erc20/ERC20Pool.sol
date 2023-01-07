@@ -5,39 +5,44 @@ pragma solidity 0.8.14;
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 }    from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {
+import { 
     IERC20Pool,
     IERC20PoolBorrowerActions,
     IERC20PoolImmutables,
     IERC20PoolLenderActions
-}  from 'src/erc20/interfaces/IERC20Pool.sol';
-import { IPoolLenderActions, IPoolLiquidationActions } from 'src/base/interfaces/IPool.sol';
-import { IERC20Taker } from 'src/erc20/interfaces/IERC20Taker.sol';
+}                              from './interfaces/IERC20Pool.sol';
+import { IERC20Taker }         from './interfaces/IERC20Taker.sol';
+
 import {
-    IERC3156FlashBorrower,
-    IERC3156FlashLender
-} from 'src/base/interfaces/IERC3156FlashLender.sol';
-import { IERC20Token } from 'src/base/interfaces/IPool.sol';
-import { PoolState }   from 'src/base/interfaces/pool/IPoolState.sol';
+    IPoolLenderActions,
+    IPoolLiquidationActions,
+    IERC20Token
+}                                                     from '../base/interfaces/IPool.sol';
+import { IERC3156FlashBorrower, IERC3156FlashLender } from '../base/interfaces/IERC3156FlashLender.sol';
+
 import {
     DrawDebtResult,
     BucketTakeResult,
     RepayDebtResult,
     SettleParams,
     TakeResult
-} from 'src/base/interfaces/pool/IPoolInternals.sol';
+}                    from '../base/interfaces/pool/IPoolInternals.sol';
+import { PoolState } from '../base/interfaces/pool/IPoolState.sol';
 
-import { FlashloanablePool }                                         from 'src/base/FlashloanablePool.sol';
-import { _getCollateralDustPricePrecisionAdjustment, _roundToScale } from 'src/base/PoolHelper.sol';
-import { _revertIfAuctionClearable }                                 from 'src/base/RevertsHelper.sol';
+import {
+    _getCollateralDustPricePrecisionAdjustment,
+    _roundToScale
+}                                               from '../base/PoolHelper.sol';
+import { FlashloanablePool }                    from '../base/FlashloanablePool.sol';
+import { _revertIfAuctionClearable }            from '../base/RevertsHelper.sol';
 
-import { Loans }    from 'src/libraries/Loans.sol';
-import { Deposits } from 'src/libraries/Deposits.sol';
-import { Maths }    from 'src/libraries/Maths.sol';
+import { Loans }    from '../libraries/Loans.sol';
+import { Deposits } from '../libraries/Deposits.sol';
+import { Maths }    from '../libraries/Maths.sol';
 
-import { BorrowerActions } from 'src/libraries/external/BorrowerActions.sol';
-import { LenderActions }   from 'src/libraries/external/LenderActions.sol';
-import { Auctions }        from 'src/libraries/external/Auctions.sol';
+import { BorrowerActions } from '../libraries/external/BorrowerActions.sol';
+import { LenderActions }   from '../libraries/external/LenderActions.sol';
+import { Auctions }        from '../libraries/external/Auctions.sol';
 
 contract ERC20Pool is IERC20Pool, FlashloanablePool {
     using SafeERC20 for IERC20;

@@ -9,19 +9,19 @@ import {
     DepositsState,
     LoansState,
     PoolState
-} from 'src/base/interfaces/pool/IPoolState.sol';
+} from '../../base/interfaces/pool/IPoolState.sol';
 
-import { DrawDebtResult, RepayDebtResult } from 'src/base/interfaces/pool/IPoolInternals.sol';
+import { DrawDebtResult, RepayDebtResult } from '../../base/interfaces/pool/IPoolInternals.sol';
 
-import { _revertOnMinDebt }                      from 'src/base/RevertsHelper.sol';
-import { _feeRate, _priceAt, _isCollateralized } from 'src/base/PoolHelper.sol';
+import { _revertOnMinDebt }                      from '../../base/RevertsHelper.sol';
+import { _feeRate, _priceAt, _isCollateralized } from '../../base/PoolHelper.sol';
 
-import { Buckets }  from 'src/libraries/Buckets.sol';
-import { Deposits } from 'src/libraries/Deposits.sol';
-import { Loans }    from 'src/libraries/Loans.sol';
-import { Maths }    from 'src/libraries/Maths.sol';
+import { Buckets }  from '../Buckets.sol';
+import { Deposits } from '../Deposits.sol';
+import { Loans }    from '../Loans.sol';
+import { Maths }    from '../Maths.sol';
 
-import { Auctions } from 'src/libraries/external/Auctions.sol';
+import { Auctions } from './Auctions.sol';
 
 /**
     @notice External library containing logic for common borrower actions.

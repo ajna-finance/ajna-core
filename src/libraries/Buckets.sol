@@ -2,9 +2,9 @@
 
 pragma solidity 0.8.14;
 
-import { Bucket, Lender } from 'src/base/interfaces/pool/IPoolState.sol';
+import { Bucket, Lender } from '../base/interfaces/pool/IPoolState.sol';
 
-import { Maths } from 'src/libraries/Maths.sol';
+import { Maths } from './Maths.sol';
 
 library Buckets {
 

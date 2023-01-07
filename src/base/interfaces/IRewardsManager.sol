@@ -2,11 +2,11 @@
 
 pragma solidity 0.8.14;
 
-import { IRewardsManagerOwnerActions } from 'src/base/interfaces/rewards/IRewardsManagerOwnerActions.sol';
-import { IRewardsManagerState }        from 'src/base/interfaces/rewards/IRewardsManagerState.sol';
-import { IRewardsManagerDerivedState } from 'src/base/interfaces/rewards/IRewardsManagerDerivedState.sol';
-import { IRewardsManagerEvents }       from 'src/base/interfaces/rewards/IRewardsManagerEvents.sol';
-import { IRewardsManagerErrors }       from 'src/base/interfaces/rewards/IRewardsManagerErrors.sol';
+import { IRewardsManagerOwnerActions } from './rewards/IRewardsManagerOwnerActions.sol';
+import { IRewardsManagerState }        from './rewards/IRewardsManagerState.sol';
+import { IRewardsManagerDerivedState } from './rewards/IRewardsManagerDerivedState.sol';
+import { IRewardsManagerEvents }       from './rewards/IRewardsManagerEvents.sol';
+import { IRewardsManagerErrors }       from './rewards/IRewardsManagerErrors.sol';
 
 interface IRewardsManager is
     IRewardsManagerOwnerActions,

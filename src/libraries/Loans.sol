@@ -8,12 +8,12 @@ import {
     DepositsState,
     Loan,
     LoansState
-} from 'src/base/interfaces/pool/IPoolState.sol';
+} from '../base/interfaces/pool/IPoolState.sol';
 
-import { _priceAt } from 'src/base/PoolHelper.sol';
+import { _priceAt } from '../base/PoolHelper.sol';
 
-import { Deposits } from 'src/libraries/Deposits.sol';
-import { Maths }    from 'src/libraries/Maths.sol';
+import { Deposits } from './Deposits.sol';
+import { Maths }    from './Maths.sol';
 
 library Loans {
 

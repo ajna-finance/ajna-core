@@ -2,20 +2,20 @@
 
 pragma solidity 0.8.14;
 
-import { AddQuoteParams, MoveQuoteParams, RemoveQuoteParams } from 'src/base/interfaces/pool/IPoolInternals.sol';
+import { AddQuoteParams, MoveQuoteParams, RemoveQuoteParams } from '../../base/interfaces/pool/IPoolInternals.sol';
 
 import {
     Bucket,
     DepositsState,
     Lender,
     PoolState
-} from 'src/base/interfaces/pool/IPoolState.sol';
+} from '../../base/interfaces/pool/IPoolState.sol';
 
-import { _feeRate, _priceAt, _ptp, MAX_FENWICK_INDEX } from 'src/base/PoolHelper.sol';
+import { _feeRate, _priceAt, _ptp, MAX_FENWICK_INDEX } from '../../base/PoolHelper.sol';
 
-import { Deposits } from 'src/libraries/Deposits.sol';
-import { Buckets }  from 'src/libraries/Buckets.sol';
-import { Maths }    from 'src/libraries/Maths.sol';
+import { Deposits } from '../Deposits.sol';
+import { Buckets }  from '../Buckets.sol';
+import { Maths }    from '../Maths.sol';
 
 /**
     @notice External library containing logic for common lender actions.

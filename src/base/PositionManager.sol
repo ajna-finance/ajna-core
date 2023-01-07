@@ -10,20 +10,20 @@ import { Multicall }       from '@openzeppelin/contracts/utils/Multicall.sol';
 import { ReentrancyGuard } from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import { SafeERC20 }       from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import { IPool }                        from 'src/base/interfaces/IPool.sol';
-import { IPositionManager }             from 'src/base/interfaces/IPositionManager.sol';
-import { IPositionManagerOwnerActions } from 'src/base/interfaces/position/IPositionManagerOwnerActions.sol';
-import { IPositionManagerDerivedState } from 'src/base/interfaces/position/IPositionManagerDerivedState.sol';
+import { IPool }                        from './interfaces/IPool.sol';
+import { IPositionManager }             from './interfaces/IPositionManager.sol';
+import { IPositionManagerOwnerActions } from './interfaces/position/IPositionManagerOwnerActions.sol';
+import { IPositionManagerDerivedState } from './interfaces/position/IPositionManagerDerivedState.sol';
 
-import { ERC20PoolFactory }  from 'src/erc20/ERC20PoolFactory.sol';
-import { ERC721PoolFactory } from 'src/erc721/ERC721PoolFactory.sol';
+import { ERC20PoolFactory }  from '../erc20/ERC20PoolFactory.sol';
+import { ERC721PoolFactory } from '../erc721/ERC721PoolFactory.sol';
 
-import { PermitERC721 }               from 'src/base/PermitERC721.sol';
-import { _lpsToQuoteToken, _priceAt } from 'src/base/PoolHelper.sol';
+import { PermitERC721 }               from './PermitERC721.sol';
+import { _lpsToQuoteToken, _priceAt } from './PoolHelper.sol';
 
-import { tokenSymbol } from 'src/libraries/SafeTokenNamer.sol';
+import { tokenSymbol } from '../libraries/SafeTokenNamer.sol';
 
-import { PositionNFTSVG } from 'src/libraries/external/PositionNFTSVG.sol';
+import { PositionNFTSVG } from '../libraries/external/PositionNFTSVG.sol';
 
 contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, ReentrancyGuard {
     using EnumerableSet for EnumerableSet.UintSet;

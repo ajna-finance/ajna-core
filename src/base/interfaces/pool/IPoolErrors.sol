@@ -21,6 +21,11 @@ interface IPoolErrors {
     error AuctionNotClearable();
 
     /**
+     *  @notice Head auction should be cleared prior of executing this action.
+     */
+    error AuctionNotCleared();
+
+    /**
      *  @notice The auction price is greater than the arbed bucket price.
      */
     error AuctionPriceGtBucketPrice();

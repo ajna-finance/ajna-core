@@ -6,16 +6,16 @@ import { IERC20 }    from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import { IERC721 }   from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 
-import { IPool }            from 'src/base/interfaces/IPool.sol';
-import { IPositionManager } from 'src/base/interfaces/IPositionManager.sol';
-import { PositionManager }  from 'src/base/PositionManager.sol';
-import { IRewardsManager }  from 'src/base/interfaces/IRewardsManager.sol';
+import { IPool }            from './interfaces/IPool.sol';
+import { IPositionManager } from './interfaces/IPositionManager.sol';
+import { PositionManager }  from './PositionManager.sol';
+import { IRewardsManager }  from './interfaces/IRewardsManager.sol';
 
-import { IRewardsManagerOwnerActions } from 'src/base/interfaces/rewards/IRewardsManagerOwnerActions.sol';
-import { IRewardsManagerDerivedState } from 'src/base/interfaces/rewards/IRewardsManagerDerivedState.sol';
-import { Stake, BucketState }          from 'src/base/interfaces/rewards/IRewardsManagerState.sol';
+import { IRewardsManagerOwnerActions } from './interfaces/rewards/IRewardsManagerOwnerActions.sol';
+import { IRewardsManagerDerivedState } from './interfaces/rewards/IRewardsManagerDerivedState.sol';
+import { Stake, BucketState }          from './interfaces/rewards/IRewardsManagerState.sol';
 
-import { Maths } from 'src/libraries/Maths.sol';
+import { Maths } from '../libraries/Maths.sol';
 
 contract RewardsManager is IRewardsManager {
 

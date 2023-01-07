@@ -2,39 +2,40 @@
 
 pragma solidity 0.8.14;
 
-import { IERC721Token, IPoolErrors } from 'src/base/interfaces/IPool.sol';
-import { PoolState }   from 'src/base/interfaces/pool/IPoolState.sol';
+import {
+    IERC721Token,
+    IPoolErrors,
+    IPoolLenderActions,
+    IPoolLiquidationActions
+}                            from '../base/interfaces/IPool.sol';
 import {
     BucketTakeResult,
     DrawDebtResult,
     RepayDebtResult,
     SettleParams,
     TakeResult
-} from 'src/base/interfaces/pool/IPoolInternals.sol';
+}                            from '../base/interfaces/pool/IPoolInternals.sol';
+import { PoolState }         from '../base/interfaces/pool/IPoolState.sol';
+
 import {
     IERC721Pool,
     IERC721PoolBorrowerActions,
     IERC721PoolImmutables,
     IERC721PoolLenderActions
-}  from 'src/erc721/interfaces/IERC721Pool.sol';
-import { IPoolLenderActions, IPoolLiquidationActions } from 'src/base/interfaces/IPool.sol';
-import { IERC721Taker } from 'src/erc721/interfaces/IERC721Taker.sol';
-import {
-    ICryptoPunks,
-    ICryptoKitties,
-    NFTTypes
-} from 'src/erc721/interfaces/IERC721NonStandard.sol';
+}                                                 from './interfaces/IERC721Pool.sol';
+import { IERC721Taker }                           from './interfaces/IERC721Taker.sol';
+import { ICryptoPunks, ICryptoKitties, NFTTypes } from './interfaces/IERC721NonStandard.sol';
 
-import { FlashloanablePool }         from 'src/base/FlashloanablePool.sol';
-import { _revertIfAuctionClearable } from 'src/base/RevertsHelper.sol';
+import { FlashloanablePool }         from '../base/FlashloanablePool.sol';
+import { _revertIfAuctionClearable } from '../base/RevertsHelper.sol';
 
-import { Maths }    from 'src/libraries/Maths.sol';
-import { Deposits } from 'src/libraries/Deposits.sol';
-import { Loans }    from 'src/libraries/Loans.sol';
+import { Maths }    from '../libraries/Maths.sol';
+import { Deposits } from '../libraries/Deposits.sol';
+import { Loans }    from '../libraries/Loans.sol';
 
-import { Auctions }        from 'src/libraries/external/Auctions.sol';
-import { LenderActions }   from 'src/libraries/external/LenderActions.sol';
-import { BorrowerActions } from 'src/libraries/external/BorrowerActions.sol';
+import { Auctions }        from '../libraries/external/Auctions.sol';
+import { LenderActions }   from '../libraries/external/LenderActions.sol';
+import { BorrowerActions } from '../libraries/external/BorrowerActions.sol';
 
 contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
