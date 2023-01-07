@@ -39,6 +39,6 @@ jobs:
       - name: Verify coverage level
         uses: zgosalvez/github-actions-report-lcov@v1
         with:
-          coverage-files: ./lcov.info
-          minimum-coverage: 0 # Set coverage threshold.
+          coverage-files: ./lcov-filtered.info
+          minimum-coverage: 95 # Set coverage threshold.
           # github-token: ${{ secrets.GITHUB_TOKEN }} # Adds a coverage summary comment to the PR.

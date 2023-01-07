@@ -2,14 +2,14 @@
 
 pragma solidity 0.8.14;
 
-import '@openzeppelin/contracts/interfaces/IERC1271.sol';
-import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
-import '@openzeppelin/contracts/utils/Address.sol';
+import { IERC1271 } from '@openzeppelin/contracts/interfaces/IERC1271.sol';
+import { ERC721 }   from '@openzeppelin/contracts/token/ERC721/ERC721.sol';
+import { Address }  from '@openzeppelin/contracts/utils/Address.sol';
 
 interface IPermit {
     function permit(
         address spender_, uint256 tokenId_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_
-    ) external payable;
+    ) external;
 }
 
 /**
@@ -69,7 +69,7 @@ abstract contract PermitERC721 is ERC721, IPermit {
      */
     function permit(
         address spender_, uint256 tokenId_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_
-    ) external payable {
+    ) external {
         require(block.timestamp <= deadline_, "ajna/nft-permit-expired");
 
         bytes32 digest = keccak256(

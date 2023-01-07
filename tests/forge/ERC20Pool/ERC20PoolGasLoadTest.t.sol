@@ -364,14 +364,14 @@ contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
             _pool.kick(_borrowers[i]);
         }
         // add quote tokens in bucket to arb
-        _pool.addQuoteToken(100_000 * 1e18, 2_000);
+        _pool.addQuoteToken(100_000 * 1e18, 1_000);
         vm.stopPrank();
 
         assertEq(_noOfLoans(), 0); // assert all loans are kicked
         skip(14 hours);
         address taker = makeAddr("taker");
         vm.startPrank(taker);
-        _pool.bucketTake(_borrowers[0], depositTake_, 2_000);
+        _pool.bucketTake(_borrowers[0], depositTake_, 1_000);
         vm.stopPrank();
     }
 
@@ -385,14 +385,14 @@ contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
             _pool.kick(_borrowers[LOANS_COUNT - 1 - i]);
         }
         // add quote tokens in bucket to arb
-        _pool.addQuoteToken(100_000 * 1e18, 2_000);
+        _pool.addQuoteToken(100_000 * 1e18, 1_000);
         vm.stopPrank();
 
         assertEq(_noOfLoans(), 0); // assert all loans are kicked
         skip(14 hours);
         address taker = makeAddr("taker");
         vm.startPrank(taker);
-        _pool.bucketTake(_borrowers[LOANS_COUNT - 1], depositTake_, 2_000);
+        _pool.bucketTake(_borrowers[LOANS_COUNT - 1], depositTake_, 1_000);
         vm.stopPrank();
     }
 

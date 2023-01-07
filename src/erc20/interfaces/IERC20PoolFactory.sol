@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.14;
 
-import '../../base/interfaces/IPoolFactory.sol';
+import { IPoolFactory } from 'src/base/interfaces/IPoolFactory.sol';
 
 /**
  *  @title ERC20 Pool Factory

@@ -8,7 +8,7 @@ pragma solidity 0.8.14;
 interface IERC721PoolEvents {
 
     /**
-     *  @notice Emitted when actor adds unencumbered collateral to a bucket.
+     *  @notice Emitted when actor adds claimable collateral to a bucket.
      *  @param  actor     Recipient that added collateral.
      *  @param  price     Price at which collateral were added.
      *  @param  tokenIds  Array of tokenIds to be added to the pool.
@@ -22,7 +22,7 @@ interface IERC721PoolEvents {
     );
 
     /**
-     *  @notice Emitted when actor adds unencumbered collateral to a bucket.
+     *  @notice Emitted when actor adds claimable collateral to a bucket.
      *  @param  actor            Recipient that added collateral.
      *  @param  collateralMerged Amount of collateral merged.
      *  @param  toIndexLps              If non-zero, amount of LPs in toIndex when collateral is merged into bucket. If 0, no collateral is merged.
@@ -36,13 +36,13 @@ interface IERC721PoolEvents {
     /**
      *  @notice Emitted when borrower draws debt from the pool, or adds collateral to the pool.
      *  @param  borrower          `msg.sender`.
-     *  @param  amountBorowed     Amount of quote tokens borrowed from the pool.
+     *  @param  amountBorrowed    Amount of quote tokens borrowed from the pool.
      *  @param  tokenIdsPledged   Array of tokenIds to be added to the pool.
      *  @param  lup               LUP after borrow.
      */
     event DrawDebtNFT(
         address indexed borrower,
-        uint256   amountBorowed,
+        uint256   amountBorrowed,
         uint256[] tokenIdsPledged,
         uint256   lup
     );
