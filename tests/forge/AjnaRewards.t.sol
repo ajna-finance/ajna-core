@@ -11,6 +11,8 @@ import 'src/base/interfaces/IPositionManager.sol';
 import 'src/base/PositionManager.sol';
 import 'src/base/PoolInfoUtils.sol';
 
+import { _feeRate } from 'src/base/PoolHelper.sol';
+
 import { DSTestPlus } from './utils/DSTestPlus.sol';
 import { Token }      from './utils/Tokens.sol';
 

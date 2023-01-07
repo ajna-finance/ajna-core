@@ -2,10 +2,39 @@
 
 pragma solidity 0.8.14;
 
-import './interfaces/IERC721Pool.sol';
-import './interfaces/IERC721Taker.sol';
-import '../base/FlashloanablePool.sol';
-import './interfaces/IERC721NonStandard.sol';
+import { IERC721Token, IPoolErrors } from 'src/base/interfaces/IPool.sol';
+import { PoolState }   from 'src/base/interfaces/pool/IPoolState.sol';
+import {
+    BucketTakeResult,
+    DrawDebtResult,
+    RepayDebtResult,
+    SettleParams,
+    TakeResult
+} from 'src/base/interfaces/pool/IPoolInternals.sol';
+import {
+    IERC721Pool,
+    IERC721PoolBorrowerActions,
+    IERC721PoolImmutables,
+    IERC721PoolLenderActions
+}  from 'src/erc721/interfaces/IERC721Pool.sol';
+import { IPoolLenderActions, IPoolLiquidationActions } from 'src/base/interfaces/IPool.sol';
+import { IERC721Taker } from 'src/erc721/interfaces/IERC721Taker.sol';
+import {
+    ICryptoPunks,
+    ICryptoKitties,
+    NFTTypes
+} from 'src/erc721/interfaces/IERC721NonStandard.sol';
+
+import { FlashloanablePool }         from 'src/base/FlashloanablePool.sol';
+import { _revertIfAuctionClearable } from 'src/base/RevertsHelper.sol';
+
+import { Maths }    from 'src/libraries/Maths.sol';
+import { Deposits } from 'src/libraries/Deposits.sol';
+import { Loans }    from 'src/libraries/Loans.sol';
+
+import { Auctions }        from 'src/libraries/external/Auctions.sol';
+import { LenderActions }   from 'src/libraries/external/LenderActions.sol';
+import { BorrowerActions } from 'src/libraries/external/BorrowerActions.sol';
 
 contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
@@ -34,7 +63,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         uint256[] memory tokenIds_,
         uint256 rate_
     ) external override {
-        if (poolInitializations != 0) revert AlreadyInitialized();
+        if (isPoolInitialized) revert AlreadyInitialized();
 
         inflatorState.inflator       = uint208(1e18);
         inflatorState.inflatorUpdate = uint48(block.timestamp);
@@ -56,7 +85,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         Loans.init(loans);
 
         // increment initializations count to ensure these values can't be updated
-        poolInitializations += 1;
+        isPoolInitialized = true;
     }
 
     /******************/

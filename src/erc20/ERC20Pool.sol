@@ -2,12 +2,41 @@
 
 pragma solidity 0.8.14;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC20 }    from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import './interfaces/IERC20Pool.sol';
-import './interfaces/IERC20Taker.sol';
-import '../base/FlashloanablePool.sol';
+import {
+    IERC20Pool,
+    IERC20PoolBorrowerActions,
+    IERC20PoolImmutables,
+    IERC20PoolLenderActions
+}  from 'src/erc20/interfaces/IERC20Pool.sol';
+import { IPoolLenderActions, IPoolLiquidationActions } from 'src/base/interfaces/IPool.sol';
+import { IERC20Taker } from 'src/erc20/interfaces/IERC20Taker.sol';
+import {
+    IERC3156FlashBorrower,
+    IERC3156FlashLender
+} from 'src/base/interfaces/IERC3156FlashLender.sol';
+import { IERC20Token } from 'src/base/interfaces/IPool.sol';
+import { PoolState }   from 'src/base/interfaces/pool/IPoolState.sol';
+import {
+    DrawDebtResult,
+    BucketTakeResult,
+    RepayDebtResult,
+    SettleParams,
+    TakeResult
+} from 'src/base/interfaces/pool/IPoolInternals.sol';
+
+import { FlashloanablePool }         from 'src/base/FlashloanablePool.sol';
+import { _revertIfAuctionClearable } from 'src/base/RevertsHelper.sol';
+
+import { Loans }    from 'src/libraries/Loans.sol';
+import { Deposits } from 'src/libraries/Deposits.sol';
+import { Maths }    from 'src/libraries/Maths.sol';
+
+import { BorrowerActions } from 'src/libraries/external/BorrowerActions.sol';
+import { LenderActions }   from 'src/libraries/external/LenderActions.sol';
+import { Auctions }        from 'src/libraries/external/Auctions.sol';
 
 contract ERC20Pool is IERC20Pool, FlashloanablePool {
     using SafeERC20 for IERC20;
@@ -27,7 +56,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     function initialize(
         uint256 rate_
     ) external override {
-        if (poolInitializations != 0) revert AlreadyInitialized();
+        if (isPoolInitialized) revert AlreadyInitialized();
 
         inflatorState.inflator       = uint208(1e18);
         inflatorState.inflatorUpdate = uint48(block.timestamp);
@@ -38,7 +67,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
         Loans.init(loans);
 
         // increment initializations count to ensure these values can't be updated
-        poolInitializations += 1;
+        isPoolInitialized = true;
     }
 
     /******************/

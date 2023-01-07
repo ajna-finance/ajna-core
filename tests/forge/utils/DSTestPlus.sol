@@ -9,11 +9,12 @@ import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import 'src/base/interfaces/IPool.sol';
 import 'src/base/interfaces/pool/IPoolEvents.sol';
+import 'src/base/interfaces/IERC3156FlashBorrower.sol';
+
 import 'src/base/PoolInfoUtils.sol';
 
 import 'src/libraries/external/Auctions.sol';
 import 'src/libraries/Maths.sol';
-
 
 abstract contract DSTestPlus is Test, IPoolEvents {
 

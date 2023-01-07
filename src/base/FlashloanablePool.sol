@@ -2,7 +2,8 @@
 
 pragma solidity 0.8.14;
 
-import '../base/Pool.sol';
+import { Pool }                  from 'src/base/Pool.sol';
+import { IERC3156FlashBorrower } from 'src/base/interfaces/IERC3156FlashBorrower.sol';
 
 abstract contract FlashloanablePool is Pool {
     /**

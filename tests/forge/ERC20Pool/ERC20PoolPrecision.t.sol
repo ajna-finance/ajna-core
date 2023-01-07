@@ -8,6 +8,7 @@ import 'src/erc20/ERC20Pool.sol';
 import 'src/erc20/ERC20PoolFactory.sol';
 
 import 'src/base/PoolInfoUtils.sol';
+import { MAX_PRICE } from 'src/base/PoolHelper.sol';
 
 import 'src/libraries/Maths.sol';
 

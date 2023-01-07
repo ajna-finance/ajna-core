@@ -7,6 +7,8 @@ import { FlashloanBorrower, SomeDefiStrategy } from '../utils/FlashloanBorrower.
 import 'src/base/PoolHelper.sol';
 import 'src/erc20/ERC20Pool.sol';
 
+import { IPoolErrors } from 'src/base/interfaces/IPool.sol'; 
+
 contract ERC20PoolFlashloanTest is ERC20HelperContract {
     address internal _borrower;
     address internal _lender;

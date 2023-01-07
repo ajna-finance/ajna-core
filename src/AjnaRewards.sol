@@ -4,15 +4,14 @@ pragma solidity 0.8.14;
 
 import { IERC20 }    from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
+import { IERC721 }   from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 
-import { IPool } from './base/interfaces/IPool.sol';
-import { IPositionManager } from './base/interfaces/IPositionManager.sol';
-import { PositionManager } from './base/PositionManager.sol';
+import { IPool }            from 'src/base/interfaces/IPool.sol';
+import { IPositionManager } from 'src/base/interfaces/IPositionManager.sol';
+import { PositionManager }  from 'src/base/PositionManager.sol';
+import { IAjnaRewards }     from 'src/IAjnaRewards.sol';
 
-import './libraries/Maths.sol';
-
-import './IAjnaRewards.sol';
+import { Maths } from 'src/libraries/Maths.sol';
 
 contract AjnaRewards is IAjnaRewards {
 

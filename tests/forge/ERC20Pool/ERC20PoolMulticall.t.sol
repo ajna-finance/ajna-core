@@ -10,6 +10,8 @@ import 'src/erc20/ERC20Pool.sol';
 
 import 'src/base/interfaces/pool/IPoolErrors.sol';
 
+import { MAX_PRICE } from 'src/base/PoolHelper.sol';
+
 contract ERC20PoolMulticallTest is ERC20HelperContract {
 
     using EnumerableSet for EnumerableSet.AddressSet;

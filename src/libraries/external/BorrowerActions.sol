@@ -3,19 +3,25 @@
 pragma solidity 0.8.14;
 
 import {
-    PoolState,
-    DepositsState,
     AuctionsState,
-    DrawDebtResult,
-    RepayDebtResult
-} from '../../base/interfaces/IPool.sol';
+    Borrower,
+    Bucket,
+    DepositsState,
+    LoansState,
+    PoolState
+} from 'src/base/interfaces/pool/IPoolState.sol';
 
-import { _revertOnMinDebt } from '../../base/RevertsHelper.sol';
+import { DrawDebtResult, RepayDebtResult } from 'src/base/interfaces/pool/IPoolInternals.sol';
 
-import './Auctions.sol';
-import '../Buckets.sol';
-import '../Deposits.sol';
-import '../Loans.sol';
+import { _revertOnMinDebt }                      from 'src/base/RevertsHelper.sol';
+import { _feeRate, _priceAt, _isCollateralized } from 'src/base/PoolHelper.sol';
+
+import { Buckets }  from 'src/libraries/Buckets.sol';
+import { Deposits } from 'src/libraries/Deposits.sol';
+import { Loans }    from 'src/libraries/Loans.sol';
+import { Maths }    from 'src/libraries/Maths.sol';
+
+import { Auctions } from 'src/libraries/external/Auctions.sol';
 
 /**
     @notice External library containing logic for common borrower actions.
