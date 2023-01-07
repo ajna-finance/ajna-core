@@ -17,8 +17,11 @@ import {
     IPoolLenderActions,
     IPoolLiquidationActions,
     IERC20Token
-}                                                     from '../base/interfaces/IPool.sol';
-import { IERC3156FlashBorrower, IERC3156FlashLender } from '../base/interfaces/IERC3156FlashLender.sol';
+}                            from '../base/interfaces/IPool.sol';
+import {
+    IERC3156FlashBorrower,
+    IERC3156FlashLender
+}                            from '../base/interfaces/IERC3156FlashLender.sol';
 
 import {
     DrawDebtResult,

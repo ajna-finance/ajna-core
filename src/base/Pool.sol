@@ -17,8 +17,7 @@ import {
     IPoolReserveAuctionActions,
     IPoolDerivedState,
     IERC20Token
-} from './interfaces/IPool.sol';
-
+}                                    from './interfaces/IPool.sol';
 import {
     PoolState,
     AuctionsState,
@@ -40,8 +39,14 @@ import {
 }                                    from './interfaces/pool/IPoolInternals.sol';
 import { StartReserveAuctionParams } from './interfaces/pool/IPoolReserveAuctionActions.sol';
 
-import { _priceAt, _roundToScale }                               from './PoolHelper.sol';
-import { _revertIfAuctionDebtLocked, _revertIfAuctionClearable } from './RevertsHelper.sol';
+import {
+    _priceAt,
+    _roundToScale
+}                               from './PoolHelper.sol';
+import {
+    _revertIfAuctionDebtLocked,
+    _revertIfAuctionClearable
+}                               from './RevertsHelper.sol';
 
 import { Buckets }  from '../libraries/Buckets.sol';
 import { Deposits } from '../libraries/Deposits.sol';

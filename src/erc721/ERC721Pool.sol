@@ -7,24 +7,28 @@ import {
     IPoolErrors,
     IPoolLenderActions,
     IPoolLiquidationActions
-}                            from '../base/interfaces/IPool.sol';
+}                           from '../base/interfaces/IPool.sol';
 import {
     BucketTakeResult,
     DrawDebtResult,
     RepayDebtResult,
     SettleParams,
     TakeResult
-}                            from '../base/interfaces/pool/IPoolInternals.sol';
-import { PoolState }         from '../base/interfaces/pool/IPoolState.sol';
+}                           from '../base/interfaces/pool/IPoolInternals.sol';
+import { PoolState }        from '../base/interfaces/pool/IPoolState.sol';
 
 import {
     IERC721Pool,
     IERC721PoolBorrowerActions,
     IERC721PoolImmutables,
     IERC721PoolLenderActions
-}                                                 from './interfaces/IERC721Pool.sol';
-import { IERC721Taker }                           from './interfaces/IERC721Taker.sol';
-import { ICryptoPunks, ICryptoKitties, NFTTypes } from './interfaces/IERC721NonStandard.sol';
+}                               from './interfaces/IERC721Pool.sol';
+import { IERC721Taker }         from './interfaces/IERC721Taker.sol';
+import {
+    ICryptoPunks,
+    ICryptoKitties,
+    NFTTypes
+}                               from './interfaces/IERC721NonStandard.sol';
 
 import { FlashloanablePool }         from '../base/FlashloanablePool.sol';
 import { _revertIfAuctionClearable } from '../base/RevertsHelper.sol';

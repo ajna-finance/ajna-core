@@ -5,6 +5,7 @@ pragma solidity 0.8.14;
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 
 import { PoolType } from '../../base/interfaces/IPool.sol';
+
 import {
     AuctionsState,
     Borrower,
@@ -16,18 +17,15 @@ import {
     LoansState,
     PoolState,
     ReserveAuctionState
-} from '../../base/interfaces/pool/IPoolState.sol';
-
+}                                    from '../../base/interfaces/pool/IPoolState.sol';
 import {
     BucketTakeResult,
     KickResult,
     SettleParams,
     TakeResult
-} from '../../base/interfaces/pool/IPoolInternals.sol';
-
+}                                    from '../../base/interfaces/pool/IPoolInternals.sol';
 import { StartReserveAuctionParams } from '../../base/interfaces/pool/IPoolReserveAuctionActions.sol';
 
-import { _revertOnMinDebt } from '../../base/RevertsHelper.sol';
 import {
     _claimableReserves,
     _indexOf,
@@ -37,7 +35,8 @@ import {
     MAX_FENWICK_INDEX,
     MAX_PRICE,
     MIN_PRICE
-} from '../../base/PoolHelper.sol';
+}                           from '../../base/PoolHelper.sol';
+import { _revertOnMinDebt } from '../../base/RevertsHelper.sol';
 
 import { Buckets }  from '../Buckets.sol';
 import { Deposits } from '../Deposits.sol';

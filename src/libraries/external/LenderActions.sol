@@ -2,14 +2,17 @@
 
 pragma solidity 0.8.14;
 
-import { AddQuoteParams, MoveQuoteParams, RemoveQuoteParams } from '../../base/interfaces/pool/IPoolInternals.sol';
-
+import {
+    AddQuoteParams,
+    MoveQuoteParams,
+    RemoveQuoteParams
+}                     from '../../base/interfaces/pool/IPoolInternals.sol';
 import {
     Bucket,
     DepositsState,
     Lender,
     PoolState
-} from '../../base/interfaces/pool/IPoolState.sol';
+}                     from '../../base/interfaces/pool/IPoolState.sol';
 
 import { _feeRate, _priceAt, _ptp, MAX_FENWICK_INDEX } from '../../base/PoolHelper.sol';
 
