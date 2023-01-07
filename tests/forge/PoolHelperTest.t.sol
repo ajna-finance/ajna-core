@@ -147,6 +147,10 @@ contract PoolHelperTest is DSTestPlus {
         uint256 nine_and_two_thirds = 9 * 1e18 + Maths.wdiv(2 * 1e18, 3 * 1e18);
         assertEq(_roundToScale(nine_and_two_thirds, tokenScale),   9.666666 * 1e18);
         assertEq(_roundUpToScale(nine_and_two_thirds, tokenScale), 9.666667 * 1e18);
+
+        uint256 five = 5 * 1e18;
+        assertEq(_roundToScale(five, tokenScale),   5 * 1e18);
+        assertEq(_roundUpToScale(five, tokenScale), 5 * 1e18);
     }
 
     function _assertBucketIndexOutOfBoundsRevert(uint256 index) internal {

@@ -248,9 +248,12 @@ import { Maths }   from 'src/libraries/Maths.sol';
         uint256 amount_,
         uint256 tokenScale_
     ) pure returns (uint256 scaledAmount_) {
-        scaledAmount_ = _roundToScale(amount_, tokenScale_) + tokenScale_;
+        if (amount_ % tokenScale_ == 0)
+            scaledAmount_ = amount_;
+        else
+            scaledAmount_ = _roundToScale(amount_, tokenScale_) + tokenScale_;
     }
-    
+
     /*********************************/
     /*** Reserve Auction Utilities ***/
     /*********************************/
