@@ -34,6 +34,7 @@ import {
     _isCollateralized,
     _priceAt,
     _reserveAuctionPrice,
+    _roundToScale,
     MAX_FENWICK_INDEX,
     MAX_PRICE,
     MIN_PRICE
@@ -47,12 +48,13 @@ import { Maths }    from 'src/libraries/Maths.sol';
 library Auctions {
 
     struct BucketTakeParams {
-        address borrower;    // borrower address to take from
-        uint256 collateral;  // borrower available collateral to take
-        bool    depositTake; // deposit or arb take, used by bucket take
-        uint256 index;       // bucket index, used by bucket take
-        uint256 inflator;    // current pool inflator
-        uint256 t0Debt;      // borrower t0 debt
+        address borrower;        // borrower address to take from
+        uint256 collateral;      // borrower available collateral to take
+        bool    depositTake;     // deposit or arb take, used by bucket take
+        uint256 index;           // bucket index, used by bucket take
+        uint256 inflator;        // current pool inflator
+        uint256 t0Debt;          // borrower t0 debt
+        uint256 collateralScale; // precision of collateral token based on decimals
     }
 
     struct KickWithDepositLocalVars {
@@ -117,12 +119,13 @@ library Auctions {
     }
 
     struct TakeParams {
-        address borrower;       // borrower address to take from
-        uint256 collateral;     // borrower available collateral to take
-        uint256 t0Debt;         // borrower t0 debt
-        uint256 takeCollateral; // desired amount to take
-        uint256 inflator;       // current pool inflator
-        uint256 poolType;       // pool type (ERC20 or NFT)
+        address borrower;        // borrower address to take from
+        uint256 collateral;      // borrower available collateral to take
+        uint256 t0Debt;          // borrower t0 debt
+        uint256 takeCollateral;  // desired amount to take
+        uint256 inflator;        // current pool inflator
+        uint256 poolType;        // pool type (ERC20 or NFT)
+        uint256 collateralScale; // precision of collateral token based on decimals
     }
 
     /**
@@ -250,10 +253,6 @@ library Auctions {
      *  @notice Borrower has a healthy over-collateralized position.
      */
     error BorrowerOk();
-    /**
-     *  @notice User attempted a take which does not exceed or leaves behind less than the dust amount.
-     */
-    error DustAmountNotExceeded();
     /**
      *  @notice Bucket to arb must have more quote available in the bucket.
      */
@@ -569,7 +568,8 @@ library Auctions {
         PoolState memory poolState_,
         address borrowerAddress_,
         bool    depositTake_,
-        uint256 index_
+        uint256 index_,
+        uint256 collateralScale_
     ) external returns (BucketTakeResult memory result_) {
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
 
@@ -583,12 +583,13 @@ library Auctions {
             buckets_,
             deposits_,
             BucketTakeParams({
-                borrower:    borrowerAddress_,
-                collateral:  borrower.collateral,
-                t0Debt:      borrower.t0Debt,
-                inflator:    poolState_.inflator,
-                depositTake: depositTake_,
-                index:       index_
+                borrower:        borrowerAddress_,
+                collateral:      borrower.collateral,
+                t0Debt:          borrower.t0Debt,
+                inflator:        poolState_.inflator,
+                depositTake:     depositTake_,
+                index:           index_,
+                collateralScale: collateralScale_
             })
         );
 
@@ -629,7 +630,7 @@ library Auctions {
         PoolState memory poolState_,
         address borrowerAddress_,
         uint256 collateral_,
-        uint256 collateralDustLimit_
+        uint256 collateralScale_
     ) external returns (TakeResult memory result_) {
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
 
@@ -646,18 +647,17 @@ library Auctions {
         ) = _take(
             auctions_,
             TakeParams({
-                borrower:       borrowerAddress_,
-                collateral:     borrower.collateral,
-                t0Debt:         borrower.t0Debt,
-                takeCollateral: collateral_,
-                inflator:       poolState_.inflator,
-                poolType:       poolState_.poolType
+                borrower:        borrowerAddress_,
+                collateral:      borrower.collateral,
+                t0Debt:          borrower.t0Debt,
+                takeCollateral:  collateral_,
+                inflator:        poolState_.inflator,
+                poolType:        poolState_.poolType,
+                collateralScale: collateralScale_
             })
         );
 
         borrower.collateral -= result_.collateralAmount;
-        // revert if the take leaves behind less collateral than the next bidder can take
-        if (borrower.collateral != 0 && borrower.collateral < collateralDustLimit_) revert DustAmountNotExceeded();
 
         if (result_.t0DebtPenalty != 0) {
             poolState_.debt += Maths.wmul(result_.t0DebtPenalty, poolState_.inflator);
@@ -918,6 +918,7 @@ library Auctions {
         vars = _calculateTakeFlowsAndBondChange(
             Maths.min(params_.collateral, params_.takeCollateral),
             params_.inflator,
+            params_.collateralScale,
             vars
         );
 
@@ -992,6 +993,7 @@ library Auctions {
         vars = _calculateTakeFlowsAndBondChange(
             params_.collateral,
             params_.inflator,
+            params_.collateralScale,
             vars
         );
 
@@ -1165,6 +1167,7 @@ library Auctions {
     function _calculateTakeFlowsAndBondChange(
         uint256              totalCollateral_,
         uint256              inflator_,
+        uint256              collateralScale_,
         TakeLocalVars memory vars
     ) internal pure returns (
         TakeLocalVars memory
@@ -1182,13 +1185,13 @@ library Auctions {
         
         if (vars.scaledQuoteTokenAmount <= vars.borrowerDebt && vars.scaledQuoteTokenAmount <= borrowerCollateralValue) {
             // quote token used to purchase is constraining factor
-            vars.collateralAmount         = Maths.wdiv(vars.scaledQuoteTokenAmount, borrowerPrice);
+            vars.collateralAmount         = _roundToScale(Maths.wdiv(vars.scaledQuoteTokenAmount, borrowerPrice), collateralScale_);
             vars.t0RepayAmount            = Maths.wdiv(vars.scaledQuoteTokenAmount, inflator_);
             vars.unscaledQuoteTokenAmount = vars.unscaledDeposit;
 
         } else if (vars.borrowerDebt <= borrowerCollateralValue) {
             // borrower debt is constraining factor
-            vars.collateralAmount = Maths.wdiv(vars.borrowerDebt, borrowerPrice);
+            vars.collateralAmount         = _roundToScale(Maths.wdiv(vars.borrowerDebt, borrowerPrice), collateralScale_);
             vars.t0RepayAmount            = vars.t0Debt;
             vars.unscaledQuoteTokenAmount = Maths.wdiv(vars.borrowerDebt, vars.bucketScale);
 

@@ -208,13 +208,6 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
                 _assertTakeDustRevert(_bidder, _borrower, takeAmount);
         }
 
-        // test a take which leaves less than a dust amount of collateral
-        (, uint256 collateralAvailable, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
-        if (collateralDust != 1) {
-            takeAmount = collateralAvailable - collateralDust / 2;
-            _assertTakeDustRevert(_bidder, _borrower, takeAmount);
-        }
-
         // settle the auction without any legitimate takes
         (auctionPrice, auctionDebt, auctionCollateral) = _advanceAuction(72 hours);
         assertEq(auctionPrice, 0);

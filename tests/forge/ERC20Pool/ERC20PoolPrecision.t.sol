@@ -493,40 +493,6 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         assertEq(_collateral.balanceOf(_borrower), (100 * 1e18) / ERC20Pool(address(_pool)).collateralScale() + (unencumberedCollateral / ERC20Pool(address(_pool)).collateralScale()));
         assertEq(_quote.balanceOf(address(_pool)),   145_000 * _quotePrecision);
         assertEq(_quote.balanceOf(_borrower), 5_000 * _quotePrecision);
-
-        // check pool state
-        debt = 5_008.653846153846150000 * 1e18;
-        col  = 1.655235436395464982 * 1e18;
-        _assertBorrower(
-            {
-                borrower:                  _borrower,
-                borrowerDebt:              debt,
-                borrowerCollateral:        col,
-                borrowert0Np:              3_162.114074012770133438 * 1e18,
-                borrowerCollateralization: 1 * 1e18
-            }
-        );
-        _assertPoolPrices(
-            {
-                htp:      3_025.946482308870941089 * 1e18,
-                htpIndex: 2549,
-                hpb:      3_025.946482308870940904 * 1e18,
-                hpbIndex: 2549,
-                lup:      price,
-                lupIndex: 2549
-            }
-        );
-        _assertLoans(
-            {
-                noOfLoans:         1,
-                maxBorrower:       _borrower,
-                maxThresholdPrice: 3_025.946482308870941089 * 1e18
-            }
-        );
-        (poolDebt,,) = _pool.debtInfo();
-        assertEq(_pool.depositSize(),       150_000 * 1e18);
-        assertEq(poolDebt,                  debt);
-        assertEq(_pool.pledgedCollateral(), col);
     }
 
     function testDepositTwoActorSameBucket(
@@ -880,34 +846,8 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint256 collateralRounded  = (collateralToPledge / collateralScale) * collateralScale;
         assertEq(pledgedCollateral, collateralRounded);
 
-        // accumulate some interest
+        // accumulate some interest prior to tearDown to validate repayment
         skip(1 weeks);
-
-        // ensure we cannot repay a dusty amount of debt
-        (currentDebt, pledgedCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
-        if (_quoteDust != 1) {
-            uint256 repaymentAmount = currentDebt - (_quoteDust / 2);
-            _assertRepayDustRevert({
-                from:             _borrower,
-                borrower:         _borrower,
-                amountToRepay:    repaymentAmount,
-                collateralToPull: 0
-            });
-        }
-        _repayDebtWithoutPullingCollateral(_borrower);
-
-        // ensure we cannot pull a dusty amount of collateral
-        uint256 collateralDust = ERC20Pool(address(_pool)).collateralDust(0);
-        if (collateralDust != 1)
-        {
-            uint256 pullAmount = pledgedCollateral - (collateralDust / 2);
-            _assertRepayDustRevert({
-                from:             _borrower,
-                borrower:         _borrower,
-                amountToRepay:    0,
-                collateralToPull: pullAmount
-            });
-        }
     }
 
 

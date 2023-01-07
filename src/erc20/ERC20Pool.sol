@@ -148,6 +148,9 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
+        // ensure collateral accounting is performed using the appropriate token scale
+        collateralAmountToPull_ = _roundToScale(collateralAmountToPull_, _collateralDust(0));
+
         RepayDebtResult memory result = BorrowerActions.repayDebt(
             auctions,
             buckets,
@@ -156,8 +159,7 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             poolState,
             borrowerAddress_,
             maxQuoteTokenAmountToRepay_,
-            collateralAmountToPull_,
-            _collateralDust(0)
+            collateralAmountToPull_
         );
 
         emit RepayDebt(borrowerAddress_, result.quoteTokenToRepay, collateralAmountToPull_, result.newLup);
@@ -341,6 +343,9 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
+        // round requested collateral to an amount which can actually be transferred
+        collateral_ = _roundToScale(collateral_, _collateralDust(0));
+
         TakeResult memory result = Auctions.take(
             auctions,
             buckets,
@@ -405,7 +410,8 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
             poolState,
             borrowerAddress_,
             depositTake_,
-            index_
+            index_,
+            _collateralDust(0)
         );
 
         // update pool balances state
