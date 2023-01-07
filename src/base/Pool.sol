@@ -32,7 +32,7 @@ import {
 
 import { StartReserveAuctionParams } from 'src/base/interfaces/pool/IPoolReserveAuctionActions.sol';
 
-import { _priceAt, _getTokenScaledAmount } from 'src/base/PoolHelper.sol';
+import { _priceAt, _roundToScale } from 'src/base/PoolHelper.sol';
 import { _revertIfAuctionDebtLocked, _revertIfAuctionClearable } from 'src/base/RevertsHelper.sol';
 
 import { Buckets }  from 'src/libraries/Buckets.sol';
