@@ -13,6 +13,7 @@ import 'src/base/PoolInfoUtils.sol';
 
 import { DSTestPlus } from './utils/DSTestPlus.sol';
 import { Token }      from './utils/Tokens.sol';
+import '@std/console.sol';
 
 contract AjnaRewardsTest is DSTestPlus {
 
@@ -243,7 +244,7 @@ contract AjnaRewardsTest is DSTestPlus {
         _positionManager.memorializePositions(memorializeParams);
     }
 
-    function _triggerReserveAuctions(TriggerReserveAuctionParams memory params_) internal returns (uint256 tokensToBurn_) {
+    function _triggerReserveAuctions(TriggerReserveAuctionParams memory params_) internal returns (uint256 tokensBurned_) {
         // create a new borrower to write state required for reserve auctions
         address borrower = makeAddr("borrower");
 
@@ -291,6 +292,11 @@ contract AjnaRewardsTest is DSTestPlus {
 
         // calculate ajna tokens to burn in order to take the full auction amount
         tokensToBurn_ = Maths.wmul(curClaimableReservesRemaining, curAuctionPrice);
+
+        (,, tokensBurned_) = IPool(pool).burnInfo(IPool(ajnaPool).currentBurnEpoch());
+        
+        return tokensBurned_;
+
     }
 
     function testStakeToken() external {
@@ -577,79 +583,37 @@ contract AjnaRewardsTest is DSTestPlus {
         /*** Lender Deposits NFT ***/
         /***************************/
         
-        // set deposit indexes
-        uint256[] memory depositIndexes = new uint256[](2);
-        uint256[] memory depositIndex1 = new uint256[](1);
-        uint256[] memory depositIndex2 = new uint256[](1);
-        depositIndexes[0] = 2770;
-        depositIndexes[1] = 2771;
-        depositIndex1[0] = 2771;
-        depositIndex2[0] = 2770;
-        
-        // configure NFT position one
+        // configure NFT position
+        uint256[] memory depositIndexes = new uint256[](5);
+        depositIndexes[0] = 9;
+        depositIndexes[1] = 1;
+        depositIndexes[2] = 2;
+        depositIndexes[3] = 3;
+        depositIndexes[4] = 4;
         MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
             indexes: depositIndexes,
             minter: _minterOne,
-            mintAmount: 10_000 * 1e18,
+            mintAmount: 1_000 * 1e18,
             pool: _poolOne
-            });
+        });
+
+        // mint memorialize and deposit NFT
         uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
-        changePrank(_minterOne);
         _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
-        
-        /************************************/
-        /*** Borrower One Accrue Interest ***/
-        /************************************/
-        
-        // borrower1 borrows
-        (address borrower1, uint256 collateralToPledge) = _createTestBorrower(_poolOne, string("borrower1"), 10_000 * 1e18, 2770);
-        changePrank(borrower1);
-        
-        _poolOne.drawDebt(borrower1, 5 * 1e18, 2770, collateralToPledge);
-
-        // pass time to allow interest to accrue
-        skip(2 hours);
-
-        // borrower1 repays their loan
-        (uint256 debt, , ) = _poolOne.borrowerInfo(borrower1);
-        _poolOne.repayDebt(borrower1, debt, 0);
 
         /*****************************/
         /*** First Reserve Auction ***/
         /*****************************/
 
-        // start reserve auction
-        changePrank(_bidder);
-        _ajnaToken.approve(address(_poolOne), type(uint256).max);
-        _poolOne.startClaimableReserveAuction();
-
-        // borrower1 now takes out more debt to accumulate more interest
-        changePrank(borrower1);
-        _poolOne.drawDebt(borrower1, 2_000 * 1e18, 2770, 0);
-
-        // allow time to pass for the reserve price to decrease
-        skip(24 hours);
-
-        (
-            ,
-            ,
-            uint256 curClaimableReservesRemaining,
-            ,
-        ) = _poolUtils.poolReservesInfo(address(_poolOne));
-
-        // take claimable reserves
-        changePrank(_bidder);
-        _poolOne.takeReserves(curClaimableReservesRemaining);
-
-        // recorder updates the change in exchange rates in the first index
-        _updateExchangeRates({
-            updater:        _updater,
-            pool:           address(_poolOne),
-            depositIndexes: depositIndex1,
-            reward:         0.007104599616026695 * 1e18
+        // borrower takes actions providing reserves enabling reserve auctions
+        TriggerReserveAuctionParams memory triggerReserveAuctionParams = TriggerReserveAuctionParams({
+            borrowAmount: 300 * 1e18,
+            limitIndex: 3,
+            pool: _poolOne
         });
-        assertEq(_ajnaToken.balanceOf(_updater), .007104599616026695 * 1e18);
 
+        uint256 burned = _triggerReserveAuctions(triggerReserveAuctionParams);
+        
         _assertBurn({
             pool:      address(_poolOne),
             epoch:     0,
@@ -662,26 +626,19 @@ contract AjnaRewardsTest is DSTestPlus {
             pool:      address(_poolOne),
             epoch:     1,
             timestamp: block.timestamp - 24 hours,
-            burned:    0.284183984708078027 * 1e18,
-            interest:  0.000048563623809373 * 1e18
+            burned:    36.171824346173572302 * 1e18,
+            interest:  6.466873982955353003 * 1e18
         });
-
-        // skip more time to allow more interest to accrue
-        skip(10 days);
-
-        // borrower1 repays their loan again
-        changePrank(borrower1);
-        (debt, , ) = _poolOne.borrowerInfo(borrower1);
-        _poolOne.repayDebt(borrower1, debt, 0);
 
         // recorder updates the change in exchange rates in the second index
         _updateExchangeRates({
-            updater:        _updater2,
+            updater:        _updater,
             pool:           address(_poolOne),
-            depositIndexes: depositIndex2,
-            reward:         0.021313798854781108 * 1e18
+            depositIndexes: depositIndexes,
+            reward:         1.808591217308675030 * 1e18
         });
-        assertEq(_ajnaToken.balanceOf(_updater2), .021313798854781108 * 1e18);
+
+        assertEq(_ajnaToken.balanceOf(_updater), 1.808591217308675030 * 1e18);
 
         /*******************************************/
         /*** Lender Withdraws And Claims Rewards ***/
@@ -693,9 +650,12 @@ contract AjnaRewardsTest is DSTestPlus {
             pool:              address(_poolOne),
             tokenId:           tokenIdOne,
             claimedArray:      _epochsClaimedArray(1, 0),
-            reward:            0.227347187766462422 * 1e18,
+            reward:            18.085912173086791760 * 1e18,
             updateRatesReward: 0
         });
+
+        console.log("burned", burned);
+        assertEq(_ajnaToken.balanceOf(_minterOne) + _ajnaToken.balanceOf(_updater), burned);
         // TODO: check reward amount vs expected from burn
     }
 
