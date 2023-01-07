@@ -153,6 +153,16 @@ library Auctions {
     );
 
     /**
+     *  @notice Emitted when LPs are forfeited as a result of the bucket losing all assets.
+     *  @param  index       The index of the bucket.
+     *  @param  lpForfeited Amount of LP forfeited by lenders.
+     */
+    event BucketBankruptcy(
+        uint256 indexed index,
+        uint256 lpForfeited
+    );
+
+    /**
      *  @notice Emitted when an actor uses quote token to arb higher-priced deposit off the book.
      *  @param  borrower    Identifies the loan being liquidated.
      *  @param  index       The index of the Highest Price Bucket used for this take.
@@ -403,6 +413,7 @@ library Auctions {
                     Bucket storage hpbBucket = buckets_[vars.index];
                     
                     if (hpbBucket.collateral == 0) {                                                   // existing LPB and LP tokens for the bucket shall become unclaimable.
+                        emit BucketBankruptcy(vars.index, hpbBucket.lps);
                         hpbBucket.lps            = 0;
                         hpbBucket.bankruptcyTime = block.timestamp;
                     }

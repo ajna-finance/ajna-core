@@ -250,7 +250,6 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         // revert if the dust amount was not exceeded, but round on the scale amount
         if (amountToAdd_ != 0 && amountToAdd_ < _bucketCollateralDust(index_)) revert DustAmountNotExceeded();
-
         amountToAdd_ = _roundToScale(amountToAdd_, _getArgUint256(COLLATERAL_SCALE));
 
         bucketLPs_ = LenderActions.addCollateral(
@@ -278,12 +277,14 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
 
         PoolState memory poolState = _accruePoolInterest();
 
+        // round the collateral amount appropriately based on token precision
+        maxAmount_ = _roundToScale(maxAmount_, _getArgUint256(COLLATERAL_SCALE));
+
         (collateralAmount_, lpAmount_) = LenderActions.removeMaxCollateral(
             buckets,
             deposits,
             maxAmount_,
-            index_,
-            _bucketCollateralDust(index_)
+            index_
         );
 
         emit RemoveCollateral(msg.sender, index_, collateralAmount_, lpAmount_);

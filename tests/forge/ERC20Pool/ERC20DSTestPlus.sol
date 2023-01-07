@@ -116,7 +116,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         uint256 scale                         = ERC20Pool(address(_pool)).collateralScale();
         uint256 collateralBalanceDenormalized = IERC20(_pool.collateralAddress()).balanceOf(address(_pool));
         uint256 collateralBalanceNormalized   = collateralBalanceDenormalized * scale;
-        // uint256 roundedSum                    = ((bucketCollateral + pledgedCollateral) / scale) * scale;
         assertEq(collateralBalanceNormalized, bucketCollateral + pledgedCollateral);
     }
 

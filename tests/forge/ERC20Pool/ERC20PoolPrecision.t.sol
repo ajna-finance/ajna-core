@@ -248,10 +248,10 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         // remove collateral from the bucket
         _removeCollateralWithoutLPCheck(_bidder, 50 * 1e18, bucketId);
 
-        // ensure removals prevent dust amounts
+        // test removal of dusty amount
         if (collateralDust != 1) {
             (, , uint256 claimableCollateral, , , ) = _poolUtils.bucketInfo(address(_pool), bucketId);
-            _assertRemoveCollateralDustRevert(_bidder, claimableCollateral - collateralDust / 2, bucketId);
+            _removeCollateralWithoutLPCheck(_bidder, claimableCollateral - collateralDust / 2, bucketId);
         }
     }
 
