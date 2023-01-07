@@ -94,6 +94,30 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         }
     }
 
+    function validateCollateral(
+        EnumerableSet.UintSet    storage buckets,
+        EnumerableSet.AddressSet storage borrowers
+    ) internal {
+        uint256 bucketCollateral = 0;
+        for (uint256 i = 0; i < buckets.length(); i++) {
+            (, , uint256 collateral, , ,) = _poolUtils.bucketInfo(address(_pool), buckets.at(i));
+            bucketCollateral += collateral;
+        }
+
+        uint256 pledgedCollateral = 0;
+        for(uint i = 0; i < borrowers.length(); i++) {
+            (, uint256 collateral,) = _poolUtils.borrowerInfo(address(_pool), borrowers.at(i));
+            pledgedCollateral += collateral;
+        }
+
+        assertEq(_pool.pledgedCollateral(), pledgedCollateral);
+        uint256 scale                         = ERC20Pool(address(_pool)).collateralScale();
+        uint256 collateralBalanceDenormalized = IERC20(_pool.collateralAddress()).balanceOf(address(_pool));
+        uint256 collateralBalanceNormalized   = collateralBalanceDenormalized * scale;
+        // uint256 roundedSum                    = ((bucketCollateral + pledgedCollateral) / scale) * scale;
+        assertEq(collateralBalanceNormalized, bucketCollateral + pledgedCollateral);
+    }
+
     function validateEmpty(
         EnumerableSet.UintSet storage buckets
     ) internal {
@@ -115,6 +139,8 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
 
     modifier tearDown {
         _;
+        validateCollateral(bucketsUsed, borrowers);
+
         for(uint i = 0; i < borrowers.length(); i++) {
             repayDebt(borrowers.at(i));
         }
