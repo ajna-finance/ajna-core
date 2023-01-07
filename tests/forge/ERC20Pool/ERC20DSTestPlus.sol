@@ -14,6 +14,7 @@ import { IERC20PoolEvents } from 'src/erc20/interfaces/pool/IERC20PoolEvents.sol
 
 import 'src/base/interfaces/IPool.sol';
 import 'src/base/interfaces/IPoolFactory.sol';
+import 'src/base/PoolHelper.sol';
 import 'src/base/PoolInfoUtils.sol';
 
 import 'src/libraries/Maths.sol';
@@ -46,14 +47,15 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
 
         uint256 currentPoolInflator = Maths.wmul(poolInflatorSnapshot, factor);
 
-        // Calculate current debt of borrower
+        // Calculate current debt of borrower, rounding up to token precision
         uint256 currentDebt = Maths.wmul(currentPoolInflator, borrowerT0debt);
+        uint256 tokenDebt   = _roundUpToScale(currentDebt, ERC20Pool(address(_pool)).quoteTokenScale());
 
         // mint quote tokens to borrower address equivalent to the current debt
         deal(_pool.quoteTokenAddress(), borrower, currentDebt);
 
         // repay current debt and pull all collateral
-        _repayDebtNoLupCheck(borrower, borrower, currentDebt, currentDebt, borrowerCollateral);
+        _repayDebtNoLupCheck(borrower, borrower, tokenDebt, currentDebt, borrowerCollateral);
 
         // check borrower state after repay of loan and pull collateral
         (borrowerT0debt, borrowerCollateral, ) = _pool.borrowerInfo(borrower);
@@ -94,6 +96,30 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         }
     }
 
+    function validateCollateral(
+        EnumerableSet.UintSet    storage buckets,
+        EnumerableSet.AddressSet storage borrowers
+    ) internal {
+        uint256 bucketCollateral = 0;
+        for (uint256 i = 0; i < buckets.length(); i++) {
+            (, , uint256 collateral, , ,) = _poolUtils.bucketInfo(address(_pool), buckets.at(i));
+            bucketCollateral += collateral;
+        }
+
+        uint256 pledgedCollateral = 0;
+        for(uint i = 0; i < borrowers.length(); i++) {
+            (, uint256 collateral,) = _poolUtils.borrowerInfo(address(_pool), borrowers.at(i));
+            pledgedCollateral += collateral;
+        }
+
+        assertEq(_pool.pledgedCollateral(), pledgedCollateral);
+        uint256 scale                         = ERC20Pool(address(_pool)).collateralScale();
+        uint256 collateralBalanceDenormalized = IERC20(_pool.collateralAddress()).balanceOf(address(_pool));
+        uint256 collateralBalanceNormalized   = collateralBalanceDenormalized * scale;
+        // uint256 roundedSum                    = ((bucketCollateral + pledgedCollateral) / scale) * scale;
+        assertEq(collateralBalanceNormalized, bucketCollateral + pledgedCollateral);
+    }
+
     function validateEmpty(
         EnumerableSet.UintSet storage buckets
     ) internal {
@@ -115,6 +141,8 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
 
     modifier tearDown {
         _;
+        validateCollateral(bucketsUsed, borrowers);
+
         for(uint i = 0; i < borrowers.length(); i++) {
             repayDebt(borrowers.at(i));
         }
@@ -491,17 +519,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         changePrank(from);
         vm.expectRevert(IPoolErrors.BorrowerNotSender.selector);
         ERC20Pool(address(_pool)).repayDebt(borrower, 0, amount);
-    }
-
-    function _assertRepayDustRevert(
-        address from,
-        address borrower,
-        uint256 amountToRepay,
-        uint256 collateralToPull
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
-        ERC20Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull);
     }
 
     function _assertRepayMinDebtRevert(
