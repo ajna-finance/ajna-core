@@ -252,7 +252,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
     }
 
-    // TODO: finish implementing
     function testPullCollateralNotInPool() external tearDown {
         // borrower is owner of NFTs
         assertEq(_collateral.ownerOf(1), _borrower);
