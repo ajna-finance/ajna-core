@@ -14,6 +14,7 @@ import { IERC20PoolEvents } from 'src/erc20/interfaces/pool/IERC20PoolEvents.sol
 
 import 'src/base/interfaces/IPool.sol';
 import 'src/base/interfaces/IPoolFactory.sol';
+import 'src/base/PoolHelper.sol';
 import 'src/base/PoolInfoUtils.sol';
 
 import 'src/libraries/Maths.sol';
@@ -46,14 +47,15 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
 
         uint256 currentPoolInflator = Maths.wmul(poolInflatorSnapshot, factor);
 
-        // Calculate current debt of borrower
+        // Calculate current debt of borrower, rounding up to token precision
         uint256 currentDebt = Maths.wmul(currentPoolInflator, borrowerT0debt);
+        uint256 tokenDebt   = _roundUpToScale(currentDebt, ERC20Pool(address(_pool)).quoteTokenScale());
 
         // mint quote tokens to borrower address equivalent to the current debt
         deal(_pool.quoteTokenAddress(), borrower, currentDebt);
 
         // repay current debt and pull all collateral
-        _repayDebtNoLupCheck(borrower, borrower, currentDebt, currentDebt, borrowerCollateral);
+        _repayDebtNoLupCheck(borrower, borrower, tokenDebt, currentDebt, borrowerCollateral);
 
         // check borrower state after repay of loan and pull collateral
         (borrowerT0debt, borrowerCollateral, ) = _pool.borrowerInfo(borrower);
