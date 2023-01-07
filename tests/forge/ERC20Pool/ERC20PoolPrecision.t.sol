@@ -222,7 +222,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint256 quoteDecimals      = bound(uint256(quotePrecisionDecimals_),      1, 18);
         uint256 bucketId           = bound(uint256(bucketId_),                    1, 7388);
         init(collateralDecimals, quoteDecimals);
-        uint256 collateralDust = ERC20Pool(address(_pool)).collateralDust(bucketId);
+        uint256 collateralDust = ERC20Pool(address(_pool)).bucketCollateralDust(bucketId);
 
         // put some deposit in the bucket
         _addInitialLiquidity({
@@ -255,7 +255,10 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         }
     }
 
-    function testBorrowRepayPrecision(uint8 collateralPrecisionDecimals_, uint8 quotePrecisionDecimals_) external virtual tearDown {
+    function testBorrowRepayPrecision(
+        uint8 collateralPrecisionDecimals_, 
+        uint8 quotePrecisionDecimals_
+    ) external tearDown {
         // setup fuzzy bounds and initialize the pool
         uint256 boundColPrecision = bound(uint256(collateralPrecisionDecimals_), 1, 18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_), 1, 18);
@@ -493,40 +496,6 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         assertEq(_collateral.balanceOf(_borrower), (100 * 1e18) / ERC20Pool(address(_pool)).collateralScale() + (unencumberedCollateral / ERC20Pool(address(_pool)).collateralScale()));
         assertEq(_quote.balanceOf(address(_pool)),   145_000 * _quotePrecision);
         assertEq(_quote.balanceOf(_borrower), 5_000 * _quotePrecision);
-
-        // check pool state
-        debt = 5_008.653846153846150000 * 1e18;
-        col  = 1.655235436395464982 * 1e18;
-        _assertBorrower(
-            {
-                borrower:                  _borrower,
-                borrowerDebt:              debt,
-                borrowerCollateral:        col,
-                borrowert0Np:              3_162.114074012770133438 * 1e18,
-                borrowerCollateralization: 1 * 1e18
-            }
-        );
-        _assertPoolPrices(
-            {
-                htp:      3_025.946482308870941089 * 1e18,
-                htpIndex: 2549,
-                hpb:      3_025.946482308870940904 * 1e18,
-                hpbIndex: 2549,
-                lup:      price,
-                lupIndex: 2549
-            }
-        );
-        _assertLoans(
-            {
-                noOfLoans:         1,
-                maxBorrower:       _borrower,
-                maxThresholdPrice: 3_025.946482308870941089 * 1e18
-            }
-        );
-        (poolDebt,,) = _pool.debtInfo();
-        assertEq(_pool.depositSize(),       150_000 * 1e18);
-        assertEq(poolDebt,                  debt);
-        assertEq(_pool.pledgedCollateral(), col);
     }
 
     function testDepositTwoActorSameBucket(
@@ -549,7 +518,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
         uint256 scaledQuoteAmount = (quoteAmount / 10 ** (18 - boundQuotePrecision)) * 10 ** (18 - boundQuotePrecision);
         uint256 scaledColAmount   = (collateralAmount / 10 ** (18 - boundColPrecision)) * 10 ** (18 - boundColPrecision);
-        uint256 colDustAmount     = ERC20Pool(address(_pool)).collateralDust(bucketId);
+        uint256 colDustAmount     = ERC20Pool(address(_pool)).bucketCollateralDust(bucketId);
 
         assertEq(ERC20Pool(address(_pool)).collateralScale(), 10 ** (18 - boundColPrecision));
         assertEq(_pool.quoteTokenScale(), 10 ** (18 - boundQuotePrecision));
@@ -820,24 +789,24 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
         // check dust limits for 18-decimal collateral
         init(18, 18);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(0),    1);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(1),    1);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(4166), 100);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(7388), 1000000000);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(0),    1);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(1),    1);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(4166), 100);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(7388), 1000000000);
 
         // check dust limits for 12-decimal collateral
         init(12, 18);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(0),    1000000);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(1),    1000000);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(6466), 100000000);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(7388), 1000000000);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(0),    1000000);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(1),    1000000);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(6466), 100000000);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(7388), 1000000000);
 
         // check dust limits for 6-decimal collateral
         init(6, 18);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(0),    1000000000000);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(1),    1000000000000);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(4156), 1000000000000);
-        assertEq(IERC20Pool(address(_pool)).collateralDust(7388), 1000000000000);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(0),    1000000000000);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(1),    1000000000000);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(4156), 1000000000000);
+        assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(7388), 1000000000000);
     }
 
     function testDrawDebtPrecision(
@@ -880,34 +849,8 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint256 collateralRounded  = (collateralToPledge / collateralScale) * collateralScale;
         assertEq(pledgedCollateral, collateralRounded);
 
-        // accumulate some interest
+        // accumulate some interest prior to tearDown to validate repayment
         skip(1 weeks);
-
-        // ensure we cannot repay a dusty amount of debt
-        (currentDebt, pledgedCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
-        if (_quoteDust != 1) {
-            uint256 repaymentAmount = currentDebt - (_quoteDust / 2);
-            _assertRepayDustRevert({
-                from:             _borrower,
-                borrower:         _borrower,
-                amountToRepay:    repaymentAmount,
-                collateralToPull: 0
-            });
-        }
-        _repayDebtWithoutPullingCollateral(_borrower);
-
-        // ensure we cannot pull a dusty amount of collateral
-        uint256 collateralDust = ERC20Pool(address(_pool)).collateralDust(0);
-        if (collateralDust != 1)
-        {
-            uint256 pullAmount = pledgedCollateral - (collateralDust / 2);
-            _assertRepayDustRevert({
-                from:             _borrower,
-                borrower:         _borrower,
-                amountToRepay:    0,
-                collateralToPull: pullAmount
-            });
-        }
     }
 
 

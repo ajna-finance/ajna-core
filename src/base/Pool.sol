@@ -118,13 +118,16 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     ) external override nonReentrant returns (uint256 bucketLPs_) {
         PoolState memory poolState = _accruePoolInterest();
 
+        // round to token precision
+        quoteTokenAmountToAdd_ = _roundToScale(quoteTokenAmountToAdd_, poolState.quoteDustLimit);
+
         uint256 newLup;
         (bucketLPs_, newLup) = LenderActions.addQuoteToken(
             buckets,
             deposits,
             poolState,
             AddQuoteParams({
-                amount: _roundToScale(quoteTokenAmountToAdd_, poolState.quoteDustLimit),
+                amount: quoteTokenAmountToAdd_,
                 index:  index_
             })
         );
