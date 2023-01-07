@@ -148,8 +148,9 @@ contract ERC20Pool is IERC20Pool, FlashloanablePool {
     ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
-        // ensure collateral accounting is performed using the appropriate token scale
-        collateralAmountToPull_ = _roundToScale(collateralAmountToPull_, _bucketCollateralDust(0));
+        // ensure accounting is performed using the appropriate token scale
+        maxQuoteTokenAmountToRepay_ = _roundToScale(maxQuoteTokenAmountToRepay_, _getArgUint256(QUOTE_SCALE));
+        collateralAmountToPull_     = _roundToScale(collateralAmountToPull_,     _bucketCollateralDust(0));
 
         RepayDebtResult memory result = BorrowerActions.repayDebt(
             auctions,
