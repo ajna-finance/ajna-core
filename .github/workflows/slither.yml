@@ -20,7 +20,13 @@ jobs:
 
       - name: Analyze Contracts
         run: |
-          slither src/.
+          slither src/ERC20Pool.sol
+          slither src/ERC20PoolFactory.sol
+          slither src/ERC721Pool.sol
+          slither src/ERC721PoolFactory.sol
+          slither src/PoolInfoUtils.sol
+          slither src/PositionManager.sol
+          slither src/RewardsManager.sol
         continue-on-error: true
         id: contracts-analyzer
 
