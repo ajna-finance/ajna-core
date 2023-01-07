@@ -44,7 +44,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         return _deploySubsetPool(subsetTokenIds);
     }
 
-    function testBorrowerInterestCalculation() external {
+    function testBorrowerInterestCalculation() tearDown external {
         _addInitialLiquidity(
             {
                 from:   _lender,

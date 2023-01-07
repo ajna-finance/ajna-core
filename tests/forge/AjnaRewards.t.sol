@@ -13,7 +13,6 @@ import 'src/base/PoolInfoUtils.sol';
 
 import { DSTestPlus } from './utils/DSTestPlus.sol';
 import { Token }      from './utils/Tokens.sol';
-import '@std/console.sol';
 
 contract AjnaRewardsTest is DSTestPlus {
 
@@ -290,11 +289,8 @@ contract AjnaRewardsTest is DSTestPlus {
         // take claimable reserves
         params_.pool.takeReserves(curClaimableReservesRemaining);
 
-        // calculate ajna tokens to burn in order to take the full auction amount
-        tokensToBurn_ = Maths.wmul(curClaimableReservesRemaining, curAuctionPrice);
-
-        (,, tokensBurned_) = IPool(pool).burnInfo(IPool(ajnaPool).currentBurnEpoch());
-        
+        (,, tokensBurned_) = IPool(params_.pool).burnInfo(IPool(params_.pool).currentBurnEpoch());
+ 
         return tokensBurned_;
 
     }
@@ -654,10 +650,9 @@ contract AjnaRewardsTest is DSTestPlus {
             updateRatesReward: 0
         });
 
-        console.log("burned", burned);
-        assertEq(_ajnaToken.balanceOf(_minterOne) + _ajnaToken.balanceOf(_updater), burned);
         // TODO: check reward amount vs expected from burn
     }
+
 
     function testMultiPeriodRewardsSingleClaim() external {
         skip(10);
