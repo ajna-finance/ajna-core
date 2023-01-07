@@ -238,6 +238,19 @@ import { Maths }   from 'src/libraries/Maths.sol';
         scaledAmount_ = (amount_ / tokenScale_) * tokenScale_;
     }
 
+    /**
+     *  @notice Rounds a token amount up to the next amount permissible by the token scale.
+     *  @param  amount_       Value to be rounded.
+     *  @param  tokenScale_   Scale of the token, presented as a power of 10.
+     *  @return scaledAmount_ Rounded value.
+     */
+    function _roundUpToScale(
+        uint256 amount_,
+        uint256 tokenScale_
+    ) pure returns (uint256 scaledAmount_) {
+        scaledAmount_ = _roundToScale(amount_, tokenScale_) + tokenScale_;
+    }
+    
     /*********************************/
     /*** Reserve Auction Utilities ***/
     /*********************************/
