@@ -6,6 +6,10 @@ import { Bucket, Lender } from '../../interfaces/pool/commons/IPoolState.sol';
 
 import { Maths } from './Maths.sol';
 
+/**
+    @title  Buckets library
+    @notice Internal library containing common logic for buckets management.
+ */
 library Buckets {
 
     /**************/

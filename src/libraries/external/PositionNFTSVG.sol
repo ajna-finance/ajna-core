@@ -5,6 +5,10 @@ pragma solidity 0.8.14;
 import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 import { Base64 }  from '@base64-sol/base64.sol';
 
+/**
+    @title  Position NFT SVG library
+    @notice External library containing logic for generating SVG for a Position NFT.
+ */
 library PositionNFTSVG {
 
     using Strings for uint256;

@@ -20,8 +20,12 @@ import { Deposits } from '../internal/Deposits.sol';
 import { Buckets }  from '../internal/Buckets.sol';
 import { Maths }    from '../internal/Maths.sol';
 
+
 /**
-    @notice External library containing logic for common lender actions.
+    @title  LenderActions library
+    @notice External library containing logic for pool actors:
+            - Lenders: add, remove and move quote tokens; transfer LPs
+            - Traders: add, remove and move quote tokens; add and remove collateral
  */
 library LenderActions {
 

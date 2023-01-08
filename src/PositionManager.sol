@@ -28,9 +28,20 @@ import { tokenSymbol } from './libraries/helpers/SafeTokenNamer.sol';
 
 import { PositionNFTSVG } from './libraries/external/PositionNFTSVG.sol';
 
+/**
+ *  @title  Position Manager Contract
+ *  @notice Used by Pool lenders to optionally mint NFT that represents their positions.
+ *          Lenders can:
+ *          - mint positions NFT token for a specific pool
+ *          - memorialize positions for given buckets
+ *          - move liquidity in pool
+ *          - redeem positions for given buckets
+ *          - burn positions NFT
+ */
 contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, ReentrancyGuard {
+
     using EnumerableSet for EnumerableSet.UintSet;
-    using SafeERC20 for ERC20;
+    using SafeERC20     for ERC20;
 
     /***********************/
     /*** State Variables ***/
@@ -85,7 +96,20 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     /*** Owner External Functions ***/
     /********************************/
 
-    /// @inheritdoc IPositionManagerOwnerActions
+    /**
+     *  @inheritdoc IPositionManagerOwnerActions
+     *  @dev write state:
+     *          - nonces: remove tokenId nonce
+     *          - poolKey: remove tokenId => pool mapping
+     *  @dev revert on:
+     *          - mayInteract:
+     *              - token id is not a valid / minted id
+     *              - sender is not owner NoAuth()
+     *              - token id not minted for given pool WrongPool()
+     *          - positions token to burn has liquidity LiquidityNotRemoved()
+     *  @dev emit events:
+     *          - Burn
+     */
     function burn(
         BurnParams calldata params_
     ) external override mayInteract(params_.pool, params_.tokenId) {
@@ -101,7 +125,19 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         _burn(params_.tokenId);
     }
 
-    /// @inheritdoc IPositionManagerOwnerActions
+    /**
+     *  @inheritdoc IPositionManagerOwnerActions
+     *  @dev External calls to Pool contract:
+     *          - lenderInfo(): get lender position in bucket
+     *          - transferLPTokens(): transfer LPs ownership to PositionManager contracts
+     *  @dev write state:
+     *          - positionIndexes: add bucket index
+     *          - positionLPs: update tokenId => bucket id mapping
+     *  @dev revert on:
+     *          - positions token to burn has liquidity LiquidityNotRemoved()
+     *  @dev emit events:
+     *          - MemorializePosition
+     */
     function memorializePositions(
         MemorializePositionsParams calldata params_
     ) external override {
@@ -133,7 +169,15 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         pool.transferLPTokens(owner, address(this), params_.indexes);
     }
 
-    /// @inheritdoc IPositionManagerOwnerActions
+    /**
+     *  @inheritdoc IPositionManagerOwnerActions
+     *  @dev write state:
+     *          - poolKey: update tokenId => pool mapping
+     *  @dev revert on:
+     *          - provided pool not valid NotAjnaPool()
+     *  @dev emit events:
+     *          - Mint
+     */
     function mint(
         MintParams calldata params_
     ) external override returns (uint256 tokenId_) {
@@ -150,7 +194,25 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         _safeMint(params_.recipient, tokenId_);
     }
 
-    /// @inheritdoc IPositionManagerOwnerActions
+    /**
+     *  @inheritdoc IPositionManagerOwnerActions
+     *  @dev External calls to Pool contract:
+     *          - bucketInfo(): get from bucket info
+     *          - moveQuoteToken(): move liquidity between buckets
+     *  @dev write state:
+     *          - positionIndexes: remove from bucket index
+     *          - positionIndexes: add to bucket index
+     *          - positionLPs: decrement from bucket LPs
+     *          - positionLPs: increment to bucket LPs
+     *  @dev revert on:
+     *          - mayInteract:
+     *              - token id is not a valid / minted id
+     *              - sender is not owner NoAuth()
+     *              - token id not minted for given pool WrongPool()
+     *          - positions token to burn has liquidity LiquidityNotRemoved()
+     *  @dev emit events:
+     *          - MoveLiquidity
+     */
     function moveLiquidity(
         MoveLiquidityParams calldata params_
     ) external override mayInteract(params_.pool, params_.tokenId) nonReentrant {
@@ -198,7 +260,23 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         positionLPs[params_.tokenId][params_.toIndex]   += lpbAmountTo;
     }
 
-    /// @inheritdoc IPositionManagerOwnerActions
+    /**
+     *  @inheritdoc IPositionManagerOwnerActions
+     *  @dev External calls to Pool contract:
+     *          - approveLpOwnership(): approve ownership for transfer
+     *          - transferLPTokens(): transfer LPs ownership from PositionManager contract
+     *  @dev write state:
+     *          - positionIndexes: remove from bucket index
+     *          - positionLPs: delete bucket LPs
+     *  @dev revert on:
+     *          - mayInteract:
+     *              - token id is not a valid / minted id
+     *              - sender is not owner NoAuth()
+     *              - token id not minted for given pool WrongPool()
+     *          - position not tracked RemoveLiquidityFailed()
+     *  @dev emit events:
+     *          - RedeemPosition
+     */
     function reedemPositions(
         RedeemPositionsParams calldata params_
     ) external override mayInteract(params_.pool, params_.tokenId) {

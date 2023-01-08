@@ -22,6 +22,16 @@ import { StakeInfo, BucketState } from './interfaces/rewards/IRewardsManagerStat
 
 import { Maths } from './libraries/internal/Maths.sol';
 
+/**
+ *  @title  Rewards (staking) Manager contract
+ *  @notice Pool lenders can optionally mint NFT that represents their positions.
+ *          The Rewards contract allows pool lenders with positions NFT to stake and earn AJNA tokens. 
+ *          Lenders with NFTs can:
+ *          - stake token
+ *          - update bucket exchange rate and earn rewards
+ *          - claim rewards
+ *          - unstake token
+ */
 contract RewardsManager is IRewardsManager {
 
     using SafeERC20 for IERC20;
@@ -98,7 +108,14 @@ contract RewardsManager is IRewardsManager {
     /*** External Functions ***/
     /**************************/
 
-    /// @inheritdoc IRewardsManagerOwnerActions
+    /**
+     *  @inheritdoc IRewardsManagerOwnerActions
+     *  @dev revert on:
+     *          - not owner NotOwnerOfDeposit()
+     *          - already claimed AlreadyClaimed()
+     *  @dev emit events:
+     *          - ClaimRewards
+     */
     function claimRewards(
         uint256 tokenId_,
         uint256 burnEpochToStartClaim_
@@ -110,7 +127,13 @@ contract RewardsManager is IRewardsManager {
         _claimRewards(tokenId_, burnEpochToStartClaim_);
     }
 
-    /// @inheritdoc IRewardsManagerOwnerActions
+    /**
+     *  @inheritdoc IRewardsManagerOwnerActions
+     *  @dev revert on:
+     *          - not owner NotOwnerOfDeposit()
+     *  @dev emit events:
+     *          - Stake
+     */
     function stake(
         uint256 tokenId_
     ) external override {
@@ -166,7 +189,14 @@ contract RewardsManager is IRewardsManager {
         IERC20(ajnaToken).safeTransfer(msg.sender, updateReward);
     }
 
-    /// @inheritdoc IRewardsManagerOwnerActions
+    /**
+     *  @inheritdoc IRewardsManagerOwnerActions
+     *  @dev revert on:
+     *          - not owner NotOwnerOfDeposit()
+     *  @dev emit events:
+     *          - ClaimRewards
+     *          - Unstake
+     */
     function unstake(
         uint256 tokenId_
     ) external override {
@@ -185,7 +215,11 @@ contract RewardsManager is IRewardsManager {
         IERC721(address(positionManager)).safeTransferFrom(address(this), msg.sender, tokenId_);
     }
 
-    /// @inheritdoc IRewardsManagerOwnerActions
+    /**
+     *  @inheritdoc IRewardsManagerOwnerActions
+     *  @dev emit events:
+     *          - UpdateExchangeRates
+     */
     function updateBucketExchangeRatesAndClaim(
         address pool_,
         uint256[] calldata indexes_
