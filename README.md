@@ -77,10 +77,6 @@ make test-with-gas-report
 ```bash
 make test-load
 ```
-- generate code coverage report:
-```bash
-make coverage
-```
 
 ### Brownie tests
 - run integration tests:
@@ -106,6 +102,16 @@ or
 brownie compile --size
 ```
 
+## Code Coverage
+- generate basic code coverage report:
+```bash
+make coverage
+```
+- exclude tests from code coverage report:
+```
+apt-get install lcov
+bash ./check-code-coverage.sh
+```
 
 ## Slither Analyzer
 
