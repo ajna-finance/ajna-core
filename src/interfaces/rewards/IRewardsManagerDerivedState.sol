@@ -16,6 +16,6 @@ interface IRewardsManagerDerivedState {
     function calculateRewards(
         uint256 tokenId,
         uint256 startEpoch
-    ) external returns (uint256);
+    ) external view returns (uint256);
 
 }
