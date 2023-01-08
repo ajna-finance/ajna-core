@@ -258,11 +258,14 @@ library BorrowerActions {
         if (vars.repay) {
             if (borrower.t0Debt == 0) revert NoDebt();
 
-            // FIXME: division overflows when passed type(uint256).max
-            result_.t0RepaidDebt = Maths.min(
-                borrower.t0Debt,
-                Maths.wdiv(maxQuoteTokenAmountToRepay_, poolState_.inflator)
-            );
+            if (maxQuoteTokenAmountToRepay_ == type(uint256).max) {
+                result_.t0RepaidDebt = borrower.t0Debt;
+            } else {
+                result_.t0RepaidDebt = Maths.min(
+                    borrower.t0Debt,
+                    Maths.wdiv(maxQuoteTokenAmountToRepay_, poolState_.inflator)
+                );
+            }
 
             result_.quoteTokenToRepay = Maths.wmul(result_.t0RepaidDebt, poolState_.inflator);
 

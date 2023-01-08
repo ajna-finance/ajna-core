@@ -1348,7 +1348,7 @@ contract ERC20PoolBorrowFuzzyTest is ERC20FuzzyHelperContract {
         _repayDebt({
             from:             _borrower,
             borrower:         _borrower,
-            amountToRepay:    debt,
+            amountToRepay:    type(uint256).max,
             amountRepaid:     debt,
             collateralToPull: requiredCollateral,
             newLup:           _calculateLup(address(_pool), 0)
