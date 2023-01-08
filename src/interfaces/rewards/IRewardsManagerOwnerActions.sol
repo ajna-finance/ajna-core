@@ -11,11 +11,11 @@ interface IRewardsManagerOwnerActions {
      *  @notice Claim ajna token rewards that have accrued to a staked LP NFT.
      *  @dev    Underlying NFT LP positions cannot change while staked. Retrieves exchange rates for each bucket the NFT is associated with.
      *  @param  tokenId    ID of the staked LP NFT.
-     *  @param  startEpoch The burn epoch to start claim.
+     *  @param  claimEpoch The burn epoch to claim rewards for.
      */
     function claimRewards(
         uint256 tokenId,
-        uint256 startEpoch
+        uint256 claimEpoch
     ) external;
 
     /**

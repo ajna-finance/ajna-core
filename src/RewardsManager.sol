@@ -105,13 +105,13 @@ contract RewardsManager is IRewardsManager {
      */
     function claimRewards(
         uint256 tokenId_,
-        uint256 burnEpochToStartClaim_
+        uint256 epochToClaim_
     ) external override {
         if (msg.sender != stakes[tokenId_].owner) revert NotOwnerOfDeposit();
 
-        if (isEpochClaimed[tokenId_][burnEpochToStartClaim_]) revert AlreadyClaimed();
+        if (isEpochClaimed[tokenId_][epochToClaim_]) revert AlreadyClaimed();
 
-        _claimRewards(tokenId_, burnEpochToStartClaim_);
+        _claimRewards(tokenId_, epochToClaim_);
     }
 
     /**
@@ -266,7 +266,7 @@ contract RewardsManager is IRewardsManager {
      *  @notice Calculate the amount of rewards that have been accumulated by a staked NFT.
      *  @dev    Rewards are calculated as the difference in exchange rates between the last interaction burn event and the current burn event.
      *  @param  tokenId_      ID of the staked LP NFT.
-     *  @param  epochToClaim_ The end burn epoch to calculate rewards for (rewards calculation starts from the last claimed epoch).
+     *  @param  epochToClaim_ The burn epoch to claim rewards for (rewards calculation starts from the last claimed epoch).
      *  @return rewards_      Amount of rewards earned by the NFT.
      */
     function _calculateAndClaimRewards(
@@ -281,7 +281,7 @@ contract RewardsManager is IRewardsManager {
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
 
         // iterate through all burn periods to calculate and claim rewards
-        for (uint256 epoch = lastBurnEpoch; epoch < burnEpochToClaim_; ) {
+        for (uint256 epoch = lastBurnEpoch; epoch < epochToClaim_; ) {
 
             uint256 nextEpochRewards = _calculateNextEpochRewards(
                 tokenId_,
@@ -440,12 +440,12 @@ contract RewardsManager is IRewardsManager {
 
     /**
      *  @notice Claim rewards that have been accumulated by a staked NFT.
-     *  @param  tokenId_               ID of the staked LP NFT.
-     *  @param  burnEpochToStartClaim_ The burn period from which to start the calculations, decrementing down.
+     *  @param  tokenId_      ID of the staked LP NFT.
+     *  @param  epochToClaim_ The burn epoch to claim rewards for (rewards calculation starts from the last claimed epoch)
      */
     function _claimRewards(
         uint256 tokenId_,
-        uint256 burnEpochToStartClaim_
+        uint256 epochToClaim_
     ) internal {
         StakeInfo storage stakeInfo = stakes[tokenId_];
 
@@ -457,11 +457,11 @@ contract RewardsManager is IRewardsManager {
             positionManager.getPositionIndexes(tokenId_)
         );
 
-        rewardsEarned += _calculateAndClaimRewards(tokenId_, burnEpochToStartClaim_);
+        rewardsEarned += _calculateAndClaimRewards(tokenId_, epochToClaim_);
 
         uint256[] memory burnEpochsClaimed = _getBurnEpochsClaimed(
             stakeInfo.lastInteractionBurnEpoch,
-            burnEpochToStartClaim_
+            epochToClaim_
         );
 
         emit ClaimRewards(
@@ -473,7 +473,7 @@ contract RewardsManager is IRewardsManager {
         );
 
         // update last interaction burn event
-        stakeInfo.lastInteractionBurnEpoch = uint96(burnEpochToStartClaim_);
+        stakeInfo.lastInteractionBurnEpoch = uint96(epochToClaim_);
 
         uint256 ajnaBalance = IERC20(ajnaToken).balanceOf(address(this));
 
