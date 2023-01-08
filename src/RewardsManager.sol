@@ -224,7 +224,7 @@ contract RewardsManager is IRewardsManager {
     /// @inheritdoc IRewardsManagerDerivedState
     function calculateRewards(
         uint256 tokenId_,
-        uint256 burnEpochToStartClaim_
+        uint256 epochToClaim_
     ) external view override returns (uint256 rewards_) {
 
         address ajnaPool      = stakes[tokenId_].ajnaPool;
@@ -234,9 +234,9 @@ contract RewardsManager is IRewardsManager {
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
 
         // iterate through all burn periods to calculate and claim rewards
-        for (uint256 epoch = lastBurnEpoch; epoch < burnEpochToStartClaim_; ) {
+        for (uint256 epoch = lastBurnEpoch; epoch < epochToClaim_; ) {
 
-            rewards_ += _calculateEpochRewards(
+            rewards_ += _calculateNextEpochRewards(
                 tokenId_,
                 epoch,
                 stakingEpoch,
@@ -265,13 +265,13 @@ contract RewardsManager is IRewardsManager {
     /**
      *  @notice Calculate the amount of rewards that have been accumulated by a staked NFT.
      *  @dev    Rewards are calculated as the difference in exchange rates between the last interaction burn event and the current burn event.
-     *  @param  tokenId_               ID of the staked LP NFT.
-     *  @param  burnEpochToStartClaim_ The burn period from which to start the calculations, decrementing down.
-     *  @return rewards_               Amount of rewards earned by the NFT.
+     *  @param  tokenId_      ID of the staked LP NFT.
+     *  @param  epochToClaim_ The end burn epoch to calculate rewards for (rewards calculation starts from the last claimed epoch).
+     *  @return rewards_      Amount of rewards earned by the NFT.
      */
     function _calculateAndClaimRewards(
         uint256 tokenId_,
-        uint256 burnEpochToStartClaim_
+        uint256 epochToClaim_
     ) internal returns (uint256 rewards_) {
 
         address ajnaPool      = stakes[tokenId_].ajnaPool;
@@ -281,11 +281,9 @@ contract RewardsManager is IRewardsManager {
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
 
         // iterate through all burn periods to calculate and claim rewards
-        for (uint256 epoch = lastBurnEpoch; epoch < burnEpochToStartClaim_; ) {
+        for (uint256 epoch = lastBurnEpoch; epoch < burnEpochToClaim_; ) {
 
-            uint256 nextEpoch = epoch + 1;
-
-            uint256 newEpochRewards = _calculateEpochRewards(
+            uint256 nextEpochRewards = _calculateNextEpochRewards(
                 tokenId_,
                 epoch,
                 stakingEpoch,
@@ -293,27 +291,29 @@ contract RewardsManager is IRewardsManager {
                 positionIndexes
             );
 
+            uint256 nextEpoch = epoch + 1;
+
             // update epoch token claim trackers
-            rewardsClaimed[nextEpoch]           += newEpochRewards;
+            rewardsClaimed[nextEpoch]           += nextEpochRewards;
             isEpochClaimed[tokenId_][nextEpoch] = true;
 
-            rewards_ += newEpochRewards;
+            rewards_ += nextEpochRewards;
 
             unchecked { ++epoch; }
         }
     }
 
     /**
-     *  @notice Calculate the amount of rewards that have been accumulated by a staked NFT in an epoch.
+     *  @notice Calculate the amount of rewards that have been accumulated by a staked NFT in next epoch.
      *  @dev    Rewards are calculated as the difference in exchange rates between the last interaction burn event and the current burn event.
      *  @param  tokenId_         ID of the staked LP NFT.
-     *  @param  epoch_           The epoch to calculate rewards for.
+     *  @param  epoch_           The current epoch.
      *  @param  stakingEpoch_    The epoch in which token was staked.
      *  @param  ajnaPool_        Address of the pool.
      *  @param  positionIndexes_ Bucket ids associated with NFT staked.
      *  @return epochRewards_    Calculated rewards in epoch.
      */
-    function _calculateEpochRewards(
+    function _calculateNextEpochRewards(
         uint256 tokenId_,
         uint256 epoch_,
         uint256 stakingEpoch_,
