@@ -294,7 +294,7 @@ contract RewardsManagerTest is DSTestPlus {
             ,
             ,
             uint256 curClaimableReservesRemaining,
-            uint256 curAuctionPrice,
+            ,
         ) = _poolUtils.poolReservesInfo(address(params_.pool));
 
         // take claimable reserves
@@ -1148,7 +1148,7 @@ contract RewardsManagerTest is DSTestPlus {
         _stakeToken(address(_poolOne), _minterTwo, tokenIdTwo);
 
         // borrower takes actions providing reserves enabling three reserve auctions
-        uint256 auctionOneTokensToBurned = _triggerReserveAuctions(TriggerReserveAuctionParams({
+        _triggerReserveAuctions(TriggerReserveAuctionParams({
             borrowAmount: 300 * 1e18,
             limitIndex: 2555,
             pool: _poolOne
@@ -1161,7 +1161,7 @@ contract RewardsManagerTest is DSTestPlus {
             reward:         1.865914922280688650 * 1e18
         });
 
-        uint256 auctionTwoTokensToBurned = _triggerReserveAuctions(TriggerReserveAuctionParams({
+        _triggerReserveAuctions(TriggerReserveAuctionParams({
             borrowAmount: 1_000 * 1e18,
             limitIndex: 2555,
             pool: _poolOne
@@ -1174,7 +1174,7 @@ contract RewardsManagerTest is DSTestPlus {
             reward:         6.270046292191646105 * 1e18
         });
 
-        uint256 auctionThreeTokensToBurned = _triggerReserveAuctions(TriggerReserveAuctionParams({
+        _triggerReserveAuctions(TriggerReserveAuctionParams({
             borrowAmount: 2_000 * 1e18,
             limitIndex: 2555,
             pool: _poolOne
