@@ -109,9 +109,9 @@ contract FenwickTreeTest is DSTestPlus {
     function testFenwickFuzzyScalingPrefix(
         uint256 insertions_,
         uint256 totalAmount_,
+        uint256 seed_,
         uint256 scaleIndex_,
-        uint256 factor_,
-        uint256 seed_
+        uint256 factor_
     ) external {
         _tree.fuzzyFill(insertions_, totalAmount_, seed_, false);
 
@@ -158,9 +158,9 @@ contract FenwickTreeTest is DSTestPlus {
     function testLoadFenwickFuzzyScalingFind(
         uint256 insertions_,
         uint256 totalAmount_,
+        uint256 seed_,
         uint256 scaleIndex_,
-        uint256 factor_,
-        uint256 seed_
+        uint256 factor_
     ) external {
         _tree.fuzzyFill(insertions_, totalAmount_, seed_, false);
 
