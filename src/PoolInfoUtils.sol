@@ -246,7 +246,6 @@ contract PoolInfoUtils {
     /**
      *  @notice Returns the proportion of interest rate which is awarded to lenders;
      *          the remainder accumulates in reserves.
-     *          TODO: move in poolUtilizationInfo
     */
     function lenderInterestMargin(address ajnaPool_)
         external

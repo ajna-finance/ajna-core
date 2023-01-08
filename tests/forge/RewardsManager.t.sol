@@ -216,7 +216,6 @@ contract RewardsManagerTest is DSTestPlus {
         epochsClaimed_ = new uint256[](numberOfAuctions_);
         uint256 claimEpoch = lastClaimed_; // starting index, not inclusive
 
-        // FIXME: this doesn't work for non starting auction epochs
         for (uint256 i = 0; i < numberOfAuctions_; i++) {
             epochsClaimed_[i] = claimEpoch + 1;
             claimEpoch += 1;
@@ -708,7 +707,6 @@ contract RewardsManagerTest is DSTestPlus {
             reward:            0.298393183929769729 * 1e18,
             updateRatesReward: 0
         });
-        // TODO: check reward amount vs expected from burn
     }
 
     function testMultiPeriodRewardsSingleClaim() external {
@@ -1498,7 +1496,6 @@ contract RewardsManagerTest is DSTestPlus {
         assertGt(_ajnaToken.balanceOf(_updater), 0);
 
         // calculate rewards earned and compare to percentages for updating and claiming
-        // FIXME: can't calculate this for use in updateBucketExchangeRatesAndClaim as current exchange rate hasn't been updated yet 
         uint256 rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
         assertGt(rewardsEarned, 0);
 
