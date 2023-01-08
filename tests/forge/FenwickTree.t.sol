@@ -246,7 +246,6 @@ contract FenwickTreeTest is DSTestPlus {
 
         assertEq(max - min, _tree.valueAt(scaleIndex));
         // 2 >= scaling discrepency
-        //        assertLe(max - min, 2);
         assertLe(subMax - subMin, 2);
     }
 
