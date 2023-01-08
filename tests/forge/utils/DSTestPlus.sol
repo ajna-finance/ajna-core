@@ -7,13 +7,14 @@ import '@std/Vm.sol';
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
-import 'src/base/interfaces/IPool.sol';
-import 'src/base/interfaces/pool/IPoolEvents.sol';
-import 'src/base/PoolInfoUtils.sol';
+import 'src/interfaces/pool/IPool.sol';
+import 'src/interfaces/pool/commons/IPoolEvents.sol';
+import 'src/interfaces/pool/IERC3156FlashBorrower.sol';
+
+import 'src/PoolInfoUtils.sol';
 
 import 'src/libraries/external/Auctions.sol';
-import 'src/libraries/Maths.sol';
-
+import 'src/libraries/internal/Maths.sol';
 
 abstract contract DSTestPlus is Test, IPoolEvents {
 
@@ -35,6 +36,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     uint256       internal _startTime;
 
     uint256 internal _p1505_26  = 1_505.263728469068226832 * 1e18;
+    uint256 internal _p1004_98  = 1_004.989662429170775094 * 1e18;
     uint256 internal _p236_59   = 236.593977318257012077 * 1e18;
     uint256 internal _p100_33   = 100.332368143282009890 * 1e18;
     uint256 internal _p9_91     = 9.917184843435912074 * 1e18;
@@ -46,6 +48,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     uint256 internal _i49910    = 1987;
     uint256 internal _i10016    = 2309;
     uint256 internal _i1505_26  = 2689;
+    uint256 internal _i1004_98  = 2770;
     uint256 internal _i236_59   = 3060;
     uint256 internal _i100_33   = 3232;
     uint256 internal _i9_91     = 3696;
@@ -100,7 +103,9 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 amount,
         uint256 index
     ) internal {
-        _addLiquidity(from, amount, index, amount * 1e9, MAX_PRICE);
+        uint256 quoteTokenScale = IPool(address(_pool)).quoteTokenScale();
+        uint256 lpAmount        = (amount / quoteTokenScale) * quoteTokenScale * 1e9;
+        _addLiquidity(from, amount, index, lpAmount, MAX_PRICE);
     }
 
     // Adds liquidity with interest rate update
@@ -125,10 +130,12 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 lpAward,
         uint256 newLup
     ) internal {
+        uint256 quoteTokenScale = IPool(address(_pool)).quoteTokenScale();
         changePrank(from);
+
         vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(from, index, amount, lpAward, newLup);
-        _assertTokenTransferEvent(from, address(_pool), amount);
+        emit AddQuoteToken(from, index, (amount / quoteTokenScale) * quoteTokenScale, lpAward, newLup);
+        _assertQuoteTokenTransferEvent(from, address(_pool), amount);
         _pool.addQuoteToken(amount, index);
 
         // Add for tearDown
@@ -220,7 +227,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit Kick(borrower, debt, collateral, bond);
-        if(transferAmount != 0) _assertTokenTransferEvent(from, address(_pool), transferAmount);
+        if(transferAmount != 0) _assertQuoteTokenTransferEvent(from, address(_pool), transferAmount);
         _pool.kick(borrower);
     }
 
@@ -240,7 +247,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         emit Kick(borrower, debt, collateral, bond);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(from, index, removedFromDeposit, removedFromDeposit * 1e9, lup);
-        if(transferAmount != 0) _assertTokenTransferEvent(from, address(_pool), transferAmount);
+        if(transferAmount != 0) _assertQuoteTokenTransferEvent(from, address(_pool), transferAmount);
         _pool.kickWithDeposit(index);
     }
 
@@ -289,7 +296,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(from, index, amount, lpRedeem, newLup);
-        _assertTokenTransferEvent(address(_pool), from, amount);
+        _assertQuoteTokenTransferEvent(address(_pool), from, amount);
         (uint256 removedAmount, uint256 lpRedeemed) = _pool.removeQuoteToken(type(uint256).max, index);
         assertEq(removedAmount, amount);
         assertEq(lpRedeemed,    lpRedeem);
@@ -304,9 +311,19 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         changePrank(from);
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(from, index, amount, lpRedeem);
-        _assertTokenTransferEvent(address(_pool), from, amount);
+        _assertCollateralTokenTransferEvent(address(_pool), from, amount);
         (, lpRedeemed_) = _pool.removeCollateral(amount, index);
         assertEq(lpRedeemed_, lpRedeem);
+    }
+
+    function _removeCollateralWithoutLPCheck(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal virtual returns (uint256 lpRedeemed_) {
+        changePrank(from);
+        _assertCollateralTokenTransferEvent(address(_pool), from, amount);
+        (, lpRedeemed_) = _pool.removeCollateral(amount, index);
     }
 
     function _removeLiquidity(
@@ -330,7 +347,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(from, index, amountRemoved, lpRedeem, newLup);
-        _assertTokenTransferEvent(address(_pool), from, amountRemoved);
+        _assertQuoteTokenTransferEvent(address(_pool), from, amountRemoved);
         (uint256 removedAmount, uint256 lpRedeemed) = _pool.removeQuoteToken(amount, index);
         assertEq(removedAmount, amountRemoved);
         assertEq(lpRedeemed,    lpRedeem);
@@ -359,7 +376,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit Take(borrower, givenAmount, collateralTaken, bondChange, isReward);
-        _assertTokenTransferEvent(from, address(_pool), givenAmount);
+        _assertQuoteTokenTransferEvent(from, address(_pool), givenAmount);
         _pool.take(borrower, maxCollateral, from, new bytes(0));
     }
 
@@ -375,7 +392,15 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.takeReserves(amount);
     }
 
-    function _assertTokenTransferEvent(
+    function _assertQuoteTokenTransferEvent(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual {
+        // to be overidden by ERC20 helper 
+    }
+
+    function _assertCollateralTokenTransferEvent(
         address from,
         address to,
         uint256 amount
@@ -1211,9 +1236,6 @@ abstract contract DSTestPlus is Test, IPoolEvents {
 
     // PositionManager events
     event Burn(address indexed lender_, uint256 indexed price_);
-    event DecreaseLiquidity(address indexed lender_, uint256 indexed price_);
-    event DecreaseLiquidityNFT(address indexed lender_, uint256 indexed price_);
-    event IncreaseLiquidity(address indexed lender_, uint256 indexed price_, uint256 amount_);
     event MemorializePosition(address indexed lender_, uint256 tokenId_);
     event Mint(address indexed lender_, address indexed pool_, uint256 tokenId_);
     event MoveLiquidity(address indexed owner_, uint256 tokenId_);
@@ -1223,6 +1245,13 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     /******************************/
     /*** Test utility functions ***/
     /******************************/
+
+    function _calculateLup(address pool_, uint256 debtAmount_) internal view returns (uint256 lup_) {
+        IPool pool = IPool(pool_);
+
+        uint256 lupIndex = pool.depositIndex(debtAmount_);
+        lup_ = _priceAt(lupIndex); 
+    }
 
     function randomInRange(uint256 min, uint256 max) public returns (uint256) {
         return randomInRange(min, max, false);
@@ -1234,6 +1263,76 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 rand = uint(keccak256(abi.encodePacked(block.timestamp, msg.sender, _nonce))) % (max - min + 1) + min;
         _nonce++;
         return rand;
+    }
+
+    // returns a random index between 1 and 7388
+    function _randomIndex() internal returns (uint256 index_) {
+        // calculate a random index between 1 and 7388
+        index_ = 1 + uint256(keccak256(abi.encodePacked(block.number, block.difficulty))) % 7387;
+        vm.roll(block.number + 1); // advance block to ensure that the index price is different
+    }
+
+    // returns a random index between 1 and a given maximum
+    // used for testing in NFT pools where higher indexes (and lower prices) would require so many NFTs that gas and memory limits would be exceeded
+    function _randomIndexWithMinimumPrice(uint256 minimumPrice_) internal returns (uint256 index_) {
+        index_ = 1 + uint256(keccak256(abi.encodePacked(block.number, block.difficulty))) % minimumPrice_;
+        vm.roll(block.number + 1); // advance block to ensure that the index price is different
+    }
+
+    // find the bucket index in array corresponding to the highest bucket price
+    function _findHighestIndexPrice(uint256[] memory indexes) internal pure returns (uint256 highestIndex_) {
+        highestIndex_ = 7388;
+        // highest index corresponds to lowest price
+        for (uint256 i = 0; i < indexes.length; ++i) {
+            if (indexes[i] < highestIndex_) {
+                highestIndex_ = indexes[i];
+            }
+        }
+    }
+
+    // find the bucket index in array corresponding to the lowest bucket price
+    function _findLowestIndexPrice(uint256[] memory indexes) internal pure returns (uint256 lowestIndex_) {
+        lowestIndex_ = 1;
+        // lowest index corresponds to highest price
+        for (uint256 i = 0; i < indexes.length; ++i) {
+            if (indexes[i] > lowestIndex_) {
+                lowestIndex_ = indexes[i];
+            }
+        }
+    }
+
+    // calculates a limit index leaving one index above the htp to accrue interest
+    function _findSecondLowestIndexPrice(uint256[] memory indexes) internal pure returns (uint256 secondLowestIndex_) {
+        secondLowestIndex_ = 1;
+        uint256 lowestIndex = secondLowestIndex_;
+
+        // lowest index corresponds to highest price
+        for (uint256 i = 0; i < indexes.length; ++i) {
+            if (indexes[i] > lowestIndex) {
+                secondLowestIndex_ = lowestIndex;
+                lowestIndex = indexes[i];
+            }
+            else if (indexes[i] > secondLowestIndex_) {
+                secondLowestIndex_ = indexes[i];
+            }
+        }
+    }
+
+    // calculate required collateral to borrow a given amount at a given limitIndex
+    function _requiredCollateral(uint256 borrowAmount, uint256 indexPrice) internal view returns (uint256 requiredCollateral_) {
+        // calculate the required collateral based upon the borrow amount and index price
+        (uint256 interestRate, ) = _pool.interestRateInfo();
+        uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient
+        uint256 expectedDebt = Maths.wmul(borrowAmount, _feeRate(newInterestRate) + Maths.WAD);
+        requiredCollateral_ = Maths.wdiv(expectedDebt, _poolUtils.indexToPrice(indexPrice));
+    }
+
+    // calculate the fee that will be charged a borrower
+    function _borrowFee() internal view returns (uint256 feeRate_) {
+        (uint256 interestRate, ) = _pool.interestRateInfo();
+        uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient
+        // calculate the fee rate based upon the interest rate
+        feeRate_ = _feeRate(newInterestRate) + Maths.WAD;
     }
 
 }

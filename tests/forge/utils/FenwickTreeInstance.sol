@@ -3,7 +3,7 @@ pragma solidity 0.8.14;
 
 import './DSTestPlus.sol';
 
-import 'src/libraries/Deposits.sol';
+import 'src/libraries/internal/Deposits.sol';
 
 contract FenwickTreeInstance is DSTestPlus {
     using Deposits for DepositsState;
@@ -77,10 +77,10 @@ contract FenwickTreeInstance is DSTestPlus {
         uint256 amount;
 
         // Calculate total insertions 
-        uint256 insertsDec= bound(insertions_, 1000, 2000);
+        uint256 insertsDec = bound(insertions_, 1000, 2000);
 
         // Calculate total amount to insert
-        uint256 totalAmount = bound(amount_, 1 * 1e18, 9_000_000_000_000_000 * 1e18);
+        uint256 totalAmount    = bound(amount_, 1 * 1e18, 9_000_000_000_000_000 * 1e18);
         uint256 totalAmountDec = totalAmount;
 
 

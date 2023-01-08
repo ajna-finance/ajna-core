@@ -3,8 +3,8 @@ pragma solidity 0.8.14;
 
 import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 
-import 'src/base/PoolInfoUtils.sol';
-import 'src/base/PoolHelper.sol';
+import 'src/PoolInfoUtils.sol';
+import 'src/libraries/helpers/PoolHelper.sol';
 
 contract ERC721PoolCollateralTest is ERC721HelperContract {
 
@@ -252,7 +252,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
     }
 
-    // TODO: finish implementing
     function testPullCollateralNotInPool() external tearDown {
         // borrower is owner of NFTs
         assertEq(_collateral.ownerOf(1), _borrower);

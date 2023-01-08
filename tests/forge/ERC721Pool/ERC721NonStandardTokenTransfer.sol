@@ -3,8 +3,8 @@ pragma solidity 0.8.14;
 
 import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 
-import 'src/erc721/ERC721Pool.sol';
-import 'src/erc721/ERC721PoolFactory.sol';
+import 'src/ERC721Pool.sol';
+import 'src/ERC721PoolFactory.sol';
 
 interface ICryptoFighters {
     function transferFrom(address from_, address to_, uint256 tokenId_) external;

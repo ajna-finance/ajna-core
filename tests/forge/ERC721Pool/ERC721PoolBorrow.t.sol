@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.14;
 
-import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
+import { ERC721HelperContract, ERC721FuzzyHelperContract } from './ERC721DSTestPlus.sol';
 
-import 'src/erc721/ERC721Pool.sol';
+import 'src/ERC721Pool.sol';
 
-import 'src/libraries/Maths.sol';
+import 'src/libraries/internal/Maths.sol';
+
+import { MAX_PRICE, _priceAt } from 'src/libraries/helpers/PoolHelper.sol';
 
 abstract contract ERC721PoolBorrowTest is ERC721HelperContract {
     address internal _borrower;
@@ -374,7 +376,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         _repayDebt({
             from:             _borrower,
             borrower:         _borrower,
-            amountToRepay:    1_508.860066921599065131 * 1e18,
+            amountToRepay:    type(uint256).max,
             amountRepaid:     1_508.860066921599065131 * 1e18,
             collateralToPull: 3,
             newLup:           MAX_PRICE
@@ -713,4 +715,162 @@ contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
             }
         );
     }
+
+}
+
+contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
+
+    address internal _borrower;
+    address internal _borrower2;
+    address internal _borrower3;
+    address internal _lender;
+    address internal _lender2;
+
+    function setUp() external {
+        _borrower  = makeAddr("borrower");
+        _borrower2 = makeAddr("borrower2");
+        _borrower3 = makeAddr("borrower3");
+        _lender    = makeAddr("lender");
+        _lender2   = makeAddr("lender2");
+
+        // deploy collection pool
+        _pool = _deployCollectionPool();
+
+        _mintAndApproveQuoteTokens(_lender, 200_000 * 1e18);
+        _mintAndApproveCollateralTokens(_borrower, 52);
+        _mintAndApproveCollateralTokens(_borrower2, 10);
+        _mintAndApproveCollateralTokens(_borrower3, 13);
+
+        vm.prank(_borrower);
+        _quote.approve(address(_pool), 200_000 * 1e18);
+    }
+
+    function testDrawRepayDebtFuzzy(uint256 numIndexes, uint256 mintAmount_) external tearDown {
+        numIndexes = bound(numIndexes, 3, 7); // number of indexes to add liquidity to
+        mintAmount_ = bound(mintAmount_, 1 * 1e18, 1_000 * 1e18);
+
+        // lender adds liquidity to random indexes
+        changePrank(_lender);
+        uint256[] memory indexes = new uint256[](numIndexes);
+        for (uint256 i = 0; i < numIndexes; ++i) {
+            deal(address(_quote), _lender, mintAmount_);
+            indexes[i] = _randomIndexWithMinimumPrice(5000); // setting a minimum price for collateral prevents exceeding memory and gas limits
+
+            _addLiquidity({
+                from:    _lender,
+                amount:  mintAmount_,
+                index:   indexes[i],
+                lpAward: mintAmount_ * 1e9,
+                newLup:  _calculateLup(address(_pool), 0)
+            });
+
+            _assertBucket({
+                index:      indexes[i],
+                lpBalance:  mintAmount_ * 1e9,
+                collateral: 0,
+                deposit:    mintAmount_,
+                exchangeRate: 1e27
+            });
+        }
+
+        // borrower draw a random amount of debt
+        changePrank(_borrower);
+        uint256 limitIndex = _findLowestIndexPrice(indexes);
+        uint256 borrowAmount = Maths.wdiv(mintAmount_, Maths.wad(3));
+        uint256[] memory tokenIdsToAdd = _NFTTokenIdsToAdd(_borrower, _requiredCollateralNFT(Maths.wdiv(mintAmount_, Maths.wad(3)), limitIndex));
+
+        _drawDebt({
+            from:           _borrower,
+            borrower:       _borrower,
+            amountToBorrow: borrowAmount,
+            limitIndex:     limitIndex,
+            tokenIds:       tokenIdsToAdd,
+            newLup:         _calculateLup(address(_pool), borrowAmount)
+        });
+
+        // check buckets after borrow
+        for (uint256 i = 0; i < numIndexes; ++i) {
+            _assertBucket({
+                index:        indexes[i],
+                lpBalance:    mintAmount_ * 1e9,
+                collateral:   0,
+                deposit:      mintAmount_,
+                exchangeRate: 1e27
+            });
+        }
+
+        // check borrower info
+        (uint256 debt, , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
+        assertGt(debt, borrowAmount); // check that initial fees accrued
+
+        // check pool state
+        (uint256 minDebt, , uint256 poolActualUtilization, uint256 poolTargetUtilization) = _poolUtils.poolUtilizationInfo(address(_pool));
+        _assertPool(
+            PoolParams({
+                htp:                  Maths.wdiv(debt, Maths.wad(tokenIdsToAdd.length)),
+                lup:                  _poolUtils.lup(address(_pool)),
+                poolSize:             (indexes.length * mintAmount_),
+                pledgedCollateral:    Maths.wad(tokenIdsToAdd.length),
+                encumberedCollateral: Maths.wdiv(debt, _poolUtils.lup(address(_pool))),
+                poolDebt:             debt,
+                actualUtilization:    poolActualUtilization,
+                targetUtilization:    poolTargetUtilization,
+                minDebtAmount:        minDebt,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+        assertLt(_htp(), _poolUtils.lup(address(_pool)));
+        assertGt(minDebt, 0);
+        assertEq(_poolUtils.lup(address(_pool)), _calculateLup(address(_pool), debt));
+
+        // pass time to allow interest to accumulate
+        skip(1 days);
+
+        // repay all debt and withdraw collateral
+        (debt, , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
+        deal(address(_quote), _borrower, debt);
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    debt,
+            amountRepaid:     debt,
+            collateralToPull: tokenIdsToAdd.length,
+            newLup:           _calculateLup(address(_pool), 0)
+        });
+
+        // check that deposit and exchange rate have increased as a result of accrued interest
+        for (uint256 i = 0; i < numIndexes; ++i) {
+            (, uint256 deposit, , uint256 lpAccumulator, , uint256 exchangeRate) = _poolUtils.bucketInfo(address(_pool), indexes[i]);
+
+            // check that only deposits above the htp earned interest
+            if (indexes[i] <= _poolUtils.priceToIndex(Maths.wdiv(debt, Maths.wad(tokenIdsToAdd.length)))) {
+                assertGt(deposit, mintAmount_);
+                assertGt(exchangeRate, 1e27);
+            } else {
+                assertEq(deposit, mintAmount_);
+                assertEq(exchangeRate, 1e27);
+            }
+
+            assertEq(lpAccumulator, mintAmount_ * 1e9);
+            _assertBucket({
+                index:        indexes[i],
+                lpBalance:    mintAmount_ * 1e9,
+                collateral:   0,
+                deposit:      deposit,
+                exchangeRate: exchangeRate
+            });
+        }
+
+        // check borrower state after repayment
+        (debt, , ) = _poolUtils.borrowerInfo(address(_pool), address(_borrower));
+        assertEq(debt, 0);
+
+        // check pool state
+        assertEq(_htp(), 0);
+        assertEq(_poolUtils.lup(address(_pool)), MAX_PRICE);
+    }
+
 }

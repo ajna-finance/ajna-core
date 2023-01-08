@@ -4,8 +4,10 @@ pragma solidity 0.8.14;
 import { ERC721HelperContract }                from './ERC721DSTestPlus.sol';
 import { FlashloanBorrower, SomeDefiStrategy } from '../utils/FlashloanBorrower.sol';
 
-import 'src/erc721/ERC721Pool.sol';
-import 'src/libraries/Maths.sol';
+import 'src/ERC721Pool.sol';
+import 'src/libraries/internal/Maths.sol';
+
+import { _indexOf } from 'src/libraries/helpers/PoolHelper.sol';
 
 contract ERC721PoolFlashloanTest is ERC721HelperContract {
     address internal _borrower;

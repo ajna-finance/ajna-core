@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.14;
 
-import { Token }                from '../utils/Tokens.sol';
+import { Token } from '../utils/Tokens.sol';
 
-import 'src/base/interfaces/IERC3156FlashBorrower.sol';
-import 'src/libraries/Maths.sol';
+import 'src/interfaces/pool/IERC3156FlashBorrower.sol';
+import 'src/libraries/internal/Maths.sol';
 
 contract FlashloanBorrower is IERC3156FlashBorrower {
     bool    public   callbackInvoked = false;

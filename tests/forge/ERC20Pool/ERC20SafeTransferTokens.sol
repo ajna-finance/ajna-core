@@ -3,8 +3,8 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import 'src/erc20/ERC20Pool.sol';
-import 'src/erc20/ERC20PoolFactory.sol';
+import 'src/ERC20Pool.sol';
+import 'src/ERC20PoolFactory.sol';
 
 interface IUSDT {
     function transfer(address _to, uint _value) external;

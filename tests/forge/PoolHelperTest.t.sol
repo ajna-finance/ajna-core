@@ -3,7 +3,7 @@ pragma solidity 0.8.14;
 
 import './utils/DSTestPlus.sol';
 
-import 'src/base/PoolHelper.sol';
+import 'src/libraries/helpers/PoolHelper.sol';
 
 contract PoolHelperTest is DSTestPlus {
 
@@ -131,6 +131,26 @@ contract PoolHelperTest is DSTestPlus {
         assertEq(_minDebtAmount(debt, 10),         110 * 1e18);
         assertEq(_minDebtAmount(debt, 0),          0);
         assertEq(_minDebtAmount(0, loansCount),    0);
+    }
+
+    /**
+     *  @notice Tests facilities used for rounding token amounts to decimal places supported by the token
+     */
+    function testRounding() external {
+        uint256 decimals   = 6;
+        uint256 tokenScale = 10 ** (18-decimals);
+
+        uint256 one_third = Maths.wdiv(1 * 1e18, 3 * 1e18);
+        assertEq(_roundToScale(one_third, tokenScale),   0.333333 * 1e18);
+        assertEq(_roundUpToScale(one_third, tokenScale), 0.333334 * 1e18);
+
+        uint256 nine_and_two_thirds = 9 * 1e18 + Maths.wdiv(2 * 1e18, 3 * 1e18);
+        assertEq(_roundToScale(nine_and_two_thirds, tokenScale),   9.666666 * 1e18);
+        assertEq(_roundUpToScale(nine_and_two_thirds, tokenScale), 9.666667 * 1e18);
+
+        uint256 five = 5 * 1e18;
+        assertEq(_roundToScale(five, tokenScale),   5 * 1e18);
+        assertEq(_roundUpToScale(five, tokenScale), 5 * 1e18);
     }
 
     function _assertBucketIndexOutOfBoundsRevert(uint256 index) internal {

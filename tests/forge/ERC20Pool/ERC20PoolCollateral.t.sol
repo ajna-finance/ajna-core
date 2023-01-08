@@ -3,8 +3,8 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import 'src/base/PoolInfoUtils.sol';
-import 'src/base/PoolHelper.sol';
+import 'src/PoolInfoUtils.sol';
+import 'src/libraries/helpers/PoolHelper.sol';
 
 contract ERC20PoolCollateralTest is ERC20HelperContract {
 
@@ -158,7 +158,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         );
         assertEq(_collateral.balanceOf(_borrower), 100 * 1e18);
 
-        // remove all of the remaining unencumbered collateral
+        // remove all of the remaining claimable collateral
         _repayDebtNoLupCheck({
             from:             _borrower,
             borrower:         _borrower,
@@ -199,7 +199,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
     /**
      *  @notice 1 borrower tests reverts in pullCollateral.
      *          Reverts:
-     *              Attempts to remove more than available unencumbered collateral.
+     *              Attempts to remove more than available claimable collateral.
      */
     function testPullCollateralRequireEnoughCollateral() external tearDown {
         _assertPullInsufficientCollateralRevert(

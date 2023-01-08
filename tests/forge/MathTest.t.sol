@@ -6,7 +6,7 @@ import './utils/DSTestPlus.sol';
 import '@prb-math/contracts/PRBMathSD59x18.sol';
 import '@prb-math/contracts/PRBMathUD60x18.sol';
 
-import 'src/libraries/Maths.sol';
+import 'src/libraries/internal/Maths.sol';
 
 contract MathTest is DSTestPlus {
 
@@ -70,5 +70,18 @@ contract MathTest is DSTestPlus {
     function testPow() external {
         assertEq(Maths.rpow(0.5 * 1e27, 60), 0.000000000000000000867361738 * 1e27);
         assertEq(Maths.rpow(0.5 * 1e27, 80), 0.000000000000000000000000827 * 1e27);
+    }
+
+    function testMaxMin() external {
+        uint256 smallerWad = 0.002144924036174740 * 1e18;
+        uint256 largerWad  = 0.951347940696070000 * 1e18;
+
+        assertEq(Maths.max(0, 9), 9);
+        assertEq(Maths.max(3, 0), 3);
+        assertEq(Maths.max(smallerWad, largerWad), largerWad);
+
+        assertEq(Maths.min(2, 4), 2);
+        assertEq(Maths.min(0, 9), 0);
+        assertEq(Maths.min(smallerWad, largerWad), smallerWad);
     }
 }

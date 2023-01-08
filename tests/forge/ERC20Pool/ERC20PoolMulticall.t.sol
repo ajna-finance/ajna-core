@@ -6,9 +6,11 @@ import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import 'src/erc20/ERC20Pool.sol';
+import 'src/ERC20Pool.sol';
 
-import 'src/base/interfaces/pool/IPoolErrors.sol';
+import 'src/interfaces/pool/commons/IPoolErrors.sol';
+
+import { MAX_PRICE } from 'src/libraries/helpers/PoolHelper.sol';
 
 contract ERC20PoolMulticallTest is ERC20HelperContract {
 

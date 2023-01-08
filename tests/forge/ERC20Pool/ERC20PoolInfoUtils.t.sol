@@ -3,10 +3,10 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import 'src/base/PoolHelper.sol';
-import 'src/erc20/interfaces/IERC20Pool.sol';
+import 'src/libraries/helpers/PoolHelper.sol';
+import 'src/interfaces/pool/erc20/IERC20Pool.sol';
 
-import 'src/erc20/ERC20Pool.sol';
+import 'src/ERC20Pool.sol';
 
 contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
 
@@ -79,7 +79,6 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
                 newLup:  MAX_PRICE
             }
         );
-
 
         _drawDebt({
             from: _borrower,
@@ -207,6 +206,14 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
     function testPoolInfoUtilsLenderInterestMargin() external {
         uint256 lenderInterestMargin = _poolUtils.lenderInterestMargin(address(_pool));
         assertEq(lenderInterestMargin, 0.874935776592563266 * 1e18);
+    }
+
+    function testMomp() external {
+        assertEq(_poolUtils.momp(address(_pool)), 2_981.007422784467321543 * 1e18);
+    }
+
+    function testPoolFeeRate() external {
+        assertEq(_poolUtils.feeRate(address(_pool)), 0.000961538461538462 * 1e18);
     }
 
     function testPoolInfoUtilsLPsToCollateralAndQuote() external {

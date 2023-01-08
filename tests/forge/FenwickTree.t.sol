@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 import './utils/DSTestPlus.sol';
 import './utils/FenwickTreeInstance.sol';
 
-import 'src/libraries/Maths.sol';
+import 'src/libraries/internal/Maths.sol';
 
 contract FenwickTreeTest is DSTestPlus {
 
@@ -164,7 +164,7 @@ contract FenwickTreeTest is DSTestPlus {
 
         _tree.fuzzyFill(insertions_, totalAmount_, false);
 
-        uint256 scaleIndex = bound(scaleIndex_, 2, 8191);
+        uint256 scaleIndex = bound(scaleIndex_, 2, 7388);
         uint256 subIndex = randomInRange(0, scaleIndex - 1);
         uint256 factor = bound(factor_, 1 * 1e18, 5 * 1e18);
 
@@ -188,7 +188,6 @@ contract FenwickTreeTest is DSTestPlus {
     /**
      *  @notice Fuzz tests additions and value removals.
      */
-    // TODO: check random parent to verify sum post removal
     function testLoadFenwickFuzzyRemoval(
         uint256 insertions_,
         uint256 totalAmount_
@@ -196,17 +195,23 @@ contract FenwickTreeTest is DSTestPlus {
 
         _tree.fuzzyFill(insertions_, totalAmount_, true);
 
-        uint256 removalIndex = _tree.getIByInsertIndex(randomInRange(0, _tree.numInserts() - 1));
-        uint256 removalAmount = _tree.get(removalIndex); 
-        uint256 preRemovalIndexSum = _tree.prefixSum(removalIndex); 
-        uint256 preRemovalTreeSum = _tree.treeSum(); 
+        // get Index randombly 
+        uint256 removalIndex  = _tree.getIByInsertIndex(randomInRange(0, _tree.numInserts() - 1));
+        uint256 removalAmount = _tree.get(removalIndex);
+        uint256 parentIndex   = randomInRange(removalIndex + 1, MAX_INDEX);
+
+        uint256 preRemovalParentIndexSum = _tree.prefixSum(parentIndex);
+        uint256 preRemovalIndexSum       = _tree.prefixSum(removalIndex); 
+        uint256 preRemovalTreeSum        = _tree.treeSum(); 
 
         _tree.remove(removalIndex, removalAmount);
 
-        uint256 postRemovalIndexSum = _tree.prefixSum(removalIndex); 
+        uint256 postRemovalIndexSum       = _tree.prefixSum(removalIndex); 
+        uint256 postRemovalParentIndexSum = _tree.prefixSum(parentIndex); 
 
-        assertEq(preRemovalIndexSum - removalAmount, postRemovalIndexSum);
-        assertEq(preRemovalTreeSum - removalAmount, _tree.treeSum());
+        assertEq(preRemovalIndexSum - removalAmount,       postRemovalIndexSum);
+        assertEq(preRemovalTreeSum - removalAmount,        _tree.treeSum());
+        assertEq(preRemovalParentIndexSum - removalAmount, postRemovalParentIndexSum);
     }
 
 }

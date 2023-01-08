@@ -4,13 +4,14 @@ pragma solidity 0.8.14;
 
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
-import { InterestState, PoolState, DepositsState } from '../../base/interfaces/IPool.sol';
+import { InterestState, PoolState, DepositsState } from '../../interfaces/pool/commons/IPoolState.sol';
 
-import '../Deposits.sol';
-import '../Buckets.sol';
-import '../Loans.sol';
+import { _indexOf, _ptp, MAX_FENWICK_INDEX, MIN_PRICE, MAX_PRICE } from '../helpers/PoolHelper.sol';
 
-import '../../base/PoolHelper.sol';
+import { Deposits } from '../internal/Deposits.sol';
+import { Buckets }  from '../internal/Buckets.sol';
+import { Loans }    from '../internal/Loans.sol';
+import { Maths }    from '../internal/Maths.sol';
 
 /**
     @notice External library containing logic for common pool functionality:
@@ -18,6 +19,11 @@ import '../../base/PoolHelper.sol';
             - pool utilization
  */
 library PoolCommons {
+
+    /*****************/
+    /*** Constants ***/
+    /*****************/
+
     uint256 internal constant CUBIC_ROOT_1000000 = 100 * 1e18;
     uint256 internal constant ONE_THIRD          = 0.333333333333333334 * 1e18;
 
@@ -27,15 +33,12 @@ library PoolCommons {
     uint256 internal constant EMA_7D_RATE_FACTOR   = 1e18 - LAMBDA_EMA_7D;
     int256  internal constant PERCENT_102          = 1.02 * 1e18;
 
-    /**
-     *  @notice Emitted when pool interest rate is updated.
-     *  @param  oldRate Old pool interest rate.
-     *  @param  newRate New pool interest rate.
-     */
-    event UpdateInterestRate(
-        uint256 oldRate,
-        uint256 newRate
-    );
+    /**************/
+    /*** Events ***/
+    /**************/
+
+    // See `IPoolEvents` for descriptions
+    event UpdateInterestRate(uint256 oldRate,uint256 newRate);
 
     /**************************/
     /*** External Functions ***/
@@ -43,6 +46,11 @@ library PoolCommons {
 
     /**
      *  @notice Calculates new pool interest rate params (EMAs and interest rate value) and saves new values in storage.
+     *  @dev    write state:
+     *              - interest debt and lup * collateral EMAs accumulators
+     *              - interest rate accumulator and interestRateUpdate state
+     *  @dev    emit events:
+     *              - UpdateInterestRate
      */
     function updateInterestRate(
         InterestState storage interestParams_,
@@ -116,6 +124,9 @@ library PoolCommons {
 
     /**
      *  @notice Calculates new pool interest and scale the fenwick tree to update amount of debt owed to lenders (saved in storage).
+     *  @dev write state:
+     *       - Deposits.mult (scale Fenwick tree with new interest accrued):
+     *         - update scaling array state 
      *  @param  thresholdPrice_ Current Pool Threshold Price.
      *  @param  elapsed_        Time elapsed since last inflator update.
      *  @return newInflator_   The new value of pool inflator.
@@ -129,12 +140,19 @@ library PoolCommons {
         // Scale the borrower inflator to update amount of interest owed by borrowers
         uint256 pendingFactor = PRBMathUD60x18.exp((poolState_.rate * elapsed_) / 365 days);
 
+        // calculate the highest threshold price
         newInflator_ = Maths.wmul(poolState_.inflator, pendingFactor);
-
         uint256 htp = Maths.wmul(thresholdPrice_, newInflator_);
 
-        // if HTP is under the lowest price bucket then accrue interest at max index (min price)
-        uint256 htpIndex = (htp >= MIN_PRICE) ? _indexOf(htp) : MAX_FENWICK_INDEX;
+        uint256 htpIndex;
+        if (htp > MAX_PRICE)
+            // if HTP is over the highest price bucket then no buckets earn interest
+            htpIndex = 1;
+        else if (htp < MIN_PRICE)
+            // if HTP is under the lowest price bucket then all buckets earn interest
+            htpIndex = MAX_FENWICK_INDEX;
+        else
+            htpIndex = _indexOf(htp);
 
         // Scale the fenwick tree to update amount of debt owed to lenders
         uint256 depositAboveHtp = Deposits.prefixSum(deposits_, htpIndex);
@@ -152,6 +170,10 @@ library PoolCommons {
             );
         }
     }
+
+    /**************************/
+    /*** View Functions ***/
+    /**************************/
 
     /**
      *  @notice Calculates pool interest factor for a given interest rate and time elapsed since last inflator update.

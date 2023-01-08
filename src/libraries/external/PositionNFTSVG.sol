@@ -2,28 +2,29 @@
 
 pragma solidity 0.8.14;
 
-import '@openzeppelin/contracts/utils/Strings.sol';
-
-import { Base64 } from '@base64-sol/base64.sol';
+import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
+import { Base64 }  from '@base64-sol/base64.sol';
 
 library PositionNFTSVG {
 
     using Strings for uint256;
 
-    /**
-     *  @notice Struct holding parameters for constructing the NFT token URI.
-     *  @param  tokenId The tokenId of the NFT.
-     *  @param  pool    The pool address.
-     *  @param  indexes The array of price buckets index with LP tokens to be tracked by the NFT.
-     */
+    /**********************/
+    /*** Params Structs ***/
+    /**********************/
+
     struct ConstructTokenURIParams {
-        string collateralTokenSymbol;
-        string quoteTokenSymbol;
-        uint256 tokenId;
-        address pool;
-        address owner;
-        uint256[] indexes;
+        string collateralTokenSymbol; // the symbol of collateral token of the pool
+        string quoteTokenSymbol;      // the symbol of quote token of the pool
+        uint256 tokenId;              // the ID of positions NFT token
+        address pool;                 // the address of pool tracked in positions NFT token
+        address owner;                // the owner of positions NFT token
+        uint256[] indexes;            // the array of price buckets index with LP tokens to be tracked by the NFT
     }
+
+    /**************************/
+    /*** External Functions ***/
+    /**************************/
 
     function constructTokenURI(ConstructTokenURIParams memory params_) external pure returns (string memory) {
         // set token metadata
