@@ -14,8 +14,7 @@ import { PositionManager }  from './PositionManager.sol';
 import {
     IRewardsManager,
     IRewardsManagerOwnerActions,
-    IRewardsManagerState,
-    IRewardsManagerDerivedState
+    IRewardsManagerState
 } from './interfaces/rewards/IRewardsManager.sol';
 
 import { StakeInfo, BucketState } from './interfaces/rewards/IRewardsManagerState.sol';
@@ -233,18 +232,6 @@ contract RewardsManager is IRewardsManager {
     /*******************************/
     /*** External View Functions ***/
     /*******************************/
-
-    /// @inheritdoc IRewardsManagerDerivedState
-    function calculateRewards(
-        uint256 tokenId_,
-        uint256 burnEpochToStartClaim_
-    ) external override returns (uint256 rewards_) {
-        rewards_ = _calculateAndClaimRewards(
-            tokenId_,
-            burnEpochToStartClaim_,
-            false
-        );
-    }
 
     /// @inheritdoc IRewardsManagerState
     function getStakeInfo(

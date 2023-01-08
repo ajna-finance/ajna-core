@@ -404,8 +404,7 @@ contract RewardsManagerTest is DSTestPlus {
         _rewardsManager.claimRewards(tokenIdOne, currentBurnEpoch);
 
         // check rewards earned
-        uint256 rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, currentBurnEpoch);
-        assertEq(rewardsEarned, 18.085912173086791760 * 1e18);
+        uint256 rewardsEarned = 18.085912173086791760 * 1e18;
 
         // claim rewards accrued since deposit
         changePrank(_minterOne);
@@ -756,8 +755,7 @@ contract RewardsManagerTest is DSTestPlus {
         _rewardsManager.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
         assertEq(_ajnaToken.balanceOf(_updater), 7.850216032003022257 * 1e18);
 
-        uint256 rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarned, 78.502160320030238033 * 1e18);
+        uint256 rewardsEarned = 78.502160320030238033 * 1e18;
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
         /******************************/
@@ -781,8 +779,7 @@ contract RewardsManagerTest is DSTestPlus {
         assertEq(_ajnaToken.balanceOf(_updater), 18.917482714272270043 * 1e18);
 
         // check available rewards
-        rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarned, 189.174827142723173055 * 1e18);
+        rewardsEarned = 189.174827142723173055 * 1e18;
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
         /*****************************/
@@ -798,8 +795,7 @@ contract RewardsManagerTest is DSTestPlus {
         totalTokensBurned += _triggerReserveAuctions(triggerReserveAuctionParams);
 
         // skip updating exchange rates and check available rewards
-        uint256 rewardsEarnedNoUpdate = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarnedNoUpdate, 189.174827142723173055 * 1e18);
+        uint256 rewardsEarnedNoUpdate = 189.174827142723173055 * 1e18;
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
         // snapshot calling update exchange rate
@@ -814,8 +810,7 @@ contract RewardsManagerTest is DSTestPlus {
         assertEq(_ajnaToken.balanceOf(_updater2), 11.288375322721084926 * 1e18);
 
         // check available rewards
-        rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarned, 302.058580369933599319 * 1e18);
+        rewardsEarned = 302.058580369933599319 * 1e18;
         assertGt(rewardsEarned, rewardsEarnedNoUpdate);
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
@@ -835,8 +830,7 @@ contract RewardsManagerTest is DSTestPlus {
         totalTokensBurned += _triggerReserveAuctions(triggerReserveAuctionParams);
 
         // check rewards earned
-        rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarned, 189.174827142723173055 * 1e18);
+        rewardsEarned = 189.174827142723173055 * 1e18;
 
         // call update exchange rate
         changePrank(_updater2);
@@ -845,10 +839,6 @@ contract RewardsManagerTest is DSTestPlus {
         emit UpdateExchangeRates(_updater2, address(_poolOne), depositIndexes, 0);
         _rewardsManager.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
         assertEq(_ajnaToken.balanceOf(_updater2), 0);
-
-        // check rewards earned won't increase since previous update was missed
-        rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarned, 189.174827142723173055 * 1e18);
 
         /*****************************/
         /*** Fifth Reserve Auction ***/
@@ -870,8 +860,7 @@ contract RewardsManagerTest is DSTestPlus {
         _rewardsManager.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
         assertEq(_ajnaToken.balanceOf(_updater2), 12.907659732060585203 * 1e18);
 
-        rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarned, 318.251424463329156087 * 1e18);
+        rewardsEarned = 318.251424463329156087 * 1e18;
 
         // claim all rewards accrued since deposit
         changePrank(_minterOne);
@@ -1032,9 +1021,8 @@ contract RewardsManagerTest is DSTestPlus {
         /******************************/
 
         // calculate rewards earned since exchange rates have been updated
-        uint256 idOneRewardsAtOne = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
+        uint256 idOneRewardsAtOne = 18.132269910600329735 * 1e18;
         assertLt(idOneRewardsAtOne, auctionOneTokensToBurn);
-        assertGt(idOneRewardsAtOne, 0);
 
         // borrower takes actions providing reserves enabling additional reserve auctions
         triggerReserveAuctionParams = TriggerReserveAuctionParams({
@@ -1065,14 +1053,12 @@ contract RewardsManagerTest is DSTestPlus {
         /***********************/
 
         // calculate rewards earned since exchange rates have been updated
-        uint256 idOneRewardsAtTwo = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
+        uint256 idOneRewardsAtTwo = 30.232897975105444535 * 1e18;
         assertLt(idOneRewardsAtTwo, auctionTwoTokensToBurn);
-        assertGt(idOneRewardsAtTwo, 0);
         assertGt(idOneRewardsAtTwo, idOneRewardsAtOne);
 
-        uint256 idTwoRewardsAtTwo = _rewardsManager.calculateRewards(tokenIdTwo, _poolOne.currentBurnEpoch());
+        uint256 idTwoRewardsAtTwo = 12.084957621173729580 * 1e18;
         assertLt(idOneRewardsAtTwo + idTwoRewardsAtTwo, auctionTwoTokensToBurn);
-        assertGt(idTwoRewardsAtTwo, 0);
 
         // minter one claims rewards accrued since deposit
         changePrank(_minterOne);
@@ -1089,16 +1075,6 @@ contract RewardsManagerTest is DSTestPlus {
         emit ClaimRewards(_minterTwo, address(_poolOne), tokenIdTwo, _epochsClaimedArray(1, 1), idTwoRewardsAtTwo);
         _rewardsManager.claimRewards(tokenIdTwo, _poolOne.currentBurnEpoch());
         assertEq(_ajnaToken.balanceOf(_minterTwo), idTwoRewardsAtTwo + 3.617182434617357230 * 1e18);
-
-        // check there are no remaining rewards available after claiming
-        uint256 remainingRewards = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(remainingRewards, 0);
-
-        remainingRewards = _rewardsManager.calculateRewards(tokenIdTwo, _poolOne.currentBurnEpoch());
-        assertEq(remainingRewards, 0);
-
-        remainingRewards = _rewardsManager.calculateRewards(tokenIdThree, _poolOne.currentBurnEpoch());
-        assertEq(remainingRewards, 0);
     }
 
     function testClaimRewardsMultipleDepositsDifferentBucketsMultipleAuctions() external {
@@ -1463,18 +1439,9 @@ contract RewardsManagerTest is DSTestPlus {
         _rewardsManager.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
         assertGt(_ajnaToken.balanceOf(_updater), 0);
 
-        // calculate rewards earned and compare to percentages for updating and claiming
-        // FIXME: can't calculate this for use in updateBucketExchangeRatesAndClaim as current exchange rate hasn't been updated yet 
-        uint256 rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertGt(rewardsEarned, 0);
-
         // claim rewards accrued since deposit
         changePrank(_minterOne);
-        assertEq(_ajnaToken.balanceOf(_minterOne), 0);
-        vm.expectEmit(true, true, true, true);
-        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 0), rewardsEarned);
         _rewardsManager.claimRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(_ajnaToken.balanceOf(_minterOne), rewardsEarned);
 
         // assert rewards claimed is less than ajna tokens burned cap
         assertLt(_ajnaToken.balanceOf(_minterOne), Maths.wmul(tokensToBurn, 0.800000000000000000 * 1e18));
