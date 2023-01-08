@@ -30,7 +30,7 @@ import {
     NFTTypes
 }                               from './interfaces/pool/erc721/IERC721NonStandard.sol';
 
-import { FlashloanablePool } from './commons/FlashloanablePool.sol';
+import { FlashloanablePool } from './base/FlashloanablePool.sol';
 
 import { _revertIfAuctionClearable } from './libraries/helpers/RevertsHelper.sol';
 

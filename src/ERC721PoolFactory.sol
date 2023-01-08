@@ -11,7 +11,7 @@ import { NFTTypes }           from './interfaces/pool/erc721/IERC721NonStandard.
 import { IERC20Token, PoolType } from './interfaces/pool/IPool.sol';
 
 import { ERC721Pool }   from './ERC721Pool.sol';
-import { PoolDeployer } from './commons/PoolDeployer.sol';
+import { PoolDeployer } from './base/PoolDeployer.sol';
 
 contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
 

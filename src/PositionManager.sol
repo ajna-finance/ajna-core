@@ -18,7 +18,7 @@ import { IPositionManagerDerivedState } from './interfaces/position/IPositionMan
 import { ERC20PoolFactory }  from './ERC20PoolFactory.sol';
 import { ERC721PoolFactory } from './ERC721PoolFactory.sol';
 
-import { PermitERC721 } from './commons/PermitERC721.sol';
+import { PermitERC721 } from './base/PermitERC721.sol';
 
 import {
     _lpsToQuoteToken,

@@ -32,7 +32,7 @@ import {
 }                    from './interfaces/pool/commons/IPoolInternals.sol';
 import { PoolState } from './interfaces/pool/commons/IPoolState.sol';
 
-import { FlashloanablePool } from './commons/FlashloanablePool.sol';
+import { FlashloanablePool } from './base/FlashloanablePool.sol';
 
 import {
     _getCollateralDustPricePrecisionAdjustment,
