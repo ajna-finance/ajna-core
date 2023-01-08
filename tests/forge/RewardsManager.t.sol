@@ -13,8 +13,9 @@ import 'src/PoolInfoUtils.sol';
 
 import { _feeRate } from 'src/libraries/helpers/PoolHelper.sol';
 
-import { DSTestPlus } from './utils/DSTestPlus.sol';
-import { Token }      from './utils/Tokens.sol';
+import { DSTestPlus }  from './utils/DSTestPlus.sol';
+import { Token }       from './utils/Tokens.sol';
+import { IPoolErrors } from 'src/interfaces/pool/commons/IPoolErrors.sol';
 
 contract RewardsManagerTest is DSTestPlus {
 
@@ -282,6 +283,10 @@ contract RewardsManagerTest is DSTestPlus {
         _ajnaToken.approve(address(params_.pool), type(uint256).max);
         params_.pool.startClaimableReserveAuction();
 
+        // Can't trigger reserve auction if less than two weeks have passed since last auction
+        vm.expectRevert(IPoolErrors.ReserveAuctionTooSoon.selector);
+        params_.pool.startClaimableReserveAuction();
+
         // allow time to pass for the reserve price to decrease
         skip(24 hours);
 
@@ -298,7 +303,6 @@ contract RewardsManagerTest is DSTestPlus {
         (,, tokensBurned_) = IPool(params_.pool).burnInfo(IPool(params_.pool).currentBurnEpoch());
  
         return tokensBurned_;
-
     }
 
     function testStakeToken() external {
@@ -1038,12 +1042,6 @@ contract RewardsManagerTest is DSTestPlus {
             limitIndex: 3,
             pool: _poolOne
         });
-
-        // check can't trigger reserve auction if less than two weeks have passed since last auction
-        // FIXME: breaking due to an apparent foundry bug on _triggerReserveAuctions params.pool.collateralAddress()
-        // vm.expectRevert(IPoolErrors.ReserveAuctionTooSoon.selector);
-        // vm.expectRevert(abi.encodeWithSignature('ReserveAuctionTooSoon()'));
-        // _triggerReserveAuctions(triggerReserveAuctionParams);
 
         // conduct second reserve auction
         uint256 auctionTwoTokensToBurn = _triggerReserveAuctions(triggerReserveAuctionParams);
