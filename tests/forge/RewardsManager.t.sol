@@ -249,7 +249,7 @@ contract RewardsManagerTest is DSTestPlus {
         _positionManager.memorializePositions(memorializeParams);
     }
 
-    function _triggerReserveAuctions(TriggerReserveAuctionParams memory params_) internal returns (uint256 tokensToBurn_) {
+    function _triggerReserveAuctions(TriggerReserveAuctionParams memory params_) internal returns (uint256 tokensBurned_) {
         // create a new borrower to write state required for reserve auctions
         address borrower = makeAddr("borrower");
 
@@ -295,8 +295,10 @@ contract RewardsManagerTest is DSTestPlus {
         // take claimable reserves
         params_.pool.takeReserves(curClaimableReservesRemaining);
 
-        // calculate ajna tokens to burn in order to take the full auction amount
-        tokensToBurn_ = Maths.wmul(curClaimableReservesRemaining, curAuctionPrice);
+        (,, tokensBurned_) = IPool(params_.pool).burnInfo(IPool(params_.pool).currentBurnEpoch());
+ 
+        return tokensBurned_;
+
     }
 
     function testStakeToken() external {
@@ -575,6 +577,7 @@ contract RewardsManagerTest is DSTestPlus {
     function testUpdateExchangeRatesAndClaimRewardsAfterMultiReserveAuctions() external {
         // TODO: implement this test checking handling of staking an NFT after multiple reserve auctions have already occured
     }
+
 
     function testClaimRewardsCap() external {
         skip(10);

@@ -36,6 +36,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     uint256       internal _startTime;
 
     uint256 internal _p1505_26  = 1_505.263728469068226832 * 1e18;
+    uint256 internal _p1004_98  = 1_004.989662429170775094 * 1e18;
     uint256 internal _p236_59   = 236.593977318257012077 * 1e18;
     uint256 internal _p100_33   = 100.332368143282009890 * 1e18;
     uint256 internal _p9_91     = 9.917184843435912074 * 1e18;
@@ -47,6 +48,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     uint256 internal _i49910    = 1987;
     uint256 internal _i10016    = 2309;
     uint256 internal _i1505_26  = 2689;
+    uint256 internal _i1004_98  = 2770;
     uint256 internal _i236_59   = 3060;
     uint256 internal _i100_33   = 3232;
     uint256 internal _i9_91     = 3696;

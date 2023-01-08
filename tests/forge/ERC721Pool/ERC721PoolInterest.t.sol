@@ -30,14 +30,6 @@ abstract contract ERC721PoolInterestTest is ERC721HelperContract {
         _mintAndApproveCollateralTokens(_borrower2, 10);
         _mintAndApproveCollateralTokens(_borrower3, 13);
 
-        // TODO: figure out how to generally approve quote tokens for the borrowers to handle repays
-        // TODO: potentially use _approveQuoteMultipleUserMultiplePool()
-        vm.prank(_borrower3);
-        _quote.approve(address(_pool), 200_000 * 1e18);
-        vm.prank(_borrower2);
-        _quote.approve(address(_pool), 200_000 * 1e18);
-        vm.prank(_borrower);
-        _quote.approve(address(_pool), 200_000 * 1e18);
     }
 }
 
@@ -157,7 +149,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         // borrower pulls some of their collateral after some time has passed
         skip(10 days);
 
-        _repayDebtNoLupCheck({
+        _approveAndRepayDebtNoLupCheck({
             from:             _borrower,
             borrower:         _borrower,
             amountToRepay:    0,
@@ -210,8 +202,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
 
         // borrower repays their loan after some additional time
         skip(10 days);
-
-        _repayDebt({
+        _approveAndRepayDebt({
             from:             _borrower,
             borrower:         _borrower,
             amountToRepay:    6_027.190390289235012950 * 1e18,
@@ -551,7 +542,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         // borrower repays their loan after some additional time
         skip(10 days);
 
-        _repayDebt({
+        _approveAndRepayDebt({
             from:             _borrower,
             borrower:         _borrower,
             amountToRepay:    6_000 * 1e18,
@@ -630,7 +621,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         // borrower pulls some of their collateral after some time has passed
         skip(10 days);
 
-        _repayDebtNoLupCheck({
+        _approveAndRepayDebtNoLupCheck({
             from:             _borrower,
             borrower:         _borrower,
             amountToRepay:    0,
@@ -684,7 +675,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         // borrower repays their loan after some additional time
         skip(10 days);
 
-        _repayDebt({
+        _approveAndRepayDebt({
             from:             _borrower,
             borrower:         _borrower,
             amountToRepay:    7_000 * 1e18,
