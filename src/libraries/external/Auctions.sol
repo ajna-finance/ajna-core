@@ -221,9 +221,8 @@ library Auctions {
         while (params_.bucketDepth != 0 && borrower.t0Debt != 0 && borrower.collateral != 0) {
             SettleLocalVars memory vars;
 
-            vars.index           = Deposits.findIndexOfSum(deposits_, 1);
+            (vars.index, , vars.scale) = Deposits.findIndexAndSumOfSum(deposits_, 1);
             vars.unscaledDeposit = Deposits.unscaledValueAt(deposits_, vars.index);
-            vars.scale           = Deposits.scale(deposits_, vars.index);
             vars.price           = _priceAt(vars.index);
 
             if (vars.unscaledDeposit != 0) {
@@ -285,9 +284,8 @@ library Auctions {
             while (params_.bucketDepth != 0 && borrower.t0Debt != 0) {
                 SettleLocalVars memory vars;
 
-                vars.index           = Deposits.findIndexOfSum(deposits_, 1);
+                (vars.index, , vars.scale) = Deposits.findIndexAndSumOfSum(deposits_, 1);
                 vars.unscaledDeposit = Deposits.unscaledValueAt(deposits_, vars.index);
-                vars.scale           = Deposits.scale(deposits_, vars.index);
                 vars.depositToRemove = Maths.wmul(vars.scale, vars.unscaledDeposit);
                 vars.debt            = Maths.wmul(borrower.t0Debt, params_.inflator);
 
