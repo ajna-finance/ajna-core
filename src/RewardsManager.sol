@@ -82,19 +82,6 @@ contract RewardsManager is IRewardsManager {
     address          public immutable ajnaToken;       // address of the AJNA token
     IPositionManager public immutable positionManager; // The PositionManager contract
 
-    /*************************/
-    /*** Local struct vars ***/
-    /*************************/
-
-    struct RewardsLocalVars {
-        uint256 bucketIndex;    // index of current bucket to calculate rewards for
-        uint256 bucketRate;     // [RAY] recorded exchange rate of current bucket
-        uint256 epoch;          // current epoch to calculate rewards for
-        uint256 nextEpoch;      // next epoch to calculate rewards for
-        uint256 interestEarned; // [WAD] interest earned on current epoch for the current bucket
-        uint256 newRewards;     // [WAD] calculated rewards
-    }
-
     /*******************/
     /*** Constructor ***/
     /*******************/
@@ -440,8 +427,7 @@ contract RewardsManager is IRewardsManager {
             )
         );
 
-        uint256 rewardsCapped         = Maths.wmul(REWARD_CAP, totalBurnedInPeriod);
-        // uint256 rewardsClaimedInEpoch = rewardsClaimed[nextEpoch_];
+        uint256 rewardsCapped = Maths.wmul(REWARD_CAP, totalBurnedInPeriod);
 
         // Check rewards claimed - check that less than 80% of the tokens for a given burn event have been claimed.
         if (rewardsClaimedInEpoch_ + newRewards_ > rewardsCapped) {
