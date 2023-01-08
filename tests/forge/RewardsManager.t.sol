@@ -705,7 +705,7 @@ contract RewardsManagerTest is DSTestPlus {
             pool:              address(_poolOne),
             tokenId:           tokenIdOne,
             claimedArray:      _epochsClaimedArray(1, 0),
-            reward:            0.227347187766462422 * 1e18,
+            reward:            0.298393183929769729 * 1e18,
             updateRatesReward: 0
         });
         // TODO: check reward amount vs expected from burn

@@ -82,19 +82,6 @@ contract RewardsManager is IRewardsManager {
     address          public immutable ajnaToken;       // address of the AJNA token
     IPositionManager public immutable positionManager; // The PositionManager contract
 
-    /*************************/
-    /*** Local struct vars ***/
-    /*************************/
-
-    struct RewardsLocalVars {
-        uint256 bucketIndex;    // index of current bucket to calculate rewards for
-        uint256 bucketRate;     // [RAY] recorded exchange rate of current bucket
-        uint256 epoch;          // current epoch to calculate rewards for
-        uint256 nextEpoch;      // next epoch to calculate rewards for
-        uint256 interestEarned; // [WAD] interest earned on current epoch for the current bucket
-        uint256 newRewards;     // [WAD] calculated rewards
-    }
-
     /*******************/
     /*** Constructor ***/
     /*******************/
@@ -118,13 +105,13 @@ contract RewardsManager is IRewardsManager {
      */
     function claimRewards(
         uint256 tokenId_,
-        uint256 burnEpochToStartClaim_
+        uint256 epochToClaim_
     ) external override {
         if (msg.sender != stakes[tokenId_].owner) revert NotOwnerOfDeposit();
 
-        if (isEpochClaimed[tokenId_][burnEpochToStartClaim_]) revert AlreadyClaimed();
+        if (isEpochClaimed[tokenId_][epochToClaim_]) revert AlreadyClaimed();
 
-        _claimRewards(tokenId_, burnEpochToStartClaim_);
+        _claimRewards(tokenId_, epochToClaim_);
     }
 
     /**
@@ -237,13 +224,28 @@ contract RewardsManager is IRewardsManager {
     /// @inheritdoc IRewardsManagerDerivedState
     function calculateRewards(
         uint256 tokenId_,
-        uint256 burnEpochToStartClaim_
-    ) external override returns (uint256 rewards_) {
-        rewards_ = _calculateAndClaimRewards(
-            tokenId_,
-            burnEpochToStartClaim_,
-            false
-        );
+        uint256 epochToClaim_
+    ) external view override returns (uint256 rewards_) {
+
+        address ajnaPool      = stakes[tokenId_].ajnaPool;
+        uint256 lastBurnEpoch = stakes[tokenId_].lastInteractionBurnEpoch;
+        uint256 stakingEpoch  = stakes[tokenId_].stakingEpoch;
+
+        uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
+
+        // iterate through all burn periods to calculate and claim rewards
+        for (uint256 epoch = lastBurnEpoch; epoch < epochToClaim_; ) {
+
+            rewards_ += _calculateNextEpochRewards(
+                tokenId_,
+                epoch,
+                stakingEpoch,
+                ajnaPool,
+                positionIndexes
+            );
+
+            unchecked { ++epoch; }
+        }
     }
 
     /// @inheritdoc IRewardsManagerState
@@ -263,15 +265,13 @@ contract RewardsManager is IRewardsManager {
     /**
      *  @notice Calculate the amount of rewards that have been accumulated by a staked NFT.
      *  @dev    Rewards are calculated as the difference in exchange rates between the last interaction burn event and the current burn event.
-     *  @param  tokenId_               ID of the staked LP NFT.
-     *  @param  burnEpochToStartClaim_ The burn period from which to start the calculations, decrementing down.
-     *  @param  isClaim_               Boolean checking whether the newly calculated rewards should be written to state as part of a claim.
-     *  @return rewards_               Amount of rewards earned by the NFT.
+     *  @param  tokenId_      ID of the staked LP NFT.
+     *  @param  epochToClaim_ The burn epoch to claim rewards for (rewards calculation starts from the last claimed epoch).
+     *  @return rewards_      Amount of rewards earned by the NFT.
      */
     function _calculateAndClaimRewards(
         uint256 tokenId_,
-        uint256 burnEpochToStartClaim_,
-        bool isClaim_
+        uint256 epochToClaim_
     ) internal returns (uint256 rewards_) {
 
         address ajnaPool      = stakes[tokenId_].ajnaPool;
@@ -280,65 +280,88 @@ contract RewardsManager is IRewardsManager {
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
 
-        // calculate accrued interest as determined by the difference in exchange rates between the last interaction block and the current block
-        for (uint256 i = 0; i < positionIndexes.length; ) {
+        // iterate through all burn periods to calculate and claim rewards
+        for (uint256 epoch = lastBurnEpoch; epoch < epochToClaim_; ) {
 
-            RewardsLocalVars memory vars;
+            uint256 nextEpochRewards = _calculateNextEpochRewards(
+                tokenId_,
+                epoch,
+                stakingEpoch,
+                ajnaPool,
+                positionIndexes
+            );
 
-            vars.bucketIndex = positionIndexes[i];
+            uint256 nextEpoch = epoch + 1;
 
-            BucketState memory bucketSnapshot = stakes[tokenId_].snapshot[vars.bucketIndex];
+            // update epoch token claim trackers
+            rewardsClaimed[nextEpoch]           += nextEpochRewards;
+            isEpochClaimed[tokenId_][nextEpoch] = true;
 
-            // iterate through all burn periods to check exchange for buckets over time
-            for (vars.epoch = lastBurnEpoch; vars.epoch < burnEpochToStartClaim_; ) {
-                vars.nextEpoch = vars.epoch + 1;
+            rewards_ += nextEpochRewards;
 
-                if (vars.epoch != stakingEpoch) {
+            unchecked { ++epoch; }
+        }
+    }
 
-                    // if staked in a previous epoch then use the initial exchange rate of epoch
-                    vars.bucketRate = bucketExchangeRates[ajnaPool][vars.bucketIndex][vars.epoch];
-                } else {
+    /**
+     *  @notice Calculate the amount of rewards that have been accumulated by a staked NFT in next epoch.
+     *  @dev    Rewards are calculated as the difference in exchange rates between the last interaction burn event and the current burn event.
+     *  @param  tokenId_         ID of the staked LP NFT.
+     *  @param  epoch_           The current epoch.
+     *  @param  stakingEpoch_    The epoch in which token was staked.
+     *  @param  ajnaPool_        Address of the pool.
+     *  @param  positionIndexes_ Bucket ids associated with NFT staked.
+     *  @return epochRewards_    Calculated rewards in epoch.
+     */
+    function _calculateNextEpochRewards(
+        uint256 tokenId_,
+        uint256 epoch_,
+        uint256 stakingEpoch_,
+        address ajnaPool_,
+        uint256[] memory positionIndexes_
+    ) internal view returns (uint256 epochRewards_) {
 
-                    // if staked during the epoch then use the bucket rate at the time of staking
-                    vars.bucketRate = bucketSnapshot.rateAtStakeTime;
-                }
+        uint256 nextEpoch = epoch_ + 1;
+        uint256 claimedRewardsInNextEpoch = rewardsClaimed[nextEpoch];
 
-                // calculate the amount of interest accrued in current epoch
-                vars.interestEarned = _calculateExchangeRateInterestEarned(
-                    ajnaPool,
-                    vars.nextEpoch,
-                    vars.bucketIndex,
-                    bucketSnapshot.lpsAtStakeTime,
-                    vars.bucketRate
-                );
+        // iterate through all buckets and calculate epoch rewards for
+        for (uint256 i = 0; i < positionIndexes_.length; ) {
 
-                // calculate and accumulate rewards if interest earned
-                if (vars.interestEarned != 0) {
+            uint256 bucketIndex = positionIndexes_[i];
+            BucketState memory bucketSnapshot = stakes[tokenId_].snapshot[bucketIndex];
 
-                    vars.newRewards = _calculateNewRewards(
-                        ajnaPool,
-                        vars.interestEarned,
-                        vars.nextEpoch,
-                        vars.epoch
-                    );
+            uint256 bucketRate;
+            if (epoch_ != stakingEpoch_) {
 
-                    // accumulate additional rewards earned for this period
-                    rewards_ += vars.newRewards;
+                // if staked in a previous epoch then use the initial exchange rate of epoch
+                bucketRate = bucketExchangeRates[ajnaPool_][bucketIndex][epoch_];
+            } else {
 
-                    if (isClaim_) {
-                        // update token claim trackers
-                        rewardsClaimed[vars.nextEpoch]           += vars.newRewards;
-                        isEpochClaimed[tokenId_][vars.nextEpoch] = true;
-                    }
-                }
-
-                // epoch is bounded by the number of reserve auctions that have occured in the pool, preventing overflow / underflow
-                unchecked { ++vars.epoch; }
+                // if staked during the epoch then use the bucket rate at the time of staking
+                bucketRate = bucketSnapshot.rateAtStakeTime;
             }
 
-            // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
-            unchecked { ++i; }
+            // calculate the amount of interest accrued in current epoch
+            uint256 interestEarned = _calculateExchangeRateInterestEarned(
+                ajnaPool_,
+                nextEpoch,
+                bucketIndex,
+                bucketSnapshot.lpsAtStakeTime,
+                bucketRate
+            );
 
+            // calculate and accumulate rewards if interest earned
+            if (interestEarned != 0) {
+                epochRewards_ += _calculateNewRewards(
+                    ajnaPool_,
+                    interestEarned,
+                    nextEpoch,
+                    epoch_,
+                    claimedRewardsInNextEpoch
+                );
+            }
+
+            unchecked { ++i; }
         }
     }
 
@@ -386,7 +409,8 @@ contract RewardsManager is IRewardsManager {
         address ajnaPool_,
         uint256 interestEarned_,
         uint256 nextEpoch_,
-        uint256 epoch_
+        uint256 epoch_,
+        uint256 rewardsClaimedInEpoch_
     ) internal view returns (uint256 newRewards_) {
         (
             ,
@@ -404,25 +428,24 @@ contract RewardsManager is IRewardsManager {
             )
         );
 
-        uint256 rewardsCapped         = Maths.wmul(REWARD_CAP, totalBurnedInPeriod);
-        uint256 rewardsClaimedInEpoch = rewardsClaimed[nextEpoch_];
+        uint256 rewardsCapped = Maths.wmul(REWARD_CAP, totalBurnedInPeriod);
 
         // Check rewards claimed - check that less than 80% of the tokens for a given burn event have been claimed.
-        if (rewardsClaimedInEpoch + newRewards_ > rewardsCapped) {
+        if (rewardsClaimedInEpoch_ + newRewards_ > rewardsCapped) {
 
             // set claim reward to difference between cap and reward
-            newRewards_ = rewardsCapped - rewardsClaimedInEpoch;
+            newRewards_ = rewardsCapped - rewardsClaimedInEpoch_;
         }
     }
 
     /**
      *  @notice Claim rewards that have been accumulated by a staked NFT.
-     *  @param  tokenId_               ID of the staked LP NFT.
-     *  @param  burnEpochToStartClaim_ The burn period from which to start the calculations, decrementing down.
+     *  @param  tokenId_      ID of the staked LP NFT.
+     *  @param  epochToClaim_ The burn epoch to claim rewards for (rewards calculation starts from the last claimed epoch)
      */
     function _claimRewards(
         uint256 tokenId_,
-        uint256 burnEpochToStartClaim_
+        uint256 epochToClaim_
     ) internal {
         StakeInfo storage stakeInfo = stakes[tokenId_];
 
@@ -434,11 +457,11 @@ contract RewardsManager is IRewardsManager {
             positionManager.getPositionIndexes(tokenId_)
         );
 
-        rewardsEarned += _calculateAndClaimRewards(tokenId_, burnEpochToStartClaim_, true); 
+        rewardsEarned += _calculateAndClaimRewards(tokenId_, epochToClaim_);
 
         uint256[] memory burnEpochsClaimed = _getBurnEpochsClaimed(
             stakeInfo.lastInteractionBurnEpoch,
-            burnEpochToStartClaim_
+            epochToClaim_
         );
 
         emit ClaimRewards(
@@ -450,7 +473,7 @@ contract RewardsManager is IRewardsManager {
         );
 
         // update last interaction burn event
-        stakeInfo.lastInteractionBurnEpoch = uint96(burnEpochToStartClaim_);
+        stakeInfo.lastInteractionBurnEpoch = uint96(epochToClaim_);
 
         uint256 ajnaBalance = IERC20(ajnaToken).balanceOf(address(this));
 
