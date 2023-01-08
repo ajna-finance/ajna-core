@@ -2426,7 +2426,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.tokenURI(1);
 
         address testAddress = makeAddr("testAddress");
-        uint256 mintAmount  = 10000 * 1e18;
+        uint256 mintAmount  = 10_000 * 1e18;
 
         _mintQuoteAndApproveManagerTokens(testAddress, mintAmount);
 
@@ -2465,12 +2465,6 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         string memory uriString = _positionManager.tokenURI(tokenId);
         // emit log(uriString);
         assertGt(bytes(uriString).length, 0);
-
-        // FIXME: split out uri string from encoding metadata, and parse resulting json object
-        // decode uri string and check attributes
-        // bytes memory data = Base64.decode(uriString);
-        // DecodeTokenURIParams memory decodedURI = abi.decode(data, (DecodeTokenURIParams));
-        // assertEq(decodedURI.name, "Ajna Token #1");
     }
 
 }
