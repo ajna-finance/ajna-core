@@ -44,6 +44,8 @@ contract AjnaRewardsTest is DSTestPlus {
     event UnstakeToken(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
 
     uint256 constant BLOCKS_IN_DAY = 7200;
+    mapping (uint256 => address) internal tokenIdToMinter;
+    mapping (address => uint256) internal minterToBalance;
 
     struct MintAndMemorializeParams {
         uint256[] indexes;
@@ -1360,6 +1362,14 @@ contract AjnaRewardsTest is DSTestPlus {
         }
     }
 
+    // Returns N addresses array
+    function _getAddresses(uint256 noOfAddress) internal returns(address[] memory addresses_) {
+        addresses_ = new address[](noOfAddress);
+        for(uint i = 0; i < noOfAddress; i++) {
+            addresses_[i] = makeAddr(string(abi.encodePacked("Minter", Strings.toString(i))));
+        }
+    }
+
     function testClaimRewardsFuzzy(uint256 indexes, uint256 mintAmount) external {
         indexes = bound(indexes, 3, 10); // number of indexes to add liquidity to
         mintAmount = bound(mintAmount, 1 * 1e18, 100_000 * 1e18); // bound mint amount and dynamically determine borrow amount and collateral based upon provided index and mintAmount
@@ -1426,22 +1436,28 @@ contract AjnaRewardsTest is DSTestPlus {
             vm.roll(block.number + 1); // advance block to ensure that the index price is different
         }
 
+        address[] memory minters = _getAddresses(deposits);
+
         // stake variable no of deposits
         for(uint256 i = 0; i < deposits; ++i) {
             // mint and memorilize Positions
             MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
                 indexes: depositIndexes,
-                minter: _minterOne,
+                minter: minters[i],
                 mintAmount: 1_000_000_000 * 1e18,
                 pool: _poolOne
             });
 
             tokenIds[i] = _mintAndMemorializePositionNFT(mintMemorializeParams);
-            _stakeToken(address(_poolOne), _minterOne, tokenIds[i]);
+            tokenIdToMinter[tokenIds[i]] = minters[i];
+            _stakeToken(address(_poolOne), minters[i], tokenIds[i]);
         }
 
         uint256 updaterBalance = _ajnaToken.balanceOf(_updater);
-        uint256 minterBalance  = _ajnaToken.balanceOf(_minterOne);
+
+        for(uint i = 0; i < deposits; i++) {
+            minterToBalance[minters[i]] = _ajnaToken.balanceOf(minters[i]);
+        }
 
         // start variable no of reserve Auctions and claim rewards for random tokenIds in each epoch
         for(uint i = 0; i < reserveAuctions; ++i) {
@@ -1453,7 +1469,7 @@ contract AjnaRewardsTest is DSTestPlus {
             });
 
             // start and end new reserve auction 
-            _triggerReserveAuctions(triggerReserveAuctionParams);
+            uint256 tokensBurned = _triggerReserveAuctions(triggerReserveAuctionParams);
 
             // call update exchange rate to enable claiming rewards
             changePrank(_updater);
@@ -1462,22 +1478,32 @@ contract AjnaRewardsTest is DSTestPlus {
 
             // ensure updater gets reward for updating exchange rate
             assertGt(_ajnaToken.balanceOf(_updater), updaterBalance);
+
+            // ensure update rewards in each epoch is less than or equals to 10% of tokensBurned
+            assertLe(_ajnaToken.balanceOf(_updater) - updaterBalance, tokensBurned / 10);
+
             updaterBalance = _ajnaToken.balanceOf(_updater);
 
             // pick random NFTs from all NFTs to claim rewards
             uint256[] memory randomNfts = _getRandomSubsetFromArray(tokenIds);
 
-            changePrank(_minterOne);
             for(uint j = 0; j < randomNfts.length; j++) {
+                address minterAddress = tokenIdToMinter[randomNfts[j]];
+                changePrank(minterAddress);
+
+                (, uint256 lastInteractionEpoch, ,) = _ajnaRewards.stakes(randomNfts[j]);
+
+                // select random epoch to claim reward
+                uint256 epochToClaim = lastInteractionEpoch < _poolOne.currentBurnEpoch() ? randomInRange(lastInteractionEpoch + 1, _poolOne.currentBurnEpoch()) : lastInteractionEpoch; 
                 
-                uint256 rewardsEarned = _ajnaRewards.calculateRewards(randomNfts[j], _poolOne.currentBurnEpoch());
+                uint256 rewardsEarned = _ajnaRewards.calculateRewards(randomNfts[j], epochToClaim);
                 assertGt(rewardsEarned, 0);
 
                 _ajnaRewards.claimRewards(randomNfts[j], _poolOne.currentBurnEpoch());
 
                 // ensure user gets reward
-                assertGt( _ajnaToken.balanceOf(_minterOne), minterBalance);
-                minterBalance = _ajnaToken.balanceOf(_minterOne);
+                assertGt( _ajnaToken.balanceOf(minterAddress), minterToBalance[minterAddress]);
+                minterToBalance[minterAddress] = _ajnaToken.balanceOf(minterAddress);
             }
         }
     }
