@@ -1169,7 +1169,7 @@ contract RewardsManagerTest is DSTestPlus {
             updater:        _updater,
             pool:           address(_poolOne),
             depositIndexes: depositIndexes,
-            reward:         1.865914922280688650 * 1e18
+            reward:         4.078737359567063040 * 1e18
         });
 
         _triggerReserveAuctions(TriggerReserveAuctionParams({
@@ -1182,7 +1182,7 @@ contract RewardsManagerTest is DSTestPlus {
             updater:        _updater,
             pool:           address(_poolOne),
             depositIndexes: depositIndexes,
-            reward:         6.270046292191646105 * 1e18
+            reward:         11.241216009399483348 * 1e18
         });
 
         _triggerReserveAuctions(TriggerReserveAuctionParams({
@@ -1195,7 +1195,7 @@ contract RewardsManagerTest is DSTestPlus {
             updater:        _updater,
             pool:           address(_poolOne),
             depositIndexes: depositIndexes,
-            reward:         12.554343784457009538 * 1e18
+            reward:         19.670757405199377738 * 1e18
         });
 
         // proof of burn events
@@ -1212,23 +1212,23 @@ contract RewardsManagerTest is DSTestPlus {
             epoch:     1,
             timestamp: block.timestamp - (52 weeks + 72 hours),
             interest:  6447445050021308895,
-            burned:    37318298445613816142
+            burned:    81574747191341355205
         });
 
         _assertBurn({
             pool:      address(_poolOne),
             epoch:     2,
             timestamp: block.timestamp - (26 weeks + 48 hours),
-            burned:    162719224289447115481,
-            interest:  28865703129152726650
+            burned:    306399067379332449973,
+            interest:  23974564976746846096
         });
 
         _assertBurn({
             pool:      address(_poolOne),
             epoch:     3,
             timestamp: block.timestamp - 24 hours,
-            burned:    413806099978590884507,
-            interest:  75769919722870123483
+            burned:    699814215483322160364,
+            interest:  55764974712671474765
         });
 
         // both stakers claim rewards
@@ -1237,7 +1237,7 @@ contract RewardsManagerTest is DSTestPlus {
             pool:              address(_poolOne),
             tokenId:           tokenIdOne,
             claimedArray:      _epochsClaimedArray(3, 0),
-            reward:            34.483841664882595105 * 1e18,
+            reward:            58.317851290276861885 * 1e18,
             updateRatesReward: 0
         });
 
@@ -1246,7 +1246,7 @@ contract RewardsManagerTest is DSTestPlus {
             pool:              address(_poolOne),
             tokenId:           tokenIdTwo,
             claimedArray:      _epochsClaimedArray(3, 0),
-            reward:            172.419208324412974750 * 1e18,
+            reward:            291.589256451384309685 * 1e18,
             updateRatesReward: 0
         });
     }
