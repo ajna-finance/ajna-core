@@ -119,6 +119,7 @@ contract FenwickTreeInstance is DSTestPlus {
     ) external {
         uint256 i;
         uint256 amount;
+        uint256 cumulativeAmount;
 
         // Initialize and print seed for randomness
         setRandomSeed(seed_);
@@ -133,15 +134,16 @@ contract FenwickTreeInstance is DSTestPlus {
 
             // Update values
             add(i, amount);
-            amount_  -=  amount;
-            insertions_      -=  1;
+            amount_          -= amount;
+            insertions_      -= 1;
+            cumulativeAmount += amount;
 
             // Verify tree sum
-            assertEq(deposits.treeSum(), amount_ - amount_);
+            assertEq(deposits.treeSum(), cumulativeAmount);
 
             if (trackInserts)  inserts.push(i);
         }
 
-        assertEq(deposits.treeSum(), amount_);
+        assertEq(deposits.treeSum(), cumulativeAmount);
     }
 }
