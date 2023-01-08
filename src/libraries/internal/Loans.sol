@@ -33,7 +33,7 @@ library Loans {
     /**
      *  @notice Initializes Loans Max Heap.
      *  @dev    Organizes loans so Highest Threshold Price can be retreived easily.
-     *  @param loans_ Holds tree loan data.
+     *  @param loans_ Holds Loan heap data.
      */
     function init(LoansState storage loans_) internal {
         loans_.loans.push(Loan(address(0), 0));
@@ -59,7 +59,7 @@ library Loans {
      *          - remove:
      *            - remove loan from loans array
      *          - update borrower in address => borrower mapping
-     *  @param loans_               Holds tree loan data.
+     *  @param loans_               Holds loan heap data.
      *  @param borrower_            Borrower struct with borrower details.
      *  @param borrowerAddress_     Borrower's address to update.
      *  @param borrowerAccruedDebt_ Borrower's current debt.
@@ -123,8 +123,8 @@ library Loans {
     /**************************************/
 
     /**
-     *  @notice Moves a Loan up the tree.
-     *  @param loans_ Holds tree loan data.
+     *  @notice Moves a Loan up the heap.
+     *  @param loans_ Holds loan heap data.
      *  @param loan_ Loan to be moved.
      *  @param i_    Index for Loan to be moved to.
      */
@@ -139,7 +139,7 @@ library Loans {
     }
 
     /**
-     *  @notice Moves a Loan down the tree.
+     *  @notice Moves a Loan down the heap.
      *  @param loans_ Holds Loan heap data.
      *  @param loan_ Loan to be moved.
      *  @param i_    Index for Loan to be moved to.
