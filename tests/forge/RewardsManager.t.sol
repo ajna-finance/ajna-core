@@ -574,11 +574,6 @@ contract RewardsManagerTest is DSTestPlus {
         });
     }
 
-    function testUpdateExchangeRatesAndClaimRewardsAfterMultiReserveAuctions() external {
-        // TODO: implement this test checking handling of staking an NFT after multiple reserve auctions have already occured
-    }
-
-
     function testClaimRewardsCap() external {
         skip(10);
         
@@ -1109,9 +1104,6 @@ contract RewardsManagerTest is DSTestPlus {
     }
 
     function testClaimRewardsMultipleDepositsDifferentBucketsMultipleAuctions() external {
-
-        // TODO: implement this -> instead of using the same RewardsTestParams struct for each new depositor, use modified structs across depositors
-
         // configure _minterOne's NFT position
         uint256[] memory depositIndexesMinterOne = new uint256[](5);
         depositIndexesMinterOne[0] = 2550;
