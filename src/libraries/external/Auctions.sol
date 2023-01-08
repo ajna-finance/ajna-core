@@ -214,13 +214,9 @@ library Auctions {
         while (params_.bucketDepth != 0 && borrower.t0Debt != 0 && borrower.collateral != 0) {
             SettleLocalVars memory vars;
 
-            {
-                (uint256 sumIndex, , uint256 sumIndexScale) = Deposits.findIndexAndSumOfSum(deposits_, 1);
-                vars.index           = sumIndex;
-                vars.unscaledDeposit = Deposits.unscaledValueAt(deposits_, vars.index);
-                vars.scale           = sumIndexScale;
-                vars.price           = _priceAt(vars.index);
-            }
+            (vars.index, , vars.scale) = Deposits.findIndexAndSumOfSum(deposits_, 1);
+            vars.unscaledDeposit = Deposits.unscaledValueAt(deposits_, vars.index);
+            vars.price           = _priceAt(vars.index);
 
             if (vars.unscaledDeposit != 0) {
                 vars.debt              = Maths.wmul(borrower.t0Debt, params_.inflator);       // current debt to be settled
@@ -281,14 +277,10 @@ library Auctions {
             while (params_.bucketDepth != 0 && borrower.t0Debt != 0) {
                 SettleLocalVars memory vars;
 
-                {
-                    (uint256 sumIndex, , uint256 sumIndexScale) = Deposits.findIndexAndSumOfSum(deposits_, 1);
-                    vars.index           = sumIndex;
-                    vars.unscaledDeposit = Deposits.unscaledValueAt(deposits_, vars.index);
-                    vars.scale           = sumIndexScale;
-                    vars.depositToRemove = Maths.wmul(vars.scale, vars.unscaledDeposit);
-                    vars.debt            = Maths.wmul(borrower.t0Debt, params_.inflator);
-                }
+                (vars.index, , vars.scale) = Deposits.findIndexAndSumOfSum(deposits_, 1);
+                vars.unscaledDeposit = Deposits.unscaledValueAt(deposits_, vars.index);
+                vars.depositToRemove = Maths.wmul(vars.scale, vars.unscaledDeposit);
+                vars.debt            = Maths.wmul(borrower.t0Debt, params_.inflator);
 
                 // enough deposit in bucket to settle entire debt
                 if (vars.depositToRemove >= vars.debt) {
