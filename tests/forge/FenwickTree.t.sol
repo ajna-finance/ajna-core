@@ -110,10 +110,10 @@ contract FenwickTreeTest is DSTestPlus {
         uint256 insertions_,
         uint256 totalAmount_,
         uint256 scaleIndex_,
-        uint256 factor_
-        ) external {
-
-        _tree.fuzzyFill(insertions_, totalAmount_, false);
+        uint256 factor_,
+        uint256 seed_
+    ) external {
+        _tree.fuzzyFill(insertions_, totalAmount_, seed_, false);
 
         uint256 scaleIndex = bound(scaleIndex_, 2, MAX_INDEX);
         uint256 subIndex   = randomInRange(1, scaleIndex - 1);
@@ -159,10 +159,10 @@ contract FenwickTreeTest is DSTestPlus {
         uint256 insertions_,
         uint256 totalAmount_,
         uint256 scaleIndex_,
-        uint256 factor_
-        ) external {
-
-        _tree.fuzzyFill(insertions_, totalAmount_, false);
+        uint256 factor_,
+        uint256 seed_
+    ) external {
+        _tree.fuzzyFill(insertions_, totalAmount_, seed_, false);
 
         uint256 scaleIndex = bound(scaleIndex_, 2, 7388);
         uint256 subIndex = randomInRange(0, scaleIndex - 1);
@@ -191,10 +191,10 @@ contract FenwickTreeTest is DSTestPlus {
     // TODO: check random parent to verify sum post removal
     function testLoadFenwickFuzzyRemoval(
         uint256 insertions_,
-        uint256 totalAmount_
-        ) external {
-
-        _tree.fuzzyFill(insertions_, totalAmount_, true);
+        uint256 totalAmount_,
+        uint256 seed_
+    ) external {
+        _tree.fuzzyFill(insertions_, totalAmount_, seed_, true);
 
         uint256 removalIndex = _tree.getIByInsertIndex(randomInRange(0, _tree.numInserts() - 1));
         uint256 removalAmount = _tree.get(removalIndex); 
@@ -208,7 +208,6 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(preRemovalIndexSum - removalAmount, postRemovalIndexSum);
         assertEq(preRemovalTreeSum - removalAmount, _tree.treeSum());
     }
-
 }
 
 contract FenwickTreeGasLoadTest is DSTestPlus {

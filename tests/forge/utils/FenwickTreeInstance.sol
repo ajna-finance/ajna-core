@@ -68,11 +68,11 @@ contract FenwickTreeInstance is DSTestPlus {
      *  @notice fills fenwick tree with fuzzed values and tests additions.
      */
     function fuzzyFill(
-        uint256 insertions_,
-        uint256 amount_,
-        bool trackInserts)
-        external {
-
+        uint256 insertions_,    // number of insertions to perform
+        uint256 amount_,        // total amount to insert
+        uint256 seed_,          // seed for psuedorandom number generator
+        bool    trackInserts
+    ) external {
         uint256 i;
         uint256 amount;
 
@@ -83,6 +83,8 @@ contract FenwickTreeInstance is DSTestPlus {
         uint256 totalAmount = bound(amount_, 1 * 1e18, 9_000_000_000_000_000 * 1e18);
         uint256 totalAmountDec = totalAmount;
 
+        // Initialize and print seed for randomness
+        setRandomSeed(bound(seed_, 0, type(uint256).max - 1));
 
         while (totalAmountDec > 0 && insertsDec > 0) {
 
@@ -106,4 +108,3 @@ contract FenwickTreeInstance is DSTestPlus {
         assertEq(deposits.treeSum(), totalAmount);
     }
 }
-
