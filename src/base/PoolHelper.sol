@@ -3,12 +3,14 @@
 pragma solidity 0.8.14;
 
 // import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
-import { ceil, div, exp2, fromSD59x18, log2, mul, SD59x18, sqrt, toSD59x18 } from "@prb-math/src/SD59x18.sol";
+import { ceil, convert, div, exp2, fromSD59x18, log2, mul, sd59x18, SD59x18, sqrt, toSD59x18, unwrap, wrap } from "@prb-math/src/SD59x18.sol";
 
 import { PoolType } from './interfaces/IPool.sol';
 
 import { Buckets } from '../libraries/Buckets.sol';
 import { Maths }   from '../libraries/Maths.sol';
+
+import { console } from '@std/console.sol';
 
     error BucketIndexOutOfBounds();
     error BucketPriceOutOfBounds();
@@ -47,19 +49,20 @@ import { Maths }   from '../libraries/Maths.sol';
      */
     function _priceAt(
         uint256 index_
-    ) pure returns (uint256) {
+    ) pure returns (uint256 index) {
         // Lowest Fenwick index is highest price, so invert the index and offset by highest bucket index.
         int256 bucketIndex = MAX_BUCKET_INDEX - int256(index_);
         if (bucketIndex < MIN_BUCKET_INDEX || bucketIndex > MAX_BUCKET_INDEX) revert BucketIndexOutOfBounds();
 
-        return uint256(fromSD59x18(
+        index = uint256(unwrap(
             exp2(
                 mul(
                     toSD59x18(bucketIndex),
-                    log2(toSD59x18(FLOAT_STEP_INT))
+                    log2(wrap(FLOAT_STEP_INT))
                 )
             )
         ));
+        return index;
     }
 
     /**
@@ -76,14 +79,14 @@ import { Maths }   from '../libraries/Maths.sol';
     ) pure returns (uint256) {
         if (price_ < MIN_PRICE || price_ > MAX_PRICE) revert BucketPriceOutOfBounds();
 
-        int index = fromSD59x18(
+        int index = unwrap(
             div(
-                log2(toSD59x18(int256(price_))),
-                log2(toSD59x18(FLOAT_STEP_INT))
+                log2(wrap(int256(price_))),
+                log2(wrap(FLOAT_STEP_INT))
             )
         );
 
-        int256 ceilIndex = fromSD59x18(ceil(toSD59x18(index)));
+        int256 ceilIndex = unwrap(ceil(toSD59x18(index)));
         if (index < 0 && ceilIndex - index > 0.5 * 1e18) {
             return uint256(4157 - ceilIndex);
         }
@@ -169,8 +172,8 @@ import { Maths }   from '../libraries/Maths.sol';
     ) pure returns (uint256 pricePrecisionAdjustment_) {
         // conditional is a gas optimization
         if (bucketIndex_ > 3900) {
-            SD59x18 bucketOffset = toSD59x18(int256(bucketIndex_ - 3900) * 1e18);
-            int256 result = fromSD59x18(sqrt(div(bucketOffset, toSD59x18(int256(36 * 1e18)))));
+            SD59x18 bucketOffset = wrap(int256(bucketIndex_ - 3900) * 1e18);
+            int256 result = unwrap(sqrt(div(bucketOffset, wrap(int256(36 * 1e18)))));
             pricePrecisionAdjustment_ = uint256(result / 1e18);
         }
     }
