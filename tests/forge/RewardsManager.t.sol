@@ -364,9 +364,9 @@ contract RewardsManagerTest is DSTestPlus {
 
         // call pool contract directly to add quote tokens
         uint256[] memory indexes = new uint256[](3);
-        indexes[0] = 2550;
-        indexes[1] = 2551;
-        indexes[2] = 2552;
+        indexes[0] = 1;
+        indexes[1] = 2;
+        indexes[2] = 3;
 
         changePrank(_minterOne);
         _collateralOne.approve(address(_poolOne), type(uint256).max);
@@ -422,7 +422,7 @@ contract RewardsManagerTest is DSTestPlus {
             updater:        _updater,
             pool:           address(_poolOne),
             depositIndexes: indexes,
-            reward:         0.465762302372357014 * 1e18
+            reward:         0 * 1e18
         });
 
         // Should a staker who only has collateral in the pool earn ajna rewards?
@@ -431,7 +431,7 @@ contract RewardsManagerTest is DSTestPlus {
             pool:              address(_poolOne),
             tokenId:           tokenIdOne,
             claimedArray:      _epochsClaimedArray(1, 0),
-            reward:            2.797465829335482755 * 1e18,
+            reward:            0,
             updateRatesReward: 0
         });
 
