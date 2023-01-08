@@ -79,14 +79,14 @@ import { console } from '@std/console.sol';
     ) pure returns (uint256) {
         if (price_ < MIN_PRICE || price_ > MAX_PRICE) revert BucketPriceOutOfBounds();
 
-        int index = unwrap(
+        int index = fromSD59x18(
             div(
                 log2(wrap(int256(price_))),
                 log2(wrap(FLOAT_STEP_INT))
             )
         );
 
-        int256 ceilIndex = unwrap(ceil(toSD59x18(index)));
+        int256 ceilIndex = fromSD59x18(ceil(toSD59x18(index)));
         if (index < 0 && ceilIndex - index > 0.5 * 1e18) {
             return uint256(4157 - ceilIndex);
         }
