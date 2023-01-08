@@ -10,18 +10,18 @@ import {
     IERC20PoolBorrowerActions,
     IERC20PoolImmutables,
     IERC20PoolLenderActions
-}                              from './interfaces/IERC20Pool.sol';
-import { IERC20Taker }         from './interfaces/IERC20Taker.sol';
+}                              from './interfaces/pool/erc20/IERC20Pool.sol';
+import { IERC20Taker }         from './interfaces/pool/erc20/IERC20Taker.sol';
 
 import {
     IPoolLenderActions,
     IPoolLiquidationActions,
     IERC20Token
-}                            from '../base/interfaces/IPool.sol';
+}                            from './interfaces/pool/IPool.sol';
 import {
     IERC3156FlashBorrower,
     IERC3156FlashLender
-}                            from '../base/interfaces/IERC3156FlashLender.sol';
+}                            from './interfaces/pool/IERC3156FlashLender.sol';
 
 import {
     DrawDebtResult,
@@ -29,24 +29,25 @@ import {
     RepayDebtResult,
     SettleParams,
     TakeResult
-}                    from '../base/interfaces/pool/IPoolInternals.sol';
-import { PoolState } from '../base/interfaces/pool/IPoolState.sol';
+}                    from './interfaces/pool/commons/IPoolInternals.sol';
+import { PoolState } from './interfaces/pool/commons/IPoolState.sol';
+
+import { FlashloanablePool } from './base/FlashloanablePool.sol';
 
 import {
     _getCollateralDustPricePrecisionAdjustment,
     _roundToScale,
     _roundUpToScale
-}                                               from '../base/PoolHelper.sol';
-import { FlashloanablePool }                    from '../base/FlashloanablePool.sol';
-import { _revertIfAuctionClearable }            from '../base/RevertsHelper.sol';
+}                                               from './libraries/helpers/PoolHelper.sol';
+import { _revertIfAuctionClearable }            from './libraries/helpers/RevertsHelper.sol';
 
-import { Loans }    from '../libraries/Loans.sol';
-import { Deposits } from '../libraries/Deposits.sol';
-import { Maths }    from '../libraries/Maths.sol';
+import { Loans }    from './libraries/internal/Loans.sol';
+import { Deposits } from './libraries/internal/Deposits.sol';
+import { Maths }    from './libraries/internal/Maths.sol';
 
-import { BorrowerActions } from '../libraries/external/BorrowerActions.sol';
-import { LenderActions }   from '../libraries/external/LenderActions.sol';
-import { Auctions }        from '../libraries/external/Auctions.sol';
+import { BorrowerActions } from './libraries/external/BorrowerActions.sol';
+import { LenderActions }   from './libraries/external/LenderActions.sol';
+import { Auctions }        from './libraries/external/Auctions.sol';
 
 contract ERC20Pool is IERC20Pool, FlashloanablePool {
     using SafeERC20 for IERC20;

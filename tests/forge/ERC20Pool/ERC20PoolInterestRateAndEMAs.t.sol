@@ -5,8 +5,8 @@ import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import 'src/base/PoolHelper.sol';
-import 'src/erc20/interfaces/IERC20Pool.sol';
+import 'src/libraries/helpers/PoolHelper.sol';
+import 'src/interfaces/pool/erc20/IERC20Pool.sol';
 
 contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 

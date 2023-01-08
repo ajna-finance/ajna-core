@@ -8,13 +8,13 @@ import {
     DepositsState,
     LoansState,
     PoolBalancesState
-} from './interfaces/pool/IPoolState.sol';
+} from '../../interfaces/pool/commons/IPoolState.sol';
 
 import { _minDebtAmount } from './PoolHelper.sol';
 
-import { Loans }    from '../libraries/Loans.sol';
-import { Deposits } from '../libraries/Deposits.sol';
-import { Maths }    from '../libraries/Maths.sol';
+import { Loans }    from '../internal/Loans.sol';
+import { Deposits } from '../internal/Deposits.sol';
+import { Maths }    from '../internal/Maths.sol';
 
     // See `IPoolErrors` for descriptions
     error AuctionNotCleared();

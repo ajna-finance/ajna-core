@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 import './utils/DSTestPlus.sol';
 import './utils/FenwickTreeInstance.sol';
 
-import 'src/libraries/Maths.sol';
+import 'src/libraries/internal/Maths.sol';
 
 contract FenwickTreeTest is DSTestPlus {
 

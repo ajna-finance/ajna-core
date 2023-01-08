@@ -4,10 +4,10 @@ pragma solidity 0.8.14;
 import { ERC721HelperContract }      from './ERC721DSTestPlus.sol';
 import { NFTCollateralToken, Token } from '../utils/Tokens.sol';
 
-import { ERC721Pool }        from 'src/erc721/ERC721Pool.sol';
-import { ERC721PoolFactory } from 'src/erc721/ERC721PoolFactory.sol';
-import { IPoolErrors }       from 'src/base/interfaces/pool/IPoolErrors.sol';
-import { IPoolFactory }      from 'src/base/interfaces/IPoolFactory.sol';
+import { ERC721Pool }        from 'src/ERC721Pool.sol';
+import { ERC721PoolFactory } from 'src/ERC721PoolFactory.sol';
+import { IPoolErrors }       from 'src/interfaces/pool/commons/IPoolErrors.sol';
+import { IPoolFactory }      from 'src/interfaces/pool/IPoolFactory.sol';
 
 contract ERC721PoolFactoryTest is ERC721HelperContract {
     address            internal _NFTCollectionPoolAddress;

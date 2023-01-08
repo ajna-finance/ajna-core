@@ -6,7 +6,7 @@ import './utils/DSTestPlus.sol';
 import '@prb-math/contracts/PRBMathSD59x18.sol';
 import '@prb-math/contracts/PRBMathUD60x18.sol';
 
-import 'src/libraries/Maths.sol';
+import 'src/libraries/internal/Maths.sol';
 
 contract MathTest is DSTestPlus {
 

@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.14;
 
-import { ERC20Pool }        from 'src/erc20/ERC20Pool.sol';
-import { ERC20PoolFactory } from 'src/erc20/ERC20PoolFactory.sol';
+import { ERC20Pool }        from 'src/ERC20Pool.sol';
+import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
 
-import 'src/base/RewardsManager.sol';
-import 'src/base/interfaces/IRewardsManager.sol';
+import 'src/RewardsManager.sol';
+import 'src/interfaces/rewards/IRewardsManager.sol';
 
-import 'src/base/interfaces/IPositionManager.sol';
-import 'src/base/PositionManager.sol';
-import 'src/base/PoolInfoUtils.sol';
+import 'src/interfaces/position/IPositionManager.sol';
+import 'src/PositionManager.sol';
+import 'src/PoolInfoUtils.sol';
 
-import { _feeRate } from 'src/base/PoolHelper.sol';
+import { _feeRate } from 'src/libraries/helpers/PoolHelper.sol';
 
 import { DSTestPlus } from './utils/DSTestPlus.sol';
 import { Token }      from './utils/Tokens.sol';

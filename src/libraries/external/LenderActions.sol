@@ -6,19 +6,19 @@ import {
     AddQuoteParams,
     MoveQuoteParams,
     RemoveQuoteParams
-}                     from '../../base/interfaces/pool/IPoolInternals.sol';
+}                     from '../../interfaces/pool/commons/IPoolInternals.sol';
 import {
     Bucket,
     DepositsState,
     Lender,
     PoolState
-}                     from '../../base/interfaces/pool/IPoolState.sol';
+}                     from '../../interfaces/pool/commons/IPoolState.sol';
 
-import { _feeRate, _priceAt, _ptp, MAX_FENWICK_INDEX } from '../../base/PoolHelper.sol';
+import { _feeRate, _priceAt, _ptp, MAX_FENWICK_INDEX } from '../helpers/PoolHelper.sol';
 
-import { Deposits } from '../Deposits.sol';
-import { Buckets }  from '../Buckets.sol';
-import { Maths }    from '../Maths.sol';
+import { Deposits } from '../internal/Deposits.sol';
+import { Buckets }  from '../internal/Buckets.sol';
+import { Maths }    from '../internal/Maths.sol';
 
 /**
     @notice External library containing logic for common lender actions.

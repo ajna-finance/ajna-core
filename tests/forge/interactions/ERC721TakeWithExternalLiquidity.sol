@@ -6,12 +6,12 @@ import { IERC20 } from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 import { NFTCollateralToken } from '../utils/Tokens.sol';
 
-import { ERC721Pool }         from 'src/erc721/ERC721Pool.sol';
-import { ERC721PoolFactory }  from 'src/erc721/ERC721PoolFactory.sol';
+import { ERC721Pool }         from 'src/ERC721Pool.sol';
+import { ERC721PoolFactory }  from 'src/ERC721PoolFactory.sol';
 
 import { ERC721HelperContract } from '../ERC721Pool/ERC721DSTestPlus.sol';
 
-import 'src/base/PoolInfoUtils.sol';
+import 'src/PoolInfoUtils.sol';
 import "./NFTTakeExample.sol";
 
 contract ERC721TakeWithExternalLiquidityTest is ERC721HelperContract {
