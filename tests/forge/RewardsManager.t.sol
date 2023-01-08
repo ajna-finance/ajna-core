@@ -1112,6 +1112,142 @@ contract RewardsManagerTest is DSTestPlus {
 
         // TODO: implement this -> instead of using the same RewardsTestParams struct for each new depositor, use modified structs across depositors
 
+        // configure _minterOne's NFT position
+        uint256[] memory depositIndexesMinterOne = new uint256[](5);
+        depositIndexesMinterOne[0] = 2550;
+        depositIndexesMinterOne[1] = 2551;
+        depositIndexesMinterOne[2] = 2552;
+        depositIndexesMinterOne[3] = 2553;
+        depositIndexesMinterOne[4] = 2555;
+        MintAndMemorializeParams memory mintMemorializeParamsMinterOne = MintAndMemorializeParams({
+            indexes: depositIndexesMinterOne,
+            minter: _minterOne,
+            mintAmount: 1_000 * 1e18,
+            pool: _poolOne
+        });
+
+        // configure _minterTwo's NFT position
+        uint256[] memory depositIndexesMinterTwo = new uint256[](5);
+        depositIndexesMinterTwo[0] = 2550;
+        depositIndexesMinterTwo[1] = 2551;
+        depositIndexesMinterTwo[2] = 2200;
+        depositIndexesMinterTwo[3] = 2221;
+        depositIndexesMinterTwo[4] = 2222;
+        MintAndMemorializeParams memory mintMemorializeParamsMinterTwo = MintAndMemorializeParams({
+            indexes: depositIndexesMinterTwo,
+            minter: _minterTwo,
+            mintAmount: 5_000 * 1e18,
+            pool: _poolOne
+        });
+
+        uint256[] memory depositIndexes = new uint256[](8);
+        depositIndexes[0] = 2550;
+        depositIndexes[1] = 2551;
+        depositIndexes[2] = 2552;
+        depositIndexes[3] = 2553;
+        depositIndexes[4] = 2555;
+        depositIndexes[5] = 2200;
+        depositIndexes[6] = 2221;
+        depositIndexes[7] = 2222;
+
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParamsMinterOne);
+        uint256 tokenIdTwo = _mintAndMemorializePositionNFT(mintMemorializeParamsMinterTwo);
+
+        // lenders stake their NFTs
+        _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
+        _stakeToken(address(_poolOne), _minterTwo, tokenIdTwo);
+
+        // borrower takes actions providing reserves enabling three reserve auctions
+        uint256 auctionOneTokensToBurned = _triggerReserveAuctions(TriggerReserveAuctionParams({
+            borrowAmount: 300 * 1e18,
+            limitIndex: 2555,
+            pool: _poolOne
+        }));
+
+        _updateExchangeRates({
+            updater:        _updater,
+            pool:           address(_poolOne),
+            depositIndexes: depositIndexes,
+            reward:         1.865914922280688650 * 1e18
+        });
+
+        uint256 auctionTwoTokensToBurned = _triggerReserveAuctions(TriggerReserveAuctionParams({
+            borrowAmount: 1_000 * 1e18,
+            limitIndex: 2555,
+            pool: _poolOne
+        }));
+
+        _updateExchangeRates({
+            updater:        _updater,
+            pool:           address(_poolOne),
+            depositIndexes: depositIndexes,
+            reward:         6.270046292191646105 * 1e18
+        });
+
+        uint256 auctionThreeTokensToBurned = _triggerReserveAuctions(TriggerReserveAuctionParams({
+            borrowAmount: 2_000 * 1e18,
+            limitIndex: 2555,
+            pool: _poolOne
+        }));
+        
+        _updateExchangeRates({
+            updater:        _updater,
+            pool:           address(_poolOne),
+            depositIndexes: depositIndexes,
+            reward:         12.554343784457009538 * 1e18
+        });
+
+        // proof of burn events
+        _assertBurn({
+            pool:      address(_poolOne),
+            epoch:     0,
+            timestamp: 0,
+            burned:    0,
+            interest:  0
+        });
+
+        _assertBurn({
+            pool:      address(_poolOne),
+            epoch:     1,
+            timestamp: block.timestamp - (52 weeks + 72 hours),
+            interest:  6447445050021308895,
+            burned:    37318298445613816142
+        });
+
+        _assertBurn({
+            pool:      address(_poolOne),
+            epoch:     2,
+            timestamp: block.timestamp - (26 weeks + 48 hours),
+            burned:    162719224289447115481,
+            interest:  28865703129152726650
+        });
+
+        _assertBurn({
+            pool:      address(_poolOne),
+            epoch:     3,
+            timestamp: block.timestamp - 24 hours,
+            burned:    413806099978590884507,
+            interest:  75769919722870123483
+        });
+
+        // both stakers claim rewards
+        _unstakeToken({
+            minter:            _minterOne,
+            pool:              address(_poolOne),
+            tokenId:           tokenIdOne,
+            claimedArray:      _epochsClaimedArray(3, 0),
+            reward:            34.483841664882595105 * 1e18,
+            updateRatesReward: 0
+        });
+
+        _unstakeToken({
+            minter:            _minterTwo,
+            pool:              address(_poolOne),
+            tokenId:           tokenIdTwo,
+            claimedArray:      _epochsClaimedArray(3, 0),
+            reward:            172.419208324412974750 * 1e18,
+            updateRatesReward: 0
+        });
     }
 
     function testUnstakeToken() external {
