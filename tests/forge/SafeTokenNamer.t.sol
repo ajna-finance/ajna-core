@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 import './utils/DSTestPlus.sol';
 import './utils/Tokens.sol';
 
-import 'src/libraries/SafeTokenNamer.sol';
+import 'src/libraries/helpers/SafeTokenNamer.sol';
 
 contract SafeTokenNamerTest is DSTestPlus {
 

@@ -8,9 +8,9 @@ import {
     DepositsState,
     Loan,
     LoansState
-} from '../base/interfaces/pool/IPoolState.sol';
+} from '../../interfaces/pool/commons/IPoolState.sol';
 
-import { _priceAt } from '../base/PoolHelper.sol';
+import { _priceAt } from '../helpers/PoolHelper.sol';
 
 import { Deposits } from './Deposits.sol';
 import { Maths }    from './Maths.sol';

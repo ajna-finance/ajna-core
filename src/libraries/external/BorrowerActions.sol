@@ -9,23 +9,23 @@ import {
     DepositsState,
     LoansState,
     PoolState
-}                   from '../../base/interfaces/pool/IPoolState.sol';
+}                   from '../../interfaces/pool/commons/IPoolState.sol';
 import {
     DrawDebtResult,
     RepayDebtResult
-}                   from '../../base/interfaces/pool/IPoolInternals.sol';
+}                   from '../../interfaces/pool/commons/IPoolInternals.sol';
 
 import {
     _feeRate,
     _priceAt,
     _isCollateralized
-}                           from '../../base/PoolHelper.sol';
-import { _revertOnMinDebt } from '../../base/RevertsHelper.sol';
+}                           from '../helpers/PoolHelper.sol';
+import { _revertOnMinDebt } from '../helpers/RevertsHelper.sol';
 
-import { Buckets }  from '../Buckets.sol';
-import { Deposits } from '../Deposits.sol';
-import { Loans }    from '../Loans.sol';
-import { Maths }    from '../Maths.sol';
+import { Buckets }  from '../internal/Buckets.sol';
+import { Deposits } from '../internal/Deposits.sol';
+import { Loans }    from '../internal/Loans.sol';
+import { Maths }    from '../internal/Maths.sol';
 
 import { Auctions } from './Auctions.sol';
 

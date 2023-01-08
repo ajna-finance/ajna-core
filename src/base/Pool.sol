@@ -17,7 +17,7 @@ import {
     IPoolReserveAuctionActions,
     IPoolDerivedState,
     IERC20Token
-}                                    from './interfaces/IPool.sol';
+}                                    from '../interfaces/pool/IPool.sol';
 import {
     PoolState,
     AuctionsState,
@@ -30,28 +30,28 @@ import {
     Bucket,
     BurnEvent,
     Liquidation
-}                                    from './interfaces/pool/IPoolState.sol';
+}                                    from '../interfaces/pool/commons/IPoolState.sol';
 import {
     KickResult,
     RemoveQuoteParams,
     MoveQuoteParams,
     AddQuoteParams
-}                                    from './interfaces/pool/IPoolInternals.sol';
-import { StartReserveAuctionParams } from './interfaces/pool/IPoolReserveAuctionActions.sol';
+}                                    from '../interfaces/pool/commons/IPoolInternals.sol';
+import { StartReserveAuctionParams } from '../interfaces/pool/commons/IPoolReserveAuctionActions.sol';
 
 import {
     _priceAt,
     _roundToScale
-}                               from './PoolHelper.sol';
+}                               from '../libraries/helpers/PoolHelper.sol';
 import {
     _revertIfAuctionDebtLocked,
     _revertIfAuctionClearable
-}                               from './RevertsHelper.sol';
+}                               from '../libraries/helpers/RevertsHelper.sol';
 
-import { Buckets }  from '../libraries/Buckets.sol';
-import { Deposits } from '../libraries/Deposits.sol';
-import { Loans }    from '../libraries/Loans.sol';
-import { Maths }    from '../libraries/Maths.sol';
+import { Buckets }  from '../libraries/internal/Buckets.sol';
+import { Deposits } from '../libraries/internal/Deposits.sol';
+import { Loans }    from '../libraries/internal/Loans.sol';
+import { Maths }    from '../libraries/internal/Maths.sol';
 
 import { Auctions }        from '../libraries/external/Auctions.sol';
 import { BorrowerActions } from '../libraries/external/BorrowerActions.sol';

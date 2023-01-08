@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.14;
 
-import { IPool, IERC20Token } from './interfaces/IPool.sol';
+import { IPool, IERC20Token } from './interfaces/pool/IPool.sol';
 
 import {
     _claimableReserves,
@@ -15,13 +15,13 @@ import {
     _reserveAuctionPrice,
     MAX_FENWICK_INDEX,
     MIN_PRICE
-} from './PoolHelper.sol';
+} from './libraries/helpers/PoolHelper.sol';
 
-import { Buckets } from '../libraries/Buckets.sol';
-import { Maths }   from '../libraries/Maths.sol';
+import { Buckets } from './libraries/internal/Buckets.sol';
+import { Maths }   from './libraries/internal/Maths.sol';
 
-import { Auctions }    from '../libraries/external/Auctions.sol';
-import { PoolCommons } from '../libraries/external/PoolCommons.sol';
+import { Auctions }    from './libraries/external/Auctions.sol';
+import { PoolCommons } from './libraries/external/PoolCommons.sol';
 
 contract PoolInfoUtils {
 

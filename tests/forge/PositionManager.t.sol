@@ -6,11 +6,11 @@ import { Base64 } from '@base64-sol/base64.sol';
 import { ERC20HelperContract } from './ERC20Pool/ERC20DSTestPlus.sol';
 import { ERC721HelperContract } from './ERC721Pool/ERC721DSTestPlus.sol';
 
-import 'src/base/interfaces/IPositionManager.sol';
-import 'src/base/PositionManager.sol';
-import 'src/libraries/SafeTokenNamer.sol';
+import 'src/interfaces/position/IPositionManager.sol';
+import 'src/PositionManager.sol';
+import 'src/libraries/helpers/SafeTokenNamer.sol';
 
-import 'src/base/interfaces/pool/IPoolErrors.sol';
+import 'src/interfaces/pool/commons/IPoolErrors.sol';
 
 import './utils/ContractNFTRecipient.sol';
 

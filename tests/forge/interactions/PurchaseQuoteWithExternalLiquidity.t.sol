@@ -3,8 +3,8 @@ pragma solidity 0.8.14;
 
 import "@std/Test.sol";
 
-import { ERC20Pool }        from 'src/erc20/ERC20Pool.sol';
-import { ERC20PoolFactory } from 'src/erc20/ERC20PoolFactory.sol';
+import { ERC20Pool }        from 'src/ERC20Pool.sol';
+import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
 
 import "./BalancerUniswapExample.sol";
 

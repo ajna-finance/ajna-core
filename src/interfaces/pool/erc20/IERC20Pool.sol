@@ -2,11 +2,11 @@
 
 pragma solidity 0.8.14;
 
-import { IPool }                     from '../../base/interfaces/IPool.sol';
-import { IERC20PoolBorrowerActions } from './pool/IERC20PoolBorrowerActions.sol';
-import { IERC20PoolLenderActions }   from './pool/IERC20PoolLenderActions.sol';
-import { IERC20PoolImmutables }      from './pool/IERC20PoolImmutables.sol';
-import { IERC20PoolEvents }          from './pool/IERC20PoolEvents.sol';
+import { IPool }                     from '../IPool.sol';
+import { IERC20PoolBorrowerActions } from './IERC20PoolBorrowerActions.sol';
+import { IERC20PoolLenderActions }   from './IERC20PoolLenderActions.sol';
+import { IERC20PoolImmutables }      from './IERC20PoolImmutables.sol';
+import { IERC20PoolEvents }          from './IERC20PoolEvents.sol';
 
 /**
  * @title ERC20 Pool

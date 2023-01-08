@@ -8,16 +8,16 @@ import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import { DSTestPlus } from '../utils/DSTestPlus.sol';
 import { Token }      from '../utils/Tokens.sol';
 
-import { ERC20Pool }        from 'src/erc20/ERC20Pool.sol';
-import { ERC20PoolFactory } from 'src/erc20/ERC20PoolFactory.sol';
-import { IERC20PoolEvents } from 'src/erc20/interfaces/pool/IERC20PoolEvents.sol';
+import { ERC20Pool }        from 'src/ERC20Pool.sol';
+import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
+import { IERC20PoolEvents } from 'src/interfaces/pool/erc20/IERC20PoolEvents.sol';
 
-import 'src/base/interfaces/IPool.sol';
-import 'src/base/interfaces/IPoolFactory.sol';
-import 'src/base/PoolHelper.sol';
-import 'src/base/PoolInfoUtils.sol';
+import 'src/interfaces/pool/IPool.sol';
+import 'src/interfaces/pool/IPoolFactory.sol';
+import 'src/libraries/helpers/PoolHelper.sol';
+import 'src/PoolInfoUtils.sol';
 
-import 'src/libraries/Maths.sol';
+import 'src/libraries/internal/Maths.sol';
 
 abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
 

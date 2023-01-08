@@ -6,8 +6,9 @@ import { IERC20 }    from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import { IERC721 }   from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 
-import { IPool }            from './interfaces/IPool.sol';
-import { IPositionManager } from './interfaces/IPositionManager.sol';
+import { IPool }            from './interfaces/pool/IPool.sol';
+import { IPositionManager } from './interfaces/position/IPositionManager.sol';
+
 import { PositionManager }  from './PositionManager.sol';
 
 import {
@@ -15,11 +16,11 @@ import {
     IRewardsManagerOwnerActions,
     IRewardsManagerState,
     IRewardsManagerDerivedState
-} from './interfaces/IRewardsManager.sol';
+} from './interfaces/rewards/IRewardsManager.sol';
 
 import { StakeInfo, BucketState } from './interfaces/rewards/IRewardsManagerState.sol';
 
-import { Maths } from '../libraries/Maths.sol';
+import { Maths } from './libraries/internal/Maths.sol';
 
 contract RewardsManager is IRewardsManager {
 
