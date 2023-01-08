@@ -509,7 +509,7 @@ library LenderActions {
      *  @dev emit events:
      *          - TransferLPTokens
      */
-    function transferLPTokens(
+    function transferLPs(
         mapping(uint256 => Bucket) storage buckets_,
         mapping(address => mapping(address => mapping(uint256 => uint256))) storage allowances_,
         address owner_,

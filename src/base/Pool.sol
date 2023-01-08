@@ -235,12 +235,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /// @inheritdoc IPoolLenderActions
-    function transferLPTokens(
+    function transferLPs(
         address owner_,
         address newOwner_,
         uint256[] calldata indexes_
     ) external override nonReentrant {
-        LenderActions.transferLPTokens(
+        LenderActions.transferLPs(
             buckets,
             _lpTokenAllowances,
             owner_,

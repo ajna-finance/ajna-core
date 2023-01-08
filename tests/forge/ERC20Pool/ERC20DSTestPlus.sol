@@ -417,7 +417,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         changePrank(operator);
         vm.expectEmit(true, true, true, true);
         emit TransferLPTokens(from, to, indexes, lpBalance);
-        _pool.transferLPTokens(from, to, indexes);
+        _pool.transferLPs(from, to, indexes);
 
         for(uint256 i = 0; i < indexes.length ;i++ ){
             if(lenders.contains(from)){
@@ -566,7 +566,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         changePrank(operator);
         vm.expectRevert(IPoolErrors.InvalidIndex.selector);
-        _pool.transferLPTokens(from, to, indexes);
+        _pool.transferLPs(from, to, indexes);
     }
 
     function _assertTransferNoAllowanceRevert(
@@ -577,7 +577,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         changePrank(operator);
         vm.expectRevert(IPoolErrors.NoAllowance.selector);
-        _pool.transferLPTokens(from, to, indexes);
+        _pool.transferLPs(from, to, indexes);
     }
 
     function _assertDepositLockedByAuctionDebtRevert(
