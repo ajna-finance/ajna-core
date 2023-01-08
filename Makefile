@@ -23,4 +23,4 @@ coverage             :; forge coverage --no-match-test testLoad
 snapshot :; forge clean && forge snapshot
 
 analyze:
-		slither src/base/. ; slither src/libraries/. ; slither src/erc20/. ; slither src/erc721/.
+		slither src/. ; slither src/libraries/external/.

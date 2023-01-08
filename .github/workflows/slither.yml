@@ -18,27 +18,42 @@ jobs:
           pip install slither-analyzer
         id: slither
 
-      - name: Analyze Position Manager
+      - name: Analyze ERC20Pool Contracts
         run: |
-          slither src/base/PositionManager.sol
+          slither src/ERC20Pool.sol
+          slither src/ERC20PoolFactory.sol
         continue-on-error: true
-        id: base-analyzer
+        id: erc20-analyzer
 
-      - name: Analyze libraries
+      - name: Analyze ERC721Pool Contracts
         run: |
-          slither src/libraries/.
+          slither src/ERC721Pool.sol
+          slither src/ERC721PoolFactory.sol
+        continue-on-error: true
+        id: erc721-analyzer
+
+      - name: Analyze PositionManager Contract
+        run: |
+          slither src/PositionManager.sol
+        continue-on-error: true
+        id: position-analyzer
+
+      - name: Analyze RewardsManager Contract
+        run: |
+          slither src/RewardsManager.sol
+        continue-on-error: true
+        id: rewards-analyzer
+
+      - name: Analyze PoolInfoUtils Contract
+        run: |
+          slither src/PoolInfoUtils.sol
+        continue-on-error: true
+        id: info-analyzer
+
+      - name: Analyze Libraries
+        run: |
+          slither src/libraries/external/.
         continue-on-error: true
         id: libraries-analyzer
 
-      - name: Analyze ERC20 Pool
-        run: |
-          slither src/erc20/.
-        continue-on-error: true
-        id: erc20-pool-analyzer
-
-      - name: Analyze ERC721 Pool
-        run: |
-          slither src/erc721/.
-        continue-on-error: true
-        id: erc721-pool-analyzer
     timeout-minutes: 5

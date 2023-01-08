@@ -5,10 +5,10 @@ import { ERC20DSTestPlus } from './ERC20DSTestPlus.sol';
 
 import '../utils/Tokens.sol';
 
-import 'src/erc20/ERC20Pool.sol';
-import 'src/erc20/ERC20PoolFactory.sol';
+import 'src/ERC20Pool.sol';
+import 'src/ERC20PoolFactory.sol';
 
-import 'src/base/PoolInfoUtils.sol';
+import 'src/PoolInfoUtils.sol';
 
 contract ERC20PoolGasLoadTest is ERC20DSTestPlus {
 

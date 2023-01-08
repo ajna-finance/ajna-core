@@ -4,13 +4,13 @@ pragma solidity 0.8.14;
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { ERC20DSTestPlus }     from './ERC20DSTestPlus.sol';
-import { ERC20Pool }           from 'src/erc20/ERC20Pool.sol';
-import { ERC20PoolFactory }    from 'src/erc20/ERC20PoolFactory.sol';
+import { ERC20Pool }           from 'src/ERC20Pool.sol';
+import { ERC20PoolFactory }    from 'src/ERC20PoolFactory.sol';
 import { TokenWithNDecimals }  from '../utils/Tokens.sol';
 
-import 'src/base/PoolInfoUtils.sol';
-import 'src/base/PoolHelper.sol';
-import 'src/erc20/interfaces/IERC20Pool.sol';
+import 'src/PoolInfoUtils.sol';
+import 'src/libraries/helpers/PoolHelper.sol';
+import 'src/interfaces/pool/erc20/IERC20Pool.sol';
 
 contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
 

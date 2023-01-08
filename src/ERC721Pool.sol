@@ -7,39 +7,40 @@ import {
     IPoolErrors,
     IPoolLenderActions,
     IPoolLiquidationActions
-}                           from '../base/interfaces/IPool.sol';
+}                           from './interfaces/pool/IPool.sol';
 import {
     BucketTakeResult,
     DrawDebtResult,
     RepayDebtResult,
     SettleParams,
     TakeResult
-}                           from '../base/interfaces/pool/IPoolInternals.sol';
-import { PoolState }        from '../base/interfaces/pool/IPoolState.sol';
+}                           from './interfaces/pool/commons/IPoolInternals.sol';
+import { PoolState }        from './interfaces/pool/commons/IPoolState.sol';
 
 import {
     IERC721Pool,
     IERC721PoolBorrowerActions,
     IERC721PoolImmutables,
     IERC721PoolLenderActions
-}                               from './interfaces/IERC721Pool.sol';
-import { IERC721Taker }         from './interfaces/IERC721Taker.sol';
+}                               from './interfaces/pool/erc721/IERC721Pool.sol';
+import { IERC721Taker }         from './interfaces/pool/erc721/IERC721Taker.sol';
 import {
     ICryptoPunks,
     ICryptoKitties,
     NFTTypes
-}                               from './interfaces/IERC721NonStandard.sol';
+}                               from './interfaces/pool/erc721/IERC721NonStandard.sol';
 
-import { FlashloanablePool }         from '../base/FlashloanablePool.sol';
-import { _revertIfAuctionClearable } from '../base/RevertsHelper.sol';
+import { FlashloanablePool } from './base/FlashloanablePool.sol';
 
-import { Maths }    from '../libraries/Maths.sol';
-import { Deposits } from '../libraries/Deposits.sol';
-import { Loans }    from '../libraries/Loans.sol';
+import { _revertIfAuctionClearable } from './libraries/helpers/RevertsHelper.sol';
 
-import { Auctions }        from '../libraries/external/Auctions.sol';
-import { LenderActions }   from '../libraries/external/LenderActions.sol';
-import { BorrowerActions } from '../libraries/external/BorrowerActions.sol';
+import { Maths }    from './libraries/internal/Maths.sol';
+import { Deposits } from './libraries/internal/Deposits.sol';
+import { Loans }    from './libraries/internal/Loans.sol';
+
+import { Auctions }        from './libraries/external/Auctions.sol';
+import { LenderActions }   from './libraries/external/LenderActions.sol';
+import { BorrowerActions } from './libraries/external/BorrowerActions.sol';
 
 contract ERC721Pool is IERC721Pool, FlashloanablePool {
 
