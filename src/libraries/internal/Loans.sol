@@ -33,11 +33,19 @@ library Loans {
     /**
      *  @notice Initializes Loans Max Heap.
      *  @dev    Organizes loans so Highest Threshold Price can be retreived easily.
-     *  @param loans_ Holds tree loan data.
+     *  @param loans_ Holds Loan heap data.
      */
     function init(LoansState storage loans_) internal {
         loans_.loans.push(Loan(address(0), 0));
     }
+
+    /**
+    * The Loans heap is a Max Heap data structure (complete binary tree), the root node is the loan with the highest threshold price (TP)
+    * at a given time. The heap is represented as an array, where the first element is a dummy element (Loan(address(0), 0)) and the first
+    * value of the heap starts at index 1, ROOT_INDEX. The threshold price of a loan's parent is always greater than or equal to the
+    * threshold price of the loan.
+    * This code was modified from the following source: https://github.com/zmitton/eth-heap/blob/master/contracts/Heap.sol
+    */
 
     /***********************************/
     /***  Loans Management Functions ***/
@@ -51,7 +59,7 @@ library Loans {
      *          - remove:
      *            - remove loan from loans array
      *          - update borrower in address => borrower mapping
-     *  @param loans_               Holds tree loan data.
+     *  @param loans_               Holds loan heap data.
      *  @param borrower_            Borrower struct with borrower details.
      *  @param borrowerAddress_     Borrower's address to update.
      *  @param borrowerAccruedDebt_ Borrower's current debt.
@@ -115,8 +123,8 @@ library Loans {
     /**************************************/
 
     /**
-     *  @notice Moves a Loan up the tree.
-     *  @param loans_ Holds tree loan data.
+     *  @notice Moves a Loan up the heap.
+     *  @param loans_ Holds loan heap data.
      *  @param loan_ Loan to be moved.
      *  @param i_    Index for Loan to be moved to.
      */
@@ -131,8 +139,8 @@ library Loans {
     }
 
     /**
-     *  @notice Moves a Loan down the tree.
-     *  @param loans_ Holds tree loan data.
+     *  @notice Moves a Loan down the heap.
+     *  @param loans_ Holds Loan heap data.
      *  @param loan_ Loan to be moved.
      *  @param i_    Index for Loan to be moved to.
      */
@@ -160,8 +168,8 @@ library Loans {
     }
 
     /**
-     *  @notice Inserts a Loan in the tree.
-     *  @param loans_ Holds tree loan data.
+     *  @notice Inserts a Loan in the heap.
+     *  @param loans_ Holds loan heap data.
      *  @param loan_ Loan to be inserted.
      *  @param i_    index for Loan to be inserted at.
      */
@@ -173,8 +181,8 @@ library Loans {
     }
 
     /**
-     *  @notice Removes loan for given borrower address.
-     *  @param loans_    Holds tree loan data.
+     *  @notice Removes loan from heap given borrower address.
+     *  @param loans_    Holds loan heap data.
      *  @param borrower_ Borrower address whose loan is being updated or inserted.
      *  @param id_       Loan id.
      */
@@ -192,7 +200,7 @@ library Loans {
 
     /**
      *  @notice Performs an insert or an update dependent on borrowers existance.
-     *  @param loans_ Holds tree loan data.
+     *  @param loans_ Holds loan heap data.
      *  @param borrower_       Borrower address that is being updated or inserted.
      *  @param id_             Loan id.
      *  @param thresholdPrice_ Threshold Price that is updated or inserted.
@@ -227,7 +235,7 @@ library Loans {
 
     /**
      *  @notice Retreives Loan by index, i_.
-     *  @param loans_ Holds tree loan data.
+     *  @param loans_ Holds loan heap data.
      *  @param i_    Index to retreive Loan.
      *  @return Loan Loan retrieved by index.
      */
@@ -237,7 +245,7 @@ library Loans {
 
     /**
      *  @notice Retreives Loan with the highest threshold price value.
-     *  @param loans_ Holds tree loan data.
+     *  @param loans_ Holds loan heap data.
      *  @return Loan Max Loan in the Heap.
      */
     function getMax(LoansState storage loans_) internal view returns(Loan memory) {
@@ -246,7 +254,7 @@ library Loans {
 
     /**
      *  @notice Returns number of loans in pool.
-     *  @param loans_ Holds tree loan data.
+     *  @param loans_ Holds loan heap data.
      *  @return number of loans in pool.
      */
     function noOfLoans(LoansState storage loans_) internal view returns (uint256) {
