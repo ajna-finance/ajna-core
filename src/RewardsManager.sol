@@ -322,6 +322,7 @@ contract RewardsManager is IRewardsManager {
     ) internal view returns (uint256 epochRewards_) {
 
         uint256 nextEpoch = epoch_ + 1;
+        uint256 claimedRewardsInNextEpoch = rewardsClaimed[nextEpoch];
 
         // iterate through all buckets and calculate epoch rewards for
         for (uint256 i = 0; i < positionIndexes_.length; ) {
@@ -356,7 +357,7 @@ contract RewardsManager is IRewardsManager {
                     interestEarned,
                     nextEpoch,
                     epoch_,
-                    rewardsClaimed[nextEpoch]
+                    claimedRewardsInNextEpoch
                 );
             }
 
