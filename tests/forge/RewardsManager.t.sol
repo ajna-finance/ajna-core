@@ -356,6 +356,87 @@ contract RewardsManagerTest is DSTestPlus {
         assertEq(interactionBurnEvent, 0);
     }
 
+    function testStakeWithCollateralNFT() external {
+        address testAddress = makeAddr("testAddress");
+        uint256 mintAmount  = 10000 * 1e18;
+
+        deal(address(_collateralOne), _minterOne, 10 * 1e18);
+
+        // call pool contract directly to add quote tokens
+        uint256[] memory indexes = new uint256[](3);
+        indexes[0] = 2550;
+        indexes[1] = 2551;
+        indexes[2] = 2552;
+
+        changePrank(_minterOne);
+        _collateralOne.approve(address(_poolOne), type(uint256).max);
+        _poolOne.addCollateral(1 * 1e18, indexes[0]);
+        _poolOne.addCollateral(1 * 1e18, indexes[1]);
+        _poolOne.addCollateral(1 * 1e18, indexes[2]);
+
+        // mint NFT
+        IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(_minterOne, address(_poolOne), keccak256("ERC20_NON_SUBSET_HASH"));
+        uint256 tokenIdOne = _positionManager.mint(mintParams);
+
+        for (uint256 i = 0; i < indexes.length; i++) {
+            (uint256 lpBalance, ) = _poolOne.lenderInfo(indexes[i], _minterOne);
+            _poolOne.approveLpOwnership(address(_positionManager), indexes[i], lpBalance);
+        }
+
+        // construct memorialize params struct
+        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
+            tokenIdOne, indexes
+        );
+
+        _positionManager.memorializePositions(memorializeParams);
+
+        _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
+
+        // configure _minterTwo's NFT position
+        uint256[] memory depositIndexesMinterTwo = new uint256[](5);
+        depositIndexesMinterTwo[0] = 2550;
+        depositIndexesMinterTwo[1] = 2551;
+        depositIndexesMinterTwo[2] = 2200;
+        depositIndexesMinterTwo[3] = 2221;
+        depositIndexesMinterTwo[4] = 2222;
+        MintAndMemorializeParams memory mintMemorializeParamsMinterTwo = MintAndMemorializeParams({
+            indexes: depositIndexesMinterTwo,
+            minter: _minterTwo,
+            mintAmount: 5_000 * 1e18,
+            pool: _poolOne
+        });
+
+        uint256 tokenIdTwo = _mintAndMemorializePositionNFT(mintMemorializeParamsMinterTwo);
+
+        TriggerReserveAuctionParams memory triggerReserveAuctionParams = TriggerReserveAuctionParams({
+            borrowAmount: 300 * 1e18,
+            limitIndex: 3000,
+            pool: _poolOne
+        });
+
+        // first reserve auction happens successfully -> epoch 1
+        uint256 tokensToBurn = _triggerReserveAuctions(triggerReserveAuctionParams);
+
+        // call update exchange rate to enable claiming for epoch 0 - 1
+        _updateExchangeRates({
+            updater:        _updater,
+            pool:           address(_poolOne),
+            depositIndexes: indexes,
+            reward:         0.465762302372357014 * 1e18
+        });
+
+        // Should a staker who only has collateral in the pool earn ajna rewards?
+        _unstakeToken({
+            minter:            _minterOne,
+            pool:              address(_poolOne),
+            tokenId:           tokenIdOne,
+            claimedArray:      _epochsClaimedArray(1, 0),
+            reward:            2.797465829335482755 * 1e18,
+            updateRatesReward: 0
+        });
+
+    }
+
     function testUpdateExchangeRatesAndClaimRewards() external {
         skip(10);
 
