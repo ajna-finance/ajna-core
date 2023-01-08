@@ -90,7 +90,7 @@ import { console } from '@std/console.sol';
         if (index < 0 && ceilIndex - index > 0.5 * 1e18) {
             return uint256(4157 - ceilIndex);
         }
-        return uint256(4156 - ceilIndex);
+        return uint256(4156 - ceilIndex) - 1;
     }
 
     /**********************/
