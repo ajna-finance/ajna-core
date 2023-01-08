@@ -49,7 +49,21 @@ import { BorrowerActions } from './libraries/external/BorrowerActions.sol';
 import { LenderActions }   from './libraries/external/LenderActions.sol';
 import { Auctions }        from './libraries/external/Auctions.sol';
 
-contract ERC20Pool is IERC20Pool, FlashloanablePool {
+/**
+ *  @title  ERC20 Pool contract
+ *  @notice Entrypoint of ERC20 Pool actions for pool actors:
+ *          - Lenders: add, remove and move quote tokens; transfer LPs
+ *          - Borrowers: draw and repay debt
+ *          - Traders: add, remove and move quote tokens; add and remove collateral
+ *          - Kickers: kick undercollateralized loans; settle auctions; claim bond rewards
+ *          - Bidders: take auctioned collateral
+ *          - Reserve purchasers: start auctions; take reserves
+ *          - Flash borrowers: initiate flash loans on quote tokens and collateral
+ *  @dev    Contract is FlashloanablePool with flash loan logic.
+ *  @dev    Contract is base Pool with logic to handle ERC20 collateral.
+ *  @dev    Calls logic from external PoolCommons, LenderActions, BorrowerActions and Auctions libraries.
+ */
+contract ERC20Pool is FlashloanablePool, IERC20Pool {
     using SafeERC20 for IERC20;
 
     /*****************/

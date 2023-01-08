@@ -14,6 +14,7 @@ import { Loans }    from '../internal/Loans.sol';
 import { Maths }    from '../internal/Maths.sol';
 
 /**
+    @title  PoolCommons library
     @notice External library containing logic for common pool functionality:
             - interest rate accrual and interest rate params update
             - pool utilization

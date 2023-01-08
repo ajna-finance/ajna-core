@@ -58,6 +58,10 @@ import { BorrowerActions } from '../libraries/external/BorrowerActions.sol';
 import { LenderActions }   from '../libraries/external/LenderActions.sol';
 import { PoolCommons }     from '../libraries/external/PoolCommons.sol';
 
+/**
+ *  @title  Pool Contract
+ *  @dev    Base contract and entrypoint for commong logic of both ERC20 and ERC721 pools.
+ */
 abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     using SafeERC20 for IERC20;
@@ -231,12 +235,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /// @inheritdoc IPoolLenderActions
-    function transferLPTokens(
+    function transferLPs(
         address owner_,
         address newOwner_,
         uint256[] calldata indexes_
     ) external override nonReentrant {
-        LenderActions.transferLPTokens(
+        LenderActions.transferLPs(
             buckets,
             _lpTokenAllowances,
             owner_,

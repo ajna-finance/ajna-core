@@ -8,6 +8,11 @@ import { _priceAt, MAX_FENWICK_INDEX } from '../helpers/PoolHelper.sol';
 
 import { Maths } from './Maths.sol';
 
+/**
+    @title  Deposits library
+    @notice Internal library containing common logic for deposits management.
+    @dev    Implemented as Fenwick Tree data structure.
+ */
 library Deposits {
 
     // Max index supported in the Fenwick tree

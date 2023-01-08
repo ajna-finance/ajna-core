@@ -75,7 +75,7 @@ interface IPoolLenderActions {
      *  @param  newOwner The new owner address of the position.
      *  @param  indexes  Array of price buckets index at which LP tokens were moved.
      */
-    function transferLPTokens(
+    function transferLPs(
         address owner,
         address newOwner,
         uint256[] calldata indexes

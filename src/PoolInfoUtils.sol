@@ -23,6 +23,11 @@ import { Maths }   from './libraries/internal/Maths.sol';
 import { Auctions }    from './libraries/external/Auctions.sol';
 import { PoolCommons } from './libraries/external/PoolCommons.sol';
 
+/**
+ *  @title  Pool Info Utils contract
+ *  @notice Contract for providing pools information for any deployed pool.
+ *  @dev    Pool info is calculated using same helper functions / logic as in Pool contracts.
+ */
 contract PoolInfoUtils {
 
     function borrowerInfo(address ajnaPool_, address borrower_)

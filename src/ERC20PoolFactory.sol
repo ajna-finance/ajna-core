@@ -11,7 +11,13 @@ import { IERC20Token, PoolType } from './interfaces/pool/IPool.sol';
 import { ERC20Pool }    from './ERC20Pool.sol';
 import { PoolDeployer } from './base/PoolDeployer.sol';
 
-contract ERC20PoolFactory is IERC20PoolFactory, PoolDeployer {
+/**
+ *  @title  ERC20 Pool Factory
+ *  @notice Pool factory contract for creating ERC20 pools. Actors actions:
+ *          - Pool creators: create pool by providing a fungible token for quote and collateral and an interest rate between 1-10%
+ *  @dev    Reverts if pool is already created or if params to deploy new pool are invalid.
+ */
+contract ERC20PoolFactory is PoolDeployer, IERC20PoolFactory {
 
     using ClonesWithImmutableArgs for address;
 
@@ -28,6 +34,19 @@ contract ERC20PoolFactory is IERC20PoolFactory, PoolDeployer {
         implementation = new ERC20Pool();
     }
 
+    /**
+     *  @inheritdoc IERC20PoolFactory
+     *  @dev  immutable args: pool type; ajna, collateral and quote address; quote and collateral scale
+     *  @dev  write state:
+     *          - deployedPools mapping
+     *          - deployedPoolsList array
+     *  @dev reverts on:
+     *          - 0x address provided as quote or collateral DeployWithZeroAddress()
+     *          - pool with provided quote / collateral pair already exists PoolAlreadyExists()
+     *          - invalid interest rate provided PoolInterestRateInvalid()
+     *  @dev emit events:
+     *          - PoolCreated
+     */
     function deployPool(
         address collateral_, address quote_, uint256 interestRate_
     ) external canDeploy(ERC20_NON_SUBSET_HASH, collateral_, quote_, interestRate_) returns (address pool_) {

@@ -5,6 +5,12 @@ pragma solidity 0.8.14;
 import { Pool }                  from './Pool.sol';
 import { IERC3156FlashBorrower } from '../interfaces/pool/IERC3156FlashBorrower.sol';
 
+/**
+ *  @title  Flashloanable Pool Contract
+ *  @notice Pool contract with IERC3156 flash loans capabilities.
+ *  @notice No fee is charged for taking flash loans from pool.
+ *  @notice Flash loans can be taking in ERC20 quote and ERC20 collateral tokens.
+ */
 abstract contract FlashloanablePool is Pool {
     /**
      *  @notice Called by flashloan borrowers to borrow liquidity which must be repaid in the same transaction.

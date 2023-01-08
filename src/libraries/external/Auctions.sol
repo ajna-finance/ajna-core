@@ -44,6 +44,13 @@ import { Deposits } from '../internal/Deposits.sol';
 import { Loans }    from '../internal/Loans.sol';
 import { Maths }    from '../internal/Maths.sol';
 
+/**
+    @title  Auctions library
+    @notice External library containing actions involving auctions within pool:
+            - Kickers: kick undercollateralized loans; settle auctions; claim bond rewards
+            - Bidders: take auctioned collateral
+            - Reserve purchasers: start auctions; take reserves
+ */
 library Auctions {
 
     /*******************************/
