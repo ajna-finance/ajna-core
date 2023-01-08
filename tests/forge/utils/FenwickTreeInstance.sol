@@ -107,4 +107,41 @@ contract FenwickTreeInstance is DSTestPlus {
 
         assertEq(deposits.treeSum(), totalAmount);
     }
+
+    /**
+     *  @notice fills fenwick tree with deterministic values and tests additions.
+     */
+    function nonFuzzyFill(
+        uint256 insertions_,    // number of insertions to perform
+        uint256 amount_,        // total amount to insert
+        uint256 seed_,          // seed for psuedorandom number generator
+        bool    trackInserts
+    ) external {
+        uint256 i;
+        uint256 amount;
+
+        // Initialize and print seed for randomness
+        setRandomSeed(seed_);
+
+        while (amount_ > 0 && insertions_ > 0) {
+
+            // Insert at random index
+            i = randomInRange(1, MAX_FENWICK_INDEX);
+
+            // If last iteration, insert remaining
+            amount = insertions_ == 1 ? amount_ : (amount_ % insertions_) * randomInRange(1_000, 1 * 1e10, true);
+
+            // Update values
+            add(i, amount);
+            amount_  -=  amount;
+            insertions_      -=  1;
+
+            // Verify tree sum
+            assertEq(deposits.treeSum(), amount_ - amount_);
+
+            if (trackInserts)  inserts.push(i);
+        }
+
+        assertEq(deposits.treeSum(), amount_);
+    }
 }

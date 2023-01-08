@@ -185,6 +185,36 @@ contract FenwickTreeTest is DSTestPlus {
         assertLe(subMax - subMin, 2);
     }
 
+    function testLoadFenwickNonFuzzyScalingFind() external {
+        // FIXME: misordered
+        //  uint256 insertions_,  Bound Result: 1145
+        //  uint256 totalAmount_, Bound Result: 549824577419048462197751701941564
+        //  uint256 scaleIndex_,  Bound Result: 1746721984912593317128871914298176971615500961962358
+        //  uint256 factor_,      Bound Result: 7388
+        //  uint256 seed_         Bound Result: 1000000000000000000
+        _tree.nonFuzzyFill(1145, 549824577419048462197751701941564, 1000000000000000000, false);
+
+        uint256 scaleIndex = bound(1746721984912593317128871914298176971615500961962358, 2, 7388);
+        uint256 subIndex = randomInRange(0, 1746721984912593317128871914298176971615500961962358 - 1);
+        uint256 factor = 7388;
+
+        _tree.mult(scaleIndex, factor);
+
+        // This offset is done because of a rounding issue that occurs when we calculate the prefixSum
+        uint256 treeDirectedIndex = _tree.findIndexOfSum(_tree.prefixSum(scaleIndex) + 1) - 1;
+        uint256 treeDirectedSubIndex = _tree.findIndexOfSum(_tree.prefixSum(subIndex) + 1) - 1;
+
+        uint256 max = Maths.max(_tree.prefixSum(treeDirectedIndex), _tree.prefixSum(scaleIndex));
+        uint256 min = Maths.min(_tree.prefixSum(treeDirectedIndex), _tree.prefixSum(scaleIndex));
+
+        uint256 subMax = Maths.max(_tree.prefixSum(treeDirectedSubIndex), _tree.prefixSum(subIndex));
+        uint256 subMin = Maths.min(_tree.prefixSum(treeDirectedSubIndex), _tree.prefixSum(subIndex));
+
+        // 2 >= scaling discrepency
+        assertLe(max - min, 2);
+        assertLe(subMax - subMin, 2);
+    }
+
     /**
      *  @notice Fuzz tests additions and value removals.
      */
