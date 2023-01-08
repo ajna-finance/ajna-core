@@ -2,15 +2,17 @@
 
 pragma solidity 0.8.14;
 
-import { Bucket, Lender } from 'src/base/interfaces/pool/IPoolState.sol';
+import { Bucket, Lender } from '../base/interfaces/pool/IPoolState.sol';
 
-import { Maths } from 'src/libraries/Maths.sol';
+import { Maths } from './Maths.sol';
 
 library Buckets {
 
-    /**
-     *  @notice Operation cannot be executed in the same block when bucket becomes insolvent.
-     */
+    /**************/
+    /*** Events ***/
+    /**************/
+
+    // See `IPoolError` for descriptions
     error BucketBankruptcyBlock();
 
     /***********************************/
@@ -19,6 +21,9 @@ library Buckets {
 
     /**
      *  @notice Add collateral to a bucket and updates LPs for bucket and lender with the amount coresponding to collateral amount added.
+     *  @dev    Increment bucket.collateral and bucket.lps accumulator
+     *             - addLenderLPs:
+     *               - increment lender.lps accumulator and lender.depositTime state
      *  @param  lender_                Address of the lender.
      *  @param  deposit_               Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs
      *  @param  collateralAmountToAdd_ Additional collateral amount to add to bucket.
@@ -56,6 +61,7 @@ library Buckets {
 
     /**
      *  @notice Add amount of LPs for a given lender in a given bucket.
+     *  @dev    Increments bucket.collateral and bucket.lps accumulator state.
      *  @param  bucket_         Bucket to record lender LPs.
      *  @param  bankruptcyTime_ Time when bucket become insolvent.
      *  @param  lender_         Lender address to add LPs for in the given bucket.

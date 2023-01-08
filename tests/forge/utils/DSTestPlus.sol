@@ -1177,16 +1177,6 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.take(borrower, maxCollateral, from, new bytes(0));
     }
 
-    function _assertTakeDustRevert(
-        address from,
-        address borrower,
-        uint256 maxCollateral
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
-        _pool.take(borrower, maxCollateral, from, new bytes(0));
-    }
-
     function _assertTakeInsufficentCollateralRevert(
         address from,
         address borrower,
@@ -1246,9 +1236,6 @@ abstract contract DSTestPlus is Test, IPoolEvents {
 
     // PositionManager events
     event Burn(address indexed lender_, uint256 indexed price_);
-    event DecreaseLiquidity(address indexed lender_, uint256 indexed price_);
-    event DecreaseLiquidityNFT(address indexed lender_, uint256 indexed price_);
-    event IncreaseLiquidity(address indexed lender_, uint256 indexed price_, uint256 amount_);
     event MemorializePosition(address indexed lender_, uint256 tokenId_);
     event Mint(address indexed lender_, address indexed pool_, uint256 tokenId_);
     event MoveLiquidity(address indexed owner_, uint256 tokenId_);

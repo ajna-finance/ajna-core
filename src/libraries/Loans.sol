@@ -8,20 +8,22 @@ import {
     DepositsState,
     Loan,
     LoansState
-} from 'src/base/interfaces/pool/IPoolState.sol';
+} from '../base/interfaces/pool/IPoolState.sol';
 
-import { _priceAt } from 'src/base/PoolHelper.sol';
+import { _priceAt } from '../base/PoolHelper.sol';
 
-import { Deposits } from 'src/libraries/Deposits.sol';
-import { Maths }    from 'src/libraries/Maths.sol';
+import { Deposits } from './Deposits.sol';
+import { Maths }    from './Maths.sol';
 
 library Loans {
 
     uint256 constant ROOT_INDEX = 1;
 
-    /**
-     *  @notice The threshold price of the loan to be inserted in loans heap is zero.
-     */
+    /**************/
+    /*** Errors ***/
+    /**************/
+
+    // See `IPoolErrors` for descriptions
     error ZeroThresholdPrice();
 
     /***********************/
@@ -43,6 +45,12 @@ library Loans {
 
     /**
      *  @notice Updates a loan: updates heap (upsert if TP not 0, remove otherwise) and borrower balance.
+     *  @dev    write state:
+     *          - _upsert:
+     *            - insert or update loan in loans array
+     *          - remove:
+     *            - remove loan from loans array
+     *          - update borrower in address => borrower mapping
      *  @param loans_               Holds tree loan data.
      *  @param borrower_            Borrower struct with borrower details.
      *  @param borrowerAddress_     Borrower's address to update.
@@ -166,7 +174,7 @@ library Loans {
 
     /**
      *  @notice Removes loan for given borrower address.
-     *  @param loans_      Holds tree loan data.
+     *  @param loans_    Holds tree loan data.
      *  @param borrower_ Borrower address whose loan is being updated or inserted.
      *  @param id_       Loan id.
      */

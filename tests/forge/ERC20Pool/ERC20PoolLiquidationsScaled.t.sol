@@ -172,7 +172,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         _settle();
     }
 
-    function testDustyTake(
+    function testSettleAuctionWithoutTakes(
         uint8  collateralPrecisionDecimals_, 
         uint8  quotePrecisionDecimals_,
         uint16 startBucketId_) external tearDown
@@ -182,7 +182,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         uint256 startBucketId       = bound(uint256(startBucketId_),               1000, 6388);
         init(boundColPrecision, boundQuotePrecision);
         addLiquidity(startBucketId);
-        uint256 collateralDust = ERC20Pool(address(_pool)).collateralDust(0);
+        uint256 collateralDust = ERC20Pool(address(_pool)).bucketCollateralDust(0);
 
         // Borrow everything from the first bucket, with origination fee tapping into the second bucket
         drawDebt(_borrower, 50_000 * 1e18, 1.01 * 1e18);
@@ -198,22 +198,6 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         assertGt(auctionPrice, 0);
         assertGt(auctionDebt, 0);
         assertGt(auctionCollateral, collateralDust);
-
-        // if collateral precision higher than quote token precision, test a take which costs 0 quote token
-        uint256 takeAmount;
-        if (boundColPrecision > boundQuotePrecision) {
-            takeAmount = collateralDust;
-            uint256 costOfTake = _roundToScale(Maths.wmul(auctionPrice, takeAmount), _pool.quoteTokenScale());
-            if (costOfTake == 0)
-                _assertTakeDustRevert(_bidder, _borrower, takeAmount);
-        }
-
-        // test a take which leaves less than a dust amount of collateral
-        (, uint256 collateralAvailable, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
-        if (collateralDust != 1) {
-            takeAmount = collateralAvailable - collateralDust / 2;
-            _assertTakeDustRevert(_bidder, _borrower, takeAmount);
-        }
 
         // settle the auction without any legitimate takes
         (auctionPrice, auctionDebt, auctionCollateral) = _advanceAuction(72 hours);

@@ -18,38 +18,6 @@ interface IPositionManagerEvents {
     );
 
     /**
-     *  @notice Emitted when liquidity of the pool was decreased.
-     *  @param  lender Lender address.
-     *  @param  price  The price at quote tokens were added.
-     */
-    event DecreaseLiquidity(
-        address indexed lender,
-        uint256 indexed price
-    );
-
-    /**
-     *  @notice Emitted when liquidity of the pool was decreased.
-     *  @param  lender Lender address.
-     *  @param  price  The price at quote tokens were added.
-     */
-    event DecreaseLiquidityNFT(
-        address indexed lender,
-        uint256 indexed price
-    );
-
-    /**
-     *  @notice Emitted when liquidity of the pool was increased.
-     *  @param  lender Lender address.
-     *  @param  price  The price at quote tokens were added.
-     *  @param  amount The amount of quote tokens added to the pool.
-     */
-    event IncreaseLiquidity(
-        address indexed lender,
-        uint256 indexed price,
-        uint256 amount
-    );
-
-    /**
      *  @notice Emitted when existing positions were memorialized for a given NFT.
      *  @param  tokenId The tokenId of the NFT.
      */
@@ -71,7 +39,7 @@ interface IPositionManagerEvents {
     );
 
     /**
-     *  @notice Emitted when a position's liquidity is moved between prices.
+     *  @notice Emitted when a position's liquidity is moved between buckets.
      *  @param  lender  Lender address.
      *  @param  tokenId The tokenId of the newly minted NFT.
      */

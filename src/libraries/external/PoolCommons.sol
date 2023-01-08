@@ -4,14 +4,14 @@ pragma solidity 0.8.14;
 
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
-import { InterestState, PoolState, DepositsState } from 'src/base/interfaces/pool/IPoolState.sol';
+import { InterestState, PoolState, DepositsState } from '../../base/interfaces/pool/IPoolState.sol';
 
-import { _indexOf, _ptp, MAX_FENWICK_INDEX, MIN_PRICE, MAX_PRICE } from 'src/base/PoolHelper.sol';
+import { _indexOf, _ptp, MAX_FENWICK_INDEX, MIN_PRICE, MAX_PRICE } from '../../base/PoolHelper.sol';
 
-import { Deposits } from 'src/libraries/Deposits.sol';
-import { Buckets }  from 'src/libraries/Buckets.sol';
-import { Loans }    from 'src/libraries/Loans.sol';
-import { Maths }    from 'src/libraries/Maths.sol';
+import { Deposits } from '../Deposits.sol';
+import { Buckets }  from '../Buckets.sol';
+import { Loans }    from '../Loans.sol';
+import { Maths }    from '../Maths.sol';
 
 /**
     @notice External library containing logic for common pool functionality:
@@ -19,6 +19,11 @@ import { Maths }    from 'src/libraries/Maths.sol';
             - pool utilization
  */
 library PoolCommons {
+
+    /*****************/
+    /*** Constants ***/
+    /*****************/
+
     uint256 internal constant CUBIC_ROOT_1000000 = 100 * 1e18;
     uint256 internal constant ONE_THIRD          = 0.333333333333333334 * 1e18;
 
@@ -28,15 +33,12 @@ library PoolCommons {
     uint256 internal constant EMA_7D_RATE_FACTOR   = 1e18 - LAMBDA_EMA_7D;
     int256  internal constant PERCENT_102          = 1.02 * 1e18;
 
-    /**
-     *  @notice Emitted when pool interest rate is updated.
-     *  @param  oldRate Old pool interest rate.
-     *  @param  newRate New pool interest rate.
-     */
-    event UpdateInterestRate(
-        uint256 oldRate,
-        uint256 newRate
-    );
+    /**************/
+    /*** Events ***/
+    /**************/
+
+    // See `IPoolEvents` for descriptions
+    event UpdateInterestRate(uint256 oldRate,uint256 newRate);
 
     /**************************/
     /*** External Functions ***/
@@ -44,6 +46,11 @@ library PoolCommons {
 
     /**
      *  @notice Calculates new pool interest rate params (EMAs and interest rate value) and saves new values in storage.
+     *  @dev    write state:
+     *              - interest debt and lup * collateral EMAs accumulators
+     *              - interest rate accumulator and interestRateUpdate state
+     *  @dev    emit events:
+     *              - UpdateInterestRate
      */
     function updateInterestRate(
         InterestState storage interestParams_,
@@ -117,6 +124,9 @@ library PoolCommons {
 
     /**
      *  @notice Calculates new pool interest and scale the fenwick tree to update amount of debt owed to lenders (saved in storage).
+     *  @dev write state:
+     *       - Deposits.mult (scale Fenwick tree with new interest accrued):
+     *         - update scaling array state 
      *  @param  thresholdPrice_ Current Pool Threshold Price.
      *  @param  elapsed_        Time elapsed since last inflator update.
      *  @return newInflator_   The new value of pool inflator.
@@ -160,6 +170,10 @@ library PoolCommons {
             );
         }
     }
+
+    /**************************/
+    /*** View Functions ***/
+    /**************************/
 
     /**
      *  @notice Calculates pool interest factor for a given interest rate and time elapsed since last inflator update.
