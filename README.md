@@ -107,7 +107,7 @@ brownie compile --size
 ```bash
 make coverage
 ```
-- exclude tests from code coerage report:
+- exclude tests from code coverage report:
 ```
 apt-get install lcov
 bash ./check-code-coverage.sh
