@@ -212,7 +212,7 @@ contract ERC721PoolLiquidationsDepositTakeTest is ERC721HelperContract {
         );
     }
 
-    function testDepositTakeNFTAndSettleAuction() external tearDown {
+    function testDepositTakeNFTAndSettleAuction() external {
 
         skip(5 hours);
 
