@@ -1328,6 +1328,29 @@ contract RewardsManagerTest is DSTestPlus {
         assertGt(_ajnaToken.balanceOf(_updater), 0);
 
         // check owner can withdraw the NFT and rewards will be automatically claimed
+
+        uint256 snapshot = vm.snapshot();
+
+        // claimed rewards amount is greater than available tokens in rewards manager contract
+
+        // burn rewards manager tokens and leave only 5 tokens available
+        changePrank(address(_rewardsManager));
+        IERC20Token(address(_ajnaToken)).burn(99_999_990.978586345404952410 * 1e18);
+        assertEq(_ajnaToken.balanceOf(address(_rewardsManager)), 5 * 1e18); 
+
+        changePrank(_minterOne);
+        vm.expectEmit(true, true, true, true);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 0), 40.214136545950568150 * 1e18);
+        vm.expectEmit(true, true, true, true);
+        emit Unstake(_minterOne, address(_poolOne), tokenIdOne);
+        _rewardsManager.unstake(tokenIdOne);
+        assertEq(_positionManager.ownerOf(tokenIdOne), _minterOne);
+        assertEq(_ajnaToken.balanceOf(_minterOne), 5 * 1e18);
+        assertEq(_ajnaToken.balanceOf(address(_rewardsManager)), 0); 
+
+        vm.revertTo(snapshot);
+
+        // test when enough tokens in rewards manager contracts
         changePrank(_minterOne);
         vm.expectEmit(true, true, true, true);
         emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 0), 40.214136545950568150 * 1e18);
