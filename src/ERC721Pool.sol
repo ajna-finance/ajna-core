@@ -42,7 +42,21 @@ import { Auctions }        from './libraries/external/Auctions.sol';
 import { LenderActions }   from './libraries/external/LenderActions.sol';
 import { BorrowerActions } from './libraries/external/BorrowerActions.sol';
 
-contract ERC721Pool is IERC721Pool, FlashloanablePool {
+/**
+ *  @title  ERC721 Pool contract
+ *  @notice Entrypoint of ERC721 Pool actions for pool actors:
+ *          - Lenders: add, remove and move quote tokens; transfer LPs
+ *          - Borrowers: draw and repay debt
+ *          - Traders: add, remove and move quote tokens; add and remove collateral
+ *          - Kickers: auction undercollateralized loans; settle auctions; claim bond rewards
+ *          - Bidders: take auctioned collateral
+ *          - Reserve purchasers: start auctions; take reserves
+ *          - Flash borrowers: initiate flash loans on ERC20 quote tokens
+ *  @dev    Contract is FlashloanablePool with flash loan logic.
+ *  @dev    Contract is base Pool with logic to handle ERC721 collateral.
+ *  @dev    Calls logic from external PoolCommons, LenderActions, BorrowerActions and Auctions libraries.
+ */
+contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
     /*****************/
     /*** Constants ***/

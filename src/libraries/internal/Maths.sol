@@ -2,6 +2,10 @@
 
 pragma solidity 0.8.14;
 
+/**
+    @title  Maths library
+    @notice Internal library containing common maths.
+ */
 library Maths {
 
     uint256 internal constant WAD = 1e18;

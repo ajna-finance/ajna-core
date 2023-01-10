@@ -15,6 +15,11 @@ import { _priceAt } from '../helpers/PoolHelper.sol';
 import { Deposits } from './Deposits.sol';
 import { Maths }    from './Maths.sol';
 
+/**
+    @title  Loans library
+    @notice Internal library containing common logic for loans management.
+    @dev    Implemented as Max Heap data structure.
+ */
 library Loans {
 
     uint256 constant ROOT_INDEX = 1;

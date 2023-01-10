@@ -30,7 +30,9 @@ import { Maths }    from '../internal/Maths.sol';
 import { Auctions } from './Auctions.sol';
 
 /**
-    @notice External library containing logic for common borrower actions.
+    @title  BorrowerActions library
+    @notice External library containing logic for for pool actors:
+            - Borrowers: pledge collateral and draw debt; repay debt and pull collateral
  */
 library BorrowerActions {
 

@@ -10,12 +10,12 @@ interface IRewardsManagerDerivedState {
     /**
      *  @notice Calculate the amount of rewards that have been accumulated by a staked NFT.
      *  @param  tokenId    ID of the staked LP NFT.
-     *  @param  startEpoch The burn epoch from which to start the calculations
+     *  @param  claimEpoch The end burn epoch to calculate rewards for (rewards calculation starts from the last claimed epoch).
      *  @return rewards_   The amount of rewards earned by the NFT.
      */
     function calculateRewards(
         uint256 tokenId,
-        uint256 startEpoch
-    ) external returns (uint256);
+        uint256 claimEpoch
+    ) external view returns (uint256);
 
 }

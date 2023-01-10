@@ -14,6 +14,7 @@ import { Loans }    from '../internal/Loans.sol';
 import { Maths }    from '../internal/Maths.sol';
 
 /**
+    @title  PoolCommons library
     @notice External library containing logic for common pool functionality:
             - interest rate accrual and interest rate params update
             - pool utilization
@@ -268,8 +269,7 @@ library PoolCommons {
     function _lenderInterestMargin(
         uint256 mau_
     ) internal pure returns (uint256) {
-        // TODO: Consider pre-calculating and storing a conversion table in a library or shared contract.
-        uint256 base = 1000000 * 1e18 - Maths.wmul(Maths.min(mau_, 1e18), 1000000 * 1e18);
+        uint256 base = 1_000_000 * 1e18 - Maths.wmul(Maths.min(mau_, 1e18), 1_000_000 * 1e18);
         if (base < 1e18) {
             return 1e18;
         } else {
