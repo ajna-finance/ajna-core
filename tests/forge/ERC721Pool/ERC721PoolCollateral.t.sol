@@ -13,20 +13,14 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     address internal _lender;
     address internal _lender2;
 
-    function setUp() external {
+    function setUp() virtual external {
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
         _lender2   = makeAddr("lender2");
 
-        // deploy subset pool
-        uint256[] memory subsetTokenIds = new uint256[](5);
-        subsetTokenIds[0] = 1;
-        subsetTokenIds[1] = 3;
-        subsetTokenIds[2] = 5;
-        subsetTokenIds[3] = 51;
-        subsetTokenIds[4] = 53;
-        _pool = _deploySubsetPool(subsetTokenIds);
+        // deploy collection pool
+        _pool = _deployCollectionPool();
 
         _mintAndApproveQuoteTokens(_lender, 200_000 * 1e18);
         _mintAndApproveQuoteTokens(_borrower, 100 * 1e18);
@@ -35,15 +29,11 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _mintAndApproveCollateralTokens(_borrower2, 53);
     }
 
-    /*******************************/
-    /*** ERC721 Collection Tests ***/
-    /*******************************/
+    /************************************/
+    /*** ERC721 Collection Pool Tests ***/
+    /************************************/
 
-    /***************************/
-    /*** ERC721 Subset Tests ***/
-    /***************************/
-
-    function testPledgeCollateralSubset() external tearDown {
+    function testPledgeCollateral() external tearDown {
         // check initial token balances
         assertEq(_pool.pledgedCollateral(), 0);
 
@@ -55,7 +45,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         tokenIdsToAdd[1] = 3;
         tokenIdsToAdd[2] = 5;
 
-        // borrower deposits three NFTs into the subset pool
+        // borrower deposits three NFTs into the pool
         _pledgeCollateral(
             {
                 from:     _borrower,
@@ -70,22 +60,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(address(_pool)), 3);
     }
 
-    function testPledgeCollateralNotInSubset() external tearDown {
-        uint256[] memory tokenIdsToAdd = new uint256[](3);
-        tokenIdsToAdd[0] = 2;
-        tokenIdsToAdd[1] = 4;
-        tokenIdsToAdd[2] = 6;
-
-        // should revert if borrower attempts to add tokens not in the pool subset
-        _assertPledgeCollateralNotInSubsetRevert(
-            {
-                from:     _borrower,
-                tokenIds: tokenIdsToAdd
-            }
-        );
-    }
-
-    function testPledgeCollateralInSubsetFromDifferentActor() external tearDown {
+    function testPledgeCollateralFromDifferentActor() external tearDown {
         // check initial token balances
         assertEq(_pool.pledgedCollateral(),             0);
 
@@ -115,7 +90,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         uint256[] memory tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 53;
 
-        // borrower deposits three NFTs into the subset pool
+        // borrower deposits three NFTs into the pool
         _pledgeCollateral(
             {
                 from:     _borrower2,
@@ -169,7 +144,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         tokenIdsToAdd[1] = 3;
         tokenIdsToAdd[2] = 5;
 
-        // borrower deposits three NFTs into the subset pool
+        // borrower deposits three NFTs into the pool
         _pledgeCollateral(
             {
                 from:     _borrower,
@@ -352,7 +327,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         tokenIdsToAdd[1] = 3;
         tokenIdsToAdd[2] = 5;
 
-        // borrower deposits three NFTs into the subset pool
+        // borrower deposits three NFTs into the pool
         _pledgeCollateral(
             {
                 from:     _borrower,
@@ -461,7 +436,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         tokenIdsToAdd[1] = 3;
         tokenIdsToAdd[2] = 5;
 
-        // borrower deposits three NFTs into the subset pool
+        // borrower deposits three NFTs into the pool
         _pledgeCollateral(
             {
                 from:     _borrower,
@@ -1168,5 +1143,49 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(_borrower),      50);
         assertEq(_collateral.balanceOf(address(_pool)), 0);
 
+    }
+}
+
+contract ERC721SubsetPoolCollateralTest is ERC721PoolCollateralTest {
+
+    function setUp() override external {
+        _borrower  = makeAddr("borrower");
+        _borrower2 = makeAddr("borrower2");
+        _lender    = makeAddr("lender");
+        _lender2   = makeAddr("lender2");
+
+        // deploy subset pool
+        uint256[] memory subsetTokenIds = new uint256[](5);
+        subsetTokenIds[0] = 1;
+        subsetTokenIds[1] = 3;
+        subsetTokenIds[2] = 5;
+        subsetTokenIds[3] = 51;
+        subsetTokenIds[4] = 53;
+        _pool = _deploySubsetPool(subsetTokenIds);
+
+        _mintAndApproveQuoteTokens(_lender, 200_000 * 1e18);
+        _mintAndApproveQuoteTokens(_borrower, 100 * 1e18);
+
+        _mintAndApproveCollateralTokens(_borrower,  52);
+        _mintAndApproveCollateralTokens(_borrower2, 53);
+    }
+
+    /********************************/
+    /*** ERC721 Subset Pool Tests ***/
+    /********************************/
+
+    function testPledgeCollateralNotInSubset() external tearDown {
+        uint256[] memory tokenIdsToAdd = new uint256[](3);
+        tokenIdsToAdd[0] = 2;
+        tokenIdsToAdd[1] = 4;
+        tokenIdsToAdd[2] = 6;
+
+        // should revert if borrower attempts to add tokens not in the pool subset
+        _assertPledgeCollateralNotInSubsetRevert(
+            {
+                from:     _borrower,
+                tokenIds: tokenIdsToAdd
+            }
+        );
     }
 }
