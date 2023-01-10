@@ -567,13 +567,21 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             if (subset && !tokenIdsAllowed[tokenId]) revert OnlySubset();
             poolTokens_.push(tokenId);
 
-            if (nftType == uint8(NFTTypes.STANDARD_ERC721)){
-                _transferNFT(msg.sender, address(this), tokenId);
+            if (nftType == uint8(NFTTypes.STANDARD_ERC721)) {
+                IERC721Token(_getArgAddress(COLLATERAL_ADDRESS)).safeTransferFrom(
+                    msg.sender,
+                    address(this),
+                    tokenId
+                );
             }
             else if (nftType == uint8(NFTTypes.CRYPTOKITTIES)) {
-                ICryptoKitties(_getArgAddress(COLLATERAL_ADDRESS)).transferFrom(msg.sender ,address(this), tokenId);
+                ICryptoKitties(_getArgAddress(COLLATERAL_ADDRESS)).transferFrom(
+                    msg.sender,
+                    address(this),
+                    tokenId
+                );
             }
-            else{
+            else {
                 ICryptoPunks(_getArgAddress(COLLATERAL_ADDRESS)).buyPunk(tokenId);
             }
 
@@ -604,14 +612,24 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             uint256 tokenId = poolTokens_[--noOfNFTsInPool]; // start with transferring the last token added in bucket
             poolTokens_.pop();
 
-            if (nftType == uint8(NFTTypes.STANDARD_ERC721)){
-                _transferNFT(address(this), toAddress_, tokenId);
+            if (nftType == uint8(NFTTypes.STANDARD_ERC721)) {
+                IERC721Token(_getArgAddress(COLLATERAL_ADDRESS)).safeTransferFrom(
+                    address(this),
+                    toAddress_,
+                    tokenId
+                );
             }
             else if (nftType == uint8(NFTTypes.CRYPTOKITTIES)) {
-                ICryptoKitties(_getArgAddress(COLLATERAL_ADDRESS)).transfer(toAddress_, tokenId);
+                ICryptoKitties(_getArgAddress(COLLATERAL_ADDRESS)).transfer(
+                    toAddress_,
+                    tokenId
+                );
             }
             else {
-                ICryptoPunks(_getArgAddress(COLLATERAL_ADDRESS)).transferPunk(toAddress_, tokenId);
+                ICryptoPunks(_getArgAddress(COLLATERAL_ADDRESS)).transferPunk(
+                    toAddress_,
+                    tokenId
+                );
             }
 
             tokensTransferred[i] = tokenId;
@@ -620,17 +638,6 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         }
 
         return tokensTransferred;
-    }
-
-    /**
-     *  @dev Helper function to transfer an NFT from owner to target address (reused in code to reduce contract deployment bytecode size).
-     *  @param from_    NFT owner address.
-     *  @param to_      New NFT owner address.
-     *  @param tokenId_ NFT token id to be transferred.
-     */
-    function _transferNFT(address from_, address to_, uint256 tokenId_) internal {
-        // slither-disable-next-line calls-loop
-        IERC721Token(_getArgAddress(COLLATERAL_ADDRESS)).safeTransferFrom(from_, to_, tokenId_);
     }
 
     /************************/
