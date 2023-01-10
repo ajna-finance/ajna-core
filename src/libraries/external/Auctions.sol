@@ -136,6 +136,13 @@ library Auctions {
         uint256 t0DebtInAuctionChange; // [WAD] t0 change amount of debt after auction is taken
         uint256 t0PoolDebt;            // [WAD] t0 pool debt
     }
+    struct TakeFromLoanResult {
+        uint256 newLup;                // [WAD] LUP after auction is taken and loan info updated
+        uint256 poolDebt;              // [WAD] accrued pool debt after auction is taken
+        uint256 remainingCollateral;   // [WAD] borrower remaining collateral after auction is taken
+        bool    settledAuction;        // true if auction was settled by take auction
+        uint256 t0DebtInAuctionChange; // [WAD] t0 change amount of debt after auction is taken
+    }
 
     /**************/
     /*** Events ***/
@@ -485,10 +492,10 @@ library Auctions {
         if (borrower.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
 
         (
-            result_.collateralAmount,
-            result_.t0RepayAmount,
-            borrower.t0Debt,
-            result_.t0DebtPenalty 
+            result_.collateralAmount, // amount to be transferred from pool to taker
+            result_.t0RepayAmount,    // amount to be removed from pool t0Debt accumulator
+            borrower.t0Debt,          // updated borrower t0 debt
+            result_.t0DebtPenalty     // amount to be added to pool t0Debt and t0DebtInAuction accumulators
         ) = _takeBucket(
             auctions_,
             buckets_,
@@ -504,18 +511,15 @@ library Auctions {
             })
         );
 
+        // remove taken collateral from borrower balance
         borrower.collateral -= result_.collateralAmount;
 
+        // add penalty to total pool debt balance (on first take)
         if (result_.t0DebtPenalty != 0) {
             poolState_.debt += Maths.wmul(result_.t0DebtPenalty, poolState_.inflator);
         }
 
-        (
-            result_.poolDebt,
-            result_.newLup,
-            result_.t0DebtInAuctionChange,
-            result_.settledAuction
-        ) = _takeLoan(
+        TakeFromLoanResult memory loanTakeResult = _takeLoan(
             auctions_,
             buckets_,
             deposits_,
@@ -525,6 +529,13 @@ library Auctions {
             borrowerAddress_,
             result_.t0RepayAmount
         );
+
+        result_.poolDebt              = loanTakeResult.poolDebt;              // pool debt balance without repaid debt
+        result_.newLup                = loanTakeResult.newLup;                // LUP calculated for new pool debt
+        result_.t0DebtInAuctionChange = loanTakeResult.t0DebtInAuctionChange; // repaid debt or entire borrower debt if auction settled
+                                                                              // removed from poolt0DebtInAuction accumulator
+        result_.settledAuction        = loanTakeResult.settledAuction;        // NFT take: rebalance borrower collateral in pool if true
+        result_.remainingCollateral   = loanTakeResult.remainingCollateral;   // NFT take: collateral to be rebalanced in case of NFT settlement
     }
 
     /**
@@ -551,12 +562,12 @@ library Auctions {
         if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral();
 
         (
-            result_.collateralAmount,
-            result_.quoteTokenAmount,
-            result_.t0RepayAmount,
-            borrower.t0Debt,
-            result_.t0DebtPenalty,
-            result_.excessQuoteToken
+            result_.collateralAmount, // amount to be transferred from pool to taker
+            result_.quoteTokenAmount, // amount to be transferred from taker to pool
+            result_.t0RepayAmount,    // amount to be removed from pool t0Debt accumulator
+            borrower.t0Debt,          // updated borrower t0 debt
+            result_.t0DebtPenalty,    // amount to be added to pool t0Debt and t0DebtInAuction accumulators
+            result_.excessQuoteToken  // NFT take: amount to be transferred to borrower for fractional collateral
         ) = _take(
             auctions_,
             TakeParams({
@@ -576,12 +587,7 @@ library Auctions {
             poolState_.debt += Maths.wmul(result_.t0DebtPenalty, poolState_.inflator);
         }
 
-        (
-            result_.poolDebt,
-            result_.newLup,
-            result_.t0DebtInAuctionChange,
-            result_.settledAuction
-        ) = _takeLoan(
+        TakeFromLoanResult memory loanTakeResult = _takeLoan(
             auctions_,
             buckets_,
             deposits_,
@@ -591,6 +597,13 @@ library Auctions {
             borrowerAddress_,
             result_.t0RepayAmount
         );
+
+        result_.poolDebt              = loanTakeResult.poolDebt;              // pool debt balance without repaid debt
+        result_.newLup                = loanTakeResult.newLup;                // LUP calculated for new pool debt
+        result_.t0DebtInAuctionChange = loanTakeResult.t0DebtInAuctionChange; // repaid debt or entire borrower debt if auction settled
+                                                                              // removed from poolt0DebtInAuction accumulator
+        result_.settledAuction        = loanTakeResult.settledAuction;        // NFT take: rebalance borrower collateral in pool if true
+        result_.remainingCollateral    = loanTakeResult.remainingCollateral;  // NFT take: collateral to be rebalanced in case of NFT settlement
     }
 
     /**
@@ -982,13 +995,10 @@ library Auctions {
      *  @notice If borrower becomes recollateralized then auction is settled. Update loan's state.
      *  @dev    reverts on:
      *              - borrower debt less than pool min debt AmountLTMinDebt()
-     *  @param  borrower_               The borrower details owning loan that is taken.
-     *  @param  borrowerAddress_        The address of the borrower.
-     *  @param  t0RepaidDebt_           T0 debt amount repaid by the take action.
-     *  @return poolDebt_               Accrued debt pool after debt is repaid.
-     *  @return newLup_                 The new LUP of pool (after debt is repaid).
-     *  @return t0DebtInAuctionChange_  The overall debt in auction change (remaining borrower debt if auction settled, repaid debt otherwise).
-     *  @return settledAuction_         True if auction is settled by the take action.
+     *  @param  borrower_        The borrower details owning loan that is taken.
+     *  @param  borrowerAddress_ The address of the borrower.
+     *  @param  t0RepaidDebt_    T0 debt amount repaid by the take action.
+     *  @return result_          Result struct of taking from loan.
     */
     function _takeLoan(
         AuctionsState storage auctions_,
@@ -999,12 +1009,7 @@ library Auctions {
         Borrower memory borrower_,
         address borrowerAddress_,
         uint256 t0RepaidDebt_
-    ) internal returns (
-        uint256 poolDebt_,
-        uint256 newLup_,
-        uint256 t0DebtInAuctionChange_,
-        bool settledAuction_
-    ) {
+    ) internal returns (TakeFromLoanResult memory result_) {
 
         TakeLoanLocalVars memory vars;
 
@@ -1012,26 +1017,27 @@ library Auctions {
         vars.borrowerDebt = Maths.wmul(borrower_.t0Debt, poolState_.inflator);
 
         vars.borrowerDebt -= vars.repaidDebt;
-        poolDebt_ = poolState_.debt - vars.repaidDebt;
+        result_.poolDebt  = poolState_.debt - vars.repaidDebt;
 
         // check that taking from loan doesn't leave borrower debt under min debt amount
-        _revertOnMinDebt(loans_, poolDebt_, vars.borrowerDebt, poolState_.quoteDustLimit);
+        _revertOnMinDebt(loans_, result_.poolDebt, vars.borrowerDebt, poolState_.quoteDustLimit);
 
-        newLup_ = _lup(deposits_, poolDebt_);
+        result_.newLup = _lup(deposits_, result_.poolDebt);
 
         vars.inAuction = true;
 
-        if (_isCollateralized(vars.borrowerDebt, borrower_.collateral, newLup_, poolState_.poolType)) {
+        if (_isCollateralized(vars.borrowerDebt, borrower_.collateral, result_.newLup, poolState_.poolType)) {
             // settle auction if borrower becomes re-collateralized
 
             vars.inAuction  = false;
-            settledAuction_ = true;
+
+            result_.settledAuction = true;
 
             // the overall debt in auction change is the total borrower debt exiting auction
-            t0DebtInAuctionChange_ = borrower_.t0Debt;
+            result_.t0DebtInAuctionChange = borrower_.t0Debt;
 
             // settle auction and update borrower's collateral with value after settlement
-            borrower_.collateral = _settleAuction(
+            result_.remainingCollateral = _settleAuction(
                 auctions_,
                 buckets_,
                 deposits_,
@@ -1039,9 +1045,10 @@ library Auctions {
                 borrower_.collateral,
                 poolState_.poolType
             );
+            borrower_.collateral = result_.remainingCollateral;
         } else {
             // the overall debt in auction change is the amount of partially repaid debt
-            t0DebtInAuctionChange_ = t0RepaidDebt_;
+            result_.t0DebtInAuctionChange = t0RepaidDebt_;
         }
 
         borrower_.t0Debt -= t0RepaidDebt_;
@@ -1055,7 +1062,7 @@ library Auctions {
             borrowerAddress_,
             vars.borrowerDebt,
             poolState_.rate,
-            newLup_,
+            result_.newLup,
             vars.inAuction,
             !vars.inAuction // stamp borrower t0Np if exiting from auction
         );
