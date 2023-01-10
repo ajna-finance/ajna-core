@@ -70,7 +70,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
             }
         );
 
-       // first borrower adds collateral token and borrows
+        // first borrower adds collateral token and borrows
         uint256[] memory tokenIdsToAdd = new uint256[](2);
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
