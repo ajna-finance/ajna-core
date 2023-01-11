@@ -141,7 +141,7 @@ contract RewardsManager is IRewardsManager {
         stakeInfo.stakingEpoch = uint96(curBurnEpoch);
 
         // initialize last time interaction at staking epoch
-        stakeInfo.lastInteractionBurnEpoch = uint96(curBurnEpoch);
+        stakeInfo.lastClaimedEpoch = uint96(curBurnEpoch);
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
 
@@ -248,7 +248,7 @@ contract RewardsManager is IRewardsManager {
         rewardsEarned += _calculateAndClaimRewards(tokenId_, epochToClaim_);
 
         uint256[] memory burnEpochsClaimed = _getBurnEpochsClaimed(
-            stakeInfo.lastInteractionBurnEpoch,
+            stakeInfo.lastClaimedEpoch,
             epochToClaim_
         );
 
@@ -261,7 +261,7 @@ contract RewardsManager is IRewardsManager {
         );
 
         // update last interaction burn event
-        stakeInfo.lastInteractionBurnEpoch = uint96(epochToClaim_);
+        stakeInfo.lastClaimedEpoch = uint96(epochToClaim_);
 
         uint256 ajnaBalance = IERC20(ajnaToken).balanceOf(address(this));
 
@@ -285,7 +285,7 @@ contract RewardsManager is IRewardsManager {
         uint256 rewards_
     ) {
         address ajnaPool      = stakes[tokenId_].ajnaPool;
-        uint256 lastBurnEpoch = stakes[tokenId_].lastInteractionBurnEpoch;
+        uint256 lastBurnEpoch = stakes[tokenId_].lastClaimedEpoch;
         uint256 stakingEpoch  = stakes[tokenId_].stakingEpoch;
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
@@ -607,22 +607,22 @@ contract RewardsManager is IRewardsManager {
 
     /**
      *  @notice Retrieve an array of burn epochs from which a depositor has claimed rewards.
-     *  @param  lastInteractionBurnEpoch_ The last burn period in which a depositor interacted with the rewards contract.
-     *  @param  burnEpochToStartClaim_    The most recent burn period from a depostor earned rewards.
-     *  @return burnEpochsClaimed_        Array of burn epochs from which a depositor has claimed rewards.
+     *  @param  lastClaimedEpoch_      The last burn period in which a depositor interacted with the rewards contract.
+     *  @param  burnEpochToStartClaim_ The most recent burn period from a depostor earned rewards.
+     *  @return burnEpochsClaimed_     Array of burn epochs from which a depositor has claimed rewards.
      */
     function _getBurnEpochsClaimed(
-        uint256 lastInteractionBurnEpoch_,
+        uint256 lastClaimedEpoch_,
         uint256 burnEpochToStartClaim_
     ) internal pure returns (
         uint256[] memory burnEpochsClaimed_
     ) {
-        uint256 numEpochsClaimed = burnEpochToStartClaim_ - lastInteractionBurnEpoch_;
+        uint256 numEpochsClaimed = burnEpochToStartClaim_ - lastClaimedEpoch_;
 
         burnEpochsClaimed_ = new uint256[](numEpochsClaimed);
 
         uint256 i;
-        uint256 claimEpoch = lastInteractionBurnEpoch_ + 1;
+        uint256 claimEpoch = lastClaimedEpoch_ + 1;
 
         while (claimEpoch <= burnEpochToStartClaim_) {
             burnEpochsClaimed_[i++] = claimEpoch;
@@ -634,29 +634,29 @@ contract RewardsManager is IRewardsManager {
 
     /**
      *  @notice Retrieve the total ajna tokens burned and total interest earned by a pool since a given block.
-     *  @param  pool_                  Address of the Ajna pool to retrieve accumulators of.
-     *  @param  currentBurnEventEpoch_ The latest burn event.
-     *  @param  lastBurnEventEpoch_    The burn event to use as checkpoint since which values have accumulated.
+     *  @param  pool_             Address of the Ajna pool to retrieve accumulators of.
+     *  @param  currentEpoch_     The latest burn event.
+     *  @param  lastClaimedEpoch_ The burn event to use as checkpoint since which values have accumulated.
      *  @return Timestamp of the latest burn event.
      *  @return Total ajna tokens burned by the pool since the last burn event.
      *  @return Total interest earned by the pool since the last burn event.
      */
     function _getPoolAccumulators(
         address pool_,
-        uint256 currentBurnEventEpoch_,
-        uint256 lastBurnEventEpoch_
+        uint256 currentEpoch_,
+        uint256 lastClaimedEpoch_
     ) internal view returns (uint256, uint256, uint256) {
         (
             uint256 currentBurnTime,
             uint256 totalInterestLatest,
             uint256 totalBurnedLatest
-        ) = IPool(pool_).burnInfo(currentBurnEventEpoch_);
+        ) = IPool(pool_).burnInfo(currentEpoch_);
 
         (
             ,
             uint256 totalInterestAtBlock,
             uint256 totalBurnedAtBlock
-        ) = IPool(pool_).burnInfo(lastBurnEventEpoch_);
+        ) = IPool(pool_).burnInfo(lastClaimedEpoch_);
 
         uint256 totalBurned   = totalBurnedLatest   != 0 ? totalBurnedLatest   - totalBurnedAtBlock   : totalBurnedAtBlock;
         uint256 totalInterest = totalInterestLatest != 0 ? totalInterestLatest - totalInterestAtBlock : totalInterestAtBlock;
@@ -680,14 +680,14 @@ contract RewardsManager is IRewardsManager {
     ) external view override returns (
         uint256 rewards_
     ) {
-        address ajnaPool      = stakes[tokenId_].ajnaPool;
-        uint256 lastBurnEpoch = stakes[tokenId_].lastInteractionBurnEpoch;
-        uint256 stakingEpoch  = stakes[tokenId_].stakingEpoch;
+        address ajnaPool         = stakes[tokenId_].ajnaPool;
+        uint256 lastClaimedEpoch = stakes[tokenId_].lastClaimedEpoch;
+        uint256 stakingEpoch     = stakes[tokenId_].stakingEpoch;
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
 
         // iterate through all burn periods to calculate and claim rewards
-        for (uint256 epoch = lastBurnEpoch; epoch < epochToClaim_; ) {
+        for (uint256 epoch = lastClaimedEpoch; epoch < epochToClaim_; ) {
 
             rewards_ += _calculateNextEpochRewards(
                 tokenId_,
@@ -708,7 +708,8 @@ contract RewardsManager is IRewardsManager {
         return (
             stakes[tokenId_].owner,
             stakes[tokenId_].ajnaPool,
-            stakes[tokenId_].lastInteractionBurnEpoch);
+            stakes[tokenId_].lastClaimedEpoch
+        );
     }
 
     /************************/
