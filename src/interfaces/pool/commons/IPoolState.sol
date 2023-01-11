@@ -20,49 +20,49 @@ interface IPoolState {
      *  @return next         Address of the next auction in queue.
      *  @return prev         Address of the prev auction in queue.
      */
-    function auctionInfo(address borrower)
-        external
-        view
-        returns (
-            address kicker,
-            uint256 bondFactor,
-            uint256 bondSize,
-            uint256 kickTime,
-            uint256 kickPrice,
-            uint256 neutralPrice,
-            address head,
-            address next,
-            address prev
-        );
+    function auctionInfo(
+        address borrower
+    ) external view returns (
+        address kicker,
+        uint256 bondFactor,
+        uint256 bondSize,
+        uint256 kickTime,
+        uint256 kickPrice,
+        uint256 neutralPrice,
+        address head,
+        address next,
+        address prev
+    );
 
     /**
      *  @notice Returns pool related debt values.
-     *  @return debt_            Current amount of debt owed by borrowers in pool.
-     *  @return accruedDebt_     Debt owed by borrowers based on last inflator snapshot.
-     *  @return debtInAuction_   Total amount of debt in auction.
+     *  @return debt          Current amount of debt owed by borrowers in pool.
+     *  @return accruedDebt   Debt owed by borrowers based on last inflator snapshot.
+     *  @return debtInAuction Total amount of debt in auction.
      */
-    function debtInfo() external view returns (uint256 debt_, uint256 accruedDebt_, uint256 debtInAuction_);
+    function debtInfo() external view returns (
+        uint256 debt,
+        uint256 accruedDebt,
+        uint256 debtInAuction
+    );
 
     /**
      *  @notice Mapping of borrower addresses to {Borrower} structs.
-     *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
      *  @param  borrower   Address of the borrower.
      *  @return t0Debt     Amount of debt borrower would have had if their loan was the first debt drawn from the pool
      *  @return collateral Amount of collateral that the borrower has deposited, in collateral token.
      *  @return t0Np       Np / borrowerInflatorSnapshot
      */
-    function borrowerInfo(address borrower)
-        external
-        view
-        returns (
-            uint256 t0Debt,
-            uint256 collateral,
-            uint256 t0Np
-        );
+    function borrowerInfo(
+        address borrower
+    ) external view returns (
+        uint256 t0Debt,
+        uint256 collateral,
+        uint256 t0Np
+    );
 
     /**
      *  @notice Mapping of buckets indexes to {Bucket} structs.
-     *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
      *  @param  index               Bucket index.
      *  @return lpAccumulator       Amount of LPs accumulated in current bucket.
      *  @return availableCollateral Amount of collateral available in current bucket.
@@ -70,45 +70,49 @@ interface IPoolState {
      *  @return bucketDeposit       Amount of quote tokens in bucket.
      *  @return bucketScale         Bucket multiplier.
      */
-    function bucketInfo(uint256 index)
-        external
-        view
-        returns (
-            uint256 lpAccumulator,
-            uint256 availableCollateral,
-            uint256 bankruptcyTime,
-            uint256 bucketDeposit,
-            uint256 bucketScale
-        );
+    function bucketInfo(
+        uint256 index
+    ) external view returns (
+        uint256 lpAccumulator,
+        uint256 availableCollateral,
+        uint256 bankruptcyTime,
+        uint256 bucketDeposit,
+        uint256 bucketScale
+    );
 
     /**
      *  @notice Mapping of burnEventEpoch to {BurnEvent} structs.
      *  @dev    Reserve auctions correspond to burn events.
-     *  @param  burnEventEpoch_  Id of the current reserve auction.
-     *  @return burnBlock        Block in which a reserve auction started.
-     *  @return totalInterest    Total interest as of the reserve auction.
-     *  @return totalBurned      Total ajna tokens burned as of the reserve auction.
+     *  @param  burnEventEpoch Id of the current reserve auction.
+     *  @return burnBlock      Block in which a reserve auction started.
+     *  @return totalInterest  Total interest as of the reserve auction.
+     *  @return totalBurned    Total ajna tokens burned as of the reserve auction.
      */
-    function burnInfo(uint256 burnEventEpoch_) external view returns (uint256, uint256, uint256);
+    function burnInfo(
+        uint256 burnEventEpoch
+    ) external view returns (
+        uint256 burnBlock,
+        uint256 totalInterest,
+        uint256 totalBurned
+    );
 
     /**
      *  @notice Returns the latest burnEventEpoch of reserve auctions.
      *  @dev    If a reserve auction is active, it refers to the current reserve auction. If no reserve auction is active, it refers to the last reserve auction.
      *  @return burnEventEpoch Current burnEventEpoch.
      */
-    function currentBurnEpoch() external view returns (uint256);
+    function currentBurnEpoch() external view returns (
+        uint256 burnEventEpoch
+    );
 
     /**
      *  @notice Returns information about the pool EMA (Exponential Moving Average) variables.
      *  @return debtEma   Exponential debt moving average.
      *  @return lupColEma Exponential LUP * pledged collateral moving average.
      */
-    function emasInfo()
-        external
-        view
-        returns (
-            uint256 debtEma,
-            uint256 lupColEma
+    function emasInfo() external view returns (
+        uint256 debtEma,
+        uint256 lupColEma
     );
 
     /**
@@ -116,12 +120,9 @@ interface IPoolState {
      *  @return inflatorSnapshot A snapshot of the last inflator value.
      *  @return lastUpdate       The timestamp of the last `inflatorSnapshot` update.
      */
-    function inflatorInfo()
-        external
-        view
-        returns (
-            uint256 inflatorSnapshot,
-            uint256 lastUpdate
+    function inflatorInfo() external view returns (
+        uint256 inflatorSnapshot,
+        uint256 lastUpdate
     );
 
     /**
@@ -129,13 +130,10 @@ interface IPoolState {
      *  @return interestRate       Current interest rate in pool.
      *  @return interestRateUpdate The timestamp of the last interest rate update.
      */
-    function interestRateInfo()
-        external
-        view
-        returns (
-            uint256 interestRate,
-            uint256 interestRateUpdate
-        );
+    function interestRateInfo() external view returns (
+        uint256 interestRate,
+        uint256 interestRateUpdate
+    );
 
 
     /**
@@ -144,13 +142,12 @@ interface IPoolState {
      *  @return claimable Amount of quote token kicker can claim / withdraw from pool at any time.
      *  @return locked    Amount of quote token kicker locked in auctions (as bonds).
      */
-    function kickerInfo(address kicker)
-        external
-        view
-        returns (
-            uint256 claimable,
-            uint256 locked
-        );
+    function kickerInfo(
+        address kicker
+    ) external view returns (
+        uint256 claimable,
+        uint256 locked
+    );
 
     /**
      *  @notice Mapping of buckets indexes and owner addresses to {Lender} structs.
@@ -162,12 +159,9 @@ interface IPoolState {
     function lenderInfo(
         uint256 index,
         address lp
-    )
-        external
-        view
-        returns (
-            uint256 lpBalance,
-            uint256 lastQuoteDeposit
+    ) external view returns (
+        uint256 lpBalance,
+        uint256 lastQuoteDeposit
     );
 
     /**
@@ -178,12 +172,9 @@ interface IPoolState {
      */
     function loanInfo(
         uint256 loanId
-    )
-        external
-        view
-        returns (
-            address borrower,
-            uint256 thresholdPrice
+    ) external view returns (
+        address borrower,
+        uint256 thresholdPrice
     );
 
     /**
@@ -192,13 +183,10 @@ interface IPoolState {
      *  @return maxThresholdPrice Highest threshold price in pool.
      *  @return noOfLoans         Total number of loans.
      */
-    function loansInfo()
-        external
-        view
-        returns (
-            address maxBorrower,
-            uint256 maxThresholdPrice,
-            uint256 noOfLoans
+    function loansInfo() external view returns (
+        address maxBorrower,
+        uint256 maxThresholdPrice,
+        uint256 noOfLoans
     );
 
     /**
@@ -207,20 +195,19 @@ interface IPoolState {
      *  @return reserveAuctionUnclaimed Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
      *  @return reserveAuctionKicked    Time a Claimable Reserve Auction was last kicked.
      */
-    function reservesInfo()
-        external
-        view
-        returns (
-            uint256 liquidationBondEscrowed,
-            uint256 reserveAuctionUnclaimed,
-            uint256 reserveAuctionKicked
+    function reservesInfo() external view returns (
+        uint256 liquidationBondEscrowed,
+        uint256 reserveAuctionUnclaimed,
+        uint256 reserveAuctionKicked
     );
 
     /**
      *  @notice Returns the `pledgedCollateral` state variable.
-     *  @return The total pledged collateral in the system, in WAD units.
+     *  @return pledgedCollateral The total pledged collateral in the system, in WAD units.
      */
-    function pledgedCollateral() external view returns (uint256);
+    function pledgedCollateral() external view returns (
+        uint256 pledgedCollateral
+    );
 
 }
 

@@ -33,7 +33,7 @@ interface IPoolFactory {
 
     /**
      *  @notice Emitted when a new pool is created.
-     *  @param  pool_ The address of the new pool.
+     *  @param  pool The address of the new pool.
      */
-    event PoolCreated(address pool_);
+    event PoolCreated(address pool);
 }

@@ -35,7 +35,9 @@ interface IPositionManagerOwnerActions {
      */
     function mint(
         MintParams calldata params
-    ) external returns (uint256 tokenId);
+    ) external returns (
+        uint256 tokenId
+    );
 
     /**
      *  @notice Called by owners to move liquidity between two buckets.

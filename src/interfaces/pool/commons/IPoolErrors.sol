@@ -6,9 +6,6 @@ pragma solidity 0.8.14;
  * @title Pool Errors
  */
 interface IPoolErrors {
-    /**************************/
-    /*** Common Pool Errors ***/
-    /**************************/
 
     /**
      *  @notice The action cannot be executed on an active auction.

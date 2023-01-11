@@ -23,7 +23,9 @@ interface IERC20Pool is
      *  @notice Initializes a new pool, setting initial state variables.
      *  @param  rate Initial interest rate of the pool.
      */
-    function initialize(uint256 rate) external;
+    function initialize(
+        uint256 rate
+    ) external;
 
     /**
      *  @notice Returns the minimum amount of collateral an actor may have in a bucket.

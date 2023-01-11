@@ -14,7 +14,9 @@ interface IERC721PoolState {
      */
     function tokenIdsAllowed(
         uint256 tokenId
-    ) external view returns (bool allowed);
+    ) external view returns (
+        bool allowed
+    );
 
     /**
      *  @notice Returns the token id of an NFT pledged by a borrower with a given index.
@@ -25,7 +27,9 @@ interface IERC721PoolState {
     function borrowerTokenIds(
         address borrower,
         uint256 nftIndex
-    ) external view returns (uint256 tokenId);
+    ) external view returns (
+        uint256 tokenId
+    );
 
     /**
      *  @notice Returns the token id of an NFT added in pool bucket.
@@ -34,5 +38,7 @@ interface IERC721PoolState {
      */
     function bucketTokenIds(
         uint256 nftIndex
-    ) external view returns (uint256 tokenId);
+    ) external view returns (
+        uint256 tokenId
+    );
 }

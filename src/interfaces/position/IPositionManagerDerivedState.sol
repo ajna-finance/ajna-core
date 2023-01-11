@@ -17,16 +17,20 @@ interface IPositionManagerDerivedState {
     function getLPTokens(
         uint256 tokenId,
         uint256 index
-    ) external view returns (uint256 lpTokens);
+    ) external view returns (
+        uint256 lpTokens
+    );
 
     /**
      *  @notice Returns an array of bucket indexes in which an NFT has liquidity.
-     *  @param  tokenId  Unique ID of token.
-     *  @return Array of bucket indexes.
+     *  @param  tokenId Unique ID of token.
+     *  @return indexes Array of bucket indexes.
     */
     function getPositionIndexes(
         uint256 tokenId
-    ) external view returns (uint256[] memory);
+    ) external view returns (
+        uint256[] memory indexes
+    );
 
     /**
      *  @notice Checks if a given tokenId has a given position bucket
@@ -37,5 +41,7 @@ interface IPositionManagerDerivedState {
     function isIndexInPosition(
         uint256 tokenId,
         uint256 index
-    ) external view returns (bool bucketInPosition);
+    ) external view returns (
+        bool bucketInPosition
+    );
 }

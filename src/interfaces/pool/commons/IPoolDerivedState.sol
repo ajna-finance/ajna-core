@@ -7,17 +7,22 @@ pragma solidity 0.8.14;
  */
 interface IPoolDerivedState {
 
+    /**
+     *  @notice Returns the bucket exchange rate.
+     *  @param  index  Bucket index.
+     *  @return Bucket exchange rate.
+     */
     function bucketExchangeRate(
-        uint256 index_
-    ) external view returns (uint256 exchangeRate_);
+        uint256 index
+    ) external view returns (uint256);
 
     /**
      *  @notice Returns the bucket index for a given debt amount.
-     *  @param  debt_  The debt amount to calculate bucket index for.
+     *  @param  debt  The debt amount to calculate bucket index for.
      *  @return Bucket index.
      */
     function depositIndex(
-        uint256 debt_
+        uint256 debt
     ) external view returns (uint256);
 
     /**
@@ -28,13 +33,13 @@ interface IPoolDerivedState {
 
     /**
      *  @notice Returns the deposit utilization for given debt and collateral amounts.
-     *  @param  debt_       The debt amount to calculate utilization for.
-     *  @param  collateral_ The collateral amount to calculate utilization for.
+     *  @param  debt       The debt amount to calculate utilization for.
+     *  @param  collateral The collateral amount to calculate utilization for.
      *  @return Deposit utilization.
      */
     function depositUtilization(
-        uint256 debt_,
-        uint256 collateral_
+        uint256 debt,
+        uint256 collateral
     ) external view returns (uint256);
 
 }

@@ -39,10 +39,10 @@ interface IPoolLiquidationActions {
 
     /**
      *  @notice Called by lenders to liquidate the top loan using their deposits.
-     *  @param  index_  The deposit index to use for kicking the top loan.
+     *  @param  index  The deposit index to use for kicking the top loan.
      */
     function kickWithDeposit(
-        uint256 index_
+        uint256 index
     ) external;
 
     /**
