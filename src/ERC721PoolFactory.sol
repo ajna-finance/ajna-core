@@ -110,7 +110,9 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
     /*** Pool Creation Functions ***/
     /*******************************/
 
-    function getNFTSubsetHash(uint256[] memory tokenIds_) public pure returns (bytes32) {
+    function getNFTSubsetHash(
+        uint256[] memory tokenIds_
+    ) public pure returns (bytes32) {
         if (tokenIds_.length == 0) return ERC721_NON_SUBSET_HASH;
         else return keccak256(abi.encodePacked(tokenIds_));
     }

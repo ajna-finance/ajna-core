@@ -246,9 +246,9 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
     /// @inheritdoc FlashloanablePool
     function flashLoan(
         IERC3156FlashBorrower receiver_,
-        address token_,
-        uint256 amount_,
-        bytes calldata data_
+        address               token_,
+        uint256               amount_,
+        bytes calldata        data_
     ) external override(IERC3156FlashLender, FlashloanablePool) nonReentrant returns (bool) {
         if (token_ == _getArgAddress(QUOTE_ADDRESS)) return _flashLoanQuoteToken(receiver_, token_, amount_, data_);
 
@@ -277,7 +277,9 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
     /// @inheritdoc FlashloanablePool
     function maxFlashLoan(
         address token_
-    ) external view override(IERC3156FlashLender, FlashloanablePool) returns (uint256 maxLoan_) {
+    ) external view override(IERC3156FlashLender, FlashloanablePool) returns (
+        uint256 maxLoan_
+    ) {
         if (token_ == _getArgAddress(QUOTE_ADDRESS) || token_ == _getArgAddress(COLLATERAL_ADDRESS)) {
             maxLoan_ = IERC20Token(token_).balanceOf(address(this));
         }

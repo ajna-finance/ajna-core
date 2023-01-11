@@ -62,7 +62,9 @@ abstract contract FlashloanablePool is Pool {
      */
      function maxFlashLoan(
         address token_
-    ) external virtual view override returns (uint256 maxLoan_) {
+    ) external virtual view override returns (
+        uint256 maxLoan_
+    ) {
         if (token_ == _getArgAddress(QUOTE_ADDRESS)) maxLoan_ = _getPoolQuoteTokenBalance();
     }
 }
