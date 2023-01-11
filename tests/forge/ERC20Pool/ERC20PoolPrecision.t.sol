@@ -913,4 +913,26 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             newLup:           MAX_PRICE
         });
     }
+
+    function testMoveQuoteDustAmountRevert() external virtual tearDown {
+        init(8, 6);
+
+        _addInitialLiquidity(
+            {
+                from:   _lender,
+                amount: 50_000 * 1e6,
+                index:  2550
+            }
+        );
+        assertEq(_quoteDust, 0.000001 * 1e18);
+        _assertMoveLiquidityDustRevert(
+            {
+                from:      _lender,
+                amount:    0.00000001 * 1e18,
+                fromIndex: 2550,
+                toIndex:   2551
+            }
+        );
+    }
+
 }
