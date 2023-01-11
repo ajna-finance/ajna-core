@@ -14,20 +14,26 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
     address internal _borrower;
     address internal _borrower2;
+    address internal _borrower3;
     address internal _lender;
     address internal _lender1;
+    address internal _lender2;
 
     function setUp() external {
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
+        _borrower3 = makeAddr("borrower3");
         _lender    = makeAddr("lender");
         _lender1   = makeAddr("_lender1");
+        _lender2   = makeAddr("_lender2");
 
         _mintCollateralAndApproveTokens(_borrower,  10_000 * 1e18);
         _mintCollateralAndApproveTokens(_borrower2, 200 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower3, 1_000_000_000 * 1e18);
 
         _mintQuoteAndApproveTokens(_lender,   200_000 * 1e18);
         _mintQuoteAndApproveTokens(_lender1,  200_000 * 1e18);
+        _mintQuoteAndApproveTokens(_lender2,  100_000_000_000_000_000 * 1e18);
     }
 
     function testPoolInterestRateIncreaseDecrease() external tearDown {
@@ -745,5 +751,41 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 lupColEma: 954.400143448544933043 * 1e18
             }
         );
+    }
+
+    function testAccruePoolInterestHtpGtMaxPrice() external tearDown {
+        _addLiquidityNoEventCheck(
+            {
+                from:    _lender2,
+                amount:  100_000_000_000_000_000 * 1e18,
+                index:   1
+            }
+        );
+        _drawDebtNoLupCheck(
+            {
+                from:               _borrower3,
+                borrower:           _borrower3,
+                amountToBorrow:     90_000_000_000_000_000 * 1e18,
+                limitIndex:         5000,
+                collateralToPledge: 90_100_000 * 1e18
+            }
+        );
+        skip(100 days);
+
+        assertGt(MAX_PRICE, _htp());
+        uint256 expectedPoolDebt = 91329091841208027.611736396814389869 * 1e18;
+        (uint256 poolDebt,,) = _pool.debtInfo();
+        assertEq(poolDebt, expectedPoolDebt);
+
+        _addLiquidityNoEventCheck(
+            {
+                from:    _lender2,
+                amount:  0,
+                index:   1
+            }
+        );
+        // check that no interest earned if HTP is over the highest price bucket
+        (poolDebt,,) = _pool.debtInfo();
+        assertEq(poolDebt, expectedPoolDebt);
     }
 }
