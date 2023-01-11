@@ -148,19 +148,20 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         address owner = ownerOf(params_.tokenId);
 
         uint256 indexesLength = params_.indexes.length;
+        uint256 index;
 
         for (uint256 i = 0; i < indexesLength; ) {
 
             // record bucket index at which a position has added liquidity
-            // slither-disable-next-line unused-return
-            positionIndex.add(params_.indexes[i]);
+            index = params_.indexes[i++];
 
-            (uint256 lpBalance,) = pool.lenderInfo(params_.indexes[i], owner);
+            // slither-disable-next-line unused-return
+            positionIndex.add(index);
+
+            (uint256 lpBalance,) = pool.lenderInfo(index, owner);
 
             // update token position LPs
-            positionLPs[params_.tokenId][params_.indexes[i]] += lpBalance;
-
-            unchecked { ++i; }
+            positionLPs[params_.tokenId][index] += lpBalance;
         }
 
         emit MemorializePosition(owner, params_.tokenId);
@@ -287,23 +288,25 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         IPool pool = IPool(poolKey[params_.tokenId]);
 
         uint256 indexesLength = params_.indexes.length;
+        uint256 index;
 
         address owner = ownerOf(params_.tokenId);
 
         for (uint256 i = 0; i < indexesLength; ) {
 
             // remove bucket index at which a position has added liquidity
-            if (!positionIndex.remove(params_.indexes[i])) revert RemoveLiquidityFailed();
+            index = params_.indexes[i++];
 
-            uint256 lpAmount = positionLPs[params_.tokenId][params_.indexes[i]];
+            // revert if index not in memorialized positions
+            if (!positionIndex.remove(index)) revert RemoveLiquidityFailed();
+
+            uint256 lpAmount = positionLPs[params_.tokenId][index];
 
             // remove LPs tracked by position manager at bucket index
-            delete positionLPs[params_.tokenId][params_.indexes[i]];
+            delete positionLPs[params_.tokenId][index];
 
             // approve owner to take over the LPs ownership (required for transferLPs pool call)
-            pool.approveLpOwnership(owner, params_.indexes[i], lpAmount);
-
-            unchecked { ++i; }
+            pool.approveLpOwnership(owner, index, lpAmount);
         }
 
         emit RedeemPosition(owner, params_.tokenId);

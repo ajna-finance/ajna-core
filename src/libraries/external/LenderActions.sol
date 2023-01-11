@@ -495,7 +495,7 @@ library LenderActions {
 
         // Loop over buckets, exit if collateralAmount is reached or max noOfBuckets is reached
         while (amountMerged_ < amount_ && i < noOfBuckets) {
-            fromIndex = indexes_[i];
+            fromIndex = indexes_[i++];
 
             if (fromIndex > toIndex_) revert CannotMergeToHigherPrice();
 
@@ -508,8 +508,6 @@ library LenderActions {
 
             amountMerged_  += amountRemoved;
             amountRemaining -= amountRemoved;
-
-            unchecked { ++i; }
         }
 
         if (amountMerged_ != amount_) {
@@ -551,9 +549,11 @@ library LenderActions {
         uint256 indexesLength = indexes_.length;
 
         uint256 transferredLPs;
+        uint256 index;
 
         for (uint256 i = 0; i < indexesLength; ) {
-            uint256 index = indexes_[i];
+            index = indexes_[i++];
+
             if (index > MAX_FENWICK_INDEX) revert InvalidIndex();
 
             uint256 amount = allowances_[owner_][newOwner_][index];
@@ -581,8 +581,6 @@ library LenderActions {
             delete bucket.lenders[owner_];
 
             transferredLPs += amount;
-
-            unchecked { ++i; }
         }
 
         emit TransferLPs(

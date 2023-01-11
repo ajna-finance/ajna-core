@@ -145,9 +145,11 @@ contract RewardsManager is IRewardsManager {
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
 
+        uint256 bucketId;
+
         for (uint256 i = 0; i < positionIndexes.length; ) {
 
-            uint256 bucketId = positionIndexes[i];
+            bucketId = positionIndexes[i++];
 
             BucketState storage bucketState = stakeInfo.snapshot[bucketId];
 
@@ -159,8 +161,6 @@ contract RewardsManager is IRewardsManager {
             // record the bucket exchange rate at the time of staking
             bucketState.rateAtStakeTime = IPool(ajnaPool).bucketExchangeRate(bucketId);
 
-            // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
-            unchecked { ++i; }
         }
 
         emit Stake(msg.sender, ajnaPool, tokenId_);
@@ -301,15 +301,11 @@ contract RewardsManager is IRewardsManager {
                 positionIndexes
             );
 
-            uint256 nextEpoch = epoch + 1;
-
-            // update epoch token claim trackers
-            rewardsClaimed[nextEpoch]           += nextEpochRewards;
-            isEpochClaimed[tokenId_][nextEpoch] = true;
+            // update epoch token claim trackers for next epoch
+            rewardsClaimed[++epoch]         += nextEpochRewards;
+            isEpochClaimed[tokenId_][epoch] = true;
 
             rewards_ += nextEpochRewards;
-
-            unchecked { ++epoch; }
         }
     }
 
@@ -332,19 +328,18 @@ contract RewardsManager is IRewardsManager {
 
         // update exchange rates only if the pool has not yet burned any tokens without calculating any reward
         if (curBurnEpoch == 0) {
+            uint256 bucketIndex;
+
             for (uint256 i = 0; i < indexes_.length; ) {
+                bucketIndex = indexes_[i++];
 
                 _updateBucketExchangeRate(
                     pool_,
-                    indexes_[i],
+                    bucketIndex,
                     curBurnEpoch
                 );
-
-                // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
-                unchecked { ++i; }
             }
         }
-
         else {
             // retrieve accumulator values used to calculate rewards accrued
             (
@@ -356,19 +351,19 @@ contract RewardsManager is IRewardsManager {
             if (block.timestamp <= curBurnTime + UPDATE_PERIOD) {
 
                 // update exchange rates and calculate rewards if tokens were burned and within allowed time period
+                uint256 bucketIndex;
+
                 for (uint256 i = 0; i < indexes_.length; ) {
+                    bucketIndex = indexes_[i++];
 
                     // calculate rewards earned for updating bucket exchange rate
                     rewards_ += _updateBucketExchangeRateAndCalculateRewards(
                         pool_,
-                        indexes_[i],
+                        bucketIndex,
                         curBurnEpoch,
                         totalBurned,
                         totalInterestEarned
                     );
-
-                    // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
-                    unchecked { ++i; }
                 }
 
                 uint256 rewardsCap            = Maths.wmul(UPDATE_CAP, totalBurned);
@@ -492,10 +487,13 @@ contract RewardsManager is IRewardsManager {
 
         uint256 claimedRewardsInNextEpoch = rewardsClaimed[nextEpoch];
 
+        uint256 bucketIndex;
+
         // iterate through all buckets and calculate epoch rewards for
         for (uint256 i = 0; i < indexes_.length; ) {
 
-            uint256 bucketIndex = indexes_[i];
+            bucketIndex = indexes_[i++];
+
             BucketState memory bucketSnapshot = stakes[tokenId_].snapshot[bucketIndex];
 
             uint256 bucketRate;
@@ -528,8 +526,6 @@ contract RewardsManager is IRewardsManager {
                     claimedRewardsInNextEpoch
                 );
             }
-
-            unchecked { ++i; }
         }
     }
 
@@ -629,13 +625,10 @@ contract RewardsManager is IRewardsManager {
         uint256 claimEpoch = lastInteractionBurnEpoch_ + 1;
 
         while (claimEpoch <= burnEpochToStartClaim_) {
-            burnEpochsClaimed_[i] = claimEpoch;
+            burnEpochsClaimed_[i++] = claimEpoch;
 
             // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
-            unchecked {
-                ++i;
-                ++claimEpoch;
-            }
+            unchecked { ++claimEpoch; }
         }
     }
 

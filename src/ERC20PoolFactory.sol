@@ -48,8 +48,12 @@ contract ERC20PoolFactory is PoolDeployer, IERC20PoolFactory {
      *          - PoolCreated
      */
     function deployPool(
-        address collateral_, address quote_, uint256 interestRate_
-    ) external canDeploy(ERC20_NON_SUBSET_HASH, collateral_, quote_, interestRate_) returns (address pool_) {
+        address collateral_,
+        address quote_,
+        uint256 interestRate_
+    ) external canDeploy(ERC20_NON_SUBSET_HASH, collateral_, quote_, interestRate_) returns (
+        address pool_
+    ) {
         uint256 quoteTokenScale = 10 ** (18 - IERC20Token(quote_).decimals());
         uint256 collateralScale = 10 ** (18 - IERC20Token(collateral_).decimals());
 

@@ -96,9 +96,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         if (noOfTokens != 0) {
             // add subset of tokenIds allowed in the pool
             for (uint256 id = 0; id < noOfTokens;) {
-                tokenIdsAllowed[tokenIds_[id]] = true;
-
-                unchecked { ++id; }
+                tokenIdsAllowed[tokenIds_[id++]] = true;
             }
         }
 
@@ -571,10 +569,13 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         uint256 noOfTokensPledged    = borrowerTokens.length;
         uint256 noOfTokensToTransfer = collateral_ != 0 ? noOfTokensPledged - collateral_ / 1e18 : noOfTokensPledged;
 
+        uint256 tokenId;
+
         for (uint256 i = 0; i < noOfTokensToTransfer;) {
-            uint256 tokenId = borrowerTokens[--noOfTokensPledged]; // start with moving the last token pledged by borrower
-            borrowerTokens.pop();                                  // remove token id from borrower
-            bucketTokenIds.push(tokenId);                          // add token id to pool claimable tokens
+            tokenId = borrowerTokens[--noOfTokensPledged]; // start with moving the last token pledged by borrower
+
+            borrowerTokens.pop();          // remove token id from borrower
+            bucketTokenIds.push(tokenId);  // add token id to pool claimable tokens
 
             unchecked { ++i; }
         }
@@ -593,9 +594,14 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         bool subset   = _getArgUint256(SUBSET) != 0;
         uint8 nftType = _getArgUint8(NFT_TYPE);
 
+        uint256 tokenId;
+
         for (uint256 i = 0; i < tokenIds_.length;) {
-            uint256 tokenId = tokenIds_[i];
+            tokenId = tokenIds_[i++];
+
+            // revert if subset and token id not in allowed tokens 
             if (subset && !tokenIdsAllowed[tokenId]) revert OnlySubset();
+
             poolTokens_.push(tokenId);
 
             if (nftType == uint8(NFTTypes.STANDARD_ERC721)) {
@@ -615,8 +621,6 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             else {
                 ICryptoPunks(_getArgAddress(COLLATERAL_ADDRESS)).buyPunk(tokenId);
             }
-
-            unchecked { ++i; }
         }
     }
 
@@ -663,9 +667,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
                 );
             }
 
-            tokensTransferred[i] = tokenId;
-
-            unchecked { ++i; }
+            tokensTransferred[i++] = tokenId;
         }
 
         return tokensTransferred;
