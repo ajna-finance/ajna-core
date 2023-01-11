@@ -22,9 +22,9 @@ abstract contract FlashloanablePool is Pool {
      */
     function flashLoan(
         IERC3156FlashBorrower receiver_,
-        address token_,
-        uint256 amount_,
-        bytes calldata data_
+        address               token_,
+        uint256               amount_,
+        bytes calldata        data_
     ) external virtual override nonReentrant returns (bool) {
         if (token_ == _getArgAddress(QUOTE_ADDRESS)) return _flashLoanQuoteToken(receiver_, token_, amount_, data_);
         revert FlashloanUnavailableForToken();

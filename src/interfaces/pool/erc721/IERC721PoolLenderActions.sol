@@ -26,8 +26,8 @@ interface IERC721PoolLenderActions {
      *  @return bucketLPs_           If non-zero, amount of LPs in toIndex when collateral is merged into bucket. If 0, no collateral is merged.
      */
     function mergeOrRemoveCollateral(
-        uint256[] calldata removeAmountAtIndex_,
         uint256 noOfNFTsToRemove_,
+        uint256[] calldata removeAmountAtIndex_,
         uint256 toIndex_
     ) external returns (uint256 collateralMerged_, uint256 bucketLPs_);
 }

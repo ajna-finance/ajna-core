@@ -98,19 +98,19 @@ library BorrowerActions {
      *                  - AuctionNFTSettle or AuctionSettle
      */
     function drawDebt(
-        AuctionsState storage auctions_,
-        mapping(uint256 => Bucket) storage buckets_,
-        DepositsState storage deposits_,
-        LoansState    storage loans_,
-        PoolState calldata poolState_,
-        address borrowerAddress_,
-        uint256 amountToBorrow_,
-        uint256 limitIndex_,
-        uint256 collateralToPledge_
+        AuctionsState              storage  auctions_,
+        mapping(uint256 => Bucket) storage  buckets_,
+        DepositsState              storage  deposits_,
+        LoansState                 storage  loans_,
+        PoolState                  calldata poolState_,
+        address                             borrower_,
+        uint256                             borrowAmount,
+        uint256                             limitIndex_,
+        uint256                             pledgeAmount_
     ) external returns (
         DrawDebtResult memory result_
     ) {
-        Borrower memory borrower = loans_.borrowers[borrowerAddress_];
+        Borrower memory borrower = loans_.borrowers[borrower_];
 
         result_.poolDebt       = poolState_.debt;
         result_.newLup         = _lup(deposits_, result_.poolDebt);
@@ -121,12 +121,12 @@ library BorrowerActions {
         vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
 
         // pledge collateral to pool
-        if (collateralToPledge_ != 0) {
+        if (pledgeAmount_ != 0) {
             // add new amount of collateral to pledge to borrower balance
-            borrower.collateral  += collateralToPledge_;
+            borrower.collateral  += pledgeAmount_;
 
             // load loan's auction state
-            vars.inAuction = _inAuction(auctions_, borrowerAddress_);
+            vars.inAuction = _inAuction(auctions_, borrower_);
             // if loan is auctioned and becomes collateralized by newly pledged collateral then settle auction
             if (
                 vars.inAuction &&
@@ -146,7 +146,7 @@ library BorrowerActions {
                     auctions_,
                     buckets_,
                     deposits_,
-                    borrowerAddress_,
+                    borrower_,
                     borrower.collateral,
                     poolState_.poolType
                 );
@@ -155,17 +155,17 @@ library BorrowerActions {
             }
 
             // add new amount of collateral to pledge to pool balance
-            result_.poolCollateral += collateralToPledge_;
+            result_.poolCollateral += pledgeAmount_;
         }
 
         // borrow against pledged collateral
         // check both values to enable an intentional 0 borrow loan call to update borrower's loan state
-        if (amountToBorrow_ != 0 || limitIndex_ != 0) {
+        if (borrowAmount != 0 || limitIndex_ != 0) {
             // only intended recipient can borrow quote
-            if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
+            if (borrower_ != msg.sender) revert BorrowerNotSender();
 
             // add origination fee to the amount to borrow and add to borrower's debt
-            vars.debtChange = Maths.wmul(amountToBorrow_, _feeRate(poolState_.rate) + Maths.WAD);
+            vars.debtChange = Maths.wmul(borrowAmount, _feeRate(poolState_.rate) + Maths.WAD);
 
             vars.borrowerDebt += vars.debtChange;
 
@@ -201,7 +201,7 @@ library BorrowerActions {
             auctions_,
             deposits_,
             borrower,
-            borrowerAddress_,
+            borrower_,
             vars.borrowerDebt,
             poolState_.rate,
             result_.newLup,
@@ -235,23 +235,23 @@ library BorrowerActions {
      *                  - AuctionNFTSettle or AuctionSettle
      */
     function repayDebt(
-        AuctionsState storage auctions_,
-        mapping(uint256 => Bucket) storage buckets_,
-        DepositsState storage deposits_,
-        LoansState    storage loans_,
-        PoolState calldata poolState_,
-        address borrowerAddress_,
-        uint256 maxQuoteTokenAmountToRepay_,
-        uint256 collateralAmountToPull_
+        AuctionsState              storage  auctions_,
+        mapping(uint256 => Bucket) storage  buckets_,
+        DepositsState              storage  deposits_,
+        LoansState                 storage  loans_,
+        PoolState                  calldata poolState_,
+        address                             borrower_,
+        uint256                             maxRepayAmount_,
+        uint256                             pullAmount_
     ) external returns (
         RepayDebtResult memory result_
     ) {
-        Borrower memory borrower = loans_.borrowers[borrowerAddress_];
+        Borrower memory borrower = loans_.borrowers[borrower_];
 
         RepayDebtLocalVars memory vars;
 
-        vars.repay        = maxQuoteTokenAmountToRepay_ != 0;
-        vars.pull         = collateralAmountToPull_ != 0;
+        vars.repay        = maxRepayAmount_ != 0;
+        vars.pull         = pullAmount_ != 0;
         vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
 
         result_.poolDebt       = poolState_.debt;
@@ -260,25 +260,25 @@ library BorrowerActions {
         if (vars.repay) {
             if (borrower.t0Debt == 0) revert NoDebt();
 
-            if (maxQuoteTokenAmountToRepay_ == type(uint256).max) {
+            if (maxRepayAmount_ == type(uint256).max) {
                 result_.t0RepaidDebt = borrower.t0Debt;
             } else {
                 result_.t0RepaidDebt = Maths.min(
                     borrower.t0Debt,
-                    Maths.wdiv(maxQuoteTokenAmountToRepay_, poolState_.inflator)
+                    Maths.wdiv(maxRepayAmount_, poolState_.inflator)
                 );
             }
 
-            result_.quoteTokenToRepay = Maths.wmul(result_.t0RepaidDebt, poolState_.inflator);
+            result_.repayAmount = Maths.wmul(result_.t0RepaidDebt, poolState_.inflator);
 
-            result_.poolDebt -= result_.quoteTokenToRepay;
-            vars.borrowerDebt -= result_.quoteTokenToRepay;
+            result_.poolDebt -= result_.repayAmount;
+            vars.borrowerDebt -= result_.repayAmount;
 
             // check that paying the loan doesn't leave borrower debt under min debt amount
             _revertOnMinDebt(loans_, result_.poolDebt, vars.borrowerDebt, poolState_.quoteDustLimit);
 
             result_.newLup = _lup(deposits_, result_.poolDebt);
-            vars.inAuction = _inAuction(auctions_, borrowerAddress_);
+            vars.inAuction = _inAuction(auctions_, borrower_);
 
             if (vars.inAuction) {
                 if (_isCollateralized(vars.borrowerDebt, borrower.collateral, result_.newLup, poolState_.poolType)) {
@@ -296,7 +296,7 @@ library BorrowerActions {
                         auctions_,
                         buckets_,
                         deposits_,
-                        borrowerAddress_,
+                        borrower_,
                         borrower.collateral,
                         poolState_.poolType
                     );
@@ -313,20 +313,20 @@ library BorrowerActions {
 
         if (vars.pull) {
             // only intended recipient can pull collateral
-            if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
+            if (borrower_ != msg.sender) revert BorrowerNotSender();
 
             // calculate LUP only if it wasn't calculated by repay action
             if (!vars.repay) result_.newLup = _lup(deposits_, result_.poolDebt);
 
             uint256 encumberedCollateral = borrower.t0Debt != 0 ? Maths.wdiv(vars.borrowerDebt, result_.newLup) : 0;
 
-            if (borrower.collateral - encumberedCollateral < collateralAmountToPull_) revert InsufficientCollateral();
+            if (borrower.collateral - encumberedCollateral < pullAmount_) revert InsufficientCollateral();
 
             // stamp borrower t0Np when pull collateral action
             vars.stampT0Np = true;
 
-            borrower.collateral    -= collateralAmountToPull_;
-            result_.poolCollateral -= collateralAmountToPull_;
+            borrower.collateral    -= pullAmount_;
+            result_.poolCollateral -= pullAmount_;
         }
 
         // calculate LUP if repay is called with 0 amount
@@ -340,7 +340,7 @@ library BorrowerActions {
             auctions_,
             deposits_,
             borrower,
-            borrowerAddress_,
+            borrower_,
             vars.borrowerDebt,
             poolState_.rate,
             result_.newLup,
@@ -361,21 +361,21 @@ library BorrowerActions {
      */
     function _inAuction(
         AuctionsState storage auctions_,
-        address borrower_
+        address               borrower_
     ) internal view returns (bool) {
         return auctions_.liquidations[borrower_].kickTime != 0;
     }
 
     function _lupIndex(
         DepositsState storage deposits_,
-        uint256 debt_
+        uint256               debt_
     ) internal view returns (uint256) {
         return Deposits.findIndexOfSum(deposits_, debt_);
     }
 
     function _lup(
         DepositsState storage deposits_,
-        uint256 debt_
+        uint256               debt_
     ) internal view returns (uint256) {
         return _priceAt(_lupIndex(deposits_, debt_));
     }

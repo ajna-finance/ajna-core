@@ -130,13 +130,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     /// @inheritdoc IPoolLenderActions
     function addQuoteToken(
-        uint256 quoteTokenAmountToAdd_,
+        uint256 amount_,
         uint256 index_
-    ) external override nonReentrant returns (uint256 bucketLPs_) {
+    ) external override nonReentrant returns (
+        uint256 bucketLPs_
+    ) {
         PoolState memory poolState = _accruePoolInterest();
 
         // round to token precision
-        quoteTokenAmountToAdd_ = _roundToScale(quoteTokenAmountToAdd_, poolState.quoteDustLimit);
+        amount_ = _roundToScale(amount_, poolState.quoteDustLimit);
 
         uint256 newLup;
         (bucketLPs_, newLup) = LenderActions.addQuoteToken(
@@ -144,7 +146,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             deposits,
             poolState,
             AddQuoteParams({
-                amount: quoteTokenAmountToAdd_,
+                amount: amount_,
                 index:  index_
             })
         );
@@ -153,7 +155,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _updateInterestState(poolState, newLup);
 
         // move quote token amount from lender to pool
-        _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToAdd_);
+        _transferQuoteTokenFrom(msg.sender, amount_);
     }
 
     /**
@@ -162,19 +164,22 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *          - _lpTokenAllowances mapping
      */
     function approveLpOwnership(
-        address allowedNewOwner_,
+        address newOwner_,
         uint256 index_,
-        uint256 lpsAmountToApprove_
+        uint256 amount_
     ) external nonReentrant {
-        _lpTokenAllowances[msg.sender][allowedNewOwner_][index_] = lpsAmountToApprove_;
+        _lpTokenAllowances[msg.sender][newOwner_][index_] = amount_;
     }
 
     /// @inheritdoc IPoolLenderActions
     function moveQuoteToken(
-        uint256 maxAmountToMove_,
+        uint256 maxAmount_,
         uint256 fromIndex_,
         uint256 toIndex_
-    ) external override nonReentrant returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
+    ) external override nonReentrant returns (
+        uint256 fromBucketLPs_,
+        uint256 toBucketLPs_
+    ) {
         PoolState memory poolState = _accruePoolInterest();
 
         _revertIfAuctionDebtLocked(deposits, poolBalances, fromIndex_, poolState.inflator);
@@ -189,7 +194,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             deposits,
             poolState,
             MoveQuoteParams({
-                maxAmountToMove: maxAmountToMove_,
+                maxAmount:       maxAmount_,
                 fromIndex:       fromIndex_,
                 toIndex:         toIndex_,
                 thresholdPrice:  Loans.getMax(loans).thresholdPrice
@@ -204,7 +209,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function removeQuoteToken(
         uint256 maxAmount_,
         uint256 index_
-    ) external override nonReentrant returns (uint256 removedAmount_, uint256 redeemedLPs_) {
+    ) external override nonReentrant returns (
+        uint256 removedAmount_,
+        uint256 bucketLPs_
+    ) {
         _revertIfAuctionClearable(auctions, loans);
 
         PoolState memory poolState = _accruePoolInterest();
@@ -214,7 +222,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 newLup;
         (
             removedAmount_,
-            redeemedLPs_,
+            bucketLPs_,
             newLup
         ) = LenderActions.removeQuoteToken(
             buckets,
@@ -236,8 +244,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     /// @inheritdoc IPoolLenderActions
     function transferLPs(
-        address owner_,
-        address newOwner_,
+        address            owner_,
+        address            newOwner_,
         uint256[] calldata indexes_
     ) external override nonReentrant {
         LenderActions.transferLPs(
@@ -259,7 +267,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *       - increment poolBalances.t0DebtInAuction and poolBalances.t0Debt accumulators
      */
     function kick(
-        address borrowerAddress_
+        address borrower_
     ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
@@ -269,7 +277,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             deposits,
             loans,
             poolState,
-            borrowerAddress_
+            borrower_
         );
 
         // update pool balances state
@@ -380,7 +388,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      */
     function takeReserves(
         uint256 maxAmount_
-    ) external override nonReentrant returns (uint256 amount_) {
+    ) external override nonReentrant returns (
+        uint256 amount_
+    ) {
         uint256 ajnaRequired;
         (amount_, ajnaRequired) = Auctions.takeReserves(
             reserveAuction,
@@ -499,19 +509,34 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         }
     }
 
-    function _transferQuoteTokenFrom(address from_, uint256 amount_) internal {
-        IERC20(_getArgAddress(QUOTE_ADDRESS)).safeTransferFrom(from_, address(this), amount_ / _getArgUint256(QUOTE_SCALE));
+    function _transferQuoteTokenFrom(
+        address from_,
+        uint256 amount_
+    ) internal {
+        IERC20(_getArgAddress(QUOTE_ADDRESS)).safeTransferFrom(
+            from_,
+            address(this),
+            amount_ / _getArgUint256(QUOTE_SCALE)
+        );
     }
 
-    function _transferQuoteToken(address to_, uint256 amount_) internal {
-        IERC20(_getArgAddress(QUOTE_ADDRESS)).safeTransfer(to_, amount_ / _getArgUint256(QUOTE_SCALE));
+    function _transferQuoteToken(
+        address to_,
+        uint256 amount_
+    ) internal {
+        IERC20(_getArgAddress(QUOTE_ADDRESS)).safeTransfer(
+            to_,
+            amount_ / _getArgUint256(QUOTE_SCALE)
+        );
     }
 
     function _getPoolQuoteTokenBalance() internal view returns (uint256) {
         return IERC20(_getArgAddress(QUOTE_ADDRESS)).balanceOf(address(this));
     }
 
-    function _lup(uint256 debt_) internal view returns (uint256) {
+    function _lup(
+        uint256 debt_
+    ) internal view returns (uint256) {
         return _priceAt(Deposits.findIndexOfSum(deposits, debt_));
     }
 

@@ -61,7 +61,7 @@ struct AddQuoteParams {
 
 struct MoveQuoteParams {
     uint256 fromIndex;       // the deposit index from where amount is moved
-    uint256 maxAmountToMove; // [WAD] max amount to move between deposits
+    uint256 maxAmount;       // [WAD] max amount to move between deposits
     uint256 toIndex;         // the deposit index where amount is moved to
     uint256 thresholdPrice;  // [WAD] max threshold price in pool
 }
@@ -94,5 +94,5 @@ struct RepayDebtResult {
     bool    settledAuction;        // true if repay debt settles auction
     uint256 t0DebtInAuctionChange; // [WAD] change of t0 pool debt in auction after repay debt
     uint256 t0RepaidDebt;          // [WAD] amount of t0 repaid debt
-    uint256 quoteTokenToRepay;     // [WAD] quote token amount to be transferred from sender to pool
+    uint256 repayAmount;           // [WAD] quote token amount to be transferred from sender to pool
 }

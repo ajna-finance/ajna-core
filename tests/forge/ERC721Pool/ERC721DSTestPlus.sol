@@ -399,7 +399,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit MergeOrRemoveCollateralNFT(from, collateralMerged, toIndexLps);
-        ERC721Pool(address(_pool)).mergeOrRemoveCollateral(removeCollateralAtIndex, noOfNFTsToRemove, toIndex);
+        ERC721Pool(address(_pool)).mergeOrRemoveCollateral(noOfNFTsToRemove, removeCollateralAtIndex, toIndex);
 
         // Add for tearDown
         lenders.add(from);
@@ -517,7 +517,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     ) internal virtual {
         changePrank(from);
         vm.expectRevert(IPoolErrors.CannotMergeToHigherPrice.selector);
-        ERC721Pool(address(_pool)).mergeOrRemoveCollateral(removeCollateralAtIndex, noOfNFTsToRemove, toIndex);
+        ERC721Pool(address(_pool)).mergeOrRemoveCollateral(noOfNFTsToRemove, removeCollateralAtIndex, toIndex);
     }
 
     function _assertBorrowBorrowerUnderCollateralizedRevert(

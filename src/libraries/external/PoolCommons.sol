@@ -56,8 +56,8 @@ library PoolCommons {
     function updateInterestRate(
         InterestState storage interestParams_,
         DepositsState storage deposits_,
-        PoolState memory poolState_,
-        uint256 lup_
+        PoolState     memory  poolState_,
+        uint256               lup_
     ) external {
 
         // current values of EMA samples
@@ -133,10 +133,10 @@ library PoolCommons {
      *  @return newInflator_   The new value of pool inflator.
      */
     function accrueInterest(
-        DepositsState storage deposits_,
-        PoolState calldata poolState_,
-        uint256 thresholdPrice_,
-        uint256 elapsed_
+        DepositsState storage  deposits_,
+        PoolState     calldata poolState_,
+        uint256                thresholdPrice_,
+        uint256                elapsed_
     ) external returns (uint256 newInflator_, uint256 newInterest_) {
         // Scale the borrower inflator to update amount of interest owed by borrowers
         uint256 pendingFactor = PRBMathUD60x18.exp((poolState_.rate * elapsed_) / 365 days);
@@ -225,9 +225,11 @@ library PoolCommons {
      */
     function utilization(
         DepositsState storage deposits,
-        uint256 poolDebt_,
-        uint256 collateral_
-    ) external view returns (uint256 utilization_) {
+        uint256               poolDebt_,
+        uint256               collateral_
+    ) external view returns (
+        uint256 utilization_
+    ) {
         return _utilization(deposits, poolDebt_, collateral_);
     }
 
@@ -243,9 +245,11 @@ library PoolCommons {
      */
     function _utilization(
         DepositsState storage deposits,
-        uint256 poolDebt_,
-        uint256 collateral_
-    ) internal view returns (uint256 utilization_) {
+        uint256               poolDebt_,
+        uint256               collateral_
+    ) internal view returns (
+        uint256 utilization_
+    ) {
         if (collateral_ != 0) {
             uint256 ptp = _ptp(poolDebt_, collateral_);
 
