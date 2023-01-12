@@ -485,8 +485,8 @@ contract RewardsManager is IRewardsManager {
 
     /**
      *  @notice Retrieve an array of burn epochs from which a depositor has claimed rewards.
-     *  @param  lastClaimedEpoch_      The last burn period in which a depositor interacted with the rewards contract.
-     *  @param  burnEpochToStartClaim_ The most recent burn period from a depostor earned rewards.
+     *  @param  lastClaimedEpoch_      The last burn period in which a depositor claimed rewards.
+     *  @param  burnEpochToStartClaim_ The most recent burn period from a depositor earned rewards.
      *  @return burnEpochsClaimed_     Array of burn epochs from which a depositor has claimed rewards.
      */
     function _getBurnEpochsClaimed(
