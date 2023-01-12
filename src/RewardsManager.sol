@@ -291,15 +291,13 @@ contract RewardsManager is IRewardsManager {
                 positionIndexes
             );
 
-            uint256 nextEpoch = epoch + 1;
-
-            // update epoch token claim trackers
-            rewardsClaimed[nextEpoch]           += nextEpochRewards;
-            isEpochClaimed[tokenId_][nextEpoch] = true;
-
             rewards_ += nextEpochRewards;
 
             unchecked { ++epoch; }
+
+            // update epoch token claim trackers
+            rewardsClaimed[epoch]           += nextEpochRewards;
+            isEpochClaimed[tokenId_][epoch] = true;
         }
     }
 
