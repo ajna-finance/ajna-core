@@ -1,9 +1,20 @@
+
+<!---
+DELETE SECTION BEFORE CRAFTING PR
+CHANGES IN SCOPE /SRC DIR:
+- resizing / retyping variables for gas optimization
+- moving variables in methods
+- altering decorators of methods (i.e. view -> internal/external)
+- signif restructuring should be avoided, but if necessary moving of functions accross files
+- altering logic
+-->
+
 # Description of bug or vulnerability and solution
 * <PARAGRAPH_EXP_OF_VULN_BUG>
 * <PARAGRAPH_EXP_OF_HOW_CHANGE_SOLVES_VULN_OR_BUG>
 
 # Description of change
-## High level:
+## High level
 * <DESCRIP_OF_CHANGE>
   * <DESCRIP_OF_SUBCHANGE>
 
@@ -17,7 +28,7 @@
 ## Post Change
 <PASTE_OUTPUT_HERE>
 
-# Gas optimization:
+# Gas optimization
 ## Pre Change
 <PASTE_OUTPUT_HERE>
 ## Post Change
