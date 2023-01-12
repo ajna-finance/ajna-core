@@ -320,7 +320,7 @@ library LenderActions {
 
         RemoveDepositParams memory removeParams;
 
-        if (bucket.bankruptcyTime < lender.depositTime) removeParams.lpConstraint = lender.lps;
+        if (bucket.bankruptcyTime < depositTime) removeParams.lpConstraint = lender.lps;
 
         if (removeParams.lpConstraint == 0) revert NoClaim(); // revert if no LP to claim
 
