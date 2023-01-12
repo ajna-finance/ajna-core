@@ -90,11 +90,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         require(tokenId != 0, "tokenId nonce not incremented");
 
         // check position info
-        address owner    = _positionManager.ownerOf(tokenId);
-        uint256 lpTokens = _positionManager.getLPTokens(tokenId, mintPrice);
+        address owner = _positionManager.ownerOf(tokenId);
+        uint256 lps   = _positionManager.getLPs(tokenId, mintPrice);
 
         assertEq(owner, testAddress);
-        assertEq(lpTokens, 0);
+        assertEq(lps,   0);
 
         // deploy a new factory to simulate creating a pool outside of expected factories
         ERC20PoolFactory invalidFactory = new ERC20PoolFactory(_ajna);
@@ -107,10 +107,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
     /**
      *  @notice Tests attachment of a created position to an already existing NFT.
-     *          LP tokens are checked to verify ownership of position.
+     *          LPs are checked to verify ownership of position.
      *          Reverts:
-     *              Attempts to memorialize when lp tokens aren't allowed to be transfered.
-     *              Attempts to set position owner when not owner of the LP tokens.
+     *              Attempts to memorialize when lps aren't allowed to be transfered.
+     *              Attempts to set position owner when not owner of the LPs.
      */
     function testMemorializePositions() external {
         address testAddress = makeAddr("testAddress");
@@ -170,16 +170,16 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testAddress, tokenId);
         vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(testAddress, address(_positionManager), indexes, 9_000 * 1e27);
+        emit TransferLPs(testAddress, address(_positionManager), indexes, 9_000 * 1e27);
         _positionManager.memorializePositions(memorializeParams);
 
         // check memorialization success
-        uint256 positionAtPriceOneLPTokens = _positionManager.getLPTokens(tokenId, indexes[0]);
-        assertGt(positionAtPriceOneLPTokens, 0);
+        uint256 positionAtPriceOneLPs = _positionManager.getLPs(tokenId, indexes[0]);
+        assertGt(positionAtPriceOneLPs, 0);
 
-        // check lp tokens at non added to price
-        uint256 positionAtWrongPriceLPTokens = _positionManager.getLPTokens(tokenId, 4000000 * 1e18);
-        assertEq(positionAtWrongPriceLPTokens, 0);
+        // check lps at non added to price
+        uint256 positionAtWrongPriceLPs = _positionManager.getLPs(tokenId, 4000000 * 1e18);
+        assertEq(positionAtWrongPriceLPs, 0);
 
         assertTrue(_positionManager.isIndexInPosition(tokenId, 2550));
         assertTrue(_positionManager.isIndexInPosition(tokenId, 2551));
@@ -274,9 +274,9 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[0]), 0);
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[1]), 0);
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[2]), 0);
+        assertEq(_positionManager.getLPs(tokenId, indexes[0]), 0);
+        assertEq(_positionManager.getLPs(tokenId, indexes[1]), 0);
+        assertEq(_positionManager.getLPs(tokenId, indexes[2]), 0);
         assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[0]));
         assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[1]));
         assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[2]));
@@ -294,7 +294,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testAddress, tokenId);
         vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(testAddress, address(_positionManager), indexes, 9_000 * 1e27);
+        emit TransferLPs(testAddress, address(_positionManager), indexes, 9_000 * 1e27);
         _positionManager.memorializePositions(memorializeParams);
 
         _assertLenderLpBalance(
@@ -347,9 +347,9 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[0]), 3_000 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[1]), 3_000 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[2]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, indexes[0]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, indexes[1]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, indexes[2]), 3_000 * 1e27);
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[0]));
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[1]));
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
@@ -428,9 +428,9 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[0]), 3_000 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[1]), 3_000 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[2]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, indexes[0]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, indexes[1]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, indexes[2]), 3_000 * 1e27);
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[0]));
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[1]));
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
@@ -444,7 +444,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testAddress, tokenId);
         vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(testAddress, address(_positionManager), indexes, 6_000 * 1e27);
+        emit TransferLPs(testAddress, address(_positionManager), indexes, 6_000 * 1e27);
         _positionManager.memorializePositions(memorializeParams);
 
         // check LP balance
@@ -498,9 +498,9 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[0]), 4_000 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[1]), 5_000 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[2]), 6_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, indexes[0]), 4_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, indexes[1]), 5_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, indexes[2]), 6_000 * 1e27);
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[0]));
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[1]));
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
@@ -664,12 +664,12 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             }
         );
 
-        assertEq(_positionManager.getLPTokens(indexes[0], tokenId1), 0);
-        assertEq(_positionManager.getLPTokens(indexes[1], tokenId1), 0);
-        assertEq(_positionManager.getLPTokens(indexes[2], tokenId1), 0);
+        assertEq(_positionManager.getLPs(indexes[0], tokenId1), 0);
+        assertEq(_positionManager.getLPs(indexes[1], tokenId1), 0);
+        assertEq(_positionManager.getLPs(indexes[2], tokenId1), 0);
 
-        assertEq(_positionManager.getLPTokens(indexes[0], tokenId2), 0);
-        assertEq(_positionManager.getLPTokens(indexes[3], tokenId2), 0);
+        assertEq(_positionManager.getLPs(indexes[0], tokenId2), 0);
+        assertEq(_positionManager.getLPs(indexes[3], tokenId2), 0);
 
         (uint256 poolSize, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
         assertEq(poolSize, 15_000 * 1e18);
@@ -694,7 +694,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testLender1, tokenId1);
         vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(testLender1, address(_positionManager), lender1Indexes, 9_000 * 1e27);
+        emit TransferLPs(testLender1, address(_positionManager), lender1Indexes, 9_000 * 1e27);
         _positionManager.memorializePositions(memorializeParams);
 
         // check lender, position manager,  and pool state
@@ -763,9 +763,9 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             }
         );
 
-        assertEq(_positionManager.getLPTokens(tokenId1, indexes[0]), 3_000 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId1, indexes[1]), 3_000 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId1, indexes[2]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId1, indexes[0]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId1, indexes[1]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId1, indexes[2]), 3_000 * 1e27);
 
         (poolSize, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
         assertEq(poolSize, 15_000 * 1e18);
@@ -787,7 +787,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testLender2, tokenId2);
         vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(testLender2, address(_positionManager), newIndexes, 6_000 * 1e27);
+        emit TransferLPs(testLender2, address(_positionManager), newIndexes, 6_000 * 1e27);
         _positionManager.memorializePositions(memorializeParams);
 
         // // check lender, position manager,  and pool state
@@ -856,12 +856,12 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             }
         );
 
-        assertEq(_positionManager.getLPTokens(tokenId1, indexes[0]), 3_000 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId1, indexes[1]), 3_000 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId1, indexes[2]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId1, indexes[0]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId1, indexes[1]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId1, indexes[2]), 3_000 * 1e27);
 
-        assertEq(_positionManager.getLPTokens(tokenId2, indexes[0]), 3_000 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId2, indexes[3]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId2, indexes[0]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId2, indexes[3]), 3_000 * 1e27);
 
         (poolSize, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
         assertEq(poolSize, 15_000 * 1e18);
@@ -944,7 +944,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 0);
+        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
         assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
 
         // memorialize positions
@@ -984,7 +984,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 15_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 15_000 * 1e27);
         assertTrue(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
 
         // approve and transfer NFT to different address
@@ -1034,7 +1034,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 0);
+        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
         assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
     }
 
@@ -1092,7 +1092,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 0);
+        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
         assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
 
         // memorialize positions
@@ -1133,7 +1133,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 15_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 15_000 * 1e27);
         assertTrue(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
 
         // approve and transfer NFT by permit to different address
@@ -1203,7 +1203,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 0);
+        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
         assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
     }
 
@@ -1457,10 +1457,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId1, mintIndex), 0);
-        assertEq(_positionManager.getLPTokens(tokenId1, moveIndex), 0);
-        assertEq(_positionManager.getLPTokens(tokenId2, mintIndex), 0);
-        assertEq(_positionManager.getLPTokens(tokenId2, moveIndex), 0);
+        assertEq(_positionManager.getLPs(tokenId1, mintIndex), 0);
+        assertEq(_positionManager.getLPs(tokenId1, moveIndex), 0);
+        assertEq(_positionManager.getLPs(tokenId2, mintIndex), 0);
+        assertEq(_positionManager.getLPs(tokenId2, moveIndex), 0);
         assertFalse(_positionManager.isIndexInPosition(tokenId1, mintIndex));
         assertFalse(_positionManager.isIndexInPosition(tokenId1, moveIndex));
         assertFalse(_positionManager.isIndexInPosition(tokenId2, mintIndex));
@@ -1530,10 +1530,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId1, mintIndex), 2_500 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId1, moveIndex), 0);
-        assertEq(_positionManager.getLPTokens(tokenId2, mintIndex), 0);
-        assertEq(_positionManager.getLPTokens(tokenId2, moveIndex), 0);
+        assertEq(_positionManager.getLPs(tokenId1, mintIndex), 2_500 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId1, moveIndex), 0);
+        assertEq(_positionManager.getLPs(tokenId2, mintIndex), 0);
+        assertEq(_positionManager.getLPs(tokenId2, moveIndex), 0);
         assertTrue(_positionManager.isIndexInPosition(tokenId1, mintIndex));
         assertFalse(_positionManager.isIndexInPosition(tokenId1, moveIndex));
         assertFalse(_positionManager.isIndexInPosition(tokenId2, mintIndex));
@@ -1601,10 +1601,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId1, mintIndex), 0);
-        assertEq(_positionManager.getLPTokens(tokenId1, moveIndex), 2_500 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId2, mintIndex), 0);
-        assertEq(_positionManager.getLPTokens(tokenId2, moveIndex), 0);
+        assertEq(_positionManager.getLPs(tokenId1, mintIndex), 0);
+        assertEq(_positionManager.getLPs(tokenId1, moveIndex), 2_500 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId2, mintIndex), 0);
+        assertEq(_positionManager.getLPs(tokenId2, moveIndex), 0);
         assertFalse(_positionManager.isIndexInPosition(tokenId1, mintIndex));
         assertTrue(_positionManager.isIndexInPosition(tokenId1, moveIndex));
         assertFalse(_positionManager.isIndexInPosition(tokenId2, mintIndex));
@@ -1672,10 +1672,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId1, mintIndex), 0);
-        assertEq(_positionManager.getLPTokens(tokenId1, moveIndex), 2_500 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId2, mintIndex), 5_500 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId2, moveIndex), 0);
+        assertEq(_positionManager.getLPs(tokenId1, mintIndex), 0);
+        assertEq(_positionManager.getLPs(tokenId1, moveIndex), 2_500 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId2, mintIndex), 5_500 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId2, moveIndex), 0);
         assertFalse(_positionManager.isIndexInPosition(tokenId1, mintIndex));
         assertTrue(_positionManager.isIndexInPosition(tokenId1, moveIndex));
         assertTrue(_positionManager.isIndexInPosition(tokenId2, mintIndex));
@@ -1752,10 +1752,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId1, mintIndex), 0);
-        assertEq(_positionManager.getLPTokens(tokenId1, moveIndex), 2_500 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId2, mintIndex), 0);
-        assertEq(_positionManager.getLPTokens(tokenId2, moveIndex), 5_500 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId1, mintIndex), 0);
+        assertEq(_positionManager.getLPs(tokenId1, moveIndex), 2_500 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId2, mintIndex), 0);
+        assertEq(_positionManager.getLPs(tokenId2, moveIndex), 5_500 * 1e27);
         assertFalse(_positionManager.isIndexInPosition(tokenId1, mintIndex));
         assertTrue(_positionManager.isIndexInPosition(tokenId1, moveIndex));
         assertFalse(_positionManager.isIndexInPosition(tokenId2, mintIndex));
@@ -1809,7 +1809,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 0);
+        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
         assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
 
         // memorialize positions
@@ -1842,7 +1842,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 15_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 15_000 * 1e27);
         assertTrue(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
 
         // redeem positions of testMinter
@@ -1880,7 +1880,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 0);
+        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
         assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
 
         // should fail if trying to redeem one more time
@@ -1994,7 +1994,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 0);
+        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
         assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
 
         // memorialize positions
@@ -2059,7 +2059,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 15_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 15_000 * 1e27);
         assertTrue(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
 
         // approve and transfer NFT to different address
@@ -2089,7 +2089,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         vm.expectEmit(true, true, true, true);
         emit RedeemPosition(testReceiver, tokenId);
         vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(address(_positionManager), testReceiver, indexes, 15_000 * 1e27);
+        emit TransferLPs(address(_positionManager), testReceiver, indexes, 15_000 * 1e27);
         changePrank(testReceiver);
         _positionManager.reedemPositions(reedemParams);
 
@@ -2144,7 +2144,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 0);
+        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
         assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
     }
 
@@ -2590,9 +2590,9 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[0]), 0);
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[1]), 0);
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[2]), 0);
+        assertEq(_positionManager.getLPs(tokenId, indexes[0]), 0);
+        assertEq(_positionManager.getLPs(tokenId, indexes[1]), 0);
+        assertEq(_positionManager.getLPs(tokenId, indexes[2]), 0);
         assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[0]));
         assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[1]));
         assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[2]));
@@ -2610,7 +2610,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testAddress1, tokenId);
         vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(testAddress1, address(_positionManager), indexes, 9_000 * 1e27);
+        emit TransferLPs(testAddress1, address(_positionManager), indexes, 9_000 * 1e27);
         _positionManager.memorializePositions(memorializeParams);
 
         _assertLenderLpBalance(
@@ -2663,9 +2663,9 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[0]), 3_000 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[1]), 3_000 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[2]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, indexes[0]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, indexes[1]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, indexes[2]), 3_000 * 1e27);
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[0]));
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[1]));
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
@@ -2744,9 +2744,9 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[0]), 3_000 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[1]), 3_000 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[2]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, indexes[0]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, indexes[1]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, indexes[2]), 3_000 * 1e27);
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[0]));
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[1]));
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
@@ -2760,7 +2760,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testAddress1, tokenId);
         vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(testAddress1, address(_positionManager), indexes, 6_000 * 1e27);
+        emit TransferLPs(testAddress1, address(_positionManager), indexes, 6_000 * 1e27);
         _positionManager.memorializePositions(memorializeParams);
 
         // check LP balance
@@ -2814,9 +2814,9 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[0]), 4_000 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[1]), 5_000 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[2]), 6_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, indexes[0]), 4_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, indexes[1]), 5_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, indexes[2]), 6_000 * 1e27);
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[0]));
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[1]));
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
@@ -2883,9 +2883,9 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[0]), 0);
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[1]), 9_000 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[2]), 6_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, indexes[0]), 0);
+        assertEq(_positionManager.getLPs(tokenId, indexes[1]), 9_000 * 1e27);
+        assertEq(_positionManager.getLPs(tokenId, indexes[2]), 6_000 * 1e27);
         assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[0]));
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[1]));
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
@@ -3002,9 +3002,9 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         );
 
         // check position manager state
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[0]), 0);
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[1]), 0);
-        assertEq(_positionManager.getLPTokens(tokenId, indexes[2]), 0);
+        assertEq(_positionManager.getLPs(tokenId, indexes[0]), 0);
+        assertEq(_positionManager.getLPs(tokenId, indexes[1]), 0);
+        assertEq(_positionManager.getLPs(tokenId, indexes[2]), 0);
         assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[0]));
         assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[1]));
         assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[2]));

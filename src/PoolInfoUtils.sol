@@ -352,13 +352,13 @@ contract PoolInfoUtils {
 
     /**
      *  @notice Calculate the amount of quote tokens in bucket for a given amount of LP Tokens.
-     *  @param  lpTokens_    The number of lpTokens to calculate amounts for.
+     *  @param  lps_         The number of LPs to calculate amounts for.
      *  @param  index_       The price bucket index for which the value should be calculated.
      *  @return quoteAmount_ The exact amount of quote tokens that can be exchanged for the given LP Tokens, WAD units.
      */
     function lpsToQuoteTokens(
         address ajnaPool_,
-        uint256 lpTokens_,
+        uint256 lps_,
         uint256 index_
     ) external view returns (uint256 quoteAmount_) {
         IPool pool = IPool(ajnaPool_);
@@ -367,7 +367,7 @@ contract PoolInfoUtils {
             bucketLPs_,
             bucketCollateral,
             bucketDeposit,
-            lpTokens_,
+            lps_,
             bucketDeposit,
             _priceAt(index_)
         );
@@ -375,13 +375,13 @@ contract PoolInfoUtils {
 
     /**
      *  @notice Calculate the amount of collateral tokens in bucket for a given amount of LP Tokens.
-     *  @param  lpTokens_         The number of lpTokens to calculate amounts for.
+     *  @param  lps_              The number of LPs to calculate amounts for.
      *  @param  index_            The price bucket index for which the value should be calculated.
      *  @return collateralAmount_ The exact amount of collateral tokens that can be exchanged for the given LP Tokens, WAD units.
      */
     function lpsToCollateral(
         address ajnaPool_,
-        uint256 lpTokens_,
+        uint256 lps_,
         uint256 index_
     ) external view returns (uint256 collateralAmount_) {
         IPool pool = IPool(ajnaPool_);
@@ -390,7 +390,7 @@ contract PoolInfoUtils {
             bucketCollateral,
             bucketLPs_,
             bucketDeposit,
-            lpTokens_,
+            lps_,
             _priceAt(index_)
         );
     }

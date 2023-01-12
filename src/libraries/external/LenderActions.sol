@@ -62,7 +62,7 @@ library LenderActions {
     event BucketBankruptcy(uint256 indexed index, uint256 lpForfeited);
     event MoveQuoteToken(address indexed lender, uint256 indexed from, uint256 indexed to, uint256 amount, uint256 lpRedeemedFrom, uint256 lpAwardedTo, uint256 lup);
     event RemoveQuoteToken(address indexed lender, uint256 indexed price, uint256 amount, uint256 lpRedeemed, uint256 lup);
-    event TransferLPTokens(address owner, address newOwner, uint256[] indexes, uint256 lpTokens);
+    event TransferLPs(address owner, address newOwner, uint256[] indexes, uint256 lps);
 
     /**************/
     /*** Errors ***/
@@ -507,7 +507,7 @@ library LenderActions {
      *          - invalid index InvalidIndex()
      *          - no allowance NoAllowance()
      *  @dev emit events:
-     *          - TransferLPTokens
+     *          - TransferLPs
      */
     function transferLPs(
         mapping(uint256 => Bucket) storage buckets_,
@@ -539,7 +539,7 @@ library LenderActions {
 
             delete allowances_[owner_][newOwner_][index]; // delete allowance
 
-            // move lp tokens to the new owner address
+            // move lps to the new owner address
             Lender storage newLender = bucket.lenders[newOwner_];
 
             newLender.lps += transferAmount;
@@ -554,7 +554,7 @@ library LenderActions {
             unchecked { ++i; }
         }
 
-        emit TransferLPTokens(owner_, newOwner_, indexes_, tokensTransferred);
+        emit TransferLPs(owner_, newOwner_, indexes_, tokensTransferred);
     }
 
     /**************************/
