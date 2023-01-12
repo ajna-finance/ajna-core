@@ -13,7 +13,7 @@
 ## Post Change
 <PASTE_OUTPUT_HERE>
 
-# Gas:
+# Gas optimization:
 ## Pre Change
 <PASTE_OUTPUT_HERE>
 ## Post Change
