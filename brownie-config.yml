@@ -20,6 +20,7 @@ compiler:
     remappings:
       - "@ds-math=lib/ds-math/src/"
       - "@openzeppelin/contracts=lib/openzeppelin-contracts/contracts"
+      - "@openzeppelin/contracts-upgradeable=lib/openzeppelin-contracts-upgradeable/contracts"
       - "@std=lib/forge-std/src/"
       - "@solmate=lib/solmate/src/"
       - "@prb-math=lib/prb-math/"

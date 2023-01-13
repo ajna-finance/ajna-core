@@ -5,6 +5,7 @@
       "@std=lib/forge-std/src/",
       "@clones=lib/clones-with-immutable-args/src/",
       "@openzeppelin/contracts=lib/openzeppelin-contracts/contracts",
+      "@openzeppelin/contracts-upgradeable=lib/openzeppelin-contracts-upgradeable/contracts",
       "@prb-math=lib/prb-math/",
       "@base64-sol=lib/base64/"
     ],
