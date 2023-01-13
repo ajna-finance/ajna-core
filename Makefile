@@ -24,3 +24,9 @@ snapshot :; forge clean && forge snapshot
 
 analyze:
 		slither src/. ; slither src/libraries/external/.
+
+
+# Deployment
+deploy-contracts:
+	forge script ./deploy.sol \
+		--rpc-url ${ETH_RPC_URL} --sender ${DEPLOY_ADDRESS} --keystore ${DEPLOY_KEY} --broadcast -vvv
