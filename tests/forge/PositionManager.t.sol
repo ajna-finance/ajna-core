@@ -27,6 +27,7 @@ abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract 
 
         vm.prank(operator_);
         _quote.approve(address(_pool), type(uint256).max);
+
         vm.prank(operator_);
         _quote.approve(address(_positionManager), type(uint256).max);
     }
@@ -124,27 +125,21 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         indexes[1] = 2551;
         indexes[2] = 2552;
 
-        _addInitialLiquidity(
-            {
-                from:   testAddress,
-                amount: 3_000 * 1e18,
-                index:  indexes[0]
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   testAddress,
-                amount: 3_000 * 1e18,
-                index:  indexes[1]
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   testAddress,
-                amount: 3_000 * 1e18,
-                index:  indexes[2]
-            }
-        );
+        _addInitialLiquidity({
+            from:   testAddress,
+            amount: 3_000 * 1e18,
+            index:  indexes[0]
+        });
+        _addInitialLiquidity({
+            from:   testAddress,
+            amount: 3_000 * 1e18,
+            index:  indexes[1]
+        });
+        _addInitialLiquidity({
+            from:   testAddress,
+            amount: 3_000 * 1e18,
+            index:  indexes[2]
+        });
 
         // mint an NFT to later memorialize existing positions into
         uint256 tokenId = _mintNFT(testAddress, testAddress, address(_pool));
@@ -198,80 +193,62 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         indexes[1] = 2551;
         indexes[2] = 2552;
 
-        _addInitialLiquidity(
-            {
-                from:   testAddress,
-                amount: 3_000 * 1e18,
-                index:  indexes[0]
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   testAddress,
-                amount: 3_000 * 1e18,
-                index:  indexes[1]
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   testAddress,
-                amount: 3_000 * 1e18,
-                index:  indexes[2]
-            }
-        );
+        _addInitialLiquidity({
+            from:   testAddress,
+            amount: 3_000 * 1e18,
+            index:  indexes[0]
+        });
+        _addInitialLiquidity({
+            from:   testAddress,
+            amount: 3_000 * 1e18,
+            index:  indexes[1]
+        });
+        _addInitialLiquidity({
+            from:   testAddress,
+            amount: 3_000 * 1e18,
+            index:  indexes[2]
+        });
 
         // mint an NFT to later memorialize existing positions into
         uint256 tokenId = _mintNFT(testAddress, testAddress, address(_pool));
 
         // check LPs
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress,
-                index:       indexes[0],
-                lpBalance:   3_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[0],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress,
-                index:       indexes[1],
-                lpBalance:   3_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[1],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress,
-                index:       indexes[2],
-                lpBalance:   3_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[2],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testAddress,
+            index:       indexes[0],
+            lpBalance:   3_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[0],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress,
+            index:       indexes[1],
+            lpBalance:   3_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[1],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress,
+            index:       indexes[2],
+            lpBalance:   3_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[2],
+            lpBalance:   0,
+            depositTime: 0
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId, indexes[0]), 0);
@@ -297,54 +274,42 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         emit TransferLPs(testAddress, address(_positionManager), indexes, 9_000 * 1e27);
         _positionManager.memorializePositions(memorializeParams);
 
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress,
-                index:       indexes[0],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[0],
-                lpBalance:   3_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress,
-                index:       indexes[1],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[1],
-                lpBalance:   3_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress,
-                index:       indexes[2],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[2],
-                lpBalance:   3_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testAddress,
+            index:       indexes[0],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[0],
+            lpBalance:   3_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress,
+            index:       indexes[1],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[1],
+            lpBalance:   3_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress,
+            index:       indexes[2],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[2],
+            lpBalance:   3_000 * 1e27,
+            depositTime: _startTime
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId, indexes[0]), 3_000 * 1e27);
@@ -355,77 +320,59 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
 
         // add more liquidity
-        _addInitialLiquidity(
-            {
-                from:   testAddress,
-                amount: 1_000 * 1e18,
-                index:  indexes[0]
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   testAddress,
-                amount: 2_000 * 1e18,
-                index:  indexes[1]
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   testAddress,
-                amount: 3_000 * 1e18,
-                index:  indexes[2]
-            }
-        );
+        _addInitialLiquidity({
+            from:   testAddress,
+            amount: 1_000 * 1e18,
+            index:  indexes[0]
+        });
+        _addInitialLiquidity({
+            from:   testAddress,
+            amount: 2_000 * 1e18,
+            index:  indexes[1]
+        });
+        _addInitialLiquidity({
+            from:   testAddress,
+            amount: 3_000 * 1e18,
+            index:  indexes[2]
+        });
 
         // check LP balance
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress,
-                index:       indexes[0],
-                lpBalance:   1_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[0],
-                lpBalance:   3_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress,
-                index:       indexes[1],
-                lpBalance:   2_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[1],
-                lpBalance:   3_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress,
-                index:       indexes[2],
-                lpBalance:   3_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[2],
-                lpBalance:   3_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testAddress,
+            index:       indexes[0],
+            lpBalance:   1_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[0],
+            lpBalance:   3_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress,
+            index:       indexes[1],
+            lpBalance:   2_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[1],
+            lpBalance:   3_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress,
+            index:       indexes[2],
+            lpBalance:   3_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[2],
+            lpBalance:   3_000 * 1e27,
+            depositTime: _startTime
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId, indexes[0]), 3_000 * 1e27);
@@ -448,54 +395,42 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.memorializePositions(memorializeParams);
 
         // check LP balance
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress,
-                index:       indexes[0],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[0],
-                lpBalance:   4_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress,
-                index:       indexes[1],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[1],
-                lpBalance:   5_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress,
-                index:       indexes[2],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[2],
-                lpBalance:   6_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testAddress,
+            index:       indexes[0],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[0],
+            lpBalance:   4_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress,
+            index:       indexes[1],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[1],
+            lpBalance:   5_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress,
+            index:       indexes[2],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[2],
+            lpBalance:   6_000 * 1e27,
+            depositTime: _startTime
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId, indexes[0]), 4_000 * 1e27);
@@ -525,144 +460,110 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         indexes[2] = 2552;
         indexes[3] = 2553;
 
-        _addInitialLiquidity(
-            {
-                from:   testLender1,
-                amount: 3_000 * 1e18,
-                index:  indexes[0]
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   testLender1,
-                amount: 3_000 * 1e18,
-                index:  indexes[1]
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   testLender1,
-                amount: 3_000 * 1e18,
-                index:  indexes[2]
-            }
-        );
+        _addInitialLiquidity({
+            from:   testLender1,
+            amount: 3_000 * 1e18,
+            index:  indexes[0]
+        });
+        _addInitialLiquidity({
+            from:   testLender1,
+            amount: 3_000 * 1e18,
+            index:  indexes[1]
+        });
+        _addInitialLiquidity({
+            from:   testLender1,
+            amount: 3_000 * 1e18,
+            index:  indexes[2]
+        });
 
-        _addInitialLiquidity(
-            {
-                from:   testLender2,
-                amount: 3_000 * 1e18,
-                index:  indexes[0]
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   testLender2,
-                amount: 3_000 * 1e18,
-                index:  indexes[3]
-            }
-        );
+        _addInitialLiquidity({
+            from:   testLender2,
+            amount: 3_000 * 1e18,
+            index:  indexes[0]
+        });
+        _addInitialLiquidity({
+            from:   testLender2,
+            amount: 3_000 * 1e18,
+            index:  indexes[3]
+        });
 
         // mint NFTs to later memorialize existing positions into
         uint256 tokenId1 = _mintNFT(testLender1, testLender1, address(_pool));
         uint256 tokenId2 = _mintNFT(testLender2, testLender2, address(_pool));
 
         // check LPs
-        _assertLenderLpBalance(
-            {
-                lender:      testLender1,
-                index:       indexes[0],
-                lpBalance:   3_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testLender2,
-                index:       indexes[0],
-                lpBalance:   3_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[0],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testLender1,
-                index:       indexes[1],
-                lpBalance:   3_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testLender2,
-                index:       indexes[1],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[1],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testLender1,
-                index:       indexes[2],
-                lpBalance:   3_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testLender2,
-                index:       indexes[2],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[2],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testLender1,
-                index:       indexes[3],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testLender2,
-                index:       indexes[3],
-                lpBalance:   3_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[3],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testLender1,
+            index:       indexes[0],
+            lpBalance:   3_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testLender2,
+            index:       indexes[0],
+            lpBalance:   3_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[0],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testLender1,
+            index:       indexes[1],
+            lpBalance:   3_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testLender2,
+            index:       indexes[1],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[1],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testLender1,
+            index:       indexes[2],
+            lpBalance:   3_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testLender2,
+            index:       indexes[2],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[2],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testLender1,
+            index:       indexes[3],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testLender2,
+            index:       indexes[3],
+            lpBalance:   3_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[3],
+            lpBalance:   0,
+            depositTime: 0
+        });
 
         assertEq(_positionManager.getLPs(indexes[0], tokenId1), 0);
         assertEq(_positionManager.getLPs(indexes[1], tokenId1), 0);
@@ -698,70 +599,54 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.memorializePositions(memorializeParams);
 
         // check lender, position manager,  and pool state
-        _assertLenderLpBalance(
-            {
-                lender:      testLender1,
-                index:       indexes[0],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[0],
-                lpBalance:   3_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testLender1,
-                index:       indexes[1],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[1],
-                lpBalance:   3_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testLender1,
-                index:       indexes[2],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[2],
-                lpBalance:   3_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testLender1,
-                index:       indexes[3],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[3],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testLender1,
+            index:       indexes[0],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[0],
+            lpBalance:   3_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testLender1,
+            index:       indexes[1],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[1],
+            lpBalance:   3_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testLender1,
+            index:       indexes[2],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[2],
+            lpBalance:   3_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testLender1,
+            index:       indexes[3],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[3],
+            lpBalance:   0,
+            depositTime: 0
+        });
 
         assertEq(_positionManager.getLPs(tokenId1, indexes[0]), 3_000 * 1e27);
         assertEq(_positionManager.getLPs(tokenId1, indexes[1]), 3_000 * 1e27);
@@ -791,70 +676,54 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.memorializePositions(memorializeParams);
 
         // // check lender, position manager,  and pool state
-        _assertLenderLpBalance(
-            {
-                lender:      testLender2,
-                index:       indexes[0],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[0],
-                lpBalance:   6_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testLender2,
-                index:       indexes[1],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[1],
-                lpBalance:   3_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testLender2,
-                index:       indexes[2],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[2],
-                lpBalance:   3_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testLender2,
-                index:       indexes[3],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[3],
-                lpBalance:   3_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testLender2,
+            index:       indexes[0],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[0],
+            lpBalance:   6_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testLender2,
+            index:       indexes[1],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[1],
+            lpBalance:   3_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testLender2,
+            index:       indexes[2],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[2],
+            lpBalance:   3_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testLender2,
+            index:       indexes[3],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[3],
+            lpBalance:   3_000 * 1e27,
+            depositTime: _startTime
+        });
 
         assertEq(_positionManager.getLPs(tokenId1, indexes[0]), 3_000 * 1e27);
         assertEq(_positionManager.getLPs(tokenId1, indexes[1]), 3_000 * 1e27);
@@ -905,43 +774,36 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // add initial liquidity
         uint256 mintAmount = 50_000 * 1e18;
         _mintQuoteAndApproveManagerTokens(testMinter, mintAmount);
-        _addInitialLiquidity(
-            {
-                from:   testMinter,
-                amount: 15_000 * 1e18,
-                index:  testIndexPrice
-            }
-        );
+
+        _addInitialLiquidity({
+            from:   testMinter,
+            amount: 15_000 * 1e18,
+            index:  testIndexPrice
+        });
 
         uint256 tokenId = _mintNFT(testMinter, testMinter, address(_pool));
         // check owner
         assertEq(_positionManager.ownerOf(tokenId), testMinter);
 
         // check LPs
-        _assertLenderLpBalance(
-            {
-                lender:      testMinter,
-                index:       testIndexPrice,
-                lpBalance:   15_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testReceiver,
-                index:       testIndexPrice,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       testIndexPrice,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndexPrice,
+            lpBalance:   15_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testReceiver,
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
@@ -958,30 +820,24 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
         _positionManager.memorializePositions(memorializeParams);
 
-        _assertLenderLpBalance(
-            {
-                lender:      testMinter,
-                index:       testIndexPrice,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testReceiver,
-                index:       testIndexPrice,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       testIndexPrice,
-                lpBalance:   15_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testReceiver,
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndexPrice,
+            lpBalance:   15_000 * 1e27,
+            depositTime: _startTime
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 15_000 * 1e27);
@@ -1008,30 +864,24 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.reedemPositions(reedemParams);
 
         // check pool state
-        _assertLenderLpBalance(
-            {
-                lender:      testMinter,
-                index:       testIndexPrice,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testReceiver,
-                index:       testIndexPrice,
-                lpBalance:   15_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       testIndexPrice,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testReceiver,
+            index:       testIndexPrice,
+            lpBalance:   15_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
@@ -1053,43 +903,36 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // add initial liquidity
         uint256 mintAmount = 50_000 * 1e18;
         _mintQuoteAndApproveManagerTokens(testMinter, mintAmount);
-        _addInitialLiquidity(
-            {
-                from:   testMinter,
-                amount: 15_000 * 1e18,
-                index:  testIndexPrice
-            }
-        );
+
+        _addInitialLiquidity({
+            from:   testMinter,
+            amount: 15_000 * 1e18,
+            index:  testIndexPrice
+        });
 
         uint256 tokenId = _mintNFT(testMinter, testMinter, address(_pool));
         // check owner
         assertEq(_positionManager.ownerOf(tokenId), testMinter);
 
         // check LPs
-        _assertLenderLpBalance(
-            {
-                lender:      testMinter,
-                index:       testIndexPrice,
-                lpBalance:   15_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testReceiver,
-                index:       testIndexPrice,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       testIndexPrice,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndexPrice,
+            lpBalance:   15_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testReceiver,
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
@@ -1107,30 +950,24 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.memorializePositions(memorializeParams);
 
         // check pool state
-        _assertLenderLpBalance(
-            {
-                lender:      testMinter,
-                index:       testIndexPrice,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testReceiver,
-                index:       testIndexPrice,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       testIndexPrice,
-                lpBalance:   15_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testReceiver,
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndexPrice,
+            lpBalance:   15_000 * 1e27,
+            depositTime: _startTime
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 15_000 * 1e27);
@@ -1177,30 +1014,24 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.reedemPositions(reedemParams);
 
         // check pool state
-        _assertLenderLpBalance(
-            {
-                lender:      testMinter,
-                index:       testIndexPrice,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testReceiver,
-                index:       testIndexPrice,
-                lpBalance:   15_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       testIndexPrice,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testReceiver,
+            index:       testIndexPrice,
+            lpBalance:   15_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
@@ -1299,13 +1130,12 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // add initial liquidity
         uint256 mintAmount = 50_000 * 1e18;
         _mintQuoteAndApproveManagerTokens(testMinter, mintAmount);
-        _addInitialLiquidity(
-            {
-                from:   testMinter,
-                amount: 15_000 * 1e18,
-                index:  testIndexPrice
-            }
-        );
+
+        _addInitialLiquidity({
+            from:   testMinter,
+            amount: 15_000 * 1e18,
+            index:  testIndexPrice
+        });
 
         uint256 tokenId = _mintNFT(testMinter, testMinter, address(_pool));
 
@@ -1353,13 +1183,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         address notOwner    = makeAddr("notOwner");
         _mintQuoteAndApproveManagerTokens(testAddress, 10_000 * 1e18);
 
-        _addInitialLiquidity(
-            {
-                from:   testAddress,
-                amount: 10_000 * 1e18,
-                index:  2550
-            }
-        );
+        _addInitialLiquidity({
+            from:   testAddress,
+            amount: 10_000 * 1e18,
+            index:  2550
+        });
 
         // mint position NFT
         uint256 tokenId = _mintNFT(testAddress, testAddress, address(_pool));
@@ -1386,20 +1214,16 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _mintQuoteAndApproveManagerTokens(testAddress2, 10_000 * 1e18);
         _mintCollateralAndApproveTokens(testAddress3, 10_000 * 1e18);
 
-        _addInitialLiquidity(
-            {
-                from:   testAddress1,
-                amount: 2_500 * 1e18,
-                index:  mintIndex
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   testAddress2,
-                amount: 5_500 * 1e18,
-                index:  mintIndex
-            }
-        );
+        _addInitialLiquidity({
+            from:   testAddress1,
+            amount: 2_500 * 1e18,
+            index:  mintIndex
+        });
+        _addInitialLiquidity({
+            from:   testAddress2,
+            amount: 5_500 * 1e18,
+            index:  mintIndex
+        });
 
         uint256 tokenId1 = _mintNFT(testAddress1, testAddress1, address(_pool));
         uint256 tokenId2 = _mintNFT(testAddress2, testAddress2, address(_pool));
@@ -1407,54 +1231,42 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertEq(_positionManager.ownerOf(tokenId2), testAddress2);
 
         // check pool state
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       mintIndex,
-                lpBalance:   2_500 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress2,
-                index:       mintIndex,
-                lpBalance:   5_500 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       mintIndex,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       moveIndex,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress2,
-                index:       moveIndex,
-                lpBalance:   0 * 1e27,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       moveIndex,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       mintIndex,
+            lpBalance:   2_500 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress2,
+            index:       mintIndex,
+            lpBalance:   5_500 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       mintIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       moveIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress2,
+            index:       moveIndex,
+            lpBalance:   0 * 1e27,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       moveIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId1, mintIndex), 0);
@@ -1480,54 +1292,42 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.memorializePositions(memorializeParams);
 
         // check pool state
-       _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       mintIndex,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress2,
-                index:       mintIndex,
-                lpBalance:   5_500 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       mintIndex,
-                lpBalance:   2_500 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       moveIndex,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress2,
-                index:       moveIndex,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       moveIndex,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       mintIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress2,
+            index:       mintIndex,
+            lpBalance:   5_500 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       mintIndex,
+            lpBalance:   2_500 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       moveIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress2,
+            index:       moveIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       moveIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId1, mintIndex), 2_500 * 1e27);
@@ -1551,54 +1351,42 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.moveLiquidity(moveLiquidityParams);
 
         // check pool state
-       _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       mintIndex,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress2,
-                index:       mintIndex,
-                lpBalance:   5_500 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       mintIndex,
-                lpBalance:   0,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       moveIndex,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress2,
-                index:       moveIndex,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       moveIndex,
-                lpBalance:   2_500 * 1e27,
-                depositTime: _startTime
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       mintIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress2,
+            index:       mintIndex,
+            lpBalance:   5_500 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       mintIndex,
+            lpBalance:   0,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       moveIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress2,
+            index:       moveIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       moveIndex,
+            lpBalance:   2_500 * 1e27,
+            depositTime: _startTime
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId1, mintIndex), 0);
@@ -1622,54 +1410,42 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.memorializePositions(memorializeParams);
 
         // check pool state
-       _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       mintIndex,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress2,
-                index:       mintIndex,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       mintIndex,
-                lpBalance:   5_500 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       moveIndex,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress2,
-                index:       moveIndex,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       moveIndex,
-                lpBalance:   2_500 * 1e27,
-                depositTime: _startTime
-            }
-        );
+       _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       mintIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress2,
+            index:       mintIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       mintIndex,
+            lpBalance:   5_500 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       moveIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress2,
+            index:       moveIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       moveIndex,
+            lpBalance:   2_500 * 1e27,
+            depositTime: _startTime
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId1, mintIndex), 0);
@@ -1686,14 +1462,12 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             tokenId2, address(_pool), mintIndex, moveIndex
         );
 
-        _addCollateral(
-            {
-                from:    testAddress3,
-                amount:  10_000 * 1e18,
-                index:   mintIndex,
-                lpAward: 30_108_920.22197881557845 * 1e27
-            }
-        );
+        _addCollateral({
+            from:    testAddress3,
+            amount:  10_000 * 1e18,
+            index:   mintIndex,
+            lpAward: 30_108_920.22197881557845 * 1e27
+        });
 
         // move liquidity called by testAddress2 owner
         vm.expectEmit(true, true, true, true);
@@ -1702,54 +1476,42 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.moveLiquidity(moveLiquidityParams);
 
         // check pool state
-       _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       mintIndex,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress2,
-                index:       mintIndex,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       mintIndex,
-                lpBalance:   0 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       moveIndex,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress2,
-                index:       moveIndex,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       moveIndex,
-                lpBalance:   8_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
+       _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       mintIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress2,
+            index:       mintIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       mintIndex,
+            lpBalance:   0 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       moveIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress2,
+            index:       moveIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       moveIndex,
+            lpBalance:   8_000 * 1e27,
+            depositTime: _startTime
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId1, mintIndex), 0);
@@ -1778,35 +1540,30 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // add initial liquidity
         uint256 mintAmount = 50_000 * 1e18;
         _mintQuoteAndApproveManagerTokens(testMinter, mintAmount);
-        _addInitialLiquidity(
-            {
-                from:   testMinter,
-                amount: 15_000 * 1e18,
-                index:  testIndexPrice
-            }
-        );
+
+        _addInitialLiquidity({
+            from:   testMinter,
+            amount: 15_000 * 1e18,
+            index:  testIndexPrice
+        });
 
         uint256 tokenId = _mintNFT(testMinter, testMinter, address(_pool));
         // check owner
         assertEq(_positionManager.ownerOf(tokenId), testMinter);
 
         // check pool state
-        _assertLenderLpBalance(
-            {
-                lender:      testMinter,
-                index:       testIndexPrice,
-                lpBalance:   15_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       testIndexPrice,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndexPrice,
+            lpBalance:   15_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
@@ -1824,22 +1581,18 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.memorializePositions(memorializeParams);
 
         // check pool state
-        _assertLenderLpBalance(
-            {
-                lender:      testMinter,
-                index:       testIndexPrice,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       testIndexPrice,
-                lpBalance:   15_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndexPrice,
+            lpBalance:   15_000 * 1e27,
+            depositTime: _startTime
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 15_000 * 1e27);
@@ -1862,22 +1615,18 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.reedemPositions(reedemParams);
 
         // check pool state
-        _assertLenderLpBalance(
-            {
-                lender:      testMinter,
-                index:       testIndexPrice,
-                lpBalance:   15_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       testIndexPrice,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndexPrice,
+            lpBalance:   15_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
@@ -1916,82 +1665,65 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         uint256 mintAmount = 50_000 * 1e18;
         _mintQuoteAndApproveManagerTokens(testMinter, mintAmount);
         _mintQuoteAndApproveManagerTokens(testReceiver, mintAmount);
-        _addInitialLiquidity(
-            {
-                from:   testReceiver,
-                amount: 25_000 * 1e18,
-                index:  testIndexPrice
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   testReceiver,
-                amount: 15_000 * 1e18,
-                index:  2551
-            }
-        );
 
-        _addInitialLiquidity(
-            {
-                from:   testMinter,
-                amount: 15_000 * 1e18,
-                index:  testIndexPrice
-            }
-        );
+        _addInitialLiquidity({
+            from:   testReceiver,
+            amount: 25_000 * 1e18,
+            index:  testIndexPrice
+        });
+        _addInitialLiquidity({
+            from:   testReceiver,
+            amount: 15_000 * 1e18,
+            index:  2551
+        });
+
+        _addInitialLiquidity({
+            from:   testMinter,
+            amount: 15_000 * 1e18,
+            index:  testIndexPrice
+        });
 
         uint256 tokenId = _mintNFT(testMinter, testMinter, address(_pool));
         // check owner
         assertEq(_positionManager.ownerOf(tokenId), testMinter);
 
         // check pool state
-        _assertLenderLpBalance(
-            {
-                lender:      testMinter,
-                index:       testIndexPrice,
-                lpBalance:   15_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testReceiver,
-                index:       testIndexPrice,
-                lpBalance:   25_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       testIndexPrice,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testMinter,
-                index:       2551,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testReceiver,
-                index:       2551,
-                lpBalance:   15_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       2551,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndexPrice,
+            lpBalance:   15_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testReceiver,
+            index:       testIndexPrice,
+            lpBalance:   25_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testMinter,
+            index:       2551,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testReceiver,
+            index:       2551,
+            lpBalance:   15_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       2551,
+            lpBalance:   0,
+            depositTime: 0
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
@@ -2009,54 +1741,42 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.memorializePositions(memorializeParams);
 
         // check pool state
-        _assertLenderLpBalance(
-            {
-                lender:      testMinter,
-                index:       testIndexPrice,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testReceiver,
-                index:       testIndexPrice,
-                lpBalance:   25_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       testIndexPrice,
-                lpBalance:   15_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testMinter,
-                index:       2551,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testReceiver,
-                index:       2551,
-                lpBalance:   15_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       2551,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testReceiver,
+            index:       testIndexPrice,
+            lpBalance:   25_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndexPrice,
+            lpBalance:   15_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      testMinter,
+            index:       2551,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testReceiver,
+            index:       2551,
+            lpBalance:   15_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       2551,
+            lpBalance:   0,
+            depositTime: 0
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 15_000 * 1e27);
@@ -2094,54 +1814,42 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.reedemPositions(reedemParams);
 
         // check pool state
-        _assertLenderLpBalance(
-            {
-                lender:      testMinter,
-                index:       testIndexPrice,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testReceiver,
-                index:       testIndexPrice,
-                lpBalance:   40_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       testIndexPrice,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testMinter,
-                index:       2551,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testReceiver,
-                index:       2551,
-                lpBalance:   15_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       2551,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testReceiver,
+            index:       testIndexPrice,
+            lpBalance:   40_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testMinter,
+            index:       2551,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testReceiver,
+            index:       2551,
+            lpBalance:   15_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       2551,
+            lpBalance:   0,
+            depositTime: 0
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
@@ -2159,37 +1867,30 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         uint256[] memory indexes = new uint256[](1);
         indexes[0] = 2550;
 
-        _addInitialLiquidity(
-            {
-                from:   lender,
-                amount: 10_000 * 1e18,
-                index:  2550
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      lender,
-                index:       2550,
-                lpBalance:   10_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      minter,
-                index:       2550,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       2550,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
+        _addInitialLiquidity({
+            from:   lender,
+            amount: 10_000 * 1e18,
+            index:  2550
+        });
+        _assertLenderLpBalance({
+            lender:      lender,
+            index:       2550,
+            lpBalance:   10_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      minter,
+            index:       2550,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       2550,
+            lpBalance:   0,
+            depositTime: 0
+        });
+
         // allow position manager to take ownership of the position
         _pool.approveLpOwnership(address(_positionManager), indexes[0], 10_000 * 1e27);
 
@@ -2200,30 +1901,25 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             tokenId, indexes
         );
         _positionManager.memorializePositions(memorializeParams);
-        _assertLenderLpBalance(
-            {
-                lender:      lender,
-                index:       2550,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      minter,
-                index:       2550,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       2550,
-                lpBalance:   10_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
+
+        _assertLenderLpBalance({
+            lender:      lender,
+            index:       2550,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      minter,
+            index:       2550,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       2550,
+            lpBalance:   10_000 * 1e27,
+            depositTime: _startTime
+        });
 
         // minter cannot move liquidity on behalf of lender (is not approved)
         IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
@@ -2253,30 +1949,25 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         changePrank(minter);
         // minter can move liquidity on behalf of lender
         _positionManager.moveLiquidity(moveLiquidityParams);
-        _assertLenderLpBalance(
-            {
-                lender:      lender,
-                index:       2551,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      minter,
-                index:       2551,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       2551,
-                lpBalance:   10_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
+
+        _assertLenderLpBalance({
+            lender:      lender,
+            index:       2551,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      minter,
+            index:       2551,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       2551,
+            lpBalance:   10_000 * 1e27,
+            depositTime: _startTime
+        });
 
         // minter can redeem liquidity on behalf of lender
         indexes[0] = 2551;
@@ -2284,30 +1975,25 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             tokenId, address(_pool), indexes
         );
         _positionManager.reedemPositions(reedemParams);
-        _assertLenderLpBalance(
-            {
-                lender:      lender,
-                index:       2551,
-                lpBalance:   10_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      minter,
-                index:       2551,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       2551,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
+
+        _assertLenderLpBalance({
+            lender:      lender,
+            index:       2551,
+            lpBalance:   10_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      minter,
+            index:       2551,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       2551,
+            lpBalance:   0,
+            depositTime: 0
+        });
 
         // minter can burn NFT on behalf of lender
         _positionManager.burn(burnParams);
@@ -2326,29 +2012,24 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         uint256[] memory indexes = new uint256[](1);
         indexes[0] = 2550;
 
-        _addInitialLiquidity(
-            {
-                from:   lender,
-                amount: 10_000 * 1e18,
-                index:  2550
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      lender,
-                index:       2550,
-                lpBalance:   10_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      minter,
-                index:       2550,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
+        _addInitialLiquidity({
+            from:   lender,
+            amount: 10_000 * 1e18,
+            index:  2550
+        });
+        _assertLenderLpBalance({
+            lender:      lender,
+            index:       2550,
+            lpBalance:   10_000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      minter,
+            index:       2550,
+            lpBalance:   0,
+            depositTime: 0
+        });
+
         // allow position manager to take ownership of the position
         _pool.approveLpOwnership(address(_positionManager), indexes[0], 10_000 * 1e27);
 
@@ -2372,22 +2053,19 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             tokenId, address(_pool), indexes
         );
         _positionManager.reedemPositions(reedemParams);
-        _assertLenderLpBalance(
-            {
-                lender:      lender,
-                index:       2550,
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      minter,
-                index:       2550,
-                lpBalance:   10_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
+
+        _assertLenderLpBalance({
+            lender:      lender,
+            index:       2550,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      minter,
+            index:       2550,
+            lpBalance:   10_000 * 1e27,
+            depositTime: _startTime
+        });
     }
 
     function testMayInteractReverts() external {
@@ -2434,13 +2112,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         uint256[] memory indexes = new uint256[](1);
         indexes[0] = 2550;
 
-        _addInitialLiquidity(
-            {
-                from:   testAddress,
-                amount: 3_000 * 1e18,
-                index:  indexes[0]
-            }
-        );
+        _addInitialLiquidity({
+            from:   testAddress,
+            amount: 3_000 * 1e18,
+            index:  indexes[0]
+        });
 
         // mint NFT
         uint256 tokenId = _mintNFT(testAddress, testAddress, address(_pool));
@@ -2514,80 +2190,62 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         indexes[1] = 2551;
         indexes[2] = 2552;
 
-        _addInitialLiquidity(
-            {
-                from:   testAddress1,
-                amount: 3_000 * 1e18,
-                index:  indexes[0]
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   testAddress1,
-                amount: 3_000 * 1e18,
-                index:  indexes[1]
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   testAddress1,
-                amount: 3_000 * 1e18,
-                index:  indexes[2]
-            }
-        );
+        _addInitialLiquidity({
+            from:   testAddress1,
+            amount: 3_000 * 1e18,
+            index:  indexes[0]
+        });
+        _addInitialLiquidity({
+            from:   testAddress1,
+            amount: 3_000 * 1e18,
+            index:  indexes[1]
+        });
+        _addInitialLiquidity({
+            from:   testAddress1,
+            amount: 3_000 * 1e18,
+            index:  indexes[2]
+        });
 
         // mint an NFT to later memorialize existing positions into
         uint256 tokenId = _mintNFT(testAddress1, testAddress1, address(_pool), keccak256("ERC721_NON_SUBSET_HASH"));
 
         // check LPs
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       indexes[0],
-                lpBalance:   3_000 * 1e27,
-                depositTime: currentTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[0],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       indexes[1],
-                lpBalance:   3_000 * 1e27,
-                depositTime: currentTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[1],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       indexes[2],
-                lpBalance:   3_000 * 1e27,
-                depositTime: currentTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[2],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       indexes[0],
+            lpBalance:   3_000 * 1e27,
+            depositTime: currentTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[0],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       indexes[1],
+            lpBalance:   3_000 * 1e27,
+            depositTime: currentTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[1],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       indexes[2],
+            lpBalance:   3_000 * 1e27,
+            depositTime: currentTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[2],
+            lpBalance:   0,
+            depositTime: 0
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId, indexes[0]), 0);
@@ -2613,54 +2271,42 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         emit TransferLPs(testAddress1, address(_positionManager), indexes, 9_000 * 1e27);
         _positionManager.memorializePositions(memorializeParams);
 
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       indexes[0],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[0],
-                lpBalance:   3_000 * 1e27,
-                depositTime: currentTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       indexes[1],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[1],
-                lpBalance:   3_000 * 1e27,
-                depositTime: currentTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       indexes[2],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[2],
-                lpBalance:   3_000 * 1e27,
-                depositTime: currentTime
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       indexes[0],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[0],
+            lpBalance:   3_000 * 1e27,
+            depositTime: currentTime
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       indexes[1],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[1],
+            lpBalance:   3_000 * 1e27,
+            depositTime: currentTime
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       indexes[2],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[2],
+            lpBalance:   3_000 * 1e27,
+            depositTime: currentTime
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId, indexes[0]), 3_000 * 1e27);
@@ -2671,77 +2317,59 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
 
         // add more liquidity
-        _addInitialLiquidity(
-            {
-                from:   testAddress1,
-                amount: 1_000 * 1e18,
-                index:  indexes[0]
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   testAddress1,
-                amount: 2_000 * 1e18,
-                index:  indexes[1]
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   testAddress1,
-                amount: 3_000 * 1e18,
-                index:  indexes[2]
-            }
-        );
+        _addInitialLiquidity({
+            from:   testAddress1,
+            amount: 1_000 * 1e18,
+            index:  indexes[0]
+        });
+        _addInitialLiquidity({
+            from:   testAddress1,
+            amount: 2_000 * 1e18,
+            index:  indexes[1]
+        });
+        _addInitialLiquidity({
+            from:   testAddress1,
+            amount: 3_000 * 1e18,
+            index:  indexes[2]
+        });
 
         // check LP balance
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       indexes[0],
-                lpBalance:   1_000 * 1e27,
-                depositTime: currentTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[0],
-                lpBalance:   3_000 * 1e27,
-                depositTime: currentTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       indexes[1],
-                lpBalance:   2_000 * 1e27,
-                depositTime: currentTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[1],
-                lpBalance:   3_000 * 1e27,
-                depositTime: currentTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       indexes[2],
-                lpBalance:   3_000 * 1e27,
-                depositTime: currentTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[2],
-                lpBalance:   3_000 * 1e27,
-                depositTime: currentTime
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       indexes[0],
+            lpBalance:   1_000 * 1e27,
+            depositTime: currentTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[0],
+            lpBalance:   3_000 * 1e27,
+            depositTime: currentTime
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       indexes[1],
+            lpBalance:   2_000 * 1e27,
+            depositTime: currentTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[1],
+            lpBalance:   3_000 * 1e27,
+            depositTime: currentTime
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       indexes[2],
+            lpBalance:   3_000 * 1e27,
+            depositTime: currentTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[2],
+            lpBalance:   3_000 * 1e27,
+            depositTime: currentTime
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId, indexes[0]), 3_000 * 1e27);
@@ -2764,54 +2392,42 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         _positionManager.memorializePositions(memorializeParams);
 
         // check LP balance
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       indexes[0],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[0],
-                lpBalance:   4_000 * 1e27,
-                depositTime: currentTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       indexes[1],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[1],
-                lpBalance:   5_000 * 1e27,
-                depositTime: currentTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       indexes[2],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[2],
-                lpBalance:   6_000 * 1e27,
-                depositTime: currentTime
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       indexes[0],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[0],
+            lpBalance:   4_000 * 1e27,
+            depositTime: currentTime
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       indexes[1],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[1],
+            lpBalance:   5_000 * 1e27,
+            depositTime: currentTime
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       indexes[2],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[2],
+            lpBalance:   6_000 * 1e27,
+            depositTime: currentTime
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId, indexes[0]), 4_000 * 1e27);
@@ -2833,54 +2449,42 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         _positionManager.moveLiquidity(moveLiquidityParams);
 
         // check LP balance
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       indexes[0],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[0],
-                lpBalance:   0,
-                depositTime: currentTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       indexes[1],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[1],
-                lpBalance:   9_000 * 1e27,
-                depositTime: currentTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       indexes[2],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[2],
-                lpBalance:   6_000 * 1e27,
-                depositTime: currentTime
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       indexes[0],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[0],
+            lpBalance:   0,
+            depositTime: currentTime
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       indexes[1],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[1],
+            lpBalance:   9_000 * 1e27,
+            depositTime: currentTime
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       indexes[2],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[2],
+            lpBalance:   6_000 * 1e27,
+            depositTime: currentTime
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId, indexes[0]), 0);
@@ -2928,78 +2532,60 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         _positionManager.reedemPositions(reedemParams);
 
          // check pool state
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       indexes[0],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress2,
-                index:       indexes[0],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[0],
-                lpBalance:   0,
-                depositTime: currentTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       indexes[0],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress2,
-                index:       indexes[1],
-                lpBalance:   9_000 * 1e27,
-                depositTime: currentTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[1],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress1,
-                index:       indexes[0],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      testAddress2,
-                index:       indexes[2],
-                lpBalance:   6_000 * 1e27,
-                depositTime: currentTime
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      address(_positionManager),
-                index:       indexes[2],
-                lpBalance:   0,
-                depositTime: 0
-            }
-        );
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       indexes[0],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress2,
+            index:       indexes[0],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[0],
+            lpBalance:   0,
+            depositTime: currentTime
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       indexes[0],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress2,
+            index:       indexes[1],
+            lpBalance:   9_000 * 1e27,
+            depositTime: currentTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[1],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       indexes[0],
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      testAddress2,
+            index:       indexes[2],
+            lpBalance:   6_000 * 1e27,
+            depositTime: currentTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[2],
+            lpBalance:   0,
+            depositTime: 0
+        });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId, indexes[0]), 0);
