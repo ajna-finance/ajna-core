@@ -44,121 +44,97 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _mintCollateralAndApproveTokens(_borrower5, 1_000 * 1e18);
         _mintCollateralAndApproveTokens(_borrower6, 1_000 * 1e18);
 
-        // Lender 1 adds Quote token accross 2 buckets
-        _addInitialLiquidity(
-            {
-                from:   _lender1,
-                amount: 50_000 * 1e18,
-                index:  2500
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   _lender1,
-                amount: 50_000 * 1e18,
-                index:  2501
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   _lender1,
-                amount: 1_000 * 1e18,
-                index:  2502
-            }
-        );
-
+        // Lender 1 adds Quote token accross 3 buckets
+        _addInitialLiquidity({
+            from:   _lender1,
+            amount: 50_000 * 1e18,
+            index:  2500
+        });
+        _addInitialLiquidity({
+            from:   _lender1,
+            amount: 50_000 * 1e18,
+            index:  2501
+        });
+        _addInitialLiquidity({
+            from:   _lender1,
+            amount: 1_000 * 1e18,
+            index:  2502
+        });
     }
     
     function testLoanHeapUpdateThresholdPrice() external {
         // all 6 borrowers draw debt from pool
-        _drawDebt(
-            {
-                from:               _borrower1,
-                borrower:           _borrower1,
-                amountToBorrow:     1_000 * 1e18,
-                limitIndex:         5000,
-                collateralToPledge: 1_000 * 1e18,
-                newLup:             3_863.654368867279344664 * 1e18
-            }
-        );
-        _drawDebt(
-            {
-                from:               _borrower2,
-                borrower:           _borrower2,
-                amountToBorrow:     2_000 * 1e18,
-                limitIndex:         5000,
-                collateralToPledge: 1_000 * 1e18,
-                newLup:             3_863.654368867279344664 * 1e18
-            }
-        );
-        _drawDebt(
-            {
-                from:               _borrower3,
-                borrower:           _borrower3,
-                amountToBorrow:     3_000 * 1e18,
-                limitIndex:         5000,
-                collateralToPledge: 1_000 * 1e18,
-                newLup:             3_863.654368867279344664 * 1e18
-            }
-        );
-        _drawDebt(
-            {
-                from:               _borrower4,
-                borrower:           _borrower4,
-                amountToBorrow:     4_000 * 1e18,
-                limitIndex:         5000,
-                collateralToPledge: 1_000 * 1e18,
-                newLup:             3_863.654368867279344664 * 1e18
-            }
-        );
-        _drawDebt(
-            {
-                from:               _borrower5,
-                borrower:           _borrower5,
-                amountToBorrow:     5_000 * 1e18,
-                limitIndex:         5000,
-                collateralToPledge: 1_000 * 1e18,
-                newLup:             3_863.654368867279344664 * 1e18
-            }
-        );
-        _drawDebt(
-            {
-                from:               _borrower6,
-                borrower:           _borrower6,
-                amountToBorrow:     6_000 * 1e18,
-                limitIndex:         5000,
-                collateralToPledge: 1_000 * 1e18,
-                newLup:             3_863.654368867279344664 * 1e18
-            }
-        );
+        _drawDebt({
+            from:               _borrower1,
+            borrower:           _borrower1,
+            amountToBorrow:     1_000 * 1e18,
+            limitIndex:         5000,
+            collateralToPledge: 1_000 * 1e18,
+            newLup:             3_863.654368867279344664 * 1e18
+        });
+        _drawDebt({
+            from:               _borrower2,
+            borrower:           _borrower2,
+            amountToBorrow:     2_000 * 1e18,
+            limitIndex:         5000,
+            collateralToPledge: 1_000 * 1e18,
+            newLup:             3_863.654368867279344664 * 1e18
+        });
+        _drawDebt({
+            from:               _borrower3,
+            borrower:           _borrower3,
+            amountToBorrow:     3_000 * 1e18,
+            limitIndex:         5000,
+            collateralToPledge: 1_000 * 1e18,
+            newLup:             3_863.654368867279344664 * 1e18
+        });
+        _drawDebt({
+            from:               _borrower4,
+            borrower:           _borrower4,
+            amountToBorrow:     4_000 * 1e18,
+            limitIndex:         5000,
+            collateralToPledge: 1_000 * 1e18,
+            newLup:             3_863.654368867279344664 * 1e18
+        });
+        _drawDebt({
+            from:               _borrower5,
+            borrower:           _borrower5,
+            amountToBorrow:     5_000 * 1e18,
+            limitIndex:         5000,
+            collateralToPledge: 1_000 * 1e18,
+            newLup:             3_863.654368867279344664 * 1e18
+        });
+        _drawDebt({
+            from:               _borrower6,
+            borrower:           _borrower6,
+            amountToBorrow:     6_000 * 1e18,
+            limitIndex:         5000,
+            collateralToPledge: 1_000 * 1e18,
+            newLup:             3_863.654368867279344664 * 1e18
+        });
 
-        _assertLoans(
-            {
-                noOfLoans:         6,
-                maxBorrower:       _borrower6,
-                maxThresholdPrice: 6.005769230769230772 * 1e18
-            }
-        );
+        _assertLoans({
+            noOfLoans:         6,
+            maxBorrower:       _borrower6,
+            maxThresholdPrice: 6.005769230769230772 * 1e18
+        });
 
-        _drawDebt(
-            {
-                from:               _borrower4,
-                borrower:           _borrower4,
-                amountToBorrow:     10_000 * 1e18,
-                limitIndex:         5000,
-                collateralToPledge: 0,
-                newLup:             3_863.654368867279344664 * 1e18
-            }
-        );
+        // borrower 4 draws debt and becomes loan with highest threshold price in heap
+        _drawDebt({
+            from:               _borrower4,
+            borrower:           _borrower4,
+            amountToBorrow:     10_000 * 1e18,
+            limitIndex:         5000,
+            collateralToPledge: 0,
+            newLup:             3_863.654368867279344664 * 1e18
+        });
+        _assertLoans({
+            noOfLoans:         6,
+            maxBorrower:       _borrower4,
+            maxThresholdPrice: 14.013461538461538468 * 1e18
+        });
 
-        _assertLoans(
-            {
-                noOfLoans:         6,
-                maxBorrower:       _borrower4,
-                maxThresholdPrice: 14.013461538461538468 * 1e18
-            }
-        );
-
+        // borrower 4 repays debt, borrower 6 becomes loan with highest threshold price in heap
         _repayDebt({
             from:             _borrower4,
             borrower:         _borrower4,
@@ -167,15 +143,13 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             collateralToPull: 0,
             newLup:           3_863.654368867279344664 * 1e18
         });
+        _assertLoans({
+            noOfLoans:         6,
+            maxBorrower:       _borrower6,
+            maxThresholdPrice: 6.005769230769230772 * 1e18
+        });
 
-        _assertLoans(
-            {
-                noOfLoans:         6,
-                maxBorrower:       _borrower6,
-                maxThresholdPrice: 6.005769230769230772 * 1e18
-            }
-        );
-
+        // borrower 6 repays debt, borrower 5 becomes loan with highest threshold price in heap
         _repayDebt({
             from:             _borrower6,
             borrower:         _borrower6,
@@ -184,32 +158,25 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             collateralToPull: 0,
             newLup:           3_863.654368867279344664 * 1e18
         });
+        _assertLoans({
+            noOfLoans:         6,
+            maxBorrower:       _borrower5,
+            maxThresholdPrice: 5.004807692307692310 * 1e18
+        });
 
-        _assertLoans(
-            {
-                noOfLoans:         6,
-                maxBorrower:       _borrower5,
-                maxThresholdPrice: 5.004807692307692310 * 1e18
-            }
-        );
-
-        _drawDebt(
-            {
-                from:               _borrower6,
-                borrower:           _borrower6,
-                amountToBorrow:     11_000 * 1e18,
-                limitIndex:         5000,
-                collateralToPledge: 0,
-                newLup:             3_863.654368867279344664 * 1e18
-            }
-        );
-
-        _assertLoans(
-            {
-                noOfLoans:         6,
-                maxBorrower:       _borrower6,
-                maxThresholdPrice: 12.016346153846153854 * 1e18
-            }
-        );
+        // borrower 6 draws more debt and becomes loan with highest threshold price in heap
+        _drawDebt({
+            from:               _borrower6,
+            borrower:           _borrower6,
+            amountToBorrow:     11_000 * 1e18,
+            limitIndex:         5000,
+            collateralToPledge: 0,
+            newLup:             3_863.654368867279344664 * 1e18
+        });
+        _assertLoans({
+            noOfLoans:         6,
+            maxBorrower:       _borrower6,
+            maxThresholdPrice: 12.016346153846153854 * 1e18
+        });
     }
 }
