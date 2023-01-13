@@ -1,12 +1,30 @@
 
 <!---
-DELETE SECTION BEFORE CRAFTING PR
+Add the `Scope: Edits /src` and `Status: Needs Auditor Approval`
 CHANGES IN SCOPE /SRC DIR:
 - resizing / retyping variables for gas optimization
 - moving variables in methods
 - altering decorators of methods (i.e. view -> internal/external)
 - signif restructuring should be avoided, but if necessary moving of functions accross files
 - altering logic
+If the above applies to this PR put the label 
+
+Add the `Scope: Edits /src` and `Status: Needs Auditor Approval`
+CHANGES IN SCOPE /SRC DIR:
+- renaming (not retyping or resizing) of variables & methods
+- reordering and moving of functions in files
+- lite moving of functions accross files
+- comments
+
+CHANGES IN SCOPE NOT /SRC DIR:
+- moving variables in methods
+- altering decorators of methods (i.e. view -> internal/external)
+- signif restructuring should be avoided, but if necessary moving of functions accross files
+- altering logic
+- renaming of variables & methods
+- reordering and moving of functions in files
+- lite moving of functions accross files
+- comments
 -->
 
 # Description of bug or vulnerability and solution
