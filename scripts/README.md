@@ -45,3 +45,16 @@ node erc20PoolInteractions.js
 - borrower pledge 100 collateral and borrows 1000 quote tokens
 - borrow repay and pull collateral
 - lender removes all their quote tokens
+## Contract Deployment Using Foundry
+
+Ensure the following env variables are set in your env file .env
+
+PRIVATE_KEY=<PRIVATE_KEY_HERE>
+ETHERSCAN_API_KEY=<ETHERSCAN_API_KEY_HERE>
+ETH_RPC_URL=<ETH_RPC_URL_HERE>
+
+
+Once the above variables are set run the following:
+WARNING: THE RPC_URL PASSED IN WILL DETERMINE WHAT NETWORK YOUR CONTRACT IS DEPLOYED ON.
+```
+make deploy-contract CONTRACT=<CONTRACT_NAME_HERE> BLOCK_NUMBER=<Latest_block_number>
