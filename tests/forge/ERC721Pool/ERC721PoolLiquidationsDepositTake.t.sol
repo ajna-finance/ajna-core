@@ -10,14 +10,14 @@ contract ERC721PoolLiquidationsDepositTakeTest is ERC721HelperContract {
     address internal _borrower;
     address internal _borrower2;
     address internal _lender;
-    address internal _lender1;
+    address internal _lender2;
     address internal _taker;
 
     function setUp() external {
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
-        _lender1   = makeAddr("lender1");
+        _lender2   = makeAddr("lender2");
         _taker     = makeAddr("taker");
 
         // deploy subset pool
@@ -31,7 +31,7 @@ contract ERC721PoolLiquidationsDepositTakeTest is ERC721HelperContract {
         _pool = _deploySubsetPool(subsetTokenIds);
 
         _mintAndApproveQuoteTokens(_lender,  120_000 * 1e18);
-        _mintAndApproveQuoteTokens(_lender1, 120_000 * 1e18);
+        _mintAndApproveQuoteTokens(_lender2, 120_000 * 1e18);
         _mintAndApproveQuoteTokens(_borrower, 10 * 1e18);
 
         _mintAndApproveCollateralTokens(_borrower,  6);
@@ -69,6 +69,8 @@ contract ERC721PoolLiquidationsDepositTakeTest is ERC721HelperContract {
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
 
+        uint256 expectedNewLup = 9.917184843435912074 * 1e18;
+
         // borrower deposits two NFTs into the subset pool and borrows
         _pledgeCollateral({
             from:     _borrower,
@@ -79,7 +81,7 @@ contract ERC721PoolLiquidationsDepositTakeTest is ERC721HelperContract {
             from:       _borrower,
             amount:     19.8 * 1e18,
             indexLimit: _i9_91,
-            newLup:     9.917184843435912074 * 1e18
+            newLup:     expectedNewLup
         });
 
         // second borrower deposits three NFTs into the subset pool and borrows
@@ -96,7 +98,7 @@ contract ERC721PoolLiquidationsDepositTakeTest is ERC721HelperContract {
             from:       _borrower2,
             amount:     15 * 1e18,
             indexLimit: _i9_72,
-            newLup:     9.917184843435912074 * 1e18
+            newLup:     expectedNewLup
         });
 
         /*****************************/
@@ -106,7 +108,7 @@ contract ERC721PoolLiquidationsDepositTakeTest is ERC721HelperContract {
         _assertPool(
             PoolParams({
                 htp:                  9.909519230769230774 * 1e18,
-                lup:                  9.917184843435912074 * 1e18,
+                lup:                  expectedNewLup,
                 poolSize:             73_000 * 1e18,
                 pledgedCollateral:    5 * 1e18,
                 encumberedCollateral: 3.512434434608473285 * 1e18,
