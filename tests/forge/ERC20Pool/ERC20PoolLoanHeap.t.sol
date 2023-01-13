@@ -128,6 +128,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             collateralToPledge: 0,
             newLup:             3_863.654368867279344664 * 1e18
         });
+
         _assertLoans({
             noOfLoans:         6,
             maxBorrower:       _borrower4,
@@ -143,6 +144,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             collateralToPull: 0,
             newLup:           3_863.654368867279344664 * 1e18
         });
+
         _assertLoans({
             noOfLoans:         6,
             maxBorrower:       _borrower6,
@@ -158,6 +160,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             collateralToPull: 0,
             newLup:           3_863.654368867279344664 * 1e18
         });
+
         _assertLoans({
             noOfLoans:         6,
             maxBorrower:       _borrower5,
@@ -173,6 +176,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             collateralToPledge: 0,
             newLup:             3_863.654368867279344664 * 1e18
         });
+
         _assertLoans({
             noOfLoans:         6,
             maxBorrower:       _borrower6,

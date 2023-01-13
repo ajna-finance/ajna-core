@@ -154,6 +154,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         vm.revertTo(snapshot);
         // repay entire loan
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 200 * 1e18);
+
         _repayDebt({
             from:             _borrower,
             borrower:         _borrower,

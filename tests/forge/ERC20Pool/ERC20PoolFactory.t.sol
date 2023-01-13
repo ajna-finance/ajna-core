@@ -23,46 +23,38 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
 
     function testDeployERC20PoolWithZeroAddress() external {
         // should revert if trying to deploy with zero address as collateral
-        _assertDeployWith0xAddressRevert(
-            {
-                poolFactory:  address(_poolFactory),
-                collateral:   address(0),
-                quote:        address(_quote),
-                interestRate: 0.05 * 10**18
-            }
-        );
+        _assertDeployWith0xAddressRevert({
+            poolFactory:  address(_poolFactory),
+            collateral:   address(0),
+            quote:        address(_quote),
+            interestRate: 0.05 * 10**18
+        });
 
         // should revert if trying to deploy with zero address as quote token
-        _assertDeployWith0xAddressRevert(
-            {
-                poolFactory:  address(_poolFactory),
-                collateral:   address(_collateral),
-                quote:        address(0),
-                interestRate: 0.05 * 10**18
-            }
-        );
+        _assertDeployWith0xAddressRevert({
+            poolFactory:  address(_poolFactory),
+            collateral:   address(_collateral),
+            quote:        address(0),
+            interestRate: 0.05 * 10**18
+        });
     }
 
     function testDeployERC20PoolWithInvalidRate() external {
         // should revert if trying to deploy with interest rate lower than accepted
-        _assertDeployWithInvalidRateRevert(
-            {
-                poolFactory:  address(_poolFactory),
-                collateral:   address(_collateral),
-                quote:        address(_quote),
-                interestRate: 10**18
-            }
-        );
+        _assertDeployWithInvalidRateRevert({
+            poolFactory:  address(_poolFactory),
+            collateral:   address(_collateral),
+            quote:        address(_quote),
+            interestRate: 10**18
+        });
 
         // should revert if trying to deploy with interest rate higher than accepted
-        _assertDeployWithInvalidRateRevert(
-            {
-                poolFactory:  address(_poolFactory),
-                collateral:   address(_collateral),
-                quote:        address(_quote),
-                interestRate: 2 * 10**18
-            }
-        );
+        _assertDeployWithInvalidRateRevert({
+            poolFactory:  address(_poolFactory),
+            collateral:   address(_collateral),
+            quote:        address(_quote),
+            interestRate: 2 * 10**18
+        });
         
         // check tracking of deployed pools
         assertEq(_poolFactory.getDeployedPoolsList().length, 0);
@@ -72,14 +64,12 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         address poolOne = _poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
 
         // should revert if trying to deploy same pool one more time
-        _assertDeployMultipleTimesRevert(
-            {
-                poolFactory:  address(_poolFactory),
-                collateral:   address(_collateral),
-                quote:        address(_quote),
-                interestRate: 0.05 * 10**18
-            }
-        );
+        _assertDeployMultipleTimesRevert({
+            poolFactory:  address(_poolFactory),
+            collateral:   address(_collateral),
+            quote:        address(_quote),
+            interestRate: 0.05 * 10**18
+        });
 
         // should deploy different pool
         address poolTwo = _poolFactory.deployPool(address(_collateral), address(_collateral), 0.05 * 10**18);
