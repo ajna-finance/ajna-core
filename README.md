@@ -170,13 +170,13 @@ make deploy-contracts
 Upon completion, contract addresses will be printed to `stdout`:
 ```
 == Logs ==
-  Deploying to chain with AJNA token address 0x34A1D3fff3958843C43aD80F30b94c510645C316
+  Deploying to chain with AJNA token address 0x34A1D3fff3958843C43aD80F30b94c510645C...
   === Deployment addresses ===
-  ERC20  factory  0x50EEf481cae4250d252Ae577A09bF514f224C6C4
-  ERC721 factory  0x62c20Aa1e0272312BC100b4e23B4DC1Ed96dD7D1
-  PoolInfoUtils   0xDEb1E9a6Be7Baf84208BB6E10aC9F9bbE1D70809
-  PositionManager 0xD718d5A27a29FF1cD22403426084bA0d479869a0
-  RewardsManager  0x4f559F30f5eB88D635FDe1548C4267DB8FaB0351
+  ERC20  factory  0x50EEf481cae4250d252Ae577A09bF514f224C...
+  ERC721 factory  0x62c20Aa1e0272312BC100b4e23B4DC1Ed96dD...
+  PoolInfoUtils   0xDEb1E9a6Be7Baf84208BB6E10aC9F9bbE1D70...
+  PositionManager 0xD718d5A27a29FF1cD22403426084bA0d47986...
+  RewardsManager  0x4f559F30f5eB88D635FDe1548C4267DB8FaB0...
 
 ```
 
