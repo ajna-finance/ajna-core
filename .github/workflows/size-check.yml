@@ -33,13 +33,13 @@ jobs:
       - name: Set pip cache directory path
         id: pip-cache-dir-path
         run: |
-            echo "PIP_CACHE_DIR=$(pip cache dir)" >> $GITHUB_OUTPUT
+            echo "PIP_CACHE_DIR=$(pip cache dir)" >> $GITHUB_ENV
       - name: Restore pip cache
         uses: actions/cache@v3
         id: pip-cache
         with:
             path: |
-                ${{ PIP_CACHE_DIR }}
+                ${PIP_CACHE_DIR}
             key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements-dev.txt') }}
             restore-keys: |
                 ${{ runner.os }}-pip-${{ hashFiles('**/requirements-dev.txt') }}
@@ -60,5 +60,5 @@ jobs:
           webhook_id: ${{ secrets.DISCORD_ID }}
           webhook_token: ${{ secrets.DISCORD_TOKEN }}
           username: "Contract Size Reporter"
-          message: Largest contract size for `${{ github.ref }}`  ```${{ SIZE_REPORT }}```
+          message: Largest contract size for `${{ github.ref }}`  ```${SIZE_REPORT}```
     timeout-minutes: 3
