@@ -48,11 +48,11 @@ jobs:
         run: pip install -r requirements-dev.txt
 
       - name: Run check-size script
+        id: check-size
         run: |
           mkdir -p size-reports-${{ github.run_id }}
           ./check-size.sh | tee size-reports-${{github.run_id}}/size-report
           echo "SIZE_REPORT=$(echo $(cat size-reports-${{github.run_id}}/size-report|tail -1))" >> $GITHUB_OUTPUT
-        id: check-size
 
       - name: Send size report to Discord
         uses: appleboy/discord-action@master
@@ -60,5 +60,5 @@ jobs:
           webhook_id: ${{ secrets.DISCORD_ID }}
           webhook_token: ${{ secrets.DISCORD_TOKEN }}
           username: "Contract Size Reporter"
-          message: Largest contract size for `${{ github.ref }}`  ```${SIZE_REPORT}```
+          message: Largest contract size for `${{ github.ref }}`  ```${{ steps.check-size.outputs.SIZE_REPORT }}```
     timeout-minutes: 3
