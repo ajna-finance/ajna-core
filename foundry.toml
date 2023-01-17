@@ -17,6 +17,7 @@ block_timestamp     = 1_672_372_127
 block_number        = 16_295_000
 fork_block_number   = 16_295_000
 rpc_storage_caching = { chains = ["mainnet"], endpoints = "all" }
+revert_on_failure   = true
 
 [profile.optimized]
 optimizer      = true
