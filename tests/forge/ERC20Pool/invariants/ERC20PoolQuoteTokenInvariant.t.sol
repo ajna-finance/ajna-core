@@ -105,7 +105,7 @@ contract InvariantLenderManager {
 }
 
 // contains invariants for the test
-contract PoolInvariants is DSTest{
+contract PoolInvariants is DSTest {
     InvariantLenderManager internal _invariantLenderManager;
 
     // Mainnet ajna address
