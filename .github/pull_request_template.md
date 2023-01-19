@@ -29,7 +29,7 @@ src/ changes you need the following (that apply):
 ## Post Change
 <PASTE_OUTPUT_HERE>
 
-# Gas optimization
+# Gas usage
 ## Pre Change
 <PASTE_OUTPUT_HERE>
 ## Post Change
