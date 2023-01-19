@@ -4,6 +4,7 @@ pragma solidity 0.8.14;
 
 import "ds-test/test.sol";
 import "forge-std/console.sol";
+import 'src/PoolInfoUtils.sol';
 
 import { ERC20Pool }        from 'src/ERC20Pool.sol';
 import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
@@ -125,6 +126,11 @@ contract PoolInvariants is DSTest {
         // create first lender
         _invariantLenderManager.createLender();
     }
+
+    function testPoolEncumberance() public {
+        assertEq(_encumberance(1 * 1e18, 1 * 1e18), 1 * 1e18);
+    }
+
 
     // include only invariantLenderManager contract for invariant testing
     function targetContracts() public view returns (address[] memory) {
