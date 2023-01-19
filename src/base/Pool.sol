@@ -273,11 +273,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         // update pool balances state
+        poolBalances.t0Debt          = result.t0PoolDebt;
         poolBalances.t0DebtInAuction += result.t0KickedDebt;
-        poolBalances.t0Debt          += result.t0KickPenalty;
 
         // update pool interest rate state
-        poolState.debt += result.kickPenalty;
+        poolState.debt = Maths.wmul(result.t0PoolDebt, poolState.inflator);
         _updateInterestState(poolState, result.lup);
 
         if(result.amountToCoverBond != 0) _transferQuoteTokenFrom(msg.sender, result.amountToCoverBond);
@@ -304,11 +304,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         // update pool balances state
-        poolBalances.t0Debt          += result.t0KickPenalty;
+        poolBalances.t0Debt          = result.t0PoolDebt;
         poolBalances.t0DebtInAuction += result.t0KickedDebt;
 
         // update pool interest rate state
-        poolState.debt += result.kickPenalty;
+        poolState.debt = Maths.wmul(result.t0PoolDebt, poolState.inflator);
         _updateInterestState(poolState, result.lup);
 
         // transfer from kicker to pool the difference to cover bond
@@ -356,7 +356,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             reserveAuction,
             StartReserveAuctionParams({
                 poolSize:    Deposits.treeSum(deposits),
-                poolDebt:    poolBalances.t0Debt,
+                t0PoolDebt:  poolBalances.t0Debt,
                 poolBalance: _getPoolQuoteTokenBalance(),
                 inflator:    inflatorState.inflator
             })
@@ -424,10 +424,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @return poolState_ Struct containing pool details.
      */
     function _accruePoolInterest() internal returns (PoolState memory poolState_) {
-	    // retrieve t0Debt amount from poolBalances struct
-        uint256 t0Debt = poolBalances.t0Debt;
-
-	    // initialize fields of poolState_ struct with initial values
+        poolState_.t0Debt         = poolBalances.t0Debt;
         poolState_.collateral     = poolBalances.pledgedCollateral;
         poolState_.inflator       = inflatorState.inflator;
         poolState_.rate           = interestState.interestRate;
@@ -435,9 +432,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         poolState_.quoteDustLimit = _getArgUint256(QUOTE_SCALE);
 
 	    // check if t0Debt is not equal to 0, indicating that there is debt to be tracked for the pool
-        if (t0Debt != 0) {
+        if (poolState_.t0Debt != 0) {
             // Calculate prior pool debt
-            poolState_.debt = Maths.wmul(t0Debt, poolState_.inflator);
+            poolState_.debt = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
 
 	        // calculate elapsed time since inflator was last updated
             uint256 elapsed = block.timestamp - inflatorState.inflatorUpdate;
@@ -455,7 +452,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 );
                 poolState_.inflator = newInflator;
                 // After debt owed to lenders has accrued, calculate current debt owed by borrowers
-                poolState_.debt = Maths.wmul(t0Debt, poolState_.inflator);
+                poolState_.debt = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
 
                 // update total interest earned accumulator with the newly accrued interest
                 reserveAuction.totalInterestEarned += newInterest;
