@@ -1,51 +1,27 @@
 
 <!---
 No need to add special tag
-CHANGES IN SCOPE NOT /SRC DIR:
-- moving variables in methods
-- altering decorators of methods (i.e. view -> internal/external)
-- signif restructuring should be avoided, but if necessary moving of functions accross files
-- altering logic
-- renaming of variables & methods
-- reordering and moving of functions in files
-- lite moving of functions accross files
-- comments
-
-Non SRC changes all you need is description below
+src/ & non src/ changes you need the following (that apply):
 -->
 # Description of change
 ## High level
 * <DESCRIP_OF_CHANGE>
   * <DESCRIP_OF_SUBCHANGE>
 
-
 <!---
-Add the `Scope: Edits /src` and `Status: Needs Auditor Approval` tags
-CHANGES IN SCOPE /SRC DIR:
-- resizing / retyping variables for gas optimization
-- moving variables in methods
-- altering decorators of methods (i.e. view -> internal/external)
-- signif restructuring should be avoided, but if necessary moving of functions accross files
-- altering logic
-If the above applies to this PR put the label 
-
-Add the `Scope: Edits /src` and `Status: Needs Auditor Approval` tags
-CHANGES IN SCOPE /SRC DIR:
+Add the `Status: Needs Auditor Approval` tags
+CHANGES IN /SRC DIR:
 - renaming (not retyping or resizing) of variables & methods
 - reordering and moving of functions in files
 - lite moving of functions accross files
 - comments
 
-SRC changes you need the following (that apply):
+src/ changes you need the following (that apply):
 -->
 
 # Description of bug or vulnerability and solution
 * <PARAGRAPH_EXP_OF_VULN_BUG>
 * <PARAGRAPH_EXP_OF_HOW_CHANGE_SOLVES_VULN_OR_BUG>
-
-## Breakdown of change by file
-* <FILE_NAME> (i.e.`src/ERC20Pool.sol`)
-  * <DESCRIP_OF_CHANGE> (i.e. changes in writes and reads)
 
 # Contract size
 ## Pre Change
