@@ -514,8 +514,7 @@ library Auctions {
         if (result_.settledAuction) {
             // the overall debt in auction change is the total borrower debt exiting auction
             result_.t0DebtInAuctionChange = t0BorrowerDebt;
-        }
-        else {
+        } else {
             // the overall debt in auction change is the amount of partially repaid debt
             result_.t0DebtInAuctionChange = t0RepayAmount;
         }
@@ -592,8 +591,7 @@ library Auctions {
         if (result_.settledAuction) {
             // the overall debt in auction change is the total borrower debt exiting auction
             result_.t0DebtInAuctionChange = t0BorrowerDebt;
-        }
-        else {
+        } else {
             // the overall debt in auction change is the amount of partially repaid debt
             result_.t0DebtInAuctionChange = t0RepayAmount;
         }
