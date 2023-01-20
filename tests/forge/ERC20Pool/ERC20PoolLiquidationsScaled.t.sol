@@ -175,7 +175,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
     function testSettleAuctionWithoutTakes(
         uint8  collateralPrecisionDecimals_, 
         uint8  quotePrecisionDecimals_,
-        uint16 startBucketId_) external tearDown
+        uint16 startBucketId_) external
     {
         uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 6,    18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      6,    18);
@@ -290,7 +290,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
             uint256 auctionBondFactor,
             uint256 auctionBondSize,
             uint256 auctionKickTime,
-            uint256 auctionKickMomp,
+            uint256 auctionreferencePrice,
             uint256 auctionNeutralPrice,
             ,
             ,
@@ -302,8 +302,8 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         assertGt(auctionBondSize,     0);
         assertLt(auctionBondSize,     _pool.depositSize());
         assertEq(auctionKickTime,     _startTime + timeSinceStart);
-        assertGt(auctionKickMomp,     _priceAt(_startBucketId + BUCKETS_WITH_DEPOSIT));
-        assertLt(auctionKickMomp,     _priceAt(_startBucketId));
+        assertGt(auctionreferencePrice,     _priceAt(_startBucketId + BUCKETS_WITH_DEPOSIT));
+        assertLt(auctionreferencePrice,     _priceAt(_startBucketId));
         assertGt(auctionNeutralPrice, _priceAt(_startBucketId));
         assertLt(auctionNeutralPrice, Maths.wmul(_priceAt(_startBucketId), 1.1 * 1e18));
     }
@@ -349,8 +349,8 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         }
 
         // confirm LPs were awarded to the kicker
-        (address kicker, , , uint256 kickTime, uint256 kickMomp, uint256 neutralPrice, , , ) = _pool.auctionInfo(_borrower);
-        uint256 auctionPrice = Auctions._auctionPrice(kickMomp, neutralPrice, kickTime);
+        (address kicker, , , uint256 kickTime, uint256 referencePrice, uint256 neutralPrice, , ,) = _pool.auctionInfo(_borrower);
+        uint256 auctionPrice = Auctions._auctionPrice(referencePrice, kickTime);
         if (auctionPrice < neutralPrice) {
             uint256 kickerLPs = _kickerLPs(bucketId);
             assertGt(kickerLPs, lastKickerLPs);
@@ -420,12 +420,12 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         uint256 auctionDebt_,
         uint256 auctionCollateral_
     ){
-        (, , , uint256 kickTime, uint256 kickMomp, uint256 neutralPrice, , , ) = _pool.auctionInfo(_borrower);
-        uint256 lastAuctionPrice = Auctions._auctionPrice(kickMomp, neutralPrice, kickTime);
+        (, , , uint256 kickTime, uint256 referencePrice, uint256 neutralPrice, , ,) = _pool.auctionInfo(_borrower);
+        uint256 lastAuctionPrice = Auctions._auctionPrice(referencePrice, kickTime);
         (uint256 lastAuctionDebt, uint256 lastAuctionCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         if (secondsToSkip != 0) {
             skip(secondsToSkip);
-            auctionPrice_ = Auctions._auctionPrice(kickMomp, neutralPrice, kickTime);
+            auctionPrice_ = Auctions._auctionPrice(referencePrice, kickTime);
             (uint256 auctionDebt, uint256 auctionCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
             // ensure auction price decreases and auction debt increases as time passes
             assertLt(auctionPrice_,     lastAuctionPrice);
@@ -441,8 +441,8 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
     }
 
     function _auctionPrice() internal view returns (uint256) {
-        (, , , uint256 kickTime, uint256 kickMomp, uint256 neutralPrice, , , ) = _pool.auctionInfo(_borrower);
-        return Auctions._auctionPrice(kickMomp, neutralPrice, kickTime);
+        (, , , uint256 kickTime, uint256 referencePrice, uint256 neutralPrice, , , ) = _pool.auctionInfo(_borrower);
+        return Auctions._auctionPrice(referencePrice, kickTime);
     }
 
     function _borrowerCollateralization(address borrower) internal view returns (uint256) {

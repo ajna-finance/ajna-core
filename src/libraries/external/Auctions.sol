@@ -729,8 +729,7 @@ library Auctions {
             uint256 fractionalCollateral = borrowerCollateral_ - floorCollateral_;
 
             uint256 auctionPrice = _auctionPrice(
-                auctions_.liquidations[borrowerAddress_].kickMomp,
-                auctions_.liquidations[borrowerAddress_].neutralPrice,
+                auctions_.liquidations[borrowerAddress_].referencePrice,
                 auctions_.liquidations[borrowerAddress_].kickTime
             );
 
@@ -817,7 +816,7 @@ library Auctions {
             borrowerAddress_,
             bondSize,
             bondFactor,
-            momp,
+            Maths.max(momp, neutralPrice),
             neutralPrice
         );
 
@@ -1184,27 +1183,27 @@ library Auctions {
      *  @param  borrowerAddress_ Address of the borrower that is kicked.
      *  @param  bondSize_        Bond size to cover newly kicked auction.
      *  @param  bondFactor_      Bond factor of the newly kicked auction.
-     *  @param  momp_            Current pool MOMP.
-     *  @param  neutralPrice_    Current pool Neutral Price.
+     *  @param  referencePrice_  Greater of the neutralPrice & momp at time of kick.
+     *  @param  neutralPrice_    Current pool Neural Price.
      */
     function _recordAuction(
         AuctionsState storage auctions_,
         address borrowerAddress_,
         uint256 bondSize_,
         uint256 bondFactor_,
-        uint256 momp_,
+        uint256 referencePrice_,
         uint256 neutralPrice_
     ) internal {
         Liquidation storage liquidation = auctions_.liquidations[borrowerAddress_];
         if (liquidation.kickTime != 0) revert AuctionActive();
 
         // record liquidation info
-        liquidation.kicker       = msg.sender;
-        liquidation.kickTime     = uint96(block.timestamp);
-        liquidation.kickMomp     = uint96(momp_);
-        liquidation.bondSize     = uint160(bondSize_);
-        liquidation.bondFactor   = uint96(bondFactor_);
-        liquidation.neutralPrice = uint96(neutralPrice_);
+        liquidation.kicker         = msg.sender;
+        liquidation.kickTime       = uint96(block.timestamp);
+        liquidation.bondSize       = uint160(bondSize_);
+        liquidation.bondFactor     = uint96(bondFactor_);
+        liquidation.referencePrice = uint96(referencePrice_);
+        liquidation.neutralPrice   = uint96(neutralPrice_);
 
         // increment number of active auctions
         ++auctions_.noOfAuctions;
@@ -1389,14 +1388,12 @@ library Auctions {
 
     /**
      *  @notice Calculates auction price.
-     *  @param  kickMomp_     MOMP recorded at the time of kick.
-     *  @param  neutralPrice_ Neutral Price of the auction.
-     *  @param  kickTime_     Time when auction was kicked.
-     *  @return price_        Calculated auction price.
+     *  @param  referencePrice_ Greater of the Momp or np at the time of kick.
+     *  @param  kickTime_       Time when auction was kicked.
+     *  @return price_          Calculated auction price.
      */
     function _auctionPrice(
-        uint256 kickMomp_,
-        uint256 neutralPrice_,
+        uint256 referencePrice_,
         uint256 kickTime_
     ) internal view returns (uint256 price_) {
         uint256 elapsedHours = Maths.wdiv((block.timestamp - kickTime_) * 1e18, 1 hours * 1e18);
@@ -1404,9 +1401,8 @@ library Auctions {
         elapsedHours -= Maths.min(elapsedHours, 1e18);  // price locked during cure period
 
         int256 timeAdjustment  = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours)); 
-        uint256 referencePrice = Maths.max(kickMomp_, neutralPrice_); 
 
-        price_ = 32 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
+        price_ = 32 * Maths.wmul(referencePrice_, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
     }
 
     /**
@@ -1488,7 +1484,7 @@ library Auctions {
 
         uint256 neutralPrice = liquidation_.neutralPrice;
 
-        vars.auctionPrice = _auctionPrice(liquidation_.kickMomp, neutralPrice, kickTime);
+        vars.auctionPrice = _auctionPrice(neutralPrice, kickTime);
         vars.bpf          = _bpf(
             vars.borrowerDebt,
             collateral_,

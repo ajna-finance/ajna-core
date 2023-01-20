@@ -80,7 +80,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 bondSize;
         uint256 bondFactor;
         uint256 kickTime;
-        uint256 kickMomp;
+        uint256 referencePrice;
         uint256 totalBondEscrowed;
         uint256 auctionPrice;
         uint256 debtInAuction;
@@ -418,7 +418,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
             uint256 auctionBondFactor,
             uint256 auctionBondSize,
             uint256 auctionKickTime,
-            uint256 auctionKickMomp,
+            uint256 auctionReferencePrice,
             uint256 auctionNeutralPrice,
             ,
             ,
@@ -436,11 +436,10 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(auctionBondSize,          state_.bondSize);
         assertEq(auctionBondFactor,        state_.bondFactor);
         assertEq(auctionKickTime,          state_.kickTime);
-        assertEq(auctionKickMomp,          state_.kickMomp);
+        assertEq(auctionReferencePrice,    state_.referencePrice);
         assertEq(auctionTotalBondEscrowed, state_.totalBondEscrowed);
         assertEq(Auctions._auctionPrice(
-            auctionKickMomp,
-            auctionNeutralPrice,
+            auctionReferencePrice,
             auctionKickTime),              state_.auctionPrice);
         assertEq(auctionDebtInAuction,     state_.debtInAuction);
         assertEq(auctionNeutralPrice,      state_.neutralPrice);
