@@ -314,7 +314,7 @@ struct Liquidation {
     uint96  bondFactor;     // [WAD] bond factor used to start liquidation
     uint96  kickTime;       // timestamp when liquidation was started
     address prev;           // previous liquidated borrower in auctions queue
-    uint96  referencePrice;
+    uint96  referencePrice; // [WAD] Greater of momp or neutral price when liquidation was started
     address next;           // next liquidated borrower in auctions queue
     uint160 bondSize;       // [WAD] liquidation bond size
     uint96  neutralPrice;   // [WAD] Neutral Price when liquidation was started
