@@ -13,6 +13,7 @@ import {
     _minDebtAmount,
     _priceAt,
     _reserveAuctionPrice,
+    _roundUpToScale,
     MAX_FENWICK_INDEX,
     MIN_PRICE
 } from './libraries/helpers/PoolHelper.sol';
@@ -53,7 +54,7 @@ contract PoolInfoUtils {
         uint256 t0Debt;
         (t0Debt, collateral_, t0Np_)  = pool.borrowerInfo(borrower_);
 
-        debt_ = Maths.wmul(t0Debt, pendingInflator);
+        debt_ = _roundUpToScale(Maths.wmul(t0Debt, pendingInflator), pool.quoteTokenScale());
     }
 
     /**

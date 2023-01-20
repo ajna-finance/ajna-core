@@ -3,10 +3,13 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import 'src/libraries/helpers/PoolHelper.sol';
 import 'src/interfaces/pool/erc20/IERC20Pool.sol';
 
 import 'src/ERC20Pool.sol';
+import 'src/ERC20PoolFactory.sol';
+import 'src/PoolInfoUtils.sol';
+
+import 'src/libraries/helpers/PoolHelper.sol';
 
 contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
 
@@ -257,5 +260,62 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
                 high
             ), 20000000000000000000
         );
+    }
+}
+
+contract ERC20PoolInfoUtilsPrecisionTest is ERC20HelperContract {
+
+    IERC20 WBTC = IERC20(0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599);
+    IERC20 USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
+
+    address internal _borrower;
+    address internal _lender;
+
+    function setUp() external {
+        _pool       = ERC20Pool(new ERC20PoolFactory(_ajna).deployPool(address(WBTC), address(USDC), 0.05 * 10**18));
+        _poolUtils  = new PoolInfoUtils();
+
+        _borrower  = makeAddr("borrower");
+        _lender    = makeAddr("lender");
+
+        deal(address(WBTC), _borrower, 1 * 1e8);
+
+        deal(address(USDC), _borrower, 100 * 1e6);
+        deal(address(USDC), _lender,   10_000 * 1e6);
+
+        vm.startPrank(_borrower);
+        WBTC.approve(address(_pool), 1 * 1e18);
+        USDC.approve(address(_pool), 100 * 1e18);
+
+        changePrank(_lender);
+        USDC.approve(address(_pool), 10_000 * 1e18);
+
+    }
+
+    function testPoolInfoUtilsRepayExactAmount() external {
+        assertEq(USDC.balanceOf(_borrower), 100 * 1e6);
+
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 10_000 * 1e18,
+            index:  2500
+        });
+
+        changePrank(_borrower);
+        ERC20Pool(address(_pool)).drawDebt(_borrower, 1_000 * 1e18, 5000, 1 * 1e18);
+
+        assertEq(USDC.balanceOf(_borrower), 1_100 * 1e6);
+
+        skip(14 days);
+
+        // accumulate interest
+        ERC20Pool(address(_pool)).repayDebt(_borrower, 0, 0);
+
+        // utils contract should return debt amount scaled to quote token precision
+        (uint256 debtToRepay, ,) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+        assertEq(debtToRepay, 1_002.883033 * 1e18);
+
+        // amount returned by utils contract should be able to be paid without leaving dust and revert
+        ERC20Pool(address(_pool)).repayDebt(_borrower, debtToRepay, 0);
     }
 }

@@ -590,17 +590,12 @@ abstract contract DSTestPlus is Test, IPoolEvents {
 
         uint256 lup = _poolUtils.lup(address(_pool));
 
-        assertEq(debt,        borrowerDebt);
-        assertEq(col,         borrowerCollateral);
-        assertEq(t0Np,        borrowert0Np);
-        assertEq(
-            _collateralization(
-                borrowerDebt,
-                borrowerCollateral,
-                lup
-            ),
-            borrowerCollateralization
-        );
+        uint256 collateralization = _collateralization(borrowerDebt, borrowerCollateral, lup);
+
+        assertEq(debt,              _roundUpToScale(borrowerDebt, _pool.quoteTokenScale()));
+        assertEq(col,               borrowerCollateral);
+        assertEq(t0Np,              borrowert0Np);
+        assertEq(collateralization, borrowerCollateralization);
     }
 
     function _assertEMAs(
