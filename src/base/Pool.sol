@@ -710,4 +710,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             reserveAuction.kicked
         );
     }
+
+    /// @inheritdoc IPoolState
+    function totalDebt() external view override returns (uint256) {
+        return poolBalances.t0Debt;
+    }
+
+    /// @inheritdoc IPoolState
+    function totalDebtInAuction() external view override returns (uint256) {
+        return poolBalances.t0DebtInAuction;
+    }
 }

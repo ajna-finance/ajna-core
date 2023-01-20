@@ -222,6 +222,18 @@ interface IPoolState {
      */
     function pledgedCollateral() external view returns (uint256);
 
+     /**
+     *  @notice Returns the `t0Debt` state variable.
+     *  @return The total t0Debt in the system, in WAD units.
+     */
+    function totalDebt() external view returns (uint256);
+
+    /**
+     *  @notice Returns the `t0DebtInAuction` state variable.
+     *  @return The total t0DebtInAuction in the system, in WAD units.
+     */
+    function totalDebtInAuction() external view returns (uint256);
+
 }
 
 /*********************/
