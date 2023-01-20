@@ -1484,7 +1484,7 @@ library Auctions {
 
         uint256 neutralPrice = liquidation_.neutralPrice;
 
-        vars.auctionPrice = _auctionPrice(neutralPrice, kickTime);
+        vars.auctionPrice = _auctionPrice(liquidation_.referencePrice, kickTime);
         vars.bpf          = _bpf(
             vars.borrowerDebt,
             collateral_,

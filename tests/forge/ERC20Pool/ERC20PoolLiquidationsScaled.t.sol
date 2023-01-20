@@ -211,7 +211,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         uint8  collateralPrecisionDecimals_, 
         uint8  quotePrecisionDecimals_,
         uint16 startBucketId_
-    ) external tearDown {
+    ) external {
 
         uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 12, 18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      1,  18);
@@ -224,7 +224,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         assertGt(_borrowerCollateralization(_borrower), 1e18);
 
         // Wait until borrower is undercollateralized
-        skip(9 weeks);
+        skip(9 weeks);  
         assertLt(_borrowerCollateralization(_borrower), 1e18);
 
         // Kick off an auction and wait the grace period
@@ -420,7 +420,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         uint256 auctionDebt_,
         uint256 auctionCollateral_
     ){
-        (, , , uint256 kickTime, uint256 referencePrice, uint256 neutralPrice, , ,) = _pool.auctionInfo(_borrower);
+        (, , , uint256 kickTime, uint256 referencePrice, , , ,) = _pool.auctionInfo(_borrower);
         uint256 lastAuctionPrice = Auctions._auctionPrice(referencePrice, kickTime);
         (uint256 lastAuctionDebt, uint256 lastAuctionCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         if (secondsToSkip != 0) {
