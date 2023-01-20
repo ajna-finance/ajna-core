@@ -440,7 +440,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
     }
 
     function _auctionPrice() internal view returns (uint256) {
-        (, , , uint256 kickTime, uint256 referencePrice, , , ) = _pool.auctionInfo(_borrower);
+        (, , , uint256 kickTime, uint256 referencePrice, , , ,) = _pool.auctionInfo(_borrower);
         return Auctions._auctionPrice(referencePrice, kickTime);
     }
 
