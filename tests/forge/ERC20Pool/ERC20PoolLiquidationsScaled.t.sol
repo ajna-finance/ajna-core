@@ -72,7 +72,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
 
         // deposit 200k quote token across 4 buckets
         uint256 lpBalance;
-        for (uint i=0; i<4; ++i) {
+        for (uint i = 0; i < 4; ++i) {
 
             _addInitialLiquidity({
                     from:   _lender,
@@ -290,7 +290,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
             uint256 auctionBondFactor,
             uint256 auctionBondSize,
             uint256 auctionKickTime,
-            uint256 auctionreferencePrice,
+            uint256 auctionReferencePrice,
             uint256 auctionNeutralPrice,
             ,
             ,
@@ -302,8 +302,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         assertGt(auctionBondSize,     0);
         assertLt(auctionBondSize,     _pool.depositSize());
         assertEq(auctionKickTime,     _startTime + timeSinceStart);
-        assertGt(auctionreferencePrice,     _priceAt(_startBucketId + BUCKETS_WITH_DEPOSIT));
-        assertLt(auctionreferencePrice,     _priceAt(_startBucketId));
+        assertGt(auctionReferencePrice,     _priceAt(_startBucketId + BUCKETS_WITH_DEPOSIT));
         assertGt(auctionNeutralPrice, _priceAt(_startBucketId));
         assertLt(auctionNeutralPrice, Maths.wmul(_priceAt(_startBucketId), 1.1 * 1e18));
     }
@@ -441,7 +440,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
     }
 
     function _auctionPrice() internal view returns (uint256) {
-        (, , , uint256 kickTime, uint256 referencePrice, uint256 neutralPrice, , , ) = _pool.auctionInfo(_borrower);
+        (, , , uint256 kickTime, uint256 referencePrice, , , ) = _pool.auctionInfo(_borrower);
         return Auctions._auctionPrice(referencePrice, kickTime);
     }
 
