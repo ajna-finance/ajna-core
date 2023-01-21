@@ -817,7 +817,7 @@ contract RewardsManagerTest is DSTestPlus {
 
         // check available rewards
         rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarned, 489.772410159936903182 * 1e18);
+        assertEq(rewardsEarned, 489.772410159936903152 * 1e18);
         assertGt(rewardsEarned, rewardsEarnedNoUpdate);
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
@@ -1180,7 +1180,7 @@ contract RewardsManagerTest is DSTestPlus {
             updater:        _updater,
             pool:           address(_poolOne),
             depositIndexes: depositIndexes,
-            reward:         11.241216009399483348 * 1e18
+            reward:         11.241216009399483350 * 1e18
         });
 
         _triggerReserveAuctions(TriggerReserveAuctionParams({
@@ -1209,24 +1209,24 @@ contract RewardsManagerTest is DSTestPlus {
             pool:      address(_poolOne),
             epoch:     1,
             timestamp: block.timestamp - (52 weeks + 72 hours),
-            interest:  6447445050021308895,
-            burned:    81574747191341355205
+            interest:  6.447445050021308895 * 1e18,
+            burned:    81.574747191341355205 * 1e18
         });
 
         _assertBurn({
             pool:      address(_poolOne),
             epoch:     2,
             timestamp: block.timestamp - (26 weeks + 48 hours),
-            burned:    306399067379332449973,
-            interest:  23974564976746846096
+            burned:    306.399067379332450033 * 1e18,
+            interest:  23.974564976746846096 * 1e18
         });
 
         _assertBurn({
             pool:      address(_poolOne),
             epoch:     3,
             timestamp: block.timestamp - 24 hours,
-            burned:    699814215483322160364,
-            interest:  55764974712671474765
+            burned:    699.814215483322160424 * 1e18,
+            interest:  55.764974712671474765 * 1e18
         });
 
         // both stakers claim rewards
@@ -1235,7 +1235,7 @@ contract RewardsManagerTest is DSTestPlus {
             pool:              address(_poolOne),
             tokenId:           tokenIdOne,
             claimedArray:      _epochsClaimedArray(3, 0),
-            reward:            58.317851290276861885 * 1e18,
+            reward:            58.317851290276861890 * 1e18,
             updateRatesReward: 0
         });
 
@@ -1244,7 +1244,7 @@ contract RewardsManagerTest is DSTestPlus {
             pool:              address(_poolOne),
             tokenId:           tokenIdTwo,
             claimedArray:      _epochsClaimedArray(3, 0),
-            reward:            291.589256451384309685 * 1e18,
+            reward:            291.589256451384309710 * 1e18,
             updateRatesReward: 0
         });
     }

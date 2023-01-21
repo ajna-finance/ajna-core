@@ -41,13 +41,14 @@ library BorrowerActions {
     /*************************/
 
     struct DrawDebtLocalVars {
-        bool    borrow;       // true if borrow action
-        uint256 borrowerDebt; // [WAD] borrower's accrued debt
-        uint256 t0DebtChange; // [WAD] additional t0 debt resulted from draw debt action
-        bool    inAuction;    // true if loan is auctioned
-        uint256 lupId;        // id of new LUP
-        bool    pledge;       // true if pledge action
-        bool    stampT0Np;    // true if loan's t0 neutral price should be restamped (when drawing debt or pledge settles auction)
+        bool    borrow;         // true if borrow action
+        uint256 borrowerDebt;   // [WAD] borrower's accrued debt
+        uint256 t0BorrowAmount; // [WAD] t0 amount to borrow
+        uint256 t0DebtChange;   // [WAD] additional t0 debt resulted from draw debt action
+        bool    inAuction;      // true if loan is auctioned
+        uint256 lupId;          // id of new LUP
+        bool    pledge;         // true if pledge action
+        bool    stampT0Np;      // true if loan's t0 neutral price should be restamped (when drawing debt or pledge settles auction)
     }
     struct RepayDebtLocalVars {
         uint256 borrowerDebt;          // [WAD] borrower's accrued debt
@@ -166,11 +167,10 @@ library BorrowerActions {
             // only intended recipient can borrow quote
             if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
 
-            // debt change is amount to borrow plus the origination fee
-            vars.t0DebtChange = Maths.wdiv(
-                Maths.wmul(amountToBorrow_, _feeRate(poolState_.rate) + Maths.WAD),
-                poolState_.inflator
-            );
+            vars.t0BorrowAmount = Maths.wdiv(amountToBorrow_, poolState_.inflator);
+
+            // t0 debt change is t0 amount to borrow plus the origination fee
+            vars.t0DebtChange = Maths.wmul(vars.t0BorrowAmount, _feeRate(poolState_.rate) + Maths.WAD);
 
             borrower.t0Debt += vars.t0DebtChange;
 
