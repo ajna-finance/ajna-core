@@ -828,8 +828,8 @@ library Auctions {
         Loans.remove(loans_, borrowerAddress_, loans_.indices[borrowerAddress_]);
 
         // when loan is kicked, penalty of three months of interest is added
-        uint256 kickPenalty   = Maths.wmul(Maths.wdiv(poolState_.rate, 4 * 1e18), borrowerDebt);
-        uint256 t0KickPenalty = Maths.wdiv(kickPenalty, poolState_.inflator);
+        uint256 t0KickPenalty = Maths.wmul(kickResult_.t0KickedDebt, Maths.wdiv(poolState_.rate, 4 * 1e18));
+        uint256 kickPenalty   = Maths.wmul(t0KickPenalty, poolState_.inflator);
 
         kickResult_.t0PoolDebt   = poolState_.t0Debt + t0KickPenalty;
         kickResult_.t0KickedDebt += t0KickPenalty;
