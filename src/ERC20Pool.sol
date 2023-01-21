@@ -15,8 +15,7 @@ import { IERC20Taker }         from './interfaces/pool/erc20/IERC20Taker.sol';
 
 import {
     IPoolLenderActions,
-    IPoolLiquidationActions,
-    IERC20Token
+    IPoolLiquidationActions
 }                            from './interfaces/pool/IPool.sol';
 import {
     IERC3156FlashBorrower,
@@ -243,12 +242,22 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         if (token_ == _getArgAddress(QUOTE_ADDRESS)) return _flashLoanQuoteToken(receiver_, token_, amount_, data_);
 
         if (token_ == _getArgAddress(COLLATERAL_ADDRESS)) {
-            _transferCollateral(address(receiver_), amount_);
+            IERC20 collateralContract = IERC20(_getArgAddress(COLLATERAL_ADDRESS));
+
+            collateralContract.safeTransfer(
+                address(receiver_),
+                amount_
+            );
 
             if (receiver_.onFlashLoan(msg.sender, token_, amount_, 0, data_) !=
                 keccak256("ERC3156FlashBorrower.onFlashLoan")) revert FlashloanCallbackFailed();
 
-            _transferCollateralFrom(address(receiver_), amount_);
+            collateralContract.safeTransferFrom(
+                address(receiver_),
+                address(this),
+                amount_
+            );
+
             return true;
         }
 
@@ -269,7 +278,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         address token_
     ) external view override(IERC3156FlashLender, FlashloanablePool) returns (uint256 maxLoan_) {
         if (token_ == _getArgAddress(QUOTE_ADDRESS) || token_ == _getArgAddress(COLLATERAL_ADDRESS)) {
-            maxLoan_ = IERC20Token(token_).balanceOf(address(this));
+            maxLoan_ = IERC20(token_).balanceOf(address(this));
         }
     }
 
@@ -359,7 +368,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
     ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
-        uint256 assets = Maths.wmul(poolBalances.t0Debt, poolState.inflator) + _getPoolQuoteTokenBalance();
+        uint256 assets = Maths.wmul(poolBalances.t0Debt, poolState.inflator) + _getScaledPoolQuoteTokenBalance();
 
         uint256 liabilities = Deposits.treeSum(deposits) + auctions.totalBondEscrowed + reserveAuction.unclaimed;
 

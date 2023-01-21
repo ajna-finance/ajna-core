@@ -357,7 +357,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             StartReserveAuctionParams({
                 poolSize:    Deposits.treeSum(deposits),
                 poolDebt:    poolBalances.t0Debt,
-                poolBalance: _getPoolQuoteTokenBalance(),
+                poolBalance: _getScaledPoolQuoteTokenBalance(),
                 inflator:    inflatorState.inflator
             })
         );
@@ -507,8 +507,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         IERC20(_getArgAddress(QUOTE_ADDRESS)).safeTransfer(to_, amount_ / _getArgUint256(QUOTE_SCALE));
     }
 
-    function _getPoolQuoteTokenBalance() internal view returns (uint256) {
-        return IERC20(_getArgAddress(QUOTE_ADDRESS)).balanceOf(address(this));
+    /**
+     *  @dev returns the pool quote token balance scaled to WAD to be used for calculating pool reserves
+     */
+    function _getScaledPoolQuoteTokenBalance() internal view returns (uint256) {
+        return IERC20(_getArgAddress(QUOTE_ADDRESS)).balanceOf(address(this)) * _getArgUint256(QUOTE_SCALE);
     }
 
     function _lup(uint256 debt_) internal view returns (uint256) {

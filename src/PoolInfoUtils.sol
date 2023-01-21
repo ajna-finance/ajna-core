@@ -187,7 +187,7 @@ contract PoolInfoUtils {
         (,uint256 poolDebt,) = pool.debtInfo();
         uint256 poolSize     = pool.depositSize();
 
-        uint256 quoteTokenBalance = IERC20Token(pool.quoteTokenAddress()).balanceOf(ajnaPool_);
+        uint256 quoteTokenBalance = IERC20Token(pool.quoteTokenAddress()).balanceOf(ajnaPool_) * pool.quoteTokenScale();
 
         (uint256 bondEscrowed, uint256 unclaimedReserve, uint256 auctionKickTime) = pool.reservesInfo();
 

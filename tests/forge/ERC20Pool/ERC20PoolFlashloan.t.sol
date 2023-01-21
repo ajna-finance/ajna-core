@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.14;
 
+import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+
 import { ERC20HelperContract }                 from './ERC20DSTestPlus.sol';
 import { FlashloanBorrower, SomeDefiStrategy } from '../utils/FlashloanBorrower.sol';
 
 import 'src/libraries/helpers/PoolHelper.sol';
 import 'src/ERC20Pool.sol';
+import 'src/ERC20PoolFactory.sol';
 
 import { IPoolErrors } from 'src/interfaces/pool/IPool.sol'; 
 
@@ -134,4 +137,103 @@ contract ERC20PoolFlashloanTest is ERC20HelperContract {
         _pool.flashLoan(flasher, address(_collateral), loanAmount, new bytes(0));
         assertFalse(flasher.callbackInvoked());
     }
+}
+
+contract ERC20PoolFlashloanPrecisionTest is ERC20HelperContract {
+
+    ERC20 WBTC = ERC20(0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599);
+    ERC20 USDC = ERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
+
+    address internal _borrower;
+    address internal _lender;
+
+    function setUp() external {
+        _pool       = ERC20Pool(new ERC20PoolFactory(_ajna).deployPool(address(WBTC), address(USDC), 0.05 * 10**18));
+
+        _borrower  = makeAddr("borrower");
+        _lender    = makeAddr("lender");
+
+        deal(address(WBTC), _borrower, 10 * 1e8);
+
+        deal(address(USDC), _lender,   10_000 * 1e6);
+
+        vm.startPrank(_borrower);
+        WBTC.approve(address(_pool), 10 * 1e18);
+
+        changePrank(_lender);
+        USDC.approve(address(_pool), 10_000 * 1e18);
+
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 10_000 * 1e18,
+            index:  2500
+        });
+
+        _pledgeCollateral({
+            from:     _borrower,
+            borrower: _borrower,
+            amount:   10 * 1e18
+        });
+    }
+
+    function testWbtcFlashloan() external tearDown {
+        skip(1 days);
+        uint256 loanAmount = 10 * 1e8;
+        assertEq(_pool.maxFlashLoan(address(WBTC)), 10 * 1e8);
+
+        // Create an example defi strategy
+        SomeDefiStrategy strategy = new SomeDefiStrategy(WBTC);
+        deal(address(WBTC), address(strategy), 10 * 1e8);
+
+        // Create a flashloan borrower contract which interacts with the strategy
+        bytes memory strategyCalldata = abi.encodeWithSignature("makeMoney(uint256)", loanAmount);
+        FlashloanBorrower flasher = new FlashloanBorrower(address(strategy), strategyCalldata);
+
+        // Run the token approvals
+        changePrank(address(flasher));
+        WBTC.approve(address(_pool),    loanAmount);
+        WBTC.approve(address(strategy), loanAmount);
+
+        // cannot flashloan more than available in pool (by specifying pool instead collateral precision)
+        vm.expectRevert('SafeERC20: low-level call failed');
+        _pool.flashLoan(flasher, address(WBTC), 10 * 1e18, new bytes(0));
+
+        // Use a flashloan to interact with the strategy
+        assertEq(WBTC.balanceOf(address(flasher)), 0);
+        assertTrue(!flasher.callbackInvoked());
+        _pool.flashLoan(flasher, address(WBTC), loanAmount, new bytes(0));
+        assertTrue(flasher.callbackInvoked());
+        assertEq(WBTC.balanceOf(address(flasher)), 0.35 * 1e8);
+    }
+
+    function testUsdcFlashloan() external tearDown {
+        skip(1 days);
+        uint256 loanAmount = 10_000 * 1e6;
+        assertEq(_pool.maxFlashLoan(address(USDC)), loanAmount);
+
+        // Create an example defi strategy which produces enough yield to pay the fee
+        SomeDefiStrategy strategy = new SomeDefiStrategy(USDC);
+        deal(address(USDC), address(strategy), 10_000 * 1e6);
+
+        // Create a flashloan borrower contract which interacts with the strategy
+        bytes memory strategyCalldata = abi.encodeWithSignature("makeMoney(uint256)", loanAmount);
+        FlashloanBorrower flasher = new FlashloanBorrower(address(strategy), strategyCalldata);
+
+        // Run approvals
+        changePrank(address(flasher));
+        USDC.approve(address(_pool),    loanAmount);
+        USDC.approve(address(strategy), loanAmount);
+
+        // cannot flashloan more than available in pool (by specifying pool instead quote token precision)
+        vm.expectRevert('ERC20: transfer amount exceeds balance');
+        _pool.flashLoan(flasher, address(USDC), 10_000 * 1e18, new bytes(0));
+
+        // Use a flashloan to interact with the strategy
+        assertEq(USDC.balanceOf(address(flasher)), 0);
+        assertTrue(!flasher.callbackInvoked());
+        _pool.flashLoan(flasher, address(USDC), loanAmount, new bytes(0));
+        assertTrue(flasher.callbackInvoked());
+        assertEq(USDC.balanceOf(address(flasher)), 350 * 1e6);
+    }
+
 }
