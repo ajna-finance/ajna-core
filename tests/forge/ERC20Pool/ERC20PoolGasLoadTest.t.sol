@@ -51,9 +51,7 @@ contract ERC20PoolGasLoadTest is ERC20DSTestPlus {
 
             _lenders.push(lender);
 
-            unchecked {
-                ++i;
-            }
+            unchecked { ++i; }
         }
     }
 
@@ -69,9 +67,8 @@ contract ERC20PoolGasLoadTest is ERC20DSTestPlus {
             vm.stopPrank();
 
             _borrowers.push(borrower);
-            unchecked {
-                ++i;
-            }
+
+            unchecked { ++i; }
         }
     }
 
@@ -105,7 +102,9 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
 
         vm.assume(borrowerId_ <= LOANS_COUNT);
         address borrower = _borrowers[borrowerId_];
+
         skip(15 hours);
+
         vm.prank(borrower);
         ERC20Pool(address(_pool)).repayDebt(borrower, 100 * 1e18, 0);
 
@@ -116,9 +115,12 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         assertEq(_noOfLoans(), LOANS_COUNT);
 
         vm.assume(borrowerId_ <= LOANS_COUNT);
+
         skip(15 hours);
+
         address borrower = _borrowers[borrowerId_];
         (uint256 debt, , ) = _poolUtils.borrowerInfo(address(_pool), borrower);
+
         vm.prank(borrower);
         ERC20Pool(address(_pool)).repayDebt(borrower, debt, 0);
 
@@ -129,18 +131,20 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         assertEq(_noOfLoans(), LOANS_COUNT);
 
         vm.assume(borrowerId_ <= LOANS_COUNT);
+
         skip(15 hours);
+
         address borrower = _borrowers[borrowerId_];
+
         vm.prank(borrower);
-        _drawDebtNoLupCheck(
-            {
-                from:               borrower,
-                borrower:           borrower,
-                amountToBorrow:     1_000 * 1e18,
-                limitIndex:         5000,
-                collateralToPledge: 0
-            }
-        );
+
+        _drawDebtNoLupCheck({
+            from:               borrower,
+            borrower:           borrower,
+            amountToBorrow:     1_000 * 1e18,
+            limitIndex:         5000,
+            collateralToPledge: 0
+        });
 
         assertEq(_noOfLoans(), LOANS_COUNT);
     }
@@ -156,31 +160,33 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         _mintCollateralAndApproveTokens(newBorrower, 2_000 * 1e18);
 
         vm.startPrank(newBorrower);
+
         skip(15 hours);
-        _drawDebtNoLupCheck(
-            {
-                from:               newBorrower,
-                borrower:           newBorrower,
-                amountToBorrow:     0,
-                limitIndex:         0,
-                collateralToPledge: 1_000 * 1e18
-            }
-        );
+
+        _drawDebtNoLupCheck({
+            from:               newBorrower,
+            borrower:           newBorrower,
+            amountToBorrow:     0,
+            limitIndex:         0,
+            collateralToPledge: 1_000 * 1e18
+        });
+
+
         skip(15 hours);
-        _drawDebtNoLupCheck(
-            {
-                from:               newBorrower,
-                borrower:           newBorrower,
-                amountToBorrow:     1_000 * 1e18,
-                limitIndex:         5000,
-                collateralToPledge: 0
-            }
-        );
+        _drawDebtNoLupCheck({
+            from:               newBorrower,
+            borrower:           newBorrower,
+            amountToBorrow:     1_000 * 1e18,
+            limitIndex:         5000,
+            collateralToPledge: 0
+        });
+
         vm.stopPrank();
 
         assertEq(_noOfLoans(), LOANS_COUNT + 1);
 
         vm.revertTo(snapshot);
+
         assertEq(_noOfLoans(), LOANS_COUNT);
     }
 
@@ -193,10 +199,12 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
             assertEq(_noOfLoans(), LOANS_COUNT);
 
             address borrower = _borrowers[i];
+
             vm.prank(borrower);
             ERC20Pool(address(_pool)).repayDebt(borrower, 100 * 1e18, 0);
 
             assertEq(_noOfLoans(), LOANS_COUNT);
+
             vm.revertTo(snapshot);
         }
 
@@ -213,10 +221,12 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
 
             address borrower = _borrowers[i];
             (uint256 debt, , ) = _poolUtils.borrowerInfo(address(_pool), borrower);
+
             vm.prank(borrower);
             ERC20Pool(address(_pool)).repayDebt(borrower, debt, 0);
 
             assertEq(_noOfLoans(), LOANS_COUNT - 1);
+
             vm.revertTo(snapshot);
         }
 
@@ -228,20 +238,23 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
 
         for (uint256 i; i < LOANS_COUNT; i++) {
             uint256 snapshot = vm.snapshot();
+
             skip(15 hours);
+
             assertEq(_noOfLoans(), LOANS_COUNT);
 
             address borrower = _borrowers[i];
-            _drawDebtNoLupCheck(
-                {
-                    from:               borrower,
-                    borrower:           borrower,
-                    amountToBorrow:     1_000 * 1e18,
-                    limitIndex:         5000,
-                    collateralToPledge: 0
-                }
-            );
+
+            _drawDebtNoLupCheck({
+                from:               borrower,
+                borrower:           borrower,
+                amountToBorrow:     1_000 * 1e18,
+                limitIndex:         5000,
+                collateralToPledge: 0
+            });
+
             assertEq(_noOfLoans(), LOANS_COUNT);
+
             vm.revertTo(snapshot);
         }
 
@@ -255,14 +268,19 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         _mintQuoteAndApproveTokens(lender, 200_000 * 1e18);
 
         vm.startPrank(lender);
+
         skip(15 hours);
         _pool.addQuoteToken(10_000 * 1e18, index_);
+
         skip(15 hours);
         _pool.removeQuoteToken(5_000 * 1e18, index_);
+
         skip(15 hours);
         _pool.moveQuoteToken(1_000 * 1e18, index_, index_ + 1);
+
         skip(15 hours);
         _pool.removeQuoteToken(type(uint256).max, index_);
+
         vm.stopPrank();
     }
 
@@ -272,16 +290,23 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
 
         for (uint256 i = 1; i < LENDERS; i++) {
             uint256 snapshot = vm.snapshot();
+
             vm.startPrank(lender);
+
             skip(15 hours);
             _pool.addQuoteToken(10_000 * 1e18, 7388 - i);
+
             skip(15 hours);
             _pool.addQuoteToken(10_000 * 1e18, 1 + i);
+
             skip(15 hours);
             _pool.removeQuoteToken(5_000 * 1e18, 7388 - i);
+
             skip(15 hours);
             _pool.removeQuoteToken(type(uint256).max, 1 + i);
+
             vm.stopPrank();
+
             vm.revertTo(snapshot);
         }
     }
@@ -291,14 +316,19 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         _mintQuoteAndApproveTokens(kicker, type(uint256).max); // mint enough to cover bonds
 
         vm.warp(100_000 days);
+
         vm.startPrank(kicker);
+
         for (uint256 i; i < LOANS_COUNT; i ++) {
             _pool.kick(_borrowers[i]);
         }
+
         skip(2 hours);
+
         for (uint256 i; i < LOANS_COUNT - 1; i ++) {
             ERC20Pool(address(_pool)).take(_borrowers[i], 100 * 1e18, kicker, new bytes(0));
         }
+
         vm.stopPrank();
     }
 
@@ -307,14 +337,19 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         _mintQuoteAndApproveTokens(kicker, type(uint256).max); // mint enough to cover bonds
 
         vm.warp(100_000 days);
+
         vm.startPrank(kicker);
+
         for (uint256 i; i < LOANS_COUNT; i ++) {
             _pool.kick(_borrowers[LOANS_COUNT - 1 - i]);
         }
+
         skip(2 hours);
+
         for (uint256 i; i < LOANS_COUNT - 1; i ++) {
             ERC20Pool(address(_pool)).take(_borrowers[LOANS_COUNT - 1 - i], 100 * 1e18, kicker, new bytes(0));
         }
+
         vm.stopPrank();
     }
 
@@ -323,15 +358,21 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         _mintQuoteAndApproveTokens(kicker, type(uint256).max); // mint enough to cover bonds
 
         vm.startPrank(kicker);
+
         _pool.addQuoteToken(500_000_000_000_000 * 1e18, 3_000);
         vm.warp(100_000 days);
+
         _pool.kickWithDeposit(3_000); // worst case scenario, pool interest accrues
+
         skip(80 hours);
+
         _pool.settle(_borrowers[LOANS_COUNT - 1], 10);
+
         // kick remaining loans with deposit to get average gas cost
         for (uint256 i; i < LOANS_COUNT - 1; i ++) {
             _pool.kickWithDeposit(3_000);
         }
+
         vm.stopPrank();
     }
 }
@@ -359,19 +400,28 @@ contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
         _mintQuoteAndApproveTokens(kicker, type(uint256).max); // mint enough to cover bonds
 
         vm.warp(100_000 days);
+
         vm.startPrank(kicker);
+
         for (uint256 i; i < LOANS_COUNT; i ++) {
             _pool.kick(_borrowers[i]);
         }
+
         // add quote tokens in bucket to arb
         _pool.addQuoteToken(100_000 * 1e18, 1_000);
+
         vm.stopPrank();
 
         assertEq(_noOfLoans(), 0); // assert all loans are kicked
+
         skip(14 hours);
+
         address taker = makeAddr("taker");
+
         vm.startPrank(taker);
+
         _pool.bucketTake(_borrowers[0], depositTake_, 1_000);
+
         vm.stopPrank();
     }
 
@@ -380,19 +430,28 @@ contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
         _mintQuoteAndApproveTokens(kicker, type(uint256).max); // mint enough to cover bonds
 
         vm.warp(100_000 days);
+
         vm.startPrank(kicker);
+
         for (uint256 i; i < LOANS_COUNT; i ++) {
             _pool.kick(_borrowers[LOANS_COUNT - 1 - i]);
         }
+
         // add quote tokens in bucket to arb
         _pool.addQuoteToken(100_000 * 1e18, 1_000);
+
         vm.stopPrank();
 
         assertEq(_noOfLoans(), 0); // assert all loans are kicked
+
         skip(14 hours);
+
         address taker = makeAddr("taker");
+
         vm.startPrank(taker);
+
         _pool.bucketTake(_borrowers[LOANS_COUNT - 1], depositTake_, 1_000);
+
         vm.stopPrank();
     }
 
@@ -410,7 +469,9 @@ contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
             _mintQuoteAndApproveTokens(lender, 200_000 * 1e18);
 
             vm.startPrank(lender);
+
             _pool.addQuoteToken(200_000 * 1e18, 5000 - i);
+
             vm.stopPrank();
 
             _lenders.push(lender);

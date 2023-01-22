@@ -34,84 +34,65 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
        _mintAndApproveCollateralTokens(_borrower2, 74);
 
         // Lender adds Quote token accross 5 prices
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 2_000 * 1e18,
-                index:  _i9_91
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 5_000 * 1e18,
-                index:  _i9_81
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 11_000 * 1e18,
-                index:  _i9_72
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 25_000 * 1e18,
-                index:  _i9_62
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 30_000 * 1e18,
-                index:  _i9_52
-            }
-        );
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 2_000 * 1e18,
+            index:  _i9_91
+        });
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 5_000 * 1e18,
+            index:  _i9_81
+        });
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 11_000 * 1e18,
+            index:  _i9_72
+        });
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 25_000 * 1e18,
+            index:  _i9_62
+        });
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 30_000 * 1e18,
+            index:  _i9_52
+        });
 
        // first borrower adds collateral token and borrows
         uint256[] memory tokenIdsToAdd = new uint256[](2);
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
-
         // borrower deposits two NFTs into the subset pool and borrows
-        _pledgeCollateral(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                tokenIds: tokenIdsToAdd
-            }
-        );
-        _borrow(
-            {
-                from:       _borrower,
-                amount:     19.8 * 1e18,
-                indexLimit: _i9_91,
-                newLup:     9.917184843435912074 * 1e18
-            }
-        );
+        _pledgeCollateral({
+            from:     _borrower,
+            borrower: _borrower,
+            tokenIds: tokenIdsToAdd
+        });
+        _borrow({
+            from:       _borrower,
+            amount:     19.8 * 1e18,
+            indexLimit: _i9_91,
+            newLup:     9.917184843435912074 * 1e18
+        });
 
         // second borrower deposits three NFTs into the subset pool and borrows
         tokenIdsToAdd = new uint256[](3);
         tokenIdsToAdd[0] = 51;
         tokenIdsToAdd[1] = 53;
         tokenIdsToAdd[2] = 73;
-        _pledgeCollateral(
-            {
-                from:     _borrower2,
-                borrower: _borrower2,
-                tokenIds: tokenIdsToAdd
-            }
-        );
-        _borrow(
-            {
-                from:       _borrower2,
-                amount:     15 * 1e18,
-                indexLimit: _i9_72,
-                newLup:     9.917184843435912074 * 1e18
-            }
-        );
+        _pledgeCollateral({
+            from:     _borrower2,
+            borrower: _borrower2,
+            tokenIds: tokenIdsToAdd
+        });
+        _borrow({
+            from:       _borrower2,
+            amount:     15 * 1e18,
+            indexLimit: _i9_72,
+            newLup:     9.917184843435912074 * 1e18
+        });
 
         /*****************************/
         /*** Assert pre-kick state ***/
@@ -134,24 +115,21 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
                 interestRateUpdate:   _startTime
             })
         );
-        _assertBorrower(
-            {
-                borrower:                  _borrower,
-                borrowerDebt:              19.819038461538461548 * 1e18,
-                borrowerCollateral:        2 * 1e18,
-                borrowert0Np:              10.404995192307692312 * 1e18,
-                borrowerCollateralization: 1.000773560501591181 * 1e18
-            }
-        );
-        _assertBorrower(
-            {
-                borrower:                  _borrower2,
-                borrowerDebt:              15.014423076923076930 * 1e18,
-                borrowerCollateral:        3 * 1e18,
-                borrowert0Np:              5.255048076923076925 * 1e18,
-                borrowerCollateralization: 1.981531649793150539 * 1e18
-            }
-        );
+        _assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              19.819038461538461548 * 1e18,
+            borrowerCollateral:        2 * 1e18,
+            borrowert0Np:              10.404995192307692312 * 1e18,
+            borrowerCollateralization: 1.000773560501591181 * 1e18
+        });
+        _assertBorrower({
+            borrower:                  _borrower2,
+            borrowerDebt:              15.014423076923076930 * 1e18,
+            borrowerCollateral:        3 * 1e18,
+            borrowert0Np:              5.255048076923076925 * 1e18,
+            borrowerCollateralization: 1.981531649793150539 * 1e18
+        });
+
         assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
     }
 
@@ -176,27 +154,22 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
                 neutralPrice:      0
             })
         );
+        _assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              22.728719829841718804 * 1e18,
+            borrowerCollateral:        2 * 1e18,
+            borrowert0Np:              10.404995192307692312 * 1e18,
+            borrowerCollateralization: 0.872656701977127996 * 1e18
+        });
 
-        _assertBorrower(
-            {
-                borrower:                  _borrower,
-                borrowerDebt:              22.728719829841718804 * 1e18,
-                borrowerCollateral:        2 * 1e18,
-                borrowert0Np:              10.404995192307692312 * 1e18,
-                borrowerCollateralization: 0.872656701977127996 * 1e18
-            }
-        );
-
-        _kick(
-            {
-                from:           _lender,
-                borrower:       _borrower,
-                debt:           23.012828827714740289 * 1e18,
-                collateral:     2 * 1e18,
-                bond:           0.227287198298417188 * 1e18,
-                transferAmount: 0.227287198298417188 * 1e18
-            }
-        );
+        _kick({
+            from:           _lender,
+            borrower:       _borrower,
+            debt:           23.012828827714740289 * 1e18,
+            collateral:     2 * 1e18,
+            bond:           0.227287198298417188 * 1e18,
+            transferAmount: 0.227287198298417188 * 1e18
+        });
 
         /******************************/
         /*** Assert Post-kick state ***/
@@ -219,25 +192,6 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
                 interestRateUpdate:   block.timestamp
             })
         );
-        _assertBorrower(
-            {
-                borrower:                  _borrower,
-                borrowerDebt:              23.012828827714740289 * 1e18,
-                borrowerCollateral:        2 * 1e18,
-                borrowert0Np:              10.404995192307692312 * 1e18,
-                borrowerCollateralization: 0.861883162446546169 * 1e18
-            }
-        );
-        _assertBorrower(
-            {
-                borrower:                  _borrower2,
-                borrowerDebt:              17.218727143819483942 * 1e18,
-                borrowerCollateral:        3 * 1e18,
-                borrowert0Np:              5.255048076923076925 * 1e18,
-                borrowerCollateralization: 1.727860269914713433 * 1e18
-            }
-        );
-        assertEq(_quote.balanceOf(_lender), 46_999.772712801701582812 * 1e18);
         _assertAuction(
             AuctionParams({
                 borrower:          _borrower,
@@ -254,46 +208,53 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
                 neutralPrice:      11.932577910666902372 * 1e18
             })
         );
-        _assertKicker(
-            {
-                kicker:    _lender,
-                claimable: 0,
-                locked:    0.227287198298417188 * 1e18
-            }
-        );
+        _assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              23.012828827714740289 * 1e18,
+            borrowerCollateral:        2 * 1e18,
+            borrowert0Np:              10.404995192307692312 * 1e18,
+            borrowerCollateralization: 0.861883162446546169 * 1e18
+        });
+        _assertBorrower({
+            borrower:                  _borrower2,
+            borrowerDebt:              17.218727143819483942 * 1e18,
+            borrowerCollateral:        3 * 1e18,
+            borrowert0Np:              5.255048076923076925 * 1e18,
+            borrowerCollateralization: 1.727860269914713433 * 1e18
+        });
+        _assertKicker({
+            kicker:    _lender,
+            claimable: 0,
+            locked:    0.227287198298417188 * 1e18
+        });
+
+        assertEq(_quote.balanceOf(_lender), 46_999.772712801701582812 * 1e18);
 
         // kick should fail if borrower in liquidation
-        _assertKickAuctionActiveRevert(
-            {
-                from:       _lender,
-                borrower:   _borrower
-            }
-        );
+        _assertKickAuctionActiveRevert({
+            from:       _lender,
+            borrower:   _borrower
+        });
 
         // kick should fail if borrower properly collateralized
-        _assertKickCollateralizedBorrowerRevert(
-            {
-                from:       _lender,
-                borrower:   _borrower2
-            }
-        );
+        _assertKickCollateralizedBorrowerRevert({
+            from:       _lender,
+            borrower:   _borrower2
+        });
 
         // check locked pool actions if auction kicked for more than 72 hours and auction head not cleared
         skip(80 hours);
-        _assertRemoveLiquidityAuctionNotClearedRevert(
-            {
-                from:   _lender,
-                amount: 1_000 * 1e18,
-                index:  _i9_91
-            }
-        );
-        _assertRemoveCollateralAuctionNotClearedRevert(
-            {
-                from:   _lender,
-                amount: 10 * 1e18,
-                index:  _i9_91
-            }
-        );
+        _assertRemoveLiquidityAuctionNotClearedRevert({
+            from:   _lender,
+            amount: 1_000 * 1e18,
+            index:  _i9_91
+        });
+
+        _assertRemoveCollateralAuctionNotClearedRevert({
+            from:   _lender,
+            amount: 10 * 1e18,
+            index:  _i9_91
+        });
     }
 
     function testKickSubsetPoolAndSettleByRepayAndPledge() external tearDown {
@@ -316,26 +277,23 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
                 neutralPrice:      0
             })
         );
-        _assertBorrower(
-            {
-                borrower:                  _borrower,
-                borrowerDebt:              22.728719829841718804 * 1e18,
-                borrowerCollateral:        2 * 1e18,
-                borrowert0Np:              10.404995192307692312 * 1e18,
-                borrowerCollateralization: 0.872656701977127996 * 1e18
-            }
-        );
+        _assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              22.728719829841718804 * 1e18,
+            borrowerCollateral:        2 * 1e18,
+            borrowert0Np:              10.404995192307692312 * 1e18,
+            borrowerCollateralization: 0.872656701977127996 * 1e18
+        });
 
-        _kick(
-            {
-                from:           _lender,
-                borrower:       _borrower,
-                debt:           23.012828827714740289 * 1e18,
-                collateral:     2 * 1e18,
-                bond:           0.227287198298417188 * 1e18,
-                transferAmount: 0.227287198298417188 * 1e18
-            }
-        );
+        _kick({
+            from:           _lender,
+            borrower:       _borrower,
+            debt:           23.012828827714740289 * 1e18,
+            collateral:     2 * 1e18,
+            bond:           0.227287198298417188 * 1e18,
+            transferAmount: 0.227287198298417188 * 1e18
+        });
+
         _assertAuction(
             AuctionParams({
                 borrower:          _borrower,
@@ -352,17 +310,16 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
                 neutralPrice:      11.932577910666902372 * 1e18
             })
         );
-        _assertBorrower(
-            {
-                borrower:                  _borrower,
-                borrowerDebt:              23.012828827714740289 * 1e18,
-                borrowerCollateral:        2 * 1e18,
-                borrowert0Np:              10.404995192307692312 * 1e18,
-                borrowerCollateralization: 0.861883162446546169 * 1e18
-            }
-        );
+        _assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              23.012828827714740289 * 1e18,
+            borrowerCollateral:        2 * 1e18,
+            borrowert0Np:              10.404995192307692312 * 1e18,
+            borrowerCollateralization: 0.861883162446546169 * 1e18
+        });
 
         uint256 snapshot = vm.snapshot();
+
         // borrower repays debt in order to exit from auction
         _repayDebt({
             from:             _borrower,
@@ -389,27 +346,24 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
                 neutralPrice:      0
             })
         );
-        _assertBorrower(
-            {
-                borrower:                  _borrower,
-                borrowerDebt:              0,
-                borrowerCollateral:        2 * 1e18,
-                borrowert0Np:              0,
-                borrowerCollateralization: 1 * 1e18
-            }
-        );
+        _assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              0,
+            borrowerCollateral:        2 * 1e18,
+            borrowert0Np:              0,
+            borrowerCollateralization: 1 * 1e18
+        });
+
         vm.revertTo(snapshot);
 
         // borrower pledge one more NFT to exit from auction
         uint256[] memory tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 5;
-        _pledgeCollateral(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                tokenIds: tokenIdsToAdd
-            }
-        );
+        _pledgeCollateral({
+            from:     _borrower,
+            borrower: _borrower,
+            tokenIds: tokenIdsToAdd
+        });
 
         _assertAuction(
             AuctionParams({
@@ -427,15 +381,13 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
                 neutralPrice:      0
             })
         );
-        _assertBorrower(
-            {
-                borrower:                  _borrower,
-                borrowerDebt:              23.012828827714740289 * 1e18,
-                borrowerCollateral:        3 * 1e18,
-                borrowert0Np:              6.989927127403846156 * 1e18,
-                borrowerCollateralization: 1.292824743669819254 * 1e18
-            }
-        );
+        _assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              23.012828827714740289 * 1e18,
+            borrowerCollateral:        3 * 1e18,
+            borrowert0Np:              6.989927127403846156 * 1e18,
+            borrowerCollateralization: 1.292824743669819254 * 1e18
+        });
     }
 
 }

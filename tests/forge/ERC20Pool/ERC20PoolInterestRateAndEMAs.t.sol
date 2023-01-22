@@ -14,58 +14,54 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
     address internal _borrower;
     address internal _borrower2;
+    address internal _borrower3;
     address internal _lender;
     address internal _lender1;
+    address internal _lender2;
 
     function setUp() external {
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
+        _borrower3 = makeAddr("borrower3");
         _lender    = makeAddr("lender");
         _lender1   = makeAddr("_lender1");
+        _lender2   = makeAddr("_lender2");
 
         _mintCollateralAndApproveTokens(_borrower,  10_000 * 1e18);
         _mintCollateralAndApproveTokens(_borrower2, 200 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower3, 1_000_000_000 * 1e18);
 
         _mintQuoteAndApproveTokens(_lender,   200_000 * 1e18);
         _mintQuoteAndApproveTokens(_lender1,  200_000 * 1e18);
+        _mintQuoteAndApproveTokens(_lender2,  100_000_000_000_000_000 * 1e18);
     }
 
     function testPoolInterestRateIncreaseDecrease() external tearDown {
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 10_000 * 1e18,
-                index:  2550
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 20_000 * 1e18,
-                index:  2551
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 20_000 * 1e18,
-                index:  2552
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 50_000 * 1e18,
-                index:  3900
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 10_000 * 1e18,
-                index:  4200
-            }
-        );
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 10_000 * 1e18,
+            index:  2550
+        });
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 20_000 * 1e18,
+            index:  2551
+        });
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 20_000 * 1e18,
+            index:  2552
+        });
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 50_000 * 1e18,
+            index:  3900
+        });
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 10_000 * 1e18,
+            index:  4200
+        });
 
         skip(10 days);
 
@@ -91,15 +87,13 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         vm.expectEmit(true, true, false, true);
         emit UpdateInterestRate(0.05 * 1e18, 0.055 * 1e18);
-        _drawDebtNoLupCheck(
-            {
-                from:               _borrower,
-                borrower:           _borrower,
-                amountToBorrow:     46_000 * 1e18,
-                limitIndex:         4_300,
-                collateralToPledge: 100 * 1e18
-            }
-        );
+        _drawDebtNoLupCheck({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToBorrow:     46_000 * 1e18,
+            limitIndex:         4_300,
+            collateralToPledge: 100 * 1e18
+        });
 
         _assertPool(
             PoolParams({
@@ -118,12 +112,10 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 interestRateUpdate:   _startTime + 10 days
             })
         );
-        _assertEMAs(
-            {
-                debtEma:   4_340.881358710158802477 * 1e18,
-                lupColEma: 28_103.845662221475161347 * 1e18
-            }
-        );
+        _assertEMAs({
+            debtEma:   4_340.881358710158802477 * 1e18,
+            lupColEma: 28_103.845662221475161347 * 1e18
+        });
 
         skip(14 hours);
 
@@ -154,16 +146,15 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 interestRateUpdate:   _startTime + 10 days + 14 hours
             })
         );
-        _assertEMAs(
-            {
-                debtEma:   8_279.448467499588505755 * 1e18,
-                lupColEma: 53_558.163735316008374982 * 1e18
-            }
-        );
+        _assertEMAs({
+            debtEma:   8_279.448467499588505755 * 1e18,
+            lupColEma: 53_558.163735316008374982 * 1e18
+        });
 
         vm.revertTo(snapshot);
         // repay entire loan
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 200 * 1e18);
+
         _repayDebt({
             from:             _borrower,
             borrower:         _borrower,
@@ -190,40 +181,33 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 interestRateUpdate:   _startTime + 10 days + 14 hours
             })
         );
-        _assertEMAs(
-            {
-                debtEma:   4_340.881358710158802477 * 1e18,
-                lupColEma: 28_103.845662221475161347 * 1e18
-            }
-        );
+        _assertEMAs({
+            debtEma:   4_340.881358710158802477 * 1e18,
+            lupColEma: 28_103.845662221475161347 * 1e18
+        });
     }
 
     function testOverutilizedPoolInterestRateIncrease() external tearDown {
         // lender deposits 1000
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 1_000 * 1e18,
-                index:  3232
-            }
-        );
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 1_000 * 1e18,
+            index:  3232
+        });
 
         // borrower draws 9100
-        _pledgeCollateral(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:    1_500 * 1e18
-            }
-        );
-        _borrow(
-            {
-                from:       _borrower,
-                amount:     995 * 1e18,
-                indexLimit: 3300,
-                newLup:     100.332368143282009890 * 1e18
-            }
-        );
+        _pledgeCollateral({
+            from:     _borrower,
+            borrower: _borrower,
+            amount:    1_500 * 1e18
+        });
+        _borrow({
+            from:       _borrower,
+            amount:     995 * 1e18,
+            indexLimit: 3300,
+            newLup:     100.332368143282009890 * 1e18
+        });
+
         _assertPool(
             PoolParams({
                 htp:                  0.663971153846153846 * 1e18,
@@ -244,15 +228,15 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         // force an interest rate update
         skip(13 hours);
-        _addLiquidity(
-            {
-                from:    _lender,
-                amount:  0,
-                index:   3232,
-                lpAward: 0,
-                newLup:  100.332368143282009890 * 1e18
-            }
-        );
+
+        _addLiquidity({
+            from:    _lender,
+            amount:  0,
+            index:   3232,
+            lpAward: 0,
+            newLup:  100.332368143282009890 * 1e18
+        });
+
         _assertPool(
             PoolParams({
                 htp:                  0.664069695689831259 * 1e18,
@@ -275,30 +259,26 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
     function testPoolInterestRateDecrease() external tearDown {
         // lender makes an initial deposit
         skip(1 hours);
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 10_000 * 1e18,
-                index:  2873
-            }
-        );
+
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 10_000 * 1e18,
+            index:  2873
+        });
+
         // borrower draws debt
         skip(2 hours);
-        _pledgeCollateral(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   10 * 1e18
-            }
-        );
-        _borrow(
-            {
-                from:       _borrower,
-                amount:     5_000 * 1e18,
-                indexLimit: 3000,
-                newLup:     601.252968524772188572 * 1e18
-            }
-        );
+        _pledgeCollateral({
+            from:     _borrower,
+            borrower: _borrower,
+            amount:   10 * 1e18
+        });
+        _borrow({
+            from:       _borrower,
+            amount:     5_000 * 1e18,
+            indexLimit: 3000,
+            newLup:     601.252968524772188572 * 1e18
+        });
 
         _assertPool(
             PoolParams({
@@ -323,13 +303,11 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         vm.expectEmit(true, true, false, true);
         emit UpdateInterestRate(0.05 * 1e18, 0.045 * 1e18);
-        _addLiquidityNoEventCheck(
-            {
-                from:    _lender1,
-                amount:  1_000 * 1e18,
-                index:   2873
-            }
-        );
+        _addLiquidityNoEventCheck({
+            from:    _lender1,
+            amount:  1_000 * 1e18,
+            index:   2873
+        });
 
         _assertPool(
             PoolParams({
@@ -351,25 +329,21 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
     }
 
     function testMinInterestRate() external tearDown {
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 10_000 * 1e18,
-                index:  _i1505_26
-            }
-        );
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 10_000 * 1e18,
+            index:  _i1505_26
+        });
 
         // pledge a tiny amount of collateral and draw a tiny amount of debt
-        _drawDebt(
-            {
-                from:               _borrower,
-                borrower:           _borrower,
-                amountToBorrow:     0.00001 * 1e18,
-                limitIndex:         _i1505_26,
-                collateralToPledge: 0.00001 * 1e18,
-                newLup:             _p1505_26
-            }
-        );
+        _drawDebt({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToBorrow:     0.00001 * 1e18,
+            limitIndex:         _i1505_26,
+            collateralToPledge: 0.00001 * 1e18,
+            newLup:             _p1505_26
+        });
 
         // confirm interest rate starts out at 5%
         _assertPool(
@@ -394,17 +368,15 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         while (i < 77) {
             // trigger an interest accumulation
             skip(12 hours);
-            _borrowZeroAmount(
-                {
-                    from:       _borrower,
-                    amount:     0,
-                    indexLimit: _i1505_26,
-                    newLup:     _p1505_26
-                }
-            );
-            unchecked {
-                ++i;
-            }
+
+            _borrowZeroAmount({
+                from:       _borrower,
+                amount:     0,
+                indexLimit: _i1505_26,
+                newLup:     _p1505_26
+            });
+            
+            unchecked { ++i; }
         }
 
         // show the rate bottoms out at 10 bps
@@ -428,25 +400,21 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
     }
 
     function testMaxInterestRate() external tearDown {
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 10_000 * 1e18,
-                index:  _i1505_26
-            }
-        );
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 10_000 * 1e18,
+            index:  _i1505_26
+        });
 
         // pledge a lot of collateral, but draw a tiny amount of debt
-        _drawDebt(
-            {
-                from:               _borrower,
-                borrower:           _borrower,
-                amountToBorrow:     0.00001 * 1e18,
-                limitIndex:         _i1505_26,
-                collateralToPledge: 10_000 * 1e18,
-                newLup:             _p1505_26
-            }
-        );
+        _drawDebt({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToBorrow:     0.00001 * 1e18,
+            limitIndex:         _i1505_26,
+            collateralToPledge: 10_000 * 1e18,
+            newLup:             _p1505_26
+        });
 
         // confirm interest rate starts out at 5%
         _assertPool(
@@ -471,17 +439,15 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         while (i < 196) {
             // trigger an interest accumulation
             skip(12 hours);
-            _borrowZeroAmount(
-                {
-                    from:       _borrower,
-                    amount:     0,
-                    indexLimit: _i1505_26,
-                    newLup:     _p1505_26
-                }
-            );
-            unchecked {
-                ++i;
-            }
+
+            _borrowZeroAmount({
+                from:       _borrower,
+                amount:     0,
+                indexLimit: _i1505_26,
+                newLup:     _p1505_26
+            });
+
+            unchecked { ++i; }
         }
 
         // show the rate maxed out at 50000%
@@ -506,46 +472,36 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
     function testPendingInflator() external tearDown {
         // add liquidity
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 10_000 * 1e18,
-                index:  2550
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 10_000 * 1e18,
-                index:  2552
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 10_000 * 1e18,
-                index:  4200
-            }
-        );
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 10_000 * 1e18,
+            index:  2550
+        });
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 10_000 * 1e18,
+            index:  2552
+        });
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 10_000 * 1e18,
+            index:  4200
+        });
 
         skip(3600);
 
         // draw debt
-        _pledgeCollateral(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   50 * 1e18
-            }
-        );
-        _borrow(
-            {
-                from:       _borrower,
-                amount:     15_000 * 1e18,
-                indexLimit: 4_300,
-                newLup:     2_981.007422784467321543 * 1e18
-            }
-        );
+        _pledgeCollateral({
+            from:     _borrower,
+            borrower: _borrower,
+            amount:   50 * 1e18
+        });
+        _borrow({
+            from:       _borrower,
+            amount:     15_000 * 1e18,
+            indexLimit: 4_300,
+            newLup:     2_981.007422784467321543 * 1e18
+        });
 
         _assertPool(
             PoolParams({
@@ -590,20 +546,16 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
     function testPoolEMAAndTargetUtilizationUpdate() external tearDown {
 
         // add initial quote to the pool
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 10_000 * 1e18,
-                index:  3_010
-            }
-        );
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 10_000 * 1e18,
-                index:  2_995
-            }
-        );
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 10_000 * 1e18,
+            index:  3_010
+        });
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 10_000 * 1e18,
+            index:  2_995
+        });
 
         _assertPool(
             PoolParams({
@@ -622,29 +574,23 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 interestRateUpdate:   _startTime
             })
         );
-        _assertEMAs(
-            {
-                debtEma:   0,
-                lupColEma: 0
-            }
-        );
+        _assertEMAs({
+            debtEma:   0,
+            lupColEma: 0
+        });
 
         // borrower 1 borrows 500 quote from the pool
-        _pledgeCollateral(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   50 * 1e18
-            }
-        );
-        _borrow(
-            {
-                from:       _borrower,
-                amount:     500 * 1e18,
-                indexLimit: 3_010,
-                newLup:     327.188250324085203338 * 1e18
-            }
-        );
+        _pledgeCollateral({
+            from:     _borrower,
+            borrower: _borrower,
+            amount:   50 * 1e18
+        });
+        _borrow({
+            from:       _borrower,
+            amount:     500 * 1e18,
+            indexLimit: 3_010,
+            newLup:     327.188250324085203338 * 1e18
+        });
 
         _assertPool(
             PoolParams({
@@ -663,28 +609,22 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 interestRateUpdate:   _startTime
             })
         );
-        _assertEMAs(
-            {
-                debtEma:   0,
-                lupColEma: 0
-            }
-        );
+        _assertEMAs({
+            debtEma:   0,
+            lupColEma: 0
+        });
 
-        _pledgeCollateral(
-            {
-                from:     _borrower2,
-                borrower: _borrower2,
-                amount:   50 * 1e18
-            }
-        );
-        _borrow(
-            {
-                from:       _borrower2,
-                amount:     500 * 1e18,
-                indexLimit: 3_010,
-                newLup:     327.188250324085203338 * 1e18
-            }
-        );
+        _pledgeCollateral({
+            from:     _borrower2,
+            borrower: _borrower2,
+            amount:   50 * 1e18
+        });
+        _borrow({
+            from:       _borrower2,
+            amount:     500 * 1e18,
+            indexLimit: 3_010,
+            newLup:     327.188250324085203338 * 1e18
+        });
 
         _assertPool(
             PoolParams({
@@ -703,24 +643,20 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 interestRateUpdate:   _startTime
             })
         );
-        _assertEMAs(
-            {
-                debtEma:   0,
-                lupColEma: 0
-            }
-        );
+        _assertEMAs({
+            debtEma:   0,
+            lupColEma: 0
+        });
 
         skip(10 days);
 
         // borrower 1 borrows 500 quote from the pool
-        _borrow(
-            {
-                from:       _borrower,
-                amount:     10 * 1e18,
-                indexLimit: 3_010,
-                newLup:     327.188250324085203338 * 1e18
-            }
-        );
+        _borrow({
+            from:       _borrower,
+            amount:     10 * 1e18,
+            indexLimit: 3_010,
+            newLup:     327.188250324085203338 * 1e18
+        });
 
         _assertPool(
             PoolParams({
@@ -739,11 +675,63 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 interestRateUpdate:   _startTime
             })
         );
-        _assertEMAs(
-            {
-                debtEma:   95.440014344854493304 * 1e18,
-                lupColEma: 954.400143448544933043 * 1e18
-            }
+        _assertEMAs({
+            debtEma:   95.440014344854493304 * 1e18,
+            lupColEma: 954.400143448544933043 * 1e18
+        });
+    }
+
+    function testAccruePoolInterestHtpGtMaxPrice() external tearDown {
+        _addLiquidityNoEventCheck({
+            from:    _lender2,
+            amount:  100_000_000_000_000_000 * 1e18,
+            index:   1
+        });
+
+        _drawDebtNoLupCheck({
+            from:               _borrower3,
+            borrower:           _borrower3,
+            amountToBorrow:     90_000_000_000_000_000 * 1e18,
+            limitIndex:         5000,
+            collateralToPledge: 90_100_000 * 1e18
+        });
+
+        skip(100 days);
+
+        assertGt(MAX_PRICE, _htp());
+
+        uint256 expectedPoolDebt = 91329091841208027.611736396814389869 * 1e18;
+
+        _assertPool(
+            PoolParams({
+                htp:                  999850593.357807564705882353 * 1e18,
+                lup:                  999969141.897027226245329498 * 1e18,
+                poolSize:             100_000_000_000_000_000 * 1e18,
+                pledgedCollateral:    90_100_000 * 1e18,
+                encumberedCollateral: 91_331_910.170696775095411340 * 1e18,
+                poolDebt:             91329091841208027.611736396814389869 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    1 * 1e18,
+                minDebtAmount:        9132909184120802.761173639681438987 * 1e18,
+                loans:                1,
+                maxBorrower:          address(_borrower3),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
         );
+
+        (uint256 poolDebt,,) = _pool.debtInfo();
+        assertEq(poolDebt, expectedPoolDebt);
+
+        // force accrue interest
+        _addLiquidityNoEventCheck({
+            from:    _lender2,
+            amount:  0,
+            index:   1
+        });
+
+        // check that no interest earned if HTP is over the highest price bucket
+        (poolDebt,,) = _pool.debtInfo();
+        assertEq(poolDebt, expectedPoolDebt);
     }
 }
