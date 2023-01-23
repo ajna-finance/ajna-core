@@ -3,6 +3,8 @@
 pragma solidity ^0.8.14;
 
 import "forge-std/Script.sol";
+import "forge-std/console.sol";
+
 import { TokensFactory } from "./test_token_factory/TokensFactory.sol";
 import { ERC20Impl }     from "./test_token_factory/implementation/ERC20Impl.sol";
 import { ERC721Impl }    from "./test_token_factory/implementation/ERC721Impl.sol";
@@ -24,6 +26,7 @@ contract DeployTokensFactory is Script {
         address erc1155implementationAddress = address(erc1155implementation);
 
         TokensFactory factory = new TokensFactory(erc20implementationAddress, erc721implementationAddress, erc1155implementationAddress);
+        console.log("TokensFactory deployed to %s", address(factory));
 
         vm.stopBroadcast();
     }
