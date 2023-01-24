@@ -23,31 +23,23 @@ abstract contract FlashloanablePool is Pool {
      *  @param  token_    Address of the ERC20 token caller wants to borrow.
      *  @param  amount_   The amount of tokens to borrow.
      *  @param  data_     User-defined calldata passed to the receiver.
-     *  @return True if successful.
+     *  @return success_  True if flashloan was successful.
      */
     function flashLoan(
         IERC3156FlashBorrower receiver_,
         address token_,
         uint256 amount_,
         bytes calldata data_
-    ) external virtual override nonReentrant returns (bool) {
-        if (token_ == _getArgAddress(QUOTE_ADDRESS)) return _flashLoanToken(receiver_, token_, amount_, data_);
-        revert FlashloanUnavailableForToken();
-    }
+    ) external virtual override nonReentrant returns (bool success_) {
+        if (!_isFlashloanSupported(token_)) revert FlashloanUnavailableForToken();
 
-    function _flashLoanToken(
-        IERC3156FlashBorrower receiver_,
-        address token_,
-        uint256 amount_,
-        bytes calldata data_
-    ) internal returns (bool) {
         IERC20 tokenContract = IERC20(token_);
 
         tokenContract.safeTransfer(
             address(receiver_),
             amount_
         );
-        
+
         if (receiver_.onFlashLoan(msg.sender, token_, amount_, 0, data_) != 
             keccak256("ERC3156FlashBorrower.onFlashLoan")) revert FlashloanCallbackFailed();
 
@@ -57,7 +49,7 @@ abstract contract FlashloanablePool is Pool {
             amount_
         );
 
-        return true;
+        success_ = true;
     }
 
     /**
@@ -67,7 +59,7 @@ abstract contract FlashloanablePool is Pool {
         address token_,
         uint256
     ) external virtual view override returns (uint256) {
-        if (token_ != _getArgAddress(QUOTE_ADDRESS)) revert FlashloanUnavailableForToken();
+        if (!_isFlashloanSupported(token_)) revert FlashloanUnavailableForToken();
         return 0;
     }
 
@@ -79,6 +71,18 @@ abstract contract FlashloanablePool is Pool {
      function maxFlashLoan(
         address token_
     ) external virtual view override returns (uint256 maxLoan_) {
-        if (token_ == _getArgAddress(QUOTE_ADDRESS)) maxLoan_ = IERC20(token_).balanceOf(address(this));
+        if (_isFlashloanSupported(token_)) maxLoan_ = IERC20(token_).balanceOf(address(this));
+    }
+
+    /**
+     *  @notice Returns true if pool allows flashloans for given token address, false otherwise.
+     *  @dev    Allows flashloans for quote token, overriden in pool implementation to allow flashloans for other tokens.
+     *  @param  token_   Address of the ERC20 token to be lent.
+     *  @return True if token can be flashloaned, false otherwise.
+     */
+    function _isFlashloanSupported(
+        address token_
+    ) internal virtual view returns (bool) {
+        return token_ == _getArgAddress(QUOTE_ADDRESS);
     }
 }
