@@ -31,18 +31,19 @@ abstract contract FlashloanablePool is Pool {
         uint256 amount_,
         bytes calldata data_
     ) external virtual override nonReentrant returns (bool) {
-        if (token_ == _getArgAddress(QUOTE_ADDRESS)) return _flashLoanQuoteToken(receiver_, token_, amount_, data_);
+        if (token_ == _getArgAddress(QUOTE_ADDRESS)) return _flashLoanToken(receiver_, token_, amount_, data_);
         revert FlashloanUnavailableForToken();
     }
 
-    function _flashLoanQuoteToken(IERC3156FlashBorrower receiver_,
+    function _flashLoanToken(
+        IERC3156FlashBorrower receiver_,
         address token_,
         uint256 amount_,
         bytes calldata data_
     ) internal returns (bool) {
-        IERC20 quoteContract = IERC20(_getArgAddress(QUOTE_ADDRESS));
+        IERC20 tokenContract = IERC20(token_);
 
-        quoteContract.safeTransfer(
+        tokenContract.safeTransfer(
             address(receiver_),
             amount_
         );
@@ -50,7 +51,7 @@ abstract contract FlashloanablePool is Pool {
         if (receiver_.onFlashLoan(msg.sender, token_, amount_, 0, data_) != 
             keccak256("ERC3156FlashBorrower.onFlashLoan")) revert FlashloanCallbackFailed();
 
-        quoteContract.safeTransferFrom(
+        tokenContract.safeTransferFrom(
             address(receiver_),
             address(this),
             amount_
