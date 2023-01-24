@@ -239,27 +239,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         uint256 amount_,
         bytes calldata data_
     ) external override(IERC3156FlashLender, FlashloanablePool) nonReentrant returns (bool) {
-        if (token_ == _getArgAddress(QUOTE_ADDRESS)) return _flashLoanQuoteToken(receiver_, token_, amount_, data_);
-
-        if (token_ == _getArgAddress(COLLATERAL_ADDRESS)) {
-            IERC20 collateralContract = IERC20(_getArgAddress(COLLATERAL_ADDRESS));
-
-            collateralContract.safeTransfer(
-                address(receiver_),
-                amount_
-            );
-
-            if (receiver_.onFlashLoan(msg.sender, token_, amount_, 0, data_) !=
-                keccak256("ERC3156FlashBorrower.onFlashLoan")) revert FlashloanCallbackFailed();
-
-            collateralContract.safeTransferFrom(
-                address(receiver_),
-                address(this),
-                amount_
-            );
-
-            return true;
-        }
+        if (token_ == _getArgAddress(QUOTE_ADDRESS) || token_ == _getArgAddress(COLLATERAL_ADDRESS)) return _flashLoanToken(receiver_, token_, amount_, data_);
 
         revert FlashloanUnavailableForToken();
     }
