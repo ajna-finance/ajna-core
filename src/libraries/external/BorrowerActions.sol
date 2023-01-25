@@ -271,8 +271,19 @@ library BorrowerActions {
 
             result_.quoteTokenToRepay = Maths.wmul(result_.t0RepaidDebt, poolState_.inflator);
 
-            result_.poolDebt -= result_.quoteTokenToRepay;
-            vars.borrowerDebt -= result_.quoteTokenToRepay;
+            if (result_.quoteTokenToRepay > result_.poolDebt) {
+                result_.poolDebt = 0;
+            }
+            else {
+                result_.poolDebt -= result_.quoteTokenToRepay;
+            }
+
+            if (result_.quoteTokenToRepay > vars.borrowerDebt) {
+                vars.borrowerDebt = 0;
+            }
+            else {
+                vars.borrowerDebt -= result_.quoteTokenToRepay;
+            }
 
             // check that paying the loan doesn't leave borrower debt under min debt amount
             _revertOnMinDebt(loans_, result_.poolDebt, vars.borrowerDebt, poolState_.quoteDustLimit);

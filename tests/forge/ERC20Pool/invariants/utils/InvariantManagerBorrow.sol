@@ -10,13 +10,13 @@ import '@std/Vm.sol';
 import { ERC20Pool }        from 'src/ERC20Pool.sol';
 import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
 import { Token }            from '../../../utils/Tokens.sol';
-import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
+import { PoolInfoUtils, _collateralization }    from 'src/PoolInfoUtils.sol';
 
 uint256 constant LENDER_MIN_BUCKET_INDEX = 2570;
 uint256 constant LENDER_MAX_BUCKET_INDEX = 2590;
 
-uint256 constant BORROWER_MIN_BUCKET_INDEX = 2600;
-uint256 constant BORROWER_MAX_BUCKET_INDEX = 2620;
+uint256 constant BORROWER_MIN_BUCKET_INDEX = 2550;
+uint256 constant BORROWER_MAX_BUCKET_INDEX = 2569;
 
 function constrictToRange(
     uint256 x,
@@ -83,11 +83,10 @@ contract InvariantActorManagerBorrow is Test{
 }
 
     modifier useRandomActor(uint256 actorIndex) {
-        address actor = _actors[constrictToRange(actorIndex, 0, _actors.length - 1)];
+        address actor = _actors[constrictToRange(actorIndex, 0, 0)];
         _actor = actor;
-        vm.startPrank(actor);
+        changePrank(_actor);
         _;
-        vm.stopPrank();
     }
 
     modifier useRandomBucketLender(uint256 bucketIndex) {
@@ -118,39 +117,72 @@ contract InvariantActorManagerBorrow is Test{
         console.log("M: remove");
         (uint256 lpBalance, ) = ERC20Pool(_pool).lenderInfo(_bucketLender, _actor);
 
+        // remove Quote token only if user has some deposit already
         if ( lpBalance > 0 ) {
             amount = constrictToRange(amount, 1, 1000000 * 1e18);
             _removeQuoteToken(amount, _bucketLender);
         }
     }
 
-    function _drawDebt(uint256 amount, uint256 limitIndex, uint256 collateralToPledge) internal {
-        ERC20Pool(_pool).drawDebt(_actor, amount, limitIndex, collateralToPledge);
+    function _drawDebt(uint256 amount, uint256 limitIndex) internal {
+
+        amount = constrictToRange(amount, 1 * 1e18, 1000000 * 1e18);
+
+        (uint256 minDebt, , , ) = PoolInfoUtils(_poolInfo).poolUtilizationInfo(_pool);
+
+        // borrow amount greater than minDebt
+        if (amount < minDebt) amount = minDebt + 100 * 1e18;
+
+        uint256 poolQuoteBalance = Token(_quote).balanceOf(_pool);
+
+        // add Quote token if pool balance is low
+        if (amount > poolQuoteBalance) {
+            _addQuoteToken(amount * 2, LENDER_MAX_BUCKET_INDEX);
+        }
+
+        uint256 lup = PoolInfoUtils(_poolInfo).lup(_pool);
+        uint256 hpb = PoolInfoUtils(_poolInfo).hpb(_pool);
+
+        // repay debt if borrower is under collateralized
+        (uint256 debt, uint256 collateral, ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);
+        if (_collateralization(debt, collateral, lup) < 1) {
+            _repayDebt(type(uint256).max);
+        }
+
+        uint256 price = lup > hpb ? hpb : lup;
+
+        // pledge slightly more than required collateral to draw debt
+        uint256 collateralToPledge = (amount * 1e18 / price) * 11 / 10;
+
+        (uint256 poolDebt, , ) = ERC20Pool(_pool).debtInfo();
+
+        // find bucket to borrow quote token
+        uint256 bucket = ERC20Pool(_pool).depositIndex(amount + poolDebt);
+
+        ERC20Pool(_pool).drawDebt(_actor, amount, bucket + 1, collateralToPledge);
 
         // skip some time for more interest and make borrower under collateralized
         vm.warp(block.timestamp + 200 days);
     }
 
     function drawDebt(uint256 actorIndex, uint256 amount, uint256 limitIndex) external useRandomActor(actorIndex) useRandomBucketBorrower(limitIndex) {
-        (uint256 minDebt, , , ) = PoolInfoUtils(_poolInfo).poolUtilizationInfo(_pool);
-
-        if (amount > minDebt) amount = minDebt + 100 * 1e18;
-
-        uint256 poolQuoteBalance = Token(_quote).balanceOf(_pool);
-        if (amount > poolQuoteBalance) {
-            _addQuoteToken(amount, LENDER_MAX_BUCKET_INDEX);
-        }
-
-        // pledge slightly more than required collateral to draw debt
-        uint256 collateralToPledge = (amount * 1e18 / PoolInfoUtils(_poolInfo).hpb(_pool)) * 101 / 100;  
-
-        _drawDebt(amount, _bucketBorrower, collateralToPledge);
-        
+        _drawDebt(amount, _bucketBorrower);
     }
 
-    function repayDebt(uint256 actorIndex, uint256 amountToRepay) external useRandomActor(actorIndex){
-        console.log("M: repay");
+    function _repayDebt(uint256 amountToRepay) internal {
         ERC20Pool(_pool).repayDebt(_actor, amountToRepay, 0);
+    }
+
+    function repayDebt(uint256 actorIndex, uint256 amountToRepay, uint256 limitIndex) external useRandomActor(actorIndex) useRandomBucketBorrower(limitIndex){
+        console.log("M: repay");
+        amountToRepay = constrictToRange(amountToRepay, 1 * 1e18, 1000000 * 1e18);
+        (uint256 debt, , ) = ERC20Pool(_pool).borrowerInfo(_actor);
+
+        // draw some debt if user has no debt
+        if(debt == 0) {
+            _drawDebt(amountToRepay, _bucketBorrower);
+        }
+        _repayDebt(amountToRepay);
     }
 
     function getActorsCount() external view returns(uint256) {

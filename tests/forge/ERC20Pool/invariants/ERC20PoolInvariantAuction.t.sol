@@ -79,8 +79,9 @@ contract PoolInvariants is InvariantTest, Test{
     function invariant_quoteTokenBalance() public {
         uint256 poolBalance = _quote.balanceOf(address(_pool));
         (uint256 pooldebt, , ) = _pool.debtInfo();
+        (uint256 totalPoolBond, , ) = _pool.reservesInfo();
         // poolBalance == poolDeposit will fail due to rounding issue while converting LPs to Quote
-        require(poolBalance >= _pool.depositSize() - pooldebt, "Incorrect pool Balance");
+        require(poolBalance >= _pool.depositSize() - pooldebt - totalPoolBond, "Incorrect pool Balance");
     }
 
     // checks pools collateral Balance to be equal to collateral pledged

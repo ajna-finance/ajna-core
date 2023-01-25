@@ -36,7 +36,7 @@ contract PoolInvariants is InvariantTest, Test{
         ERC20Pool impl         = _poolFactory.implementation();
         _pool                  = ERC20Pool(_poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
         _poolInfo              = new PoolInfoUtils();
-        _invariantActorManager = new InvariantActorManagerBorrow(address(_pool), address(_quote), address(_collateral), address(_poolInfo), 20);
+        _invariantActorManager = new InvariantActorManagerBorrow(address(_pool), address(_quote), address(_collateral), address(_poolInfo), 1);
 
         excludeContract(address(_collateral));
         excludeContract(address(_quote));
@@ -47,15 +47,6 @@ contract PoolInvariants is InvariantTest, Test{
         // excludeContract(address(_invariantActorManager));
 
         targetContract(address(_invariantActorManager));
-
-        // bytes4[] memory selectors = new bytes4[](1);
-        // selectors[0] = InvariantActorManager.addQuoteToken.selector;
-        // selectors[1] = InvariantActorManager.removeQuoteToken.selector;
-        // selectors[2] = InvariantActorManager.drawDebt.selector;
-        // selectors[3] = InvariantActorManager.repayDebt.selector;
-        // FuzzSelector memory target = FuzzSelector(address(_invariantActorManager), selectors);
-
-        // targetSelector(target);
     }
 
     // checks pool lps are equal to sum of all lender lps in a bucket 
@@ -107,5 +98,11 @@ contract PoolInvariants is InvariantTest, Test{
         uint256 poolDebt = _pool.totalDebt();
 
         require(poolDebt == totalDebt, "Incorrect pool debt");
+    }
+
+    // simulation of a failing sequence with underflow/overflow error
+    function testManager() external {
+        _invariantActorManager.repayDebt(6644, 8455, 6988);
+        _invariantActorManager.addQuoteToken(8737, 15502, 15193);
     }
 }

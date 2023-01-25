@@ -124,17 +124,13 @@ contract InvariantActorManagerAuction is Test{
         }
     }
 
-    function _drawDebt(uint256 amount, uint256 limitIndex, uint256 collateralToPledge) internal {
-        ERC20Pool(_pool).drawDebt(_actor, amount, limitIndex, collateralToPledge);
+    function _drawDebt(uint256 amount, uint256 limitIndex) internal {
 
-        // skip some time for more interest and make borrower under collateralized
-        vm.warp(block.timestamp + 200 days);
-    }
+        amount = constrictToRange(amount, 1, 1000000 * 1e18);
 
-    function drawDebt(uint256 actorIndex, uint256 amount, uint256 limitIndex) external useRandomActor(actorIndex) useRandomBucketBorrower(limitIndex) {
         (uint256 minDebt, , , ) = PoolInfoUtils(_poolInfo).poolUtilizationInfo(_pool);
 
-        if (amount > minDebt) amount = minDebt + 100 * 1e18;
+        if (amount < minDebt) amount = minDebt + 100 * 1e18;
 
         uint256 poolQuoteBalance = Token(_quote).balanceOf(_pool);
         if (amount > poolQuoteBalance) {
@@ -142,18 +138,28 @@ contract InvariantActorManagerAuction is Test{
         }
 
         // pledge slightly more than required collateral to draw debt
-        uint256 collateralToPledge = (amount * 1e18 / PoolInfoUtils(_poolInfo).hpb(_pool)) * 101 / 100;  
+        uint256 collateralToPledge = (amount * 1e18 / PoolInfoUtils(_poolInfo).hpb(_pool)) * 101 / 100;
 
-        _drawDebt(amount, _bucketBorrower, collateralToPledge);
-        
+        ERC20Pool(_pool).drawDebt(_actor, amount, limitIndex, collateralToPledge);
+
+        // skip some time for more interest and make borrower under collateralized
+        vm.warp(block.timestamp + 200 days);
     }
 
-    function repayDebt(uint256 actorIndex, uint256 amountToRepay) external useRandomActor(actorIndex){
+    function drawDebt(uint256 actorIndex, uint256 amount, uint256 limitIndex) external useRandomActor(actorIndex) useRandomBucketBorrower(limitIndex) {
+        _drawDebt(amount, _bucketBorrower);
+    }
+
+    function repayDebt(uint256 actorIndex, uint256 amountToRepay, uint256 limitIndex) external useRandomActor(actorIndex) useRandomBucketBorrower(limitIndex){
         console.log("M: repay");
+        (uint256 debt, , ) = ERC20Pool(_pool).borrowerInfo(_actor);
+        if(debt == 0) {
+            _drawDebt(amountToRepay, _bucketBorrower);
+        }
         ERC20Pool(_pool).repayDebt(_actor, amountToRepay, 0);
     }
 
-    function kickAuction(uint256 borrowerIndex, uint256 amount, uint256 kickerIndex) external {
+    function kickAuction(uint256 borrowerIndex, uint256 amount, uint256 kickerIndex) external useRandomBucketBorrower(BORROWER_MIN_BUCKET_INDEX) {
         console.log("M: kick");
         borrowerIndex = constrictToRange(borrowerIndex, 0, _actors.length - 1);
         kickerIndex   = constrictToRange(kickerIndex, 0, _actors.length - 1);
@@ -165,13 +171,11 @@ contract InvariantActorManagerAuction is Test{
         if (kickTime == 0) {
             (uint256 debt, , ) = ERC20Pool(_pool).borrowerInfo(borrower);
             if (debt == 0) {
-                vm.startPrank(borrower);
-                _drawDebt(borrowerIndex, amount, BORROWER_MIN_BUCKET_INDEX);
-                vm.stopPrank();
+                changePrank(borrower);
+                _drawDebt(borrowerIndex, amount);
             }
-            vm.startPrank(_actors[kickerIndex]);
+            changePrank(_actors[kickerIndex]);
             ERC20Pool(_pool).kick(borrower);
-            vm.stopPrank();
         }
 
         // skip some time for more interest
