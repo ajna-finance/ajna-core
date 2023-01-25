@@ -365,7 +365,6 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
         (
             ,
-            ,
             uint256 collateralSettled,
             uint256 t0DebtSettled
         ) = Auctions.settlePoolDebt(

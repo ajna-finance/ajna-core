@@ -370,7 +370,6 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         );
         (
             uint256 collateralRemaining,
-            uint256 t0DebtRemaining,
             uint256 collateralSettled,
             uint256 t0DebtSettled
         ) = Auctions.settlePoolDebt(
@@ -381,8 +380,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             params
         );
 
-        // slither-disable-next-line incorrect-equality
-        if (t0DebtRemaining == 0) _rebalanceTokens(params.borrower, collateralRemaining);
+        // move collateral used to settle debt from borrower to pool balance
+        _rebalanceTokens(params.borrower, collateralRemaining);
 
         // update pool balances state
         poolBalances.t0Debt            -= t0DebtSettled;

@@ -192,7 +192,6 @@ library Auctions {
      *              - BucketBankruptcy
      *  @param  params_ Settle params
      *  @return collateralRemaining_ The amount of borrower collateral left after settle.
-     *  @return t0DebtRemaining_     The amount of t0 debt left after settle.
      *  @return collateralSettled_   The amount of collateral settled.
      *  @return t0DebtSettled_       The amount of t0 debt settled.
      */
@@ -204,7 +203,6 @@ library Auctions {
         SettleParams memory params_
     ) external returns (
         uint256 collateralRemaining_,
-        uint256 t0DebtRemaining_,
         uint256 collateralSettled_,
         uint256 t0DebtSettled_
     ) {
@@ -312,14 +310,20 @@ library Auctions {
             }
         }
 
-        t0DebtRemaining_ =  borrower.t0Debt;
-        t0DebtSettled_   -= t0DebtRemaining_;
+        t0DebtSettled_ -= borrower.t0Debt;
 
         emit Settle(params_.borrower, t0DebtSettled_);
 
         if (borrower.t0Debt == 0) {
-            // settle auction
-            borrower.collateral = _settleAuction(
+            // FIXME:
+            // If we set borrower collateral to _settleAuction returned collateral then in case of NFTs we will loose fraction of NFT
+            // e.g. if entire borrower debt is settled using 0.5 worth of collateral, there'll still be 0.5 collateral remaining in borrower balance.
+            // NFT settle will round that to 0, making borrower's collateral balance 0 but not adding those 0.5 collateral into any bucket balance.
+            // Therefore the pool will have with 0.5 collateral less in bucket balances so the NFT will be unclaimable.
+
+            // On the other hand, if we don't account the rounded collateral after NFT settle then we end up with the situation
+            // where NFT will be unclaimable as the NFT will be split 0.5 in borrower collateral balance and 0.5 in bucket collateral balance.
+            _settleAuction(
                 auctions_,
                 buckets_,
                 deposits_,
