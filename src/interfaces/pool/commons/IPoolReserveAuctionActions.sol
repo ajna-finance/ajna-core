@@ -27,7 +27,7 @@ interface IPoolReserveAuctionActions {
 
 struct StartReserveAuctionParams {
     uint256 poolSize;    // [WAD] total deposits in pool (with accrued debt)
-    uint256 poolDebt;    // [WAD] current t0 pool debt
+    uint256 t0PoolDebt;  // [WAD] current t0 pool debt
     uint256 poolBalance; // [WAD] pool quote token balance
     uint256 inflator;    // [WAD] pool current inflator
 }
