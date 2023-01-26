@@ -163,7 +163,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             if (result.t0DebtInAuctionChange != 0) {
                 poolBalances.t0DebtInAuction -= result.t0DebtInAuctionChange;
             }
-            poolBalances.pledgedCollateral += Maths.wad(tokenIdsToPledge_.length);
+            poolBalances.pledgedCollateral = result.poolCollateral;
 
             // move collateral from sender to pool
             _transferFromSenderToPool(borrowerTokenIds[borrowerAddress_], tokenIdsToPledge_);
@@ -218,6 +218,9 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         poolState.collateral = result.poolCollateral;
         _updateInterestState(poolState, result.newLup);
 
+        // update pool balances state
+        poolBalances.pledgedCollateral = result.poolCollateral;
+
         if (result.quoteTokenToRepay != 0) {
             // update pool balances state
             poolBalances.t0Debt = result.t0PoolDebt;
@@ -229,9 +232,6 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             _transferQuoteTokenFrom(msg.sender, result.quoteTokenToRepay);
         }
         if (noOfNFTsToPull_ != 0) {
-            // update pool balances state
-            poolBalances.pledgedCollateral = result.poolCollateral;
-
             // move collateral from pool to sender
             _transferFromPoolToAddress(msg.sender, borrowerTokenIds[msg.sender], noOfNFTsToPull_);
         }

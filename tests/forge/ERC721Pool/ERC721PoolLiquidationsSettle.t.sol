@@ -963,7 +963,7 @@ contract ERC721PoolLiquidationsPartialSettleTest is ERC721HelperContract {
         assertEq(_collateral.ownerOf(3), _lender);
     }
 
-    function testDepositTakeAndSettleByPledgeSubsetPool() external { // tearDown { FIXME: incorrect pledgedCollateral pool balance
+    function testDepositTakeAndSettleByPledgeSubsetPool() external tearDown {
         // kick loan
         _kickWithDeposit({
             from:               _lender,
@@ -1104,7 +1104,7 @@ contract ERC721PoolLiquidationsPartialSettleTest is ERC721HelperContract {
         }
         assertEq(collateral, 2 * 1e18);
 
-        assertEq(_pool.pledgedCollateral(), 4.151993545296404634 * 1e18); // FIXME: should be 4
+        assertEq(_pool.pledgedCollateral(), 4 * 1e18);
 
         // the 3 new token ids pledged are owned by borrower
         assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 0), 1);
@@ -1176,10 +1176,10 @@ contract ERC721PoolLiquidationsPartialSettleTest is ERC721HelperContract {
             lpRedeem: 0.000008766823996014791499039 * 1e27
         });
 
-        assertEq(_pool.pledgedCollateral(), 1.151993545296404634 * 1e18); // FIXME: should be 0
+        assertEq(_pool.pledgedCollateral(), 1 * 1e18);
     }
 
-    function testDepositTakeAndSettleByRepaySubsetPool() external { // tearDown { FIXME: incorrect pledgedCollateral pool balance
+    function testDepositTakeAndSettleByRepaySubsetPool() external tearDown {
         // kick loan
         _kickWithDeposit({
             from:               _lender,
@@ -1317,7 +1317,7 @@ contract ERC721PoolLiquidationsPartialSettleTest is ERC721HelperContract {
         }
         assertEq(collateral, 2 * 1e18);
 
-        assertEq(_pool.pledgedCollateral(), 1.151993545296404634 * 1e18); // FIXME: should be 0
+        assertEq(_pool.pledgedCollateral(), 1 * 1e18);
 
         // tokens used to settle auction are moved to pool claimable array
         assertEq(ERC721Pool(address(_pool)).bucketTokenIds(0), 3);
@@ -1371,6 +1371,6 @@ contract ERC721PoolLiquidationsPartialSettleTest is ERC721HelperContract {
             lpRedeem: 0.000008766823996014791499039 * 1e27
         });
 
-        assertEq(_pool.pledgedCollateral(), 1.151993545296404634 * 1e18); // FIXME: should be 0
+        assertEq(_pool.pledgedCollateral(), 1 * 1e18);
     }
 }
