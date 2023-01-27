@@ -8,7 +8,7 @@ import "forge-std/console.sol";
 
 import { TestBase } from './TestBase.sol';
 
-import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BORROWER_MIN_BUCKET_INDEX} from './handlers/Lenders.sol';
+import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BORROWER_MIN_BUCKET_INDEX } from './handlers/BasicPool.sol';
 
 // struct FuzzSelector {
 //     address addr;
@@ -29,7 +29,8 @@ contract BaseInvariants is TestBase {
 
     ****************************************************************************************************************************************/
 
-    function setUp() public override {
+    function setUp() public override virtual{
+
         super.setUp();
 
         excludeContract(address(_collateral));
@@ -44,26 +45,26 @@ contract BaseInvariants is TestBase {
 
     // checks pool lps are equal to sum of all lender lps in a bucket 
     function invariant_Lps() public {
-        uint256 actorCount = _lenderHandler.getActorsCount();
+        uint256 actorCount = _basicPoolHandler.getActorsCount();
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             uint256 totalLps;
             for (uint256 i = 0; i < actorCount; i++) {
-                address lender = _lenderHandler._actors(i);
+                address lender = _basicPoolHandler._actors(i);
                 (uint256 lps, ) = _pool.lenderInfo(bucketIndex, lender);
                 totalLps += lps;
             }
             (uint256 poolLps, , , , ) = _pool.bucketInfo(bucketIndex);
-            assertEq(poolLps, totalLps, "Bucket Invariant A" );
+            assertEq(poolLps, totalLps, "Bucket Invariant A");
         }
     }
 
     // checks pool quote token balance is greater than equals total deposits in pool
-    // function invariant_quoteTokenBalance() public {
-    //     uint256 poolBalance = _quote.balanceOf(address(_pool));
-    //     (uint256 pooldebt, , ) = _pool.debtInfo();
-    //     // poolBalance == poolDeposit will fail due to rounding issue while converting LPs to Quote
-    //     assertGe(poolBalance, _pool.depositSize() - pooldebt, "Pool Invariant A");
-    // }
+    function invariant_quoteTokenBalance() public {
+        uint256 poolBalance = _quote.balanceOf(address(_pool));
+        (uint256 pooldebt, , ) = _pool.debtInfo();
+        // poolBalance == poolDeposit will fail due to rounding issue while converting LPs to Quote
+        assertGe(poolBalance, _pool.depositSize() - pooldebt, "Pool Invariant A");
+    }
 
     // // checks pools collateral Balance to be equal to collateral pledged
     // function invariant_collateralBalance() public {
@@ -120,15 +121,20 @@ contract BaseInvariants is TestBase {
 
     function invariant_call_summary() external view {
         console.log("\nCall Summary\n");
-        console.log("BLenderHandler.addQuoteToken         ",  _lenderHandler.numberOfCalls("BLenderHandler.addQuoteToken"));
-        console.log("UBLenderHandler.addQuoteToken        ",  _lenderHandler.numberOfCalls("UBLenderHandler.addQuoteToken"));
-        console.log("BLenderHandler.removeQuoteToken      ",  _lenderHandler.numberOfCalls("BLenderHandler.removeQuoteToken"));
-        console.log("UBLenderHandler.removeQuoteToken     ", _lenderHandler.numberOfCalls("UBLenderHandler.removeQuoteToken"));
+        console.log("--Lender----------");
+        console.log("BBasicHandler.addQuoteToken         ",  _basicPoolHandler.numberOfCalls("BBasicHandler.addQuoteToken"));
+        console.log("UBBasicHandler.addQuoteToken        ",  _basicPoolHandler.numberOfCalls("UBBasicHandler.addQuoteToken"));
+        console.log("BBasicHandler.removeQuoteToken      ",  _basicPoolHandler.numberOfCalls("BBasicHandler.removeQuoteToken"));
+        console.log("UBBasicHandler.removeQuoteToken     ", _basicPoolHandler.numberOfCalls("UBBasicHandler.removeQuoteToken"));
+        console.log("--Borrower--------");
+        console.log("BBasicHandler.drawDebt              ",  _basicPoolHandler.numberOfCalls("BBasicHandler.drawDebt"));
+        console.log("UBBasicHandler.drawDebt             ",  _basicPoolHandler.numberOfCalls("UBBasicHandler.drawDebt"));
         console.log("------------------");
         console.log(
             "Sum",
-            _lenderHandler.numberOfCalls("BLenderHandler.addQuoteToken") +
-            _lenderHandler.numberOfCalls("BLenderHandler.removeQuoteToken")
+            _basicPoolHandler.numberOfCalls("BBasicHandler.addQuoteToken") +
+            _basicPoolHandler.numberOfCalls("BBasicHandler.removeQuoteToken") +
+            _basicPoolHandler.numberOfCalls("BBasicHandler.drawDebt")
         );
     }
 }

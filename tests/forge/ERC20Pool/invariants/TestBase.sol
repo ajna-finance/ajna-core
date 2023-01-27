@@ -9,33 +9,62 @@ import { ERC20Pool }        from 'src/ERC20Pool.sol';
 import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
 import { Token }            from '../../utils/Tokens.sol';
 import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
-import { BoundedLenderHandler } from './handlers/Lenders.sol';
+import { BoundedBasicPoolHandler } from './handlers/BasicPool.sol';
 import { InvariantTest } from './InvariantTest.sol';
 
 contract TestBase is InvariantTest, Test {
 
     // Mainnet ajna address
-    address              internal _ajna = 0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079;
+    address                internal _ajna = 0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079;
+    uint256                internal constant NUM_BORROWERS = 10;
+    uint256                internal constant NUM_LENDERS = 10;
 
-    Token                internal _quote;
-    Token                internal _collateral;
+    Token                  internal _quote;
+    Token                  internal _collateral;
 
-    ERC20Pool            internal _pool;
-    ERC20Pool            internal _impl;
-    PoolInfoUtils        internal _poolInfo;
-    ERC20PoolFactory     internal _poolFactory;
+    ERC20Pool              internal _pool;
+    ERC20Pool              internal _impl;
+    PoolInfoUtils          internal _poolInfo;
+    ERC20PoolFactory       internal _poolFactory;
 
-    BoundedLenderHandler internal _lenderHandler;
+    BoundedBasicPoolHandler   internal _basicPoolHandler;
 
     function setUp() public virtual {
-        _collateral     = new Token("Collateral", "C");
-        _quote          = new Token("Quote", "Q");
-        _poolFactory    = new ERC20PoolFactory(_ajna);
-        _impl           = _poolFactory.implementation();
-        _pool           = ERC20Pool(_poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
-        _poolInfo       = new PoolInfoUtils();
-        _lenderHandler  = new BoundedLenderHandler(address(_pool), address(_quote), address(_collateral), address(_poolInfo), 20);
+        _collateral       = new Token("Collateral", "C");
+        _quote            = new Token("Quote", "Q");
+        _poolFactory      = new ERC20PoolFactory(_ajna);
+        _impl             = _poolFactory.implementation();
+        _pool             = ERC20Pool(_poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
+        _poolInfo         = new PoolInfoUtils();
+        _basicPoolHandler = new BoundedBasicPoolHandler(address(_pool), address(_quote), address(_collateral), address(_poolInfo), NUM_LENDERS);
     }
+
+    /**************************************************************************************************************************************/
+    /*** Helper Functions                                                                                                               ***/
+    /**************************************************************************************************************************************/
+
+    // function constrictToRange(
+    //     uint256 x,
+    //     uint256 min,
+    //     uint256 max
+    // ) pure public returns (uint256 result) {
+    //     require(max >= min, "MAX_LESS_THAN_MIN");
+
+    //     uint256 size = max - min;
+
+    //     if (size == 0) return min;            // Using max would be equivalent as well.
+    //     if (max != type(uint256).max) size++; // Make the max inclusive.
+
+    //     // Ensure max is inclusive in cases where x != 0 and max is at uint max.
+    //     if (max == type(uint256).max && x != 0) x--; // Accounted for later.
+
+    //     if (x < min) x += size * (((min - x) / size) + 1);
+
+    //     result = min + ((x - min) % size);
+
+    //     // Account for decrementing x to make max inclusive.
+    //     if (max == type(uint256).max && x != 0) result++;
+    // }
 
     // // checks pool lps are equal to sum of all lender lps in a bucket 
     // function invariant_Lps() public {
