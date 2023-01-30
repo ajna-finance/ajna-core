@@ -144,14 +144,6 @@ contract BoundedBasicPoolHandler is UnboundedBasicPoolHandler {
         // Pre condition
         (uint256 lpBalanceBefore, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
 
-        // uint256 totalSupply = Token(_quote).totalSupply();
-        // console.log("totalSupply", totalSupply);
-
-        // uint256 minDeposit = totalSupply == 0 ? 1 : Token(_quote).balanceOf(address(_actor)) / totalSupply + 1;
-        // console.log("minDepo", minDeposit);
-
-        // amount = constrictToRange(amount, minDeposit, 1e36);
-
         // Action
         super.addQuoteToken(amount, _lenderBucketIndex);
 
@@ -196,10 +188,8 @@ contract BoundedBasicPoolHandler is UnboundedBasicPoolHandler {
         // 3. drawDebt should not make borrower under collateralized
         // 4. borrower should have sufficent collateral to draw debt
 
-        // amount of debt is contstrained so overflow doesn't happen on mint
-        uint256 totalSupply = _quote.totalSupply();
-        uint256 minBorrow = totalSupply == 0 ? 1 : _quote.balanceOf(address(_actor)) / totalSupply + 1;
-        amountToBorrow = constrictToRange(amountToBorrow, minBorrow, 1e36);
+        // amount of debt is contstrained so overflow doesn't happen on mint for _quote or _collateral in collateralToPledge
+        amountToBorrow = constrictToRange(amountToBorrow, 0, 1e36);
 
         // 1. borrower's debt should exceed minDebt
         (uint256 debt, uint256 collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
@@ -245,7 +235,7 @@ contract BoundedBasicPoolHandler is UnboundedBasicPoolHandler {
     //     if (debt == 0) return;
 
     //     // Action
-    //     _repayDebt(_actor, amountToRepay, 0);
+    //     repayDebt(_actor, amountToRepay);
 
     //     // Post condition
     //     (debt, collateral, ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);
