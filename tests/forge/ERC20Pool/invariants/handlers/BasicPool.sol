@@ -74,68 +74,52 @@ contract UnboundedBasicPoolHandler is Test, BaseHandler {
     /*** Lender Functions                                                                                                               ***/
     /**************************************************************************************************************************************/
 
-    function _addQuoteToken(uint256 amount, uint256 bucket) internal {
-        ERC20Pool(_pool).addQuoteToken(amount, bucket);
-    }
+    // function _addQuoteToken(uint256 amount, uint256 bucket) internal {
+    //     ERC20Pool(_pool).addQuoteToken(amount, bucket);
+    // }
 
     function addQuoteToken(uint256 amount, uint256 bucketIndex) internal {
         numberOfCalls['UBBasicHandler.addQuoteToken']++;
 
-        uint256 totalSupply = Token(_quote).totalSupply();
-        uint256 minDeposit = totalSupply == 0 ? 1 : Token(_quote).balanceOf(address(_actor)) / totalSupply + 1;
+        uint256 totalSupply = _quote.totalSupply();
+        uint256 minDeposit = totalSupply == 0 ? 1 : _quote.balanceOf(address(_actor)) / totalSupply + 1;
         amount = constrictToRange(amount, minDeposit, 1e36);
 
-        Token(_quote).mint(_actor, amount);
-        Token(_quote).approve(_pool, amount);
+        _quote.mint(_actor, amount);
+        _quote.approve(address(_pool), amount);
 
-        _addQuoteToken(amount, bucketIndex);
+        _pool.addQuoteToken(amount, bucketIndex);
     }
 
-    function _removeQuoteToken(uint256 amount, uint256 bucket) internal {
-        ERC20Pool(_pool).removeQuoteToken(amount, bucket);
-    }
+    // function _removeQuoteToken(uint256 amount, uint256 bucket) internal {
+    //     ERC20Pool(_pool).removeQuoteToken(amount, bucket);
+    // }
 
     function removeQuoteToken(uint256 amount, uint256 bucketIndex) internal {
         numberOfCalls['UBBasicHandler.removeQuoteToken']++;
 
-        _removeQuoteToken(amount, bucketIndex);
+        _pool.removeQuoteToken(amount, bucketIndex);
     }
 
     /**************************************************************************************************************************************/
     /*** Borrower Functions                                                                                                               ***/
     /**************************************************************************************************************************************/
 
-    function _drawDebt(uint256 amountToBorrow, uint256 limitIndex, uint256 collateralToPledge) internal {
-        // ERC20Pool(_pool).drawDebt(_actor, amountToBorrow, limitIndex, collateralToPledge);
-        try ERC20Pool(_pool).drawDebt(_actor, amountToBorrow, limitIndex, collateralToPledge) {
-            console.log("success");
-        } catch {
-            console.log("amountToBorrow", amountToBorrow);
-            console.log("collateralToPledge", collateralToPledge);
-        }
-        // skip some time for more interest and make borrower under collateralized
-        // vm.warp(block.timestamp + 200 days);
-    }
-
     function drawDebt(uint256 amount, uint256 collateralToPledge) public virtual {
         numberOfCalls['UBBasicHandler.drawDebt']++;
 
-        // uint256 totalSupply = Token(_quote).totalSupply();
-        // uint256 minDeposit = totalSupply == 0 ? 1 : Token(_quote).balanceOf(address(_actor)) / totalSupply + 1;
-        // amount = constrictToRange(amount, minDeposit, 1e36);
+        _collateral.mint(_actor, collateralToPledge);
+        _collateral.approve(address(_pool), collateralToPledge);
 
-        Token(_collateral).mint(_actor, collateralToPledge);
-        Token(_collateral).approve(_pool, collateralToPledge);
-
-        _drawDebt(amount, 7388, collateralToPledge); 
+        _pool.drawDebt(_actor, amount, 7388, collateralToPledge); 
     }
 
-    function _repayDebt(address _actor, uint256 amountToRepay) internal {
+    function repayDebt(address _actor, uint256 amountToRepay) internal {
 
-        Token(_quote).mint(_actor, amountToRepay);
-        Token(_quote).approve(_pool, amountToRepay);
+        _quote.mint(_actor, amountToRepay);
+        _quote.approve(address(_pool), amountToRepay);
 
-        ERC20Pool(_pool).repayDebt(_actor, amountToRepay, 0);
+        _pool.repayDebt(_actor, amountToRepay, 0);
     }
 
 }
@@ -158,7 +142,7 @@ contract BoundedBasicPoolHandler is UnboundedBasicPoolHandler {
         numberOfCalls['BBasicHandler.addQuoteToken']++;
 
         // Pre condition
-        (uint256 lpBalanceBefore, ) = ERC20Pool(_pool).lenderInfo(_lenderBucketIndex, _actor);
+        (uint256 lpBalanceBefore, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
 
         // uint256 totalSupply = Token(_quote).totalSupply();
         // console.log("totalSupply", totalSupply);
@@ -181,12 +165,12 @@ contract BoundedBasicPoolHandler is UnboundedBasicPoolHandler {
         numberOfCalls['BBasicHandler.removeQuoteToken']++;
 
         // Pre condition
-        (uint256 lpBalanceBefore, ) = ERC20Pool(_pool).lenderInfo(_lenderBucketIndex, _actor);
+        (uint256 lpBalanceBefore, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
 
         if (lpBalanceBefore == 0) return; // no value in bucket
 
         // get max amount of quote actor has in bucket
-        uint256 deposit = PoolInfoUtils(_poolInfo).lpsToQuoteTokens(_pool, lpBalanceBefore, _lenderBucketIndex);
+        uint256 deposit = _poolInfo.lpsToQuoteTokens(address(_pool), lpBalanceBefore, _lenderBucketIndex);
 
         amount = constrictToRange(amount, 1, deposit);
 
@@ -194,7 +178,7 @@ contract BoundedBasicPoolHandler is UnboundedBasicPoolHandler {
         super.removeQuoteToken(amount, _lenderBucketIndex);
 
         // Post condition
-        (uint256 lpBalanceAfter, ) = ERC20Pool(_pool).lenderInfo(_lenderBucketIndex, _actor);
+        (uint256 lpBalanceAfter, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
         require(lpBalanceAfter < lpBalanceBefore, "LP balance should decrease");
     }
 
@@ -212,9 +196,14 @@ contract BoundedBasicPoolHandler is UnboundedBasicPoolHandler {
         // 3. drawDebt should not make borrower under collateralized
         // 4. borrower should have sufficent collateral to draw debt
 
+        // amount of debt is contstrained so overflow doesn't happen on mint
+        uint256 totalSupply = _quote.totalSupply();
+        uint256 minBorrow = totalSupply == 0 ? 1 : _quote.balanceOf(address(_actor)) / totalSupply + 1;
+        amountToBorrow = constrictToRange(amountToBorrow, minBorrow, 1e36);
+
         // 1. borrower's debt should exceed minDebt
-        (uint256 debt, uint256 collateral, ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);
-        (uint256 minDebt, , , ) = PoolInfoUtils(_poolInfo).poolUtilizationInfo(_pool);
+        (uint256 debt, uint256 collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
+        (uint256 minDebt, , , ) = _poolInfo.poolUtilizationInfo(address(_pool));
         if (amountToBorrow < minDebt) amountToBorrow = minDebt + 1;
 
 
@@ -222,33 +211,26 @@ contract BoundedBasicPoolHandler is UnboundedBasicPoolHandler {
 
 
         // 2. pool needs sufficent quote token to draw debt
-        uint256 poolQuoteBalance = Token(_quote).balanceOf(_pool);
+        uint256 poolQuoteBalance = _quote.balanceOf(address(_pool));
 
         if (amountToBorrow > poolQuoteBalance) {
             addQuoteToken(amountToBorrow, LENDER_MAX_BUCKET_INDEX);
         }
 
-
         // 3. drawing of addition debt will make them under collateralized
-        uint256 lup = PoolInfoUtils(_poolInfo).lup(_pool);
-        (debt, collateral, ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);
+        uint256 lup = _poolInfo.lup(address(_pool));
+        (debt, collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
 
         if (_collateralization(debt, collateral, lup) < 1) {
-            _repayDebt(_actor, debt);
-            (debt, collateral, ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);
+            repayDebt(_actor, debt);
+            (debt, collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
             require(debt == 0, "borrower has debt");
         }
 
-
         // 4. borrower should have sufficent collateral to draw debt 
-        // (debt, collateral, ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);
-        // uint256 collateralToPledge = (amountToBorrow + debt * 1e18 / PoolInfoUtils(_poolInfo).hpb(_pool)) * 101 / 100;  
-
-        uint256 poolPrice = PoolInfoUtils(_poolInfo).lup(_pool);
-        poolPrice = poolPrice == 1_004_968_987606512354182109771 ? PoolInfoUtils(_poolInfo).hpb(_pool) : poolPrice;
-        uint256 collateralToPledge = amountToBorrow / poolPrice * 2 * 10 * 1e18;
-        // require(poolPrice > 0, "poolPrice should be > 0");
-        // if (amountToBorrow > 0 ) require(collateralToPledge > 0, "collateralToPledge should be > 0");
+        uint256 poolPrice = _poolInfo.lup(address(_pool));
+        poolPrice = poolPrice == 1_004_968_987606512354182109771 ? _poolInfo.hpb(address(_pool)) : poolPrice;
+        uint256 collateralToPledge = ((amountToBorrow * 1e18 + poolPrice / 2) / poolPrice) * 1e18;
         
         // Action
         super.drawDebt(amountToBorrow, collateralToPledge);
@@ -268,74 +250,5 @@ contract BoundedBasicPoolHandler is UnboundedBasicPoolHandler {
     //     // Post condition
     //     (debt, collateral, ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);
     //     require(debt == 0, "borrower has debt");
-    // }
-
-
-    // function _drawDebt(uint256 amount, uint256 limitIndex, uint256 collateralToPledge) internal {
-    //     ERC20Pool(_pool).drawDebt(_actor, amount, limitIndex, collateralToPledge);
-
-    //     // skip some time for more interest and make borrower under collateralized
-    //     vm.warp(block.timestamp + 200 days);
-    // }
-
-    // function drawDebt(uint256 actorIndex, uint256 amount, uint256 limitIndex) external useRandomActor(actorIndex) useRandomBucketBorrower(limitIndex) {
-    //     (uint256 minDebt, , , ) = PoolInfoUtils(_poolInfo).poolUtilizationInfo(_pool);
-
-    //     if (amount > minDebt) amount = minDebt + 100 * 1e18;
-
-    //     uint256 poolQuoteBalance = Token(_quote).balanceOf(_pool);
-    //     if (amount > poolQuoteBalance) {
-    //         _addQuoteToken(amount, LENDER_MAX_BUCKET_INDEX);
-    //     }
-
-    //     // pledge slightly more than required collateral to draw debt
-    //     uint256 collateralToPledge = (amount * 1e18 / PoolInfoUtils(_poolInfo).hpb(_pool)) * 101 / 100;  
-
-    //     _drawDebt(amount, _bucketBorrower, collateralToPledge);
-        
-    // }
-
-
-    // function kickAuction(uint256 borrowerIndex, uint256 amount, uint256 kickerIndex) external {
-    //     console.log("M: kick");
-    //     borrowerIndex = constrictToRange(borrowerIndex, 0, _actors.length - 1);
-    //     kickerIndex   = constrictToRange(kickerIndex, 0, _actors.length - 1);
-
-    //     address borrower = _actors[borrowerIndex];
-
-    //     ( , , , uint256 kickTime, , , , , ) = ERC20Pool(_pool).auctionInfo(borrower);
-
-    //     if (kickTime == 0) {
-    //         (uint256 debt, , ) = ERC20Pool(_pool).borrowerInfo(borrower);
-    //         if (debt == 0) {
-    //             vm.startPrank(borrower);
-    //             _drawDebt(borrowerIndex, amount, BORROWER_MIN_BUCKET_INDEX);
-    //             vm.stopPrank();
-    //         }
-    //         vm.startPrank(_actors[kickerIndex]);
-    //         ERC20Pool(_pool).kick(borrower);
-    //         vm.stopPrank();
-    //     }
-
-    //     // skip some time for more interest
-    //     vm.warp(block.timestamp + 2 hours);
-    // }
-
-    // function takeAuction(uint256 borrowerIndex, uint256 amount, uint256 actorIndex) external useRandomActor(borrowerIndex){
-    //     console.log("M: take");
-    //     actorIndex = constrictToRange(actorIndex, 0, _actors.length - 1);
-
-    //     address borrower = _actor;
-    //     address taker    = _actors[actorIndex];
-
-    //     ( , , , uint256 kickTime, , , , , ) = ERC20Pool(_pool).auctionInfo(borrower);
-
-    //     if (kickTime != 0) {
-    //         ERC20Pool(_pool).take(borrower, amount, taker, bytes(""));
-    //     }
-    // }
-
-    // function getActorsCount() external view returns(uint256) {
-    //     return _actors.length;
     // }
 }

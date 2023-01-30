@@ -16,12 +16,12 @@ import { InvariantTest } from '../InvariantTest.sol';
 contract BaseHandler is InvariantTest, Test {
 
     // Pool
-    address   internal _pool;
-    address   internal _poolInfo;
+    ERC20Pool   internal _pool;
+    PoolInfoUtils   internal _poolInfo;
 
     // Tokens
-    address   internal _quote;
-    address   internal _collateral;
+    Token   internal _quote;
+    Token   internal _collateral;
 
     // Modifiers
     address   internal _actor;
@@ -33,10 +33,13 @@ contract BaseHandler is InvariantTest, Test {
     mapping(bytes32 => uint256) public numberOfCalls;
 
     constructor(address pool, address quote, address collateral, address poolInfo) {
-        _pool       = pool;
-        _quote      = quote;
-        _collateral = collateral;
-        _poolInfo   = poolInfo;
+        // Pool
+        _pool       = ERC20Pool(pool);
+        _poolInfo   = PoolInfoUtils(poolInfo);
+
+        // Tokens
+        _quote      = Token(quote);
+        _collateral = Token(collateral);
     }
 
     /**************************************************************************************************************************************/

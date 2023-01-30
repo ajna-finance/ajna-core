@@ -40,6 +40,7 @@ contract BaseInvariants is TestBase {
         excludeContract(address(_poolInfo));
         excludeContract(address(_impl));
 
+        // TODO: Change once this issue is resolved -> https://github.com/foundry-rs/foundry/issues/2963
         targetSender(address(0x1234));
     }
 

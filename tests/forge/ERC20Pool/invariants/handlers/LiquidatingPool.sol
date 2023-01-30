@@ -1,6 +1,13 @@
 
 // SPDX-License-Identifier: UNLICENSED
-// pragma solidity 0.8.14;
+pragma solidity 0.8.14;
+
+
+
+// contract BoundedLiquidatingPoolHandler is BoundedBasicPoolHandler {
+
+//     constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) BoundedBasicPoolHandler(pool, quote, collateral, poolInfo, numOfActors) {} 
+
 
 // function kickAuction(uint256 borrowerIndex, uint256 amount, uint256 kickerIndex) external {
 //     console.log("M: kick");
