@@ -6,9 +6,9 @@
 - #### NFT:  
   - **CT2**: number of tokens owned by the pool (`Collateral.balanceOf(pool)`) * `1e18` = sum of collateral across all borrowers (`Borrower.collateral`) + sum of claimable collateral across all buckets (`Bucket.collateral`)  
   - **CT3**: number of tokens owned by the pool (`Collateral.balanceOf(pool)` = length of borrower array token ids (`ERC721Pool.borrowerTokenIds.length`) + length of buckets array token ids (`ERC721Pool.bucketTokenIds.length`)  
-  - **CT4**: number of borrower token ids (`ERC721Pool.borrowerTokenIds.length`) <= borrower balance (`Borrower.collateral`) Note: can be lower in case when fractional collateral that is rebalanced / moved to buckets claimable token ids  
-  - **CT5**: token ids in buckets array (`ERC721Pool.bucketTokenIds.length`) and in borrowers array (`ERC721Pool.borrowerTokenIds.length`) are owned by pool contract (`Collateral.ownerOf(tokenId)`)  
-  - **CT6**: in case of subset pools: token ids in buckets array (`ERC721Pool.bucketTokenIds.length`) and in borrowers array (`ERC721Pool.borrowerTokenIds.length`) should have a mapping of `True` in allowed token ids mapping (`ERC721Pool.tokenIdsAllowed`)  
+  - **CT4**: number of borrower token ids (`ERC721Pool.borrowerTokenIds.length`) * `1e18` <= borrower balance (`Borrower.collateral`) Note: can be lower in case when fractional collateral that is rebalanced / moved to buckets claimable token ids  
+  - **CT5**: token ids in buckets array (`ERC721Pool.bucketTokenIds`) and in borrowers array (`ERC721Pool.borrowerTokenIds`) are owned by pool contract (`Collateral.ownerOf(tokenId)`)  
+  - **CT6**: in case of subset pools: token ids in buckets array (`ERC721Pool.bucketTokenIds`) and in borrowers array (`ERC721Pool.borrowerTokenIds`) should have a mapping of `True` in allowed token ids mapping (`ERC721Pool.tokenIdsAllowed`)  
 
 - **CT7**: total pledged collateral in pool (`PoolBalancesState.pledgedCollateral`) = sum of collateral balances across all borrowers (`Borrower.collateral`)
 
@@ -20,8 +20,8 @@
 - **A1**: total t0 debt auctioned (`PoolBalancesState.t0DebtInAuction`) = sum of debt across all auctioned borrowers (`Borrower.t0Debt` where borrower's `kickTime != 0`)  
 - **A2**: sum of bonds locked in auctions (`Liquidation.bondSize`) = sum of locked balances across all kickers (`Kicker.locked`) = total bond escrowed accumulator (`AuctionsState.totalBondEscrowed`)  
 - **A3**: number of borrowers with debt (`LoansState.borrowers.length` with `t0Debt != 0`) = number of loans (`LoansState.loans.length -1`) + number of auctioned borrowers (`AuctionsState.noOfAuctions`)  
-- **A4**: number of recorded auctions (`AuctionsState.noOfAuctions`) = length of liquidation array (`AuctionsState.liquidations.length`)  
-- **A5**: for each `Liquidation` recorded in liquidations array (`AuctionsState.liquidations`) the kicker address (`Liquidation.kicker`) has a locked balance (`Kicker.locked`) equal or greater than liquidation bond size (`Liquidation.bondSize`)  
+- **A4**: number of recorded auctions (`AuctionsState.noOfAuctions`) = length of auctioned borrowers (count of borrowers in `AuctionsState.liquidations` with `kickTime != 0`)
+- **A5**: for each `Liquidation` recorded in liquidation mapping (`AuctionsState.liquidations`) the kicker address (`Liquidation.kicker`) has a locked balance (`Kicker.locked`) equal or greater than liquidation bond size (`Liquidation.bondSize`)  
 - **A6**: if a `Liquidation` is not taken then the take flag (`Liquidation.alreadyTaken`) should be `False`, if already taken then the take flag should be `True`  
 
 ## Loans
