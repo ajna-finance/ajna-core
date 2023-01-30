@@ -1,0 +1,41 @@
+# Ajna Pool Invariants
+
+## Collateral
+- #### ERC20:  
+  - **CT1**: pool collateral token balance (`Collateral.balanceOf(pool)`) = sum of collateral balances across all borrowers (`Borrower.collateral`) + sum of claimable collateral across all buckets (`Bucket.collateral`)  
+- #### NFT:  
+  - **CT2**: number of tokens owned by the pool (`Collateral.balanceOf(pool)`) * `1e18` = sum of collateral across all borrowers (`Borrower.collateral`) + sum of claimable collateral across all buckets (`Bucket.collateral`)  
+  - **CT3**: number of tokens owned by the pool (`Collateral.balanceOf(pool)` = length of borrower array token ids (`ERC721Pool.borrowerTokenIds.length`) + length of buckets array token ids (`ERC721Pool.bucketTokenIds.length`)  
+  - **CT4**: number of borrower token ids (`ERC721Pool.borrowerTokenIds.length`) <= borrower balance (`Borrower.collateral`) Note: can be lower in case when fractional collateral that is rebalanced / moved to buckets claimable token ids  
+  - **CT5**: token ids in buckets array (`ERC721Pool.bucketTokenIds.length`) and in borrowers array (`ERC721Pool.borrowerTokenIds.length`) are owned by pool contract (`Collateral.ownerOf(tokenId)`)  
+  - **CT6**: in case of subset pools: token ids in buckets array (`ERC721Pool.bucketTokenIds.length`) and in borrowers array (`ERC721Pool.borrowerTokenIds.length`) should have a mapping of `True` in allowed token ids mapping (`ERC721Pool.tokenIdsAllowed`)  
+
+- **CT7**: total pledged collateral in pool (`PoolBalancesState.pledgedCollateral`) = sum of collateral balances across all borrowers (`Borrower.collateral`)
+
+## Quote Token
+- **QT1**: pool quote token balance (`Quote.balanceOf(pool)`) >= liquidation bonds (`AuctionsState.totalBondEscrowed`) + pool deposit size (`Pool.depositSize()`)  - pool t0 debt (`PoolBalancesState.t0Debt`)  
+- **QT2**: pool t0 debt (`PoolBalancesState.t0Debt`) = sum of t0 debt across all borrowers (`Borrower.t0Debt`)
+
+## Auctions
+- **A1**: total t0 debt auctioned (`PoolBalancesState.t0DebtInAuction`) = sum of debt across all auctioned borrowers (`Borrower.t0Debt` where borrower's `kickTime != 0`)  
+- **A2**: sum of bonds locked in auctions (`Liquidation.bondSize`) = sum of locked balances across all kickers (`Kicker.locked`) = total bond escrowed accumulator (`AuctionsState.totalBondEscrowed`)  
+- **A3**: number of borrowers with debt (`LoansState.borrowers.length` with `t0Debt != 0`) = number of loans (`LoansState.loans.length -1`) + number of auctioned borrowers (`AuctionsState.noOfAuctions`)  
+- **A4**: number of recorded auctions (`AuctionsState.noOfAuctions`) = length of liquidation array (`AuctionsState.liquidations.length`)  
+- **A5**: for each `Liquidation` recorded in liquidations array (`AuctionsState.liquidations`) the kicker address (`Liquidation.kicker`) has a locked balance (`Kicker.locked`) equal or greater than liquidation bond size (`Liquidation.bondSize`)  
+- **A6**: if a `Liquidation` is not taken then the take flag (`Liquidation.alreadyTaken`) should be `False`, if already taken then the take flag should be `True`  
+
+## Loans
+- **L1**: for each `Loan` in loans array (`LoansState.loans`) starting from index 1, the corresponding address (`Loan.borrower`) is not `0x`, the threshold price (`Loan.thresholdPrice`) is different than 0 and the id mapped in indices mapping (`LoansState.indices`) is not 0  
+- **L2**: `Loan` in loans array (`LoansState.loans`) at index 0 has the corresponding address (`Loan.borrower`) equal with `0x` address and the threshold price (`Loan.thresholdPrice`) equal with 0
+
+## Buckets
+- **B1**: sum of LPs of lenders in bucket (`Lender.lps`) = bucket LPs accumulator (`Bucket.lps`)  
+- **B2**: bucket LPs accumulator (`Bucket.lps`) = 0 if no deposit / collateral in bucket  
+- **B3**: if no collateral or deposit in bucket then the bucket exchange rate is `1e18`  
+- **B4**: bankrupt bucket LPs accumulator = 0; lender LPs for deposits before bankruptcy time = 0  
+- **B5**: when adding quote tokens: lender deposit time (`Lender.depositTime`) = timestamp of block when deposit happened (`block.timestamp`)  
+
+## Interest
+- **I1**: interest rate (`InterestState.interestRate`) cannot be updated more than once in a 12 hours period of time (`InterestState.interestRateUpdate`)  
+- **I2**: reserve interest (`ReserveAuctionState.totalInterestEarned`) accrues only once per block (`block.timestamp - InflatorState.inflatorUpdate != 0`) and only if there's debt in the pool (`PoolBalancesState.t0Debt != 0`)  
+- **I3**: pool inflator (`InflatorState.inflator`) cannot be updated more than once per block (`block.timestamp - InflatorState.inflatorUpdate != 0`) and equals `1e18` if there's no debt in the pool (`PoolBalancesState.t0Debt != 0`)
