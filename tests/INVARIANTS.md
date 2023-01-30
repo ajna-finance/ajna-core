@@ -26,7 +26,8 @@
 
 ## Loans
 - **L1**: for each `Loan` in loans array (`LoansState.loans`) starting from index 1, the corresponding address (`Loan.borrower`) is not `0x`, the threshold price (`Loan.thresholdPrice`) is different than 0 and the id mapped in indices mapping (`LoansState.indices`) equals index of loan in loans array.  
-- **L3**: `Loan` in loans array (`LoansState.loans`) at index 0 has the corresponding address (`Loan.borrower`) equal with `0x` address and the threshold price (`Loan.thresholdPrice`) equal with 0
+- **L2**: `Loan` in loans array (`LoansState.loans`) at index 0 has the corresponding address (`Loan.borrower`) equal with `0x` address and the threshold price (`Loan.thresholdPrice`) equal with 0
+- **L3**: Loans array (`LoansState.loans`) is a max-heap with respect to t0-threshold price: the t0TP of loan at index `i` is >= the t0-threshold price of the loans at index `2*i` and `2*i+1`
 
 ## Buckets
 - **B1**: sum of LPs of lenders in bucket (`Lender.lps`) = bucket LPs accumulator (`Bucket.lps`)  
@@ -39,3 +40,30 @@
 - **I1**: interest rate (`InterestState.interestRate`) cannot be updated more than once in a 12 hours period of time (`InterestState.interestRateUpdate`)  
 - **I2**: reserve interest (`ReserveAuctionState.totalInterestEarned`) accrues only once per block (`block.timestamp - InflatorState.inflatorUpdate != 0`) and only if there's debt in the pool (`PoolBalancesState.t0Debt != 0`)  
 - **I3**: pool inflator (`InflatorState.inflator`) cannot be updated more than once per block (`block.timestamp - InflatorState.inflatorUpdate != 0`) and equals `1e18` if there's no debt in the pool (`PoolBalancesState.t0Debt != 0`)
+
+## Fenwick tree
+- **F1**: Value represented at index `i` (`Deposits.valueAt(i)`) is equal to the accumulation of scaled values incremented or decremented from index `i`
+- **F2**: For any index `i`, the prefix sum up to and including `i` is the sum of values stored in indices `j<=i`
+- **F3**: For any index `i < MAX_FENWICK_INDEX`,  `findIndexOfSum(prefixSum(i)) > i`
+- **F4**: For any index `i`, there is zero deposit above `i` and below `findIndexOfSum(prefixSum(i))`:  `prefixSum(findIndexOfSum(prefixSum(i))-1 == prefixSum(i)'
+
+## Exchange rate invariants ##
+- **R1**: Exchange rates are unchanged by pledging collateral
+- **R2**: Exchange rates are unchanged by removing collateral
+- **R3**: Exchange rates are unchanged by depositing quote token into a bucket
+- **R4**: Exchange rates are unchanged by withdrawing deposit (quote token) from a bucket
+- **R5**: Exchange rates are unchanged by adding collateral token into a bucket
+- **R6**: Exchange rates are unchanged by removing collateral token from a bucket
+- **R7**: Exchange rates are unchanged under depositTakes
+- **R8**: Exchange rates are unchanged under arbTakes
+
+## Reserves ##
+- **RE1**: Reserves are unchanged by pledging collateral
+- **RE2**: Reserves are unchanged by removing collateral
+- **RE3**: Reserves are unchanged by depositing quote token into a bucket
+- **RE4**: Reserves are unchanged by withdrawing deposit (quote token) from a bucket after the penalty period hes expired
+- **RE5**: Reserves are unchanged by adding collateral token into a bucket
+- **RE6**: Reserves are unchanged by removing collateral token from a bucket
+- **RE7**: Reserves increase by 7% of the loan quantity upon the first take (including depositTake or arbTake)
+- **RE8**: Reserves are unchanged under takes/depositTakes/arbTakes after the first take
+- **RE9**: Reserves increase by .25% of the debt when a loan is kicked
