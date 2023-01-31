@@ -174,7 +174,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         // move borrowed amount from pool to sender
         if (amountToBorrow_ != 0) {
             // update pool balances state
-            poolBalances.t0Debt += result.t0DebtChange;
+            poolBalances.t0Debt = result.t0PoolDebt;
 
             // move borrowed amount from pool to sender
             _transferQuoteToken(msg.sender, amountToBorrow_);
@@ -220,7 +220,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
         if (result.quoteTokenToRepay != 0) {
             // update pool balances state
-            poolBalances.t0Debt -= result.t0RepaidDebt;
+            poolBalances.t0Debt = result.t0PoolDebt;
             if (result.t0DebtInAuctionChange != 0) {
                 poolBalances.t0DebtInAuction -= result.t0DebtInAuctionChange;
             }
@@ -422,18 +422,11 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         );
 
         // update pool balances state
-        uint256 t0PoolDebt      = poolBalances.t0Debt;
         uint256 t0DebtInAuction = poolBalances.t0DebtInAuction;
-
-        if (result.t0DebtPenalty != 0) {
-            t0PoolDebt      += result.t0DebtPenalty;
-            t0DebtInAuction += result.t0DebtPenalty;
-        }
-
-        t0PoolDebt      -= result.t0RepayAmount;
+        t0DebtInAuction += result.t0DebtPenalty;
         t0DebtInAuction -= result.t0DebtInAuctionChange;
 
-        poolBalances.t0Debt            =  t0PoolDebt;
+        poolBalances.t0Debt            =  result.t0PoolDebt;
         poolBalances.t0DebtInAuction   =  t0DebtInAuction;
         poolBalances.pledgedCollateral -= result.collateralAmount;
 
@@ -494,18 +487,11 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         );
 
         // update pool balances state
-        uint256 t0PoolDebt      = poolBalances.t0Debt;
         uint256 t0DebtInAuction = poolBalances.t0DebtInAuction;
-
-        if (result.t0DebtPenalty != 0) {
-            t0PoolDebt      += result.t0DebtPenalty;
-            t0DebtInAuction += result.t0DebtPenalty;
-        }
-
-        t0PoolDebt      -= result.t0RepayAmount;
+        t0DebtInAuction += result.t0DebtPenalty;
         t0DebtInAuction -= result.t0DebtInAuctionChange;
 
-        poolBalances.t0Debt            =  t0PoolDebt;
+        poolBalances.t0Debt            =  result.t0PoolDebt;
         poolBalances.t0DebtInAuction   =  t0DebtInAuction;
         poolBalances.pledgedCollateral -= result.collateralAmount;
 
