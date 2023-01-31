@@ -430,6 +430,27 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         }
     }
 
+    function _assertCollateralInvariants() internal {
+        uint256 collateralInBuckets;
+        for(uint256 bucketIndex = 0; bucketIndex <= 7388; bucketIndex++) {
+            (, uint256 bucketCollateral, , , ) = _pool.bucketInfo(bucketIndex);
+            collateralInBuckets += bucketCollateral;
+        }
+
+        uint256 borrowersCollateral;
+        for (uint256 i = 0; i < borrowers.length(); i++) {
+            (, uint256 borrowerCollateral, ) = _poolUtils.borrowerInfo(address(_pool), borrowers.at(i));
+            borrowersCollateral += borrowerCollateral;
+        }
+
+        // pool pledged collateral accumulator should be equal with the amounts of collateral owned by borrowers
+        assertEq(borrowersCollateral, _pool.pledgedCollateral());
+
+        // collateral in buckets + collateral owned borrowers should be equal with the total number of tokens owned by the pool
+        uint256 poolBalance = _collateral.balanceOf(address(_pool));
+        assertEq(collateralInBuckets + borrowersCollateral, poolBalance * 1e18);
+    }
+
     /**********************/
     /*** Revert asserts ***/
     /**********************/
