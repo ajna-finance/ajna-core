@@ -1328,6 +1328,33 @@ contract RewardsManagerTest is DSTestPlus {
         assertGt(_ajnaToken.balanceOf(_updater), 0);
 
         // check owner can withdraw the NFT and rewards will be automatically claimed
+
+        uint256 snapshot = vm.snapshot();
+
+        // claimed rewards amount is greater than available tokens in rewards manager contract
+
+        // burn rewards manager tokens and leave only 5 tokens available
+        changePrank(address(_rewardsManager));
+        IERC20Token(address(_ajnaToken)).burn(99_999_990.978586345404952410 * 1e18);
+
+        uint256 managerBalance = _ajnaToken.balanceOf(address(_rewardsManager));
+        assertEq(managerBalance, 5 * 1e18); 
+
+        changePrank(_minterOne);
+        vm.expectEmit(true, true, true, true);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 0), 40.214136545950568150 * 1e18);
+        vm.expectEmit(true, true, true, true);
+        emit Unstake(_minterOne, address(_poolOne), tokenIdOne);
+        _rewardsManager.unstake(tokenIdOne);
+
+        // minter one receives only the amount of 5 ajna tokens available in manager balance instead calculated rewards of 40.214136545950568150
+        assertEq(_ajnaToken.balanceOf(_minterOne), managerBalance);
+        // all 5 tokens available in manager balance were used to reward minter one
+        assertEq(_ajnaToken.balanceOf(address(_rewardsManager)), 0); 
+
+        vm.revertTo(snapshot);
+
+        // test when enough tokens in rewards manager contracts
         changePrank(_minterOne);
         vm.expectEmit(true, true, true, true);
         emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 0), 40.214136545950568150 * 1e18);
@@ -1376,6 +1403,7 @@ contract RewardsManagerTest is DSTestPlus {
             mintAmount: 1000 * 1e18,
             pool: _poolTwo
         });
+
         uint256 tokenIdTwo = _mintAndMemorializePositionNFT(mintMemorializeParams);
 
         // minterOne deposits their NFT into the rewards contract
@@ -1391,6 +1419,7 @@ contract RewardsManagerTest is DSTestPlus {
             limitIndex: 3,
             pool: _poolOne
         });
+
         uint256 tokensToBurn = _triggerReserveAuctions(triggerReserveAuctionParams);
 
         uint256 currentBurnEpochPoolOne = _poolOne.currentBurnEpoch();

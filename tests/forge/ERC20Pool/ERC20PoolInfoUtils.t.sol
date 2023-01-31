@@ -34,51 +34,41 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         _mintQuoteAndApproveTokens(_lender1,  200_000 * 1e18);
 
         // lender deposits 10000 DAI in 5 buckets each
-        _addLiquidity(
-            {
-                from:    _lender,
-                amount:  10_000 * 1e18,
-                index:   highest,
-                lpAward: 10_000 * 1e27,
-                newLup:  MAX_PRICE
-            }
-        );
-        _addLiquidity(
-            {
-                from:    _lender,
-                amount:  10_000 * 1e18,
-                index:   high,
-                lpAward: 10_000 * 1e27,
-                newLup:  MAX_PRICE
-            } 
-        ); 
-        _addLiquidity( 
-            { 
-                from:    _lender,
-                amount:  10_000 * 1e18,
-                index:   med,
-                lpAward: 10_000 * 1e27,
-                newLup:  MAX_PRICE
-            } 
-        ); 
-        _addLiquidity( 
-            { 
-                from:    _lender,
-                amount:  10_000 * 1e18,
-                index:   low,
-                lpAward: 10_000 * 1e27,
-                newLup:  MAX_PRICE
-            } 
-        ); 
-        _addLiquidity( 
-            { 
-                from:    _lender,
-                amount:  10_000 * 1e18,
-                index:   lowest,
-                lpAward: 10_000 * 1e27,
-                newLup:  MAX_PRICE
-            }
-        );
+        _addLiquidity({
+            from:    _lender,
+            amount:  10_000 * 1e18,
+            index:   highest,
+            lpAward: 10_000 * 1e27,
+            newLup:  MAX_PRICE
+        });
+        _addLiquidity({
+            from:    _lender,
+            amount:  10_000 * 1e18,
+            index:   high,
+            lpAward: 10_000 * 1e27,
+            newLup:  MAX_PRICE
+        }); 
+        _addLiquidity({
+            from:    _lender,
+            amount:  10_000 * 1e18,
+            index:   med,
+            lpAward: 10_000 * 1e27,
+            newLup:  MAX_PRICE
+        });
+        _addLiquidity({
+            from:    _lender,
+            amount:  10_000 * 1e18,
+            index:   low,
+            lpAward: 10_000 * 1e27,
+            newLup:  MAX_PRICE
+        });
+        _addLiquidity({
+            from:    _lender,
+            amount:  10_000 * 1e18,
+            index:   lowest,
+            lpAward: 10_000 * 1e27,
+            newLup:  MAX_PRICE
+        });
 
         _drawDebt({
             from: _borrower,
@@ -114,6 +104,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
             uint256 scale,
             uint256 exchangeRate
         ) = _poolUtils.bucketInfo(address(_pool), 5000);
+
         assertEq(price,        0.014854015662334135 * 1e18);
         assertEq(quoteTokens,  0);
         assertEq(collateral,   0);
@@ -161,6 +152,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
             uint256 lup,
             uint256 lupIndex
         ) = _poolUtils.poolPricesInfo(address(_pool));
+
         assertEq(hpb,      3_010.892022197881557845 * 1e18);
         assertEq(hpbIndex, 2550);
         assertEq(htp,      210.201923076923077020 * 1e18);
@@ -183,6 +175,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
             uint256 auctionPrice,
             uint256 timeRemaining
         ) = _poolUtils.poolReservesInfo(address(_pool));
+
         assertEq(reserves,                   20.192307692307702000 * 1e18);
         assertEq(claimableReserves,          0);
         assertEq(claimableReservesRemaining, 0);
@@ -197,6 +190,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
             uint256 poolActualUtilization,
             uint256 poolTargetUtilization
         ) = _poolUtils.poolUtilizationInfo(address(_pool));
+
         assertEq(poolMinDebtAmount,     2_102.019230769230770200 * 1e18);
         assertEq(poolCollateralization, 14.181637252165253251 * 1e18);
         assertEq(poolActualUtilization, 0.420403846153846154 * 1e18);
@@ -224,6 +218,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
                 high
             ), 0
         );
+
         changePrank(_borrower2);
         ERC20Pool(address(_pool)).addCollateral(10 * 1e18, high);
 
@@ -241,7 +236,6 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
                 high
             ), 6675762482285055
         );
-
         assertEq(
             _poolUtils.lpsToQuoteTokens(
                 address(_pool),

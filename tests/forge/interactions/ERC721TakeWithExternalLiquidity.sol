@@ -36,13 +36,11 @@ contract ERC721TakeWithExternalLiquidityTest is ERC721HelperContract {
         _quote.approve(address(_pool), type(uint256).max);
 
         // lender deposits 50_000 Quote into the pool
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 50_000 * 1e18,
-                index:  _i1004_98
-            }
-        );
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 50_000 * 1e18,
+            index:  _i1004_98
+        });
 
         uint256[] memory tokenIdsToAdd = new uint256[](2);
         tokenIdsToAdd[0] = 1;
