@@ -162,9 +162,9 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
 
         _assertCollateralInvariants();
 
-        // the 2 token ids are still owned by borrower after settle
-        assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 0), 1);
-        assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 1), 3);
+        // the 2 token ids are rebalanced and transferred to pool claimable tokens array after settle
+        assertEq(ERC721Pool(address(_pool)).bucketTokenIds(0), 3);
+        assertEq(ERC721Pool(address(_pool)).bucketTokenIds(1), 1);
 
         // all NFTs are owned by the pool
         assertEq(_collateral.ownerOf(1),  address(_pool));

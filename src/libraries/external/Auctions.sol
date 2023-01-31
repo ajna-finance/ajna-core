@@ -174,7 +174,6 @@ library Auctions {
      *              - BucketBankruptcy
      *  @param  params_ Settle params
      *  @return collateralRemaining_ The amount of borrower collateral left after settle.
-     *  @return t0DebtRemaining_     The amount of t0 debt left after settle.
      *  @return collateralSettled_   The amount of collateral settled.
      *  @return t0DebtSettled_       The amount of t0 debt settled.
      */
@@ -186,7 +185,6 @@ library Auctions {
         SettleParams memory params_
     ) external returns (
         uint256 collateralRemaining_,
-        uint256 t0DebtRemaining_,
         uint256 collateralSettled_,
         uint256 t0DebtSettled_
     ) {
@@ -294,8 +292,7 @@ library Auctions {
             }
         }
 
-        t0DebtRemaining_ =  borrower.t0Debt;
-        t0DebtSettled_   -= t0DebtRemaining_;
+        t0DebtSettled_ -= borrower.t0Debt;
 
         emit Settle(params_.borrower, t0DebtSettled_);
 
