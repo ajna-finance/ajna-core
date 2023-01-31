@@ -499,8 +499,7 @@ library Auctions {
         result_.poolDebt   = poolState_.debt;
         (
             result_.newLup,
-            result_.settledAuction,
-            result_.remainingCollateral
+            result_.settledAuction
         ) = _takeLoan(
             auctions_,
             buckets_,
@@ -576,8 +575,7 @@ library Auctions {
         result_.poolDebt   = poolState_.debt;
         (
             result_.newLup,
-            result_.settledAuction,
-            result_.remainingCollateral
+            result_.settledAuction
         ) = _takeLoan(
             auctions_,
             buckets_,
@@ -1002,12 +1000,11 @@ library Auctions {
      *  @notice If borrower becomes recollateralized then auction is settled. Update loan's state.
      *  @dev    reverts on:
      *              - borrower debt less than pool min debt AmountLTMinDebt()
-     *  @param  borrower_            Struct containing pool details.
-     *  @param  borrower_            The borrower details owning loan that is taken.
-     *  @param  borrowerAddress_     The address of the borrower.
-     *  @return newLup_              The new LUP of pool (after debt is repaid).
-     *  @return settledAuction_      True if auction is settled by the take action. (NFT take: rebalance borrower collateral in pool if true)
-     *  @return remainingCollateral_ Borrower collateral remaining after take action. (NFT take: collateral to be rebalanced in case of NFT settlement)
+     *  @param  borrower_        Struct containing pool details.
+     *  @param  borrower_        The borrower details owning loan that is taken.
+     *  @param  borrowerAddress_ The address of the borrower.
+     *  @return newLup_          The new LUP of pool (after debt is repaid).
+     *  @return settledAuction_  True if auction is settled by the take action.
     */
     function _takeLoan(
         AuctionsState storage auctions_,
@@ -1019,8 +1016,7 @@ library Auctions {
         address borrowerAddress_
     ) internal returns (
         uint256 newLup_,
-        bool settledAuction_,
-        uint256 remainingCollateral_
+        bool settledAuction_
     ) {
 
         uint256 borrowerDebt = Maths.wmul(borrower_.t0Debt, poolState_.inflator);
@@ -1040,7 +1036,7 @@ library Auctions {
             settledAuction_ = true;
 
             // settle auction and update borrower's collateral with value after settlement
-            remainingCollateral_ = _settleAuction(
+            borrower_.collateral = _settleAuction(
                 auctions_,
                 buckets_,
                 deposits_,
@@ -1048,8 +1044,6 @@ library Auctions {
                 borrower_.collateral,
                 poolState_.poolType
             );
-
-            borrower_.collateral = remainingCollateral_;
         }
 
         // update loan state, stamp borrower t0Np only when exiting from auction

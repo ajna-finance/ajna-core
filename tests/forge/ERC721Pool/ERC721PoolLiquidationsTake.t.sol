@@ -776,15 +776,6 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
             borrowerCollateralization: 1 * 1e18
         });
 
-        // borrower should be able to pull collateral from the pool
-        _repayDebtNoLupCheck({
-            from:             _borrower,
-            borrower:         _borrower,
-            amountToRepay:    0,
-            amountRepaid:     0,
-            collateralToPull: 1
-        });
-
         vm.revertTo(snapshot);
 
         // borrower repays part of debt, but not enough to exit from auction
