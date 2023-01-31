@@ -93,7 +93,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     bool internal isPoolInitialized;
 
-    mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
+    mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 
     /******************/
     /*** Immutables ***/
@@ -159,14 +159,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /**
      *  @inheritdoc IPoolLenderActions
      *  @dev write state:
-     *          - _lpTokenAllowances mapping
+     *          - _lpAllowances mapping
      */
     function approveLpOwnership(
-        address allowedNewOwner_,
+        address newOwner,
         uint256 index_,
-        uint256 lpsAmountToApprove_
+        uint256 amount_
     ) external nonReentrant {
-        _lpTokenAllowances[msg.sender][allowedNewOwner_][index_] = lpsAmountToApprove_;
+        _lpAllowances[msg.sender][newOwner][index_] = amount_;
     }
 
     /// @inheritdoc IPoolLenderActions
@@ -242,7 +242,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     ) external override nonReentrant {
         LenderActions.transferLPs(
             buckets,
-            _lpTokenAllowances,
+            _lpAllowances,
             owner_,
             newOwner_,
             indexes_

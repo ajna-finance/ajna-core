@@ -149,8 +149,8 @@ contract RewardsManager is IRewardsManager {
 
             BucketState storage bucketState = stakeInfo.snapshot[bucketId];
 
-            // record the number of lp tokens in bucket at the time of staking
-            bucketState.lpsAtStakeTime = positionManager.getLPTokens(
+            // record the number of lps in bucket at the time of staking
+            bucketState.lpsAtStakeTime = positionManager.getLPs(
                 tokenId_,
                 bucketId
             );

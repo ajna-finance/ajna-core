@@ -129,7 +129,7 @@
 
 	emit events:
 	- LenderActions.transferLPs():
-		- TransferLPTokens
+		- TransferLPs
 
 ### kick
 	external libraries call:
