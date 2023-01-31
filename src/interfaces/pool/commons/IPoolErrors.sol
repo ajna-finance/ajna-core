@@ -76,6 +76,11 @@ interface IPoolErrors {
     error FlashloanCallbackFailed();
 
     /**
+     *  @notice Balance of pool contract before flash loan is different than the balance after flash loan.
+     */
+    error FlashloanIncorrectBalance();
+
+    /**
      *  @notice Pool cannot facilitate a flashloan for the specified token address.
      */
     error FlashloanUnavailableForToken();
