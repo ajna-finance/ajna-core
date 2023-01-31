@@ -13,8 +13,7 @@ contract RegressionTest is BaseInvariants {
     }
 
     function test_regression_invariantUnderflow_1() external {
-        // _basicPoolHandler.addQuoteToken(0, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 2590);
-
+        _basicPoolHandler.addQuoteToken(14227, 5211, 3600000000000000000000);
         // check invariants hold true
         invariant_Lps();
         invariant_quoteTokenBalance();

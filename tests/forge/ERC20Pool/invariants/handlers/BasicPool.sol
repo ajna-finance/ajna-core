@@ -12,13 +12,7 @@ import { Token }            from '../../../utils/Tokens.sol';
 import { PoolInfoUtils, _collateralization }    from 'src/PoolInfoUtils.sol';
 
 import { BaseHandler }    from './Base.sol';
-
-uint256 constant LENDER_MIN_BUCKET_INDEX = 2570;
-uint256 constant LENDER_MAX_BUCKET_INDEX = 2590;
-
-uint256 constant BORROWER_MIN_BUCKET_INDEX = 2600;
-uint256 constant BORROWER_MAX_BUCKET_INDEX = 2620;
-
+import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BORROWER_MIN_BUCKET_INDEX } from './Base.sol';
 
 /**
  *  @dev this contract manages multiple lenders
@@ -27,48 +21,9 @@ uint256 constant BORROWER_MAX_BUCKET_INDEX = 2620;
  */ 
 contract UnboundedBasicPoolHandler is Test, BaseHandler {
 
-    // Lender tracking
-    mapping(address => uint256[]) public touchedBuckets;
-
-    constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) BaseHandler(pool, quote, collateral, poolInfo) {
-        _actors     = _getActors(numOfActors);
+    constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) BaseHandler(pool, quote, collateral, poolInfo, numOfActors) {
     } 
 
-    modifier useRandomActor(uint256 actorIndex) {
-        vm.stopPrank();
-
-        address actor = _actors[constrictToRange(actorIndex, 0, _actors.length - 1)];
-        _actor = actor;
-        vm.startPrank(actor);
-        _;
-        vm.stopPrank();
-    }
-
-    modifier useRandomLenderBucket(uint256 bucketIndex) {
-        uint256[] storage lenderBucketIndexes = touchedBuckets[_actor];
-        if (lenderBucketIndexes.length < 3) {
-            // if actor has touched less than three buckets, add a new bucket
-            _lenderBucketIndex = constrictToRange(bucketIndex, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
-            lenderBucketIndexes.push(_lenderBucketIndex);
-        } else {
-            // if actor has touched more than three buckets, reuse one of the touched buckets
-            _lenderBucketIndex = lenderBucketIndexes[constrictToRange(bucketIndex, 0, lenderBucketIndexes.length - 1)];
-        }
-        _;
-    }
- 
-    function _getActors(uint256 noOfActors_) internal returns(address[] memory) {
-        address[] memory actors = new address[](noOfActors_);
-        for(uint i = 0; i < noOfActors_; i++) {
-            address actor = makeAddr(string(abi.encodePacked("Actor", Strings.toString(i))));
-            actors[i] = actor;
-        }
-        return actors;
-    }
-
-    function getActorsCount() external view returns(uint256) {
-        return _actors.length;
-    }
 
     /**************************************************************************************************************************************/
     /*** Lender Functions                                                                                                               ***/
@@ -85,15 +40,8 @@ contract UnboundedBasicPoolHandler is Test, BaseHandler {
         uint256 minDeposit = totalSupply == 0 ? 1 : _quote.balanceOf(address(_actor)) / totalSupply + 1;
         amount = constrictToRange(amount, minDeposit, 1e36);
 
-        _quote.mint(_actor, amount);
-        _quote.approve(address(_pool), amount);
-
         _pool.addQuoteToken(amount, bucketIndex);
     }
-
-    // function _removeQuoteToken(uint256 amount, uint256 bucket) internal {
-    //     ERC20Pool(_pool).removeQuoteToken(amount, bucket);
-    // }
 
     function removeQuoteToken(uint256 amount, uint256 bucketIndex) internal {
         numberOfCalls['UBBasicHandler.removeQuoteToken']++;
@@ -108,16 +56,13 @@ contract UnboundedBasicPoolHandler is Test, BaseHandler {
     function drawDebt(uint256 amount, uint256 collateralToPledge) public virtual {
         numberOfCalls['UBBasicHandler.drawDebt']++;
 
-        _collateral.mint(_actor, collateralToPledge);
-        _collateral.approve(address(_pool), collateralToPledge);
+        // _collateral.mint(_actor, collateralToPledge);
+        // _collateral.approve(address(_pool), collateralToPledge);
 
         _pool.drawDebt(_actor, amount, 7388, collateralToPledge); 
     }
 
     function repayDebt(address _actor, uint256 amountToRepay) internal {
-
-        _quote.mint(_actor, amountToRepay);
-        _quote.approve(address(_pool), amountToRepay);
 
         _pool.repayDebt(_actor, amountToRepay, 0);
     }
@@ -196,9 +141,7 @@ contract BoundedBasicPoolHandler is UnboundedBasicPoolHandler {
         (uint256 minDebt, , , ) = _poolInfo.poolUtilizationInfo(address(_pool));
         if (amountToBorrow < minDebt) amountToBorrow = minDebt + 1;
 
-
         // TODO: Need to constrain amountToBorrow so LUP > HTP
-
 
         // 2. pool needs sufficent quote token to draw debt
         uint256 poolQuoteBalance = _quote.balanceOf(address(_pool));

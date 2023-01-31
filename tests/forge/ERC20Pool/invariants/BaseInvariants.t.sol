@@ -8,7 +8,8 @@ import "forge-std/console.sol";
 
 import { TestBase } from './TestBase.sol';
 
-import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BORROWER_MIN_BUCKET_INDEX } from './handlers/BasicPool.sol';
+import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BORROWER_MIN_BUCKET_INDEX } from './handlers/Base.sol';
+
 
 // struct FuzzSelector {
 //     address addr;
@@ -70,7 +71,7 @@ contract BaseInvariants is TestBase {
 
     // checks pools collateral Balance to be equal to collateral pledged
     // function invariant_collateralBalance() public {
-    //     uint256 actorCount = _.getActorsCount();
+    //     uint256 actorCount = _. getActorsCount();
     //     uint256 totalCollateralPledged;
     //     for(uint256 i = 0; i < actorCount; i++) {
     //         address borrower = _invariantActorManager._actors(i);
