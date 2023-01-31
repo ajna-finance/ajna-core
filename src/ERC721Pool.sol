@@ -445,10 +445,12 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             result.collateralAmount / 1e18
         );
 
+        uint256 totalQuoteTokenAmount = result.quoteTokenAmount + result.excessQuoteToken;
+
         if (data_.length != 0) {
             IERC721Taker(callee_).atomicSwapCallback(
                 tokensTaken,
-                result.quoteTokenAmount / _getArgUint256(QUOTE_SCALE), 
+                totalQuoteTokenAmount  / _getArgUint256(QUOTE_SCALE),
                 data_
             );
         }
@@ -456,7 +458,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         if (result.settledAuction) _rebalanceTokens(borrowerAddress_, result.remainingCollateral);
 
         // transfer from taker to pool the amount of quote tokens needed to cover collateral auctioned (including excess for rounded collateral)
-        _transferQuoteTokenFrom(callee_, result.quoteTokenAmount + result.excessQuoteToken);
+        _transferQuoteTokenFrom(callee_, totalQuoteTokenAmount);
 
         // transfer from pool to borrower the excess of quote tokens after rounding collateral auctioned
         if (result.excessQuoteToken != 0) _transferQuoteToken(borrowerAddress_, result.excessQuoteToken);
