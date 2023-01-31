@@ -301,7 +301,7 @@ library Auctions {
 
         if (borrower.t0Debt == 0) {
             // settle auction
-            borrower.collateral = _settleAuction(
+            (borrower.collateral, ) = _settleAuction(
                 auctions_,
                 buckets_,
                 deposits_,
@@ -500,7 +500,8 @@ library Auctions {
         (
             result_.newLup,
             result_.settledAuction,
-            result_.remainingCollateral
+            result_.remainingCollateral,
+            result_.compensatedCollateral
         ) = _takeLoan(
             auctions_,
             buckets_,
@@ -577,7 +578,8 @@ library Auctions {
         (
             result_.newLup,
             result_.settledAuction,
-            result_.remainingCollateral
+            result_.remainingCollateral,
+            result_.compensatedCollateral
         ) = _takeLoan(
             auctions_,
             buckets_,
@@ -674,10 +676,11 @@ library Auctions {
      *  @notice Performs auction settle based on pool type, emits settle event and removes auction from auctions queue.
      *  @dev    emit events:
      *              - AuctionNFTSettle or AuctionSettle
-     *  @param  borrowerAddress_     Address of the borrower that exits auction.
-     *  @param  borrowerCollateral_  Borrower collateral amount before auction exit (in NFT could be fragmented as result of partial takes).
-     *  @param  poolType_            Type of the pool (can be ERC20 or NFT).
-     *  @return remainingCollateral_ Collateral remaining after auction is settled (same amount for ERC20 pool, rounded collateral for NFT pool).
+     *  @param  borrowerAddress_       Address of the borrower that exits auction.
+     *  @param  borrowerCollateral_    Borrower collateral amount before auction exit (in NFT could be fragmented as result of partial takes).
+     *  @param  poolType_              Type of the pool (can be ERC20 or NFT).
+     *  @return remainingCollateral_   Collateral remaining after auction is settled (same amount for ERC20 pool, rounded collateral for NFT pool).
+     *  @return compensatedCollateral_ Amount of collateral compensated (NFT settle only), to be deducted from pool pledged collateral accumulator. 0 for ERC20 pools.
      */
     function _settleAuction(
         AuctionsState storage auctions_,
@@ -686,18 +689,38 @@ library Auctions {
         address borrowerAddress_,
         uint256 borrowerCollateral_,
         uint256 poolType_
-    ) internal returns (uint256 remainingCollateral_) {
+    ) internal returns (uint256 remainingCollateral_, uint256 compensatedCollateral_) {
+
         if (poolType_ == uint8(PoolType.ERC721)) {
             uint256 lps;
             uint256 bucketIndex;
 
-            (remainingCollateral_, lps, bucketIndex) = _settleNFTCollateral(
-                auctions_,
-                buckets_,
-                deposits_,
-                borrowerAddress_,
-                borrowerCollateral_
-            );
+            remainingCollateral_ = (borrowerCollateral_ / Maths.WAD) * Maths.WAD; // floor collateral of borrower
+
+            // if there's fraction of NFTs remaining then reward difference to borrower as LPs in auction price bucket
+            if (remainingCollateral_ != borrowerCollateral_) {
+
+                // calculate the amount of collateral that should be compensated with LPs
+                compensatedCollateral_ = borrowerCollateral_ - remainingCollateral_;
+
+                uint256 auctionPrice = _auctionPrice(
+                    auctions_.liquidations[borrowerAddress_].kickMomp,
+                    auctions_.liquidations[borrowerAddress_].neutralPrice,
+                    auctions_.liquidations[borrowerAddress_].kickTime
+                );
+
+                // determine the bucket index to compensate fractional collateral
+                bucketIndex = auctionPrice > MIN_PRICE ? _indexOf(auctionPrice) : MAX_FENWICK_INDEX;
+
+                // deposit collateral in bucket and reward LPs to compensate fractional collateral
+                lps = Buckets.addCollateral(
+                    buckets_[bucketIndex],
+                    borrowerAddress_,
+                    Deposits.valueAt(deposits_, bucketIndex),
+                    compensatedCollateral_,
+                    _priceAt(bucketIndex)
+                );
+            }
 
             emit AuctionNFTSettle(borrowerAddress_, remainingCollateral_, lps, bucketIndex);
 
@@ -708,46 +731,6 @@ library Auctions {
         }
 
         _removeAuction(auctions_, borrowerAddress_);
-    }
-
-    /**
-     *  @notice Performs NFT collateral settlement by rounding down borrower's collateral amount and by moving borrower's token ids to pool claimable array.
-     *  @param borrowerAddress_    Address of the borrower that exits auction.
-     *  @param borrowerCollateral_ Borrower collateral amount before auction exit (could be fragmented as result of partial takes).
-     *  @return floorCollateral_   Rounded down collateral, the number of NFT tokens borrower can pull after auction exit.
-     *  @return lps_               LPs given to the borrower to compensate fractional collateral (if any).
-     *  @return bucketIndex_       Index of the bucket with LPs to compensate.
-     */
-    function _settleNFTCollateral(
-        AuctionsState storage auctions_,
-        mapping(uint256 => Bucket) storage buckets_,
-        DepositsState storage deposits_,
-        address borrowerAddress_,
-        uint256 borrowerCollateral_
-    ) internal returns (uint256 floorCollateral_, uint256 lps_, uint256 bucketIndex_) {
-        floorCollateral_ = (borrowerCollateral_ / Maths.WAD) * Maths.WAD; // floor collateral of borrower
-
-        // if there's fraction of NFTs remaining then reward difference to borrower as LPs in auction price bucket
-        if (floorCollateral_ != borrowerCollateral_) {
-            // cover borrower's fractional amount with LPs in auction price bucket
-            uint256 fractionalCollateral = borrowerCollateral_ - floorCollateral_;
-
-            uint256 auctionPrice = _auctionPrice(
-                auctions_.liquidations[borrowerAddress_].kickMomp,
-                auctions_.liquidations[borrowerAddress_].neutralPrice,
-                auctions_.liquidations[borrowerAddress_].kickTime
-            );
-
-            bucketIndex_ = auctionPrice > MIN_PRICE ? _indexOf(auctionPrice) : MAX_FENWICK_INDEX;
-
-            lps_ = Buckets.addCollateral(
-                buckets_[bucketIndex_],
-                borrowerAddress_,
-                Deposits.valueAt(deposits_, bucketIndex_),
-                fractionalCollateral,
-                _priceAt(bucketIndex_)
-            );
-        }
     }
 
     /**
@@ -1002,12 +985,13 @@ library Auctions {
      *  @notice If borrower becomes recollateralized then auction is settled. Update loan's state.
      *  @dev    reverts on:
      *              - borrower debt less than pool min debt AmountLTMinDebt()
-     *  @param  borrower_            Struct containing pool details.
-     *  @param  borrower_            The borrower details owning loan that is taken.
-     *  @param  borrowerAddress_     The address of the borrower.
-     *  @return newLup_              The new LUP of pool (after debt is repaid).
-     *  @return settledAuction_      True if auction is settled by the take action. (NFT take: rebalance borrower collateral in pool if true)
-     *  @return remainingCollateral_ Borrower collateral remaining after take action. (NFT take: collateral to be rebalanced in case of NFT settlement)
+     *  @param  borrower_              Struct containing pool details.
+     *  @param  borrower_              The borrower details owning loan that is taken.
+     *  @param  borrowerAddress_       The address of the borrower.
+     *  @return newLup_                The new LUP of pool (after debt is repaid).
+     *  @return settledAuction_        True if auction is settled by the take action. (NFT take: rebalance borrower collateral in pool if true)
+     *  @return remainingCollateral_   Borrower collateral remaining after take action. (NFT take: collateral to be rebalanced in case of NFT settlement)
+     *  @return compensatedCollateral_ Amount of collateral compensated, to be deducted from pool pledged collateral accumulator.
     */
     function _takeLoan(
         AuctionsState storage auctions_,
@@ -1020,7 +1004,8 @@ library Auctions {
     ) internal returns (
         uint256 newLup_,
         bool settledAuction_,
-        uint256 remainingCollateral_
+        uint256 remainingCollateral_,
+        uint256 compensatedCollateral_
     ) {
 
         uint256 borrowerDebt = Maths.wmul(borrower_.t0Debt, poolState_.inflator);
@@ -1040,7 +1025,7 @@ library Auctions {
             settledAuction_ = true;
 
             // settle auction and update borrower's collateral with value after settlement
-            remainingCollateral_ = _settleAuction(
+            (remainingCollateral_, compensatedCollateral_) = _settleAuction(
                 auctions_,
                 buckets_,
                 deposits_,
