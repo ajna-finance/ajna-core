@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.14;
 
+import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+
 import { Token } from '../utils/Tokens.sol';
 
 import 'src/interfaces/pool/IERC3156FlashBorrower.sol';
@@ -32,9 +34,9 @@ contract FlashloanBorrower is IERC3156FlashBorrower {
 
 // Example of some defi strategy which produces a fixed return
 contract SomeDefiStrategy {
-    Token public token;
+    ERC20 public token;
 
-    constructor(Token token_) {
+    constructor(ERC20 token_) {
         token = token_;
     }
 
