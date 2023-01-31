@@ -21,17 +21,11 @@ import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BORROWER_MIN_BUCKET_I
  */ 
 contract UnboundedBasicPoolHandler is Test, BaseHandler {
 
-    constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) BaseHandler(pool, quote, collateral, poolInfo, numOfActors) {
-    } 
-
+    constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) BaseHandler(pool, quote, collateral, poolInfo, numOfActors) {} 
 
     /**************************************************************************************************************************************/
     /*** Lender Functions                                                                                                               ***/
     /**************************************************************************************************************************************/
-
-    // function _addQuoteToken(uint256 amount, uint256 bucket) internal {
-    //     ERC20Pool(_pool).addQuoteToken(amount, bucket);
-    // }
 
     function addQuoteToken(uint256 amount, uint256 bucketIndex) internal {
         numberOfCalls['UBBasicHandler.addQuoteToken']++;
@@ -55,9 +49,6 @@ contract UnboundedBasicPoolHandler is Test, BaseHandler {
 
     function drawDebt(uint256 amount, uint256 collateralToPledge) public virtual {
         numberOfCalls['UBBasicHandler.drawDebt']++;
-
-        // _collateral.mint(_actor, collateralToPledge);
-        // _collateral.approve(address(_pool), collateralToPledge);
 
         _pool.drawDebt(_actor, amount, 7388, collateralToPledge); 
     }

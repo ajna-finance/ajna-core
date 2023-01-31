@@ -22,19 +22,19 @@ uint256 constant BORROWER_MAX_BUCKET_INDEX = 2620;
 
 contract BaseHandler is InvariantTest, Test {
 
-    // Pool
-    ERC20Pool   internal _pool;
-    PoolInfoUtils   internal _poolInfo;
-
     // Tokens
-    Token   internal _quote;
-    Token   internal _collateral;
+    Token         internal _quote;
+    Token         internal _collateral;
+
+    // Pool
+    ERC20Pool     internal _pool;
+    PoolInfoUtils internal _poolInfo;
 
     // Modifiers
-    address   internal _actor;
-    uint256   internal _lenderBucketIndex;
-    uint256   internal _limitIndex;
-    address[] public   _actors;
+    address       internal _actor;
+    uint256       internal _lenderBucketIndex;
+    uint256       internal _limitIndex;
+    address[]     public   _actors;
 
     // Logging
     mapping(bytes32 => uint256) public numberOfCalls;
