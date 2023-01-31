@@ -30,12 +30,17 @@ contract TestBase is InvariantTest, Test {
     BoundedBasicPoolHandler   internal _basicPoolHandler;
 
     function setUp() public virtual {
-        _collateral       = new Token("Collateral", "C");
+        // Tokens
         _quote            = new Token("Quote", "Q");
+        _collateral       = new Token("Collateral", "C");
+
+        // Pool
         _poolFactory      = new ERC20PoolFactory(_ajna);
-        _impl             = _poolFactory.implementation();
         _pool             = ERC20Pool(_poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
         _poolInfo         = new PoolInfoUtils();
+        _impl             = _poolFactory.implementation();
+
+        // Handlers
         _basicPoolHandler = new BoundedBasicPoolHandler(address(_pool), address(_quote), address(_collateral), address(_poolInfo), NUM_LENDERS);
     }
 

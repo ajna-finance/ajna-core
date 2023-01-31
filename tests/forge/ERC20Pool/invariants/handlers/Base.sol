@@ -44,14 +44,15 @@ contract BaseHandler is InvariantTest, Test {
 
 
     constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) {
-        // Pool
-        _pool       = ERC20Pool(pool);
-        _poolInfo   = PoolInfoUtils(poolInfo);
-
         // Tokens
         _quote      = Token(quote);
         _collateral = Token(collateral);
 
+        // Pool
+        _pool       = ERC20Pool(pool);
+        _poolInfo   = PoolInfoUtils(poolInfo);
+
+        // Actors
         _actors    = _buildActors(numOfActors);
 
     }
@@ -89,11 +90,15 @@ contract BaseHandler is InvariantTest, Test {
             address actor = makeAddr(string(abi.encodePacked("Actor", Strings.toString(i))));
             actors[i] = actor;
 
+            vm.startPrank(actor);
+
             _quote.mint(actor, 1e40);
             _quote.approve(address(_pool), 1e40);
 
             _collateral.mint(actor, 1e40);
             _collateral.approve(address(_pool), 1e40);
+
+            vm.stopPrank();
         }
         return actors;
     }
