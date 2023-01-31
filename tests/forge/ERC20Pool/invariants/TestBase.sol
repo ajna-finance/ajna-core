@@ -9,14 +9,12 @@ import { ERC20Pool }        from 'src/ERC20Pool.sol';
 import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
 import { Token }            from '../../utils/Tokens.sol';
 import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
-import { BoundedBasicPoolHandler } from './handlers/BasicPool.sol';
 import { InvariantTest } from './InvariantTest.sol';
 
 contract TestBase is InvariantTest, Test {
 
     // Mainnet ajna address
     address                internal _ajna = 0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079;
-    uint256                internal constant NUM_ACTORS = 10;
 
     Token                  internal _quote;
     Token                  internal _collateral;
@@ -25,8 +23,6 @@ contract TestBase is InvariantTest, Test {
     ERC20Pool              internal _impl;
     PoolInfoUtils          internal _poolInfo;
     ERC20PoolFactory       internal _poolFactory;
-
-    BoundedBasicPoolHandler   internal _basicPoolHandler;
 
     function setUp() public virtual {
         // Tokens
@@ -38,8 +34,5 @@ contract TestBase is InvariantTest, Test {
         _pool             = ERC20Pool(_poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
         _poolInfo         = new PoolInfoUtils();
         _impl             = _poolFactory.implementation();
-
-        // Handlers
-        _basicPoolHandler = new BoundedBasicPoolHandler(address(_pool), address(_quote), address(_collateral), address(_poolInfo), NUM_ACTORS);
     }
 }
