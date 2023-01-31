@@ -31,12 +31,21 @@ contract UnboundedBasicPoolHandler is Test, BaseHandler {
         numberOfCalls['UBBasicHandler.addQuoteToken']++;
 
         _pool.addQuoteToken(amount, bucketIndex);
+
+        // Fenwick
+        uint256 deposit = fenwickDeposits[bucketIndex];
+        fenwickDeposits[bucketIndex] = deposit + amount;
+
     }
 
     function removeQuoteToken(uint256 amount, uint256 bucketIndex) internal {
         numberOfCalls['UBBasicHandler.removeQuoteToken']++;
 
         _pool.removeQuoteToken(amount, bucketIndex);
+
+        // Fenwick
+        uint256 deposit = fenwickDeposits[bucketIndex];
+        fenwickDeposits[bucketIndex] = deposit - amount;
     }
 
     function addCollateral(uint256 amount, uint256 bucketIndex) internal {

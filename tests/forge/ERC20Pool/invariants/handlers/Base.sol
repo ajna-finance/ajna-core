@@ -42,6 +42,8 @@ contract BaseHandler is InvariantTest, Test {
     // Lender tracking
     mapping(address => uint256[]) public touchedBuckets;
 
+    // Ghost variables
+    uint256[] internal fenwickDeposits;
 
     constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) {
         // Tokens
