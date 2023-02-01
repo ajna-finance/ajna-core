@@ -449,6 +449,9 @@ contract RewardsManager is IRewardsManager {
 
         address ajnaPool = stakeInfo.ajnaPool;
 
+        // revert if higher epoch to claim than current burn epoch
+        if (epochToClaim_ > IPool(ajnaPool).currentBurnEpoch()) revert EpochNotAvailable();
+
         // update bucket exchange rates and claim associated rewards
         uint256 rewardsEarned = _updateBucketExchangeRates(
             ajnaPool,
