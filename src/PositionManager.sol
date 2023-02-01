@@ -180,7 +180,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      */
     function mint(
         MintParams calldata params_
-    ) external override returns (uint256 tokenId_) {
+    ) external override nonReentrant returns (uint256 tokenId_) {
         tokenId_ = _nextId++;
 
         // revert if the address is not a valid Ajna pool
