@@ -3,6 +3,7 @@
 
 pragma solidity 0.8.14;
 
+import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 import '@std/Test.sol';
 import "forge-std/console.sol";
 
@@ -11,7 +12,6 @@ import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
 import { Token }            from '../../../utils/Tokens.sol';
 import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
 import { InvariantTest } from '../InvariantTest.sol';
-import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 
 
 uint256 constant LENDER_MIN_BUCKET_INDEX = 2570;
@@ -92,11 +92,11 @@ contract BaseHandler is InvariantTest, Test {
 
             vm.startPrank(actor);
 
-            _quote.mint(actor, 1e40);
-            _quote.approve(address(_pool), 1e40);
+            _quote.mint(actor, 1e45);
+            _quote.approve(address(_pool), 1e45);
 
-            _collateral.mint(actor, 1e40);
-            _collateral.approve(address(_pool), 1e40);
+            _collateral.mint(actor, 1e45);
+            _collateral.approve(address(_pool), 1e45);
 
             vm.stopPrank();
         }

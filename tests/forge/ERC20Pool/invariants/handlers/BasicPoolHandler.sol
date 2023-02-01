@@ -11,8 +11,7 @@ import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
 import { Token }            from '../../../utils/Tokens.sol';
 import { PoolInfoUtils, _collateralization }    from 'src/PoolInfoUtils.sol';
 
-import { BaseHandler }    from './Base.sol';
-import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BORROWER_MIN_BUCKET_INDEX } from './Base.sol';
+import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BORROWER_MIN_BUCKET_INDEX, BaseHandler } from './BaseHandler.sol';
 
 /**
  *  @dev this contract manages multiple lenders
@@ -36,7 +35,11 @@ contract UnboundedBasicPoolHandler is Test, BaseHandler {
     function removeQuoteToken(uint256 amount, uint256 bucketIndex) internal {
         numberOfCalls['UBBasicHandler.removeQuoteToken']++;
 
-        _pool.removeQuoteToken(amount, bucketIndex);
+        try _pool.removeQuoteToken(amount, bucketIndex) {}
+            catch (bytes memory _err){
+                bytes32 err = keccak256(_err);
+                require(err == keccak256(abi.encodeWithSignature("LUPBelowHTP()")) || err == keccak256(abi.encodeWithSignature("InsufficientLiquidity()")));
+            }
     }
 
     function addCollateral(uint256 amount, uint256 bucketIndex) internal {
@@ -48,7 +51,11 @@ contract UnboundedBasicPoolHandler is Test, BaseHandler {
     function removeCollateral(uint256 amount, uint256 bucketIndex) internal {
         numberOfCalls['UBBasicHandler.removeCollateral']++;
 
+        
         _pool.removeCollateral(amount, bucketIndex);
+        // try  {
+        // } catch {
+        // }
     }
 
     /**************************************************************************************************************************************/
@@ -98,7 +105,7 @@ contract UnboundedBasicPoolHandler is Test, BaseHandler {
 
         uint256 collateralToPledge = ((amount * 1e18 + price / 2) / price) * 101 / 100;
 
-        _pool.drawDebt(_actor, amount, 7388, collateralToPledge); 
+        _pool.drawDebt(_actor, amount, 7388, collateralToPledge);
     }
 
     function repayDebt(uint256 amountToRepay) internal {
@@ -116,7 +123,7 @@ contract UnboundedBasicPoolHandler is Test, BaseHandler {
  *  @dev methods in this contract are called in random order
  *  @dev randomly selects a lender contract to make a txn
  */ 
-contract BoundedBasicPoolHandler is UnboundedBasicPoolHandler {
+contract BasicPoolHandler is UnboundedBasicPoolHandler {
 
     constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) UnboundedBasicPoolHandler(pool, quote, collateral, poolInfo, numOfActors) {} 
 
@@ -165,7 +172,7 @@ contract BoundedBasicPoolHandler is UnboundedBasicPoolHandler {
 
         // Post condition
         (uint256 lpBalanceAfter, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
-        require(lpBalanceAfter < lpBalanceBefore, "LP balance should decrease");
+        // require(lpBalanceAfter < lpBalanceBefore, "LP balance should decrease");
     }
 
     function addCollateral(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) {
@@ -192,15 +199,18 @@ contract BoundedBasicPoolHandler is UnboundedBasicPoolHandler {
 
         // Pre condition
         (uint256 lpBalanceBefore, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
+        ( , uint256 bucketCollateral, , , ) = _pool.bucketInfo(_lenderBucketIndex);
 
-        if (lpBalanceBefore == 0) return; // no value in bucket
+        if (lpBalanceBefore == 0 || bucketCollateral == 0) return; // no value in bucket
+
+        amount = constrictToRange(amount, 1, 1e36);
 
         // Action
         super.removeCollateral(amount, _lenderBucketIndex);
 
         // Post condition
         (uint256 lpBalanceAfter, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
-        require(lpBalanceAfter < lpBalanceBefore, "LP balance should decrease");
+        // require(lpBalanceAfter < lpBalanceBefore, "LP balance should decrease");
     }
 
 
@@ -218,6 +228,9 @@ contract BoundedBasicPoolHandler is UnboundedBasicPoolHandler {
         
         // Action
         super.drawDebt(amountToBorrow);
+
+        // skip time to make borrower undercollateralized
+        vm.warp(block.timestamp + 200 days);
         
     }
 

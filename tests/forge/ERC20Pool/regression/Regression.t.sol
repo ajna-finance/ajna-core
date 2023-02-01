@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 
-import { BaseInvariants }            from "../invariants/BaseInvariants.t.sol";
+import { BasicInvariants }            from "../invariants/BasicInvariants.t.sol";
 
 pragma solidity 0.8.14;
 
 
-contract RegressionTest is BaseInvariants { 
+contract RegressionTest is BasicInvariants { 
 
     function setUp() public override { 
         super.setUp();
