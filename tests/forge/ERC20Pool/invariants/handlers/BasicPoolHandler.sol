@@ -18,9 +18,7 @@ import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BORROWER_MIN_BUCKET_I
  *  @dev methods in this contract are called in random order
  *  @dev randomly selects a lender contract to make a txn
  */ 
-contract UnboundedBasicPoolHandler is Test, BaseHandler {
-
-    constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) BaseHandler(pool, quote, collateral, poolInfo, numOfActors) {} 
+abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
     /**************************************************************************************************************************************/
     /*** Lender Functions                                                                                                               ***/
@@ -125,7 +123,7 @@ contract UnboundedBasicPoolHandler is Test, BaseHandler {
  */ 
 contract BasicPoolHandler is UnboundedBasicPoolHandler {
 
-    constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) UnboundedBasicPoolHandler(pool, quote, collateral, poolInfo, numOfActors) {} 
+    constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) BaseHandler(pool, quote, collateral, poolInfo, numOfActors) {} 
 
     /**************************************************************************************************************************************/
     /*** Lender Functions                                                                                                               ***/

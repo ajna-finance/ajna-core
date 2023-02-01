@@ -9,19 +9,7 @@ import "forge-std/console.sol";
 import { TestBase } from './TestBase.sol';
 
 import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BORROWER_MIN_BUCKET_INDEX, BasicPoolHandler } from './handlers/BasicPoolHandler.sol';
-
-interface Handler {
-    function getActorsCount() external view returns(uint256);
-
-    function _actors(uint256) external view returns(address);
-
-    function numberOfCalls(bytes32) external view returns(uint256);
-}
-
-// struct FuzzSelector {
-//     address addr;
-//     bytes4[] selectors;
-// }
+import { IBaseHandler } from './handlers/IBaseHandler.sol';
 
 // contains invariants for the test
 contract BasicInvariants is TestBase {
@@ -60,11 +48,11 @@ contract BasicInvariants is TestBase {
 
     // checks pool lps are equal to sum of all lender lps in a bucket 
     function invariant_Lps() public {
-        uint256 actorCount = Handler(_handler).getActorsCount();
+        uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             uint256 totalLps;
             for (uint256 i = 0; i < actorCount; i++) {
-                address lender = Handler(_handler)._actors(i);
+                address lender = IBaseHandler(_handler)._actors(i);
                 (uint256 lps, ) = _pool.lenderInfo(bucketIndex, lender);
                 totalLps += lps;
             }
@@ -84,10 +72,10 @@ contract BasicInvariants is TestBase {
 
     // checks pools collateral Balance to be equal to collateral pledged
     function invariant_collateralBalance() public {
-        uint256 actorCount = Handler(_handler).getActorsCount();
+        uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         uint256 totalCollateralPledged;
         for(uint256 i = 0; i < actorCount; i++) {
-            address borrower = Handler(_handler)._actors(i);
+            address borrower = IBaseHandler(_handler)._actors(i);
             ( , uint256 borrowerCollateral, ) = _pool.borrowerInfo(borrower);
             totalCollateralPledged += borrowerCollateral;
         }
@@ -107,10 +95,10 @@ contract BasicInvariants is TestBase {
 
     // checks pool debt is equal to sum of all borrowers debt
     function invariant_pooldebt() public {
-        uint256 actorCount = Handler(_handler).getActorsCount();
+        uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         uint256 totalDebt;
         for(uint256 i = 0; i < actorCount; i++) {
-            address borrower = Handler(_handler)._actors(i);
+            address borrower = IBaseHandler(_handler)._actors(i);
             (uint256 debt, , ) = _pool.borrowerInfo(borrower);
             totalDebt += debt;
         }
@@ -120,31 +108,31 @@ contract BasicInvariants is TestBase {
         require(poolDebt == totalDebt, "Incorrect pool debt");
     }
 
-    function invariant_call_summary() external view {
+    function invariant_call_summary() external view virtual {
         console.log("\nCall Summary\n");
         console.log("--Lender----------");
-        console.log("BBasicHandler.addQuoteToken         ",  Handler(_handler).numberOfCalls("BBasicHandler.addQuoteToken"));
-        console.log("UBBasicHandler.addQuoteToken        ",  Handler(_handler).numberOfCalls("UBBasicHandler.addQuoteToken"));
-        console.log("BBasicHandler.removeQuoteToken      ",  Handler(_handler).numberOfCalls("BBasicHandler.removeQuoteToken"));
-        console.log("UBBasicHandler.removeQuoteToken     ",  Handler(_handler).numberOfCalls("UBBasicHandler.removeQuoteToken"));
-        console.log("BBasicHandler.addCollateral         ",  Handler(_handler).numberOfCalls("BBasicHandler.addCollateral"));
-        console.log("UBBasicHandler.addCollateral        ",  Handler(_handler).numberOfCalls("UBBasicHandler.addCollateral"));
-        console.log("BBasicHandler.removeCollateral      ",  Handler(_handler).numberOfCalls("BBasicHandler.removeCollateral"));
-        console.log("UBBasicHandler.removeCollateral     ",  Handler(_handler).numberOfCalls("UBBasicHandler.removeCollateral"));
+        console.log("BBasicHandler.addQuoteToken         ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.addQuoteToken"));
+        console.log("UBBasicHandler.addQuoteToken        ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.addQuoteToken"));
+        console.log("BBasicHandler.removeQuoteToken      ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.removeQuoteToken"));
+        console.log("UBBasicHandler.removeQuoteToken     ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.removeQuoteToken"));
+        console.log("BBasicHandler.addCollateral         ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.addCollateral"));
+        console.log("UBBasicHandler.addCollateral        ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.addCollateral"));
+        console.log("BBasicHandler.removeCollateral      ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.removeCollateral"));
+        console.log("UBBasicHandler.removeCollateral     ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.removeCollateral"));
         console.log("--Borrower--------");
-        console.log("BBasicHandler.drawDebt              ",  Handler(_handler).numberOfCalls("BBasicHandler.drawDebt"));
-        console.log("UBBasicHandler.drawDebt             ",  Handler(_handler).numberOfCalls("UBBasicHandler.drawDebt"));
-        console.log("BBasicHandler.repayDebt              ", Handler(_handler).numberOfCalls("BBasicHandler.repayDebt"));
-        console.log("UBBasicHandler.repayDebt             ", Handler(_handler).numberOfCalls("UBBasicHandler.repayDebt"));
+        console.log("BBasicHandler.drawDebt              ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.drawDebt"));
+        console.log("UBBasicHandler.drawDebt             ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.drawDebt"));
+        console.log("BBasicHandler.repayDebt              ", IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt"));
+        console.log("UBBasicHandler.repayDebt             ", IBaseHandler(_handler).numberOfCalls("UBBasicHandler.repayDebt"));
         console.log("------------------");
         console.log(
             "Sum",
-            Handler(_handler).numberOfCalls("BBasicHandler.addQuoteToken") +
-            Handler(_handler).numberOfCalls("BBasicHandler.removeQuoteToken") +
-            Handler(_handler).numberOfCalls("BBasicHandler.addCollateral") +
-            Handler(_handler).numberOfCalls("BBasicHandler.removeCollateral") +
-            Handler(_handler).numberOfCalls("BBasicHandler.drawDebt") + 
-            Handler(_handler).numberOfCalls("BBasicHandler.repayDebt")
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.addQuoteToken") +
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.removeQuoteToken") +
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.addCollateral") +
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.removeCollateral") +
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.drawDebt") + 
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt")
         );
     }
 }
