@@ -407,7 +407,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         _repayDebt(from, borrower, amountToRepay, amountRepaid, collateralToPull, 0);
     }
 
-    function _transferLpTokens(
+    function _transferLPs(
         address operator,
         address from,
         address to,
@@ -577,6 +577,17 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         changePrank(operator);
         vm.expectRevert(IPoolErrors.NoAllowance.selector);
+        _pool.transferLPs(from, to, indexes);
+    }
+
+    function _assertTransferToSameOwnerRevert(
+        address operator,
+        address from,
+        address to,
+        uint256[] memory indexes
+    ) internal {
+        changePrank(operator);
+        vm.expectRevert(IPoolErrors.TransferToSameOwner.selector);
         _pool.transferLPs(from, to, indexes);
     }
 

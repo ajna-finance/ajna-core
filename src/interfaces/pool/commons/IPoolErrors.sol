@@ -180,6 +180,11 @@ interface IPoolErrors {
     error TakeNotPastCooldown();
 
     /**
+     *  @notice Owner of the LP tokens attemps to transfer LPs to same address.
+     */
+    error TransferToSameOwner();
+
+    /**
      *  @notice The threshold price of the loan to be inserted in loans heap is zero.
      */
     error ZeroThresholdPrice();
