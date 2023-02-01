@@ -423,8 +423,9 @@ contract RewardsManager is IRewardsManager {
         // calculate rewards earned
         newRewards_ = Maths.wmul(
             REWARD_FACTOR,
-            Maths.wmul(
-                Maths.wdiv(interestEarned_, totalInterestEarnedInPeriod), totalBurnedInPeriod
+            Maths.wdiv(
+                Maths.wmul(interestEarned_, totalBurnedInPeriod),
+                totalInterestEarnedInPeriod
             )
         );
 
