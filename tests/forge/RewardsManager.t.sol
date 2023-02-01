@@ -160,8 +160,15 @@ contract RewardsManagerTest is DSTestPlus {
         _rewardsManager.unstake(tokenId);
         assertEq(_positionManager.ownerOf(tokenId), minter);
 
-        // check token was transferred to rewards contract
+        // check token was transferred from rewards contract to minter
         assertEq(_positionManager.ownerOf(tokenId), address(minter));
+
+        // invariant: all bucket snapshots are removed for the token id that was unstaken
+        for(uint256 bucketIndex = 0; bucketIndex <= 7388; bucketIndex++) {
+            (uint256 lps, uint256 rate) = _rewardsManager.getBucketStateStakeInfo(tokenId, bucketIndex);
+            assertEq(lps, 0);
+            assertEq(rate, 0);
+        }
     }
 
     function _triggerReserveAuctionsNoTake(TriggerReserveAuctionParams memory params_) internal {
