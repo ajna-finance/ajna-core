@@ -10,6 +10,7 @@ import { BaseHandler } from './BaseHandler.sol';
 abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
     function kickAuction(address borrower) internal {
         numberOfCalls['UBLiquidationHandler.kickAuction']++;
+
         try _pool.kick(borrower) {}
         catch (bytes memory err){
             require(keccak256(abi.encodeWithSignature("BorrowerOk()")) == keccak256(err));
@@ -19,6 +20,7 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
 
     function takeAuction(address borrower, uint256 amount, address taker) internal {
         numberOfCalls['UBLiquidationHandler.takeAuction']++;
+        
         _pool.take(borrower, amount, taker, bytes(""));
     }
 }
@@ -28,11 +30,9 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
     constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) BasicPoolHandler(pool, quote, collateral, poolInfo, numOfActors) {} 
 
     function kickAuction(uint256 borrowerIndex, uint256 amount, uint256 kickerIndex) external useRandomActor(kickerIndex) {
-
         numberOfCalls['BLiquidationHandler.kickAuction']++;
 
         borrowerIndex   = constrictToRange(borrowerIndex, 0, _actors.length - 1);
-
         address borrower = _actors[borrowerIndex];
 
         ( , , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower);
@@ -54,7 +54,6 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
     }
 
     function takeAuction(uint256 borrowerIndex, uint256 amount, uint256 actorIndex) external useRandomActor(borrowerIndex){
-
         numberOfCalls['BLiquidationHandler.takeAuction']++;
 
         actorIndex = constrictToRange(actorIndex, 0, _actors.length - 1);

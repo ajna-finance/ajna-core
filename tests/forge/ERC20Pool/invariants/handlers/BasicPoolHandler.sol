@@ -27,33 +27,57 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     function addQuoteToken(uint256 amount, uint256 bucketIndex) internal {
         numberOfCalls['UBBasicHandler.addQuoteToken']++;
 
+        // Pre condition
+        (uint256 lpBalanceBefore, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
+
         _pool.addQuoteToken(amount, bucketIndex);
+
+        // Post condition
+        (uint256 lpBalanceAfter, ) = _pool.lenderInfo(bucketIndex, _actor);
+        require(lpBalanceAfter > lpBalanceBefore, "LP balance should increase");
     }
 
     function removeQuoteToken(uint256 amount, uint256 bucketIndex) internal {
         numberOfCalls['UBBasicHandler.removeQuoteToken']++;
 
-        try _pool.removeQuoteToken(amount, bucketIndex) {}
-            catch (bytes memory _err){
-                bytes32 err = keccak256(_err);
-                require(err == keccak256(abi.encodeWithSignature("LUPBelowHTP()")) || err == keccak256(abi.encodeWithSignature("InsufficientLiquidity()")));
-            }
+        // Pre condition
+        (uint256 lpBalanceBefore, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
+
+        try _pool.removeQuoteToken(amount, bucketIndex) {
+            // Post condition
+            (uint256 lpBalanceAfter, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
+            require(lpBalanceAfter < lpBalanceBefore, "LP balance should decrease");
+        }
+        catch (bytes memory _err){
+            bytes32 err = keccak256(_err);
+            require(err == keccak256(abi.encodeWithSignature("LUPBelowHTP()")) || err == keccak256(abi.encodeWithSignature("InsufficientLiquidity()")));
+        }
     }
 
     function addCollateral(uint256 amount, uint256 bucketIndex) internal {
         numberOfCalls['UBBasicHandler.addCollateral']++;
 
+        // Pre condition
+        (uint256 lpBalanceBefore, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
+
         _pool.addCollateral(amount, bucketIndex);
+
+        // Post condition
+        (uint256 lpBalanceAfter, ) = _pool.lenderInfo(bucketIndex, _actor);
+        require(lpBalanceAfter > lpBalanceBefore, "LP balance should increase");
     }
 
     function removeCollateral(uint256 amount, uint256 bucketIndex) internal {
         numberOfCalls['UBBasicHandler.removeCollateral']++;
 
-        
+        // Pre condition
+        (uint256 lpBalanceBefore, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
+
         _pool.removeCollateral(amount, bucketIndex);
-        // try  {
-        // } catch {
-        // }
+
+        // Post condition
+        (uint256 lpBalanceAfter, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
+        require(lpBalanceAfter < lpBalanceBefore, "LP balance should decrease");
     }
 
     /**************************************************************************************************************************************/
@@ -104,10 +128,15 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         uint256 collateralToPledge = ((amount * 1e18 + price / 2) / price) * 101 / 100;
 
         _pool.drawDebt(_actor, amount, 7388, collateralToPledge);
+
+        try _pool.drawDebt(_actor, amount, 7388, collateralToPledge) {}
+        catch (bytes memory _err){
+            bytes32 err = keccak256(_err);
+            require(err == keccak256(abi.encodeWithSignature("BorrowerUnderCollateralized()")));
+        }
     }
 
     function repayDebt(uint256 amountToRepay) internal {
-
         numberOfCalls['UBBasicHandler.repayDebt']++;
 
         _pool.repayDebt(_actor, amountToRepay, 0);
@@ -132,34 +161,23 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     function addQuoteToken(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) {
         numberOfCalls['BBasicHandler.addQuoteToken']++;
 
-        // Pre condition
-        (uint256 lpBalanceBefore, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
-
         uint256 totalSupply = _quote.totalSupply();
         uint256 minDeposit = totalSupply == 0 ? 1 : _quote.balanceOf(address(_actor)) / totalSupply + 1;
         amount = constrictToRange(amount, minDeposit, 1e36);
 
         // Action
         super.addQuoteToken(amount, _lenderBucketIndex);
-
-        // Post condition
-        (uint256 lpBalanceAfter, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
-        require(lpBalanceAfter > lpBalanceBefore, "LP balance should increase");
     }
 
     function removeQuoteToken(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) {
-
         numberOfCalls['BBasicHandler.removeQuoteToken']++;
 
-        // Pre condition
-        (uint256 lpBalanceBefore, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
+        (uint256 lpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
 
-        if (lpBalanceBefore == 0) {
+        if (lpBalance == 0) {
             amount = constrictToRange(amount, 1, 1e36);
             super.addQuoteToken(amount, _lenderBucketIndex);
         }
-
-        (lpBalanceBefore, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
 
         uint256 poolBalance = _quote.balanceOf(address(_pool));
 
@@ -167,48 +185,30 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
 
         // Action
         super.removeQuoteToken(amount, _lenderBucketIndex);
-
-        // Post condition
-        (uint256 lpBalanceAfter, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
-        // require(lpBalanceAfter < lpBalanceBefore, "LP balance should decrease");
     }
 
     function addCollateral(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) {
         numberOfCalls['BBasicHandler.addCollateral']++;
 
-        // Pre condition
-        (uint256 lpBalanceBefore, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
-
-        uint256 totalSupply = _collateral.totalSupply();
-        uint256 minDeposit = totalSupply == 0 ? 1 : _collateral.balanceOf(address(_actor)) / totalSupply + 1;
-        amount = constrictToRange(amount, minDeposit, 1e36);
+        amount = constrictToRange(amount, 1, 1e36);
 
         // Action
         super.addCollateral(amount, _lenderBucketIndex);
-
-        // Post condition
-        (uint256 lpBalanceAfter, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
-        require(lpBalanceAfter > lpBalanceBefore, "LP balance should increase");
     }
 
     function removeCollateral(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) {
 
         numberOfCalls['BBasicHandler.removeCollateral']++;
 
-        // Pre condition
-        (uint256 lpBalanceBefore, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
+        (uint256 lpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
         ( , uint256 bucketCollateral, , , ) = _pool.bucketInfo(_lenderBucketIndex);
 
-        if (lpBalanceBefore == 0 || bucketCollateral == 0) return; // no value in bucket
+        if (lpBalance == 0 || bucketCollateral == 0) return; // no value in bucket
 
         amount = constrictToRange(amount, 1, 1e36);
 
         // Action
         super.removeCollateral(amount, _lenderBucketIndex);
-
-        // Post condition
-        (uint256 lpBalanceAfter, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
-        // require(lpBalanceAfter < lpBalanceBefore, "LP balance should decrease");
     }
 
 
@@ -219,10 +219,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     function drawDebt(uint256 actorIndex, uint256 amountToBorrow) public useRandomActor(actorIndex) {
         numberOfCalls['BBasicHandler.drawDebt']++;
 
-        // amount of debt is contstrained so overflow doesn't happen on mint
-        // uint256 totalSupply = _quote.totalSupply();
-        // uint256 minBorrow = totalSupply == 0 ? 1 : _quote.balanceOf(address(_actor)) / totalSupply + 1;
-        amountToBorrow = constrictToRange(amountToBorrow, 1e18, 1e36);
+        amountToBorrow = constrictToRange(amountToBorrow, 1, 1e36);
         
         // Action
         super.drawDebt(amountToBorrow);
@@ -233,10 +230,9 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     }
 
     function repayDebt(uint256 actorIndex, uint256 amountToRepay) public useRandomActor(actorIndex) {
-
         numberOfCalls['BBasicHandler.repayDebt']++;
 
-        amountToRepay = constrictToRange(amountToRepay, 1e18, 1e36);
+        amountToRepay = constrictToRange(amountToRepay, 1, 1e36);
 
         // Pre condition
         (uint256 debt, uint256 collateral, ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);

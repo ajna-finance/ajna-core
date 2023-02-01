@@ -13,6 +13,13 @@ import { BasicInvariants } from './BasicInvariants.t.sol';
 import { IBaseHandler } from './handlers/IBaseHandler.sol';
 
 contract LiquidationInvariant is BasicInvariants {
+
+    /**************************************************************************************************************************************/
+    /*** Invariant Tests                                                                                                                ***/
+    /***************************************************************************************************************************************
+     * Auction
+        *  A2: totalBondEscrowed = sum of all kicker's bond = total Bond in Auction
+    ****************************************************************************************************************************************/
     
     LiquidationPoolHandler internal _liquidationPoolHandler;
 
@@ -27,7 +34,7 @@ contract LiquidationInvariant is BasicInvariants {
     }
 
     // checks sum of all kicker bond is equal to total pool bond
-    function invariant_bond() public {
+    function invariant_bond_A2() public {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         uint256 totalKickerBond;
         for(uint256 i = 0; i < actorCount; i++) {

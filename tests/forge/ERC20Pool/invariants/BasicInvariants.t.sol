@@ -18,11 +18,15 @@ contract BasicInvariants is TestBase {
     /*** Invariant Tests                                                                                                                ***/
     /***************************************************************************************************************************************
      * Bucket
-        * Invariant A: totlaBucketLPs === totalLenderLps
+        *  B1: totalBucketLPs === totalLenderLps
 
-     * Pool
-        * Invariant A: poolQtBal >= poolDepositSize - poolDebt
+     * Quote Token
+        * QT1: poolQtBal + poolDebt >= totalBondEscrowed + poolDepositSize
+        * QT2: pool t0 debt = sum of all borrower's t0 debt
 
+     * Collateral Token
+        * CT1: poolCtBal >= sum of all borrower's collateral + sum of all bucket's claimable collateral
+        * CT7: pool Pledged collateral = sum of all borrower's pledged collateral
     ****************************************************************************************************************************************/
 
     uint256                   internal constant NUM_ACTORS = 10;
@@ -47,7 +51,7 @@ contract BasicInvariants is TestBase {
     }
 
     // checks pool lps are equal to sum of all lender lps in a bucket 
-    function invariant_Lps() public {
+    function invariant_Lps_B1() public {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             uint256 totalLps;
@@ -57,21 +61,21 @@ contract BasicInvariants is TestBase {
                 totalLps += lps;
             }
             (uint256 poolLps, , , , ) = _pool.bucketInfo(bucketIndex);
-            assertEq(poolLps, totalLps, "Bucket Invariant A");
+            assertEq(poolLps, totalLps, "Incorrect Bucket/lender lps");
         }
     }
 
     // checks pool quote token balance is greater than equals total deposits in pool
-    function invariant_quoteTokenBalance() public {
+    function invariant_quoteTokenBalance_QT1() public {
         uint256 poolBalance = _quote.balanceOf(address(_pool));
         (uint256 pooldebt, , ) = _pool.debtInfo();
         (uint256 totalPoolBond, , ) = _pool.reservesInfo();
         // poolBalance == poolDeposit will fail due to rounding issue while converting LPs to Quote
-        assertGe(poolBalance + pooldebt, totalPoolBond + _pool.depositSize() , "Pool Invariant A");
+        assertGe(poolBalance + pooldebt, totalPoolBond + _pool.depositSize() , "Incorrect pool debt");
     }
 
     // checks pools collateral Balance to be equal to collateral pledged
-    function invariant_collateralBalance() public {
+    function invariant_collateralBalance_CT1_CT7() public {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         uint256 totalCollateralPledged;
         for(uint256 i = 0; i < actorCount; i++) {
@@ -94,7 +98,7 @@ contract BasicInvariants is TestBase {
     }
 
     // checks pool debt is equal to sum of all borrowers debt
-    function invariant_pooldebt() public {
+    function invariant_pooldebt_QT2() public {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         uint256 totalDebt;
         for(uint256 i = 0; i < actorCount; i++) {

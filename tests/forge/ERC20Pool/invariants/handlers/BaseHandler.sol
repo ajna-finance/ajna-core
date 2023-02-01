@@ -5,6 +5,7 @@ pragma solidity 0.8.14;
 
 import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 import '@std/Test.sol';
+import '@std/Vm.sol';
 import "forge-std/console.sol";
 
 import { ERC20Pool }        from 'src/ERC20Pool.sol';
@@ -68,6 +69,9 @@ contract BaseHandler is InvariantTest, Test {
         _actor = actor;
         vm.startPrank(actor);
         _;
+
+        // skip time to update interest rate on each action
+        vm.warp(block.timestamp + 13 hours);
         vm.stopPrank();
     }
 
