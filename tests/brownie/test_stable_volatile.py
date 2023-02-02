@@ -364,7 +364,7 @@ def repay_debt(borrower, borrower_index, pool_helper, test_utils):
               f"is withdrawing {collateral_deposited/1e18:.1f} collateral")
         # assert collateral_to_withdraw > 0
         repay_amount = int(repay_amount * 1.01)
-        tx = pool_helper.pool.repayDebt(borrower, repay_amount, collateral_to_withdraw, {"from": borrower})
+        tx = pool_helper.pool.repayDebt(borrower, repay_amount, collateral_to_withdraw, borrower, {"from": borrower})
     elif debt == 0:
         log(f" borrower {borrower_index:>4} has no debt to repay")
     else:

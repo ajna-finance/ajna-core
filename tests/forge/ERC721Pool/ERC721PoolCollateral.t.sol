@@ -3,6 +3,8 @@ pragma solidity 0.8.14;
 
 import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 
+import { ERC721Pool }  from 'src/ERC721Pool.sol';
+
 import 'src/PoolInfoUtils.sol';
 import 'src/libraries/helpers/PoolHelper.sol';
 
@@ -199,12 +201,96 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.ownerOf(3), _borrower);
         assertEq(_collateral.ownerOf(5), _borrower);
 
-
         // should fail if borrower tries to pull more NFTs than remaining in pool
         _assertPullInsufficientCollateralRevert({
             from:   _borrower,
             amount: 3
         });
+    }
+
+    function testPullCollateralToDifferentRecipient() external tearDown {
+        address tokensReceiver = makeAddr("tokensReceiver");
+
+        // check initial token balances
+        assertEq(_pool.pledgedCollateral(), 0);
+
+        assertEq(_collateral.balanceOf(_borrower),      52);
+        assertEq(_collateral.balanceOf(_borrower2),     53);
+        assertEq(_collateral.balanceOf(tokensReceiver), 0);
+        assertEq(_collateral.balanceOf(address(_pool)), 0);
+
+        // borrower is owner of NFTs
+        assertEq(_collateral.ownerOf(1), _borrower);
+        assertEq(_collateral.ownerOf(3), _borrower);
+        assertEq(_collateral.ownerOf(5), _borrower);
+
+        uint256[] memory tokenIdsToAdd = new uint256[](3);
+        tokenIdsToAdd[0] = 1;
+        tokenIdsToAdd[1] = 3;
+        tokenIdsToAdd[2] = 5;
+
+        // borrower deposits three NFTs into the pool
+        _pledgeCollateral({
+            from:     _borrower,
+            borrower: _borrower,
+            tokenIds: tokenIdsToAdd
+        });
+
+        // borrower2 deposits three NFTs into the pool
+        tokenIdsToAdd = new uint256[](1);
+        tokenIdsToAdd[0] = 53;
+        _pledgeCollateral({
+            from:     _borrower2,
+            borrower: _borrower2,
+            tokenIds: tokenIdsToAdd
+        });
+
+        // check token balances after add
+        assertEq(_pool.pledgedCollateral(), Maths.wad(4));
+        assertEq(_collateral.balanceOf(address(_pool)), 4);
+
+        // pool is owner of pledged NFTs
+        assertEq(_collateral.ownerOf(1), address(_pool));
+        assertEq(_collateral.ownerOf(3), address(_pool));
+        assertEq(_collateral.ownerOf(5), address(_pool));
+        assertEq(_collateral.ownerOf(53), address(_pool));
+
+        // borrower removes some of their deposited NFTs from the pool and transfer to a different recipient
+        changePrank(_borrower);
+        ERC721Pool(address(_pool)).repayDebt(_borrower, 0, 2, tokensReceiver);
+
+        // check token balances after remove
+        assertEq(_pool.pledgedCollateral(), Maths.wad(2));
+
+        assertEq(_collateral.balanceOf(_borrower),      49);
+        assertEq(_collateral.balanceOf(_borrower2),     52);
+        assertEq(_collateral.balanceOf(tokensReceiver), 2);
+        assertEq(_collateral.balanceOf(address(_pool)), 2);
+
+        // pool is owner of remaining pledged NFT
+        assertEq(_collateral.ownerOf(1), address(_pool));
+        // recipient is owner of 2 pulled NFTs
+        assertEq(_collateral.ownerOf(3), tokensReceiver);
+        assertEq(_collateral.ownerOf(5), tokensReceiver);
+
+        // borrower2 removes deposited NFT from the pool and transfer to same recipient
+        changePrank(_borrower2);
+        ERC721Pool(address(_pool)).repayDebt(_borrower2, 0, 1, tokensReceiver);
+
+        // check token balances after remove
+        assertEq(_pool.pledgedCollateral(), Maths.wad(1));
+
+        assertEq(_collateral.balanceOf(_borrower),      49);
+        assertEq(_collateral.balanceOf(_borrower2),     52);
+        assertEq(_collateral.balanceOf(tokensReceiver), 3);
+        assertEq(_collateral.balanceOf(address(_pool)), 1);
+
+        // pool is owner of remaining pledged NFT
+        assertEq(_collateral.ownerOf(1), address(_pool));
+        // recipient is owner of 3 pulled NFTs
+        assertEq(_collateral.ownerOf(3),  tokensReceiver);
+        assertEq(_collateral.ownerOf(5),  tokensReceiver);
+        assertEq(_collateral.ownerOf(53), tokensReceiver);
     }
 
     function testPullCollateralNotInPool() external tearDown {

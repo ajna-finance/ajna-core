@@ -12,11 +12,13 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
     address internal _borrower;
     address internal _borrower2;
     address internal _lender;
+    address internal _withdrawRecipient;
 
     function setUp() external {
-        _borrower  = makeAddr("borrower");
-        _borrower2 = makeAddr("borrower2");
-        _lender    = makeAddr("lender");
+        _borrower          = makeAddr("borrower");
+        _borrower2         = makeAddr("borrower2");
+        _lender            = makeAddr("lender");
+        _withdrawRecipient = makeAddr("withdrawRecipient");
 
         // deploy subset pool
         uint256[] memory subsetTokenIds = new uint256[](6);
@@ -646,9 +648,18 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
             locked:    0
         });
 
-        // Kicker claims bond + reward
+        uint256 snapshot = vm.snapshot();
+
         changePrank(_lender);
-        _pool.withdrawBonds();
+
+        // Kicker claims bond + reward and transfer to a different address
+        _pool.withdrawBonds(_withdrawRecipient);
+        assertEq(_quote.balanceOf(_withdrawRecipient), 0.242202920686750816 * 1e18);
+
+        vm.revertTo(snapshot);
+
+        // Kicker claims bond + reward
+        _pool.withdrawBonds(_lender);
         assertEq(_quote.balanceOf(_lender), 46_998.523343483554970812 * 1e18);
     }
 

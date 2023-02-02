@@ -320,10 +320,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @dev write state:
      *       - reset kicker's claimable accumulator
      */
-    function withdrawBonds() external {
+    function withdrawBonds(address recipient_) external {
         uint256 claimable = auctions.kickers[msg.sender].claimable;
         auctions.kickers[msg.sender].claimable = 0;
-        _transferQuoteToken(msg.sender, claimable);
+        _transferQuoteToken(recipient_, claimable);
     }
 
     /*********************************/

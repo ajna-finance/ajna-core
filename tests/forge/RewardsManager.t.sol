@@ -179,7 +179,7 @@ contract RewardsManagerTest is DSTestPlus {
 
         // borrower repays some of their debt, providing reserves to be claimed
         // don't pull any collateral, as such functionality is unrelated to reserve auctions
-        params_.pool.repayDebt(borrower, Maths.wdiv(params_.borrowAmount, Maths.wad(2)), 0);
+        params_.pool.repayDebt(borrower, Maths.wdiv(params_.borrowAmount, Maths.wad(2)), 0, borrower);
 
         // start reserve auction
         changePrank(_bidder);
@@ -279,7 +279,7 @@ contract RewardsManagerTest is DSTestPlus {
 
         // borrower repays some of their debt, providing reserves to be claimed
         // don't pull any collateral, as such functionality is unrelated to reserve auctions
-        params_.pool.repayDebt(borrower, params_.borrowAmount, 0);
+        params_.pool.repayDebt(borrower, params_.borrowAmount, 0, borrower);
 
         // start reserve auction
         changePrank(_bidder);
@@ -623,7 +623,7 @@ contract RewardsManagerTest is DSTestPlus {
 
         // borrower1 repays their loan
         (uint256 debt, , ) = _poolOne.borrowerInfo(borrower1);
-        _poolOne.repayDebt(borrower1, debt, 0);
+        _poolOne.repayDebt(borrower1, debt, 0, borrower1);
 
         /*****************************/
         /*** First Reserve Auction ***/
@@ -683,7 +683,7 @@ contract RewardsManagerTest is DSTestPlus {
         // borrower1 repays their loan again
         changePrank(borrower1);
         (debt, , ) = _poolOne.borrowerInfo(borrower1);
-        _poolOne.repayDebt(borrower1, debt, 0);
+        _poolOne.repayDebt(borrower1, debt, 0, borrower1);
 
         // recorder updates the change in exchange rates in the second index
         _updateExchangeRates({

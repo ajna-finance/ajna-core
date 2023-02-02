@@ -51,7 +51,7 @@ contract ERC721PoolNonStandardNftTest is ERC721HelperContract {
         assertEq(cryptoKittiesContract.ownerOf(1777317), address(_pool));
 
         // Pull collateral
-        ERC721Pool(address(_pool)).repayDebt(_borrower, 0, 1);
+        ERC721Pool(address(_pool)).repayDebt(_borrower, 0, 1, _borrower);
 
         // Check Borrower is owner of NFT
         assertEq(cryptoKittiesContract.ownerOf(1777317), _borrower); 
@@ -81,7 +81,7 @@ contract ERC721PoolNonStandardNftTest is ERC721HelperContract {
         assertEq(cryptoFightersContract.ownerOf(1), address(_pool));
 
         // Pull collateral
-        ERC721Pool(address(_pool)).repayDebt(_borrower, 0, 1);
+        ERC721Pool(address(_pool)).repayDebt(_borrower, 0, 1, _borrower);
 
         // Check Borrower is owner of NFT
         assertEq(cryptoFightersContract.ownerOf(1), _borrower); 
@@ -112,7 +112,7 @@ contract ERC721PoolNonStandardNftTest is ERC721HelperContract {
         assertEq(cryptoPunksContract.punkIndexToAddress(1), address(_pool));
 
         // Pull collateral
-        ERC721Pool(address(_pool)).repayDebt(_borrower, 0, 1);
+        ERC721Pool(address(_pool)).repayDebt(_borrower, 0, 1, _borrower);
 
         // Check Borrower is owner of NFT
         assertEq(cryptoPunksContract.punkIndexToAddress(1), _borrower);

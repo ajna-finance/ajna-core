@@ -336,7 +336,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                 emit RepayDebt(borrower, amountRepaid, collateralToPull, newLup);
             }
 
-            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull);
+            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull, borrower);
 
             // post pull checks
             if (collateralToPull != 0) {
@@ -352,7 +352,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                 emit RepayDebt(borrower, amountRepaid, collateralToPull, newLup);
             }
 
-            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull);
+            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull, borrower);
         }
     }
 
@@ -569,7 +569,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
-        ERC721Pool(address(_pool)).repayDebt(from, 0, amount);
+        ERC721Pool(address(_pool)).repayDebt(from, 0, amount, from);
     }
 
     function _assertRepayNoDebtRevert(
@@ -579,7 +579,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.NoDebt.selector);
-        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0);
+        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0, borrower);
     }
 
     function _assertRepayMinDebtRevert(
@@ -589,7 +589,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
-        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0);
+        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0, borrower);
     }
 
     function _assertRemoveCollateralNoClaimRevert(

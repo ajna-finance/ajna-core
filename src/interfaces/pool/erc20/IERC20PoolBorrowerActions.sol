@@ -29,10 +29,12 @@ interface IERC20PoolBorrowerActions {
      *  @param  borrowerAddress_            The borrower whose loan is being interacted with.
      *  @param  maxQuoteTokenAmountToRepay_ The amount of quote tokens to repay.
      *  @param  collateralAmountToPull_     The amount of collateral to be puled from the pool.
+     *  @param  recipient_                  The address to receive amount of pulled collateral.
      */
     function repayDebt(
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
-        uint256 collateralAmountToPull_
+        uint256 collateralAmountToPull_,
+        address recipient_
     ) external;
 }
