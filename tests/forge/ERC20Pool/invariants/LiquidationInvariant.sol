@@ -18,7 +18,11 @@ contract LiquidationInvariant is BasicInvariants {
     /*** Invariant Tests                                                                                                                ***/
     /***************************************************************************************************************************************
      * Auction
+        *  A1: totalDebtInAuction = sum of all debt of all borrowers kicked
         *  A2: totalBondEscrowed = sum of all kicker's bond = total Bond in Auction
+        *  A3: number of borrowers with debt = number of loans + number of auctioned borrowers
+        *  A4: number of auctions = total borrowers kicked
+        *  A5: for each auction, kicker locked bond is more than equal to auction bond
     ****************************************************************************************************************************************/
     
     LiquidationPoolHandler internal _liquidationPoolHandler;
@@ -31,6 +35,21 @@ contract LiquidationInvariant is BasicInvariants {
 
         _liquidationPoolHandler = new LiquidationPoolHandler(address(_pool), address(_quote), address(_collateral), address(_poolInfo), NUM_ACTORS);
         _handler = address(_liquidationPoolHandler);
+    }
+
+    // checks sum of all borrower's t0debt is equals to total pool t0debtInAuction
+    function invariant_debtInAuction_A1() public {
+        uint256 actorCount = IBaseHandler(_handler).getActorsCount();
+        uint256 totalT0debtInAuction;
+        for(uint256 i = 0; i < actorCount; i++) {
+            address borrower = IBaseHandler(_handler)._actors(i);
+            (, , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower);
+            if(kickTime != 0) {
+                (uint256 t0debt, , ) = _pool.borrowerInfo(borrower);
+                totalT0debtInAuction += t0debt;
+            }
+        }
+        require(_pool.totalDebtInAuction() == totalT0debtInAuction, "Incorrect debt in auction");
     }
 
     // checks sum of all kicker bond is equal to total pool bond
@@ -56,6 +75,44 @@ contract LiquidationInvariant is BasicInvariants {
         (uint256 totalPoolBond, , ) = _pool.reservesInfo();
 
         require(totalPoolBond == totalKickerBond, "Incorrect bond");
+    }   
+
+    // checks total borrowers with debt is equals to sum of borrowers unkicked and borrowers kicked
+    // checks total auctions is equals to total borrowers kicked 
+    function invariant_auctions_A3_A4() public {
+        uint256 actorCount = IBaseHandler(_handler).getActorsCount();
+        uint256 totalBorrowersWithDebt;
+        for(uint256 i = 0; i < actorCount; i++) {
+            address borrower = IBaseHandler(_handler)._actors(i);
+            (uint256 t0Debt, , ) = _pool.borrowerInfo(borrower);
+            if(t0Debt > 0) {
+                totalBorrowersWithDebt += 1;
+            }
+        }
+        ( , , uint256 loansCount) = _pool.loansInfo();
+        uint256 totalAuction = _pool.totalAuctionsInPool();
+        require(totalBorrowersWithDebt == loansCount + totalAuction, "incorrect no of borrowers in LoanState");
+
+        uint256 borrowersKicked;
+        for(uint256 i = 0; i < actorCount; i++) {
+            address borrower = IBaseHandler(_handler)._actors(i);
+            (, , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower);
+            if(kickTime != 0) {
+                borrowersKicked += 1;
+            }
+        }
+        require(borrowersKicked == totalAuction, "Incorrect borrowers in auction");
+    }
+
+    function invariant_borrowers_A5() public {
+        uint256 actorCount = IBaseHandler(_handler).getActorsCount();
+        uint256 totalT0debtInAuction;
+        for(uint256 i = 0; i < actorCount; i++) {
+            address borrower = IBaseHandler(_handler)._actors(i);
+            (address kicker, , uint256 bondSize, , , , , , ) = _pool.auctionInfo(borrower);
+            (, uint256 lockedAmount) = _pool.kickerInfo(kicker);
+            require(lockedAmount >= bondSize, "Incorrect bond locked");
+        }
     }
 
     function invariant_call_summary() external view virtual override{

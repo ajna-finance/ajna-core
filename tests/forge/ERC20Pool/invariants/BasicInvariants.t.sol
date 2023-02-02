@@ -19,7 +19,8 @@ contract BasicInvariants is TestBase {
     /***************************************************************************************************************************************
      * Bucket
         *  B1: totalBucketLPs === totalLenderLps
-
+        *  B2: bucketLps == 0 (if bucket quote and collateral is 0)
+        *  B3: exchangeRate == 0 (if bucket quote and collateral is 0)
      * Quote Token
         * QT1: poolQtBal + poolDebt >= totalBondEscrowed + poolDepositSize
         * QT2: pool t0 debt = sum of all borrower's t0 debt
@@ -60,8 +61,21 @@ contract BasicInvariants is TestBase {
                 (uint256 lps, ) = _pool.lenderInfo(bucketIndex, lender);
                 totalLps += lps;
             }
-            (uint256 poolLps, , , , ) = _pool.bucketInfo(bucketIndex);
-            assertEq(poolLps, totalLps, "Incorrect Bucket/lender lps");
+            (uint256 bucketLps, , , , ) = _pool.bucketInfo(bucketIndex);
+            assertEq(bucketLps, totalLps, "Incorrect Bucket/lender lps");
+        }
+    }
+
+    // checks bucket lps are equal to 0 if bucket quote and collateral are 0
+    // checks exchange rate is 1e27 if bucket quote and collateral are 0 
+    function invariant_Buckets_B2_B3() public {
+        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+            ( ,uint256 deposit, uint256 collateral, uint256 bucketLps, ,uint256 exchangeRate) = _poolInfo.bucketInfo(address(_pool), bucketIndex);
+
+            if (collateral == 0 && deposit == 0) {
+                require(bucketLps == 0, "Incorrect bucket lps");
+                require(exchangeRate == 1e27, "Incorrect exchange rate");
+            }
         }
     }
 
