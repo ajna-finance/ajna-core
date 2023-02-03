@@ -16,7 +16,7 @@ import { InvariantTest } from '../InvariantTest.sol';
 
 
 uint256 constant LENDER_MIN_BUCKET_INDEX = 2570;
-uint256 constant LENDER_MAX_BUCKET_INDEX = 2590;
+uint256 constant LENDER_MAX_BUCKET_INDEX = 2570;
 
 uint256 constant BORROWER_MIN_BUCKET_INDEX = 2600;
 uint256 constant BORROWER_MAX_BUCKET_INDEX = 2620;
@@ -43,6 +43,8 @@ contract BaseHandler is InvariantTest, Test {
     // Lender tracking
     mapping(address => uint256[]) public touchedBuckets;
 
+    // bucket exchange rate invariant check
+    bool public shouldExchangeRateChange;
 
     constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) {
         // Tokens

@@ -32,6 +32,8 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
     function kickAuction(uint256 borrowerIndex, uint256 amount, uint256 kickerIndex) external useRandomActor(kickerIndex) {
         numberOfCalls['BLiquidationHandler.kickAuction']++;
 
+        shouldExchangeRateChange = true;
+
         borrowerIndex   = constrictToRange(borrowerIndex, 0, _actors.length - 1);
         address borrower = _actors[borrowerIndex];
 
@@ -55,6 +57,8 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
 
     function takeAuction(uint256 borrowerIndex, uint256 amount, uint256 actorIndex) external useRandomActor(borrowerIndex){
         numberOfCalls['BLiquidationHandler.takeAuction']++;
+
+        shouldExchangeRateChange = true;
 
         actorIndex = constrictToRange(actorIndex, 0, _actors.length - 1);
 

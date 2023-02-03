@@ -34,11 +34,14 @@ contract BasicInvariants is TestBase {
     BasicPoolHandler          internal _basicPoolHandler;
     address                   internal _handler;
 
+    // bucket exchange rate tracking
+    mapping(uint256 => uint256) internal previousBucketExchangeRate;
+
     function setUp() public override virtual{
 
         super.setUp();
 
-        _basicPoolHandler = new BasicPoolHandler(address(_pool), address(_quote), address(_collateral), address(_poolInfo), NUM_ACTORS);
+        _basicPoolHandler = new BasicPoolHandler(address(_pool), address(_quote), address(_collateral), address(_poolInfo), 1);
         _handler = address(_basicPoolHandler);
         excludeContract(address(_collateral));
         excludeContract(address(_quote));
@@ -46,6 +49,11 @@ contract BasicInvariants is TestBase {
         excludeContract(address(_pool));
         excludeContract(address(_poolInfo));
         excludeContract(address(_impl));
+
+        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+            ( , , , , ,uint256 exchangeRate) = _poolInfo.bucketInfo(address(_pool), bucketIndex);
+            previousBucketExchangeRate[bucketIndex] = exchangeRate;
+        }
 
         // TODO: Change once this issue is resolved -> https://github.com/foundry-rs/foundry/issues/2963
         targetSender(address(0x1234));
@@ -126,6 +134,20 @@ contract BasicInvariants is TestBase {
         require(poolDebt == totalDebt, "Incorrect pool debt");
     }
 
+    function invariant_exchangeRate_R3_R4_R5_R6() public {
+        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+            ( , , , , ,uint256 exchangeRate) = _poolInfo.bucketInfo(address(_pool), bucketIndex);
+            if (!IBaseHandler(_handler).shouldExchangeRateChange()) {
+                console.log("======================================");
+                console.log("Bucket Index -->", bucketIndex);
+                console.log("Previous exchange Rate -->", previousBucketExchangeRate[bucketIndex]);
+                console.log("Current exchange Rate -->", exchangeRate);
+                requireWithinDiff(exchangeRate, previousBucketExchangeRate[bucketIndex], 1e25, "Incorrect exchange Rate changed");
+                console.log("======================================");
+            }
+        }
+    }
+
     function invariant_call_summary() external view virtual {
         console.log("\nCall Summary\n");
         console.log("--Lender----------");
@@ -152,5 +174,28 @@ contract BasicInvariants is TestBase {
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.drawDebt") + 
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt")
         );
+    }
+
+    function test_exchange_rate_bug_simulation() external {
+        // Action sequence
+        // 1. addQuoteToken(6879, 2570)
+        // 2. addCollateral(3642907759282013932739218713, 2570)
+        // 3. removeCollateral(296695924278944779257290397234298756, 2570)
+
+        uint256 previousExchangeRate = 1e27;
+        _basicPoolHandler.addQuoteToken(999999999844396154169639088436193915956854451, 6879, 2809);
+        ( , , , , ,uint256 exchangeRate) = _poolInfo.bucketInfo(address(_pool), 2570);
+        console.log("Exchange Rate-->", exchangeRate);
+        requireWithinDiff(previousExchangeRate, exchangeRate, 1e18, "Incorrect exchange rate");
+        exchangeRate = previousExchangeRate;
+        _basicPoolHandler.addCollateral(2, 3642907759282013932739218713, 202214962129783771592);
+        ( , , , , , exchangeRate) = _poolInfo.bucketInfo(address(_pool), 2570);
+        console.log("Exchange Rate-->", exchangeRate);
+        requireWithinDiff(previousExchangeRate, exchangeRate, 1e18, "Incorrect exchange rate");
+        exchangeRate = previousExchangeRate;
+        _basicPoolHandler.removeCollateral(1, 2296695924278944779257290397234298756, 10180568736759156593834642286260647915348262280903719122483474452532722106636);
+        ( , , , , , exchangeRate) = _poolInfo.bucketInfo(address(_pool), 2570);
+        console.log("Exchange Rate-->", exchangeRate);
+        requireWithinDiff(previousExchangeRate, exchangeRate, 1e18, "Incorrect exchange rate");
     }
 }

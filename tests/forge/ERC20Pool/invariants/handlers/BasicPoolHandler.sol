@@ -161,6 +161,8 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     function addQuoteToken(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) {
         numberOfCalls['BBasicHandler.addQuoteToken']++;
 
+        shouldExchangeRateChange = false;
+
         uint256 totalSupply = _quote.totalSupply();
         uint256 minDeposit = totalSupply == 0 ? 1 : _quote.balanceOf(address(_actor)) / totalSupply + 1;
         amount = constrictToRange(amount, minDeposit, 1e36);
@@ -171,6 +173,8 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
 
     function removeQuoteToken(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) {
         numberOfCalls['BBasicHandler.removeQuoteToken']++;
+
+        shouldExchangeRateChange = false;
 
         (uint256 lpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
 
@@ -190,6 +194,8 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     function addCollateral(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) {
         numberOfCalls['BBasicHandler.addCollateral']++;
 
+        shouldExchangeRateChange = false;
+
         amount = constrictToRange(amount, 1, 1e36);
 
         // Action
@@ -197,8 +203,9 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     }
 
     function removeCollateral(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) {
-
         numberOfCalls['BBasicHandler.removeCollateral']++;
+
+        shouldExchangeRateChange = false;
 
         (uint256 lpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
         ( , uint256 bucketCollateral, , , ) = _pool.bucketInfo(_lenderBucketIndex);
@@ -219,6 +226,8 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     function drawDebt(uint256 actorIndex, uint256 amountToBorrow) public useRandomActor(actorIndex) {
         numberOfCalls['BBasicHandler.drawDebt']++;
 
+        shouldExchangeRateChange = true;
+
         amountToBorrow = constrictToRange(amountToBorrow, 1, 1e36);
         
         // Action
@@ -231,6 +240,8 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
 
     function repayDebt(uint256 actorIndex, uint256 amountToRepay) public useRandomActor(actorIndex) {
         numberOfCalls['BBasicHandler.repayDebt']++;
+
+        shouldExchangeRateChange = true;
 
         amountToRepay = constrictToRange(amountToRepay, 1, 1e36);
 
