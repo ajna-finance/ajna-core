@@ -634,18 +634,18 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _assertBucket({
             index:        3060,
-            lpBalance:    20.2 * 1e27,
+            lpBalance:    20.202020202020202022 * 1e27,
             collateral:   0.085430491711717314 * 1e18,
             deposit:      0,
-            exchangeRate: 1.000610882095524250072170475 * 1e27
+            exchangeRate: 1.000510821007314697558117795 * 1e27
         });
 
         _assertBucket({
             index:        3061,
-            lpBalance:    20.2 * 1e27,
+            lpBalance:    20.202020202020202019 * 1e27,
             collateral:   0.085857644170275899 * 1e18,
             deposit:      0,
-            exchangeRate: 1.000610882095524239992886155 * 1e27
+            exchangeRate: 1.000510821007314687628417260 * 1e27
         });
 
         _assertBucket({
@@ -793,22 +793,22 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _assertBucket({
             index:        3060,
-            lpBalance:    20.2 * 1e27,
+            lpBalance:    20.202020202020202022 * 1e27,
             collateral:   0.085430491711717314 * 1e18,
             deposit:      0,
-            exchangeRate: 1.000610882095524250072170475 * 1e27
+            exchangeRate: 1.000510821007314697558117795 * 1e27
         });
         _assertBucket({
             index:        3069,
-            lpBalance:    20.2 * 1e27,
+            lpBalance:    20.20202020202020202 * 1e27,
             collateral:   0.089352655062849951 * 1e18,
             deposit:      0,
-            exchangeRate: 1.000610882095524241676916623 * 1e27
+            exchangeRate: 1.000510821007314689262754039 * 1e27
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       3069,
-            lpBalance:   20.2 * 1e27,
+            lpBalance:   20.20202020202020202 * 1e27,
             depositTime: _startTime + 10000 days + 32 hours
         });
         _assertBucket({
