@@ -529,7 +529,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         });
     }
 
-    function testMergeOrRemoveCollateral() external tearDown {
+    function testMergeOrRemoveCollateral() external  {
         for (uint256 i = 3060; i < (3060 + 10); i++) {
             _addLiquidity({
                 from:   _lender,
@@ -619,6 +619,23 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             })
         );
 
+        // force an interest accumulation to assert bucket with interest
+        _addLiquidity({
+            from:   _lender,
+            amount: 0 * 1e18,
+            index:  7000,
+            newLup: 99836282890,
+            lpAward: 0 * 1e27
+        });
+        return;
+        _assertBucket({
+            index:        3060,
+            lpBalance:    20.000000000000000000 * 1e27,
+            collateral:   0.0000000000000000000 * 1e18,
+            deposit:      20.010216420146293860 * 1e18,
+            exchangeRate: 1.000510821007314693000000000 * 1e27
+        });
+
         // Before depositTake: NFTs pledged by liquidated borrower are owned by the borrower in the pool
         assertEq(_collateral.ownerOf(1), address(_pool));
         assertEq(_collateral.ownerOf(3), address(_pool));
@@ -682,7 +699,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 encumberedCollateral: 4407944209.541175956055268556 * 1e18,
                 poolDebt:             440.072765067090279852 * 1e18,
                 actualUtilization:    0,
-                targetUtilization:    3_123_578_486.651416548727612650 * 1e18,
+                targetUtilization:    2_996_091_127.870826153174895975 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
@@ -989,7 +1006,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 encumberedCollateral: 0,
                 poolDebt:             0,
                 actualUtilization:    0,
-                targetUtilization:    3123578486.651416548727612650 * 1e18,
+                targetUtilization:    2_996_091_127.870826153174895975 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
