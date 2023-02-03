@@ -184,18 +184,36 @@ contract BasicInvariants is TestBase {
 
         uint256 previousExchangeRate = 1e27;
         _basicPoolHandler.addQuoteToken(999999999844396154169639088436193915956854451, 6879, 2809);
-        ( , , , , ,uint256 exchangeRate) = _poolInfo.bucketInfo(address(_pool), 2570);
+        ( , uint256 quote, uint256 collateral, uint256 lps, , uint256 exchangeRate) = _poolInfo.bucketInfo(address(_pool), 2570);
+        console.log("After addQuoteToken(6879, 2570)");
+        console.log("============");
+        console.log("Quote Tokens -->", quote);
+        console.log("Collateral Tokens -->", collateral);
+        console.log("Lps -->", lps);
         console.log("Exchange Rate-->", exchangeRate);
+        console.log("============");
         requireWithinDiff(previousExchangeRate, exchangeRate, 1e18, "Incorrect exchange rate");
         exchangeRate = previousExchangeRate;
         _basicPoolHandler.addCollateral(2, 3642907759282013932739218713, 202214962129783771592);
-        ( , , , , , exchangeRate) = _poolInfo.bucketInfo(address(_pool), 2570);
+        ( , quote, collateral, lps, , exchangeRate) = _poolInfo.bucketInfo(address(_pool), 2570);
+        console.log("After addCollateral(3642907759282013932739218713, 2570)");
+        console.log("============");
+        console.log("Quote Tokens -->", quote);
+        console.log("Collateral Tokens -->", collateral);
+        console.log("Lps -->", lps);
         console.log("Exchange Rate-->", exchangeRate);
+        console.log("============");
         requireWithinDiff(previousExchangeRate, exchangeRate, 1e18, "Incorrect exchange rate");
         exchangeRate = previousExchangeRate;
         _basicPoolHandler.removeCollateral(1, 2296695924278944779257290397234298756, 10180568736759156593834642286260647915348262280903719122483474452532722106636);
-        ( , , , , , exchangeRate) = _poolInfo.bucketInfo(address(_pool), 2570);
+        ( , quote, collateral, lps, , exchangeRate) = _poolInfo.bucketInfo(address(_pool), 2570);
+        console.log("After removeCollateral(296695924278944779257290397234298756, 2570)");
+        console.log("============");
+        console.log("Quote Tokens -->", quote);
+        console.log("Collateral Tokens -->", collateral);
+        console.log("Lps -->", lps);
         console.log("Exchange Rate-->", exchangeRate);
+        console.log("============");
         requireWithinDiff(previousExchangeRate, exchangeRate, 1e18, "Incorrect exchange rate");
     }
 }
