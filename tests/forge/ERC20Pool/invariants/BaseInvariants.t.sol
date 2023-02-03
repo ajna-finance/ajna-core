@@ -7,6 +7,7 @@ import '@std/Test.sol';
 import "forge-std/console.sol";
 
 import { TestBase } from './TestBase.sol';
+import { BaseHandler } from './handlers/Base.sol';
 
 import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BORROWER_MIN_BUCKET_INDEX, BoundedBasicPoolHandler } from './handlers/BasicPool.sol';
 
@@ -26,6 +27,9 @@ contract BaseInvariants is TestBase {
 
      * Pool
         * Invariant A: poolQtBal >= poolDepositSize - poolDebt
+
+     * Fenwick
+        - **F1**: Value represented at index `i` (`Deposits.valueAt(i)`) is equal to the accumulation of scaled values incremented or decremented from index `i`
 
     ****************************************************************************************************************************************/
 
@@ -98,6 +102,13 @@ contract BaseInvariants is TestBase {
         uint256 poolDebt = _pool.totalDebt();
 
         require(poolDebt == totalDebt, "Incorrect pool debt");
+    }
+
+    function invariant_fenwickTreeSum() public {
+        console.log("depSize", _pool.depositSize());
+        console.log("prefixSum", _basicPoolHandler.fenwickPrefixSum(7388));
+        assertEq(_basicPoolHandler.fenwickPrefixSum(7388), _pool.depositSize(), "Fenwick Tree Invariant A");
+
     }
 
     // // checks sum of all kicker bond is equal to total pool bond

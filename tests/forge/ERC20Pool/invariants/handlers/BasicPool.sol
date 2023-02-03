@@ -27,21 +27,30 @@ contract UnboundedBasicPoolHandler is Test, BaseHandler {
     /*** Lender Functions                                                                                                               ***/
     /**************************************************************************************************************************************/
 
-    function addQuoteToken(uint256 amount, uint256 bucketIndex) internal {
+    function addQuoteToken(uint256 amount, uint256 bucketIndex) public {
+        // vm.startPrank(_actors[0]);
         numberOfCalls['UBBasicHandler.addQuoteToken']++;
+
+        fenwickAccrueInterest();
 
         _pool.addQuoteToken(amount, bucketIndex);
 
-        // Fenwick
+        // vm.stopPrank();
+        
         uint256 deposit = fenwickDeposits[bucketIndex];
         fenwickDeposits[bucketIndex] = deposit + amount;
-
+        // console.log("-- test addQuote END --");
     }
 
-    function removeQuoteToken(uint256 amount, uint256 bucketIndex) internal {
+    function removeQuoteToken(uint256 amount, uint256 bucketIndex) public {
+        // vm.startPrank(_actors[0]);
         numberOfCalls['UBBasicHandler.removeQuoteToken']++;
 
+        fenwickAccrueInterest();
+
         _pool.removeQuoteToken(amount, bucketIndex);
+
+        // vm.stopPrank();
 
         // Fenwick
         uint256 deposit = fenwickDeposits[bucketIndex];
@@ -64,8 +73,13 @@ contract UnboundedBasicPoolHandler is Test, BaseHandler {
     /*** Borrower Functions                                                                                                               ***/
     /**************************************************************************************************************************************/
 
-    function drawDebt(uint256 amount) internal {
+    function drawDebt(uint256 amount) public {
+
+        // vm.startPrank(_actors[1]);
+        // _actor = _actors[1];
         numberOfCalls['UBBasicHandler.drawDebt']++;
+
+        fenwickAccrueInterest();
 
         // Pre Condition
         // 1. borrower's debt should exceed minDebt
@@ -108,6 +122,11 @@ contract UnboundedBasicPoolHandler is Test, BaseHandler {
         uint256 collateralToPledge = ((amount * 1e18 + price / 2) / price) * 101 / 100;
 
         _pool.drawDebt(_actor, amount, 7388, collateralToPledge); 
+        // vm.stopPrank();
+
+        // skip time to make borrower undercollateralized
+        // vm.warp(block.timestamp + 200 days);
+        // console.log("-- drawDebt end --");
     }
 
     function repayDebt(uint256 amountToRepay) internal {
@@ -175,6 +194,10 @@ contract BoundedBasicPoolHandler is UnboundedBasicPoolHandler {
         // Post condition
         (uint256 lpBalanceAfter, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
         require(lpBalanceAfter < lpBalanceBefore, "LP balance should decrease");
+
+
+
+
     }
 
     function addCollateral(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) {

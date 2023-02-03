@@ -10,6 +10,7 @@ import { ERC20Pool }        from 'src/ERC20Pool.sol';
 import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
 import { Token }            from '../../../utils/Tokens.sol';
 import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
+import { PoolCommons }     from 'src/libraries/external/PoolCommons.sol';
 import { InvariantTest } from '../InvariantTest.sol';
 import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 
@@ -43,7 +44,7 @@ contract BaseHandler is InvariantTest, Test {
     mapping(address => uint256[]) public touchedBuckets;
 
     // Ghost variables
-    uint256[] internal fenwickDeposits;
+    uint256[7389] internal fenwickDeposits;
 
     constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) {
         // Tokens
@@ -132,4 +133,78 @@ contract BaseHandler is InvariantTest, Test {
         if (max == type(uint256).max && x != 0) result++;
     }
 
+    function fenwickPrefixSum(uint256 index) public view returns (uint256) {
+        uint256 sum = 0;
+        while (index > 0) {
+                sum += fenwickDeposits[index];
+            index--;
+        }
+        return sum;
+    }
+
+    function fenwickMult(uint256 index, uint256 scale) internal returns (uint256) {
+        uint256 sum = 0;
+        while (index > 0) {
+            fenwickDeposits[index] = wmul(fenwickDeposits[index], scale);
+            index--;
+        }
+        return sum;
+    }
+
+    function fenwickAccrueInterest() internal {
+
+        (,,,,uint256 pendingFactor) = _poolInfo.poolLoansInfo(address(_pool));
+
+        // poolLoansInfo returns 1e18 if no interest is pending or time elapsed... the contracts calculate 0 time elapsed which causes discrep
+        if (pendingFactor == 1e18) return;
+
+        // get TP of worst loan, pendingInflator and poolDebt
+        uint256 maxThresholdPrice;
+        uint256 pendingInflator;
+        uint256 poolDebt;
+        {
+            (, maxThresholdPrice,) =  _pool.loansInfo();
+            (, poolDebt ,) = _pool.debtInfo();
+            (uint256 inflator, uint256 inflatorUpdate) = _pool.inflatorInfo();
+            (uint256 interestRate, ) = _pool.interestRateInfo();
+            pendingInflator = PoolCommons.pendingInflator(
+                inflator,
+                inflatorUpdate,
+                interestRate
+            );
+        }
+
+        // get HTP and deposit above HTP
+        uint256 htp = wmul(maxThresholdPrice, pendingInflator);
+        uint256 htpIndex = htp == 0 ? 0 : _poolInfo.priceToIndex(htp);
+        uint256 depositAboveHtp = fenwickPrefixSum(htpIndex);
+
+        if (depositAboveHtp != 0) {
+
+            uint256 poolCollateral  = _pool.pledgedCollateral();
+            uint256 utilization = _pool.depositUtilization(poolDebt, poolCollateral);
+            uint256 lenderInterestMargin_ = PoolCommons.lenderInterestMargin(utilization);
+
+            uint256 newInterest_ = wmul(
+                lenderInterestMargin_,
+                wmul(pendingFactor - 1e18, poolDebt)
+            );
+
+            uint256 scale = wdiv(newInterest_, depositAboveHtp) + 1e18;
+
+            // simulate scale being applied to all deposits above HTP
+            fenwickMult(htpIndex, scale);
+        } 
+    }
+
+    function wdiv(uint256 x, uint256 y) internal pure returns (uint256) {
+        return (x * 1e18 + y / 2) / y;
+    }
+
+    function wmul(uint256 x, uint256 y) internal pure returns (uint256) {
+        return (x * y + 1e18 / 2) / 1e18;
+    }
+
 }
+
+
