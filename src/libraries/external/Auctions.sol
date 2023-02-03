@@ -541,8 +541,13 @@ library Auctions {
     ) external returns (TakeResult memory result_) {
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
 
-        // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
-        if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral();
+        if (
+            (collateral_         == 0)                                                    || // revert if amount to take is 0
+            (poolState_.poolType == uint8(PoolType.ERC721) && borrower.collateral < 1e18) || // revert in case of NFT take when there isn't a full token to be taken
+            (poolState_.poolType == uint8(PoolType.ERC20)  && borrower.collateral == 0)      // revert in case of ERC20 take when no collateral to be taken
+        ) {
+            revert InsufficientCollateral();
+        }
 
         uint256 t0RepayAmount;
         uint256 t0BorrowerDebt;
@@ -860,11 +865,17 @@ library Auctions {
         vars.unscaledDeposit = type(uint256).max;
         vars.bucketScale     = Maths.WAD;
 
+        uint256 takeableCollateral = borrower_.collateral;
+        // for NFT take make sure the take flow and bond change calculation happens for the rounded collateral that can be taken
+        if (params_.poolType == uint8(PoolType.ERC721)) {
+            takeableCollateral = (takeableCollateral / 1e18) * 1e18;
+        }
+
         // In the case of take, the taker binds the collateral qty but not the quote token qty
         // ugly to get take work like a bucket take -- this is the max amount of quote token from the take that could go to
         // reduce the debt of the borrower -- analagous to the amount of deposit in the bucket for a bucket take
         vars = _calculateTakeFlowsAndBondChange(
-            Maths.min(borrower_.collateral, params_.takeCollateral),
+            Maths.min(takeableCollateral, params_.takeCollateral),
             params_.inflator,
             params_.collateralScale,
             vars
