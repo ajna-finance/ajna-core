@@ -1625,7 +1625,7 @@ contract RewardsManagerTest is DSTestPlus {
         }
     }
 
-    function testClaimRewardsFroozeUnclaimedYield() external {
+    function testClaimRewardsFreezeUnclaimedYield() external {
         skip(10);
 
         uint256[] memory depositIndexes = new uint256[](5);
