@@ -21,6 +21,15 @@ interface IPoolDerivedState {
     ) external view returns (uint256);
 
     /**
+     *  @notice Returns the sum from 0 - given index, index.
+     *  @param  index_  The max index to calculate sum to.
+     *  @return sum sum.
+     */
+    function depositSumAtIndex(
+        uint256 index_
+    ) external view returns (uint256);
+
+    /**
      *  @notice Returns the total amount of quote tokens deposited in pool.
      *  @return Total amount of deposited quote tokens.
      */

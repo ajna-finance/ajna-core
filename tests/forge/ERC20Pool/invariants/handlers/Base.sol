@@ -133,13 +133,17 @@ contract BaseHandler is InvariantTest, Test {
         if (max == type(uint256).max && x != 0) result++;
     }
 
-    function fenwickPrefixSum(uint256 index) public view returns (uint256) {
+    function fenwickSumAtIndex(uint256 index) public view returns (uint256) {
         uint256 sum = 0;
         while (index > 0) {
                 sum += fenwickDeposits[index];
             index--;
         }
         return sum;
+    }
+
+    function fenwickTreeSum() public view returns (uint256) {
+        return fenwickSumAtIndex(fenwickDeposits.length - 1);    
     }
 
     function fenwickMult(uint256 index, uint256 scale) internal returns (uint256) {
@@ -177,7 +181,7 @@ contract BaseHandler is InvariantTest, Test {
         // get HTP and deposit above HTP
         uint256 htp = wmul(maxThresholdPrice, pendingInflator);
         uint256 htpIndex = htp == 0 ? 0 : _poolInfo.priceToIndex(htp);
-        uint256 depositAboveHtp = fenwickPrefixSum(htpIndex);
+        uint256 depositAboveHtp = fenwickSumAtIndex(htpIndex);
 
         if (depositAboveHtp != 0) {
 

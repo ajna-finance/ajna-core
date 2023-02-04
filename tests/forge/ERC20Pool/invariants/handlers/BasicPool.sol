@@ -11,6 +11,8 @@ import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
 import { Token }            from '../../../utils/Tokens.sol';
 import { PoolInfoUtils, _collateralization }    from 'src/PoolInfoUtils.sol';
 
+import { _ptp } from 'src/libraries/helpers/PoolHelper.sol';
+
 import { BaseHandler }    from './Base.sol';
 import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BORROWER_MIN_BUCKET_INDEX } from './Base.sol';
 
@@ -27,7 +29,7 @@ contract UnboundedBasicPoolHandler is Test, BaseHandler {
     /*** Lender Functions                                                                                                               ***/
     /**************************************************************************************************************************************/
 
-    function addQuoteToken(uint256 amount, uint256 bucketIndex) public {
+    function addQuoteToken(uint256 amount, uint256 bucketIndex) internal {
         // vm.startPrank(_actors[0]);
         numberOfCalls['UBBasicHandler.addQuoteToken']++;
 
@@ -39,22 +41,35 @@ contract UnboundedBasicPoolHandler is Test, BaseHandler {
         
         uint256 deposit = fenwickDeposits[bucketIndex];
         fenwickDeposits[bucketIndex] = deposit + amount;
-        // console.log("-- test addQuote END --");
     }
 
-    function removeQuoteToken(uint256 amount, uint256 bucketIndex) public {
+    function removeQuoteToken(uint256 amount, uint256 bucketIndex) internal {
         // vm.startPrank(_actors[0]);
         numberOfCalls['UBBasicHandler.removeQuoteToken']++;
 
         fenwickAccrueInterest();
+        
+        (uint256 removedAmount,) = _pool.removeQuoteToken(amount, bucketIndex);
 
-        _pool.removeQuoteToken(amount, bucketIndex);
+        // add early withdrawal penalty back to removedAmount if removeQT is occurs above the PTP
+        // as that is the value removed from the fenwick tree
+        (, uint256 depositTime) = _pool.lenderInfo(bucketIndex, _actor);
+        uint256 price = _poolInfo.indexToPrice(bucketIndex);
+        (, uint256 poolDebt ,) = _pool.debtInfo();
+        uint256 poolCollateral  = _pool.pledgedCollateral();
+
+        if (depositTime != 0 && block.timestamp - depositTime < 1 days) {
+            if (price > _ptp(poolDebt, poolCollateral)) {
+                removedAmount = wdiv(removedAmount, 1e18 - _poolInfo.feeRate(address(_pool)));
+            }
+        }
 
         // vm.stopPrank();
 
         // Fenwick
         uint256 deposit = fenwickDeposits[bucketIndex];
-        fenwickDeposits[bucketIndex] = deposit - amount;
+        fenwickDeposits[bucketIndex] = deposit - removedAmount;
+
     }
 
     function addCollateral(uint256 amount, uint256 bucketIndex) internal {
@@ -73,7 +88,7 @@ contract UnboundedBasicPoolHandler is Test, BaseHandler {
     /*** Borrower Functions                                                                                                               ***/
     /**************************************************************************************************************************************/
 
-    function drawDebt(uint256 amount) public {
+    function drawDebt(uint256 amount) internal {
 
         // vm.startPrank(_actors[1]);
         // _actor = _actors[1];
@@ -126,7 +141,6 @@ contract UnboundedBasicPoolHandler is Test, BaseHandler {
 
         // skip time to make borrower undercollateralized
         // vm.warp(block.timestamp + 200 days);
-        // console.log("-- drawDebt end --");
     }
 
     function repayDebt(uint256 amountToRepay) internal {
@@ -194,10 +208,6 @@ contract BoundedBasicPoolHandler is UnboundedBasicPoolHandler {
         // Post condition
         (uint256 lpBalanceAfter, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
         require(lpBalanceAfter < lpBalanceBefore, "LP balance should decrease");
-
-
-
-
     }
 
     function addCollateral(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) {

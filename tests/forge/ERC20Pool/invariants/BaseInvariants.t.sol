@@ -105,10 +105,7 @@ contract BaseInvariants is TestBase {
     }
 
     function invariant_fenwickTreeSum() public {
-        console.log("depSize", _pool.depositSize());
-        console.log("prefixSum", _basicPoolHandler.fenwickPrefixSum(7388));
-        assertEq(_basicPoolHandler.fenwickPrefixSum(7388), _pool.depositSize(), "Fenwick Tree Invariant A");
-
+        assertEq(_basicPoolHandler.fenwickTreeSum(), _pool.depositSize(), "Fenwick Tree Invariant A");
     }
 
     // // checks sum of all kicker bond is equal to total pool bond

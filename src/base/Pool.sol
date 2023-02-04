@@ -58,6 +58,9 @@ import { BorrowerActions } from '../libraries/external/BorrowerActions.sol';
 import { LenderActions }   from '../libraries/external/LenderActions.sol';
 import { PoolCommons }     from '../libraries/external/PoolCommons.sol';
 
+
+import '@std/console.sol'; 
+
 /**
  *  @title  Pool Contract
  *  @dev    Base contract and entrypoint for commong logic of both ERC20 and ERC721 pools.
@@ -617,6 +620,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /// @inheritdoc IPoolDerivedState
     function depositIndex(uint256 debt_) external view override returns (uint256) {
         return Deposits.findIndexOfSum(deposits, debt_);
+    }
+
+    function depositSumAtIndex(uint256 index_) external view override returns (uint256) {
+        return Deposits.prefixSum(deposits, index_);
     }
 
     /// @inheritdoc IPoolDerivedState
