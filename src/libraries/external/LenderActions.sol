@@ -620,9 +620,10 @@ library LenderActions {
         lender.lps -= lpAmount_;
 
         // update bucket LPs and collateral balance
-        bucketLPs         -= lpAmount_;
+        bucketLPs         -= Maths.min(bucketLPs, lpAmount_);
         bucketCollateral  -= Maths.min(bucketCollateral, collateralAmount_);
         bucket.collateral  = bucketCollateral;
+
         if (bucketCollateral == 0 && bucketDeposit == 0 && bucketLPs != 0) {
             emit BucketBankruptcy(index_, bucketLPs);
             bucket.lps            = 0;
