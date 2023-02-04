@@ -902,6 +902,13 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             newLup:  MAX_PRICE
         });
 
+        _assertBucket({
+            index:        7388,
+            lpBalance:    10.000000012600803969212666666 * 1e27,
+            collateral:   0.126214674710621229 * 1e18,
+            deposit:      10 * 1e18,
+            exchangeRate: 1.000000000000000000006624324 * 1e27
+        });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       7388,
@@ -946,15 +953,15 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         });   
         _assertBucket({
             index:        7388,
-            lpBalance:    10.000000000000000000212666669 * 1e27, // LPs in bucket 7388 diminished when NFT merged and removed
+            lpBalance:    9.999999999999999999933756760 * 1e27, // LPs in bucket 7388 diminished when NFT merged and removed
             collateral:   0,                                    // no collateral remaining as it was merged and removed
             deposit:      10 * 1e18,
-            exchangeRate: 0.999999999999999999978733333 * 1e27
+            exchangeRate: 1.000000000000000000006624324 * 1e27
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       7388,
-            lpBalance:   9.999999987399196030933756763 * 1e27, // lender LPs decreased with the amount used to merge NFT
+            lpBalance:   9.999999987399196030654846854 * 1e27, // lender LPs decreased with the amount used to merge NFT
             depositTime: _startTime + 10000 days + (32 hours + 4210 minutes)
         });
         _assertLenderLpBalance({
@@ -969,7 +976,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             amount:   9.987201910492245717 * 1e18,
             index:    7388,
             newLup:   MAX_PRICE,
-            lpRedeem: 9.999999987399196030933756763 * 1e27
+            lpRedeem: 9.999999987399196030654846854 * 1e27
         });
 
         _assertBucket({
