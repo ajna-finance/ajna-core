@@ -31,32 +31,28 @@ contract ERC721PoolFlashloanTest is ERC721HelperContract {
         _bucketPrice = 251.186576139566121965 * 1e18;
         _bucketId = _indexOf(_bucketPrice);
         assertEq(_bucketId, 3048);
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 300 * 1e18,
-                index:  _bucketId
-            }
-        );
+
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 300 * 1e18,
+            index:  _bucketId
+        });
 
         // borrower draws debt
         uint256[] memory tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 1;
-        _pledgeCollateral(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                tokenIds: tokenIdsToAdd
-            }
-        );
-        _borrow(
-            {
-                from:       _borrower,
-                amount:     200 * 1e18,
-                indexLimit: _bucketId,
-                newLup:     _bucketPrice
-            }
-        );
+        _pledgeCollateral({
+            from:     _borrower,
+            borrower: _borrower,
+            tokenIds: tokenIdsToAdd
+        });
+        _borrow({
+            from:       _borrower,
+            amount:     200 * 1e18,
+            indexLimit: _bucketId,
+            newLup:     _bucketPrice
+        });
+
         (uint256 poolDebt,,) = _pool.debtInfo();
         assertEq(poolDebt, 200.192307692307692400 * 1e18);
     }

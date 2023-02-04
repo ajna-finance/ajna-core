@@ -25,4 +25,12 @@ snapshot :; forge clean && forge snapshot
 analyze:
 		slither src/. ; slither src/libraries/external/.
 
-deploy-contract-and-verify :; forge script scripts/Deploy${CONTRACT}.s.sol:Deploy${CONTRACT}  --rpc-url ${ETH_RPC_URL} --private-key ${PRIVATE_KEY} --fork-block-number ${BLOCK_NUMBER} --broadcast --verify
+
+# Deployment
+deploy-contracts:
+	forge script ./deploy.sol \
+		--rpc-url ${ETH_RPC_URL} --sender ${DEPLOY_ADDRESS} --keystore ${DEPLOY_KEY} --broadcast -vvv
+
+deploy-test-token-factory:
+	forge script scripts/DeployTokensFactory.s.sol:DeployTokensFactory \
+		--rpc-url ${ETH_RPC_URL} --sender ${DEPLOY_ADDRESS} --keystore ${DEPLOY_KEY} --broadcast --verify -vvv
