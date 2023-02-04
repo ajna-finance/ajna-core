@@ -529,7 +529,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         });
     }
 
-    function testMergeOrRemoveCollateral() external  {
+    function testMergeOrRemoveCollateral() external tearDown {
         for (uint256 i = 3060; i < (3060 + 10); i++) {
             _addLiquidity({
                 from:   _lender,
@@ -627,7 +627,6 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             newLup: 99836282890,
             lpAward: 0 * 1e27
         });
-        return;
         _assertBucket({
             index:        3060,
             lpBalance:    20.000000000000000000 * 1e27,
