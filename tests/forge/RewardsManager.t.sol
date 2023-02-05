@@ -911,11 +911,11 @@ contract RewardsManagerTest is DSTestPlus {
         });
         uint256 tokenIdTwo = _mintAndMemorializePositionNFT(mintMemorializeParams);
         // bucket exchange rates are not changed at the time minter two stakes
-        assertEq(_poolOne.bucketExchangeRate(2550), 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2551), 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2552), 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2553), 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2555), 1e27);
+        assertEq(_poolOne.bucketExchangeRate(2550), 1e18);
+        assertEq(_poolOne.bucketExchangeRate(2551), 1e18);
+        assertEq(_poolOne.bucketExchangeRate(2552), 1e18);
+        assertEq(_poolOne.bucketExchangeRate(2553), 1e18);
+        assertEq(_poolOne.bucketExchangeRate(2555), 1e18);
         _stakeToken(address(_poolOne), _minterTwo, tokenIdTwo);
 
         // borrower borrows and change the exchange rates of buckets
@@ -935,11 +935,11 @@ contract RewardsManagerTest is DSTestPlus {
         });
         uint256 tokenIdThree = _mintAndMemorializePositionNFT(mintMemorializeParams);
         // bucket exchange rates are higher at the time minter three stakes
-        assertEq(_poolOne.bucketExchangeRate(2550), 1.000000116565164638999999999 * 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2551), 1.000000116565164638999999999 * 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2552), 1.000000116565164638999999999 * 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2553), 1.000000116565164638999999999 * 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2555), 1.000000116565164638999999999 * 1e27);
+        assertEq(_poolOne.bucketExchangeRate(2550), 1.000000116565164639 * 1e18);
+        assertEq(_poolOne.bucketExchangeRate(2551), 1.000000116565164639 * 1e18);
+        assertEq(_poolOne.bucketExchangeRate(2552), 1.000000116565164639 * 1e18);
+        assertEq(_poolOne.bucketExchangeRate(2553), 1.000000116565164639 * 1e18);
+        assertEq(_poolOne.bucketExchangeRate(2555), 1.000000116565164639 * 1e18);
         _stakeToken(address(_poolOne), _minterThree, tokenIdThree);
 
         skip(1 days);

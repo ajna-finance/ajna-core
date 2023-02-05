@@ -104,7 +104,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 index
     ) internal {
         uint256 quoteTokenScale = IPool(address(_pool)).quoteTokenScale();
-        uint256 lpAmount        = (amount / quoteTokenScale) * quoteTokenScale * 1e9;
+        uint256 lpAmount        = (amount / quoteTokenScale) * quoteTokenScale;
         _addLiquidity(from, amount, index, lpAmount, MAX_PRICE);
     }
 
@@ -246,7 +246,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         vm.expectEmit(true, true, false, true);
         emit Kick(borrower, debt, collateral, bond);
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(from, index, removedFromDeposit, removedFromDeposit * 1e9, lup);
+        emit RemoveQuoteToken(from, index, removedFromDeposit, removedFromDeposit, lup);
         if(transferAmount != 0) _assertQuoteTokenTransferEvent(from, address(_pool), transferAmount);
         _pool.kickWithDeposit(index);
     }

@@ -183,10 +183,10 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         // check initial bucket state
         _assertBucket({
             index:        2550,
-            lpBalance:    10_000 * 1e27,
+            lpBalance:    10_000 * 1e18,
             collateral:   0,
             deposit:      10_000 * 1e18,
-            exchangeRate: 1 * 1e27
+            exchangeRate: 1 * 1e18
         });
 
         // borrower deposits three NFTs into the subset pool
@@ -236,10 +236,10 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         // check bucket state after borrow
         _assertBucket({
             index:        2550,
-            lpBalance:    10_000 * 1e27,
+            lpBalance:    10_000 * 1e18,
             collateral:   0,
             deposit:      10_000 * 1e18,
-            exchangeRate: 1 * 1e27
+            exchangeRate: 1 * 1e18
         });
         // check borrower info after borrow
         _assertBorrower({
@@ -291,10 +291,10 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         // check bucket state after partial repay
         _assertBucket({
             index:        2550,
-            lpBalance:    10_000 * 1e27,
+            lpBalance:    10_000 * 1e18,
             collateral:   0,
             deposit:      10_001.17341179741568 * 1e18,
-            exchangeRate: 1.000117341179741568 * 1e27
+            exchangeRate: 1.000117341179741568 * 1e18
         });
         // check borrower info after partial repay
         _assertBorrower({
@@ -370,10 +370,10 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         // check bucket state after fully repay
         _assertBucket({
             index:        2550,
-            lpBalance:    10_000 * 1e27,
+            lpBalance:    10_000 * 1e18,
             collateral:   0,
             deposit:      10_001.70173768409813 * 1e18,
-            exchangeRate: 1.000170173768409813 * 1e27
+            exchangeRate: 1.000170173768409813 * 1e18
         });
         // check borrower info after fully repay
         _assertBorrower({
@@ -707,16 +707,16 @@ contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
                 from:    _lender,
                 amount:  mintAmount_,
                 index:   indexes[i],
-                lpAward: mintAmount_ * 1e9,
+                lpAward: mintAmount_,
                 newLup:  _calculateLup(address(_pool), 0)
             });
 
             _assertBucket({
                 index:      indexes[i],
-                lpBalance:  mintAmount_ * 1e9,
+                lpBalance:  mintAmount_,
                 collateral: 0,
                 deposit:    mintAmount_,
-                exchangeRate: 1e27
+                exchangeRate: 1e18
             });
         }
 
@@ -739,10 +739,10 @@ contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
         for (uint256 i = 0; i < numIndexes; ++i) {
             _assertBucket({
                 index:        indexes[i],
-                lpBalance:    mintAmount_ * 1e9,
+                lpBalance:    mintAmount_,
                 collateral:   0,
                 deposit:      mintAmount_,
-                exchangeRate: 1e27
+                exchangeRate: 1e18
             });
         }
 
@@ -796,17 +796,17 @@ contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
             // check that only deposits above the htp earned interest
             if (indexes[i] <= _poolUtils.priceToIndex(Maths.wdiv(debt, Maths.wad(tokenIdsToAdd.length)))) {
                 assertGt(deposit, mintAmount_);
-                assertGt(exchangeRate, 1e27);
+                assertGt(exchangeRate, 1e18);
             } else {
                 assertEq(deposit, mintAmount_);
-                assertEq(exchangeRate, 1e27);
+                assertEq(exchangeRate, 1e18);
             }
 
-            assertEq(lpAccumulator, mintAmount_ * 1e9);
+            assertEq(lpAccumulator, mintAmount_);
 
             _assertBucket({
                 index:        indexes[i],
-                lpBalance:    mintAmount_ * 1e9,
+                lpBalance:    mintAmount_,
                 collateral:   0,
                 deposit:      deposit,
                 exchangeRate: exchangeRate

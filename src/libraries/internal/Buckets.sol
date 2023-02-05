@@ -107,7 +107,7 @@ library Buckets {
     ) internal pure returns (uint256 lps_) {
         uint256 rate = getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_);
 
-        lps_ = (collateral_ * bucketPrice_ * 1e18 + rate / 2) / rate;
+        lps_ = Maths.wdiv(Maths.wmul(collateral_, bucketPrice_), rate);
     }
 
     /**
@@ -126,8 +126,8 @@ library Buckets {
         uint256 quoteTokens_,
         uint256 bucketPrice_
     ) internal pure returns (uint256) {
-        return Maths.rdiv(
-            Maths.wadToRay(quoteTokens_),
+        return Maths.wdiv(
+            quoteTokens_,
             getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_)
         );
     }
@@ -145,10 +145,8 @@ library Buckets {
         uint256 bucketDeposit_,
         uint256 bucketPrice_
     ) internal pure returns (uint256) {
-        return bucketLPs_ == 0
-            ? Maths.RAY
-            : (bucketDeposit_ * 1e18 + bucketPrice_ * bucketCollateral_) * 1e18 / bucketLPs_;
-            // 10^36 * 1e18 / 10^27 = 10^54 / 10^27 = 10^27
+        return bucketLPs_ == 0 ? Maths.WAD :
+            Maths.wdiv(bucketDeposit_ + Maths.wmul(bucketPrice_, bucketCollateral_), bucketLPs_);
     }
 
     /**
@@ -167,8 +165,12 @@ library Buckets {
         uint256 bucketPrice_
     ) internal pure returns (uint256) {
         return bucketLPs_ == 0
-            ? Maths.RAY
-            : (bucketUnscaledDeposit_ + bucketPrice_ * bucketCollateral_ / bucketScale_ ) * 10**36 / bucketLPs_;
-            // 10^18 * 1e36 / 10^27 = 10^54 / 10^27 = 10^27
+            ? Maths.WAD
+            : Maths.wdiv(
+                bucketUnscaledDeposit_ + Maths.wdiv(
+                    Maths.wmul(bucketPrice_, bucketCollateral_), bucketScale_
+                ),
+                bucketLPs_
+            );
     }
 }
