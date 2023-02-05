@@ -678,7 +678,7 @@ library LenderActions {
         } else {
             // redeeming all LPs
             redeemedLPs_          = params_.lpConstraint;
-            unscaledRemovedAmount = Maths.rayToWad(Maths.rmul(redeemedLPs_, unscaledExchangeRate));
+            unscaledRemovedAmount = Maths.min(Maths.rrdivw(redeemedLPs_, unscaledExchangeRate), unscaledDepositAvailable);
         }
 
         // If clearing out the bucket deposit, ensure it's zeroed out

@@ -966,7 +966,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _removeAllLiquidity({
             from:     _lender,
-            amount:   9.987201910492245717 * 1e18,
+            amount:   9.987201923076923080 * 1e18,
             index:    7388,
             newLup:   MAX_PRICE,
             lpRedeem: 9.999999987399196030933756763 * 1e27
@@ -974,17 +974,17 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _assertBucket({
             index:        7388,
-            lpBalance:    0.000000012600803969278909906 * 1e27, // LPs in bucket 7388 diminished when NFT merged and removed
+            lpBalance:    0, // LPs in bucket 7388 diminished when NFT merged and removed
             collateral:   0,                                    // no collateral remaining as it was merged and removed
-            deposit:      0.000000012600803969 * 1e18,
-            exchangeRate: 0.999999999977865705499427682 * 1e27
+            deposit:      0,
+            exchangeRate: 1 * 1e27
         });
 
         _assertPool(
             PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
-                poolSize:             0.000000012600803969 * 1e18,
+                poolSize:             0,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
                 poolDebt:             0,
