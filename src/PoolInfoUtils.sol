@@ -83,12 +83,7 @@ contract PoolInfoUtils {
         price_ = _priceAt(index_);
 
         (bucketLPs_, collateral_, , quoteTokens_, scale_) = pool.bucketInfo(index_);
-        if (bucketLPs_ == 0) {
-            exchangeRate_ = Maths.RAY;
-        } else {
-            uint256 bucketSize = quoteTokens_ * 1e18 + price_ * collateral_;  // 10^36 + // 10^36
-            exchangeRate_ = bucketSize * 1e18 / bucketLPs_; // 10^27
-        }
+        exchangeRate_ = Buckets.getExchangeRate(collateral_, bucketLPs_, quoteTokens_, price_);
     }
 
     /**

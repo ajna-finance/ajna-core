@@ -601,8 +601,8 @@ library LenderActions {
 
         // determine how much LP would be required to remove the requested amount
         uint256 collateralValue     = Maths.wmul(bucketPrice, bucketCollateral);
-        uint256 lpsForAllCollateral = Maths.rmul(bucketLPs, Maths.wwdivr(collateralValue, collateralValue + bucketDeposit));
-        uint256 requiredLPs         = Maths.rmul(lpsForAllCollateral, Maths.wwdivr(collateralAmount_, bucketCollateral));
+        uint256 lpsForAllCollateral = Maths.wmul(bucketLPs, Maths.wdiv(collateralValue, collateralValue + bucketDeposit));
+        uint256 requiredLPs         = Maths.wmul(lpsForAllCollateral, Maths.wdiv(collateralAmount_, bucketCollateral));
 
         // limit withdrawal by the lender's LPB
         if (requiredLPs <= lenderLpBalance) {
@@ -610,7 +610,7 @@ library LenderActions {
             lpAmount_ = requiredLPs;
         } else {
             lpAmount_         = lenderLpBalance;
-            collateralAmount_ = Maths.wmul(Maths.rrdivw(lenderLpBalance,lpsForAllCollateral), bucketCollateral);
+            collateralAmount_ = Maths.wmul(Maths.wdiv(lenderLpBalance,lpsForAllCollateral), bucketCollateral);
         }
 
         // update lender LPs balance
@@ -663,22 +663,22 @@ library LenderActions {
         // redeemedLPs_ = min ( maxAmount_/(unscaledExchangeRate*scale), unscaledDeposit/unscaledExchangeRate, lenderLPsBalance)
 
         uint256 unscaledRemovedAmount;
-        uint256 unscaledLpConstraint = Maths.rmul(params_.lpConstraint, unscaledExchangeRate);
+        uint256 unscaledLpConstraint = Maths.wmul(params_.lpConstraint, unscaledExchangeRate);
         if (
             params_.depositConstraint < Maths.wmul(unscaledDepositAvailable, depositScale) &&
-            Maths.wwdivr(params_.depositConstraint, depositScale) < unscaledLpConstraint
+            Maths.wdiv(params_.depositConstraint, depositScale) < unscaledLpConstraint
         ) {
             // depositConstraint is binding constraint
             unscaledRemovedAmount = Maths.wdiv(params_.depositConstraint, depositScale);
-            redeemedLPs_          = Maths.wrdivr(unscaledRemovedAmount, unscaledExchangeRate);
-        } else if (Maths.wadToRay(unscaledDepositAvailable) < unscaledLpConstraint) {
+            redeemedLPs_          = Maths.wdiv(unscaledRemovedAmount, unscaledExchangeRate);
+        } else if (unscaledDepositAvailable < unscaledLpConstraint) {
             // unscaledDeposit is binding constraint
             unscaledRemovedAmount = unscaledDepositAvailable;
-            redeemedLPs_          = Maths.wrdivr(unscaledRemovedAmount, unscaledExchangeRate);
+            redeemedLPs_          = Maths.wdiv(unscaledRemovedAmount, unscaledExchangeRate);
         } else {
             // redeeming all LPs
             redeemedLPs_          = params_.lpConstraint;
-            unscaledRemovedAmount = Maths.rayToWad(Maths.rmul(redeemedLPs_, unscaledExchangeRate));
+            unscaledRemovedAmount = Maths.wmul(redeemedLPs_, unscaledExchangeRate);
         }
 
         // If clearing out the bucket deposit, ensure it's zeroed out

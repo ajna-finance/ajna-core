@@ -5,7 +5,7 @@ import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
 import 'src/libraries/helpers/PoolHelper.sol';
 
-contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
+contract ERC20PoolLoanHeapTest is ERC20HelperContract {
 
     address internal _borrower1;
     address internal _borrower2;

@@ -41,7 +41,7 @@ contract BasicInvariants is TestBase {
 
         super.setUp();
 
-        _basicPoolHandler = new BasicPoolHandler(address(_pool), address(_quote), address(_collateral), address(_poolInfo), 1);
+        _basicPoolHandler = new BasicPoolHandler(address(_pool), address(_quote), address(_collateral), address(_poolInfo), NUM_ACTORS);
         _handler = address(_basicPoolHandler);
         excludeContract(address(_collateral));
         excludeContract(address(_quote));
@@ -82,7 +82,7 @@ contract BasicInvariants is TestBase {
 
             if (collateral == 0 && deposit == 0) {
                 require(bucketLps == 0, "Incorrect bucket lps");
-                require(exchangeRate == 1e27, "Incorrect exchange rate");
+                require(exchangeRate == 1e18, "Incorrect exchange rate");
             }
         }
     }
@@ -182,7 +182,7 @@ contract BasicInvariants is TestBase {
         // 2. addCollateral(3642907759282013932739218713, 2570)
         // 3. removeCollateral(296695924278944779257290397234298756, 2570)
 
-        uint256 previousExchangeRate = 1e27;
+        uint256 previousExchangeRate = 1e18;
         _basicPoolHandler.addQuoteToken(999999999844396154169639088436193915956854451, 6879, 2809);
         ( , uint256 quote, uint256 collateral, uint256 lps, , uint256 exchangeRate) = _poolInfo.bucketInfo(address(_pool), 2570);
         console.log("After addQuoteToken(6879, 2570)");
@@ -192,7 +192,7 @@ contract BasicInvariants is TestBase {
         console.log("Lps -->", lps);
         console.log("Exchange Rate-->", exchangeRate);
         console.log("============");
-        requireWithinDiff(previousExchangeRate, exchangeRate, 1e18, "Incorrect exchange rate");
+        require(previousExchangeRate == exchangeRate, "Incorrect exchange rate");
         exchangeRate = previousExchangeRate;
         _basicPoolHandler.addCollateral(2, 3642907759282013932739218713, 202214962129783771592);
         ( , quote, collateral, lps, , exchangeRate) = _poolInfo.bucketInfo(address(_pool), 2570);
@@ -203,7 +203,7 @@ contract BasicInvariants is TestBase {
         console.log("Lps -->", lps);
         console.log("Exchange Rate-->", exchangeRate);
         console.log("============");
-        requireWithinDiff(previousExchangeRate, exchangeRate, 1e18, "Incorrect exchange rate");
+        require(previousExchangeRate == exchangeRate, "Incorrect exchange rate");
         exchangeRate = previousExchangeRate;
         _basicPoolHandler.removeCollateral(1, 2296695924278944779257290397234298756, 10180568736759156593834642286260647915348262280903719122483474452532722106636);
         ( , quote, collateral, lps, , exchangeRate) = _poolInfo.bucketInfo(address(_pool), 2570);
@@ -214,6 +214,6 @@ contract BasicInvariants is TestBase {
         console.log("Lps -->", lps);
         console.log("Exchange Rate-->", exchangeRate);
         console.log("============");
-        requireWithinDiff(previousExchangeRate, exchangeRate, 1e18, "Incorrect exchange rate");
+        require(previousExchangeRate == exchangeRate, "Incorrect exchange rate");
     }
 }

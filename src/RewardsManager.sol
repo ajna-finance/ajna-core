@@ -391,7 +391,7 @@ contract RewardsManager is IRewardsManager {
 
                 // calculate the equivalent amount of quote tokens given the stakes lp balance,
                 // and the exchange rate at the next and current burn events
-                interestEarned_ = Maths.rayToWad(Maths.rmul(nextExchangeRate - exchangeRate_, bucketLPs));
+                interestEarned_ = Maths.wmul(nextExchangeRate - exchangeRate_, bucketLPs);
             }
 
         }

@@ -230,21 +230,21 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             from:    _bidder,
             amount:  4 * 1e18,
             index:   2550,
-            lpAward: 12_043.56808879152623138 * 1e27
+            lpAward: 12_043.56808879152623138 * 1e18
         });
 
         // check bucket state and bidder's LPs
         _assertBucket({
             index:        2550,
-            lpBalance:    12_043.56808879152623138 * 1e27,
+            lpBalance:    12_043.56808879152623138 * 1e18,
             collateral:   4 * 1e18,
             deposit:      0,
-            exchangeRate: 1 * 1e27
+            exchangeRate: 1 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _bidder,
             index:       2550,
-            lpBalance:   12_043.56808879152623138 * 1e27,
+            lpBalance:   12_043.56808879152623138 * 1e18,
             depositTime: _startTime
         });
 
@@ -258,21 +258,21 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             from:     _bidder,
             amount:   1.53 * 1e18,
             index:    2550,
-            lpRedeem: 4_606.664793962758783502850000000 * 1e27
+            lpRedeem: 4_606.664793962758783503 * 1e18
         });
 
         // check bucket state and bidder's LPs
         _assertBucket({
             index:        2550,
-            lpBalance:    7_436.90329482876744787715 * 1e27,
+            lpBalance:    7_436.903294828767447877 * 1e18,
             collateral:   2.47 * 1e18,
             deposit:      0,
-            exchangeRate: 1 * 1e27
+            exchangeRate: 1 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _bidder,
             index:       2550,
-            lpBalance:   7_436.90329482876744787715 * 1e27,
+            lpBalance:   7_436.903294828767447877 * 1e18,
             depositTime: _startTime
         });
 
@@ -286,7 +286,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             from:     _bidder,
             amount:   2.47 * 1e18,
             index:    2550,
-            lpRedeem: 7_436.90329482876744787715 * 1e27
+            lpRedeem: 7_436.903294828767447877 * 1e18
         });
 
         // check bucket state and bidder's LPs
@@ -295,7 +295,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             lpBalance:    0,
             collateral:   0,
             deposit:      0,
-            exchangeRate: 1 * 1e27
+            exchangeRate: 1 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _bidder,
@@ -319,28 +319,28 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             from:    _bidder,
             amount:  1 * 1e18,
             index:   1530,
-            lpAward: 487616.252661175041981841 * 1e27
+            lpAward: 487616.252661175041981841 * 1e18
         });
 
         _removeCollateral({
             from:     _bidder,
             amount:   0.5 * 1e18,
             index:    1530,
-            lpRedeem: 243_808.1263305875209909205 * 1e27
+            lpRedeem: 243_808.126330587520990921 * 1e18
         });
 
         // check bucket state and bidder's LPs
         _assertBucket({
             index:        1530,
-            lpBalance:    243_808.1263305875209909205 * 1e27,
+            lpBalance:    243_808.126330587520990920 * 1e18,
             collateral:   0.5 * 1e18,
             deposit:      0,
-            exchangeRate: 1 * 1e27
+            exchangeRate: 1 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _bidder,
             index:       1530,
-            lpBalance:   243_808.1263305875209909205 * 1e27,
+            lpBalance:   243_808.126330587520990920 * 1e18,
             depositTime: _startTime
         });
 
@@ -354,7 +354,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             from:     _bidder,
             amount:   0.5 * 1e18,
             index:    1530,
-            lpRedeem: 243_808.1263305875209909205 * 1e27
+            lpRedeem: 243_808.126330587520990920 * 1e18
         });
 
         // check bucket state and bidder's LPs
@@ -363,7 +363,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             lpBalance:    0,
             collateral:   0,
             deposit:      0,
-            exchangeRate: 1 * 1e27
+            exchangeRate: 1 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _bidder,
@@ -398,7 +398,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             from:    _bidder,
             amount:  0.65 * 1e18,
             index:   testIndex,
-            lpAward: 0.0000116119721720119 * 1e27
+            lpAward: 0.000011611972172012 * 1e18
         });
 
         // should revert if actor has no LPB in the bucket
@@ -465,5 +465,156 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
 
         assertEq(_collateral.balanceOf(_borrower),  150 * 1e18);
         assertEq(_collateral.balanceOf(_borrower2), 0);
+    }
+
+    function testAddRemoveCollateralBucketExchangeRateInvariantDifferentActor() external tearDown {
+        _mintCollateralAndApproveTokens(_lender,  50000000000 * 1e18);
+
+        _addInitialLiquidity({
+            from:   _bidder,
+            amount: 6879,
+            index:  2570
+        });
+
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2570,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      _bidder,
+            index:       2570,
+            lpBalance:   6879,
+            depositTime: _startTime
+        });
+        _assertBucket({
+            index:        2570,
+            lpBalance:    6879,
+            collateral:   0,
+            deposit:      6879,
+            exchangeRate: 1 * 1e18 // exchange rate should not change
+        });
+
+        _addCollateral({
+            from:    _lender,
+            amount:  3642907759.282013932739218713 * 1e18,
+            index:   2570,
+            lpAward: 9927093687851.086595628225711617 * 1e18
+        });
+
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2570,
+            lpBalance:   9927093687851.086595628225711617 * 1e18,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      _bidder,
+            index:       2570,
+            lpBalance:   6879,
+            depositTime: _startTime
+        });
+        _assertBucket({
+            index:        2570,
+            lpBalance:    9927093687851.086595628225718496 * 1e18,
+            collateral:   3642907759.282013932739218713 * 1e18,
+            deposit:      6879,
+            exchangeRate: 1 * 1e18 // exchange rate should not change
+        });
+
+        _removeAllCollateral({
+            from:     _lender,
+            amount:   3642907759.282013932739218713 * 1e18,
+            index:    2570,
+            lpRedeem: 9927093687851.086595628225711617 * 1e18
+        });
+
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2570,
+            lpBalance:   0, // LPs should get back to same value as before add / remove collateral
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      _bidder,
+            index:       2570,
+            lpBalance:   6879, // LPs should get back to same value as before add / remove collateral
+            depositTime: _startTime
+        });
+        _assertBucket({
+            index:        2570,
+            lpBalance:    6879,
+            collateral:   0,
+            deposit:      6879,
+            exchangeRate: 1 * 1e18 // exchange rate should not change
+        });
+    }
+
+    // FIXME: fails
+    function _testAddRemoveCollateralBucketExchangeRateInvariantSameActor() external tearDown {
+        _mintCollateralAndApproveTokens(_lender,  50000000000 * 1e18);
+
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 6879,
+            index:  2570
+        });
+
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2570,
+            lpBalance:   6879,
+            depositTime: _startTime
+        });
+        _assertBucket({
+            index:        2570,
+            lpBalance:    6879,
+            collateral:   0,
+            deposit:      6879,
+            exchangeRate: 1 * 1e18 // exchange rate should not change
+        });
+
+        _addCollateral({
+            from:    _lender,
+            amount:  3642907759.282013932739218713 * 1e18,
+            index:   2570,
+            lpAward: 9927093687851.086595628225711617 * 1e18
+        });
+
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2570,
+            lpBalance:   9927093687851.086595628225718496 * 1e18,
+            depositTime: _startTime
+        });
+        _assertBucket({
+            index:        2570,
+            lpBalance:    9927093687851.086595628225718496 * 1e18,
+            collateral:   3642907759.282013932739218713 * 1e18,
+            deposit:      6879,
+            exchangeRate: 1 * 1e18 // exchange rate should not change
+        });
+
+        _removeAllCollateral({
+            from:     _lender,
+            amount:   3642907759.282013932739218713 * 1e18,
+            index:    2570,
+            lpRedeem: 9927093687851.086595628225718496 * 1e18
+        });
+
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2570,
+            lpBalance:   0, // LPs should get back to same value as before add / remove collateral
+            depositTime: _startTime
+        });
+        _assertBucket({
+            index:        2570,
+            lpBalance:    0,
+            collateral:   0,
+            deposit:      6879,
+            exchangeRate: 1 * 1e18 // exchange rate should not change
+        });
     }
 }
