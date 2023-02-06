@@ -14,6 +14,7 @@ import { PoolCommons }     from 'src/libraries/external/PoolCommons.sol';
 import { InvariantTest } from '../InvariantTest.sol';
 import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 
+import { _ptp } from 'src/libraries/helpers/PoolHelper.sol';
 
 uint256 constant LENDER_MIN_BUCKET_INDEX = 2570;
 uint256 constant LENDER_MAX_BUCKET_INDEX = 2590;
@@ -131,6 +132,31 @@ contract BaseHandler is InvariantTest, Test {
 
         // Account for decrementing x to make max inclusive.
         if (max == type(uint256).max && x != 0) result++;
+    }
+
+    function fenwickAdd(uint256 amount, uint256 bucketIndex) internal { 
+        uint256 deposit = fenwickDeposits[bucketIndex];
+        fenwickDeposits[bucketIndex] = deposit + amount;
+    }
+
+    function fenwickRemove(uint256 removedAmount, uint256 bucketIndex) internal {
+
+        // add early withdrawal penalty back to removedAmount if removeQT is occurs above the PTP
+        // as that is the value removed from the fenwick tree
+        (, uint256 depositTime) = _pool.lenderInfo(bucketIndex, _actor);
+        uint256 price = _poolInfo.indexToPrice(bucketIndex);
+        (, uint256 poolDebt ,) = _pool.debtInfo();
+        uint256 poolCollateral  = _pool.pledgedCollateral();
+
+        if (depositTime != 0 && block.timestamp - depositTime < 1 days) {
+            if (price > _ptp(poolDebt, poolCollateral)) {
+                removedAmount = wdiv(removedAmount, 1e18 - _poolInfo.feeRate(address(_pool)));
+            }
+        }
+
+        // Fenwick
+        uint256 deposit = fenwickDeposits[bucketIndex];
+        fenwickDeposits[bucketIndex] = deposit - removedAmount;
     }
 
     function fenwickSumAtIndex(uint256 index) public view returns (uint256) {
