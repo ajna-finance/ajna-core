@@ -2,14 +2,19 @@
 
 The Ajna protocol is a non-custodial, peer-to-peer, permissionless lending, borrowing and trading system that requires no governance or external price feeds to function. The protocol consists of pools: pairings of quote tokens provided by lenders and collateral tokens provided by borrowers. Ajna is capable of accepting fungible tokens as quote tokens and both fungible and non-fungible tokens as collateral tokens.
 
-## Limitations
-- The following types of tokens are incompatible with Ajna, and no countermeasures exist to explicitly prevent creating a pool with such tokens:
-	- Fungible tokens whose balance rebases.
-	- NFTs which charge a fee on transfer.
-	- Fungible tokens with more than 18 decimals or 0 decimals.
+## Accepted tokens:
+- Fungible tokens (following the [ERC20 token standard](https://eips.ethereum.org/EIPS/eip-20)).
+- Non-fungible tokens (following the [ERC721 token standard](https://eips.ethereum.org/EIPS/eip-721))
 - Special considerations have been made to support specific NFTs with nonstandard ERC721 implementations, including _CryptoPunks_ and _CryptoKitties_.  This support is limited to Ethereum mainnet.
+
+### Token limitations
+- The following types of tokens are incompatible with Ajna, and no countermeasures exist to explicitly prevent creating a pool with such tokens, actors should use them at their own risk:
+  - NFT and fungible tokens which charge a fee on transfer.
+  - Fungible tokens whose balance rebases.
+  - Fungible tokens with more than 18 decimals or 0 decimals.
 - Borrowers cannot draw debt from a pool in the same block as when the pool was created.
 - With the exception of quantized prices, pool inputs and most accumulators are not explicitly limited.  The pool will stop functioning when the bounds of a `uint256` need to be exceeded to process a request.
+
 
 
 ## Development

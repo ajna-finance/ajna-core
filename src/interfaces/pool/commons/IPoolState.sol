@@ -36,6 +36,12 @@ interface IPoolState {
         );
 
     /**
+     *  @notice Returns the total number of active auctions in pool
+     *  @return totalAuctions_ number of active auctions.
+     */
+    function totalAuctionsInPool() external view returns (uint256);
+
+    /**
      *  @notice Returns pool related debt values.
      *  @return debt_            Current amount of debt owed by borrowers in pool.
      *  @return accruedDebt_     Debt owed by borrowers based on last inflator snapshot.

@@ -3,7 +3,9 @@
 
 pragma solidity 0.8.14;
 
+import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 import '@std/Test.sol';
+import '@std/Vm.sol';
 import "forge-std/console.sol";
 
 import { ERC20Pool }        from 'src/ERC20Pool.sol';
@@ -12,14 +14,13 @@ import { Token }            from '../../../utils/Tokens.sol';
 import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
 import { PoolCommons }     from 'src/libraries/external/PoolCommons.sol';
 import { InvariantTest } from '../InvariantTest.sol';
-import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 
 import { _ptp } from 'src/libraries/helpers/PoolHelper.sol';
 
 import 'src/libraries/internal/Maths.sol';
 
 uint256 constant LENDER_MIN_BUCKET_INDEX = 2570;
-uint256 constant LENDER_MAX_BUCKET_INDEX = 2590;
+uint256 constant LENDER_MAX_BUCKET_INDEX = 2570;
 
 uint256 constant BORROWER_MIN_BUCKET_INDEX = 2600;
 uint256 constant BORROWER_MAX_BUCKET_INDEX = 2620;
@@ -48,6 +49,8 @@ contract BaseHandler is InvariantTest, Test {
 
     // Ghost variables
     uint256[7389] internal fenwickDeposits;
+    // bucket exchange rate invariant check
+    bool public shouldExchangeRateChange;
 
     constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) {
         // Tokens
@@ -74,6 +77,9 @@ contract BaseHandler is InvariantTest, Test {
         _actor = actor;
         vm.startPrank(actor);
         _;
+
+        // skip time to update interest rate on each action
+        vm.warp(block.timestamp + 13 hours);
         vm.stopPrank();
     }
 
@@ -98,11 +104,11 @@ contract BaseHandler is InvariantTest, Test {
 
             vm.startPrank(actor);
 
-            _quote.mint(actor, 1e40);
-            _quote.approve(address(_pool), 1e40);
+            _quote.mint(actor, 1e45);
+            _quote.approve(address(_pool), 1e45);
 
-            _collateral.mint(actor, 1e40);
-            _collateral.approve(address(_pool), 1e40);
+            _collateral.mint(actor, 1e45);
+            _collateral.approve(address(_pool), 1e45);
 
             vm.stopPrank();
         }

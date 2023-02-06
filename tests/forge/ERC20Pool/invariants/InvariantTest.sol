@@ -61,4 +61,16 @@ contract InvariantTest {
         targetedSenders_ = _targetedSenders;
     }
 
+    /******************************************************************************
+    *******           Helper Functions                    *************************
+    *******************************************************************************/
+
+    function getDiff(uint256 x, uint256 y) internal pure returns (uint256 diff) {
+        diff = x > y ? x - y : y - x;
+    }
+
+    function requireWithinDiff(uint256 x, uint256 y, uint256 expectedDiff, string memory err) internal pure {
+        require(getDiff(x, y) <= expectedDiff, err);
+    }
+
 }
