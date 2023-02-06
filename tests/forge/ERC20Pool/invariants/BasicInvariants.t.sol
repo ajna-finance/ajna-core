@@ -11,8 +11,6 @@ import { TestBase } from './TestBase.sol';
 import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BORROWER_MIN_BUCKET_INDEX, BasicPoolHandler } from './handlers/BasicPoolHandler.sol';
 import { IBaseHandler } from './handlers/IBaseHandler.sol';
 
-import "@openzeppelin/contracts/utils/Strings.sol";
-
 // contains invariants for the test
 contract BasicInvariants is TestBase {
 
