@@ -16,6 +16,8 @@ import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 
 import { _ptp } from 'src/libraries/helpers/PoolHelper.sol';
 
+import 'src/libraries/internal/Maths.sol';
+
 uint256 constant LENDER_MIN_BUCKET_INDEX = 2570;
 uint256 constant LENDER_MAX_BUCKET_INDEX = 2590;
 
@@ -150,7 +152,7 @@ contract BaseHandler is InvariantTest, Test {
 
         if (depositTime != 0 && block.timestamp - depositTime < 1 days) {
             if (price > _ptp(poolDebt, poolCollateral)) {
-                removedAmount = wdiv(removedAmount, 1e18 - _poolInfo.feeRate(address(_pool)));
+                removedAmount = Maths.wdiv(removedAmount, Maths.WAD - _poolInfo.feeRate(address(_pool)));
             }
         }
 
@@ -175,7 +177,7 @@ contract BaseHandler is InvariantTest, Test {
     function fenwickMult(uint256 index, uint256 scale) internal returns (uint256) {
         uint256 sum = 0;
         while (index > 0) {
-            fenwickDeposits[index] = wmul(fenwickDeposits[index], scale);
+            fenwickDeposits[index] = Maths.wmul(fenwickDeposits[index], scale);
             index--;
         }
         return sum;
@@ -205,7 +207,7 @@ contract BaseHandler is InvariantTest, Test {
         }
 
         // get HTP and deposit above HTP
-        uint256 htp = wmul(maxThresholdPrice, pendingInflator);
+        uint256 htp = Maths.wmul(maxThresholdPrice, pendingInflator);
         uint256 htpIndex = htp == 0 ? 0 : _poolInfo.priceToIndex(htp);
         uint256 depositAboveHtp = fenwickSumAtIndex(htpIndex);
 
@@ -215,26 +217,17 @@ contract BaseHandler is InvariantTest, Test {
             uint256 utilization = _pool.depositUtilization(poolDebt, poolCollateral);
             uint256 lenderInterestMargin_ = PoolCommons.lenderInterestMargin(utilization);
 
-            uint256 newInterest_ = wmul(
+            uint256 newInterest_ = Maths.wmul(
                 lenderInterestMargin_,
-                wmul(pendingFactor - 1e18, poolDebt)
+                Maths.wmul(pendingFactor - Maths.WAD, poolDebt)
             );
 
-            uint256 scale = wdiv(newInterest_, depositAboveHtp) + 1e18;
+            uint256 scale = Maths.wdiv(newInterest_, depositAboveHtp) + Maths.WAD;
 
             // simulate scale being applied to all deposits above HTP
             fenwickMult(htpIndex, scale);
         } 
     }
-
-    function wdiv(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (x * 1e18 + y / 2) / y;
-    }
-
-    function wmul(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (x * y + 1e18 / 2) / 1e18;
-    }
-
 }
 
 
