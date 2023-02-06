@@ -58,9 +58,6 @@ import { BorrowerActions } from '../libraries/external/BorrowerActions.sol';
 import { LenderActions }   from '../libraries/external/LenderActions.sol';
 import { PoolCommons }     from '../libraries/external/PoolCommons.sol';
 
-
-import '@std/console.sol'; 
-
 /**
  *  @title  Pool Contract
  *  @dev    Base contract and entrypoint for commong logic of both ERC20 and ERC721 pools.

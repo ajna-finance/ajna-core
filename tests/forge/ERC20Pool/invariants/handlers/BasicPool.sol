@@ -38,7 +38,6 @@ contract UnboundedBasicPoolHandler is Test, BaseHandler {
     }
 
     function removeQuoteToken(uint256 amount, uint256 bucketIndex) internal {
-        // vm.startPrank(_actors[0]);
         numberOfCalls['UBBasicHandler.removeQuoteToken']++;
 
         fenwickAccrueInterest();
