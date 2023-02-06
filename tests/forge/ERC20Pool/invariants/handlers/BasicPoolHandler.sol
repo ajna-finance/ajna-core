@@ -25,7 +25,6 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     /**************************************************************************************************************************************/
 
     function addQuoteToken(uint256 amount, uint256 bucketIndex) internal {
-        numberOfCalls['UBBasicHandler.addQuoteToken']++;
 
         // Pre condition
         (uint256 lpBalanceBefore, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
@@ -33,8 +32,10 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         _pool.addQuoteToken(amount, bucketIndex);
 
-        // Post condition
         fenwickAdd(amount, bucketIndex);
+        numberOfCalls['UBBasicHandler.addQuoteToken']++;
+
+        // Post condition
         (uint256 lpBalanceAfter, ) = _pool.lenderInfo(bucketIndex, _actor);
         require(lpBalanceAfter > lpBalanceBefore, "LP balance should increase");
     }

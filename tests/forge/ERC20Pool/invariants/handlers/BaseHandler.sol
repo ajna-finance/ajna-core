@@ -142,7 +142,7 @@ contract BaseHandler is InvariantTest, Test {
         if (max == type(uint256).max && x != 0) result++;
     }
 
-    function fenwickAdd(uint256 amount, uint256 bucketIndex) internal { 
+    function fenwickAdd(uint256 amount, uint256 bucketIndex) internal {
         uint256 deposit = fenwickDeposits[bucketIndex];
         fenwickDeposits[bucketIndex] = deposit + amount;
     }
@@ -176,7 +176,7 @@ contract BaseHandler is InvariantTest, Test {
         return sum;
     }
 
-    function fenwickTreeSum() public view returns (uint256) {
+    function fenwickTreeSum() external view returns (uint256) {
         return fenwickSumAtIndex(fenwickDeposits.length - 1);    
     }
 
