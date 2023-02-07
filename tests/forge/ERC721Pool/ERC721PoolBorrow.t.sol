@@ -433,6 +433,14 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             maxThresholdPrice: 333.653846153846154 * 1e18
         });
 
+        // should revert if LUP is below the limit
+        ( , , , , , uint256 lupIndex ) = _poolUtils.poolPricesInfo(address(_pool));        
+        _assertPullLimitIndexRevert({
+            from:       _borrower,
+            amount:     2,
+            indexLimit: lupIndex - 1
+        });
+
         // borrower 2 borrows 3k quote from the pool and becomes new queue HEAD
         tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 53;

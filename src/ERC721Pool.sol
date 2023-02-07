@@ -194,7 +194,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     function repayDebt(
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
-        uint256 noOfNFTsToPull_
+        uint256 noOfNFTsToPull_,
+        uint256 limitIndex_
     ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
@@ -206,7 +207,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             poolState,
             borrowerAddress_,
             maxQuoteTokenAmountToRepay_,
-            Maths.wad(noOfNFTsToPull_)
+            Maths.wad(noOfNFTsToPull_),
+            limitIndex_
         );
 
         emit RepayDebt(borrowerAddress_, result.quoteTokenToRepay, noOfNFTsToPull_, result.newLup);

@@ -336,7 +336,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                 emit RepayDebt(borrower, amountRepaid, collateralToPull, newLup);
             }
 
-            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull);
+            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull, MAX_FENWICK_INDEX);
 
             // post pull checks
             if (collateralToPull != 0) {
@@ -352,7 +352,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                 emit RepayDebt(borrower, amountRepaid, collateralToPull, newLup);
             }
 
-            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull);
+            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull, MAX_FENWICK_INDEX);
         }
     }
 
@@ -569,7 +569,17 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
-        ERC721Pool(address(_pool)).repayDebt(from, 0, amount);
+        ERC721Pool(address(_pool)).repayDebt(from, 0, amount, MAX_FENWICK_INDEX);
+    }
+
+    function _assertPullLimitIndexRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.LimitIndexReached.selector);
+        ERC721Pool(address(_pool)).repayDebt(from, 0, amount, indexLimit);
     }
 
     function _assertRepayNoDebtRevert(
@@ -579,7 +589,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.NoDebt.selector);
-        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0);
+        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0, MAX_FENWICK_INDEX);
     }
 
     function _assertRepayMinDebtRevert(
@@ -589,7 +599,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
-        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0);
+        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0, MAX_FENWICK_INDEX);
     }
 
     function _assertRemoveCollateralNoClaimRevert(

@@ -85,11 +85,11 @@ def test_borrow_repay_scaled(
                 print(f"Transaction: {i} | {test_utils.get_usage(txes[i].gas_used)}")
 
         repay_txes = []
-        tx = scaled_pool.repayDebt(borrowers[0], 110 * 10**18, 0, {"from": borrowers[0]})
+        tx = scaled_pool.repayDebt(borrowers[0], 110 * 10**18, 0, {"from": borrowers[0]}, 7388)
         repay_txes.append(tx)
-        tx = scaled_pool.repayDebt(borrowers[0], 110 * 10**18, 0, {"from": borrowers[0]})
+        tx = scaled_pool.repayDebt(borrowers[0], 110 * 10**18, 0, {"from": borrowers[0]}, 7388)
         repay_txes.append(tx)
-        tx = scaled_pool.repayDebt(borrowers[0], 50 * 10**18, 0, {"from": borrowers[0]})
+        tx = scaled_pool.repayDebt(borrowers[0], 50 * 10**18, 0, {"from": borrowers[0]}, 7388)
         repay_txes.append(tx)
         with capsys.disabled():
             print("\n==================================")

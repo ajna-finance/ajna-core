@@ -6,6 +6,8 @@ import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 import 'src/ERC721Pool.sol';
 import 'src/ERC721PoolFactory.sol';
 
+import 'src/PoolInfoUtils.sol';
+
 interface ICryptoFighters {
     function transferFrom(address from_, address to_, uint256 tokenId_) external;
     function transfer(address to_, uint256 tokenId_) external;
@@ -51,7 +53,7 @@ contract ERC721PoolNonStandardNftTest is ERC721HelperContract {
         assertEq(cryptoKittiesContract.ownerOf(1777317), address(_pool));
 
         // Pull collateral
-        ERC721Pool(address(_pool)).repayDebt(_borrower, 0, 1);
+        ERC721Pool(address(_pool)).repayDebt(_borrower, 0, 1, MAX_FENWICK_INDEX);
 
         // Check Borrower is owner of NFT
         assertEq(cryptoKittiesContract.ownerOf(1777317), _borrower); 
@@ -81,7 +83,7 @@ contract ERC721PoolNonStandardNftTest is ERC721HelperContract {
         assertEq(cryptoFightersContract.ownerOf(1), address(_pool));
 
         // Pull collateral
-        ERC721Pool(address(_pool)).repayDebt(_borrower, 0, 1);
+        ERC721Pool(address(_pool)).repayDebt(_borrower, 0, 1, MAX_FENWICK_INDEX);
 
         // Check Borrower is owner of NFT
         assertEq(cryptoFightersContract.ownerOf(1), _borrower); 
@@ -112,7 +114,7 @@ contract ERC721PoolNonStandardNftTest is ERC721HelperContract {
         assertEq(cryptoPunksContract.punkIndexToAddress(1), address(_pool));
 
         // Pull collateral
-        ERC721Pool(address(_pool)).repayDebt(_borrower, 0, 1);
+        ERC721Pool(address(_pool)).repayDebt(_borrower, 0, 1, MAX_FENWICK_INDEX);
 
         // Check Borrower is owner of NFT
         assertEq(cryptoPunksContract.punkIndexToAddress(1), _borrower);

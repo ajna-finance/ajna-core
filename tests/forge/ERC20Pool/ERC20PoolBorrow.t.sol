@@ -711,6 +711,14 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             })
         );
 
+        // should revert if LUP is below the limit
+        ( , , , , , uint256 lupIndex ) = _poolUtils.poolPricesInfo(address(_pool));        
+        _assertPullLimitIndexRevert({
+            from:       _borrower,
+            amount:     20 * 1e18,
+            indexLimit: lupIndex - 1
+        });
+
         // should be able to repay loan if properly specified
         _repayDebt({
             from:             _borrower,
@@ -920,7 +928,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         // should revert if borrower repays most, but not all of their debt resulting in a 0 tp loan remaining on the book
         vm.expectRevert(abi.encodeWithSignature('ZeroThresholdPrice()'));
-        IERC20Pool(address(_pool)).repayDebt(_borrower, 500.480769230769231000 * 1e18 - 1, 0);
+        IERC20Pool(address(_pool)).repayDebt(_borrower, 500.480769230769231000 * 1e18 - 1, 0, MAX_FENWICK_INDEX);
 
         // should be able to pay back all pendingDebt
         _repayDebt({
