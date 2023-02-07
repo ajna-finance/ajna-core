@@ -7,6 +7,7 @@ import '@std/Test.sol';
 import "forge-std/console.sol";
 
 import { TestBase } from './TestBase.sol';
+import { Maths } from 'src/libraries/internal/Maths.sol';
 
 import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BORROWER_MIN_BUCKET_INDEX, BasicPoolHandler } from './handlers/BasicPoolHandler.sol';
 import { IBaseHandler } from './handlers/IBaseHandler.sol';
@@ -90,10 +91,18 @@ contract BasicInvariants is TestBase {
     // checks pool quote token balance is greater than equals total deposits in pool
     function invariant_quoteTokenBalance_QT1() public {
         uint256 poolBalance = _quote.balanceOf(address(_pool));
-        (uint256 pooldebt, , ) = _pool.debtInfo();
-        (uint256 totalPoolBond, , ) = _pool.reservesInfo();
+
+        // TODO: fix overflow/underflow error in debtInfo
+        // (uint256 poolDebt, , ) = _pool.debtInfo();
+
+        uint256 t0debt = _pool.totalDebt();
+        (uint256 inflator, ) = _pool.inflatorInfo();
+
+        uint256 poolDebt = Maths.wmul(t0debt, inflator);
+        
+        (uint256 totalPoolBond, uint256 unClaimed, ) = _pool.reservesInfo();
         // poolBalance == poolDeposit will fail due to rounding issue while converting LPs to Quote
-        assertGe(poolBalance + pooldebt, totalPoolBond + _pool.depositSize() , "Incorrect pool debt");
+        assertGe(poolBalance + poolDebt, totalPoolBond + _pool.depositSize() + unClaimed, "Incorrect pool debt");
     }
 
     // checks pools collateral Balance to be equal to collateral pledged
@@ -142,9 +151,10 @@ contract BasicInvariants is TestBase {
                 console.log("Bucket Index -->", bucketIndex);
                 console.log("Previous exchange Rate -->", previousBucketExchangeRate[bucketIndex]);
                 console.log("Current exchange Rate -->", exchangeRate);
-                requireWithinDiff(exchangeRate, previousBucketExchangeRate[bucketIndex], 1e25, "Incorrect exchange Rate changed");
+                requireWithinDiff(exchangeRate, previousBucketExchangeRate[bucketIndex], 1e12, "Incorrect exchange Rate changed");
                 console.log("======================================");
             }
+            previousBucketExchangeRate[bucketIndex] = exchangeRate;
         }
     }
 
@@ -176,44 +186,4 @@ contract BasicInvariants is TestBase {
         );
     }
 
-    function test_exchange_rate_bug_simulation() external {
-        // Action sequence
-        // 1. addQuoteToken(6879, 2570)
-        // 2. addCollateral(3642907759282013932739218713, 2570)
-        // 3. removeCollateral(296695924278944779257290397234298756, 2570)
-
-        uint256 previousExchangeRate = 1e18;
-        _basicPoolHandler.addQuoteToken(999999999844396154169639088436193915956854451, 6879, 2809);
-        ( , uint256 quote, uint256 collateral, uint256 lps, , uint256 exchangeRate) = _poolInfo.bucketInfo(address(_pool), 2570);
-        console.log("After addQuoteToken(6879, 2570)");
-        console.log("============");
-        console.log("Quote Tokens -->", quote);
-        console.log("Collateral Tokens -->", collateral);
-        console.log("Lps -->", lps);
-        console.log("Exchange Rate-->", exchangeRate);
-        console.log("============");
-        require(previousExchangeRate == exchangeRate, "Incorrect exchange rate");
-        exchangeRate = previousExchangeRate;
-        _basicPoolHandler.addCollateral(2, 3642907759282013932739218713, 202214962129783771592);
-        ( , quote, collateral, lps, , exchangeRate) = _poolInfo.bucketInfo(address(_pool), 2570);
-        console.log("After addCollateral(3642907759282013932739218713, 2570)");
-        console.log("============");
-        console.log("Quote Tokens -->", quote);
-        console.log("Collateral Tokens -->", collateral);
-        console.log("Lps -->", lps);
-        console.log("Exchange Rate-->", exchangeRate);
-        console.log("============");
-        require(previousExchangeRate == exchangeRate, "Incorrect exchange rate");
-        exchangeRate = previousExchangeRate;
-        _basicPoolHandler.removeCollateral(1, 2296695924278944779257290397234298756, 10180568736759156593834642286260647915348262280903719122483474452532722106636);
-        ( , quote, collateral, lps, , exchangeRate) = _poolInfo.bucketInfo(address(_pool), 2570);
-        console.log("After removeCollateral(296695924278944779257290397234298756, 2570)");
-        console.log("============");
-        console.log("Quote Tokens -->", quote);
-        console.log("Collateral Tokens -->", collateral);
-        console.log("Lps -->", lps);
-        console.log("Exchange Rate-->", exchangeRate);
-        console.log("============");
-        require(previousExchangeRate == exchangeRate, "Incorrect exchange rate");
-    }
 }

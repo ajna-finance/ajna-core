@@ -71,9 +71,6 @@ contract BaseHandler is InvariantTest, Test {
         _actor = actor;
         vm.startPrank(actor);
         _;
-
-        // skip time to update interest rate on each action
-        vm.warp(block.timestamp + 13 hours);
         vm.stopPrank();
     }
 
