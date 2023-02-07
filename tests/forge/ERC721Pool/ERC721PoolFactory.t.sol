@@ -188,6 +188,34 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
     /*** ERC721 Collection Subset Tests ***/
     /**************************************/
 
+    function testGetNFTSubsetHashTokenOrdering() external {
+        uint256[] memory tokenIdsOne = new uint256[](3);
+        tokenIdsOne[0] = 1;
+        tokenIdsOne[1] = 70;
+        tokenIdsOne[2] = 3;
+        uint256[] memory tokenIdsTwo = new uint256[](3);
+        tokenIdsTwo[0] = 3;
+        tokenIdsTwo[1] = 1;
+        tokenIdsTwo[2] = 70;
+
+        assertEq(_factory.getNFTSubsetHash(tokenIdsOne), _factory.getNFTSubsetHash(tokenIdsTwo));
+        assertTrue(keccak256(abi.encodePacked(tokenIdsOne)) != keccak256(abi.encodePacked(tokenIdsTwo)));
+    }
+
+    function testLoadGetNFTSubsetHashTokenOrderingFuzzy(uint256 numTokens_, uint256 randomTokenId_) external {
+        uint256 numTokens = bound(numTokens_, 500, 5000);
+        uint256 randomTokenId = bound(randomTokenId_, 1, 10000000);
+        uint256[] memory tokenIdsOne = new uint256[](numTokens);
+        uint256[] memory tokenIdsTwo = new uint256[](numTokens);
+
+        for (uint256 i = 0; i < numTokens; i++) {
+            tokenIdsOne[i] = randomTokenId;
+            tokenIdsTwo[i] = randomTokenId;
+        }
+        tokenIdsTwo = _insertionSortTokenIds(tokenIdsTwo);
+        assertEq(_factory.getNFTSubsetHash(tokenIdsOne), _factory.getNFTSubsetHash(tokenIdsTwo));
+    }
+
     function testDeployERC721SubsetPoolWithZeroAddress() external {
         uint256[] memory tokenIdsTestSubset = new uint256[](3);
         tokenIdsTestSubset[0] = 1;
@@ -273,6 +301,25 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         assertTrue(_NFTSubsetOnePool.tokenIdsAllowed(61));
 
         assertFalse(_NFTSubsetOnePool.tokenIdsAllowed(10));
+    }
+
+    /******************************/
+    /*** Fuzz utility ufunction ***/
+    /******************************/
+
+    function _insertionSortTokenIds(uint256[] memory tokenIds_) internal pure returns (uint256[] memory) {
+        uint256 i = 1;
+        while (i < tokenIds_.length) {
+            uint256 j = i;
+            while (j > 0 && tokenIds_[j] < tokenIds_[j - 1]) {
+                uint256 temp = tokenIds_[j - 1];
+                tokenIds_[j - 1] = tokenIds_[j];
+                tokenIds_[j] = temp;
+                j--;
+            }
+            i++;
+        }
+        return tokenIds_;
     }
 
 }
