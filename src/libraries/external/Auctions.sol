@@ -1044,7 +1044,7 @@ library Auctions {
             deposits_,
             borrower_,
             borrowerAddress_,
-            borrowerDebt,
+            poolState_.debt,
             poolState_.rate,
             newLup_,
             !settledAuction_,
