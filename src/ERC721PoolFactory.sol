@@ -105,6 +105,12 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
     /*** Pool Creation Functions ***/
     /*******************************/
 
+    /**
+     *  @notice Get the hash of the subset of NFTs that will be used to create the pool
+     *  @dev    If no tokenIds are provided, the default ERC721_NON_SUBSET_HASH is returned
+     *  @param  tokenIds_ The array of token ids that will be used to create the pool
+     *  @return bytes32 The hash of the subset of NFTs that will be used to create the pool
+     */
     function getNFTSubsetHash(uint256[] memory tokenIds_) public pure returns (bytes32) {
         if (tokenIds_.length == 0) return ERC721_NON_SUBSET_HASH;
         else {
@@ -116,7 +122,13 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
         }
     }
 
-    // insertion sort the array of tokenIds in ascending order
+    /**
+     *  @notice Sort the array of token ids in ascending order
+     *  @dev    The array is sorted using the insertion sort algorithm
+     *  @dev    The counters are modified in unchecked blocks due to being bounded by array length
+     *  @param  tokenIds_ The array of token ids to be sorted
+     *  @return uint256[] The sorted array of token ids
+     */
     function _insertionSortTokenIds(uint256[] memory tokenIds_) internal pure returns (uint256[] memory) {
         uint256 i = 1;
         while (i < tokenIds_.length) {
@@ -125,9 +137,13 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
                 uint256 temp = tokenIds_[j - 1];
                 tokenIds_[j - 1] = tokenIds_[j];
                 tokenIds_[j] = temp;
-                j--;
+                unchecked {
+                    --j;
+                }
             }
-            i++;
+            unchecked {
+                ++i;
+            }
         }
         return tokenIds_;
     }
