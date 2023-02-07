@@ -1021,6 +1021,8 @@ library Auctions {
         // calculate new lup with repaid debt from take
         newLup_ = _lup(deposits_, poolState_.debt);
 
+        remainingCollateral_ = borrower_.collateral;
+
         if (_isCollateralized(borrowerDebt, borrower_.collateral, newLup_, poolState_.poolType)) {
             settledAuction_ = true;
 
