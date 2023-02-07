@@ -350,15 +350,16 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             revert ReserveAuctionTooSoon();
         }
 
+        PoolState memory poolState = _accruePoolInterest();
+
         // start a new claimable reserve auction, passing in relevant parameters such as the current pool size, debt, balance, and inflator value
         uint256 kickerAward = Auctions.startClaimableReserveAuction(
             auctions,
             reserveAuction,
             StartReserveAuctionParams({
-                poolSize:    Deposits.treeSum(deposits),
-                t0PoolDebt:  poolBalances.t0Debt,
                 poolBalance: _getNormalizedPoolQuoteTokenBalance(),
-                inflator:    inflatorState.inflator
+                poolDebt:    poolState.debt,
+                poolSize:    Deposits.treeSum(deposits)
             })
         );
 
@@ -367,6 +368,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         reserveAuction.latestBurnEventEpoch = latestBurnEpoch;
         reserveAuction.burnEvents[latestBurnEpoch].timestamp = block.timestamp;
+
+        // update pool interest rate state
+        _updateInterestState(poolState, _lup(poolState.debt));
 
         // transfer kicker award to msg.sender
         _transferQuoteToken(msg.sender, kickerAward);
