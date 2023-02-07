@@ -29,6 +29,11 @@ contract BasicInvariants is TestBase {
      * Collateral Token
         * CT1: poolCtBal >= sum of all borrower's collateral + sum of all bucket's claimable collateral
         * CT7: pool Pledged collateral = sum of all borrower's pledged collateral
+    
+    * Loan
+        * L1: for each Loan in loans array (LoansState.loans) starting from index 1, the corresponding address (Loan.borrower) is not 0x, the threshold price (Loan.thresholdPrice) is different than 0
+        * L2: Loan in loans array (LoansState.loans) at index 0 has the corresponding address (Loan.borrower) equal with 0x address and the threshold price (Loan.thresholdPrice) equal with 0
+        * L3: Loans array (LoansState.loans) is a max-heap with respect to t0-threshold price: the t0TP of loan at index i is >= the t0-threshold price of the loans at index 2i and 2i+1
     ****************************************************************************************************************************************/
 
     uint256                   internal constant NUM_ACTORS = 10;
@@ -155,6 +160,31 @@ contract BasicInvariants is TestBase {
                 console.log("======================================");
             }
             previousBucketExchangeRate[bucketIndex] = exchangeRate;
+        }
+    }
+
+    function invariant_loan_L1_L2_L3() public {
+        (address borrower, uint256 tp) = _pool.loanInfo(0);
+
+        // first loan in loan heap should be 0
+        require(borrower == address(0), "Incorrect borrower");
+        require(tp == 0, "Incorrect threshold price");
+
+        ( , , uint256 totalLoans) = _pool.loansInfo();
+
+        for(uint256 loanId = 1; loanId < totalLoans; loanId++) {
+            (borrower, tp) = _pool.loanInfo(loanId);
+
+            // borrower address and threshold price should not 0
+            require(borrower != address(0), "Incorrect borrower");
+            require(tp != 0, "Incorrect threshold price");
+
+            // tp of a loan at index 'i' in loan array should be greater than equals to loans at index '2i' and '2i+1'
+            (, uint256 tp1) = _pool.loanInfo(2 * loanId);
+            (, uint256 tp2) = _pool.loanInfo(2 * loanId + 1);
+
+            require(tp >= tp1, "Incorrect loan heap");
+            require(tp >= tp2, "Incorrect loan heap");
         }
     }
 

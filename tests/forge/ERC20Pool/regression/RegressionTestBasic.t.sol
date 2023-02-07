@@ -4,6 +4,8 @@ import { BasicInvariants }            from "../invariants/BasicInvariants.t.sol"
 
 pragma solidity 0.8.14;
 
+import '@std/console.sol';
+
 
 contract RegressionTestBasic is BasicInvariants { 
 
