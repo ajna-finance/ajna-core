@@ -624,13 +624,14 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
     /**
      *  @dev Helper function to transfer an NFT from owner to target address (reused in code to reduce contract deployment bytecode size).
+     *  @dev Since transferFrom is used instead of safeTransferFrom, calling smart contracts must be careful to check that they support any received NFTs.
      *  @param from_    NFT owner address.
      *  @param to_      New NFT owner address.
      *  @param tokenId_ NFT token id to be transferred.
      */
     function _transferNFT(address from_, address to_, uint256 tokenId_) internal {
         // slither-disable-next-line calls-loop
-        IERC721Token(_getArgAddress(COLLATERAL_ADDRESS)).safeTransferFrom(from_, to_, tokenId_);
+        IERC721Token(_getArgAddress(COLLATERAL_ADDRESS)).transferFrom(from_, to_, tokenId_);
     }
 
     /************************/
