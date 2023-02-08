@@ -19,6 +19,7 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
     ERC20 AJNA = ERC20(_ajna);
 
     address internal _borrower;
+    address internal _borrower2;
     address internal _lender;
     address internal _bidder;
 
@@ -26,10 +27,12 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
         _pool      = ERC20Pool(new ERC20PoolFactory(address(AJNA)).deployPool(address(WBTC), address(USDC), 0.05 * 10**18));
 
         _borrower  = makeAddr("borrower");
+        _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
         _bidder    = makeAddr("bidder");
 
         deal(address(WBTC), _borrower, 10 * 1e8);
+        deal(address(WBTC), _borrower2, 10 * 1e8);
         deal(address(USDC), _borrower, 100 * 1e6);
 
         deal(address(USDC), _lender,   10_000 * 1e6);
@@ -39,6 +42,9 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
         vm.startPrank(_borrower);
         WBTC.approve(address(_pool), 10 * 1e18);
         USDC.approve(address(_pool), 1_000 * 1e18);
+
+        changePrank(_borrower2);
+        WBTC.approve(address(_pool), 10 * 1e18);
 
         changePrank(_bidder);
         AJNA.approve(address(_pool), 10 * 1e18);
@@ -111,5 +117,49 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
         assertEq(USDC.balanceOf(address(_pool)),   1_006.571244 * 1e6);
         assertEq(USDC.balanceOf(address(_bidder)), 1.297968 * 1e6);
         assertEq(AJNA.balanceOf(address(_bidder)), 9.999999998885449254 * 1e18);
+    }
+
+    function testReserveAuctionAccrueInterest() external {
+        _drawDebtNoLupCheck({
+            from:               _borrower2,
+            borrower:           _borrower2,
+            amountToBorrow:     300 * 1e18,
+            limitIndex:         7000,
+            collateralToPledge: 1 * 1e18
+        });
+
+        skip(26 weeks);
+
+        // repay entire debt
+        _repayDebtNoLupCheck({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    400 * 1e18,
+            amountRepaid:     307.869212479869665749 * 1e18,
+            collateralToPull: 0
+        });
+
+        uint256 reservesWithoutNewInterest = 0.705309714116053616 * 1e18;
+        uint256 reservesWithNewInterest    = 1.789580885547436858 * 1e18;
+
+        uint256 snapshot = vm.snapshot();
+
+        // kick off a new auction without new interest accrued
+        _startClaimableReserveAuction({
+            from:              _bidder,
+            remainingReserves: reservesWithoutNewInterest,
+            price:             1000000000 * 1e18
+        });
+
+        vm.revertTo(snapshot);
+
+        skip(26 weeks);
+
+        // kick off a new auction with 26 weeks interest accrued
+        _startClaimableReserveAuction({
+            from:              _bidder,
+            remainingReserves: reservesWithNewInterest,
+            price:             1000000000 * 1e18
+        });
     }
 }
