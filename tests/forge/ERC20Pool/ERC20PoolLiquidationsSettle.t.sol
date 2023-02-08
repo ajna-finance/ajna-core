@@ -125,7 +125,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
     }
     
-    function testSettleOnAuctionKicked72HoursAgoAndPartiallyTaken() external { // FIXME teardown fails
+    function testSettleOnAuctionKicked72HoursAgoAndPartiallyTaken() external tearDown {
         // Borrower2 borrows
         _borrow({
             from:       _borrower2,
@@ -592,7 +592,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         });
     }
 
-    function testSettleAuctionReverts() external { // FIXME: teardown fails
+    function testSettleAuctionReverts() external tearDown {
         // Borrower2 borrows
         _borrow({
             from:       _borrower2,

@@ -188,8 +188,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         });
     }
 
-    // FIXME: fails
-    function _testAddRemoveCollateralPrecision (
+    function testAddRemoveCollateralPrecision (
         uint8   collateralPrecisionDecimals_,
         uint8   quotePrecisionDecimals_,
         uint16  bucketId_

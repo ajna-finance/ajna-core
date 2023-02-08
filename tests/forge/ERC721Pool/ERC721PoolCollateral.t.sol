@@ -847,11 +847,11 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _mergeOrRemoveCollateral({
             from:                    _lender,
-            toIndex:                 3069,
+            toIndex:                 3070,
             noOfNFTsToRemove:        1.0,
             collateralMerged:        0.873785325289378771 * 1e18,
             removeCollateralAtIndex: removalIndexes,
-            toIndexLps:              197.657763058028917104 * 1e18
+            toIndexLps:              196.674391102516337019 * 1e18
         });
 
         _assertBucket({
@@ -859,26 +859,26 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             lpBalance:    0,
             collateral:   0,
             deposit:      0,
-            exchangeRate: 1.0 * 1e18
+            exchangeRate: 1 * 1e18
         });
         _assertBucket({
             index:        3061,
             lpBalance:    0,
             collateral:   0,
             deposit:      0,
-            exchangeRate: 1.0 * 1e18
+            exchangeRate: 1 * 1e18
         });
         _assertBucket({
-            index:        3069,
-            lpBalance:    197.657763058028917104 * 1e18, // new LPs amount accounting collateral merged in bucket
+            index:        3070,
+            lpBalance:    196.674391102516337019 * 1e18, // new LPs amount accounting collateral merged in bucket
             collateral:   0.873785325289378771 * 1e18,   // reflects collateral merged in the bucket
             deposit:      0,
             exchangeRate: 1 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _lender,
-            index:       3069,
-            lpBalance:   197.657763058028917104 * 1e18,
+            index:       3070,
+            lpBalance:   196.674391102516337019 * 1e18,
             depositTime: _startTime + 10000 days +  32 hours + 4210 minutes
         });
         _assertBucket({
@@ -911,7 +911,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         // collateral is now splitted accross buckets 3069 and 7388
         uint256[] memory allRemovalIndexes = new uint256[](2);
-        allRemovalIndexes[0] = 3069;
+        allRemovalIndexes[0] = 3070;
         allRemovalIndexes[1] = 7388;
 
         _mergeOrRemoveCollateral({
@@ -938,7 +938,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             exchangeRate: 1.0 * 1e18
         });
         _assertBucket({
-            index:        3069,
+            index:        3070,
             lpBalance:    0,
             collateral:   0,
             deposit:      0,
@@ -946,15 +946,15 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         });   
         _assertBucket({
             index:        7388,
-            lpBalance:    10.000000000000000003 * 1e18, // LPs in bucket 7388 diminished when NFT merged and removed
-            collateral:   0,                            // no collateral remaining as it was merged and removed
+            lpBalance:    10 * 1e18, // LPs in bucket 7388 diminished when NFT merged and removed
+            collateral:   0,         // no collateral remaining as it was merged and removed
             deposit:      10 * 1e18,
             exchangeRate: 1 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       7388,
-            lpBalance:   9.999999987399196034 * 1e18, // lender LPs decreased with the amount used to merge NFT
+            lpBalance:   9.999999987399196031 * 1e18, // lender LPs decreased with the amount used to merge NFT
             depositTime: _startTime + 10000 days + (32 hours + 4210 minutes)
         });
         _assertLenderLpBalance({
@@ -966,25 +966,25 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _removeAllLiquidity({
             from:     _lender,
-            amount:   9.987201910492245719 * 1e18,
+            amount:   9.987201910492245716 * 1e18,
             index:    7388,
             newLup:   MAX_PRICE,
-            lpRedeem: 9.999999987399196034 * 1e18
+            lpRedeem: 9.999999987399196031 * 1e18
         });
 
         _assertBucket({
             index:        7388,
             lpBalance:    0.000000012600803969 * 1e18, // LPs in bucket 7388 diminished when NFT merged and removed
             collateral:   0,                           // no collateral remaining as it was merged and removed
-            deposit:      0.000000012600803967 * 1e18,
-            exchangeRate: 0.999999999841279969 * 1e18
+            deposit:      0.000000012600803970 * 1e18,
+            exchangeRate: 1.000000000079360016 * 1e18
         });
 
         _assertPool(
             PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
-                poolSize:             0.000000012600803967 * 1e18,
+                poolSize:             0.000000012600803970 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
                 poolDebt:             0,

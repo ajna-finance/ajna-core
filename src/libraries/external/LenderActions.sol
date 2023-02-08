@@ -351,9 +351,6 @@ library LenderActions {
         // check loan book's htp against new lup
         if (htp > lup_) revert LUPBelowHTP();
 
-        // update lender and bucket LPs balances
-        lender.lps -= redeemedLPs_;
-
         uint256 lpsRemaining = removeParams.bucketLPs - redeemedLPs_;
 
         if (removeParams.bucketCollateral == 0 && unscaledRemaining == 0 && lpsRemaining != 0) {
@@ -361,6 +358,9 @@ library LenderActions {
             bucket.lps            = 0;
             bucket.bankruptcyTime = block.timestamp;
         } else {
+            // update lender and bucket LPs balances
+            lender.lps -= redeemedLPs_;
+
             bucket.lps = lpsRemaining;
         }
 
@@ -600,9 +600,13 @@ library LenderActions {
         collateralAmount_ = Maths.min(maxAmount_, bucketCollateral);
 
         // determine how much LP would be required to remove the requested amount
-        uint256 collateralValue     = Maths.wmul(bucketPrice, bucketCollateral);
-        uint256 lpsForAllCollateral = Maths.wmul(bucketLPs, Maths.wdiv(collateralValue, collateralValue + bucketDeposit));
-        uint256 requiredLPs         = Maths.wmul(lpsForAllCollateral, Maths.wdiv(collateralAmount_, bucketCollateral));
+        uint256 requiredLPs = Buckets.collateralToLPs(
+            bucketCollateral,
+            bucketLPs,
+            bucketDeposit,
+            collateralAmount_,
+            bucketPrice
+        );
 
         // limit withdrawal by the lender's LPB
         if (requiredLPs <= lenderLpBalance) {
@@ -610,11 +614,8 @@ library LenderActions {
             lpAmount_ = requiredLPs;
         } else {
             lpAmount_         = lenderLpBalance;
-            collateralAmount_ = Maths.wmul(Maths.wdiv(lenderLpBalance,lpsForAllCollateral), bucketCollateral);
+            collateralAmount_ = Maths.wmul(Maths.wdiv(lenderLpBalance, requiredLPs), bucketCollateral);
         }
-
-        // update lender LPs balance
-        lender.lps -= lpAmount_;
 
         // update bucket LPs and collateral balance
         bucketLPs         -= Maths.min(bucketLPs, lpAmount_);
@@ -625,6 +626,9 @@ library LenderActions {
             bucket.lps            = 0;
             bucket.bankruptcyTime = block.timestamp;
         } else {
+            // update lender LPs balance
+            lender.lps -= lpAmount_;
+
             bucket.lps = bucketLPs;
         }
     }

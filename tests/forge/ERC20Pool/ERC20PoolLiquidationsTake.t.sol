@@ -1189,7 +1189,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         });
     }
 
-    function testTakeAndSettle() external { // FIXME: teardown fails
+    function testTakeAndSettle() external tearDown {
 
         // Borrower2 borrows
         _borrow({

@@ -147,7 +147,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
             from: _bidder,
             amount: 0.678725133191514712 * 1e18,
             index: testIndex,
-            lpRedeem: 2_043.56808879152623138 * 1e18
+            lpRedeem: 2_043.568088791526231161 * 1e18
         });
 
         // check pool balances

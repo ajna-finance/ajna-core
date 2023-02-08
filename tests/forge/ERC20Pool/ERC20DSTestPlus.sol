@@ -88,8 +88,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
                 lenderLpBalance -= lpRedeemed;
             }
 
-            // confirm the redemption amount returned by removal methods is correct
-            assertEq(lenderLpBalance, 0);
             // confirm the user actually has 0 LPB in the bucket
             (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
             assertEq(lenderLpBalance, 0);
