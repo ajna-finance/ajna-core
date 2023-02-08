@@ -76,6 +76,11 @@ interface IPoolErrors {
     error FlashloanCallbackFailed();
 
     /**
+     *  @notice Balance of pool contract before flash loan is different than the balance after flash loan.
+     */
+    error FlashloanIncorrectBalance();
+
+    /**
      *  @notice Pool cannot facilitate a flashloan for the specified token address.
      */
     error FlashloanUnavailableForToken();
@@ -178,6 +183,11 @@ interface IPoolErrors {
      *  @notice Take was called before 1 hour had passed from kick time.
      */
     error TakeNotPastCooldown();
+
+    /**
+     *  @notice Owner of the LP tokens attemps to transfer LPs to same address.
+     */
+    error TransferToSameOwner();
 
     /**
      *  @notice The threshold price of the loan to be inserted in loans heap is zero.

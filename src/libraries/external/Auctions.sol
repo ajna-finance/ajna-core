@@ -174,7 +174,6 @@ library Auctions {
      *              - BucketBankruptcy
      *  @param  params_ Settle params
      *  @return collateralRemaining_ The amount of borrower collateral left after settle.
-     *  @return t0DebtRemaining_     The amount of t0 debt left after settle.
      *  @return collateralSettled_   The amount of collateral settled.
      *  @return t0DebtSettled_       The amount of t0 debt settled.
      */
@@ -186,7 +185,6 @@ library Auctions {
         SettleParams memory params_
     ) external returns (
         uint256 collateralRemaining_,
-        uint256 t0DebtRemaining_,
         uint256 collateralSettled_,
         uint256 t0DebtSettled_
     ) {
@@ -294,8 +292,7 @@ library Auctions {
             }
         }
 
-        t0DebtRemaining_ =  borrower.t0Debt;
-        t0DebtSettled_   -= t0DebtRemaining_;
+        t0DebtSettled_ -= borrower.t0Debt;
 
         emit Settle(params_.borrower, t0DebtSettled_);
 
@@ -541,8 +538,13 @@ library Auctions {
     ) external returns (TakeResult memory result_) {
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
 
-        // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
-        if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral();
+        if (
+            (collateral_         == 0)                                                    || // revert if amount to take is 0
+            (poolState_.poolType == uint8(PoolType.ERC721) && borrower.collateral < 1e18) || // revert in case of NFT take when there isn't a full token to be taken
+            (poolState_.poolType == uint8(PoolType.ERC20)  && borrower.collateral == 0)      // revert in case of ERC20 take when no collateral to be taken
+        ) {
+            revert InsufficientCollateral();
+        }
 
         uint256 t0RepayAmount;
         uint256 t0BorrowerDebt;
@@ -860,11 +862,17 @@ library Auctions {
         vars.unscaledDeposit = type(uint256).max;
         vars.bucketScale     = Maths.WAD;
 
+        uint256 takeableCollateral = borrower_.collateral;
+        // for NFT take make sure the take flow and bond change calculation happens for the rounded collateral that can be taken
+        if (params_.poolType == uint8(PoolType.ERC721)) {
+            takeableCollateral = (takeableCollateral / 1e18) * 1e18;
+        }
+
         // In the case of take, the taker binds the collateral qty but not the quote token qty
         // ugly to get take work like a bucket take -- this is the max amount of quote token from the take that could go to
         // reduce the debt of the borrower -- analagous to the amount of deposit in the bucket for a bucket take
         vars = _calculateTakeFlowsAndBondChange(
-            Maths.min(borrower_.collateral, params_.takeCollateral),
+            Maths.min(takeableCollateral, params_.takeCollateral),
             params_.inflator,
             params_.collateralScale,
             vars
@@ -1021,6 +1029,8 @@ library Auctions {
         // calculate new lup with repaid debt from take
         newLup_ = _lup(deposits_, poolState_.debt);
 
+        remainingCollateral_ = borrower_.collateral;
+
         if (_isCollateralized(borrowerDebt, borrower_.collateral, newLup_, poolState_.poolType)) {
             settledAuction_ = true;
 
@@ -1136,6 +1146,8 @@ library Auctions {
             vars.collateralAmount         = _roundToScale(Maths.wdiv(vars.scaledQuoteTokenAmount, borrowerPrice), collateralScale_);
             vars.t0RepayAmount            = Maths.wdiv(vars.scaledQuoteTokenAmount, inflator_);
             vars.unscaledQuoteTokenAmount = vars.unscaledDeposit;
+
+            vars.scaledQuoteTokenAmount   = Maths.wmul(vars.collateralAmount, vars.auctionPrice);
 
         } else if (vars.borrowerDebt <= borrowerCollateralValue) {
             // borrower debt is constraining factor

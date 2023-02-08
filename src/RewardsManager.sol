@@ -173,7 +173,7 @@ contract RewardsManager is IRewardsManager {
         );
 
         // transfer rewards to sender
-        IERC20(ajnaToken).safeTransfer(msg.sender, updateReward);
+        _transferAjnaRewards(updateReward);
     }
 
     /**
@@ -194,6 +194,17 @@ contract RewardsManager is IRewardsManager {
         // claim rewards, if any
         _claimRewards(tokenId_, IPool(ajnaPool).currentBurnEpoch());
 
+        StakeInfo storage stakeInfo = stakes[tokenId_];
+
+        // remove bucket snapshots recorded at the time of staking
+        uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
+        for (uint256 i = 0; i < positionIndexes.length; ) {
+            delete stakeInfo.snapshot[positionIndexes[i]]; // reset BucketState struct for current position
+
+            unchecked { ++i; }
+        }
+
+        // remove recorded stake info
         delete stakes[tokenId_];
 
         emit Unstake(msg.sender, ajnaPool, tokenId_);
@@ -214,7 +225,7 @@ contract RewardsManager is IRewardsManager {
         updateReward = _updateBucketExchangeRates(pool_, indexes_);
 
         // transfer rewards to sender
-        IERC20(ajnaToken).safeTransfer(msg.sender, updateReward);
+        _transferAjnaRewards(updateReward);
     }
 
     /*******************************/
@@ -255,7 +266,19 @@ contract RewardsManager is IRewardsManager {
         return (
             stakes[tokenId_].owner,
             stakes[tokenId_].ajnaPool,
-            stakes[tokenId_].lastInteractionBurnEpoch);
+            stakes[tokenId_].lastInteractionBurnEpoch
+        );
+    }
+
+    /// @inheritdoc IRewardsManagerState
+    function getBucketStateStakeInfo(
+        uint256 tokenId_,
+        uint256 bucketId_
+    ) external view override returns (uint256, uint256) {
+        return (
+            stakes[tokenId_].snapshot[bucketId_].lpsAtStakeTime,
+            stakes[tokenId_].snapshot[bucketId_].rateAtStakeTime
+        );
     }
 
     /**************************/
@@ -421,8 +444,9 @@ contract RewardsManager is IRewardsManager {
         // calculate rewards earned
         newRewards_ = Maths.wmul(
             REWARD_FACTOR,
-            Maths.wmul(
-                Maths.wdiv(interestEarned_, totalInterestEarnedInPeriod), totalBurnedInPeriod
+            Maths.wdiv(
+                Maths.wmul(interestEarned_, totalBurnedInPeriod),
+                totalInterestEarnedInPeriod
             )
         );
 
@@ -449,6 +473,9 @@ contract RewardsManager is IRewardsManager {
 
         address ajnaPool = stakeInfo.ajnaPool;
 
+        // revert if higher epoch to claim than current burn epoch
+        if (epochToClaim_ > IPool(ajnaPool).currentBurnEpoch()) revert EpochNotAvailable();
+
         // update bucket exchange rates and claim associated rewards
         uint256 rewardsEarned = _updateBucketExchangeRates(
             ajnaPool,
@@ -473,12 +500,8 @@ contract RewardsManager is IRewardsManager {
         // update last interaction burn event
         stakeInfo.lastInteractionBurnEpoch = uint96(epochToClaim_);
 
-        uint256 ajnaBalance = IERC20(ajnaToken).balanceOf(address(this));
-
-        if (rewardsEarned > ajnaBalance) rewardsEarned = ajnaBalance;
-
         // transfer rewards to sender
-        IERC20(ajnaToken).safeTransfer(msg.sender, rewardsEarned);
+        _transferAjnaRewards(rewardsEarned);
     }
 
     /**
@@ -684,6 +707,20 @@ contract RewardsManager is IRewardsManager {
                 rewards_ += Maths.wmul(UPDATE_CLAIM_REWARD, Maths.wmul(burnFactor, interestFactor));
             }
         }
+    }
+
+    /** @notice Utility method to transfer Ajna rewards to the sender
+     *  @dev   This method is used to transfer rewards to the sender after a successful claim or update.
+     *  @dev   It is used to ensure that rewards claimers will be able to claim some portion of the remaining tokens if a claim would exceed the remaining contract balance.
+     *  @param rewardsEarned_ Amount of rewards earned by the caller.
+     */
+    function _transferAjnaRewards(uint256 rewardsEarned_) internal {
+        // check that rewards earned isn't greater than remaining balance
+        // if remaining balance is greater, set to remaining balance
+        uint256 ajnaBalance = IERC20(ajnaToken).balanceOf(address(this));
+        if (rewardsEarned_ > ajnaBalance) rewardsEarned_ = ajnaBalance;
+        // transfer rewards to sender
+        IERC20(ajnaToken).safeTransfer(msg.sender, rewardsEarned_);
     }
 
     /************************/

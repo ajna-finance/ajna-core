@@ -4,7 +4,11 @@ pragma solidity 0.8.14;
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 
 import { ERC20HelperContract }                 from './ERC20DSTestPlus.sol';
-import { FlashloanBorrower, SomeDefiStrategy } from '../utils/FlashloanBorrower.sol';
+import {
+    FlashloanBorrower,
+    SomeDefiStrategy,
+    SomeDefiStrategyWithRepayment
+} from '../utils/FlashloanBorrower.sol';
 
 import 'src/libraries/helpers/PoolHelper.sol';
 import 'src/ERC20Pool.sol';
@@ -136,6 +140,29 @@ contract ERC20PoolFlashloanTest is ERC20HelperContract {
         vm.expectRevert(IPoolErrors.FlashloanCallbackFailed.selector);
         _pool.flashLoan(flasher, address(_collateral), loanAmount, new bytes(0));
         assertFalse(flasher.callbackInvoked());
+    }
+
+    function testIncorrectBalanceAfterFlashloanFailure() external tearDown {
+        skip(1 days);
+        uint256 loanAmount = 100 * 1e18;
+        assertEq(_pool.maxFlashLoan(address(_collateral)), loanAmount);
+
+        // Create an example defi strategy that pays a fee to pool contract
+        SomeDefiStrategyWithRepayment strategy = new SomeDefiStrategyWithRepayment(_collateral, address(_pool));
+        deal(address(_collateral), address(strategy), 10 * 1e18);
+
+        // Create a flashloan borrower contract which interacts with the strategy
+        bytes memory strategyCalldata = abi.encodeWithSignature("makeMoney(uint256)", loanAmount);
+        FlashloanBorrower flasher = new FlashloanBorrower(address(strategy), strategyCalldata);
+
+        // Run the token approvals
+        changePrank(address(flasher));
+        _collateral.approve(address(_pool),    loanAmount);
+        _collateral.approve(address(strategy), loanAmount);
+
+        // should revert as the pool balance after flashloan is different than the initial balance
+        vm.expectRevert(IPoolErrors.FlashloanIncorrectBalance.selector);
+        _pool.flashLoan(flasher, address(_collateral), loanAmount, new bytes(0));
     }
 }
 

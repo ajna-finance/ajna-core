@@ -188,7 +188,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     function repayDebt(
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
-        uint256 noOfNFTsToPull_
+        uint256 noOfNFTsToPull_,
+        address collateralReceiver_
     ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
@@ -226,8 +227,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             _transferQuoteTokenFrom(msg.sender, result.quoteTokenToRepay);
         }
         if (noOfNFTsToPull_ != 0) {
-            // move collateral from pool to sender
-            _transferFromPoolToAddress(msg.sender, borrowerTokenIds[msg.sender], noOfNFTsToPull_);
+            // move collateral from pool to address specified as collateral receiver
+            _transferFromPoolToAddress(collateralReceiver_, borrowerTokenIds[msg.sender], noOfNFTsToPull_);
         }
     }
 
@@ -276,6 +277,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         uint256 noOfNFTsToRemove_,
         uint256 toIndex_
     ) external override nonReentrant returns (uint256 collateralMerged_, uint256 bucketLPs_) {
+        _revertIfAuctionClearable(auctions, loans);
+
         PoolState memory poolState = _accruePoolInterest();
         uint256 collateralAmount = Maths.wad(noOfNFTsToRemove_);
 
@@ -365,7 +368,6 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         );
         (
             uint256 collateralRemaining,
-            uint256 t0DebtRemaining,
             uint256 collateralSettled,
             uint256 t0DebtSettled
         ) = Auctions.settlePoolDebt(
@@ -376,8 +378,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             params
         );
 
-        // slither-disable-next-line incorrect-equality
-        if (t0DebtRemaining == 0) _rebalanceTokens(params.borrower, collateralRemaining);
+        if (collateralSettled > 0) _rebalanceTokens(params.borrower, collateralRemaining);
 
         // update pool balances state
         poolBalances.t0Debt            -= t0DebtSettled;
