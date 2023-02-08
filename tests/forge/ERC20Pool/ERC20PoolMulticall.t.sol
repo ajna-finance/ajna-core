@@ -63,17 +63,14 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
         emit Transfer(_lender, address(_pool), 10_000 * 1e18);                
         ERC20Pool(address(_pool)).multicall(callsToExecute);
 
-
-        _assertPoolPrices(
-            {
+        _assertPoolPrices({
                 htp:      0,
                 htpIndex: 7388,
                 hpb:      3_010.892022197881557845 * 1e18,
                 hpbIndex: 2550,
                 lup:      MAX_PRICE,
                 lupIndex: 0
-            }
-        );
+        });
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)), 30_000 * 1e18);
@@ -82,59 +79,47 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
         assertEq(_pool.depositSize(), 30_000 * 1e18);
 
         // check buckets
-        _assertBucket(
-            {
-                index:        2550,
-                lpBalance:    10_000 * 1e27,
-                collateral:   0,
-                deposit:      10_000 * 1e18,
-                exchangeRate: 1 * 1e27
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      _lender,
-                index:       2550,
-                lpBalance:   10_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
+        _assertBucket({
+            index:        2550,
+            lpBalance:    10_000 * 1e27,
+            collateral:   0,
+            deposit:      10_000 * 1e18,
+            exchangeRate: 1 * 1e27
+        });
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2550,
+            lpBalance:   10_000 * 1e27,
+            depositTime: _startTime
+        });
 
-        _assertBucket(
-            {
-                index:        2551,
-                lpBalance:    10_000 * 1e27,
-                collateral:   0,
-                deposit:      10_000 * 1e18,
-                exchangeRate: 1 * 1e27
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      _lender,
-                index:       2551,
-                lpBalance:   10_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
+        _assertBucket({
+            index:        2551,
+            lpBalance:    10_000 * 1e27,
+            collateral:   0,
+            deposit:      10_000 * 1e18,
+            exchangeRate: 1 * 1e27
+        });
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2551,
+            lpBalance:   10_000 * 1e27,
+            depositTime: _startTime
+        });
 
-        _assertBucket(
-            {
-                index:        2552,
-                lpBalance:    10_000 * 1e27,
-                collateral:   0,
-                deposit:      10_000 * 1e18,
-                exchangeRate: 1 * 1e27
-            }
-        );
-        _assertLenderLpBalance(
-            {
-                lender:      _lender,
-                index:       2552,
-                lpBalance:   10_000 * 1e27,
-                depositTime: _startTime
-            }
-        );
+        _assertBucket({
+            index:        2552,
+            lpBalance:    10_000 * 1e27,
+            collateral:   0,
+            deposit:      10_000 * 1e18,
+            exchangeRate: 1 * 1e27
+        });
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2552,
+            lpBalance:   10_000 * 1e27,
+            depositTime: _startTime
+        });
     }
 
     function testMulticallRevertString() public {

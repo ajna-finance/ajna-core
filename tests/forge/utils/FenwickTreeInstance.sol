@@ -68,42 +68,83 @@ contract FenwickTreeInstance is DSTestPlus {
      *  @notice fills fenwick tree with fuzzed values and tests additions.
      */
     function fuzzyFill(
-        uint256 insertions_,
-        uint256 amount_,
-        bool trackInserts)
-        external {
-
+        uint256 insertions_,    // number of insertions to perform
+        uint256 amount_,        // total amount to insert
+        uint256 seed_,          // seed for psuedorandom number generator
+        bool    trackInserts
+    ) external {
         uint256 i;
         uint256 amount;
+        uint256 cumulativeAmount;
 
         // Calculate total insertions 
-        uint256 insertsDec = bound(insertions_, 1000, 2000);
+        insertions_ = bound(insertions_, 1000, 2000);
 
         // Calculate total amount to insert
-        uint256 totalAmount    = bound(amount_, 1 * 1e18, 9_000_000_000_000_000 * 1e18);
-        uint256 totalAmountDec = totalAmount;
+        amount_ = bound(amount_, 1 * 1e18, 9_000_000_000_000_000 * 1e18);
 
+        // Initialize and print seed for randomness
+        setRandomSeed(bound(seed_, 0, type(uint256).max - 1));
 
-        while (totalAmountDec > 0 && insertsDec > 0) {
+        while (amount_ > 0 && insertions_ > 0) {
 
             // Insert at random index
             i = randomInRange(1, MAX_FENWICK_INDEX);
 
             // If last iteration, insert remaining
-            amount = insertsDec == 1 ? totalAmountDec : (totalAmountDec % insertsDec) * randomInRange(1_000, 1 * 1e10, true);
+            amount = insertions_ == 1 ? amount_ : (amount_ % insertions_) * randomInRange(1_000, 1 * 1e10, true);
 
             // Update values
             add(i, amount);
-            totalAmountDec  -=  amount;
-            insertsDec      -=  1;
+            amount_          -= amount;
+            insertions_      -= 1;
+            cumulativeAmount += amount;
 
             // Verify tree sum
-            assertEq(deposits.treeSum(), totalAmount - totalAmountDec);
+            assertEq(deposits.treeSum(), cumulativeAmount);
 
             if (trackInserts)  inserts.push(i);
         }
 
-        assertEq(deposits.treeSum(), totalAmount);
+        assertEq(deposits.treeSum(), cumulativeAmount);
+    }
+
+    /**
+     *  @notice fills fenwick tree with deterministic values and tests additions.
+     */
+    function nonFuzzyFill(
+        uint256 insertions_,    // number of insertions to perform
+        uint256 amount_,        // total amount to insert
+        uint256 seed_,          // seed for psuedorandom number generator
+        bool    trackInserts
+    ) external {
+        uint256 i;
+        uint256 amount;
+        uint256 cumulativeAmount;
+
+        // Initialize and print seed for randomness
+        setRandomSeed(seed_);
+
+        while (amount_ > 0 && insertions_ > 0) {
+
+            // Insert at random index
+            i = randomInRange(1, MAX_FENWICK_INDEX);
+
+            // If last iteration, insert remaining
+            amount = insertions_ == 1 ? amount_ : (amount_ % insertions_) * randomInRange(1_000, 1 * 1e10, true);
+
+            // Update values
+            add(i, amount);
+            amount_          -= amount;
+            insertions_      -= 1;
+            cumulativeAmount += amount;
+
+            // Verify tree sum
+            assertEq(deposits.treeSum(), cumulativeAmount);
+
+            if (trackInserts)  inserts.push(i);
+        }
+
+        assertEq(deposits.treeSum(), cumulativeAmount);
     }
 }
-

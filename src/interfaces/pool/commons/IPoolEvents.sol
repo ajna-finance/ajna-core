@@ -211,13 +211,13 @@ interface IPoolEvents {
      *  @param  owner    The original owner address of the position.
      *  @param  newOwner The new owner address of the position.
      *  @param  indexes  Array of price bucket indexes at which LP tokens were transferred.
-     *  @param  lpTokens Amount of LP tokens transferred.
+     *  @param  lps      Amount of LPs transferred.
      */
-    event TransferLPTokens(
+    event TransferLPs(
         address owner,
         address newOwner,
         uint256[] indexes,
-        uint256 lpTokens
+        uint256 lps
     );
 
     /**

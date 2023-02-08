@@ -9,7 +9,7 @@ interface IPositionManagerOwnerActions {
 
     /**
      *  @notice Called by owners to burn an existing NFT.
-     *  @dev    Requires that all lp tokens have been removed from the NFT prior to calling.
+     *  @dev    Requires that all lps have been removed from the NFT prior to calling.
      *  @param  params Calldata struct supplying inputs required to update the underlying assets owed to an NFT.
      */
     function burn(

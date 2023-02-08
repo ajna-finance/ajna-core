@@ -231,10 +231,10 @@ contract HeapTest is DSTestPlus {
         assertEq(_loans.getTotalTps(),    7);
     }
 
-    function testLoadHeapFuzzy(uint256 inserts_) public {
+    function testLoadHeapFuzzy(uint256 inserts_, uint256 seed_) public {
 
         // test adding different TPs
-        _loans.fuzzyFill(inserts_, true);
+        _loans.fuzzyFill(inserts_, seed_, true);
 
         // test adding different TPs
         address removeAddress = _loans.getIdByInsertIndex(randomInRange(1, _loans.numInserts() - 1, true));

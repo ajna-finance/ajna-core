@@ -89,24 +89,20 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
 
     function testDeployERC721CollectionPoolWithZeroAddress() external {
         // should revert if trying to deploy with zero address as collateral
-        _assertDeployWith0xAddressRevert(
-            {
-                poolFactory:  address(_factory),
-                collateral:   address(0),
-                quote:        address(_quote),
-                interestRate: 0.05 * 10**18
-            }
-        );
+        _assertDeployWith0xAddressRevert({
+            poolFactory:  address(_factory),
+            collateral:   address(0),
+            quote:        address(_quote),
+            interestRate: 0.05 * 10**18
+        });
 
         // should revert if trying to deploy with zero address as quote token
-        _assertDeployWith0xAddressRevert(
-            {
-                poolFactory:  address(_factory),
-                collateral:   address(_collateral),
-                quote:        address(0),
-                interestRate: 0.05 * 10**18
-            }
-        );
+        _assertDeployWith0xAddressRevert({
+            poolFactory:  address(_factory),
+            collateral:   address(_collateral),
+            quote:        address(0),
+            interestRate: 0.05 * 10**18
+        });
         
         // check tracking of deployed pools
         assertEq(_factory.getDeployedPoolsList().length,  3);
@@ -115,24 +111,20 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
 
     function testDeployERC721CollectionPoolWithInvalidRate() external {
         // should revert if trying to deploy with interest rate lower than accepted
-        _assertDeployWithInvalidRateRevert(
-            {
-                poolFactory:  address(_factory),
-                collateral:   address(_quote),
-                quote:        address(_quote),
-                interestRate: 10**18
-            }
-        );
+        _assertDeployWithInvalidRateRevert({
+            poolFactory:  address(_factory),
+            collateral:   address(_quote),
+            quote:        address(_quote),
+            interestRate: 10**18
+        });
 
         // should revert if trying to deploy with interest rate higher than accepted
-        _assertDeployWithInvalidRateRevert(
-            {
-                poolFactory:  address(_factory),
-                collateral:   address(_quote),
-                quote:        address(_quote),
-                interestRate: 2 * 10**18
-            }
-        );
+        _assertDeployWithInvalidRateRevert({
+            poolFactory:  address(_factory),
+            collateral:   address(_quote),
+            quote:        address(_quote),
+            interestRate: 2 * 10**18
+        });
 
         // check tracking of deployed pools
         assertEq(_factory.getDeployedPoolsList().length,  3);
@@ -141,26 +133,40 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
 
     function testDeployERC721CollectionPoolWithNonNFTAddress() external {
         // should revert if trying to deploy with non NFT
-        _assertDeployWithNonNFTRevert(
-            {
-                poolFactory:  address(_factory),
-                collateral:   address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2),
-                quote:        address(_quote),
-                interestRate: 0.05 * 10**18
-            }
-        );
+        _assertDeployWithNonNFTRevert({
+            poolFactory:  address(_factory),
+            collateral:   address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2),
+            quote:        address(_quote),
+            interestRate: 0.05 * 10**18
+        });
     }
 
     function testDeployERC721PoolMultipleTimes() external {
         // should revert if trying to deploy same pool one more time
-        _assertDeployMultipleTimesRevert(
-            {
-                poolFactory:  address(_factory),
-                collateral:   address(_collateral),
-                quote:        address(_quote),
-                interestRate: 0.05 * 10**18
-            }
-        );
+        _assertDeployMultipleTimesRevert({
+            poolFactory:  address(_factory),
+            collateral:   address(_collateral),
+            quote:        address(_quote),
+            interestRate: 0.05 * 10**18
+        });
+    }
+
+    function testDeployERC721PoolWithMinRate() external {
+        uint256[] memory tokenIds = new uint256[](0);
+        _factory.deployPool(address(new NFTCollateralToken()), address(new Token("Quote", "Q1")), tokenIds, 0.01 * 10**18);
+
+        // check tracking of deployed pools
+        assertEq(_factory.getDeployedPoolsList().length, 4);
+        assertEq(_factory.getNumberOfDeployedPools(),    4);
+    }
+
+    function testDeployERC721PoolWithMaxRate() external {
+        uint256[] memory tokenIds = new uint256[](0);
+        _factory.deployPool(address(new NFTCollateralToken()), address(new Token("Quote", "Q1")), tokenIds, 0.1 * 10**18);
+
+        // check tracking of deployed pools
+        assertEq(_factory.getDeployedPoolsList().length, 4);
+        assertEq(_factory.getNumberOfDeployedPools(),    4);
     }
 
     function testDeployERC721CollectionPool() external {

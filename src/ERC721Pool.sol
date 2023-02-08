@@ -163,7 +163,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             if (result.t0DebtInAuctionChange != 0) {
                 poolBalances.t0DebtInAuction -= result.t0DebtInAuctionChange;
             }
-            poolBalances.pledgedCollateral += Maths.wad(tokenIdsToPledge_.length);
+            poolBalances.pledgedCollateral = result.poolCollateral;
 
             // move collateral from sender to pool
             _transferFromSenderToPool(borrowerTokenIds[borrowerAddress_], tokenIdsToPledge_);
@@ -174,7 +174,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         // move borrowed amount from pool to sender
         if (amountToBorrow_ != 0) {
             // update pool balances state
-            poolBalances.t0Debt += result.t0DebtChange;
+            poolBalances.t0Debt = result.t0PoolDebt;
 
             // move borrowed amount from pool to sender
             _transferQuoteToken(msg.sender, amountToBorrow_);
@@ -194,7 +194,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     function repayDebt(
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
-        uint256 noOfNFTsToPull_
+        uint256 noOfNFTsToPull_,
+        address collateralReceiver_
     ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
@@ -218,9 +219,12 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         poolState.collateral = result.poolCollateral;
         _updateInterestState(poolState, result.newLup);
 
+        // update pool balances state
+        poolBalances.pledgedCollateral = result.poolCollateral;
+
         if (result.quoteTokenToRepay != 0) {
             // update pool balances state
-            poolBalances.t0Debt -= result.t0RepaidDebt;
+            poolBalances.t0Debt = result.t0PoolDebt;
             if (result.t0DebtInAuctionChange != 0) {
                 poolBalances.t0DebtInAuction -= result.t0DebtInAuctionChange;
             }
@@ -229,11 +233,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             _transferQuoteTokenFrom(msg.sender, result.quoteTokenToRepay);
         }
         if (noOfNFTsToPull_ != 0) {
-            // update pool balances state
-            poolBalances.pledgedCollateral = result.poolCollateral;
-
-            // move collateral from pool to sender
-            _transferFromPoolToAddress(msg.sender, borrowerTokenIds[msg.sender], noOfNFTsToPull_);
+            // move collateral from pool to address specified as collateral receiver
+            _transferFromPoolToAddress(collateralReceiver_, borrowerTokenIds[msg.sender], noOfNFTsToPull_);
         }
     }
 
@@ -282,6 +283,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         uint256 noOfNFTsToRemove_,
         uint256 toIndex_
     ) external override nonReentrant returns (uint256 collateralMerged_, uint256 bucketLPs_) {
+        _revertIfAuctionClearable(auctions, loans);
+
         PoolState memory poolState = _accruePoolInterest();
         uint256 collateralAmount = Maths.wad(noOfNFTsToRemove_);
 
@@ -356,7 +359,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     ) external nonReentrant override {
         PoolState memory poolState = _accruePoolInterest();
 
-        uint256 assets = Maths.wmul(poolBalances.t0Debt, poolState.inflator) + _getPoolQuoteTokenBalance();
+        uint256 assets = Maths.wmul(poolBalances.t0Debt, poolState.inflator) + _getNormalizedPoolQuoteTokenBalance();
+
         uint256 liabilities = Deposits.treeSum(deposits) + auctions.totalBondEscrowed + reserveAuction.unclaimed;
 
         SettleParams memory params = SettleParams(
@@ -370,7 +374,6 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         );
         (
             uint256 collateralRemaining,
-            uint256 t0DebtRemaining,
             uint256 collateralSettled,
             uint256 t0DebtSettled
         ) = Auctions.settlePoolDebt(
@@ -381,8 +384,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             params
         );
 
-        // slither-disable-next-line incorrect-equality
-        if (t0DebtRemaining == 0) _rebalanceTokens(params.borrower, collateralRemaining);
+        if (collateralSettled > 0) _rebalanceTokens(params.borrower, collateralRemaining);
 
         // update pool balances state
         poolBalances.t0Debt            -= t0DebtSettled;
@@ -422,24 +424,20 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         );
 
         // update pool balances state
-        uint256 t0PoolDebt      = poolBalances.t0Debt;
         uint256 t0DebtInAuction = poolBalances.t0DebtInAuction;
-
-        if (result.t0DebtPenalty != 0) {
-            t0PoolDebt      += result.t0DebtPenalty;
-            t0DebtInAuction += result.t0DebtPenalty;
-        }
-
-        t0PoolDebt      -= result.t0RepayAmount;
+        t0DebtInAuction += result.t0DebtPenalty;
         t0DebtInAuction -= result.t0DebtInAuctionChange;
 
-        poolBalances.t0Debt            =  t0PoolDebt;
-        poolBalances.t0DebtInAuction   =  t0DebtInAuction;
-        poolBalances.pledgedCollateral -= result.collateralAmount;
+        poolBalances.t0Debt          = result.t0PoolDebt;
+        poolBalances.t0DebtInAuction = t0DebtInAuction;
+
+        // the total collateral taken from borrower pledged collateral (collateral taken plus collateral compensated if auction settled)
+        uint256 collateralSettled = result.collateralAmount + result.compensatedCollateral;
+        poolBalances.pledgedCollateral -= collateralSettled;
 
         // update pool interest rate state
         poolState.debt       =  result.poolDebt;
-        poolState.collateral -= result.collateralAmount;
+        poolState.collateral -= collateralSettled;
         _updateInterestState(poolState, result.newLup);
 
         // transfer rounded collateral from pool to taker
@@ -449,10 +447,12 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             result.collateralAmount / 1e18
         );
 
+        uint256 totalQuoteTokenAmount = result.quoteTokenAmount + result.excessQuoteToken;
+
         if (data_.length != 0) {
             IERC721Taker(callee_).atomicSwapCallback(
                 tokensTaken,
-                result.quoteTokenAmount / _getArgUint256(QUOTE_SCALE), 
+                totalQuoteTokenAmount  / _getArgUint256(QUOTE_SCALE),
                 data_
             );
         }
@@ -460,7 +460,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         if (result.settledAuction) _rebalanceTokens(borrowerAddress_, result.remainingCollateral);
 
         // transfer from taker to pool the amount of quote tokens needed to cover collateral auctioned (including excess for rounded collateral)
-        _transferQuoteTokenFrom(callee_, result.quoteTokenAmount + result.excessQuoteToken);
+        _transferQuoteTokenFrom(callee_, totalQuoteTokenAmount);
 
         // transfer from pool to borrower the excess of quote tokens after rounding collateral auctioned
         if (result.excessQuoteToken != 0) _transferQuoteToken(borrowerAddress_, result.excessQuoteToken);
@@ -494,24 +494,20 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         );
 
         // update pool balances state
-        uint256 t0PoolDebt      = poolBalances.t0Debt;
         uint256 t0DebtInAuction = poolBalances.t0DebtInAuction;
-
-        if (result.t0DebtPenalty != 0) {
-            t0PoolDebt      += result.t0DebtPenalty;
-            t0DebtInAuction += result.t0DebtPenalty;
-        }
-
-        t0PoolDebt      -= result.t0RepayAmount;
+        t0DebtInAuction += result.t0DebtPenalty;
         t0DebtInAuction -= result.t0DebtInAuctionChange;
 
-        poolBalances.t0Debt            =  t0PoolDebt;
-        poolBalances.t0DebtInAuction   =  t0DebtInAuction;
-        poolBalances.pledgedCollateral -= result.collateralAmount;
+        poolBalances.t0Debt          = result.t0PoolDebt;
+        poolBalances.t0DebtInAuction = t0DebtInAuction;
+
+        // the total collateral taken from borrower pledged collateral (collateral taken plus collateral compensated if auction settled)
+        uint256 collateralSettled = result.collateralAmount + result.compensatedCollateral;
+        poolBalances.pledgedCollateral -= collateralSettled;
 
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
-        poolState.collateral -= result.collateralAmount;
+        poolState.collateral -= collateralSettled;
         _updateInterestState(poolState, result.newLup);
 
         if (result.settledAuction) _rebalanceTokens(borrowerAddress_, result.remainingCollateral);

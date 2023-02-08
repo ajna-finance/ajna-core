@@ -336,7 +336,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                 emit RepayDebt(borrower, amountRepaid, collateralToPull, newLup);
             }
 
-            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull);
+            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull, borrower);
 
             // post pull checks
             if (collateralToPull != 0) {
@@ -352,7 +352,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                 emit RepayDebt(borrower, amountRepaid, collateralToPull, newLup);
             }
 
-            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull);
+            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull, borrower);
         }
     }
 
@@ -428,6 +428,27 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         for (uint256 i; i < tokenIds.length; i++) {
             assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(borrower, i), tokenIds[i]);
         }
+    }
+
+    function _assertCollateralInvariants() internal {
+        uint256 collateralInBuckets;
+        for(uint256 bucketIndex = 0; bucketIndex <= 7388; bucketIndex++) {
+            (, uint256 bucketCollateral, , , ) = _pool.bucketInfo(bucketIndex);
+            collateralInBuckets += bucketCollateral;
+        }
+
+        uint256 borrowersCollateral;
+        for (uint256 i = 0; i < borrowers.length(); i++) {
+            (, uint256 borrowerCollateral, ) = _poolUtils.borrowerInfo(address(_pool), borrowers.at(i));
+            borrowersCollateral += borrowerCollateral;
+        }
+
+        // pool pledged collateral accumulator should be equal with the amounts of collateral owned by borrowers
+        assertEq(borrowersCollateral, _pool.pledgedCollateral());
+
+        // collateral in buckets + collateral owned borrowers should be equal with the total number of tokens owned by the pool
+        uint256 poolBalance = _collateral.balanceOf(address(_pool));
+        assertEq(collateralInBuckets + borrowersCollateral, poolBalance * 1e18);
     }
 
     /**********************/
@@ -509,6 +530,17 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         ERC721Pool(address(_pool)).drawDebt(from, amount, indexLimit, emptyArray);
     }
 
+    function _assertMergeRemoveCollateralAuctionNotClearedRevert(
+        address from,
+        uint256 toIndex,
+        uint256 noOfNFTsToRemove,
+        uint256[] memory removeCollateralAtIndex
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('AuctionNotCleared()'));
+        ERC721Pool(address(_pool)).mergeOrRemoveCollateral(removeCollateralAtIndex, noOfNFTsToRemove, toIndex);
+    }
+
     function _assertCannotMergeToHigherPriceRevert(
         address from,
         uint256 toIndex,
@@ -548,7 +580,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
-        ERC721Pool(address(_pool)).repayDebt(from, 0, amount);
+        ERC721Pool(address(_pool)).repayDebt(from, 0, amount, from);
     }
 
     function _assertRepayNoDebtRevert(
@@ -558,7 +590,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.NoDebt.selector);
-        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0);
+        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0, borrower);
     }
 
     function _assertRepayMinDebtRevert(
@@ -568,7 +600,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
-        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0);
+        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0, borrower);
     }
 
     function _assertRemoveCollateralNoClaimRevert(
