@@ -235,7 +235,7 @@ contract ERC721PoolLiquidationsDepositTakeTest is ERC721HelperContract {
             kicker:           _lender,
             index:            _i1505_26,
             collateralArbed:  0.009965031187761219 * 1e18,
-            quoteTokenAmount: 15.0 * 1e18,
+            quoteTokenAmount: 14.999999999999999995 * 1e18,
             bondChange:       0.15 * 1e18,
             isReward:         false,
             lpAwardTaker:     0,

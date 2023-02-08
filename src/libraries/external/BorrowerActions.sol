@@ -127,9 +127,13 @@ library BorrowerActions {
         result_.poolDebt       = poolState_.debt;
         result_.poolCollateral = poolState_.collateral;
 
+        result_.remainingCollateral = borrower.collateral;
+
         if (vars.pledge) {
             // add new amount of collateral to pledge to borrower balance
             borrower.collateral  += collateralToPledge_;
+
+            result_.remainingCollateral += collateralToPledge_;
 
             result_.newLup  = _lup(deposits_, result_.poolDebt);
             vars.inAuction = _inAuction(auctions_, borrowerAddress_);
@@ -277,6 +281,8 @@ library BorrowerActions {
         result_.t0PoolDebt     = poolState_.t0Debt;
         result_.poolDebt       = poolState_.debt;
         result_.poolCollateral = poolState_.collateral;
+
+        result_.remainingCollateral = borrower.collateral;
 
         if (vars.repay) {
             if (borrower.t0Debt == 0) revert NoDebt();

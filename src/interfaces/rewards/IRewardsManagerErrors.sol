@@ -12,6 +12,11 @@ interface IRewardsManagerErrors {
     error AlreadyClaimed();
 
     /**
+     *  @notice User attempted to claim rewards for an epoch that is not yet available.
+     */
+    error EpochNotAvailable();
+
+    /**
      *  @notice User attempted to record updated exchange rates outside of the allowed period.
      */
     error ExchangeRateUpdateTooLate();
