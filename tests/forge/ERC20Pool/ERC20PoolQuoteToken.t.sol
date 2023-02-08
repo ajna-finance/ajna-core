@@ -990,6 +990,15 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             toIndex:   6000
         });
 
+        // should revert if transaction expired
+        _assertMoveLiquidityExpiredRevert({
+            from:      _lender,
+            amount:    30_000 * 1e18,
+            fromIndex: 4549,
+            toIndex:   4459,
+            expiry:    block.timestamp - 20
+        });
+
         // should be able to moveQuoteToken if properly specified
         _moveLiquidity({
             from:         _lender,

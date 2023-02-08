@@ -176,8 +176,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function moveQuoteToken(
         uint256 maxAmountToMove_,
         uint256 fromIndex_,
-        uint256 toIndex_
+        uint256 toIndex_,
+        uint256 expiry_
     ) external override nonReentrant returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
+        _revertOnExpiry(expiry_);
         PoolState memory poolState = _accruePoolInterest();
 
         _revertIfAuctionDebtLocked(deposits, poolBalances, fromIndex_, poolState.inflator);

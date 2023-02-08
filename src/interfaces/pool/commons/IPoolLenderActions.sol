@@ -37,13 +37,15 @@ interface IPoolLenderActions {
      *  @param  maxAmount     The maximum amount of quote token to be moved by a lender.
      *  @param  fromIndex     The bucket index from which the quote tokens will be removed.
      *  @param  toIndex       The bucket index to which the quote tokens will be added.
+     *  @param  expiry        Timestamp after which this TX will revert, preventing inclusion in a block with unfavorable price.
      *  @return lpbAmountFrom The amount of LPs moved out from bucket.
      *  @return lpbAmountTo   The amount of LPs moved to destination bucket.
      */
     function moveQuoteToken(
         uint256 maxAmount,
         uint256 fromIndex,
-        uint256 toIndex
+        uint256 toIndex,
+        uint256 expiry
     ) external returns (uint256 lpbAmountFrom, uint256 lpbAmountTo);
 
     /**

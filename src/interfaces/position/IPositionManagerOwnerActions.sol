@@ -94,6 +94,7 @@ interface IPositionManagerOwnerActions {
         address pool;      // The pool address associated with positions NFT
         uint256 fromIndex; // The bucket index from which liquidity should be moved
         uint256 toIndex;   // The bucket index to which liquidity should be moved
+        uint256 expiry;    // Timestamp after which this TX will revert, preventing inclusion in a block with unfavorable price
     }
 
     /**

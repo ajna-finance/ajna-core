@@ -276,7 +276,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         changePrank(from);
         vm.expectEmit(true, true, true, true);
         emit MoveQuoteToken(from, fromIndex, toIndex, amountMoved, lpRedeemFrom, lpAwardTo, newLup);
-        (uint256 lpbFrom, uint256 lpbTo) = _pool.moveQuoteToken(amount, fromIndex, toIndex);
+        (uint256 lpbFrom, uint256 lpbTo) = _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
         assertEq(lpbFrom, lpRedeemFrom);
         assertEq(lpbTo,   lpAwardTo);
 
@@ -1111,7 +1111,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('BucketBankruptcyBlock()'));
-        _pool.moveQuoteToken(amount, fromIndex, toIndex);
+        _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
     }
 
     function _assertMoveLiquidityLupBelowHtpRevert(
@@ -1122,7 +1122,19 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.LUPBelowHTP.selector);
-        _pool.moveQuoteToken(amount, fromIndex, toIndex);
+        _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
+    }
+
+    function _assertMoveLiquidityExpiredRevert(
+        address from,
+        uint256 amount,
+        uint256 fromIndex,
+        uint256 toIndex,
+        uint256 expiry
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.TransactionExpired.selector);
+        _pool.moveQuoteToken(amount, fromIndex, toIndex, expiry);
     }
 
     function _assertMoveLiquidityDustRevert(
@@ -1133,7 +1145,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
-        _pool.moveQuoteToken(amount, fromIndex, toIndex);
+        _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
     }
 
     function _assertMoveLiquidityToSamePriceRevert(
@@ -1144,7 +1156,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.MoveToSamePrice.selector);
-        _pool.moveQuoteToken(amount, fromIndex, toIndex);
+        _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
     }
 
     function _assertMoveLiquidityToIndex0Revert(
@@ -1154,7 +1166,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InvalidIndex.selector);
-        _pool.moveQuoteToken(amount, fromIndex, 0);
+        _pool.moveQuoteToken(amount, fromIndex, 0, type(uint256).max);
     }
 
     function _assertMoveDepositLockedByAuctionDebtRevert(
@@ -1165,7 +1177,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.RemoveDepositLockedByAuctionDebt.selector);
-        _pool.moveQuoteToken(amount, fromIndex, toIndex);
+        _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
     }
 
     function _assertTakeAuctionInCooldownRevert(

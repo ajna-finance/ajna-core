@@ -805,7 +805,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         skip(1 hours);
 
         _pool.addQuoteToken(100 * 1e18, _i9_91, block.timestamp + 1 minutes);
-        _pool.moveQuoteToken(10 * 1e18, _i9_52, _i9_91);
+        _pool.moveQuoteToken(10 * 1e18, _i9_52, _i9_91, block.timestamp + 1 minutes);
         ERC20Pool(address(_pool)).addCollateral(4 * 1e18, _i9_91, block.timestamp + 1 minutes);
 
         _assertLenderLpBalance({
@@ -832,7 +832,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             depositTime: _startTime
         });
 
-        _pool.moveQuoteToken(1_000 * 1e18, _i9_52, _i9_91);
+        _pool.moveQuoteToken(1_000 * 1e18, _i9_52, _i9_91, block.timestamp + 1 minutes);
 
         _assertLenderLpBalance({
             lender:      _lender,
@@ -842,7 +842,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         });
 
         _pool.addQuoteToken(1_000 * 1e18, _i9_52, block.timestamp + 1 minutes);
-        _pool.moveQuoteToken(1_000 * 1e18, _i9_52, _i9_91);
+        _pool.moveQuoteToken(1_000 * 1e18, _i9_52, _i9_91, block.timestamp + 1 minutes);
 
         _assertLenderLpBalance({
             lender:      _lender,
