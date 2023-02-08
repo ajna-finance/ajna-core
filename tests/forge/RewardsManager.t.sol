@@ -1632,4 +1632,34 @@ contract RewardsManagerTest is DSTestPlus {
         }
     }
 
+    function testClaimRewardsFreezeUnclaimedYield() external {
+        skip(10);
+
+        uint256[] memory depositIndexes = new uint256[](5);
+        depositIndexes[0] = 9;
+        depositIndexes[1] = 1;
+        depositIndexes[2] = 2;
+        depositIndexes[3] = 3;
+        depositIndexes[4] = 4;
+        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+            indexes: depositIndexes,
+            minter: _minterOne,
+            mintAmount: 1000 * 1e18,
+            pool: _poolOne
+        });
+
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
+
+        uint256 currentBurnEpoch = _poolOne.currentBurnEpoch();
+
+        changePrank(_minterOne);
+        // should revert if the epoch to claim is not available yet
+        vm.expectRevert(IRewardsManagerErrors.EpochNotAvailable.selector);
+        _rewardsManager.claimRewards(tokenIdOne, currentBurnEpoch + 10);
+
+        // user should be able to claim rewards for current epoch
+        _rewardsManager.claimRewards(tokenIdOne, currentBurnEpoch);
+    }
+
 }
