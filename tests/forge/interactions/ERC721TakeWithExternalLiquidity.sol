@@ -19,20 +19,17 @@ contract ERC721TakeWithExternalLiquidityTest is ERC721HelperContract {
     address internal _borrower;
     address internal _borrower2;
     address internal _lender;
-    address internal _lender1;
 
     function setUp() external {
 
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
-        _lender1    = makeAddr("lender1");
 
         // deploy collection pool
         _pool = _deployCollectionPool();
 
         _mintAndApproveQuoteTokens(_lender, 100_000 * 1e18);
-        _mintAndApproveQuoteTokens(_lender1, 100_000 * 1e18);
         _mintAndApproveCollateralTokens(_borrower, 3);
         _mintAndApproveCollateralTokens(_borrower2, 5);
 
@@ -122,6 +119,4 @@ contract ERC721TakeWithExternalLiquidityTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_lender), 49_450.248738460601210993 * 1e18);
         assertEq(_quote.balanceOf(address(taker)), 1_500.0 * 1e18); // QT is increased as NFTTakeExample contract sells the NFT
     }
-
-
 }
