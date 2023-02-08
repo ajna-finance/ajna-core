@@ -405,7 +405,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
             );
         }
 
-        _transferQuoteTokenFrom(callee_, result.quoteTokenAmount);
+        _transferQuoteTokenFrom(msg.sender, result.quoteTokenAmount);
     }
 
     /**
