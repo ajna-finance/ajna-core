@@ -107,11 +107,13 @@ contract RewardsManager is IRewardsManager {
         uint256 tokenId_,
         uint256 epochToClaim_
     ) external override {
-        if (msg.sender != stakes[tokenId_].owner) revert NotOwnerOfDeposit();
+        StakeInfo storage stakeInfo = stakes[tokenId_];
+
+        if (msg.sender != stakeInfo.owner) revert NotOwnerOfDeposit();
 
         if (isEpochClaimed[tokenId_][epochToClaim_]) revert AlreadyClaimed();
 
-        _claimRewards(tokenId_, epochToClaim_);
+        _claimRewards(stakeInfo, tokenId_, epochToClaim_, true, stakeInfo.ajnaPool);
     }
 
     /**
@@ -187,14 +189,20 @@ contract RewardsManager is IRewardsManager {
     function unstake(
         uint256 tokenId_
     ) external override {
-        if (msg.sender != stakes[tokenId_].owner) revert NotOwnerOfDeposit();
+        StakeInfo storage stakeInfo = stakes[tokenId_];
 
-        address ajnaPool = stakes[tokenId_].ajnaPool;
+        if (msg.sender != stakeInfo.owner) revert NotOwnerOfDeposit();
+
+        address ajnaPool = stakeInfo.ajnaPool;
 
         // claim rewards, if any
-        _claimRewards(tokenId_, IPool(ajnaPool).currentBurnEpoch());
-
-        StakeInfo storage stakeInfo = stakes[tokenId_];
+        _claimRewards(
+            stakeInfo,
+            tokenId_,
+            IPool(ajnaPool).currentBurnEpoch(),
+            false,
+            ajnaPool
+        );
 
         // remove bucket snapshots recorded at the time of staking
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
@@ -462,43 +470,46 @@ contract RewardsManager is IRewardsManager {
 
     /**
      *  @notice Claim rewards that have been accumulated by a staked NFT.
-     *  @param  tokenId_      ID of the staked LP NFT.
-     *  @param  epochToClaim_ The burn epoch to claim rewards for (rewards calculation starts from the last claimed epoch)
+     *  @param  stakeInfo_     Details of stake to claim rewards for.
+     *  @param  tokenId_       ID of the staked LP NFT.
+     *  @param  epochToClaim_  The burn epoch to claim rewards for (rewards calculation starts from the last claimed epoch)
+     *  @param  isManualEpoch_ True if the epoch is received as a parameter and needs to be validated (lower or equal with latest epoch).
+     *  @param  ajnaPool_      Address of ajna pool associated with the stake.
      */
     function _claimRewards(
+        StakeInfo storage stakeInfo_,
         uint256 tokenId_,
-        uint256 epochToClaim_
+        uint256 epochToClaim_,
+        bool isManualEpoch_,
+        address ajnaPool_
     ) internal {
-        StakeInfo storage stakeInfo = stakes[tokenId_];
-
-        address ajnaPool = stakeInfo.ajnaPool;
 
         // revert if higher epoch to claim than current burn epoch
-        if (epochToClaim_ > IPool(ajnaPool).currentBurnEpoch()) revert EpochNotAvailable();
+        if (isManualEpoch_ && epochToClaim_ > IPool(ajnaPool_).currentBurnEpoch()) revert EpochNotAvailable();
 
         // update bucket exchange rates and claim associated rewards
         uint256 rewardsEarned = _updateBucketExchangeRates(
-            ajnaPool,
+            ajnaPool_,
             positionManager.getPositionIndexes(tokenId_)
         );
 
         rewardsEarned += _calculateAndClaimRewards(tokenId_, epochToClaim_);
 
         uint256[] memory burnEpochsClaimed = _getBurnEpochsClaimed(
-            stakeInfo.lastInteractionBurnEpoch,
+            stakeInfo_.lastInteractionBurnEpoch,
             epochToClaim_
         );
 
         emit ClaimRewards(
             msg.sender,
-            ajnaPool,
+            ajnaPool_,
             tokenId_,
             burnEpochsClaimed,
             rewardsEarned
         );
 
         // update last interaction burn event
-        stakeInfo.lastInteractionBurnEpoch = uint96(epochToClaim_);
+        stakeInfo_.lastInteractionBurnEpoch = uint96(epochToClaim_);
 
         // transfer rewards to sender
         _transferAjnaRewards(rewardsEarned);
