@@ -240,9 +240,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         address newOwner_,
         uint256[] calldata indexes_
     ) external override nonReentrant {
-        // revert if new owner address is the same as old owner address
-        if (owner_ == newOwner_) revert TransferToSameOwner();
-
         LenderActions.transferLPs(
             buckets,
             _lpAllowances,
