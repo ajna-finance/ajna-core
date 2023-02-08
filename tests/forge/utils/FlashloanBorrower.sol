@@ -5,6 +5,7 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 
 import { Token } from '../utils/Tokens.sol';
 
+import 'src/ERC20Pool.sol';
 import 'src/interfaces/pool/IERC3156FlashBorrower.sol';
 import 'src/libraries/internal/Maths.sol';
 
@@ -47,5 +48,28 @@ contract SomeDefiStrategy {
         uint256 reward = Maths.wmul(0.035 * 1e18, amount_);
         // step 3: profit
         token.transfer(msg.sender, amount_ + reward);
+    }
+}
+
+// Example of some defi strategy which repays to pool
+contract SomeDefiStrategyWithRepayment {
+    ERC20 public token;
+    address public pool;
+
+    constructor(ERC20 token_, address pool_) {
+        token = token_;
+        pool  = pool_;
+    }
+
+    function makeMoney(uint256 amount_) external {
+        // step 1: take deposit from caller
+        token.transferFrom(msg.sender, address(this), amount_);
+        // step 2: earn 3.5% reward
+        uint256 reward = Maths.wmul(0.035 * 1e18, amount_);
+        // step 3: profit
+        token.transfer(msg.sender, amount_ + reward);
+
+        // repay amount to pool
+        token.transfer(pool, 1 * 1e18);
     }
 }

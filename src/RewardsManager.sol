@@ -194,6 +194,17 @@ contract RewardsManager is IRewardsManager {
         // claim rewards, if any
         _claimRewards(tokenId_, IPool(ajnaPool).currentBurnEpoch());
 
+        StakeInfo storage stakeInfo = stakes[tokenId_];
+
+        // remove bucket snapshots recorded at the time of staking
+        uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
+        for (uint256 i = 0; i < positionIndexes.length; ) {
+            delete stakeInfo.snapshot[positionIndexes[i]]; // reset BucketState struct for current position
+
+            unchecked { ++i; }
+        }
+
+        // remove recorded stake info
         delete stakes[tokenId_];
 
         emit Unstake(msg.sender, ajnaPool, tokenId_);
@@ -255,7 +266,19 @@ contract RewardsManager is IRewardsManager {
         return (
             stakes[tokenId_].owner,
             stakes[tokenId_].ajnaPool,
-            stakes[tokenId_].lastInteractionBurnEpoch);
+            stakes[tokenId_].lastInteractionBurnEpoch
+        );
+    }
+
+    /// @inheritdoc IRewardsManagerState
+    function getBucketStateStakeInfo(
+        uint256 tokenId_,
+        uint256 bucketId_
+    ) external view override returns (uint256, uint256) {
+        return (
+            stakes[tokenId_].snapshot[bucketId_].lpsAtStakeTime,
+            stakes[tokenId_].snapshot[bucketId_].rateAtStakeTime
+        );
     }
 
     /**************************/
@@ -448,6 +471,9 @@ contract RewardsManager is IRewardsManager {
         StakeInfo storage stakeInfo = stakes[tokenId_];
 
         address ajnaPool = stakeInfo.ajnaPool;
+
+        // revert if higher epoch to claim than current burn epoch
+        if (epochToClaim_ > IPool(ajnaPool).currentBurnEpoch()) revert EpochNotAvailable();
 
         // update bucket exchange rates and claim associated rewards
         uint256 rewardsEarned = _updateBucketExchangeRates(

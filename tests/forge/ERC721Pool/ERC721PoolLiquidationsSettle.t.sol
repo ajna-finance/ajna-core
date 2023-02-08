@@ -203,6 +203,14 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
             })
         );
 
+        // revert if auction is not settled
+        _assertMergeRemoveCollateralAuctionNotClearedRevert({
+            from:                    _lender,
+            toIndex:                 MAX_FENWICK_INDEX,
+            noOfNFTsToRemove:        2,
+            removeCollateralAtIndex: new uint256[](0)
+        });
+
         _settle({
             from:        _lender,
             borrower:    _borrower2,
@@ -226,6 +234,14 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
                 neutralPrice:      0
             })
         );
+
+        // revert if auction is not settled
+        _assertMergeRemoveCollateralAuctionNotClearedRevert({
+            from:                    _lender,
+            toIndex:                 MAX_FENWICK_INDEX,
+            noOfNFTsToRemove:        2,
+            removeCollateralAtIndex: new uint256[](0)
+        });
 
         // settle borrower
         _settle({

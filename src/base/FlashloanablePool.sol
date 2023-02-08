@@ -35,6 +35,8 @@ abstract contract FlashloanablePool is Pool {
 
         IERC20 tokenContract = IERC20(token_);
 
+        uint256 initialBalance = tokenContract.balanceOf(address(this));
+
         tokenContract.safeTransfer(
             address(receiver_),
             amount_
@@ -48,6 +50,8 @@ abstract contract FlashloanablePool is Pool {
             address(this),
             amount_
         );
+
+        if (tokenContract.balanceOf(address(this)) != initialBalance) revert FlashloanIncorrectBalance();
 
         success_ = true;
     }
