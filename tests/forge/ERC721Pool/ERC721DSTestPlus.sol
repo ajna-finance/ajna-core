@@ -530,6 +530,17 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         ERC721Pool(address(_pool)).drawDebt(from, amount, indexLimit, emptyArray);
     }
 
+    function _assertMergeRemoveCollateralAuctionNotClearedRevert(
+        address from,
+        uint256 toIndex,
+        uint256 noOfNFTsToRemove,
+        uint256[] memory removeCollateralAtIndex
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('AuctionNotCleared()'));
+        ERC721Pool(address(_pool)).mergeOrRemoveCollateral(removeCollateralAtIndex, noOfNFTsToRemove, toIndex);
+    }
+
     function _assertCannotMergeToHigherPriceRevert(
         address from,
         uint256 toIndex,

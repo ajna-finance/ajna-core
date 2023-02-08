@@ -282,6 +282,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         uint256 noOfNFTsToRemove_,
         uint256 toIndex_
     ) external override nonReentrant returns (uint256 collateralMerged_, uint256 bucketLPs_) {
+        _revertIfAuctionClearable(auctions, loans);
+
         PoolState memory poolState = _accruePoolInterest();
         uint256 collateralAmount = Maths.wad(noOfNFTsToRemove_);
 
