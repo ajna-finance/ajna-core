@@ -29,7 +29,8 @@ interface IPositionManagerOwnerActions {
     ) external;
 
     /**
-     *  @notice Called by owners to add quote tokens and receive a representative NFT.
+     *  @notice Called by owners to mint and receive an Ajna Position NFT.
+     *  @dev    PositionNFTs can only be minited with an association to pools that have been deployed by the Ajna ERC20PoolFactory or ERC721PoolFactory.
      *  @param  params  Calldata struct supplying inputs required to mint a positions NFT.
      *  @return tokenId The tokenId of the newly minted NFT.
      */
