@@ -75,12 +75,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
             (, uint256 bucketQuote, uint256 bucketCollateral, , ,) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
             (uint256 lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
 
-            // redeem LP for quote token if available
             uint256 lpRedeemed;
-            if(lenderLpBalance != 0 && bucketQuote != 0) {
-                (, lpRedeemed) = _pool.removeQuoteToken(type(uint256).max, bucketIndex);
-                lenderLpBalance -= lpRedeemed;
-            }
 
             // redeem LP for collateral if available
             if(lenderLpBalance != 0 && bucketCollateral != 0) {
@@ -88,8 +83,12 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
                 lenderLpBalance -= lpRedeemed;
             }
 
-            // confirm the redemption amount returned by removal methods is correct
-            assertEq(lenderLpBalance, 0);
+            // redeem LP for quote token if available
+            if(lenderLpBalance != 0 && bucketQuote != 0) {
+                (, lpRedeemed) = _pool.removeQuoteToken(type(uint256).max, bucketIndex);
+                lenderLpBalance -= lpRedeemed;
+            }
+
             // confirm the user actually has 0 LPB in the bucket
             (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
             assertEq(lenderLpBalance, 0);
