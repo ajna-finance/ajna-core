@@ -118,7 +118,7 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
             uint256[] memory sortedTokenIds = _insertionSortTokenIds(tokenIds_);
 
             // hash the sorted array of tokenIds
-            return keccak256(abi.encodePacked(sortedTokenIds));
+            return keccak256(abi.encode(sortedTokenIds));
         }
     }
 
