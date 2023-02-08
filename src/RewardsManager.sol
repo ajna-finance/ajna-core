@@ -473,19 +473,19 @@ contract RewardsManager is IRewardsManager {
      *  @param  stakeInfo_     Details of stake to claim rewards for.
      *  @param  tokenId_       ID of the staked LP NFT.
      *  @param  epochToClaim_  The burn epoch to claim rewards for (rewards calculation starts from the last claimed epoch)
-     *  @param  isManualEpoch_ True if the epoch is received as a parameter and needs to be validated (lower or equal with latest epoch).
+     *  @param  validateEpoch_ True if the epoch is received as a parameter and needs to be validated (lower or equal with latest epoch).
      *  @param  ajnaPool_      Address of ajna pool associated with the stake.
      */
     function _claimRewards(
         StakeInfo storage stakeInfo_,
         uint256 tokenId_,
         uint256 epochToClaim_,
-        bool isManualEpoch_,
+        bool validateEpoch_,
         address ajnaPool_
     ) internal {
 
         // revert if higher epoch to claim than current burn epoch
-        if (isManualEpoch_ && epochToClaim_ > IPool(ajnaPool_).currentBurnEpoch()) revert EpochNotAvailable();
+        if (validateEpoch_ && epochToClaim_ > IPool(ajnaPool_).currentBurnEpoch()) revert EpochNotAvailable();
 
         // update bucket exchange rates and claim associated rewards
         uint256 rewardsEarned = _updateBucketExchangeRates(
