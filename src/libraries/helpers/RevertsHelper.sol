@@ -59,6 +59,11 @@ import { Maths }    from '../internal/Maths.sol';
         }
     }
 
+    /**
+     *  @notice Check if expiration provided by user has met or exceeded current block height timestamp.
+     *  @notice Prevents stale transactions interacting with the pool at potentially unfavorable prices.
+     *  @param  expiry_ Expiration provided by user when creating the TX.
+     */
     function _revertOnExpiry(
         uint256 expiry_
     ) view {

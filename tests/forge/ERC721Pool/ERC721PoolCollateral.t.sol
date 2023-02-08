@@ -1045,4 +1045,18 @@ contract ERC721SubsetPoolCollateralTest is ERC721PoolCollateralTest {
             tokenIds: tokenIdsToAdd
         });
     }
+
+    function testRemoveCollateralReverts() external tearDown {
+        uint256 testIndex = 6248;
+        uint256[] memory tokenIdsToAdd = new uint256[](2);
+        tokenIdsToAdd[0] = 3;
+        tokenIdsToAdd[1] = 5;
+
+        _assertAddCollateralExpiredRevert({
+            from:     _lender,
+            tokenIds: tokenIdsToAdd,
+            index:    testIndex,
+            expiry:   block.timestamp - 15
+        });
+    }
 }

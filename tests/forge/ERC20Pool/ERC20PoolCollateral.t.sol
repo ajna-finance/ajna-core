@@ -412,6 +412,14 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             from:  _lender,
             index: testIndex
         });
+
+        // should revert if expiration passed
+        _assertAddCollateralExpiredRevert({
+            from:   _lender,
+            amount: 0.5 * 1e18,
+            index:  testIndex,
+            expiry: block.timestamp - 2 minutes
+        });
     }
 
     function testPledgeCollateralFromDifferentActor() external tearDown {

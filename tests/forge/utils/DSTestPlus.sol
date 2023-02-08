@@ -733,6 +733,17 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.addQuoteToken(amount, index, type(uint256).max);
     }
 
+    function _assertAddLiquidityExpiredRevert(
+        address from,
+        uint256 amount,
+        uint256 index,
+        uint256 expiry
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.TransactionExpired.selector);
+        _pool.addQuoteToken(amount, index, expiry);
+    }
+
     function _assertArbTakeNoAuction(
         address from,
         address borrower,

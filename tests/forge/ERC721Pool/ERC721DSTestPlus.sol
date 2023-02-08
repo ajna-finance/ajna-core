@@ -455,6 +455,17 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     /*** Revert asserts ***/
     /**********************/
 
+    function _assertAddCollateralExpiredRevert(
+        address from,
+        uint256[] memory tokenIds,
+        uint256 index,
+        uint256 expiry
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.TransactionExpired.selector);
+        ERC721Pool(address(_pool)).addCollateral(tokenIds, index, expiry);
+    }
+
     function _assertDeployWith0xAddressRevert(
         address poolFactory,
         address collateral,
