@@ -115,7 +115,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 index
     ) internal {
         changePrank(from);
-        _pool.addQuoteToken(amount, index);
+        _pool.addQuoteToken(amount, index, type(uint256).max);
 
         // Add for tearDown
         lenders.add(from);
@@ -136,7 +136,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         vm.expectEmit(true, true, false, true);
         emit AddQuoteToken(from, index, (amount / quoteTokenScale) * quoteTokenScale, lpAward, newLup);
         _assertQuoteTokenTransferEvent(from, address(_pool), amount);
-        _pool.addQuoteToken(amount, index);
+        _pool.addQuoteToken(amount, index, type(uint256).max);
 
         // Add for tearDown
         lenders.add(from);
@@ -711,7 +711,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('BucketBankruptcyBlock()'));
-        _pool.addQuoteToken(amount, index);
+        _pool.addQuoteToken(amount, index, type(uint256).max);
     }
 
     function _assertAddLiquidityAtIndex0Revert(
@@ -720,7 +720,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InvalidIndex.selector);
-        _pool.addQuoteToken(amount, 0);
+        _pool.addQuoteToken(amount, 0, type(uint256).max);
     }
 
     function _assertAddLiquidityDustRevert(
@@ -730,7 +730,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
-        _pool.addQuoteToken(amount, index);
+        _pool.addQuoteToken(amount, index, type(uint256).max);
     }
 
     function _assertArbTakeNoAuction(

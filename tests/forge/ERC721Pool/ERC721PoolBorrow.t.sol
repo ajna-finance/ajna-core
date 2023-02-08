@@ -574,7 +574,7 @@ contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
     function testMinBorrowAmountCheck() external tearDown {
         // add initial quote to the pool
         changePrank(_lender);
-        _pool.addQuoteToken(20_000 * 1e18, 2550);
+        _pool.addQuoteToken(20_000 * 1e18, 2550, block.timestamp + 1 minutes);
 
         // 10 borrowers draw debt
         for (uint i=0; i<10; ++i) {
@@ -603,7 +603,7 @@ contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
     function testMinRepayAmountCheck() external tearDown {
         // add initial quote to the pool
         changePrank(_lender);
-        _pool.addQuoteToken(20_000 * 1e18, 2550);
+        _pool.addQuoteToken(20_000 * 1e18, 2550, block.timestamp + 1 minutes);
 
         // 9 other borrowers draw debt
         for (uint i=0; i<9; ++i) {

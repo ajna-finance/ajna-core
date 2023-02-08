@@ -32,7 +32,10 @@ import {
 
 import { FlashloanablePool } from './base/FlashloanablePool.sol';
 
-import { _revertIfAuctionClearable } from './libraries/helpers/RevertsHelper.sol';
+import { 
+    _revertIfAuctionClearable,
+    _revertOnExpiry 
+}                               from './libraries/helpers/RevertsHelper.sol';
 
 import { Maths }    from './libraries/internal/Maths.sol';
 import { Deposits } from './libraries/internal/Deposits.sol';
@@ -252,8 +255,10 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
      */
     function addCollateral(
         uint256[] calldata tokenIdsToAdd_,
-        uint256 index_
+        uint256 index_,
+        uint256 expiry_
     ) external override nonReentrant returns (uint256 bucketLPs_) {
+        _revertOnExpiry(expiry_);
         PoolState memory poolState = _accruePoolInterest();
 
         bucketLPs_ = LenderActions.addCollateral(

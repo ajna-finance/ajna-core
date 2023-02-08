@@ -195,7 +195,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         lendersDepositedIndex[from].add(index);
         bucketsUsed.add(index); 
 
-        return ERC20Pool(address(_pool)).addCollateral(amount, index);
+        return ERC20Pool(address(_pool)).addCollateral(amount, index, type(uint256).max);
     }
 
     function _addCollateralWithoutCheckingLP(
@@ -218,7 +218,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         lendersDepositedIndex[from].add(index);
         bucketsUsed.add(index);
 
-        return ERC20Pool(address(_pool)).addCollateral(amount, index);
+        return ERC20Pool(address(_pool)).addCollateral(amount, index, type(uint256).max);
     }
 
     function _borrow(
@@ -439,7 +439,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('BucketBankruptcyBlock()'));
-        ERC20Pool(address(_pool)).addCollateral(amount, index);
+        ERC20Pool(address(_pool)).addCollateral(amount, index, type(uint256).max);
     }
 
     function _assertAddCollateralAtIndex0Revert(
@@ -448,7 +448,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InvalidIndex.selector);
-        ERC20Pool(address(_pool)).addCollateral(amount, 0);
+        ERC20Pool(address(_pool)).addCollateral(amount, 0, type(uint256).max);
     }
 
     function _assertAddCollateralDustRevert(
@@ -458,7 +458,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
-        ERC20Pool(address(_pool)).addCollateral(amount, index);
+        ERC20Pool(address(_pool)).addCollateral(amount, index, type(uint256).max);
     }
 
     function _assertDeployWith0xAddressRevert(

@@ -106,7 +106,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                     }
                     deal(_pool.quoteTokenAddress(), lender, depositRequired);
                     Token(_pool.quoteTokenAddress()).approve(address(_pool) , depositRequired);
-                    _pool.addQuoteToken(depositRequired, bucketIndex);
+                    _pool.addQuoteToken(depositRequired, bucketIndex, block.timestamp + 1 minutes);
                     (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
                     lpsAsCollateral = _poolUtils.lpsToCollateral(address(_pool), lenderLpBalance, bucketIndex);
                 }
@@ -175,7 +175,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
             emit Transfer(from, address(_pool), tokenIds[i]);
         }
 
-        lps_ = ERC721Pool(address(_pool)).addCollateral(tokenIds, index);
+        lps_ = ERC721Pool(address(_pool)).addCollateral(tokenIds, index, block.timestamp + 10 minutes);
 
         for (uint256 i = 0; i < tokenIds.length; i++) {
             assertEq(_collateral.ownerOf(tokenIds[i]), address(_pool));  // token is owned by pool after add

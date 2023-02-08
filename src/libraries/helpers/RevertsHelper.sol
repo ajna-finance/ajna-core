@@ -21,6 +21,7 @@ import { Maths }    from '../internal/Maths.sol';
     error AmountLTMinDebt();
     error DustAmountNotExceeded();
     error RemoveDepositLockedByAuctionDebt();
+    error TransactionExpired();
 
     /**
      *  @notice Called by LPB removal functions assess whether or not LPB is locked.
@@ -56,6 +57,12 @@ import { Maths }    from '../internal/Maths.sol';
             Borrower storage borrower = loans_.borrowers[head];
             if (borrower.t0Debt != 0 && borrower.collateral == 0) revert AuctionNotCleared();
         }
+    }
+
+    function _revertOnExpiry(
+        uint256 expiry_
+    ) view {
+        if (block.timestamp >= expiry_) revert TransactionExpired();
     }
 
     function _revertOnMinDebt(

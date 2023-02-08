@@ -45,8 +45,8 @@ contract ERC20PoolGasLoadTest is ERC20DSTestPlus {
             _mintQuoteAndApproveTokens(lender, 200_000 * 1e18);
 
             vm.startPrank(lender);
-            _pool.addQuoteToken(100_000 * 1e18, 7388 - i);
-            _pool.addQuoteToken(100_000 * 1e18, 1 + i);
+            _pool.addQuoteToken(100_000 * 1e18, 7388 - i, block.timestamp + 2 minutes);
+            _pool.addQuoteToken(100_000 * 1e18, 1 + i,    block.timestamp + 2 minutes);
             vm.stopPrank();
 
             _lenders.push(lender);
@@ -270,7 +270,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         vm.startPrank(lender);
 
         skip(15 hours);
-        _pool.addQuoteToken(10_000 * 1e18, index_);
+        _pool.addQuoteToken(10_000 * 1e18, index_, block.timestamp + 2 minutes);
 
         skip(15 hours);
         _pool.removeQuoteToken(5_000 * 1e18, index_);
@@ -294,10 +294,10 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
             vm.startPrank(lender);
 
             skip(15 hours);
-            _pool.addQuoteToken(10_000 * 1e18, 7388 - i);
+            _pool.addQuoteToken(10_000 * 1e18, 7388 - i, block.timestamp + 2 minutes);
 
             skip(15 hours);
-            _pool.addQuoteToken(10_000 * 1e18, 1 + i);
+            _pool.addQuoteToken(10_000 * 1e18, 1 + i,    block.timestamp + 2 minutes);
 
             skip(15 hours);
             _pool.removeQuoteToken(5_000 * 1e18, 7388 - i);
@@ -359,7 +359,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
 
         vm.startPrank(kicker);
 
-        _pool.addQuoteToken(500_000_000_000_000 * 1e18, 3_000);
+        _pool.addQuoteToken(500_000_000_000_000 * 1e18, 3_000, block.timestamp + 2 minutes);
         vm.warp(100_000 days);
 
         _pool.kickWithDeposit(3_000); // worst case scenario, pool interest accrues
@@ -408,7 +408,7 @@ contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
         }
 
         // add quote tokens in bucket to arb
-        _pool.addQuoteToken(100_000 * 1e18, 1_000);
+        _pool.addQuoteToken(100_000 * 1e18, 1_000, block.timestamp + 2 minutes);
 
         vm.stopPrank();
 
@@ -438,7 +438,7 @@ contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
         }
 
         // add quote tokens in bucket to arb
-        _pool.addQuoteToken(100_000 * 1e18, 1_000);
+        _pool.addQuoteToken(100_000 * 1e18, 1_000, block.timestamp + 2 minutes);
 
         vm.stopPrank();
 
@@ -470,7 +470,7 @@ contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
 
             vm.startPrank(lender);
 
-            _pool.addQuoteToken(200_000 * 1e18, 5000 - i);
+            _pool.addQuoteToken(200_000 * 1e18, 5000 - i, block.timestamp + 2 minutes);
 
             vm.stopPrank();
 

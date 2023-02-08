@@ -180,6 +180,11 @@ interface IPoolErrors {
     error TakeNotPastCooldown();
 
     /**
+     *  @notice Current block timestamp has reached or exceeded a user-provided expiration.
+     */
+    error TransactionExpired();
+
+    /**
      *  @notice The threshold price of the loan to be inserted in loans heap is zero.
      */
     error ZeroThresholdPrice();

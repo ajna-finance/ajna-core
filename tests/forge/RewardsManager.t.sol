@@ -240,7 +240,7 @@ contract RewardsManagerTest is DSTestPlus {
         tokenId_ = _positionManager.mint(mintParams);
 
         for (uint256 i = 0; i < params_.indexes.length; i++) {
-            params_.pool.addQuoteToken(params_.mintAmount, params_.indexes[i]);
+            params_.pool.addQuoteToken(params_.mintAmount, params_.indexes[i], type(uint256).max);
             (uint256 lpBalance, ) = params_.pool.lenderInfo(params_.indexes[i], params_.minter);
             params_.pool.approveLpOwnership(address(_positionManager), params_.indexes[i], lpBalance);
         }

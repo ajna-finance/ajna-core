@@ -804,9 +804,9 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         // all operations should work if not in same block
         skip(1 hours);
 
-        _pool.addQuoteToken(100 * 1e18, _i9_91);
+        _pool.addQuoteToken(100 * 1e18, _i9_91, block.timestamp + 1 minutes);
         _pool.moveQuoteToken(10 * 1e18, _i9_52, _i9_91);
-        ERC20Pool(address(_pool)).addCollateral(4 * 1e18, _i9_91);
+        ERC20Pool(address(_pool)).addCollateral(4 * 1e18, _i9_91, block.timestamp + 1 minutes);
 
         _assertLenderLpBalance({
             lender:      _lender1,
@@ -841,7 +841,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             depositTime: _startTime + 100 days + 10 hours + 1 // _i9_91 bucket insolvency time + 1 (since deposit in _i9_52 from bucket was done before _i9_91 target bucket become insolvent)
         });
 
-        _pool.addQuoteToken(1_000 * 1e18, _i9_52);
+        _pool.addQuoteToken(1_000 * 1e18, _i9_52, block.timestamp + 1 minutes);
         _pool.moveQuoteToken(1_000 * 1e18, _i9_52, _i9_91);
 
         _assertLenderLpBalance({
