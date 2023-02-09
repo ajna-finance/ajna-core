@@ -75,16 +75,17 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
             (, uint256 bucketQuote, uint256 bucketCollateral, , ,) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
             (uint256 lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
 
-            // redeem LP for quote token if available
             uint256 lpRedeemed;
-            if(lenderLpBalance != 0 && bucketQuote != 0) {
-                (, lpRedeemed) = _pool.removeQuoteToken(type(uint256).max, bucketIndex);
-                lenderLpBalance -= lpRedeemed;
-            }
 
             // redeem LP for collateral if available
             if(lenderLpBalance != 0 && bucketCollateral != 0) {
                 (, lpRedeemed) = ERC20Pool(address(_pool)).removeCollateral(type(uint256).max, bucketIndex);
+                lenderLpBalance -= lpRedeemed;
+            }
+
+            // redeem LP for quote token if available
+            if(lenderLpBalance != 0 && bucketQuote != 0) {
+                (, lpRedeemed) = _pool.removeQuoteToken(type(uint256).max, bucketIndex);
                 lenderLpBalance -= lpRedeemed;
             }
 
@@ -127,9 +128,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
             // Checking if all bucket lps are redeemed
             assertEq(bucketLps, 0);
             assertEq(quoteTokens, 0);
-            // changing assert below - there could be cases when collateral accumulates but we don't have a collateral reserves auction
-            // therefore there could still be collateral remaining in bucket even after LP redeem
-            assertTrue(collateral >= 0);
+            assertEq(collateral, 0);
         }
         ( , uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
         (uint256 debt, , ) = _pool.debtInfo();
