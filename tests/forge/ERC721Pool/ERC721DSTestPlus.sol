@@ -336,7 +336,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                 emit RepayDebt(borrower, amountRepaid, collateralToPull, newLup);
             }
 
-            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull, MAX_FENWICK_INDEX);
+            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull, borrower, MAX_FENWICK_INDEX);
 
             // post pull checks
             if (collateralToPull != 0) {
@@ -352,7 +352,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                 emit RepayDebt(borrower, amountRepaid, collateralToPull, newLup);
             }
 
-            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull, MAX_FENWICK_INDEX);
+            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull, borrower, MAX_FENWICK_INDEX);
         }
     }
 
@@ -541,6 +541,17 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         ERC721Pool(address(_pool)).drawDebt(from, amount, indexLimit, emptyArray);
     }
 
+    function _assertMergeRemoveCollateralAuctionNotClearedRevert(
+        address from,
+        uint256 toIndex,
+        uint256 noOfNFTsToRemove,
+        uint256[] memory removeCollateralAtIndex
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('AuctionNotCleared()'));
+        ERC721Pool(address(_pool)).mergeOrRemoveCollateral(removeCollateralAtIndex, noOfNFTsToRemove, toIndex);
+    }
+
     function _assertCannotMergeToHigherPriceRevert(
         address from,
         uint256 toIndex,
@@ -580,7 +591,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
-        ERC721Pool(address(_pool)).repayDebt(from, 0, amount, MAX_FENWICK_INDEX);
+        ERC721Pool(address(_pool)).repayDebt(from, 0, amount, from, MAX_FENWICK_INDEX);
     }
 
     function _assertPullLimitIndexRevert(
@@ -590,7 +601,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.LimitIndexReached.selector);
-        ERC721Pool(address(_pool)).repayDebt(from, 0, amount, indexLimit);
+        ERC721Pool(address(_pool)).repayDebt(from, 0, amount, from, indexLimit);
     }
 
     function _assertRepayNoDebtRevert(
@@ -600,7 +611,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.NoDebt.selector);
-        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0, MAX_FENWICK_INDEX);
+        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0, borrower, MAX_FENWICK_INDEX);
     }
 
     function _assertRepayMinDebtRevert(
@@ -610,7 +621,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
-        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0, MAX_FENWICK_INDEX);
+        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0, borrower, MAX_FENWICK_INDEX);
     }
 
     function _assertRemoveCollateralNoClaimRevert(

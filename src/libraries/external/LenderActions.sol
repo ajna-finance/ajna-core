@@ -80,6 +80,7 @@ library LenderActions {
     error InsufficientLiquidity();
     error InsufficientCollateral();
     error MoveToSamePrice();
+    error TransferToSameOwner();
 
     /***************************/
     /***  External Functions ***/
@@ -516,6 +517,9 @@ library LenderActions {
         address newOwner_,
         uint256[] calldata indexes_
     ) external {
+        // revert if new owner address is the same as old owner address
+        if (owner_ == newOwner_) revert TransferToSameOwner();
+
         uint256 indexesLength = indexes_.length;
 
         uint256 tokensTransferred;

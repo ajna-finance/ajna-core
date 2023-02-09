@@ -151,6 +151,24 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         });
     }
 
+    function testDeployERC721PoolWithMinRate() external {
+        uint256[] memory tokenIds = new uint256[](0);
+        _factory.deployPool(address(new NFTCollateralToken()), address(new Token("Quote", "Q1")), tokenIds, 0.01 * 10**18);
+
+        // check tracking of deployed pools
+        assertEq(_factory.getDeployedPoolsList().length, 4);
+        assertEq(_factory.getNumberOfDeployedPools(),    4);
+    }
+
+    function testDeployERC721PoolWithMaxRate() external {
+        uint256[] memory tokenIds = new uint256[](0);
+        _factory.deployPool(address(new NFTCollateralToken()), address(new Token("Quote", "Q1")), tokenIds, 0.1 * 10**18);
+
+        // check tracking of deployed pools
+        assertEq(_factory.getDeployedPoolsList().length, 4);
+        assertEq(_factory.getNumberOfDeployedPools(),    4);
+    }
+
     function testDeployERC721CollectionPool() external {
         assertEq(address(_collateral), _NFTCollectionPool.collateralAddress());
         assertEq(address(_quote),      _NFTCollectionPool.quoteTokenAddress());

@@ -24,11 +24,6 @@ import {
     IERC721PoolLenderActions
 }                               from './interfaces/pool/erc721/IERC721Pool.sol';
 import { IERC721Taker }         from './interfaces/pool/erc721/IERC721Taker.sol';
-import {
-    ICryptoPunks,
-    ICryptoKitties,
-    NFTTypes
-}                               from './interfaces/pool/erc721/IERC721NonStandard.sol';
 
 import { FlashloanablePool } from './base/FlashloanablePool.sol';
 
@@ -67,7 +62,6 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
     // immutable args offset
     uint256 internal constant SUBSET   = 93;
-    uint256 internal constant NFT_TYPE = 125;
 
     /***********************/
     /*** State Variables ***/
@@ -198,6 +192,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
         uint256 noOfNFTsToPull_,
+        address collateralReceiver_,
         uint256 limitIndex_
     ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
@@ -237,8 +232,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             _transferQuoteTokenFrom(msg.sender, result.quoteTokenToRepay);
         }
         if (noOfNFTsToPull_ != 0) {
-            // move collateral from pool to sender
-            _transferFromPoolToAddress(msg.sender, borrowerTokenIds[msg.sender], noOfNFTsToPull_);
+            // move collateral from pool to address specified as collateral receiver
+            _transferFromPoolToAddress(collateralReceiver_, borrowerTokenIds[msg.sender], noOfNFTsToPull_);
         }
     }
 
@@ -289,6 +284,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         uint256 noOfNFTsToRemove_,
         uint256 toIndex_
     ) external override nonReentrant returns (uint256 collateralMerged_, uint256 bucketLPs_) {
+        _revertIfAuctionClearable(auctions, loans);
+
         PoolState memory poolState = _accruePoolInterest();
         uint256 collateralAmount = Maths.wad(noOfNFTsToRemove_);
 
@@ -378,7 +375,6 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         );
         (
             uint256 collateralRemaining,
-            uint256 t0DebtRemaining,
             uint256 collateralSettled,
             uint256 t0DebtSettled
         ) = Auctions.settlePoolDebt(
@@ -389,8 +385,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             params
         );
 
-        // slither-disable-next-line incorrect-equality
-        if (t0DebtRemaining == 0) _rebalanceTokens(params.borrower, collateralRemaining);
+        if (collateralSettled > 0) _rebalanceTokens(params.borrower, collateralRemaining);
 
         // update pool balances state
         poolBalances.t0Debt            -= t0DebtSettled;
@@ -466,7 +461,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         if (result.settledAuction) _rebalanceTokens(borrowerAddress_, result.remainingCollateral);
 
         // transfer from taker to pool the amount of quote tokens needed to cover collateral auctioned (including excess for rounded collateral)
-        _transferQuoteTokenFrom(callee_, totalQuoteTokenAmount);
+        _transferQuoteTokenFrom(msg.sender, totalQuoteTokenAmount);
 
         // transfer from pool to borrower the excess of quote tokens after rounding collateral auctioned
         if (result.excessQuoteToken != 0) _transferQuoteToken(borrowerAddress_, result.excessQuoteToken);
@@ -562,22 +557,13 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         uint256[] calldata tokenIds_
     ) internal {
         bool subset   = _getArgUint256(SUBSET) != 0;
-        uint8 nftType = _getArgUint8(NFT_TYPE);
 
         for (uint256 i = 0; i < tokenIds_.length;) {
             uint256 tokenId = tokenIds_[i];
             if (subset && !tokenIdsAllowed[tokenId]) revert OnlySubset();
             poolTokens_.push(tokenId);
 
-            if (nftType == uint8(NFTTypes.STANDARD_ERC721)){
-                _transferNFT(msg.sender, address(this), tokenId);
-            }
-            else if (nftType == uint8(NFTTypes.CRYPTOKITTIES)) {
-                ICryptoKitties(_getArgAddress(COLLATERAL_ADDRESS)).transferFrom(msg.sender ,address(this), tokenId);
-            }
-            else{
-                ICryptoPunks(_getArgAddress(COLLATERAL_ADDRESS)).buyPunk(tokenId);
-            }
+            _transferNFT(msg.sender, address(this), tokenId);
 
             unchecked { ++i; }
         }
@@ -600,21 +586,11 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
         uint256 noOfNFTsInPool = poolTokens_.length;
 
-        uint8 nftType = _getArgUint8(NFT_TYPE);
-
         for (uint256 i = 0; i < amountToRemove_;) {
             uint256 tokenId = poolTokens_[--noOfNFTsInPool]; // start with transferring the last token added in bucket
             poolTokens_.pop();
 
-            if (nftType == uint8(NFTTypes.STANDARD_ERC721)){
-                _transferNFT(address(this), toAddress_, tokenId);
-            }
-            else if (nftType == uint8(NFTTypes.CRYPTOKITTIES)) {
-                ICryptoKitties(_getArgAddress(COLLATERAL_ADDRESS)).transfer(toAddress_, tokenId);
-            }
-            else {
-                ICryptoPunks(_getArgAddress(COLLATERAL_ADDRESS)).transferPunk(toAddress_, tokenId);
-            }
+            _transferNFT(address(this), toAddress_, tokenId);
 
             tokensTransferred[i] = tokenId;
 
