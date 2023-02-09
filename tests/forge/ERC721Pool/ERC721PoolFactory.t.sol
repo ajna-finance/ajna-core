@@ -2,7 +2,7 @@
 pragma solidity 0.8.14;
 
 import { ERC721HelperContract }      from './ERC721DSTestPlus.sol';
-import { NFTCollateralToken, Token } from '../utils/Tokens.sol';
+import { NFTCollateralToken, TokenWithNDecimals } from '../utils/Tokens.sol';
 
 import { ERC721Pool }        from 'src/ERC721Pool.sol';
 import { ERC721PoolFactory } from 'src/ERC721PoolFactory.sol';
@@ -23,7 +23,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
     function setUp() external {
         _startTime   = block.timestamp;
         _collateral  = new NFTCollateralToken();
-        _quote       = new Token("Quote", "Q");
+        _quote       = new TokenWithNDecimals("Quote", "Q", 18);
 
         // deploy factory
         _factory = new ERC721PoolFactory(_ajna);
@@ -153,7 +153,12 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
 
     function testDeployERC721PoolWithMinRate() external {
         uint256[] memory tokenIds = new uint256[](0);
-        _factory.deployPool(address(new NFTCollateralToken()), address(new Token("Quote", "Q1")), tokenIds, 0.01 * 10**18);
+        _factory.deployPool(
+            address(new NFTCollateralToken()), 
+            address(new TokenWithNDecimals("Quote", "Q1", 18)), 
+            tokenIds, 
+            0.01 * 10**18
+        );
 
         // check tracking of deployed pools
         assertEq(_factory.getDeployedPoolsList().length, 4);
@@ -162,7 +167,12 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
 
     function testDeployERC721PoolWithMaxRate() external {
         uint256[] memory tokenIds = new uint256[](0);
-        _factory.deployPool(address(new NFTCollateralToken()), address(new Token("Quote", "Q1")), tokenIds, 0.1 * 10**18);
+        _factory.deployPool(
+            address(new NFTCollateralToken()), 
+            address(new TokenWithNDecimals("Quote", "Q1", 18)), 
+            tokenIds, 
+            0.1 * 10**18
+        );
 
         // check tracking of deployed pools
         assertEq(_factory.getDeployedPoolsList().length, 4);

@@ -70,6 +70,13 @@ import { Maths }    from '../internal/Maths.sol';
         if (block.timestamp >= expiry_) revert TransactionExpired();
     }
 
+    /**
+     *  @notice Called when borrower debt changes, ensuring minimum debt rules are honored.
+     *  @param loans_        Loans heap, used to determine loan count.
+     *  @param poolDebt_     Total pool debt, used to calculate average debt.
+     *  @param borrowerDebt_ New debt for the borrower, assuming the current transaction succeeds.
+     *  @param quoteDust_    Smallest amount of quote token when can be transferred, determined by token scale.
+     */
     function _revertOnMinDebt(
         LoansState storage loans_,
         uint256 poolDebt_,
@@ -77,11 +84,9 @@ import { Maths }    from '../internal/Maths.sol';
         uint256 quoteDust_
     ) view {
         if (borrowerDebt_ != 0) {
+            if (borrowerDebt_ < quoteDust_) revert DustAmountNotExceeded();
             uint256 loansCount = Loans.noOfLoans(loans_);
-            if (loansCount >= 10) {
+            if (loansCount >= 10)
                 if (borrowerDebt_ < _minDebtAmount(poolDebt_, loansCount)) revert AmountLTMinDebt();
-            } else {
-                if (borrowerDebt_ < quoteDust_)                            revert DustAmountNotExceeded();
-            }
         }
     }
