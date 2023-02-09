@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.14;
 
-import { ERC721HelperContract, ERC721FuzzyHelperContract } from './ERC721DSTestPlus.sol';
+import { ERC721HelperContract, ERC721FuzzyHelperContract, ERC721NDecimalsHelperContract } from './ERC721DSTestPlus.sol';
 
 import 'src/ERC721Pool.sol';
 
@@ -536,31 +536,19 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
     }
 }
 
-contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
-    uint internal _anonBorrowerCount = 0;
+contract ERC721CollectionPoolBorrowTest is ERC721NDecimalsHelperContract(18) {
+    address internal _borrower;
+    address internal _lender;
 
-    function createPool() external override returns (ERC721Pool) {
-        return _deployCollectionPool();
-    }
+    function setUp() external {
+        _borrower  = makeAddr("borrower");
+        _lender    = makeAddr("lender");
 
-    /**
-     *  @dev Creates debt for an anonymous non-player borrower not otherwise involved in the test.
-     **/
-    function _anonBorrowerDrawsDebt(uint256 loanAmount) internal {
-        _anonBorrowerCount += 1;
-        address borrower = makeAddr(string(abi.encodePacked("anonBorrower", _anonBorrowerCount)));
-        vm.stopPrank();
-        _mintAndApproveCollateralTokens(borrower, 1);
-        uint256[] memory tokenIdsToAdd = new uint256[](1);
-        tokenIdsToAdd[0] = _collateral.totalSupply();
+        _mintAndApproveQuoteTokens(_lender, 200_000 * 1e18);
+        _mintAndApproveCollateralTokens(_borrower, 52);
 
-        _drawDebtNoLupCheck({
-            from:           borrower,
-            borrower:       borrower,
-            amountToBorrow: loanAmount,
-            limitIndex:     7_777,
-            tokenIds:       tokenIdsToAdd
-        });
+        vm.prank(_borrower);
+        _quote.approve(address(_pool), 200_000 * 1e18);
     }
 
     function testMinBorrowAmountCheck() external tearDown {
@@ -626,8 +614,55 @@ contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
             amount:   900 * 1e18
         });
     }
-
 }
+
+contract ERC721ScaledQuoteTokenBorrowTest is ERC721NDecimalsHelperContract(4) {
+    address internal _borrower;
+    address internal _lender;
+
+    function setUp() external {
+        _borrower  = makeAddr("borrower");
+        _lender    = makeAddr("lender");
+
+        _mintAndApproveQuoteTokens(_lender, 20_000 * 1e4);
+        _mintAndApproveCollateralTokens(_borrower, 5);
+    }
+
+    function testMinDebtBelowDustLimitCheck() external tearDown {
+        // add initial quote to the pool
+        changePrank(_lender);
+        _pool.addQuoteToken(20_000 * 1e18, 2550);
+
+        // borrower pledges a single NFT
+        uint256[] memory tokenIdsToAdd = new uint256[](1);
+        tokenIdsToAdd[0] = 5;
+        _pledgeCollateral({
+            from:       _borrower,
+            borrower:   _borrower,
+            tokenIds:   tokenIdsToAdd
+        });
+
+        // should revert if borrower tries to draw debt below dust limit
+        _assertBorrowDustRevert({
+            from:       _borrower,
+            amount:     0.00005 * 1e18,
+            indexLimit: 2550
+        });
+
+        // 10 borrowers draw debt at the dust limit
+        for (uint i=0; i<10; ++i) {
+            _anonBorrowerDrawsDebt(0.0001 * 1e18);
+        }
+
+        // should still revert if borrower tries to draw debt below dust limit
+        _assertBorrowDustRevert({
+            from:       _borrower,
+            amount:     0.000075 * 1e18,
+            indexLimit: 2550
+        });
+    }
+}
+
 
 contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
 
