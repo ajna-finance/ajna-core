@@ -144,6 +144,7 @@ library Auctions {
     error AuctionNotClearable();
     error AuctionPriceGtBucketPrice();
     error BorrowerOk();
+    error CollateralRoundingNeededButNotPossible();
     error InsufficientLiquidity();
     error InsufficientCollateral();
     error NoAuction();
@@ -892,14 +893,18 @@ library Auctions {
             // slither-disable-next-line divide-before-multiply
             uint256 collateralTaken = (vars.collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
 
-            if (collateralTaken != vars.collateralAmount && borrower_.collateral >= collateralTaken + 1e18) { // collateral taken not a round number
-                collateralTaken += 1e18; // round up collateral to take
-                // taker should send additional quote tokens to cover difference between collateral needed to be taken and rounded collateral, at auction price
-                // borrower will get quote tokens for the difference between rounded collateral and collateral taken to cover debt
-                vars.excessQuoteToken = Maths.wmul(collateralTaken - vars.collateralAmount, vars.auctionPrice);
+            if (collateralTaken != vars.collateralAmount) { // collateral taken not a round number
+                if (Maths.min(borrower_.collateral, params_.takeCollateral) >= collateralTaken + 1e18) {
+                    collateralTaken += 1e18; // round up collateral to take
+                    // taker should send additional quote tokens to cover difference between collateral needed to be taken and rounded collateral, at auction price
+                    // borrower will get quote tokens for the difference between rounded collateral and collateral taken to cover debt
+                    vars.excessQuoteToken = Maths.wmul(collateralTaken - vars.collateralAmount, vars.auctionPrice);
+                    vars.collateralAmount = collateralTaken;
+                } else {
+                    // shouldn't get here, but just in case revert
+                    revert CollateralRoundingNeededButNotPossible();
+                }
             }
-
-            vars.collateralAmount = collateralTaken;
         }
 
         return (
