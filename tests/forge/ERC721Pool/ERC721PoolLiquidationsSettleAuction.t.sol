@@ -112,7 +112,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         });
     }
 
-    function testSettlePartialDebtSubsetPool() external { // FIXME: tearDown with 678 uncovered deposit
+    function testSettlePartialDebtSubsetPool() external tearDown {
         // the 2 token ids are owned by borrower before settle
         assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 0), 1);
         assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 1), 3);
@@ -333,7 +333,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         _assertCollateralInvariants();
     }
 
-    function testDepositTakeAndSettleSubsetPool() external { // FIXME: fails in teardown with 523 deposit not covered
+    function testDepositTakeAndSettleSubsetPool() external tearDown {
 
         // the 2 token ids are owned by borrower before settle
         assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 0), 1);

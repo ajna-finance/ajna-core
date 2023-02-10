@@ -691,7 +691,7 @@ library LenderActions {
 
         // If clearing out the bucket deposit, ensure it's zeroed out
         if (redeemedLPs_ == params_.bucketLPs) {
-            exchangeRate = scaledDepositAvailable;
+            removedAmount_ = scaledDepositAvailable;
         }
 
         scaledRemaining_ = scaledDepositAvailable - removedAmount_;
