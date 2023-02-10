@@ -126,7 +126,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         uint8  collateralPrecisionDecimals_, 
         uint8  quotePrecisionDecimals_,
         uint16 startBucketId_
-    ) external tearDown {
+    ) external { // FIXME: tearDown leave dust deposit
 
         uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 6,    18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      1,    18);
@@ -211,7 +211,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         uint8  collateralPrecisionDecimals_, 
         uint8  quotePrecisionDecimals_,
         uint16 startBucketId_
-    ) external tearDown {
+    ) external { // FIXME: tearDown leave dust deposit
 
         uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 12, 18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      1,  18);

@@ -77,15 +77,15 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
 
             uint256 lpRedeemed;
 
-            // redeem LP for collateral if available
-            if(lenderLpBalance != 0 && bucketCollateral != 0) {
-                (, lpRedeemed) = ERC20Pool(address(_pool)).removeCollateral(type(uint256).max, bucketIndex);
-                lenderLpBalance -= lpRedeemed;
-            }
-
             // redeem LP for quote token if available
             if(lenderLpBalance != 0 && bucketQuote != 0) {
                 (, lpRedeemed) = _pool.removeQuoteToken(type(uint256).max, bucketIndex);
+                lenderLpBalance -= lpRedeemed;
+            }
+
+            // redeem LP for collateral if available
+            if(lenderLpBalance != 0 && bucketCollateral != 0) {
+                (, lpRedeemed) = ERC20Pool(address(_pool)).removeCollateral(type(uint256).max, bucketIndex);
                 lenderLpBalance -= lpRedeemed;
             }
 

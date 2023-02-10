@@ -1340,11 +1340,12 @@ library Auctions {
     ) internal {
         Bucket storage bucket = buckets_[bucketIndex_];
 
-        uint256 bucketExchangeRate = Buckets.getUnscaledExchangeRate(
+        uint256 scaledDeposit = Maths.wmul(vars.unscaledDeposit, vars.bucketScale);
+
+        uint256 exchangeRate = Buckets.getExchangeRate(
             bucket.collateral,
             bucket.lps,
-            vars.unscaledDeposit,
-            vars.bucketScale,
+            scaledDeposit,
             vars.bucketPrice
         );
 
@@ -1353,10 +1354,9 @@ library Auctions {
 
         // if arb take - taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
         if (!depositTake_) {
-            uint256 takerReward                   = Maths.wmul(vars.collateralAmount, vars.bucketPrice - vars.auctionPrice);
-            uint256 takerRewardUnscaledQuoteToken = Maths.wdiv(takerReward,           vars.bucketScale);
+            uint256 takerReward = Maths.wmul(vars.collateralAmount, vars.bucketPrice - vars.auctionPrice);
 
-            totalLPsReward = Maths.wdiv(takerRewardUnscaledQuoteToken, bucketExchangeRate);
+            totalLPsReward = Maths.wdiv(takerReward, exchangeRate);
 
             Buckets.addLenderLPs(bucket, bankruptcyTime, msg.sender, totalLPsReward);
         }
@@ -1365,7 +1365,7 @@ library Auctions {
 
         // the bondholder/kicker is awarded bond change worth of LPB in the bucket
         if (vars.isRewarded) {
-            kickerLPsReward = Maths.wdiv(Maths.wdiv(vars.bondChange, vars.bucketScale), bucketExchangeRate);
+            kickerLPsReward = Maths.wdiv(vars.bondChange, exchangeRate);
             totalLPsReward  += kickerLPsReward;
 
             Buckets.addLenderLPs(bucket, bankruptcyTime, vars.kicker, kickerLPsReward);
