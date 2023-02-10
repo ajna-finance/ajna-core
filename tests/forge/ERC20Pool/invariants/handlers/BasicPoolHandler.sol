@@ -139,7 +139,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     function repayDebt(uint256 amountToRepay) internal {
         numberOfCalls['UBBasicHandler.repayDebt']++;
 
-        _pool.repayDebt(_actor, amountToRepay, 0);
+        _pool.repayDebt(_actor, amountToRepay, 0, _actor);
     }
 
 }

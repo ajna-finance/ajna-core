@@ -12,6 +12,7 @@ pragma solidity 0.8.14;
 
 struct BucketTakeResult {
     uint256 collateralAmount;      // [WAD] amount of collateral taken
+    uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LPs
     uint256 t0DebtPenalty;         // [WAD] t0 penalty applied on first take
     uint256 remainingCollateral;   // [WAD] amount of borrower collateral remaining after take
     uint256 poolDebt;              // [WAD] current pool debt
@@ -38,6 +39,7 @@ struct SettleParams {
 
 struct TakeResult {
     uint256 collateralAmount;      // [WAD] amount of collateral taken
+    uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LPs
     uint256 quoteTokenAmount;      // [WAD] amount of quote tokens paid by taker for taken collateral
     uint256 t0DebtPenalty;         // [WAD] t0 penalty applied on first take
     uint256 excessQuoteToken;      // [WAD] (NFT only) amount of quote tokens to be paid by taker to borrower for fractional collateral

@@ -132,4 +132,27 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         // confirm we earned some quote token
         assertGt(usdc.balanceOf(address(taker)), 0);
     }
+
+    function testTakeCalleeDiffersFromSender() external {
+ 
+        // _lender is msg.sender, QT & CT balances pre take
+        assertEq(usdc.balanceOf(_lender), 119_999.999999926999804658 * 1e18);
+        assertEq(weth.balanceOf(_lender), 0);
+
+        // callee, _lender1 QT & CT balances pre take
+        assertEq(usdc.balanceOf(_lender1), 120_000.0 * 1e18);
+        assertEq(weth.balanceOf(_lender1), 4.0 * 1e18);
+
+        // lender calls take, passing _lender1 as the callee
+        changePrank(_lender);
+        _ajnaPool.take(_borrower, 1_001 * 1e18, _lender1, new bytes(0));
+
+        // _lender is has QT deducted from balance
+        assertEq(usdc.balanceOf(_lender), 119_999.999999926985301196 * 1e18);
+        assertEq(weth.balanceOf(_lender), 0);
+
+        // callee, _lender1 receives CT from take
+        assertEq(usdc.balanceOf(_lender1), 120_000.0 * 1e18);
+        assertEq(weth.balanceOf(_lender1), 6.0 * 1e18);
+    }
 }

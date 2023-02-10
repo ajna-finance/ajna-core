@@ -93,7 +93,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     bool internal isPoolInitialized;
 
-    mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
+    mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 
     /******************/
     /*** Immutables ***/
@@ -159,14 +159,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /**
      *  @inheritdoc IPoolLenderActions
      *  @dev write state:
-     *          - _lpTokenAllowances mapping
+     *          - _lpAllowances mapping
      */
     function approveLpOwnership(
-        address allowedNewOwner_,
+        address newOwner,
         uint256 index_,
-        uint256 lpsAmountToApprove_
+        uint256 amount_
     ) external nonReentrant {
-        _lpTokenAllowances[msg.sender][allowedNewOwner_][index_] = lpsAmountToApprove_;
+        _lpAllowances[msg.sender][newOwner][index_] = amount_;
     }
 
     /// @inheritdoc IPoolLenderActions
@@ -242,7 +242,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     ) external override nonReentrant {
         LenderActions.transferLPs(
             buckets,
-            _lpTokenAllowances,
+            _lpAllowances,
             owner_,
             newOwner_,
             indexes_
@@ -320,10 +320,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @dev write state:
      *       - reset kicker's claimable accumulator
      */
-    function withdrawBonds() external {
+    function withdrawBonds(address recipient_) external {
         uint256 claimable = auctions.kickers[msg.sender].claimable;
         auctions.kickers[msg.sender].claimable = 0;
-        _transferQuoteToken(msg.sender, claimable);
+        _transferQuoteToken(recipient_, claimable);
     }
 
     /*********************************/
@@ -357,7 +357,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             StartReserveAuctionParams({
                 poolSize:    Deposits.treeSum(deposits),
                 t0PoolDebt:  poolBalances.t0Debt,
-                poolBalance: _getPoolQuoteTokenBalance(),
+                poolBalance: _getNormalizedPoolQuoteTokenBalance(),
                 inflator:    inflatorState.inflator
             })
         );
@@ -504,8 +504,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         IERC20(_getArgAddress(QUOTE_ADDRESS)).safeTransfer(to_, amount_ / _getArgUint256(QUOTE_SCALE));
     }
 
-    function _getPoolQuoteTokenBalance() internal view returns (uint256) {
-        return IERC20(_getArgAddress(QUOTE_ADDRESS)).balanceOf(address(this));
+    /**
+     *  @dev returns the pool quote token balance normalized to WAD to be used for calculating pool reserves
+     */
+    function _getNormalizedPoolQuoteTokenBalance() internal view returns (uint256) {
+        return IERC20(_getArgAddress(QUOTE_ADDRESS)).balanceOf(address(this)) * _getArgUint256(QUOTE_SCALE);
     }
 
     function _lup(uint256 debt_) internal view returns (uint256) {

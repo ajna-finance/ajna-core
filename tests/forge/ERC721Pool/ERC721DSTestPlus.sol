@@ -5,8 +5,8 @@ import { ERC20 } from '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
-import { DSTestPlus }                from '../utils/DSTestPlus.sol';
-import { NFTCollateralToken, Token } from '../utils/Tokens.sol';
+import { DSTestPlus }        from '../utils/DSTestPlus.sol';
+import { NFTCollateralToken, Token, TokenWithNDecimals } from '../utils/Tokens.sol';
 
 import { ERC721Pool }        from 'src/ERC721Pool.sol';
 import { ERC721PoolFactory } from 'src/ERC721PoolFactory.sol';
@@ -25,7 +25,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     using EnumerableSet for EnumerableSet.UintSet;
     
     NFTCollateralToken internal _collateral;
-    Token              internal _quote;
+    TokenWithNDecimals internal _quote;
     ERC20              internal _ajnaToken;
 
     mapping(uint256 => uint256) NFTidToIndex;
@@ -336,7 +336,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                 emit RepayDebt(borrower, amountRepaid, collateralToPull, newLup);
             }
 
-            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull);
+            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull, borrower);
 
             // post pull checks
             if (collateralToPull != 0) {
@@ -352,7 +352,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                 emit RepayDebt(borrower, amountRepaid, collateralToPull, newLup);
             }
 
-            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull);
+            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull, borrower);
         }
     }
 
@@ -428,6 +428,27 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         for (uint256 i; i < tokenIds.length; i++) {
             assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(borrower, i), tokenIds[i]);
         }
+    }
+
+    function _assertCollateralInvariants() internal {
+        uint256 collateralInBuckets;
+        for(uint256 bucketIndex = 0; bucketIndex <= 7388; bucketIndex++) {
+            (, uint256 bucketCollateral, , , ) = _pool.bucketInfo(bucketIndex);
+            collateralInBuckets += bucketCollateral;
+        }
+
+        uint256 borrowersCollateral;
+        for (uint256 i = 0; i < borrowers.length(); i++) {
+            (, uint256 borrowerCollateral, ) = _poolUtils.borrowerInfo(address(_pool), borrowers.at(i));
+            borrowersCollateral += borrowerCollateral;
+        }
+
+        // pool pledged collateral accumulator should be equal with the amounts of collateral owned by borrowers
+        assertEq(borrowersCollateral, _pool.pledgedCollateral());
+
+        // collateral in buckets + collateral owned borrowers should be equal with the total number of tokens owned by the pool
+        uint256 poolBalance = _collateral.balanceOf(address(_pool));
+        assertEq(collateralInBuckets + borrowersCollateral, poolBalance * 1e18);
     }
 
     /**********************/
@@ -509,6 +530,17 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         ERC721Pool(address(_pool)).drawDebt(from, amount, indexLimit, emptyArray);
     }
 
+    function _assertMergeRemoveCollateralAuctionNotClearedRevert(
+        address from,
+        uint256 toIndex,
+        uint256 noOfNFTsToRemove,
+        uint256[] memory removeCollateralAtIndex
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('AuctionNotCleared()'));
+        ERC721Pool(address(_pool)).mergeOrRemoveCollateral(removeCollateralAtIndex, noOfNFTsToRemove, toIndex);
+    }
+
     function _assertCannotMergeToHigherPriceRevert(
         address from,
         uint256 toIndex,
@@ -531,6 +563,17 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         ERC721Pool(address(_pool)).drawDebt(from, amount, indexLimit, emptyArray);        
     }
 
+    function _assertBorrowDustRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
+        uint256[] memory emptyArray;
+        ERC721Pool(address(_pool)).drawDebt(from, amount, indexLimit, emptyArray);
+    }
+
     function _assertBorrowMinDebtRevert(
         address from,
         uint256 amount,
@@ -548,7 +591,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
-        ERC721Pool(address(_pool)).repayDebt(from, 0, amount);
+        ERC721Pool(address(_pool)).repayDebt(from, 0, amount, from);
     }
 
     function _assertRepayNoDebtRevert(
@@ -558,7 +601,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.NoDebt.selector);
-        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0);
+        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0, borrower);
     }
 
     function _assertRepayMinDebtRevert(
@@ -568,7 +611,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
-        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0);
+        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0, borrower);
     }
 
     function _assertRemoveCollateralNoClaimRevert(
@@ -603,7 +646,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
 
         _collateral = new NFTCollateralToken();
         vm.makePersistent(address(_collateral));
-        _quote      = new Token("Quote", "Q");
+        _quote      = new TokenWithNDecimals("Quote", "Q", 18);
         vm.makePersistent(address(_quote));
         _ajnaToken  = ERC20(_ajna);
         vm.makePersistent(_ajna);
@@ -670,6 +713,65 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     }
 }
 
+abstract contract ERC721NDecimalsHelperContract is ERC721DSTestPlus {
+    using EnumerableSet for EnumerableSet.AddressSet;
+    ERC721PoolFactory internal _poolFactory;
+
+    constructor(uint8 decimals) {
+        vm.createSelectFork(vm.envString("ETH_RPC_URL"));
+
+        _collateral = new NFTCollateralToken();
+        vm.makePersistent(address(_collateral));
+        _quote      = new TokenWithNDecimals("Quote", "Q", decimals);
+        vm.makePersistent(address(_quote));
+        _ajnaToken  = ERC20(_ajna);
+        vm.makePersistent(_ajna);
+        _poolUtils  = new PoolInfoUtils();
+        vm.makePersistent(address(_poolUtils));
+        _poolFactory = new ERC721PoolFactory(_ajna);
+        vm.makePersistent(address(_poolFactory));
+
+        _startTime = block.timestamp;
+        uint256[] memory tokenIds;
+        address contractAddress = _poolFactory.deployPool(address(_collateral), address(_quote), tokenIds, 0.05 * 10**18);
+        vm.makePersistent(contractAddress);
+        _pool = ERC721Pool(contractAddress);
+    }
+
+    function _mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) internal {
+        deal(address(_quote), operator_, mintAmount_);
+        vm.prank(operator_);
+        _quote.approve(address(_pool), type(uint256).max);
+    }
+
+    function _mintAndApproveCollateralTokens(address operator_, uint256 mintAmount_) internal {
+        _collateral.mint(operator_, mintAmount_);
+        vm.prank(operator_);
+        _collateral.setApprovalForAll(address(_pool), true);
+    }
+
+    /**
+     *  @dev Creates debt for an anonymous non-player borrower not otherwise involved in the test.
+     **/
+    function _anonBorrowerDrawsDebt(uint256 loanAmount) internal {
+        // _anonBorrowerCount += 1;
+        
+        address borrower = makeAddr(string(abi.encodePacked("anonBorrower", borrowers.length())));
+        vm.stopPrank();
+        _mintAndApproveCollateralTokens(borrower, 1);
+        uint256[] memory tokenIdsToAdd = new uint256[](1);
+        tokenIdsToAdd[0] = _collateral.totalSupply();
+
+        _drawDebtNoLupCheck({
+            from:           borrower,
+            borrower:       borrower,
+            amountToBorrow: loanAmount,
+            limitIndex:     7_777,
+            tokenIds:       tokenIdsToAdd
+        });
+    }
+}
+
 abstract contract ERC721FuzzyHelperContract is ERC721DSTestPlus {
 
     uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
@@ -678,7 +780,7 @@ abstract contract ERC721FuzzyHelperContract is ERC721DSTestPlus {
 
     constructor() {
         _collateral = new NFTCollateralToken();
-        _quote      = new Token("Quote", "Q");
+        _quote      = new TokenWithNDecimals("Quote", "Q", 18);
         _ajnaToken  = ERC20(_ajna);
         _poolUtils  = new PoolInfoUtils();
         _poolFactory = new ERC721PoolFactory(_ajna);

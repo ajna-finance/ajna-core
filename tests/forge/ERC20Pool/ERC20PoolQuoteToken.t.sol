@@ -706,7 +706,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             amountRemoved: expectedWithdrawal1,
             index:         1606,
             newLup:        _priceAt(1663),
-            lpRedeem:      1_699.988795593461528952000000000 * 1e27
+            lpRedeem:      1_699.988795593461528952268999517 * 1e27
         });
 
         // lender removes all quote token, including interest, from the bucket
@@ -721,7 +721,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             amount:   expectedWithdrawal2,
             index:    1606,
             newLup:   _priceAt(1663),
-            lpRedeem: 1_700.011204406538471048000000000 * 1e27
+            lpRedeem: 1_700.011204406538471047731000483 * 1e27
         });
 
         assertEq(_quote.balanceOf(_lender), lenderBalanceBefore + expectedWithdrawal1 + expectedWithdrawal2);
@@ -1014,7 +1014,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             amountMoved:  2_497.596153846153845 * 1e18,
             fromIndex:    2873,
             toIndex:      2954,
-            lpRedeemFrom: 2_499.899333909953254268000000000 * 1e27,
+            lpRedeemFrom: 2_499.899333909953254268257527496 * 1e27,
             lpAwardTo:    2_497.596153846153845 * 1e27,
             newLup:       _lup()
         });
@@ -1026,7 +1026,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             from:    _lender1,
             amount:  1_000 * 1e18,
             index:   2873,
-            lpAward: 999.956320611641422442838174928 * 1e27,
+            lpAward: 999.956320611641422442803839928 * 1e27,
             newLup:  601.252968524772188572 * 1e18
         });
 
@@ -1038,7 +1038,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             amount:       2_500 * 1e18,
             fromIndex:    2873,
             toIndex:      2954,
-            lpRedeemFrom: 2_499.810182702901761330952408614 * 1e27,
+            lpRedeemFrom: 2_499.810182702901761331141452320 * 1e27,
             lpAwardTo:    2_500 * 1e27,
             newLup:       _lup()
         });
@@ -1050,7 +1050,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             from:    _lender1,
             amount:  9_000 * 1e18,
             index:   2873,
-            lpAward: 8_993.373316759001213153971860794 * 1e27,
+            lpAward: 8_993.373316759001213153251060415 * 1e27,
             newLup:  601.252968524772188572 * 1e18
         });
 
@@ -1062,7 +1062,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             amount:   5_003.981613396490344248 * 1e18,
             index:    2873,
             newLup:   601.252968524772188572 * 1e18,
-            lpRedeem: 5_000.290483387144984401047591386 * 1e27
+            lpRedeem: 5_000.290483387144984400601020184 * 1e27
         });
 
         _removeAllLiquidity({
@@ -1074,5 +1074,98 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         });
 
         assertGt(_quote.balanceOf(_lender), 200_000 * 1e18);
+    }
+
+    function testAddRemoveQuoteTokenBucketExchangeRateInvariantDifferentActor() external tearDown {
+        _mintQuoteAndApproveTokens(_lender, 1000000000000000000 * 1e18);
+
+        uint256 initialLenderBalance = _quote.balanceOf(_lender);
+
+        _addCollateral({
+            from:    _borrower,
+            amount:  13167,
+            index:   2570,
+            lpAward: 35880689609801455
+        });
+
+        _assertLenderLpBalance({
+            lender:      _borrower,
+            index:       2570,
+            lpBalance:   35880689609801455,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2570,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertBucket({
+            index:        2570,
+            lpBalance:    35880689609801455,
+            collateral:   13167,
+            deposit:      0,
+            exchangeRate: 0.999999999999999999612823717 * 1e27
+        });
+
+        _addLiquidity({
+            from:    _lender,
+            amount:  984665640564039457.584007913129639933 * 1e18,
+            index:   2570,
+            lpAward: 984665640564039457.584007913129639933000000000 * 1e27,
+            newLup:  MAX_PRICE
+        });
+
+        _assertLenderLpBalance({
+            lender:      _borrower,
+            index:       2570,
+            lpBalance:   35880689609801455,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2570,
+            lpBalance:   984665640564039457.584007913129639933000000000 * 1e27,
+            depositTime: _startTime
+        });
+        _assertBucket({
+            index:        2570,
+            lpBalance:    984665640564039457.584007913165520622609801455 * 1e27,
+            collateral:   13167,
+            deposit:      984665640564039457.584007913129639933 * 1e18,
+            exchangeRate: 0.999999999999999999999999999 * 1e27 // exchange rate should not change
+        });
+
+        skip(48 hours); // to avoid penalty
+
+        _removeAllLiquidity({
+            from:     _lender,
+            amount:   984665640564039457.584007913129639933 * 1e18,
+            index:    2570,
+            newLup:   MAX_PRICE,
+            lpRedeem: 984665640564039457.584007913129639933000000000 * 1e27
+        });
+
+        _assertLenderLpBalance({
+            lender:      _borrower,
+            index:       2570,
+            lpBalance:   35880689609801455,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2570,
+            lpBalance:   0, // LPs should get back to same value as before add / remove collateral
+            depositTime: _startTime
+        });
+        _assertBucket({
+            index:        2570,
+            lpBalance:    35880689609801455,
+            collateral:   13167,
+            deposit:      0,
+            exchangeRate: 0.999999999999999999612823717 * 1e27
+        });
+
+        assertEq(_quote.balanceOf(_lender), initialLenderBalance);
     }
 }
