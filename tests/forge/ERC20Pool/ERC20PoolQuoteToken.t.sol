@@ -1075,4 +1075,97 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
         assertGt(_quote.balanceOf(_lender), 200_000 * 1e18);
     }
+
+    function testAddRemoveQuoteTokenBucketExchangeRateInvariantDifferentActor() external tearDown {
+        _mintQuoteAndApproveTokens(_lender, 1000000000000000000 * 1e18);
+
+        uint256 initialLenderBalance = _quote.balanceOf(_lender);
+
+        _addCollateral({
+            from:    _borrower,
+            amount:  13167,
+            index:   2570,
+            lpAward: 35880689609801455
+        });
+
+        _assertLenderLpBalance({
+            lender:      _borrower,
+            index:       2570,
+            lpBalance:   35880689609801455,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2570,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertBucket({
+            index:        2570,
+            lpBalance:    35880689609801455,
+            collateral:   13167,
+            deposit:      0,
+            exchangeRate: 0.999999999999999999612823717 * 1e27
+        });
+
+        _addLiquidity({
+            from:    _lender,
+            amount:  984665640564039457.584007913129639933 * 1e18,
+            index:   2570,
+            lpAward: 984665640564039457.965247095841038753800319114 * 1e27,
+            newLup:  MAX_PRICE
+        });
+
+        _assertLenderLpBalance({
+            lender:      _borrower,
+            index:       2570,
+            lpBalance:   35880689609801455,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2570,
+            lpBalance:   984665640564039457.965247095841038753800319114 * 1e27,
+            depositTime: _startTime
+        });
+        _assertBucket({
+            index:        2570,
+            lpBalance:    984665640564039457.965247095876919443410120569 * 1e27,
+            collateral:   13167,
+            deposit:      984665640564039457.584007913129639933 * 1e18,
+            exchangeRate: 0.999999999999999999612823716 * 1e27 // exchange rate should not change
+        });
+
+        skip(48 hours); // to avoid penalty
+
+        _removeAllLiquidity({
+            from:     _lender,
+            amount:   984665640564039457.584007912144974292 * 1e18,
+            index:    2570,
+            newLup:   MAX_PRICE,
+            lpRedeem: 984665640564039457.965247095841038753800319114 * 1e27
+        });
+
+        _assertLenderLpBalance({
+            lender:      _borrower,
+            index:       2570,
+            lpBalance:   35880689609801455,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2570,
+            lpBalance:   0, // LPs should get back to same value as before add / remove collateral
+            depositTime: _startTime
+        });
+        _assertBucket({
+            index:        2570,
+            lpBalance:    35880689609801455,
+            collateral:   13167,
+            deposit:      984665641,
+            exchangeRate: 28.442773584012189376294029041 * 1e27 // FIXME: exchange rate should not change
+        });
+
+        assertEq(_quote.balanceOf(_lender), initialLenderBalance); // FIXME
+
 }

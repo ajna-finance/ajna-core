@@ -117,7 +117,7 @@ library Buckets {
      *  @param  deposit_     Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs.
      *  @param  quoteTokens_ The amount of quote tokens to calculate LPs amount for.
      *  @param  bucketPrice_ Price bucket.
-     *  @return The amount of LPs coresponding to the given quote tokens in current bucket.
+     *  @return lps_         The amount of LPs coresponding to the given quote tokens in current bucket.
      */
     function quoteTokensToLPs(
         uint256 bucketCollateral_,
@@ -125,11 +125,10 @@ library Buckets {
         uint256 deposit_,
         uint256 quoteTokens_,
         uint256 bucketPrice_
-    ) internal pure returns (uint256) {
-        return Maths.rdiv(
-            Maths.wadToRay(quoteTokens_),
-            getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_)
-        );
+    ) internal pure returns (uint256 lps_) {
+        uint256 rate = getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_);
+
+        lps_ = (quoteTokens_ * 1e36 + rate / 2) / rate;
     }
 
     /**
@@ -147,7 +146,7 @@ library Buckets {
     ) internal pure returns (uint256) {
         return bucketLPs_ == 0
             ? Maths.RAY
-            : (bucketDeposit_ * 1e18 + bucketPrice_ * bucketCollateral_) * 1e18 / bucketLPs_;
+            : (bucketDeposit_ * 1e36 + bucketPrice_ * bucketCollateral_ * 1e18 + 1e27 / 2) / 1e27 * 1e27 / bucketLPs_; // TODO: find a nicer way
             // 10^36 * 1e18 / 10^27 = 10^54 / 10^27 = 10^27
     }
 
