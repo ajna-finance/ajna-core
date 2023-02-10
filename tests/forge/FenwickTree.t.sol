@@ -198,7 +198,7 @@ contract FenwickTreeTest is DSTestPlus {
         // get Index randombly 
         uint256 removalIndex  = _tree.getIByInsertIndex(randomInRange(0, _tree.numInserts() - 1));
         uint256 removalAmount = _tree.get(removalIndex);
-        uint256 parentIndex   = randomInRange(removalIndex + 1, MAX_INDEX);
+        uint256 parentIndex   = randomInRange(Maths.min(MAX_INDEX, removalIndex + 1), MAX_INDEX);
 
         uint256 preRemovalParentIndexSum = _tree.prefixSum(parentIndex);
         uint256 preRemovalIndexSum       = _tree.prefixSum(removalIndex); 
