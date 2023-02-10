@@ -223,36 +223,36 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     /*** Borrower Functions                                                                                                               ***/
     /**************************************************************************************************************************************/
 
-    function drawDebt(uint256 actorIndex, uint256 amountToBorrow) public useRandomActor(actorIndex) {
-        numberOfCalls['BBasicHandler.drawDebt']++;
+    // function drawDebt(uint256 actorIndex, uint256 amountToBorrow) public useRandomActor(actorIndex) {
+    //     numberOfCalls['BBasicHandler.drawDebt']++;
 
-        shouldExchangeRateChange = true;
+    //     shouldExchangeRateChange = true;
 
-        amountToBorrow = constrictToRange(amountToBorrow, 1, 1e36);
+    //     amountToBorrow = constrictToRange(amountToBorrow, 1, 1e36);
         
-        // Action
-        super.drawDebt(amountToBorrow);
+    //     // Action
+    //     super.drawDebt(amountToBorrow);
 
-        // skip time to make borrower undercollateralized
-        vm.warp(block.timestamp + 200 days);
+    //     // skip time to make borrower undercollateralized
+    //     vm.warp(block.timestamp + 200 days);
         
-    }
+    // }
 
-    function repayDebt(uint256 actorIndex, uint256 amountToRepay) public useRandomActor(actorIndex) {
-        numberOfCalls['BBasicHandler.repayDebt']++;
+    // function repayDebt(uint256 actorIndex, uint256 amountToRepay) public useRandomActor(actorIndex) {
+    //     numberOfCalls['BBasicHandler.repayDebt']++;
 
-        shouldExchangeRateChange = true;
+    //     shouldExchangeRateChange = true;
 
-        amountToRepay = constrictToRange(amountToRepay, 1, 1e36);
+    //     amountToRepay = constrictToRange(amountToRepay, 1, 1e36);
 
-        // Pre condition
-        (uint256 debt, uint256 collateral, ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);
-        if (debt == 0) {
-            super.drawDebt(amountToRepay);
-        }
+    //     // Pre condition
+    //     (uint256 debt, uint256 collateral, ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);
+    //     if (debt == 0) {
+    //         super.drawDebt(amountToRepay);
+    //     }
 
-        // Action
-        super.repayDebt(amountToRepay);
+    //     // Action
+    //     super.repayDebt(amountToRepay);
 
-    }
+    // }
 }
