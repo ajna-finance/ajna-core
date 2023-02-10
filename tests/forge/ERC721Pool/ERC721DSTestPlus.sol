@@ -787,7 +787,7 @@ abstract contract ERC721NDecimalsHelperContract is ERC721DSTestPlus {
             from:           borrower,
             borrower:       borrower,
             amountToBorrow: loanAmount,
-            limitIndex:     7_777,
+            limitIndex:     MAX_FENWICK_INDEX,
             tokenIds:       tokenIdsToAdd
         });
     }
