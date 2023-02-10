@@ -280,7 +280,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             bondChange:       0.198343696868718241 * 1e18,
             isReward:         true,
             lpAwardTaker:     0,
-            lpAwardKicker:    0.198343053438495848000000000 * 1e27
+            lpAwardKicker:    0.198343053438495847517901615 * 1e27
         });
 
         _assertLenderLpBalance({
@@ -292,15 +292,15 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender,
             index:       _i9_91,
-            lpBalance:   2_000.198343053438495848000000000 * 1e27,
+            lpBalance:   2_000.198343053438495847517901615 * 1e27,
             depositTime: _startTime + 250 days + 6.5 hours
         });
         _assertBucket({
             index:        _i9_91,
-            lpBalance:    2_000.198343053438495848000000000 * 1e27,
+            lpBalance:    2_000.198343053438495847517901615 * 1e27,
             collateral:   2 * 1e18,
             deposit:      1_980.370462064014808094 * 1e18,
-            exchangeRate: 1.000003244027008957000258924 * 1e27
+            exchangeRate: 1.000003244027008957000499950 * 1e27
         });
         // reserves should remain the same after deposit take
         _assertReserveAuction({
