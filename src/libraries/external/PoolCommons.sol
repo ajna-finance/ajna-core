@@ -30,7 +30,7 @@ library PoolCommons {
 
     uint256 internal constant INCREASE_COEFFICIENT = 1.1 * 1e18;
     uint256 internal constant DECREASE_COEFFICIENT = 0.9 * 1e18;
-    uint256 internal constant LAMBDA_EMA_7D        = 0.905723664263906671 * 1e18; // Lambda used for interest EMAs calculated as exp(-1/7   * ln2)
+    uint256 internal constant LAMBDA_EMA_7D        = 0.905723664263906671 * 1e18; // Lambda used for interest EMAs calculated as exp(-1/7 * ln2) / 2 
     uint256 internal constant EMA_7D_RATE_FACTOR   = 1e18 - LAMBDA_EMA_7D;
     int256  internal constant PERCENT_102          = 1.02 * 1e18;
 
@@ -70,18 +70,20 @@ library PoolCommons {
         int256 mau102;
 
         if (poolState_.debt != 0) {
-            // update pool EMAs for target utilization calculation
 
+            // update pool EMAs for target utilization calculation
             curDebtEma =
-                Maths.wmul(poolState_.debt,  EMA_7D_RATE_FACTOR) +
-                Maths.wmul(curDebtEma,       LAMBDA_EMA_7D
+                Maths.wmul(poolState_.t0Debt, EMA_7D_RATE_FACTOR) +
+                Maths.wmul(curDebtEma,        LAMBDA_EMA_7D
             );
 
             // lup * collateral EMA sample max value is 10 times current debt
+            // TODO: is using non t0debt alright?
             uint256 maxLupColEma = Maths.wmul(poolState_.debt, Maths.wad(10));
 
-            // current lup * collateral value
-            uint256 lupCol = Maths.wmul(poolState_.collateral, lup_);
+            // current inflator * t0UtilizationDebtWeight / current lup
+            uint256 lupCol = 
+                Maths.wdiv(Maths.wmul(poolState_.inflator, poolState_.t0PoolUtilizationDebtWeight), lup_);
 
             curLupColEma =
                 Maths.wmul(Maths.min(lupCol, maxLupColEma), EMA_7D_RATE_FACTOR) +
@@ -94,11 +96,10 @@ library PoolCommons {
             // calculate meaningful actual utilization for interest rate update
             mau    = int256(_utilization(deposits_, poolState_.debt, poolState_.collateral));
             mau102 = mau * PERCENT_102 / 1e18;
-
         }
 
         // calculate target utilization
-        int256 tu = (curDebtEma != 0 && curLupColEma != 0) ? int256(Maths.wdiv(curDebtEma, curLupColEma)) : int(Maths.WAD);
+        int256 tu = (curDebtEma != 0 && curLupColEma != 0) ? int256(Maths.wdiv(curLupColEma, curDebtEma)) : int(Maths.WAD);
 
         if (!poolState_.isNewInterestAccrued) poolState_.rate = interestParams_.interestRate;
 

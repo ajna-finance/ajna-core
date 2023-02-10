@@ -424,12 +424,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @return poolState_ Struct containing pool details.
      */
     function _accruePoolInterest() internal returns (PoolState memory poolState_) {
-        poolState_.t0Debt         = poolBalances.t0Debt;
-        poolState_.collateral     = poolBalances.pledgedCollateral;
-        poolState_.inflator       = inflatorState.inflator;
-        poolState_.rate           = interestState.interestRate;
-        poolState_.poolType       = _getArgUint8(POOL_TYPE);
-        poolState_.quoteDustLimit = _getArgUint256(QUOTE_SCALE);
+        poolState_.t0Debt                  = poolBalances.t0Debt;
+        poolState_.collateral              = poolBalances.pledgedCollateral;
+        poolState_.inflator                = inflatorState.inflator;
+        poolState_.rate                    = interestState.interestRate;
+        poolState_.t0PoolUtilizationDebtWeight = interestState.t0PoolUtilizationDebtWeight;
+        poolState_.poolType                = _getArgUint8(POOL_TYPE);
+        poolState_.quoteDustLimit          = _getArgUint256(QUOTE_SCALE);
 
 	    // check if t0Debt is not equal to 0, indicating that there is debt to be tracked for the pool
         if (poolState_.t0Debt != 0) {
@@ -483,6 +484,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         if (block.timestamp - interestState.interestRateUpdate > 12 hours) {
             PoolCommons.updateInterestRate(interestState, deposits, poolState_, lup_);
         }
+
+        // update pool utilization debt weight
+        interestState.t0PoolUtilizationDebtWeight = poolState_.t0PoolUtilizationDebtWeight;
 
         // update pool inflator
         if (poolState_.isNewInterestAccrued) {

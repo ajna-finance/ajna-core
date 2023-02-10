@@ -85,6 +85,7 @@ struct DrawDebtResult {
     bool    settledAuction;        // true if collateral pledged settles auction
     uint256 t0DebtInAuctionChange; // [WAD] change of t0 pool debt in auction after pledge collateral
     uint256 t0PoolDebt;            // [WAD] amount of t0 debt in pool after draw debt
+    uint256 t0PoolUtilizationDebtWeight;            // [WAD] amount of t0 debt in pool after draw debt
 }
 
 struct RepayDebtResult {
@@ -96,4 +97,5 @@ struct RepayDebtResult {
     uint256 t0DebtInAuctionChange; // [WAD] change of t0 pool debt in auction after repay debt
     uint256 t0PoolDebt;            // [WAD] amount of t0 debt in pool after repay
     uint256 quoteTokenToRepay;     // [WAD] quote token amount to be transferred from sender to pool
+    uint256 t0PoolUtilizationDebtWeight;            // [WAD] amount of t0 debt in pool after draw debt
 }

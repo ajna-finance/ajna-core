@@ -87,6 +87,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
         interestState.interestRate       = uint208(rate_);
         interestState.interestRateUpdate = uint48(block.timestamp);
+        interestState.t0PoolUtilizationDebtWeight = uint256(0);
 
         Loans.init(loans);
 
@@ -149,6 +150,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
         poolState.collateral = result.poolCollateral;
+        poolState.t0PoolUtilizationDebtWeight = result.t0PoolUtilizationDebtWeight;
         _updateInterestState(poolState, result.newLup);
 
         if (collateralToPledge_ != 0) {
@@ -208,6 +210,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
         poolState.collateral = result.poolCollateral;
+        poolState.t0PoolUtilizationDebtWeight = result.t0PoolUtilizationDebtWeight;
         _updateInterestState(poolState, result.newLup);
 
         if (result.quoteTokenToRepay != 0) {
