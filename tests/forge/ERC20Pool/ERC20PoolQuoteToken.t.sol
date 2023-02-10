@@ -1112,7 +1112,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             from:    _lender,
             amount:  984665640564039457.584007913129639933 * 1e18,
             index:   2570,
-            lpAward: 984665640564039457.965247095841038753800319114 * 1e27,
+            lpAward: 984665640564039457.584007913129639933000000000 * 1e27,
             newLup:  MAX_PRICE
         });
 
@@ -1125,25 +1125,25 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2570,
-            lpBalance:   984665640564039457.965247095841038753800319114 * 1e27,
+            lpBalance:   984665640564039457.584007913129639933000000000 * 1e27,
             depositTime: _startTime
         });
         _assertBucket({
             index:        2570,
-            lpBalance:    984665640564039457.965247095876919443410120569 * 1e27,
+            lpBalance:    984665640564039457.584007913165520622609801455 * 1e27,
             collateral:   13167,
             deposit:      984665640564039457.584007913129639933 * 1e18,
-            exchangeRate: 0.999999999999999999612823716 * 1e27 // exchange rate should not change
+            exchangeRate: 0.999999999999999999999999999 * 1e27 // exchange rate should not change
         });
 
         skip(48 hours); // to avoid penalty
 
         _removeAllLiquidity({
             from:     _lender,
-            amount:   984665640564039457.584007912144974292 * 1e18,
+            amount:   984665640564039457.584007913129639933 * 1e18,
             index:    2570,
             newLup:   MAX_PRICE,
-            lpRedeem: 984665640564039457.965247095841038753800319114 * 1e27
+            lpRedeem: 984665640564039457.584007913129639933000000000 * 1e27
         });
 
         _assertLenderLpBalance({
@@ -1162,10 +1162,10 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             index:        2570,
             lpBalance:    35880689609801455,
             collateral:   13167,
-            deposit:      984665641,
-            exchangeRate: 28.442773584012189376294029041 * 1e27 // FIXME: exchange rate should not change
+            deposit:      0,
+            exchangeRate: 0.999999999999999999612823717 * 1e27
         });
 
-        assertEq(_quote.balanceOf(_lender), initialLenderBalance); // FIXME
-
+        assertEq(_quote.balanceOf(_lender), initialLenderBalance);
+    }
 }
