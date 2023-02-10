@@ -41,7 +41,7 @@ contract BasicInvariants is TestBase {
 
         super.setUp();
 
-        _basicPoolHandler = new BasicPoolHandler(address(_pool), address(_quote), address(_collateral), address(_poolInfo), 1);
+        _basicPoolHandler = new BasicPoolHandler(address(_pool), address(_quote), address(_collateral), address(_poolInfo), NUM_ACTORS);
         _handler = address(_basicPoolHandler);
         excludeContract(address(_collateral));
         excludeContract(address(_quote));
