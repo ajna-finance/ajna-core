@@ -80,13 +80,13 @@ library Auctions {
         uint256 amountToDebitFromDeposit; // [WAD] the amount of quote tokens used to kick and debited from lender deposit
         uint256 bucketCollateral;         // [WAD] amount of collateral in bucket
         uint256 bucketDeposit;            // [WAD] amount of quote tokens in bucket
-        uint256 bucketLPs;                // [RAY] LPs of the bucket
+        uint256 bucketLPs;                // [WAD] LPs of the bucket
         uint256 bucketPrice;              // [WAD] bucket price
-        uint256 bucketRate;               // [RAY] bucket exchange rate
+        uint256 bucketRate;               // [WAD] bucket exchange rate
         uint256 bucketScale;              // [WAD] bucket scales
         uint256 bucketUnscaledDeposit;    // [WAD] unscaled amount of quote tokens in bucket
-        uint256 lenderLPs;                // [RAY] LPs of lender in bucket
-        uint256 redeemedLPs;              // [RAY] LPs used by kick action
+        uint256 lenderLPs;                // [WAD] LPs of lender in bucket
+        uint256 redeemedLPs;              // [WAD] LPs used by kick action
     }
     struct SettleLocalVars {
         uint256 collateralUsed;    // [WAD] collateral used to settle debt

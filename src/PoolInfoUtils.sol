@@ -58,13 +58,13 @@ contract PoolInfoUtils {
 
     /**
      *  @notice Get a bucket struct for a given index.
-     *  @param  index_             The index of the bucket to retrieve.
-     *  @return price_             Bucket price (WAD)
-     *  @return quoteTokens_       Amount of quote token in bucket, deposit + interest (WAD)
-     *  @return collateral_        Unencumbered collateral in bucket (WAD).
-     *  @return bucketLPs_         Outstanding LP balance in bucket (WAD)
-     *  @return scale_             Lender interest multiplier (WAD).
-     *  @return exchangeRate_      The exchange rate of the bucket, in RAY units.
+     *  @param  index_        The index of the bucket to retrieve.
+     *  @return price_        Bucket price (WAD)
+     *  @return quoteTokens_  Amount of quote token in bucket, deposit + interest (WAD)
+     *  @return collateral_   Unencumbered collateral in bucket (WAD).
+     *  @return bucketLPs_    Outstanding LP balance in bucket (WAD)
+     *  @return scale_        Lender interest multiplier (WAD).
+     *  @return exchangeRate_ The exchange rate of the bucket, in WAD units.
      */
     function bucketInfo(address ajnaPool_, uint256 index_)
         external

@@ -36,7 +36,7 @@ library LenderActions {
     struct MoveQuoteLocalVars {
         uint256 amountToMove;           // [WAD] Quote token amount to move between indexes.
         uint256 fromBucketPrice;        // [WAD] Price of the bucket to move amount from.
-        uint256 fromBucketLPs;          // [RAY] Amount of LPs in the bucket to move amount from.
+        uint256 fromBucketLPs;          // [WAD] Amount of LPs in the bucket to move amount from.
         uint256 fromBucketDepositTime;  // Time of lender deposit in the bucket to move amount from.
         uint256 toBucketPrice;          // [WAD] Price of the bucket to move amount to.
         uint256 toBucketBankruptcyTime; // Time the bucket to move amount to was marked as insolvent.
@@ -45,8 +45,8 @@ library LenderActions {
     }
     struct RemoveDepositParams {
         uint256 depositConstraint; // [WAD] Constraint on deposit in quote token.
-        uint256 lpConstraint;      // [RAY] Constraint in LPB terms.
-        uint256 bucketLPs;         // [RAY] Total LPB in the bucket.
+        uint256 lpConstraint;      // [WAD] Constraint in LPB terms.
+        uint256 bucketLPs;         // [WAD] Total LPB in the bucket.
         uint256 bucketCollateral;  // [WAD] Claimable collateral in the bucket.
         uint256 price;             // [WAD] Price of bucket.
         uint256 index;             // Bucket index.
