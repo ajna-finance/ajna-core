@@ -30,7 +30,7 @@ library PoolCommons {
 
     uint256 internal constant INCREASE_COEFFICIENT = 1.1 * 1e18;
     uint256 internal constant DECREASE_COEFFICIENT = 0.9 * 1e18;
-    uint256 internal constant LAMBDA_EMA_7D        = 0.905723664263906671 * 1e18; // Lambda used for interest EMAs calculated as exp(-1/7 * ln2) / 2 
+    uint256 internal constant LAMBDA_EMA_7D        = 0.905723664263906671 * 1e18; // Lambda used for interest EMAs calculated as exp(-1/7 * ln2)
     uint256 internal constant EMA_7D_RATE_FACTOR   = 1e18 - LAMBDA_EMA_7D;
     int256  internal constant PERCENT_102          = 1.02 * 1e18;
 
