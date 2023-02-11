@@ -751,7 +751,7 @@ library LenderActions {
             scaledRemaining_ = 0;
         }
 
-        uint256 unscaledRemovedAmount = Maths.wdiv(removedAmount_, depositScale);
+        uint256 unscaledRemovedAmount = Maths.min(unscaledDepositAvailable, Maths.wdiv(removedAmount_, depositScale));
         Deposits.unscaledRemove(deposits_, params_.index, unscaledRemovedAmount); // update FenwickTree
     }
 
