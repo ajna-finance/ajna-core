@@ -181,7 +181,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
      *          - decrement poolBalances.t0Debt accumulator
      *          - decrement poolBalances.t0DebtInAuction accumulator
      *          - decrement poolBalances.pledgedCollateral accumulator
-     *          - update borrowerTokenIds arrays
+     *          - update borrowerTokenIds and bucketTokenIds arrays
      *  @dev emit events:
      *          - RepayDebt
      */
@@ -239,7 +239,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     /**
      *  @inheritdoc IERC721PoolLenderActions
      *  @dev write state:
-     *          - update borrowerTokenIds arrays
+     *          - update bucketTokenIds arrays
      *  @dev emit events:
      *          - AddCollateralNFT
      */
