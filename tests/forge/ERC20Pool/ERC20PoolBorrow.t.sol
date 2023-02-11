@@ -606,7 +606,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
     function testMinBorrowAmountCheck() external tearDown {
         // 10 borrowers draw debt
         for (uint i=0; i<10; ++i) {
-            _anonBorrowerDrawsDebt(100 * 1e18, 1_200 * 1e18, 7777);
+            _anonBorrowerDrawsDebt(100 * 1e18, 1_200 * 1e18, MAX_FENWICK_INDEX);
         }
 
         (, uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
@@ -622,7 +622,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         _assertBorrowMinDebtRevert({
             from:       _borrower,
             amount:     10 * 1e18,
-            indexLimit: 7_777
+            indexLimit: MAX_FENWICK_INDEX
         });
     }
 
@@ -761,7 +761,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         // 9 other borrowers draw debt
         for (uint i=0; i<9; ++i) {
-            _anonBorrowerDrawsDebt(100 * 1e18, 1_000 * 1e18, 7777);
+            _anonBorrowerDrawsDebt(100 * 1e18, 1_000 * 1e18, MAX_FENWICK_INDEX);
         }
 
         (, uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));

@@ -7,7 +7,7 @@ import 'src/ERC721Pool.sol';
 
 import 'src/libraries/internal/Maths.sol';
 
-import { MAX_PRICE, _priceAt } from 'src/libraries/helpers/PoolHelper.sol';
+import { MAX_FENWICK_INDEX, MAX_PRICE, _priceAt } from 'src/libraries/helpers/PoolHelper.sol';
 
 abstract contract ERC721PoolBorrowTest is ERC721HelperContract {
     address internal _borrower;
@@ -584,7 +584,7 @@ contract ERC721CollectionPoolBorrowTest is ERC721NDecimalsHelperContract(18) {
         _assertBorrowMinDebtRevert({
             from:       _borrower,
             amount:     100 * 1e18,
-            indexLimit: 7_777
+            indexLimit: MAX_FENWICK_INDEX
         });
     }
 

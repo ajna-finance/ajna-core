@@ -10,7 +10,7 @@ import {
     PoolBalancesState
 } from '../../interfaces/pool/commons/IPoolState.sol';
 
-import { _minDebtAmount } from './PoolHelper.sol';
+import { _minDebtAmount, _priceAt } from './PoolHelper.sol';
 
 import { Loans }    from '../internal/Loans.sol';
 import { Deposits } from '../internal/Deposits.sol';
@@ -20,6 +20,7 @@ import { Maths }    from '../internal/Maths.sol';
     error AuctionNotCleared();
     error AmountLTMinDebt();
     error DustAmountNotExceeded();
+    error LimitIndexReached();
     error RemoveDepositLockedByAuctionDebt();
     error TransactionExpired();
 
@@ -57,6 +58,19 @@ import { Maths }    from '../internal/Maths.sol';
             Borrower storage borrower = loans_.borrowers[head];
             if (borrower.t0Debt != 0 && borrower.collateral == 0) revert AuctionNotCleared();
         }
+    }
+
+    /**
+     * @notice  Check if LUP is at or above index limit provided by borrower.
+     * @notice  Prevents stale transactions and certain MEV manipulations.
+     * @param newLup_     New LUP as a result of the borrower action.
+     * @param limitIndex_ Price limit provided by user creating the TX.
+     */
+    function _revertIfLupDroppedBelowLimit(
+        uint256 newLup_,
+        uint256 limitIndex_
+    ) pure {
+        if (newLup_ < _priceAt(limitIndex_)) revert LimitIndexReached();
     }
 
     /**

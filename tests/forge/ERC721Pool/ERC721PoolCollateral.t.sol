@@ -638,7 +638,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _borrow({
             from:       _borrower,
             amount:     150 * 1e18,
-            indexLimit: 8191,
+            indexLimit: MAX_FENWICK_INDEX,
             newLup:     228.476350374240318479 * 1e18
         });
 

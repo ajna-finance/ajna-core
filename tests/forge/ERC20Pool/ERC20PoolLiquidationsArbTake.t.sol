@@ -702,7 +702,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
 
         // 10 borrowers draw debt to enable the min debt check
         for (uint i=0; i<10; ++i) {
-            _anonBorrowerDrawsDebt(1_000 * 1e18, 6_000 * 1e18, 7777);
+            _anonBorrowerDrawsDebt(1_000 * 1e18, 6_000 * 1e18, MAX_FENWICK_INDEX);
         }
 
         // should revert if auction leaves borrower with debt under minimum pool debt
