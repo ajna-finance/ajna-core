@@ -3,7 +3,7 @@
 pragma solidity 0.8.14;
 
 import '@std/Test.sol';
-import "forge-std/console.sol";
+import "@std/console.sol";
 
 import { TestBase } from './TestBase.sol';
 
@@ -29,15 +29,14 @@ contract ReserveInvariants is LiquidationInvariant {
         (previousReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
     }
 
-    function invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9() external {
+    function invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9() public {
 
         (uint256 currentReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
+        console.log("Current Reserves -->", currentReserves);
+        console.log("Previous Reserves -->", previousReserves);
         if(!IBaseHandler(_handler).shouldReserveChange()) {
             require(currentReserves == previousReserves, "Incorrect Reserves change");
         }
-
-        console.log("Current Reserves -->", currentReserves);
-        console.log("Previous Reserves -->", previousReserves);
 
         uint256 firstTakeIncreaseInReserve = IBaseHandler(_handler).firstTakeIncreaseInReserve();
 

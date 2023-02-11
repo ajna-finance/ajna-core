@@ -66,6 +66,25 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         }
     }
 
+    function moveQuoteToken(uint256 amount, uint256 fromIndex, uint256 toIndex) internal {
+        if(fromIndex == toIndex) return;
+
+        (uint256 lpBalance, ) = _pool.lenderInfo(fromIndex, _actor);
+
+        if (lpBalance == 0) {
+            addQuoteToken(amount, fromIndex);
+        }
+
+        try _pool.moveQuoteToken(amount, fromIndex, toIndex) {
+            shouldExchangeRateChange = false;
+            shouldReserveChange      = false;
+        }
+        catch (bytes memory _err){
+            bytes32 err = keccak256(_err);
+            require(err == keccak256(abi.encodeWithSignature("LUPBelowHTP()")) || err == keccak256(abi.encodeWithSignature("InsufficientLiquidity()")) || err == keccak256(abi.encodeWithSignature("RemoveDepositLockedByAuctionDebt()")));
+        }
+    }
+
     function addCollateral(uint256 amount, uint256 bucketIndex) internal {
         numberOfCalls['UBBasicHandler.addCollateral']++;
 
@@ -237,6 +256,18 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
 
         // Action
         super.removeQuoteToken(amount, _lenderBucketIndex);
+    }
+
+    function moveQuoteToken(uint256 actorIndex, uint256 amount, uint256 fromBucketIndex, uint256 toBucketIndex) public useRandomActor(actorIndex) {
+        numberOfCalls['BBasicHandler.moveQuoteToken']++;
+
+        fromBucketIndex = constrictToRange(fromBucketIndex, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
+
+        toBucketIndex   = constrictToRange(toBucketIndex, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
+
+        amount          = constrictToRange(amount, 1, 1e36);
+        
+        super.moveQuoteToken(amount, fromBucketIndex, toBucketIndex);
     }
 
     function addCollateral(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) {
