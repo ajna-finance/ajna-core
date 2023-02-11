@@ -850,6 +850,27 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             lpBalance:   2_000 * 1e18,
             depositTime: _startTime + 100 days + 10 hours + 1 hours // time of deposit in _i9_52 from bucket (since deposit in _i9_52 from bucket was done after _i9_91 target bucket become insolvent)
         });
+
+        // ensure bucket bankruptcy when moving amounts from an unbalanced bucket leave bucket healthy
+        _assertBucket({
+            index:        _i9_72,
+            lpBalance:    11_000 * 1e18,
+            collateral:   0 * 1e18,
+            deposit:      9_035.875749431291350856 * 1e18,
+            exchangeRate: 0.821443249948299214 * 1e18
+        });
+
+        vm.expectEmit(true, true, false, true);
+        emit BucketBankruptcy(_i9_72, 3827);
+        _pool.moveQuoteToken(10000000000 * 1e18, _i9_72, _i9_91);
+
+        _assertBucket({
+            index:        _i9_72,
+            lpBalance:    0,
+            collateral:   0 * 1e18,
+            deposit:      0,
+            exchangeRate: 1 * 1e18
+        });
     }
 
 }

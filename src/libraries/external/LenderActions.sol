@@ -34,14 +34,21 @@ library LenderActions {
     /*************************/
 
     struct MoveQuoteLocalVars {
-        uint256 amountToMove;           // [WAD] Quote token amount to move between indexes.
-        uint256 fromBucketPrice;        // [WAD] Price of the bucket to move amount from.
-        uint256 fromBucketLPs;          // [WAD] Amount of LPs in the bucket to move amount from.
-        uint256 fromBucketDepositTime;  // Time of lender deposit in the bucket to move amount from.
-        uint256 toBucketPrice;          // [WAD] Price of the bucket to move amount to.
-        uint256 toBucketBankruptcyTime; // Time the bucket to move amount to was marked as insolvent.
-        uint256 ptp;                    // [WAD] Pool Threshold Price.
-        uint256 htp;                    // [WAD] Highest Threshold Price.
+        uint256 amountToMove;               // [WAD] Quote token amount to move between indexes.
+        uint256 fromBucketPrice;            // [WAD] Price of the bucket to move amount from.
+        uint256 fromBucketCollateral;       // [WAD] Total amount of collateral in from bucket.
+        uint256 fromBucketLPs;              // [WAD] Total amount of LPs in from bucket.
+        uint256 fromBucketLenderLPs;        // [WAD] Amount of LPs owned by lender in from bucket.
+        uint256 fromBucketDepositTime;      // Time of lender deposit in the bucket to move amount from.
+        uint256 fromBucketRemainingLPs;     // Amount of LPs remaining in from bucket after move.
+        uint256 fromBucketRemainingDeposit; // Amount of scaled deposit remaining in from bucket after move.
+        uint256 toBucketPrice;              // [WAD] Price of the bucket to move amount to.
+        uint256 toBucketBankruptcyTime;     // Time the bucket to move amount to was marked as insolvent.
+        uint256 toBucketUnscaledDeposit;    // Amount of unscaled deposit in to bucket.
+        uint256 toBucketDeposit;            // Amount of scaled deposit in to bucket.
+        uint256 toBucketScale;              // Scale deposit of to bucket.
+        uint256 ptp;                        // [WAD] Pool Threshold Price.
+        uint256 htp;                        // [WAD] Highest Threshold Price.
     }
     struct RemoveDepositParams {
         uint256 depositConstraint; // [WAD] Constraint on deposit in quote token.
@@ -192,6 +199,7 @@ library LenderActions {
      *              - dust amount DustAmountNotExceeded()
      *              - invalid index InvalidIndex()
      *  @dev    emit events:
+     *              - BucketBankruptcy
      *              - MoveQuoteToken
      */
     function moveQuoteToken(
@@ -219,18 +227,21 @@ library LenderActions {
         Lender storage fromBucketLender = fromBucket.lenders[msg.sender];
 
         vars.fromBucketPrice       = _priceAt(params_.fromIndex);
-        vars.toBucketPrice         = _priceAt(params_.toIndex);
+        vars.fromBucketCollateral  = fromBucket.collateral;
+        vars.fromBucketLPs         = fromBucket.lps;
         vars.fromBucketDepositTime = fromBucketLender.depositTime;
 
-        if (fromBucket.bankruptcyTime < vars.fromBucketDepositTime) vars.fromBucketLPs = fromBucketLender.lps;
+        vars.toBucketPrice         = _priceAt(params_.toIndex);
 
-        (vars.amountToMove, fromBucketRedeemedLPs_, ) = _removeMaxDeposit(
+        if (fromBucket.bankruptcyTime < vars.fromBucketDepositTime) vars.fromBucketLenderLPs = fromBucketLender.lps;
+
+        (vars.amountToMove, fromBucketRedeemedLPs_, vars.fromBucketRemainingDeposit) = _removeMaxDeposit(
             deposits_,
             RemoveDepositParams({
                 depositConstraint: params_.maxAmountToMove,
-                lpConstraint:      vars.fromBucketLPs,
-                bucketLPs:         fromBucket.lps,
-                bucketCollateral:  fromBucket.collateral,
+                lpConstraint:      vars.fromBucketLenderLPs,
+                bucketLPs:         vars.fromBucketLPs,
+                bucketCollateral:  vars.fromBucketCollateral,
                 price:             vars.fromBucketPrice,
                 index:             params_.fromIndex,
                 dustLimit:         poolState_.quoteDustLimit
@@ -246,41 +257,53 @@ library LenderActions {
             }
         }
 
-        uint256 unscaledToBucketDeposit = Deposits.unscaledValueAt(deposits_, params_.toIndex);
-        uint256 toBucketScale           = Deposits.scale(deposits_, params_.toIndex);
-        uint256 toBucketDeposit         = Maths.wmul(toBucketScale, unscaledToBucketDeposit);
+        vars.toBucketUnscaledDeposit = Deposits.unscaledValueAt(deposits_, params_.toIndex);
+        vars.toBucketScale           = Deposits.scale(deposits_, params_.toIndex);
+        vars.toBucketDeposit         = Maths.wmul(vars.toBucketUnscaledDeposit, vars.toBucketScale);
 
         toBucketLPs_ = Buckets.quoteTokensToLPs(
             toBucket.collateral,
             toBucket.lps,
-            toBucketDeposit,
+            vars.toBucketDeposit,
             vars.amountToMove,
             vars.toBucketPrice
         );
 
-        Deposits.unscaledAdd(deposits_, params_.toIndex, Maths.wdiv(vars.amountToMove, toBucketScale));
+        Deposits.unscaledAdd(deposits_, params_.toIndex, Maths.wdiv(vars.amountToMove, vars.toBucketScale));
 
         lup_     = _lup(deposits_, poolState_.debt);
         vars.htp = Maths.wmul(params_.thresholdPrice, poolState_.inflator);
 
         // check loan book's htp against new lup, revert if move drives LUP below HTP
-        if (params_.fromIndex < params_.toIndex) if(vars.htp > lup_) revert LUPBelowHTP();
+        if (params_.fromIndex < params_.toIndex && vars.htp > lup_) revert LUPBelowHTP();
 
-        // update lender LPs balance in from bucket
-        fromBucketLender.lps -= fromBucketRedeemedLPs_;
+        // update lender and bucket LPs balance in from bucket
+        vars.fromBucketRemainingLPs = vars.fromBucketLPs - fromBucketRedeemedLPs_;
 
-        // update lender LPs balance and deposit time in target bucket
+        if (vars.fromBucketCollateral == 0 && vars.fromBucketRemainingDeposit == 0 && vars.fromBucketRemainingLPs != 0) {
+            emit BucketBankruptcy(params_.fromIndex, vars.fromBucketRemainingLPs);
+            fromBucket.lps            = 0;
+            fromBucket.bankruptcyTime = block.timestamp;
+        } else {
+            // update lender and bucket LPs balance
+            fromBucketLender.lps -= fromBucketRedeemedLPs_;
+
+            fromBucket.lps = vars.fromBucketRemainingLPs;
+        }
+
+        // update lender and bucket LPs balance in target bucket
         Lender storage toBucketLender = toBucket.lenders[msg.sender];
 
-        if (vars.toBucketBankruptcyTime >= toBucketLender.depositTime) toBucketLender.lps = toBucketLPs_;
-        else toBucketLender.lps += toBucketLPs_;
-
+        if (vars.toBucketBankruptcyTime >= toBucketLender.depositTime) {
+            toBucketLender.lps = toBucketLPs_;
+        } else {
+            toBucketLender.lps += toBucketLPs_;
+        }
         // set deposit time to the greater of the lender's from bucket and the target bucket's last bankruptcy timestamp + 1 so deposit won't get invalidated
         toBucketLender.depositTime = Maths.max(vars.fromBucketDepositTime, vars.toBucketBankruptcyTime + 1);
 
-        // update buckets LPs balance
-        fromBucket.lps -= fromBucketRedeemedLPs_;
-        toBucket.lps   += toBucketLPs_;
+        // update bucket LPs balance
+        toBucket.lps += toBucketLPs_;
 
         emit MoveQuoteToken(
             msg.sender,
@@ -376,6 +399,8 @@ library LenderActions {
      *  @dev    reverts on:
      *              - not enough collateral InsufficientCollateral()
      *              - insufficient LPs InsufficientLPs()
+     *  @dev    emit events:
+     *              - BucketBankruptcy
      */
     function removeCollateral(
         mapping(uint256 => Bucket) storage buckets_,
@@ -666,8 +691,9 @@ library LenderActions {
      *  @dev    write state:
      *          - Deposits.unscaledRemove (remove amount in Fenwick tree, from index):
      *              - update values array state
-     *  @return removedAmount_ Amount of scaled deposit removed.
-     *  @return redeemedLPs_   Amount of bucket LPs corresponding for calculated scaled deposit amount.
+     *  @return removedAmount_   Amount of scaled deposit removed.
+     *  @return redeemedLPs_     Amount of bucket LPs corresponding for calculated scaled deposit amount.
+     *  @return scaledRemaining_ Amount of scaled deposit remaining.
      */
     function _removeMaxDeposit(
         DepositsState storage deposits_,
