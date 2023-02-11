@@ -204,7 +204,6 @@ library BorrowerActions {
             // determine new lup index and revert if borrow happens at a price higher than the specified limit (lower index than lup index)
             vars.lupId = _lupIndex(deposits_, result_.poolDebt);
             result_.newLup = _priceAt(vars.lupId);
-            // if (vars.lupId > limitIndex_) revert LimitIndexReached();
 
             _revertIfLupDroppedBelowLimit(result_.newLup, limitIndex_);
 
