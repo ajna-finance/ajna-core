@@ -11,7 +11,9 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
     function kickAuction(address borrower) internal {
         numberOfCalls['UBLiquidationHandler.kickAuction']++;
 
-        try _pool.kick(borrower) {}
+        try _pool.kick(borrower) {
+            shouldExchangeRateChange = true;
+        }
         catch (bytes memory _err){
         }
     }
@@ -19,15 +21,19 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
     function takeAuction(address borrower, uint256 amount, address taker) internal {
         numberOfCalls['UBLiquidationHandler.takeAuction']++;
         
-        try _pool.take(borrower, amount, taker, bytes("")) {}
+        try _pool.take(borrower, amount, taker, bytes("")) {
+            shouldExchangeRateChange = true;
+        }
         catch (bytes memory _err){
         }
     }
 
     function bucketTake(address borrower, bool depositTake, uint256 bucketIndex) internal {
-        numberOfCalls['UBLiquidationHandler.takeAuction']++;
+        numberOfCalls['UBLiquidationHandler.bucketTake']++;
 
-        try _pool.bucketTake(borrower, depositTake, bucketIndex) {}
+        try _pool.bucketTake(borrower, depositTake, bucketIndex) {
+            shouldExchangeRateChange = true;
+        }
         catch (bytes memory _err){
         }
     }
@@ -55,7 +61,6 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
                 changePrank(borrower);
                 _actor = borrower;
                 super.drawDebt(amount);
-                skip(200 days);
             }
             changePrank(kicker);
             _actor = kicker;
@@ -87,6 +92,7 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
         if (kickTime == 0) {
             _kickAuction(borrowerIndex, amount * 100, actorIndex);
         }
+        changePrank(taker);
         super.takeAuction(borrower, amount, taker);
     }
 
@@ -107,7 +113,7 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
         if (kickTime == 0) {
             _kickAuction(borrowerIndex, 1e24, bucketIndex);
         }
-
+        changePrank(taker);
         super.bucketTake(borrower, depositTake, bucketIndex);
     } 
 }

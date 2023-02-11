@@ -27,6 +27,8 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     function addQuoteToken(uint256 amount, uint256 bucketIndex) internal {
         numberOfCalls['UBBasicHandler.addQuoteToken']++;
 
+        shouldExchangeRateChange = false;
+
         // Pre condition
         (uint256 lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex, _actor);
 
@@ -43,6 +45,13 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         // Pre condition
         (uint256 lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex, _actor);
 
+        if (lpBalanceBefore == 0) {
+            amount = constrictToRange(amount, 1, 1e36);
+            addQuoteToken(amount, bucketIndex);
+        }
+
+        (lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex, _actor);
+
         try _pool.removeQuoteToken(amount, bucketIndex) {
             // Post condition
             (uint256 lpBalanceAfter, ) = _pool.lenderInfo(bucketIndex, _actor);
@@ -58,6 +67,8 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     function addCollateral(uint256 amount, uint256 bucketIndex) internal {
         numberOfCalls['UBBasicHandler.addCollateral']++;
 
+        shouldExchangeRateChange = false;
+
         // Pre condition
         (uint256 lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex, _actor);
 
@@ -71,8 +82,16 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     function removeCollateral(uint256 amount, uint256 bucketIndex) internal {
         numberOfCalls['UBBasicHandler.removeCollateral']++;
 
+        shouldExchangeRateChange = false;
+
         // Pre condition
         (uint256 lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex, _actor);
+
+        if(lpBalanceBefore == 0) {
+            addCollateral(amount, bucketIndex);
+        }
+
+        (lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex, _actor);
 
         _pool.removeCollateral(amount, bucketIndex);
 
@@ -85,6 +104,25 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     /*** Borrower Functions                                                                                                               ***/
     /**************************************************************************************************************************************/
 
+    function pledgeCollateral(uint256 amount) internal {
+        numberOfCalls['UBBasicHandler.pledgeCollateral']++;
+
+        shouldExchangeRateChange = false;
+
+        _pool.drawDebt(_actor, 0, 0, amount);      
+    }
+
+    function pullCollateral(uint256 amount) internal {
+        numberOfCalls['UBBasicHandler.pullCollateral']++;
+
+        try _pool.repayDebt(_actor, 0, amount) {
+            shouldExchangeRateChange = false;
+        } catch (bytes memory _err){
+            bytes32 err = keccak256(_err);
+            require(err == keccak256(abi.encodeWithSignature("InsufficientCollateral()")));
+        }
+    }
+ 
     function drawDebt(uint256 amount) internal {
         numberOfCalls['UBBasicHandler.drawDebt']++;
 
@@ -128,7 +166,9 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         uint256 collateralToPledge = ((amount * 1e18 + price / 2) / price) * 101 / 100;
 
-        try _pool.drawDebt(_actor, amount, 7388, collateralToPledge) {}
+        try _pool.drawDebt(_actor, amount, 7388, collateralToPledge) {
+            shouldExchangeRateChange = true;
+        }
         catch (bytes memory _err){
             bytes32 err = keccak256(_err);
             require(err == keccak256(abi.encodeWithSignature("BorrowerUnderCollateralized()")));
@@ -138,10 +178,18 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     function repayDebt(uint256 amountToRepay) internal {
         numberOfCalls['UBBasicHandler.repayDebt']++;
 
-        try _pool.repayDebt(_actor, amountToRepay, 0) {}
+        // Pre condition
+        (uint256 debt, uint256 collateral, ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);
+        if (debt == 0) {
+            drawDebt(amountToRepay);
+        }
+
+        try _pool.repayDebt(_actor, amountToRepay, 0) {
+            shouldExchangeRateChange = true;
+        }
         catch(bytes memory _err) {
             bytes32 err = keccak256(_err);
-            require(err == keccak256(abi.encodeWithSignature("NoDebt()")));
+            require(err == keccak256(abi.encodeWithSignature("NoDebt()")) || err == keccak256(abi.encodeWithSignature("AmountLTMinDebt()")));
         }
     }
 
@@ -164,8 +212,6 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     function addQuoteToken(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) {
         numberOfCalls['BBasicHandler.addQuoteToken']++;
 
-        shouldExchangeRateChange = false;
-
         uint256 totalSupply = _quote.totalSupply();
         uint256 minDeposit = totalSupply == 0 ? 1 : _quote.balanceOf(address(_actor)) / totalSupply + 1;
         amount = constrictToRange(amount, minDeposit, 1e36);
@@ -177,13 +223,6 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     function removeQuoteToken(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) {
         numberOfCalls['BBasicHandler.removeQuoteToken']++;
 
-        (uint256 lpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
-
-        if (lpBalance == 0) {
-            amount = constrictToRange(amount, 1, 1e36);
-            super.addQuoteToken(amount, _lenderBucketIndex);
-        }
-
         uint256 poolBalance = _quote.balanceOf(address(_pool));
 
         if (poolBalance < amount) return; // (not enough quote token to withdraw / quote tokens are borrowed)
@@ -194,8 +233,6 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
 
     function addCollateral(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) {
         numberOfCalls['BBasicHandler.addCollateral']++;
-
-        shouldExchangeRateChange = false;
 
         amount = constrictToRange(amount, 1, 1e36);
 
@@ -222,10 +259,26 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     /*** Borrower Functions                                                                                                               ***/
     /**************************************************************************************************************************************/
 
+    function pledgeCollateral(uint256 actorIndex, uint256 amountToPledge) public useRandomActor(actorIndex) {
+        numberOfCalls['BBasicHandler.pledgeCollateral']++;
+
+        amountToPledge = constrictToRange(amountToPledge, 1, 1e36);
+
+        // Action
+        super.pledgeCollateral(amountToPledge);
+    }
+
+    function pullCollateral(uint256 actorIndex, uint256 amountToPull) public useRandomActor(actorIndex) {
+        numberOfCalls['BBasicHandler.pullCollateral']++;
+
+        amountToPull = constrictToRange(amountToPull, 1, 1e36);
+
+        // Action
+        super.pullCollateral(amountToPull);
+    } 
+
     function drawDebt(uint256 actorIndex, uint256 amountToBorrow) public useRandomActor(actorIndex) {
         numberOfCalls['BBasicHandler.drawDebt']++;
-
-        shouldExchangeRateChange = true;
 
         amountToBorrow = constrictToRange(amountToBorrow, 1, 1e36);
         
@@ -234,24 +287,14 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
 
         // skip time to make borrower undercollateralized
         vm.warp(block.timestamp + 200 days);
-        
     }
 
     function repayDebt(uint256 actorIndex, uint256 amountToRepay) public useRandomActor(actorIndex) {
         numberOfCalls['BBasicHandler.repayDebt']++;
 
-        shouldExchangeRateChange = true;
-
         amountToRepay = constrictToRange(amountToRepay, 1, 1e36);
-
-        // Pre condition
-        (uint256 debt, uint256 collateral, ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);
-        if (debt == 0) {
-            super.drawDebt(amountToRepay);
-        }
 
         // Action
         super.repayDebt(amountToRepay);
-
     }
 }

@@ -12,4 +12,6 @@ interface IBaseHandler {
     function numberOfCalls(bytes32) external view returns(uint256); 
 
     function shouldExchangeRateChange() external view returns(bool);
+
+    function shouldReserveChange() external view returns(bool);
 }

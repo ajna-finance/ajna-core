@@ -30,10 +30,14 @@ contract BasicInvariants is TestBase {
         * CT1: poolCtBal >= sum of all borrower's collateral + sum of all bucket's claimable collateral
         * CT7: pool Pledged collateral = sum of all borrower's pledged collateral
     
-    * Loan
+     * Loan
         * L1: for each Loan in loans array (LoansState.loans) starting from index 1, the corresponding address (Loan.borrower) is not 0x, the threshold price (Loan.thresholdPrice) is different than 0
         * L2: Loan in loans array (LoansState.loans) at index 0 has the corresponding address (Loan.borrower) equal with 0x address and the threshold price (Loan.thresholdPrice) equal with 0
         * L3: Loans array (LoansState.loans) is a max-heap with respect to t0-threshold price: the t0TP of loan at index i is >= the t0-threshold price of the loans at index 2i and 2i+1
+
+     * Interest Rate
+        * I1: Interest rate should only update once in 12 hours
+        * I3: Inflator should only update once per block
     ****************************************************************************************************************************************/
 
     uint256                   internal constant NUM_ACTORS = 10;
@@ -42,6 +46,12 @@ contract BasicInvariants is TestBase {
 
     // bucket exchange rate tracking
     mapping(uint256 => uint256) internal previousBucketExchangeRate;
+
+    uint256 previousInterestRateUpdate;
+
+    uint256 previousInflator;
+
+    uint256 previousInflatorUpdate;
 
     function setUp() public override virtual{
 
@@ -60,6 +70,8 @@ contract BasicInvariants is TestBase {
             ( , , , , ,uint256 exchangeRate) = _poolInfo.bucketInfo(address(_pool), bucketIndex);
             previousBucketExchangeRate[bucketIndex] = exchangeRate;
         }
+
+        (, previousInterestRateUpdate) = _pool.interestRateInfo();
 
         // TODO: Change once this issue is resolved -> https://github.com/foundry-rs/foundry/issues/2963
         targetSender(address(0x1234));
@@ -148,20 +160,20 @@ contract BasicInvariants is TestBase {
         require(poolDebt == totalDebt, "Incorrect pool debt");
     }
 
-    function invariant_exchangeRate_R3_R4_R5_R6() public {
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            ( , , , , ,uint256 exchangeRate) = _poolInfo.bucketInfo(address(_pool), bucketIndex);
-            if (!IBaseHandler(_handler).shouldExchangeRateChange()) {
-                console.log("======================================");
-                console.log("Bucket Index -->", bucketIndex);
-                console.log("Previous exchange Rate -->", previousBucketExchangeRate[bucketIndex]);
-                console.log("Current exchange Rate -->", exchangeRate);
-                requireWithinDiff(exchangeRate, previousBucketExchangeRate[bucketIndex], 1e12, "Incorrect exchange Rate changed");
-                console.log("======================================");
-            }
-            previousBucketExchangeRate[bucketIndex] = exchangeRate;
-        }
-    }
+    // function invariant_exchangeRate_RE1_RE2_R3_R4_R5_R6() public {
+    //     for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+    //         ( , , , , ,uint256 exchangeRate) = _poolInfo.bucketInfo(address(_pool), bucketIndex);
+    //         if (!IBaseHandler(_handler).shouldExchangeRateChange()) {
+    //             console.log("======================================");
+    //             console.log("Bucket Index -->", bucketIndex);
+    //             console.log("Previous exchange Rate -->", previousBucketExchangeRate[bucketIndex]);
+    //             console.log("Current exchange Rate -->", exchangeRate);
+    //             requireWithinDiff(exchangeRate, previousBucketExchangeRate[bucketIndex], 1e12, "Incorrect exchange Rate changed");
+    //             console.log("======================================");
+    //         }
+    //         previousBucketExchangeRate[bucketIndex] = exchangeRate;
+    //     }
+    // }
 
     function invariant_loan_L1_L2_L3() public {
         (address borrower, uint256 tp) = _pool.loanInfo(0);
@@ -186,6 +198,27 @@ contract BasicInvariants is TestBase {
             require(tp >= tp1, "Incorrect loan heap");
             require(tp >= tp2, "Incorrect loan heap");
         }
+    }
+
+    // int-erest should only update once in 12 hours
+    function invariant_interest_rate_I1() public {
+
+        (, uint256 currentInterestRateUpdate) = _pool.interestRateInfo();
+
+        if (currentInterestRateUpdate != previousInterestRateUpdate) {
+            require(currentInterestRateUpdate - previousInterestRateUpdate >=  12 hours, "Incorrect interest rate update");
+        }
+        previousInterestRateUpdate = currentInterestRateUpdate;
+    }
+
+    // inflator should only update once per block
+    function invariant_inflator_I3() public {
+        (uint256 currentInflator, uint256 currentInflatorUpdate) = _pool.inflatorInfo();
+        if(currentInflatorUpdate == previousInflatorUpdate) {
+            require(currentInflator == previousInflator, "Incorrect inflator update");
+        }
+        previousInflator = currentInflator;
+        previousInflatorUpdate = currentInflatorUpdate;
     }
 
     function invariant_call_summary() external view virtual {

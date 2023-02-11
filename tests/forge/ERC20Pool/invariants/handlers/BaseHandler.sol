@@ -46,6 +46,8 @@ contract BaseHandler is InvariantTest, Test {
     // bucket exchange rate invariant check
     bool public shouldExchangeRateChange;
 
+    bool public shouldReserveChange;
+    
     constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) {
         // Tokens
         _quote      = Token(quote);
