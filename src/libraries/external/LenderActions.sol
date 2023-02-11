@@ -389,13 +389,14 @@ library LenderActions {
 
         if (amount_ > bucketCollateral) revert InsufficientCollateral();
 
-        uint256 bucketPrice = _priceAt(index_);
-        uint256 bucketLPs   = bucket.lps;
+        uint256 bucketPrice   = _priceAt(index_);
+        uint256 bucketLPs     = bucket.lps;
+        uint256 bucketDeposit = Deposits.valueAt(deposits_, index_);
 
         lpAmount_ = Buckets.collateralToLPs(
             bucketCollateral,
             bucketLPs,
-            Deposits.valueAt(deposits_, index_),
+            bucketDeposit,
             amount_,
             bucketPrice
         );
@@ -406,12 +407,27 @@ library LenderActions {
         if (bucket.bankruptcyTime < lender.depositTime) lenderLpBalance = lender.lps;
         if (lenderLpBalance == 0 || lpAmount_ > lenderLpBalance) revert InsufficientLPs();
 
-        // update lender LPs balance
-        lender.lps -= lpAmount_;
-
         // update bucket LPs and collateral balance
-        bucket.lps        -= Maths.min(bucketLPs, lpAmount_);
-        bucket.collateral -= Maths.min(bucketCollateral, amount_);
+        bucketLPs -= lpAmount_;
+
+        // If clearing out the bucket collateral, ensure it's zeroed out
+        if (bucketLPs == 0 && bucketDeposit == 0) {
+            amount_ = bucketCollateral;
+        }
+
+        bucketCollateral  -= Maths.min(bucketCollateral, amount_);
+        bucket.collateral = bucketCollateral;
+
+        if (bucketCollateral == 0 && bucketDeposit == 0 && bucketLPs != 0) {
+            emit BucketBankruptcy(index_, bucketLPs);
+            bucket.lps            = 0;
+            bucket.bankruptcyTime = block.timestamp;
+        } else {
+            // update lender LPs balance
+            lender.lps -= lpAmount_;
+
+            bucket.lps = bucketLPs;
+        }
     }
 
     /**
@@ -622,9 +638,16 @@ library LenderActions {
         }
 
         // update bucket LPs and collateral balance
-        bucketLPs         -= Maths.min(bucketLPs, lpAmount_);
+        bucketLPs -= Maths.min(bucketLPs, lpAmount_);
+
+        // If clearing out the bucket collateral, ensure it's zeroed out
+        if (bucketLPs == 0 && bucketDeposit == 0) {
+            collateralAmount_ = bucketCollateral;
+        }
+
         bucketCollateral  -= Maths.min(bucketCollateral, collateralAmount_);
-        bucket.collateral  = bucketCollateral;
+        bucket.collateral = bucketCollateral;
+
         if (bucketCollateral == 0 && bucketDeposit == 0 && bucketLPs != 0) {
             emit BucketBankruptcy(index_, bucketLPs);
             bucket.lps            = 0;
