@@ -620,7 +620,7 @@ library Auctions {
         uint256 curUnclaimedAuctionReserve = reserveAuction_.unclaimed;
 
         uint256 claimable = _claimableReserves(
-            params_.poolDebt,
+            Maths.wmul(params_.t0PoolDebt, params_.inflator),
             params_.poolSize,
             auctions_.totalBondEscrowed,
             curUnclaimedAuctionReserve,
