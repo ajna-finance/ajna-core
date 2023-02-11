@@ -920,7 +920,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         // should revert if borrower repays most, but not all of their debt resulting in a 0 tp loan remaining on the book
         vm.expectRevert(abi.encodeWithSignature('ZeroThresholdPrice()'));
-        IERC20Pool(address(_pool)).repayDebt(_borrower, 500.480769230769231000 * 1e18 - 1, 0);
+        IERC20Pool(address(_pool)).repayDebt(_borrower, 500.480769230769231000 * 1e18 - 1, 0, _borrower);
 
         // should be able to pay back all pendingDebt
         _repayDebt({

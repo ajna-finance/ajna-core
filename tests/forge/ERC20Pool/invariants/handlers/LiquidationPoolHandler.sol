@@ -32,11 +32,13 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
             shouldExchangeRateChange = true;
             shouldReserveChange      = true;
             
-            if(!firstTake) {
+            if(!isFirstTakeOnAuction[borrower]) {
                 firstTakeIncreaseInReserve = Maths.wmul(borrowerDebt, 0.07 * 1e18);
                 firstTake = true;
+                isFirstTakeOnAuction[borrower] = true;
             }
             else {
+                isFirstTakeOnAuction[borrower] = false;
                 firstTake = false;
             }
         }

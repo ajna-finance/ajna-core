@@ -11,12 +11,14 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
     address internal _borrower2;
     address internal _lender;
     address internal _lender1;
+    address internal _withdrawRecipient;
 
     function setUp() external {
-        _borrower  = makeAddr("borrower");
-        _borrower2 = makeAddr("borrower2");
-        _lender    = makeAddr("lender");
-        _lender1   = makeAddr("lender1");
+        _borrower          = makeAddr("borrower");
+        _borrower2         = makeAddr("borrower2");
+        _lender            = makeAddr("lender");
+        _lender1           = makeAddr("lender1");
+        _withdrawRecipient = makeAddr("withdrawRecipient");
 
         _mintQuoteAndApproveTokens(_lender,  120_000 * 1e18);
         _mintQuoteAndApproveTokens(_lender1, 120_000 * 1e18);
@@ -426,10 +428,23 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             })
         );
 
-        // kicker withdraws his auction bonds
-        changePrank(_lender);
+        // kicker balance befor withdraw auction bonds
         assertEq(_quote.balanceOf(_lender), 46_999.804657220228527274 * 1e18);
-        _pool.withdrawBonds();
+
+        snapshot = vm.snapshot();
+
+        changePrank(_lender);
+
+        // kicker withdraws auction bonds and transfer to a different address
+        _pool.withdrawBonds(_withdrawRecipient);
+
+        assertEq(_quote.balanceOf(_withdrawRecipient), 0.195342779771472726 * 1e18);
+        assertEq(_quote.balanceOf(_lender), 46_999.804657220228527274 * 1e18);
+
+        vm.revertTo(snapshot);
+
+        // kicker withdraws auction bonds
+        _pool.withdrawBonds(_lender);
 
         assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
 
@@ -533,7 +548,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         changePrank(_lender);
         assertEq(_quote.balanceOf(_lender), 46_999.804657220228527274 * 1e18);
 
-        _pool.withdrawBonds();
+        _pool.withdrawBonds(_lender);
 
         assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
 

@@ -120,7 +120,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     function pullCollateral(uint256 amount) internal {
         numberOfCalls['UBBasicHandler.pullCollateral']++;
 
-        try _pool.repayDebt(_actor, 0, amount) {
+        try _pool.repayDebt(_actor, 0, amount, _actor) {
             shouldExchangeRateChange = false;
             shouldReserveChange      = false;
         } catch (bytes memory _err){
@@ -191,7 +191,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             drawDebt(amountToRepay);
         }
 
-        try _pool.repayDebt(_actor, amountToRepay, 0) {
+        try _pool.repayDebt(_actor, amountToRepay, 0, _actor) {
             shouldExchangeRateChange = true;
             shouldReserveChange      = true;
         }

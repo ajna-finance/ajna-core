@@ -799,6 +799,32 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         skip(1 weeks);
     }
 
+    function testFlashLoanPrecision(
+        uint8 collateralPrecisionDecimals_,
+        uint8 quotePrecisionDecimals_
+    ) external tearDown {
+        // setup fuzzy bounds and initialize the pool
+        uint256 collateralDecimals = bound(uint256(collateralPrecisionDecimals_), 1, 18);
+        uint256 quoteDecimals      = bound(uint256(quotePrecisionDecimals_),      1, 18);
+        init(collateralDecimals, quoteDecimals);
+
+        // add liquidity
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 10_000 * 1e18,
+            index:  2500
+        });
+
+        _pledgeCollateral({
+            from:     _borrower,
+            borrower: _borrower,
+            amount:   150 * 1e18
+        });
+
+        assertEq(_pool.maxFlashLoan(address(_collateral)), 150 * 10 ** collateralDecimals);
+        assertEq(_pool.maxFlashLoan(address(_quote)),      10_000 * 10 ** quoteDecimals);
+    }
+
 
     /**********************/
     /*** Helper Methods ***/

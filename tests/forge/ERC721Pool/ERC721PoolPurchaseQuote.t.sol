@@ -273,7 +273,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             amount:   amountWithInterest,
             index:    2350,
             newLup:   _priceAt(2352),
-            lpRedeem: 24_000.766696558404286249 * 1e18
+            lpRedeem: 24_000.766696558404301151 * 1e18
         });
 
         assertEq(_quote.balanceOf(_bidder), amountWithInterest);
@@ -281,10 +281,10 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         // check bucket state
         _assertBucket({
             index:        2350,
-            lpBalance:    32_653.643978812540068736 * 1e18,
+            lpBalance:    32_653.643978812540053834 * 1e18,
             collateral:   Maths.wad(4),
             deposit:      0,
-            exchangeRate: 1.000082597676179283 * 1e18
+            exchangeRate: 1.000082597676179284 * 1e18
         });
 
         // bidder withdraws unused collateral
@@ -292,13 +292,13 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             from:     _bidder,
             amount:   1,
             index:    2350,
-            lpRedeem: 8_163.410994703135018445 * 1e18
+            lpRedeem: 8_163.410994703135010282 * 1e18
         });
 
         _assertLenderLpBalance({
             lender:      _bidder,
             index:       2350,
-            lpBalance:   490.232984109405050291 * 1e18,
+            lpBalance:   490.232984109405043552 * 1e18,
             depositTime: _startTime + 25 hours
         });
 
@@ -316,7 +316,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         _assertLenderLpBalance({
             lender:      _bidder,
             index:       2350,
-            lpBalance:   490.232984109405050291 * 1e18,
+            lpBalance:   490.232984109405043552 * 1e18,
             depositTime: _startTime + 25 hours
         });
 
@@ -325,10 +325,10 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         // check bucket state
         _assertBucket({
             index:        2350,
-            lpBalance:    16_326.821989406270031846 * 1e18,
+            lpBalance:    16_326.821989406270025107 * 1e18,
             collateral:   Maths.wad(2),
             deposit:      0,
-            exchangeRate: 1.000082597676179283 * 1e18
+            exchangeRate: 1.000082597676179284 * 1e18
         });
 
         // should revert if lender2 attempts to remove more collateral than lp is available for

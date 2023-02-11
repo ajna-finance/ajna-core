@@ -148,29 +148,4 @@ library Buckets {
         return bucketLPs_ == 0 ? Maths.WAD :
             Maths.wdiv(bucketDeposit_ + Maths.wmul(bucketPrice_, bucketCollateral_), bucketLPs_);
     }
-
-    /**
-     *  @notice Returns the unscaled exchange rate for a given bucket.
-     *  @param  bucketCollateral_       Amount of collateral in bucket.
-     *  @param  bucketLPs_              Amount of LPs in bucket.
-     *  @param  bucketUnscaledDeposit_  The amount of unscaled Fenwick tree amount in bucket.
-     *  @param  bucketScale_            Bucket scale factor
-     *  @param  bucketPrice_            Bucket's price.
-     */
-    function getUnscaledExchangeRate(
-        uint256 bucketCollateral_,
-        uint256 bucketLPs_,
-        uint256 bucketUnscaledDeposit_,
-        uint256 bucketScale_,
-        uint256 bucketPrice_
-    ) internal pure returns (uint256) {
-        return bucketLPs_ == 0
-            ? Maths.WAD
-            : Maths.wdiv(
-                bucketUnscaledDeposit_ + Maths.wdiv(
-                    Maths.wmul(bucketPrice_, bucketCollateral_), bucketScale_
-                ),
-                bucketLPs_
-            );
-    }
 }

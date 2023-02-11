@@ -51,6 +51,9 @@ contract BaseHandler is InvariantTest, Test {
     // if take is called on auction first time
     bool public firstTake;
 
+    // mapping borrower address to first take on auction
+    mapping(address => bool) internal isFirstTakeOnAuction;
+
     // amount of reserve increase after first take
     uint256 public firstTakeIncreaseInReserve;
 

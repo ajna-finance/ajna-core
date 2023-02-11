@@ -65,3 +65,27 @@ contract NFTMarketPlace is INFTMarketPlace {
         return this.onERC721Received.selector;
     }
 }
+
+contract NFTNoopTakeExample is IERC721Taker {
+    uint256[] public tokenIdsReceived;
+    uint256   public quoteAmountDueReceived;
+    address   public poolAddressReceived;
+
+    function atomicSwapCallback(
+        uint256[] memory tokenIds,
+        uint256          quoteAmountDue,
+        bytes calldata   data
+    ) external {
+        // NOOP, records inputs passed from pool to be checked in tests
+        tokenIdsReceived       = tokenIds;
+        quoteAmountDueReceived = quoteAmountDue;
+        poolAddressReceived    = abi.decode(data, (address));
+    }
+
+    /** @notice Implementing this method allows contracts to receive ERC721 tokens
+     *  @dev https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
+     */
+    function onERC721Received(address, address, uint256, bytes memory) external pure returns (bytes4) {
+        return this.onERC721Received.selector;
+    }
+}
