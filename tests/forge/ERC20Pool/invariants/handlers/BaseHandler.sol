@@ -47,6 +47,15 @@ contract BaseHandler is InvariantTest, Test {
     bool public shouldExchangeRateChange;
 
     bool public shouldReserveChange;
+
+    // if take is called on auction first time
+    bool public firstTake;
+
+    // amount of reserve increase after first take
+    uint256 public firstTakeIncreaseInReserve;
+
+    // amount of reserve increase after kicking a loan
+    uint256 public loanKickIncreaseInReserve;
     
     constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) {
         // Tokens
@@ -59,7 +68,6 @@ contract BaseHandler is InvariantTest, Test {
 
         // Actors
         _actors    = _buildActors(numOfActors);
-
     }
 
     /**************************************************************************************************************************************/
@@ -67,6 +75,10 @@ contract BaseHandler is InvariantTest, Test {
     /**************************************************************************************************************************************/
 
     modifier useRandomActor(uint256 actorIndex) {
+        // pre condition
+        firstTakeIncreaseInReserve = 0;
+        loanKickIncreaseInReserve = 0;
+
         vm.stopPrank();
 
         address actor = _actors[constrictToRange(actorIndex, 0, _actors.length - 1)];

@@ -14,4 +14,10 @@ interface IBaseHandler {
     function shouldExchangeRateChange() external view returns(bool);
 
     function shouldReserveChange() external view returns(bool);
+
+    function firstTake() external view returns(bool);
+
+    function firstTakeIncreaseInReserve() external view returns(uint256);
+
+    function loanKickIncreaseInReserve() external view returns(uint256);
 }

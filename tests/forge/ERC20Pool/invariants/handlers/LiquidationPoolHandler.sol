@@ -6,13 +6,18 @@ import '@std/Vm.sol';
 
 import { BasicPoolHandler } from './BasicPoolHandler.sol';
 import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BaseHandler } from './BaseHandler.sol';
+import { Maths } from 'src/libraries/internal/Maths.sol';
 
 abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
     function kickAuction(address borrower) internal {
         numberOfCalls['UBLiquidationHandler.kickAuction']++;
 
+        (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower);
+
         try _pool.kick(borrower) {
             shouldExchangeRateChange = true;
+            shouldReserveChange      = true;
+            loanKickIncreaseInReserve = Maths.wmul(borrowerDebt, 0.25 * 1e18);
         }
         catch (bytes memory _err){
         }
@@ -20,9 +25,20 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
 
     function takeAuction(address borrower, uint256 amount, address taker) internal {
         numberOfCalls['UBLiquidationHandler.takeAuction']++;
+
+        (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower);
         
         try _pool.take(borrower, amount, taker, bytes("")) {
             shouldExchangeRateChange = true;
+            shouldReserveChange      = true;
+            
+            if(!firstTake) {
+                firstTakeIncreaseInReserve = Maths.wmul(borrowerDebt, 0.07 * 1e18);
+                firstTake = true;
+            }
+            else {
+                firstTake = false;
+            }
         }
         catch (bytes memory _err){
         }
@@ -31,8 +47,19 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
     function bucketTake(address borrower, bool depositTake, uint256 bucketIndex) internal {
         numberOfCalls['UBLiquidationHandler.bucketTake']++;
 
+        (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower);
+
         try _pool.bucketTake(borrower, depositTake, bucketIndex) {
             shouldExchangeRateChange = true;
+            shouldReserveChange      = true;
+
+            if(!firstTake) {
+                firstTakeIncreaseInReserve = Maths.wmul(borrowerDebt, 0.07 * 1e18);
+                firstTake = true;
+            }
+            else {
+                firstTake = false;
+            }
         }
         catch (bytes memory _err){
         }

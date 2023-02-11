@@ -28,6 +28,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         numberOfCalls['UBBasicHandler.addQuoteToken']++;
 
         shouldExchangeRateChange = false;
+        shouldReserveChange      = false;
 
         // Pre condition
         (uint256 lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex, _actor);
@@ -57,6 +58,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             (uint256 lpBalanceAfter, ) = _pool.lenderInfo(bucketIndex, _actor);
             require(lpBalanceAfter < lpBalanceBefore, "LP balance should decrease");
             shouldExchangeRateChange = false;
+            shouldReserveChange      = false;
         }
         catch (bytes memory _err){
             bytes32 err = keccak256(_err);
@@ -68,6 +70,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         numberOfCalls['UBBasicHandler.addCollateral']++;
 
         shouldExchangeRateChange = false;
+        shouldReserveChange      = false;
 
         // Pre condition
         (uint256 lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex, _actor);
@@ -83,6 +86,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         numberOfCalls['UBBasicHandler.removeCollateral']++;
 
         shouldExchangeRateChange = false;
+        shouldReserveChange      = false;
 
         // Pre condition
         (uint256 lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex, _actor);
@@ -108,6 +112,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         numberOfCalls['UBBasicHandler.pledgeCollateral']++;
 
         shouldExchangeRateChange = false;
+        shouldReserveChange      = false;
 
         _pool.drawDebt(_actor, 0, 0, amount);      
     }
@@ -117,6 +122,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         try _pool.repayDebt(_actor, 0, amount) {
             shouldExchangeRateChange = false;
+            shouldReserveChange      = false;
         } catch (bytes memory _err){
             bytes32 err = keccak256(_err);
             require(err == keccak256(abi.encodeWithSignature("InsufficientCollateral()")));
@@ -168,6 +174,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         try _pool.drawDebt(_actor, amount, 7388, collateralToPledge) {
             shouldExchangeRateChange = true;
+            shouldReserveChange      = true;
         }
         catch (bytes memory _err){
             bytes32 err = keccak256(_err);
@@ -186,6 +193,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         try _pool.repayDebt(_actor, amountToRepay, 0) {
             shouldExchangeRateChange = true;
+            shouldReserveChange      = true;
         }
         catch(bytes memory _err) {
             bytes32 err = keccak256(_err);
