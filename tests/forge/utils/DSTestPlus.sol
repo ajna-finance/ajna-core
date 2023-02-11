@@ -1266,9 +1266,10 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     }
 
     function randomInRange(uint256 min, uint256 max, bool nonZero) public returns (uint256) {
+        require(min <= max, "randomInRange bad inputs");
         if      (max == 0 && nonZero) return 1;
-        else if (max == min)           return max;
-        return uint(keccak256(abi.encodePacked(msg.sender, getNextNonce()))) % (max - min + 1) + min;
+        else if (max == min)          return max;
+        return uint256(keccak256(abi.encodePacked(msg.sender, getNextNonce()))) % (max - min + 1) + min;
     }
 
     // returns a random index between 1 and 7388
