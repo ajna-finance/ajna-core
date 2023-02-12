@@ -14,9 +14,10 @@ install :; git submodule update --init --recursive
 build   :; forge clean && forge build
 
 # Tests
-test                 :; forge test --no-match-test testLoad # --ffi # enable if you need the `ffi` cheat code on HEVM
+test                 :; forge test --no-match-test "testLoad|invariant"  # --ffi # enable if you need the `ffi` cheat code on HEVM
 test-with-gas-report :; FOUNDRY_PROFILE=optimized forge test --no-match-test testLoad --gas-report # --ffi # enable if you need the `ffi` cheat code on HEVM
 test-load            :; FOUNDRY_PROFILE=optimized forge test --match-test testLoad --gas-report
+test-invariant		 :; forge t --mt invariant
 coverage             :; forge coverage --no-match-test testLoad
 
 # Generate Gas Snapshots
