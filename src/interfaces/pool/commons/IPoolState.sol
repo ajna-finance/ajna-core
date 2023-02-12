@@ -222,6 +222,26 @@ interface IPoolState {
      */
     function pledgedCollateral() external view returns (uint256);
 
+    /**
+     *  @notice Returns the total number of active auctions in pool
+     *  @return totalAuctions_ number of active auctions.
+     */
+    function totalAuctionsInPool() external view returns (uint256);
+
+     /**
+     *  @notice Returns the `t0Debt` state variable.
+     *  @dev    This value should be multiplied by inflator in order to calculate current debt of the pool.
+     *  @return The total t0Debt in the system, in WAD units.
+     */
+    function totalT0Debt() external view returns (uint256);
+
+    /**
+     *  @notice Returns the `t0DebtInAuction` state variable.
+     *  @dev    This value should be multiplied by inflator in order to calculate current debt in auction of the pool.
+     *  @return The total t0DebtInAuction in the system, in WAD units.
+     */
+    function totalT0DebtInAuction() external view returns (uint256);
+
 }
 
 /*********************/

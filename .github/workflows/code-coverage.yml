@@ -21,7 +21,7 @@ jobs:
 
       # Report code coverage to discord
       - name: Generate coverage
-        run: forge coverage --report lcov --no-match-test testLoad
+        run: forge coverage --report lcov --no-match-test "testLoad|invariant"
       - name: Setup LCOV
         uses: hrishikesh-kadam/setup-lcov@v1
       - name: Filter lcov
