@@ -57,7 +57,6 @@ library BorrowerActions {
         uint256 borrowerDebt;          // [WAD] borrower's accrued debt
         uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LPs (NFTs only)
         bool    inAuction;             // true if loan still in auction after repay, false otherwise
-        uint256 newLup;                // [WAD] LUP after repay debt action
         bool    pull;                  // true if pull action
         bool    repay;                 // true if repay action
         bool    stampT0Np;             // true if loan's t0 neutral price should be restamped (when repay settles auction or pull collateral)
