@@ -862,7 +862,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
         vm.expectEmit(true, true, false, true);
         emit BucketBankruptcy(_i9_72, 3827);
-        _pool.moveQuoteToken(10000000000 * 1e18, _i9_72, _i9_91);
+        _pool.moveQuoteToken(10000000000 * 1e18, _i9_72, _i9_91, type(uint256).max);
 
         _assertBucket({
             index:        _i9_72,
