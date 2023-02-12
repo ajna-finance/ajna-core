@@ -69,6 +69,7 @@ library BorrowerActions {
     /**************/
 
     // See `IPoolErrors` for descriptions
+    error AuctionActive();
     error BorrowerNotSender();
     error BorrowerUnderCollateralized();
     error InsufficientCollateral();
@@ -123,6 +124,7 @@ library BorrowerActions {
         vars.pledge       = collateralToPledge_ != 0;
         vars.borrow       = amountToBorrow_ != 0 || limitIndex_ != 0; // enable an intentional 0 borrow loan call to update borrower's loan state
         vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
+        vars.inAuction    = _inAuction(auctions_, borrowerAddress_);
 
         result_.t0PoolDebt     = poolState_.t0Debt;
         result_.poolDebt       = poolState_.debt;
@@ -137,7 +139,6 @@ library BorrowerActions {
             result_.remainingCollateral += collateralToPledge_;
 
             result_.newLup  = _lup(deposits_, result_.poolDebt);
-            vars.inAuction = _inAuction(auctions_, borrowerAddress_);
 
             // if loan is auctioned and becomes collateralized by newly pledged collateral then settle auction
             if (
@@ -177,6 +178,9 @@ library BorrowerActions {
         if (vars.borrow) {
             // only intended recipient can borrow quote
             if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
+
+            // an auctioned borrower in not allowed to draw more debt (even if collateralized at the new LUP) if auction is not settled
+            if (vars.inAuction) revert AuctionActive();
 
             vars.t0BorrowAmount = Maths.wdiv(amountToBorrow_, poolState_.inflator);
 
@@ -280,6 +284,7 @@ library BorrowerActions {
         vars.repay        = maxQuoteTokenAmountToRepay_ != 0;
         vars.pull         = collateralAmountToPull_     != 0;
         vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
+        vars.inAuction    = _inAuction(auctions_, borrowerAddress_);
 
         result_.t0PoolDebt     = poolState_.t0Debt;
         result_.poolDebt       = poolState_.debt;
@@ -314,7 +319,6 @@ library BorrowerActions {
             );
 
             result_.newLup = _lup(deposits_, result_.poolDebt);
-            vars.inAuction = _inAuction(auctions_, borrowerAddress_);
 
             // if loan is auctioned and becomes collateralized by repaying debt then settle auction
             if (vars.inAuction) {
@@ -355,6 +359,9 @@ library BorrowerActions {
         if (vars.pull) {
             // only intended recipient can pull collateral
             if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
+
+            // an auctioned borrower in not allowed to pull collateral (even if collateralized at the new LUP) if auction is not settled
+            if (vars.inAuction) revert AuctionActive();
 
             // calculate LUP only if it wasn't calculated in repay action
             if (!vars.repay) result_.newLup = _lup(deposits_, result_.poolDebt);
