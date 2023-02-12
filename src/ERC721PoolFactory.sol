@@ -5,9 +5,9 @@ pragma solidity 0.8.14;
 import { ClonesWithImmutableArgs } from '@clones/ClonesWithImmutableArgs.sol';
 import { IERC165 }                 from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 
-import { IERC721PoolFactory } from './interfaces/pool/erc721/IERC721PoolFactory.sol';
-import { NFTTypes }           from './interfaces/pool/erc721/IERC721NonStandard.sol';
-
+import { IERC721PoolFactory }    from './interfaces/pool/erc721/IERC721PoolFactory.sol';
+import { NFTTypes }              from './interfaces/pool/erc721/IERC721NonStandard.sol';
+import { IPoolFactory }          from './interfaces/pool/IPoolFactory.sol';
 import { IERC20Token, PoolType } from './interfaces/pool/IPool.sol';
 
 import { ERC721Pool }   from './ERC721Pool.sol';
@@ -53,7 +53,10 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
      */
     function deployPool(
         address collateral_, address quote_, uint256[] memory tokenIds_, uint256 interestRate_
-    ) external canDeploy(getNFTSubsetHash(tokenIds_), collateral_, quote_, interestRate_) returns (address pool_) {
+    ) external canDeploy(collateral_, quote_, interestRate_) returns (address pool_) {
+        bytes32 subsetHash = getNFTSubsetHash(tokenIds_);
+        if (deployedPools[subsetHash][collateral_][quote_] != address(0)) revert IPoolFactory.PoolAlreadyExists();
+
         uint256 quoteTokenScale = 10**(18 - IERC20Token(quote_).decimals());
 
         NFTTypes nftType;
@@ -93,7 +96,7 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
         pool_ = address(pool);
 
         // Track the newly deployed pool
-        deployedPools[getNFTSubsetHash(tokenIds_)][collateral_][quote_] = pool_;
+        deployedPools[subsetHash][collateral_][quote_] = pool_;
         deployedPoolsList.push(pool_);
 
         emit PoolCreated(pool_);

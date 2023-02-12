@@ -4,8 +4,8 @@ pragma solidity 0.8.14;
 
 import { ClonesWithImmutableArgs } from '@clones/ClonesWithImmutableArgs.sol';
 
-import { IERC20PoolFactory } from './interfaces/pool/erc20/IERC20PoolFactory.sol';
-
+import { IERC20PoolFactory }     from './interfaces/pool/erc20/IERC20PoolFactory.sol';
+import { IPoolFactory }          from './interfaces/pool/IPoolFactory.sol';
 import { IERC20Token, PoolType } from './interfaces/pool/IPool.sol';
 
 import { ERC20Pool }    from './ERC20Pool.sol';
@@ -49,7 +49,9 @@ contract ERC20PoolFactory is PoolDeployer, IERC20PoolFactory {
      */
     function deployPool(
         address collateral_, address quote_, uint256 interestRate_
-    ) external canDeploy(ERC20_NON_SUBSET_HASH, collateral_, quote_, interestRate_) returns (address pool_) {
+    ) external canDeploy(collateral_, quote_, interestRate_) returns (address pool_) {
+        if (deployedPools[ERC20_NON_SUBSET_HASH][collateral_][quote_] != address(0)) revert IPoolFactory.PoolAlreadyExists();
+
         uint256 quoteTokenScale = 10 ** (18 - IERC20Token(quote_).decimals());
         uint256 collateralScale = 10 ** (18 - IERC20Token(collateral_).decimals());
 
