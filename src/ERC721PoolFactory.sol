@@ -115,7 +115,7 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
      */
     function _checkTokenIdSortOrder(uint256[] memory tokenIds_) internal pure {
         for (uint256 i = 0; i < tokenIds_.length - 1; ) {
-            if (tokenIds_[i] > tokenIds_[i + 1]) revert TokenIdsNotSorted();
+            if (tokenIds_[i] >= tokenIds_[i + 1]) revert TokenIdSubsetInvalid();
             unchecked {
                 ++i;
             }

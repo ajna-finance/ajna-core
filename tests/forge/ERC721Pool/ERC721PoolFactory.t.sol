@@ -215,11 +215,21 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         tokenIdsTwo[0] = 1;
         tokenIdsTwo[1] = 2;
         tokenIdsTwo[2] = 3;
+        uint256[] memory tokenIdsThree = new uint256[](3);
+        tokenIdsThree[0] = 1;
+        tokenIdsThree[1] = 2;
+        tokenIdsThree[2] = 2;
 
-        vm.expectRevert(IERC721PoolFactory.TokenIdsNotSorted.selector);
+        // check sort order
+        vm.expectRevert(IERC721PoolFactory.TokenIdSubsetInvalid.selector);
         _factory.getNFTSubsetHash(tokenIdsOne);
 
+        // check valid subset hash
         assertEq(_factory.getNFTSubsetHash(tokenIdsTwo), keccak256(abi.encode(tokenIdsTwo)));
+
+        // check for duplicate tokenIds
+        vm.expectRevert(IERC721PoolFactory.TokenIdSubsetInvalid.selector);
+        _factory.getNFTSubsetHash(tokenIdsThree);
     }
 
     function testDeployERC721SubsetPoolWithZeroAddress() external {

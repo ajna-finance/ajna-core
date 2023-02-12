@@ -15,9 +15,9 @@ interface IERC721PoolFactory is IPoolFactory {
     /**************/
 
     /**
-     *  @notice Pool with this combination of quote and collateral already exists.
+     *  @notice User tried to deploy a pool with an array of tokenIds that weren't sorted, or contained duplicates.
      */
-    error TokenIdsNotSorted();
+    error TokenIdSubsetInvalid();
 
     /**************************/
     /*** External Functions ***/
