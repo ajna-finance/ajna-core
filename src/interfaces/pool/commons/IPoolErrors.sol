@@ -110,7 +110,7 @@ interface IPoolErrors {
     /**
      *  @notice Borrower is attempting to borrow more quote token than is available before the supplied limitIndex.
      */
-    error LimitIndexReached();
+    error LimitIndexExceeded();
 
     /**
      *  @notice When moving quote token HTP must stay below LUP.

@@ -20,7 +20,7 @@ import { Maths }    from '../internal/Maths.sol';
     error AuctionNotCleared();
     error AmountLTMinDebt();
     error DustAmountNotExceeded();
-    error LimitIndexReached();
+    error LimitIndexExceeded();
     error RemoveDepositLockedByAuctionDebt();
     error TransactionExpired();
 
@@ -64,13 +64,13 @@ import { Maths }    from '../internal/Maths.sol';
      * @notice  Check if LUP is at or above index limit provided by borrower.
      * @notice  Prevents stale transactions and certain MEV manipulations.
      * @param newLup_     New LUP as a result of the borrower action.
-     * @param limitIndex_ Price limit provided by user creating the TX.
+     * @param limitIndex_ Limit price index provided by user creating the TX.
      */
     function _revertIfLupDroppedBelowLimit(
         uint256 newLup_,
         uint256 limitIndex_
     ) pure {
-        if (newLup_ < _priceAt(limitIndex_)) revert LimitIndexReached();
+        if (newLup_ < _priceAt(limitIndex_)) revert LimitIndexExceeded();
     }
 
     /**
