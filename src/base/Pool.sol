@@ -45,7 +45,8 @@ import {
 }                               from '../libraries/helpers/PoolHelper.sol';
 import {
     _revertIfAuctionDebtLocked,
-    _revertIfAuctionClearable
+    _revertIfAuctionClearable,
+    _revertOnExpiry
 }                               from '../libraries/helpers/RevertsHelper.sol';
 
 import { Buckets }  from '../libraries/internal/Buckets.sol';
@@ -131,8 +132,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /// @inheritdoc IPoolLenderActions
     function addQuoteToken(
         uint256 quoteTokenAmountToAdd_,
-        uint256 index_
+        uint256 index_,
+        uint256 expiry_
     ) external override nonReentrant returns (uint256 bucketLPs_) {
+        _revertOnExpiry(expiry_);
         PoolState memory poolState = _accruePoolInterest();
 
         // round to token precision
@@ -173,8 +176,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function moveQuoteToken(
         uint256 maxAmountToMove_,
         uint256 fromIndex_,
-        uint256 toIndex_
+        uint256 toIndex_,
+        uint256 expiry_
     ) external override nonReentrant returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
+        _revertOnExpiry(expiry_);
         PoolState memory poolState = _accruePoolInterest();
 
         _revertIfAuctionDebtLocked(deposits, poolBalances, fromIndex_, poolState.inflator);

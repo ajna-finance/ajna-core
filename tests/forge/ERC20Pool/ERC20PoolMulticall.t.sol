@@ -31,21 +31,24 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
         bytes[] memory callsToExecute = new bytes[](3);
 
         callsToExecute[0] = abi.encodeWithSignature(
-            "addQuoteToken(uint256,uint256)",
+            "addQuoteToken(uint256,uint256,uint256)",
             10_000 * 1e18,
-            2550
+            2550,
+            block.timestamp + 5 minutes
         );
 
         callsToExecute[1] = abi.encodeWithSignature(
-            "addQuoteToken(uint256,uint256)",
+            "addQuoteToken(uint256,uint256,uint256)",
             10_000 * 1e18,
-            2551
+            2551,
+            block.timestamp + 5 minutes
         );
 
         callsToExecute[2] = abi.encodeWithSignature(
-            "addQuoteToken(uint256,uint256)",
+            "addQuoteToken(uint256,uint256,uint256)",
             10_000 * 1e18,
-            2552
+            2552,
+            block.timestamp + 5 minutes
         );
 
         changePrank(_lender);
@@ -134,7 +137,7 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
         );
 
         changePrank(_lender);
-        vm.expectRevert(IPoolErrors.LimitIndexReached.selector);
+        vm.expectRevert(IPoolErrors.LimitIndexExceeded.selector);
         ERC20Pool(address(_pool)).multicall(callsToExecute);
     }
 }

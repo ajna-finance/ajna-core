@@ -147,7 +147,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _borrow({
             from:       _borrower2,
             amount:     1_700.0 * 1e18,
-            indexLimit: _p9_72,
+            indexLimit: _i9_72,
             newLup:     _p9_72
         });
 
@@ -203,7 +203,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _borrow({
             from:       _borrower2,
             amount:     1_700.0 * 1e18,
-            indexLimit: _p9_72,
+            indexLimit: _i9_72,
             newLup:     _p9_72
         });
 
@@ -412,7 +412,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _borrow({
             from:       _borrower2,
             amount:     1_700.0 * 1e18,
-            indexLimit: _p9_72,
+            indexLimit: _i9_72,
             newLup:     _p9_72
         });
 
@@ -620,7 +620,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _borrow({
             from:       _borrower2,
             amount:     1_700.0 * 1e18,
-            indexLimit: _p9_72,
+            indexLimit: _i9_72,
             newLup:     _p9_72
         });
 
@@ -807,7 +807,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _borrow({
             from:       _borrower2,
             amount:     1_700.0 * 1e18,
-            indexLimit: _p9_72,
+            indexLimit: _i9_72,
             newLup:     _p9_72
         });
 
@@ -1008,7 +1008,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _borrow({
             from:       _borrower2,
             amount:     1_700.0 * 1e18,
-            indexLimit: _p9_72,
+            indexLimit: _i9_72,
             newLup:     _p9_72
         });
 
@@ -1792,7 +1792,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         // 10 borrowers draw debt to enable the min debt check
         for (uint i=0; i<10; ++i) {
-            _anonBorrowerDrawsDebt(1_000 * 1e18, 6_000 * 1e18, 7_777);
+            _anonBorrowerDrawsDebt(1_000 * 1e18, 6_000 * 1e18, MAX_FENWICK_INDEX);
         }
 
         // should revert if auction leaves borrower with debt under minimum pool debt

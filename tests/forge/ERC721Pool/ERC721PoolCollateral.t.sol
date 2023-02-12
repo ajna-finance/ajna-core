@@ -257,7 +257,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         // borrower removes some of their deposited NFTs from the pool and transfer to a different recipient
         changePrank(_borrower);
-        ERC721Pool(address(_pool)).repayDebt(_borrower, 0, 2, tokensReceiver);
+        ERC721Pool(address(_pool)).repayDebt(_borrower, 0, 2, tokensReceiver, MAX_FENWICK_INDEX);
 
         // check token balances after remove
         assertEq(_pool.pledgedCollateral(), Maths.wad(2));
@@ -275,7 +275,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         // borrower2 removes deposited NFT from the pool and transfer to same recipient
         changePrank(_borrower2);
-        ERC721Pool(address(_pool)).repayDebt(_borrower2, 0, 1, tokensReceiver);
+        ERC721Pool(address(_pool)).repayDebt(_borrower2, 0, 1, tokensReceiver, MAX_FENWICK_INDEX);
 
         // check token balances after remove
         assertEq(_pool.pledgedCollateral(), Maths.wad(1));
@@ -638,7 +638,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _borrow({
             from:       _borrower,
             amount:     150 * 1e18,
-            indexLimit: 8191,
+            indexLimit: MAX_FENWICK_INDEX,
             newLup:     228.476350374240318479 * 1e18
         });
 
@@ -1151,6 +1151,20 @@ contract ERC721SubsetPoolCollateralTest is ERC721PoolCollateralTest {
         _assertPledgeCollateralNotInSubsetRevert({
             from:     _borrower,
             tokenIds: tokenIdsToAdd
+        });
+    }
+
+    function testRemoveCollateralReverts() external tearDown {
+        uint256 testIndex = 6248;
+        uint256[] memory tokenIdsToAdd = new uint256[](2);
+        tokenIdsToAdd[0] = 3;
+        tokenIdsToAdd[1] = 5;
+
+        _assertAddCollateralExpiredRevert({
+            from:     _lender,
+            tokenIds: tokenIdsToAdd,
+            index:    testIndex,
+            expiry:   block.timestamp - 15
         });
     }
 }

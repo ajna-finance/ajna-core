@@ -20,7 +20,10 @@ import {
     _priceAt,
     _isCollateralized
 }                           from '../helpers/PoolHelper.sol';
-import { _revertOnMinDebt } from '../helpers/RevertsHelper.sol';
+import { 
+    _revertIfLupDroppedBelowLimit, 
+    _revertOnMinDebt
+}                           from '../helpers/RevertsHelper.sol';
 
 import { Buckets }  from '../internal/Buckets.sol';
 import { Deposits } from '../internal/Deposits.sol';
@@ -47,7 +50,6 @@ library BorrowerActions {
         uint256 t0BorrowAmount;        // [WAD] t0 amount to borrow
         uint256 t0DebtChange;          // [WAD] additional t0 debt resulted from draw debt action
         bool    inAuction;             // true if loan is auctioned
-        uint256 lupId;                 // id of new LUP
         bool    pledge;                // true if pledge action
         bool    stampT0Np;             // true if loan's t0 neutral price should be restamped (when drawing debt or pledge settles auction)
     }
@@ -55,7 +57,6 @@ library BorrowerActions {
         uint256 borrowerDebt;          // [WAD] borrower's accrued debt
         uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LPs (NFTs only)
         bool    inAuction;             // true if loan still in auction after repay, false otherwise
-        uint256 newLup;                // [WAD] LUP after repay debt action
         bool    pull;                  // true if pull action
         bool    repay;                 // true if repay action
         bool    stampT0Np;             // true if loan's t0 neutral price should be restamped (when repay settles auction or pull collateral)
@@ -71,7 +72,7 @@ library BorrowerActions {
     error BorrowerNotSender();
     error BorrowerUnderCollateralized();
     error InsufficientCollateral();
-    error LimitIndexReached();
+    error LimitIndexExceeded();
     error NoDebt();
 
     /***************************/
@@ -96,7 +97,7 @@ library BorrowerActions {
      *  @dev    reverts on:
      *              - borrower not sender BorrowerNotSender()
      *              - borrower debt less than pool min debt AmountLTMinDebt()
-     *              - limit price reached LimitIndexReached()
+     *              - limit price reached LimitIndexExceeded()
      *              - borrower cannot draw more debt BorrowerUnderCollateralized()
      *  @dev    emit events:
      *              - Auctions._settleAuction:
@@ -198,13 +199,13 @@ library BorrowerActions {
             result_.t0PoolDebt += vars.t0DebtChange;
             result_.poolDebt   = Maths.wmul(result_.t0PoolDebt, poolState_.inflator);
 
-            // determine new lup index and revert if borrow happens at a price higher than the specified limit (lower index than lup index)
-            vars.lupId = _lupIndex(deposits_, result_.poolDebt);
-            if (vars.lupId > limitIndex_) revert LimitIndexReached();
+            result_.newLup = _lup(deposits_, result_.poolDebt);
+
+            // revert if borrow drives LUP price under the specified price limit
+            _revertIfLupDroppedBelowLimit(result_.newLup, limitIndex_);
 
             // calculate new lup and check borrow action won't push borrower into a state of under-collateralization
             // this check also covers the scenario when loan is already auctioned
-            result_.newLup = _priceAt(vars.lupId);
 
             if (!_isCollateralized(vars.borrowerDebt, borrower.collateral, result_.newLup, poolState_.poolType)) {
                 revert BorrowerUnderCollateralized();
@@ -254,6 +255,7 @@ library BorrowerActions {
      *              - borrower debt less than pool min debt AmountLTMinDebt()
      *              - borrower not sender BorrowerNotSender()
      *              - not enough collateral to pull InsufficientCollateral()
+     *              - limit price reached LimitIndexExceeded()
      *  @dev    emit events:
      *              - Auctions._settleAuction:
      *                  - AuctionNFTSettle or AuctionSettle
@@ -266,7 +268,8 @@ library BorrowerActions {
         PoolState calldata poolState_,
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
-        uint256 collateralAmountToPull_
+        uint256 collateralAmountToPull_,
+        uint256 limitIndex_
     ) external returns (
         RepayDebtResult memory result_
     ) {
@@ -356,6 +359,8 @@ library BorrowerActions {
             // calculate LUP only if it wasn't calculated in repay action
             if (!vars.repay) result_.newLup = _lup(deposits_, result_.poolDebt);
 
+            _revertIfLupDroppedBelowLimit(result_.newLup, limitIndex_);
+
             uint256 encumberedCollateral = borrower.t0Debt != 0 ? Maths.wdiv(vars.borrowerDebt, result_.newLup) : 0;
 
             if (borrower.collateral - encumberedCollateral < collateralAmountToPull_) revert InsufficientCollateral();
@@ -404,18 +409,11 @@ library BorrowerActions {
         return auctions_.liquidations[borrower_].kickTime != 0;
     }
 
-    function _lupIndex(
-        DepositsState storage deposits_,
-        uint256 debt_
-    ) internal view returns (uint256) {
-        return Deposits.findIndexOfSum(deposits_, debt_);
-    }
-
     function _lup(
         DepositsState storage deposits_,
         uint256 debt_
     ) internal view returns (uint256) {
-        return _priceAt(_lupIndex(deposits_, debt_));
+        return _priceAt(Deposits.findIndexOfSum(deposits_, debt_));
     }
 
 }

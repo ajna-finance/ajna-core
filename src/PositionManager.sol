@@ -252,7 +252,8 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         ) = IPool(params_.pool).moveQuoteToken(
             maxQuote,
             params_.fromIndex,
-            params_.toIndex
+            params_.toIndex,
+            params_.expiry
         );
 
         // update position LPs state

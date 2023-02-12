@@ -3,6 +3,7 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
+import 'src/interfaces/pool/IPool.sol';
 import 'src/libraries/helpers/PoolHelper.sol';
 
 contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
@@ -32,12 +33,6 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
      */
     function testPoolDepositQuoteToken() external tearDown {
         assertEq(_hpb(), MIN_PRICE);
-
-        // should revert if trying to deposit at index 0
-        _assertAddLiquidityAtIndex0Revert({
-            from:   _lender,
-            amount: 10_000 * 1e18
-        });
 
         // test 10_000 deposit at price of 3_010.892022197881557845
         _addInitialLiquidity({
@@ -203,6 +198,39 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         // check balances
         assertEq(_quote.balanceOf(address(_pool)), 70_000 * 1e18);
         assertEq(_quote.balanceOf(_lender),        130_000 * 1e18);
+    }
+
+    function testPoolAddQuoteTokenReverts() external tearDown {
+        // should revert if trying to deposit at index 0
+        _assertAddLiquidityAtIndex0Revert({
+            from:   _lender,
+            amount: 10_000 * 1e18
+        });
+
+        // should revert if passing an already-expired timestamp
+        _assertAddLiquidityExpiredRevert({
+            from:   _lender,
+            amount: 100_000 * 1e18,
+            index:  3232,
+            expiry: block.timestamp - 1 minutes
+        });
+
+        // should revert if passing future timestamp but time has elapsed
+        bytes memory data = abi.encodeWithSignature(
+            "addQuoteToken(uint256,uint256,uint256)",
+            50_000 * 1e18,
+            3333,
+            block.timestamp + 5 minutes
+        );
+
+        // should succeed if time hasn't passed
+        (bool success, ) = address(_pool).call(data);
+        assertEq(success, true);        
+
+        // should fail if expiration exceeded
+        skip(6 minutes);
+        vm.expectRevert(IPoolErrors.TransactionExpired.selector);
+        (success, ) = address(_pool).call(data);
     }
 
     function testPoolRemoveQuoteToken() external tearDown {
@@ -960,6 +988,15 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             amount:    40_000 * 1e18,
             fromIndex: 4549,
             toIndex:   6000
+        });
+
+        // should revert if transaction expired
+        _assertMoveLiquidityExpiredRevert({
+            from:      _lender,
+            amount:    30_000 * 1e18,
+            fromIndex: 4549,
+            toIndex:   4459,
+            expiry:    block.timestamp - 20
         });
 
         // should be able to moveQuoteToken if properly specified
