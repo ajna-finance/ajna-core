@@ -1059,7 +1059,7 @@ library Auctions {
             deposits_,
             borrower_,
             borrowerAddress_,
-            borrowerDebt,
+            poolState_.debt,
             poolState_.rate,
             newLup_,
             !settledAuction_,
@@ -1172,7 +1172,7 @@ library Auctions {
         }
 
         if (vars.isRewarded) {
-            // take is above neutralPrice, Kicker is rewarded
+            // take is below neutralPrice, Kicker is rewarded
             vars.bondChange = Maths.wmul(vars.scaledQuoteTokenAmount, uint256(vars.bpf));
         } else {
             // take is above neutralPrice, Kicker is penalized

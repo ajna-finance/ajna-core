@@ -64,14 +64,14 @@ library Loans {
      *          - remove:
      *            - remove loan from loans array
      *          - update borrower in address => borrower mapping
-     *  @param loans_               Holds loan heap data.
-     *  @param borrower_            Borrower struct with borrower details.
-     *  @param borrowerAddress_     Borrower's address to update.
-     *  @param borrowerAccruedDebt_ Borrower's current debt.
-     *  @param poolRate_            Pool's current rate.
-     *  @param lup_                 Current LUP.
-     *  @param inAuction_           Whether the loan is in auction or not.
-     *  @param t0NpUpdate_          Whether the neutral price of borrower should be updated or not.
+     *  @param loans_           Holds loan heap data.
+     *  @param borrower_        Borrower struct with borrower details.
+     *  @param borrowerAddress_ Borrower's address to update.
+     *  @param poolDebt_        Pool's current debt.
+     *  @param poolRate_        Pool's current rate.
+     *  @param lup_             Current LUP.
+     *  @param inAuction_       Whether the loan is in auction or not.
+     *  @param t0NpUpdate_      Whether the neutral price of borrower should be updated or not.
      */
     function update(
         LoansState storage loans_,
@@ -79,7 +79,7 @@ library Loans {
         DepositsState storage deposits_,
         Borrower memory borrower_,
         address borrowerAddress_,
-        uint256 borrowerAccruedDebt_,
+        uint256 poolDebt_,
         uint256 poolRate_,
         uint256 lup_,
         bool inAuction_,
@@ -111,7 +111,7 @@ library Loans {
         if (t0NpUpdate_) {
             if (t0ThresholdPrice != 0) {
                 uint256 loansInPool = loans_.loans.length - 1 + auctions_.noOfAuctions;
-                uint256 curMomp     = _priceAt(Deposits.findIndexOfSum(deposits_, Maths.wdiv(borrowerAccruedDebt_, loansInPool * 1e18)));
+                uint256 curMomp     = _priceAt(Deposits.findIndexOfSum(deposits_, Maths.wdiv(poolDebt_, loansInPool * 1e18)));
 
                 borrower_.t0Np = (1e18 + poolRate_) * curMomp * t0ThresholdPrice / lup_ / 1e18;
             } else {

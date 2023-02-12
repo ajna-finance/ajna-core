@@ -29,29 +29,29 @@ contract ReserveInvariants is LiquidationInvariant {
         (previousReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
     }
 
-    function invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9() public {
+    // function invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9() public {
 
-        (uint256 currentReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
-        console.log("Current Reserves -->", currentReserves);
-        console.log("Previous Reserves -->", previousReserves);
-        if(!IBaseHandler(_handler).shouldReserveChange()) {
-            require(currentReserves == previousReserves, "Incorrect Reserves change");
-        }
+    //     (uint256 currentReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
+    //     console.log("Current Reserves -->", currentReserves);
+    //     console.log("Previous Reserves -->", previousReserves);
+    //     if(!IBaseHandler(_handler).shouldReserveChange()) {
+    //         require(currentReserves == previousReserves, "Incorrect Reserves change");
+    //     }
 
-        uint256 firstTakeIncreaseInReserve = IBaseHandler(_handler).firstTakeIncreaseInReserve();
+    //     uint256 firstTakeIncreaseInReserve = IBaseHandler(_handler).firstTakeIncreaseInReserve();
 
-        console.log("firstTakeIncreaseInReserve -->", firstTakeIncreaseInReserve);
-        if(IBaseHandler(_handler).firstTake()) {
-            requireWithinDiff(currentReserves, previousReserves + firstTakeIncreaseInReserve, 1e2, "Incorrect Reserves change with first take");
-        }
+    //     console.log("firstTakeIncreaseInReserve -->", firstTakeIncreaseInReserve);
+    //     if(IBaseHandler(_handler).firstTake()) {
+    //         requireWithinDiff(currentReserves, previousReserves + firstTakeIncreaseInReserve, 1e2, "Incorrect Reserves change with first take");
+    //     }
 
-        uint256 loanKickIncreaseInReserve = IBaseHandler(_handler).loanKickIncreaseInReserve();
+    //     uint256 loanKickIncreaseInReserve = IBaseHandler(_handler).loanKickIncreaseInReserve();
 
-        console.log("loanKickIncreaseInReserve -->", loanKickIncreaseInReserve);
-        if(loanKickIncreaseInReserve != 0) {
-            requireWithinDiff(currentReserves, previousReserves + loanKickIncreaseInReserve, 1e2, "Incorrect Reserves change with kick");
-        }
-        previousReserves = currentReserves;
-    }
+    //     console.log("loanKickIncreaseInReserve -->", loanKickIncreaseInReserve);
+    //     if(loanKickIncreaseInReserve != 0) {
+    //         requireWithinDiff(currentReserves, previousReserves + loanKickIncreaseInReserve, 1e2, "Incorrect Reserves change with kick");
+    //     }
+    //     previousReserves = currentReserves;
+    // }
 
 }

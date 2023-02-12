@@ -499,7 +499,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 auctionPrice:      123_636.939803752939029248 * 1e18,
                 debtInAuction:     35_471.574519230769247125 * 1e18,
                 thresholdPrice:    35.471574519230769247 * 1e18,
-                neutralPrice:      37.154109537259614798 * 1e18
+                neutralPrice:      36.969263221153845869 * 1e18
             })
         );
     }
