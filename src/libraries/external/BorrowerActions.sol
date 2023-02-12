@@ -50,7 +50,6 @@ library BorrowerActions {
         uint256 t0BorrowAmount;        // [WAD] t0 amount to borrow
         uint256 t0DebtChange;          // [WAD] additional t0 debt resulted from draw debt action
         bool    inAuction;             // true if loan is auctioned
-        uint256 lupId;                 // id of new LUP
         bool    pledge;                // true if pledge action
         bool    stampT0Np;             // true if loan's t0 neutral price should be restamped (when drawing debt or pledge settles auction)
     }
@@ -201,10 +200,9 @@ library BorrowerActions {
             result_.t0PoolDebt += vars.t0DebtChange;
             result_.poolDebt   = Maths.wmul(result_.t0PoolDebt, poolState_.inflator);
 
-            // determine new lup index and revert if borrow drives LUP index under the specified index limit (new LUP price greater than limit price)
-            vars.lupId = _lupIndex(deposits_, result_.poolDebt);
-            result_.newLup = _priceAt(vars.lupId);
+            result_.newLup = _lup(deposits_, result_.poolDebt);
 
+            // revert if borrow drives LUP price under the specified price limit
             _revertIfLupDroppedBelowLimit(result_.newLup, limitIndex_);
 
             // calculate new lup and check borrow action won't push borrower into a state of under-collateralization
@@ -412,18 +410,11 @@ library BorrowerActions {
         return auctions_.liquidations[borrower_].kickTime != 0;
     }
 
-    function _lupIndex(
-        DepositsState storage deposits_,
-        uint256 debt_
-    ) internal view returns (uint256) {
-        return Deposits.findIndexOfSum(deposits_, debt_);
-    }
-
     function _lup(
         DepositsState storage deposits_,
         uint256 debt_
     ) internal view returns (uint256) {
-        return _priceAt(_lupIndex(deposits_, debt_));
+        return _priceAt(Deposits.findIndexOfSum(deposits_, debt_));
     }
 
 }
