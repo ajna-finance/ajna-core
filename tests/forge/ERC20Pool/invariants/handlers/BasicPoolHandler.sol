@@ -155,7 +155,10 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             shouldReserveChange      = false;
         } catch (bytes memory _err){
             bytes32 err = keccak256(_err);
-            require(err == keccak256(abi.encodeWithSignature("InsufficientCollateral()")));
+            require(
+                err == keccak256(abi.encodeWithSignature("InsufficientCollateral()")) ||
+                err == keccak256(abi.encodeWithSignature("AuctionActive()"))
+            );
         }
     }
  
@@ -208,7 +211,10 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         }
         catch (bytes memory _err){
             bytes32 err = keccak256(_err);
-            require(err == keccak256(abi.encodeWithSignature("BorrowerUnderCollateralized()")));
+            require(
+                err == keccak256(abi.encodeWithSignature("BorrowerUnderCollateralized()")) ||
+                err == keccak256(abi.encodeWithSignature("AuctionActive()"))
+            );
         }
     }
 

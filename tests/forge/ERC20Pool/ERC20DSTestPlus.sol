@@ -643,7 +643,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         uint256 indexLimit
     ) internal override {
         changePrank(from);
-        vm.expectRevert(IPoolErrors.BorrowerUnderCollateralized.selector);
+        vm.expectRevert(IPoolErrors.AuctionActive.selector);
         ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
     }
 
