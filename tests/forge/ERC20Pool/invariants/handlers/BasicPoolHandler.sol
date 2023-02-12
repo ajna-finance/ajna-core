@@ -33,7 +33,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         // Pre condition
         (uint256 lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex, _actor);
 
-        _pool.addQuoteToken(amount, bucketIndex);
+        _pool.addQuoteToken(amount, bucketIndex, block.timestamp + 1 minutes);
 
         // Post condition
         (uint256 lpBalanceAfter, ) = _pool.lenderInfo(bucketIndex, _actor);
@@ -75,7 +75,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             addQuoteToken(amount, fromIndex);
         }
 
-        try _pool.moveQuoteToken(amount, fromIndex, toIndex) {
+        try _pool.moveQuoteToken(amount, fromIndex, toIndex, block.timestamp + 1 minutes) {
             shouldExchangeRateChange = false;
             shouldReserveChange      = false;
         }
@@ -94,7 +94,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         // Pre condition
         (uint256 lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex, _actor);
 
-        _pool.addCollateral(amount, bucketIndex);
+        _pool.addCollateral(amount, bucketIndex, block.timestamp + 1 minutes);
 
         // Post condition
         (uint256 lpBalanceAfter, ) = _pool.lenderInfo(bucketIndex, _actor);
@@ -139,7 +139,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     function pullCollateral(uint256 amount) internal {
         numberOfCalls['UBBasicHandler.pullCollateral']++;
 
-        try _pool.repayDebt(_actor, 0, amount, _actor) {
+        try _pool.repayDebt(_actor, 0, amount, _actor, 7388) {
             shouldExchangeRateChange = false;
             shouldReserveChange      = false;
         } catch (bytes memory _err){
@@ -210,7 +210,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             drawDebt(amountToRepay);
         }
 
-        try _pool.repayDebt(_actor, amountToRepay, 0, _actor) {
+        try _pool.repayDebt(_actor, amountToRepay, 0, _actor, 7388) {
             shouldExchangeRateChange = true;
             shouldReserveChange      = true;
         }
