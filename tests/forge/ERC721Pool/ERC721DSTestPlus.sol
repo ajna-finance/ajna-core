@@ -536,7 +536,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         uint256 indexLimit
     ) internal override {
         changePrank(from);
-        vm.expectRevert(IPoolErrors.LimitIndexReached.selector);
+        vm.expectRevert(IPoolErrors.LimitIndexExceeded.selector);
         uint256[] memory emptyArray;
         ERC721Pool(address(_pool)).drawDebt(from, amount, indexLimit, emptyArray);
     }
@@ -611,7 +611,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         uint256 indexLimit
     ) internal {
         changePrank(from);
-        vm.expectRevert(IPoolErrors.LimitIndexReached.selector);
+        vm.expectRevert(IPoolErrors.LimitIndexExceeded.selector);
         ERC721Pool(address(_pool)).repayDebt(from, 0, amount, from, indexLimit);
     }
 

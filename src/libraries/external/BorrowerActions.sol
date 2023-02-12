@@ -74,7 +74,7 @@ library BorrowerActions {
     error BorrowerNotSender();
     error BorrowerUnderCollateralized();
     error InsufficientCollateral();
-    error LimitIndexReached();
+    error LimitIndexExceeded();
     error NoDebt();
 
     /***************************/
@@ -99,7 +99,7 @@ library BorrowerActions {
      *  @dev    reverts on:
      *              - borrower not sender BorrowerNotSender()
      *              - borrower debt less than pool min debt AmountLTMinDebt()
-     *              - limit price reached LimitIndexReached()
+     *              - limit price reached LimitIndexExceeded()
      *              - borrower cannot draw more debt BorrowerUnderCollateralized()
      *  @dev    emit events:
      *              - Auctions._settleAuction:
@@ -201,7 +201,7 @@ library BorrowerActions {
             result_.t0PoolDebt += vars.t0DebtChange;
             result_.poolDebt   = Maths.wmul(result_.t0PoolDebt, poolState_.inflator);
 
-            // determine new lup index and revert if borrow happens at a price higher than the specified limit (lower index than lup index)
+            // determine new lup index and revert if borrow drives LUP index under the specified index limit (new LUP price greater than limit price)
             vars.lupId = _lupIndex(deposits_, result_.poolDebt);
             result_.newLup = _priceAt(vars.lupId);
 
@@ -258,7 +258,7 @@ library BorrowerActions {
      *              - borrower debt less than pool min debt AmountLTMinDebt()
      *              - borrower not sender BorrowerNotSender()
      *              - not enough collateral to pull InsufficientCollateral()
-     *              - limit price reached LimitIndexReached()
+     *              - limit price reached LimitIndexExceeded()
      *  @dev    emit events:
      *              - Auctions._settleAuction:
      *                  - AuctionNFTSettle or AuctionSettle

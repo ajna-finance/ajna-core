@@ -533,7 +533,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         uint256 indexLimit
     ) internal {
         changePrank(from);
-        vm.expectRevert(IPoolErrors.LimitIndexReached.selector);
+        vm.expectRevert(IPoolErrors.LimitIndexExceeded.selector);
         ERC20Pool(address(_pool)).repayDebt(from, 0, amount, from, indexLimit);
     }
 
@@ -665,7 +665,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         uint256 indexLimit
     ) internal override {
         changePrank(from);
-        vm.expectRevert(IPoolErrors.LimitIndexReached.selector);
+        vm.expectRevert(IPoolErrors.LimitIndexExceeded.selector);
         ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
     }
 
