@@ -117,38 +117,27 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
     function getNFTSubsetHash(uint256[] memory tokenIds_) public pure returns (bytes32) {
         if (tokenIds_.length == 0) return ERC721_NON_SUBSET_HASH;
         else {
-            // sort the array of tokenIds
-            uint256[] memory sortedTokenIds = _insertionSortTokenIds(tokenIds_);
+            // check the array of token ids is sorted in ascending order
+            // revert if not sorted
+            _checkTokenIdSortOrder(tokenIds_);
 
             // hash the sorted array of tokenIds
-            return keccak256(abi.encode(sortedTokenIds));
+            return keccak256(abi.encode(tokenIds_));
         }
     }
 
     /**
-     *  @notice Sort the array of token ids in ascending order
-     *  @dev    The array is sorted using the insertion sort algorithm
+     *  @notice Check that the array of token ids is sorted in ascending order, else revert.
      *  @dev    The counters are modified in unchecked blocks due to being bounded by array length
-     *  @param  tokenIds_ The array of token ids to be sorted
-     *  @return uint256[] The sorted array of token ids
+     *  @param  tokenIds_ The array of token ids to check for sorting
      */
-    function _insertionSortTokenIds(uint256[] memory tokenIds_) internal pure returns (uint256[] memory) {
-        uint256 i = 1;
-        while (i < tokenIds_.length) {
-            uint256 j = i;
-            while (j > 0 && tokenIds_[j] < tokenIds_[j - 1]) {
-                uint256 temp = tokenIds_[j - 1];
-                tokenIds_[j - 1] = tokenIds_[j];
-                tokenIds_[j] = temp;
-                unchecked {
-                    --j;
-                }
-            }
+    function _checkTokenIdSortOrder(uint256[] memory tokenIds_) internal pure {
+        for (uint256 i = 0; i < tokenIds_.length - 1; ) {
+            if (tokenIds_[i] > tokenIds_[i + 1]) revert TokenIdsNotSorted();
             unchecked {
                 ++i;
             }
         }
-        return tokenIds_;
     }
 
 }

@@ -10,6 +10,15 @@ import { IPoolFactory } from '../IPoolFactory.sol';
  */
 interface IERC721PoolFactory is IPoolFactory {
 
+    /**************/
+    /*** Errors ***/
+    /**************/
+
+    /**
+     *  @notice Pool with this combination of quote and collateral already exists.
+     */
+    error TokenIdsNotSorted();
+
     /**************************/
     /*** External Functions ***/
     /**************************/
