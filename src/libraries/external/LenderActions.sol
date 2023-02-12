@@ -659,7 +659,7 @@ library LenderActions {
             lpAmount_ = requiredLPs;
         } else {
             lpAmount_         = lenderLpBalance;
-            collateralAmount_ = Maths.wmul(Maths.wdiv(lenderLpBalance, requiredLPs), bucketCollateral);
+            collateralAmount_ = Maths.wmul(Maths.wdiv(lenderLpBalance, requiredLPs), collateralAmount_);
         }
 
         // update bucket LPs and collateral balance
@@ -744,12 +744,6 @@ library LenderActions {
         }
 
         scaledRemaining_ = scaledDepositAvailable - removedAmount_;
-
-        // abandon dust amounts upon last withdrawal
-        if (scaledRemaining_ < params_.dustLimit && redeemedLPs_ == params_.bucketLPs) {
-            removedAmount_   = scaledDepositAvailable;
-            scaledRemaining_ = 0;
-        }
 
         uint256 unscaledRemovedAmount = Maths.min(unscaledDepositAvailable, Maths.wdiv(removedAmount_, depositScale));
         Deposits.unscaledRemove(deposits_, params_.index, unscaledRemovedAmount); // update FenwickTree
