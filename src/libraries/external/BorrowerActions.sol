@@ -123,6 +123,7 @@ library BorrowerActions {
         vars.pledge       = collateralToPledge_ != 0;
         vars.borrow       = amountToBorrow_ != 0 || limitIndex_ != 0; // enable an intentional 0 borrow loan call to update borrower's loan state
         vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
+        vars.inAuction    = _inAuction(auctions_, borrowerAddress_);
 
         result_.t0PoolDebt     = poolState_.t0Debt;
         result_.poolDebt       = poolState_.debt;
@@ -137,7 +138,6 @@ library BorrowerActions {
             result_.remainingCollateral += collateralToPledge_;
 
             result_.newLup  = _lup(deposits_, result_.poolDebt);
-            vars.inAuction = _inAuction(auctions_, borrowerAddress_);
 
             // if loan is auctioned and becomes collateralized by newly pledged collateral then settle auction
             if (
@@ -280,6 +280,7 @@ library BorrowerActions {
         vars.repay        = maxQuoteTokenAmountToRepay_ != 0;
         vars.pull         = collateralAmountToPull_     != 0;
         vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
+        vars.inAuction    = _inAuction(auctions_, borrowerAddress_);
 
         result_.t0PoolDebt     = poolState_.t0Debt;
         result_.poolDebt       = poolState_.debt;
@@ -314,7 +315,6 @@ library BorrowerActions {
             );
 
             result_.newLup = _lup(deposits_, result_.poolDebt);
-            vars.inAuction = _inAuction(auctions_, borrowerAddress_);
 
             // if loan is auctioned and becomes collateralized by repaying debt then settle auction
             if (vars.inAuction) {
