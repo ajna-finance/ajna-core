@@ -100,9 +100,8 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                     {
                         uint256 fractionOfNftRemaining = lpsAsCollateral % 1e18;
                         assertLt(fractionOfNftRemaining, 1e18);
-                        
-                        // 1 wei workaround due to rounding
-                        depositRequired = Maths.wmul(1e18 - fractionOfNftRemaining + 1, price);
+
+                        depositRequired = Maths.wmul(1e18 - fractionOfNftRemaining, price);
                     }
                     deal(_pool.quoteTokenAddress(), lender, depositRequired);
                     Token(_pool.quoteTokenAddress()).approve(address(_pool) , depositRequired);

@@ -80,13 +80,13 @@ library Auctions {
         uint256 amountToDebitFromDeposit; // [WAD] the amount of quote tokens used to kick and debited from lender deposit
         uint256 bucketCollateral;         // [WAD] amount of collateral in bucket
         uint256 bucketDeposit;            // [WAD] amount of quote tokens in bucket
-        uint256 bucketLPs;                // [RAY] LPs of the bucket
+        uint256 bucketLPs;                // [WAD] LPs of the bucket
         uint256 bucketPrice;              // [WAD] bucket price
-        uint256 bucketRate;               // [RAY] bucket exchange rate
+        uint256 bucketRate;               // [WAD] bucket exchange rate
         uint256 bucketScale;              // [WAD] bucket scales
         uint256 bucketUnscaledDeposit;    // [WAD] unscaled amount of quote tokens in bucket
-        uint256 lenderLPs;                // [RAY] LPs of lender in bucket
-        uint256 redeemedLPs;              // [RAY] LPs used by kick action
+        uint256 lenderLPs;                // [WAD] LPs of lender in bucket
+        uint256 redeemedLPs;              // [WAD] LPs used by kick action
     }
     struct SettleLocalVars {
         uint256 collateralUsed;    // [WAD] collateral used to settle debt
@@ -386,7 +386,7 @@ library Auctions {
             vars.bucketPrice
         );
 
-        vars.amountToDebitFromDeposit = Maths.rayToWad(Maths.rmul(vars.lenderLPs, vars.bucketRate));  // calculate amount to remove based on lender LPs in bucket
+        vars.amountToDebitFromDeposit = Maths.wmul(vars.lenderLPs, vars.bucketRate);  // calculate amount to remove based on lender LPs in bucket
 
         if (vars.amountToDebitFromDeposit > vars.bucketDeposit) vars.amountToDebitFromDeposit = vars.bucketDeposit; // cap the amount to remove at bucket deposit
 
@@ -424,7 +424,7 @@ library Auctions {
             Deposits.unscaledRemove(deposits_, index_, vars.bucketUnscaledDeposit);
 
         } else {
-            vars.redeemedLPs = Maths.wrdivr(vars.amountToDebitFromDeposit, vars.bucketRate);
+            vars.redeemedLPs = Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketRate);
 
             Deposits.unscaledRemove(
                 deposits_,
@@ -1340,11 +1340,12 @@ library Auctions {
     ) internal {
         Bucket storage bucket = buckets_[bucketIndex_];
 
-        uint256 bucketExchangeRate = Buckets.getUnscaledExchangeRate(
+        uint256 scaledDeposit = Maths.wmul(vars.unscaledDeposit, vars.bucketScale);
+
+        uint256 exchangeRate = Buckets.getExchangeRate(
             bucket.collateral,
             bucket.lps,
-            vars.unscaledDeposit,
-            vars.bucketScale,
+            scaledDeposit,
             vars.bucketPrice
         );
 
@@ -1353,10 +1354,9 @@ library Auctions {
 
         // if arb take - taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
         if (!depositTake_) {
-            uint256 takerReward                   = Maths.wmul(vars.collateralAmount, vars.bucketPrice - vars.auctionPrice);
-            uint256 takerRewardUnscaledQuoteToken = Maths.wdiv(takerReward,           vars.bucketScale);
+            uint256 takerReward = Maths.wmul(vars.collateralAmount, vars.bucketPrice - vars.auctionPrice);
 
-            totalLPsReward = Maths.wrdivr(takerRewardUnscaledQuoteToken, bucketExchangeRate);
+            totalLPsReward = Maths.wdiv(takerReward, exchangeRate);
 
             Buckets.addLenderLPs(bucket, bankruptcyTime, msg.sender, totalLPsReward);
         }
@@ -1365,7 +1365,7 @@ library Auctions {
 
         // the bondholder/kicker is awarded bond change worth of LPB in the bucket
         if (vars.isRewarded) {
-            kickerLPsReward = Maths.wrdivr(Maths.wdiv(vars.bondChange, vars.bucketScale), bucketExchangeRate);
+            kickerLPsReward = Maths.wdiv(vars.bondChange, exchangeRate);
             totalLPsReward  += kickerLPsReward;
 
             Buckets.addLenderLPs(bucket, bankruptcyTime, vars.kicker, kickerLPsReward);
