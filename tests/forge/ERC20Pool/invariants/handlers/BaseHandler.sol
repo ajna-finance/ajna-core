@@ -35,7 +35,7 @@ contract BaseHandler is InvariantTest, Test {
     address       internal _actor;
     uint256       internal _lenderBucketIndex;
     uint256       internal _limitIndex;
-    address[]     public   _actors;
+    address[]     public   actors;
 
     // Logging
     mapping(bytes32 => uint256) public numberOfCalls;
@@ -70,7 +70,7 @@ contract BaseHandler is InvariantTest, Test {
         _poolInfo   = PoolInfoUtils(poolInfo);
 
         // Actors
-        _actors    = _buildActors(numOfActors);
+        actors    = _buildActors(numOfActors);
     }
 
     /**************************************************************************************************************************************/
@@ -84,7 +84,7 @@ contract BaseHandler is InvariantTest, Test {
 
         vm.stopPrank();
 
-        address actor = _actors[constrictToRange(actorIndex, 0, _actors.length - 1)];
+        address actor = actors[constrictToRange(actorIndex, 0, actors.length - 1)];
         _actor = actor;
         vm.startPrank(actor);
         _;
@@ -105,10 +105,10 @@ contract BaseHandler is InvariantTest, Test {
     }
  
     function _buildActors(uint256 noOfActors_) internal returns(address[] memory) {
-        address[] memory actors = new address[](noOfActors_);
+        address[] memory actorsAddress = new address[](noOfActors_);
         for(uint i = 0; i < noOfActors_; i++) {
             address actor = makeAddr(string(abi.encodePacked("Actor", Strings.toString(i))));
-            actors[i] = actor;
+            actorsAddress[i] = actor;
 
             vm.startPrank(actor);
 
@@ -120,11 +120,11 @@ contract BaseHandler is InvariantTest, Test {
 
             vm.stopPrank();
         }
-        return actors;
+        return actorsAddress;
     }
 
     function getActorsCount() external view returns(uint256) {
-        return _actors.length;
+        return actors.length;
     }
 
     function constrictToRange(

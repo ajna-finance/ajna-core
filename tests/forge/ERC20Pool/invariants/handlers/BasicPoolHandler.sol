@@ -62,7 +62,11 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         }
         catch (bytes memory _err){
             bytes32 err = keccak256(_err);
-            require(err == keccak256(abi.encodeWithSignature("LUPBelowHTP()")) || err == keccak256(abi.encodeWithSignature("InsufficientLiquidity()")) || err == keccak256(abi.encodeWithSignature("RemoveDepositLockedByAuctionDebt()")));
+            require(
+                err == keccak256(abi.encodeWithSignature("LUPBelowHTP()")) ||
+                err == keccak256(abi.encodeWithSignature("InsufficientLiquidity()")) ||
+                err == keccak256(abi.encodeWithSignature("RemoveDepositLockedByAuctionDebt()")) ||
+                err == keccak256(abi.encodeWithSignature("NoClaim()")));
         }
     }
 
@@ -81,7 +85,14 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         }
         catch (bytes memory _err){
             bytes32 err = keccak256(_err);
-            require(err == keccak256(abi.encodeWithSignature("LUPBelowHTP()")) || err == keccak256(abi.encodeWithSignature("InsufficientLiquidity()")) || err == keccak256(abi.encodeWithSignature("RemoveDepositLockedByAuctionDebt()")));
+            require(
+                err == keccak256(abi.encodeWithSignature("LUPBelowHTP()")) ||
+                err == keccak256(abi.encodeWithSignature("InsufficientLiquidity()")) ||
+                err == keccak256(abi.encodeWithSignature("MoveToSamePrice()")) ||
+                err == keccak256(abi.encodeWithSignature("DustAmountNotExceeded()")) ||
+                err == keccak256(abi.encodeWithSignature("InvalidIndex()")) ||
+                err == keccak256(abi.encodeWithSignature("BucketBankruptcyBlock()"))
+            );
         }
     }
 
@@ -123,9 +134,9 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         require(lpBalanceAfter < lpBalanceBefore, "LP balance should decrease");
     }
 
-    /**************************************************************************************************************************************/
-    /*** Borrower Functions                                                                                                               ***/
-    /**************************************************************************************************************************************/
+    /**************************/
+    /*** Borrower Functions ***/
+    /**************************/
 
     function pledgeCollateral(uint256 amount) internal {
         numberOfCalls['UBBasicHandler.pledgeCollateral']++;
@@ -216,7 +227,10 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         }
         catch(bytes memory _err) {
             bytes32 err = keccak256(_err);
-            require(err == keccak256(abi.encodeWithSignature("NoDebt()")) || err == keccak256(abi.encodeWithSignature("AmountLTMinDebt()")));
+            require(
+                err == keccak256(abi.encodeWithSignature("NoDebt()")) ||
+                err == keccak256(abi.encodeWithSignature("AmountLTMinDebt()"))
+            );
         }
     }
 
@@ -232,9 +246,9 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
 
     constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) BaseHandler(pool, quote, collateral, poolInfo, numOfActors) {} 
 
-    /**************************************************************************************************************************************/
-    /*** Lender Functions                                                                                                               ***/
-    /**************************************************************************************************************************************/
+    /**************************/
+    /*** Lender Functions ***/
+    /**************************/
 
     function addQuoteToken(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) {
         numberOfCalls['BBasicHandler.addQuoteToken']++;
@@ -294,9 +308,9 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     }
 
 
-    /**************************************************************************************************************************************/
-    /*** Borrower Functions                                                                                                               ***/
-    /**************************************************************************************************************************************/
+    /**************************/
+    /*** Borrower Functions ***/
+    /**************************/
 
     function pledgeCollateral(uint256 actorIndex, uint256 amountToPledge) public useRandomActor(actorIndex) {
         numberOfCalls['BBasicHandler.pledgeCollateral']++;

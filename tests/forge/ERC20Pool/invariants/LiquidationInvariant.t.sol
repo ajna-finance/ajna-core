@@ -43,14 +43,14 @@ contract LiquidationInvariant is BasicInvariants {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         uint256 totalT0debtInAuction;
         for(uint256 i = 0; i < actorCount; i++) {
-            address borrower = IBaseHandler(_handler)._actors(i);
+            address borrower = IBaseHandler(_handler).actors(i);
             (, , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower);
             if(kickTime != 0) {
                 (uint256 t0debt, , ) = _pool.borrowerInfo(borrower);
                 totalT0debtInAuction += t0debt;
             }
         }
-        require(_pool.totalDebtInAuction() == totalT0debtInAuction, "Incorrect debt in auction");
+        require(_pool.totalT0DebtInAuction() == totalT0debtInAuction, "Incorrect debt in auction");
     }
 
     // checks sum of all kicker bond is equal to total pool bond
@@ -58,7 +58,7 @@ contract LiquidationInvariant is BasicInvariants {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         uint256 totalKickerBond;
         for(uint256 i = 0; i < actorCount; i++) {
-            address kicker = IBaseHandler(_handler)._actors(i);
+            address kicker = IBaseHandler(_handler).actors(i);
             (, uint256 bond) = _pool.kickerInfo(kicker);
             totalKickerBond += bond;
         }
@@ -66,7 +66,7 @@ contract LiquidationInvariant is BasicInvariants {
         uint256 totalBondInAuction;
 
         for(uint256 i = 0; i < actorCount; i++) {
-            address borrower = IBaseHandler(_handler)._actors(i);
+            address borrower = IBaseHandler(_handler).actors(i);
             (, , uint256 bondSize, , , , , , ) = _pool.auctionInfo(borrower);
             totalBondInAuction += bondSize;
         }
@@ -84,7 +84,7 @@ contract LiquidationInvariant is BasicInvariants {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         uint256 totalBorrowersWithDebt;
         for(uint256 i = 0; i < actorCount; i++) {
-            address borrower = IBaseHandler(_handler)._actors(i);
+            address borrower = IBaseHandler(_handler).actors(i);
             (uint256 t0Debt, , ) = _pool.borrowerInfo(borrower);
             if(t0Debt > 0) {
                 totalBorrowersWithDebt += 1;
@@ -96,7 +96,7 @@ contract LiquidationInvariant is BasicInvariants {
 
         uint256 borrowersKicked;
         for(uint256 i = 0; i < actorCount; i++) {
-            address borrower = IBaseHandler(_handler)._actors(i);
+            address borrower = IBaseHandler(_handler).actors(i);
             (, , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower);
             if(kickTime != 0) {
                 borrowersKicked += 1;
@@ -108,7 +108,7 @@ contract LiquidationInvariant is BasicInvariants {
     function invariant_borrowers_A5() public view {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         for(uint256 i = 0; i < actorCount; i++) {
-            address borrower = IBaseHandler(_handler)._actors(i);
+            address borrower = IBaseHandler(_handler).actors(i);
             (address kicker, , uint256 bondSize, , , , , , ) = _pool.auctionInfo(borrower);
             (, uint256 lockedAmount) = _pool.kickerInfo(kicker);
             require(lockedAmount >= bondSize, "Incorrect bond locked");

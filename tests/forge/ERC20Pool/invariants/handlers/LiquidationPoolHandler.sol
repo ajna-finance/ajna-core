@@ -77,8 +77,8 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
 
         shouldExchangeRateChange = true;
 
-        borrowerIndex    = constrictToRange(borrowerIndex, 0, _actors.length - 1);
-        address borrower = _actors[borrowerIndex];
+        borrowerIndex    = constrictToRange(borrowerIndex, 0, actors.length - 1);
+        address borrower = actors[borrowerIndex];
         address kicker   = _actor;
         amount           = constrictToRange(amount, 1, 1e36);
 
@@ -111,9 +111,9 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
 
         shouldExchangeRateChange = true;
 
-        borrowerIndex = constrictToRange(borrowerIndex, 0, _actors.length - 1);
+        borrowerIndex = constrictToRange(borrowerIndex, 0, actors.length - 1);
 
-        address borrower = _actors[borrowerIndex];
+        address borrower = actors[borrowerIndex];
         address taker    = _actor;
 
         ( , , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower);
@@ -130,11 +130,11 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
 
         shouldExchangeRateChange = true;
 
-        borrowerIndex = constrictToRange(borrowerIndex, 0, _actors.length - 1);
+        borrowerIndex = constrictToRange(borrowerIndex, 0, actors.length - 1);
 
         bucketIndex = constrictToRange(bucketIndex, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
 
-        address borrower = _actors[borrowerIndex];
+        address borrower = actors[borrowerIndex];
         address taker    = _actor;
 
         ( , , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower);

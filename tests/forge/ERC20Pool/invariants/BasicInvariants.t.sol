@@ -85,7 +85,7 @@ contract BasicInvariants is TestBase {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             uint256 totalLps;
             for (uint256 i = 0; i < actorCount; i++) {
-                address lender = IBaseHandler(_handler)._actors(i);
+                address lender = IBaseHandler(_handler).actors(i);
                 (uint256 lps, ) = _pool.lenderInfo(bucketIndex, lender);
                 totalLps += lps;
             }
@@ -110,7 +110,7 @@ contract BasicInvariants is TestBase {
     // checks pool quote token balance is greater than equals total deposits in pool
     function invariant_quoteTokenBalance_QT1() public {
         uint256 poolBalance  = _quote.balanceOf(address(_pool));
-        uint256 t0debt       = _pool.totalDebt();
+        uint256 t0debt       = _pool.totalT0Debt();
         (uint256 inflator, ) = _pool.inflatorInfo();
         uint256 poolDebt     = Maths.wmul(t0debt, inflator);
         (uint256 totalPoolBond, uint256 unClaimed, ) = _pool.reservesInfo();
@@ -123,7 +123,7 @@ contract BasicInvariants is TestBase {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         uint256 totalCollateralPledged;
         for(uint256 i = 0; i < actorCount; i++) {
-            address borrower = IBaseHandler(_handler)._actors(i);
+            address borrower = IBaseHandler(_handler).actors(i);
             ( , uint256 borrowerCollateral, ) = _pool.borrowerInfo(borrower);
             totalCollateralPledged += borrowerCollateral;
         }
@@ -146,12 +146,12 @@ contract BasicInvariants is TestBase {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         uint256 totalDebt;
         for(uint256 i = 0; i < actorCount; i++) {
-            address borrower = IBaseHandler(_handler)._actors(i);
+            address borrower = IBaseHandler(_handler).actors(i);
             (uint256 debt, , ) = _pool.borrowerInfo(borrower);
             totalDebt += debt;
         }
 
-        uint256 poolDebt = _pool.totalDebt();
+        uint256 poolDebt = _pool.totalT0Debt();
 
         require(poolDebt == totalDebt, "Incorrect pool debt");
     }
@@ -196,7 +196,7 @@ contract BasicInvariants is TestBase {
         }
     }
 
-    // int-erest should only update once in 12 hours
+    // interest should only update once in 12 hours
     function invariant_interest_rate_I1() public {
 
         (, uint256 currentInterestRateUpdate) = _pool.interestRateInfo();
