@@ -27,7 +27,10 @@ import { IERC721Taker }         from './interfaces/pool/erc721/IERC721Taker.sol'
 
 import { FlashloanablePool } from './base/FlashloanablePool.sol';
 
-import { _revertIfAuctionClearable } from './libraries/helpers/RevertsHelper.sol';
+import { 
+    _revertIfAuctionClearable,
+    _revertOnExpiry 
+}                               from './libraries/helpers/RevertsHelper.sol';
 
 import { Maths }    from './libraries/internal/Maths.sol';
 import { Deposits } from './libraries/internal/Deposits.sol';
@@ -189,7 +192,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
         uint256 noOfNFTsToPull_,
-        address collateralReceiver_
+        address collateralReceiver_,
+        uint256 limitIndex_
     ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
@@ -201,7 +205,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             poolState,
             borrowerAddress_,
             maxQuoteTokenAmountToRepay_,
-            Maths.wad(noOfNFTsToPull_)
+            Maths.wad(noOfNFTsToPull_),
+            limitIndex_
         );
 
         emit RepayDebt(borrowerAddress_, result.quoteTokenToRepay, noOfNFTsToPull_, result.newLup);
@@ -245,8 +250,10 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
      */
     function addCollateral(
         uint256[] calldata tokenIdsToAdd_,
-        uint256 index_
+        uint256 index_,
+        uint256 expiry_
     ) external override nonReentrant returns (uint256 bucketLPs_) {
+        _revertOnExpiry(expiry_);
         PoolState memory poolState = _accruePoolInterest();
 
         bucketLPs_ = LenderActions.addCollateral(

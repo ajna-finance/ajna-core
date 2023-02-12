@@ -7,7 +7,7 @@ import 'src/ERC721Pool.sol';
 
 import 'src/libraries/internal/Maths.sol';
 
-import { MAX_PRICE, _priceAt } from 'src/libraries/helpers/PoolHelper.sol';
+import { MAX_FENWICK_INDEX, MAX_PRICE, _priceAt } from 'src/libraries/helpers/PoolHelper.sol';
 
 abstract contract ERC721PoolBorrowTest is ERC721HelperContract {
     address internal _borrower;
@@ -433,6 +433,14 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             maxThresholdPrice: 333.653846153846154 * 1e18
         });
 
+        // should revert if LUP is below the limit
+        ( , , , , , uint256 lupIndex ) = _poolUtils.poolPricesInfo(address(_pool));        
+        _assertPullLimitIndexRevert({
+            from:       _borrower,
+            amount:     2,
+            indexLimit: lupIndex - 1
+        });
+
         // borrower 2 borrows 3k quote from the pool and becomes new queue HEAD
         tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 53;
@@ -554,7 +562,7 @@ contract ERC721CollectionPoolBorrowTest is ERC721NDecimalsHelperContract(18) {
     function testMinBorrowAmountCheck() external tearDown {
         // add initial quote to the pool
         changePrank(_lender);
-        _pool.addQuoteToken(20_000 * 1e18, 2550);
+        _pool.addQuoteToken(20_000 * 1e18, 2550, block.timestamp + 1 minutes);
 
         // 10 borrowers draw debt
         for (uint i=0; i<10; ++i) {
@@ -576,14 +584,14 @@ contract ERC721CollectionPoolBorrowTest is ERC721NDecimalsHelperContract(18) {
         _assertBorrowMinDebtRevert({
             from:       _borrower,
             amount:     100 * 1e18,
-            indexLimit: 7_777
+            indexLimit: MAX_FENWICK_INDEX
         });
     }
 
     function testMinRepayAmountCheck() external tearDown {
         // add initial quote to the pool
         changePrank(_lender);
-        _pool.addQuoteToken(20_000 * 1e18, 2550);
+        _pool.addQuoteToken(20_000 * 1e18, 2550, block.timestamp + 1 minutes);
 
         // 9 other borrowers draw debt
         for (uint i=0; i<9; ++i) {
@@ -631,7 +639,7 @@ contract ERC721ScaledQuoteTokenBorrowTest is ERC721NDecimalsHelperContract(4) {
     function testMinDebtBelowDustLimitCheck() external tearDown {
         // add initial quote to the pool
         changePrank(_lender);
-        _pool.addQuoteToken(20_000 * 1e18, 2550);
+        _pool.addQuoteToken(20_000 * 1e18, 2550, block.timestamp + 30);
 
         // borrower pledges a single NFT
         uint256[] memory tokenIdsToAdd = new uint256[](1);

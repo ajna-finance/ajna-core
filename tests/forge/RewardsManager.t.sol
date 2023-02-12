@@ -186,7 +186,7 @@ contract RewardsManagerTest is DSTestPlus {
 
         // borrower repays some of their debt, providing reserves to be claimed
         // don't pull any collateral, as such functionality is unrelated to reserve auctions
-        params_.pool.repayDebt(borrower, Maths.wdiv(params_.borrowAmount, Maths.wad(2)), 0, borrower);
+        params_.pool.repayDebt(borrower, Maths.wdiv(params_.borrowAmount, Maths.wad(2)), 0, borrower, MAX_FENWICK_INDEX);
 
         // start reserve auction
         changePrank(_bidder);
@@ -247,7 +247,7 @@ contract RewardsManagerTest is DSTestPlus {
         tokenId_ = _positionManager.mint(mintParams);
 
         for (uint256 i = 0; i < params_.indexes.length; i++) {
-            params_.pool.addQuoteToken(params_.mintAmount, params_.indexes[i]);
+            params_.pool.addQuoteToken(params_.mintAmount, params_.indexes[i], type(uint256).max);
             (uint256 lpBalance, ) = params_.pool.lenderInfo(params_.indexes[i], params_.minter);
             params_.pool.approveLpOwnership(address(_positionManager), params_.indexes[i], lpBalance);
         }
@@ -286,7 +286,7 @@ contract RewardsManagerTest is DSTestPlus {
 
         // borrower repays some of their debt, providing reserves to be claimed
         // don't pull any collateral, as such functionality is unrelated to reserve auctions
-        params_.pool.repayDebt(borrower, params_.borrowAmount, 0, borrower);
+        params_.pool.repayDebt(borrower, params_.borrowAmount, 0, borrower, MAX_FENWICK_INDEX);
 
         // start reserve auction
         changePrank(_bidder);
@@ -630,7 +630,7 @@ contract RewardsManagerTest is DSTestPlus {
 
         // borrower1 repays their loan
         (uint256 debt, , ) = _poolOne.borrowerInfo(borrower1);
-        _poolOne.repayDebt(borrower1, debt, 0, borrower1);
+        _poolOne.repayDebt(borrower1, debt, 0, borrower1, MAX_FENWICK_INDEX);
 
         /*****************************/
         /*** First Reserve Auction ***/
@@ -690,7 +690,7 @@ contract RewardsManagerTest is DSTestPlus {
         // borrower1 repays their loan again
         changePrank(borrower1);
         (debt, , ) = _poolOne.borrowerInfo(borrower1);
-        _poolOne.repayDebt(borrower1, debt, 0, borrower1);
+        _poolOne.repayDebt(borrower1, debt, 0, borrower1, MAX_FENWICK_INDEX);
 
         // recorder updates the change in exchange rates in the second index
         _updateExchangeRates({

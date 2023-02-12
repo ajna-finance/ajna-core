@@ -220,7 +220,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         );
 
         changePrank(_borrower2);
-        ERC20Pool(address(_pool)).addCollateral(10 * 1e18, high);
+        ERC20Pool(address(_pool)).addCollateral(10 * 1e18, high, block.timestamp + 5 minutes);
 
         assertEq(
             _poolUtils.lpsToCollateral(

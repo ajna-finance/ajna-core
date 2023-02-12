@@ -194,7 +194,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         lendersDepositedIndex[from].add(index);
         bucketsUsed.add(index); 
 
-        return ERC20Pool(address(_pool)).addCollateral(amount, index);
+        return ERC20Pool(address(_pool)).addCollateral(amount, index, type(uint256).max);
     }
 
     function _addCollateralWithoutCheckingLP(
@@ -217,7 +217,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         lendersDepositedIndex[from].add(index);
         bucketsUsed.add(index);
 
-        return ERC20Pool(address(_pool)).addCollateral(amount, index);
+        return ERC20Pool(address(_pool)).addCollateral(amount, index, type(uint256).max);
     }
 
     function _borrow(
@@ -365,7 +365,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         vm.expectEmit(true, true, false, true);
         emit RepayDebt(borrower, repaid, 0, newLup);
         _assertQuoteTokenTransferEvent(from, address(_pool), repaid);
-        ERC20Pool(address(_pool)).repayDebt(borrower, amount, 0, borrower);
+        ERC20Pool(address(_pool)).repayDebt(borrower, amount, 0, borrower, MAX_FENWICK_INDEX);
     }
 
     function _repayDebt(
@@ -393,7 +393,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
             _assertCollateralTokenTransferEvent(address(_pool), from, collateralToPull);
         }
 
-        ERC20Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull, borrower);
+        ERC20Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull, borrower, MAX_FENWICK_INDEX);
     }
 
     function _repayDebtAndPullToRecipient(
@@ -409,7 +409,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         vm.expectEmit(true, true, false, true);
         emit RepayDebt(borrower, amountRepaid, collateralToPull, newLup);
         _assertCollateralTokenTransferEvent(address(_pool), recipient, collateralToPull);
-        ERC20Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull, recipient);
+        ERC20Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull, recipient, MAX_FENWICK_INDEX);
     }
 
     function _repayDebtNoLupCheck(
@@ -454,7 +454,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('BucketBankruptcyBlock()'));
-        ERC20Pool(address(_pool)).addCollateral(amount, index);
+        ERC20Pool(address(_pool)).addCollateral(amount, index, type(uint256).max);
     }
 
     function _assertAddCollateralAtIndex0Revert(
@@ -463,7 +463,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InvalidIndex.selector);
-        ERC20Pool(address(_pool)).addCollateral(amount, 0);
+        ERC20Pool(address(_pool)).addCollateral(amount, 0, type(uint256).max);
     }
 
     function _assertAddCollateralDustRevert(
@@ -473,7 +473,18 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.DustAmountNotExceeded.selector);
-        ERC20Pool(address(_pool)).addCollateral(amount, index);
+        ERC20Pool(address(_pool)).addCollateral(amount, index, type(uint256).max);
+    }
+
+    function _assertAddCollateralExpiredRevert(
+        address from,
+        uint256 amount,
+        uint256 index,
+        uint256 expiry
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.TransactionExpired.selector);
+        ERC20Pool(address(_pool)).addCollateral(amount, index, expiry);
     }
 
     function _assertDeployWith0xAddressRevert(
@@ -512,7 +523,17 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
-        ERC20Pool(address(_pool)).repayDebt(from, 0, amount, from);
+        ERC20Pool(address(_pool)).repayDebt(from, 0, amount, from, MAX_FENWICK_INDEX);
+    }
+
+    function _assertPullLimitIndexRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.LimitIndexReached.selector);
+        ERC20Pool(address(_pool)).repayDebt(from, 0, amount, from, indexLimit);
     }
 
     function _assertRepayNoDebtRevert(
@@ -522,7 +543,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.NoDebt.selector);
-        ERC20Pool(address(_pool)).repayDebt(borrower, amount, 0, borrower);
+        ERC20Pool(address(_pool)).repayDebt(borrower, amount, 0, borrower, MAX_FENWICK_INDEX);
     }
 
     function _assertPullBorrowerNotSenderRevert(
@@ -532,7 +553,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.BorrowerNotSender.selector);
-        ERC20Pool(address(_pool)).repayDebt(borrower, 0, amount, borrower);
+        ERC20Pool(address(_pool)).repayDebt(borrower, 0, amount, borrower, MAX_FENWICK_INDEX);
     }
 
     function _assertRepayMinDebtRevert(
@@ -542,7 +563,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
-        ERC20Pool(address(_pool)).repayDebt(borrower, amount, 0, borrower);
+        ERC20Pool(address(_pool)).repayDebt(borrower, amount, 0, borrower, MAX_FENWICK_INDEX);
     }
 
     function _assertRemoveAllCollateralNoClaimRevert(

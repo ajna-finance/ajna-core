@@ -1207,7 +1207,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // construct move liquidity params
         IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
-            tokenId, address(_pool), 2550, 2551
+            tokenId, address(_pool), 2550, 2551, block.timestamp + 30
         );
 
         // move liquidity should fail because is not performed by owner
@@ -1354,7 +1354,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // construct move liquidity params
         IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
-            tokenId1, address(_pool), mintIndex, moveIndex
+            tokenId1, address(_pool), mintIndex, moveIndex, block.timestamp + 30
         );
 
         // move liquidity called by testAddress1 owner
@@ -1472,7 +1472,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // construct move liquidity params
         moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
-            tokenId2, address(_pool), mintIndex, moveIndex
+            tokenId2, address(_pool), mintIndex, moveIndex, block.timestamp + 30
         );
 
         _addCollateral({
@@ -1538,7 +1538,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // check can't move liquidity from position with no liquidity
         moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
-            tokenId2, address(_pool), 1000, 2000
+            tokenId2, address(_pool), 1000, 2000, block.timestamp + 30
         );
         changePrank(address(testAddress2));
         vm.expectRevert(IPositionManagerErrors.RemoveLiquidityFailed.selector);
@@ -1936,7 +1936,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // minter cannot move liquidity on behalf of lender (is not approved)
         IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
-            tokenId, address(_pool), 2550, 2551
+            tokenId, address(_pool), 2550, 2551, block.timestamp + 30
         );
         vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
         _positionManager.moveLiquidity(moveLiquidityParams);
@@ -2452,7 +2452,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
 
         // construct move liquidity params
         IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
-            tokenId, address(_pool), indexes[0], indexes[1]
+            tokenId, address(_pool), indexes[0], indexes[1], block.timestamp + 30
         );
 
         // move liquidity called by testAddress1

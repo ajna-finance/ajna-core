@@ -185,6 +185,11 @@ interface IPoolErrors {
     error TakeNotPastCooldown();
 
     /**
+     *  @notice Current block timestamp has reached or exceeded a user-provided expiration.
+     */
+    error TransactionExpired();
+
+    /**
      *  @notice Owner of the LP tokens attemps to transfer LPs to same address.
      */
     error TransferToSameOwner();

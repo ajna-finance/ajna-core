@@ -13,7 +13,8 @@ interface IAjnaPool {
 
     function addCollateral(
         uint256 amount,
-        uint256 index
+        uint256 index,
+        uint256 expiry
     ) external returns (uint256 lpbChange);
 
     function removeQuoteToken(
