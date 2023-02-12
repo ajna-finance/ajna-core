@@ -6,7 +6,6 @@ import { ClonesWithImmutableArgs } from '@clones/ClonesWithImmutableArgs.sol';
 import { IERC165 }                 from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 
 import { IERC721PoolFactory }    from './interfaces/pool/erc721/IERC721PoolFactory.sol';
-import { NFTTypes }              from './interfaces/pool/erc721/IERC721NonStandard.sol';
 import { IPoolFactory }          from './interfaces/pool/IPoolFactory.sol';
 import { IERC20Token, PoolType } from './interfaces/pool/IPool.sol';
 
@@ -59,26 +58,10 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
 
         uint256 quoteTokenScale = 10**(18 - IERC20Token(quote_).decimals());
 
-        NFTTypes nftType;
-        // CryptoPunks NFTs
-        if (collateral_ == 0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB ) {
-            nftType = NFTTypes.CRYPTOPUNKS;
-        }
-        // CryptoKitties and CryptoFighters NFTs
-        else if (collateral_ == 0x06012c8cf97BEaD5deAe237070F9587f8E7A266d || collateral_ ==  0x87d598064c736dd0C712D329aFCFAA0Ccc1921A1) {
-            nftType = NFTTypes.CRYPTOKITTIES;
-        }
-        // All other NFTs that support the EIP721 standard
-        else {
-            // Here 0x80ac58cd is the ERC721 interface Id
-            // Neither a standard NFT nor a non-standard supported NFT(punk, kitty or fighter)
-            try IERC165(collateral_).supportsInterface(0x80ac58cd) returns (bool supportsERC721Interface) {
-                if (!supportsERC721Interface) revert NFTNotSupported();
-            } catch {
-                revert NFTNotSupported();
-            }
-
-            nftType = NFTTypes.STANDARD_ERC721;
+        try IERC165(collateral_).supportsInterface(0x80ac58cd) returns (bool supportsERC721Interface) {
+            if (!supportsERC721Interface) revert NFTNotSupported();
+        } catch {
+            revert NFTNotSupported();
         }
 
         bytes memory data = abi.encodePacked(
@@ -87,8 +70,7 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
             collateral_,
             quote_,
             quoteTokenScale,
-            tokenIds_.length,
-            nftType
+            tokenIds_.length
         );
 
         ERC721Pool pool = ERC721Pool(address(implementation).clone(data));

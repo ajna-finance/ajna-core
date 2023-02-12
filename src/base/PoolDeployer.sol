@@ -37,7 +37,7 @@ abstract contract PoolDeployer {
      */
     modifier canDeploy(address collateral_, address quote_, uint256 interestRate_) {
         if (collateral_ == address(0) || quote_ == address(0))              revert IPoolFactory.DeployWithZeroAddress();
-        if (MIN_RATE >= interestRate_ || interestRate_ >= MAX_RATE)         revert IPoolFactory.PoolInterestRateInvalid();
+        if (MIN_RATE > interestRate_ || interestRate_ > MAX_RATE)         revert IPoolFactory.PoolInterestRateInvalid();
         _;
     }
 

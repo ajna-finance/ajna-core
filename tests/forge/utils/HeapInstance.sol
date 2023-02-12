@@ -60,16 +60,19 @@ contract HeapInstance is DSTestPlus {
      *  @notice fills Heap with fuzzed values and tests additions.
      */
     function fuzzyFill(
-        uint256 inserts_,
-        bool trackInserts_)
-        external {
-
+        uint256 inserts_,       // number of insertions to perform
+        uint256 seed_,          // seed for psuedorandom number generator
+        bool trackInserts_
+    ) external {
         uint256 tp;
         address borrower;
 
         // Calculate total insertions 
         uint256 totalInserts = bound(inserts_, 1000, 2000);
         uint256 insertsDec = totalInserts;
+
+        // Initialize and print seed for randomness
+        setRandomSeed(bound(seed_, 0, type(uint256).max - 1));
 
         while (insertsDec > 0) {
 
@@ -91,4 +94,3 @@ contract HeapInstance is DSTestPlus {
         assertEq(_heap.loans.length - 1, totalInserts);
     }
 }
-

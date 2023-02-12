@@ -73,15 +73,15 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         // deposit 200k quote token across 4 buckets
         uint256 lpBalance;
         for (uint i=0; i<4; ++i) {
-            _addInitialLiquidity(
-                {
+
+            _addInitialLiquidity({
                     from:   _lender,
                     amount: 50_000 * 1e18,
                     index:  startBucketId + i
-                }
-            );
+            });
+
             (lpBalance, ) = _pool.lenderInfo(startBucketId + i, _lender);
-            assertEq(lpBalance, 50_000 * 1e27);
+            assertEq(lpBalance, 50_000 * 1e18);
         }
         assertEq(_pool.depositSize(), 200_000 * 1e18);
     }
@@ -295,6 +295,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
             ,
             ,
         ) = _pool.auctionInfo(_borrower);
+
         assertEq(auctionKicker,       kicker);
         assertGe(auctionBondFactor,   0.01 * 1e18);
         assertLe(auctionBondFactor,   0.3  * 1e18);

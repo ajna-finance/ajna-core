@@ -165,7 +165,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
         emit MemorializePosition(owner, params_.tokenId);
 
-        // update pool lp token accounting and transfer ownership of lp tokens to PositionManager contract
+        // update pool lps accounting and transfer ownership of lps to PositionManager contract
         pool.transferLPs(owner, address(this), params_.indexes);
     }
 
@@ -180,7 +180,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      */
     function mint(
         MintParams calldata params_
-    ) external override returns (uint256 tokenId_) {
+    ) external override nonReentrant returns (uint256 tokenId_) {
         tokenId_ = _nextId++;
 
         // revert if the address is not a valid Ajna pool
@@ -252,7 +252,8 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         ) = IPool(params_.pool).moveQuoteToken(
             maxQuote,
             params_.fromIndex,
-            params_.toIndex
+            params_.toIndex,
+            params_.expiry
         );
 
         // update position LPs state
@@ -307,7 +308,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
         emit RedeemPosition(owner, params_.tokenId);
 
-        // update pool lp token accounting and transfer ownership of lp tokens from PositionManager contract
+        // update pool lps accounting and transfer ownership of lps from PositionManager contract
         pool.transferLPs(address(this), owner, params_.indexes);
     }
 
@@ -350,7 +351,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     /**********************/
 
     /// @inheritdoc IPositionManagerDerivedState
-    function getLPTokens(
+    function getLPs(
         uint256 tokenId_,
         uint256 index_
     ) external override view returns (uint256) {

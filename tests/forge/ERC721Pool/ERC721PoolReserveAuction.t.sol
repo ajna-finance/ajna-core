@@ -27,57 +27,51 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
 
         // lender adds liquidity and borrower draws debt
         uint16 bucketId = 1663;
-        _addInitialLiquidity(
-            {
-                from:   _lender,
-                amount: 200_000 * 1e18,
-                index:  bucketId
-            }
-        );
+
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 200_000 * 1e18,
+            index:  bucketId
+        });
 
         // borrower draws debt
         uint256[] memory tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 1;
-        _pledgeCollateral(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                tokenIds: tokenIdsToAdd
-            }
-        );
-        _borrow(
-            {
-                from:       _borrower,
-                amount:     175_000 * 1e18,
-                indexLimit: bucketId,
-                newLup:     251_183.992399245533703810 * 1e18
-            }
-        );
+        _pledgeCollateral({
+            from:     _borrower,
+            borrower: _borrower,
+            tokenIds: tokenIdsToAdd
+        });
+        _borrow({
+            from:       _borrower,
+            amount:     175_000 * 1e18,
+            indexLimit: bucketId,
+            newLup:     251_183.992399245533703810 * 1e18
+        });
+
         (uint256 poolDebt,,) = _pool.debtInfo();
         assertEq(poolDebt - 175_000 * 1e18, 168.26923076923085 * 1e18);
+
         skip(26 weeks);
+
         (poolDebt,,) = _pool.debtInfo();
         assertEq(poolDebt - 175_000 * 1e18, 4_590.373946590638353626 * 1e18);  // debt matches develop
     }
 
     function testClaimableReserveNoAuction() external {
         // ensure empty state is returned
-        _assertReserveAuction(
-            {
-                reserves:                   168.26923076923085 * 1e18,
-                claimableReserves :         0,
-                claimableReservesRemaining: 0,
-                auctionPrice:               0,
-                timeRemaining:              0
-            }
-        );
+        _assertReserveAuction({
+            reserves:                   168.26923076923085 * 1e18,
+            claimableReserves :         0,
+            claimableReservesRemaining: 0,
+            auctionPrice:               0,
+            timeRemaining:              0
+        });
 
         // ensure cannot take when no auction was started
-        _assertTakeReservesNoAuctionRevert(
-            {
-                amount: 555 * 1e18
-            }
-        );
+        _assertTakeReservesNoAuctionRevert({
+            amount: 555 * 1e18
+        });
     }
 
     function testUnclaimableReserves() external {
@@ -91,16 +85,16 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
             newLup:           251_183.992399245533703810 * 1e18
         });
 
-        _assertReserveAuction(
-            {
-                reserves:                   499.181304561658553626 * 1e18,
-                claimableReserves :         0,
-                claimableReservesRemaining: 0,
-                auctionPrice:               0,
-                timeRemaining:              0
-            }
-        );
+        _assertReserveAuction({
+            reserves:                   499.181304561658553626 * 1e18,
+            claimableReserves :         0,
+            claimableReservesRemaining: 0,
+            auctionPrice:               0,
+            timeRemaining:              0
+        });
+
         changePrank(_bidder);
+
         _assertTakeReservesNoReservesRevert();
     }
 
@@ -114,57 +108,70 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
             collateralToPull: 0,
             newLup:           MAX_PRICE
         });
-        _assertReserveAuction(
-            {
-                reserves:                   499.181304561658553626 * 1e18,
-                claimableReserves :         499.181304561658553626 * 1e18,
-                claimableReservesRemaining: 0,
-                auctionPrice:               0,
-                timeRemaining:              0
-            }
-        );
+
+        _assertReserveAuction({
+            reserves:                   499.181304561658553626 * 1e18,
+            claimableReserves :         499.181304561658553626 * 1e18,
+            claimableReservesRemaining: 0,
+            auctionPrice:               0,
+            timeRemaining:              0
+        });
 
         // kick off a new auction
-        _startClaimableReserveAuction(
-            {
-                from:              _bidder,
-                remainingReserves: 494.189491516041968090 * 1e18,
-                price:             1_000_000_000 * 1e18
-            }
-        );
+        _startClaimableReserveAuction({
+            from:              _bidder,
+            remainingReserves: 494.189491516041968090 * 1e18,
+            price:             1_000_000_000 * 1e18
+        });
+
         _assertReserveAuctionPrice(1_000_000_000 * 1e18);
 
         // check prices
         skip(37 minutes);
         _assertReserveAuctionPrice(652176034.882782126826643053 * 1e18);
+
         skip(23 hours);     // 23 hours 37 minutes
         _assertReserveAuctionPrice(77.745441780421987394 * 1e18);
+
         skip(1400);         // 24 hours 0 minutes 20 seconds
         _assertReserveAuctionPrice(59.604644775390625 * 1e18);
+
         skip(100);          // 24 hours 2 minutes
         _assertReserveAuctionPrice(58.243272807255146201 * 1e18);
+
         skip(58 minutes);   // 25 hours
         _assertReserveAuctionPrice(29.8023223876953125 * 1e18);
+
         skip(5 hours);      // 30 hours
         _assertReserveAuctionPrice(0.931322574615478515 * 1e18);
+
         skip(121 minutes);  // 32 hours 1 minute
         _assertReserveAuctionPrice(0.230156355619639189 * 1e18);
+
         skip(7700 seconds); // 34 hours 9 minutes 20 seconds
         _assertReserveAuctionPrice(0.052459681325756842 * 1e18);
+
         skip(8 hours);      // 42 hours 9 minutes 20 seconds
         _assertReserveAuctionPrice(0.000204920630178738 * 1e18);
+
         skip(6 hours);      // 42 hours 9 minutes 20 seconds
         _assertReserveAuctionPrice(0.000003201884846542 * 1e18);
+
         skip(3100 seconds); // 43 hours
         _assertReserveAuctionPrice(0.000001755953640897 * 1e18);
+
         skip(5 hours);      // 48 hours
         _assertReserveAuctionPrice(0.000000054873551278 * 1e18);
+
         skip(12 hours);     // 60 hours
         _assertReserveAuctionPrice(0.000000000013396863 * 1e18);
+
         skip(11 hours);     // 71 hours
         _assertReserveAuctionPrice(0.000000000000006541 * 1e18);
+
         skip(3599 seconds); // 71 hours 59 minutes 59 seconds
         _assertReserveAuctionPrice(0.000000000000003308 * 1e18);
+
         skip(1 seconds);    // 72 hours
         _assertReserveAuctionPrice(0.000000000000003270 * 1e18);
     }

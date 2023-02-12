@@ -2,14 +2,19 @@
 
 The Ajna protocol is a non-custodial, peer-to-peer, permissionless lending, borrowing and trading system that requires no governance or external price feeds to function. The protocol consists of pools: pairings of quote tokens provided by lenders and collateral tokens provided by borrowers. Ajna is capable of accepting fungible tokens as quote tokens and both fungible and non-fungible tokens as collateral tokens.
 
-## Limitations
-- The following types of tokens are incompatible with Ajna, and no countermeasures exist to explicitly prevent creating a pool with such tokens:
-	- Fungible tokens whose balance rebases.
-	- NFTs which charge a fee on transfer.
-	- Fungible tokens with more than 18 decimals or 0 decimals.
+## Accepted tokens:
+- Fungible tokens (following the [ERC20 token standard](https://eips.ethereum.org/EIPS/eip-20)).
+- Non-fungible tokens (following the [ERC721 token standard](https://eips.ethereum.org/EIPS/eip-721))
 - Special considerations have been made to support specific NFTs with nonstandard ERC721 implementations, including _CryptoPunks_ and _CryptoKitties_.  This support is limited to Ethereum mainnet.
+
+### Token limitations
+- The following types of tokens are incompatible with Ajna, and no countermeasures exist to explicitly prevent creating a pool with such tokens, actors should use them at their own risk:
+  - NFT and fungible tokens which charge a fee on transfer.
+  - Fungible tokens whose balance rebases.
+  - Fungible tokens with more than 18 decimals or 0 decimals.
 - Borrowers cannot draw debt from a pool in the same block as when the pool was created.
 - With the exception of quantized prices, pool inputs and most accumulators are not explicitly limited.  The pool will stop functioning when the bounds of a `uint256` need to be exceeded to process a request.
+
 
 
 ## Development
@@ -150,35 +155,38 @@ Modifications to, or notices of actions by Licensor, contemplated above or under
 
 ## Deployment
 
-A deployment script has been created to automate deployment of libraries and factory contracts.
-To use it, set up an environment with the following:
-- **AJNA_TOKEN** - address of the AJNA token on your target chain
-- **ETH_RPC_URL** - node pointing to the target chain
-- **DEPLOY_KEY** - path to the JSON keystore file for your deployment account
+A deployment script has been created to automate deployment of libraries, factory contracts, and manager contracts.
 
-Ensure your deployment account is funded with some ETH for gas.
+To use it, ensure the following env variables are in your `.env` file or exported into your environment.
+| Environment Variable | Purpose |
+|----------------------|---------|
+| `AJNA_TOKEN`         | address of the AJNA token on your target chain
+| `DEPLOY_ADDRESS`     | address from which you wish to deploy
+| `DEPLOY_KEY`         | path to the JSON keystore file for the deployment address
+| `ETHERSCAN_API_KEY`  | required to verify contracts
+| `ETH_RPC_URL`        | node on your target deployment network
 
-The deployment script takes no arguments, and interactively prompts for your keystore password:
+
+Since contract source has not yet been made public, the `--verify` switch has been omitted.  To run:
+
 ```
-./deploy.sh
+make deploy-contracts
 ```
 
 Upon completion, contract addresses will be printed to `stdout`:
 ```
-Deploying to chain with AJNA token address 0xDD576260ed60AaAb798D8ECa9bdBf33D70E077F4
-Enter keystore password: 
-Deploying libraries...
-Deployed             Auctions to 0xDD576260ed60AaAb798D8ECa9bdBf33D70E077F4
-Deployed        LenderActions to 0x4c08A2ec1f5C067DC53A5fCc36C649501F403b93
-Deployed          PoolCommons to 0x8BBCA51044d00dbf16aaB8Fd6cbC5B45503B898b
-Deploying factories...
-Deployed     ERC20PoolFactory to 0xED625fbf62695A13d2cADEdd954b23cc97249988
-Deployed    ERC721PoolFactory to 0x775D30918A42160bC7aE56BA1660E32ff50CF6dC
-Deploying PoolInfoUtils...
-Deployed        PoolInfoUtils to 0xd8A51cE16c7665111401C0Ba2ABEcE03B847b4e6
+== Logs ==
+  Deploying to chain with AJNA token address 0x34A1D3fff3958843C43aD80F30b94c510645C...
+  === Deployment addresses ===
+  ERC20  factory  0x50EEf481cae4250d252Ae577A09bF514f224C...
+  ERC721 factory  0x62c20Aa1e0272312BC100b4e23B4DC1Ed96dD...
+  PoolInfoUtils   0xDEb1E9a6Be7Baf84208BB6E10aC9F9bbE1D70...
+  PositionManager 0xD718d5A27a29FF1cD22403426084bA0d47986...
+  RewardsManager  0x4f559F30f5eB88D635FDe1548C4267DB8FaB0...
+
 ```
 
-Record the factory addresses.
+Record these addresses.
 
 ### Validation
 
