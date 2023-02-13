@@ -10,6 +10,15 @@ import { IPoolFactory } from '../IPoolFactory.sol';
  */
 interface IERC721PoolFactory is IPoolFactory {
 
+    /**************/
+    /*** Errors ***/
+    /**************/
+
+    /**
+     *  @notice User tried to deploy a pool with an array of tokenIds that weren't sorted, or contained duplicates.
+     */
+    error TokenIdSubsetInvalid();
+
     /**************************/
     /*** External Functions ***/
     /**************************/

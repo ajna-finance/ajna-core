@@ -35,10 +35,9 @@ abstract contract PoolDeployer {
      * @notice Ensures that pools are deployed according to specifications.
      * @dev    Used by both ERC20, and ERC721 pool factory types.
      */
-    modifier canDeploy(bytes32 subsetHash_, address collateral_, address quote_, uint256 interestRate_) {
+    modifier canDeploy(address collateral_, address quote_, uint256 interestRate_) {
         if (collateral_ == address(0) || quote_ == address(0))              revert IPoolFactory.DeployWithZeroAddress();
-        if (deployedPools[subsetHash_][collateral_][quote_] != address(0)) revert IPoolFactory.PoolAlreadyExists();
-        if (MIN_RATE >= interestRate_ || interestRate_ >= MAX_RATE)         revert IPoolFactory.PoolInterestRateInvalid();
+        if (MIN_RATE > interestRate_ || interestRate_ > MAX_RATE)         revert IPoolFactory.PoolInterestRateInvalid();
         _;
     }
 

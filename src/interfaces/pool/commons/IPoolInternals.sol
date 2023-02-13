@@ -11,22 +11,22 @@ pragma solidity 0.8.14;
 /*****************************/
 
 struct BucketTakeResult {
-    uint256 collateralAmount;
-    uint256 t0RepayAmount;
-    uint256 t0DebtPenalty;
-    uint256 remainingCollateral;
-    uint256 poolDebt;
-    uint256 newLup;
-    uint256 t0DebtInAuctionChange;
-    bool    settledAuction;
+    uint256 collateralAmount;      // [WAD] amount of collateral taken
+    uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LPs
+    uint256 t0DebtPenalty;         // [WAD] t0 penalty applied on first take
+    uint256 remainingCollateral;   // [WAD] amount of borrower collateral remaining after take
+    uint256 poolDebt;              // [WAD] current pool debt
+    uint256 t0PoolDebt;            // [WAD] t0 pool debt
+    uint256 newLup;                // [WAD] current lup
+    uint256 t0DebtInAuctionChange; // [WAD] the amount of t0 debt recovered by take action
+    bool    settledAuction;        // true if auction is settled by take action
 }
 
 struct KickResult {
-    uint256 amountToCoverBond; // amount of bond that needs to be covered
-    uint256 kickPenalty;       // kick penalty
-    uint256 t0KickPenalty;     // t0 kick penalty
-    uint256 t0KickedDebt;      // new t0 debt after kick
-    uint256 lup;               // current lup
+    uint256 amountToCoverBond; // [WAD] amount of bond that needs to be covered
+    uint256 t0PoolDebt;        // [WAD] t0 debt in pool after kick
+    uint256 t0KickedDebt;      // [WAD] new t0 debt after kick
+    uint256 lup;               // [WAD] current lup
 }
 
 struct SettleParams {
@@ -38,16 +38,17 @@ struct SettleParams {
 }
 
 struct TakeResult {
-    uint256 collateralAmount;
-    uint256 quoteTokenAmount;
-    uint256 t0RepayAmount;
-    uint256 t0DebtPenalty;
-    uint256 excessQuoteToken;
-    uint256 remainingCollateral;
-    uint256 poolDebt;
-    uint256 newLup;
-    uint256 t0DebtInAuctionChange;
-    bool    settledAuction;
+    uint256 collateralAmount;      // [WAD] amount of collateral taken
+    uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LPs
+    uint256 quoteTokenAmount;      // [WAD] amount of quote tokens paid by taker for taken collateral
+    uint256 t0DebtPenalty;         // [WAD] t0 penalty applied on first take
+    uint256 excessQuoteToken;      // [WAD] (NFT only) amount of quote tokens to be paid by taker to borrower for fractional collateral
+    uint256 remainingCollateral;   // [WAD] amount of borrower collateral remaining after take
+    uint256 poolDebt;              // [WAD] current pool debt
+    uint256 t0PoolDebt;            // [WAD] t0 pool debt
+    uint256 newLup;                // [WAD] current lup
+    uint256 t0DebtInAuctionChange; // [WAD] the amount of t0 debt recovered by take action
+    bool    settledAuction;        // true if auction is settled by take action
 }
 
 /******************************************/
@@ -83,7 +84,7 @@ struct DrawDebtResult {
     uint256 remainingCollateral;   // [WAD] amount of borrower collateral after draw debt (for NFT can be diminished if auction settled)
     bool    settledAuction;        // true if collateral pledged settles auction
     uint256 t0DebtInAuctionChange; // [WAD] change of t0 pool debt in auction after pledge collateral
-    uint256 t0DebtChange;          // [WAD] change of total t0 pool debt after after draw debt
+    uint256 t0PoolDebt;            // [WAD] amount of t0 debt in pool after draw debt
 }
 
 struct RepayDebtResult {
@@ -93,6 +94,6 @@ struct RepayDebtResult {
     uint256 remainingCollateral;   // [WAD] amount of borrower collateral after pull collateral
     bool    settledAuction;        // true if repay debt settles auction
     uint256 t0DebtInAuctionChange; // [WAD] change of t0 pool debt in auction after repay debt
-    uint256 t0RepaidDebt;          // [WAD] amount of t0 repaid debt
+    uint256 t0PoolDebt;            // [WAD] amount of t0 debt in pool after repay
     uint256 quoteTokenToRepay;     // [WAD] quote token amount to be transferred from sender to pool
 }
