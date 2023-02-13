@@ -830,4 +830,135 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             exchangeRate: 1 * 1e18 // exchange rate should not change
         });
     }
+
+    function testSwapSmallAmountsBucketExchangeRateInvariantDifferentActor() external tearDown {
+        _mintCollateralAndApproveTokens(_lender,  50000000000 * 1e18);
+
+        _addInitialLiquidity({
+            from:   _bidder,
+            amount: 2725,
+            index:  2570
+        });
+
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2570,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      _bidder,
+            index:       2570,
+            lpBalance:   2725,
+            depositTime: _startTime
+        });
+        _assertBucket({
+            index:        2570,
+            lpBalance:    2725,
+            collateral:   0,
+            deposit:      2725,
+            exchangeRate: 1 * 1e18 // exchange rate should not change
+        });
+
+        _addCollateral({
+            from:    _lender,
+            amount:  1,
+            index:   2570,
+            lpAward: 2725
+        });
+
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2570,
+            lpBalance:   2725,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      _bidder,
+            index:       2570,
+            lpBalance:   2725,
+            depositTime: _startTime
+        });
+        _assertBucket({
+            index:        2570,
+            lpBalance:    5450,
+            collateral:   1,
+            deposit:      2725,
+            exchangeRate: 1 * 1e18 // exchange rate should not change
+        });
+
+        uint256 snapshot = vm.snapshot();
+
+        // bucket should be cleaned out if collateral swap happens first
+        _removeAllCollateral({
+            from:     _bidder,
+            amount:   1,
+            index:    2570,
+            lpRedeem: 2725
+        });
+        _removeAllLiquidity({
+            from:     _lender,
+            amount:   2722,
+            index:    2570,
+            newLup:   MAX_PRICE,
+            lpRedeem: 2725
+        });
+
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2570,
+            lpBalance:   0,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      _bidder,
+            index:       2570,
+            lpBalance:   0,
+            depositTime: _startTime
+        });
+        _assertBucket({
+            index:        2570,
+            lpBalance:    0,
+            collateral:   0,
+            deposit:      0,
+            exchangeRate: 1 * 1e18 // exchange rate should not change
+        });
+
+        vm.revertTo(snapshot);
+
+        // bucket should be cleaned out if quote token swap happens first
+        _removeAllLiquidity({
+            from:     _lender,
+            amount:   2722,
+            index:    2570,
+            newLup:   MAX_PRICE,
+            lpRedeem: 2725
+        });
+        _removeAllCollateral({
+            from:     _bidder,
+            amount:   1,
+            index:    2570,
+            lpRedeem: 2725
+        });
+
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2570,
+            lpBalance:   0,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      _bidder,
+            index:       2570,
+            lpBalance:   0,
+            depositTime: _startTime
+        });
+        _assertBucket({
+            index:        2570,
+            lpBalance:    0,
+            collateral:   0,
+            deposit:      0,
+            exchangeRate: 1 * 1e18 // exchange rate should not change
+        });
+    }
 }
