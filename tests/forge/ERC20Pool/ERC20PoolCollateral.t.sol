@@ -740,4 +740,94 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             exchangeRate: 1 * 1e18 // exchange rate should not change
         });
     }
+
+    function testAddRemoveCollateralSmallAmountsBucketExchangeRateInvariantDifferentActor() external tearDown {
+        _mintCollateralAndApproveTokens(_lender,  50000000000 * 1e18);
+
+        _addInitialLiquidity({
+            from:   _bidder,
+            amount: 304,
+            index:  2570
+        });
+
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2570,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      _bidder,
+            index:       2570,
+            lpBalance:   304,
+            depositTime: _startTime
+        });
+        _assertBucket({
+            index:        2570,
+            lpBalance:    304,
+            collateral:   0,
+            deposit:      304,
+            exchangeRate: 1 * 1e18 // exchange rate should not change
+        });
+
+        _addCollateral({
+            from:    _lender,
+            amount:  1,
+            index:   2570,
+            lpAward: 2725
+        });
+
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2570,
+            lpBalance:   2725,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      _bidder,
+            index:       2570,
+            lpBalance:   304,
+            depositTime: _startTime
+        });
+        _assertBucket({
+            index:        2570,
+            lpBalance:    3029,
+            collateral:   1,
+            deposit:      304,
+            exchangeRate: 1 * 1e18 // exchange rate should not change
+        });
+
+        // lender should not be able to remove any collateral as LP balance is 304 < 2725
+        _assertRemoveAllCollateralInsufficientLPsRevert({
+            from:  _bidder,
+            index: 2570
+        });
+
+        _removeAllCollateral({
+            from:     _lender,
+            amount:   1,
+            index:    2570,
+            lpRedeem: 2725
+        });
+
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2570,
+            lpBalance:   0,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      _bidder,
+            index:       2570,
+            lpBalance:   304,
+            depositTime: _startTime
+        });
+        _assertBucket({
+            index:        2570,
+            lpBalance:    304,
+            collateral:   0,
+            deposit:      304,
+            exchangeRate: 1 * 1e18 // exchange rate should not change
+        });
+    }
 }

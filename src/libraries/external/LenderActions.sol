@@ -660,6 +660,7 @@ library LenderActions {
         } else {
             lpAmount_         = lenderLpBalance;
             collateralAmount_ = Maths.wmul(Maths.wdiv(lenderLpBalance, requiredLPs), collateralAmount_);
+            if (collateralAmount_ == 0) revert InsufficientLPs();
         }
 
         // update bucket LPs and collateral balance

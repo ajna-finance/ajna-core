@@ -594,6 +594,15 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         ERC20Pool(address(_pool)).removeCollateral(amount, index);
     }
 
+    function _assertRemoveAllCollateralInsufficientLPsRevert(
+        address from,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.InsufficientLPs.selector);
+        ERC20Pool(address(_pool)).removeCollateral(type(uint256).max, index);
+    }
+
     function _assertTransferInvalidIndexRevert(
         address operator,
         address from,
