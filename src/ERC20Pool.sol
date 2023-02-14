@@ -38,7 +38,10 @@ import {
     _roundToScale,
     _roundUpToScale
 }                                               from './libraries/helpers/PoolHelper.sol';
-import { _revertIfAuctionClearable }            from './libraries/helpers/RevertsHelper.sol';
+import { 
+    _revertIfAuctionClearable,
+    _revertOnExpiry 
+}                               from './libraries/helpers/RevertsHelper.sol';
 
 import { Loans }    from './libraries/internal/Loans.sol';
 import { Deposits } from './libraries/internal/Deposits.sol';
@@ -186,7 +189,8 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
         uint256 collateralAmountToPull_,
-        address collateralReceiver_
+        address collateralReceiver_,
+        uint256 limitIndex_
     ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
@@ -202,7 +206,8 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
             poolState,
             borrowerAddress_,
             maxQuoteTokenAmountToRepay_,
-            collateralAmountToPull_
+            collateralAmountToPull_,
+            limitIndex_
         );
 
         emit RepayDebt(borrowerAddress_, result.quoteTokenToRepay, collateralAmountToPull_, result.newLup);
@@ -245,8 +250,10 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
      */
     function addCollateral(
         uint256 amountToAdd_,
-        uint256 index_
+        uint256 index_,
+        uint256 expiry_
     ) external override nonReentrant returns (uint256 bucketLPs_) {
+        _revertOnExpiry(expiry_);
         PoolState memory poolState = _accruePoolInterest();
 
         // revert if the dust amount was not exceeded, but round on the scale amount

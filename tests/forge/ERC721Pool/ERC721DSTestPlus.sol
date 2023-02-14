@@ -100,13 +100,12 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                     {
                         uint256 fractionOfNftRemaining = lpsAsCollateral % 1e18;
                         assertLt(fractionOfNftRemaining, 1e18);
-                        
-                        // 1 wei workaround due to rounding
-                        depositRequired = Maths.wmul(1e18 - fractionOfNftRemaining + 1, price);
+
+                        depositRequired = Maths.wmul(1e18 - fractionOfNftRemaining, price);
                     }
                     deal(_pool.quoteTokenAddress(), lender, depositRequired);
                     Token(_pool.quoteTokenAddress()).approve(address(_pool) , depositRequired);
-                    _pool.addQuoteToken(depositRequired, bucketIndex);
+                    _pool.addQuoteToken(depositRequired, bucketIndex, block.timestamp + 1 minutes);
                     (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
                     lpsAsCollateral = _poolUtils.lpsToCollateral(address(_pool), lenderLpBalance, bucketIndex);
                 }
@@ -175,7 +174,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
             emit Transfer(from, address(_pool), tokenIds[i]);
         }
 
-        lps_ = ERC721Pool(address(_pool)).addCollateral(tokenIds, index);
+        lps_ = ERC721Pool(address(_pool)).addCollateral(tokenIds, index, block.timestamp + 10 minutes);
 
         for (uint256 i = 0; i < tokenIds.length; i++) {
             assertEq(_collateral.ownerOf(tokenIds[i]), address(_pool));  // token is owned by pool after add
@@ -336,7 +335,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                 emit RepayDebt(borrower, amountRepaid, collateralToPull, newLup);
             }
 
-            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull, borrower);
+            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull, borrower, MAX_FENWICK_INDEX);
 
             // post pull checks
             if (collateralToPull != 0) {
@@ -352,7 +351,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                 emit RepayDebt(borrower, amountRepaid, collateralToPull, newLup);
             }
 
-            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull, borrower);
+            ERC721Pool(address(_pool)).repayDebt(borrower, amountToRepay, collateralToPull, borrower, MAX_FENWICK_INDEX);
         }
     }
 
@@ -455,6 +454,17 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     /*** Revert asserts ***/
     /**********************/
 
+    function _assertAddCollateralExpiredRevert(
+        address from,
+        uint256[] memory tokenIds,
+        uint256 index,
+        uint256 expiry
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.TransactionExpired.selector);
+        ERC721Pool(address(_pool)).addCollateral(tokenIds, index, expiry);
+    }
+
     function _assertDeployWith0xAddressRevert(
         address poolFactory,
         address collateral,
@@ -525,7 +535,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         uint256 indexLimit
     ) internal override {
         changePrank(from);
-        vm.expectRevert(IPoolErrors.LimitIndexReached.selector);
+        vm.expectRevert(IPoolErrors.LimitIndexExceeded.selector);
         uint256[] memory emptyArray;
         ERC721Pool(address(_pool)).drawDebt(from, amount, indexLimit, emptyArray);
     }
@@ -591,7 +601,17 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
-        ERC721Pool(address(_pool)).repayDebt(from, 0, amount, from);
+        ERC721Pool(address(_pool)).repayDebt(from, 0, amount, from, MAX_FENWICK_INDEX);
+    }
+
+    function _assertPullLimitIndexRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.LimitIndexExceeded.selector);
+        ERC721Pool(address(_pool)).repayDebt(from, 0, amount, from, indexLimit);
     }
 
     function _assertRepayNoDebtRevert(
@@ -601,7 +621,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.NoDebt.selector);
-        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0, borrower);
+        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0, borrower, MAX_FENWICK_INDEX);
     }
 
     function _assertRepayMinDebtRevert(
@@ -611,7 +631,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
-        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0, borrower);
+        ERC721Pool(address(_pool)).repayDebt(borrower, amount, 0, borrower, MAX_FENWICK_INDEX);
     }
 
     function _assertRemoveCollateralNoClaimRevert(
@@ -766,7 +786,7 @@ abstract contract ERC721NDecimalsHelperContract is ERC721DSTestPlus {
             from:           borrower,
             borrower:       borrower,
             amountToBorrow: loanAmount,
-            limitIndex:     7_777,
+            limitIndex:     MAX_FENWICK_INDEX,
             tokenIds:       tokenIdsToAdd
         });
     }

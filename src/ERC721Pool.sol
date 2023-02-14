@@ -27,7 +27,10 @@ import { IERC721Taker }         from './interfaces/pool/erc721/IERC721Taker.sol'
 
 import { FlashloanablePool } from './base/FlashloanablePool.sol';
 
-import { _revertIfAuctionClearable } from './libraries/helpers/RevertsHelper.sol';
+import { 
+    _revertIfAuctionClearable,
+    _revertOnExpiry 
+}                               from './libraries/helpers/RevertsHelper.sol';
 
 import { Maths }    from './libraries/internal/Maths.sol';
 import { Deposits } from './libraries/internal/Deposits.sol';
@@ -181,7 +184,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
      *          - decrement poolBalances.t0Debt accumulator
      *          - decrement poolBalances.t0DebtInAuction accumulator
      *          - decrement poolBalances.pledgedCollateral accumulator
-     *          - update borrowerTokenIds arrays
+     *          - update borrowerTokenIds and bucketTokenIds arrays
      *  @dev emit events:
      *          - RepayDebt
      */
@@ -189,7 +192,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
         uint256 noOfNFTsToPull_,
-        address collateralReceiver_
+        address collateralReceiver_,
+        uint256 limitIndex_
     ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
@@ -201,7 +205,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             poolState,
             borrowerAddress_,
             maxQuoteTokenAmountToRepay_,
-            Maths.wad(noOfNFTsToPull_)
+            Maths.wad(noOfNFTsToPull_),
+            limitIndex_
         );
 
         emit RepayDebt(borrowerAddress_, result.quoteTokenToRepay, noOfNFTsToPull_, result.newLup);
@@ -239,14 +244,16 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     /**
      *  @inheritdoc IERC721PoolLenderActions
      *  @dev write state:
-     *          - update borrowerTokenIds arrays
+     *          - update bucketTokenIds arrays
      *  @dev emit events:
      *          - AddCollateralNFT
      */
     function addCollateral(
         uint256[] calldata tokenIdsToAdd_,
-        uint256 index_
+        uint256 index_,
+        uint256 expiry_
     ) external override nonReentrant returns (uint256 bucketLPs_) {
+        _revertOnExpiry(expiry_);
         PoolState memory poolState = _accruePoolInterest();
 
         bucketLPs_ = LenderActions.addCollateral(
@@ -595,13 +602,14 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
     /**
      *  @dev Helper function to transfer an NFT from owner to target address (reused in code to reduce contract deployment bytecode size).
+     *  @dev Since transferFrom is used instead of safeTransferFrom, calling smart contracts must be careful to check that they support any received NFTs.
      *  @param from_    NFT owner address.
      *  @param to_      New NFT owner address.
      *  @param tokenId_ NFT token id to be transferred.
      */
     function _transferNFT(address from_, address to_, uint256 tokenId_) internal {
         // slither-disable-next-line calls-loop
-        IERC721Token(_getArgAddress(COLLATERAL_ADDRESS)).safeTransferFrom(from_, to_, tokenId_);
+        IERC721Token(_getArgAddress(COLLATERAL_ADDRESS)).transferFrom(from_, to_, tokenId_);
     }
 
     /************************/

@@ -12,6 +12,10 @@ make test-with-gas-report
 ```bash
 make test-load
 ```
+- run invariant tests:
+```bash
+make test-invariant
+```
 - generate code coverage report:
 ```bash
 make coverage

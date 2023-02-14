@@ -191,7 +191,7 @@ import { Maths }   from '../internal/Maths.sol';
         // max collateral to lps
         uint256 rate = Buckets.getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_);
 
-        collateralAmount_ = Maths.rwdivw(Maths.rmul(lenderLPsBalance_, rate), bucketPrice_);
+        collateralAmount_ = Maths.wdiv(Maths.wmul(lenderLPsBalance_, rate), bucketPrice_);
 
         if (collateralAmount_ > bucketCollateral_) {
             // user is owed more collateral than is available in the bucket
@@ -219,7 +219,7 @@ import { Maths }   from '../internal/Maths.sol';
     ) pure returns (uint256 quoteTokenAmount_) {
         uint256 rate = Buckets.getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_);
 
-        quoteTokenAmount_ = Maths.rayToWad(Maths.rmul(lenderLPsBalance_, rate));
+        quoteTokenAmount_ = Maths.wmul(lenderLPsBalance_, rate);
 
         if (quoteTokenAmount_ > deposit_)       quoteTokenAmount_ = deposit_;
         if (quoteTokenAmount_ > maxQuoteToken_) quoteTokenAmount_ = maxQuoteToken_;

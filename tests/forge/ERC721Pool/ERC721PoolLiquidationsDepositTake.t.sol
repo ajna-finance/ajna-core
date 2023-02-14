@@ -213,7 +213,7 @@ contract ERC721PoolLiquidationsDepositTakeTest is ERC721HelperContract {
             from:    _lender,
             amount:  15.0 * 1e18,
             index:   _i1505_26,
-            lpAward: 15.0 * 1e27,
+            lpAward: 15.0 * 1e18,
             newLup:  9.917184843435912074 * 1e18
         });
 
@@ -262,15 +262,15 @@ contract ERC721PoolLiquidationsDepositTakeTest is ERC721HelperContract {
         _assertLenderLpBalance({
             lender:      _borrower,
             index:       3519,
-            lpBalance:   23.737330323739529014630349498 * 1e27,
+            lpBalance:   23.737330323739529015 * 1e18,
             depositTime: block.timestamp
         });
         _assertBucket({
             index:        _i1505_26,
-            lpBalance:    15 * 1e27,
+            lpBalance:    15 * 1e18,
             collateral:   0.009965031187761219 * 1e18,
             deposit:      0,
-            exchangeRate: 0.999999999999999999688877723 * 1e27
+            exchangeRate: 1 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower,
@@ -288,7 +288,7 @@ contract ERC721PoolLiquidationsDepositTakeTest is ERC721HelperContract {
         _assertLenderLpBalance({
             lender:      _lender,
             index:       _i1505_26,
-            lpBalance:   15.0 * 1e27,
+            lpBalance:   15.0 * 1e18,
             depositTime: block.timestamp
         });
 

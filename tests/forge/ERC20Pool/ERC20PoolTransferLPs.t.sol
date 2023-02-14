@@ -59,9 +59,9 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
 
         // should fail if allowed owner is set to lender2 address but trying to transfer to lender address
         changePrank(_lender1);
-        _pool.approveLpOwnership(_lender2, indexes[0], 1_000 * 1e27);
-        _pool.approveLpOwnership(_lender2, indexes[1], 1_000 * 1e27);
-        _pool.approveLpOwnership(_lender2, indexes[2], 1_000 * 1e27);
+        _pool.approveLpOwnership(_lender2, indexes[0], 1_000 * 1e18);
+        _pool.approveLpOwnership(_lender2, indexes[1], 1_000 * 1e18);
+        _pool.approveLpOwnership(_lender2, indexes[2], 1_000 * 1e18);
 
         _assertTransferNoAllowanceRevert({
             operator: _lender,
@@ -79,9 +79,9 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
 
         // should fail since 9999 is not a valid index
         changePrank(_lender1);
-        _pool.approveLpOwnership(_lender2, indexes[0], 1_000 * 1e27);
-        _pool.approveLpOwnership(_lender2, indexes[1], 1_000 * 1e27);
-        _pool.approveLpOwnership(_lender2, indexes[2], 1_000 * 1e27);
+        _pool.approveLpOwnership(_lender2, indexes[0], 1_000 * 1e18);
+        _pool.approveLpOwnership(_lender2, indexes[1], 1_000 * 1e18);
+        _pool.approveLpOwnership(_lender2, indexes[2], 1_000 * 1e18);
 
         _assertTransferInvalidIndexRevert({
             operator: _lender,
@@ -108,8 +108,8 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         });
 
         // set allowed owner to lender2 address
-        _pool.approveLpOwnership(_lender2, indexes[0], 10_000 * 1e27);
-        _pool.approveLpOwnership(_lender2, indexes[1], 30_000 * 1e27);
+        _pool.approveLpOwnership(_lender2, indexes[0], 10_000 * 1e18);
+        _pool.approveLpOwnership(_lender2, indexes[1], 30_000 * 1e18);
 
         _assertTransferNoAllowanceRevert({
             operator: _lender2,
@@ -132,12 +132,12 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         });
 
         changePrank(_lender1);
-        _pool.approveLpOwnership(_lender1, indexes[0], 10_000 * 1e27);
+        _pool.approveLpOwnership(_lender1, indexes[0], 10_000 * 1e18);
 
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       indexes[0],
-            lpBalance:   10_000 * 1e27,
+            lpBalance:   10_000 * 1e18,
             depositTime: _startTime + 1 hours
         });
 
@@ -178,7 +178,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       indexes[0],
-            lpBalance:   10_000 * 1e27,
+            lpBalance:   10_000 * 1e18,
             depositTime: _startTime + 1 hours
         });
         _assertLenderLpBalance({
@@ -190,7 +190,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       indexes[1],
-            lpBalance:   20_000 * 1e27,
+            lpBalance:   20_000 * 1e18,
             depositTime: _startTime + 1 hours
         });
         _assertLenderLpBalance({
@@ -202,7 +202,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       indexes[2],
-            lpBalance:   30_000 * 1e27,
+            lpBalance:   30_000 * 1e18,
             depositTime: _startTime + 1 hours
         });
         _assertLenderLpBalance({
@@ -213,9 +213,9 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         });
 
         // set allowed owner to lender2 address
-        _pool.approveLpOwnership(_lender2, indexes[0], 10_000 * 1e27);
-        _pool.approveLpOwnership(_lender2, indexes[1], 20_000 * 1e27);
-        _pool.approveLpOwnership(_lender2, indexes[2], 30_000 * 1e27);
+        _pool.approveLpOwnership(_lender2, indexes[0], 10_000 * 1e18);
+        _pool.approveLpOwnership(_lender2, indexes[1], 20_000 * 1e18);
+        _pool.approveLpOwnership(_lender2, indexes[2], 30_000 * 1e18);
 
         // transfer LP tokens for all indexes
         _transferLPs({
@@ -223,7 +223,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
             from:      _lender1,
             to:        _lender2,
             indexes:   indexes,
-            lpBalance: 60_000 * 1e27
+            lpBalance: 60_000 * 1e18
         });
 
         // check that old token ownership was removed - a new transfer should fail
@@ -244,7 +244,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       indexes[0],
-            lpBalance:   10_000 * 1e27,
+            lpBalance:   10_000 * 1e18,
             depositTime: _startTime + 1 hours
         });
         _assertLenderLpBalance({
@@ -256,7 +256,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       indexes[1],
-            lpBalance:   20_000 * 1e27,
+            lpBalance:   20_000 * 1e18,
             depositTime: _startTime + 1 hours
         });
         _assertLenderLpBalance({
@@ -268,7 +268,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       indexes[2],
-            lpBalance:   30_000 * 1e27,
+            lpBalance:   30_000 * 1e18,
             depositTime: _startTime + 1 hours
         });
     }
@@ -303,7 +303,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       depositIndexes[0],
-            lpBalance:   10_000 * 1e27,
+            lpBalance:   10_000 * 1e18,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
@@ -315,7 +315,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       depositIndexes[1],
-            lpBalance:   20_000 * 1e27,
+            lpBalance:   20_000 * 1e18,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
@@ -327,7 +327,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       depositIndexes[2],
-            lpBalance:   30_000 * 1e27,
+            lpBalance:   30_000 * 1e18,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
@@ -338,8 +338,8 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         });
 
         // set allowed owner to lender2 address
-        _pool.approveLpOwnership(_lender2, transferIndexes[0], 10_000 * 1e27);
-        _pool.approveLpOwnership(_lender2, transferIndexes[1], 30_000 * 1e27);
+        _pool.approveLpOwnership(_lender2, transferIndexes[0], 10_000 * 1e18);
+        _pool.approveLpOwnership(_lender2, transferIndexes[1], 30_000 * 1e18);
 
         // transfer LP tokens for 2 indexes
         _transferLPs({
@@ -347,7 +347,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
             from:      _lender1,
             to:        _lender2,
             indexes:   transferIndexes,
-            lpBalance: 40_000 * 1e27
+            lpBalance: 40_000 * 1e18
         });
 
         // check that old token ownership was removed - transfer with same indexes should fail
@@ -368,13 +368,13 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       depositIndexes[0],
-            lpBalance:   10_000 * 1e27,
+            lpBalance:   10_000 * 1e18,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       depositIndexes[1],
-            lpBalance:   20_000 * 1e27,
+            lpBalance:   20_000 * 1e18,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
@@ -392,7 +392,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       depositIndexes[2],
-            lpBalance:   30_000 * 1e27,
+            lpBalance:   30_000 * 1e18,
             depositTime: _startTime
         });
     }
@@ -443,45 +443,45 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       indexes[0],
-            lpBalance:   10_000 * 1e27,
+            lpBalance:   10_000 * 1e18,
             depositTime: _startTime + 1 hours
         });
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       indexes[0],
-            lpBalance:   5_000 * 1e27,
+            lpBalance:   5_000 * 1e18,
             depositTime: _startTime + 2 hours
         });
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       indexes[1],
-            lpBalance:   20_000 * 1e27,
+            lpBalance:   20_000 * 1e18,
             depositTime: _startTime + 1 hours
         });
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       indexes[1],
-            lpBalance:   10_000 * 1e27,
+            lpBalance:   10_000 * 1e18,
             depositTime: _startTime + 2 hours
         });
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       indexes[2],
-            lpBalance:   30_000 * 1e27,
+            lpBalance:   30_000 * 1e18,
             depositTime: _startTime + 1 hours
         });
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       indexes[2],
-            lpBalance:   15_000 * 1e27,
+            lpBalance:   15_000 * 1e18,
             depositTime: _startTime + 2 hours
         });
 
         // set allowed owner to lender2 address
         changePrank(_lender1);
-        _pool.approveLpOwnership(_lender2, indexes[0], 10_000 * 1e27);
-        _pool.approveLpOwnership(_lender2, indexes[1], 20_000 * 1e27);
-        _pool.approveLpOwnership(_lender2, indexes[2], 30_000 * 1e27);
+        _pool.approveLpOwnership(_lender2, indexes[0], 10_000 * 1e18);
+        _pool.approveLpOwnership(_lender2, indexes[1], 20_000 * 1e18);
+        _pool.approveLpOwnership(_lender2, indexes[2], 30_000 * 1e18);
 
         // transfer LP tokens for all indexes
         _transferLPs({
@@ -489,7 +489,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
             from:      _lender1,
             to:        _lender2,
             indexes:   indexes,
-            lpBalance: 60_000 * 1e27
+            lpBalance: 60_000 * 1e18
         });
 
         // check that old token ownership was removed - transfer with same indexes should fail
@@ -510,7 +510,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       indexes[0],
-            lpBalance:   15_000 * 1e27,
+            lpBalance:   15_000 * 1e18,
             depositTime: _startTime + 2 hours
         });
         _assertLenderLpBalance({
@@ -522,7 +522,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       indexes[1],
-            lpBalance:   30_000 * 1e27,
+            lpBalance:   30_000 * 1e18,
             depositTime: _startTime + 2 hours
         });
         _assertLenderLpBalance({
@@ -534,7 +534,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       indexes[2],
-            lpBalance:   45_000 * 1e27,
+            lpBalance:   45_000 * 1e18,
             depositTime: _startTime + 2 hours
         });
     }

@@ -10,7 +10,7 @@ import {
     PoolBalancesState
 } from '../../interfaces/pool/commons/IPoolState.sol';
 
-import { _minDebtAmount } from './PoolHelper.sol';
+import { _minDebtAmount, _priceAt } from './PoolHelper.sol';
 
 import { Loans }    from '../internal/Loans.sol';
 import { Deposits } from '../internal/Deposits.sol';
@@ -20,7 +20,9 @@ import { Maths }    from '../internal/Maths.sol';
     error AuctionNotCleared();
     error AmountLTMinDebt();
     error DustAmountNotExceeded();
+    error LimitIndexExceeded();
     error RemoveDepositLockedByAuctionDebt();
+    error TransactionExpired();
 
     /**
      *  @notice Called by LPB removal functions assess whether or not LPB is locked.
@@ -56,6 +58,30 @@ import { Maths }    from '../internal/Maths.sol';
             Borrower storage borrower = loans_.borrowers[head];
             if (borrower.t0Debt != 0 && borrower.collateral == 0) revert AuctionNotCleared();
         }
+    }
+
+    /**
+     * @notice  Check if LUP is at or above index limit provided by borrower.
+     * @notice  Prevents stale transactions and certain MEV manipulations.
+     * @param newLup_     New LUP as a result of the borrower action.
+     * @param limitIndex_ Limit price index provided by user creating the TX.
+     */
+    function _revertIfLupDroppedBelowLimit(
+        uint256 newLup_,
+        uint256 limitIndex_
+    ) pure {
+        if (newLup_ < _priceAt(limitIndex_)) revert LimitIndexExceeded();
+    }
+
+    /**
+     *  @notice Check if expiration provided by user has met or exceeded current block height timestamp.
+     *  @notice Prevents stale transactions interacting with the pool at potentially unfavorable prices.
+     *  @param  expiry_ Expiration provided by user when creating the TX.
+     */
+    function _revertOnExpiry(
+        uint256 expiry_
+    ) view {
+        if (block.timestamp >= expiry_) revert TransactionExpired();
     }
 
     /**

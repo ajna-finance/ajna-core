@@ -45,7 +45,8 @@ import {
 }                               from '../libraries/helpers/PoolHelper.sol';
 import {
     _revertIfAuctionDebtLocked,
-    _revertIfAuctionClearable
+    _revertIfAuctionClearable,
+    _revertOnExpiry
 }                               from '../libraries/helpers/RevertsHelper.sol';
 
 import { Buckets }  from '../libraries/internal/Buckets.sol';
@@ -131,8 +132,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /// @inheritdoc IPoolLenderActions
     function addQuoteToken(
         uint256 quoteTokenAmountToAdd_,
-        uint256 index_
+        uint256 index_,
+        uint256 expiry_
     ) external override nonReentrant returns (uint256 bucketLPs_) {
+        _revertOnExpiry(expiry_);
         PoolState memory poolState = _accruePoolInterest();
 
         // round to token precision
@@ -173,8 +176,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function moveQuoteToken(
         uint256 maxAmountToMove_,
         uint256 fromIndex_,
-        uint256 toIndex_
+        uint256 toIndex_,
+        uint256 expiry_
     ) external override nonReentrant returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
+        _revertOnExpiry(expiry_);
         PoolState memory poolState = _accruePoolInterest();
 
         _revertIfAuctionDebtLocked(deposits, poolBalances, fromIndex_, poolState.inflator);
@@ -424,13 +429,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @return poolState_ Struct containing pool details.
      */
     function _accruePoolInterest() internal returns (PoolState memory poolState_) {
-        poolState_.t0Debt                  = poolBalances.t0Debt;
-        poolState_.collateral              = poolBalances.pledgedCollateral;
-        poolState_.inflator                = inflatorState.inflator;
-        poolState_.rate                    = interestState.interestRate;
-        poolState_.t0PoolUtilizationDebtWeight = interestState.t0PoolUtilizationDebtWeight;
-        poolState_.poolType                = _getArgUint8(POOL_TYPE);
-        poolState_.quoteDustLimit          = _getArgUint256(QUOTE_SCALE);
+        poolState_.t0Debt         = poolBalances.t0Debt;
+        poolState_.collateral     = poolBalances.pledgedCollateral;
+        poolState_.inflator       = inflatorState.inflator;
+        poolState_.rate           = interestState.interestRate;
+        poolState_.poolType       = _getArgUint8(POOL_TYPE);
+        poolState_.quoteDustLimit = _getArgUint256(QUOTE_SCALE);
 
 	    // check if t0Debt is not equal to 0, indicating that there is debt to be tracked for the pool
         if (poolState_.t0Debt != 0) {
@@ -713,5 +717,20 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             reserveAuction.unclaimed,
             reserveAuction.kicked
         );
+    }
+
+    /// @inheritdoc IPoolState
+    function totalAuctionsInPool() external view override returns (uint256) {
+        return auctions.noOfAuctions;
+    }
+
+    /// @inheritdoc IPoolState
+    function totalT0Debt() external view override returns (uint256) {
+        return poolBalances.t0Debt;
+    }
+
+    /// @inheritdoc IPoolState
+    function totalT0DebtInAuction() external view override returns (uint256) {
+        return poolBalances.t0DebtInAuction;
     }
 }

@@ -36,7 +36,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         _mintQuoteAndApproveTokens(_lender2,  100_000_000_000_000_000 * 1e18);
     }
 
-    function testPoolInterestRateIncreaseDecrease() external {
+    function testPoolInterestRateIncreaseDecrease() external tearDown {
         _addInitialLiquidity({
             from:   _lender,
             amount: 10_000 * 1e18,
@@ -86,7 +86,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         changePrank(_borrower);
 
         vm.expectEmit(true, true, false, true);
-        emit UpdateInterestRate(0.05 * 1e18, 0.045 * 1e18);
+        emit UpdateInterestRate(0.05 * 1e18, 0.055 * 1e18);
         _drawDebtNoLupCheck({
             from:               _borrower,
             borrower:           _borrower,
@@ -113,8 +113,8 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             })
         );
         _assertEMAs({
-            debtEma:   0 * 1e18,
-            lupColEma: 43_408.813587101588024766 * 1e18
+            debtEma:   4_340.881358710158802477 * 1e18,
+            lupColEma: 28_103.845662221475161347 * 1e18
         });
 
         skip(14 hours);
@@ -147,8 +147,8 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             })
         );
         _assertEMAs({
-            debtEma:   4_340.881358710158802477 * 1e18,
-            lupColEma: 82_781.879840256846120840 * 1e18
+            debtEma:   8_279.448467499588505755 * 1e18,
+            lupColEma: 53_558.163735316008374982 * 1e18
         });
 
         vm.revertTo(snapshot);
@@ -183,8 +183,8 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             })
         );
         _assertEMAs({
-            debtEma:   0 * 1e18,
-            lupColEma: 43_408.813587101588024766 * 1e18
+            debtEma:   4_340.881358710158802477 * 1e18,
+            lupColEma: 28_103.845662221475161347 * 1e18
         });
     }
 

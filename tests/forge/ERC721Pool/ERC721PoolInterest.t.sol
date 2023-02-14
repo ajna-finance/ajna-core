@@ -362,7 +362,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             from:    _lender,
             amount:  1 * 1e18,
             index:   2550,
-            lpAward: 0.999978753161905147653029533 * 1e27,
+            lpAward: 0.999978753161905148 * 1e18,
             newLup:  2995.912459898389633881 * 1e18
         });
         liquidityAdded += 1e18;

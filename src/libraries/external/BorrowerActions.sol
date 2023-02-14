@@ -20,7 +20,10 @@ import {
     _priceAt,
     _isCollateralized
 }                           from '../helpers/PoolHelper.sol';
-import { _revertOnMinDebt } from '../helpers/RevertsHelper.sol';
+import { 
+    _revertIfLupDroppedBelowLimit, 
+    _revertOnMinDebt
+}                           from '../helpers/RevertsHelper.sol';
 
 import { Buckets }  from '../internal/Buckets.sol';
 import { Deposits } from '../internal/Deposits.sol';
@@ -47,7 +50,6 @@ library BorrowerActions {
         uint256 t0BorrowAmount;        // [WAD] t0 amount to borrow
         uint256 t0DebtChange;          // [WAD] additional t0 debt resulted from draw debt action
         bool    inAuction;             // true if loan is auctioned
-        uint256 lupId;                 // id of new LUP
         bool    pledge;                // true if pledge action
         bool    stampT0Np;             // true if loan's t0 neutral price should be restamped (when drawing debt or pledge settles auction)
     }
@@ -55,7 +57,6 @@ library BorrowerActions {
         uint256 borrowerDebt;          // [WAD] borrower's accrued debt
         uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LPs (NFTs only)
         bool    inAuction;             // true if loan still in auction after repay, false otherwise
-        uint256 newLup;                // [WAD] LUP after repay debt action
         bool    pull;                  // true if pull action
         bool    repay;                 // true if repay action
         bool    stampT0Np;             // true if loan's t0 neutral price should be restamped (when repay settles auction or pull collateral)
@@ -68,10 +69,11 @@ library BorrowerActions {
     /**************/
 
     // See `IPoolErrors` for descriptions
+    error AuctionActive();
     error BorrowerNotSender();
     error BorrowerUnderCollateralized();
     error InsufficientCollateral();
-    error LimitIndexReached();
+    error LimitIndexExceeded();
     error NoDebt();
 
     /***************************/
@@ -96,7 +98,7 @@ library BorrowerActions {
      *  @dev    reverts on:
      *              - borrower not sender BorrowerNotSender()
      *              - borrower debt less than pool min debt AmountLTMinDebt()
-     *              - limit price reached LimitIndexReached()
+     *              - limit price reached LimitIndexExceeded()
      *              - borrower cannot draw more debt BorrowerUnderCollateralized()
      *  @dev    emit events:
      *              - Auctions._settleAuction:
@@ -122,11 +124,11 @@ library BorrowerActions {
         vars.pledge       = collateralToPledge_ != 0;
         vars.borrow       = amountToBorrow_ != 0 || limitIndex_ != 0; // enable an intentional 0 borrow loan call to update borrower's loan state
         vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
+        vars.inAuction    = _inAuction(auctions_, borrowerAddress_);
 
         result_.t0PoolDebt     = poolState_.t0Debt;
         result_.poolDebt       = poolState_.debt;
         result_.poolCollateral = poolState_.collateral;
-        result_.t0PoolUtilizationDebtWeight = poolState_.t0PoolUtilizationDebtWeight;
 
         result_.remainingCollateral = borrower.collateral;
 
@@ -137,7 +139,6 @@ library BorrowerActions {
             result_.remainingCollateral += collateralToPledge_;
 
             result_.newLup  = _lup(deposits_, result_.poolDebt);
-            vars.inAuction = _inAuction(auctions_, borrowerAddress_);
 
             // if loan is auctioned and becomes collateralized by newly pledged collateral then settle auction
             if (
@@ -193,14 +194,13 @@ library BorrowerActions {
             // only intended recipient can borrow quote
             if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
 
+            // an auctioned borrower in not allowed to draw more debt (even if collateralized at the new LUP) if auction is not settled
+            if (vars.inAuction) revert AuctionActive();
+
             vars.t0BorrowAmount = Maths.wdiv(amountToBorrow_, poolState_.inflator);
 
             // t0 debt change is t0 amount to borrow plus the origination fee
             vars.t0DebtChange = Maths.wmul(vars.t0BorrowAmount, _feeRate(poolState_.rate) + Maths.WAD);
-
-            // increasing debt, increase debt utilization weight
-            // calculate what to increase weight by: newDebt^2 - oldDebt^2 / collateral
-            result_.t0PoolUtilizationDebtWeight += Maths.wdiv(((borrower.t0Debt + vars.t0DebtChange) ** 2) - (borrower.t0Debt ** 2), borrower.collateral);
 
             borrower.t0Debt += vars.t0DebtChange;
 
@@ -218,13 +218,13 @@ library BorrowerActions {
             result_.t0PoolDebt += vars.t0DebtChange;
             result_.poolDebt   = Maths.wmul(result_.t0PoolDebt, poolState_.inflator);
 
-            // determine new lup index and revert if borrow happens at a price higher than the specified limit (lower index than lup index)
-            vars.lupId = _lupIndex(deposits_, result_.poolDebt);
-            if (vars.lupId > limitIndex_) revert LimitIndexReached();
+            result_.newLup = _lup(deposits_, result_.poolDebt);
+
+            // revert if borrow drives LUP price under the specified price limit
+            _revertIfLupDroppedBelowLimit(result_.newLup, limitIndex_);
 
             // calculate new lup and check borrow action won't push borrower into a state of under-collateralization
             // this check also covers the scenario when loan is already auctioned
-            result_.newLup = _priceAt(vars.lupId);
 
             if (!_isCollateralized(vars.borrowerDebt, borrower.collateral, result_.newLup, poolState_.poolType)) {
                 revert BorrowerUnderCollateralized();
@@ -246,7 +246,7 @@ library BorrowerActions {
             deposits_,
             borrower,
             borrowerAddress_,
-            vars.borrowerDebt,
+            result_.poolDebt,
             poolState_.rate,
             result_.newLup,
             vars.inAuction,
@@ -274,6 +274,7 @@ library BorrowerActions {
      *              - borrower debt less than pool min debt AmountLTMinDebt()
      *              - borrower not sender BorrowerNotSender()
      *              - not enough collateral to pull InsufficientCollateral()
+     *              - limit price reached LimitIndexExceeded()
      *  @dev    emit events:
      *              - Auctions._settleAuction:
      *                  - AuctionNFTSettle or AuctionSettle
@@ -286,7 +287,8 @@ library BorrowerActions {
         PoolState calldata poolState_,
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
-        uint256 collateralAmountToPull_
+        uint256 collateralAmountToPull_,
+        uint256 limitIndex_
     ) external returns (
         RepayDebtResult memory result_
     ) {
@@ -297,13 +299,13 @@ library BorrowerActions {
         vars.repay        = maxQuoteTokenAmountToRepay_ != 0;
         vars.pull         = collateralAmountToPull_     != 0;
         vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
+        vars.inAuction    = _inAuction(auctions_, borrowerAddress_);
 
         result_.t0PoolDebt     = poolState_.t0Debt;
         result_.poolDebt       = poolState_.debt;
         result_.poolCollateral = poolState_.collateral;
 
         result_.remainingCollateral = borrower.collateral;
-        result_.t0PoolUtilizationDebtWeight = poolState_.t0PoolUtilizationDebtWeight;
 
         if (vars.repay) {
             if (borrower.t0Debt == 0) revert NoDebt();
@@ -323,10 +325,6 @@ library BorrowerActions {
             result_.quoteTokenToRepay = Maths.wmul(vars.t0RepaidDebt,                   poolState_.inflator);
             vars.borrowerDebt         = Maths.wmul(borrower.t0Debt - vars.t0RepaidDebt, poolState_.inflator);
 
-            // reducing debt, reduce utilization debt weight
-            // calculate weight decrease: oldDebt^2 - newDebt^2 / collateral
-            result_.t0PoolUtilizationDebtWeight -= Maths.wdiv(borrower.t0Debt ** 2 - ((borrower.t0Debt - vars.t0RepaidDebt) ** 2), borrower.collateral);
-
             // check that paying the loan doesn't leave borrower debt under min debt amount
             _revertOnMinDebt(
                 loans_,
@@ -336,7 +334,6 @@ library BorrowerActions {
             );
 
             result_.newLup = _lup(deposits_, result_.poolDebt);
-            vars.inAuction = _inAuction(auctions_, borrowerAddress_);
 
             // if loan is auctioned and becomes collateralized by repaying debt then settle auction
             if (vars.inAuction) {
@@ -378,8 +375,13 @@ library BorrowerActions {
             // only intended recipient can pull collateral
             if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
 
+            // an auctioned borrower in not allowed to pull collateral (even if collateralized at the new LUP) if auction is not settled
+            if (vars.inAuction) revert AuctionActive();
+
             // calculate LUP only if it wasn't calculated in repay action
             if (!vars.repay) result_.newLup = _lup(deposits_, result_.poolDebt);
+
+            _revertIfLupDroppedBelowLimit(result_.newLup, limitIndex_);
 
             uint256 encumberedCollateral = borrower.t0Debt != 0 ? Maths.wdiv(vars.borrowerDebt, result_.newLup) : 0;
 
@@ -390,21 +392,6 @@ library BorrowerActions {
 
             borrower.collateral    -= collateralAmountToPull_;
             result_.poolCollateral -= collateralAmountToPull_;
-        }
-
-        // removing collateral without any debt has no effect to the utilization debt weight
-        if (vars.borrowerDebt != 0) {
-
-            // calclate collateral change: newCollateral - oldCollateral
-            uint256 collateralChange = (borrower.collateral + collateralAmountToPull_) - borrower.collateral;
-
-            // calculate collateralPortion: collateral change / newCollateral * oldCollateral
-            uint256 collateralPortion = Maths.wdiv(collateralChange,
-                                                 Maths.wmul((borrower.collateral + collateralAmountToPull_), borrower.collateral));
-
-            // removing collateral, increment utilization debt weight
-            // calculate what to increment weight by: t0Debt^2 / collateralDenom
-            result_.t0PoolUtilizationDebtWeight += Maths.wmul(borrower.t0Debt ** 2, collateralPortion);
         }
 
         // calculate LUP if it wasn't calculated previously
@@ -419,7 +406,7 @@ library BorrowerActions {
             deposits_,
             borrower,
             borrowerAddress_,
-            vars.borrowerDebt,
+            result_.poolDebt,
             poolState_.rate,
             result_.newLup,
             vars.inAuction,
@@ -444,18 +431,11 @@ library BorrowerActions {
         return auctions_.liquidations[borrower_].kickTime != 0;
     }
 
-    function _lupIndex(
-        DepositsState storage deposits_,
-        uint256 debt_
-    ) internal view returns (uint256) {
-        return Deposits.findIndexOfSum(deposits_, debt_);
-    }
-
     function _lup(
         DepositsState storage deposits_,
         uint256 debt_
     ) internal view returns (uint256) {
-        return _priceAt(_lupIndex(deposits_, debt_));
+        return _priceAt(Deposits.findIndexOfSum(deposits_, debt_));
     }
 
 }
