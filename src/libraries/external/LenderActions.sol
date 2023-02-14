@@ -659,7 +659,8 @@ library LenderActions {
             lpAmount_ = requiredLPs;
         } else {
             lpAmount_         = lenderLpBalance;
-            collateralAmount_ = Maths.wmul(Maths.wdiv(lenderLpBalance, requiredLPs), collateralAmount_);
+            collateralAmount_ = Maths.wdiv(Maths.wmul(lenderLpBalance, collateralAmount_), requiredLPs);
+
             if (collateralAmount_ == 0) revert InsufficientLPs();
         }
 

@@ -961,4 +961,48 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             exchangeRate: 1 * 1e18 // exchange rate should not change
         });
     }
+
+    function testAddRemoveCollateralBucketExchangeRateInvariantDifferentActor2() external tearDown {
+        _mintCollateralAndApproveTokens(_lender,  1000000000000000000 * 1e18);
+        _mintCollateralAndApproveTokens(_bidder,  50000000000 * 1e18);
+
+        _addCollateral({
+            from:    _bidder,
+            amount:  15200,
+            index:   2570,
+            lpAward: 41420710
+        });
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 2,
+            index:  2570
+        });
+        _addCollateral({
+            from:    _lender,
+            amount:  883976901103343226.563974622543668416 * 1e18,
+            index:   2570,
+            lpAward: 2408878317819033617340.926215832879088040 * 1e18
+        });
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2570,
+            lpBalance:   2408878317819033617340.926215832879088042 * 1e18,
+            depositTime: _startTime
+        });
+
+        _removeAllCollateral({
+            from:     _lender,
+            amount:   883976901103343226.563974622543668416 * 1e18,
+            index:    2570,
+            lpRedeem: 2408878317819033617340.926215832879088042 * 1e18
+        });
+        _assertBucket({
+            index:        2570,
+            lpBalance:    41420710,
+            collateral:   15200,
+            deposit:      2,
+            exchangeRate: 1.000000048285024569 * 1e18
+        });
+
+    }
 }
