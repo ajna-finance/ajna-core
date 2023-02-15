@@ -12,11 +12,17 @@ import { ERC20Pool }        from 'src/ERC20Pool.sol';
 import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
 import { Token }            from '../../../utils/Tokens.sol';
 import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
+import { PoolCommons }     from 'src/libraries/external/PoolCommons.sol';
 import { InvariantTest } from '../InvariantTest.sol';
+import { _ptp } from 'src/libraries/helpers/PoolHelper.sol';
+import { _priceAt } from 'src/libraries/helpers/PoolHelper.sol';
+import { Buckets } from 'src/libraries/internal/Buckets.sol';
+
+import 'src/libraries/internal/Maths.sol';
 
 
 uint256 constant LENDER_MIN_BUCKET_INDEX = 2570;
-uint256 constant LENDER_MAX_BUCKET_INDEX = 2590;
+uint256 constant LENDER_MAX_BUCKET_INDEX = 2572;
 
 uint256 constant BORROWER_MIN_BUCKET_INDEX = 2600;
 uint256 constant BORROWER_MAX_BUCKET_INDEX = 2620;
@@ -43,10 +49,18 @@ contract BaseHandler is InvariantTest, Test {
     // Lender tracking
     mapping(address => uint256[]) public touchedBuckets;
 
+    // Ghost variables
+    uint256[7389] internal fenwickDeposits;
+
     // bucket exchange rate invariant check
     bool public shouldExchangeRateChange;
 
     bool public shouldReserveChange;
+
+    // mapping from bucket index to exchange rate
+    mapping(uint256 => uint256) public previousExchangeRate;
+
+    mapping(uint256 => uint256) public currentExchangeRate;
 
     // if take is called on auction first time
     bool public firstTake;
@@ -81,7 +95,11 @@ contract BaseHandler is InvariantTest, Test {
         // pre condition
         firstTakeIncreaseInReserve = 0;
         loanKickIncreaseInReserve = 0;
-
+        // reset the exchange rates before each action
+        for(uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+            previousExchangeRate[bucketIndex] = 0;
+            currentExchangeRate[bucketIndex] = 0;
+        }
         vm.stopPrank();
 
         address actor = actors[constrictToRange(actorIndex, 0, actors.length - 1)];
@@ -148,6 +166,122 @@ contract BaseHandler is InvariantTest, Test {
 
         // Account for decrementing x to make max inclusive.
         if (max == type(uint256).max && x != 0) result++;
+    }
+
+    function fenwickAdd(uint256 amount, uint256 bucketIndex) internal {
+        uint256 deposit = fenwickDeposits[bucketIndex];
+        fenwickDeposits[bucketIndex] = deposit + amount;
+    }
+
+    function fenwickRemove(uint256 removedAmount, uint256 bucketIndex) internal {
+        // add early withdrawal penalty back to removedAmount if removeQT is occurs above the PTP
+        // as that is the value removed from the fenwick tree
+        (, uint256 depositTime) = _pool.lenderInfo(bucketIndex, _actor);
+        uint256 price = _poolInfo.indexToPrice(bucketIndex);
+        (, uint256 poolDebt ,) = _pool.debtInfo();
+        uint256 poolCollateral  = _pool.pledgedCollateral();
+
+        if (depositTime != 0 && block.timestamp - depositTime < 1 days) {
+            if (price > _ptp(poolDebt, poolCollateral)) {
+                removedAmount = Maths.wdiv(removedAmount, Maths.WAD - _poolInfo.feeRate(address(_pool)));
+            }
+        }
+
+        // Fenwick
+        uint256 deposit = fenwickDeposits[bucketIndex];
+        fenwickDeposits[bucketIndex] = deposit - removedAmount;
+    }
+
+    function fenwickSumTillIndex(uint256 index) public view returns (uint256) {
+        uint256 sum = 0;
+        while (index > 0) {
+                sum += fenwickDeposits[index];
+            index--;
+        }
+        return sum;
+    }
+
+    function fenwickTreeSum() external view returns (uint256) {
+        return fenwickSumTillIndex(fenwickDeposits.length - 1);    
+    }
+
+    function fenwickMult(uint256 index, uint256 scale) internal returns (uint256) {
+        uint256 sum = 0;
+        while (index > 0) {
+            fenwickDeposits[index] = Maths.wmul(fenwickDeposits[index], scale);
+            index--;
+        }
+        return sum;
+    }
+
+    function fenwickAccrueInterest() internal {
+        (,,,,uint256 pendingFactor) = _poolInfo.poolLoansInfo(address(_pool));
+
+        // poolLoansInfo returns 1e18 if no interest is pending or time elapsed... the contracts calculate 0 time elapsed which causes discrep
+        if (pendingFactor == 1e18) return;
+
+        // get TP of worst loan, pendingInflator and poolDebt
+        uint256 maxThresholdPrice;
+        uint256 pendingInflator;
+        uint256 poolDebt;
+        {
+            (, maxThresholdPrice,) =  _pool.loansInfo();
+            (, poolDebt ,) = _pool.debtInfo();
+            (uint256 inflator, uint256 inflatorUpdate) = _pool.inflatorInfo();
+            (uint256 interestRate, ) = _pool.interestRateInfo();
+            pendingInflator = PoolCommons.pendingInflator(
+                inflator,
+                inflatorUpdate,
+                interestRate
+            );
+        }
+
+        // get HTP and deposit above HTP
+        uint256 htp = Maths.wmul(maxThresholdPrice, pendingInflator);
+        uint256 htpIndex = htp == 0 ? 0 : _poolInfo.priceToIndex(htp);
+        uint256 depositAboveHtp = fenwickSumTillIndex(htpIndex);
+
+        if (depositAboveHtp != 0) {
+
+            uint256 poolCollateral  = _pool.pledgedCollateral();
+            uint256 utilization = _pool.depositUtilization(poolDebt, poolCollateral);
+            uint256 lenderInterestMargin_ = PoolCommons.lenderInterestMargin(utilization);
+
+            uint256 newInterest_ = Maths.wmul(
+                lenderInterestMargin_,
+                Maths.wmul(pendingFactor - Maths.WAD, poolDebt)
+            );
+
+            uint256 scale = Maths.wdiv(newInterest_, depositAboveHtp) + Maths.WAD;
+
+            // simulate scale being applied to all deposits above HTP
+            fenwickMult(htpIndex, scale);
+        } 
+    }
+
+    function getExchangeRate(uint256 bucketIndex) internal view returns(uint256) {
+        (uint256 bucketLps, uint256 bucketCollateral, , , ) = _pool.bucketInfo(bucketIndex);
+
+        uint256 bucketPrice = _priceAt(bucketIndex);
+
+        uint256 exchangeRate = Buckets.getExchangeRate(bucketCollateral, bucketLps, fenwickSumTillIndex(bucketIndex) - fenwickSumTillIndex(bucketIndex - 1), bucketPrice);
+        
+        return exchangeRate;
+    }
+
+    // precalculate exchange rate before an action using ghost fenwick tree
+    function updatePreviousExchangeRate() internal {
+        for(uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+            previousExchangeRate[bucketIndex] = getExchangeRate(bucketIndex);
+        }
+    }
+
+    // calculate exchange rate from pool right after an action
+    function updateCurrentExchangeRate() internal {
+        // update exchange rate for all buckets in fuzz bound
+        for(uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+            currentExchangeRate[bucketIndex] = _pool.bucketExchangeRate(bucketIndex);
+        }
     }
 
 }

@@ -40,6 +40,9 @@ contract BasicInvariants is TestBase {
      * Interest Rate
         * I1: Interest rate should only update once in 12 hours
         * I3: Inflator should only update once per block
+
+    * Fenwick tree
+        * F1: Value represented at index `i` (`Deposits.valueAt(i)`) is equal to the accumulation of scaled values incremented or decremented from index `i`
     ****************************************************************************************************************************************/
 
     uint256          internal constant NUM_ACTORS = 10;
@@ -156,18 +159,18 @@ contract BasicInvariants is TestBase {
         require(poolDebt == totalDebt, "Incorrect pool debt");
     }
 
-    function _invariant_exchangeRate_RE1_RE2_R3_R4_R5_R6() public {
+    function invariant_exchangeRate_R1_R2_R3_R4_R5_R6() public {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            ( , , , , ,uint256 exchangeRate) = _poolInfo.bucketInfo(address(_pool), bucketIndex);
-            if (!IBaseHandler(_handler).shouldExchangeRateChange()) {
+            uint256 currentExchangeRate = IBaseHandler(_handler).currentExchangeRate(bucketIndex);
+            if (!IBaseHandler(_handler).shouldExchangeRateChange() && currentExchangeRate != 0) {
+                uint256 previousExchangeRate = IBaseHandler(_handler).previousExchangeRate(bucketIndex);
                 console.log("======================================");
                 console.log("Bucket Index -->", bucketIndex);
-                console.log("Previous exchange Rate -->", previousBucketExchangeRate[bucketIndex]);
-                console.log("Current exchange Rate -->", exchangeRate);
-                requireWithinDiff(exchangeRate, previousBucketExchangeRate[bucketIndex], 1e12, "Incorrect exchange Rate changed");
+                console.log("Previous exchange Rate -->", previousExchangeRate);
+                console.log("Current exchange Rate -->", currentExchangeRate);
+                requireWithinDiff(currentExchangeRate, previousExchangeRate, 1e17, "Incorrect exchange Rate changed");
                 console.log("======================================");
             }
-            previousBucketExchangeRate[bucketIndex] = exchangeRate;
         }
     }
 
@@ -215,6 +218,10 @@ contract BasicInvariants is TestBase {
         }
         previousInflator = currentInflator;
         previousInflatorUpdate = currentInflatorUpdate;
+    }
+
+    function invariant_fenwickTreeSum() public {
+        assertEq(IBaseHandler(_handler).fenwickTreeSum(), _pool.depositSize(), "Fenwick Tree Invariant A Failed");
     }
 
     function invariant_call_summary() external view virtual {

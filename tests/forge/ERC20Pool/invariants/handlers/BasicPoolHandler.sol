@@ -33,7 +33,15 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         // Pre condition
         (uint256 lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex, _actor);
 
+        fenwickAccrueInterest();
+
+        updatePreviousExchangeRate();
+
         _pool.addQuoteToken(amount, bucketIndex, block.timestamp + 1 minutes);
+
+        updateCurrentExchangeRate();
+
+        fenwickAdd(amount, bucketIndex);
 
         // Post condition
         (uint256 lpBalanceAfter, ) = _pool.lenderInfo(bucketIndex, _actor);
@@ -53,10 +61,18 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         (lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex, _actor);
 
-        try _pool.removeQuoteToken(amount, bucketIndex) {
+        fenwickAccrueInterest();
+
+        updatePreviousExchangeRate();
+
+        try _pool.removeQuoteToken(amount, bucketIndex) returns (uint256 removedAmount, uint256 lpRedeemed) {
+            fenwickRemove(removedAmount, bucketIndex);
             // Post condition
             (uint256 lpBalanceAfter, ) = _pool.lenderInfo(bucketIndex, _actor);
             require(lpBalanceAfter < lpBalanceBefore, "LP balance should decrease");
+
+            updateCurrentExchangeRate();
+
             shouldExchangeRateChange = false;
             shouldReserveChange      = false;
         }
@@ -79,9 +95,14 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             addQuoteToken(amount, fromIndex);
         }
 
+        fenwickAccrueInterest();
+
+        updatePreviousExchangeRate();
+
         try _pool.moveQuoteToken(amount, fromIndex, toIndex, block.timestamp + 1 minutes) {
             shouldExchangeRateChange = false;
             shouldReserveChange      = false;
+            updateCurrentExchangeRate();
         }
         catch (bytes memory _err){
             bytes32 err = keccak256(_err);
@@ -105,7 +126,13 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         // Pre condition
         (uint256 lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex, _actor);
 
+        fenwickAccrueInterest();
+
+        updatePreviousExchangeRate();
+
         _pool.addCollateral(amount, bucketIndex, block.timestamp + 1 minutes);
+
+        updateCurrentExchangeRate();
 
         // Post condition
         (uint256 lpBalanceAfter, ) = _pool.lenderInfo(bucketIndex, _actor);
@@ -127,7 +154,21 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         (lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex, _actor);
 
-        _pool.removeCollateral(amount, bucketIndex);
+        fenwickAccrueInterest();
+
+        updatePreviousExchangeRate();
+
+        try _pool.removeCollateral(amount, bucketIndex) {
+            shouldExchangeRateChange = false;
+            shouldReserveChange      = false;
+            updateCurrentExchangeRate();
+        }
+        catch (bytes memory _err){
+            bytes32 err = keccak256(_err);
+            require(
+                err == keccak256(abi.encodeWithSignature("InsufficientLPs()"))
+            );
+        }
 
         // Post condition
         (uint256 lpBalanceAfter, ) = _pool.lenderInfo(bucketIndex, _actor);
@@ -141,18 +182,29 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     function pledgeCollateral(uint256 amount) internal {
         numberOfCalls['UBBasicHandler.pledgeCollateral']++;
 
-        shouldExchangeRateChange = false;
-        shouldReserveChange      = false;
+        fenwickAccrueInterest();
 
-        _pool.drawDebt(_actor, 0, 0, amount);      
+        updatePreviousExchangeRate();
+
+        _pool.drawDebt(_actor, 0, 0, amount);   
+
+        shouldExchangeRateChange = false;
+        shouldReserveChange      = false;   
+        updateCurrentExchangeRate();
+
     }
 
     function pullCollateral(uint256 amount) internal {
         numberOfCalls['UBBasicHandler.pullCollateral']++;
 
+        fenwickAccrueInterest();
+
+        updatePreviousExchangeRate();
+
         try _pool.repayDebt(_actor, 0, amount, _actor, 7388) {
             shouldExchangeRateChange = false;
             shouldReserveChange      = false;
+            updateCurrentExchangeRate();
         } catch (bytes memory _err){
             bytes32 err = keccak256(_err);
             require(
@@ -203,7 +255,9 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         uint256 price = _poolInfo.indexToPrice(bucket);
 
-        uint256 collateralToPledge = ((amount * 1e18 + price / 2) / price) * 101 / 100;
+        uint256 collateralToPledge = ((amount * 1e18 + price / 2) / price) * 101 / 100 + 1;
+
+        fenwickAccrueInterest();
 
         try _pool.drawDebt(_actor, amount, 7388, collateralToPledge) {
             shouldExchangeRateChange = true;
@@ -226,6 +280,8 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         if (debt == 0) {
             drawDebt(amountToRepay);
         }
+
+        fenwickAccrueInterest();
 
         try _pool.repayDebt(_actor, amountToRepay, 0, _actor, 7388) {
             shouldExchangeRateChange = true;
@@ -278,17 +334,17 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         super.removeQuoteToken(amount, _lenderBucketIndex);
     }
 
-    function moveQuoteToken(uint256 actorIndex, uint256 amount, uint256 fromBucketIndex, uint256 toBucketIndex) public useRandomActor(actorIndex) {
-        numberOfCalls['BBasicHandler.moveQuoteToken']++;
+    // function moveQuoteToken(uint256 actorIndex, uint256 amount, uint256 fromBucketIndex, uint256 toBucketIndex) public useRandomActor(actorIndex) {
+    //     numberOfCalls['BBasicHandler.moveQuoteToken']++;
 
-        fromBucketIndex = constrictToRange(fromBucketIndex, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
+    //     fromBucketIndex = constrictToRange(fromBucketIndex, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
 
-        toBucketIndex   = constrictToRange(toBucketIndex, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
+    //     toBucketIndex   = constrictToRange(toBucketIndex, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
 
-        amount          = constrictToRange(amount, 1, 1e36);
+    //     amount          = constrictToRange(amount, 1, 1e36);
         
-        super.moveQuoteToken(amount, fromBucketIndex, toBucketIndex);
-    }
+    //     super.moveQuoteToken(amount, fromBucketIndex, toBucketIndex);
+    // }
 
     function addCollateral(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) {
         numberOfCalls['BBasicHandler.addCollateral']++;

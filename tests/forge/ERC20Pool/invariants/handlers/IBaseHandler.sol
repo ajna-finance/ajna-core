@@ -8,9 +8,17 @@ interface IBaseHandler {
 
     function actors(uint256) external view returns(address);
 
-    function numberOfCalls(bytes32) external view returns(uint256); 
+    function numberOfCalls(bytes32) external view returns(uint256);
+
+    function fenwickSumAtIndex(uint256, uint256) external view returns(uint256);
+
+    function fenwickTreeSum() external view returns(uint256); 
 
     function shouldExchangeRateChange() external view returns(bool);
+
+    function previousExchangeRate(uint256) external view returns(uint256);
+    
+    function currentExchangeRate(uint256) external view returns(uint256);
 
     function shouldReserveChange() external view returns(bool);
 
