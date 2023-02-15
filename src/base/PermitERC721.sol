@@ -109,7 +109,6 @@ abstract contract PermitERC721 is ERC721, IPermit {
      *  @notice Called by an NFT owner to enable their NFT to be transferred by a spender address without making a seperate approve call
      *  @param  from_     The address of the current owner of the NFT
      *  @param  to_       The address of the new owner of the NFT
-     *  @param  spender_  The address of the third party who will execute the transaction involving an owners NFT
      *  @param  tokenId_  The id of the NFT being interacted with
      *  @param  deadline_ The unix timestamp by which the permit must be called
      *  @param  v_        Component of secp256k1 signature
@@ -117,9 +116,9 @@ abstract contract PermitERC721 is ERC721, IPermit {
      *  @param  s_        Component of secp256k1 signature
      */
     function safeTransferFromWithPermit(
-        address from_, address to_, address spender_, uint256 tokenId_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_
+        address from_, address to_, uint256 tokenId_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_
     ) external {
-        this.permit(spender_, tokenId_, deadline_, v_, r_, s_);
+        this.permit(msg.sender, tokenId_, deadline_, v_, r_, s_);
         safeTransferFrom(from_, to_, tokenId_);
     }
 

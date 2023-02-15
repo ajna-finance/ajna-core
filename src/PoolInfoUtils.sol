@@ -58,13 +58,13 @@ contract PoolInfoUtils {
 
     /**
      *  @notice Get a bucket struct for a given index.
-     *  @param  index_             The index of the bucket to retrieve.
-     *  @return price_             Bucket price (WAD)
-     *  @return quoteTokens_       Amount of quote token in bucket, deposit + interest (WAD)
-     *  @return collateral_        Unencumbered collateral in bucket (WAD).
-     *  @return bucketLPs_         Outstanding LP balance in bucket (WAD)
-     *  @return scale_             Lender interest multiplier (WAD).
-     *  @return exchangeRate_      The exchange rate of the bucket, in RAY units.
+     *  @param  index_        The index of the bucket to retrieve.
+     *  @return price_        Bucket price (WAD)
+     *  @return quoteTokens_  Amount of quote token in bucket, deposit + interest (WAD)
+     *  @return collateral_   Unencumbered collateral in bucket (WAD).
+     *  @return bucketLPs_    Outstanding LP balance in bucket (WAD)
+     *  @return scale_        Lender interest multiplier (WAD).
+     *  @return exchangeRate_ The exchange rate of the bucket, in WAD units.
      */
     function bucketInfo(address ajnaPool_, uint256 index_)
         external
@@ -83,12 +83,7 @@ contract PoolInfoUtils {
         price_ = _priceAt(index_);
 
         (bucketLPs_, collateral_, , quoteTokens_, scale_) = pool.bucketInfo(index_);
-        if (bucketLPs_ == 0) {
-            exchangeRate_ = Maths.RAY;
-        } else {
-            uint256 bucketSize = quoteTokens_ * 1e18 + price_ * collateral_;  // 10^36 + // 10^36
-            exchangeRate_ = bucketSize * 1e18 / bucketLPs_; // 10^27
-        }
+        exchangeRate_ = Buckets.getExchangeRate(collateral_, bucketLPs_, quoteTokens_, price_);
     }
 
     /**
@@ -187,7 +182,7 @@ contract PoolInfoUtils {
         (,uint256 poolDebt,) = pool.debtInfo();
         uint256 poolSize     = pool.depositSize();
 
-        uint256 quoteTokenBalance = IERC20Token(pool.quoteTokenAddress()).balanceOf(ajnaPool_);
+        uint256 quoteTokenBalance = IERC20Token(pool.quoteTokenAddress()).balanceOf(ajnaPool_) * pool.quoteTokenScale();
 
         (uint256 bondEscrowed, uint256 unclaimedReserve, uint256 auctionKickTime) = pool.reservesInfo();
 
@@ -352,13 +347,13 @@ contract PoolInfoUtils {
 
     /**
      *  @notice Calculate the amount of quote tokens in bucket for a given amount of LP Tokens.
-     *  @param  lpTokens_    The number of lpTokens to calculate amounts for.
+     *  @param  lps_         The number of LPs to calculate amounts for.
      *  @param  index_       The price bucket index for which the value should be calculated.
      *  @return quoteAmount_ The exact amount of quote tokens that can be exchanged for the given LP Tokens, WAD units.
      */
     function lpsToQuoteTokens(
         address ajnaPool_,
-        uint256 lpTokens_,
+        uint256 lps_,
         uint256 index_
     ) external view returns (uint256 quoteAmount_) {
         IPool pool = IPool(ajnaPool_);
@@ -367,7 +362,7 @@ contract PoolInfoUtils {
             bucketLPs_,
             bucketCollateral,
             bucketDeposit,
-            lpTokens_,
+            lps_,
             bucketDeposit,
             _priceAt(index_)
         );
@@ -375,13 +370,13 @@ contract PoolInfoUtils {
 
     /**
      *  @notice Calculate the amount of collateral tokens in bucket for a given amount of LP Tokens.
-     *  @param  lpTokens_         The number of lpTokens to calculate amounts for.
+     *  @param  lps_              The number of LPs to calculate amounts for.
      *  @param  index_            The price bucket index for which the value should be calculated.
      *  @return collateralAmount_ The exact amount of collateral tokens that can be exchanged for the given LP Tokens, WAD units.
      */
     function lpsToCollateral(
         address ajnaPool_,
-        uint256 lpTokens_,
+        uint256 lps_,
         uint256 index_
     ) external view returns (uint256 collateralAmount_) {
         IPool pool = IPool(ajnaPool_);
@@ -390,7 +385,7 @@ contract PoolInfoUtils {
             bucketCollateral,
             bucketLPs_,
             bucketDeposit,
-            lpTokens_,
+            lps_,
             _priceAt(index_)
         );
     }

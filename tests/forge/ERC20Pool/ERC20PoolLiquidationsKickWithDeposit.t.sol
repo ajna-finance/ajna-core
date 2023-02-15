@@ -105,7 +105,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             from:    _lender2,
             amount:  10_000 * 1e18,
             index:   2500,
-            lpAward: 10_000 * 1e27,
+            lpAward: 10_000 * 1e18,
             newLup:  3_844.432207828138682757 * 1e18
         });
 
@@ -159,10 +159,10 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         // assert bucket state pre kick with deposit
         _assertBucket({
             index:        2500,
-            lpBalance:    60_000 * 1e27,
+            lpBalance:    60_000 * 1e18,
             collateral:   0,
             deposit:      60_000 * 1e18,
-            exchangeRate: 1 * 1e27
+            exchangeRate: 1 * 1e18
         });
 
         _kickWithDeposit({
@@ -213,22 +213,22 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       2500,
-            lpBalance:   43_994.230769230769228 * 1e27, // reduced by amount used to cover auction bond
+            lpBalance:   43_994.230769230769228 * 1e18, // reduced by amount used to cover auction bond
             depositTime: _startTime
         });
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       2500,
-            lpBalance:   10_000 * 1e27,
+            lpBalance:   10_000 * 1e18,
             depositTime: _startTime
         });
         // assert bucket LPs
         _assertBucket({
             index:        2500,
-            lpBalance:    53_994.230769230769228 * 1e27,    // reduced by amount used to cover auction bond
+            lpBalance:    53_994.230769230769228 * 1e18,    // reduced by amount used to cover auction bond
             collateral:   0,
             deposit:      53_994.230769230769228000 * 1e18, // reduced by amount used to cover auction bond
-            exchangeRate: 1 * 1e27
+            exchangeRate: 1 * 1e18
         });
         // assert lender1 as a kicker
         _assertKicker({
@@ -277,7 +277,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             from:    _lender3,
             amount:  1 * 1e18,
             index:   2500,
-            lpAward: 3_863.654368867279344664 * 1e27 // less than bond size
+            lpAward: 3_863.654368867279344664 * 1e18 // less than bond size
         });
 
         // assert balances
@@ -340,7 +340,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       2500,
-            lpBalance:   50_000 * 1e27,
+            lpBalance:   50_000 * 1e18,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
@@ -352,10 +352,10 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         // assert bucket LPs
         _assertBucket({
             index:        2500,
-            lpBalance:    60_000 * 1e27,
+            lpBalance:    60_000 * 1e18,
             collateral:   1 * 1e18,
             deposit:      56_136.345631132720655336 * 1e18,
-            exchangeRate: 1 * 1e27
+            exchangeRate: 1 * 1e18
         });
         // assert lender3 as a kicker
         _assertKicker({
@@ -393,7 +393,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             from:    _lender2,
             amount:  10_000 * 1e18,
             index:   2499,
-            lpAward: 10_000 * 1e27,
+            lpAward: 10_000 * 1e18,
             newLup:  3_844.432207828138682757 * 1e18
         });
 
@@ -477,7 +477,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             lpBalance:    0,
             collateral:   0,
             deposit:      0,
-            exchangeRate: 1 * 1e27
+            exchangeRate: 1 * 1e18
         });
         // assert lender2 as a kicker
         _assertKicker({
@@ -499,7 +499,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 auctionPrice:      123_636.939803752939029248 * 1e18,
                 debtInAuction:     35_471.574519230769247125 * 1e18,
                 thresholdPrice:    35.471574519230769247 * 1e18,
-                neutralPrice:      37.154109537259614798 * 1e18
+                neutralPrice:      36.969263221153845869 * 1e18
             })
         );
     }
@@ -516,22 +516,22 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             from:    _lender1,
             amount:  10 * 1e18,
             index:   2500,
-            lpAward: 38636.54368867279344664 * 1e27
+            lpAward: 38636.54368867279344664 * 1e18
         });
 
         // assert lender and bucket LP balances pre kick
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       2500,
-            lpBalance:   88_636.54368867279344664 * 1e27,
+            lpBalance:   88_636.54368867279344664 * 1e18,
             depositTime: _startTime
         });
         _assertBucket({
             index:        2500,
-            lpBalance:    98_636.54368867279344664 * 1e27,
+            lpBalance:    98_636.54368867279344664 * 1e18,
             collateral:   10 * 1e18,
             deposit:      60_000 * 1e18,
-            exchangeRate: 1 * 1e27
+            exchangeRate: 1 * 1e18
         });
 
         _kickWithDeposit({
@@ -582,22 +582,22 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       2500,
-            lpBalance:   82_630.77445790356267464 * 1e27, // reduced by amount used to cover auction bond
+            lpBalance:   82_630.77445790356267464 * 1e18, // reduced by amount used to cover auction bond
             depositTime: _startTime
         });
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       2500,
-            lpBalance:   10_000 * 1e27,
+            lpBalance:   10_000 * 1e18,
             depositTime: _startTime
         });
         // assert bucket LPs
         _assertBucket({
             index:        2500,
-            lpBalance:    92_630.77445790356267464 * 1e27,  // reduced by amount used to cover auction bond
+            lpBalance:    92_630.77445790356267464 * 1e18,  // reduced by amount used to cover auction bond
             collateral:   10 * 1e18,
             deposit:      53_994.230769230769228000 * 1e18, // reduced by amount used to cover auction bond
-            exchangeRate: 1 * 1e27
+            exchangeRate: 1 * 1e18
         });
         // assert lender1 as a kicker
         _assertKicker({
@@ -1219,7 +1219,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       2500,
-            lpBalance:   19_971.15384615384614 * 1e27,
+            lpBalance:   19_971.15384615384614 * 1e18,
             depositTime: _startTime
         });
         // assert lender1 as a kicker
@@ -1284,7 +1284,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             from:    _lender3,
             amount:  150_000 * 1e18,
             index:   7000,
-            lpAward: 150_000 * 1e27,
+            lpAward: 150_000 * 1e18,
             newLup:  3_844.432207828138682757 * 1e18
         });
 
@@ -1298,7 +1298,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             from:    _lender4,
             amount:  5_000 * 1e18,
             index:   2499,
-            lpAward: 5_000 * 1e27,
+            lpAward: 5_000 * 1e18,
             newLup:  3_844.432207828138682757 * 1e18
         });
 

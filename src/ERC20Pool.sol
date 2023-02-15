@@ -15,8 +15,7 @@ import { IERC20Taker }         from './interfaces/pool/erc20/IERC20Taker.sol';
 
 import {
     IPoolLenderActions,
-    IPoolLiquidationActions,
-    IERC20Token
+    IPoolLiquidationActions
 }                            from './interfaces/pool/IPool.sol';
 import {
     IERC3156FlashBorrower,
@@ -39,7 +38,10 @@ import {
     _roundToScale,
     _roundUpToScale
 }                                               from './libraries/helpers/PoolHelper.sol';
-import { _revertIfAuctionClearable }            from './libraries/helpers/RevertsHelper.sol';
+import { 
+    _revertIfAuctionClearable,
+    _revertOnExpiry 
+}                               from './libraries/helpers/RevertsHelper.sol';
 
 import { Loans }    from './libraries/internal/Loans.sol';
 import { Deposits } from './libraries/internal/Deposits.sol';
@@ -165,7 +167,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
         if (amountToBorrow_ != 0) {
             // update pool balances state
-            poolBalances.t0Debt += result.t0DebtChange;
+            poolBalances.t0Debt = result.t0PoolDebt;
 
             // move borrowed amount from pool to sender
             _transferQuoteToken(msg.sender, amountToBorrow_);
@@ -184,7 +186,9 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
     function repayDebt(
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_,
-        uint256 collateralAmountToPull_
+        uint256 collateralAmountToPull_,
+        address collateralReceiver_,
+        uint256 limitIndex_
     ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
@@ -200,7 +204,8 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
             poolState,
             borrowerAddress_,
             maxQuoteTokenAmountToRepay_,
-            collateralAmountToPull_
+            collateralAmountToPull_,
+            limitIndex_
         );
 
         emit RepayDebt(borrowerAddress_, result.quoteTokenToRepay, collateralAmountToPull_, result.newLup);
@@ -212,7 +217,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
         if (result.quoteTokenToRepay != 0) {
             // update pool balances state
-            poolBalances.t0Debt -= result.t0RepaidDebt;
+            poolBalances.t0Debt = result.t0PoolDebt;
             if (result.t0DebtInAuctionChange != 0) {
                 poolBalances.t0DebtInAuction -= result.t0DebtInAuctionChange;
             }
@@ -224,52 +229,8 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
             // update pool balances state
             poolBalances.pledgedCollateral = result.poolCollateral;
 
-            // move collateral from pool to sender
-            _transferCollateral(msg.sender, collateralAmountToPull_);
-        }
-    }
-
-    /************************************/
-    /*** Flashloan External Functions ***/
-    /************************************/
-
-    /// @inheritdoc FlashloanablePool
-    function flashLoan(
-        IERC3156FlashBorrower receiver_,
-        address token_,
-        uint256 amount_,
-        bytes calldata data_
-    ) external override(IERC3156FlashLender, FlashloanablePool) nonReentrant returns (bool) {
-        if (token_ == _getArgAddress(QUOTE_ADDRESS)) return _flashLoanQuoteToken(receiver_, token_, amount_, data_);
-
-        if (token_ == _getArgAddress(COLLATERAL_ADDRESS)) {
-            _transferCollateral(address(receiver_), amount_);
-
-            if (receiver_.onFlashLoan(msg.sender, token_, amount_, 0, data_) !=
-                keccak256("ERC3156FlashBorrower.onFlashLoan")) revert FlashloanCallbackFailed();
-
-            _transferCollateralFrom(address(receiver_), amount_);
-            return true;
-        }
-
-        revert FlashloanUnavailableForToken();
-    }
-
-    /// @inheritdoc FlashloanablePool
-    function flashFee(
-        address token_,
-        uint256
-    ) external pure override(IERC3156FlashLender, FlashloanablePool) returns (uint256) {
-        if (token_ == _getArgAddress(QUOTE_ADDRESS) || token_ == _getArgAddress(COLLATERAL_ADDRESS)) return 0;
-        revert FlashloanUnavailableForToken();
-    }
-
-    /// @inheritdoc FlashloanablePool
-    function maxFlashLoan(
-        address token_
-    ) external view override(IERC3156FlashLender, FlashloanablePool) returns (uint256 maxLoan_) {
-        if (token_ == _getArgAddress(QUOTE_ADDRESS) || token_ == _getArgAddress(COLLATERAL_ADDRESS)) {
-            maxLoan_ = IERC20Token(token_).balanceOf(address(this));
+            // move collateral from pool to address specified as collateral receiver
+            _transferCollateral(collateralReceiver_, collateralAmountToPull_);
         }
     }
 
@@ -286,8 +247,10 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
      */
     function addCollateral(
         uint256 amountToAdd_,
-        uint256 index_
+        uint256 index_,
+        uint256 expiry_
     ) external override nonReentrant returns (uint256 bucketLPs_) {
+        _revertOnExpiry(expiry_);
         PoolState memory poolState = _accruePoolInterest();
 
         // revert if the dust amount was not exceeded, but round on the scale amount
@@ -359,12 +322,11 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
     ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
-        uint256 assets = Maths.wmul(poolBalances.t0Debt, poolState.inflator) + _getPoolQuoteTokenBalance();
+        uint256 assets = Maths.wmul(poolBalances.t0Debt, poolState.inflator) + _getNormalizedPoolQuoteTokenBalance();
 
         uint256 liabilities = Deposits.treeSum(deposits) + auctions.totalBondEscrowed + reserveAuction.unclaimed;
 
         (
-            ,
             ,
             uint256 collateralSettled,
             uint256 t0DebtSettled
@@ -427,18 +389,11 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         result.quoteTokenAmount = _roundUpToScale(result.quoteTokenAmount, _getArgUint256(QUOTE_SCALE));
 
         // update pool balances state
-        uint256 t0PoolDebt      = poolBalances.t0Debt;
         uint256 t0DebtInAuction = poolBalances.t0DebtInAuction;
-
-        if (result.t0DebtPenalty != 0) {
-            t0PoolDebt      += result.t0DebtPenalty;
-            t0DebtInAuction += result.t0DebtPenalty;
-        }
-
-        t0PoolDebt      -= result.t0RepayAmount;
+        t0DebtInAuction += result.t0DebtPenalty;
         t0DebtInAuction -= result.t0DebtInAuctionChange;
 
-        poolBalances.t0Debt            =  t0PoolDebt;
+        poolBalances.t0Debt            =  result.t0PoolDebt;
         poolBalances.t0DebtInAuction   =  t0DebtInAuction;
         poolBalances.pledgedCollateral -= result.collateralAmount;
 
@@ -457,7 +412,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
             );
         }
 
-        _transferQuoteTokenFrom(callee_, result.quoteTokenAmount);
+        _transferQuoteTokenFrom(msg.sender, result.quoteTokenAmount);
     }
 
     /**
@@ -488,18 +443,11 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         );
 
         // update pool balances state
-        uint256 t0PoolDebt      = poolBalances.t0Debt;
         uint256 t0DebtInAuction = poolBalances.t0DebtInAuction;
-
-        if (result.t0DebtPenalty != 0) {
-            t0PoolDebt      += result.t0DebtPenalty;
-            t0DebtInAuction += result.t0DebtPenalty;
-        }
-
-        t0PoolDebt      -= result.t0RepayAmount;
+        t0DebtInAuction += result.t0DebtPenalty;
         t0DebtInAuction -= result.t0DebtInAuctionChange;
 
-        poolBalances.t0Debt            =  t0PoolDebt;
+        poolBalances.t0Debt            =  result.t0PoolDebt;
         poolBalances.t0DebtInAuction   =  t0DebtInAuction;
         poolBalances.pledgedCollateral -= result.collateralAmount;
 
@@ -507,6 +455,20 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         poolState.debt       = result.poolDebt;
         poolState.collateral -= result.collateralAmount;
         _updateInterestState(poolState, result.newLup);
+    }
+
+    /***************************/
+    /*** Flashloan Functions ***/
+    /***************************/
+
+    /**
+     *  @inheritdoc FlashloanablePool
+     *  @dev Override default implementation and allows flashloans for both quote and collateral token.
+     */
+    function _isFlashloanSupported(
+        address token_
+    ) internal virtual view override returns (bool) {
+        return token_ == _getArgAddress(QUOTE_ADDRESS) || token_ == _getArgAddress(COLLATERAL_ADDRESS);
     }
 
     /************************/

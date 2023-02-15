@@ -160,8 +160,15 @@ contract RewardsManagerTest is DSTestPlus {
         _rewardsManager.unstake(tokenId);
         assertEq(_positionManager.ownerOf(tokenId), minter);
 
-        // check token was transferred to rewards contract
+        // check token was transferred from rewards contract to minter
         assertEq(_positionManager.ownerOf(tokenId), address(minter));
+
+        // invariant: all bucket snapshots are removed for the token id that was unstaken
+        for(uint256 bucketIndex = 0; bucketIndex <= 7388; bucketIndex++) {
+            (uint256 lps, uint256 rate) = _rewardsManager.getBucketStateStakeInfo(tokenId, bucketIndex);
+            assertEq(lps, 0);
+            assertEq(rate, 0);
+        }
     }
 
     function _triggerReserveAuctionsNoTake(TriggerReserveAuctionParams memory params_) internal {
@@ -179,7 +186,7 @@ contract RewardsManagerTest is DSTestPlus {
 
         // borrower repays some of their debt, providing reserves to be claimed
         // don't pull any collateral, as such functionality is unrelated to reserve auctions
-        params_.pool.repayDebt(borrower, Maths.wdiv(params_.borrowAmount, Maths.wad(2)), 0);
+        params_.pool.repayDebt(borrower, Maths.wdiv(params_.borrowAmount, Maths.wad(2)), 0, borrower, MAX_FENWICK_INDEX);
 
         // start reserve auction
         changePrank(_bidder);
@@ -240,7 +247,7 @@ contract RewardsManagerTest is DSTestPlus {
         tokenId_ = _positionManager.mint(mintParams);
 
         for (uint256 i = 0; i < params_.indexes.length; i++) {
-            params_.pool.addQuoteToken(params_.mintAmount, params_.indexes[i]);
+            params_.pool.addQuoteToken(params_.mintAmount, params_.indexes[i], type(uint256).max);
             (uint256 lpBalance, ) = params_.pool.lenderInfo(params_.indexes[i], params_.minter);
             params_.pool.approveLpOwnership(address(_positionManager), params_.indexes[i], lpBalance);
         }
@@ -279,7 +286,7 @@ contract RewardsManagerTest is DSTestPlus {
 
         // borrower repays some of their debt, providing reserves to be claimed
         // don't pull any collateral, as such functionality is unrelated to reserve auctions
-        params_.pool.repayDebt(borrower, params_.borrowAmount, 0);
+        params_.pool.repayDebt(borrower, params_.borrowAmount, 0, borrower, MAX_FENWICK_INDEX);
 
         // start reserve auction
         changePrank(_bidder);
@@ -408,7 +415,7 @@ contract RewardsManagerTest is DSTestPlus {
 
         // check rewards earned
         uint256 rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, currentBurnEpoch);
-        assertEq(rewardsEarned, 40.214136545950568150 * 1e18);
+        assertEq(rewardsEarned, 40.214136545950568100 * 1e18);
 
         // claim rewards accrued since deposit
         changePrank(_minterOne);
@@ -504,7 +511,7 @@ contract RewardsManagerTest is DSTestPlus {
             pool:              address(_poolOne),
             tokenId:           tokenIdOne,
             claimedArray:      _epochsClaimedArray(2, 0),
-            reward:            80.793427892333608620 * 1e18,
+            reward:            80.793427892333608615 * 1e18,
             updateRatesReward: 3.689026486034825940 * 1e18
         });
     }
@@ -623,7 +630,7 @@ contract RewardsManagerTest is DSTestPlus {
 
         // borrower1 repays their loan
         (uint256 debt, , ) = _poolOne.borrowerInfo(borrower1);
-        _poolOne.repayDebt(borrower1, debt, 0);
+        _poolOne.repayDebt(borrower1, debt, 0, borrower1, MAX_FENWICK_INDEX);
 
         /*****************************/
         /*** First Reserve Auction ***/
@@ -683,7 +690,7 @@ contract RewardsManagerTest is DSTestPlus {
         // borrower1 repays their loan again
         changePrank(borrower1);
         (debt, , ) = _poolOne.borrowerInfo(borrower1);
-        _poolOne.repayDebt(borrower1, debt, 0);
+        _poolOne.repayDebt(borrower1, debt, 0, borrower1, MAX_FENWICK_INDEX);
 
         // recorder updates the change in exchange rates in the second index
         _updateExchangeRates({
@@ -704,7 +711,7 @@ contract RewardsManagerTest is DSTestPlus {
             pool:              address(_poolOne),
             tokenId:           tokenIdOne,
             claimedArray:      _epochsClaimedArray(1, 0),
-            reward:            0.298393183929769729 * 1e18,
+            reward:            0.298393183929769450 * 1e18,
             updateRatesReward: 0
         });
     }
@@ -759,7 +766,7 @@ contract RewardsManagerTest is DSTestPlus {
         assertEq(_ajnaToken.balanceOf(_updater), 18.914328218434904846 * 1e18);
 
         uint256 rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarned, 189.143282184349085719 * 1e18);
+        assertEq(rewardsEarned, 189.143282184349085696 * 1e18);
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
         /******************************/
@@ -784,7 +791,7 @@ contract RewardsManagerTest is DSTestPlus {
 
         // check available rewards
         rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarned, 354.209322508542220912 * 1e18);
+        assertEq(rewardsEarned, 354.209322508542220207 * 1e18);
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
         /*****************************/
@@ -801,7 +808,7 @@ contract RewardsManagerTest is DSTestPlus {
 
         // skip updating exchange rates and check available rewards
         uint256 rewardsEarnedNoUpdate = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarnedNoUpdate, 354.209322508542220912 * 1e18);
+        assertEq(rewardsEarnedNoUpdate, 354.209322508542220207 * 1e18);
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
         // snapshot calling update exchange rate
@@ -817,7 +824,7 @@ contract RewardsManagerTest is DSTestPlus {
 
         // check available rewards
         rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarned, 489.772410159936903182 * 1e18);
+        assertEq(rewardsEarned, 489.772410159936902605 * 1e18);
         assertGt(rewardsEarned, rewardsEarnedNoUpdate);
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
@@ -838,7 +845,7 @@ contract RewardsManagerTest is DSTestPlus {
 
         // check rewards earned
         rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarned, 354.209322508542220912 * 1e18);
+        assertEq(rewardsEarned, 354.209322508542220207 * 1e18);
 
         // call update exchange rate
         changePrank(_updater2);
@@ -850,7 +857,7 @@ contract RewardsManagerTest is DSTestPlus {
 
         // check rewards earned won't increase since previous update was missed
         rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarned, 354.209322508542220912 * 1e18);
+        assertEq(rewardsEarned, 354.209322508542220207 * 1e18);
 
         /*****************************/
         /*** Fifth Reserve Auction ***/
@@ -873,7 +880,7 @@ contract RewardsManagerTest is DSTestPlus {
         assertEq(_ajnaToken.balanceOf(_updater2), 10.978967849507124864 * 1e18);
 
         rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarned, 463.999001003613678404 * 1e18);
+        assertEq(rewardsEarned, 463.999001003613677587 * 1e18);
 
         // claim all rewards accrued since deposit
         changePrank(_minterOne);
@@ -904,11 +911,11 @@ contract RewardsManagerTest is DSTestPlus {
         });
         uint256 tokenIdTwo = _mintAndMemorializePositionNFT(mintMemorializeParams);
         // bucket exchange rates are not changed at the time minter two stakes
-        assertEq(_poolOne.bucketExchangeRate(2550), 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2551), 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2552), 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2553), 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2555), 1e27);
+        assertEq(_poolOne.bucketExchangeRate(2550), 1e18);
+        assertEq(_poolOne.bucketExchangeRate(2551), 1e18);
+        assertEq(_poolOne.bucketExchangeRate(2552), 1e18);
+        assertEq(_poolOne.bucketExchangeRate(2553), 1e18);
+        assertEq(_poolOne.bucketExchangeRate(2555), 1e18);
         _stakeToken(address(_poolOne), _minterTwo, tokenIdTwo);
 
         // borrower borrows and change the exchange rates of buckets
@@ -928,11 +935,11 @@ contract RewardsManagerTest is DSTestPlus {
         });
         uint256 tokenIdThree = _mintAndMemorializePositionNFT(mintMemorializeParams);
         // bucket exchange rates are higher at the time minter three stakes
-        assertEq(_poolOne.bucketExchangeRate(2550), 1.000000116565164638999999999 * 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2551), 1.000000116565164638999999999 * 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2552), 1.000000116565164638999999999 * 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2553), 1.000000116565164638999999999 * 1e27);
-        assertEq(_poolOne.bucketExchangeRate(2555), 1.000000116565164638999999999 * 1e27);
+        assertEq(_poolOne.bucketExchangeRate(2550), 1.000000116565164639 * 1e18);
+        assertEq(_poolOne.bucketExchangeRate(2551), 1.000000116565164639 * 1e18);
+        assertEq(_poolOne.bucketExchangeRate(2552), 1.000000116565164639 * 1e18);
+        assertEq(_poolOne.bucketExchangeRate(2553), 1.000000116565164639 * 1e18);
+        assertEq(_poolOne.bucketExchangeRate(2555), 1.000000116565164639 * 1e18);
         _stakeToken(address(_poolOne), _minterThree, tokenIdThree);
 
         skip(1 days);
@@ -951,28 +958,24 @@ contract RewardsManagerTest is DSTestPlus {
             pool:              address(_poolOne),
             tokenId:           tokenIdTwo,
             claimedArray:      _epochsClaimedArray(1, 0),
-            reward:            20.035397317001861785 * 1e18,
+            reward:            20.035397317001861795 * 1e18,
             updateRatesReward: 0
         });
         uint256 minterTwoBalance = _ajnaToken.balanceOf(_minterTwo);
-        assertEq(minterTwoBalance, 20.035397317001861785 * 1e18);
+        assertEq(minterTwoBalance, 20.035397317001861795 * 1e18);
 
         _unstakeToken({
             minter:            _minterThree,
             pool:              address(_poolOne),
             tokenId:           tokenIdThree,
             claimedArray:      _epochsClaimedArray(1, 0),
-            reward:            16.692493739675876000 * 1e18,
+            reward:            16.692493739675875940 * 1e18,
             updateRatesReward: 0
         });
         uint256 minterThreeBalance = _ajnaToken.balanceOf(_minterThree);
-        assertEq(minterThreeBalance, 16.692493739675876000 * 1e18);
+        assertEq(minterThreeBalance, 16.692493739675875940 * 1e18);
 
         assertGt(minterTwoBalance, minterThreeBalance);
-    }
-
-    function testMultiPeriodRewardsMultiClaim() external {
-
     }
 
     // Calling updateExchangeRates not needed since deposits will update the exchange rate themselves
@@ -1180,7 +1183,7 @@ contract RewardsManagerTest is DSTestPlus {
             updater:        _updater,
             pool:           address(_poolOne),
             depositIndexes: depositIndexes,
-            reward:         11.241216009399483348 * 1e18
+            reward:         11.241216009399483350 * 1e18
         });
 
         _triggerReserveAuctions(TriggerReserveAuctionParams({
@@ -1209,24 +1212,24 @@ contract RewardsManagerTest is DSTestPlus {
             pool:      address(_poolOne),
             epoch:     1,
             timestamp: block.timestamp - (52 weeks + 72 hours),
-            interest:  6447445050021308895,
-            burned:    81574747191341355205
+            interest:  6.447445050021308895 * 1e18,
+            burned:    81.574747191341355205 * 1e18
         });
 
         _assertBurn({
             pool:      address(_poolOne),
             epoch:     2,
             timestamp: block.timestamp - (26 weeks + 48 hours),
-            burned:    306399067379332449973,
-            interest:  23974564976746846096
+            burned:    306.399067379332450033 * 1e18,
+            interest:  23.974564976746846096 * 1e18
         });
 
         _assertBurn({
             pool:      address(_poolOne),
             epoch:     3,
             timestamp: block.timestamp - 24 hours,
-            burned:    699814215483322160364,
-            interest:  55764974712671474765
+            burned:    699.814215483322160424 * 1e18,
+            interest:  55.764974712671474765 * 1e18
         });
 
         // both stakers claim rewards
@@ -1235,7 +1238,7 @@ contract RewardsManagerTest is DSTestPlus {
             pool:              address(_poolOne),
             tokenId:           tokenIdOne,
             claimedArray:      _epochsClaimedArray(3, 0),
-            reward:            58.317851290276861885 * 1e18,
+            reward:            58.317851290276861945 * 1e18,
             updateRatesReward: 0
         });
 
@@ -1244,7 +1247,7 @@ contract RewardsManagerTest is DSTestPlus {
             pool:              address(_poolOne),
             tokenId:           tokenIdTwo,
             claimedArray:      _epochsClaimedArray(3, 0),
-            reward:            291.589256451384309685 * 1e18,
+            reward:            291.589256451384309690 * 1e18,
             updateRatesReward: 0
         });
     }
@@ -1342,7 +1345,7 @@ contract RewardsManagerTest is DSTestPlus {
 
         changePrank(_minterOne);
         vm.expectEmit(true, true, true, true);
-        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 0), 40.214136545950568150 * 1e18);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 0), 40.214136545950568100 * 1e18);
         vm.expectEmit(true, true, true, true);
         emit Unstake(_minterOne, address(_poolOne), tokenIdOne);
         _rewardsManager.unstake(tokenIdOne);
@@ -1357,12 +1360,12 @@ contract RewardsManagerTest is DSTestPlus {
         // test when enough tokens in rewards manager contracts
         changePrank(_minterOne);
         vm.expectEmit(true, true, true, true);
-        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 0), 40.214136545950568150 * 1e18);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 0), 40.214136545950568100 * 1e18);
         vm.expectEmit(true, true, true, true);
         emit Unstake(_minterOne, address(_poolOne), tokenIdOne);
         _rewardsManager.unstake(tokenIdOne);
         assertEq(_positionManager.ownerOf(tokenIdOne), _minterOne);
-        assertEq(_ajnaToken.balanceOf(_minterOne), 40.214136545950568150 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_minterOne), 40.214136545950568100 * 1e18);
         assertLt(_ajnaToken.balanceOf(_minterOne), tokensToBurn);
 
         uint256 currentBurnEpoch = _poolOne.currentBurnEpoch();
@@ -1447,9 +1450,9 @@ contract RewardsManagerTest is DSTestPlus {
         changePrank(_minterOne);
         assertEq(_ajnaToken.balanceOf(_minterOne), 4.021413654595047590 * 1e18);
         vm.expectEmit(true, true, true, true);
-        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 0), 40.214136545950568150 * 1e18);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenIdOne, _epochsClaimedArray(1, 0), 40.214136545950568100 * 1e18);
         _rewardsManager.claimRewards(tokenIdOne, currentBurnEpochPoolOne);
-        assertEq(_ajnaToken.balanceOf(_minterOne), 44.235550200545615740 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_minterOne), 44.235550200545615690 * 1e18);
         assertLt(_ajnaToken.balanceOf(_minterOne), tokensToBurn);
     }
 
@@ -1623,6 +1626,36 @@ contract RewardsManagerTest is DSTestPlus {
                 minterToBalance[minterAddress] = _ajnaToken.balanceOf(minterAddress);
             }
         }
+    }
+
+    function testClaimRewardsFreezeUnclaimedYield() external {
+        skip(10);
+
+        uint256[] memory depositIndexes = new uint256[](5);
+        depositIndexes[0] = 9;
+        depositIndexes[1] = 1;
+        depositIndexes[2] = 2;
+        depositIndexes[3] = 3;
+        depositIndexes[4] = 4;
+        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+            indexes: depositIndexes,
+            minter: _minterOne,
+            mintAmount: 1000 * 1e18,
+            pool: _poolOne
+        });
+
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
+
+        uint256 currentBurnEpoch = _poolOne.currentBurnEpoch();
+
+        changePrank(_minterOne);
+        // should revert if the epoch to claim is not available yet
+        vm.expectRevert(IRewardsManagerErrors.EpochNotAvailable.selector);
+        _rewardsManager.claimRewards(tokenIdOne, currentBurnEpoch + 10);
+
+        // user should be able to claim rewards for current epoch
+        _rewardsManager.claimRewards(tokenIdOne, currentBurnEpoch);
     }
 
 }

@@ -3,6 +3,8 @@ pragma solidity 0.8.14;
 
 import { ERC721HelperContract } from "./ERC721DSTestPlus.sol";
 
+import { NFTNoopTakeExample } from "../interactions/NFTTakeExample.sol";
+
 import 'src/libraries/helpers/PoolHelper.sol';
 
 contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
@@ -10,11 +12,13 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
     address internal _borrower;
     address internal _borrower2;
     address internal _lender;
+    address internal _withdrawRecipient;
 
     function setUp() external {
-        _borrower  = makeAddr("borrower");
-        _borrower2 = makeAddr("borrower2");
-        _lender    = makeAddr("lender");
+        _borrower          = makeAddr("borrower");
+        _borrower2         = makeAddr("borrower2");
+        _lender            = makeAddr("lender");
+        _withdrawRecipient = makeAddr("withdrawRecipient");
 
         // deploy subset pool
         uint256[] memory subsetTokenIds = new uint256[](6);
@@ -644,9 +648,18 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
             locked:    0
         });
 
-        // Kicker claims bond + reward
+        uint256 snapshot = vm.snapshot();
+
         changePrank(_lender);
-        _pool.withdrawBonds();
+
+        // Kicker claims bond + reward and transfer to a different address
+        _pool.withdrawBonds(_withdrawRecipient);
+        assertEq(_quote.balanceOf(_withdrawRecipient), 0.242202920686750816 * 1e18);
+
+        vm.revertTo(snapshot);
+
+        // Kicker claims bond + reward
+        _pool.withdrawBonds(_lender);
         assertEq(_quote.balanceOf(_lender), 46_998.523343483554970812 * 1e18);
     }
 
@@ -776,6 +789,15 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
             borrowerCollateralization: 1 * 1e18
         });
 
+        // borrower should be able to pull collateral from the pool
+        _repayDebtNoLupCheck({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    0,
+            amountRepaid:     0,
+            collateralToPull: 1
+        });
+
         vm.revertTo(snapshot);
 
         // borrower repays part of debt, but not enough to exit from auction
@@ -821,5 +843,43 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
             borrowerCollateralization: 1.010408400292926569 * 1e18
         });
 
+    }
+
+    function testTakeCollateralWithAtomicSwapSubsetPool() external tearDown {
+        // Skip to make borrower undercollateralized
+        skip(1000 days);
+
+        _kick({
+            from:           _lender,
+            borrower:       _borrower,
+            debt:           23.012828827714740289 * 1e18,
+            collateral:     2 * 1e18,
+            bond:           0.227287198298417188 * 1e18,
+            transferAmount: 0.227287198298417188 * 1e18
+        });
+
+        skip(5.5 hours);
+
+        uint256 initialBalance = 10_000 * 1e18;
+
+        // instantiate a NOOP taker contract which implements IERC721Taker
+        NFTNoopTakeExample taker = new NFTNoopTakeExample();
+        deal(address(_quote), address(taker), initialBalance);
+        changePrank(address(taker));
+        _quote.approve(address(_pool), type(uint256).max);
+
+        bytes memory data = abi.encode(address(_pool));
+        _pool.take(_borrower, 2, address(taker), data);
+
+        // check that token ids are the same as id pledged by borrower
+        assertEq(taker.tokenIdsReceived(0), 3);
+        assertEq(taker.tokenIdsReceived(1), 1);
+
+        // check that the amount of quote tokens passed to taker contract is the same as the one deducted from taker balance
+        uint256 currentBalance = _quote.balanceOf(address(taker));
+        assertEq(initialBalance - taker.quoteAmountDueReceived(), currentBalance);
+
+        // check address received is the address of current ajna pool
+        assertEq(taker.poolAddressReceived(), address(_pool));
     }
 }

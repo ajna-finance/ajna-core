@@ -9,7 +9,6 @@ pragma solidity 0.8.14;
 library Maths {
 
     uint256 internal constant WAD = 1e18;
-    uint256 internal constant RAY = 10**27;
 
     function wmul(uint256 x, uint256 y) internal pure returns (uint256) {
         return (x * y + 1e18 / 2) / 1e18;
@@ -35,30 +34,6 @@ library Maths {
         return (x * y + 10**27 / 2) / 10**27;
     }
 
-    function rdiv(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (x * 10**27 + y / 2) / y;
-    }
-
-    /** @notice Divides a WAD by a RAY and returns a RAY */
-    function wrdivr(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (x * 1e36 + y / 2) / y;
-    }
-
-    /** @notice Divides a WAD by a WAD and returns a RAY */
-    function wwdivr(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (x * 1e27 + y / 2) / y;
-    }
-
-    /** @notice Divides a RAY by another RAY and returns a WAD */
-    function rrdivw(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (x * 1e18 + y / 2) / y;
-    }
-
-    /** @notice Divides a RAY by a WAD and returns a WAD */
-    function rwdivw(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (x * 1e9 + y / 2) / y;
-    }
-
     function rpow(uint256 x, uint256 n) internal pure returns (uint256 z) {
         z = n % 2 != 0 ? x : 10**27;
 
@@ -69,10 +44,6 @@ library Maths {
                 z = rmul(z, x);
             }
         }
-    }
-
-    function wadToRay(uint256 x) internal pure returns (uint256) {
-        return x * 10**9;
     }
 
     function rayToWad(uint256 x) internal pure returns (uint256) {

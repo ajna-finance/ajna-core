@@ -3,6 +3,8 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
+import { Token } from '../utils/Tokens.sol';
+
 import { ERC20Pool }        from 'src/ERC20Pool.sol';
 import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
 import { IPoolErrors }      from 'src/interfaces/pool/commons/IPoolErrors.sol';
@@ -82,6 +84,22 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         assertEq(_poolFactory.deployedPoolsList(0),          poolOne);
         assertEq(_poolFactory.getDeployedPoolsList()[1],     poolTwo);
         assertEq(_poolFactory.deployedPoolsList(1),          poolTwo);
+    }
+
+    function testDeployERC20PoolWithMinRate() external {
+        _poolFactory.deployPool(address(new Token("Collateral", "C1")), address(new Token("Quote", "Q1")), 0.01 * 10**18);
+
+        // check tracking of deployed pools
+        assertEq(_poolFactory.getDeployedPoolsList().length, 1);
+        assertEq(_poolFactory.getNumberOfDeployedPools(),    1);
+    }
+
+    function testDeployERC20PoolWithMaxRate() external {
+        _poolFactory.deployPool(address(new Token("Collateral", "C1")), address(new Token("Quote", "Q1")), 0.1 * 10**18);
+
+        // check tracking of deployed pools
+        assertEq(_poolFactory.getDeployedPoolsList().length, 1);
+        assertEq(_poolFactory.getNumberOfDeployedPools(),    1);
     }
 
     function testDeployERC20Pool() external {
