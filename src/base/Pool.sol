@@ -433,6 +433,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         poolState_.collateral     = poolBalances.pledgedCollateral;
         poolState_.inflator       = inflatorState.inflator;
         poolState_.rate           = interestState.interestRate;
+        poolState_.t0PoolUtilizationDebtWeight = interestState.t0PoolUtilizationDebtWeight;
         poolState_.poolType       = _getArgUint8(POOL_TYPE);
         poolState_.quoteDustLimit = _getArgUint256(QUOTE_SCALE);
 

@@ -51,6 +51,8 @@ import { BorrowerActions } from './libraries/external/BorrowerActions.sol';
 import { LenderActions }   from './libraries/external/LenderActions.sol';
 import { Auctions }        from './libraries/external/Auctions.sol';
 
+import '@std/console.sol';
+
 /**
  *  @title  ERC20 Pool contract
  *  @notice Entrypoint of ERC20 Pool actions for pool actors:

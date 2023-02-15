@@ -4,8 +4,6 @@ pragma solidity 0.8.14;
 
 import { LiquidationInvariant }            from "../invariants/LiquidationInvariant.t.sol";
 
-import '@std/console.sol';
-
 contract RegressionTestLiquidation is LiquidationInvariant { 
 
     function setUp() public override { 
