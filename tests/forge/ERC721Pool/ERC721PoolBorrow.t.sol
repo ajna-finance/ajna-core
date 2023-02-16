@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.14;
 
-import { ERC721HelperContract, ERC721FuzzyHelperContract } from './ERC721DSTestPlus.sol';
+import { ERC721HelperContract, ERC721FuzzyHelperContract, ERC721NDecimalsHelperContract } from './ERC721DSTestPlus.sol';
 
 import 'src/ERC721Pool.sol';
 
 import 'src/libraries/internal/Maths.sol';
 
-import { MAX_PRICE, _priceAt } from 'src/libraries/helpers/PoolHelper.sol';
+import { MAX_FENWICK_INDEX, MAX_PRICE, _priceAt } from 'src/libraries/helpers/PoolHelper.sol';
 
 abstract contract ERC721PoolBorrowTest is ERC721HelperContract {
     address internal _borrower;
@@ -183,10 +183,10 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         // check initial bucket state
         _assertBucket({
             index:        2550,
-            lpBalance:    10_000 * 1e27,
+            lpBalance:    10_000 * 1e18,
             collateral:   0,
             deposit:      10_000 * 1e18,
-            exchangeRate: 1 * 1e27
+            exchangeRate: 1 * 1e18
         });
 
         // borrower deposits three NFTs into the subset pool
@@ -236,10 +236,10 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         // check bucket state after borrow
         _assertBucket({
             index:        2550,
-            lpBalance:    10_000 * 1e27,
+            lpBalance:    10_000 * 1e18,
             collateral:   0,
             deposit:      10_000 * 1e18,
-            exchangeRate: 1 * 1e27
+            exchangeRate: 1 * 1e18
         });
         // check borrower info after borrow
         _assertBorrower({
@@ -291,10 +291,10 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         // check bucket state after partial repay
         _assertBucket({
             index:        2550,
-            lpBalance:    10_000 * 1e27,
+            lpBalance:    10_000 * 1e18,
             collateral:   0,
             deposit:      10_001.17341179741568 * 1e18,
-            exchangeRate: 1.000117341179741568 * 1e27
+            exchangeRate: 1.000117341179741568 * 1e18
         });
         // check borrower info after partial repay
         _assertBorrower({
@@ -370,10 +370,10 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         // check bucket state after fully repay
         _assertBucket({
             index:        2550,
-            lpBalance:    10_000 * 1e27,
+            lpBalance:    10_000 * 1e18,
             collateral:   0,
             deposit:      10_001.70173768409813 * 1e18,
-            exchangeRate: 1.000170173768409813 * 1e27
+            exchangeRate: 1.000170173768409813 * 1e18
         });
         // check borrower info after fully repay
         _assertBorrower({
@@ -431,6 +431,14 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             noOfLoans: 1,
             maxBorrower: _borrower,
             maxThresholdPrice: 333.653846153846154 * 1e18
+        });
+
+        // should revert if LUP is below the limit
+        ( , , , , , uint256 lupIndex ) = _poolUtils.poolPricesInfo(address(_pool));        
+        _assertPullLimitIndexRevert({
+            from:       _borrower,
+            amount:     2,
+            indexLimit: lupIndex - 1
         });
 
         // borrower 2 borrows 3k quote from the pool and becomes new queue HEAD
@@ -536,37 +544,25 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
     }
 }
 
-contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
-    uint internal _anonBorrowerCount = 0;
+contract ERC721CollectionPoolBorrowTest is ERC721NDecimalsHelperContract(18) {
+    address internal _borrower;
+    address internal _lender;
 
-    function createPool() external override returns (ERC721Pool) {
-        return _deployCollectionPool();
-    }
+    function setUp() external {
+        _borrower  = makeAddr("borrower");
+        _lender    = makeAddr("lender");
 
-    /**
-     *  @dev Creates debt for an anonymous non-player borrower not otherwise involved in the test.
-     **/
-    function _anonBorrowerDrawsDebt(uint256 loanAmount) internal {
-        _anonBorrowerCount += 1;
-        address borrower = makeAddr(string(abi.encodePacked("anonBorrower", _anonBorrowerCount)));
-        vm.stopPrank();
-        _mintAndApproveCollateralTokens(borrower, 1);
-        uint256[] memory tokenIdsToAdd = new uint256[](1);
-        tokenIdsToAdd[0] = _collateral.totalSupply();
+        _mintAndApproveQuoteTokens(_lender, 200_000 * 1e18);
+        _mintAndApproveCollateralTokens(_borrower, 52);
 
-        _drawDebtNoLupCheck({
-            from:           borrower,
-            borrower:       borrower,
-            amountToBorrow: loanAmount,
-            limitIndex:     7_777,
-            tokenIds:       tokenIdsToAdd
-        });
+        vm.prank(_borrower);
+        _quote.approve(address(_pool), 200_000 * 1e18);
     }
 
     function testMinBorrowAmountCheck() external tearDown {
         // add initial quote to the pool
         changePrank(_lender);
-        _pool.addQuoteToken(20_000 * 1e18, 2550);
+        _pool.addQuoteToken(20_000 * 1e18, 2550, block.timestamp + 1 minutes);
 
         // 10 borrowers draw debt
         for (uint i=0; i<10; ++i) {
@@ -588,14 +584,14 @@ contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
         _assertBorrowMinDebtRevert({
             from:       _borrower,
             amount:     100 * 1e18,
-            indexLimit: 7_777
+            indexLimit: MAX_FENWICK_INDEX
         });
     }
 
     function testMinRepayAmountCheck() external tearDown {
         // add initial quote to the pool
         changePrank(_lender);
-        _pool.addQuoteToken(20_000 * 1e18, 2550);
+        _pool.addQuoteToken(20_000 * 1e18, 2550, block.timestamp + 1 minutes);
 
         // 9 other borrowers draw debt
         for (uint i=0; i<9; ++i) {
@@ -626,8 +622,55 @@ contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
             amount:   900 * 1e18
         });
     }
-
 }
+
+contract ERC721ScaledQuoteTokenBorrowTest is ERC721NDecimalsHelperContract(4) {
+    address internal _borrower;
+    address internal _lender;
+
+    function setUp() external {
+        _borrower  = makeAddr("borrower");
+        _lender    = makeAddr("lender");
+
+        _mintAndApproveQuoteTokens(_lender, 20_000 * 1e4);
+        _mintAndApproveCollateralTokens(_borrower, 5);
+    }
+
+    function testMinDebtBelowDustLimitCheck() external tearDown {
+        // add initial quote to the pool
+        changePrank(_lender);
+        _pool.addQuoteToken(20_000 * 1e18, 2550, block.timestamp + 30);
+
+        // borrower pledges a single NFT
+        uint256[] memory tokenIdsToAdd = new uint256[](1);
+        tokenIdsToAdd[0] = 5;
+        _pledgeCollateral({
+            from:       _borrower,
+            borrower:   _borrower,
+            tokenIds:   tokenIdsToAdd
+        });
+
+        // should revert if borrower tries to draw debt below dust limit
+        _assertBorrowDustRevert({
+            from:       _borrower,
+            amount:     0.00005 * 1e18,
+            indexLimit: 2550
+        });
+
+        // 10 borrowers draw debt at the dust limit
+        for (uint i=0; i<10; ++i) {
+            _anonBorrowerDrawsDebt(0.0001 * 1e18);
+        }
+
+        // should still revert if borrower tries to draw debt below dust limit
+        _assertBorrowDustRevert({
+            from:       _borrower,
+            amount:     0.000075 * 1e18,
+            indexLimit: 2550
+        });
+    }
+}
+
 
 contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
 
@@ -672,16 +715,16 @@ contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
                 from:    _lender,
                 amount:  mintAmount_,
                 index:   indexes[i],
-                lpAward: mintAmount_ * 1e9,
+                lpAward: mintAmount_,
                 newLup:  _calculateLup(address(_pool), 0)
             });
 
             _assertBucket({
                 index:      indexes[i],
-                lpBalance:  mintAmount_ * 1e9,
+                lpBalance:  mintAmount_,
                 collateral: 0,
                 deposit:    mintAmount_,
-                exchangeRate: 1e27
+                exchangeRate: 1e18
             });
         }
 
@@ -704,10 +747,10 @@ contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
         for (uint256 i = 0; i < numIndexes; ++i) {
             _assertBucket({
                 index:        indexes[i],
-                lpBalance:    mintAmount_ * 1e9,
+                lpBalance:    mintAmount_,
                 collateral:   0,
                 deposit:      mintAmount_,
-                exchangeRate: 1e27
+                exchangeRate: 1e18
             });
         }
 
@@ -761,17 +804,17 @@ contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
             // check that only deposits above the htp earned interest
             if (indexes[i] <= _poolUtils.priceToIndex(Maths.wdiv(debt, Maths.wad(tokenIdsToAdd.length)))) {
                 assertGt(deposit, mintAmount_);
-                assertGt(exchangeRate, 1e27);
+                assertGt(exchangeRate, 1e18);
             } else {
                 assertEq(deposit, mintAmount_);
-                assertEq(exchangeRate, 1e27);
+                assertEq(exchangeRate, 1e18);
             }
 
-            assertEq(lpAccumulator, mintAmount_ * 1e9);
+            assertEq(lpAccumulator, mintAmount_);
 
             _assertBucket({
                 index:        indexes[i],
-                lpBalance:    mintAmount_ * 1e9,
+                lpBalance:    mintAmount_,
                 collateral:   0,
                 deposit:      deposit,
                 exchangeRate: exchangeRate

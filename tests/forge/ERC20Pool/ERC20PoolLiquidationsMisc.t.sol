@@ -143,21 +143,21 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             amount:   2_000.00 * 1e18,
             index:    _i9_91,
             newLup:   9.721295865031779605 * 1e18,
-            lpRedeem: 1_999.891367962935869240000000000 * 1e27
+            lpRedeem: 1_999.891367962935869240 * 1e18
         });
         _removeLiquidity({
             from:     _lender,
             amount:   5_000 * 1e18,
             index:    _i9_81,
             newLup:   9.721295865031779605 * 1e18,
-            lpRedeem: 4_999.728419907339673101000000000 * 1e27
+            lpRedeem: 4_999.728419907339673101 * 1e18
         });
         _removeLiquidity({
             from:     _lender,
             amount:   2_992.8 * 1e18,
             index:    _i9_72,
             newLup:   9.721295865031779605 * 1e18,
-            lpRedeem: 2_992.637443019737234731000000000 * 1e27
+            lpRedeem: 2_992.637443019737234731 * 1e18
         });
 
         // Lender amount to withdraw is restricted by HTP 
@@ -168,10 +168,10 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
 
         _assertBucket({
             index:        _i9_72,
-            lpBalance:    8_007.362556980262765269000000000 * 1e27, 
+            lpBalance:    8_007.362556980262765269 * 1e18, 
             collateral:   0,
             deposit:      8_007.797508658144068000 * 1e18,
-            exchangeRate: 1.000054318968922187999940710 * 1e27
+            exchangeRate: 1.000054318968922188 * 1e18
         });
 
         skip(16 hours);
@@ -211,10 +211,10 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
 
         _assertBucket({
             index:        _i9_72,
-            lpBalance:    8_007.362556980262765269000000000 * 1e27,
+            lpBalance:    8_007.362556980262765269 * 1e18,
             collateral:   0,          
             deposit:      8_008.361347558277120605 * 1e18,
-            exchangeRate: 1.000124734027079076000026734 * 1e27
+            exchangeRate: 1.000124734027079076 * 1e18
         });
         _assertAuction(
             AuctionParams({
@@ -250,7 +250,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
 
         // lender can add / remove liquidity in buckets that are not within liquidation debt
         changePrank(_lender1);
-        _pool.addQuoteToken(2_000 * 1e18, 5000);
+        _pool.addQuoteToken(2_000 * 1e18, 5000, block.timestamp + 1 minutes);
         _pool.removeQuoteToken(2_000 * 1e18, 5000);
 
         skip(3 hours);
@@ -336,15 +336,15 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             amount:   8_008.373442262808822463 * 1e18,
             index:    _i9_72,
             newLup:   9.624807173121239337 * 1e18,
-            lpRedeem: 8_007.362556980262762824000000000 * 1e27
+            lpRedeem: 8_007.362556980262762824 * 1e18
         });
         
         _assertBucket({
             index:        _i9_72,
-            lpBalance:    0.000000000000002445000000000 * 1e27,   
+            lpBalance:    0.000000000000002445 * 1e18,   
             collateral:   0,          
             deposit:      2445,
-            exchangeRate: 1 * 1e27
+            exchangeRate: 1 * 1e18
         });
 
         _removeLiquidity({
@@ -352,7 +352,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             amount:   25_000.037756489769875000 * 1e18,
             index:    _i9_62,
             newLup:   9.529276179422528643 * 1e18,
-            lpRedeem: 25_000 * 1e27
+            lpRedeem: 25_000 * 1e18
         });
 
         _assertBucket({
@@ -360,7 +360,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             lpBalance:    0,
             collateral:   0,          
             deposit:      0,
-            exchangeRate: 1 * 1e27
+            exchangeRate: 1 * 1e18
         });
 
         _removeLiquidity({
@@ -368,15 +368,15 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             amount:   22_000 * 1e18,
             index:    _i9_52,
             newLup:   9.529276179422528643 * 1e18,
-            lpRedeem: 21_999.966774339181882911000000000 * 1e27
+            lpRedeem: 21_999.966774339181882911 * 1e18
         });
 
         _assertBucket({
             index:        _i9_52,
-            lpBalance:    8_000.033225660818117089000000000 * 1e27,
+            lpBalance:    8_000.033225660818117089 * 1e18,
             collateral:   0,          
             deposit:      8_000.045307787723850000 * 1e18,
-            exchangeRate: 1.000001510259590794999992127 * 1e27
+            exchangeRate: 1.000001510259590795 * 1e18
         });
 
         _assertRemoveAllLiquidityLupBelowHtpRevert({
@@ -548,35 +548,35 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             lpBalance:    0,
             collateral:   0,          
             deposit:      0,
-            exchangeRate: 1 * 1e27
+            exchangeRate: 1 * 1e18
         });
         _assertBucket({
             index:        _i9_81,
             lpBalance:    0,
             collateral:   0,          
             deposit:      0,
-            exchangeRate: 1 * 1e27
+            exchangeRate: 1 * 1e18
         });
         _assertBucket({
             index:        _i9_72,
             lpBalance:    0,
             collateral:   0,          
             deposit:      0,
-            exchangeRate: 1 * 1e27
+            exchangeRate: 1 * 1e18
         });
         _assertBucket({
             index:        _i9_62,
             lpBalance:    0,
             collateral:   0,          
             deposit:      0,
-            exchangeRate: 1 * 1e27
+            exchangeRate: 1 * 1e18
         });
         _assertBucket({
             index:        _i9_52,
-            lpBalance:    0 * 1e27,
+            lpBalance:    0,
             collateral:   0,          
             deposit:      0,
-            exchangeRate: 1 * 1e27
+            exchangeRate: 1 * 1e18
         });
     }
  }

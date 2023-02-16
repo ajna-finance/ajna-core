@@ -8,16 +8,16 @@ pragma solidity 0.8.14;
 interface IPositionManagerDerivedState {
 
     /**
-     *  @notice Returns the lpTokens accrued to a given tokenId, bucket pairing.
+     *  @notice Returns the LPs accrued to a given tokenId, bucket pairing.
      *  @dev    Nested mappings aren't returned normally as part of the default getter for a mapping.
-     *  @param  tokenId  Unique ID of token.
-     *  @param  index    Index of bucket to check LP balance of.
-     *  @return lpTokens Balance of lpTokens in the bucket for this position.
+     *  @param  tokenId Unique ID of token.
+     *  @param  index   Index of bucket to check LP balance of.
+     *  @return lps     Balance of lps in the bucket for this position.
     */
-    function getLPTokens(
+    function getLPs(
         uint256 tokenId,
         uint256 index
-    ) external view returns (uint256 lpTokens);
+    ) external view returns (uint256 lps);
 
     /**
      *  @notice Returns an array of bucket indexes in which an NFT has liquidity.

@@ -205,15 +205,15 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender,
             index:       _i9_91,
-            lpBalance:   2_000 * 1e27,
+            lpBalance:   2_000 * 1e18,
             depositTime: _startTime
         });
         _assertBucket({
             index:        _i9_91,
-            lpBalance:    2_000 * 1e27,
+            lpBalance:    2_000 * 1e18,
             collateral:   0,
             deposit:      2_027.000651340490292000 * 1e18,
-            exchangeRate: 1.013500325670245146000000000 * 1e27
+            exchangeRate: 1.013500325670245146 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower,
@@ -228,16 +228,16 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             from:    _lender1,
             amount:  1 * 1e18,
             index:   _i9_52,
-            lpAward: 0.999996826562080000190961519 * 1e27,
+            lpAward: 0.99999682656208 * 1e18,
             newLup:  9.721295865031779605 * 1e18
         });
 
         _assertBucket({
             index:        _i9_91,
-            lpBalance:    2_000 * 1e27,
+            lpBalance:    2_000 * 1e18,
             collateral:   0,
             deposit:      2_027.007083921634518000 * 1e18,
-            exchangeRate: 1.013503541960817259000000000 * 1e27
+            exchangeRate: 1.013503541960817259 * 1e18
         });
         _assertReserveAuction({
             reserves:                   23.911413759224212224 * 1e18,
@@ -281,28 +281,28 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             quoteTokenAmount: 14.503461444385064128 * 1e18,
             bondChange:       0.145034614443850641 * 1e18,
             isReward:         true,
-            lpAwardTaker:     5.259881215780552826000000000 * 1e27,
-            lpAwardKicker:    0.143102227509983165000000000 * 1e27
+            lpAwardTaker:     5.259881215780552826 * 1e18,
+            lpAwardKicker:    0.143102227509983165 * 1e18
         });
 
         _assertLenderLpBalance({
             lender:      _taker,
             index:       _i9_91,
-            lpBalance:   5.259881215780552826000000000 * 1e27,
+            lpBalance:   5.259881215780552826 * 1e18,
             depositTime: _startTime + 100 days + 6.5 hours
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       _i9_91,
-            lpBalance:   2_000.143102227509983165000000000 * 1e27, // rewarded with LPs in bucket
+            lpBalance:   2_000.143102227509983165 * 1e18, // rewarded with LPs in bucket
             depositTime: _startTime + 100 days + 6.5 hours
         });
         _assertBucket({
             index:        _i9_91,
-            lpBalance:    2_005.402983443290535991000000000 * 1e27,
+            lpBalance:    2_005.402983443290535991 * 1e18,
             collateral:   2 * 1e18,
             deposit:      2_012.648657091693304514 * 1e18,
-            exchangeRate: 1.013503541960817259000463129 * 1e27
+            exchangeRate: 1.013503541960817259 * 1e18
         });
         // reserves should remain the same after arb take
         _assertReserveAuction({
@@ -369,7 +369,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             from:    _lender,
             amount:  25_000 * 1e18,
             index:   _i1505_26,
-            lpAward: 25_000 * 1e27,
+            lpAward: 25_000 * 1e18,
             newLup:  1_505.263728469068226832 * 1e18
         });
 
@@ -391,7 +391,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             quoteTokenAmount: 21.163491979352977584 * 1e18,
             bondChange:       0.195342779771472726 * 1e18,
             isReward:         false,
-            lpAwardTaker:     1_531.986011313779866428534379038 * 1e27,
+            lpAwardTaker:     1_531.986011313779866429 * 1e18,
             lpAwardKicker:    0
         });
 
@@ -405,21 +405,21 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _taker,
             index:       _i1505_26,
-            lpBalance:   1_531.986011313779866428534379038 * 1e27,
+            lpBalance:   1_531.986011313779866429 * 1e18,
             depositTime: block.timestamp
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       _i1505_26,
-            lpBalance:   25_000 * 1e27,
+            lpBalance:   25_000 * 1e18,
             depositTime: block.timestamp
         });
         _assertBucket({
             index:        _i1505_26,
-            lpBalance:    26_531.986011313779866428534379038 * 1e27,
+            lpBalance:    26_531.986011313779866429 * 1e18,
             collateral:   1.031812215971460994 * 1e18,
             deposit:      24_978.836508020647022417 * 1e18,
-            exchangeRate: 0.999999999999999999999729424 * 1e27
+            exchangeRate: 1 * 1e18
         });
         _assertReserveAuction({
             reserves:                   25.482262302272484525 * 1e18,
@@ -455,7 +455,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             from:    _lender,
             amount:  15.0 * 1e18,
             index:   _i1505_26,
-            lpAward: 15.0 * 1e27,
+            lpAward: 15.0 * 1e18,
             newLup:  9.721295865031779605 * 1e18
         });
 
@@ -474,10 +474,10 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             kicker:           _lender,
             index:            _i1505_26,
             collateralArbed:  0.731315193857015473 * 1e18,
-            quoteTokenAmount: 15.000000000000000000 * 1e18,
+            quoteTokenAmount: 14.99999999999999999 * 1e18,
             bondChange:       0.15 * 1e18,
             isReward:         false,
-            lpAwardTaker:     1_085.822235391290531116686016658 * 1e27,
+            lpAwardTaker:     1_085.822235391290531090 * 1e18,
             lpAwardKicker:    0
         });
 
@@ -499,28 +499,28 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         );
         _assertBucket({
             index:        _i1505_26,
-            lpBalance:    1_100.822235391290531116686016658 * 1e27,
+            lpBalance:    1_100.822235391290531090 * 1e18,
             collateral:   0.731315193857015473 * 1e18,
             deposit:      0,
-            exchangeRate: 0.999999999999999999966196099 * 1e27
+            exchangeRate: 1 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower,
             borrowerDebt:              6.163491979352977583 * 1e18,
             borrowerCollateral:        1.268684806142984527 * 1e18,
-            borrowert0Np:              5.108498139847549815 * 1e18,
+            borrowert0Np:              5.057793757429320955 * 1e18,
             borrowerCollateralization: 2.001018319047304755  * 1e18
         });
         _assertLenderLpBalance({
             lender:      _taker,
             index:       _i1505_26,
-            lpBalance:   1_085.822235391290531116686016658 * 1e27,
+            lpBalance:   1_085.822235391290531090 * 1e18,
             depositTime: block.timestamp
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       _i1505_26,
-            lpBalance:   15.0 * 1e27,
+            lpBalance:   15.0 * 1e18,
             depositTime: block.timestamp
         });
     }
@@ -533,7 +533,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             from:    _lender,
             amount:  1_000 * 1e18,
             index:   _i10016,
-            lpAward: 1_000 * 1e27,
+            lpAward: 1_000 * 1e18,
             newLup:  9.721295865031779605 * 1e18
         });
 
@@ -546,15 +546,15 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender,
             index:       _i10016,
-            lpBalance:   1_000 * 1e27,
+            lpBalance:   1_000 * 1e18,
             depositTime: block.timestamp
         });
         _assertBucket({
             index:        _i10016,
-            lpBalance:    1_000 * 1e27,
+            lpBalance:    1_000 * 1e18,
             collateral:   0,
             deposit:      1_000 * 1e18,
-            exchangeRate: 1.0 * 1e27
+            exchangeRate: 1.0 * 1e18
         });
         _assertAuction(
             AuctionParams({
@@ -589,20 +589,20 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             quoteTokenAmount: 21.163274547333150631 * 1e18,
             bondChange:       0.195342779771472726 * 1e18,
             isReward:         false,
-            lpAwardTaker:     2_562.597355112798042001349648580 * 1e27,
+            lpAwardTaker:     2_562.597355112798042 * 1e18,
             lpAwardKicker:    0
         });
 
         _assertLenderLpBalance({
             lender:      _taker,
             index:       _i10016,
-            lpBalance:   2_562.597355112798042001349648580 * 1e27, // arb taker was rewarded LPBs in arbed bucket
+            lpBalance:   2_562.597355112798042 * 1e18, // arb taker was rewarded LPBs in arbed bucket
             depositTime: _startTime + 100 days + 3 hours
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       _i10016,
-            lpBalance:   1_000 * 1e27,
+            lpBalance:   1_000 * 1e18,
             depositTime: _startTime + 100 days + 3 hours
         });
         _assertKicker({
@@ -612,10 +612,10 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         });
         _assertBucket({
             index:        _i10016,
-            lpBalance:    3_562.597355112798042001349648580 * 1e27,       // LP balance in arbed bucket increased with LPs awarded for arb taker
-            collateral:   0.257950403803869741 * 1e18,          // arbed collateral added to the arbed bucket
-            deposit:      978.836725452666849368 * 1e18,        // quote token amount is diminished in arbed bucket
-            exchangeRate: 1.000000000000000000007160522 * 1e27
+            lpBalance:    3_562.597355112798042 * 1e18,       // LP balance in arbed bucket increased with LPs awarded for arb taker
+            collateral:   0.257950403803869741 * 1e18,        // arbed collateral added to the arbed bucket
+            deposit:      978.836725452666849368 * 1e18,      // quote token amount is diminished in arbed bucket
+            exchangeRate: 1 * 1e18
         });
         _assertAuction(
             AuctionParams({
@@ -702,7 +702,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
 
         // 10 borrowers draw debt to enable the min debt check
         for (uint i=0; i<10; ++i) {
-            _anonBorrowerDrawsDebt(1_000 * 1e18, 6_000 * 1e18, 7777);
+            _anonBorrowerDrawsDebt(1_000 * 1e18, 6_000 * 1e18, MAX_FENWICK_INDEX);
         }
 
         // should revert if auction leaves borrower with debt under minimum pool debt

@@ -203,6 +203,14 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
             })
         );
 
+        // revert if auction is not settled
+        _assertMergeRemoveCollateralAuctionNotClearedRevert({
+            from:                    _lender,
+            toIndex:                 MAX_FENWICK_INDEX,
+            noOfNFTsToRemove:        2,
+            removeCollateralAtIndex: new uint256[](0)
+        });
+
         _settle({
             from:        _lender,
             borrower:    _borrower2,
@@ -226,6 +234,14 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
                 neutralPrice:      0
             })
         );
+
+        // revert if auction is not settled
+        _assertMergeRemoveCollateralAuctionNotClearedRevert({
+            from:                    _lender,
+            toIndex:                 MAX_FENWICK_INDEX,
+            noOfNFTsToRemove:        2,
+            removeCollateralAtIndex: new uint256[](0)
+        });
 
         // settle borrower
         _settle({
@@ -285,10 +301,10 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
         // assert bucket used for settle
         _assertBucket({
             index:        MAX_FENWICK_INDEX,
-            lpBalance:    0.000000137345389190751978670 * 1e27,
+            lpBalance:    0.000000137345389190 * 1e18,
             collateral:   1.375706158271934624 * 1e18,
             deposit:      0,
-            exchangeRate: 0.999999999999999999994537736 * 1e27
+            exchangeRate: 1.000000000007280914 * 1e18
         });
 
         assertEq(_quote.balanceOf(address(_pool)), 6_000 * 1e18);
@@ -301,7 +317,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
             from:    _lender,
             amount:  100 * 1e18,
             index:   MAX_FENWICK_INDEX,
-            lpAward: 100.000000000000000000546226400 * 1e27,
+            lpAward: 99.999999999271908600 * 1e18,
             newLup:  MAX_PRICE
         });
 
@@ -355,10 +371,10 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
 
         _assertBucket({
             index:        2500,
-            lpBalance:    1_861.033884081553472671582113012 * 1e27,
+            lpBalance:    1_861.033884081553472950 * 1e18,
             collateral:   0,
-            deposit:      1861.636634299022017158 * 1e18,
-            exchangeRate: 1.000323879227898104734699503 * 1e27
+            deposit:      1_861.636634299022017158 * 1e18,
+            exchangeRate: 1.000323879227898105 * 1e18
         });
     }
 

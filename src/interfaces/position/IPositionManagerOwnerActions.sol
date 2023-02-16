@@ -9,7 +9,7 @@ interface IPositionManagerOwnerActions {
 
     /**
      *  @notice Called by owners to burn an existing NFT.
-     *  @dev    Requires that all lp tokens have been removed from the NFT prior to calling.
+     *  @dev    Requires that all lps have been removed from the NFT prior to calling.
      *  @param  params Calldata struct supplying inputs required to update the underlying assets owed to an NFT.
      */
     function burn(
@@ -29,7 +29,8 @@ interface IPositionManagerOwnerActions {
     ) external;
 
     /**
-     *  @notice Called by owners to add quote tokens and receive a representative NFT.
+     *  @notice Called by owners to mint and receive an Ajna Position NFT.
+     *  @dev    PositionNFTs can only be minited with an association to pools that have been deployed by the Ajna ERC20PoolFactory or ERC721PoolFactory.
      *  @param  params  Calldata struct supplying inputs required to mint a positions NFT.
      *  @return tokenId The tokenId of the newly minted NFT.
      */
@@ -94,6 +95,7 @@ interface IPositionManagerOwnerActions {
         address pool;      // The pool address associated with positions NFT
         uint256 fromIndex; // The bucket index from which liquidity should be moved
         uint256 toIndex;   // The bucket index to which liquidity should be moved
+        uint256 expiry;    // Timestamp after which this TX will revert, preventing inclusion in a block with unfavorable price
     }
 
     /**

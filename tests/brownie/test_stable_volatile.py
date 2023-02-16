@@ -76,7 +76,7 @@ def borrowers(ajna_protocol, scaled_pool):
 def pool_helper(ajna_protocol, scaled_pool, lenders, borrowers, test_utils, chain):
     pool_helper = PoolHelper(ajna_protocol, scaled_pool)
     # Adds liquidity to an empty pool and draws debt up to a target utilization
-    add_initial_liquidity(lenders, pool_helper)
+    add_initial_liquidity(lenders, pool_helper, chain)
     draw_initial_debt(borrowers, pool_helper, test_utils, chain, target_utilization=GOAL_UTILIZATION)
     global last_triggered
     last_triggered = dict.fromkeys(range(0, max(NUM_LENDERS, NUM_BORROWERS)), 0)
@@ -84,7 +84,7 @@ def pool_helper(ajna_protocol, scaled_pool, lenders, borrowers, test_utils, chai
     return pool_helper
 
 
-def add_initial_liquidity(lenders, pool_helper):
+def add_initial_liquidity(lenders, pool_helper, chain):
     # Lenders 0-9 will be "new to the pool" upon actual testing
     # TODO: determine this non-arbitrarily
     deposit_amount = MIN_PARTICIPATION * 10**18
@@ -97,7 +97,7 @@ def add_initial_liquidity(lenders, pool_helper):
             price_index = price_position + MAX_BUCKET
             log(f" lender {i} depositing {deposit_amount/1e18} into bucket {price_index} "
                 f"({pool_helper.indexToPrice(price_index) / 1e18:.1f})")
-            pool_helper.pool.addQuoteToken(deposit_amount, price_index, {"from": lenders[i]})
+            pool_helper.pool.addQuoteToken(deposit_amount, price_index, chain.time() + 30, {"from": lenders[i]})
 
 
 def draw_initial_debt(borrowers, pool_helper, test_utils, chain, target_utilization):
@@ -249,7 +249,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool_helper, chain, test_utils,
             # Add or remove liquidity
             if user_index < NUM_LENDERS:
                 if random.choice([True, False]):
-                    price = add_quote_token(lenders[user_index], user_index, pool_helper)
+                    price = add_quote_token(lenders[user_index], user_index, pool_helper, chain)
                     if price:
                         buckets_deposited[user_index].add(price)
                 else:
@@ -294,7 +294,7 @@ def draw_debt(borrower, borrower_index, pool_helper, test_utils, collateralizati
     tx = pledge_and_borrow(pool_helper, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils)
 
 
-def add_quote_token(lender, lender_index, pool_helper):
+def add_quote_token(lender, lender_index, pool_helper, chain):
     dai = pool_helper.quoteToken()
     index_offset = ((lender_index % 6) - 2) * 2
     lup_index = pool_helper.lupIndex()
@@ -307,7 +307,7 @@ def add_quote_token(lender, lender_index, pool_helper):
         return None
 
     log(f" lender   {lender_index:>4} adding {quantity / 10**18:.1f} liquidity at {deposit_price / 10**18:.1f}")
-    tx = pool_helper.pool.addQuoteToken(quantity, deposit_index, {"from": lender})
+    tx = pool_helper.pool.addQuoteToken(quantity, deposit_index, chain.time() + 15, {"from": lender})
     return deposit_price
 
 
@@ -364,7 +364,7 @@ def repay_debt(borrower, borrower_index, pool_helper, test_utils):
               f"is withdrawing {collateral_deposited/1e18:.1f} collateral")
         # assert collateral_to_withdraw > 0
         repay_amount = int(repay_amount * 1.01)
-        tx = pool_helper.pool.repayDebt(borrower, repay_amount, collateral_to_withdraw, {"from": borrower})
+        tx = pool_helper.pool.repayDebt(borrower, repay_amount, collateral_to_withdraw, borrower, 7388, {"from": borrower})
     elif debt == 0:
         log(f" borrower {borrower_index:>4} has no debt to repay")
     else:

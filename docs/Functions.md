@@ -129,7 +129,7 @@
 
 	emit events:
 	- LenderActions.transferLPs():
-		- TransferLPTokens
+		- TransferLPs
 
 ### kick
 	external libraries call:
@@ -370,7 +370,7 @@
 	- BorrowerActions.drawDebt()
 		- borrower not sender BorrowerNotSender()
 		- borrower debt less than pool min debt AmountLTMinDebt()
-		- limit price reached LimitIndexReached()
+		- limit price reached LimitIndexExceeded()
 		- borrower cannot draw more debt BorrowerUnderCollateralized()
 
 	emit events:
