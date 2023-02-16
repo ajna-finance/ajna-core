@@ -3,6 +3,8 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
+import 'src/interfaces/pool/commons/IPoolErrors.sol';
+
 import 'src/libraries/helpers/PoolHelper.sol';
 
 contract ERC20PoolTransferLPsTest is ERC20HelperContract {
@@ -19,6 +21,11 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         _mintQuoteAndApproveTokens(_lender,  200_000 * 1e18);
         _mintQuoteAndApproveTokens(_lender1, 200_000 * 1e18);
         _mintQuoteAndApproveTokens(_lender2, 200_000 * 1e18);
+
+        changePrank(_lender2);
+        address[] memory transferors = new address[](1);
+        transferors[0] = _lender;
+        _pool.approveLpTransferors(transferors);
     }
 
     /**************************/
@@ -145,6 +152,9 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 10_000 * 1e18;
         _pool.approveLpOwnership(_lender1, indexes, amounts);
+        address[] memory transferors = new address[](1);
+        transferors[0] = _lender;
+        _pool.approveLpTransferors(transferors);
 
         _assertLenderLpBalance({
             lender:      _lender1,
@@ -554,6 +564,65 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
             index:       indexes[2],
             lpBalance:   45_000 * 1e18,
             depositTime: _startTime + 2 hours
+        });
+    }
+
+    function testTransferLPsApproveRevokeTransferors() external tearDown {
+        uint256[] memory indexes = new uint256[](3);
+        indexes[0] = 2550;
+        indexes[1] = 2551;
+        indexes[2] = 2552;
+
+        skip(1 hours);
+
+        _addInitialLiquidity({
+            from:   _lender1,
+            amount: 10_000 * 1e18,
+            index:  indexes[0]
+        });
+        _addInitialLiquidity({
+            from:   _lender1,
+            amount: 20_000 * 1e18,
+            index:  indexes[1]
+        });
+        _addInitialLiquidity({
+            from:   _lender1,
+            amount: 30_000 * 1e18,
+            index:  indexes[2]
+        });
+        // set allowed owner to lender2 address
+        uint256[] memory amounts = new uint256[](3);
+        amounts[0] = 10_000 * 1e18;
+        amounts[1] = 20_000 * 1e18;
+        amounts[2] = 30_000 * 1e18;
+        _pool.approveLpOwnership(_lender2, indexes, amounts);
+
+        assertTrue(_pool.approvedTransferors(_lender2, _lender));
+
+        // revoke transferor
+        changePrank(_lender2);
+        address[] memory transferors = new address[](1);
+        transferors[0] = _lender;
+        _pool.revokeLpTransferors(transferors);
+        assertFalse(_pool.approvedTransferors(_lender2, _lender));
+
+        // transfer initiated by lender should fail as it is no longer an approved transferor
+        changePrank(_lender);
+        vm.expectRevert(IPoolErrors.TransferorNotApproved.selector);
+        _pool.transferLPs(_lender1, _lender2, indexes);
+
+        // reapprove transferor
+        changePrank(_lender2);
+        _pool.approveLpTransferors(transferors);
+        assertTrue(_pool.approvedTransferors(_lender2, _lender));
+
+        // transfer LP tokens for all indexes
+        _transferLPs({
+            operator:  _lender,
+            from:      _lender1,
+            to:        _lender2,
+            indexes:   indexes,
+            lpBalance: 60_000 * 1e18
         });
     }
 }

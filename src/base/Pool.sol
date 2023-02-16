@@ -96,6 +96,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 
+    mapping(address => mapping(address => bool)) public override approvedTransferors; // owner address -> transferor address -> approved flag
+
     /******************/
     /*** Immutables ***/
     /******************/
@@ -168,12 +170,48 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         address newOwner_,
         uint256[] calldata indexes_,
         uint256[] calldata amounts_
-    ) external nonReentrant {
+    ) external override nonReentrant {
         mapping(uint256 => uint256) storage allowances = _lpAllowances[msg.sender][newOwner_];
 
         uint256 indexesLength = indexes_.length;
         for (uint256 i = 0; i < indexesLength; ) {
             allowances[indexes_[i]] = amounts_[i];
+
+            unchecked { ++i; }
+        }
+    }
+
+    /**
+     *  @inheritdoc IPoolLenderActions
+     *  @dev write state:
+     *          - approvedTransferors mapping
+     */
+    function approveLpTransferors(
+        address[] calldata transferors_
+    ) external override {
+        mapping(address => bool) storage allowances = approvedTransferors[msg.sender];
+
+        uint256 transferorsLength = transferors_.length;
+        for (uint256 i = 0; i < transferorsLength; ) {
+            allowances[transferors_[i]] = true;
+
+            unchecked { ++i; }
+        }
+    }
+
+    /**
+     *  @inheritdoc IPoolLenderActions
+     *  @dev write state:
+     *          - approvedTransferors mapping
+     */
+    function revokeLpTransferors(
+        address[] calldata transferors_
+    ) external override {
+        mapping(address => bool) storage allowances = approvedTransferors[msg.sender];
+
+        uint256 transferorsLength = transferors_.length;
+        for (uint256 i = 0; i < transferorsLength; ) {
+            delete allowances[transferors_[i]];
 
             unchecked { ++i; }
         }
@@ -255,6 +293,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         LenderActions.transferLPs(
             buckets,
             _lpAllowances,
+            approvedTransferors,
             owner_,
             newOwner_,
             indexes_
