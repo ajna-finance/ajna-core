@@ -41,7 +41,11 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
 
         // should fail if allowed owner is set to 0x
         changePrank(_lender1);
-        _pool.approveLpOwnership(address(0), indexes[0], 1_000 * 1e18);
+        uint256[] memory approveIndexes = new uint256[](1);
+        approveIndexes[0] = 2550;
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 1_000 * 1e18;
+        _pool.approveLpOwnership(address(0), approveIndexes, amounts);
 
         _assertTransferNoAllowanceRevert({
             operator: _lender,
@@ -59,9 +63,11 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
 
         // should fail if allowed owner is set to lender2 address but trying to transfer to lender address
         changePrank(_lender1);
-        _pool.approveLpOwnership(_lender2, indexes[0], 1_000 * 1e18);
-        _pool.approveLpOwnership(_lender2, indexes[1], 1_000 * 1e18);
-        _pool.approveLpOwnership(_lender2, indexes[2], 1_000 * 1e18);
+        uint256[] memory amounts = new uint256[](3);
+        amounts[0] = 1_000 * 1e18;
+        amounts[1] = 1_000 * 1e18;
+        amounts[2] = 1_000 * 1e18;
+        _pool.approveLpOwnership(_lender2, indexes, amounts);
 
         _assertTransferNoAllowanceRevert({
             operator: _lender,
@@ -79,9 +85,11 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
 
         // should fail since 9999 is not a valid index
         changePrank(_lender1);
-        _pool.approveLpOwnership(_lender2, indexes[0], 1_000 * 1e18);
-        _pool.approveLpOwnership(_lender2, indexes[1], 1_000 * 1e18);
-        _pool.approveLpOwnership(_lender2, indexes[2], 1_000 * 1e18);
+        uint256[] memory amounts = new uint256[](3);
+        amounts[0] = 1_000 * 1e18;
+        amounts[1] = 1_000 * 1e18;
+        amounts[2] = 1_000 * 1e18;
+        _pool.approveLpOwnership(_lender2, indexes, amounts);
 
         _assertTransferInvalidIndexRevert({
             operator: _lender,
@@ -108,8 +116,10 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         });
 
         // set allowed owner to lender2 address
-        _pool.approveLpOwnership(_lender2, indexes[0], 10_000 * 1e18);
-        _pool.approveLpOwnership(_lender2, indexes[1], 30_000 * 1e18);
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 10_000 * 1e18;
+        amounts[1] = 30_000 * 1e18;
+        _pool.approveLpOwnership(_lender2, indexes, amounts);
 
         _assertTransferNoAllowanceRevert({
             operator: _lender2,
@@ -132,7 +142,9 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         });
 
         changePrank(_lender1);
-        _pool.approveLpOwnership(_lender1, indexes[0], 10_000 * 1e18);
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 10_000 * 1e18;
+        _pool.approveLpOwnership(_lender1, indexes, amounts);
 
         _assertLenderLpBalance({
             lender:      _lender1,
@@ -213,9 +225,11 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         });
 
         // set allowed owner to lender2 address
-        _pool.approveLpOwnership(_lender2, indexes[0], 10_000 * 1e18);
-        _pool.approveLpOwnership(_lender2, indexes[1], 20_000 * 1e18);
-        _pool.approveLpOwnership(_lender2, indexes[2], 30_000 * 1e18);
+        uint256[] memory amounts = new uint256[](3);
+        amounts[0] = 10_000 * 1e18;
+        amounts[1] = 20_000 * 1e18;
+        amounts[2] = 30_000 * 1e18;
+        _pool.approveLpOwnership(_lender2, indexes, amounts);
 
         // transfer LP tokens for all indexes
         _transferLPs({
@@ -338,8 +352,10 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         });
 
         // set allowed owner to lender2 address
-        _pool.approveLpOwnership(_lender2, transferIndexes[0], 10_000 * 1e18);
-        _pool.approveLpOwnership(_lender2, transferIndexes[1], 30_000 * 1e18);
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 10_000 * 1e18;
+        amounts[1] = 30_000 * 1e18;
+        _pool.approveLpOwnership(_lender2, transferIndexes, amounts);
 
         // transfer LP tokens for 2 indexes
         _transferLPs({
@@ -479,9 +495,11 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
 
         // set allowed owner to lender2 address
         changePrank(_lender1);
-        _pool.approveLpOwnership(_lender2, indexes[0], 10_000 * 1e18);
-        _pool.approveLpOwnership(_lender2, indexes[1], 20_000 * 1e18);
-        _pool.approveLpOwnership(_lender2, indexes[2], 30_000 * 1e18);
+        uint256[] memory amounts = new uint256[](3);
+        amounts[0] = 10_000 * 1e18;
+        amounts[1] = 20_000 * 1e18;
+        amounts[2] = 30_000 * 1e18;
+        _pool.approveLpOwnership(_lender2, indexes, amounts);
 
         // transfer LP tokens for all indexes
         _transferLPs({

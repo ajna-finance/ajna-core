@@ -165,11 +165,18 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *          - _lpAllowances mapping
      */
     function approveLpOwnership(
-        address newOwner,
-        uint256 index_,
-        uint256 amount_
+        address newOwner_,
+        uint256[] calldata indexes_,
+        uint256[] calldata amounts_
     ) external nonReentrant {
-        _lpAllowances[msg.sender][newOwner][index_] = amount_;
+        mapping(uint256 => uint256) storage allowances = _lpAllowances[msg.sender][newOwner_];
+
+        uint256 indexesLength = indexes_.length;
+        for (uint256 i = 0; i < indexesLength; ) {
+            allowances[indexes_[i]] = amounts_[i];
+
+            unchecked { ++i; }
+        }
     }
 
     /// @inheritdoc IPoolLenderActions
