@@ -248,7 +248,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         // move quote tokens in pool
         (
             uint256 lpbAmountFrom,
-            uint256 lpbAmountTo
+            uint256 lpbAmountTo,
         ) = IPool(params_.pool).moveQuoteToken(
             maxQuote,
             params_.fromIndex,
