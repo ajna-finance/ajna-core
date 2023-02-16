@@ -438,7 +438,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         );
 
         uint i = 0;
-        while (i < 196) {
+        while (i < 194) {
             // trigger an interest accumulation
             skip(12 hours);
 
@@ -455,15 +455,15 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         // show the rate maxed out at 50000%
         _assertPool(
             PoolParams({
-                htp:                  32_229.862501923749497041 * 1e18,
+                htp:                  2_081.663642755844195984 * 1e18,
                 lup:                  _p1505_26,
-                poolSize:             10_048.284243805461810000 * 1e18,
+                poolSize:             10012.270021606533230000 * 1e18,
                 pledgedCollateral:    10_000.0 * 1e18,
-                encumberedCollateral: 0.037733346596011819 * 1e18,
-                poolDebt:             56.798637984728374088 * 1e18,
-                actualUtilization:    0.005652570787867933 * 1e18,
-                targetUtilization:    2_143_138.287531775560054952 * 1e18,
-                minDebtAmount:        5.679863798472837409 * 1e18,
+                encumberedCollateral: 0.009589619533804370 * 1e18,
+                poolDebt:             14.434906454054174087 * 1e18,
+                actualUtilization:    0.001441721649826020 * 1e18,
+                targetUtilization:    8_170_210.475701867592667419 * 1e18,
+                minDebtAmount:        1.443490645405417409 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
                 interestRate:         500.0 * 1e18,
