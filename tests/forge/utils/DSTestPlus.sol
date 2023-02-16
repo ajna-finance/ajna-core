@@ -276,7 +276,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         changePrank(from);
         vm.expectEmit(true, true, true, true);
         emit MoveQuoteToken(from, fromIndex, toIndex, amountMoved, lpRedeemFrom, lpAwardTo, newLup);
-        (uint256 lpbFrom, uint256 lpbTo) = _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
+        (uint256 lpbFrom, uint256 lpbTo, ) = _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
         assertEq(lpbFrom, lpRedeemFrom);
         assertEq(lpbTo,   lpAwardTo);
 
