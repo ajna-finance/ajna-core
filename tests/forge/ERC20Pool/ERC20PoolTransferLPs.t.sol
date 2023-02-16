@@ -595,6 +595,8 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[0] = 10_000 * 1e18;
         amounts[1] = 20_000 * 1e18;
         amounts[2] = 30_000 * 1e18;
+        vm.expectEmit(true, true, false, true);
+        emit ApproveLpOwnership(_lender1, _lender2, indexes, amounts);
         _pool.approveLpOwnership(_lender2, indexes, amounts);
 
         assertTrue(_pool.approvedTransferors(_lender2, _lender));
@@ -603,6 +605,8 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         changePrank(_lender2);
         address[] memory transferors = new address[](1);
         transferors[0] = _lender;
+        vm.expectEmit(true, true, false, true);
+        emit RevokeLpTransferors(_lender2, transferors);
         _pool.revokeLpTransferors(transferors);
         assertFalse(_pool.approvedTransferors(_lender2, _lender));
 
@@ -613,6 +617,8 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
 
         // reapprove transferor
         changePrank(_lender2);
+        vm.expectEmit(true, true, false, true);
+        emit ApproveLpTransferors(_lender2, transferors);
         _pool.approveLpTransferors(transferors);
         assertTrue(_pool.approvedTransferors(_lender2, _lender));
 

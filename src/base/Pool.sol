@@ -179,6 +179,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
             unchecked { ++i; }
         }
+
+        emit ApproveLpOwnership(
+            msg.sender,
+            newOwner_,
+            indexes_,
+            amounts_
+        );
     }
 
     /**
@@ -197,6 +204,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
             unchecked { ++i; }
         }
+
+        emit ApproveLpTransferors(
+            msg.sender,
+            transferors_
+        );
     }
 
     /**
@@ -215,6 +227,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
             unchecked { ++i; }
         }
+
+        emit RevokeLpTransferors(
+            msg.sender,
+            transferors_
+        );
     }
 
     /// @inheritdoc IPoolLenderActions
