@@ -373,15 +373,21 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
                 poolType:    poolState.poolType
             }
         );
+
+        uint256 collateralRemaining;
+        uint256 collateralSettled;
+        uint256 t0DebtSettled;
         (
-            uint256 collateralRemaining,
-            uint256 collateralSettled,
-            uint256 t0DebtSettled
+            collateralRemaining,
+            collateralSettled,
+            t0DebtSettled,
+            poolState.t0PoolUtilizationDebtWeight
         ) = Auctions.settlePoolDebt(
             auctions,
             buckets,
             deposits,
             loans,
+            poolState.t0PoolUtilizationDebtWeight,
             params
         );
 

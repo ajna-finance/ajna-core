@@ -329,15 +329,20 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
         uint256 liabilities = Deposits.treeSum(deposits) + auctions.totalBondEscrowed + reserveAuction.unclaimed;
 
+        uint256 collateralSettled;
+        uint256 t0DebtSettled;
+
         (
             ,
-            uint256 collateralSettled,
-            uint256 t0DebtSettled
+            collateralSettled,
+            t0DebtSettled,
+            poolState.t0PoolUtilizationDebtWeight
         ) = Auctions.settlePoolDebt(
             auctions,
             buckets,
             deposits,
             loans,
+            poolState.t0PoolUtilizationDebtWeight,
             SettleParams({
                 borrower:    borrowerAddress_,
                 reserves:    (assets > liabilities) ? (assets - liabilities) : 0,
@@ -403,6 +408,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         // update pool interest rate state
         poolState.debt       =  result.poolDebt;
         poolState.collateral -= result.collateralAmount;
+        poolState.t0PoolUtilizationDebtWeight = result.t0PoolUtilizationDebtWeight;
         _updateInterestState(poolState, result.newLup);
 
         _transferCollateral(callee_, result.collateralAmount);
@@ -457,6 +463,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
         poolState.collateral -= result.collateralAmount;
+        poolState.t0PoolUtilizationDebtWeight = result.t0PoolUtilizationDebtWeight;
         _updateInterestState(poolState, result.newLup);
     }
 

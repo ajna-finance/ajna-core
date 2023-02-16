@@ -11,22 +11,24 @@ pragma solidity 0.8.14;
 /*****************************/
 
 struct BucketTakeResult {
-    uint256 collateralAmount;      // [WAD] amount of collateral taken
-    uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LPs
-    uint256 t0DebtPenalty;         // [WAD] t0 penalty applied on first take
-    uint256 remainingCollateral;   // [WAD] amount of borrower collateral remaining after take
-    uint256 poolDebt;              // [WAD] current pool debt
-    uint256 t0PoolDebt;            // [WAD] t0 pool debt
-    uint256 newLup;                // [WAD] current lup
-    uint256 t0DebtInAuctionChange; // [WAD] the amount of t0 debt recovered by take action
-    bool    settledAuction;        // true if auction is settled by take action
+    uint256 collateralAmount;            // [WAD] amount of collateral taken
+    uint256 compensatedCollateral;       // [WAD] amount of borrower collateral that is compensated with LPs
+    uint256 t0DebtPenalty;               // [WAD] t0 penalty applied on first take
+    uint256 remainingCollateral;         // [WAD] amount of borrower collateral remaining after take
+    uint256 poolDebt;                    // [WAD] current pool debt
+    uint256 t0PoolDebt;                  // [WAD] t0 pool debt
+    uint256 newLup;                      // [WAD] current lup
+    uint256 t0DebtInAuctionChange;       // [WAD] the amount of t0 debt recovered by take action
+    uint256 t0PoolUtilizationDebtWeight; // [WAD] utilization weight accumulator, tracks debt and collateral relationship accross borrowers
+    bool    settledAuction;              // true if auction is settled by take action
 }
 
 struct KickResult {
-    uint256 amountToCoverBond; // [WAD] amount of bond that needs to be covered
-    uint256 t0PoolDebt;        // [WAD] t0 debt in pool after kick
-    uint256 t0KickedDebt;      // [WAD] new t0 debt after kick
-    uint256 lup;               // [WAD] current lup
+    uint256 amountToCoverBond;           // [WAD] amount of bond that needs to be covered
+    uint256 t0PoolDebt;                  // [WAD] t0 debt in pool after kick
+    uint256 t0KickedDebt;                // [WAD] new t0 debt after kick
+    uint256 lup;                         // [WAD] current lup
+    uint256 t0PoolUtilizationDebtWeight; // [WAD] utilization weight accumulator, tracks debt and collateral relationship accross borrowers
 }
 
 struct SettleParams {
@@ -38,17 +40,18 @@ struct SettleParams {
 }
 
 struct TakeResult {
-    uint256 collateralAmount;      // [WAD] amount of collateral taken
-    uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LPs
-    uint256 quoteTokenAmount;      // [WAD] amount of quote tokens paid by taker for taken collateral
-    uint256 t0DebtPenalty;         // [WAD] t0 penalty applied on first take
-    uint256 excessQuoteToken;      // [WAD] (NFT only) amount of quote tokens to be paid by taker to borrower for fractional collateral
-    uint256 remainingCollateral;   // [WAD] amount of borrower collateral remaining after take
-    uint256 poolDebt;              // [WAD] current pool debt
-    uint256 t0PoolDebt;            // [WAD] t0 pool debt
-    uint256 newLup;                // [WAD] current lup
-    uint256 t0DebtInAuctionChange; // [WAD] the amount of t0 debt recovered by take action
-    bool    settledAuction;        // true if auction is settled by take action
+    uint256 collateralAmount;            // [WAD] amount of collateral taken
+    uint256 compensatedCollateral;       // [WAD] amount of borrower collateral that is compensated with LPs
+    uint256 quoteTokenAmount;            // [WAD] amount of quote tokens paid by taker for taken collateral
+    uint256 t0DebtPenalty;               // [WAD] t0 penalty applied on first take
+    uint256 excessQuoteToken;            // [WAD] (NFT only) amount of quote tokens to be paid by taker to borrower for fractional collateral
+    uint256 remainingCollateral;         // [WAD] amount of borrower collateral remaining after take
+    uint256 poolDebt;                    // [WAD] current pool debt
+    uint256 t0PoolDebt;                  // [WAD] t0 pool debt
+    uint256 newLup;                      // [WAD] current lup
+    uint256 t0DebtInAuctionChange;       // [WAD] the amount of t0 debt recovered by take action
+    bool    settledAuction;              // true if auction is settled by take action
+    uint256 t0PoolUtilizationDebtWeight; // [WAD] utilization weight accumulator, tracks debt and collateral relationship accross borrowers
 }
 
 /******************************************/

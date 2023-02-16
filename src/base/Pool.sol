@@ -283,6 +283,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // update pool interest rate state
         poolState.debt = Maths.wmul(result.t0PoolDebt, poolState.inflator);
+        poolState.t0PoolUtilizationDebtWeight = result.t0PoolUtilizationDebtWeight;
         _updateInterestState(poolState, result.lup);
 
         if(result.amountToCoverBond != 0) _transferQuoteTokenFrom(msg.sender, result.amountToCoverBond);
@@ -314,6 +315,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // update pool interest rate state
         poolState.debt = Maths.wmul(result.t0PoolDebt, poolState.inflator);
+        poolState.t0PoolUtilizationDebtWeight = result.t0PoolUtilizationDebtWeight;
         _updateInterestState(poolState, result.lup);
 
         // transfer from kicker to pool the difference to cover bond
