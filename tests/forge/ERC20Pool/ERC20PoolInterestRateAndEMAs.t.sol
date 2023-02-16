@@ -150,7 +150,6 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             debtEma:   4_340.881358710158802477 * 1e18,
             lupColEma: 1_278.637533654711320024 * 1e18
         });
-        return;
 
         vm.revertTo(snapshot);
         // repay entire loan
@@ -175,7 +174,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 encumberedCollateral: 0,
                 poolDebt:             0,
                 actualUtilization:    0,
-                targetUtilization:    1_501.914318396030271203 * 1e18,
+                targetUtilization:    1 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
@@ -190,7 +189,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         });
     }
 
-    function testOverutilizedPoolInterestRateIncrease() external {
+    function testOverutilizedPoolInterestRateIncrease() external tearDown {
         // lender deposits 1000
         _addInitialLiquidity({
             from:   _lender,
@@ -228,7 +227,6 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 interestRateUpdate:   _startTime
             })
         );
-        return;
 
         // force an interest rate update
         skip(13 hours);
@@ -250,7 +248,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 encumberedCollateral: 9.927311124438159308 * 1e18,
                 poolDebt:             996.030634410028283604 * 1e18,
                 actualUtilization:    0.995958788335693301 * 1e18,
-                targetUtilization:    1 * 1e18,
+                targetUtilization:    151.098316673830768396 * 1e18,
                 minDebtAmount:        99.603063441002828360 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
@@ -260,7 +258,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         );
     }
 
-    function testPoolInterestRateDecrease() external {
+    function testPoolInterestRateDecrease() external tearDown {
         // lender makes an initial deposit
         skip(1 hours);
 
@@ -332,7 +330,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         );
     }
 
-    function testMinInterestRate() external {
+    function testMinInterestRate() external tearDown {
         _addInitialLiquidity({
             from:   _lender,
             amount: 10_000 * 1e18,
@@ -403,7 +401,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         );
     }
 
-    function testMaxInterestRate() external {
+    function testMaxInterestRate() external tearDown {
         _addInitialLiquidity({
             from:   _lender,
             amount: 10_000 * 1e18,

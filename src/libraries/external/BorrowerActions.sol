@@ -32,8 +32,6 @@ import { Maths }    from '../internal/Maths.sol';
 
 import { Auctions } from './Auctions.sol';
 
-import '@std/console.sol';
-
 /**
     @title  BorrowerActions library
     @notice External library containing logic for for pool actors:
