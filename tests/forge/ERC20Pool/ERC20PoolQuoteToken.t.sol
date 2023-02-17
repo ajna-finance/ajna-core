@@ -34,6 +34,12 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
     function testPoolDepositQuoteToken() external tearDown {
         assertEq(_hpb(), MIN_PRICE);
 
+        // should revert if trying to deposit at index 0
+        _assertAddLiquidityAtIndex0Revert({
+            from:   _lender,
+            amount: 10_000 * 1e18
+        });
+
         // test 10_000 deposit at price of 3_010.892022197881557845
         _addInitialLiquidity({
             from:   _lender,
