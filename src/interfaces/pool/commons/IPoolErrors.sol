@@ -190,6 +190,11 @@ interface IPoolErrors {
     error TransactionExpired();
 
     /**
+     *  @notice The address that transfer LPs is not approved by the LPs receiving address.
+     */
+    error TransferorNotApproved();
+
+    /**
      *  @notice Owner of the LP tokens attemps to transfer LPs to same address.
      */
     error TransferToSameOwner();

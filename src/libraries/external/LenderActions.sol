@@ -87,6 +87,7 @@ library LenderActions {
     error InsufficientLiquidity();
     error InsufficientCollateral();
     error MoveToSamePrice();
+    error TransferorNotApproved();
     error TransferToSameOwner();
 
     /***************************/
@@ -554,10 +555,14 @@ library LenderActions {
     function transferLPs(
         mapping(uint256 => Bucket) storage buckets_,
         mapping(address => mapping(address => mapping(uint256 => uint256))) storage allowances_,
+        mapping(address => mapping(address => bool)) storage approvedTransferors_,
         address owner_,
         address newOwner_,
         uint256[] calldata indexes_
     ) external {
+        // revert if msg.sender is not the new owner and is not approved as a transferor by the new owner
+        if (newOwner_ != msg.sender && !approvedTransferors_[newOwner_][msg.sender]) revert TransferorNotApproved();
+
         // revert if new owner address is the same as old owner address
         if (owner_ == newOwner_) revert TransferToSameOwner();
 

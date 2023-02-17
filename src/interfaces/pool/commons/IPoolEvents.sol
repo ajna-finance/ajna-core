@@ -23,6 +23,30 @@ interface IPoolEvents {
     );
 
     /**
+     *  @notice Emitted when lender approves a new owner of LPs at specified indexes with specified amounts.
+     *  @param  lender    Recipient that approves new owner for LPs.
+     *  @param  newOwner  Recipient approved to transfer LPs.
+     *  @param  indexes   Bucket indexes of LPs approved.
+     *  @param  amounts   LP amounts approved (ordered by approved indexes).
+     */
+    event ApproveLpOwnership(
+        address indexed lender,
+        address indexed newOwner,
+        uint256[] indexes,
+        uint256[] amounts
+    );
+
+    /**
+     *  @notice Emitted when lender whitelists addresses to accept LPs from.
+     *  @param  lender      Recipient that approves new owner for LPs.
+     *  @param  transferors List of addresses that can transfer LPs to lender.
+     */
+    event ApproveLpTransferors(
+        address indexed lender,
+        address[] transferors
+    );
+
+    /**
      *  @notice Emitted when auction is completed.
      *  @param  borrower   Address of borrower that exits auction.
      *  @param  collateral Borrower's remaining collateral when auction completed.
@@ -186,6 +210,16 @@ interface IPoolEvents {
     event ReserveAuction(
         uint256 claimableReservesRemaining,
         uint256 auctionPrice
+    );
+
+    /**
+     *  @notice Emitted when lender removes addresses from the LPs transferors whitelist.
+     *  @param  lender      Recipient that approves new owner for LPs.
+     *  @param  transferors List of addresses that won't be able to transfer LPs to lender anymore.
+     */
+    event RevokeLpTransferors(
+        address indexed lender,
+        address[] transferors
     );
 
     /**

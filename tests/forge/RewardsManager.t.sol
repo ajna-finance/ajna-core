@@ -246,11 +246,14 @@ contract RewardsManagerTest is DSTestPlus {
         IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(params_.minter, address(params_.pool), keccak256("ERC20_NON_SUBSET_HASH"));
         tokenId_ = _positionManager.mint(mintParams);
 
+        uint256[] memory lpBalances = new uint256[](params_.indexes.length);
+
         for (uint256 i = 0; i < params_.indexes.length; i++) {
             params_.pool.addQuoteToken(params_.mintAmount, params_.indexes[i], type(uint256).max);
-            (uint256 lpBalance, ) = params_.pool.lenderInfo(params_.indexes[i], params_.minter);
-            params_.pool.approveLpOwnership(address(_positionManager), params_.indexes[i], lpBalance);
+            (lpBalances[i], ) = params_.pool.lenderInfo(params_.indexes[i], params_.minter);
         }
+
+        params_.pool.approveLpOwnership(address(_positionManager), params_.indexes, lpBalances);
 
         // construct memorialize params struct
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(

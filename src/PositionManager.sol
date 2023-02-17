@@ -286,28 +286,29 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
         IPool pool = IPool(poolKey[params_.tokenId]);
 
+        address owner = ownerOf(params_.tokenId);
+
         uint256 indexesLength = params_.indexes.length;
 
-        address owner = ownerOf(params_.tokenId);
+        uint256[] memory lpAmounts = new uint256[](indexesLength);
 
         for (uint256 i = 0; i < indexesLength; ) {
 
             // remove bucket index at which a position has added liquidity
             if (!positionIndex.remove(params_.indexes[i])) revert RemoveLiquidityFailed();
 
-            uint256 lpAmount = positionLPs[params_.tokenId][params_.indexes[i]];
+            lpAmounts[i] = positionLPs[params_.tokenId][params_.indexes[i]];
 
             // remove LPs tracked by position manager at bucket index
             delete positionLPs[params_.tokenId][params_.indexes[i]];
-
-            // approve owner to take over the LPs ownership (required for transferLPs pool call)
-            pool.approveLpOwnership(owner, params_.indexes[i], lpAmount);
 
             unchecked { ++i; }
         }
 
         emit RedeemPosition(owner, params_.tokenId);
 
+        // approve owner to take over the LPs ownership (required for transferLPs pool call)
+        pool.approveLpOwnership(owner, params_.indexes, lpAmounts);
         // update pool lps accounting and transfer ownership of lps from PositionManager contract
         pool.transferLPs(address(this), owner, params_.indexes);
     }
