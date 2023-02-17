@@ -44,6 +44,7 @@ library LenderActions {
         uint256 fromBucketRemainingDeposit; // Amount of scaled deposit remaining in from bucket after move.
         uint256 toBucketPrice;              // [WAD] Price of the bucket to move amount to.
         uint256 toBucketBankruptcyTime;     // Time the bucket to move amount to was marked as insolvent.
+        uint256 toBucketDepositTime;        // Time of lender deposit in the bucket to move amount to.
         uint256 toBucketUnscaledDeposit;    // Amount of unscaled deposit in to bucket.
         uint256 toBucketDeposit;            // Amount of scaled deposit in to bucket.
         uint256 toBucketScale;              // Scale deposit of to bucket.
@@ -295,13 +296,19 @@ library LenderActions {
         // update lender and bucket LPs balance in target bucket
         Lender storage toBucketLender = toBucket.lenders[msg.sender];
 
-        if (vars.toBucketBankruptcyTime >= toBucketLender.depositTime) {
+        vars.toBucketDepositTime = toBucketLender.depositTime;
+        if (vars.toBucketBankruptcyTime >= vars.toBucketDepositTime) {
+            // bucket is bankrupt and deposit was done before bankruptcy time, reset lender lp amount
             toBucketLender.lps = toBucketLPs_;
+
+            // set deposit time of the lender's to bucket as bucket's last bankruptcy timestamp + 1 so deposit won't get invalidated
+            vars.toBucketDepositTime = vars.toBucketBankruptcyTime + 1;
         } else {
             toBucketLender.lps += toBucketLPs_;
         }
-        // set deposit time to the greater of the lender's from bucket and the target bucket's last bankruptcy timestamp + 1 so deposit won't get invalidated
-        toBucketLender.depositTime = Maths.max(vars.fromBucketDepositTime, vars.toBucketBankruptcyTime + 1);
+
+        // set deposit time to the greater of the lender's from bucket and the target bucket
+        toBucketLender.depositTime = Maths.max(vars.fromBucketDepositTime, vars.toBucketDepositTime);
 
         // update bucket LPs balance
         toBucket.lps += toBucketLPs_;
