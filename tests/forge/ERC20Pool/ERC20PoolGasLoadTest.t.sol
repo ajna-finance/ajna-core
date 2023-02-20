@@ -276,7 +276,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         _pool.removeQuoteToken(5_000 * 1e18, index_);
 
         skip(15 hours);
-        _pool.moveQuoteToken(1_000 * 1e18, index_, index_ + 1, block.timestamp + 2 minutes);
+        _pool.moveQuoteToken(lender, 1_000 * 1e18, index_, index_ + 1, block.timestamp + 2 minutes);
 
         skip(15 hours);
         _pool.removeQuoteToken(type(uint256).max, index_);

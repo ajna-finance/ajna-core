@@ -63,6 +63,7 @@ struct AddQuoteParams {
 struct MoveQuoteParams {
     uint256 fromIndex;       // the deposit index from where amount is moved
     uint256 maxAmountToMove; // [WAD] max amount to move between deposits
+    address owner;           // address owner of the LPs to be moved
     uint256 toIndex;         // the deposit index where amount is moved to
     uint256 thresholdPrice;  // [WAD] max threshold price in pool
 }

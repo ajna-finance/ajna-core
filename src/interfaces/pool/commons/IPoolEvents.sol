@@ -23,17 +23,15 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when lender approves a new owner of LPs at specified indexes with specified amounts.
-     *  @param  lender    Recipient that approves new owner for LPs.
-     *  @param  newOwner  Recipient approved to transfer LPs.
+     *  @notice Emitted when lender approves a new manager of LPs at specified indexes.
+     *  @param  lender    Recipient that approves new manager for LPs.
+     *  @param  lpManager Recipient approved to manage LPs.
      *  @param  indexes   Bucket indexes of LPs approved.
-     *  @param  amounts   LP amounts approved (ordered by approved indexes).
      */
-    event ApproveLpOwnership(
+    event ApproveLpManager(
         address indexed lender,
-        address indexed newOwner,
-        uint256[] indexes,
-        uint256[] amounts
+        address indexed lpManager,
+        uint256[] indexes
     );
 
     /**
@@ -141,6 +139,7 @@ interface IPoolEvents {
     /**
      *  @notice Emitted when lender moves quote token from a bucket price to another.
      *  @param  lender         Recipient that moved quote tokens.
+     *  @param  operator       Recipient that moved quote tokens.
      *  @param  from           Price bucket from which quote tokens were moved.
      *  @param  to             Price bucket where quote tokens were moved.
      *  @param  amount         Amount of quote tokens moved.
@@ -149,6 +148,7 @@ interface IPoolEvents {
      *  @param  lup            LUP calculated after removal.
      */
     event MoveQuoteToken(
+        address operator,
         address indexed lender,
         uint256 indexed from,
         uint256 indexed to,
@@ -210,6 +210,18 @@ interface IPoolEvents {
     event ReserveAuction(
         uint256 claimableReservesRemaining,
         uint256 auctionPrice
+    );
+
+    /**
+     *  @notice Emitted when manager removes itself from the LPs managers list.
+     *  @param  lpManager Address that revoke itself as manager of LPs.
+     *  @param  lender    Recipient that approved manager of LPs.
+     *  @param  indexes   List of indexes to remove LP manager for.
+     */
+    event RevokeLpManager(
+        address indexed lpManager,
+        address indexed lender,
+        uint256[] indexes
     );
 
     /**

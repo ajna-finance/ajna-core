@@ -294,6 +294,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             bucketLPs_
         ) = LenderActions.mergeOrRemoveCollateral(
             buckets,
+            lpManagers[msg.sender],
             deposits,
             removalIndexes_,
             collateralAmount,
@@ -322,7 +323,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     function removeCollateral(
         uint256 noOfNFTsToRemove_,
         uint256 index_
-    ) external override nonReentrant returns (uint256 collateralAmount_, uint256 lpAmount_) {
+    ) external override nonReentrant onlyIfOwnerManaged(index_) returns (uint256 collateralAmount_, uint256 lpAmount_) {
         _revertIfAuctionClearable(auctions, loans);
 
         PoolState memory poolState = _accruePoolInterest();

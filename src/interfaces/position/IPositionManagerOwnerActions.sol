@@ -17,15 +17,14 @@ interface IPositionManagerOwnerActions {
     ) external;
 
     /**
-     *  @notice Called to memorialize existing positions with a given NFT.
+     *  @notice Called to track existing positions with a given NFT.
      *  @dev    The array of buckets is expected to be constructed off chain by scanning events for that lender.
-     *  @dev    The NFT must have already been created, and the number of buckets to be memorialized at a time determined by function caller.
-     *  @dev    An additional call is made to the pool to transfer the LP tokens from their previous owner, to the Position Manager.
-     *  @dev    Pool.setPositionOwner() must be called prior to calling this method.
-     *  @param  params Calldata struct supplying inputs required to conduct the memorialization.
+     *  @dev    When tracking position the owner gives full control of the entire LP deposit and won't be able to use LPs outside of position manager (only move actions).
+     *  @dev    The NFT must have already been created, and the number of buckets to be tracked at a time determined by function caller.
+     *  @param  params Calldata struct supplying inputs required to conduct the tracking positions.
      */
-    function memorializePositions(
-        MemorializePositionsParams calldata params
+    function trackPositions(
+        TrackPositionsParams calldata params
     ) external;
 
     /**
@@ -47,15 +46,13 @@ interface IPositionManagerOwnerActions {
     ) external;
 
     /**
-     *  @notice Called to reedem existing positions with a given NFT.
+     *  @notice Called to untrack existing positions for a given NFT.
      *  @dev    The array of buckets is expected to be constructed off chain by scanning events for that lender.
-     *  @dev    The NFT must have already been created, and the number of buckets to be memorialized at a time determined by function caller.
-     *  @dev    An additional call is made to the pool to transfer the LP tokens Position Manager to owner.
-     *  @dev    Pool.setPositionOwner() must be called prior to calling this method.
-     *  @param  params Calldata struct supplying inputs required to conduct the redeem.
+     *  @dev    The NFT must have already been created, and the number of buckets to be tracked at a time determined by function caller.
+     *  @param  params Calldata struct supplying inputs required to conduct positions untrack.
      */
-    function reedemPositions(
-        RedeemPositionsParams calldata params
+    function untrackPositions(
+        UntrackPositionsParams calldata params
     ) external;
 
     /*********************/
@@ -73,9 +70,10 @@ interface IPositionManagerOwnerActions {
     /**
      *  @notice Struct holding parameters for tracking positions.
      */
-    struct MemorializePositionsParams {
+    struct TrackPositionsParams {
         uint256   tokenId; // The tokenId of the positions NFT
-        uint256[] indexes; // The array of bucket indexes to memorialize positions
+        address   pool;    // The pool address associated with positions NFT
+        uint256[] indexes; // The array of bucket indexes to track positions
     }
 
     /**
@@ -101,9 +99,9 @@ interface IPositionManagerOwnerActions {
     /**
      *  @notice Struct holding parameters for tracking positions.
      */
-    struct RedeemPositionsParams {
+    struct UntrackPositionsParams {
         uint256   tokenId; // The tokenId of the positions NFT
         address   pool;    // The pool address associated with positions NFT
-        uint256[] indexes; // The array of bucket indexes to reedem positions for
+        uint256[] indexes; // The array of bucket indexes to untrack positions for
     }
 }

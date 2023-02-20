@@ -2,6 +2,7 @@
 pragma solidity 0.8.14;
 
 import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
+import { IERC165 } from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 
 import { ERC20Pool }        from 'src/ERC20Pool.sol';
 import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
@@ -52,7 +53,7 @@ contract RewardsManagerTest is DSTestPlus {
     mapping (uint256 => address) internal tokenIdToMinter;
     mapping (address => uint256) internal minterToBalance;
 
-    struct MintAndMemorializeParams {
+    struct MintAndTrackParams {
         uint256[] indexes;
         address minter;
         uint256 mintAmount;
@@ -229,7 +230,7 @@ contract RewardsManagerTest is DSTestPlus {
         }
     }
 
-    function _mintAndMemorializePositionNFT(MintAndMemorializeParams memory params_) internal returns (uint256 tokenId_) {
+    function _mintAndTrackPositionNFT(MintAndTrackParams memory params_) internal returns (uint256 tokenId_) {
         changePrank(params_.minter);
 
         Token collateral = Token(params_.pool.collateralAddress());
@@ -246,21 +247,18 @@ contract RewardsManagerTest is DSTestPlus {
         IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(params_.minter, address(params_.pool), keccak256("ERC20_NON_SUBSET_HASH"));
         tokenId_ = _positionManager.mint(mintParams);
 
-        uint256[] memory lpBalances = new uint256[](params_.indexes.length);
-
         for (uint256 i = 0; i < params_.indexes.length; i++) {
             params_.pool.addQuoteToken(params_.mintAmount, params_.indexes[i], type(uint256).max);
-            (lpBalances[i], ) = params_.pool.lenderInfo(params_.indexes[i], params_.minter);
         }
 
-        params_.pool.approveLpOwnership(address(_positionManager), params_.indexes, lpBalances);
+        params_.pool.approveLpManager(address(_positionManager), params_.indexes);
 
-        // construct memorialize params struct
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId_, params_.indexes
+        // construct track params struct
+        IPositionManagerOwnerActions.TrackPositionsParams memory trackParams = IPositionManagerOwnerActions.TrackPositionsParams(
+            tokenId_, address(params_.pool), params_.indexes
         );
 
-        _positionManager.memorializePositions(memorializeParams);
+        _positionManager.trackPositions(trackParams);
     }
 
     function _triggerReserveAuctions(TriggerReserveAuctionParams memory params_) internal returns (uint256 tokensBurned_) {
@@ -328,14 +326,14 @@ contract RewardsManagerTest is DSTestPlus {
         depositIndexes[2] = 2;
         depositIndexes[3] = 3;
         depositIndexes[4] = 4;
-        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+        MintAndTrackParams memory mintTrackParams = MintAndTrackParams({
             indexes: depositIndexes,
             minter: _minterOne,
             mintAmount: 1000 * 1e18,
             pool: _poolOne
         });
 
-        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        uint256 tokenIdOne = _mintAndTrackPositionNFT(mintTrackParams);
 
         // configure NFT position two
         depositIndexes = new uint256[](4);
@@ -343,13 +341,13 @@ contract RewardsManagerTest is DSTestPlus {
         depositIndexes[1] = 1;
         depositIndexes[2] = 3;
         depositIndexes[3] = 12;
-        mintMemorializeParams = MintAndMemorializeParams({
+        mintTrackParams = MintAndTrackParams({
             indexes: depositIndexes,
             minter: _minterTwo,
             mintAmount: 1000 * 1e18,
             pool: _poolTwo
         });
-        uint256 tokenIdTwo = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        uint256 tokenIdTwo = _mintAndTrackPositionNFT(mintTrackParams);
 
         // check only owner of an NFT can deposit it into the rewards contract
         changePrank(_minterTwo);
@@ -383,7 +381,7 @@ contract RewardsManagerTest is DSTestPlus {
         depositIndexes[2] = 2;
         depositIndexes[3] = 3;
         depositIndexes[4] = 4;
-        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+        MintAndTrackParams memory mintTrackParams = MintAndTrackParams({
             indexes: depositIndexes,
             minter: _minterOne,
             mintAmount: 1000 * 1e18,
@@ -391,8 +389,18 @@ contract RewardsManagerTest is DSTestPlus {
         });
 
         // mint memorialize and deposit NFT
-        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        uint256 tokenIdOne = _mintAndTrackPositionNFT(mintTrackParams);
+        assertTrue(_positionManager.isIndexInPosition(tokenIdOne, 9));
+        assertTrue(_positionManager.isIndexInPosition(tokenIdOne, 1));
+        assertTrue(_positionManager.isIndexInPosition(tokenIdOne, 2));
+        assertTrue(_positionManager.isIndexInPosition(tokenIdOne, 3));
+        assertTrue(_positionManager.isIndexInPosition(tokenIdOne, 4));
         _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
+        assertTrue(_positionManager.isIndexInPosition(tokenIdOne, 9));
+        assertTrue(_positionManager.isIndexInPosition(tokenIdOne, 1));
+        assertTrue(_positionManager.isIndexInPosition(tokenIdOne, 2));
+        assertTrue(_positionManager.isIndexInPosition(tokenIdOne, 3));
+        assertTrue(_positionManager.isIndexInPosition(tokenIdOne, 4));
 
         // borrower takes actions providing reserves enabling reserve auctions
         // bidder takes reserve auctions by providing ajna tokens to be burned
@@ -460,14 +468,14 @@ contract RewardsManagerTest is DSTestPlus {
         depositIndexes[2] = 2552;
         depositIndexes[3] = 2553;
         depositIndexes[4] = 2555;
-        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+        MintAndTrackParams memory mintTrackParams = MintAndTrackParams({
             indexes: depositIndexes,
             minter: _minterOne,
             mintAmount: 1000 * 1e18,
             pool: _poolOne
         });
 
-        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        uint256 tokenIdOne = _mintAndTrackPositionNFT(mintTrackParams);
 
         // epoch 0 - 1 is checked for rewards
         _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
@@ -532,14 +540,14 @@ contract RewardsManagerTest is DSTestPlus {
         depositIndexes[2] = 2552;
         depositIndexes[3] = 2553;
         depositIndexes[4] = 2555;
-        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+        MintAndTrackParams memory mintTrackParams = MintAndTrackParams({
             indexes: depositIndexes,
             minter: _minterOne,
             mintAmount: 1000 * 1e18,
             pool: _poolOne
         });
 
-        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        uint256 tokenIdOne = _mintAndTrackPositionNFT(mintTrackParams);
 
         // epoch 0 - 1 is checked for rewards
         _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
@@ -608,13 +616,13 @@ contract RewardsManagerTest is DSTestPlus {
         depositIndex2[0] = 2770;
         
         // configure NFT position one
-        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+        MintAndTrackParams memory mintTrackParams = MintAndTrackParams({
             indexes: depositIndexes,
             minter: _minterOne,
             mintAmount: 10_000 * 1e18,
             pool: _poolOne
             });
-        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        uint256 tokenIdOne = _mintAndTrackPositionNFT(mintTrackParams);
         changePrank(_minterOne);
         _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
         
@@ -736,7 +744,7 @@ contract RewardsManagerTest is DSTestPlus {
         depositIndexes[7] = 6002;
         depositIndexes[8] = 6003;
         depositIndexes[9] = 6004;
-        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+        MintAndTrackParams memory mintTrackParams = MintAndTrackParams({
             indexes: depositIndexes,
             minter: _minterOne,
             mintAmount: 1_000 * 1e18,
@@ -744,7 +752,7 @@ contract RewardsManagerTest is DSTestPlus {
         });
 
         // mint memorialize and deposit NFT
-        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        uint256 tokenIdOne = _mintAndTrackPositionNFT(mintTrackParams);
         _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
 
         /*****************************/
@@ -906,13 +914,13 @@ contract RewardsManagerTest is DSTestPlus {
         depositIndexes[4] = 2555;
 
         // configure NFT position two
-        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+        MintAndTrackParams memory mintTrackParams = MintAndTrackParams({
             indexes:    depositIndexes,
             minter:     _minterTwo,
             mintAmount: 1000 * 1e18,
             pool:       _poolOne
         });
-        uint256 tokenIdTwo = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        uint256 tokenIdTwo = _mintAndTrackPositionNFT(mintTrackParams);
         // bucket exchange rates are not changed at the time minter two stakes
         assertEq(_poolOne.bucketExchangeRate(2550), 1e18);
         assertEq(_poolOne.bucketExchangeRate(2551), 1e18);
@@ -930,13 +938,13 @@ contract RewardsManagerTest is DSTestPlus {
         skip(1 days);
 
         // configure NFT position three one day after early minter
-        mintMemorializeParams = MintAndMemorializeParams({
+        mintTrackParams = MintAndTrackParams({
             indexes:    depositIndexes,
             minter:     _minterThree,
             mintAmount: 1000 * 1e18,
             pool:       _poolOne
         });
-        uint256 tokenIdThree = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        uint256 tokenIdThree = _mintAndTrackPositionNFT(mintTrackParams);
         // bucket exchange rates are higher at the time minter three stakes
         assertEq(_poolOne.bucketExchangeRate(2550), 1.000000116565164639 * 1e18);
         assertEq(_poolOne.bucketExchangeRate(2551), 1.000000116565164639 * 1e18);
@@ -996,7 +1004,7 @@ contract RewardsManagerTest is DSTestPlus {
         depositIndexes[2] = 2;
         depositIndexes[3] = 3;
         depositIndexes[4] = 4;
-        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+        MintAndTrackParams memory mintTrackParams = MintAndTrackParams({
             indexes: depositIndexes,
             minter: _minterOne,
             mintAmount: 1000 * 1e18,
@@ -1004,7 +1012,7 @@ contract RewardsManagerTest is DSTestPlus {
         });
 
         // mint memorialize and deposit NFT
-        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        uint256 tokenIdOne = _mintAndTrackPositionNFT(mintTrackParams);
         _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
 
         /*****************************/
@@ -1024,13 +1032,13 @@ contract RewardsManagerTest is DSTestPlus {
         /******************************/
 
         // second depositor deposits an NFT representing the same positions into the rewards contract
-        mintMemorializeParams = MintAndMemorializeParams({
+        mintTrackParams = MintAndTrackParams({
             indexes: depositIndexes,
             minter: _minterTwo,
             mintAmount: 1000 * 1e18,
             pool: _poolOne
         });
-        uint256 tokenIdTwo = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        uint256 tokenIdTwo = _mintAndTrackPositionNFT(mintTrackParams);
         // second depositor stakes NFT, generating an update reward
         _stakeToken(address(_poolOne), _minterTwo, tokenIdTwo);
         assertEq(_ajnaToken.balanceOf(_minterTwo), 8.038657281009010230 * 1e18);
@@ -1067,13 +1075,13 @@ contract RewardsManagerTest is DSTestPlus {
         /*****************************/
 
         // third depositor deposits an NFT representing the same positions into the rewards contract
-        mintMemorializeParams = MintAndMemorializeParams({
+        mintTrackParams = MintAndTrackParams({
             indexes: depositIndexes,
             minter: _minterThree,
             mintAmount: 1000 * 1e18,
             pool: _poolOne
         });
-        uint256 tokenIdThree = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        uint256 tokenIdThree = _mintAndTrackPositionNFT(mintTrackParams);
         _stakeToken(address(_poolOne), _minterThree, tokenIdThree);
 
         /***********************/
@@ -1124,7 +1132,7 @@ contract RewardsManagerTest is DSTestPlus {
         depositIndexesMinterOne[2] = 2552;
         depositIndexesMinterOne[3] = 2553;
         depositIndexesMinterOne[4] = 2555;
-        MintAndMemorializeParams memory mintMemorializeParamsMinterOne = MintAndMemorializeParams({
+        MintAndTrackParams memory mintTrackParamsMinterOne = MintAndTrackParams({
             indexes: depositIndexesMinterOne,
             minter: _minterOne,
             mintAmount: 1_000 * 1e18,
@@ -1138,7 +1146,7 @@ contract RewardsManagerTest is DSTestPlus {
         depositIndexesMinterTwo[2] = 2200;
         depositIndexesMinterTwo[3] = 2221;
         depositIndexesMinterTwo[4] = 2222;
-        MintAndMemorializeParams memory mintMemorializeParamsMinterTwo = MintAndMemorializeParams({
+        MintAndTrackParams memory mintTrackParamsMinterTwo = MintAndTrackParams({
             indexes: depositIndexesMinterTwo,
             minter: _minterTwo,
             mintAmount: 5_000 * 1e18,
@@ -1155,8 +1163,8 @@ contract RewardsManagerTest is DSTestPlus {
         depositIndexes[6] = 2221;
         depositIndexes[7] = 2222;
 
-        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParamsMinterOne);
-        uint256 tokenIdTwo = _mintAndMemorializePositionNFT(mintMemorializeParamsMinterTwo);
+        uint256 tokenIdOne = _mintAndTrackPositionNFT(mintTrackParamsMinterOne);
+        uint256 tokenIdTwo = _mintAndTrackPositionNFT(mintTrackParamsMinterTwo);
 
         // lenders stake their NFTs
         _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
@@ -1267,7 +1275,7 @@ contract RewardsManagerTest is DSTestPlus {
         depositIndexes[2] = 2552;
         depositIndexes[3] = 2553;
         depositIndexes[4] = 2555;
-        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+        MintAndTrackParams memory mintTrackParams = MintAndTrackParams({
             indexes: depositIndexes,
             minter: _minterOne,
             mintAmount: 1000 * 1e18,
@@ -1275,7 +1283,7 @@ contract RewardsManagerTest is DSTestPlus {
         });
 
         // mint memorialize and deposit NFT
-        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        uint256 tokenIdOne = _mintAndTrackPositionNFT(mintTrackParams);
         _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
 
         // only owner should be able to withdraw the NFT
@@ -1307,14 +1315,14 @@ contract RewardsManagerTest is DSTestPlus {
         depositIndexes[2] = 2552;
         depositIndexes[3] = 2553;
         depositIndexes[4] = 2555;
-        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+        MintAndTrackParams memory mintTrackParams = MintAndTrackParams({
             indexes: depositIndexes,
             minter: _minterOne,
             mintAmount: 1000 * 1e18,
             pool: _poolOne
         });
 
-        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        uint256 tokenIdOne = _mintAndTrackPositionNFT(mintTrackParams);
         _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
 
         TriggerReserveAuctionParams memory triggerReserveAuctionParams = TriggerReserveAuctionParams({
@@ -1388,14 +1396,14 @@ contract RewardsManagerTest is DSTestPlus {
         depositIndexesOne[2] = 2;
         depositIndexesOne[3] = 3;
         depositIndexesOne[4] = 4;
-        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+        MintAndTrackParams memory mintTrackParams = MintAndTrackParams({
             indexes: depositIndexesOne,
             minter: _minterOne,
             mintAmount: 1000 * 1e18,
             pool: _poolOne
         });
 
-        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        uint256 tokenIdOne = _mintAndTrackPositionNFT(mintTrackParams);
 
         // configure NFT position two
         uint256[] memory depositIndexesTwo = new uint256[](4);
@@ -1403,14 +1411,14 @@ contract RewardsManagerTest is DSTestPlus {
         depositIndexesTwo[1] = 1;
         depositIndexesTwo[2] = 3;
         depositIndexesTwo[3] = 12;
-        mintMemorializeParams = MintAndMemorializeParams({
+        mintTrackParams = MintAndTrackParams({
             indexes: depositIndexesTwo,
             minter: _minterTwo,
             mintAmount: 1000 * 1e18,
             pool: _poolTwo
         });
 
-        uint256 tokenIdTwo = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        uint256 tokenIdTwo = _mintAndTrackPositionNFT(mintTrackParams);
 
         // minterOne deposits their NFT into the rewards contract
         _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
@@ -1503,13 +1511,13 @@ contract RewardsManagerTest is DSTestPlus {
         for (uint256 i = 0; i < indexes; ++i) {
             depositIndexes[i] = _randomIndex();
         }
-        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+        MintAndTrackParams memory mintTrackParams = MintAndTrackParams({
             indexes: depositIndexes,
             minter: _minterOne,
             mintAmount: mintAmount,
             pool: _poolOne
         });
-        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        uint256 tokenIdOne = _mintAndTrackPositionNFT(mintTrackParams);
 
         // stake NFT
         _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
@@ -1564,14 +1572,14 @@ contract RewardsManagerTest is DSTestPlus {
         // stake variable no of deposits
         for(uint256 i = 0; i < deposits; ++i) {
             // mint and memorilize Positions
-            MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+            MintAndTrackParams memory mintTrackParams = MintAndTrackParams({
                 indexes: depositIndexes,
                 minter: minters[i],
                 mintAmount: 1_000_000_000 * 1e18,
                 pool: _poolOne
             });
 
-            tokenIds[i] = _mintAndMemorializePositionNFT(mintMemorializeParams);
+            tokenIds[i] = _mintAndTrackPositionNFT(mintTrackParams);
             tokenIdToMinter[tokenIds[i]] = minters[i];
             _stakeToken(address(_poolOne), minters[i], tokenIds[i]);
         }
@@ -1640,14 +1648,14 @@ contract RewardsManagerTest is DSTestPlus {
         depositIndexes[2] = 2;
         depositIndexes[3] = 3;
         depositIndexes[4] = 4;
-        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+        MintAndTrackParams memory mintTrackParams = MintAndTrackParams({
             indexes: depositIndexes,
             minter: _minterOne,
             mintAmount: 1000 * 1e18,
             pool: _poolOne
         });
 
-        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        uint256 tokenIdOne = _mintAndTrackPositionNFT(mintTrackParams);
         _stakeToken(address(_poolOne), _minterOne, tokenIdOne);
 
         uint256 currentBurnEpoch = _poolOne.currentBurnEpoch();
@@ -1659,6 +1667,11 @@ contract RewardsManagerTest is DSTestPlus {
 
         // user should be able to claim rewards for current epoch
         _rewardsManager.claimRewards(tokenIdOne, currentBurnEpoch);
+    }
+
+    function testIERC165Support() external {
+        assertTrue(IERC165(address(_rewardsManager)).supportsInterface(0x03000336));
+        assertFalse(IERC165(address(_positionManager)).supportsInterface(0x03000336));
     }
 
 }

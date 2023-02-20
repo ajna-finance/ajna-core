@@ -27,13 +27,9 @@ abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract 
 
         vm.prank(operator_);
         _quote.approve(address(_pool), type(uint256).max);
-        address[] memory transferors = new address[](1);
-        transferors[0] = address(_positionManager);
-        _pool.approveLpTransferors(transferors);
 
         vm.prank(operator_);
         _quote.approve(address(_positionManager), type(uint256).max);
-        _pool.approveLpTransferors(transferors);
     }
 
     /**
@@ -114,10 +110,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
      *  @notice Tests attachment of a created position to an already existing NFT.
      *          LPs are checked to verify ownership of position.
      *          Reverts:
-     *              Attempts to memorialize when lps aren't allowed to be transfered.
+     *              Attempts to track when lps aren't allowed to be transfered.
      *              Attempts to set position owner when not owner of the LPs.
      */
-    function testMemorializePositions() external {
+    function testTrackPositions() external {
         address testAddress = makeAddr("testAddress");
         uint256 mintAmount  = 10000 * 1e18;
 
@@ -145,615 +141,151 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             index:  indexes[2]
         });
 
-        // mint an NFT to later memorialize existing positions into
+        // mint an NFT to later track existing positions into
         uint256 tokenId = _mintNFT(testAddress, testAddress, address(_pool));
         assertFalse(_positionManager.isIndexInPosition(tokenId, 2550));
         assertFalse(_positionManager.isIndexInPosition(tokenId, 2551));
         assertFalse(_positionManager.isIndexInPosition(tokenId, 2552));
 
-        // construct memorialize params struct
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
+        // construct track params struct
+        IPositionManagerOwnerActions.TrackPositionsParams memory trackParams = IPositionManagerOwnerActions.TrackPositionsParams(
+            tokenId, address(_pool), indexes
         );
 
-        // should revert if access hasn't been granted to transfer LP tokens
-        vm.expectRevert(IPoolErrors.NoAllowance.selector);
-        _positionManager.memorializePositions(memorializeParams);
+        // should revert if access hasn't been granted to manage LP tokens
+        vm.expectRevert(IPositionManagerErrors.NotLPsManager.selector);
+        _positionManager.trackPositions(trackParams);
 
-        // allow position manager to take ownership of the position
-        uint256[] memory amounts = new uint256[](3);
-        amounts[0] = 3_000 * 1e18;
-        amounts[1] = 3_000 * 1e18;
-        amounts[2] = 3_000 * 1e18;
-        _pool.approveLpOwnership(address(_positionManager), indexes, amounts);
+        assertEq(_pool.lpManagers(testAddress, indexes[0]), address(0));
+        assertEq(_pool.lpManagers(testAddress, indexes[1]), address(0));
+        assertEq(_pool.lpManagers(testAddress, indexes[2]), address(0));
 
-        // memorialize quote tokens into minted NFT
+        // allow position manager to manage positions LPs
+        _pool.approveLpManager(address(_positionManager), indexes);
+
+        assertEq(_pool.lpManagers(testAddress, indexes[0]), address(_positionManager));
+        assertEq(_pool.lpManagers(testAddress, indexes[1]), address(_positionManager));
+        assertEq(_pool.lpManagers(testAddress, indexes[2]), address(_positionManager));
+
+        // track positions
         vm.expectEmit(true, true, true, true);
-        emit MemorializePosition(testAddress, tokenId);
+        emit TrackPositions(testAddress, tokenId, indexes);
+        _positionManager.trackPositions(trackParams);
+
+        // check positions through position manager
+        assertTrue(_positionManager.isIndexInPosition(tokenId, 2550));
+        assertTrue(_positionManager.isIndexInPosition(tokenId, 2551));
+        assertTrue(_positionManager.isIndexInPosition(tokenId, 2552));
+
+        assertEq(_positionManager.getLPs(tokenId, indexes[0]), 3_000 * 1e18);
+        assertEq(_positionManager.getLPs(tokenId, indexes[1]), 3_000 * 1e18);
+        assertEq(_positionManager.getLPs(tokenId, indexes[2]), 3_000 * 1e18);
+
+        // check that LPs are still owned by the owner
+        (uint256 lpBalance, ) = _pool.lenderInfo(indexes[0], testAddress);
+        assertEq(lpBalance, 3_000 * 1e18);
+        (lpBalance, ) = _pool.lenderInfo(indexes[1], testAddress);
+        assertEq(lpBalance, 3_000 * 1e18);
+        (lpBalance, ) = _pool.lenderInfo(indexes[2], testAddress);
+        assertEq(lpBalance, 3_000 * 1e18);
+
+        // check that position manager contract doesn't own any LP at positions
+        (lpBalance, ) = _pool.lenderInfo(indexes[0], address(_positionManager));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.lenderInfo(indexes[1], address(_positionManager));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.lenderInfo(indexes[2], address(_positionManager));
+        assertEq(lpBalance, 0);
+
+        // check that the owner cannot approve position manager for same indexes
+        indexes = new uint256[](1);
+        indexes[0] = 2550;
+        vm.expectRevert(IPoolErrors.OwnerNotLPsManager.selector);
+        _pool.approveLpManager(address(_positionManager), indexes);
+
+        indexes = new uint256[](1);
+        indexes[0] = 2551;
+        vm.expectRevert(IPoolErrors.OwnerNotLPsManager.selector);
+        _pool.approveLpManager(address(_positionManager), indexes);
+
+        indexes = new uint256[](1);
+        indexes[0] = 2552;
+        vm.expectRevert(IPoolErrors.OwnerNotLPsManager.selector);
+        _pool.approveLpManager(address(_positionManager), indexes);
+
+        // check that the owner can approve position manager for a different index
+        indexes = new uint256[](1);
+        indexes[0] = 111;
+        _pool.approveLpManager(address(_positionManager), indexes);
+        assertEq(_pool.lpManagers(testAddress, 111), address(_positionManager));
+
+        indexes = new uint256[](3);
+        indexes[0] = 2550;
+        indexes[1] = 2551;
+        indexes[2] = 2552;
+
+        // check that the owner is not allowed to move quote token at tracked indexes
+        vm.expectRevert(IPoolErrors.OwnerNotLPsManager.selector);
+        _pool.moveQuoteToken(testAddress, 1_000 * 1e18, indexes[0], indexes[1], type(uint256).max);
+
+        // check that the owner is not allowed to remove quote token at tracked indexes
+        vm.expectRevert(IPoolErrors.OwnerNotLPsManager.selector);
+        _pool.removeQuoteToken(1_000 * 1e18, indexes[0]);
+
+        // check that the owner is not allowed to remove collateral at tracked indexes
+        vm.expectRevert(IPoolErrors.OwnerNotLPsManager.selector);
+        _pool.removeCollateral(1_000 * 1e18, indexes[0]);
+
+        // check that the owner is not allowed to kick with deposit at tracked indexes
+        vm.expectRevert(IPoolErrors.OwnerNotLPsManager.selector);
+        _pool.kickWithDeposit(indexes[0]);
+
+        // check that the owner is allowed to increase LP deposit at an already tracked index
+        _pool.addQuoteToken(1_000 * 1e18, indexes[0], type(uint256).max);
+        (lpBalance, ) = _pool.lenderInfo(indexes[0], testAddress);
+        assertEq(lpBalance, 4_000 * 1e18);
+
+        // check that new indexes can be tracked (current tracked indexes are ignored if already tracked)
+        indexes = new uint256[](2);
+        indexes[0] = 2553;
+        indexes[1] = 2554;
+
+        _pool.approveLpManager(address(_positionManager), indexes);
+
+        // track positions
+        trackParams = IPositionManagerOwnerActions.TrackPositionsParams(
+            tokenId, address(_pool), indexes
+        );
         vm.expectEmit(true, true, true, true);
-        emit TransferLPs(testAddress, address(_positionManager), indexes, 9_000 * 1e18);
-        _positionManager.memorializePositions(memorializeParams);
-
-        // check memorialization success
-        uint256 positionAtPriceOneLPs = _positionManager.getLPs(tokenId, indexes[0]);
-        assertGt(positionAtPriceOneLPs, 0);
-
-        // check lps at non added to price
-        uint256 positionAtWrongPriceLPs = _positionManager.getLPs(tokenId, 4000000 * 1e18);
-        assertEq(positionAtWrongPriceLPs, 0);
+        emit TrackPositions(testAddress, tokenId, indexes);
+        _positionManager.trackPositions(trackParams);
 
         assertTrue(_positionManager.isIndexInPosition(tokenId, 2550));
         assertTrue(_positionManager.isIndexInPosition(tokenId, 2551));
         assertTrue(_positionManager.isIndexInPosition(tokenId, 2552));
-    }
+        assertTrue(_positionManager.isIndexInPosition(tokenId, 2553));
+        assertTrue(_positionManager.isIndexInPosition(tokenId, 2554));
 
-    function testRememorializePositions() external {
-        address testAddress = makeAddr("testAddress");
-        uint256 mintAmount  = 50_000 * 1e18;
-
-        _mintQuoteAndApproveManagerTokens(testAddress, mintAmount);
-
-        // call pool contract directly to add quote tokens
-        uint256[] memory indexes = new uint256[](3);
-        indexes[0] = 2550;
-        indexes[1] = 2551;
-        indexes[2] = 2552;
-
-        _addInitialLiquidity({
-            from:   testAddress,
-            amount: 3_000 * 1e18,
-            index:  indexes[0]
-        });
-        _addInitialLiquidity({
-            from:   testAddress,
-            amount: 3_000 * 1e18,
-            index:  indexes[1]
-        });
-        _addInitialLiquidity({
-            from:   testAddress,
-            amount: 3_000 * 1e18,
-            index:  indexes[2]
-        });
-
-        // mint an NFT to later memorialize existing positions into
-        uint256 tokenId = _mintNFT(testAddress, testAddress, address(_pool));
-
-        // check LPs
-        _assertLenderLpBalance({
-            lender:      testAddress,
-            index:       indexes[0],
-            lpBalance:   3_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[0],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      testAddress,
-            index:       indexes[1],
-            lpBalance:   3_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[1],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      testAddress,
-            index:       indexes[2],
-            lpBalance:   3_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[2],
-            lpBalance:   0,
-            depositTime: 0
-        });
-
-        // check position manager state
-        assertEq(_positionManager.getLPs(tokenId, indexes[0]), 0);
-        assertEq(_positionManager.getLPs(tokenId, indexes[1]), 0);
-        assertEq(_positionManager.getLPs(tokenId, indexes[2]), 0);
-        assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[0]));
-        assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[1]));
-        assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[2]));
-
-        // construct memorialize params struct
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
+        // check that same indexes cannot be tracked twice
+        trackParams = IPositionManagerOwnerActions.TrackPositionsParams(
+            tokenId, address(_pool), indexes
         );
-        // allow position manager to take ownership of the position
-        uint256[] memory amounts = new uint256[](3);
-        amounts[0] = 3_000 * 1e18;
-        amounts[1] = 3_000 * 1e18;
-        amounts[2] = 3_000 * 1e18;
-        _pool.approveLpOwnership(address(_positionManager), indexes, amounts);
+        vm.expectRevert(IPositionManagerErrors.PositionAlreadyTracked.selector);
+        _positionManager.trackPositions(trackParams);
 
-        // memorialize quote tokens into minted NFT
-        vm.expectEmit(true, true, true, true);
-        emit MemorializePosition(testAddress, tokenId);
-        vm.expectEmit(true, true, true, true);
-        emit TransferLPs(testAddress, address(_positionManager), indexes, 9_000 * 1e18);
-        _positionManager.memorializePositions(memorializeParams);
-
-        _assertLenderLpBalance({
-            lender:      testAddress,
-            index:       indexes[0],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[0],
-            lpBalance:   3_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      testAddress,
-            index:       indexes[1],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[1],
-            lpBalance:   3_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      testAddress,
-            index:       indexes[2],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[2],
-            lpBalance:   3_000 * 1e18,
-            depositTime: _startTime
-        });
-
-        // check position manager state
-        assertEq(_positionManager.getLPs(tokenId, indexes[0]), 3_000 * 1e18);
-        assertEq(_positionManager.getLPs(tokenId, indexes[1]), 3_000 * 1e18);
-        assertEq(_positionManager.getLPs(tokenId, indexes[2]), 3_000 * 1e18);
-        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[0]));
-        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[1]));
-        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
-
-        // add more liquidity
-        _addInitialLiquidity({
-            from:   testAddress,
-            amount: 1_000 * 1e18,
-            index:  indexes[0]
-        });
-        _addInitialLiquidity({
-            from:   testAddress,
-            amount: 2_000 * 1e18,
-            index:  indexes[1]
-        });
-        _addInitialLiquidity({
-            from:   testAddress,
-            amount: 3_000 * 1e18,
-            index:  indexes[2]
-        });
-
-        // check LP balance
-        _assertLenderLpBalance({
-            lender:      testAddress,
-            index:       indexes[0],
-            lpBalance:   1_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[0],
-            lpBalance:   3_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      testAddress,
-            index:       indexes[1],
-            lpBalance:   2_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[1],
-            lpBalance:   3_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      testAddress,
-            index:       indexes[2],
-            lpBalance:   3_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[2],
-            lpBalance:   3_000 * 1e18,
-            depositTime: _startTime
-        });
-
-        // check position manager state
-        assertEq(_positionManager.getLPs(tokenId, indexes[0]), 3_000 * 1e18);
-        assertEq(_positionManager.getLPs(tokenId, indexes[1]), 3_000 * 1e18);
-        assertEq(_positionManager.getLPs(tokenId, indexes[2]), 3_000 * 1e18);
-        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[0]));
-        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[1]));
-        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
-
-        // allow position manager to take ownership of the new LPs
-        amounts[0] = 1_000 * 1e18;
-        amounts[1] = 2_000 * 1e18;
-        amounts[2] = 3_000 * 1e18;
-        _pool.approveLpOwnership(address(_positionManager), indexes, amounts);
-
-        // rememorialize quote tokens into minted NFT
-        vm.expectEmit(true, true, true, true);
-        emit MemorializePosition(testAddress, tokenId);
-        vm.expectEmit(true, true, true, true);
-        emit TransferLPs(testAddress, address(_positionManager), indexes, 6_000 * 1e18);
-        _positionManager.memorializePositions(memorializeParams);
-
-        // check LP balance
-        _assertLenderLpBalance({
-            lender:      testAddress,
-            index:       indexes[0],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[0],
-            lpBalance:   4_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      testAddress,
-            index:       indexes[1],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[1],
-            lpBalance:   5_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      testAddress,
-            index:       indexes[2],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[2],
-            lpBalance:   6_000 * 1e18,
-            depositTime: _startTime
-        });
-
-        // check position manager state
-        assertEq(_positionManager.getLPs(tokenId, indexes[0]), 4_000 * 1e18);
-        assertEq(_positionManager.getLPs(tokenId, indexes[1]), 5_000 * 1e18);
-        assertEq(_positionManager.getLPs(tokenId, indexes[2]), 6_000 * 1e18);
-        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[0]));
-        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[1]));
-        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
-    }
-
-    /**
-     *  @notice Tests attachment of multiple previously created position to already existing NFTs.
-     *          LP tokens are checked to verify ownership of position.
-     */
-    function testMemorializeMultiple() external {
-        address testLender1 = makeAddr("testLender1");
-        address testLender2 = makeAddr("testLender2");
-        uint256 mintAmount  = 10000 * 1e18;
-
-        _mintQuoteAndApproveManagerTokens(testLender1, mintAmount);
-        _mintQuoteAndApproveManagerTokens(testLender2, mintAmount);
-
-        // call pool contract directly to add quote tokens
-        uint256[] memory indexes = new uint256[](4);
-        indexes[0] = 2550;
-        indexes[1] = 2551;
-        indexes[2] = 2552;
-        indexes[3] = 2553;
-
-        _addInitialLiquidity({
-            from:   testLender1,
-            amount: 3_000 * 1e18,
-            index:  indexes[0]
-        });
-        _addInitialLiquidity({
-            from:   testLender1,
-            amount: 3_000 * 1e18,
-            index:  indexes[1]
-        });
-        _addInitialLiquidity({
-            from:   testLender1,
-            amount: 3_000 * 1e18,
-            index:  indexes[2]
-        });
-
-        _addInitialLiquidity({
-            from:   testLender2,
-            amount: 3_000 * 1e18,
-            index:  indexes[0]
-        });
-        _addInitialLiquidity({
-            from:   testLender2,
-            amount: 3_000 * 1e18,
-            index:  indexes[3]
-        });
-
-        // mint NFTs to later memorialize existing positions into
-        uint256 tokenId1 = _mintNFT(testLender1, testLender1, address(_pool));
-        uint256 tokenId2 = _mintNFT(testLender2, testLender2, address(_pool));
-
-        // check LPs
-        _assertLenderLpBalance({
-            lender:      testLender1,
-            index:       indexes[0],
-            lpBalance:   3_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      testLender2,
-            index:       indexes[0],
-            lpBalance:   3_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[0],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      testLender1,
-            index:       indexes[1],
-            lpBalance:   3_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      testLender2,
-            index:       indexes[1],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[1],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      testLender1,
-            index:       indexes[2],
-            lpBalance:   3_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      testLender2,
-            index:       indexes[2],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[2],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      testLender1,
-            index:       indexes[3],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      testLender2,
-            index:       indexes[3],
-            lpBalance:   3_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[3],
-            lpBalance:   0,
-            depositTime: 0
-        });
-
-        assertEq(_positionManager.getLPs(indexes[0], tokenId1), 0);
-        assertEq(_positionManager.getLPs(indexes[1], tokenId1), 0);
-        assertEq(_positionManager.getLPs(indexes[2], tokenId1), 0);
-
-        assertEq(_positionManager.getLPs(indexes[0], tokenId2), 0);
-        assertEq(_positionManager.getLPs(indexes[3], tokenId2), 0);
-
-        (uint256 poolSize, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
-        assertEq(poolSize, 15_000 * 1e18);
-
-        // construct memorialize lender 1 params struct
-        uint256[] memory lender1Indexes = new uint256[](3);
-        lender1Indexes[0] = 2550;
-        lender1Indexes[1] = 2551;
-        lender1Indexes[2] = 2552;
-
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId1, lender1Indexes
+        // untrack positions
+        IPositionManagerOwnerActions.UntrackPositionsParams memory untrackParams = IPositionManagerOwnerActions.UntrackPositionsParams(
+            tokenId, address(_pool), indexes
         );
+        _positionManager.untrackPositions(untrackParams);
+        assertFalse(_positionManager.isIndexInPosition(tokenId, 2553));
+        assertFalse(_positionManager.isIndexInPosition(tokenId, 2554));
 
-        // allow position manager to take ownership of lender 1's position
-        changePrank(testLender1);
-        uint256[] memory transferIndexes = new uint256[](3);
-        transferIndexes[0] = 2550;
-        transferIndexes[1] = 2551;
-        transferIndexes[2] = 2552;
-        uint256[] memory amounts = new uint256[](3);
-        amounts[0] = 3_000 * 1e18;
-        amounts[1] = 3_000 * 1e18;
-        amounts[2] = 3_000 * 1e18;
-        _pool.approveLpOwnership(address(_positionManager), transferIndexes, amounts);
+        _pool.approveLpManager(address(_positionManager), indexes);
 
-        // memorialize lender 1 quote tokens into minted NFT
-        vm.expectEmit(true, true, true, true);
-        emit MemorializePosition(testLender1, tokenId1);
-        vm.expectEmit(true, true, true, true);
-        emit TransferLPs(testLender1, address(_positionManager), lender1Indexes, 9_000 * 1e18);
-        _positionManager.memorializePositions(memorializeParams);
-
-        // check lender, position manager,  and pool state
-        _assertLenderLpBalance({
-            lender:      testLender1,
-            index:       indexes[0],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[0],
-            lpBalance:   3_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      testLender1,
-            index:       indexes[1],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[1],
-            lpBalance:   3_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      testLender1,
-            index:       indexes[2],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[2],
-            lpBalance:   3_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      testLender1,
-            index:       indexes[3],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[3],
-            lpBalance:   0,
-            depositTime: 0
-        });
-
-        assertEq(_positionManager.getLPs(tokenId1, indexes[0]), 3_000 * 1e18);
-        assertEq(_positionManager.getLPs(tokenId1, indexes[1]), 3_000 * 1e18);
-        assertEq(_positionManager.getLPs(tokenId1, indexes[2]), 3_000 * 1e18);
-
-        (poolSize, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
-        assertEq(poolSize, 15_000 * 1e18);
-
-        // allow position manager to take ownership of lender 2's position
-        changePrank(testLender2);
-        transferIndexes = new uint256[](2);
-        transferIndexes[0] = indexes[0];
-        transferIndexes[1] = indexes[3];
-        amounts = new uint256[](2);
-        amounts[0] = 3_000 * 1e18;
-        amounts[1] = 3_000 * 1e18;
-        _pool.approveLpOwnership(address(_positionManager), transferIndexes, amounts);
-
-        // memorialize lender 2 quote tokens into minted NFT
-        uint256[] memory newIndexes = new uint256[](2);
-        newIndexes[0] = 2550;
-        newIndexes[1] = 2553;
-
-        memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId2, newIndexes
-        );
-
-        vm.expectEmit(true, true, true, true);
-        emit MemorializePosition(testLender2, tokenId2);
-        vm.expectEmit(true, true, true, true);
-        emit TransferLPs(testLender2, address(_positionManager), newIndexes, 6_000 * 1e18);
-        _positionManager.memorializePositions(memorializeParams);
-
-        // // check lender, position manager,  and pool state
-        _assertLenderLpBalance({
-            lender:      testLender2,
-            index:       indexes[0],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[0],
-            lpBalance:   6_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      testLender2,
-            index:       indexes[1],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[1],
-            lpBalance:   3_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      testLender2,
-            index:       indexes[2],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[2],
-            lpBalance:   3_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      testLender2,
-            index:       indexes[3],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[3],
-            lpBalance:   3_000 * 1e18,
-            depositTime: _startTime
-        });
-
-        assertEq(_positionManager.getLPs(tokenId1, indexes[0]), 3_000 * 1e18);
-        assertEq(_positionManager.getLPs(tokenId1, indexes[1]), 3_000 * 1e18);
-        assertEq(_positionManager.getLPs(tokenId1, indexes[2]), 3_000 * 1e18);
-
-        assertEq(_positionManager.getLPs(tokenId2, indexes[0]), 3_000 * 1e18);
-        assertEq(_positionManager.getLPs(tokenId2, indexes[3]), 3_000 * 1e18);
-
-        (poolSize, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
-        assertEq(poolSize, 15_000 * 1e18);
+        _positionManager.trackPositions(trackParams);
+        assertTrue(_positionManager.isIndexInPosition(tokenId, 2553));
+        assertTrue(_positionManager.isIndexInPosition(tokenId, 2554));
     }
 
     /**
@@ -775,8 +307,25 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertEq(_positionManager.ownerOf(1), address(recipientContract));
 
         // check contract owner can transfer to another smart contract
+        // receiver should whitelist position manager as transferor otherwise transfer will fail
         ContractNFTRecipient secondRecipient = new ContractNFTRecipient(recipientOwner);
+
+        uint256 snapshot = vm.snapshot();
+        vm.expectRevert(IPoolErrors.TransferorNotApproved.selector);
         recipientContract.transferNFT(address(_positionManager), address(secondRecipient), 1);
+
+        assertEq(_positionManager.ownerOf(1), address(recipientContract));
+
+        vm.revertTo(snapshot);
+
+        changePrank(address(secondRecipient));
+        address[] memory transferors = new address[](1);
+        transferors[0] = address(_positionManager);
+        _pool.approveLpTransferors(transferors);
+
+        changePrank(address(recipientContract));
+        recipientContract.transferNFT(address(_positionManager), address(secondRecipient), 1);
+
         assertEq(_positionManager.ownerOf(1), address(secondRecipient));
     }
 
@@ -818,105 +367,72 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             lpBalance:   0,
             depositTime: 0
         });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       testIndexPrice,
-            lpBalance:   0,
-            depositTime: 0
-        });
 
         // check position manager state
-        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
         assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
 
-        // memorialize positions
+        // track positions of testMinter
         uint256[] memory indexes = new uint256[](1);
         indexes[0] = testIndexPrice;
-        uint256[] memory amounts = new uint256[](1);
-        amounts[0] = 15_000 * 1e18;
-        // allow position manager to take ownership of the position of testMinter
-        _pool.approveLpOwnership(address(_positionManager), indexes, amounts);
 
-        // allow position manager as transferor
+        changePrank(testMinter);
+        _pool.approveLpManager(address(_positionManager), indexes);
+        assertEq(_pool.lpManagers(testMinter, indexes[0]), address(_positionManager));
+
+        // track positions of testMinter
+        IPositionManagerOwnerActions.TrackPositionsParams memory trackParams = IPositionManagerOwnerActions.TrackPositionsParams(
+            tokenId, address(_pool), indexes
+        );
+        _positionManager.trackPositions(trackParams);
+
+        assertTrue(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
+
+        // transfer should fail if position manager not listed as transferor by NFT receiver
+        vm.expectRevert(IPoolErrors.TransferorNotApproved.selector);
+        _pool.transferLPs(testMinter, testReceiver, indexes);
+
+        // receiver whitelists position manager as transferor
+        changePrank(testReceiver);
         address[] memory transferors = new address[](1);
         transferors[0] = address(_positionManager);
         _pool.approveLpTransferors(transferors);
 
-        // memorialize positions of testMinter
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
-        );
-        _positionManager.memorializePositions(memorializeParams);
-
-        _assertLenderLpBalance({
-            lender:      testMinter,
-            index:       testIndexPrice,
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      testReceiver,
-            index:       testIndexPrice,
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       testIndexPrice,
-            lpBalance:   15_000 * 1e18,
-            depositTime: _startTime
-        });
-
-        // check position manager state
-        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 15_000 * 1e18);
-        assertTrue(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
-
         // approve and transfer NFT to different address
+        changePrank(testMinter);
         _positionManager.approve(address(this), tokenId);
+
+        vm.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, true, true);
+        emit UntrackPositions(testMinter, tokenId, indexes);
+        emit TransferLPs(testMinter, testReceiver, indexes, 15_000 * 1e18);
         _positionManager.safeTransferFrom(testMinter, testReceiver, tokenId);
 
-        // check owner
+        // check NFT position new owner
         assertEq(_positionManager.ownerOf(tokenId), testReceiver);
 
-        // check old owner cannot redeem positions
-        // construct redeem liquidity params
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
-            tokenId, address(_pool), indexes
-        );
-        // redeem liquidity called by old owner
-        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.reedemPositions(reedemParams);
+        // check that positions are no longer tracked after transfer
+        assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
 
-        // check new owner can redeem positions
-        changePrank(testReceiver);
-        // allow position manager as transferor
-        _pool.approveLpTransferors(transferors);
+        // check that position manager revoked from old owner position management
+        assertEq(_pool.lpManagers(testMinter, indexes[0]), address(0));
 
-        _positionManager.reedemPositions(reedemParams);
+        // check no manager for new owner position
+        assertEq(_pool.lpManagers(testReceiver, indexes[0]), address(0));
 
-        // check pool state
+        // check old owner doesn't have any position at index
         _assertLenderLpBalance({
             lender:      testMinter,
             index:       testIndexPrice,
             lpBalance:   0,
             depositTime: 0
         });
+        // check new owner have position at index and with inherited initial deposit time
         _assertLenderLpBalance({
             lender:      testReceiver,
             index:       testIndexPrice,
             lpBalance:   15_000 * 1e18,
             depositTime: _startTime
         });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       testIndexPrice,
-            lpBalance:   0,
-            depositTime: 0
-        });
-
-        // check position manager state
-        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
-        assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
     }
 
     /**
@@ -927,7 +443,6 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
     function testNFTTransferByPermit() external {
         // generate addresses and set test params
         (address testMinter, uint256 minterPrivateKey) = makeAddrAndKey("testMinter");
-
         address testReceiver   = makeAddr("testReceiver");
         uint256 testIndexPrice = 2550;
 
@@ -958,53 +473,35 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             lpBalance:   0,
             depositTime: 0
         });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       testIndexPrice,
-            lpBalance:   0,
-            depositTime: 0
-        });
 
         // check position manager state
-        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
         assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
 
-        // memorialize positions
+        // track positions of testMinter
         uint256[] memory indexes = new uint256[](1);
         indexes[0] = testIndexPrice;
-        uint256[] memory amounts = new uint256[](1);
-        amounts[0] = 15_000 * 1e18;
-        // allow position manager to take ownership of the position of testMinter
-        _pool.approveLpOwnership(address(_positionManager), indexes, amounts);
+
+        changePrank(testMinter);
+        _pool.approveLpManager(address(_positionManager), indexes);
+        assertEq(_pool.lpManagers(testMinter, indexes[0]), address(_positionManager));
+
         // memorialize positions of testMinter
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
+        IPositionManagerOwnerActions.TrackPositionsParams memory trackParams = IPositionManagerOwnerActions.TrackPositionsParams(
+            tokenId, address(_pool), indexes
         );
-        _positionManager.memorializePositions(memorializeParams);
+        _positionManager.trackPositions(trackParams);
 
-        // check pool state
-        _assertLenderLpBalance({
-            lender:      testMinter,
-            index:       testIndexPrice,
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      testReceiver,
-            index:       testIndexPrice,
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       testIndexPrice,
-            lpBalance:   15_000 * 1e18,
-            depositTime: _startTime
-        });
-
-        // check position manager state
-        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 15_000 * 1e18);
         assertTrue(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
+
+        // transfer should fail if position manager not listed as transferor by NFT receiver
+        vm.expectRevert(IPoolErrors.TransferorNotApproved.selector);
+        _pool.transferLPs(testMinter, testReceiver, indexes);
+
+        // receiver whitelists position manager as transferor
+        changePrank(testReceiver);
+        address[] memory transferors = new address[](1);
+        transferors[0] = address(_positionManager);
+        _pool.approveLpTransferors(transferors);
 
         address testSpender = makeAddr("testSpender");
 
@@ -1033,60 +530,48 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             _positionManager.safeTransferFromWithPermit(testMinter, testReceiver, tokenId, deadline, v, r, s );
         }
 
-        // check owner
+        // check NFT position new owner
         assertEq(_positionManager.ownerOf(tokenId), testReceiver);
 
-        // check old owner cannot redeem positions
-        // construct redeem liquidity params
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
-            tokenId, address(_pool), indexes
-        );
-        // redeem liquidity called by old owner
-        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.reedemPositions(reedemParams);
+        // check that positions are no longer tracked after transfer
+        assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
 
-        // check new owner can redeem positions
-        changePrank(testReceiver);
-        // allow position manager as transferor
-        address[] memory transferors = new address[](1);
-        transferors[0] = address(_positionManager);
-        _pool.approveLpTransferors(transferors);
+        // check that position manager revoked from old owner position management
+        assertEq(_pool.lpManagers(testMinter, indexes[0]), address(0));
 
-        _positionManager.reedemPositions(reedemParams);
+        // check no manager for new owner position
+        assertEq(_pool.lpManagers(testReceiver, indexes[0]), address(0));
 
-        // check pool state
+        // check old owner doesn't have any position at index
         _assertLenderLpBalance({
             lender:      testMinter,
             index:       testIndexPrice,
             lpBalance:   0,
             depositTime: 0
         });
+        // check new owner have position at index and with inherited initial deposit time
         _assertLenderLpBalance({
             lender:      testReceiver,
             index:       testIndexPrice,
             lpBalance:   15_000 * 1e18,
             depositTime: _startTime
         });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       testIndexPrice,
-            lpBalance:   0,
-            depositTime: 0
-        });
-
-        // check position manager state
-        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
-        assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
     }
 
     function testPermitByContract() external {
         address testSpender = makeAddr("spender");
 
-        // deploy recipient contract
+        // deploy NFT receiver contract
         (address nonMintingContractOwner, uint256 nonMintingContractPrivateKey) = makeAddrAndKey("nonMintingContract");
         ContractNFTRecipient recipientContract = new ContractNFTRecipient(nonMintingContractOwner);
 
-        // deploy contract to receive the NFT
+        // receiver should list position manager as transferor of LPs
+        changePrank(address(recipientContract));
+        address[] memory transferors = new address[](1);
+        transferors[0] = address(_positionManager);
+        _pool.approveLpTransferors(transferors);
+
+        // deploy contract minter of the NFT
         (address testContractOwner, uint256 ownerPrivateKey) = makeAddrAndKey("testContractOwner");
         ContractNFTRecipient ownerContract = new ContractNFTRecipient(testContractOwner);
         uint256 tokenId = _mintNFT(address(ownerContract), address(ownerContract), address(_pool));
@@ -1146,9 +631,8 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
     }
 
     /**
-     *  @notice Tests NFT position can & can't be burned based on liquidity attached to it.
-     *          Checks that old owner cannot move positions.
-     *          Owner reverts: attempts to burn NFT with liquidity.
+     *  @notice Tests NFT position can be burned based on tracked positions attached to it.
+     *          Attempts to burn NFT without tracked positions.
      */
     function testBurnNFTWithoutPositions() external {
         // generate a new address and set test params
@@ -1169,9 +653,8 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
     }
 
     /**
-     *  @notice Tests NFT position can & can't be burned based on liquidity attached to it.
-     *          Checks that old owner cannot move positions.
-     *          Owner reverts: attempts to burn NFT with liquidity.
+     *  @notice Tests NFT position can & can't be burned based on tracked positions attached to it.
+     *          Owner reverts: attempts to burn NFT with tracked positions.
      */
     function testBurnNFTWithPositions() external {
         address testMinter     = makeAddr("testMinter");
@@ -1193,29 +676,24 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // check owner
         assertEq(_positionManager.ownerOf(tokenId), testMinter);
 
-        // memorialize positions
+        // track positions of testMinter
         uint256[] memory indexes = new uint256[](1);
         indexes[0] = testIndexPrice;
-        uint256[] memory amounts = new uint256[](1);
-        amounts[0] = 15_000 * 1e18;
-        // allow position manager to take ownership of the position of testMinter
-        _pool.approveLpOwnership(address(_positionManager), indexes, amounts);
 
-        // approve position manager as a transferor
-        address[] memory transferors = new address[](1);
-        transferors[0] = address(_positionManager);
-        _pool.approveLpTransferors(transferors);
+        changePrank(testMinter);
+        _pool.approveLpManager(address(_positionManager), indexes);
+        assertEq(_pool.lpManagers(testMinter, indexes[0]), address(_positionManager));
 
-        // memorialize positions of testMinter
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
+        // track positions of testMinter
+        IPositionManagerOwnerActions.TrackPositionsParams memory trackParams = IPositionManagerOwnerActions.TrackPositionsParams(
+            tokenId, address(_pool), indexes
         );
-        _positionManager.memorializePositions(memorializeParams);
+        _positionManager.trackPositions(trackParams);
 
         // construct BurnParams
         IPositionManagerOwnerActions.BurnParams memory burnParams = IPositionManagerOwnerActions.BurnParams(tokenId, address(_pool));
         // check that NFT cannot be burnt if it tracks postions
-        vm.expectRevert(IPositionManagerErrors.LiquidityNotRemoved.selector);
+        vm.expectRevert(IPositionManagerErrors.PositionNotUntracked.selector);
         _positionManager.burn(burnParams);
 
         // check that NFT cannot be burnt if not owner
@@ -1223,12 +701,15 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
         _positionManager.burn(burnParams);
 
-        // redeem positions of testMinter
+        // untrack positions of testMinter
         changePrank(testMinter);
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        IPositionManagerOwnerActions.UntrackPositionsParams memory untrackParams = IPositionManagerOwnerActions.UntrackPositionsParams(
             tokenId, address(_pool), indexes
         );
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.untrackPositions(untrackParams);
+
+        // check that position manager revoked from old owner position management
+        assertEq(_pool.lpManagers(testMinter, indexes[0]), address(0));
 
         _positionManager.burn(burnParams);
 
@@ -1328,9 +809,9 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         });
 
         // check position manager state
-        assertEq(_positionManager.getLPs(tokenId1, mintIndex), 0);
+        assertEq(_positionManager.getLPs(tokenId1, mintIndex), 2_500 * 1e18);
         assertEq(_positionManager.getLPs(tokenId1, moveIndex), 0);
-        assertEq(_positionManager.getLPs(tokenId2, mintIndex), 0);
+        assertEq(_positionManager.getLPs(tokenId2, mintIndex), 5_500 * 1e18);
         assertEq(_positionManager.getLPs(tokenId2, moveIndex), 0);
         assertFalse(_positionManager.isIndexInPosition(tokenId1, mintIndex));
         assertFalse(_positionManager.isIndexInPosition(tokenId1, moveIndex));
@@ -1338,26 +819,25 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertFalse(_positionManager.isIndexInPosition(tokenId2, moveIndex));
 
         // allow position manager to take ownership of the position of testAddress1
-        changePrank(testAddress1);
-        uint256[] memory indexes = new uint256[](1);
+        uint256[] memory indexes = new uint256[](2);
         indexes[0] = mintIndex;
-        uint256[] memory amounts = new uint256[](1);
-        amounts[0] = 2_500 * 1e18;
-        _pool.approveLpOwnership(address(_positionManager), indexes, amounts);
+        indexes[1] = moveIndex;
+        changePrank(testAddress1);
+        _pool.approveLpManager(address(_positionManager), indexes);
 
-        // memorialize positions of testAddress1
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId1, indexes
+        // track positions of testAddress1
+        IPositionManagerOwnerActions.TrackPositionsParams memory trackParams = IPositionManagerOwnerActions.TrackPositionsParams(
+            tokenId1, address(_pool), indexes
         );
         changePrank(testAddress1);
-        _positionManager.memorializePositions(memorializeParams);
+        _positionManager.trackPositions(trackParams);
 
         // check pool state
         _assertLenderLpBalance({
             lender:      testAddress1,
             index:       mintIndex,
-            lpBalance:   0,
-            depositTime: 0
+            lpBalance:   2_500 * 1e18,
+            depositTime: _startTime
         });
         _assertLenderLpBalance({
             lender:      testAddress2,
@@ -1368,8 +848,8 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _assertLenderLpBalance({
             lender:      address(_positionManager),
             index:       mintIndex,
-            lpBalance:   2_500 * 1e18,
-            depositTime: _startTime
+            lpBalance:   0,
+            depositTime: 0
         });
         _assertLenderLpBalance({
             lender:      testAddress1,
@@ -1393,10 +873,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId1, mintIndex), 2_500 * 1e18);
         assertEq(_positionManager.getLPs(tokenId1, moveIndex), 0);
-        assertEq(_positionManager.getLPs(tokenId2, mintIndex), 0);
+        assertEq(_positionManager.getLPs(tokenId2, mintIndex), 5_500 * 1e18);
         assertEq(_positionManager.getLPs(tokenId2, moveIndex), 0);
         assertTrue(_positionManager.isIndexInPosition(tokenId1, mintIndex));
-        assertFalse(_positionManager.isIndexInPosition(tokenId1, moveIndex));
+        assertTrue(_positionManager.isIndexInPosition(tokenId1, moveIndex));
         assertFalse(_positionManager.isIndexInPosition(tokenId2, mintIndex));
         assertFalse(_positionManager.isIndexInPosition(tokenId2, moveIndex));
 
@@ -1416,7 +896,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             lender:      testAddress1,
             index:       mintIndex,
             lpBalance:   0,
-            depositTime: 0
+            depositTime: _startTime
         });
         _assertLenderLpBalance({
             lender:      testAddress2,
@@ -1425,88 +905,16 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             depositTime: _startTime
         });
         _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       mintIndex,
-            lpBalance:   0,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
             lender:      testAddress1,
-            index:       moveIndex,
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      testAddress2,
-            index:       moveIndex,
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
             index:       moveIndex,
             lpBalance:   2_500 * 1e18,
             depositTime: _startTime
         });
-
-        // check position manager state
-        assertEq(_positionManager.getLPs(tokenId1, mintIndex), 0);
-        assertEq(_positionManager.getLPs(tokenId1, moveIndex), 2_500 * 1e18);
-        assertEq(_positionManager.getLPs(tokenId2, mintIndex), 0);
-        assertEq(_positionManager.getLPs(tokenId2, moveIndex), 0);
-        assertFalse(_positionManager.isIndexInPosition(tokenId1, mintIndex));
-        assertTrue(_positionManager.isIndexInPosition(tokenId1, moveIndex));
-        assertFalse(_positionManager.isIndexInPosition(tokenId2, mintIndex));
-        assertFalse(_positionManager.isIndexInPosition(tokenId2, moveIndex));
-
-        // allow position manager to take ownership of the position of testAddress2
-        changePrank(testAddress2);
-        amounts[0] = 5_500 * 1e18;
-        _pool.approveLpOwnership(address(_positionManager), indexes, amounts);
-
-        // memorialize positions of testAddress2
-        memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId2, indexes
-        );
-        changePrank(testAddress2);
-        _positionManager.memorializePositions(memorializeParams);
-
-        // check pool state
-       _assertLenderLpBalance({
-            lender:      testAddress1,
-            index:       mintIndex,
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      testAddress2,
-            index:       mintIndex,
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       mintIndex,
-            lpBalance:   5_500 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      testAddress1,
-            index:       moveIndex,
-            lpBalance:   0,
-            depositTime: 0
-        });
         _assertLenderLpBalance({
             lender:      testAddress2,
             index:       moveIndex,
             lpBalance:   0,
             depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       moveIndex,
-            lpBalance:   2_500 * 1e18,
-            depositTime: _startTime
         });
 
         // check position manager state
@@ -1514,10 +922,31 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertEq(_positionManager.getLPs(tokenId1, moveIndex), 2_500 * 1e18);
         assertEq(_positionManager.getLPs(tokenId2, mintIndex), 5_500 * 1e18);
         assertEq(_positionManager.getLPs(tokenId2, moveIndex), 0);
-        assertFalse(_positionManager.isIndexInPosition(tokenId1, mintIndex));
+        assertTrue(_positionManager.isIndexInPosition(tokenId1, mintIndex));
+        assertTrue(_positionManager.isIndexInPosition(tokenId1, moveIndex));
+        assertFalse(_positionManager.isIndexInPosition(tokenId2, mintIndex));
+        assertFalse(_positionManager.isIndexInPosition(tokenId2, moveIndex));
+
+        // allow position manager to take ownership of the position of testAddress2
+        changePrank(testAddress2);
+        _pool.approveLpManager(address(_positionManager), indexes);
+
+        // memorialize positions of testAddress2
+        trackParams = IPositionManagerOwnerActions.TrackPositionsParams(
+            tokenId2, address(_pool), indexes
+        );
+        changePrank(testAddress2);
+        _positionManager.trackPositions(trackParams);
+
+        // check position manager state
+        assertEq(_positionManager.getLPs(tokenId1, mintIndex), 0);
+        assertEq(_positionManager.getLPs(tokenId1, moveIndex), 2_500 * 1e18);
+        assertEq(_positionManager.getLPs(tokenId2, mintIndex), 5_500 * 1e18);
+        assertEq(_positionManager.getLPs(tokenId2, moveIndex), 0);
+        assertTrue(_positionManager.isIndexInPosition(tokenId1, mintIndex));
         assertTrue(_positionManager.isIndexInPosition(tokenId1, moveIndex));
         assertTrue(_positionManager.isIndexInPosition(tokenId2, mintIndex));
-        assertFalse(_positionManager.isIndexInPosition(tokenId2, moveIndex));
+        assertTrue(_positionManager.isIndexInPosition(tokenId2, moveIndex));
 
         // construct move liquidity params
         moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
@@ -1542,394 +971,45 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             lender:      testAddress1,
             index:       mintIndex,
             lpBalance:   0,
-            depositTime: 0
+            depositTime: _startTime
         });
         _assertLenderLpBalance({
             lender:      testAddress2,
             index:       mintIndex,
             lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       mintIndex,
-            lpBalance:   0 * 1e18,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
             lender:      testAddress1,
             index:       moveIndex,
-            lpBalance:   0,
-            depositTime: 0
+            lpBalance:   2_500 * 1e18,
+            depositTime: _startTime
         });
         _assertLenderLpBalance({
             lender:      testAddress2,
             index:       moveIndex,
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       moveIndex,
-            lpBalance:   8_000 * 1e18,
+            lpBalance:   5_500 * 1e18,
             depositTime: _startTime
         });
+
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId1, mintIndex), 0);
         assertEq(_positionManager.getLPs(tokenId1, moveIndex), 2_500 * 1e18);
         assertEq(_positionManager.getLPs(tokenId2, mintIndex), 0);
         assertEq(_positionManager.getLPs(tokenId2, moveIndex), 5_500 * 1e18);
-        assertFalse(_positionManager.isIndexInPosition(tokenId1, mintIndex));
+        assertTrue(_positionManager.isIndexInPosition(tokenId1, mintIndex));
         assertTrue(_positionManager.isIndexInPosition(tokenId1, moveIndex));
-        assertFalse(_positionManager.isIndexInPosition(tokenId2, mintIndex));
+        assertTrue(_positionManager.isIndexInPosition(tokenId2, mintIndex));
         assertTrue(_positionManager.isIndexInPosition(tokenId2, moveIndex));
 
-        // check can't move liquidity from position with no liquidity
+        // check can't move liquidity if not manager of position
         moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
             tokenId2, address(_pool), 1000, 2000, block.timestamp + 30
         );
-        changePrank(address(testAddress2));
-        vm.expectRevert(IPositionManagerErrors.RemoveLiquidityFailed.selector);
+        changePrank(testAddress2);
+        vm.expectRevert(IPositionManagerErrors.NotLPsManager.selector);
         _positionManager.moveLiquidity(moveLiquidityParams);
-    }
-
-    function testRedeemPositions() external {
-        address testMinter     = makeAddr("testMinter");
-        address notOwner       = makeAddr("notOwner");
-        uint256 testIndexPrice = 2550;
-
-        // add initial liquidity
-        uint256 mintAmount = 50_000 * 1e18;
-        _mintQuoteAndApproveManagerTokens(testMinter, mintAmount);
-
-        _addInitialLiquidity({
-            from:   testMinter,
-            amount: 15_000 * 1e18,
-            index:  testIndexPrice
-        });
-
-        uint256 tokenId = _mintNFT(testMinter, testMinter, address(_pool));
-        // check owner
-        assertEq(_positionManager.ownerOf(tokenId), testMinter);
-
-        // check pool state
-        _assertLenderLpBalance({
-            lender:      testMinter,
-            index:       testIndexPrice,
-            lpBalance:   15_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       testIndexPrice,
-            lpBalance:   0,
-            depositTime: 0
-        });
-
-        // check position manager state
-        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
-        assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
-
-        // memorialize positions
-        uint256[] memory indexes = new uint256[](1);
-        indexes[0] = testIndexPrice;
-        // allow position manager to take ownership of the position of testMinter
-        uint256[] memory amounts = new uint256[](1);
-        amounts[0] = 15_000 * 1e18;
-        _pool.approveLpOwnership(address(_positionManager), indexes, amounts);
-
-        address[] memory transferors = new address[](1);
-        transferors[0] = address(_positionManager);
-        _pool.approveLpTransferors(transferors);
-
-        // memorialize positions of testMinter
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
-        );
-        _positionManager.memorializePositions(memorializeParams);
-
-        // check pool state
-        _assertLenderLpBalance({
-            lender:      testMinter,
-            index:       testIndexPrice,
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       testIndexPrice,
-            lpBalance:   15_000 * 1e18,
-            depositTime: _startTime
-        });
-
-        // check position manager state
-        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 15_000 * 1e18);
-        assertTrue(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
-
-        // redeem positions of testMinter
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
-            tokenId, address(_pool), indexes
-        );
-
-        // should fail if trying to redeem from different address but owner
-        changePrank(notOwner);
-        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.reedemPositions(reedemParams);
-
-        // redeem from owner
-        vm.expectEmit(true, true, true, true);
-        emit RedeemPosition(testMinter, tokenId);
-        changePrank(testMinter);
-        _positionManager.reedemPositions(reedemParams);
-
-        // check pool state
-        _assertLenderLpBalance({
-            lender:      testMinter,
-            index:       testIndexPrice,
-            lpBalance:   15_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       testIndexPrice,
-            lpBalance:   0,
-            depositTime: 0
-        });
-
-        // check position manager state
-        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
-        assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
-
-        // should fail if trying to redeem one more time
-        vm.expectRevert(IPositionManagerErrors.RemoveLiquidityFailed.selector);
-        _positionManager.reedemPositions(reedemParams);
-    }
-
-    function testRedeemEmptyPositions() external {
-        address testMinter = makeAddr("testMinter");
-        uint256 tokenId    = _mintNFT(testMinter, testMinter, address(_pool));
-
-        // check owner
-        assertEq(_positionManager.ownerOf(tokenId), testMinter);
-
-        // redeem positions of testMinter
-        uint256[] memory indexes = new uint256[](1);
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
-            tokenId, address(_pool), indexes
-        );
-
-        // should fail if trying to redeem empty position
-        changePrank(testMinter);
-        vm.expectRevert(IPositionManagerErrors.RemoveLiquidityFailed.selector);
-        _positionManager.reedemPositions(reedemParams);
-    }
-
-    function testRedeemPositionsByNewNFTOwner() external {
-        address testMinter     = makeAddr("testMinter");
-        address testReceiver   = makeAddr("testReceiver");
-        uint256 testIndexPrice = 2550;
-
-        // add initial liquidity
-        uint256 mintAmount = 50_000 * 1e18;
-        _mintQuoteAndApproveManagerTokens(testMinter, mintAmount);
-        _mintQuoteAndApproveManagerTokens(testReceiver, mintAmount);
-
-        _addInitialLiquidity({
-            from:   testReceiver,
-            amount: 25_000 * 1e18,
-            index:  testIndexPrice
-        });
-        _addInitialLiquidity({
-            from:   testReceiver,
-            amount: 15_000 * 1e18,
-            index:  2551
-        });
-
-        _addInitialLiquidity({
-            from:   testMinter,
-            amount: 15_000 * 1e18,
-            index:  testIndexPrice
-        });
-
-        uint256 tokenId = _mintNFT(testMinter, testMinter, address(_pool));
-        // check owner
-        assertEq(_positionManager.ownerOf(tokenId), testMinter);
-
-        // check pool state
-        _assertLenderLpBalance({
-            lender:      testMinter,
-            index:       testIndexPrice,
-            lpBalance:   15_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      testReceiver,
-            index:       testIndexPrice,
-            lpBalance:   25_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       testIndexPrice,
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      testMinter,
-            index:       2551,
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      testReceiver,
-            index:       2551,
-            lpBalance:   15_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       2551,
-            lpBalance:   0,
-            depositTime: 0
-        });
-
-        // check position manager state
-        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
-        assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
-
-        // memorialize positions
-        uint256[] memory indexes = new uint256[](1);
-        indexes[0] = testIndexPrice;
-        // allow position manager to take ownership of the position of testMinter
-        uint256[] memory amounts = new uint256[](1);
-        amounts[0] = 15_000 * 1e18;
-        _pool.approveLpOwnership(address(_positionManager), indexes, amounts);
-        // approve position manager as transferor
-        address[] memory transferors = new address[](1);
-        transferors[0] = address(_positionManager);
-        _pool.approveLpTransferors(transferors);
-        // memorialize positions of testMinter
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
-        );
-        _positionManager.memorializePositions(memorializeParams);
-
-        // check pool state
-        _assertLenderLpBalance({
-            lender:      testMinter,
-            index:       testIndexPrice,
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      testReceiver,
-            index:       testIndexPrice,
-            lpBalance:   25_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       testIndexPrice,
-            lpBalance:   15_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      testMinter,
-            index:       2551,
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      testReceiver,
-            index:       2551,
-            lpBalance:   15_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       2551,
-            lpBalance:   0,
-            depositTime: 0
-        });
-
-        // check position manager state
-        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 15_000 * 1e18);
-        assertTrue(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
-
-        // approve and transfer NFT to different address
-        _positionManager.approve(address(this), tokenId);
-        _positionManager.safeTransferFrom(testMinter, testReceiver, tokenId);
-
-        // check new owner
-        assertEq(_positionManager.ownerOf(tokenId), testReceiver);
-
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
-            tokenId, address(_pool), indexes
-        );
-
-        // check old owner cannot redeem positions
-        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.reedemPositions(reedemParams);
-
-        // check position manager cannot redeem positions
-        changePrank(address(_positionManager));
-        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.reedemPositions(reedemParams);
-
-        // redeem from new owner
-        reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
-            tokenId, address(_pool), indexes
-        );
-        vm.expectEmit(true, true, true, true);
-        emit RedeemPosition(testReceiver, tokenId);
-        vm.expectEmit(true, true, true, true);
-        emit TransferLPs(address(_positionManager), testReceiver, indexes, 15_000 * 1e18);
-        changePrank(testReceiver);
-        _pool.approveLpTransferors(transferors);
-        _positionManager.reedemPositions(reedemParams);
-
-        // check pool state
-        _assertLenderLpBalance({
-            lender:      testMinter,
-            index:       testIndexPrice,
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      testReceiver,
-            index:       testIndexPrice,
-            lpBalance:   40_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       testIndexPrice,
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      testMinter,
-            index:       2551,
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      testReceiver,
-            index:       2551,
-            lpBalance:   15_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       2551,
-            lpBalance:   0,
-            depositTime: 0
-        });
-
-        // check position manager state
-        assertEq(_positionManager.getLPs(tokenId, testIndexPrice), 0);
-        assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
     }
 
     function test3rdPartyMinter() external {
@@ -1954,130 +1034,43 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             lpBalance:   10_000 * 1e18,
             depositTime: _startTime
         });
-        _assertLenderLpBalance({
-            lender:      minter,
-            index:       2550,
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       2550,
-            lpBalance:   0,
-            depositTime: 0
-        });
 
         // allow position manager to take ownership of the position
-        uint256[] memory amounts = new uint256[](1);
-        amounts[0] = 10_000 * 1e18;
-        _pool.approveLpOwnership(address(_positionManager), indexes, amounts);
-        address[] memory transferors = new address[](1);
-        transferors[0] = address(_positionManager);
-        _pool.approveLpTransferors(transferors);
+        changePrank(lender);
+        _pool.approveLpManager(address(_positionManager), indexes);
 
-        // 3rd party minter mints NFT and memorialize lender positions
+        // 3rd party minter mints NFT and tracks lender positions
+        changePrank(minter);
         uint256 tokenId = _mintNFT(minter, lender, address(_pool));
         assertEq(_positionManager.ownerOf(tokenId), lender);
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
-        );
-        _positionManager.memorializePositions(memorializeParams);
-
-        _assertLenderLpBalance({
-            lender:      lender,
-            index:       2550,
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      minter,
-            index:       2550,
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       2550,
-            lpBalance:   10_000 * 1e18,
-            depositTime: _startTime
-        });
-
-        // minter cannot move liquidity on behalf of lender (is not approved)
-        IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
-            tokenId, address(_pool), 2550, 2551, block.timestamp + 30
-        );
-        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.moveLiquidity(moveLiquidityParams);
-
-        // minter cannot redeem positions on behalf of lender (is not approved)
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        IPositionManagerOwnerActions.TrackPositionsParams memory trackParams = IPositionManagerOwnerActions.TrackPositionsParams(
             tokenId, address(_pool), indexes
         );
-        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.reedemPositions(reedemParams);
 
-        // minter cannot burn positions NFT on behalf of lender (is not approved)
-        IPositionManagerOwnerActions.BurnParams memory burnParams = IPositionManagerOwnerActions.BurnParams(
-            tokenId, address(_pool)
-        );
+        // check minter cannot track positions if not approved by lender
         vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.burn(burnParams);
+        _positionManager.trackPositions(trackParams);
 
         // lender approves minter to interact with positions NFT on his behalf
         changePrank(lender);
         _positionManager.approve(minter, tokenId);
 
+        // check minter can track positions when approved by lender
         changePrank(minter);
-        // minter can move liquidity on behalf of lender
-        _positionManager.moveLiquidity(moveLiquidityParams);
+        _positionManager.trackPositions(trackParams);
 
-        _assertLenderLpBalance({
-            lender:      lender,
-            index:       2551,
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      minter,
-            index:       2551,
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       2551,
-            lpBalance:   10_000 * 1e18,
-            depositTime: _startTime
-        });
+        // TODO: check minter can move liquidity on behalf of lender.
+        // TODO: One issue on move liquidity is that target index should be also approved by lender calling pool.approveLPsManager so out of minter access
+        // TODO: check if that's limitation is acceptable
 
-        // minter can redeem liquidity on behalf of lender
-        indexes[0] = 2551;
-        reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        // check minter can untrack positions when approved by lender
+        IPositionManagerOwnerActions.UntrackPositionsParams memory untrackParams = IPositionManagerOwnerActions.UntrackPositionsParams(
             tokenId, address(_pool), indexes
         );
-        // minter allows position manager as transferor too
-        _positionManager.reedemPositions(reedemParams);
-
-        _assertLenderLpBalance({
-            lender:      lender,
-            index:       2551,
-            lpBalance:   10_000 * 1e18,
-            depositTime: _startTime
-        });
-        _assertLenderLpBalance({
-            lender:      minter,
-            index:       2551,
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       2551,
-            lpBalance:   0,
-            depositTime: 0
-        });
+        _positionManager.untrackPositions(untrackParams);
 
         // minter can burn NFT on behalf of lender
+        IPositionManagerOwnerActions.BurnParams memory burnParams = IPositionManagerOwnerActions.BurnParams(tokenId, address(_pool));
         _positionManager.burn(burnParams);
         vm.expectRevert("ERC721: invalid token ID");
         _positionManager.ownerOf(tokenId);
@@ -2113,36 +1106,33 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         });
 
         // allow position manager to take ownership of the position
-        uint256[] memory amounts = new uint256[](1);
-        amounts[0] = 10_000 * 1e18;
-        _pool.approveLpOwnership(address(_positionManager), indexes, amounts);
+        _pool.approveLpManager(address(_positionManager), indexes);
 
         // 3rd party minter mints NFT and memorialize lender positions
         changePrank(minter);
         uint256 tokenId = _mintNFT(minter, lender, address(_pool));
         assertEq(_positionManager.ownerOf(tokenId), lender);
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
-        );
-        _positionManager.memorializePositions(memorializeParams);
 
-        // lender transfers NFT ownership to minter
-        changePrank(lender);
-        _positionManager.safeTransferFrom(lender, minter, tokenId);
-        assertEq(_positionManager.ownerOf(tokenId), minter);
-
-        // minter is owner so can reddeem LPs
-        changePrank(minter);
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        IPositionManagerOwnerActions.TrackPositionsParams memory trackParams = IPositionManagerOwnerActions.TrackPositionsParams(
             tokenId, address(_pool), indexes
         );
 
-        // minter approves position manager as a transferor
+        // lender approves minter to interact with positions NFT on his behalf
+        changePrank(lender);
+        _positionManager.approve(minter, tokenId);
+
+        changePrank(minter);
+        // check minter can track positions when approved by lender
+        _positionManager.trackPositions(trackParams);
+        // minter approves position manager as transferor in order to receive LPs on NFT transfer
         address[] memory transferors = new address[](1);
         transferors[0] = address(_positionManager);
         _pool.approveLpTransferors(transferors);
 
-        _positionManager.reedemPositions(reedemParams);
+        // lender transfers NFT ownership and LPs to minter
+        changePrank(lender);
+        _positionManager.safeTransferFrom(lender, minter, tokenId);
+        assertEq(_positionManager.ownerOf(tokenId), minter);
 
         _assertLenderLpBalance({
             lender:      lender,
@@ -2219,16 +1209,14 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertEq(tokenName(collateralTokenAddress), "Collateral");
         assertEq(tokenName(quoteTokenAddress), "Quote");
 
-        // allow position manager to take ownership of the position
-        uint256[] memory amounts = new uint256[](1);
-        amounts[0] = 3_000 * 1e18;
-        _pool.approveLpOwnership(address(_positionManager), indexes, amounts);
+        // allow position manager to manage position
+        _pool.approveLpManager(address(_positionManager), indexes);
 
-        // memorialize position
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
+        // track position
+        IPositionManagerOwnerActions.TrackPositionsParams memory trackParams = IPositionManagerOwnerActions.TrackPositionsParams(
+            tokenId, address(_pool), indexes
         );
-        _positionManager.memorializePositions(memorializeParams);
+        _positionManager.trackPositions(trackParams);
 
         string memory uriString = _positionManager.tokenURI(tokenId);
         // emit log(uriString);
@@ -2340,71 +1328,60 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         });
 
         // check position manager state
-        assertEq(_positionManager.getLPs(tokenId, indexes[0]), 0);
-        assertEq(_positionManager.getLPs(tokenId, indexes[1]), 0);
-        assertEq(_positionManager.getLPs(tokenId, indexes[2]), 0);
+        assertEq(_positionManager.getLPs(tokenId, indexes[0]), 3_000 * 1e18);
+        assertEq(_positionManager.getLPs(tokenId, indexes[1]), 3_000 * 1e18);
+        assertEq(_positionManager.getLPs(tokenId, indexes[2]), 3_000 * 1e18);
         assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[0]));
         assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[1]));
         assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[2]));
 
-        // construct memorialize params struct
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
+        // construct track params struct
+        IPositionManagerOwnerActions.TrackPositionsParams memory trackParams = IPositionManagerOwnerActions.TrackPositionsParams(
+            tokenId, address(_pool), indexes
         );
         // allow position manager to take ownership of the position
-        uint256[] memory amounts = new uint256[](3);
-        amounts[0] = 3_000 * 1e18;
-        amounts[1] = 3_000 * 1e18;
-        amounts[2] = 3_000 * 1e18;
-        _pool.approveLpOwnership(address(_positionManager), indexes, amounts);
+        _pool.approveLpManager(address(_positionManager), indexes);
 
-        // approve position manager as transferor
-        address[] memory transferors = new address[](1);
-        transferors[0] = address(_positionManager);
-        _pool.approveLpTransferors(transferors);
-
-        // memorialize quote tokens into minted NFT
+        // track positions into minted NFT
         vm.expectEmit(true, true, true, true);
-        emit MemorializePosition(testAddress1, tokenId);
-        vm.expectEmit(true, true, true, true);
-        emit TransferLPs(testAddress1, address(_positionManager), indexes, 9_000 * 1e18);
-        _positionManager.memorializePositions(memorializeParams);
+        emit TrackPositions(testAddress1, tokenId, indexes);
+        _positionManager.trackPositions(trackParams);
 
         _assertLenderLpBalance({
             lender:      testAddress1,
-            index:       indexes[0],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
             index:       indexes[0],
             lpBalance:   3_000 * 1e18,
             depositTime: currentTime
         });
         _assertLenderLpBalance({
-            lender:      testAddress1,
-            index:       indexes[1],
+            lender:      address(_positionManager),
+            index:       indexes[0],
             lpBalance:   0,
             depositTime: 0
         });
         _assertLenderLpBalance({
-            lender:      address(_positionManager),
+            lender:      testAddress1,
             index:       indexes[1],
             lpBalance:   3_000 * 1e18,
             depositTime: currentTime
         });
         _assertLenderLpBalance({
-            lender:      testAddress1,
-            index:       indexes[2],
+            lender:      address(_positionManager),
+            index:       indexes[1],
             lpBalance:   0,
             depositTime: 0
         });
         _assertLenderLpBalance({
-            lender:      address(_positionManager),
+            lender:      testAddress1,
             index:       indexes[2],
             lpBalance:   3_000 * 1e18,
             depositTime: currentTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[2],
+            lpBalance:   0,
+            depositTime: 0
         });
 
         // check position manager state
@@ -2436,101 +1413,38 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         _assertLenderLpBalance({
             lender:      testAddress1,
             index:       indexes[0],
-            lpBalance:   1_000 * 1e18,
-            depositTime: currentTime
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[0],
-            lpBalance:   3_000 * 1e18,
-            depositTime: currentTime
-        });
-        _assertLenderLpBalance({
-            lender:      testAddress1,
-            index:       indexes[1],
-            lpBalance:   2_000 * 1e18,
-            depositTime: currentTime
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[1],
-            lpBalance:   3_000 * 1e18,
-            depositTime: currentTime
-        });
-        _assertLenderLpBalance({
-            lender:      testAddress1,
-            index:       indexes[2],
-            lpBalance:   3_000 * 1e18,
-            depositTime: currentTime
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[2],
-            lpBalance:   3_000 * 1e18,
-            depositTime: currentTime
-        });
-
-        // check position manager state
-        assertEq(_positionManager.getLPs(tokenId, indexes[0]), 3_000 * 1e18);
-        assertEq(_positionManager.getLPs(tokenId, indexes[1]), 3_000 * 1e18);
-        assertEq(_positionManager.getLPs(tokenId, indexes[2]), 3_000 * 1e18);
-        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[0]));
-        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[1]));
-        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
-
-        // allow position manager to take ownership of the new LPs
-        amounts = new uint256[](3);
-        amounts[0] = 1_000 * 1e18;
-        amounts[1] = 2_000 * 1e18;
-        amounts[2] = 3_000 * 1e18;
-        _pool.approveLpOwnership(address(_positionManager), indexes, amounts);
-
-        // approve position manager as transferor
-        _pool.approveLpTransferors(transferors);
-
-        // rememorialize quote tokens into minted NFT
-        vm.expectEmit(true, true, true, true);
-        emit MemorializePosition(testAddress1, tokenId);
-        vm.expectEmit(true, true, true, true);
-        emit TransferLPs(testAddress1, address(_positionManager), indexes, 6_000 * 1e18);
-        _positionManager.memorializePositions(memorializeParams);
-
-        // check LP balance
-        _assertLenderLpBalance({
-            lender:      testAddress1,
-            index:       indexes[0],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
-            index:       indexes[0],
             lpBalance:   4_000 * 1e18,
             depositTime: currentTime
         });
         _assertLenderLpBalance({
-            lender:      testAddress1,
-            index:       indexes[1],
+            lender:      address(_positionManager),
+            index:       indexes[0],
             lpBalance:   0,
             depositTime: 0
         });
         _assertLenderLpBalance({
-            lender:      address(_positionManager),
+            lender:      testAddress1,
             index:       indexes[1],
             lpBalance:   5_000 * 1e18,
             depositTime: currentTime
         });
         _assertLenderLpBalance({
-            lender:      testAddress1,
-            index:       indexes[2],
+            lender:      address(_positionManager),
+            index:       indexes[1],
             lpBalance:   0,
             depositTime: 0
         });
         _assertLenderLpBalance({
-            lender:      address(_positionManager),
+            lender:      testAddress1,
             index:       indexes[2],
             lpBalance:   6_000 * 1e18,
             depositTime: currentTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[2],
+            lpBalance:   0,
+            depositTime: 0
         });
 
         // check position manager state
@@ -2552,99 +1466,68 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         changePrank(testAddress1);
         _positionManager.moveLiquidity(moveLiquidityParams);
 
-        // check LP balance
         _assertLenderLpBalance({
             lender:      testAddress1,
-            index:       indexes[0],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      address(_positionManager),
             index:       indexes[0],
             lpBalance:   0,
             depositTime: currentTime
         });
         _assertLenderLpBalance({
-            lender:      testAddress1,
-            index:       indexes[1],
+            lender:      address(_positionManager),
+            index:       indexes[0],
             lpBalance:   0,
             depositTime: 0
         });
         _assertLenderLpBalance({
-            lender:      address(_positionManager),
+            lender:      testAddress1,
             index:       indexes[1],
             lpBalance:   9_000 * 1e18,
             depositTime: currentTime
         });
         _assertLenderLpBalance({
-            lender:      testAddress1,
-            index:       indexes[2],
+            lender:      address(_positionManager),
+            index:       indexes[1],
             lpBalance:   0,
             depositTime: 0
         });
         _assertLenderLpBalance({
-            lender:      address(_positionManager),
+            lender:      testAddress1,
             index:       indexes[2],
             lpBalance:   6_000 * 1e18,
             depositTime: currentTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[2],
+            lpBalance:   0,
+            depositTime: 0
         });
 
         // check position manager state
         assertEq(_positionManager.getLPs(tokenId, indexes[0]), 0);
         assertEq(_positionManager.getLPs(tokenId, indexes[1]), 9_000 * 1e18);
         assertEq(_positionManager.getLPs(tokenId, indexes[2]), 6_000 * 1e18);
-        assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[0]));
+        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[0]));
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[1]));
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
 
         // approve and transfer NFT to testAddress2 address
+        // testAddress2 should whitelist position manager as transferor prior of NFT / LPs transfer
+        changePrank(testAddress2);
+        address[] memory transferors = new address[](1);
+        transferors[0] = address(_positionManager);
+        _pool.approveLpTransferors(transferors);
+
+        changePrank(testAddress1);
         _positionManager.approve(address(this), tokenId);
         _positionManager.safeTransferFrom(testAddress1, testAddress2, tokenId);
 
         // check owner
         assertEq(_positionManager.ownerOf(tokenId), testAddress2);
 
-        // construct BurnParams
-        changePrank(testAddress2);
-        IPositionManagerOwnerActions.BurnParams memory burnParams = IPositionManagerOwnerActions.BurnParams(tokenId, address(_pool));
-        // check that NFT cannot be burnt if it tracks postions
-        vm.expectRevert(IPositionManagerErrors.LiquidityNotRemoved.selector);
-        _positionManager.burn(burnParams);
-
-        // check that NFT cannot be burnt if not owner
-        changePrank(testAddress1);
-        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.burn(burnParams);
-
-        // Indexes that have non zero position
-        uint256[] memory newIndexes = new uint256[](2);
-        newIndexes[0] = indexes[1];
-        newIndexes[1] = indexes[2];
-
-        // check old owner cannot redeem positions
-        // construct redeem liquidity params
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
-            tokenId, address(_pool), newIndexes
-        );
-        // redeem liquidity called by old owner
-        vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.reedemPositions(reedemParams);
-
-        // check new owner can redeem positions
-        changePrank(testAddress2);
-        _pool.approveLpTransferors(transferors);
-        _positionManager.reedemPositions(reedemParams);
-
-         // check pool state
+        // check LPs are owned by NFT receiver
         _assertLenderLpBalance({
             lender:      testAddress1,
-            index:       indexes[0],
-            lpBalance:   0,
-            depositTime: 0
-        });
-        _assertLenderLpBalance({
-            lender:      testAddress2,
             index:       indexes[0],
             lpBalance:   0,
             depositTime: 0
@@ -2653,11 +1536,11 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
             lender:      address(_positionManager),
             index:       indexes[0],
             lpBalance:   0,
-            depositTime: currentTime
+            depositTime: 0
         });
         _assertLenderLpBalance({
             lender:      testAddress1,
-            index:       indexes[0],
+            index:       indexes[1],
             lpBalance:   0,
             depositTime: 0
         });
@@ -2675,7 +1558,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         });
         _assertLenderLpBalance({
             lender:      testAddress1,
-            index:       indexes[0],
+            index:       indexes[2],
             lpBalance:   0,
             depositTime: 0
         });
@@ -2692,15 +1575,11 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
             depositTime: 0
         });
 
-        // check position manager state
-        assertEq(_positionManager.getLPs(tokenId, indexes[0]), 0);
-        assertEq(_positionManager.getLPs(tokenId, indexes[1]), 0);
-        assertEq(_positionManager.getLPs(tokenId, indexes[2]), 0);
-        assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[0]));
-        assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[1]));
-        assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[2]));
-
-        // burn and check state changes
+        // new owner can burn NFT as there's no position tracked
+        changePrank(testAddress2);
+        IPositionManagerOwnerActions.BurnParams memory burnParams = IPositionManagerOwnerActions.BurnParams(
+            tokenId, address(_pool)
+        );
         _positionManager.burn(burnParams);
 
         vm.expectRevert("ERC721: invalid token ID");

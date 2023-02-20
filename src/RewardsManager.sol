@@ -5,6 +5,7 @@ pragma solidity 0.8.14;
 import { IERC20 }    from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import { IERC721 }   from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
+import { IERC165 }   from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
 
 import { IPool }            from './interfaces/pool/IPool.sol';
 import { IPositionManager } from './interfaces/position/IPositionManager.sol';
@@ -32,7 +33,7 @@ import { Maths } from './libraries/internal/Maths.sol';
  *          - claim rewards
  *          - unstake token
  */
-contract RewardsManager is IRewardsManager {
+contract RewardsManager is IRewardsManager, IERC165 {
 
     using SafeERC20 for IERC20;
 
@@ -89,6 +90,25 @@ contract RewardsManager is IRewardsManager {
     constructor(address ajnaToken_, IPositionManager positionManager_) {
         ajnaToken = ajnaToken_;
         positionManager = positionManager_;
+    }
+
+    /**
+     * @dev See {IERC165-supportsInterface}.
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        /* 0x03000336 is calculated xoring all the function selectors in Rewards Manager interface
+            IRewardsManager.getBucketStateStakeInfo.selector ^
+            IRewardsManager.getStakeInfo.selector ^
+            IRewardsManager.updateRewardsClaimed.selector ^
+            IRewardsManager.rewardsClaimed.selector ^
+            IRewardsManager.isEpochClaimed.selector ^
+            IRewardsManager.updateBucketExchangeRatesAndClaim.selector ^
+            IRewardsManager.unstake.selector ^
+            IRewardsManager.stake.selector ^
+            IRewardsManager.claimRewards.selector ^
+            IRewardsManager.calculateRewards.selector
+        */
+        return interfaceId == 0x03000336;
     }
 
     /**************************/

@@ -79,7 +79,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             addQuoteToken(amount, fromIndex);
         }
 
-        try _pool.moveQuoteToken(amount, fromIndex, toIndex, block.timestamp + 1 minutes) {
+        try _pool.moveQuoteToken(_actor, amount, fromIndex, toIndex, block.timestamp + 1 minutes) {
             shouldExchangeRateChange = false;
             shouldReserveChange      = false;
         }

@@ -614,14 +614,14 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         _pool.transferLPs(from, to, indexes);
     }
 
-    function _assertTransferNoAllowanceRevert(
+    function _assertTransferNotLpsManagerRevert(
         address operator,
         address from,
         address to,
         uint256[] memory indexes
     ) internal {
         changePrank(operator);
-        vm.expectRevert(IPoolErrors.NoAllowance.selector);
+        vm.expectRevert(IPoolErrors.NotLPsManager.selector);
         _pool.transferLPs(from, to, indexes);
     }
 

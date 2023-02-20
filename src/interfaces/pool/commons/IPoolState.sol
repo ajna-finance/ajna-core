@@ -8,6 +8,17 @@ pragma solidity 0.8.14;
 interface IPoolState {
 
     /**
+     *  @notice Mapping of addresses that can transfer LPs to a given lender.
+     *  @param  lender     Lender that receives LPs.
+     *  @param  transferor Transferor that transfers LPs.
+     *  @return True if the transferor is approved by lender.
+     */
+    function approvedTransferors(
+        address lender,
+        address transferor
+    ) external view returns (bool);
+
+    /**
      *  @notice Returns details of an auction for a given borrower address.
      *  @param  borrower     Address of the borrower that is liquidated.
      *  @return kicker       Address of the kicker that is kicking the auction.
@@ -202,6 +213,17 @@ interface IPoolState {
     );
 
     /**
+     *  @notice Returns the address of approved LP manager for a given lender and bucket or 0x address if no approval.
+     *  @param  owner_ LPs owner address.
+     *  @param  index_ Bucket index to check manager address.
+     *  @return The total t0DebtInAuction in the system, in WAD units.
+     */
+    function lpManagers(
+        address owner_,
+        uint256 index_
+    ) external view returns (address);
+
+    /**
      *  @notice Returns information about pool reserves.
      *  @return liquidationBondEscrowed Amount of liquidation bond across all liquidators.
      *  @return reserveAuctionUnclaimed Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
@@ -241,17 +263,6 @@ interface IPoolState {
      *  @return The total t0DebtInAuction in the system, in WAD units.
      */
     function totalT0DebtInAuction() external view returns (uint256);
-
-    /**
-     *  @notice Mapping of addresses that can transfer LPs to a given lender.
-     *  @param  lender     Lender that receives LPs.
-     *  @param  transferor Transferor that transfers LPs.
-     *  @return True if the transferor is approved by lender.
-     */
-    function approvedTransferors(
-        address lender,
-        address transferor
-    ) external view returns (bool);
 
 }
 

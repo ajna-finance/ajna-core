@@ -94,9 +94,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     bool internal isPoolInitialized;
 
-    mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpAllowances; // owner address -> new owner address -> deposit index -> allowed amount
-
-    mapping(address => mapping(address => bool)) public override approvedTransferors; // owner address -> transferor address -> approved flag
+    mapping(address => mapping(uint256 => address)) public override lpManagers;          // owner address -> deposit index -> position manager address
+    mapping(address => mapping(address => bool))    public override approvedTransferors; // owner address -> transferor address -> approved flag
 
     /******************/
     /*** Immutables ***/
@@ -124,6 +123,21 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     function quoteTokenDust() external pure override returns (uint256) {
         return _getArgUint256(QUOTE_SCALE);
+    }
+
+    /*****************/
+    /*** Modifiers ***/
+    /*****************/
+
+    /**
+     *  @dev Modifier that prevent changing LP positions if the management is delegated to position manager.
+     */
+    modifier onlyIfOwnerManaged(uint256 index_) {
+
+        // revert if sender delegated management of bucket LPs to a different address
+        if (lpManagers[msg.sender][index_] != address(0)) revert OwnerNotLPsManager();
+
+        _;
     }
 
 
@@ -159,33 +173,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // move quote token amount from lender to pool
         _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToAdd_);
-    }
-
-    /**
-     *  @inheritdoc IPoolLenderActions
-     *  @dev write state:
-     *          - _lpAllowances mapping
-     */
-    function approveLpOwnership(
-        address newOwner_,
-        uint256[] calldata indexes_,
-        uint256[] calldata amounts_
-    ) external override nonReentrant {
-        mapping(uint256 => uint256) storage allowances = _lpAllowances[msg.sender][newOwner_];
-
-        uint256 indexesLength = indexes_.length;
-        for (uint256 i = 0; i < indexesLength; ) {
-            allowances[indexes_[i]] = amounts_[i];
-
-            unchecked { ++i; }
-        }
-
-        emit ApproveLpOwnership(
-            msg.sender,
-            newOwner_,
-            indexes_,
-            amounts_
-        );
     }
 
     /**
@@ -234,17 +221,90 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
+    /**
+     *  @inheritdoc IPoolLenderActions
+     *  @dev write state:
+     *          - lpManagers mapping
+     */
+    function approveLpManager(
+        address lpManager_,
+        uint256[] calldata indexes_
+    ) external override nonReentrant {
+        mapping(uint256 => address) storage approvedManagers = lpManagers[msg.sender];
+
+        uint256 indexesLength = indexes_.length;
+        uint256 index;
+
+        for (uint256 i = 0; i < indexesLength; ) {
+            index = indexes_[i];
+
+            // cannot reapprove manager for an already approved index. Only managers can revoke themselves.
+            if (approvedManagers[index] != address(0)) revert OwnerNotLPsManager();
+
+            approvedManagers[index] = lpManager_;
+
+            unchecked { ++i; }
+        }
+
+        emit ApproveLpManager(
+            msg.sender,
+            lpManager_,
+            indexes_
+        );
+    }
+
+    /**
+     *  @inheritdoc IPoolLenderActions
+     *  @dev write state:
+     *          - lpManagers mapping
+     */
+    function revokeLpManager(
+        address   owner_,
+        uint256[] calldata indexes_
+    ) external override nonReentrant {
+        mapping(uint256 => address) storage approvedManagers = lpManagers[owner_];
+
+        uint256 indexesLength = indexes_.length;
+        uint256 index;
+
+        for (uint256 i = 0; i < indexesLength; ) {
+            index = indexes_[i];
+
+            // only manager can revoke itself as LP manager
+            if (approvedManagers[index] != msg.sender) revert NotLPsManager();
+
+            delete approvedManagers[index];
+
+            unchecked { ++i; }
+        }
+
+        emit RevokeLpManager(
+            msg.sender,
+            owner_,
+            indexes_
+        );
+    }
+
     /// @inheritdoc IPoolLenderActions
     function moveQuoteToken(
+        address owner_,
         uint256 maxAmountToMove_,
         uint256 fromIndex_,
         uint256 toIndex_,
         uint256 expiry_
-    ) external override nonReentrant returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
+    ) external override nonReentrant onlyIfOwnerManaged(fromIndex_) returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
         _revertOnExpiry(expiry_);
+
         PoolState memory poolState = _accruePoolInterest();
 
         _revertIfAuctionDebtLocked(deposits, poolBalances, fromIndex_, poolState.inflator);
+
+        MoveQuoteParams memory moveParams;
+        moveParams.maxAmountToMove = maxAmountToMove_;
+        moveParams.fromIndex       = fromIndex_;
+        moveParams.toIndex         = toIndex_;
+        moveParams.owner           = owner_;
+        moveParams.thresholdPrice  = Loans.getMax(loans).thresholdPrice;
 
         uint256 newLup;
         (
@@ -253,14 +313,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             newLup
         ) = LenderActions.moveQuoteToken(
             buckets,
+            lpManagers[owner_],
             deposits,
             poolState,
-            MoveQuoteParams({
-                maxAmountToMove: maxAmountToMove_,
-                fromIndex:       fromIndex_,
-                toIndex:         toIndex_,
-                thresholdPrice:  Loans.getMax(loans).thresholdPrice
-            })
+            moveParams
         );
 
         // update pool interest rate state
@@ -271,7 +327,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function removeQuoteToken(
         uint256 maxAmount_,
         uint256 index_
-    ) external override nonReentrant returns (uint256 removedAmount_, uint256 redeemedLPs_) {
+    ) external override nonReentrant onlyIfOwnerManaged(index_) returns (uint256 removedAmount_, uint256 redeemedLPs_) {
         _revertIfAuctionClearable(auctions, loans);
 
         PoolState memory poolState = _accruePoolInterest();
@@ -309,8 +365,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     ) external override nonReentrant {
         LenderActions.transferLPs(
             buckets,
-            _lpAllowances,
             approvedTransferors,
+            lpManagers[owner_],
             owner_,
             newOwner_,
             indexes_
@@ -358,7 +414,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      */
     function kickWithDeposit(
         uint256 index_
-    ) external override nonReentrant {
+    ) external override nonReentrant onlyIfOwnerManaged(index_) {
         PoolState memory poolState = _accruePoolInterest();
 
         // kick auctions

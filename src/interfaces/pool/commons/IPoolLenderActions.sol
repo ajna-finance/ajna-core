@@ -20,16 +20,14 @@ interface IPoolLenderActions {
     ) external returns (uint256 lpbChange);
 
     /**
-     *  @notice Called by lenders to approve transfer of LPs to a new owner.
+     *  @notice Called by lenders to approve address as LP position manager.
      *  @dev    Intended for use by the PositionManager contract.
-     *  @param  allowedNewOwner The new owner of the LPs.
-     *  @param  indexes         Bucket indexes from where LPs are transferred.
-     *  @param  amounts         The amounts of LPs approved to transfer.
+     *  @param  lpManager The new address approved as LP manager.
+     *  @param  indexes   The bucket indexes that the allowed manager LP can control.
      */
-    function approveLpOwnership(
-        address allowedNewOwner,
-        uint256[] calldata indexes,
-        uint256[] calldata amounts
+    function approveLpManager(
+        address lpManager,
+        uint256[] calldata indexes
     ) external;
 
     /**
@@ -42,16 +40,8 @@ interface IPoolLenderActions {
     ) external;
 
     /**
-     *  @notice Called by lenders to revoke addresses that can transfer LPs.
-     *  @dev    Intended for use by the PositionManager contract.
-     *  @param  transferors Addresses that are revoked to transfer LPs to lender.
-     */
-    function revokeLpTransferors(
-        address[] calldata transferors
-    ) external;
-
-    /**
-     *  @notice Called by lenders to move an amount of credit from a specified price bucket to another specified price bucket.
+     *  @notice Called by lenders and positions managers to move an amount of credit from a specified price bucket to another specified price bucket.
+     *  @param  lender        The owner address of the LPs to move.
      *  @param  maxAmount     The maximum amount of quote token to be moved by a lender.
      *  @param  fromIndex     The bucket index from which the quote tokens will be removed.
      *  @param  toIndex       The bucket index to which the quote tokens will be added.
@@ -60,6 +50,7 @@ interface IPoolLenderActions {
      *  @return lpbAmountTo   The amount of LPs moved to destination bucket.
      */
     function moveQuoteToken(
+        address lender,
         uint256 maxAmount,
         uint256 fromIndex,
         uint256 toIndex,
@@ -91,8 +82,27 @@ interface IPoolLenderActions {
     ) external returns (uint256 quoteTokenAmount, uint256 lpAmount);
 
     /**
-     *  @notice Called by lenders to transfers their LP tokens to a different address. approveLpOwnership needs to be run first
-     *  @dev    Used by PositionManager.memorializePositions().
+     *  @notice Called by lenders to revoke address as LP position manager.
+     *  @dev    Intended for use by the PositionManager contract.
+     *  @param  indexes The bucket indexes to revoke LP manager control at.
+     */
+    function revokeLpManager(
+        address lender,
+        uint256[] calldata indexes
+    ) external;
+
+    /**
+     *  @notice Called by lenders to revoke addresses that can transfer LPs.
+     *  @dev    Intended for use by the PositionManager contract.
+     *  @param  transferors Addresses that are revoked to transfer LPs to lender.
+     */
+    function revokeLpTransferors(
+        address[] calldata transferors
+    ) external;
+
+    /**
+     *  @notice Called by lenders to transfers their LP tokens to a different address. approveLpTransferor of position manager needs to be run first
+     *  @dev    Can be called only by the managers approved by owner address. New owner should have the manager address approved as transferor.
      *  @param  owner    The original owner address of the position.
      *  @param  newOwner The new owner address of the position.
      *  @param  indexes  Array of price buckets index at which LP tokens were moved.

@@ -281,7 +281,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
     function removeCollateral(
         uint256 maxAmount_,
         uint256 index_
-    ) external override nonReentrant returns (uint256 collateralAmount_, uint256 lpAmount_) {
+    ) external override nonReentrant onlyIfOwnerManaged(index_) returns (uint256 collateralAmount_, uint256 lpAmount_) {
         _revertIfAuctionClearable(auctions, loans);
 
         PoolState memory poolState = _accruePoolInterest();

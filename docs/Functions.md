@@ -125,7 +125,9 @@
 	reverts on:
 	- LenderActions.transferLPs():
 		- invalid index InvalidIndex()
-		- no allowance NoAllowance()
+		- transfer to same owner TransferToSameOwner()
+		- transfer not approved by receiver TransferorNotApproved()
+		- transfer not initiated by manager NotLPsManager()
 
 	emit events:
 	- LenderActions.transferLPs():

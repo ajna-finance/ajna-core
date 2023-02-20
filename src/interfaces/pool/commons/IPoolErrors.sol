@@ -129,11 +129,6 @@ interface IPoolErrors {
     error MoveToSamePrice();
 
     /**
-     *  @notice Owner of the LP tokens must have approved the new owner prior to transfer.
-     */
-    error NoAllowance();
-
-    /**
      *  @notice Actor is attempting to take or clear an inactive auction.
      */
     error NoAuction();
@@ -158,6 +153,21 @@ interface IPoolErrors {
      *  @notice Borrower is attempting to repay when they have no outstanding debt.
      */
     error NoDebt();
+
+    /**
+     *  @notice Lender action cannot be completed because LPs management is delegated by the owner.
+     */
+    error OwnerNotLPsManager();
+
+    /**
+     *  @notice Only delegated LPs manager can perform this action.
+     */
+    error NotLPsManager();
+
+    /**
+     *  @notice Transfer LPs action is attempted by an address that is not owner of LPs.
+     */
+    error NotLPsOwner();
 
     /**
      *  @notice Borrower is attempting to borrow an amount of quote tokens that will push the pool into under-collateralization.

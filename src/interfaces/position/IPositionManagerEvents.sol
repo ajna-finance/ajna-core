@@ -18,12 +18,13 @@ interface IPositionManagerEvents {
     );
 
     /**
-     *  @notice Emitted when existing positions were memorialized for a given NFT.
+     *  @notice Emitted when existing positions were tracked for a given NFT.
      *  @param  tokenId The tokenId of the NFT.
      */
-    event MemorializePosition(
+    event TrackPositions(
         address indexed lender,
-        uint256 tokenId
+        uint256 tokenId,
+        uint256[] indexes
     );
 
     /**
@@ -49,11 +50,12 @@ interface IPositionManagerEvents {
     );
 
     /**
-     *  @notice Emitted when existing positions were redeemed for a given NFT.
+     *  @notice Emitted when existing positions were untracked for a given NFT.
      *  @param  tokenId The tokenId of the NFT.
      */
-    event RedeemPosition(
+    event UntrackPositions(
         address indexed lender,
-        uint256 tokenId
+        uint256 tokenId,
+        uint256[] indexes
     );
 }
