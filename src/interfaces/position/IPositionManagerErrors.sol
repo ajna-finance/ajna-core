@@ -8,6 +8,11 @@ pragma solidity 0.8.14;
 interface IPositionManagerErrors {
 
     /**
+     * @notice User attempting to utilize LPB from a bankrupt bucket.
+     */
+    error BucketBankrupt();
+
+    /**
      * @notice User attempting to burn a LPB NFT before removing liquidity.
      */
     error LiquidityNotRemoved();

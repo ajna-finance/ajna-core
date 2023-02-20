@@ -49,6 +49,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
     mapping(uint256 => address)                     public override poolKey;     // token id => ajna pool address for which token was minted
     mapping(uint256 => mapping(uint256 => uint256)) public override positionLPs; // token id => bucket index => LPs
+    mapping(uint256 => mapping(uint256 => uint256)) public positionDepositTime;  // token id => bucket index => bucket deposit time
 
     mapping(uint256 => uint96)                internal nonces;          // token id => nonce value used for permit
     mapping(uint256 => EnumerableSet.UintSet) internal positionIndexes; // token id => bucket indexes associated with position
@@ -155,10 +156,23 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             // slither-disable-next-line unused-return
             positionIndex.add(params_.indexes[i]);
 
-            (uint256 lpBalance,) = pool.lenderInfo(params_.indexes[i], owner);
+            (uint256 lpBalance, uint256 depositTime) = pool.lenderInfo(params_.indexes[i], owner);
+
+            // check for previous deposits
+            if (positionDepositTime[params_.tokenId][params_.indexes[i]] != 0) {
+                // check that bucket didn't go bankrupt after prior memorialization
+                (, , uint256 bankruptcyTime, , ) = pool.bucketInfo(params_.indexes[i]);
+                if (positionDepositTime[params_.tokenId][params_.indexes[i]] < bankruptcyTime) {
+                    // if bucket did go bankrupt, zero out the LPs tracked by position manager
+                    positionLPs[params_.tokenId][params_.indexes[i]] = 0;
+                }
+            }
 
             // update token position LPs
             positionLPs[params_.tokenId][params_.indexes[i]] += lpBalance;
+
+            // set token's position deposit time to the original lender's deposit time
+            positionDepositTime[params_.tokenId][params_.indexes[i]] = depositTime;
 
             unchecked { ++i; }
         }
@@ -220,9 +234,14 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         (
             uint256 bucketLPs,
             uint256 bucketCollateral,
-            ,
+            uint256 bankruptcyTime,
             uint256 bucketDeposit,
         ) = IPool(params_.pool).bucketInfo(params_.fromIndex);
+
+        // check that bucket hasn't gone bankrupt since memorialization
+        if (positionDepositTime[params_.tokenId][params_.fromIndex] < bankruptcyTime) {
+            revert BucketBankrupt();
+        }
 
         // calculate the max amount of quote tokens that can be moved, given the tracked LPs
         uint256 maxQuote = _lpsToQuoteToken(
@@ -293,6 +312,12 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         uint256[] memory lpAmounts = new uint256[](indexesLength);
 
         for (uint256 i = 0; i < indexesLength; ) {
+
+            // check that bucket didn't go bankrupt after memorialization
+            (, , uint256 bankruptcyTime, , ) = pool.bucketInfo(params_.indexes[i]);
+            if (positionDepositTime[params_.tokenId][params_.indexes[i]] < bankruptcyTime) {
+                revert BucketBankrupt();
+            }
 
             // remove bucket index at which a position has added liquidity
             if (!positionIndex.remove(params_.indexes[i])) revert RemoveLiquidityFailed();
