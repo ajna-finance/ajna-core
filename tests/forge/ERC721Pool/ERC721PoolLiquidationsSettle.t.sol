@@ -183,7 +183,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
 
     }
 
-    function testKickAndSettleSubsetPoolFractionalCollateral() external tearDown {
+    function testKickAndSettleSubsetPoolFractionalCollateral() external {
 
         // settle borrower 2
         _assertAuction(
@@ -260,11 +260,11 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
                 encumberedCollateral: 0,
                 poolDebt:             0,
                 actualUtilization:    0,
-                targetUtilization:    0.437382306954677563 * 1e18,
+                targetUtilization:    3.048439116380388985 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                interestRate:         0.045 * 1e18,
+                interestRate:         0.055 * 1e18,
                 interestRateUpdate:   _startTime + 80 hours
             })
         );

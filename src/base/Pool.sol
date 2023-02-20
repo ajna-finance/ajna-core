@@ -59,6 +59,8 @@ import { BorrowerActions } from '../libraries/external/BorrowerActions.sol';
 import { LenderActions }   from '../libraries/external/LenderActions.sol';
 import { PoolCommons }     from '../libraries/external/PoolCommons.sol';
 
+import '@std/console.sol';
+
 /**
  *  @title  Pool Contract
  *  @dev    Base contract and entrypoint for commong logic of both ERC20 and ERC721 pools.
@@ -310,7 +312,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         // update pool balances state
-        poolBalances.t0Debt          = result.t0PoolDebt;
+        poolBalances.t0Debt          =  result.t0PoolDebt;
         poolBalances.t0DebtInAuction += result.t0KickedDebt;
 
         // update pool interest rate state

@@ -40,6 +40,9 @@ import { Auctions }        from './libraries/external/Auctions.sol';
 import { LenderActions }   from './libraries/external/LenderActions.sol';
 import { BorrowerActions } from './libraries/external/BorrowerActions.sol';
 
+
+import '@std/console.sol';
+
 /**
  *  @title  ERC721 Pool contract
  *  @notice Entrypoint of ERC721 Pool actions for pool actors:
@@ -153,6 +156,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
         poolState.collateral = result.poolCollateral;
+        poolState.t0PoolUtilizationDebtWeight = result.t0PoolUtilizationDebtWeight;
         _updateInterestState(poolState, result.newLup);
 
         if (tokenIdsToPledge_.length != 0) {
@@ -196,6 +200,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         uint256 limitIndex_
     ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
+        console.log("in repay start");
 
         RepayDebtResult memory result = BorrowerActions.repayDebt(
             auctions,
@@ -216,6 +221,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
         poolState.collateral = result.poolCollateral;
+        poolState.t0PoolUtilizationDebtWeight = result.t0PoolUtilizationDebtWeight;
         _updateInterestState(poolState, result.newLup);
 
         // update pool balances state
@@ -419,6 +425,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
+        console.log("take pre: ", poolState.t0PoolUtilizationDebtWeight);
         TakeResult memory result = Auctions.take(
             auctions,
             buckets,
@@ -445,7 +452,9 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         // update pool interest rate state
         poolState.debt       =  result.poolDebt;
         poolState.collateral -= collateralSettled;
+        poolState.t0PoolUtilizationDebtWeight = result.t0PoolUtilizationDebtWeight;
         _updateInterestState(poolState, result.newLup);
+        console.log("take post: ", poolState.t0PoolUtilizationDebtWeight);
 
         // transfer rounded collateral from pool to taker
         uint256[] memory tokensTaken = _transferFromPoolToAddress(
@@ -499,6 +508,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             index_,
             1
         );
+        console.log("aft bucket take");
 
         // update pool balances state
         uint256 t0DebtInAuction = poolBalances.t0DebtInAuction;
@@ -515,6 +525,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
         poolState.collateral -= collateralSettled;
+        poolState.t0PoolUtilizationDebtWeight = result.t0PoolUtilizationDebtWeight;
         _updateInterestState(poolState, result.newLup);
 
         if (result.settledAuction) _rebalanceTokens(borrowerAddress_, result.remainingCollateral);

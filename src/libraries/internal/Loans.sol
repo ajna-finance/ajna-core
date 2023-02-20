@@ -15,6 +15,10 @@ import { _priceAt } from '../helpers/PoolHelper.sol';
 import { Deposits } from './Deposits.sol';
 import { Maths }    from './Maths.sol';
 
+
+import '@std/console.sol';
+
+
 /**
     @title  Loans library
     @notice Internal library containing common logic for loans management.
@@ -237,6 +241,36 @@ library Loans {
     /**********************/
     /*** View Functions ***/
     /**********************/
+
+    function adjustUtilizationWeight(
+        uint256 t0PoolUtilizationDebtWeight,
+        uint256 debtPreAction,
+        uint256 debtPostAction,
+        uint256 colPreAction,
+        uint256 colPostAction
+        ) internal returns (uint256) {
+
+        uint256 returnWeight_ = t0PoolUtilizationDebtWeight;
+        uint256 debtColAccumPreAction;
+        uint256 debtColAccumPostAction;
+
+        // only bad debt, already deducted from accumulator when collateral was removed, do nothing.
+        if (colPreAction == 0 && debtPreAction != 0) return returnWeight_;
+
+        // position is closed, bad debt is created, purely interest update deduct from accumulator
+        if (colPostAction == 0) {
+            debtColAccumPreAction = colPreAction != 0 ? Maths.wdiv(Maths.wmul(debtPreAction, debtPreAction), colPreAction): 0;
+            returnWeight_ -= debtColAccumPreAction;
+            return returnWeight_;
+        }
+
+        // partial take, depositTake, arbTake, settle
+        debtColAccumPostAction = Maths.wdiv(Maths.wmul(debtPostAction, debtPostAction), colPostAction);
+        debtColAccumPreAction = colPreAction != 0 ? Maths.wdiv(Maths.wmul(debtPreAction, debtPreAction), colPreAction) : 0;
+        returnWeight_ += debtColAccumPostAction;
+        returnWeight_ -= debtColAccumPreAction;
+        return returnWeight_;
+    }
 
     /**
      *  @notice Retreives Loan by index, i_.

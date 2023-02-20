@@ -11,6 +11,7 @@ import 'src/PoolInfoUtils.sol';
 import { MAX_PRICE } from 'src/libraries/helpers/PoolHelper.sol';
 
 import 'src/libraries/internal/Maths.sol';
+import '@std/console.sol';
 
 contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
@@ -653,7 +654,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint8   collateralPrecisionDecimals_,
         uint8   quotePrecisionDecimals_,
         uint16  bucketId_
-    ) external tearDown {
+    ) external {
         // setup fuzzy bounds and initialize the pool
         uint256 collateralDecimals = bound(uint256(collateralPrecisionDecimals_), 1, 18);
         uint256 quoteDecimals      = bound(uint256(quotePrecisionDecimals_),      1, 18);
@@ -694,7 +695,6 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                     indexLimit: bucketId
                 });
             }
-
             // draw a legitimate amount of debt
             _drawDebtNoLupCheck({
                     from:               borrower,

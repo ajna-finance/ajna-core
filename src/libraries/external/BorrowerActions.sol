@@ -32,6 +32,9 @@ import { Maths }    from '../internal/Maths.sol';
 
 import { Auctions } from './Auctions.sol';
 
+
+import '@std/console.sol';
+
 /**
     @title  BorrowerActions library
     @notice External library containing logic for for pool actors:
@@ -177,19 +180,26 @@ library BorrowerActions {
             result_.poolCollateral += collateralToPledge_;
 
             // adding collateral without any debt has no effect to the utilization debt weight
-            if (vars.borrowerDebt != 0) {
-                uint256 debtSquared = Maths.wmul(borrower.t0Debt, borrower.t0Debt);
+            // if (vars.borrowerDebt != 0) {
+            //     uint256 debtSquared = Maths.wmul(borrower.t0Debt, borrower.t0Debt);
                 
-                uint256 oldCollateralWeight = Maths.wdiv(debtSquared,
-                                                        (borrower.collateral - collateralToPledge_));
+            //     uint256 oldCollateralWeight = Maths.wdiv(debtSquared,
+            //                                             (borrower.collateral - collateralToPledge_));
                                                          
-                uint256 newCollateralWeight = Maths.wdiv(debtSquared,
-                                                        borrower.collateral);
+            //     uint256 newCollateralWeight = Maths.wdiv(debtSquared,
+            //                                             borrower.collateral);
 
-                // adding collateral, decrement utilization debt weight
-                // calculate what to decrement weight by: collateralNewWeight - collateralOldWeight
-                result_.t0PoolUtilizationDebtWeight -= oldCollateralWeight - newCollateralWeight;
-            }
+            //     // adding collateral, decrement utilization debt weight
+            //     // calculate what to decrement weight by: collateralNewWeight - collateralOldWeight
+            //     result_.t0PoolUtilizationDebtWeight -= oldCollateralWeight - newCollateralWeight;
+            //     result_.t0PoolUtilizationDebtWeight = Loans.adjustUtilizationWeight(
+            //                                                 result_.t0PoolUtilizationDebtWeight,
+            //                                                 debtPreAction,
+            //                                                 debtPostAction,
+            //                                                 colPreAction,
+            //                                                 colPostAction);   
+                
+            // }
         }
 
         if (vars.borrow) {
@@ -203,16 +213,6 @@ library BorrowerActions {
 
             // t0 debt change is t0 amount to borrow plus the origination fee
             vars.t0DebtChange = Maths.wmul(vars.t0BorrowAmount, _feeRate(poolState_.rate) + Maths.WAD);
-
-            // increasing debt, increase debt utilization weight
-            // calculate what to increase weight by: newDebt^2 - oldDebt^2 / collateral
-            uint256 newDebt = Maths.wdiv(Maths.wmul((borrower.t0Debt + vars.t0DebtChange),(borrower.t0Debt + vars.t0DebtChange)),
-                                         borrower.collateral);
-
-            uint256 oldDebt = Maths.wdiv(Maths.wmul(borrower.t0Debt, borrower.t0Debt),
-                                        borrower.collateral);
-                            
-            result_.t0PoolUtilizationDebtWeight += newDebt - oldDebt;
 
             borrower.t0Debt += vars.t0DebtChange;
 
@@ -242,9 +242,32 @@ library BorrowerActions {
                 revert BorrowerUnderCollateralized();
             }
 
+            // // increasing debt, increase debt utilization weight
+            // // calculate what to increase weight by: newDebt^2 /collateral - oldDebt^2 / collateral
+            // uint256 newDebt = Maths.wdiv(Maths.wmul(borrower.t0Debt, borrower.t0Debt),
+            //                              borrower.collateral);
+
+            // uint256 oldDebt = Maths.wdiv(Maths.wmul(borrower.t0Debt - vars.t0DebtChange, borrower.t0Debt - vars.t0DebtChange),
+            //                             borrower.collateral);
+                            
+            // result_.t0PoolUtilizationDebtWeight += newDebt - oldDebt;
+
             // stamp borrower t0Np when draw debt
             vars.stampT0Np = true;
         }
+
+        // console.log("draw debt", borrower.t0Debt);
+        // console.log("draw debt", borrower.t0Debt - vars.t0DebtChange);
+        // console.log("draw debt", borrower.collateral - collateralToPledge_);
+        // console.log("draw debt", borrower.collateral);
+
+        result_.t0PoolUtilizationDebtWeight = Loans.adjustUtilizationWeight(
+                                                    result_.t0PoolUtilizationDebtWeight,
+                                                    borrower.t0Debt - vars.t0DebtChange,
+                                                    borrower.t0Debt,
+                                                    borrower.collateral - collateralToPledge_,
+                                                    borrower.collateral);
+        // console.log("after here");
 
         // calculate LUP if it wasn't calculated previously
         if (!vars.pledge && !vars.borrow) {
@@ -338,14 +361,14 @@ library BorrowerActions {
             result_.quoteTokenToRepay = Maths.wmul(vars.t0RepaidDebt,                   poolState_.inflator);
             vars.borrowerDebt         = Maths.wmul(borrower.t0Debt - vars.t0RepaidDebt, poolState_.inflator);
 
-            // reducing debt, reduce utilization debt weight
-            uint256 newDebtWeight = Maths.wdiv(Maths.wmul((borrower.t0Debt - vars.t0RepaidDebt),(borrower.t0Debt - vars.t0RepaidDebt)),
-                                                              borrower.collateral);
+            // // // reducing debt, reduce utilization debt weight
+            // uint256 newDebtWeight = Maths.wdiv(Maths.wmul((borrower.t0Debt - vars.t0RepaidDebt),(borrower.t0Debt - vars.t0RepaidDebt)),
+            //                                                   borrower.collateral);
 
-            uint256 oldDebtWeight = Maths.wdiv(Maths.wmul(borrower.t0Debt, borrower.t0Debt),
-                                        borrower.collateral);
+            // uint256 oldDebtWeight = Maths.wdiv(Maths.wmul(borrower.t0Debt, borrower.t0Debt),
+            //                             borrower.collateral);
  
-            result_.t0PoolUtilizationDebtWeight -= oldDebtWeight - newDebtWeight;
+            // result_.t0PoolUtilizationDebtWeight -= oldDebtWeight - newDebtWeight;
 
             // check that paying the loan doesn't leave borrower debt under min debt amount
             _revertOnMinDebt(
@@ -415,26 +438,33 @@ library BorrowerActions {
             borrower.collateral    -= collateralAmountToPull_;
             result_.poolCollateral -= collateralAmountToPull_;
 
-            // removing collateral without any debt has no effect to the utilization debt weight
-            if (vars.borrowerDebt != 0) {
-                uint256 debtSquared = Maths.wmul(borrower.t0Debt, borrower.t0Debt);
+            // // removing collateral without any debt has no effect to the utilization debt weight
+            // if (vars.borrowerDebt != 0) {
+            //     uint256 debtSquared = Maths.wmul(borrower.t0Debt, borrower.t0Debt);
                 
-                uint256 oldCollateralWeight = Maths.wdiv(debtSquared,
-                                                         borrower.collateral);
+            //     uint256 newCollateralWeight = Maths.wdiv(debtSquared,
+            //                                              borrower.collateral);
                                                          
-                uint256 newCollateralWeight = Maths.wdiv(debtSquared,
-                                                        (borrower.collateral + collateralAmountToPull_));
+            //     uint256 oldCollateralWeight = Maths.wdiv(debtSquared,
+            //                                             (borrower.collateral + collateralAmountToPull_));
 
-                // removing collateral, increment utilization debt weight
-                // calculate what to decrement weight by: collateralNewWeight - collateralOldWeight
-                result_.t0PoolUtilizationDebtWeight += newCollateralWeight - oldCollateralWeight;
-            }
+            //     // removing collateral, increment utilization debt weight
+            //     // calculate what to decrement weight by: collateralNewWeight - collateralOldWeight
+            //     result_.t0PoolUtilizationDebtWeight += newCollateralWeight - oldCollateralWeight;
+            // }
         }
 
         // calculate LUP if it wasn't calculated previously
         if (!vars.repay && !vars.pull) {
             result_.newLup = _lup(deposits_, result_.poolDebt);
         }
+
+        result_.t0PoolUtilizationDebtWeight = Loans.adjustUtilizationWeight(
+                                                    result_.t0PoolUtilizationDebtWeight,
+                                                    borrower.t0Debt + vars.t0RepaidDebt,
+                                                    borrower.t0Debt,
+                                                    borrower.collateral + collateralAmountToPull_,
+                                                    borrower.collateral);   
 
         // update loan state
         Loans.update(

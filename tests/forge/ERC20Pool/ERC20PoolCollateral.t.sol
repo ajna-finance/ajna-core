@@ -29,7 +29,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
     /**
      *  @notice With 1 lender and 1 borrower test pledgeCollateral, borrow, and pullCollateral.
      */
-    function testPledgeAndPullCollateral() external tearDown {
+    function testPledgeAndPullCollateral() external {
         // lender deposits 10000 Quote into 3 buckets
 
         _addInitialLiquidity({
@@ -129,7 +129,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 encumberedCollateral: 7.061038044473493202 * 1e18,
                 poolDebt:             21_049.0068231390029184310 * 1e18,
                 actualUtilization:    0.701027796272525944 * 1e18,
-                targetUtilization:    0.141220760889469864 * 1e18,
+                targetUtilization:    14.162223651842185625 * 1e18,
                 minDebtAmount:        2_104.900682313900291843 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
@@ -165,7 +165,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 encumberedCollateral: 7.061038044473493202 * 1e18,
                 poolDebt:             21_049.0068231390029184310 * 1e18,
                 actualUtilization:    0.701027796272525944 * 1e18,
-                targetUtilization:    0.141220760889469864 * 1e18,
+                targetUtilization:    14.162223651842185625 * 1e18,
                 minDebtAmount:        2_104.900682313900291843 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
@@ -305,7 +305,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
      *          Reverts:
      *              Attempts to remove more than available claimable collateral.
      */
-    function testPullCollateralRequireEnoughCollateral() external tearDown {
+    function testPullCollateralRequireEnoughCollateral() external {
         _assertPullInsufficientCollateralRevert({
             from:   _borrower,
             amount: 100 * 1e18

@@ -295,12 +295,12 @@ library Auctions {
             }
         }
 
-        t0DebtWeight_ = adjustUtilizationWeight(
+        t0DebtWeight_ = Loans.adjustUtilizationWeight(
             t0PoolUtilizationDebtWeight_,
-            borrower.t0Debt,
             t0DebtSettled_,
-            borrower.collateral,
-            collateralSettled_
+            borrower.t0Debt,
+            collateralSettled_,
+            borrower.collateral
         );
 
         // bad debt could not be allocated, remove from system
@@ -472,6 +472,7 @@ library Auctions {
         uint256 collateralScale_
     ) external returns (BucketTakeResult memory result_) {
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
+        result_.t0PoolUtilizationDebtWeight = poolState_.t0PoolUtilizationDebtWeight;
 
         if (borrower.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
 
@@ -496,8 +497,8 @@ library Auctions {
             })
         );
 
-        result_.t0PoolUtilizationDebtWeight = adjustUtilizationWeight(
-            poolState_.t0PoolUtilizationDebtWeight,
+        result_.t0PoolUtilizationDebtWeight = Loans.adjustUtilizationWeight(
+            result_.t0PoolUtilizationDebtWeight,
             borrower.t0Debt,
             t0BorrowerDebt - t0RepayAmount,
             borrower.collateral,
@@ -557,6 +558,7 @@ library Auctions {
         uint256 collateralScale_
     ) external returns (TakeResult memory result_) {
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
+        result_.t0PoolUtilizationDebtWeight = poolState_.t0PoolUtilizationDebtWeight;
 
         if (
             (collateral_         == 0)                                                    || // revert if amount to take is 0
@@ -587,8 +589,8 @@ library Auctions {
             })
         );
 
-        result_.t0PoolUtilizationDebtWeight = adjustUtilizationWeight(
-            poolState_.t0PoolUtilizationDebtWeight,
+        result_.t0PoolUtilizationDebtWeight = Loans.adjustUtilizationWeight(
+            result_.t0PoolUtilizationDebtWeight,
             borrower.t0Debt,
             t0BorrowerDebt - t0RepayAmount,
             borrower.collateral,
@@ -890,14 +892,14 @@ library Auctions {
         Borrower memory borrower_,
         TakeParams memory params_
     ) internal returns (uint256, uint256, uint256, uint256, uint256, uint256) {
-        Liquidation storage liquidation = auctions_.liquidations[params_.borrower]; 
+        Liquidation storage liquidation = auctions_.liquidations[params_.borrower];
 
         TakeLocalVars memory vars = _prepareTake(
             liquidation,
             borrower_.t0Debt,
             borrower_.collateral,
             params_.inflator
-        ); 
+        );
 
         // These are placeholder max values passed to calculateTakeFlows because there is no explicit bound on the
         // quote token amount in take calls (as opposed to bucketTake)
@@ -1499,46 +1501,6 @@ library Auctions {
         return PRBMathSD59x18.mul(int256(bondFactor_), sign);
     }
 
-    function adjustUtilizationWeight(
-        uint256 t0PoolUtilizationDebtWeight,
-        uint256 debtPreAction,
-        uint256 debtPostAction,
-        uint256 colPreAction,
-        uint256 colPostAction
-        ) internal pure returns (uint256) {
-
-        uint256 returnWeight = t0PoolUtilizationDebtWeight;
-
-        uint256 newDebt = Maths.wdiv(Maths.wmul(debtPreAction, debtPostAction),
-                                    colPreAction);
-
-        uint256 oldDebt = Maths.wdiv(Maths.wmul(debtPostAction, debtPostAction),
-                                    colPreAction);
-        
-        // take call could increase or decrease debt due to take penalty
-        if (debtPreAction > debtPostAction) {
-            // net decrease in debt, decreasing debt utilization weight
-            returnWeight -= oldDebt - newDebt;
-
-        } else {
-            // net increase in debt, increase debt utilization weight
-            returnWeight += newDebt - oldDebt;
-        }
-
-        // removing collateral without any debt has no effect to the utilization debt weight
-        if (debtPostAction != 0) {
-            
-            uint256 collateralOldWeight = Maths.wdiv(Maths.wmul(debtPostAction, debtPostAction),
-                                                        colPreAction);
-                                                        
-            uint256 collateralNewWeight = Maths.wdiv(Maths.wmul(debtPostAction, debtPostAction),
-                                                    (colPostAction));
-
-            // removing collateral, increment utilization debt weight
-            // calculate what to decrement weight by: collateralNewWeight - collateralOldWeight
-            returnWeight += collateralNewWeight - collateralOldWeight;
-        }
-    }
 
     /**
      *  @notice Utility function to validate take and calculate take's parameters.
