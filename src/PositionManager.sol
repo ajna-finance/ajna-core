@@ -339,7 +339,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     /**************************/
 
     /**
-     *  @dev    Retrieves token's next nonce for permit.
+     *  @notice Retrieves token's next nonce for permit.
      *  @param  tokenId_ Address of the Ajna pool to retrieve accumulators of.
      *  @return Incremented token permit nonce.
      */
@@ -350,7 +350,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     }
 
     /**
-     *  @dev    Checks that a provided pool address was deployed by an Ajna factory.
+     *  @notice Checks that a provided pool address was deployed by an Ajna factory.
      *  @param  pool_       Address of the Ajna pool.
      *  @param  subsetHash_ Factory's subset hash pool.
      *  @return True if a valid Ajna pool false otherwise.
@@ -368,12 +368,16 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         return (pool_ == erc20DeployedPoolAddress || pool_ == erc721DeployedPoolAddress);
     }
 
+    /**
+     *  @notice Checks that a bucket index associated with a given NFT didn't go bankrupt after memorialization.
+     *  @param  tokenId_    The ID of the NFT to check deposit time for.
+     *  @param  index_      The bucket index to check deposit time for.
+     *  @return True if the bucket went bankrupt after that position memorialzied their lpb.
+     */
     function _bucketBankruptAfterDeposit(
         uint256 tokenId_,
         uint256 index_
     ) internal view returns (bool) {
-        if (positionDepositTime[tokenId_][index_] == 0) return false;
-
         (, , uint256 bankruptcyTime, , ) = IPool(poolKey[tokenId_]).bucketInfo(index_);
         return positionDepositTime[tokenId_][index_] < bankruptcyTime;
     }

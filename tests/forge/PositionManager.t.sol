@@ -9,6 +9,7 @@ import { ERC721HelperContract } from './ERC721Pool/ERC721DSTestPlus.sol';
 import 'src/interfaces/position/IPositionManager.sol';
 import 'src/PositionManager.sol';
 import 'src/libraries/helpers/SafeTokenNamer.sol';
+import 'src/libraries/helpers/PoolHelper.sol';
 
 import 'src/interfaces/pool/commons/IPoolErrors.sol';
 
@@ -93,10 +94,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         uint256 tokenId = _mintNFT(testAddress, testAddress, address(_pool));
 
         require(tokenId != 0, "tokenId nonce not incremented");
+        assertEq(tokenId, 1);
 
         // check position info
         address owner = _positionManager.ownerOf(tokenId);
-        uint256 lps   = _positionManager.getLPs(tokenId, mintPrice);
+        uint256 lps   = _positionManager.getLPs(tokenId, _indexOf(mintPrice));
 
         assertEq(owner, testAddress);
         assertEq(lps,   0);
@@ -179,7 +181,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertGt(positionAtPriceOneLPs, 0);
 
         // check lps at non added to price
-        uint256 positionAtWrongPriceLPs = _positionManager.getLPs(tokenId, 4000000 * 1e18);
+        uint256 positionAtWrongPriceLPs = _positionManager.getLPs(tokenId, uint256(MAX_BUCKET_INDEX));
         assertEq(positionAtWrongPriceLPs, 0);
 
         assertTrue(_positionManager.isIndexInPosition(tokenId, 2550));
@@ -574,12 +576,12 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             depositTime: 0
         });
 
-        assertEq(_positionManager.getLPs(indexes[0], tokenId1), 0);
-        assertEq(_positionManager.getLPs(indexes[1], tokenId1), 0);
-        assertEq(_positionManager.getLPs(indexes[2], tokenId1), 0);
+        assertEq(_positionManager.getLPs(tokenId1, indexes[0]), 0);
+        assertEq(_positionManager.getLPs(tokenId1, indexes[1]), 0);
+        assertEq(_positionManager.getLPs(tokenId1, indexes[2]), 0);
 
-        assertEq(_positionManager.getLPs(indexes[0], tokenId2), 0);
-        assertEq(_positionManager.getLPs(indexes[3], tokenId2), 0);
+        assertEq(_positionManager.getLPs(tokenId2, indexes[0]), 0);
+        assertEq(_positionManager.getLPs(tokenId2, indexes[3]), 0);
 
         (uint256 poolSize, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
         assertEq(poolSize, 15_000 * 1e18);
