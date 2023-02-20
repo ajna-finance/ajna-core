@@ -161,8 +161,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             // check for previous deposits
             if (positionDepositTime[params_.tokenId][params_.indexes[i]] != 0) {
                 // check that bucket didn't go bankrupt after prior memorialization
-                (, , uint256 bankruptcyTime, , ) = pool.bucketInfo(params_.indexes[i]);
-                if (positionDepositTime[params_.tokenId][params_.indexes[i]] < bankruptcyTime) {
+                if (_bucketBankruptAfterDeposit(params_.tokenId, params_.indexes[i])) {
                     // if bucket did go bankrupt, zero out the LPs tracked by position manager
                     positionLPs[params_.tokenId][params_.indexes[i]] = 0;
                 }
@@ -314,10 +313,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         for (uint256 i = 0; i < indexesLength; ) {
 
             // check that bucket didn't go bankrupt after memorialization
-            (, , uint256 bankruptcyTime, , ) = pool.bucketInfo(params_.indexes[i]);
-            if (positionDepositTime[params_.tokenId][params_.indexes[i]] < bankruptcyTime) {
-                revert BucketBankrupt();
-            }
+            if (_bucketBankruptAfterDeposit(params_.tokenId, params_.indexes[i])) revert BucketBankrupt();
 
             // remove bucket index at which a position has added liquidity
             if (!positionIndex.remove(params_.indexes[i])) revert RemoveLiquidityFailed();
@@ -372,6 +368,16 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         return (pool_ == erc20DeployedPoolAddress || pool_ == erc721DeployedPoolAddress);
     }
 
+    function _bucketBankruptAfterDeposit(
+        uint256 tokenId_,
+        uint256 index_
+    ) internal view returns (bool) {
+        if (positionDepositTime[tokenId_][index_] == 0) return false;
+
+        (, , uint256 bankruptcyTime, , ) = IPool(poolKey[tokenId_]).bucketInfo(index_);
+        return positionDepositTime[tokenId_][index_] < bankruptcyTime;
+    }
+
     /**********************/
     /*** View Functions ***/
     /**********************/
@@ -381,7 +387,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         uint256 tokenId_,
         uint256 index_
     ) external override view returns (uint256) {
-        return positionLPs[tokenId_][index_];
+        return _bucketBankruptAfterDeposit(tokenId_, index_) ? 0 : positionLPs[tokenId_][index_];
     }
 
     /// @inheritdoc IPositionManagerDerivedState
