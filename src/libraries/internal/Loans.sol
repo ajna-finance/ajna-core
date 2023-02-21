@@ -16,9 +16,6 @@ import { Deposits } from './Deposits.sol';
 import { Maths }    from './Maths.sol';
 
 
-import '@std/console.sol';
-
-
 /**
     @title  Loans library
     @notice Internal library containing common logic for loans management.
@@ -242,13 +239,23 @@ library Loans {
     /*** View Functions ***/
     /**********************/
 
+    /**
+     *  @notice adjusts the utilization debt weight maintained accross all borrowers, t0PoolUtilizationDebtWeight.
+     *  @dev anytime a borrower's debt or collateral changes, the t0PoolUtilizationDebtWeight must be updated.
+     *  @param t0PoolUtilizationDebtWeight The current t0PoolUtilizationDebtWeight
+     *  @param debtPreAction               Borrower's debt before the action
+     *  @param debtPostAction              Borrower's debt after the action
+     *  @param colPreAction                Borrower's collateral before the action
+     *  @param colPostAction               Borrower's collateral after the action
+     *  @return returnWeight_              The new t0PoolUtilizationDebtWeight 
+     */
     function adjustUtilizationWeight(
         uint256 t0PoolUtilizationDebtWeight,
         uint256 debtPreAction,
         uint256 debtPostAction,
         uint256 colPreAction,
         uint256 colPostAction
-        ) internal returns (uint256) {
+        ) internal pure returns (uint256) {
 
         uint256 returnWeight_ = t0PoolUtilizationDebtWeight;
         uint256 debtColAccumPreAction;

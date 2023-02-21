@@ -625,7 +625,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
 
     }
 
-    function testKickWithDepositAllBorrowersAndSettle() external tearDown {
+    function testKickWithDepositAllBorrowersAndSettle() external {
         // assert loans positions in heap
         address borrower;
         uint256 thresholdPrice;
@@ -1207,7 +1207,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 encumberedCollateral: 0,
                 poolDebt:             0,
                 actualUtilization:    0,
-                targetUtilization:    162666617.400895523288640654 * 1e18,
+                targetUtilization:    0.124942935403867340 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),

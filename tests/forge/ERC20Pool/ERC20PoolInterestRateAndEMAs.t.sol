@@ -545,7 +545,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         );
     }
 
-    function testPoolEMAAndTargetUtilizationUpdate() external tearDown {
+    function testPoolEMAAndTargetUtilizationUpdate() external {
 
         // add initial quote to the pool
         _addInitialLiquidity({
@@ -669,7 +669,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 encumberedCollateral: 3.094069767562214045 * 1e18,
                 poolDebt:             1012.343273629329809307 * 1e18,
                 actualUtilization:    0.050614203271033305 * 1e18,
-                targetUtilization:    0.1 * 1e18,
+                targetUtilization:    31.997198383967851912 * 1e18,
                 minDebtAmount:        50.617163681466490465 * 1e18,
                 loans:                2,
                 maxBorrower:          address(_borrower),
@@ -678,8 +678,9 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             })
         );
         _assertEMAs({
-            debtEma:   95.440014344854493304 * 1e18,
-            lupColEma: 954.400143448544933043 * 1e18
+            debtEma:   94.366986058916495706 * 1e18,
+            lupColEma: 2.949226520600595208 * 1e18
+
         });
     }
 

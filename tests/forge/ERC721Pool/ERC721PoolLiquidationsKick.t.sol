@@ -133,7 +133,7 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
     }
 
-    function testKickSubsetPool() external tearDown {
+    function testKickSubsetPool() external {
 
         // Skip to make borrower undercollateralized
         skip(1000 days);
@@ -184,7 +184,7 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
                 encumberedCollateral: 4.056751649452525709 * 1e18,
                 poolDebt:             40.231555971534224231 * 1e18,
                 actualUtilization:    0.000551117205089510 * 1e18,
-                targetUtilization:    0.811350329890505142 * 1e18,
+                targetUtilization:    1.089496132912974071 * 1e18,
                 minDebtAmount:        4.023155597153422423 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower2),

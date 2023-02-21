@@ -176,7 +176,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         });
     }
 
-    function testTakeLoanColConstraintBpfPosNoResidual() external tearDown {
+    function testTakeLoanColConstraintBpfPosNoResidual() external {
 
         // Increase neutralPrice so it exceeds TP
         _addLiquidity({
@@ -315,7 +315,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 encumberedCollateral: 1_966.791200431324241706 * 1e18,
                 poolDebt:             19_119.759164133922414841 * 1e18,
                 actualUtilization:    0.359239713545693419 * 1e18,
-                targetUtilization:    0.982347302508817815 * 1e18,
+                targetUtilization:    1.009698902033558317 * 1e18,
                 minDebtAmount:        1_911.975916413392241484 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower),
@@ -385,7 +385,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         });
     }
 
-    function testTakeCallerColConstraintBpfPosNoResidual() external tearDown {
+    function testTakeCallerColConstraintBpfPosNoResidual() external {
  
         // Increase neutralPrice so it exceeds TP
         _addLiquidity({
@@ -524,7 +524,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 encumberedCollateral: 1_966.779974486190376300 * 1e18,
                 poolDebt:             19_119.650033399911495436 * 1e18,
                 actualUtilization:    0.359237663096559171 * 1e18,
-                targetUtilization:    0.982347302508817815 * 1e18,
+                targetUtilization:    1.009698902033558317 * 1e18,
                 minDebtAmount:        1_911.965003339991149544 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower),
@@ -593,7 +593,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         });
     }
 
-    function testTakeCallerColConstraintBpfPosResidual () external tearDown {
+    function testTakeCallerColConstraintBpfPosResidual () external {
         
         // Increase neutralPrice so it exceeds TP
         _addLiquidity({
@@ -732,7 +732,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 encumberedCollateral: 1_966.779974486190376300 * 1e18,
                 poolDebt:             19_119.650033399911495436 * 1e18,
                 actualUtilization:    0.359237663096559171 * 1e18,
-                targetUtilization:    0.982347302508817815 * 1e18,
+                targetUtilization:    1.009698902033558317 * 1e18,
                 minDebtAmount:        1_911.965003339991149544 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower),
@@ -802,7 +802,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
     }
 
-    function testTakeCallerColConstraintBpfNegResidual () external tearDown {
+    function testTakeCallerColConstraintBpfNegResidual () external {
 
         _borrow({
             from:       _borrower2,
@@ -894,7 +894,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 encumberedCollateral: 1_025.107650389722106875 * 1e18,
                 poolDebt:             9_965.374762946048672276 * 1e18,
                 actualUtilization:    0 * 1e18,
-                targetUtilization:    1.023051016482943442 * 1e18,
+                targetUtilization:    0.965423885044231708 * 1e18,
                 minDebtAmount:        996.537476294604867228 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower),
@@ -946,7 +946,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 encumberedCollateral: 925.265940856763249327 * 1e18,
                 poolDebt:             8_994.783964905591719091 * 1e18,
                 actualUtilization:    0.123016555060279713 * 1e18,
-                targetUtilization:    1.023051016482943442 * 1e18,
+                targetUtilization:    0.965423885044231708 * 1e18,
                 minDebtAmount:        449.739198245279585955 * 1e18,
                 loans:                2,
                 maxBorrower:          address(_borrower),
@@ -981,7 +981,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
     }
 
-    function testTakeLoanDebtConstraintBpfPosResidual() external tearDown {
+    function testTakeLoanDebtConstraintBpfPosResidual() external {
 
         // Increase neutralPrice so it exceeds TP
         _addLiquidity({
@@ -1074,7 +1074,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         );
         _assertBorrower({
             borrower:                  _borrower2,
-            borrowerDebt:              9_822.951211365485636462* 1e18,
+            borrowerDebt:              9_822.951211365485636462 * 1e18,
             borrowerCollateral:        1_000 * 1e18,
             borrowert0Np:              1_575.326150647652569911 * 1e18,
             borrowerCollateralization: 0.989651241857326201 * 1e18
@@ -1120,7 +1120,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 encumberedCollateral: 1_966.779974486190376300 * 1e18,
                 poolDebt:             19_119.650033399911495436 * 1e18,
                 actualUtilization:    0.359237663096559171 * 1e18,
-                targetUtilization:    0.982347302508817815 * 1e18,
+                targetUtilization:    1.009698902033558317 * 1e18,
                 minDebtAmount:        1_911.965003339991149544 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower),

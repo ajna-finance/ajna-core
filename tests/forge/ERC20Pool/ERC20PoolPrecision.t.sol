@@ -11,7 +11,6 @@ import 'src/PoolInfoUtils.sol';
 import { MAX_PRICE } from 'src/libraries/helpers/PoolHelper.sol';
 
 import 'src/libraries/internal/Maths.sol';
-import '@std/console.sol';
 
 contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
