@@ -4,6 +4,7 @@ pragma solidity 0.8.14;
 
 import '@std/Test.sol';
 import "@std/console.sol";
+import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 
 import { TestBase } from './TestBase.sol';
 
@@ -16,7 +17,6 @@ import { IBaseHandler }         from './handlers/IBaseHandler.sol';
 contract ReserveInvariants is LiquidationInvariant {
     
     ReservePoolHandler internal _reservePoolHandler;
-    uint256 previousReserves;
 
     function setUp() public override virtual {
 
@@ -26,34 +26,48 @@ contract ReserveInvariants is LiquidationInvariant {
 
         _reservePoolHandler = new ReservePoolHandler(address(_pool), address(_quote), address(_collateral), address(_poolInfo), NUM_ACTORS);
         _handler = address(_reservePoolHandler);
-
-        (previousReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
     }
 
-    // FIXME
-    function _invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9() public {
+    function invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9() public {
 
-        (uint256 currentReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
+        uint256 previousReserves = IBaseHandler(_handler).previousReserves();
+        uint256 currentReserves  = IBaseHandler(_handler).currentReserves();
         console.log("Current Reserves -->", currentReserves);
         console.log("Previous Reserves -->", previousReserves);
-        if(!IBaseHandler(_handler).shouldReserveChange()) {
-            require(currentReserves == previousReserves, "Incorrect Reserves change");
+
+        // reserves should not change with a action
+        if(!IBaseHandler(_handler).shouldReserveChange() && currentReserves != 0) {
+            requireWithinDiff(currentReserves, previousReserves, 1e12, string(abi.encodePacked(Strings.toString(previousReserves),"| -> |", Strings.toString(currentReserves))));
         }
 
-        uint256 firstTakeIncreaseInReserve = IBaseHandler(_handler).firstTakeIncreaseInReserve();
+        // reserves should change
+        else {
+            uint256 loanKickIncreaseInReserve = IBaseHandler(_handler).loanKickIncreaseInReserve();
 
-        console.log("firstTakeIncreaseInReserve -->", firstTakeIncreaseInReserve);
-        if(IBaseHandler(_handler).firstTake()) {
-            requireWithinDiff(currentReserves, previousReserves + firstTakeIncreaseInReserve, 1e2, "Incorrect Reserves change with first take");
+            console.log("loanKickIncreaseInReserve -->", loanKickIncreaseInReserve);
+            
+            // reserves should increase by 0.25% of borrower debt on loan kick
+            if(loanKickIncreaseInReserve != 0) {
+                requireWithinDiff(currentReserves, previousReserves + loanKickIncreaseInReserve, 1e12, "Incorrect Reserves change with kick");
+            }
+
+            uint256 firstTakeIncreaseInReserve = IBaseHandler(_handler).firstTakeIncreaseInReserve();
+            bool isKickerRewarded = IBaseHandler(_handler).isKickerRewarded();
+            uint256 kickerBondChange = IBaseHandler(_handler).kickerBondChange();
+
+            console.log("Kicker Rewarded -->", isKickerRewarded);
+            console.log("Kicker Bond change -->", kickerBondChange);
+
+            console.log("firstTakeIncreaseInReserve -->", firstTakeIncreaseInReserve);
+
+            uint256 previousReservesAndBondChange = isKickerRewarded ? previousReserves + kickerBondChange : previousReserves - kickerBondChange;
+            
+            // reserves should increase by 7% of borrower debt on first take
+            if(IBaseHandler(_handler).firstTake()) {
+                requireWithinDiff(currentReserves, previousReservesAndBondChange + firstTakeIncreaseInReserve, 1e12, "Incorrect Reserves change with first take");
+            } else if(currentReserves != 0 && loanKickIncreaseInReserve == 0) {
+                requireWithinDiff(currentReserves, previousReservesAndBondChange, 1e21, "Incorrect Reserves change with not first take");
+            }
         }
-
-        uint256 loanKickIncreaseInReserve = IBaseHandler(_handler).loanKickIncreaseInReserve();
-
-        console.log("loanKickIncreaseInReserve -->", loanKickIncreaseInReserve);
-        if(loanKickIncreaseInReserve != 0) {
-            requireWithinDiff(currentReserves, previousReserves + loanKickIncreaseInReserve, 1e2, "Incorrect Reserves change with kick");
-        }
-        previousReserves = currentReserves;
     }
-
 }

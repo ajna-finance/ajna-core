@@ -12,6 +12,7 @@ import { Deposits } from '../internal/Deposits.sol';
 import { Buckets }  from '../internal/Buckets.sol';
 import { Loans }    from '../internal/Loans.sol';
 import { Maths }    from '../internal/Maths.sol';
+import "@std/console.sol";
 
 /**
     @title  PoolCommons library
@@ -169,6 +170,8 @@ library PoolCommons {
                 htpIndex,
                 Maths.wdiv(newInterest_, depositAboveHtp) + Maths.WAD // lender factor
             );
+            // TODO: Remove logs
+            console.log("Scaling Factor from Pool Commons -->", Maths.wdiv(newInterest_, depositAboveHtp) + Maths.WAD);
         }
     }
 

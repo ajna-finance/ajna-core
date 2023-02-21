@@ -64,6 +64,6 @@
 - **RE4**: Reserves are unchanged by withdrawing deposit (quote token) from a bucket after the penalty period hes expired
 - **RE5**: Reserves are unchanged by adding collateral token into a bucket
 - **RE6**: Reserves are unchanged by removing collateral token from a bucket
-- **RE7**: Reserves increase by 7% of the loan quantity upon the first take (including depositTake or arbTake)
-- **RE8**: Reserves are unchanged under takes/depositTakes/arbTakes after the first take
-- **RE9**: Reserves increase by .25% of the debt when a loan is kicked
+- **RE7**: Reserves increase by 7% of the loan quantity upon the first take (including depositTake or arbTake) and increase/decrease by bond penalty/reward on take.
+- **RE8**: Reserves are unchanged under takes/depositTakes/arbTakes after the first take but increase/decrease by bond penalty/reward on take.
+- **RE9**: Reserves increase by 3 months of interest when a loan is kicked

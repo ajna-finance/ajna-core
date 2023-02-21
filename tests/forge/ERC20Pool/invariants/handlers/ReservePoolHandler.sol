@@ -9,19 +9,21 @@ import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BaseHandler } from '.
 import { Auctions } from 'src/libraries/external/Auctions.sol';
 
 abstract contract UnBoundedReservePoolHandler is BaseHandler {
-    function startClaimableReserveAuction() internal {
+    function startClaimableReserveAuction() internal resetAllPreviousLocalState {
         (, uint256 claimableReserves, , , ) = _poolInfo.poolReservesInfo(address(_pool));
         if(claimableReserves == 0) return;
         try _pool.startClaimableReserveAuction(){
             shouldReserveChange = true;
         } catch {
+            resetFenwickDepositUpdate();
         }
     }
 
-    function takeReserves(uint256 amount) internal {
+    function takeReserves(uint256 amount) internal resetAllPreviousLocalState {
         try _pool.takeReserves(amount){
             shouldReserveChange = true;
         } catch {
+            resetFenwickDepositUpdate();
         }
     }
 }

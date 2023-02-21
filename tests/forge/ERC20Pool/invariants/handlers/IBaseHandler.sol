@@ -10,7 +10,7 @@ interface IBaseHandler {
 
     function numberOfCalls(bytes32) external view returns(uint256);
 
-    function fenwickSumAtIndex(uint256, uint256) external view returns(uint256);
+    function fenwickSumAtIndex(uint256) external view returns(uint256);
 
     function fenwickTreeSum() external view returns(uint256); 
 
@@ -21,6 +21,14 @@ interface IBaseHandler {
     function currentExchangeRate(uint256) external view returns(uint256);
 
     function shouldReserveChange() external view returns(bool);
+
+    function isKickerRewarded() external view returns(bool);
+
+    function kickerBondChange() external view returns(uint256);
+
+    function previousReserves() external view returns(uint256);
+    
+    function currentReserves() external view returns(uint256);
 
     function firstTake() external view returns(bool);
 

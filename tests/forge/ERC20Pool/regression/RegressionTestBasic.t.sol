@@ -3,6 +3,8 @@
 pragma solidity 0.8.14;
 
 import { BasicInvariants } from "../invariants/BasicInvariants.t.sol";
+import { IBaseHandler } from '../invariants/handlers/IBaseHandler.sol';
+import "src/libraries/internal/Maths.sol";
 
 import '@std/console.sol';
 
@@ -458,7 +460,6 @@ contract RegressionTestBasic is BasicInvariants {
         previousExchangeRate = exchangeRate;
     } 
 
-    // test was 
     function test_exchange_rate_bug_9() external {
         _basicPoolHandler.addQuoteToken(179828875014111774829603408358905079754763388655646874, 39999923045226513122629818514849844245682430, 12649859691422584279364490330583846883);
         invariant_exchangeRate_R1_R2_R3_R4_R5_R6();
@@ -466,5 +467,81 @@ contract RegressionTestBasic is BasicInvariants {
         invariant_exchangeRate_R1_R2_R3_R4_R5_R6();
         _basicPoolHandler.pledgeCollateral(7289, 8216);
         invariant_exchangeRate_R1_R2_R3_R4_R5_R6();
+    }
+
+    function test_fenwick_bug_1() external {
+        console.log("==========Before addQuoteToken============");
+        (, , , uint256 poolDepositsAtIndex, ) = _pool.bucketInfo(2570);
+        uint256 fenwickDepositAtIndex = IBaseHandler(_handler).fenwickSumAtIndex(2570);
+        console.log("Pool deposit at 2570          :", poolDepositsAtIndex);
+        console.log("Local Fenwick deposit at 2570 :", fenwickDepositAtIndex);
+        console.log("==================================");
+        console.log("");
+
+
+        _basicPoolHandler.addQuoteToken(0, 994665640564039457584007913129639932, 2570);
+        console.log("==========After addQuoteToken(994665640564039457584007913129639932, 2570) by actor1 ============");
+        (, , , poolDepositsAtIndex, ) = _pool.bucketInfo(2570);
+        fenwickDepositAtIndex = IBaseHandler(_handler).fenwickSumAtIndex(2570);
+        console.log("Pool deposit at 2570          :", poolDepositsAtIndex);
+        console.log("Local Fenwick deposit at 2570 :", fenwickDepositAtIndex);
+        invariant_fenwickTreeSum();
+        console.log("");
+        console.log("==================================");
+        console.log("Skipping 25 hours");
+        console.log("==================================");
+        console.log("");
+
+
+        _basicPoolHandler.drawDebt(0, 984665640564039457584007913129639932);
+        console.log("==========After drawDebt(borrowAmount: 984665640564039457584007913129639932)  by actor1 =============");
+        (, , , poolDepositsAtIndex, ) = _pool.bucketInfo(2570);
+        fenwickDepositAtIndex = IBaseHandler(_handler).fenwickSumAtIndex(2570);
+        console.log("Pool deposit at 2570          :", poolDepositsAtIndex);
+        console.log("Local Fenwick deposit at 2570 :", fenwickDepositAtIndex);
+        invariant_fenwickTreeSum();
+        console.log("");
+        console.log("==================================");
+        console.log("Skipping 200 days");
+        console.log("==================================");
+        console.log("");
+
+
+        _basicPoolHandler.repayDebt(0, 984665640564039457584007913129639932);
+        console.log("==========After repayDebt(repayAmount: 984665640564039457584007913129639932) by actor1 ============");
+        (, , , poolDepositsAtIndex, ) = _pool.bucketInfo(2570);
+        fenwickDepositAtIndex = IBaseHandler(_handler).fenwickSumAtIndex(2570);
+        console.log("Pool deposit at 2570          :", poolDepositsAtIndex);
+        console.log("Local Fenwick deposit at 2570 :", fenwickDepositAtIndex);
+        invariant_fenwickTreeSum();
+        console.log("==================================");
+        console.log("");
+
+
+        _basicPoolHandler.addQuoteToken(1, 48462143332689486187207611220503504, 2570);
+        console.log("==========After addQuoteToken(48462143332689486187207611220503504, 2570) by actor2 ============");
+        (, , , poolDepositsAtIndex, ) = _pool.bucketInfo(2570);
+        fenwickDepositAtIndex = IBaseHandler(_handler).fenwickSumAtIndex(2570);
+        console.log("Pool deposit at 2570          :", poolDepositsAtIndex);
+        console.log("Local Fenwick deposit at 2570 :", fenwickDepositAtIndex);
+        invariant_fenwickTreeSum();
+        console.log("");
+        console.log("==================================");
+        console.log("Skipping 25 hours");
+        console.log("==================================");
+        console.log("");
+
+        uint256 amountToRemove = 48462143332689486187207611220503504;
+        _basicPoolHandler.removeQuoteToken(1, 48462143332689486187207611220503504, 2570);
+        (, , ,uint256 newPoolDepositsAtIndex, ) = _pool.bucketInfo(2570);
+        uint256 newFenwickDepositAtIndex = IBaseHandler(_handler).fenwickSumAtIndex(2570);
+        uint256 scalingFactor = 1000000140885917739;
+        console.log("==========After removeQuoteToken(48462143332689486187207611220503504, 2570) by actor2 ============");
+        console.log("New Pool deposit at 2570                                        :", newPoolDepositsAtIndex);
+        console.log("Previous pool deposit * scaling factor - removedAmount          :", Maths.wmul(poolDepositsAtIndex, scalingFactor) - amountToRemove);
+        console.log("New Local Fenwick deposit at 2570                               :", newFenwickDepositAtIndex);
+        console.log("Previous local fenwick deposit * scaling factor - removedAmount :", Maths.wmul(fenwickDepositAtIndex, scalingFactor) - amountToRemove);
+        invariant_fenwickTreeSum();
+
     }
 }
