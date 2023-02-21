@@ -213,6 +213,34 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(preRemovalTreeSum - removalAmount,        _tree.treeSum());
         assertEq(preRemovalParentIndexSum - removalAmount, postRemovalParentIndexSum);
     }
+
+    function testFenwickScaling() external {
+        uint256 totalDeposit;
+        uint256 firstDeposit = 994665640564039457584007913129639932;
+        _tree.add(2570, firstDeposit);
+        totalDeposit += firstDeposit;
+        assertEq(totalDeposit, _tree.get(2570));
+
+        uint256 firstScale = 1000150675548441862;
+        _tree.mult(2570, firstScale);
+        totalDeposit = Maths.wmul(totalDeposit, firstScale);
+        assertEq(totalDeposit, _tree.get(2570));
+
+        uint256 secondDeposit = 48462143332689486187207611220503504;
+        _tree.add(2570, secondDeposit);
+        totalDeposit += secondDeposit;
+        assertEq(totalDeposit, _tree.get(2570));
+
+        uint256 secondScale = 1000000140885917739;
+        _tree.mult(2570, secondScale);
+        totalDeposit = Maths.wmul(totalDeposit, secondScale);
+        assertEq(totalDeposit, _tree.get(2570));
+
+        uint256 firstRemove = 48462143332689486187207611220503504;
+        _tree.remove(2570, firstRemove);
+        totalDeposit -= firstRemove;
+        assertEq(totalDeposit, _tree.get(2570));
+    }
 }
 
 contract FenwickTreeGasLoadTest is DSTestPlus {
