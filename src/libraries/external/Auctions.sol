@@ -848,15 +848,16 @@ library Auctions {
         uint256 kickPenalty   = Maths.wmul(t0KickPenalty, poolState_.inflator);
 
         {
+            // update utilization weight
             // increasing debt, increase debt utilization weight
             // calculate what to increase weight by: newDebt^2 - oldDebt^2 / collateral
-            uint256 newDebt = Maths.wdiv(Maths.wmul((borrower.t0Debt + t0KickPenalty),(borrower.t0Debt + t0KickPenalty)),
+            uint256 newDebtWeight = Maths.wdiv(Maths.wmul((borrower.t0Debt + t0KickPenalty),(borrower.t0Debt + t0KickPenalty)),
                                             borrower.collateral);
 
-            uint256 oldDebt = Maths.wdiv(Maths.wmul(borrower.t0Debt, borrower.t0Debt),
+            uint256 oldDebtWeight = Maths.wdiv(Maths.wmul(borrower.t0Debt, borrower.t0Debt),
                                         borrower.collateral);
                             
-            kickResult_.t0PoolUtilizationDebtWeight += newDebt - oldDebt;
+            kickResult_.t0PoolUtilizationDebtWeight += newDebtWeight - oldDebtWeight;
         }
 
 

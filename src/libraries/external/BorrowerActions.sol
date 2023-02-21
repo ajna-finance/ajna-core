@@ -134,7 +134,6 @@ library BorrowerActions {
         result_.remainingCollateral = borrower.collateral;
 
         if (vars.pledge) {
-
             // add new amount of collateral to pledge to borrower balance
             borrower.collateral  += collateralToPledge_;
 

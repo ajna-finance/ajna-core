@@ -78,7 +78,6 @@ library PoolCommons {
             );
 
             // lup * collateral EMA sample max value is 10 times current debt
-            // TODO: is using non t0debt alright?
             uint256 maxLupColEma = Maths.wmul(poolState_.debt, Maths.wad(10));
 
             // current inflator * t0UtilizationDebtWeight / current lup

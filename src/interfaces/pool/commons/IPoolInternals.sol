@@ -81,24 +81,24 @@ struct RemoveQuoteParams {
 /*************************************/
 
 struct DrawDebtResult {
-    uint256 newLup;                // [WAD] new pool LUP after draw debt
-    uint256 poolCollateral;        // [WAD] total amount of collateral in pool after pledge collateral
-    uint256 poolDebt;              // [WAD] total accrued debt in pool after draw debt
-    uint256 remainingCollateral;   // [WAD] amount of borrower collateral after draw debt (for NFT can be diminished if auction settled)
-    bool    settledAuction;        // true if collateral pledged settles auction
-    uint256 t0DebtInAuctionChange; // [WAD] change of t0 pool debt in auction after pledge collateral
-    uint256 t0PoolDebt;            // [WAD] amount of t0 debt in pool after draw debt
-    uint256 t0PoolUtilizationDebtWeight;            // [WAD] amount of t0 debt in pool after draw debt
+    uint256 newLup;                      // [WAD] new pool LUP after draw debt
+    uint256 poolCollateral;              // [WAD] total amount of collateral in pool after pledge collateral
+    uint256 poolDebt;                    // [WAD] total accrued debt in pool after draw debt
+    uint256 remainingCollateral;         // [WAD] amount of borrower collateral after draw debt (for NFT can be diminished if auction settled)
+    bool    settledAuction;              // true if collateral pledged settles auction
+    uint256 t0DebtInAuctionChange;       // [WAD] change of t0 pool debt in auction after pledge collateral
+    uint256 t0PoolDebt;                  // [WAD] amount of t0 debt in pool after draw debt
+    uint256 t0PoolUtilizationDebtWeight; // [WAD] utilization weight accumulator, tracks debt and collateral relationship accross borrowers
 }
 
 struct RepayDebtResult {
-    uint256 newLup;                // [WAD] new pool LUP after draw debt
-    uint256 poolCollateral;        // [WAD] total amount of collateral in pool after pull collateral
-    uint256 poolDebt;              // [WAD] total accrued debt in pool after repay debt
-    uint256 remainingCollateral;   // [WAD] amount of borrower collateral after pull collateral
-    bool    settledAuction;        // true if repay debt settles auction
-    uint256 t0DebtInAuctionChange; // [WAD] change of t0 pool debt in auction after repay debt
-    uint256 t0PoolDebt;            // [WAD] amount of t0 debt in pool after repay
-    uint256 quoteTokenToRepay;     // [WAD] quote token amount to be transferred from sender to pool
-    uint256 t0PoolUtilizationDebtWeight;            // [WAD] amount of t0 debt in pool after draw debt
+    uint256 newLup;                      // [WAD] new pool LUP after draw debt
+    uint256 poolCollateral;              // [WAD] total amount of collateral in pool after pull collateral
+    uint256 poolDebt;                    // [WAD] total accrued debt in pool after repay debt
+    uint256 remainingCollateral;         // [WAD] amount of borrower collateral after pull collateral
+    bool    settledAuction;              // true if repay debt settles auction
+    uint256 t0DebtInAuctionChange;       // [WAD] change of t0 pool debt in auction after repay debt
+    uint256 t0PoolDebt;                  // [WAD] amount of t0 debt in pool after repay
+    uint256 quoteTokenToRepay;           // [WAD] quote token amount to be transferred from sender to pool
+    uint256 t0PoolUtilizationDebtWeight; // [WAD] utilization weight accumulator, tracks debt and collateral relationship accross borrowers
 }

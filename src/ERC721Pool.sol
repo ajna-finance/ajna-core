@@ -40,7 +40,6 @@ import { Auctions }        from './libraries/external/Auctions.sol';
 import { LenderActions }   from './libraries/external/LenderActions.sol';
 import { BorrowerActions } from './libraries/external/BorrowerActions.sol';
 
-
 /**
  *  @title  ERC721 Pool contract
  *  @notice Entrypoint of ERC721 Pool actions for pool actors:
