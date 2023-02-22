@@ -166,7 +166,7 @@ contract RewardsManager is IRewardsManager {
         emit Stake(msg.sender, ajnaPool, tokenId_);
 
         // transfer LP NFT to this contract
-        IERC721(address(positionManager)).safeTransferFrom(msg.sender, address(this), tokenId_);
+        IERC721(address(positionManager)).transferFrom(msg.sender, address(this), tokenId_);
 
         // calculate rewards for updating exchange rates, if any
         uint256 updateReward = _updateBucketExchangeRates(
