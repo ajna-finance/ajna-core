@@ -758,6 +758,215 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertEq(poolSize, 15_000 * 1e18);
     }
 
+    function testMemorializeAndRedeemBucketBankruptcy() external {
+        address testMinter        = makeAddr("testMinter");
+        address testBorrower      = makeAddr("testBorrower");
+        address testBorrowerTwo   = makeAddr("testBorrowerTwo");
+
+        uint256 testIndex = _i9_91;
+
+        /************************/
+        /*** Setup Pool State ***/
+        /************************/
+
+        _mintCollateralAndApproveTokens(testBorrower,  4 * 1e18);
+        _mintCollateralAndApproveTokens(testBorrowerTwo, 1_000 * 1e18);
+
+        // add initial liquidity
+        _mintQuoteAndApproveManagerTokens(testMinter, 500_000 * 1e18);
+
+        _addInitialLiquidity({
+            from:   testMinter,
+            amount: 2_000 * 1e18,
+            index:  _i9_91
+        });
+        _addInitialLiquidity({
+            from:   testMinter,
+            amount: 5_000 * 1e18,
+            index:  _i9_81
+        });
+        _addInitialLiquidity({
+            from:   testMinter,
+            amount: 11_000 * 1e18,
+            index:  _i9_72
+        });
+        _addInitialLiquidity({
+            from:   testMinter,
+            amount: 25_000 * 1e18,
+            index:  _i9_62
+        });
+        _addInitialLiquidity({
+            from:   testMinter,
+            amount: 30_000 * 1e18,
+            index:  _i9_52
+        });
+
+        // first borrower adds collateral token and borrows
+        _pledgeCollateral({
+            from:     testBorrower,
+            borrower: testBorrower,
+            amount:   2 * 1e18
+        });
+        _borrow({
+            from:       testBorrower,
+            amount:     19.25 * 1e18,
+            indexLimit: _i9_91,
+            newLup:     9.917184843435912074 * 1e18
+        });
+
+        // second borrower adds collateral token and borrows
+        _pledgeCollateral({
+            from:     testBorrowerTwo,
+            borrower: testBorrowerTwo,
+            amount:   1_000 * 1e18
+        });
+        _borrow({
+            from:       testBorrowerTwo,
+            amount:     7_980 * 1e18,
+            indexLimit: _i9_72,
+            newLup:     9.721295865031779605 * 1e18
+        });
+
+        _borrow({
+            from:       testBorrowerTwo,
+            amount:     1_730 * 1e18,
+            indexLimit: _i9_72,
+            newLup:     9.721295865031779605 * 1e18
+        });
+
+        /****************************/
+        /*** Memorialize Position ***/
+        /****************************/
+
+        uint256 tokenId = _mintNFT(testMinter, testMinter, address(_pool));
+        // check owner
+        assertEq(_positionManager.ownerOf(tokenId), testMinter);
+
+        // check pool state
+        _assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndex,
+            lpBalance:   2_000 * 1e18,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });
+
+        // check position manager state
+        assertEq(_positionManager.getLPs(tokenId, testIndex), 0);
+        assertFalse(_positionManager.isIndexInPosition(tokenId, testIndex));
+
+        // memorialize positions
+        uint256[] memory indexes = new uint256[](1);
+        indexes[0] = testIndex;
+        // allow position manager to take ownership of the position of testMinter
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 2_000 * 1e18;
+        _pool.approveLpOwnership(address(_positionManager), indexes, amounts);
+
+        address[] memory transferors = new address[](1);
+        transferors[0] = address(_positionManager);
+        _pool.approveLpTransferors(transferors);
+
+        // memorialize positions of testMinter
+        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
+            tokenId, indexes
+        );
+        _positionManager.memorializePositions(memorializeParams);
+
+        // check pool state
+        _assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndex,
+            lpBalance:   2_000 * 1e18,
+            depositTime: _startTime
+        });
+
+        /*************************/
+        /*** Bucket Bankruptcy ***/
+        /*************************/
+
+        // Skip to make borrower undercollateralized
+        skip(100 days);
+
+        // minter kicks borrower
+        _kick({
+            from:           testMinter,
+            borrower:       testBorrowerTwo,
+            debt:           9_976.561670003961916237 * 1e18,
+            collateral:     1_000 * 1e18,
+            bond:           98.533942419792216457 * 1e18,
+            transferAmount: 98.533942419792216457 * 1e18
+        });
+
+        // skip ahead so take can be called on the loan
+        skip(10 hours);
+
+        // take entire collateral
+        _take({
+            from:            testMinter,
+            borrower:        testBorrowerTwo,
+            maxCollateral:   1_000 * 1e18,
+            bondChange:      6.531114528261135360 * 1e18,
+            givenAmount:     653.111452826113536000 * 1e18,
+            collateralTaken: 1_000 * 1e18,
+            isReward:        true
+        });
+
+        _settle({
+            from:        testMinter,
+            borrower:    testBorrowerTwo,
+            maxDepth:    10,
+            settledDebt: 9_891.935520844277346922 * 1e18
+        });
+
+        // bucket is insolvent, balances are reset
+        _assertBucket({
+            index:        _i9_91,
+            lpBalance:    0, // bucket is bankrupt
+            collateral:   0,
+            deposit:      0,
+            exchangeRate: 1 * 1e18
+        });
+
+        // redeem should fail as the bucket has bankrupted
+        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+            tokenId, address(_pool), indexes
+        );
+        vm.expectRevert(IPositionManagerErrors.BucketBankrupt.selector);
+        _positionManager.reedemPositions(reedemParams);
+
+        // move liquidity should fail as the bucket has bankrupted
+        IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
+            tokenId, address(_pool), _i9_91, _i9_72, block.timestamp + 30
+        );
+        vm.expectRevert(IPositionManagerErrors.BucketBankrupt.selector);
+        _positionManager.moveLiquidity(moveLiquidityParams);
+
+        // // check can memorialize additional liquidity into the bankrupted bucket
+        // // skip(3 days);
+        // vm.roll(block.number + 1);
+        // _addInitialLiquidity({
+        //     from:   testMinter,
+        //     amount: 30_000 * 1e18,
+        //     index:  _i9_91
+        // });
+        // memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
+        //     tokenId, indexes
+        // );
+        // _positionManager.memorializePositions(memorializeParams);
+    }
+
     /**
      *  @notice Tests a contract minting an NFT.
      */
