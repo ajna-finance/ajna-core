@@ -144,7 +144,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     ) external override {
         EnumerableSet.UintSet storage positionIndex = positionIndexes[params_.tokenId];
 
-        address pool  = poolKey[params_.tokenId];
+        IPool   pool  = IPool(poolKey[params_.tokenId]);
         address owner = ownerOf(params_.tokenId);
 
         uint256 indexesLength = params_.indexes.length;
@@ -157,7 +157,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             // slither-disable-next-line unused-return
             positionIndex.add(index);
 
-            (uint256 lpBalance, uint256 depositTime) = IPool(pool).lenderInfo(index, owner);
+            (uint256 lpBalance, uint256 depositTime) = pool.lenderInfo(index, owner);
 
             Position memory position = positions[params_.tokenId][index];
 
@@ -182,7 +182,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         }
 
         // update pool lps accounting and transfer ownership of lps to PositionManager contract
-        IPool(pool).transferLPs(owner, address(this), params_.indexes);
+        pool.transferLPs(owner, address(this), params_.indexes);
 
         emit MemorializePosition(owner, params_.tokenId);
     }
@@ -306,6 +306,8 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     ) external override mayInteract(params_.pool, params_.tokenId) {
         EnumerableSet.UintSet storage positionIndex = positionIndexes[params_.tokenId];
 
+        IPool pool = IPool(params_.pool);
+
         uint256 indexesLength = params_.indexes.length;
         uint256[] memory lpAmounts = new uint256[](indexesLength);
 
@@ -317,7 +319,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             Position memory position = positions[params_.tokenId][index];
 
             // check that bucket didn't go bankrupt after memorialization
-            if (_bucketBankruptAfterDeposit(params_.pool, index, position.depositTime)) revert BucketBankrupt();
+            if (_bucketBankruptAfterDeposit(pool, index, position.depositTime)) revert BucketBankrupt();
 
             // remove bucket index at which a position has added liquidity
             if (!positionIndex.remove(index)) revert RemovePositionFailed();
@@ -333,9 +335,9 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         address owner = ownerOf(params_.tokenId);
 
         // approve owner to take over the LPs ownership (required for transferLPs pool call)
-        IPool(params_.pool).approveLpOwnership(owner, params_.indexes, lpAmounts);
+        pool.approveLpOwnership(owner, params_.indexes, lpAmounts);
         // update pool lps accounting and transfer ownership of lps from PositionManager contract
-        IPool(params_.pool).transferLPs(address(this), owner, params_.indexes);
+        pool.transferLPs(address(this), owner, params_.indexes);
 
         emit RedeemPosition(owner, params_.tokenId);
     }
@@ -382,11 +384,11 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      *  @return True if the bucket went bankrupt after that position memorialzied their lpb.
      */
     function _bucketBankruptAfterDeposit(
-        address pool_,
+        IPool pool_,
         uint256 index_,
         uint256 depositTime_
     ) internal view returns (bool) {
-        (, , uint256 bankruptcyTime, , ) = IPool(pool_).bucketInfo(index_);
+        (, , uint256 bankruptcyTime, , ) = pool_.bucketInfo(index_);
         return depositTime_ < bankruptcyTime;
     }
 
@@ -400,7 +402,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         uint256 index_
     ) external override view returns (uint256) {
         Position memory position = positions[tokenId_][index_];
-        return _bucketBankruptAfterDeposit(poolKey[tokenId_], index_, position.depositTime) ? 0 : position.lps;
+        return _bucketBankruptAfterDeposit(IPool(poolKey[tokenId_]), index_, position.depositTime) ? 0 : position.lps;
     }
 
     /// @inheritdoc IPositionManagerDerivedState
