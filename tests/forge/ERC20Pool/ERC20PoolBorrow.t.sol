@@ -341,7 +341,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 poolDebt:             expectedDebt,
                 actualUtilization:    0.420922471900653558 * 1e18,
                 targetUtilization:    1 * 1e18,
-                minDebtAmount:        21_04.612359503267792443 * 1e18,
+                minDebtAmount:        2_104.612359503267792443 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
                 interestRate:         0.045 * 1e18,

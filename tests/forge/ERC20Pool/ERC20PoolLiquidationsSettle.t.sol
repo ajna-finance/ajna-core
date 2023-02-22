@@ -804,8 +804,17 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         // all operations should work if not in same block
         skip(1 hours);
 
-        _pool.addQuoteToken(100 * 1e18, _i9_91, block.timestamp + 1 minutes);
+        // move quote token in a bankrupt bucket should set deposit time to time of bankruptcy + 1 to prevent losing deposit
         _pool.moveQuoteToken(10 * 1e18, _i9_52, _i9_91, block.timestamp + 1 minutes);
+        (, , uint256 bankruptcyTime, , ) = _pool.bucketInfo(_i9_91);
+        _assertLenderLpBalance({
+            lender:      _lender1,
+            index:       _i9_91,
+            lpBalance:   10 * 1e18,
+            depositTime: bankruptcyTime + 1
+        });
+
+        _pool.addQuoteToken(100 * 1e18, _i9_91, block.timestamp + 1 minutes);
         ERC20Pool(address(_pool)).addCollateral(4 * 1e18, _i9_91, block.timestamp + 1 minutes);
 
         _assertLenderLpBalance({

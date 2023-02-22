@@ -409,7 +409,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         assertEq(expectedPoolDebt, expectedBorrower1Debt + expectedBorrower2Debt + expectedBorrower3Debt);
     }
 
-    function testBorrowerInterestCalculationAfterRepayingAllDebtOnce() external {
+    function testBorrowerInterestCalculationAfterRepayingAllDebtOnce() external tearDown {
         _addInitialLiquidity({
             from:   _lender,
             amount: 10_000 * 1e18,
@@ -531,6 +531,8 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             borrowert0Np:              1_726.979669209494250312 * 1e18,
             borrowerCollateralization: 1.805129295309881815 * 1e18
         });
+
+        _assertLenderInterest(liquidityAdded, 21.157033792511550000 * 1e18);
 
         _assertLenderInterest(liquidityAdded, 21.157033792511550000 * 1e18);
 

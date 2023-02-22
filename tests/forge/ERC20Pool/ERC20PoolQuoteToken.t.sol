@@ -34,6 +34,12 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
     function testPoolDepositQuoteToken() external tearDown {
         assertEq(_hpb(), MIN_PRICE);
 
+        // should revert if trying to deposit at index 0
+        _assertAddLiquidityAtIndex0Revert({
+            from:   _lender,
+            amount: 10_000 * 1e18
+        });
+
         // test 10_000 deposit at price of 3_010.892022197881557845
         _addInitialLiquidity({
             from:   _lender,
@@ -909,6 +915,84 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             index:       2777,
             lpBalance:   15_000 * 1e18,
             depositTime: _startTime
+        });
+    }
+
+    function testPoolMoveQuoteTokenWithDifferentTime() external tearDown {
+        _addLiquidity({
+            from:    _lender,
+            amount:  40_000 * 1e18,
+            index:   2549,
+            lpAward: 40_000 * 1e18,
+            newLup:  MAX_PRICE
+        });
+
+        skip(7 days);
+        _addLiquidity({
+            from:    _lender,
+            amount:  10_000 * 1e18,
+            index:   2550,
+            lpAward: 10_000 * 1e18,
+            newLup:  MAX_PRICE
+        });
+
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2549,
+            lpBalance:   40_000 * 1e18,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2550,
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime + 7 days
+        });
+
+        // move liquidity from an older deposit to a newer one, deposit time should remain the newer one
+        _moveLiquidity({
+            from:         _lender,
+            amount:       5_000 * 1e18,
+            fromIndex:    2549,
+            toIndex:      2550,
+            lpRedeemFrom: 5_000 * 1e18,
+            lpAwardTo:    5_000 * 1e18,
+            newLup:       MAX_PRICE
+        });
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2549,
+            lpBalance:   35_000 * 1e18,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2550,
+            lpBalance:   15_000 * 1e18,
+            depositTime: _startTime + 7 days
+        });
+
+        // move liquidity from a newer deposit to an older one, deposit time should be set to the newer one
+        _moveLiquidity({
+            from:         _lender,
+            amount:       5_000 * 1e18,
+            fromIndex:    2550,
+            toIndex:      2549,
+            lpRedeemFrom: 5_000 * 1e18,
+            lpAwardTo:    5_000 * 1e18,
+            newLup:       MAX_PRICE
+        });
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2549,
+            lpBalance:   40_000 * 1e18,
+            depositTime: _startTime + 7 days
+        });
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       2550,
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime + 7 days
         });
     }
 

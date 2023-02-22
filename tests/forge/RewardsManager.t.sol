@@ -164,11 +164,11 @@ contract RewardsManagerTest is DSTestPlus {
         assertEq(_positionManager.ownerOf(tokenId), address(minter));
 
         // invariant: all bucket snapshots are removed for the token id that was unstaken
-        // for(uint256 bucketIndex = 0; bucketIndex <= 7388; bucketIndex++) {
-        //     (uint256 lps, uint256 rate) = _rewardsManager.getBucketStateStakeInfo(tokenId, bucketIndex);
-        //     assertEq(lps, 0);
-        //     assertEq(rate, 0);
-        // }
+        for(uint256 bucketIndex = 0; bucketIndex <= 7388; bucketIndex++) {
+            (uint256 lps, uint256 rate) = _rewardsManager.getBucketStateStakeInfo(tokenId, bucketIndex);
+            assertEq(lps, 0);
+            assertEq(rate, 0);
+        }
     }
 
     function _triggerReserveAuctionsNoTake(TriggerReserveAuctionParams memory params_) internal {
@@ -246,11 +246,14 @@ contract RewardsManagerTest is DSTestPlus {
         IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(params_.minter, address(params_.pool), keccak256("ERC20_NON_SUBSET_HASH"));
         tokenId_ = _positionManager.mint(mintParams);
 
+        uint256[] memory lpBalances = new uint256[](params_.indexes.length);
+
         for (uint256 i = 0; i < params_.indexes.length; i++) {
             params_.pool.addQuoteToken(params_.mintAmount, params_.indexes[i], type(uint256).max);
-            (uint256 lpBalance, ) = params_.pool.lenderInfo(params_.indexes[i], params_.minter);
-            params_.pool.approveLpOwnership(address(_positionManager), params_.indexes[i], lpBalance);
+            (lpBalances[i], ) = params_.pool.lenderInfo(params_.indexes[i], params_.minter);
         }
+
+        params_.pool.approveLpOwnership(address(_positionManager), params_.indexes, lpBalances);
 
         // construct memorialize params struct
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
@@ -512,8 +515,8 @@ contract RewardsManagerTest is DSTestPlus {
             pool:              address(_poolOne),
             tokenId:           tokenIdOne,
             claimedArray:      _epochsClaimedArray(2, 0),
-            reward:            77.541715598030643730 * 1e18,
-            updateRatesReward: 3.393416277461818150 * 1e18
+            reward:            80.793427892333608615 * 1e18,
+            updateRatesReward: 3.689026486034825940 * 1e18
         });
     }
 

@@ -599,6 +599,7 @@ library Auctions {
 
         borrower.t0Debt     =  t0BorrowerDebt - t0RepayAmount;
         borrower.collateral -= result_.collateralAmount;
+        borrower.t0Debt     = t0BorrowerDebt - t0RepayAmount;
 
         // update pool debt: apply penalty if case
         poolState_.t0Debt += result_.t0DebtPenalty;

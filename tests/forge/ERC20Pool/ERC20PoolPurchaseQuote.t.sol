@@ -248,7 +248,6 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
             index:   2550,
             lpAward: 10_200.383861467480875669 * 1e18
         });
-
         skip(25 hours); // remove liquidity after one day to avoid early withdraw penalty
 
         _removeAllLiquidity({
@@ -259,8 +258,9 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
             lpRedeem: 10_000.349513872212134207 * 1e18
         });
 
+
         // bidder withdraws unused collateral
-        uint256 expectedCollateral = 0.066443194797165079 * 1e18;
+        uint256 expectedCollateral = 0.066443194797165080 * 1e18;
 
         _removeAllCollateral({
             from:     _bidder,
@@ -279,7 +279,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         skip(7200);
 
         // lender exchanges their LP for collateral
-        expectedCollateral = 1.992953578100502458 * 1e18;
+        expectedCollateral = 1.992953578100502457 * 1e18;
 
         _removeAllCollateral({
             from:     _lender,

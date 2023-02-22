@@ -199,7 +199,6 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             borrowert0Np:              8.471136974495192174 * 1e18,
             borrowerCollateralization: 1.200479200648987171 * 1e18
         });
-        return;
 
         assertEq(_quote.balanceOf(_lender), 46_999.804657220228527274 * 1e18);
 

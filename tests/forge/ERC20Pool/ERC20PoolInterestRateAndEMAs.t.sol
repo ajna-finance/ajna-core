@@ -36,7 +36,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         _mintQuoteAndApproveTokens(_lender2,  100_000_000_000_000_000 * 1e18);
     }
 
-    function testPoolInterestRateIncreaseDecrease() external {
+    function testPoolInterestRateIncreaseDecrease() external tearDown {
         _addInitialLiquidity({
             from:   _lender,
             amount: 10_000 * 1e18,
@@ -113,7 +113,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             })
         );
         _assertEMAs({
-            debtEma:   0 * 1e18,
+            debtEma:   0,
             lupColEma: 670.486566033464515042 * 1e18
         });
 

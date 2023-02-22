@@ -375,6 +375,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             deposit:      10_001.760480777944100000 * 1e18,
             exchangeRate: 1.000176048077794410 * 1e18
         });
+
         // check borrower info after fully repay
         _assertBorrower({
             borrower:                  _borrower,
