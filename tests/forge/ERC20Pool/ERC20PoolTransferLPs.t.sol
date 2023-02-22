@@ -241,7 +241,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[2] = 30_000 * 1e18;
         _pool.approveLpOwnership(_lender2, indexes, amounts);
 
-        // transfer LP tokens for all indexes
+        // transfer LPs for all indexes
         _transferLPs({
             operator:  _lender,
             from:      _lender1,
@@ -367,7 +367,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[1] = 30_000 * 1e18;
         _pool.approveLpOwnership(_lender2, transferIndexes, amounts);
 
-        // transfer LP tokens for 2 indexes
+        // transfer LPs for 2 indexes
         _transferLPs({
             operator:  _lender,
             from:      _lender1,
@@ -423,7 +423,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         });
     }
 
-    function testTransferLPsToLenderWithLPTokens() external tearDown {
+    function testTransferLPsToLenderWithLPs() external tearDown {
         uint256[] memory indexes = new uint256[](3);
         indexes[0] = 2550;
         indexes[1] = 2551;
@@ -511,7 +511,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[2] = 30_000 * 1e18;
         _pool.approveLpOwnership(_lender2, indexes, amounts);
 
-        // transfer LP tokens for all indexes
+        // transfer LPs for all indexes
         _transferLPs({
             operator:  _lender,
             from:      _lender1,
@@ -622,7 +622,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         _pool.approveLpTransferors(transferors);
         assertTrue(_pool.approvedTransferors(_lender2, _lender));
 
-        // transfer LP tokens for all indexes
+        // transfer LPs for all indexes
         _transferLPs({
             operator:  _lender,
             from:      _lender1,
@@ -630,5 +630,46 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
             indexes:   indexes,
             lpBalance: 60_000 * 1e18
         });
+    }
+
+    function testTransferLPsAllowances() external tearDown {
+        uint256[] memory indexes = new uint256[](3);
+        indexes[0] = 2550;
+        indexes[1] = 2551;
+        indexes[2] = 2552;
+        // set allowed owner to lender2 address
+        uint256[] memory amounts = new uint256[](3);
+        amounts[0] = 10_000 * 1e18;
+        amounts[1] = 20_000 * 1e18;
+        amounts[2] = 30_000 * 1e18;
+
+        changePrank(_lender1);
+        vm.expectEmit(true, true, false, true);
+        emit ApproveLpOwnership(_lender1, _lender2, indexes, amounts);
+        _pool.approveLpOwnership(_lender2, indexes, amounts);
+
+        // reapproving same indexes with same amounts should revert - owner can only reset the approval
+        vm.expectRevert(IPoolErrors.AllowanceAlreadySet.selector);
+        _pool.approveLpOwnership(_lender2, indexes, amounts);
+
+        // reset approval at 2 indexes
+        indexes = new uint256[](2);
+        indexes[0] = 2550;
+        indexes[1] = 2551;
+        amounts = new uint256[](2);
+        amounts[0] = 0;
+        amounts[1] = 0;
+        vm.expectEmit(true, true, false, true);
+        emit ApproveLpOwnership(_lender1, _lender2, indexes, amounts);
+        _pool.approveLpOwnership(_lender2, indexes, amounts);
+
+        // approve a previous reseted index
+        indexes = new uint256[](1);
+        indexes[0] = 2550;
+        amounts = new uint256[](1);
+        amounts[0] = 5_000 * 1e18;
+        vm.expectEmit(true, true, false, true);
+        emit ApproveLpOwnership(_lender1, _lender2, indexes, amounts);
+        _pool.approveLpOwnership(_lender2, indexes, amounts);
     }
 }

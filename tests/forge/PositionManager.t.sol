@@ -158,7 +158,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             tokenId, indexes
         );
 
-        // should revert if access hasn't been granted to transfer LP tokens
+        // should revert if access hasn't been granted to transfer LPs
         vm.expectRevert(IPoolErrors.NoAllowance.selector);
         _positionManager.memorializePositions(memorializeParams);
 
@@ -454,7 +454,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
     /**
      *  @notice Tests attachment of multiple previously created position to already existing NFTs.
-     *          LP tokens are checked to verify ownership of position.
+     *          LPs are checked to verify ownership of position.
      */
     function testMemorializeMultiple() external {
         address testLender1 = makeAddr("testLender1");

@@ -240,11 +240,11 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when a lender transfers their LP tokens to a different address.
+     *  @notice Emitted when a lender transfers their LPs to a different address.
      *  @dev    Used by PositionManager.memorializePositions().
      *  @param  owner    The original owner address of the position.
      *  @param  newOwner The new owner address of the position.
-     *  @param  indexes  Array of price bucket indexes at which LP tokens were transferred.
+     *  @param  indexes  Array of price bucket indexes at which LPs were transferred.
      *  @param  lps      Amount of LPs transferred.
      */
     event TransferLPs(
