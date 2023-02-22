@@ -256,13 +256,11 @@ interface IPoolEvents {
 
     /**
      *  @notice Emitted when pool interest rate is updated.
-     *  @param  oldRate    Old pool interest rate.
-     *  @param  newRate    New pool interest rate.
-     *  @param  updateTime Time of interest rate update.
+     *  @param  oldRate Old pool interest rate.
+     *  @param  newRate New pool interest rate.
      */
     event UpdateInterestRate(
         uint256 oldRate,
-        uint256 newRate,
-        uint256 updateTime
+        uint256 newRate
     );
 }

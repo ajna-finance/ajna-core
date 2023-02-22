@@ -86,7 +86,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         changePrank(_borrower);
 
         vm.expectEmit(true, true, false, true);
-        emit UpdateInterestRate(0.05 * 1e18, 0.055 * 1e18, block.timestamp);
+        emit UpdateInterestRate(0.05 * 1e18, 0.055 * 1e18);
         _drawDebtNoLupCheck({
             from:               _borrower,
             borrower:           _borrower,
@@ -302,7 +302,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         skip(12 hours);
 
         vm.expectEmit(true, true, false, true);
-        emit UpdateInterestRate(0.05 * 1e18, 0.045 * 1e18, block.timestamp);
+        emit UpdateInterestRate(0.05 * 1e18, 0.045 * 1e18);
         _addLiquidityNoEventCheck({
             from:    _lender1,
             amount:  1_000 * 1e18,

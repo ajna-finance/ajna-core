@@ -39,7 +39,7 @@ library PoolCommons {
     /**************/
 
     // See `IPoolEvents` for descriptions
-    event UpdateInterestRate(uint256 oldRate, uint256 newRate, uint256 updateTime);
+    event UpdateInterestRate(uint256 oldRate, uint256 newRate);
 
     /**************************/
     /*** External Functions ***/
@@ -119,7 +119,7 @@ library PoolCommons {
             interestParams_.interestRate       = uint208(newInterestRate);
             interestParams_.interestRateUpdate = uint48(block.timestamp);
 
-            emit UpdateInterestRate(poolState_.rate, newInterestRate, block.timestamp);
+            emit UpdateInterestRate(poolState_.rate, newInterestRate);
         }
     }
 
