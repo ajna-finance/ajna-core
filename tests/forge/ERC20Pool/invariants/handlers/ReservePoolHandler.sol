@@ -15,7 +15,7 @@ abstract contract UnBoundedReservePoolHandler is BaseHandler {
         try _pool.startClaimableReserveAuction(){
             shouldReserveChange = true;
         } catch {
-            resetFenwickDepositUpdate();
+            
         }
     }
 
@@ -23,7 +23,7 @@ abstract contract UnBoundedReservePoolHandler is BaseHandler {
         try _pool.takeReserves(amount){
             shouldReserveChange = true;
         } catch {
-            resetFenwickDepositUpdate();
+            
         }
     }
 }

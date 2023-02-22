@@ -35,4 +35,6 @@ interface IBaseHandler {
     function firstTakeIncreaseInReserve() external view returns(uint256);
 
     function loanKickIncreaseInReserve() external view returns(uint256);
+
+    function drawDebtIncreaseInReserve() external view returns(uint256);
 }

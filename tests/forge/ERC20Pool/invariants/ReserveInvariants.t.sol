@@ -28,7 +28,7 @@ contract ReserveInvariants is LiquidationInvariant {
         _handler = address(_reservePoolHandler);
     }
 
-    function invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9() public {
+    function invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10() public {
 
         uint256 previousReserves = IBaseHandler(_handler).previousReserves();
         uint256 currentReserves  = IBaseHandler(_handler).currentReserves();
@@ -51,6 +51,14 @@ contract ReserveInvariants is LiquidationInvariant {
                 requireWithinDiff(currentReserves, previousReserves + loanKickIncreaseInReserve, 1e12, "Incorrect Reserves change with kick");
             }
 
+            uint256 drawDebtIncreaseInReserve = IBaseHandler(_handler).drawDebtIncreaseInReserve();
+
+            console.log("Draw debt increase in reserve --->", drawDebtIncreaseInReserve);
+            // reserves should increase by origination fees on draw debt
+            if(drawDebtIncreaseInReserve != 0) {
+                requireWithinDiff(currentReserves, previousReserves + drawDebtIncreaseInReserve, 1e12, "Incorrect reserve change on draw debt");
+            }
+
             uint256 firstTakeIncreaseInReserve = IBaseHandler(_handler).firstTakeIncreaseInReserve();
             bool isKickerRewarded = IBaseHandler(_handler).isKickerRewarded();
             uint256 kickerBondChange = IBaseHandler(_handler).kickerBondChange();
@@ -65,7 +73,7 @@ contract ReserveInvariants is LiquidationInvariant {
             // reserves should increase by 7% of borrower debt on first take
             if(IBaseHandler(_handler).firstTake()) {
                 requireWithinDiff(currentReserves, previousReservesAndBondChange + firstTakeIncreaseInReserve, 1e12, "Incorrect Reserves change with first take");
-            } else if(currentReserves != 0 && loanKickIncreaseInReserve == 0) {
+            } else if(currentReserves != 0 && loanKickIncreaseInReserve == 0 && drawDebtIncreaseInReserve == 0) {
                 requireWithinDiff(currentReserves, previousReservesAndBondChange, 1e21, "Incorrect Reserves change with not first take");
             }
         }

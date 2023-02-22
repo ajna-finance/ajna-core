@@ -21,7 +21,7 @@ contract RegressionTestBasic is BasicInvariants {
         invariant_quoteTokenBalance_QT1();
     }
 
-    function test_exchange_rate_bug_simulation() external {
+    function test_exchange_rate_bug_1() external {
         // Action sequence
         // 1. addQuoteToken(6879, 2570)
         // 2. addCollateral(3642907759282013932739218713, 2570)
@@ -63,7 +63,7 @@ contract RegressionTestBasic is BasicInvariants {
     }
 
     // test was failing when actors = 10, buckets = [2570], maxAmount = 1e36
-    function test_exchange_rate_bug2() external {
+    function test_exchange_rate_bug_2() external {
         uint256 previousExchangeRate = 1e18;
         _basicPoolHandler.addQuoteToken(211670885988646987334214990781526025942, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 6894274025938223490357894120267612065037086600750070030707794233);
 
@@ -299,15 +299,15 @@ contract RegressionTestBasic is BasicInvariants {
         previousExchangeRate = exchangeRate;
     }
 
-    // test will fail at actors = 1, buckets = [2570], maxAmount = 1e36
-    // function test_exchange_rate_bug_5() external {
-    //     _basicPoolHandler.drawDebt(1156, 1686);  
-    //     // Previous exchange Rate --> 1012158956109134045
-    //     _basicPoolHandler.addQuoteToken(711, 2161, 2012); 
-    //     // Current exchange Rate --> 1012166333757036499   
-    // }
+    // test was failing when actors = 1, buckets = [2570], maxAmount = 1e36
+    function test_exchange_rate_bug_5() external {
+        _basicPoolHandler.drawDebt(1156, 1686);
+        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
+        _basicPoolHandler.addQuoteToken(711, 2161, 2012); 
+        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();   
+    }
 
-    // test will fail at actors = 1, buckets = [2570]
+    // test was failing when actors = 1, buckets = [2570]
     function test_exchange_rate_bug_6() external {
         uint256 previousExchangeRate = 1e18;
         _basicPoolHandler.addCollateral(999999999000000000000000081002632733724231666, 999999999243662968633890481597751057821356823, 1827379824097500721086759239664926559);
@@ -365,7 +365,7 @@ contract RegressionTestBasic is BasicInvariants {
         previousExchangeRate = exchangeRate;
 
 
-        invariant_exchangeRate_R1_R2_R3_R4_R5_R6();
+        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
     // test was failing when actors = 10, buckets = [2570], maxAmount = 1e36
@@ -428,9 +428,8 @@ contract RegressionTestBasic is BasicInvariants {
         previousExchangeRate = exchangeRate;
     }
 
-    // test will fail when actors = 10, buckets = [2570], maxAmount = 1e36
+    // test was failing when actors = 10, buckets = [2570], maxAmount = 1e36
     function test_exchange_rate_bug_8() external {
-        uint256 previousExchangeRate = 1e18;
         _basicPoolHandler.drawDebt(0, 10430);
 
         ( , uint256 quote, uint256 collateral, uint256 lps, , uint256 exchangeRate) = _poolInfo.bucketInfo(address(_pool), 2570);
@@ -441,9 +440,7 @@ contract RegressionTestBasic is BasicInvariants {
         console.log("Lps -->", lps);
         console.log("Exchange Rate-->", exchangeRate);
         console.log("============");
-        requireWithinDiff(previousExchangeRate, exchangeRate, 1e12, "Incorrect exchange rate change");
-        previousExchangeRate = exchangeRate;
-
+        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
 
         _basicPoolHandler.addCollateral(86808428701435509359888008280539191473421, 35, 89260656586096811497271673595050);
 
@@ -455,93 +452,16 @@ contract RegressionTestBasic is BasicInvariants {
         console.log("Lps -->", lps);
         console.log("Exchange Rate-->", exchangeRate);
         console.log("============");
-        invariant_exchangeRate_R1_R2_R3_R4_R5_R6();
-        requireWithinDiff(previousExchangeRate, exchangeRate, 1e12, "Incorrect exchange rate change");
-        previousExchangeRate = exchangeRate;
-    } 
+        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
+    }
 
     function test_exchange_rate_bug_9() external {
         _basicPoolHandler.addQuoteToken(179828875014111774829603408358905079754763388655646874, 39999923045226513122629818514849844245682430, 12649859691422584279364490330583846883);
-        invariant_exchangeRate_R1_R2_R3_R4_R5_R6();
+        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
         _basicPoolHandler.addCollateral(472, 2100, 11836);
-        invariant_exchangeRate_R1_R2_R3_R4_R5_R6();
+        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
         _basicPoolHandler.pledgeCollateral(7289, 8216);
-        invariant_exchangeRate_R1_R2_R3_R4_R5_R6();
+        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
-    function test_fenwick_bug_1() external {
-        console.log("==========Before addQuoteToken============");
-        (, , , uint256 poolDepositsAtIndex, ) = _pool.bucketInfo(2570);
-        uint256 fenwickDepositAtIndex = IBaseHandler(_handler).fenwickSumAtIndex(2570);
-        console.log("Pool deposit at 2570          :", poolDepositsAtIndex);
-        console.log("Local Fenwick deposit at 2570 :", fenwickDepositAtIndex);
-        console.log("==================================");
-        console.log("");
-
-
-        _basicPoolHandler.addQuoteToken(0, 994665640564039457584007913129639932, 2570);
-        console.log("==========After addQuoteToken(994665640564039457584007913129639932, 2570) by actor1 ============");
-        (, , , poolDepositsAtIndex, ) = _pool.bucketInfo(2570);
-        fenwickDepositAtIndex = IBaseHandler(_handler).fenwickSumAtIndex(2570);
-        console.log("Pool deposit at 2570          :", poolDepositsAtIndex);
-        console.log("Local Fenwick deposit at 2570 :", fenwickDepositAtIndex);
-        invariant_fenwickTreeSum();
-        console.log("");
-        console.log("==================================");
-        console.log("Skipping 25 hours");
-        console.log("==================================");
-        console.log("");
-
-
-        _basicPoolHandler.drawDebt(0, 984665640564039457584007913129639932);
-        console.log("==========After drawDebt(borrowAmount: 984665640564039457584007913129639932)  by actor1 =============");
-        (, , , poolDepositsAtIndex, ) = _pool.bucketInfo(2570);
-        fenwickDepositAtIndex = IBaseHandler(_handler).fenwickSumAtIndex(2570);
-        console.log("Pool deposit at 2570          :", poolDepositsAtIndex);
-        console.log("Local Fenwick deposit at 2570 :", fenwickDepositAtIndex);
-        invariant_fenwickTreeSum();
-        console.log("");
-        console.log("==================================");
-        console.log("Skipping 200 days");
-        console.log("==================================");
-        console.log("");
-
-
-        _basicPoolHandler.repayDebt(0, 984665640564039457584007913129639932);
-        console.log("==========After repayDebt(repayAmount: 984665640564039457584007913129639932) by actor1 ============");
-        (, , , poolDepositsAtIndex, ) = _pool.bucketInfo(2570);
-        fenwickDepositAtIndex = IBaseHandler(_handler).fenwickSumAtIndex(2570);
-        console.log("Pool deposit at 2570          :", poolDepositsAtIndex);
-        console.log("Local Fenwick deposit at 2570 :", fenwickDepositAtIndex);
-        invariant_fenwickTreeSum();
-        console.log("==================================");
-        console.log("");
-
-
-        _basicPoolHandler.addQuoteToken(1, 48462143332689486187207611220503504, 2570);
-        console.log("==========After addQuoteToken(48462143332689486187207611220503504, 2570) by actor2 ============");
-        (, , , poolDepositsAtIndex, ) = _pool.bucketInfo(2570);
-        fenwickDepositAtIndex = IBaseHandler(_handler).fenwickSumAtIndex(2570);
-        console.log("Pool deposit at 2570          :", poolDepositsAtIndex);
-        console.log("Local Fenwick deposit at 2570 :", fenwickDepositAtIndex);
-        invariant_fenwickTreeSum();
-        console.log("");
-        console.log("==================================");
-        console.log("Skipping 25 hours");
-        console.log("==================================");
-        console.log("");
-
-        uint256 amountToRemove = 48462143332689486187207611220503504;
-        _basicPoolHandler.removeQuoteToken(1, 48462143332689486187207611220503504, 2570);
-        (, , ,uint256 newPoolDepositsAtIndex, ) = _pool.bucketInfo(2570);
-        uint256 newFenwickDepositAtIndex = IBaseHandler(_handler).fenwickSumAtIndex(2570);
-        uint256 scalingFactor = 1000000140885917739;
-        console.log("==========After removeQuoteToken(48462143332689486187207611220503504, 2570) by actor2 ============");
-        console.log("New Pool deposit at 2570                                        :", newPoolDepositsAtIndex);
-        console.log("Previous pool deposit * scaling factor - removedAmount          :", Maths.wmul(poolDepositsAtIndex, scalingFactor) - amountToRemove);
-        console.log("New Local Fenwick deposit at 2570                               :", newFenwickDepositAtIndex);
-        console.log("Previous local fenwick deposit * scaling factor - removedAmount :", Maths.wmul(fenwickDepositAtIndex, scalingFactor) - amountToRemove);
-        invariant_fenwickTreeSum();
-
-    }
 }

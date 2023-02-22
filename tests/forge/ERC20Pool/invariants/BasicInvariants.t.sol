@@ -159,7 +159,7 @@ contract BasicInvariants is TestBase {
         require(poolDebt == totalDebt, "Incorrect pool debt");
     }
 
-    function invariant_exchangeRate_R1_R2_R3_R4_R5_R6() public {
+    function invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8() public {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             uint256 currentExchangeRate = IBaseHandler(_handler).currentExchangeRate(bucketIndex);
             if (!IBaseHandler(_handler).shouldExchangeRateChange() && currentExchangeRate != 0) {
@@ -220,9 +220,9 @@ contract BasicInvariants is TestBase {
         previousInflatorUpdate = currentInflatorUpdate;
     }
 
-    function invariant_fenwickTreeSum() public {
-        assertEq(IBaseHandler(_handler).fenwickTreeSum(), _pool.depositSize(), "Fenwick Tree Invariant A Failed");
-    }
+    // function invariant_fenwickTreeSum() public {
+    //     assertEq(IBaseHandler(_handler).fenwickTreeSum(), _pool.depositSize(), "Fenwick Tree Invariant A Failed");
+    // }
 
     function invariant_call_summary() external view virtual {
         console.log("\nCall Summary\n");

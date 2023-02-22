@@ -12,11 +12,11 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
     function kickAuction(address borrower) internal resetAllPreviousLocalState {
         numberOfCalls['UBLiquidationHandler.kickAuction']++;
 
+        updatePoolState();
+        updatePreviousReserves();
+
         (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower);
         (uint256 interestRate, )   = _pool.interestRateInfo();
-
-        fenwickAccrueInterest();
-        updatePreviousReserves();
 
         try _pool.kick(borrower) {
             shouldExchangeRateChange = true;
@@ -26,13 +26,15 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
             // reserve increase by 3 months of interest of borrowerDebt
             loanKickIncreaseInReserve = Maths.wmul(borrowerDebt, Maths.wdiv(interestRate, 4 * 1e18));
         }
-        catch {
-            resetFenwickDepositUpdate();
+        catch {  
         }
     }
 
     function takeAuction(address borrower, uint256 amount, address taker) internal resetAllPreviousLocalState {
         numberOfCalls['UBLiquidationHandler.takeAuction']++;
+
+        updatePoolState();
+        updatePreviousReserves();
 
         (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower);
         (address kicker, , , , , , , , ) = _pool.auctionInfo(borrower);
@@ -40,9 +42,6 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
         (uint256 claimableBond, uint256 lockedBond) = _pool.kickerInfo(kicker);
 
         uint256 totalBond = claimableBond + lockedBond;
-
-        fenwickAccrueInterest();
-        updatePreviousReserves();
         
         try _pool.take(borrower, amount, taker, bytes("")) {
             shouldExchangeRateChange = true;
@@ -50,6 +49,8 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
             updateCurrentReserves();
 
             (claimableBond, lockedBond) = _pool.kickerInfo(kicker);
+
+            // calculate amount of kicker reward/penalty that will decrease/increase reserves
             if(totalBond > claimableBond + lockedBond) {
                 kickerBondChange = totalBond - claimableBond - lockedBond;
                 isKickerRewarded = true;
@@ -71,12 +72,15 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
             }
         }
         catch {
-            resetFenwickDepositUpdate();
         }
     }
 
     function bucketTake(address borrower, bool depositTake, uint256 bucketIndex) internal resetAllPreviousLocalState {
         numberOfCalls['UBLiquidationHandler.bucketTake']++;
+
+        updatePoolState();
+        updatePreviousReserves();
+        updatePreviousExchangeRate();
 
         (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower);
         (address kicker, , , , , , , , ) = _pool.auctionInfo(borrower);
@@ -85,13 +89,11 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
 
         uint256 totalBond = claimableBond + lockedBond;
 
-        fenwickAccrueInterest();
-        updatePreviousReserves();
-
         try _pool.bucketTake(borrower, depositTake, bucketIndex) {
-            shouldExchangeRateChange = true;
+            shouldExchangeRateChange = false;
             shouldReserveChange      = true;
             updateCurrentReserves();
+            updateCurrentExchangeRate();
             
             if(!isFirstTakeOnAuction[borrower]) {
                 // reserve increase by 7% of borrower debt on first take
@@ -103,7 +105,9 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
                 isFirstTakeOnAuction[borrower] = false;
                 firstTake = false;
                 (claimableBond, lockedBond) = _pool.kickerInfo(kicker);
-                if(totalBond > claimableBond + lockedBond) {
+
+                // calculate amount of kicker reward/penalty that will decrease/increase reserves
+                if(totalBond > claimableBond + lockedBond) { 
                     kickerBondChange = totalBond - claimableBond - lockedBond;
                     isKickerRewarded = true;
                 }
@@ -114,7 +118,6 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
             }
         }
         catch {
-            resetFenwickDepositUpdate();
         }
     }
 }
@@ -141,9 +144,6 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
                 changePrank(borrower);
                 _actor = borrower;
                 super.drawDebt(amount);
-                
-                // TODO: Check why adding this is increasing reverts many fold
-                vm.warp(block.timestamp + 200 days);
             }
             changePrank(kicker);
             _actor = kicker;

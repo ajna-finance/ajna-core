@@ -61,20 +61,14 @@ contract RegressionTestReserve is ReserveInvariants {
         (uint256 reserve, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
         console.log("Initial Reserve -->", reserve);
         console.log("===========");
-
         _reservePoolHandler.repayDebt(404759030515771436961484, 115792089237316195423570985008687907853269984665640564039457584007913129639932);
-
-        invariant_fenwickTreeSum();
-
+        invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9();
         (reserve, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
         console.log("Reserve after repayDebt --->", reserve);
-
         _reservePoolHandler.removeQuoteToken(1, 48462143332689486187207611220503504, 3016379223696706064676286307759709760607418884028758142005949880337746);
         (reserve, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
         console.log("Reserve after removeQuoteToken --->", reserve);
-
-        invariant_fenwickTreeSum();
-
+        invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9();
     }
 
     function test_reserve_4() external {
@@ -131,6 +125,14 @@ contract RegressionTestReserve is ReserveInvariants {
 
         _reservePoolHandler.kickAuction(353274873012743605831170677893, 0, 297442424590491337560428021161844134441441035247561757);
 
+        invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9();
+    }
+
+    function test_reserve_9() external {
+        _reservePoolHandler.addQuoteToken(8167, 13910, 6572);
+        _reservePoolHandler.removeQuoteToken(450224344766393467188006446127940623592343232978, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 3);
+        _reservePoolHandler.addQuoteToken(1338758958425242459263005073411197235389119160018038412507867175716953081924, 0, 3);
+        _reservePoolHandler.removeQuoteToken(13684, 7152374202712184607581797, 37874588407625287908455929174);
         invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9();
     }
 }

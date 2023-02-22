@@ -15,14 +15,12 @@ import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
 import { PoolCommons }     from 'src/libraries/external/PoolCommons.sol';
 import { InvariantTest } from '../InvariantTest.sol';
 import { _ptp } from 'src/libraries/helpers/PoolHelper.sol';
-import { _priceAt } from 'src/libraries/helpers/PoolHelper.sol';
-import { Buckets } from 'src/libraries/internal/Buckets.sol';
 
 import 'src/libraries/internal/Maths.sol';
 
 
 uint256 constant LENDER_MIN_BUCKET_INDEX = 2570;
-uint256 constant LENDER_MAX_BUCKET_INDEX = 2570;
+uint256 constant LENDER_MAX_BUCKET_INDEX = 2572;
 
 uint256 constant BORROWER_MIN_BUCKET_INDEX = 2600;
 uint256 constant BORROWER_MAX_BUCKET_INDEX = 2620;
@@ -90,6 +88,9 @@ contract BaseHandler is InvariantTest, Test {
 
     // amount of reserve increase after kicking a loan
     uint256 public loanKickIncreaseInReserve;
+
+    // amount of reserve increase after draw debt as origination fee
+    uint256 public drawDebtIncreaseInReserve;
     
     constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) {
         // Tokens
@@ -115,6 +116,7 @@ contract BaseHandler is InvariantTest, Test {
         loanKickIncreaseInReserve = 0;
         kickerBondChange = 0;
         isKickerRewarded = false;
+        drawDebtIncreaseInReserve = 0;
 
         // reset the exchange rates before each action
         for(uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
@@ -297,6 +299,10 @@ contract BaseHandler is InvariantTest, Test {
         } 
     }
 
+    function updatePoolState() internal {
+        _pool.repayDebt(_actor, 0, 0, _actor, 0);
+    }
+
     function resetFenwickDepositUpdate() internal {
         // reset fenwick deposits to last updated value in case of transaction revert
         for(uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
@@ -304,20 +310,10 @@ contract BaseHandler is InvariantTest, Test {
         }
     }
 
-    function getExchangeRate(uint256 bucketIndex) internal view returns(uint256) {
-        (uint256 bucketLps, uint256 bucketCollateral, , , ) = _pool.bucketInfo(bucketIndex);
-
-        uint256 bucketPrice = _priceAt(bucketIndex);
-
-        uint256 exchangeRate = Buckets.getExchangeRate(bucketCollateral, bucketLps, fenwickDeposits[bucketIndex], bucketPrice);
-        
-        return exchangeRate;
-    }
-
-    // precalculate exchange rate before an action using ghost fenwick tree
+    // precalculate exchange rate before an action
     function updatePreviousExchangeRate() internal {
         for(uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            previousExchangeRate[bucketIndex] = getExchangeRate(bucketIndex);
+            previousExchangeRate[bucketIndex] = _pool.bucketExchangeRate(bucketIndex);
         }
     }
 
@@ -331,21 +327,10 @@ contract BaseHandler is InvariantTest, Test {
 
     // precalculate reserves before an action
     function updatePreviousReserves() internal {
-        (uint256 poolDebt, , ) = _pool.debtInfo();
-
-        uint256 poolSize = fenwickSumTillIndex(fenwickDeposits.length - 1);
-
-        uint256 quoteTokenBalance = _quote.balanceOf(address(_pool));
-
-        (uint256 bondEscrowed, uint256 unclaimedReserve, ) = _pool.reservesInfo();
-        if( poolDebt + quoteTokenBalance >= poolSize + bondEscrowed + unclaimedReserve) {
-            previousReserves = poolDebt + quoteTokenBalance - poolSize - bondEscrowed - unclaimedReserve;
-        }
-        else {
-            previousReserves = 0;
-        }
+        (previousReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
     }
 
+    // update reserve after an action
     function updateCurrentReserves() internal {
         (currentReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool)); 
     }
