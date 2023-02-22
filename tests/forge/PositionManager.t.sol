@@ -953,18 +953,50 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         vm.expectRevert(IPositionManagerErrors.BucketBankrupt.selector);
         _positionManager.moveLiquidity(moveLiquidityParams);
 
-        // // check can memorialize additional liquidity into the bankrupted bucket
-        // // skip(3 days);
-        // vm.roll(block.number + 1);
-        // _addInitialLiquidity({
-        //     from:   testMinter,
-        //     amount: 30_000 * 1e18,
-        //     index:  _i9_91
-        // });
-        // memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-        //     tokenId, indexes
-        // );
-        // _positionManager.memorializePositions(memorializeParams);
+        // check lender state after bankruptcy before rememorializing
+        _assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndex,
+            lpBalance:   0,
+            depositTime: _startTime
+        });
+
+        // check can rememorialize additional liquidity into the bankrupted bucket
+        skip(3 days);
+        vm.roll(block.number + 1);
+        amounts = new uint256[](1);
+        amounts[0] = 30_000 * 1e18;
+
+        changePrank(testMinter);
+        _pool.addQuoteToken(amounts[0], _i9_91, type(uint256).max);
+
+        _pool.approveLpOwnership(address(_positionManager), indexes, amounts);
+        _pool.approveLpTransferors(transferors);
+        memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
+            tokenId, indexes
+        );
+        _positionManager.memorializePositions(memorializeParams);
+
+        // check lender state after bankruptcy after rememorializing
+        _assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });
+        // TODO: check position manager lp balance != amount?
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndex,
+            lpBalance:   32_000 * 1e18,
+            depositTime: block.timestamp
+        });
     }
 
     /**
