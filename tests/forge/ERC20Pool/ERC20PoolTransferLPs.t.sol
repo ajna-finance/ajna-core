@@ -79,7 +79,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         _assertTransferNoAllowanceRevert({
             operator: _lender,
             from:     _lender1,
-            to:       _lender2,
+            to:       _lender,
             indexes:  indexes
         });
     }
@@ -128,11 +128,24 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[1] = 30_000 * 1e18;
         _pool.approveLpOwnership(_lender2, indexes, amounts);
 
-        _assertTransferNoAllowanceRevert({
-            operator: _lender2,
-            from:     _lender1,
-            to:       _lender2,
-            indexes:  indexes
+        _transferLPs({
+            operator:  _lender2,
+            from:      _lender1,
+            to:        _lender2,
+            indexes:   indexes,
+            lpBalance: 30_000 * 1e18
+        });
+        _assertLenderLpBalance({
+            lender:      _lender2,
+            index:       indexes[0],
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      _lender2,
+            index:       indexes[1],
+            lpBalance:   20_000 * 1e18,
+            depositTime: _startTime
         });
     }
 
@@ -263,7 +276,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
             lender:      _lender1,
             index:       indexes[0],
             lpBalance:   0,
-            depositTime: 0
+            depositTime: _startTime + 1 hours
         });
         _assertLenderLpBalance({
             lender:      _lender2,
@@ -275,7 +288,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
             lender:      _lender1,
             index:       indexes[1],
             lpBalance:   0,
-            depositTime: 0
+            depositTime: _startTime + 1 hours
         });
         _assertLenderLpBalance({
             lender:      _lender2,
@@ -287,7 +300,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
             lender:      _lender1,
             index:       indexes[2],
             lpBalance:   0,
-            depositTime: 0
+            depositTime: _startTime + 1 hours
         });
         _assertLenderLpBalance({
             lender:      _lender2,
@@ -389,7 +402,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
             lender:      _lender1,
             index:       depositIndexes[0],
             lpBalance:   0,
-            depositTime: 0
+            depositTime: _startTime
         });
         _assertLenderLpBalance({
             lender:      _lender2,
@@ -413,7 +426,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
             lender:      _lender1,
             index:       depositIndexes[2],
             lpBalance:   0,
-            depositTime: 0
+            depositTime: _startTime
         });
         _assertLenderLpBalance({
             lender:      _lender2,
@@ -533,7 +546,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
             lender:      _lender1,
             index:       indexes[0],
             lpBalance:   0,
-            depositTime: 0
+            depositTime: _startTime + 1 hours
         });
         _assertLenderLpBalance({
             lender:      _lender2,
@@ -545,7 +558,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
             lender:      _lender1,
             index:       indexes[1],
             lpBalance:   0,
-            depositTime: 0
+            depositTime: _startTime + 1 hours
         });
         _assertLenderLpBalance({
             lender:      _lender2,
@@ -557,7 +570,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
             lender:      _lender1,
             index:       indexes[2],
             lpBalance:   0,
-            depositTime: 0
+            depositTime: _startTime + 1 hours
         });
         _assertLenderLpBalance({
             lender:      _lender2,
@@ -671,5 +684,92 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         vm.expectEmit(true, true, false, true);
         emit ApproveLpOwnership(_lender1, _lender2, indexes, amounts);
         _pool.approveLpOwnership(_lender2, indexes, amounts);
+    }
+
+    function testTransferPartialLPs() external tearDown {
+        uint256[] memory indexes = new uint256[](2);
+        indexes[0] = 2550;
+        indexes[1] = 2551;
+
+        _addInitialLiquidity({
+            from:   _lender1,
+            amount: 10_000 * 1e18,
+            index:  indexes[0]
+        });
+        _addInitialLiquidity({
+            from:   _lender1,
+            amount: 20_000 * 1e18,
+            index:  indexes[1]
+        });
+
+        // set transfer allowances for lender and lender2
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 5_000 * 1e18;
+        amounts[1] = 10_000 * 1e18;
+        _pool.approveLpOwnership(_lender2, indexes, amounts);
+        amounts = new uint256[](2);
+        amounts[0] = 1_000 * 1e18;
+        amounts[1] = 2_000 * 1e18;
+        _pool.approveLpOwnership(_lender, indexes, amounts);
+
+        // lender 2 approves lender as transferor of LPs
+        changePrank(_lender2);
+        address[] memory transferors = new address[](1);
+        transferors[0] = _lender;
+        _pool.approveLpTransferors(transferors);
+
+        // lender transfers allowed LPs from lender1
+        _transferLPs({
+            operator:  _lender,
+            from:      _lender1,
+            to:        _lender,
+            indexes:   indexes,
+            lpBalance: 3_000 * 1e18
+        });
+        // lender transfers allowed LPs from lender1 to lender2
+        _transferLPs({
+            operator:  _lender,
+            from:      _lender1,
+            to:        _lender2,
+            indexes:   indexes,
+            lpBalance: 15_000 * 1e18
+        });
+
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       indexes[0],
+            lpBalance:   1_000 * 1e18,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      _lender1,
+            index:       indexes[0],
+            lpBalance:   4_000 * 1e18,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      _lender2,
+            index:       indexes[0],
+            lpBalance:   5_000 * 1e18,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       indexes[1],
+            lpBalance:   2_000 * 1e18,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      _lender1,
+            index:       indexes[1],
+            lpBalance:   8_000 * 1e18,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      _lender2,
+            index:       indexes[1],
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime
+        });
     }
 }
