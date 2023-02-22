@@ -90,7 +90,6 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
         interestState.interestRate       = uint208(rate_);
         interestState.interestRateUpdate = uint48(block.timestamp);
-        interestState.t0PoolUtilizationDebtWeight = uint256(0);
 
         Loans.init(loans);
 
