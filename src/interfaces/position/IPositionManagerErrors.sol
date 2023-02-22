@@ -28,9 +28,9 @@ interface IPositionManagerErrors {
     error NotAjnaPool();
 
     /**
-     * @notice User failed to remove liquidity in an index from their NFT.
+     * @notice User failed to remove position from their NFT.
      */
-    error RemoveLiquidityFailed();
+    error RemovePositionFailed();
 
     /**
      * @notice User attempting to interact with a pool that doesn't match the pool associated with the tokenId.

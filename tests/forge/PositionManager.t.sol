@@ -171,9 +171,9 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // memorialize quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
-        emit MemorializePosition(testAddress, tokenId);
-        vm.expectEmit(true, true, true, true);
         emit TransferLPs(testAddress, address(_positionManager), indexes, 9_000 * 1e18);
+        vm.expectEmit(true, true, true, true);
+        emit MemorializePosition(testAddress, tokenId);
         _positionManager.memorializePositions(memorializeParams);
 
         // check memorialization success
@@ -279,9 +279,9 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // memorialize quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
-        emit MemorializePosition(testAddress, tokenId);
-        vm.expectEmit(true, true, true, true);
         emit TransferLPs(testAddress, address(_positionManager), indexes, 9_000 * 1e18);
+        vm.expectEmit(true, true, true, true);
+        emit MemorializePosition(testAddress, tokenId);
         _positionManager.memorializePositions(memorializeParams);
 
         _assertLenderLpBalance({
@@ -400,9 +400,9 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // rememorialize quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
-        emit MemorializePosition(testAddress, tokenId);
-        vm.expectEmit(true, true, true, true);
         emit TransferLPs(testAddress, address(_positionManager), indexes, 6_000 * 1e18);
+        vm.expectEmit(true, true, true, true);
+        emit MemorializePosition(testAddress, tokenId);
         _positionManager.memorializePositions(memorializeParams);
 
         // check LP balance
@@ -610,9 +610,9 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // memorialize lender 1 quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
-        emit MemorializePosition(testLender1, tokenId1);
-        vm.expectEmit(true, true, true, true);
         emit TransferLPs(testLender1, address(_positionManager), lender1Indexes, 9_000 * 1e18);
+        vm.expectEmit(true, true, true, true);
+        emit MemorializePosition(testLender1, tokenId1);
         _positionManager.memorializePositions(memorializeParams);
 
         // check lender, position manager,  and pool state
@@ -692,9 +692,9 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         vm.expectEmit(true, true, true, true);
-        emit MemorializePosition(testLender2, tokenId2);
-        vm.expectEmit(true, true, true, true);
         emit TransferLPs(testLender2, address(_positionManager), newIndexes, 6_000 * 1e18);
+        vm.expectEmit(true, true, true, true);
+        emit MemorializePosition(testLender2, tokenId2);
         _positionManager.memorializePositions(memorializeParams);
 
         // // check lender, position manager,  and pool state
@@ -1833,7 +1833,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             tokenId2, address(_pool), 1000, 2000, block.timestamp + 30
         );
         changePrank(address(testAddress2));
-        vm.expectRevert(IPositionManagerErrors.RemoveLiquidityFailed.selector);
+        vm.expectRevert(IPositionManagerErrors.RemovePositionFailed.selector);
         _positionManager.moveLiquidity(moveLiquidityParams);
     }
 
@@ -1945,7 +1945,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
 
         // should fail if trying to redeem one more time
-        vm.expectRevert(IPositionManagerErrors.RemoveLiquidityFailed.selector);
+        vm.expectRevert(IPositionManagerErrors.RemovePositionFailed.selector);
         _positionManager.reedemPositions(reedemParams);
     }
 
@@ -1964,7 +1964,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // should fail if trying to redeem empty position
         changePrank(testMinter);
-        vm.expectRevert(IPositionManagerErrors.RemoveLiquidityFailed.selector);
+        vm.expectRevert(IPositionManagerErrors.RemovePositionFailed.selector);
         _positionManager.reedemPositions(reedemParams);
     }
 
@@ -2124,11 +2124,12 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
-        vm.expectEmit(true, true, true, true);
-        emit RedeemPosition(testReceiver, tokenId);
+
+        changePrank(testReceiver);
         vm.expectEmit(true, true, true, true);
         emit TransferLPs(address(_positionManager), testReceiver, indexes, 15_000 * 1e18);
-        changePrank(testReceiver);
+        vm.expectEmit(true, true, true, true);
+        emit RedeemPosition(testReceiver, tokenId);
         _pool.approveLpTransferors(transferors);
         _positionManager.reedemPositions(reedemParams);
 
@@ -2608,9 +2609,9 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
 
         // memorialize quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
-        emit MemorializePosition(testAddress1, tokenId);
-        vm.expectEmit(true, true, true, true);
         emit TransferLPs(testAddress1, address(_positionManager), indexes, 9_000 * 1e18);
+        vm.expectEmit(true, true, true, true);
+        emit MemorializePosition(testAddress1, tokenId);
         _positionManager.memorializePositions(memorializeParams);
 
         _assertLenderLpBalance({
@@ -2733,9 +2734,9 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
 
         // rememorialize quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
-        emit MemorializePosition(testAddress1, tokenId);
-        vm.expectEmit(true, true, true, true);
         emit TransferLPs(testAddress1, address(_positionManager), indexes, 6_000 * 1e18);
+        vm.expectEmit(true, true, true, true);
+        emit MemorializePosition(testAddress1, tokenId);
         _positionManager.memorializePositions(memorializeParams);
 
         // check LP balance
