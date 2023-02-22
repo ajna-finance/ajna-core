@@ -352,11 +352,11 @@ contract RewardsManager is IRewardsManager {
 
         uint256 nextEpoch = epoch_ + 1;
         uint256 claimedRewardsInNextEpoch = rewardsClaimed[nextEpoch];
+        uint256 bucketIndex;
 
         // iterate through all buckets and calculate epoch rewards for
         for (uint256 i = 0; i < positionIndexes_.length; ) {
-
-            uint256 bucketIndex = positionIndexes_[i];
+            bucketIndex = positionIndexes_[i];
             BucketState memory bucketSnapshot = stakes[tokenId_].snapshot[bucketIndex];
 
             uint256 bucketRate;
@@ -368,6 +368,13 @@ contract RewardsManager is IRewardsManager {
 
                 // if staked during the epoch then use the bucket rate at the time of staking
                 bucketRate = bucketSnapshot.rateAtStakeTime;
+            }
+
+            // check if bucket is bankrupt after NFT memorialization
+            if (positionManager.isPositionBucketBankrupt(tokenId_, bucketIndex)) {
+                // if bucket is bankrupt after deposit then skip to next bucket without accruing additional rewards
+                epochRewards_ += 0;
+                continue;
             }
 
             // calculate the amount of interest accrued in current epoch

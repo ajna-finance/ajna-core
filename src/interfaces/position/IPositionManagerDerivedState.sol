@@ -29,6 +29,19 @@ interface IPositionManagerDerivedState {
     ) external view returns (uint256[] memory);
 
     /**
+     *  @notice Returns information about a given NFT.
+     *  @param  tokenId_ Unique ID of token.
+     *  @param  index_   Bucket index to check for position information.
+     *  @return lps in that bucket.
+     *  @return position's deposit time.
+    */
+    function getPositionInfo(
+        uint256 tokenId_,
+        uint256 index_
+    ) external view returns (uint256, uint256);
+
+
+    /**
      *  @notice Checks if a given tokenId has a given position bucket
      *  @param  tokenId           Unique ID of token.
      *  @param  index             Index of bucket to check if in position buckets.
@@ -38,4 +51,15 @@ interface IPositionManagerDerivedState {
         uint256 tokenId,
         uint256 index
     ) external view returns (bool bucketInPosition);
+
+    /**
+     *  @notice Checks if a tokenId has a position in a bucket that was bankrupted.
+     *  @param  tokenId_           Unique ID of token.
+     *  @param  index_             Index of bucket to check for bankruptcy.
+     *  @return isBankrupt_        True if the position in the bucket was bankrupted.
+    */
+    function isPositionBucketBankrupt(
+        uint256 tokenId_,
+        uint256 index_
+    ) external view returns (bool isBankrupt_);
 }

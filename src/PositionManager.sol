@@ -412,6 +412,23 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         return positionIndexes[tokenId_].values();
     }
 
+    function getPositionInfo(
+        uint256 tokenId_,
+        uint256 index_
+    ) external view override returns (uint256, uint256) {
+        return (
+            positions[tokenId_][index_].lps,
+            positions[tokenId_][index_].depositTime
+        );
+    }
+
+    function isPositionBucketBankrupt(
+        uint256 tokenId_,
+        uint256 index_
+    ) external view override returns (bool) {
+        return _bucketBankruptAfterDeposit(IPool(poolKey[tokenId_]), index_, positions[tokenId_][index_].depositTime);
+    }
+
     /// @inheritdoc IPositionManagerDerivedState
     function isIndexInPosition(
         uint256 tokenId_,
