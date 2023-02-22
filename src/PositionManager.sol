@@ -412,6 +412,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         return positionIndexes[tokenId_].values();
     }
 
+    /// @inheritdoc IPositionManagerDerivedState
     function getPositionInfo(
         uint256 tokenId_,
         uint256 index_
@@ -422,6 +423,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         );
     }
 
+    /// @inheritdoc IPositionManagerDerivedState
     function isPositionBucketBankrupt(
         uint256 tokenId_,
         uint256 index_

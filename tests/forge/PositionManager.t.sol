@@ -328,6 +328,19 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[0]));
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[1]));
         assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
+        assertFalse(_positionManager.isPositionBucketBankrupt(tokenId, indexes[0]));
+        assertFalse(_positionManager.isPositionBucketBankrupt(tokenId, indexes[1]));
+        assertFalse(_positionManager.isPositionBucketBankrupt(tokenId, indexes[2]));
+
+        (uint256 lps, uint256 depositTime) = _positionManager.getPositionInfo(tokenId, indexes[0]);
+        assertEq(lps, 3_000 * 1e18);
+        assertEq(depositTime, _startTime);
+        (lps, depositTime) = _positionManager.getPositionInfo(tokenId, indexes[1]);
+        assertEq(lps, 3_000 * 1e18);
+        assertEq(depositTime, _startTime);
+        (lps, depositTime) = _positionManager.getPositionInfo(tokenId, indexes[2]);
+        assertEq(lps, 3_000 * 1e18);
+        assertEq(depositTime, _startTime);
 
         // add more liquidity
         _addInitialLiquidity({
@@ -892,6 +905,14 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             depositTime: _startTime
         });
 
+        // check position state
+        (uint256 lps, uint256 depositTime) = _positionManager.getPositionInfo(tokenId, testIndex);
+        assertEq(lps, 2_000 * 1e18);
+        assertEq(depositTime, _startTime);
+
+        // check position is not bankrupt
+        assertFalse(_positionManager.isPositionBucketBankrupt(tokenId, testIndex));
+
         /*************************/
         /*** Bucket Bankruptcy ***/
         /*************************/
@@ -938,6 +959,9 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             deposit:      0,
             exchangeRate: 1 * 1e18
         });
+
+        // check position is bankrupt
+        assertTrue(_positionManager.isPositionBucketBankrupt(tokenId, testIndex));
 
         // redeem should fail as the bucket has bankrupted
         IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
@@ -997,6 +1021,9 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             lpBalance:   30_000 * 1e18,
             depositTime: block.timestamp
         });
+
+        // check position is not bankrupt
+        assertFalse(_positionManager.isPositionBucketBankrupt(tokenId, testIndex));
     }
 
     /**
