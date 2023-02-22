@@ -169,7 +169,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // memorialize quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
-        emit MemorializePosition(testAddress, tokenId);
+        emit MemorializePosition(testAddress, tokenId, indexes);
         vm.expectEmit(true, true, true, true);
         emit TransferLPs(testAddress, address(_positionManager), indexes, 9_000 * 1e18);
         _positionManager.memorializePositions(memorializeParams);
@@ -277,7 +277,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // memorialize quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
-        emit MemorializePosition(testAddress, tokenId);
+        emit MemorializePosition(testAddress, tokenId, indexes);
         vm.expectEmit(true, true, true, true);
         emit TransferLPs(testAddress, address(_positionManager), indexes, 9_000 * 1e18);
         _positionManager.memorializePositions(memorializeParams);
@@ -398,7 +398,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // rememorialize quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
-        emit MemorializePosition(testAddress, tokenId);
+        emit MemorializePosition(testAddress, tokenId, indexes);
         vm.expectEmit(true, true, true, true);
         emit TransferLPs(testAddress, address(_positionManager), indexes, 6_000 * 1e18);
         _positionManager.memorializePositions(memorializeParams);
@@ -608,7 +608,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // memorialize lender 1 quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
-        emit MemorializePosition(testLender1, tokenId1);
+        emit MemorializePosition(testLender1, tokenId1, lender1Indexes);
         vm.expectEmit(true, true, true, true);
         emit TransferLPs(testLender1, address(_positionManager), lender1Indexes, 9_000 * 1e18);
         _positionManager.memorializePositions(memorializeParams);
@@ -690,7 +690,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         vm.expectEmit(true, true, true, true);
-        emit MemorializePosition(testLender2, tokenId2);
+        emit MemorializePosition(testLender2, tokenId2, newIndexes);
         vm.expectEmit(true, true, true, true);
         emit TransferLPs(testLender2, address(_positionManager), newIndexes, 6_000 * 1e18);
         _positionManager.memorializePositions(memorializeParams);
@@ -1407,7 +1407,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // move liquidity called by testAddress1 owner
         vm.expectEmit(true, true, true, true);
-        emit MoveLiquidity(testAddress1, tokenId1);
+        emit MoveLiquidity(testAddress1, tokenId1, mintIndex, moveIndex);
         changePrank(address(testAddress1));
         _positionManager.moveLiquidity(moveLiquidityParams);
 
@@ -1533,7 +1533,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // move liquidity called by testAddress2 owner
         vm.expectEmit(true, true, true, true);
-        emit MoveLiquidity(testAddress2, tokenId2);
+        emit MoveLiquidity(testAddress2, tokenId2, mintIndex, moveIndex);
         changePrank(address(testAddress2));
         _positionManager.moveLiquidity(moveLiquidityParams);
 
@@ -1679,7 +1679,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // redeem from owner
         vm.expectEmit(true, true, true, true);
-        emit RedeemPosition(testMinter, tokenId);
+        emit RedeemPosition(testMinter, tokenId, indexes);
         changePrank(testMinter);
         _positionManager.reedemPositions(reedemParams);
 
@@ -1882,7 +1882,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             tokenId, address(_pool), indexes
         );
         vm.expectEmit(true, true, true, true);
-        emit RedeemPosition(testReceiver, tokenId);
+        emit RedeemPosition(testReceiver, tokenId, indexes);
         vm.expectEmit(true, true, true, true);
         emit TransferLPs(address(_positionManager), testReceiver, indexes, 15_000 * 1e18);
         changePrank(testReceiver);
@@ -2365,7 +2365,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
 
         // memorialize quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
-        emit MemorializePosition(testAddress1, tokenId);
+        emit MemorializePosition(testAddress1, tokenId, indexes);
         vm.expectEmit(true, true, true, true);
         emit TransferLPs(testAddress1, address(_positionManager), indexes, 9_000 * 1e18);
         _positionManager.memorializePositions(memorializeParams);
@@ -2490,7 +2490,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
 
         // rememorialize quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
-        emit MemorializePosition(testAddress1, tokenId);
+        emit MemorializePosition(testAddress1, tokenId, indexes);
         vm.expectEmit(true, true, true, true);
         emit TransferLPs(testAddress1, address(_positionManager), indexes, 6_000 * 1e18);
         _positionManager.memorializePositions(memorializeParams);
@@ -2548,7 +2548,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
 
         // move liquidity called by testAddress1
         vm.expectEmit(true, true, true, true);
-        emit MoveLiquidity(testAddress1, tokenId);
+        emit MoveLiquidity(testAddress1, tokenId, indexes[0], indexes[1]);
         changePrank(testAddress1);
         _positionManager.moveLiquidity(moveLiquidityParams);
 
