@@ -315,7 +315,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         );
     }
 
-    function testPoolBorrowerInterestAccumulation() external {
+    function testPoolBorrowerInterestAccumulation() external tearDown {
         (uint256 liquidityAdded, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
 
         skip(10 days);

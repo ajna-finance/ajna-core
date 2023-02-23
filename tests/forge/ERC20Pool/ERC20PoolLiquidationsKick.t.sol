@@ -127,7 +127,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
 
     }
     
-    function testKick() external {
+    function testKick() external tearDown {
         // Skip to make borrower undercollateralized
         skip(100 days);
 
@@ -622,7 +622,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         });
     }
 
-    function testInterestsAccumulationWithAllLoansAuctioned() external {
+    function testInterestsAccumulationWithAllLoansAuctioned() external tearDown {
         // Borrower2 borrows
         _borrow({
             from:       _borrower2,

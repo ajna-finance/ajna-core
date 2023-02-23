@@ -183,7 +183,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
 
     }
 
-    function testKickAndSettleSubsetPoolFractionalCollateral() external {
+    function testKickAndSettleSubsetPoolFractionalCollateral() external tearDown {
 
         // settle borrower 2
         _assertAuction(

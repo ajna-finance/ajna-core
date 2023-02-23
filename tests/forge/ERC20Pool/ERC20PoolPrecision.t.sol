@@ -653,7 +653,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint8   collateralPrecisionDecimals_,
         uint8   quotePrecisionDecimals_,
         uint16  bucketId_
-    ) external {
+    ) external tearDown {
         // setup fuzzy bounds and initialize the pool
         uint256 collateralDecimals = bound(uint256(collateralPrecisionDecimals_), 1, 18);
         uint256 quoteDecimals      = bound(uint256(quotePrecisionDecimals_),      1, 18);

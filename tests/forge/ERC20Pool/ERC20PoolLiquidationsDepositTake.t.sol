@@ -191,7 +191,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         });
     }
 
-    function testDepositTakeCollateralRestrict() external {
+    function testDepositTakeCollateralRestrict() external tearDown {
         skip(6.5 hours);
 
         _assertLenderLpBalance({

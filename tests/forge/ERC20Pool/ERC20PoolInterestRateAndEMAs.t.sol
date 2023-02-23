@@ -545,7 +545,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         );
     }
 
-    function testPoolEMAAndTargetUtilizationUpdate() external {
+    function testPoolEMAAndTargetUtilizationUpdate() external tearDown {
 
         // add initial quote to the pool
         _addInitialLiquidity({
