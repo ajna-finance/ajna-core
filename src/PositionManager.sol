@@ -163,7 +163,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             unchecked { ++i; }
         }
 
-        emit MemorializePosition(owner, params_.tokenId);
+        emit MemorializePosition(owner, params_.tokenId, params_.indexes);
 
         // update pool lps accounting and transfer ownership of lps to PositionManager contract
         pool.transferLPs(owner, address(this), params_.indexes);
@@ -243,7 +243,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         // slither-disable-next-line unused-return
         positionIndex.add(params_.toIndex);
 
-        emit MoveLiquidity(ownerOf(params_.tokenId), params_.tokenId);
+        emit MoveLiquidity(ownerOf(params_.tokenId), params_.tokenId, params_.fromIndex, params_.toIndex);
 
         // move quote tokens in pool
         (
@@ -305,7 +305,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             unchecked { ++i; }
         }
 
-        emit RedeemPosition(owner, params_.tokenId);
+        emit RedeemPosition(owner, params_.tokenId, params_.indexes);
 
         // approve owner to take over the LPs ownership (required for transferLPs pool call)
         pool.approveLpOwnership(owner, params_.indexes, lpAmounts);

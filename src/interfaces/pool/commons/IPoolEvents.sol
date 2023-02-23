@@ -9,14 +9,14 @@ interface IPoolEvents {
     /**
      *  @notice Emitted when lender adds quote token to the pool.
      *  @param  lender    Recipient that added quote tokens.
-     *  @param  price     Price at which quote tokens were added.
+     *  @param  index     Index at which quote tokens were added.
      *  @param  amount    Amount of quote tokens added to the pool.
      *  @param  lpAwarded Amount of LP awarded for the deposit. 
      *  @param  lup       LUP calculated after deposit.
      */
     event AddQuoteToken(
         address indexed lender,
-        uint256 indexed price,
+        uint256 indexed index,
         uint256 amount,
         uint256 lpAwarded,
         uint256 lup
@@ -161,13 +161,13 @@ interface IPoolEvents {
     /**
      *  @notice Emitted when lender claims collateral from a bucket.
      *  @param  claimer    Recipient that claimed collateral.
-     *  @param  price      Price at which collateral was claimed.
+     *  @param  index      Index at which collateral was claimed.
      *  @param  amount     The amount of collateral (or number of NFT tokens) transferred to the claimer.
      *  @param  lpRedeemed Amount of LP exchanged for quote token.
      */
     event RemoveCollateral(
         address indexed claimer,
-        uint256 indexed price,
+        uint256 indexed index,
         uint256 amount,
         uint256 lpRedeemed
     );
@@ -175,14 +175,14 @@ interface IPoolEvents {
     /**
      *  @notice Emitted when lender removes quote token from the pool.
      *  @param  lender     Recipient that removed quote tokens.
-     *  @param  price      Price at which quote tokens were removed.
+     *  @param  index      Index at which quote tokens were removed.
      *  @param  amount     Amount of quote tokens removed from the pool.
      *  @param  lpRedeemed Amount of LP exchanged for quote token.
      *  @param  lup        LUP calculated after removal.
      */
     event RemoveQuoteToken(
         address indexed lender,
-        uint256 indexed price,
+        uint256 indexed index,
         uint256 amount,
         uint256 lpRedeemed,
         uint256 lup
