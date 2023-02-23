@@ -184,7 +184,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         // update pool lps accounting and transfer ownership of lps to PositionManager contract
         pool.transferLPs(owner, address(this), params_.indexes);
 
-        emit MemorializePosition(owner, params_.tokenId);
+        emit MemorializePosition(owner, params_.tokenId, params_.indexes);
     }
 
     /**
@@ -281,7 +281,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         positions[params_.tokenId][params_.fromIndex].lps -= lpbAmountFrom;
         positions[params_.tokenId][params_.toIndex].lps   += lpbAmountTo;
 
-        emit MoveLiquidity(ownerOf(params_.tokenId), params_.tokenId);
+        emit MoveLiquidity(ownerOf(params_.tokenId), params_.tokenId, params_.fromIndex, params_.toIndex);
     }
 
     /**
@@ -339,7 +339,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         // update pool lps accounting and transfer ownership of lps from PositionManager contract
         pool.transferLPs(address(this), owner, params_.indexes);
 
-        emit RedeemPosition(owner, params_.tokenId);
+        emit RedeemPosition(owner, params_.tokenId, params_.indexes);
     }
 
     /**************************/

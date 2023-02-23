@@ -66,10 +66,10 @@ library LenderActions {
     /**************/
 
     // See `IPoolEvents` for descriptions
-    event AddQuoteToken(address indexed lender, uint256 indexed price, uint256 amount, uint256 lpAwarded, uint256 lup);
+    event AddQuoteToken(address indexed lender, uint256 indexed index, uint256 amount, uint256 lpAwarded, uint256 lup);
     event BucketBankruptcy(uint256 indexed index, uint256 lpForfeited);
     event MoveQuoteToken(address indexed lender, uint256 indexed from, uint256 indexed to, uint256 amount, uint256 lpRedeemedFrom, uint256 lpAwardedTo, uint256 lup);
-    event RemoveQuoteToken(address indexed lender, uint256 indexed price, uint256 amount, uint256 lpRedeemed, uint256 lup);
+    event RemoveQuoteToken(address indexed lender, uint256 indexed index, uint256 amount, uint256 lpRedeemed, uint256 lup);
     event TransferLPs(address owner, address newOwner, uint256[] indexes, uint256 lps);
 
     /**************/
