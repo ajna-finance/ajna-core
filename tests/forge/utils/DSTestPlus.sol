@@ -356,11 +356,12 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     function _startClaimableReserveAuction(
         address from,
         uint256 remainingReserves,
-        uint256 price
+        uint256 price,
+        uint256 epoch
     ) internal {
         changePrank(from);
         vm.expectEmit(true, true, true, true);
-        emit ReserveAuction(remainingReserves, price);
+        emit ReserveAuction(remainingReserves, price, epoch);
         _pool.startClaimableReserveAuction();
     }
 
@@ -384,11 +385,12 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         address from,
         uint256 amount,
         uint256 remainingReserves,
-        uint256 price
+        uint256 price,
+        uint256 epoch
     ) internal {
         changePrank(from);
         vm.expectEmit(true, true, true, true);
-        emit ReserveAuction(remainingReserves, price);
+        emit ReserveAuction(remainingReserves, price, epoch);
         _pool.takeReserves(amount);
     }
 
