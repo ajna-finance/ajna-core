@@ -374,6 +374,7 @@ contract RewardsManager is IRewardsManager {
             if (positionManager.isPositionBucketBankrupt(tokenId_, bucketIndex)) {
                 // if bucket is bankrupt after deposit then skip to next bucket without accruing additional rewards
                 epochRewards_ += 0;
+                unchecked { ++i; }
                 continue;
             }
 
