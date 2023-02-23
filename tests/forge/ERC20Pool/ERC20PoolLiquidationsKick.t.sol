@@ -155,6 +155,12 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             borrowerCollateralization: 0.995306391810796636 * 1e18
         });
 
+        // should revert if NP goes below limit
+        _assertKickNpUnderLimitRevert({
+            from:     _lender,
+            borrower: _borrower
+        });
+
         _kick({
             from:           _lender,
             borrower:       _borrower,

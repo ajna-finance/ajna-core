@@ -165,6 +165,12 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             exchangeRate: 1 * 1e18
         });
 
+        // should revert if NP goes below limit
+        _assertKickWithDepositNpUnderLimitRevert({
+            from:  _lender1,
+            index: 2500
+        });
+
         _kickWithDeposit({
             from:               _lender1,
             index:              2500,
@@ -290,6 +296,13 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(_borrower3),     20_000 * 1e18);
         assertEq(_quote.balanceOf(_borrower4),     20_000 * 1e18);
         assertEq(_quote.balanceOf(_borrower5),     20_000 * 1e18);
+
+
+        // should revert if NP goes below limit
+        _assertKickWithDepositNpUnderLimitRevert({
+            from:  _lender3,
+            index: 2500
+        });
 
         _kickWithDeposit({
             from:               _lender3,
@@ -418,6 +431,12 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(_borrower4),     20_000 * 1e18);
         assertEq(_quote.balanceOf(_borrower5),     20_000 * 1e18);
 
+        // should revert if NP goes below limit
+        _assertKickWithDepositNpUnderLimitRevert({
+            from:  _lender2,
+            index: 2500
+        });
+
         // lender 2 kicks using all LPs from bucket 2499 (10_000) and sending additional quote tokens to cover auction bond (510.096153846153851000)
         _kickWithDeposit({
             from:               _lender2,
@@ -532,6 +551,12 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             collateral:   10 * 1e18,
             deposit:      60_000 * 1e18,
             exchangeRate: 1 * 1e18
+        });
+
+        // should revert if NP goes below limit
+        _assertKickWithDepositNpUnderLimitRevert({
+            from:  _lender1,
+            index: 2500
         });
 
         _kickWithDeposit({
@@ -1314,6 +1339,6 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
 
         changePrank(_lender4);
         vm.expectRevert("ERC20: transfer amount exceeds balance");
-        _pool.kickWithDeposit(2499);
+        _pool.kickWithDeposit(2499, MAX_FENWICK_INDEX);
     }
 }
