@@ -9,17 +9,41 @@ interface IPoolEvents {
     /**
      *  @notice Emitted when lender adds quote token to the pool.
      *  @param  lender    Recipient that added quote tokens.
-     *  @param  price     Price at which quote tokens were added.
+     *  @param  index     Index at which quote tokens were added.
      *  @param  amount    Amount of quote tokens added to the pool.
      *  @param  lpAwarded Amount of LP awarded for the deposit. 
      *  @param  lup       LUP calculated after deposit.
      */
     event AddQuoteToken(
         address indexed lender,
-        uint256 indexed price,
+        uint256 indexed index,
         uint256 amount,
         uint256 lpAwarded,
         uint256 lup
+    );
+
+    /**
+     *  @notice Emitted when lender approves a new owner of LPs at specified indexes with specified amounts.
+     *  @param  lender    Recipient that approves new owner for LPs.
+     *  @param  newOwner  Recipient approved to transfer LPs.
+     *  @param  indexes   Bucket indexes of LPs approved.
+     *  @param  amounts   LP amounts approved (ordered by approved indexes).
+     */
+    event ApproveLpOwnership(
+        address indexed lender,
+        address indexed newOwner,
+        uint256[] indexes,
+        uint256[] amounts
+    );
+
+    /**
+     *  @notice Emitted when lender whitelists addresses to accept LPs from.
+     *  @param  lender      Recipient that approves new owner for LPs.
+     *  @param  transferors List of addresses that can transfer LPs to lender.
+     */
+    event ApproveLpTransferors(
+        address indexed lender,
+        address[] transferors
     );
 
     /**
@@ -137,13 +161,13 @@ interface IPoolEvents {
     /**
      *  @notice Emitted when lender claims collateral from a bucket.
      *  @param  claimer    Recipient that claimed collateral.
-     *  @param  price      Price at which collateral was claimed.
+     *  @param  index      Index at which collateral was claimed.
      *  @param  amount     The amount of collateral (or number of NFT tokens) transferred to the claimer.
      *  @param  lpRedeemed Amount of LP exchanged for quote token.
      */
     event RemoveCollateral(
         address indexed claimer,
-        uint256 indexed price,
+        uint256 indexed index,
         uint256 amount,
         uint256 lpRedeemed
     );
@@ -151,14 +175,14 @@ interface IPoolEvents {
     /**
      *  @notice Emitted when lender removes quote token from the pool.
      *  @param  lender     Recipient that removed quote tokens.
-     *  @param  price      Price at which quote tokens were removed.
+     *  @param  index      Index at which quote tokens were removed.
      *  @param  amount     Amount of quote tokens removed from the pool.
      *  @param  lpRedeemed Amount of LP exchanged for quote token.
      *  @param  lup        LUP calculated after removal.
      */
     event RemoveQuoteToken(
         address indexed lender,
-        uint256 indexed price,
+        uint256 indexed index,
         uint256 amount,
         uint256 lpRedeemed,
         uint256 lup
@@ -186,6 +210,16 @@ interface IPoolEvents {
     event ReserveAuction(
         uint256 claimableReservesRemaining,
         uint256 auctionPrice
+    );
+
+    /**
+     *  @notice Emitted when lender removes addresses from the LPs transferors whitelist.
+     *  @param  lender      Recipient that approves new owner for LPs.
+     *  @param  transferors List of addresses that won't be able to transfer LPs to lender anymore.
+     */
+    event RevokeLpTransferors(
+        address indexed lender,
+        address[] transferors
     );
 
     /**

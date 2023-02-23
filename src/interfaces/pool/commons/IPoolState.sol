@@ -242,6 +242,17 @@ interface IPoolState {
      */
     function totalT0DebtInAuction() external view returns (uint256);
 
+    /**
+     *  @notice Mapping of addresses that can transfer LPs to a given lender.
+     *  @param  lender     Lender that receives LPs.
+     *  @param  transferor Transferor that transfers LPs.
+     *  @return True if the transferor is approved by lender.
+     */
+    function approvedTransferors(
+        address lender,
+        address transferor
+    ) external view returns (bool);
+
 }
 
 /*********************/

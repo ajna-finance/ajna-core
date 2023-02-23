@@ -1259,10 +1259,10 @@ abstract contract DSTestPlus is Test, IPoolEvents {
 
     // PositionManager events
     event Burn(address indexed lender_, uint256 indexed price_);
-    event MemorializePosition(address indexed lender_, uint256 tokenId_);
+    event MemorializePosition(address indexed lender_, uint256 tokenId_, uint256[] indexes_);
     event Mint(address indexed lender_, address indexed pool_, uint256 tokenId_);
-    event MoveLiquidity(address indexed owner_, uint256 tokenId_);
-    event RedeemPosition(address indexed lender_, uint256 tokenId_);
+    event MoveLiquidity(address indexed owner_, uint256 tokenId_, uint256 fromIndex_, uint256 toIndex_);
+    event RedeemPosition(address indexed lender_, uint256 tokenId_, uint256[] indexes_);
 
 
     /******************************/
@@ -1289,9 +1289,10 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     }
 
     function randomInRange(uint256 min, uint256 max, bool nonZero) public returns (uint256) {
+        require(min <= max, "randomInRange bad inputs");
         if      (max == 0 && nonZero) return 1;
-        else if (max == min)           return max;
-        return uint(keccak256(abi.encodePacked(msg.sender, getNextNonce()))) % (max - min + 1) + min;
+        else if (max == min)          return max;
+        return uint256(keccak256(abi.encodePacked(msg.sender, getNextNonce()))) % (max - min + 1) + min;
     }
 
     // returns a random index between 1 and 7388
