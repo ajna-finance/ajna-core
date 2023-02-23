@@ -240,7 +240,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 fromIndex_,
         uint256 toIndex_,
         uint256 expiry_
-    ) external override nonReentrant returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
+    ) external override nonReentrant returns (uint256 fromBucketLPs_, uint256 toBucketLPs_, uint256 movedAmount_) {
         _revertOnExpiry(expiry_);
         PoolState memory poolState = _accruePoolInterest();
 
@@ -250,6 +250,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         (
             fromBucketLPs_,
             toBucketLPs_,
+            movedAmount_,
             newLup
         ) = LenderActions.moveQuoteToken(
             buckets,
