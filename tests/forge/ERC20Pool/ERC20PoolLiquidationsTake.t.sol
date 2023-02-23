@@ -1849,6 +1849,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 neutralPrice:      10.449783245217816340 * 1e18
             })
         );
+        assertEq(_poolUtils.momp(address(_pool)), 9.818751856078723036 * 1e18);
         _assertBorrower({
             borrower:                  _borrower2,
             borrowerDebt:              9_976.561670003961916237 * 1e18,
