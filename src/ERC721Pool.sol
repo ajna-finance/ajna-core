@@ -612,15 +612,4 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         IERC721Token(_getArgAddress(COLLATERAL_ADDRESS)).transferFrom(from_, to_, tokenId_);
     }
 
-    /************************/
-    /*** Helper Functions ***/
-    /************************/
-
-    /** @notice Implementing this method allows contracts to receive ERC721 tokens
-     *  @dev https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
-     */
-    function onERC721Received(address, address, uint256, bytes memory) external pure returns (bytes4) {
-        return this.onERC721Received.selector;
-    }
-
 }

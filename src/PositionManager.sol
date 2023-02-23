@@ -191,7 +191,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
         emit Mint(params_.recipient, params_.pool, tokenId_);
 
-        _safeMint(params_.recipient, tokenId_);
+        _mint(params_.recipient, tokenId_);
     }
 
     /**
