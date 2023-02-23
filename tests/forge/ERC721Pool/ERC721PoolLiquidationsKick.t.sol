@@ -310,6 +310,7 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
                 neutralPrice:      11.932577910666902372 * 1e18
             })
         );
+        assertEq(_poolUtils.momp(address(_pool)), 9.917184843435912074 * 1e18);
         _assertBorrower({
             borrower:                  _borrower,
             borrowerDebt:              23.012828827714740289 * 1e18,

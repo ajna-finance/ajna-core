@@ -218,6 +218,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 neutralPrice:      10.255495938002318100 * 1e18
             })
         );
+        assertEq(_poolUtils.momp(address(_pool)), 9.818751856078723036 * 1e18);
         _assertKicker({
             kicker:    _lender,
             claimable: 0,

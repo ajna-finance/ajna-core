@@ -327,6 +327,7 @@ contract PoolInfoUtils {
 
         (uint256 debt, , )       = pool.debtInfo();
         ( , , uint256 noOfLoans) = pool.loansInfo();
+        noOfLoans += pool.totalAuctionsInPool();
         return _priceAt(pool.depositIndex(Maths.wdiv(debt, noOfLoans * 1e18)));
     }
 

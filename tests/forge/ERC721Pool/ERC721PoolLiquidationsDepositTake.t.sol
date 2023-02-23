@@ -208,6 +208,7 @@ contract ERC721PoolLiquidationsDepositTakeTest is ERC721HelperContract {
                 neutralPrice:      11.932577910666902372 * 1e18
             })
         );
+        assertEq(_poolUtils.momp(address(_pool)), 9.917184843435912074 * 1e18);
 
         _addLiquidity({
             from:    _lender,

@@ -521,6 +521,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 interestRateUpdate:   _startTime + 50 days
             })
         );
+        assertEq(_poolUtils.momp(address(_pool)), 2_981.007422784467321543 * 1e18);
         _assertBorrower({
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
