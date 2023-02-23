@@ -294,6 +294,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
             uint256 auctionNeutralPrice,
             ,
             ,
+            ,
         ) = _pool.auctionInfo(_borrower);
 
         assertEq(auctionKicker,       kicker);
@@ -349,7 +350,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         }
 
         // confirm LPs were awarded to the kicker
-        (address kicker, , , uint256 kickTime, uint256 kickMomp, uint256 neutralPrice, , , ) = _pool.auctionInfo(_borrower);
+        (address kicker, , , uint256 kickTime, uint256 kickMomp, uint256 neutralPrice, , , , ) = _pool.auctionInfo(_borrower);
         uint256 auctionPrice = Auctions._auctionPrice(kickMomp, neutralPrice, kickTime);
         if (auctionPrice < neutralPrice) {
             uint256 kickerLPs = _kickerLPs(bucketId);
@@ -420,7 +421,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         uint256 auctionDebt_,
         uint256 auctionCollateral_
     ){
-        (, , , uint256 kickTime, uint256 kickMomp, uint256 neutralPrice, , , ) = _pool.auctionInfo(_borrower);
+        (, , , uint256 kickTime, uint256 kickMomp, uint256 neutralPrice, , , , ) = _pool.auctionInfo(_borrower);
         uint256 lastAuctionPrice = Auctions._auctionPrice(kickMomp, neutralPrice, kickTime);
         (uint256 lastAuctionDebt, uint256 lastAuctionCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         if (secondsToSkip != 0) {
@@ -441,7 +442,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
     }
 
     function _auctionPrice() internal view returns (uint256) {
-        (, , , uint256 kickTime, uint256 kickMomp, uint256 neutralPrice, , , ) = _pool.auctionInfo(_borrower);
+        (, , , uint256 kickTime, uint256 kickMomp, uint256 neutralPrice, , , , ) = _pool.auctionInfo(_borrower);
         return Auctions._auctionPrice(kickMomp, neutralPrice, kickTime);
     }
 
@@ -451,7 +452,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
     }
 
     function _kickerLPs(uint256 bucketId) internal view returns (uint256) {
-        (address kicker, , , , , , , , ) = _pool.auctionInfo(_borrower);
+        (address kicker, , , , , , , , , ) = _pool.auctionInfo(_borrower);
         (uint256 kickerLPs, ) = _pool.lenderInfo(bucketId, kicker);
         return kickerLPs;
     }

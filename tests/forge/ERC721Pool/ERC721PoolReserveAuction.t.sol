@@ -202,7 +202,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         // check that you can't start a new auction if a previous auction is active
         _assertReserveAuctionTooSoon();
 
-        (, uint256 unclaimed, ) = _pool.reservesInfo();
+        (, uint256 unclaimed, , ) = _pool.reservesInfo();
 
         uint256 expectedPrice = 59.604644775390625 * 1e18;
         _takeReserves(

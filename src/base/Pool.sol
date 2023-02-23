@@ -601,7 +601,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 neutralPrice,
         address head,
         address next,
-        address prev
+        address prev,
+        bool alreadyTaken
     ) {
         Liquidation memory liquidation = auctions.liquidations[borrower_];
         return (
@@ -613,7 +614,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             liquidation.neutralPrice,
             auctions.head,
             liquidation.next,
-            liquidation.prev
+            liquidation.prev,
+            liquidation.alreadyTaken
         );
     }
 
@@ -772,11 +774,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /// @inheritdoc IPoolState
-    function reservesInfo() external view override returns (uint256, uint256, uint256) {
+    function reservesInfo() external view override returns (uint256, uint256, uint256, uint256) {
         return (
             auctions.totalBondEscrowed,
             reserveAuction.unclaimed,
-            reserveAuction.kicked
+            reserveAuction.kicked,
+            reserveAuction.totalInterestEarned
         );
     }
 
