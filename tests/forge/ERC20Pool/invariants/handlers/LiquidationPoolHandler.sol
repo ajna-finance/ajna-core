@@ -6,6 +6,7 @@ import '@std/Vm.sol';
 
 import { BasicPoolHandler } from './BasicPoolHandler.sol';
 import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BaseHandler } from './BaseHandler.sol';
+import { MAX_FENWICK_INDEX } from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths } from 'src/libraries/internal/Maths.sol';
 
 abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
@@ -14,7 +15,7 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
 
         (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower);
 
-        try _pool.kick(borrower) {
+        try _pool.kick(borrower, MAX_FENWICK_INDEX) {
             shouldExchangeRateChange = true;
             shouldReserveChange      = true;
             loanKickIncreaseInReserve = Maths.wmul(borrowerDebt, 0.25 * 1e18);

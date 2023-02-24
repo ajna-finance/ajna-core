@@ -261,7 +261,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
 
     function _kick(address borrower, address kicker) internal {
         changePrank(kicker);
-        _pool.kick(borrower);
+        _pool.kick(borrower, MAX_FENWICK_INDEX);
         _checkAuctionStateUponKick(kicker);
     }
 
@@ -270,7 +270,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         (, uint256 lastBucketDeposit, , uint256 lastBucketLPs, , ) = _poolUtils.bucketInfo(address(_pool), bucketId);
 
         changePrank(lender);
-        _pool.kickWithDeposit(bucketId);
+        _pool.kickWithDeposit(bucketId, MAX_FENWICK_INDEX);
         _checkAuctionStateUponKick(lender);
 
         // confirm user has redeemed some of their LPs to post liquidation bond

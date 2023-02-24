@@ -61,16 +61,16 @@ import { Maths }    from '../internal/Maths.sol';
     }
 
     /**
-     * @notice  Check if LUP is at or above index limit provided by borrower.
+     * @notice  Check if provided price is at or above index limit provided by borrower.
      * @notice  Prevents stale transactions and certain MEV manipulations.
-     * @param newLup_     New LUP as a result of the borrower action.
+     * @param newPrice_   New price to be compared with given limit price (can be LUP, NP).
      * @param limitIndex_ Limit price index provided by user creating the TX.
      */
-    function _revertIfLupDroppedBelowLimit(
-        uint256 newLup_,
+    function _revertIfPriceDroppedBelowLimit(
+        uint256 newPrice_,
         uint256 limitIndex_
     ) pure {
-        if (newLup_ < _priceAt(limitIndex_)) revert LimitIndexExceeded();
+        if (newPrice_ < _priceAt(limitIndex_)) revert LimitIndexExceeded();
     }
 
     /**

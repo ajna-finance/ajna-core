@@ -21,7 +21,7 @@ import {
     _isCollateralized
 }                           from '../helpers/PoolHelper.sol';
 import { 
-    _revertIfLupDroppedBelowLimit, 
+    _revertIfPriceDroppedBelowLimit,
     _revertOnMinDebt
 }                           from '../helpers/RevertsHelper.sol';
 
@@ -206,7 +206,7 @@ library BorrowerActions {
             result_.newLup = _lup(deposits_, result_.poolDebt);
 
             // revert if borrow drives LUP price under the specified price limit
-            _revertIfLupDroppedBelowLimit(result_.newLup, limitIndex_);
+            _revertIfPriceDroppedBelowLimit(result_.newLup, limitIndex_);
 
             // calculate new lup and check borrow action won't push borrower into a state of under-collateralization
             // this check also covers the scenario when loan is already auctioned
@@ -366,7 +366,7 @@ library BorrowerActions {
             // calculate LUP only if it wasn't calculated in repay action
             if (!vars.repay) result_.newLup = _lup(deposits_, result_.poolDebt);
 
-            _revertIfLupDroppedBelowLimit(result_.newLup, limitIndex_);
+            _revertIfPriceDroppedBelowLimit(result_.newLup, limitIndex_);
 
             uint256 encumberedCollateral = borrower.t0Debt != 0 ? Maths.wdiv(vars.borrowerDebt, result_.newLup) : 0;
 

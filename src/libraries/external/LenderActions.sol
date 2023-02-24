@@ -34,7 +34,6 @@ library LenderActions {
     /*************************/
 
     struct MoveQuoteLocalVars {
-        uint256 amountToMove;               // [WAD] Quote token amount to move between indexes.
         uint256 fromBucketPrice;            // [WAD] Price of the bucket to move amount from.
         uint256 fromBucketCollateral;       // [WAD] Total amount of collateral in from bucket.
         uint256 fromBucketLPs;              // [WAD] Total amount of LPs in from bucket.
@@ -209,7 +208,7 @@ library LenderActions {
         DepositsState storage deposits_,
         PoolState calldata poolState_,
         MoveQuoteParams calldata params_
-    ) external returns (uint256 fromBucketRedeemedLPs_, uint256 toBucketLPs_, uint256 lup_) {
+    ) external returns (uint256 fromBucketRedeemedLPs_, uint256 toBucketLPs_, uint256 movedAmount_, uint256 lup_) {
         if (params_.fromIndex == params_.toIndex)
             revert MoveToSamePrice();
         if (params_.maxAmountToMove != 0 && params_.maxAmountToMove < poolState_.quoteDustLimit)
@@ -237,7 +236,7 @@ library LenderActions {
 
         if (fromBucket.bankruptcyTime < vars.fromBucketDepositTime) vars.fromBucketLenderLPs = fromBucketLender.lps;
 
-        (vars.amountToMove, fromBucketRedeemedLPs_, vars.fromBucketRemainingDeposit) = _removeMaxDeposit(
+        (movedAmount_, fromBucketRedeemedLPs_, vars.fromBucketRemainingDeposit) = _removeMaxDeposit(
             deposits_,
             RemoveDepositParams({
                 depositConstraint: params_.maxAmountToMove,
@@ -255,7 +254,7 @@ library LenderActions {
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
         if (vars.fromBucketDepositTime != 0 && block.timestamp - vars.fromBucketDepositTime < 1 days) {
             if (vars.fromBucketPrice > vars.ptp && vars.toBucketPrice < vars.ptp) {
-                vars.amountToMove = Maths.wmul(vars.amountToMove, Maths.WAD - _feeRate(poolState_.rate));
+                movedAmount_ = Maths.wmul(movedAmount_, Maths.WAD - _feeRate(poolState_.rate));
             }
         }
 
@@ -267,11 +266,11 @@ library LenderActions {
             toBucket.collateral,
             toBucket.lps,
             vars.toBucketDeposit,
-            vars.amountToMove,
+            movedAmount_,
             vars.toBucketPrice
         );
 
-        Deposits.unscaledAdd(deposits_, params_.toIndex, Maths.wdiv(vars.amountToMove, vars.toBucketScale));
+        Deposits.unscaledAdd(deposits_, params_.toIndex, Maths.wdiv(movedAmount_, vars.toBucketScale));
 
         lup_     = _lup(deposits_, poolState_.debt);
         vars.htp = Maths.wmul(params_.thresholdPrice, poolState_.inflator);
@@ -317,7 +316,7 @@ library LenderActions {
             msg.sender,
             params_.fromIndex,
             params_.toIndex,
-            vars.amountToMove,
+            movedAmount_,
             fromBucketRedeemedLPs_,
             toBucketLPs_,
             lup_

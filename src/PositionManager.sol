@@ -207,7 +207,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         // record which pool the tokenId was minted in
         poolKey[tokenId_] = params_.pool;
 
-        _safeMint(params_.recipient, tokenId_);
+        _mint(params_.recipient, tokenId_);
 
         emit Mint(params_.recipient, params_.pool, tokenId_);
     }
@@ -269,7 +269,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         // move quote tokens in pool
         (
             uint256 lpbAmountFrom,
-            uint256 lpbAmountTo
+            uint256 lpbAmountTo,
         ) = IPool(params_.pool).moveQuoteToken(
             maxQuote,
             params_.fromIndex,
