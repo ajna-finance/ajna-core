@@ -411,8 +411,8 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             borrowerCollateralization: 1.192575121957988603 * 1e18
         });
 
-        // draw debt is called to trigger accrual of pool interest that will push the lup back up
-        IERC20Pool(address(_pool)).drawDebt(_lender, 0, 0, 0);
+        // trigger accrual of pool interest that will push the lup back up
+        _updateInterest();
 
         _assertPool(
             PoolParams({

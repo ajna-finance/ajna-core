@@ -1926,13 +1926,7 @@ contract ERC20PoolLiquidationsTakeAndRepayAllDebtInPoolTest is ERC20HelperContra
     }
 
     function testTakeAuctionRepaidAmountGreaterThanPoolDebt() external tearDown {
-        _repayDebtNoLupCheck({
-            from:             _borrower,
-            borrower:         _borrower,
-            amountToRepay:    0,
-            amountRepaid:     0,
-            collateralToPull: 0
-        });
+        _updateInterest();
 
         _drawDebtNoLupCheck({
             from:               _borrower,

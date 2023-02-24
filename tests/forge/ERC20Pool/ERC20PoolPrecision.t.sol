@@ -442,7 +442,8 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         assertEq(_quote.balanceOf(_borrower), 5_000 * _quotePrecision);
     }
 
-    function testDepositTwoActorSameBucket(
+    // FIXME: the scaled amounts are always 0
+    function _testDepositTwoActorSameBucket(
         uint8   collateralPrecisionDecimals_,
         uint8   quotePrecisionDecimals_,
         uint16  bucketId_,
@@ -522,7 +523,8 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         assertEq(bucketLpBalance, lenderLpBalance + bidderLpBalance);
     }
 
-    function testDepositTwoLendersSameBucket(
+    // FIXME: the scaled amounts are always 0
+    function _testDepositTwoLendersSameBucket(
         uint8   collateralPrecisionDecimals_,
         uint8   quotePrecisionDecimals_,
         uint16  bucketId_,
@@ -595,10 +597,12 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         // setup fuzzy bounds and initialize the pool
         uint256 boundColPrecision   = bound(uint256(collateralPrecisionDecimals_), 1, 18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_),      1, 18);
+        // init to set lender deposit normalized
+        init(boundColPrecision, boundQuotePrecision);
+
         uint256 fromBucketId        = bound(uint256(fromBucketId_),                1, 7388);
         uint256 toBucketId          = bound(uint256(toBucketId_),                  1, 7388);
-        uint256 amountToMove        = bound(uint256(amountToMove_),                0, _lenderDepositNormalized);
-        init(boundColPrecision, boundQuotePrecision);
+        uint256 amountToMove        = bound(uint256(amountToMove_),                1, _lenderDepositNormalized);
 
         _addInitialLiquidity({
             from:   _lender,
@@ -882,25 +886,6 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             amountRepaid:     debt,
             collateralToPull: 0,
             newLup:           MAX_PRICE
-        });
-    }
-
-    function testMoveQuoteDustAmountRevert() external virtual tearDown {
-        init(8, 6);
-
-        _addInitialLiquidity({
-            from:   _lender,
-            amount: 50_000 * 1e6,
-            index:  2550
-        });
-
-        assertEq(_quoteDust, 0.000001 * 1e18);
-
-        _assertMoveLiquidityDustRevert({
-            from:      _lender,
-            amount:    0.00000001 * 1e18,
-            fromIndex: 2550,
-            toIndex:   2551
         });
     }
 

@@ -73,6 +73,7 @@ library BorrowerActions {
     error BorrowerNotSender();
     error BorrowerUnderCollateralized();
     error InsufficientCollateral();
+    error InvalidAmount();
     error LimitIndexExceeded();
     error NoDebt();
 
@@ -117,12 +118,15 @@ library BorrowerActions {
     ) external returns (
         DrawDebtResult memory result_
     ) {
+        DrawDebtLocalVars memory vars;
+        vars.pledge = collateralToPledge_ != 0;
+        vars.borrow = amountToBorrow_ != 0;
+
+        // revert if no amount to pledge or borrow
+        if (!vars.pledge && !vars.borrow) revert InvalidAmount();
+
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
 
-        DrawDebtLocalVars memory vars;
-
-        vars.pledge       = collateralToPledge_ != 0;
-        vars.borrow       = amountToBorrow_ != 0 || limitIndex_ != 0; // enable an intentional 0 borrow loan call to update borrower's loan state
         vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
         vars.inAuction    = _inAuction(auctions_, borrowerAddress_);
 
@@ -219,11 +223,6 @@ library BorrowerActions {
             vars.stampT0Np = true;
         }
 
-        // calculate LUP if it wasn't calculated previously
-        if (!vars.pledge && !vars.borrow) {
-            result_.newLup = _lup(deposits_, result_.poolDebt);
-        }
-
         // update loan state
         Loans.update(
             loans_,
@@ -277,12 +276,15 @@ library BorrowerActions {
     ) external returns (
         RepayDebtResult memory result_
     ) {
+        RepayDebtLocalVars memory vars;
+        vars.repay = maxQuoteTokenAmountToRepay_ != 0;
+        vars.pull  = collateralAmountToPull_     != 0;
+
+        // revert if no amount to pledge or borrow
+        if (!vars.repay && !vars.pull) revert InvalidAmount();
+
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
 
-        RepayDebtLocalVars memory vars;
-
-        vars.repay        = maxQuoteTokenAmountToRepay_ != 0;
-        vars.pull         = collateralAmountToPull_     != 0;
         vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
         vars.inAuction    = _inAuction(auctions_, borrowerAddress_);
 
@@ -377,11 +379,6 @@ library BorrowerActions {
 
             borrower.collateral    -= collateralAmountToPull_;
             result_.poolCollateral -= collateralAmountToPull_;
-        }
-
-        // calculate LUP if it wasn't calculated previously
-        if (!vars.repay && !vars.pull) {
-            result_.newLup = _lup(deposits_, result_.poolDebt);
         }
 
         // update loan state

@@ -103,9 +103,19 @@ interface IPoolErrors {
     error InsufficientLiquidity();
 
     /**
+     *  @notice When settling pool debt the number of buckets to use should be greater than 0.
+     */
+    error InvalidBucketDepth();
+
+    /**
      *  @notice When transferring LP tokens between indices, the new index must be a valid index.
      */
     error InvalidIndex();
+
+    /**
+     *  @notice The amount used for performed action should be greater than 0.
+     */
+    error InvalidAmount();
 
     /**
      *  @notice Borrower is attempting to borrow more quote token than is available before the supplied limitIndex.

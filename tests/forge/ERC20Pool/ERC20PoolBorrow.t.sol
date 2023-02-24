@@ -432,12 +432,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         skip(10 days);
 
-        _borrowZeroAmount({
-            from:       _borrower,
-            amount:     0,
-            indexLimit: 3_000,
-            newLup:     2_981.007422784467321543 * 1e18
-        });
+        _updateInterest();
 
         expectedDebt = 21_157.152643010853304038 * 1e18;
 
@@ -462,15 +457,14 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        50 * 1e18,
-            borrowert0Np:              448.381722115384615591 * 1e18,
+            borrowert0Np:              445.838278846153846359 * 1e18,
             borrowerCollateralization: 7.044916376706357984 * 1e18
         });
         _assertLenderInterest(liquidityAdded, 119.836959946754650000 * 1e18);
 
         skip(10 days);
 
-        // call drawDebt to restamp the loan's neutral price
-        IERC20Pool(address(_pool)).drawDebt(_borrower, 0, 0, 0);
+        _updateInterest();
 
         expectedDebt = 21_199.628356897284442294 * 1e18;
 
@@ -495,7 +489,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        50 * 1e18,
-            borrowert0Np:              448.381722115384615591 * 1e18,
+            borrowert0Np:              445.838278846153846359 * 1e18,
             borrowerCollateralization: 7.030801136225104190 * 1e18
         });
         _assertLenderInterest(liquidityAdded, 157.005764521268350000 * 1e18);
@@ -526,7 +520,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        50 * 1e18,
-            borrowert0Np:              448.381722115384615591 * 1e18,
+            borrowert0Np:              445.838278846153846359 * 1e18,
             borrowerCollateralization: 7.015307034516347067 * 1e18
         });
     }

@@ -318,6 +318,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
+    /// @inheritdoc IPoolLenderActions
+    function updateInterest() external override nonReentrant {
+        PoolState memory poolState = _accruePoolInterest();
+        _updateInterestState(poolState, _lup(poolState.debt));
+    }
+
     /*****************************/
     /*** Liquidation Functions ***/
     /*****************************/

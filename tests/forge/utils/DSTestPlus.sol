@@ -392,6 +392,10 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.takeReserves(amount);
     }
 
+    function _updateInterest() internal {
+        _pool.updateInterest();
+    }
+
     function _assertQuoteTokenTransferEvent(
         address from,
         address to,
