@@ -228,7 +228,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         vm.expectEmit(true, true, false, true);
         emit Kick(borrower, debt, collateral, bond);
         if(transferAmount != 0) _assertQuoteTokenTransferEvent(from, address(_pool), transferAmount);
-        _pool.kick(borrower);
+        _pool.kick(borrower, MAX_FENWICK_INDEX);
     }
 
     function _kickWithDeposit(
@@ -248,7 +248,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(from, index, removedFromDeposit, removedFromDeposit, lup);
         if(transferAmount != 0) _assertQuoteTokenTransferEvent(from, address(_pool), transferAmount);
-        _pool.kickWithDeposit(index);
+        _pool.kickWithDeposit(index, MAX_FENWICK_INDEX);
     }
 
     function _moveLiquidity(
@@ -967,7 +967,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('AuctionActive()'));
-        _pool.kick(borrower);
+        _pool.kick(borrower, MAX_FENWICK_INDEX);
     }
 
     function _assertKickCollateralizedBorrowerRevert(
@@ -976,7 +976,25 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.BorrowerOk.selector);
-        _pool.kick(borrower);
+        _pool.kick(borrower, MAX_FENWICK_INDEX);
+    }
+
+    function _assertKickNpUnderLimitRevert(
+        address from,
+        address borrower
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.LimitIndexExceeded.selector);
+        _pool.kick(borrower, 0);
+    }
+
+    function _assertKickWithDepositNpUnderLimitRevert(
+        address from,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.LimitIndexExceeded.selector);
+        _pool.kickWithDeposit(index, 0);
     }
 
     function _assertKickWithInsufficientLiquidityRevert(
@@ -985,7 +1003,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('InsufficientLiquidity()'));
-        _pool.kickWithDeposit(index);
+        _pool.kickWithDeposit(index, MAX_FENWICK_INDEX);
     }
 
     function _assertKickWithBadProposedLupRevert(
@@ -994,7 +1012,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('BorrowerOk()'));
-        _pool.kickWithDeposit(index);
+        _pool.kickWithDeposit(index, MAX_FENWICK_INDEX);
     }
 
     function _assertKickPriceBelowProposedLupRevert(
@@ -1003,7 +1021,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('PriceBelowLUP()'));
-        _pool.kickWithDeposit(index);
+        _pool.kickWithDeposit(index, MAX_FENWICK_INDEX);
     }
 
     function _assertRemoveCollateralAuctionNotClearedRevert(

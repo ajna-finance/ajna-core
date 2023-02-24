@@ -328,7 +328,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *       - increment poolBalances.t0DebtInAuction and poolBalances.t0Debt accumulators
      */
     function kick(
-        address borrowerAddress_
+        address borrowerAddress_,
+        uint256 limitIndex_
     ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
@@ -338,7 +339,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             deposits,
             loans,
             poolState,
-            borrowerAddress_
+            borrowerAddress_,
+            limitIndex_
         );
 
         // update pool balances state
@@ -358,7 +360,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *       - increment poolBalances.t0DebtInAuction and poolBalances.t0Debt accumulators
      */
     function kickWithDeposit(
-        uint256 index_
+        uint256 index_,
+        uint256 limitIndex_
     ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
@@ -369,7 +372,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             buckets,
             loans,
             poolState,
-            index_
+            index_,
+            limitIndex_
         );
 
         // update pool balances state
