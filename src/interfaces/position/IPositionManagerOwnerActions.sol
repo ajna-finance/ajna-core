@@ -20,7 +20,7 @@ interface IPositionManagerOwnerActions {
      *  @notice Called to memorialize existing positions with a given NFT.
      *  @dev    The array of buckets is expected to be constructed off chain by scanning events for that lender.
      *  @dev    The NFT must have already been created, and the number of buckets to be memorialized at a time determined by function caller.
-     *  @dev    An additional call is made to the pool to transfer the LP tokens from their previous owner, to the Position Manager.
+     *  @dev    An additional call is made to the pool to transfer the LPs from their previous owner, to the Position Manager.
      *  @dev    Pool.setPositionOwner() must be called prior to calling this method.
      *  @param  params Calldata struct supplying inputs required to conduct the memorialization.
      */
@@ -50,7 +50,7 @@ interface IPositionManagerOwnerActions {
      *  @notice Called to reedem existing positions with a given NFT.
      *  @dev    The array of buckets is expected to be constructed off chain by scanning events for that lender.
      *  @dev    The NFT must have already been created, and the number of buckets to be memorialized at a time determined by function caller.
-     *  @dev    An additional call is made to the pool to transfer the LP tokens Position Manager to owner.
+     *  @dev    An additional call is made to the pool to transfer the LPs Position Manager to owner.
      *  @dev    Pool.setPositionOwner() must be called prior to calling this method.
      *  @param  params Calldata struct supplying inputs required to conduct the redeem.
      */

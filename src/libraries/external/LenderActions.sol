@@ -562,55 +562,67 @@ library LenderActions {
         mapping(uint256 => Bucket) storage buckets_,
         mapping(address => mapping(address => mapping(uint256 => uint256))) storage allowances_,
         mapping(address => mapping(address => bool)) storage approvedTransferors_,
-        address owner_,
-        address newOwner_,
+        address ownerAddress_,
+        address newOwnerAddress_,
         uint256[] calldata indexes_
     ) external {
         // revert if msg.sender is not the new owner and is not approved as a transferor by the new owner
-        if (newOwner_ != msg.sender && !approvedTransferors_[newOwner_][msg.sender]) revert TransferorNotApproved();
+        if (newOwnerAddress_ != msg.sender && !approvedTransferors_[newOwnerAddress_][msg.sender]) revert TransferorNotApproved();
 
         // revert if new owner address is the same as old owner address
-        if (owner_ == newOwner_) revert TransferToSameOwner();
+        if (ownerAddress_ == newOwnerAddress_) revert TransferToSameOwner();
 
         uint256 indexesLength = indexes_.length;
-
-        uint256 tokensTransferred;
+        uint256 index;
+        uint256 lpsTransferred;
 
         for (uint256 i = 0; i < indexesLength; ) {
-            uint256 index = indexes_[i];
+            index = indexes_[i];
+
+            // revert if invalid index
             if (index > MAX_FENWICK_INDEX) revert InvalidIndex();
 
-            uint256 transferAmount = allowances_[owner_][newOwner_][index];
-
             Bucket storage bucket = buckets_[index];
-            Lender storage lender = bucket.lenders[owner_];
+            Lender storage owner  = bucket.lenders[ownerAddress_];
 
-            uint256 lenderDepositTime = lender.depositTime;
+            uint256 bankruptcyTime   = bucket.bankruptcyTime;
+            uint256 ownerDepositTime = owner.depositTime;
+            uint256 ownerLpBalance   = bankruptcyTime < ownerDepositTime ? owner.lps : 0;
 
-            uint256 lenderLpBalance;
+            uint256 allowedAmount = allowances_[ownerAddress_][newOwnerAddress_][index];
+            if (allowedAmount == 0) revert NoAllowance();
 
-            if (bucket.bankruptcyTime < lenderDepositTime) lenderLpBalance = lender.lps;
+            // transfer allowed amount or entire LP balance
+            allowedAmount = Maths.min(allowedAmount, ownerLpBalance);
 
-            if (transferAmount == 0 || transferAmount != lenderLpBalance) revert NoAllowance();
+            // move owner lps (if any) to the new owner
+            if (allowedAmount != 0) {
+                Lender storage newOwner = bucket.lenders[newOwnerAddress_];
 
-            delete allowances_[owner_][newOwner_][index]; // delete allowance
+                uint256 newOwnerDepositTime = newOwner.depositTime;
 
-            // move lps to the new owner address
-            Lender storage newLender = bucket.lenders[newOwner_];
+                if (newOwnerDepositTime > bankruptcyTime) {
+                    // deposit happened in a healthy bucket, add amount of LPs to new owner
+                    newOwner.lps += allowedAmount;
+                } else {
+                    // bucket bankruptcy happened after deposit, reset balance and add amount of LPs to new owner
+                    newOwner.lps = allowedAmount;
+                }
 
-            newLender.lps += transferAmount;
+                owner.lps      -= allowedAmount; // remove amount of LPs from old owner
+                lpsTransferred += allowedAmount; // add amount of LPs to total LPs transferred
 
-            newLender.depositTime = Maths.max(lenderDepositTime, newLender.depositTime);
+                // set the deposit time as the max of transferred deposit and current deposit time
+                newOwner.depositTime = Maths.max(ownerDepositTime, newOwnerDepositTime);
+            }
 
-            // reset owner lp balance for this index
-            delete bucket.lenders[owner_];
-
-            tokensTransferred += transferAmount;
+            // reset allowances of transferred LPs
+            delete allowances_[ownerAddress_][newOwnerAddress_][index];
 
             unchecked { ++i; }
         }
 
-        emit TransferLPs(owner_, newOwner_, indexes_, tokensTransferred);
+        emit TransferLPs(ownerAddress_, newOwnerAddress_, indexes_, lpsTransferred);
     }
 
     /**************************/

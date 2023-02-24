@@ -347,10 +347,10 @@ contract PoolInfoUtils {
     }
 
     /**
-     *  @notice Calculate the amount of quote tokens in bucket for a given amount of LP Tokens.
+     *  @notice Calculate the amount of quote tokens in bucket for a given amount of LPs.
      *  @param  lps_         The number of LPs to calculate amounts for.
      *  @param  index_       The price bucket index for which the value should be calculated.
-     *  @return quoteAmount_ The exact amount of quote tokens that can be exchanged for the given LP Tokens, WAD units.
+     *  @return quoteAmount_ The exact amount of quote tokens that can be exchanged for the given LPs, WAD units.
      */
     function lpsToQuoteTokens(
         address ajnaPool_,
@@ -370,10 +370,10 @@ contract PoolInfoUtils {
     }
 
     /**
-     *  @notice Calculate the amount of collateral tokens in bucket for a given amount of LP Tokens.
+     *  @notice Calculate the amount of collateral tokens in bucket for a given amount of LPs.
      *  @param  lps_              The number of LPs to calculate amounts for.
      *  @param  index_            The price bucket index for which the value should be calculated.
-     *  @return collateralAmount_ The exact amount of collateral tokens that can be exchanged for the given LP Tokens, WAD units.
+     *  @return collateralAmount_ The exact amount of collateral tokens that can be exchanged for the given LPs, WAD units.
      */
     function lpsToCollateral(
         address ajnaPool_,

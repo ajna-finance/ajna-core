@@ -174,8 +174,16 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         mapping(uint256 => uint256) storage allowances = _lpAllowances[msg.sender][newOwner_];
 
         uint256 indexesLength = indexes_.length;
+        uint256 index;
+
         for (uint256 i = 0; i < indexesLength; ) {
-            allowances[indexes_[i]] = amounts_[i];
+            index = indexes_[i];
+
+            // revert if allowance at index is already set (not 0) and the new allowance does not reset the old one (not 0)
+            // this prevents possible attack where LPs receiver (newOwner) frontruns owner allowance calls to transfer more than allowed
+            if (allowances[index] != 0 && amounts_[i] != 0) revert AllowanceAlreadySet();
+
+            allowances[index] = amounts_[i];
 
             unchecked { ++i; }
         }
