@@ -598,23 +598,6 @@ library Auctions {
                     borrower.collateral + result_.collateralAmount
         );
 
-        // (
-        //     result_.newLup,
-        //     result_.settledAuction,
-        //     result_.remainingCollateral,
-        //     result_.compensatedCollateral
-        // ) = _takeLoan(
-        //     auctions_,
-        //     buckets_,
-        //     deposits_,
-        //     loans_,
-        //     poolState_,
-        //     borrower,
-        //     borrowerAddress_,
-        //     t0BorrowerDebt + t0RepayAmount,
-        //     borrower.collateral + result_.collateralAmount
-        // );
-
         if (result_.settledAuction) {
             // the overall debt in auction change is the total borrower debt exiting auction
             result_.t0DebtInAuctionChange = t0BorrowerDebt;
