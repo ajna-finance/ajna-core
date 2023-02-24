@@ -285,46 +285,6 @@ library Loans {
     /*** View Functions ***/
     /**********************/
 
-    // /**
-    //  *  @notice adjusts the utilization debt weight maintained accross all borrowers, t0PoolUtilizationDebtWeight.
-    //  *  @dev anytime a borrower's debt or collateral changes, the t0PoolUtilizationDebtWeight must be updated.
-    //  *  @param t0PoolUtilizationDebtWeight The current t0PoolUtilizationDebtWeight
-    //  *  @param debtPreAction               Borrower's debt before the action
-    //  *  @param debtPostAction              Borrower's debt after the action
-    //  *  @param colPreAction                Borrower's collateral before the action
-    //  *  @param colPostAction               Borrower's collateral after the action
-    //  *  @return returnWeight_              The new t0PoolUtilizationDebtWeight 
-    //  */
-    // function _adjustUtilizationWeight(
-    //     uint256 t0PoolUtilizationDebtWeight,
-    //     uint256 debtPreAction,
-    //     uint256 debtPostAction,
-    //     uint256 colPreAction,
-    //     uint256 colPostAction
-    //     ) internal pure returns (uint256) {
-
-    //     uint256 returnWeight_ = t0PoolUtilizationDebtWeight;
-    //     uint256 debtColAccumPreAction;
-    //     uint256 debtColAccumPostAction;
-
-    //     // only bad debt, already deducted from accumulator when collateral was removed, do nothing.
-    //     if (colPreAction == 0 && debtPreAction != 0) return returnWeight_;
-
-    //     // position is closed, bad debt is created, purely interest update deduct from accumulator
-    //     if (colPostAction == 0) {
-    //         debtColAccumPreAction = colPreAction != 0 ? Maths.wdiv(Maths.wmul(debtPreAction, debtPreAction), colPreAction): 0;
-    //         returnWeight_ -= debtColAccumPreAction;
-    //         return returnWeight_;
-    //     }
-
-    //     // partial take, depositTake, arbTake, settle
-    //     debtColAccumPostAction = Maths.wdiv(Maths.wmul(debtPostAction, debtPostAction), colPostAction);
-    //     debtColAccumPreAction  = colPreAction != 0 ? Maths.wdiv(Maths.wmul(debtPreAction, debtPreAction), colPreAction) : 0;
-    //     returnWeight_ += debtColAccumPostAction;
-    //     returnWeight_ -= debtColAccumPreAction;
-    //     return returnWeight_;
-    // }
-
     /**
      *  @notice Retreives Loan by index, i_.
      *  @param loans_ Holds loan heap data.
