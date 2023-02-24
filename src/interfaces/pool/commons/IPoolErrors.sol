@@ -134,9 +134,9 @@ interface IPoolErrors {
     error LUPGreaterThanTP();
 
     /**
-     *  @notice FromIndex_ and toIndex_ arguments to move are the same.
+     *  @notice From index and to index arguments to move are the same.
      */
-    error MoveToSamePrice();
+    error MoveToSameIndex();
 
     /**
      *  @notice Owner of the LP tokens must have approved the new owner prior to transfer.

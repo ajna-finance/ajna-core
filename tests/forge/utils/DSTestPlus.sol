@@ -426,11 +426,12 @@ abstract contract DSTestPlus is Test, IPoolEvents {
             uint256 auctionNeutralPrice,
             ,
             ,
+            ,
         ) = _pool.auctionInfo(state_.borrower);
 
         (uint256 borrowerDebt, uint256 borrowerCollateral , ) = _poolUtils.borrowerInfo(address(_pool), state_.borrower);
         (, uint256 lockedBonds) = _pool.kickerInfo(state_.kicker);
-        (uint256 auctionTotalBondEscrowed,,) = _pool.reservesInfo();
+        (uint256 auctionTotalBondEscrowed,,,) = _pool.reservesInfo();
         (,,uint256 auctionDebtInAuction)  = _pool.debtInfo(); 
         uint256 borrowerThresholdPrice = borrowerCollateral > 0 ? borrowerDebt * Maths.WAD / borrowerCollateral : 0;
 
@@ -1170,14 +1171,14 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
     }
 
-    function _assertMoveLiquidityToSamePriceRevert(
+    function _assertMoveLiquidityToSameIndexRevert(
         address from,
         uint256 amount,
         uint256 fromIndex,
         uint256 toIndex
     ) internal {
         changePrank(from);
-        vm.expectRevert(IPoolErrors.MoveToSamePrice.selector);
+        vm.expectRevert(IPoolErrors.MoveToSameIndex.selector);
         _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
     }
 

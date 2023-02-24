@@ -1039,7 +1039,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         });
 
         // should revert if moving quote token to the existing price
-        _assertMoveLiquidityToSamePriceRevert({
+        _assertMoveLiquidityToSameIndexRevert({
             from:      _lender,
             amount:    5_000 * 1e18,
             fromIndex: 4549,

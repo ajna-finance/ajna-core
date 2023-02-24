@@ -66,7 +66,7 @@
 	reverts on:
 	- deposits locked RemoveDepositLockedByAuctionDebt()
 	- LenderActions.moveQuoteToken():
-		- same index MoveToSamePrice()
+		- same index MoveToSameIndex()
 		- dust amount DustAmountNotExceeded()
 		- invalid index InvalidIndex()
 

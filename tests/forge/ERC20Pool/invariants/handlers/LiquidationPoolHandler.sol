@@ -83,7 +83,7 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
         address kicker   = _actor;
         amount           = constrictToRange(amount, 1, 1e36);
 
-        ( , , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower);
+        ( , , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
 
         if (kickTime == 0) {
             (uint256 debt, , ) = _pool.borrowerInfo(borrower);
@@ -117,7 +117,7 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
         address borrower = actors[borrowerIndex];
         address taker    = _actor;
 
-        ( , , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower);
+        ( , , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
 
         if (kickTime == 0) {
             _kickAuction(borrowerIndex, amount * 100, actorIndex);
@@ -138,7 +138,7 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
         address borrower = actors[borrowerIndex];
         address taker    = _actor;
 
-        ( , , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower);
+        ( , , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
 
         if (kickTime == 0) {
             _kickAuction(borrowerIndex, 1e24, bucketIndex);

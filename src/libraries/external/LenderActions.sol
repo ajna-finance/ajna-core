@@ -87,7 +87,7 @@ library LenderActions {
     error InsufficientLPs();
     error InsufficientLiquidity();
     error InsufficientCollateral();
-    error MoveToSamePrice();
+    error MoveToSameIndex();
     error TransferorNotApproved();
     error TransferToSameOwner();
 
@@ -203,7 +203,7 @@ library LenderActions {
      *              - decrement bucket.lps accumulator for from bucket
      *              - increment bucket.lps accumulator for to bucket
      *  @dev    reverts on:
-     *              - same index MoveToSamePrice()
+     *              - same index MoveToSameIndex()
      *              - dust amount DustAmountNotExceeded()
      *              - invalid index InvalidIndex()
      *  @dev    emit events:
@@ -219,7 +219,7 @@ library LenderActions {
         if (params_.maxAmountToMove == 0)
             revert InvalidAmount();
         if (params_.fromIndex == params_.toIndex)
-            revert MoveToSamePrice();
+            revert MoveToSameIndex();
         if (params_.maxAmountToMove != 0 && params_.maxAmountToMove < poolState_.quoteDustLimit)
             revert DustAmountNotExceeded();
         if (params_.toIndex == 0 || params_.toIndex > MAX_FENWICK_INDEX) 
@@ -495,6 +495,9 @@ library LenderActions {
         uint256 maxAmount_,
         uint256 index_
     ) external returns (uint256, uint256) {
+        // revert if no amount to remove
+        if (maxAmount_ == 0) revert InvalidAmount();
+
         return _removeMaxCollateral(
             buckets_,
             deposits_,

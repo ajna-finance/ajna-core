@@ -611,7 +611,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         });
 
         if (fromBucketId == toBucketId) {
-            _assertMoveLiquidityToSamePriceRevert({
+            _assertMoveLiquidityToSameIndexRevert({
                 from:      _lender,
                 amount:    amountToMove,
                 fromIndex: fromBucketId,
