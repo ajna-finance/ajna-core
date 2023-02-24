@@ -155,6 +155,12 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             borrowerCollateralization: 0.995306391810796636 * 1e18
         });
 
+        // should revert if NP goes below limit
+        _assertKickNpUnderLimitRevert({
+            from:     _lender,
+            borrower: _borrower
+        });
+
         _kick({
             from:           _lender,
             borrower:       _borrower,
@@ -218,6 +224,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 neutralPrice:      10.255495938002318100 * 1e18
             })
         );
+        assertEq(_poolUtils.momp(address(_pool)), 9.818751856078723036 * 1e18);
         _assertKicker({
             kicker:    _lender,
             claimable: 0,

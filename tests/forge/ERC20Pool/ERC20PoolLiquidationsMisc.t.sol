@@ -444,7 +444,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
 
         // kick borrower 2
         changePrank(_lender);
-        _pool.kickWithDeposit(_i9_52);
+        _pool.kickWithDeposit(_i9_52, MAX_FENWICK_INDEX);
 
         _assertRemoveDepositLockedByAuctionDebtRevert({
             from:   _lender,

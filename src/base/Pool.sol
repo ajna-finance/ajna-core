@@ -248,7 +248,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 fromIndex_,
         uint256 toIndex_,
         uint256 expiry_
-    ) external override nonReentrant returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
+    ) external override nonReentrant returns (uint256 fromBucketLPs_, uint256 toBucketLPs_, uint256 movedAmount_) {
         _revertOnExpiry(expiry_);
         PoolState memory poolState = _accruePoolInterest();
 
@@ -258,6 +258,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         (
             fromBucketLPs_,
             toBucketLPs_,
+            movedAmount_,
             newLup
         ) = LenderActions.moveQuoteToken(
             buckets,
@@ -335,7 +336,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *       - increment poolBalances.t0DebtInAuction and poolBalances.t0Debt accumulators
      */
     function kick(
-        address borrowerAddress_
+        address borrowerAddress_,
+        uint256 limitIndex_
     ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
@@ -345,7 +347,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             deposits,
             loans,
             poolState,
-            borrowerAddress_
+            borrowerAddress_,
+            limitIndex_
         );
 
         // update pool balances state
@@ -365,7 +368,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *       - increment poolBalances.t0DebtInAuction and poolBalances.t0Debt accumulators
      */
     function kickWithDeposit(
-        uint256 index_
+        uint256 index_,
+        uint256 limitIndex_
     ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
@@ -376,7 +380,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             buckets,
             loans,
             poolState,
-            index_
+            index_,
+            limitIndex_
         );
 
         // update pool balances state
@@ -608,7 +613,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 neutralPrice,
         address head,
         address next,
-        address prev
+        address prev,
+        bool alreadyTaken
     ) {
         Liquidation memory liquidation = auctions.liquidations[borrower_];
         return (
@@ -620,7 +626,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             liquidation.neutralPrice,
             auctions.head,
             liquidation.next,
-            liquidation.prev
+            liquidation.prev,
+            liquidation.alreadyTaken
         );
     }
 
@@ -779,11 +786,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /// @inheritdoc IPoolState
-    function reservesInfo() external view override returns (uint256, uint256, uint256) {
+    function reservesInfo() external view override returns (uint256, uint256, uint256, uint256) {
         return (
             auctions.totalBondEscrowed,
             reserveAuction.unclaimed,
-            reserveAuction.kicked
+            reserveAuction.kicked,
+            reserveAuction.totalInterestEarned
         );
     }
 
