@@ -73,21 +73,18 @@ library PoolCommons {
         if (poolState_.debt != 0) {
 
             // update pool EMAs for target utilization calculation
-            // curDebtEma =
-            //     Maths.wmul(poolState_.t0Debt, EMA_7D_RATE_FACTOR) +
-            //     Maths.wmul(curDebtEma,        LAMBDA_EMA_7D
-            // );
-
-            // lup * collateral EMA sample max value is 10 times current debt
-            // uint256 maxLupColEma = Maths.wmul(poolState_.debt, Maths.wad(10));
+            curDebtEma =
+                Maths.wmul(poolState_.t0Debt, EMA_7D_RATE_FACTOR) +
+                Maths.wmul(curDebtEma,        LAMBDA_EMA_7D
+            );
 
             // current inflator * t0UtilizationDebtWeight / current lup
             uint256 lupCol = 
                 Maths.wdiv(Maths.wmul(poolState_.inflator, t0PoolUtilizationDebtWeight_), lup_);
 
             curLupColEma =
-                Maths.wmul(lupCol, (1e18 - LAMBDA_EMA_7D)) +
-                Maths.wmul(curLupColEma,                    LAMBDA_EMA_7D);
+                Maths.wmul(lupCol,        EMA_7D_RATE_FACTOR) +
+                Maths.wmul(curLupColEma,  LAMBDA_EMA_7D);
 
             // save EMA samples in storage
             interestParams_.debtEma   = curDebtEma;
@@ -99,7 +96,7 @@ library PoolCommons {
         }
 
         // calculate target utilization
-        int256 tu = (curDebtEma != 0 && curLupColEma != 0) ? int256(curLupColEma) : int(Maths.WAD);
+        int256 tu = (curDebtEma != 0 && curLupColEma != 0) ? int256(Maths.wdiv(curLupColEma, curDebtEma)) : int(Maths.WAD);
 
         if (!poolState_.isNewInterestAccrued) poolState_.rate = interestParams_.interestRate;
 
