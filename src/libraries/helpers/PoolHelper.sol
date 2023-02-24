@@ -264,12 +264,13 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 debt_,
         uint256 poolSize_,
         uint256 totalBondEscrowed_,
+        uint256 totalClaimableBond,
         uint256 reserveAuctionUnclaimed_,
         uint256 quoteTokenBalance_
     ) pure returns (uint256 claimable_) {
         claimable_ = Maths.wmul(0.995 * 1e18, debt_) + quoteTokenBalance_;
 
-        claimable_ -= Maths.min(claimable_, poolSize_ + totalBondEscrowed_ + reserveAuctionUnclaimed_);
+        claimable_ -= Maths.min(claimable_, poolSize_ + totalBondEscrowed_ + totalClaimableBond + reserveAuctionUnclaimed_);
     }
 
     function _reserveAuctionPrice(

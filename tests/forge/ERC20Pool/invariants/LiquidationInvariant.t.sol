@@ -73,7 +73,7 @@ contract LiquidationInvariant is BasicInvariants {
 
         require(totalBondInAuction == totalKickerBond, "Incorrect bond");
 
-        (uint256 totalPoolBond, , , ) = _pool.reservesInfo();
+        (uint256 totalPoolBond, , , , ) = _pool.reservesInfo();
 
         require(totalPoolBond == totalKickerBond, "Incorrect bond");
     }   
