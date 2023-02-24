@@ -152,7 +152,6 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
         poolState.collateral = result.poolCollateral;
-        poolState.t0PoolUtilizationDebtWeight = result.t0PoolUtilizationDebtWeight;
         _updateInterestState(poolState, result.newLup);
 
         if (collateralToPledge_ != 0) {
@@ -214,7 +213,6 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
         poolState.collateral = result.poolCollateral;
-        poolState.t0PoolUtilizationDebtWeight = result.t0PoolUtilizationDebtWeight;
         _updateInterestState(poolState, result.newLup);
 
         if (result.quoteTokenToRepay != 0) {
@@ -334,14 +332,12 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         (
             ,
             collateralSettled,
-            t0DebtSettled,
-            poolState.t0PoolUtilizationDebtWeight
+            t0DebtSettled
         ) = Auctions.settlePoolDebt(
             auctions,
             buckets,
             deposits,
             loans,
-            poolState.t0PoolUtilizationDebtWeight,
             SettleParams({
                 borrower:    borrowerAddress_,
                 reserves:    (assets > liabilities) ? (assets - liabilities) : 0,
@@ -407,7 +403,6 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         // update pool interest rate state
         poolState.debt       =  result.poolDebt;
         poolState.collateral -= result.collateralAmount;
-        poolState.t0PoolUtilizationDebtWeight = result.t0PoolUtilizationDebtWeight;
         _updateInterestState(poolState, result.newLup);
 
         _transferCollateral(callee_, result.collateralAmount);
@@ -437,7 +432,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
         PoolState memory poolState = _accruePoolInterest();
 
-        BucketTakeResult memory result = Auctions.bucketTake(
+        TakeResult memory result = Auctions.bucketTake(
             auctions,
             buckets,
             deposits,
@@ -461,7 +456,6 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
         poolState.collateral -= result.collateralAmount;
-        poolState.t0PoolUtilizationDebtWeight = result.t0PoolUtilizationDebtWeight;
         _updateInterestState(poolState, result.newLup);
     }
 

@@ -271,7 +271,6 @@ struct InterestState {
     uint48  interestRateUpdate; // [SEC] last time pool's interest rate was updated (not before 12 hours passed)
     uint256 debtEma;            // [WAD] sample of debt EMA
     uint256 lupColEma;          // [WAD] sample of LUP price * collateral EMA. capped at 10 times current pool debt
-    uint256 t0PoolUtilizationDebtWeight; // [WAD]
 }
 
 struct PoolBalancesState {
@@ -289,7 +288,6 @@ struct PoolState {
     bool    isNewInterestAccrued; // true if new interest already accrued in current block
     uint256 rate;                 // [WAD] pool's current interest rate
     uint256 quoteDustLimit;       // [WAD] quote token dust limit of the pool
-    uint256 t0PoolUtilizationDebtWeight; // [WAD]
 }
 
 /*** Buckets State ***/
@@ -319,6 +317,7 @@ struct LoansState {
     Loan[] loans;
     mapping (address => uint)     indices;   // borrower address => loan index mapping
     mapping (address => Borrower) borrowers; // borrower address => Borrower struct mapping
+    uint256 t0PoolUtilizationDebtWeight;     // [WAD] utilization weight accumulator, tracks debt and collateral relationship accross borrowers 
 }
 
 struct Loan {

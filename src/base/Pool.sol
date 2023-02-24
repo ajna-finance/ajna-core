@@ -346,7 +346,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // update pool interest rate state
         poolState.debt = Maths.wmul(result.t0PoolDebt, poolState.inflator);
-        poolState.t0PoolUtilizationDebtWeight = result.t0PoolUtilizationDebtWeight;
         _updateInterestState(poolState, result.lup);
 
         if(result.amountToCoverBond != 0) _transferQuoteTokenFrom(msg.sender, result.amountToCoverBond);
@@ -378,7 +377,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // update pool interest rate state
         poolState.debt = Maths.wmul(result.t0PoolDebt, poolState.inflator);
-        poolState.t0PoolUtilizationDebtWeight = result.t0PoolUtilizationDebtWeight;
         _updateInterestState(poolState, result.lup);
 
         // transfer from kicker to pool the difference to cover bond
@@ -498,7 +496,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         poolState_.collateral     = poolBalances.pledgedCollateral;
         poolState_.inflator       = inflatorState.inflator;
         poolState_.rate           = interestState.interestRate;
-        poolState_.t0PoolUtilizationDebtWeight = interestState.t0PoolUtilizationDebtWeight;
         poolState_.poolType       = _getArgUint8(POOL_TYPE);
         poolState_.quoteDustLimit = _getArgUint256(QUOTE_SCALE);
 
@@ -552,11 +549,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     ) internal {
         // if it has been more than 12 hours since the last interest rate update, call updateInterestRate function
         if (block.timestamp - interestState.interestRateUpdate > 12 hours) {
-            PoolCommons.updateInterestRate(interestState, deposits, poolState_, lup_);
+            PoolCommons.updateInterestRate(interestState, deposits, poolState_, lup_, loans.t0PoolUtilizationDebtWeight);
         }
-
-        // update pool utilization debt weight
-        interestState.t0PoolUtilizationDebtWeight = poolState_.t0PoolUtilizationDebtWeight;
 
         // update pool inflator
         if (poolState_.isNewInterestAccrued) {

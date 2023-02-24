@@ -84,18 +84,20 @@ library Loans {
         uint256 poolRate_,
         uint256 lup_,
         bool inAuction_,
-        bool t0NpUpdate_
+        bool t0NpUpdate_,
+        uint256 t0DebtPreAction_,
+        uint256 collateralPreAction_
     ) internal {
 
-        bool activeBorrower = borrower_.t0Debt != 0 && borrower_.collateral != 0;
+        // bool activeBorrower = (borrower_.t0Debt != 0 && borrower_.collateral != 0);
 
-        uint256 t0ThresholdPrice = activeBorrower ? Maths.wdiv(borrower_.t0Debt, borrower_.collateral) : 0;
+        uint256 t0ThresholdPrice = (borrower_.t0Debt != 0 && borrower_.collateral != 0) ? Maths.wdiv(borrower_.t0Debt, borrower_.collateral) : 0;
 
         // loan not in auction, update threshold price and position in heap
         if (!inAuction_ ) {
             // get the loan id inside the heap
             uint256 loanId = loans_.indices[borrowerAddress_];
-            if (activeBorrower) {
+            if (borrower_.t0Debt != 0 && borrower_.collateral != 0) {
                 // revert if threshold price is zero
                 if (t0ThresholdPrice == 0) revert ZeroThresholdPrice();
 
@@ -119,6 +121,12 @@ library Loans {
                 borrower_.t0Np = 0;
             }
         }
+
+        adjustUtilizationWeight(loans_,
+                                t0DebtPreAction_,
+                                borrower_.t0Debt,
+                                collateralPreAction_,
+                                borrower_.collateral);
 
         // save borrower state
         loans_.borrowers[borrowerAddress_] = borrower_;
@@ -234,50 +242,88 @@ library Loans {
         }
     }
 
+    /**
+     *  @notice adjusts the utilization debt weight maintained accross all borrowers, t0PoolUtilizationDebtWeight.
+     *  @dev anytime a borrower's debt or collateral changes, the t0PoolUtilizationDebtWeight must be updated.
+     *  @param loans_ its the loans
+     *  @param debtPreAction               Borrower's debt before the action
+     *  @param debtPostAction              Borrower's debt after the action
+     *  @param colPreAction                Borrower's collateral before the action
+     *  @param colPostAction               Borrower's collateral after the action
+     */
+    function adjustUtilizationWeight(
+        LoansState storage loans_,
+        uint256 debtPreAction,
+        uint256 debtPostAction,
+        uint256 colPreAction,
+        uint256 colPostAction
+        ) internal {
+        uint256 utilWeight = loans_.t0PoolUtilizationDebtWeight;
+        uint256 debtColAccumPreAction;
+        uint256 debtColAccumPostAction;
+
+        // only bad debt, already deducted from accumulator when collateral was removed, do nothing.
+        if (colPreAction == 0 && debtPreAction != 0) return;
+
+        // position is closed, bad debt is created, purely interest update deduct from accumulator
+        if (colPostAction == 0) {
+            debtColAccumPreAction = colPreAction != 0 ? Maths.wdiv(Maths.wmul(debtPreAction, debtPreAction), colPreAction): 0;
+            loans_.t0PoolUtilizationDebtWeight -= debtColAccumPreAction;
+            return;
+        }
+
+        // partial take, depositTake, arbTake, settle
+        debtColAccumPostAction = Maths.wdiv(Maths.wmul(debtPostAction, debtPostAction), colPostAction);
+        debtColAccumPreAction  = colPreAction != 0 ? Maths.wdiv(Maths.wmul(debtPreAction, debtPreAction), colPreAction) : 0;
+        utilWeight += debtColAccumPostAction;
+        utilWeight -= debtColAccumPreAction;
+        loans_.t0PoolUtilizationDebtWeight = utilWeight; 
+        return;
+    }
 
     /**********************/
     /*** View Functions ***/
     /**********************/
 
-    /**
-     *  @notice adjusts the utilization debt weight maintained accross all borrowers, t0PoolUtilizationDebtWeight.
-     *  @dev anytime a borrower's debt or collateral changes, the t0PoolUtilizationDebtWeight must be updated.
-     *  @param t0PoolUtilizationDebtWeight The current t0PoolUtilizationDebtWeight
-     *  @param debtPreAction               Borrower's debt before the action
-     *  @param debtPostAction              Borrower's debt after the action
-     *  @param colPreAction                Borrower's collateral before the action
-     *  @param colPostAction               Borrower's collateral after the action
-     *  @return returnWeight_              The new t0PoolUtilizationDebtWeight 
-     */
-    function adjustUtilizationWeight(
-        uint256 t0PoolUtilizationDebtWeight,
-        uint256 debtPreAction,
-        uint256 debtPostAction,
-        uint256 colPreAction,
-        uint256 colPostAction
-        ) internal pure returns (uint256) {
+    // /**
+    //  *  @notice adjusts the utilization debt weight maintained accross all borrowers, t0PoolUtilizationDebtWeight.
+    //  *  @dev anytime a borrower's debt or collateral changes, the t0PoolUtilizationDebtWeight must be updated.
+    //  *  @param t0PoolUtilizationDebtWeight The current t0PoolUtilizationDebtWeight
+    //  *  @param debtPreAction               Borrower's debt before the action
+    //  *  @param debtPostAction              Borrower's debt after the action
+    //  *  @param colPreAction                Borrower's collateral before the action
+    //  *  @param colPostAction               Borrower's collateral after the action
+    //  *  @return returnWeight_              The new t0PoolUtilizationDebtWeight 
+    //  */
+    // function _adjustUtilizationWeight(
+    //     uint256 t0PoolUtilizationDebtWeight,
+    //     uint256 debtPreAction,
+    //     uint256 debtPostAction,
+    //     uint256 colPreAction,
+    //     uint256 colPostAction
+    //     ) internal pure returns (uint256) {
 
-        uint256 returnWeight_ = t0PoolUtilizationDebtWeight;
-        uint256 debtColAccumPreAction;
-        uint256 debtColAccumPostAction;
+    //     uint256 returnWeight_ = t0PoolUtilizationDebtWeight;
+    //     uint256 debtColAccumPreAction;
+    //     uint256 debtColAccumPostAction;
 
-        // only bad debt, already deducted from accumulator when collateral was removed, do nothing.
-        if (colPreAction == 0 && debtPreAction != 0) return returnWeight_;
+    //     // only bad debt, already deducted from accumulator when collateral was removed, do nothing.
+    //     if (colPreAction == 0 && debtPreAction != 0) return returnWeight_;
 
-        // position is closed, bad debt is created, purely interest update deduct from accumulator
-        if (colPostAction == 0) {
-            debtColAccumPreAction = colPreAction != 0 ? Maths.wdiv(Maths.wmul(debtPreAction, debtPreAction), colPreAction): 0;
-            returnWeight_ -= debtColAccumPreAction;
-            return returnWeight_;
-        }
+    //     // position is closed, bad debt is created, purely interest update deduct from accumulator
+    //     if (colPostAction == 0) {
+    //         debtColAccumPreAction = colPreAction != 0 ? Maths.wdiv(Maths.wmul(debtPreAction, debtPreAction), colPreAction): 0;
+    //         returnWeight_ -= debtColAccumPreAction;
+    //         return returnWeight_;
+    //     }
 
-        // partial take, depositTake, arbTake, settle
-        debtColAccumPostAction = Maths.wdiv(Maths.wmul(debtPostAction, debtPostAction), colPostAction);
-        debtColAccumPreAction = colPreAction != 0 ? Maths.wdiv(Maths.wmul(debtPreAction, debtPreAction), colPreAction) : 0;
-        returnWeight_ += debtColAccumPostAction;
-        returnWeight_ -= debtColAccumPreAction;
-        return returnWeight_;
-    }
+    //     // partial take, depositTake, arbTake, settle
+    //     debtColAccumPostAction = Maths.wdiv(Maths.wmul(debtPostAction, debtPostAction), colPostAction);
+    //     debtColAccumPreAction  = colPreAction != 0 ? Maths.wdiv(Maths.wmul(debtPreAction, debtPreAction), colPreAction) : 0;
+    //     returnWeight_ += debtColAccumPostAction;
+    //     returnWeight_ -= debtColAccumPreAction;
+    //     return returnWeight_;
+    // }
 
     /**
      *  @notice Retreives Loan by index, i_.

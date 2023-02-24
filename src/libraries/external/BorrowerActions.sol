@@ -62,6 +62,7 @@ library BorrowerActions {
         bool    stampT0Np;             // true if loan's t0 neutral price should be restamped (when repay settles auction or pull collateral)
         uint256 t0DebtInAuctionChange; // [WAD] t0 change amount of debt after repayment
         uint256 t0RepaidDebt;          // [WAD] t0 debt repaid
+        uint256 collateralAmountToPull;
     }
 
     /**************/
@@ -129,7 +130,6 @@ library BorrowerActions {
         result_.t0PoolDebt     = poolState_.t0Debt;
         result_.poolDebt       = poolState_.debt;
         result_.poolCollateral = poolState_.collateral;
-        result_.t0PoolUtilizationDebtWeight = poolState_.t0PoolUtilizationDebtWeight;
 
         result_.remainingCollateral = borrower.collateral;
 
@@ -220,12 +220,12 @@ library BorrowerActions {
             vars.stampT0Np = true;
         }
 
-        result_.t0PoolUtilizationDebtWeight = Loans.adjustUtilizationWeight(
-                                                    result_.t0PoolUtilizationDebtWeight,
-                                                    borrower.t0Debt - vars.t0DebtChange,
-                                                    borrower.t0Debt,
-                                                    borrower.collateral - collateralToPledge_,
-                                                    borrower.collateral);
+        // result_.t0PoolUtilizationDebtWeight = Loans.adjustUtilizationWeight(
+        //                                             result_.t0PoolUtilizationDebtWeight,
+        //                                             borrower.t0Debt - vars.t0DebtChange,
+        //                                             borrower.t0Debt,
+        //                                             borrower.collateral - collateralToPledge_,
+        //                                             borrower.collateral);
 
         // calculate LUP if it wasn't calculated previously
         if (!vars.pledge && !vars.borrow) {
@@ -243,7 +243,9 @@ library BorrowerActions {
             poolState_.rate,
             result_.newLup,
             vars.inAuction,
-            vars.stampT0Np
+            vars.stampT0Np,
+            borrower.t0Debt - vars.t0DebtChange,
+            borrower.collateral - collateralToPledge_
         );
     }
 
@@ -293,13 +295,13 @@ library BorrowerActions {
         vars.pull         = collateralAmountToPull_     != 0;
         vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
         vars.inAuction    = _inAuction(auctions_, borrowerAddress_);
+        vars.collateralAmountToPull = collateralAmountToPull_;
 
         result_.t0PoolDebt     = poolState_.t0Debt;
         result_.poolDebt       = poolState_.debt;
         result_.poolCollateral = poolState_.collateral;
 
         result_.remainingCollateral = borrower.collateral;
-        result_.t0PoolUtilizationDebtWeight = poolState_.t0PoolUtilizationDebtWeight;
 
         if (vars.repay) {
             if (borrower.t0Debt == 0) revert NoDebt();
@@ -393,13 +395,6 @@ library BorrowerActions {
             result_.newLup = _lup(deposits_, result_.poolDebt);
         }
 
-        result_.t0PoolUtilizationDebtWeight = Loans.adjustUtilizationWeight(
-                                                    result_.t0PoolUtilizationDebtWeight,
-                                                    borrower.t0Debt + vars.t0RepaidDebt,
-                                                    borrower.t0Debt,
-                                                    borrower.collateral + collateralAmountToPull_,
-                                                    borrower.collateral);   
-
         // update loan state
         Loans.update(
             loans_,
@@ -411,7 +406,9 @@ library BorrowerActions {
             poolState_.rate,
             result_.newLup,
             vars.inAuction,
-            vars.stampT0Np
+            vars.stampT0Np,
+            borrower.t0Debt + vars.t0RepaidDebt,
+            borrower.collateral + vars.collateralAmountToPull
         );
     }
 

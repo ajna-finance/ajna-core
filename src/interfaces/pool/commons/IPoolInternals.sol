@@ -51,7 +51,6 @@ struct TakeResult {
     uint256 newLup;                      // [WAD] current lup
     uint256 t0DebtInAuctionChange;       // [WAD] the amount of t0 debt recovered by take action
     bool    settledAuction;              // true if auction is settled by take action
-    uint256 t0PoolUtilizationDebtWeight; // [WAD] utilization weight accumulator, tracks debt and collateral relationship accross borrowers
 }
 
 /******************************************/

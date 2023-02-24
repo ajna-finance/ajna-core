@@ -153,7 +153,6 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
         poolState.collateral = result.poolCollateral;
-        poolState.t0PoolUtilizationDebtWeight = result.t0PoolUtilizationDebtWeight;
         _updateInterestState(poolState, result.newLup);
 
         if (tokenIdsToPledge_.length != 0) {
@@ -217,7 +216,6 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
         poolState.collateral = result.poolCollateral;
-        poolState.t0PoolUtilizationDebtWeight = result.t0PoolUtilizationDebtWeight;
         _updateInterestState(poolState, result.newLup);
 
         // update pool balances state
@@ -382,14 +380,12 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         (
             collateralRemaining,
             collateralSettled,
-            t0DebtSettled,
-            poolState.t0PoolUtilizationDebtWeight
+            t0DebtSettled
         ) = Auctions.settlePoolDebt(
             auctions,
             buckets,
             deposits,
             loans,
-            poolState.t0PoolUtilizationDebtWeight,
             params
         );
 
@@ -447,7 +443,6 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         // update pool interest rate state
         poolState.debt       =  result.poolDebt;
         poolState.collateral -= collateralSettled;
-        poolState.t0PoolUtilizationDebtWeight = result.t0PoolUtilizationDebtWeight;
         _updateInterestState(poolState, result.newLup);
 
         // transfer rounded collateral from pool to taker
@@ -491,7 +486,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
         PoolState memory poolState = _accruePoolInterest();
 
-        BucketTakeResult memory result = Auctions.bucketTake(
+        TakeResult memory result = Auctions.bucketTake(
             auctions,
             buckets,
             deposits,
@@ -518,7 +513,6 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
         poolState.collateral -= collateralSettled;
-        poolState.t0PoolUtilizationDebtWeight = result.t0PoolUtilizationDebtWeight;
         _updateInterestState(poolState, result.newLup);
 
         if (result.settledAuction) _rebalanceTokens(borrowerAddress_, result.remainingCollateral);
