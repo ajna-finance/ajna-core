@@ -19,6 +19,7 @@ interface IPoolState {
      *  @return head         Address of the head auction.
      *  @return next         Address of the next auction in queue.
      *  @return prev         Address of the prev auction in queue.
+     *  @return alreadyTaken True if take has been called on auction
      */
     function auctionInfo(address borrower)
         external
@@ -32,7 +33,8 @@ interface IPoolState {
             uint256 neutralPrice,
             address head,
             address next,
-            address prev
+            address prev,
+            bool alreadyTaken
         );
 
     /**
@@ -206,6 +208,7 @@ interface IPoolState {
      *  @return liquidationBondEscrowed Amount of liquidation bond across all liquidators.
      *  @return reserveAuctionUnclaimed Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
      *  @return reserveAuctionKicked    Time a Claimable Reserve Auction was last kicked.
+     *  @return totalInterestEarned     Total interest earned by all lenders in the pool
      */
     function reservesInfo()
         external
@@ -213,7 +216,8 @@ interface IPoolState {
         returns (
             uint256 liquidationBondEscrowed,
             uint256 reserveAuctionUnclaimed,
-            uint256 reserveAuctionKicked
+            uint256 reserveAuctionKicked,
+            uint256 totalInterestEarned
     );
 
     /**

@@ -113,7 +113,7 @@ contract BasicInvariants is TestBase {
         uint256 t0debt       = _pool.totalT0Debt();
         (uint256 inflator, ) = _pool.inflatorInfo();
         uint256 poolDebt     = Maths.wmul(t0debt, inflator);
-        (uint256 totalPoolBond, uint256 unClaimed, ) = _pool.reservesInfo();
+        (uint256 totalPoolBond, uint256 unClaimed, , ) = _pool.reservesInfo();
 
         assertGe(poolBalance + poolDebt, totalPoolBond + _pool.depositSize() + unClaimed, "Incorrect pool debt");
     }

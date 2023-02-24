@@ -44,7 +44,7 @@ contract LiquidationInvariant is BasicInvariants {
         uint256 totalT0debtInAuction;
         for(uint256 i = 0; i < actorCount; i++) {
             address borrower = IBaseHandler(_handler).actors(i);
-            (, , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower);
+            (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
             if(kickTime != 0) {
                 (uint256 t0debt, , ) = _pool.borrowerInfo(borrower);
                 totalT0debtInAuction += t0debt;
@@ -67,13 +67,13 @@ contract LiquidationInvariant is BasicInvariants {
 
         for(uint256 i = 0; i < actorCount; i++) {
             address borrower = IBaseHandler(_handler).actors(i);
-            (, , uint256 bondSize, , , , , , ) = _pool.auctionInfo(borrower);
+            (, , uint256 bondSize, , , , , , , ) = _pool.auctionInfo(borrower);
             totalBondInAuction += bondSize;
         }
 
         require(totalBondInAuction == totalKickerBond, "Incorrect bond");
 
-        (uint256 totalPoolBond, , ) = _pool.reservesInfo();
+        (uint256 totalPoolBond, , , ) = _pool.reservesInfo();
 
         require(totalPoolBond == totalKickerBond, "Incorrect bond");
     }   
@@ -97,7 +97,7 @@ contract LiquidationInvariant is BasicInvariants {
         uint256 borrowersKicked;
         for(uint256 i = 0; i < actorCount; i++) {
             address borrower = IBaseHandler(_handler).actors(i);
-            (, , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower);
+            (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
             if(kickTime != 0) {
                 borrowersKicked += 1;
             }
@@ -109,7 +109,7 @@ contract LiquidationInvariant is BasicInvariants {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         for(uint256 i = 0; i < actorCount; i++) {
             address borrower = IBaseHandler(_handler).actors(i);
-            (address kicker, , uint256 bondSize, , , , , , ) = _pool.auctionInfo(borrower);
+            (address kicker, , uint256 bondSize, , , , , , , ) = _pool.auctionInfo(borrower);
             (, uint256 lockedAmount) = _pool.kickerInfo(kicker);
             require(lockedAmount >= bondSize, "Incorrect bond locked");
         }
