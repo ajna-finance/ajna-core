@@ -206,10 +206,12 @@ interface IPoolEvents {
      *  @notice Emitted when a Claimaible Reserve Auction is started or taken.
      *  @return claimableReservesRemaining Amount of claimable reserves which has not yet been taken.
      *  @return auctionPrice               Current price at which 1 quote token may be purchased, denominated in Ajna.
+     *  @return currentBurnEpoch           Current burn epoch.
      */
     event ReserveAuction(
         uint256 claimableReservesRemaining,
-        uint256 auctionPrice
+        uint256 auctionPrice,
+        uint256 currentBurnEpoch
     );
 
     /**
@@ -240,11 +242,11 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when a lender transfers their LP tokens to a different address.
+     *  @notice Emitted when a lender transfers their LPs to a different address.
      *  @dev    Used by PositionManager.memorializePositions().
      *  @param  owner    The original owner address of the position.
      *  @param  newOwner The new owner address of the position.
-     *  @param  indexes  Array of price bucket indexes at which LP tokens were transferred.
+     *  @param  indexes  Array of price bucket indexes at which LPs were transferred.
      *  @param  lps      Amount of LPs transferred.
      */
     event TransferLPs(

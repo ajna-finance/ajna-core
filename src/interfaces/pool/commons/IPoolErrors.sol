@@ -11,6 +11,11 @@ interface IPoolErrors {
     /**************************/
 
     /**
+     *  @notice LPs allowance is already set by the owner.
+     */
+    error AllowanceAlreadySet();
+
+    /**
      *  @notice The action cannot be executed on an active auction.
      */
     error AuctionActive();
@@ -93,7 +98,7 @@ interface IPoolErrors {
     /**
      *  @notice Lender is attempting to move or remove more collateral they have claim to in the bucket.
      *  @notice Lender is attempting to remove more collateral they have claim to in the bucket.
-     *  @notice Lender must have enough LP tokens to claim the desired amount of quote from the bucket.
+     *  @notice Lender must have enough LPs to claim the desired amount of quote from the bucket.
      */
     error InsufficientLPs();
 
@@ -108,7 +113,7 @@ interface IPoolErrors {
     error InvalidBucketDepth();
 
     /**
-     *  @notice When transferring LP tokens between indices, the new index must be a valid index.
+     *  @notice When transferring LPs between indices, the new index must be a valid index.
      */
     error InvalidIndex();
 
@@ -139,7 +144,7 @@ interface IPoolErrors {
     error MoveToSameIndex();
 
     /**
-     *  @notice Owner of the LP tokens must have approved the new owner prior to transfer.
+     *  @notice Owner of the LPs must have approved the new owner prior to transfer.
      */
     error NoAllowance();
 
@@ -205,7 +210,7 @@ interface IPoolErrors {
     error TransferorNotApproved();
 
     /**
-     *  @notice Owner of the LP tokens attemps to transfer LPs to same address.
+     *  @notice Owner of the LPs attemps to transfer LPs to same address.
      */
     error TransferToSameOwner();
 
