@@ -422,15 +422,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *          - ReserveAuction
      */
     function startClaimableReserveAuction() external override nonReentrant {
-        // retrieve timestamp of latest burn event and last burn timestamp
-        uint256 latestBurnEpoch   = reserveAuction.latestBurnEventEpoch;
-        uint256 lastBurnTimestamp = reserveAuction.burnEvents[latestBurnEpoch].timestamp;
-
-        // check that at least two weeks have passed since the last reserve auction completed, and that the auction was not kicked within the past 72 hours
-        if (block.timestamp < lastBurnTimestamp + 2 weeks || block.timestamp - reserveAuction.kicked <= 72 hours) {
-            revert ReserveAuctionTooSoon();
-        }
-
         // start a new claimable reserve auction, passing in relevant parameters such as the current pool size, debt, balance, and inflator value
         uint256 kickerAward = Auctions.startClaimableReserveAuction(
             auctions,
@@ -442,12 +433,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 inflator:    inflatorState.inflator
             })
         );
-
-        // increment latest burn event epoch and update burn event timestamp
-        latestBurnEpoch += 1;
-
-        reserveAuction.latestBurnEventEpoch = latestBurnEpoch;
-        reserveAuction.burnEvents[latestBurnEpoch].timestamp = block.timestamp;
 
         // transfer kicker award to msg.sender
         _transferQuoteToken(msg.sender, kickerAward);
@@ -467,18 +452,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             reserveAuction,
             maxAmount_
         );
-
-        uint256 totalBurned = reserveAuction.totalAjnaBurned + ajnaRequired;
-        
-        // accumulate additional ajna burned
-        reserveAuction.totalAjnaBurned = totalBurned;
-
-        uint256 burnEventEpoch = reserveAuction.latestBurnEventEpoch;
-
-        // record burn event information to enable querying by staking rewards
-        BurnEvent storage burnEvent = reserveAuction.burnEvents[burnEventEpoch];
-        burnEvent.totalInterest = reserveAuction.totalInterestEarned;
-        burnEvent.totalBurned   = totalBurned;
 
         // burn required number of ajna tokens to take quote from reserves
         IERC20(_getArgAddress(AJNA_ADDRESS)).safeTransferFrom(msg.sender, address(this), ajnaRequired);

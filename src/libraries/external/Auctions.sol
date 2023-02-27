@@ -10,6 +10,7 @@ import {
     AuctionsState,
     Borrower,
     Bucket,
+    BurnEvent,
     DepositsState,
     Kicker,
     Lender,
@@ -145,7 +146,7 @@ library Auctions {
     event Kick(address indexed borrower, uint256 debt, uint256 collateral, uint256 bond);
     event Take(address indexed borrower, uint256 amount, uint256 collateral, uint256 bondChange, bool isReward);
     event RemoveQuoteToken(address indexed lender, uint256 indexed price, uint256 amount, uint256 lpRedeemed, uint256 lup);
-    event ReserveAuction(uint256 claimableReservesRemaining, uint256 auctionPrice);
+    event ReserveAuction(uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 currentBurnEpoch);
     event Settle(address indexed borrower, uint256 settledDebt);
 
     /**************/
@@ -165,6 +166,7 @@ library Auctions {
     error NoReserves();
     error NoReservesAuction();
     error PriceBelowLUP();
+    error ReserveAuctionTooSoon();
     error TakeNotPastCooldown();
 
     /***************************/
@@ -637,6 +639,15 @@ library Auctions {
         ReserveAuctionState storage reserveAuction_,
         StartReserveAuctionParams calldata params_
     ) external returns (uint256 kickerAward_) {
+        // retrieve timestamp of latest burn event and last burn timestamp
+        uint256 latestBurnEpoch   = reserveAuction_.latestBurnEventEpoch;
+        uint256 lastBurnTimestamp = reserveAuction_.burnEvents[latestBurnEpoch].timestamp;
+
+        // check that at least two weeks have passed since the last reserve auction completed, and that the auction was not kicked within the past 72 hours
+        if (block.timestamp < lastBurnTimestamp + 2 weeks || block.timestamp - reserveAuction_.kicked <= 72 hours) {
+            revert ReserveAuctionTooSoon();
+        }
+
         uint256 curUnclaimedAuctionReserve = reserveAuction_.unclaimed;
 
         uint256 claimable = _claimableReserves(
@@ -656,7 +667,17 @@ library Auctions {
         reserveAuction_.unclaimed = curUnclaimedAuctionReserve;
         reserveAuction_.kicked    = block.timestamp;
 
-        emit ReserveAuction(curUnclaimedAuctionReserve, _reserveAuctionPrice(block.timestamp));
+        // increment latest burn event epoch and update burn event timestamp
+        latestBurnEpoch += 1;
+
+        reserveAuction_.latestBurnEventEpoch = latestBurnEpoch;
+        reserveAuction_.burnEvents[latestBurnEpoch].timestamp = block.timestamp;
+
+        emit ReserveAuction(
+            curUnclaimedAuctionReserve,
+            _reserveAuctionPrice(block.timestamp),
+            latestBurnEpoch
+        );
     }
 
     /**
@@ -685,7 +706,19 @@ library Auctions {
 
             reserveAuction_.unclaimed = unclaimed;
 
-            emit ReserveAuction(unclaimed, price);
+            uint256 totalBurned = reserveAuction_.totalAjnaBurned + ajnaRequired_;
+            
+            // accumulate additional ajna burned
+            reserveAuction_.totalAjnaBurned = totalBurned;
+
+            uint256 burnEventEpoch = reserveAuction_.latestBurnEventEpoch;
+
+            // record burn event information to enable querying by staking rewards
+            BurnEvent storage burnEvent = reserveAuction_.burnEvents[burnEventEpoch];
+            burnEvent.totalInterest = reserveAuction_.totalInterestEarned;
+            burnEvent.totalBurned   = totalBurned;
+
+            emit ReserveAuction(unclaimed, price, burnEventEpoch);
         } else {
             revert NoReservesAuction();
         }
