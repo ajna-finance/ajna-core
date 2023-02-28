@@ -395,8 +395,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      */
     function withdrawBonds(address recipient_) external {
         uint256 claimable = auctions.kickers[msg.sender].claimable;
-        // decrement total claimable bond
-        auctions.totalClaimableBond -= claimable;
+        // decrement total bond escrowed
+        auctions.totalBondEscrowed -= claimable;
         auctions.kickers[msg.sender].claimable = 0;
         _transferQuoteToken(recipient_, claimable);
     }
@@ -780,10 +780,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /// @inheritdoc IPoolState
-    function reservesInfo() external view override returns (uint256, uint256, uint256, uint256, uint256) {
+    function reservesInfo() external view override returns (uint256, uint256, uint256, uint256) {
         return (
             auctions.totalBondEscrowed,
-            auctions.totalClaimableBond,
             reserveAuction.unclaimed,
             reserveAuction.kicked,
             reserveAuction.totalInterestEarned

@@ -490,7 +490,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 0,
+                totalBondEscrowed: 0.045342779771472726 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
                 thresholdPrice:    4.858174346779663271 * 1e18,

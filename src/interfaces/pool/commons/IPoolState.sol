@@ -206,7 +206,6 @@ interface IPoolState {
     /**
      *  @notice Returns information about pool reserves.
      *  @return liquidationBondEscrowed Amount of liquidation bond across all liquidators.
-     *  @return liquidationBondClaimable Amount of liquidation bond that are claimable by kicker
      *  @return reserveAuctionUnclaimed Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
      *  @return reserveAuctionKicked    Time a Claimable Reserve Auction was last kicked.
      *  @return totalInterestEarned     Total interest earned by all lenders in the pool
@@ -216,7 +215,6 @@ interface IPoolState {
         view
         returns (
             uint256 liquidationBondEscrowed,
-            uint256 liquidationBondClaimable,
             uint256 reserveAuctionUnclaimed,
             uint256 reserveAuctionKicked,
             uint256 totalInterestEarned
@@ -343,7 +341,6 @@ struct AuctionsState {
     address head;                                 // first address in auction queue
     address tail;                                 // last address in auction queue
     uint256 totalBondEscrowed;                    // [WAD] total amount of quote token posted as auction kick bonds
-    uint256 totalClaimableBond;                   // [WAD] total amount of quote token that was posted as auction kick bonds that are yet to be claimed by kicker
     mapping(address => Liquidation) liquidations; // mapping of borrower address and auction details
     mapping(address => Kicker)      kickers;      // mapping of kicker address and kicker balances
 }
