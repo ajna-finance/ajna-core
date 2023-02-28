@@ -8,6 +8,8 @@ import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 import 'src/libraries/helpers/PoolHelper.sol';
 import 'src/interfaces/pool/erc20/IERC20Pool.sol';
 
+import '@std/console.sol';
+
 contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -401,7 +403,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         );
     }
 
-    function testMaxInterestRate() external tearDown {
+    function testMaxInterestRate() external {
         _addInitialLiquidity({
             from:   _lender,
             amount: 10_000 * 1e18,

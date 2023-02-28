@@ -15,6 +15,8 @@ import { _priceAt } from '../helpers/PoolHelper.sol';
 import { Deposits } from './Deposits.sol';
 import { Maths }    from './Maths.sol';
 
+import '@std/console.sol';
+
 
 /**
     @title  Loans library
@@ -246,39 +248,49 @@ library Loans {
      *  @notice adjusts the utilization debt weight maintained accross all borrowers, t0PoolUtilizationDebtWeight.
      *  @dev anytime a borrower's debt or collateral changes, the t0PoolUtilizationDebtWeight must be updated.
      *  @param loans_ its the loans
-     *  @param debtPreAction               Borrower's debt before the action
-     *  @param debtPostAction              Borrower's debt after the action
-     *  @param colPreAction                Borrower's collateral before the action
-     *  @param colPostAction               Borrower's collateral after the action
+     *  @param debtPreAction_               Borrower's debt before the action
+     *  @param debtPostAction_              Borrower's debt after the action
+     *  @param colPreAction_                Borrower's collateral before the action
+     *  @param colPostAction_               Borrower's collateral after the action
      */
     function adjustUtilizationWeight(
         LoansState storage loans_,
-        uint256 debtPreAction,
-        uint256 debtPostAction,
-        uint256 colPreAction,
-        uint256 colPostAction
-        ) internal {
+        uint256 debtPreAction_,
+        uint256 debtPostAction_,
+        uint256 colPreAction_,
+        uint256 colPostAction_
+    ) internal {
         uint256 utilWeight = loans_.t0PoolUtilizationDebtWeight;
         uint256 debtColAccumPreAction;
         uint256 debtColAccumPostAction;
 
+        // console.log("debt pre", debtPreAction_);
+        // console.log("debt post", debtPostAction_);
+        // console.log("debt col pre", colPreAction_);
+        // console.log("debt col post", colPostAction_);
+
         // only bad debt, already deducted from accumulator when collateral was removed, do nothing.
-        if (colPreAction == 0 && debtPreAction != 0) return;
+        if (colPreAction_ == 0 && debtPreAction_ != 0) return;
 
-        // position is closed, bad debt is created, purely interest update deduct from accumulator
-        if (colPostAction == 0) {
-            debtColAccumPreAction = colPreAction != 0 ? Maths.wdiv(Maths.wmul(debtPreAction, debtPreAction), colPreAction): 0;
+        debtColAccumPreAction = colPreAction_ != 0 ? debtPreAction_ ** 2 / colPreAction_ : 0;
+
+        if (colPostAction_ == 0) {
+            // position is closed, bad debt is created or purely interest update deduct from accumulator
             loans_.t0PoolUtilizationDebtWeight -= debtColAccumPreAction;
-            return;
-        }
+        } else { 
 
-        // partial take, depositTake, arbTake, settle
-        debtColAccumPostAction = Maths.wdiv(Maths.wmul(debtPostAction, debtPostAction), colPostAction);
-        debtColAccumPreAction  = colPreAction != 0 ? Maths.wdiv(Maths.wmul(debtPreAction, debtPreAction), colPreAction) : 0;
-        utilWeight += debtColAccumPostAction;
-        utilWeight -= debtColAccumPreAction;
-        loans_.t0PoolUtilizationDebtWeight = utilWeight; 
-        return;
+            // Pool methods: drawDebt, repayDebt
+            // Auction methods: kick, partial take, partial depositTake, partial arbTake, partial settle
+            debtColAccumPostAction = debtPostAction_ ** 2 / colPostAction_;
+            
+            // console.log("add to weight: ", debtColAccumPostAction);
+            // console.log("remove from util weight: ", debtColAccumPreAction);
+            // console.log("util weight going in: ", utilWeight);
+            utilWeight += debtColAccumPostAction;
+            utilWeight -= debtColAccumPreAction;
+            loans_.t0PoolUtilizationDebtWeight = utilWeight; 
+        }
+        // console.log("util weight aft: ", utilWeight);
     }
 
     /**********************/

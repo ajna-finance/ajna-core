@@ -104,9 +104,9 @@ contract PoolHelperTest is DSTestPlus {
         uint256 debtEma  = 11_000.143012091382543917 * 1e18;
         uint256 lupColEma = 1_001.6501589292607751220 * 1e18;
 
-        assertEq(_targetUtilization(debtEma, lupColEma), 10.98202093218880245 * 1e18);
-        assertEq(_targetUtilization(0, lupColEma),       Maths.WAD);
-        assertEq(_targetUtilization(debtEma, 0),         Maths.WAD);
+        assertEq(_targetUtilization(lupColEma,debtEma), 10.98202093218880245 * 1e18);
+        assertEq(_targetUtilization(lupColEma, 0),       Maths.WAD);
+        assertEq(_targetUtilization(0, debtEma),         Maths.WAD);
         assertEq(_targetUtilization(0, 0),               Maths.WAD);
     }
 

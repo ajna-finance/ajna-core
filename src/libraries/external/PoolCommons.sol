@@ -12,6 +12,7 @@ import { Deposits } from '../internal/Deposits.sol';
 import { Buckets }  from '../internal/Buckets.sol';
 import { Loans }    from '../internal/Loans.sol';
 import { Maths }    from '../internal/Maths.sol';
+import '@std/console.sol';
 
 /**
     @title  PoolCommons library
@@ -60,6 +61,7 @@ library PoolCommons {
         uint256 t0PoolUtilizationDebtWeight_,
         uint256 lup_
     ) external {
+        console.log("interest updating start");
 
         // current values of EMA samples
         uint256 curDebtEma   = interestParams_.debtEma;
@@ -102,20 +104,29 @@ library PoolCommons {
 
         uint256 newInterestRate = poolState_.rate;
 
+        console.log("interest updating TU");
+        console.logInt(tu);
+
+        console.log("interest updating MAU");
+        console.logInt(mau);
+
+
         // raise rates if 4*(tu-1.02*mau) < (tu+1.02*mau-1)^2-1
         if (4 * (tu - mau102) < ((tu + mau102 - 1e18) ** 2) / 1e18 - 1e18) {
             newInterestRate = Maths.wmul(poolState_.rate, INCREASE_COEFFICIENT);
-        }
         // decrease rates if 4*(tu-mau) > 1-(tu+mau-1)^2
-        else if (4 * (tu - mau) > 1e18 - ((tu + mau - 1e18) ** 2) / 1e18) {
+        } else if (4 * (tu - mau) > 1e18 - ((tu + mau - 1e18) ** 2) / 1e18) {
             newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
         }
 
         newInterestRate = Maths.min(500 * 1e18, Maths.max(0.001 * 1e18, newInterestRate));
 
+        console.log("pool rate", poolState_.rate);
+        console.log("newInterestRate", newInterestRate);
         if (poolState_.rate != newInterestRate) {
             interestParams_.interestRate       = uint208(newInterestRate);
             interestParams_.interestRateUpdate = uint48(block.timestamp);
+            console.log("interestRateUpdate", interestParams_.interestRateUpdate);
 
             emit UpdateInterestRate(poolState_.rate, newInterestRate);
         }

@@ -235,7 +235,7 @@ contract PoolInfoUtils {
         poolActualUtilization_ = pool.depositUtilization(poolDebt, poolCollateral);
 
         (uint256 debtEma, uint256 lupColEma) = pool.emasInfo();
-        poolTargetUtilization_ = _targetUtilization(debtEma, lupColEma);
+        poolTargetUtilization_ = _targetUtilization(lupColEma, debtEma);
     }
 
     /**
@@ -431,8 +431,8 @@ contract PoolInfoUtils {
      *  @return Target utilization of the pool.
      */
     function _targetUtilization(
-        uint256 debtEma_,
-        uint256 lupColEma_
+        uint256 lupColEma_,
+        uint256 debtEma_
     ) pure returns (uint256) {
-        return (debtEma_ != 0 && lupColEma_ != 0) ? Maths.wdiv(debtEma_, lupColEma_) : Maths.WAD;
+        return (debtEma_ != 0 && lupColEma_ != 0) ? Maths.wdiv(lupColEma_, debtEma_) : Maths.WAD;
     }

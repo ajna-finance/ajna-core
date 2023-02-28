@@ -44,6 +44,8 @@ import { Deposits } from '../internal/Deposits.sol';
 import { Loans }    from '../internal/Loans.sol';
 import { Maths }    from '../internal/Maths.sol';
 
+import '@std/console.sol';
+
 /**
     @title  Auctions library
     @notice External library containing actions involving auctions within pool:
@@ -502,7 +504,7 @@ library Auctions {
 
         result_.t0PoolDebt = poolState_.t0Debt;
         result_.poolDebt   = poolState_.debt;
-
+ 
         result_ = _takeLoan(
                   auctions_,
                   buckets_,
@@ -513,7 +515,7 @@ library Auctions {
                   borrowerAddress_,
                   result_,
                   t0BorrowerDebt + t0RepayAmount,
-                  borrower.collateral - result_.collateralAmount
+                  borrower.collateral + result_.collateralAmount
         );
 
         if (result_.settledAuction) {
@@ -832,7 +834,7 @@ library Auctions {
         // increasing debt, increase debt utilization weight
         Loans.adjustUtilizationWeight(
             loans_,
-            borrower.t0Debt,
+            kickResult_.t0KickedDebt - t0KickPenalty,
             kickResult_.t0KickedDebt,
             borrower.collateral,
             borrower.collateral

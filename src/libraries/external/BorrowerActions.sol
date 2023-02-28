@@ -32,6 +32,8 @@ import { Maths }    from '../internal/Maths.sol';
 
 import { Auctions } from './Auctions.sol';
 
+import '@std/console.sol';
+
 /**
     @title  BorrowerActions library
     @notice External library containing logic for for pool actors:
@@ -219,13 +221,6 @@ library BorrowerActions {
             // stamp borrower t0Np when draw debt
             vars.stampT0Np = true;
         }
-
-        // result_.t0PoolUtilizationDebtWeight = Loans.adjustUtilizationWeight(
-        //                                             result_.t0PoolUtilizationDebtWeight,
-        //                                             borrower.t0Debt - vars.t0DebtChange,
-        //                                             borrower.t0Debt,
-        //                                             borrower.collateral - collateralToPledge_,
-        //                                             borrower.collateral);
 
         // calculate LUP if it wasn't calculated previously
         if (!vars.pledge && !vars.borrow) {
