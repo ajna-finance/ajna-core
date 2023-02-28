@@ -422,8 +422,9 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         // filter out bankrupt buckets
         filteredIndexes_ = new uint256[](indexesLength);
         uint256 filteredIndexesLength = 0;
+        IPool pool = IPool(poolKey[tokenId_]);
         for (uint256 i = 0; i < indexesLength; ) {
-            if (!_bucketBankruptAfterDeposit(IPool(poolKey[tokenId_]), indexes[i], positions[tokenId_][indexes[i]].depositTime)) {
+            if (!_bucketBankruptAfterDeposit(pool, indexes[i], positions[tokenId_][indexes[i]].depositTime)) {
                 filteredIndexes_[filteredIndexesLength++] = indexes[i];
             }
             unchecked { ++i; }
