@@ -19,6 +19,7 @@ interface IPoolState {
      *  @return head         Address of the head auction.
      *  @return next         Address of the next auction in queue.
      *  @return prev         Address of the prev auction in queue.
+     *  @return alreadyTaken True if take has been called on auction
      */
     function auctionInfo(address borrower)
         external
@@ -32,7 +33,8 @@ interface IPoolState {
             uint256 neutralPrice,
             address head,
             address next,
-            address prev
+            address prev,
+            bool alreadyTaken
         );
 
     /**
@@ -206,6 +208,7 @@ interface IPoolState {
      *  @return liquidationBondEscrowed Amount of liquidation bond across all liquidators.
      *  @return reserveAuctionUnclaimed Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
      *  @return reserveAuctionKicked    Time a Claimable Reserve Auction was last kicked.
+     *  @return totalInterestEarned     Total interest earned by all lenders in the pool
      */
     function reservesInfo()
         external
@@ -213,7 +216,8 @@ interface IPoolState {
         returns (
             uint256 liquidationBondEscrowed,
             uint256 reserveAuctionUnclaimed,
-            uint256 reserveAuctionKicked
+            uint256 reserveAuctionKicked,
+            uint256 totalInterestEarned
     );
 
     /**
@@ -221,6 +225,37 @@ interface IPoolState {
      *  @return The total pledged collateral in the system, in WAD units.
      */
     function pledgedCollateral() external view returns (uint256);
+
+    /**
+     *  @notice Returns the total number of active auctions in pool
+     *  @return totalAuctions_ number of active auctions.
+     */
+    function totalAuctionsInPool() external view returns (uint256);
+
+     /**
+     *  @notice Returns the `t0Debt` state variable.
+     *  @dev    This value should be multiplied by inflator in order to calculate current debt of the pool.
+     *  @return The total t0Debt in the system, in WAD units.
+     */
+    function totalT0Debt() external view returns (uint256);
+
+    /**
+     *  @notice Returns the `t0DebtInAuction` state variable.
+     *  @dev    This value should be multiplied by inflator in order to calculate current debt in auction of the pool.
+     *  @return The total t0DebtInAuction in the system, in WAD units.
+     */
+    function totalT0DebtInAuction() external view returns (uint256);
+
+    /**
+     *  @notice Mapping of addresses that can transfer LPs to a given lender.
+     *  @param  lender     Lender that receives LPs.
+     *  @param  transferor Transferor that transfers LPs.
+     *  @return True if the transferor is approved by lender.
+     */
+    function approvedTransferors(
+        address lender,
+        address transferor
+    ) external view returns (bool);
 
 }
 
@@ -250,6 +285,7 @@ struct PoolBalancesState {
 
 struct PoolState {
     uint8   poolType;             // pool type, can be ERC20 or ERC721
+    uint256 t0Debt;               // [WAD] t0 debt in pool
     uint256 debt;                 // [WAD] total debt in pool, accrued in current block
     uint256 collateral;           // [WAD] total collateral pledged in pool
     uint256 inflator;             // [WAD] current pool inflator
@@ -261,12 +297,12 @@ struct PoolState {
 /*** Buckets State ***/
 
 struct Lender {
-    uint256 lps;         // [RAY] Lender LP accumulator
+    uint256 lps;         // [WAD] Lender LP accumulator
     uint256 depositTime; // timestamp of last deposit
 }
 
 struct Bucket {
-    uint256 lps;                        // [RAY] Bucket LP accumulator
+    uint256 lps;                        // [WAD] Bucket LP accumulator
     uint256 collateral;                 // [WAD] Available collateral tokens deposited in the bucket
     uint256 bankruptcyTime;             // Timestamp when bucket become insolvent, 0 if healthy
     mapping(address => Lender) lenders; // lender address to Lender struct mapping

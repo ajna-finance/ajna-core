@@ -9,7 +9,7 @@ interface IPositionManagerOwnerActions {
 
     /**
      *  @notice Called by owners to burn an existing NFT.
-     *  @dev    Requires that all lp tokens have been removed from the NFT prior to calling.
+     *  @dev    Requires that all lps have been removed from the NFT prior to calling.
      *  @param  params Calldata struct supplying inputs required to update the underlying assets owed to an NFT.
      */
     function burn(
@@ -20,7 +20,7 @@ interface IPositionManagerOwnerActions {
      *  @notice Called to memorialize existing positions with a given NFT.
      *  @dev    The array of buckets is expected to be constructed off chain by scanning events for that lender.
      *  @dev    The NFT must have already been created, and the number of buckets to be memorialized at a time determined by function caller.
-     *  @dev    An additional call is made to the pool to transfer the LP tokens from their previous owner, to the Position Manager.
+     *  @dev    An additional call is made to the pool to transfer the LPs from their previous owner, to the Position Manager.
      *  @dev    Pool.setPositionOwner() must be called prior to calling this method.
      *  @param  params Calldata struct supplying inputs required to conduct the memorialization.
      */
@@ -29,7 +29,8 @@ interface IPositionManagerOwnerActions {
     ) external;
 
     /**
-     *  @notice Called by owners to add quote tokens and receive a representative NFT.
+     *  @notice Called by owners to mint and receive an Ajna Position NFT.
+     *  @dev    PositionNFTs can only be minited with an association to pools that have been deployed by the Ajna ERC20PoolFactory or ERC721PoolFactory.
      *  @param  params  Calldata struct supplying inputs required to mint a positions NFT.
      *  @return tokenId The tokenId of the newly minted NFT.
      */
@@ -49,7 +50,7 @@ interface IPositionManagerOwnerActions {
      *  @notice Called to reedem existing positions with a given NFT.
      *  @dev    The array of buckets is expected to be constructed off chain by scanning events for that lender.
      *  @dev    The NFT must have already been created, and the number of buckets to be memorialized at a time determined by function caller.
-     *  @dev    An additional call is made to the pool to transfer the LP tokens Position Manager to owner.
+     *  @dev    An additional call is made to the pool to transfer the LPs Position Manager to owner.
      *  @dev    Pool.setPositionOwner() must be called prior to calling this method.
      *  @param  params Calldata struct supplying inputs required to conduct the redeem.
      */
@@ -94,6 +95,7 @@ interface IPositionManagerOwnerActions {
         address pool;      // The pool address associated with positions NFT
         uint256 fromIndex; // The bucket index from which liquidity should be moved
         uint256 toIndex;   // The bucket index to which liquidity should be moved
+        uint256 expiry;    // Timestamp after which this TX will revert, preventing inclusion in a block with unfavorable price
     }
 
     /**

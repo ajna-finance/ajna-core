@@ -36,7 +36,7 @@ contract ERC20SafeTransferTokens is ERC20HelperContract {
 
         usdt.approve(address(pool), 1_000 * 1e18);
 
-        pool.addQuoteToken(1_000 * 1e18, 2549);
+        pool.addQuoteToken(1_000 * 1e18, 2549, type(uint256).max);
 
         changePrank(_borrower);
 
@@ -54,7 +54,7 @@ contract ERC20SafeTransferTokens is ERC20HelperContract {
 
         _quote.approve(address(pool), 1_000 * 1e18);
 
-        pool.addQuoteToken(1_000 * 1e18, 2549);
+        pool.addQuoteToken(1_000 * 1e18, 2549, type(uint256).max);
 
         changePrank(_borrower);
 

@@ -107,11 +107,13 @@ contract RewardsManager is IRewardsManager {
         uint256 tokenId_,
         uint256 epochToClaim_
     ) external override {
-        if (msg.sender != stakes[tokenId_].owner) revert NotOwnerOfDeposit();
+        StakeInfo storage stakeInfo = stakes[tokenId_];
+
+        if (msg.sender != stakeInfo.owner) revert NotOwnerOfDeposit();
 
         if (isEpochClaimed[tokenId_][epochToClaim_]) revert AlreadyClaimed();
 
-        _claimRewards(tokenId_, epochToClaim_);
+        _claimRewards(stakeInfo, tokenId_, epochToClaim_, true, stakeInfo.ajnaPool);
     }
 
     /**
@@ -149,8 +151,8 @@ contract RewardsManager is IRewardsManager {
 
             BucketState storage bucketState = stakeInfo.snapshot[bucketId];
 
-            // record the number of lp tokens in bucket at the time of staking
-            bucketState.lpsAtStakeTime = positionManager.getLPTokens(
+            // record the number of lps in bucket at the time of staking
+            bucketState.lpsAtStakeTime = positionManager.getLPs(
                 tokenId_,
                 bucketId
             );
@@ -164,7 +166,7 @@ contract RewardsManager is IRewardsManager {
         emit Stake(msg.sender, ajnaPool, tokenId_);
 
         // transfer LP NFT to this contract
-        IERC721(address(positionManager)).safeTransferFrom(msg.sender, address(this), tokenId_);
+        IERC721(address(positionManager)).transferFrom(msg.sender, address(this), tokenId_);
 
         // calculate rewards for updating exchange rates, if any
         uint256 updateReward = _updateBucketExchangeRates(
@@ -173,7 +175,7 @@ contract RewardsManager is IRewardsManager {
         );
 
         // transfer rewards to sender
-        IERC20(ajnaToken).safeTransfer(msg.sender, updateReward);
+        _transferAjnaRewards(updateReward);
     }
 
     /**
@@ -187,19 +189,36 @@ contract RewardsManager is IRewardsManager {
     function unstake(
         uint256 tokenId_
     ) external override {
-        if (msg.sender != stakes[tokenId_].owner) revert NotOwnerOfDeposit();
+        StakeInfo storage stakeInfo = stakes[tokenId_];
 
-        address ajnaPool = stakes[tokenId_].ajnaPool;
+        if (msg.sender != stakeInfo.owner) revert NotOwnerOfDeposit();
+
+        address ajnaPool = stakeInfo.ajnaPool;
 
         // claim rewards, if any
-        _claimRewards(tokenId_, IPool(ajnaPool).currentBurnEpoch());
+        _claimRewards(
+            stakeInfo,
+            tokenId_,
+            IPool(ajnaPool).currentBurnEpoch(),
+            false,
+            ajnaPool
+        );
 
+        // remove bucket snapshots recorded at the time of staking
+        uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
+        for (uint256 i = 0; i < positionIndexes.length; ) {
+            delete stakeInfo.snapshot[positionIndexes[i]]; // reset BucketState struct for current position
+
+            unchecked { ++i; }
+        }
+
+        // remove recorded stake info
         delete stakes[tokenId_];
 
         emit Unstake(msg.sender, ajnaPool, tokenId_);
 
         // transfer LP NFT from contract to sender
-        IERC721(address(positionManager)).safeTransferFrom(address(this), msg.sender, tokenId_);
+        IERC721(address(positionManager)).transferFrom(address(this), msg.sender, tokenId_);
     }
 
     /**
@@ -214,7 +233,7 @@ contract RewardsManager is IRewardsManager {
         updateReward = _updateBucketExchangeRates(pool_, indexes_);
 
         // transfer rewards to sender
-        IERC20(ajnaToken).safeTransfer(msg.sender, updateReward);
+        _transferAjnaRewards(updateReward);
     }
 
     /*******************************/
@@ -255,7 +274,19 @@ contract RewardsManager is IRewardsManager {
         return (
             stakes[tokenId_].owner,
             stakes[tokenId_].ajnaPool,
-            stakes[tokenId_].lastClaimedEpoch);
+            stakes[tokenId_].lastClaimedEpoch
+        );
+    }
+
+    /// @inheritdoc IRewardsManagerState
+    function getBucketStateStakeInfo(
+        uint256 tokenId_,
+        uint256 bucketId_
+    ) external view override returns (uint256, uint256) {
+        return (
+            stakes[tokenId_].snapshot[bucketId_].lpsAtStakeTime,
+            stakes[tokenId_].snapshot[bucketId_].rateAtStakeTime
+        );
     }
 
     /**************************/
@@ -291,15 +322,13 @@ contract RewardsManager is IRewardsManager {
                 positionIndexes
             );
 
-            uint256 nextEpoch = epoch + 1;
-
-            // update epoch token claim trackers
-            rewardsClaimed[nextEpoch]           += nextEpochRewards;
-            isEpochClaimed[tokenId_][nextEpoch] = true;
-
             rewards_ += nextEpochRewards;
 
             unchecked { ++epoch; }
+
+            // update epoch token claim trackers
+            rewardsClaimed[epoch]           += nextEpochRewards;
+            isEpochClaimed[tokenId_][epoch] = true;
         }
     }
 
@@ -391,7 +420,7 @@ contract RewardsManager is IRewardsManager {
 
                 // calculate the equivalent amount of quote tokens given the stakes lp balance,
                 // and the exchange rate at the next and current burn events
-                interestEarned_ = Maths.rayToWad(Maths.rmul(nextExchangeRate - exchangeRate_, bucketLPs));
+                interestEarned_ = Maths.wmul(nextExchangeRate - exchangeRate_, bucketLPs);
             }
 
         }
@@ -423,8 +452,9 @@ contract RewardsManager is IRewardsManager {
         // calculate rewards earned
         newRewards_ = Maths.wmul(
             REWARD_FACTOR,
-            Maths.wmul(
-                Maths.wdiv(interestEarned_, totalInterestEarnedInPeriod), totalBurnedInPeriod
+            Maths.wdiv(
+                Maths.wmul(interestEarned_, totalBurnedInPeriod),
+                totalInterestEarnedInPeriod
             )
         );
 
@@ -440,47 +470,49 @@ contract RewardsManager is IRewardsManager {
 
     /**
      *  @notice Claim rewards that have been accumulated by a staked NFT.
-     *  @param  tokenId_      ID of the staked LP NFT.
-     *  @param  epochToClaim_ The burn epoch to claim rewards for (rewards calculation starts from the last claimed epoch)
+     *  @param  stakeInfo_     Details of stake to claim rewards for.
+     *  @param  tokenId_       ID of the staked LP NFT.
+     *  @param  epochToClaim_  The burn epoch to claim rewards for (rewards calculation starts from the last claimed epoch)
+     *  @param  validateEpoch_ True if the epoch is received as a parameter and needs to be validated (lower or equal with latest epoch).
+     *  @param  ajnaPool_      Address of ajna pool associated with the stake.
      */
     function _claimRewards(
+        StakeInfo storage stakeInfo_,
         uint256 tokenId_,
-        uint256 epochToClaim_
+        uint256 epochToClaim_,
+        bool validateEpoch_,
+        address ajnaPool_
     ) internal {
-        StakeInfo storage stakeInfo = stakes[tokenId_];
 
-        address ajnaPool = stakeInfo.ajnaPool;
+        // revert if higher epoch to claim than current burn epoch
+        if (validateEpoch_ && epochToClaim_ > IPool(ajnaPool_).currentBurnEpoch()) revert EpochNotAvailable();
 
         // update bucket exchange rates and claim associated rewards
         uint256 rewardsEarned = _updateBucketExchangeRates(
-            ajnaPool,
+            ajnaPool_,
             positionManager.getPositionIndexes(tokenId_)
         );
 
         rewardsEarned += _calculateAndClaimRewards(tokenId_, epochToClaim_);
 
         uint256[] memory burnEpochsClaimed = _getBurnEpochsClaimed(
-            stakeInfo.lastClaimedEpoch,
+            stakeInfo_.lastClaimedEpoch,
             epochToClaim_
         );
 
         emit ClaimRewards(
             msg.sender,
-            ajnaPool,
+            ajnaPool_,
             tokenId_,
             burnEpochsClaimed,
             rewardsEarned
         );
 
         // update last interaction burn event
-        stakeInfo.lastClaimedEpoch = uint96(epochToClaim_);
-
-        uint256 ajnaBalance = IERC20(ajnaToken).balanceOf(address(this));
-
-        if (rewardsEarned > ajnaBalance) rewardsEarned = ajnaBalance;
+        stakeInfo_.lastClaimedEpoch = uint96(epochToClaim_);
 
         // transfer rewards to sender
-        IERC20(ajnaToken).safeTransfer(msg.sender, rewardsEarned);
+        _transferAjnaRewards(rewardsEarned);
     }
 
     /**
@@ -688,15 +720,18 @@ contract RewardsManager is IRewardsManager {
         }
     }
 
-    /************************/
-    /*** Helper Functions ***/
-    /************************/
-
-    /** @notice Implementing this method allows contracts to receive ERC721 tokens
-     *  @dev https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
+    /** @notice Utility method to transfer Ajna rewards to the sender
+     *  @dev   This method is used to transfer rewards to the sender after a successful claim or update.
+     *  @dev   It is used to ensure that rewards claimers will be able to claim some portion of the remaining tokens if a claim would exceed the remaining contract balance.
+     *  @param rewardsEarned_ Amount of rewards earned by the caller.
      */
-    function onERC721Received(address, address, uint256, bytes memory) external pure returns (bytes4) {
-        return this.onERC721Received.selector;
+    function _transferAjnaRewards(uint256 rewardsEarned_) internal {
+        // check that rewards earned isn't greater than remaining balance
+        // if remaining balance is greater, set to remaining balance
+        uint256 ajnaBalance = IERC20(ajnaToken).balanceOf(address(this));
+        if (rewardsEarned_ > ajnaBalance) rewardsEarned_ = ajnaBalance;
+        // transfer rewards to sender
+        IERC20(ajnaToken).safeTransfer(msg.sender, rewardsEarned_);
     }
 
 }

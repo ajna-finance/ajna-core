@@ -44,7 +44,7 @@ interface IERC20Token {
 }
 
 interface IERC721Token {
-    function safeTransferFrom(
+    function transferFrom(
         address from,
         address to,
         uint256 tokenId

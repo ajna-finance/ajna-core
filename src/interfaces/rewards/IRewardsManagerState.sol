@@ -47,6 +47,18 @@ interface IRewardsManagerState {
         uint256 tokenId
     ) external view returns (address, address, uint256);
 
+    /**
+     *  @notice Retrieve information about recorded LPs and rate values for a given bucket and a given stake, at stake time.
+     *  @param  tokenId  ID of the NFT staked in the rewards contract to retrieve information about.
+     *  @param  bucketId ID of the bucket to retrieve recorded information at stake time.
+     *  @return [WAD] LP amount the NFT owner is entitled in current bucket at the time of staking.
+     *  @return [WAD] current bucket exchange rate at the time of staking.
+     */
+    function getBucketStateStakeInfo(
+        uint256 tokenId,
+        uint256 bucketId
+    ) external view returns (uint256, uint256);
+
 }
 
 /*********************/
@@ -62,6 +74,6 @@ struct StakeInfo {
 }
 
 struct BucketState {
-    uint256 lpsAtStakeTime;  // [RAY] LP amount the NFT owner is entitled in current bucket at the time of staking
-    uint256 rateAtStakeTime; // [RAY] current bucket exchange rate at the time of staking (RAY)
+    uint256 lpsAtStakeTime;  // [WAD] LP amount the NFT owner is entitled in current bucket at the time of staking
+    uint256 rateAtStakeTime; // [WAD] current bucket exchange rate at the time of staking
 }

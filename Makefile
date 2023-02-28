@@ -14,13 +14,20 @@ install :; git submodule update --init --recursive
 build   :; forge clean && forge build
 
 # Tests
-test                 :; forge test --no-match-test testLoad # --ffi # enable if you need the `ffi` cheat code on HEVM
-test-with-gas-report :; FOUNDRY_PROFILE=optimized forge test --no-match-test testLoad --gas-report # --ffi # enable if you need the `ffi` cheat code on HEVM
+test                 :; forge test --no-match-test "testLoad|invariant"  # --ffi # enable if you need the `ffi` cheat code on HEVM
+test-with-gas-report :; FOUNDRY_PROFILE=optimized forge test --no-match-test "testLoad|invariant" --gas-report # --ffi # enable if you need the `ffi` cheat code on HEVM
 test-load            :; FOUNDRY_PROFILE=optimized forge test --match-test testLoad --gas-report
-coverage             :; forge coverage --no-match-test testLoad
+test-invariant		 :; forge t --mt invariant
+coverage             :; forge coverage --no-match-test "testLoad|invariant"
 
 # Generate Gas Snapshots
 snapshot :; forge clean && forge snapshot
 
 analyze:
 		slither src/. ; slither src/libraries/external/.
+
+
+# Deployment
+deploy-contracts:
+	forge script ./deploy.sol \
+		--rpc-url ${ETH_RPC_URL} --sender ${DEPLOY_ADDRESS} --keystore ${DEPLOY_KEY} --broadcast -vvv

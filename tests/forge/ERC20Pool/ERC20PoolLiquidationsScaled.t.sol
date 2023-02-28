@@ -73,15 +73,15 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         // deposit 200k quote token across 4 buckets
         uint256 lpBalance;
         for (uint i=0; i<4; ++i) {
-            _addInitialLiquidity(
-                {
+
+            _addInitialLiquidity({
                     from:   _lender,
                     amount: 50_000 * 1e18,
                     index:  startBucketId + i
-                }
-            );
+            });
+
             (lpBalance, ) = _pool.lenderInfo(startBucketId + i, _lender);
-            assertEq(lpBalance, 50_000 * 1e27);
+            assertEq(lpBalance, 50_000 * 1e18);
         }
         assertEq(_pool.depositSize(), 200_000 * 1e18);
     }
@@ -261,7 +261,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
 
     function _kick(address borrower, address kicker) internal {
         changePrank(kicker);
-        _pool.kick(borrower);
+        _pool.kick(borrower, MAX_FENWICK_INDEX);
         _checkAuctionStateUponKick(kicker);
     }
 
@@ -270,7 +270,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         (, uint256 lastBucketDeposit, , uint256 lastBucketLPs, , ) = _poolUtils.bucketInfo(address(_pool), bucketId);
 
         changePrank(lender);
-        _pool.kickWithDeposit(bucketId);
+        _pool.kickWithDeposit(bucketId, MAX_FENWICK_INDEX);
         _checkAuctionStateUponKick(lender);
 
         // confirm user has redeemed some of their LPs to post liquidation bond
@@ -294,7 +294,9 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
             uint256 auctionNeutralPrice,
             ,
             ,
+            ,
         ) = _pool.auctionInfo(_borrower);
+
         assertEq(auctionKicker,       kicker);
         assertGe(auctionBondFactor,   0.01 * 1e18);
         assertLe(auctionBondFactor,   0.3  * 1e18);
@@ -348,7 +350,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         }
 
         // confirm LPs were awarded to the kicker
-        (address kicker, , , uint256 kickTime, uint256 kickMomp, uint256 neutralPrice, , , ) = _pool.auctionInfo(_borrower);
+        (address kicker, , , uint256 kickTime, uint256 kickMomp, uint256 neutralPrice, , , , ) = _pool.auctionInfo(_borrower);
         uint256 auctionPrice = Auctions._auctionPrice(kickMomp, neutralPrice, kickTime);
         if (auctionPrice < neutralPrice) {
             uint256 kickerLPs = _kickerLPs(bucketId);
@@ -419,7 +421,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         uint256 auctionDebt_,
         uint256 auctionCollateral_
     ){
-        (, , , uint256 kickTime, uint256 kickMomp, uint256 neutralPrice, , , ) = _pool.auctionInfo(_borrower);
+        (, , , uint256 kickTime, uint256 kickMomp, uint256 neutralPrice, , , , ) = _pool.auctionInfo(_borrower);
         uint256 lastAuctionPrice = Auctions._auctionPrice(kickMomp, neutralPrice, kickTime);
         (uint256 lastAuctionDebt, uint256 lastAuctionCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         if (secondsToSkip != 0) {
@@ -440,7 +442,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
     }
 
     function _auctionPrice() internal view returns (uint256) {
-        (, , , uint256 kickTime, uint256 kickMomp, uint256 neutralPrice, , , ) = _pool.auctionInfo(_borrower);
+        (, , , uint256 kickTime, uint256 kickMomp, uint256 neutralPrice, , , , ) = _pool.auctionInfo(_borrower);
         return Auctions._auctionPrice(kickMomp, neutralPrice, kickTime);
     }
 
@@ -450,7 +452,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
     }
 
     function _kickerLPs(uint256 bucketId) internal view returns (uint256) {
-        (address kicker, , , , , , , , ) = _pool.auctionInfo(_borrower);
+        (address kicker, , , , , , , , , ) = _pool.auctionInfo(_borrower);
         (uint256 kickerLPs, ) = _pool.lenderInfo(bucketId, kicker);
         return kickerLPs;
     }

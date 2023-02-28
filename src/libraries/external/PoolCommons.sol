@@ -39,7 +39,7 @@ library PoolCommons {
     /**************/
 
     // See `IPoolEvents` for descriptions
-    event UpdateInterestRate(uint256 oldRate,uint256 newRate);
+    event UpdateInterestRate(uint256 oldRate, uint256 newRate);
 
     /**************************/
     /*** External Functions ***/

@@ -8,6 +8,11 @@ pragma solidity 0.8.14;
 interface IPositionManagerErrors {
 
     /**
+     * @notice User attempting to utilize LPB from a bankrupt bucket.
+     */
+    error BucketBankrupt();
+
+    /**
      * @notice User attempting to burn a LPB NFT before removing liquidity.
      */
     error LiquidityNotRemoved();
@@ -23,9 +28,9 @@ interface IPositionManagerErrors {
     error NotAjnaPool();
 
     /**
-     * @notice User failed to remove liquidity in an index from their NFT.
+     * @notice User failed to remove position from their NFT.
      */
-    error RemoveLiquidityFailed();
+    error RemovePositionFailed();
 
     /**
      * @notice User attempting to interact with a pool that doesn't match the pool associated with the tokenId.

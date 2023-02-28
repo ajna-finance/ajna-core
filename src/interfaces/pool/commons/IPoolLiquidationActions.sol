@@ -32,17 +32,21 @@ interface IPoolLiquidationActions {
     /**
      *  @notice Called by actors to initiate a liquidation.
      *  @param  borrower Identifies the loan to liquidate.
+     *  @param  npLimitIndex Lower bound of NP tolerated when kicking the auction.
      */
     function kick(
-        address borrower
+        address borrower,
+        uint256 npLimitIndex
     ) external;
 
     /**
      *  @notice Called by lenders to liquidate the top loan using their deposits.
-     *  @param  index_  The deposit index to use for kicking the top loan.
+     *  @param  index        The deposit index to use for kicking the top loan.
+     *  @param  npLimitIndex Lower bound of NP tolerated when kicking the auction.
      */
     function kickWithDeposit(
-        uint256 index_
+        uint256 index,
+        uint256 npLimitIndex
     ) external;
 
     /**
@@ -63,6 +67,7 @@ interface IPoolLiquidationActions {
 
     /**
      *  @notice Called by kickers to withdraw their auction bonds (the amount of quote tokens that are not locked in active auctions).
+     *  @param  recipient Address to receive claimed bonds amount.
      */
-    function withdrawBonds() external;
+    function withdrawBonds(address recipient) external;
 }

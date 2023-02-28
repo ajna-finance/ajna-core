@@ -11,6 +11,11 @@ interface IPoolErrors {
     /**************************/
 
     /**
+     *  @notice LPs allowance is already set by the owner.
+     */
+    error AllowanceAlreadySet();
+
+    /**
      *  @notice The action cannot be executed on an active auction.
      */
     error AuctionActive();
@@ -76,6 +81,11 @@ interface IPoolErrors {
     error FlashloanCallbackFailed();
 
     /**
+     *  @notice Balance of pool contract before flash loan is different than the balance after flash loan.
+     */
+    error FlashloanIncorrectBalance();
+
+    /**
      *  @notice Pool cannot facilitate a flashloan for the specified token address.
      */
     error FlashloanUnavailableForToken();
@@ -88,7 +98,7 @@ interface IPoolErrors {
     /**
      *  @notice Lender is attempting to move or remove more collateral they have claim to in the bucket.
      *  @notice Lender is attempting to remove more collateral they have claim to in the bucket.
-     *  @notice Lender must have enough LP tokens to claim the desired amount of quote from the bucket.
+     *  @notice Lender must have enough LPs to claim the desired amount of quote from the bucket.
      */
     error InsufficientLPs();
 
@@ -98,14 +108,14 @@ interface IPoolErrors {
     error InsufficientLiquidity();
 
     /**
-     *  @notice When transferring LP tokens between indices, the new index must be a valid index.
+     *  @notice When transferring LPs between indices, the new index must be a valid index.
      */
     error InvalidIndex();
 
     /**
      *  @notice Borrower is attempting to borrow more quote token than is available before the supplied limitIndex.
      */
-    error LimitIndexReached();
+    error LimitIndexExceeded();
 
     /**
      *  @notice When moving quote token HTP must stay below LUP.
@@ -124,7 +134,7 @@ interface IPoolErrors {
     error MoveToSamePrice();
 
     /**
-     *  @notice Owner of the LP tokens must have approved the new owner prior to transfer.
+     *  @notice Owner of the LPs must have approved the new owner prior to transfer.
      */
     error NoAllowance();
 
@@ -178,6 +188,21 @@ interface IPoolErrors {
      *  @notice Take was called before 1 hour had passed from kick time.
      */
     error TakeNotPastCooldown();
+
+    /**
+     *  @notice Current block timestamp has reached or exceeded a user-provided expiration.
+     */
+    error TransactionExpired();
+
+    /**
+     *  @notice The address that transfer LPs is not approved by the LPs receiving address.
+     */
+    error TransferorNotApproved();
+
+    /**
+     *  @notice Owner of the LPs attemps to transfer LPs to same address.
+     */
+    error TransferToSameOwner();
 
     /**
      *  @notice The threshold price of the loan to be inserted in loans heap is zero.
