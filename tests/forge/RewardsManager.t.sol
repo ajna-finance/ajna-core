@@ -588,10 +588,6 @@ contract RewardsManagerTest is ERC20HelperContract {
         });
     }
 
-    // staker and lenders have positions in the pool
-    // staker bucket goes bankrupt, but reserves still acrrue
-    // other lenders would recieve interest but the staker gets no rewards
-
     // two lenders stake their positions in the pool
     // staker one bucket bankrupt, staker two bucket active
     // interest accrued to both buckets, but staker one receives no rewards
@@ -780,7 +776,7 @@ contract RewardsManagerTest is ERC20HelperContract {
             exchangeRate: 1 * 1e18
         });
 
-        // // lower priced bucket isn't bankrupt
+        // lower priced bucket isn't bankrupt, but exchange rate has decreased
         // _assertBucket({
         //     index:        _i9_81,
         //     lpBalance:    10_000.000000000000000000 * 1e18,
@@ -826,7 +822,7 @@ contract RewardsManagerTest is ERC20HelperContract {
             updateRatesReward: 0
         });
 
-        // _minterOne withdraws and claims rewards, rewards should be 0
+        // _minterTwo withdraws and claims rewards, rewards should be 0 as their bucket exchange rate decreased
         _unstakeToken({
             minter:            _minterTwo,
             pool:              address(_pool),
