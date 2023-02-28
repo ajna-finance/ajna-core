@@ -92,9 +92,9 @@ library PoolCommons {
             interestParams_.lupColEma = curLupColEma;
 
             // calculate meaningful actual utilization for interest rate update
-            mau    = int256(_utilization(deposits_, poolState_.debt, poolState_.collateral));
+            uint256 meaningfulDeposit = _meaningfulDeposit(deposits_, poolState_.debt, poolState_.collateral);
+            mau    = int256(_utilization(meaningfulDeposit, poolState_.debt));
             mau102 = mau * PERCENT_102 / 1e18;
-
         }
 
         // calculate target utilization
@@ -155,15 +155,16 @@ library PoolCommons {
         else
             htpIndex = _indexOf(htp);
 
-        // Scale the fenwick tree to update amount of debt owed to lenders
-        uint256 depositAboveHtp = Deposits.prefixSum(deposits_, htpIndex);
+        uint256 depositAboveHtp   = Deposits.prefixSum(deposits_, htpIndex);
+        uint256 meaningfulDeposit = _meaningfulDeposit(deposits_, poolState_.debt, poolState_.collateral);
 
         if (depositAboveHtp != 0) {
             newInterest_ = Maths.wmul(
-                _lenderInterestMargin(_utilization(deposits_, poolState_.debt, poolState_.collateral)),
+                _lenderInterestMargin(_utilization(meaningfulDeposit, poolState_.debt)),
                 Maths.wmul(pendingFactor - Maths.WAD, poolState_.debt)
             );
 
+            // Scale the fenwick tree to update amount of debt owed to lenders
             Deposits.mult(
                 deposits_,
                 htpIndex,
@@ -226,7 +227,7 @@ library PoolCommons {
         uint256 poolDebt_,
         uint256 collateral_
     ) external view returns (uint256 utilization_) {
-        return _utilization(deposits, poolDebt_, collateral_);
+        return _utilization(_meaningfulDeposit(deposits, poolDebt_, collateral_), poolDebt_);
     }
 
     /**************************/
@@ -235,30 +236,18 @@ library PoolCommons {
 
     /**
      *  @notice Calculates pool utilization based on pool size, accrued debt and collateral pledged in pool .
-     *  @param  poolDebt_    Pool accrued debt.
-     *  @param  collateral_  Amount of collateral pledged in pool.
-     *  @return utilization_ Pool utilization value.
+     *  @param  meaningfulDeposit_  Amount of deposit above the pool threshold price.
+     *  @param  poolDebt_           Pool accrued debt.
+     *  @return utilization_        Pool utilization value.
      */
     function _utilization(
-        DepositsState storage deposits,
-        uint256 poolDebt_,
-        uint256 collateral_
+        uint256 meaningfulDeposit_,
+        uint256 poolDebt_
     ) internal view returns (uint256 utilization_) {
-        if (collateral_ != 0) {
-            uint256 ptp = _ptp(poolDebt_, collateral_);
-
-            if (ptp != 0) {
-                uint256 depositAbove;
-                if      (ptp >= MAX_PRICE) depositAbove = 0;
-                else if (ptp >= MIN_PRICE) depositAbove = Deposits.prefixSum(deposits, _indexOf(ptp));
-                else                       depositAbove = Deposits.treeSum(deposits);
-
-                if (depositAbove != 0) utilization_ = Maths.wdiv(
-                    poolDebt_,
-                    depositAbove
-                );
-            }
-        }
+        if (meaningfulDeposit_ != 0) utilization_ = Maths.wdiv(
+            poolDebt_,
+            meaningfulDeposit_
+        );
     }
 
     /**
@@ -279,4 +268,17 @@ library PoolCommons {
         }
     }
 
+    function _meaningfulDeposit(
+        DepositsState storage deposits,
+        uint256 poolDebt_,
+        uint256 collateral_
+    ) internal view returns (uint256 meaningfulDeposit_) {
+        uint256 ptp = _ptp(poolDebt_, collateral_);
+        if (ptp != 0) {
+            uint256 depositAbove;
+            if      (ptp >= MAX_PRICE) meaningfulDeposit_ = 0;
+            else if (ptp >= MIN_PRICE) meaningfulDeposit_ = Deposits.prefixSum(deposits, _indexOf(ptp));
+            else                       meaningfulDeposit_ = Deposits.treeSum(deposits);
+        }
+    }
 }
