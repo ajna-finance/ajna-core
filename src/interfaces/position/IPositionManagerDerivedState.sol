@@ -21,10 +21,20 @@ interface IPositionManagerDerivedState {
 
     /**
      *  @notice Returns an array of bucket indexes in which an NFT has liquidity.
+     *  @dev    Potentially includes buckets that have been bankrupted.
      *  @param  tokenId  Unique ID of token.
      *  @return Array of bucket indexes.
     */
     function getPositionIndexes(
+        uint256 tokenId
+    ) external view returns (uint256[] memory);
+
+    /**
+     *  @notice Returns an array of bucket indexes in which an NFT has liquidity, with bankrupt buckets removed.
+     *  @param  tokenId  Unique ID of token.
+     *  @return Array of bucket indexes filtered for active liquidity.
+    */
+    function getPositionIndexesFiltered(
         uint256 tokenId
     ) external view returns (uint256[] memory);
 

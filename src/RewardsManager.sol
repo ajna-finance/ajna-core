@@ -250,7 +250,7 @@ contract RewardsManager is IRewardsManager {
         uint256 lastBurnEpoch = stakes[tokenId_].lastInteractionBurnEpoch;
         uint256 stakingEpoch  = stakes[tokenId_].stakingEpoch;
 
-        uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
+        uint256[] memory positionIndexes = positionManager.getPositionIndexesFiltered(tokenId_);
 
         // iterate through all burn periods to calculate and claim rewards
         for (uint256 epoch = lastBurnEpoch; epoch < epochToClaim_; ) {
@@ -309,7 +309,7 @@ contract RewardsManager is IRewardsManager {
         uint256 lastBurnEpoch = stakes[tokenId_].lastInteractionBurnEpoch;
         uint256 stakingEpoch  = stakes[tokenId_].stakingEpoch;
 
-        uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
+        uint256[] memory positionIndexes = positionManager.getPositionIndexesFiltered(tokenId_);
 
         // iterate through all burn periods to calculate and claim rewards
         for (uint256 epoch = lastBurnEpoch; epoch < epochToClaim_; ) {
@@ -370,29 +370,24 @@ contract RewardsManager is IRewardsManager {
                 bucketRate = bucketSnapshot.rateAtStakeTime;
             }
 
-            // check if bucket is bankrupt after NFT memorialization
-            // if bucket is bankrupt after deposit then skip to next bucket without accruing additional rewards
-            if (!positionManager.isPositionBucketBankrupt(tokenId_, bucketIndex)) {
+            // calculate the amount of interest accrued in current epoch
+            uint256 interestEarned = _calculateExchangeRateInterestEarned(
+                ajnaPool_,
+                nextEpoch,
+                bucketIndex,
+                bucketSnapshot.lpsAtStakeTime,
+                bucketRate
+            );
 
-                // calculate the amount of interest accrued in current epoch
-                uint256 interestEarned = _calculateExchangeRateInterestEarned(
+            // calculate and accumulate rewards if interest earned
+            if (interestEarned != 0) {
+                epochRewards_ += _calculateNewRewards(
                     ajnaPool_,
+                    interestEarned,
                     nextEpoch,
-                    bucketIndex,
-                    bucketSnapshot.lpsAtStakeTime,
-                    bucketRate
+                    epoch_,
+                    claimedRewardsInNextEpoch
                 );
-
-                // calculate and accumulate rewards if interest earned
-                if (interestEarned != 0) {
-                    epochRewards_ += _calculateNewRewards(
-                        ajnaPool_,
-                        interestEarned,
-                        nextEpoch,
-                        epoch_,
-                        claimedRewardsInNextEpoch
-                    );
-                }
             }
 
             unchecked { ++i; }
