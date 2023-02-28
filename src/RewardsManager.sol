@@ -371,31 +371,28 @@ contract RewardsManager is IRewardsManager {
             }
 
             // check if bucket is bankrupt after NFT memorialization
-            if (positionManager.isPositionBucketBankrupt(tokenId_, bucketIndex)) {
-                // if bucket is bankrupt after deposit then skip to next bucket without accruing additional rewards
-                epochRewards_ += 0;
-                unchecked { ++i; }
-                continue;
-            }
+            // if bucket is bankrupt after deposit then skip to next bucket without accruing additional rewards
+            if (!positionManager.isPositionBucketBankrupt(tokenId_, bucketIndex)) {
 
-            // calculate the amount of interest accrued in current epoch
-            uint256 interestEarned = _calculateExchangeRateInterestEarned(
-                ajnaPool_,
-                nextEpoch,
-                bucketIndex,
-                bucketSnapshot.lpsAtStakeTime,
-                bucketRate
-            );
-
-            // calculate and accumulate rewards if interest earned
-            if (interestEarned != 0) {
-                epochRewards_ += _calculateNewRewards(
+                // calculate the amount of interest accrued in current epoch
+                uint256 interestEarned = _calculateExchangeRateInterestEarned(
                     ajnaPool_,
-                    interestEarned,
                     nextEpoch,
-                    epoch_,
-                    claimedRewardsInNextEpoch
+                    bucketIndex,
+                    bucketSnapshot.lpsAtStakeTime,
+                    bucketRate
                 );
+
+                // calculate and accumulate rewards if interest earned
+                if (interestEarned != 0) {
+                    epochRewards_ += _calculateNewRewards(
+                        ajnaPool_,
+                        interestEarned,
+                        nextEpoch,
+                        epoch_,
+                        claimedRewardsInNextEpoch
+                    );
+                }
             }
 
             unchecked { ++i; }
@@ -709,9 +706,9 @@ contract RewardsManager is IRewardsManager {
             // retrieve the bucket exchange rate at the previous epoch
             uint256 prevBucketExchangeRate = bucketExchangeRates[pool_][bucketIndex_][burnEpoch_ - 1];
 
-            // skip reward calculation if update at the previous epoch was missed
+            // skip reward calculation if update at the previous epoch was missed and if exchange rate decreased due to bad debt
             // prevents excess rewards from being provided from using a 0 value as an input to the interestFactor calculation below.
-            if (prevBucketExchangeRate != 0) {
+            if (prevBucketExchangeRate != 0 && prevBucketExchangeRate < curBucketExchangeRate) {
 
                 // retrieve current deposit of the bucket
                 (, , , uint256 bucketDeposit, ) = IPool(pool_).bucketInfo(bucketIndex_);
