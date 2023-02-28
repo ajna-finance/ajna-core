@@ -432,7 +432,10 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         skip(10 days);
 
-        _updateInterest();
+        // accrue debt and restamp Neutral Price of the loan
+        vm.expectEmit(true, true, true, true);
+        emit LoanStamped(_borrower);
+        _pool.stampLoan(_borrower);
 
         expectedDebt = 21_157.152643010853304038 * 1e18;
 
@@ -457,7 +460,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        50 * 1e18,
-            borrowert0Np:              445.838278846153846359 * 1e18,
+            borrowert0Np:              448.381722115384615591 * 1e18,
             borrowerCollateralization: 7.044916376706357984 * 1e18
         });
         _assertLenderInterest(liquidityAdded, 119.836959946754650000 * 1e18);
@@ -489,7 +492,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        50 * 1e18,
-            borrowert0Np:              445.838278846153846359 * 1e18,
+            borrowert0Np:              448.381722115384615591 * 1e18,
             borrowerCollateralization: 7.030801136225104190 * 1e18
         });
         _assertLenderInterest(liquidityAdded, 157.005764521268350000 * 1e18);
@@ -520,7 +523,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              expectedDebt,
             borrowerCollateral:        50 * 1e18,
-            borrowert0Np:              445.838278846153846359 * 1e18,
+            borrowert0Np:              448.381722115384615591 * 1e18,
             borrowerCollateralization: 7.015307034516347067 * 1e18
         });
     }
@@ -595,6 +598,14 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             amount:     10 * 1e18,
             indexLimit: 3_000,
             newLup:     2_995.912459898389633881 * 1e18
+        });
+
+        // skip to make loan undercolalteralized
+        skip(10000 days);
+
+        // should not allow borrower to restamp the Neutral Price of the loan if under collateralized
+        _assertStampLoanBorrowerUnderCollateralizedRevert({
+            borrower: _borrower2
         });
     }
 

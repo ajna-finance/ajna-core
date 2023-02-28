@@ -11,6 +11,7 @@ import { IERC20 }          from "@openzeppelin/contracts/token/ERC20/IERC20.sol"
 import {
     IPool,
     IPoolImmutables,
+    IPoolBorrowerActions,
     IPoolLenderActions,
     IPoolState,
     IPoolLiquidationActions,
@@ -330,6 +331,25 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function updateInterest() external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
         _updateInterestState(poolState, _lup(poolState.debt));
+    }
+
+    /***********************************/
+    /*** Borrower External Functions ***/
+    /***********************************/
+
+    /// @inheritdoc IPoolBorrowerActions
+    function stampLoan(address borrowerAddress_) external override nonReentrant {
+        PoolState memory poolState = _accruePoolInterest();
+
+        uint256 newLup = BorrowerActions.stampLoan(
+            auctions,
+            deposits,
+            loans,
+            poolState,
+            borrowerAddress_
+        );
+
+        _updateInterestState(poolState, newLup);
     }
 
     /*****************************/

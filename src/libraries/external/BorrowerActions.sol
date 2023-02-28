@@ -65,6 +65,13 @@ library BorrowerActions {
     }
 
     /**************/
+    /*** Events ***/
+    /**************/
+
+    // See `IPoolEvents` for descriptions
+    event LoanStamped(address indexed borrowerAddress);
+
+    /**************/
     /*** Errors ***/
     /**************/
 
@@ -394,6 +401,62 @@ library BorrowerActions {
             vars.inAuction,
             vars.stampT0Np
         );
+    }
+
+    /**
+     *  @notice See `IPoolBorrowerActions` for descriptions
+     *  @dev    write state:
+     *              - Loans.update:
+     *                  - _upsert:
+     *                      - insert or update loan in loans array
+     *                  - remove:
+     *                      - remove loan from loans array
+     *                  - update borrower in address => borrower mapping
+     *  @dev    reverts on:
+     *              - auction active AuctionActive()
+     *              - loan not fully collateralized BorrowerUnderCollateralized()
+     *  @dev    emit events:
+     *              - LoanStamped
+     */
+    function stampLoan(
+        AuctionsState storage auctions_,
+        DepositsState storage deposits_,
+        LoansState    storage loans_,
+        PoolState calldata poolState_,
+        address borrowerAddress_
+    ) external returns (
+        uint256 newLup_
+    ) {
+        Borrower memory borrower = loans_.borrowers[borrowerAddress_];
+
+        bool inAuction = _inAuction(auctions_, borrowerAddress_);
+
+        // revert if loan is in auction
+        if (inAuction) revert AuctionActive();
+
+        newLup_ = _lup(deposits_, poolState_.debt);
+
+        uint256 borrowerDebt  = Maths.wmul(borrower.t0Debt, poolState_.inflator);
+        bool isCollateralized = _isCollateralized(borrowerDebt, borrower.collateral, newLup_, poolState_.poolType);
+
+        // revert if loan is not fully collateralized at current LUP
+        if (!isCollateralized) revert BorrowerUnderCollateralized();
+
+        // update loan state to stamp Neutral Price
+        Loans.update(
+            loans_,
+            auctions_,
+            deposits_,
+            borrower,
+            borrowerAddress_,
+            poolState_.debt,
+            poolState_.rate,
+            newLup_,
+            false,          // loan not in auction
+            true            // stamp Neutral Price of the loan
+        );
+
+        emit LoanStamped(borrowerAddress_);
     }
 
     /**********************/

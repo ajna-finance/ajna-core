@@ -881,6 +881,22 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.bucketTake(borrower, true, index);
     }
 
+    function _assertStampLoanAuctionActiveRevert(
+        address borrower
+    ) internal {
+        changePrank(borrower);
+        vm.expectRevert(IPoolErrors.AuctionActive.selector);
+        _pool.stampLoan(borrower);
+    }
+
+    function _assertStampLoanBorrowerUnderCollateralizedRevert(
+        address borrower
+    ) internal {
+        changePrank(borrower);
+        vm.expectRevert(IPoolErrors.BorrowerUnderCollateralized.selector);
+        _pool.stampLoan(borrower);
+    }
+
     function _assertBorrowAuctionActiveRevert(
         address from,
         uint256,
