@@ -886,7 +886,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(borrower);
         vm.expectRevert(IPoolErrors.AuctionActive.selector);
-        _pool.stampLoan(borrower);
+        _pool.stampLoan();
     }
 
     function _assertStampLoanBorrowerUnderCollateralizedRevert(
@@ -894,7 +894,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(borrower);
         vm.expectRevert(IPoolErrors.BorrowerUnderCollateralized.selector);
-        _pool.stampLoan(borrower);
+        _pool.stampLoan();
     }
 
     function _assertBorrowAuctionActiveRevert(

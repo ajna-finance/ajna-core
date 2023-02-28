@@ -338,15 +338,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /***********************************/
 
     /// @inheritdoc IPoolBorrowerActions
-    function stampLoan(address borrowerAddress_) external override nonReentrant {
+    function stampLoan() external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
         uint256 newLup = BorrowerActions.stampLoan(
             auctions,
             deposits,
             loans,
-            poolState,
-            borrowerAddress_
+            poolState
         );
 
         _updateInterestState(poolState, newLup);

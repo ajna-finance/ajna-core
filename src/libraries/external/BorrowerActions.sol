@@ -422,14 +422,14 @@ library BorrowerActions {
         AuctionsState storage auctions_,
         DepositsState storage deposits_,
         LoansState    storage loans_,
-        PoolState calldata poolState_,
-        address borrowerAddress_
+        PoolState calldata poolState_
     ) external returns (
         uint256 newLup_
     ) {
-        Borrower memory borrower = loans_.borrowers[borrowerAddress_];
+        address borrowerAddress  = msg.sender;
+        Borrower memory borrower = loans_.borrowers[borrowerAddress];
 
-        bool inAuction = _inAuction(auctions_, borrowerAddress_);
+        bool inAuction = _inAuction(auctions_, borrowerAddress);
 
         // revert if loan is in auction
         if (inAuction) revert AuctionActive();
@@ -448,7 +448,7 @@ library BorrowerActions {
             auctions_,
             deposits_,
             borrower,
-            borrowerAddress_,
+            borrowerAddress,
             poolState_.debt,
             poolState_.rate,
             newLup_,
@@ -456,7 +456,7 @@ library BorrowerActions {
             true            // stamp Neutral Price of the loan
         );
 
-        emit LoanStamped(borrowerAddress_);
+        emit LoanStamped(borrowerAddress);
     }
 
     /**********************/

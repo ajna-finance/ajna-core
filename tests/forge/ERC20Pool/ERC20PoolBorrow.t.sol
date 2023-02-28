@@ -435,7 +435,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         // accrue debt and restamp Neutral Price of the loan
         vm.expectEmit(true, true, true, true);
         emit LoanStamped(_borrower);
-        _pool.stampLoan(_borrower);
+        _pool.stampLoan();
 
         expectedDebt = 21_157.152643010853304038 * 1e18;
 
