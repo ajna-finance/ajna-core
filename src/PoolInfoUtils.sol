@@ -234,7 +234,7 @@ contract PoolInfoUtils {
         poolCollateralization_ = _collateralization(poolDebt, poolCollateral, currentLup);
         poolActualUtilization_ = pool.depositUtilization(poolDebt, poolCollateral);
 
-        (uint256 debtEma, uint256 lupColEma) = pool.emasInfo();
+        (uint256 lupColEma, uint256 debtEma) = pool.emasInfo();
         poolTargetUtilization_ = _targetUtilization(lupColEma, debtEma);
     }
 
