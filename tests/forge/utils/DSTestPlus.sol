@@ -93,6 +93,16 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     EnumerableSet.AddressSet borrowers;
     EnumerableSet.UintSet bucketsUsed;
 
+    function _registerLender(
+        address lender,
+        uint256[] memory indexes
+    ) internal {
+        lenders.add(lender);
+        for (uint256 i = 0; i < indexes.length; i++) {
+            lendersDepositedIndex[lender].add(indexes[i]);
+        }
+    }
+
     /*****************************/
     /*** Actor actions asserts ***/
     /*****************************/

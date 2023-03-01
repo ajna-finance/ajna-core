@@ -258,6 +258,9 @@ contract RewardsManagerTest is ERC20HelperContract {
         );
 
         _positionManager.memorializePositions(memorializeParams);
+
+        // register position manager as lender at memorialized indexes (for LP test assertions)
+        _registerLender(address(_positionManager), params_.indexes);
     }
 
     function _triggerReserveAuctions(TriggerReserveAuctionParams memory params_) internal returns (uint256 tokensBurned_) {
@@ -767,23 +770,14 @@ contract RewardsManagerTest is ERC20HelperContract {
             exchangeRate: 1 * 1e18
         });
 
-        // higher priced bucket is bankrupt
-        _assertBucket({
-            index:        _i9_91,
-            lpBalance:    0,
-            collateral:   0,
-            deposit:      0,
-            exchangeRate: 1 * 1e18
-        });
-
         // lower priced bucket isn't bankrupt, but exchange rate has decreased
-        // _assertBucket({
-        //     index:        _i9_81,
-        //     lpBalance:    10_000.000000000000000000 * 1e18,
-        //     collateral:   0,
-        //     deposit:      4936.353249567789112549 * 1e18,
-        //     exchangeRate: .493635324956778911 * 1e18
-        // });
+        _assertBucket({
+            index:        _i9_81,
+            lpBalance:    10_000 * 1e18,
+            collateral:   0,
+            deposit:      4936.353249567789112549 * 1e18,
+            exchangeRate: 0.493635324956778911 * 1e18
+        });
 
         /***********************/
         /*** Reserve Auction ***/
