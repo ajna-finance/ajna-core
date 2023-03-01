@@ -111,7 +111,7 @@ contract PoolHelperTest is DSTestPlus {
     }
 
     /**
-     *  @notice Tests fee rate for early withdrawals
+     *  @notice Tests fee rate for originations
      */
     function testFeeRate() external {
         uint256 interestRate = 0.12 * 1e18;

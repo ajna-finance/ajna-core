@@ -251,13 +251,6 @@ library LenderActions {
 
         vars.ptp = _ptp(poolState_.debt, poolState_.collateral);
 
-        // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
-        if (vars.fromBucketDepositTime != 0 && block.timestamp - vars.fromBucketDepositTime < 1 days) {
-            if (vars.fromBucketPrice > vars.ptp && vars.toBucketPrice < vars.ptp) {
-                movedAmount_ = Maths.wmul(movedAmount_, Maths.WAD - _feeRate(poolState_.rate));
-            }
-        }
-
         vars.toBucketUnscaledDeposit = Deposits.unscaledValueAt(deposits_, params_.toIndex);
         vars.toBucketScale           = Deposits.scale(deposits_, params_.toIndex);
         vars.toBucketDeposit         = Maths.wmul(vars.toBucketUnscaledDeposit, vars.toBucketScale);
@@ -367,13 +360,6 @@ library LenderActions {
             deposits_,
             removeParams
         );
-
-        // apply early withdrawal penalty if quote token is removed from above the PTP
-        if (depositTime != 0 && block.timestamp - depositTime < 1 days) {
-            if (removeParams.price > _ptp(poolState_.debt, poolState_.collateral)) {
-                removedAmount_ = Maths.wmul(removedAmount_, Maths.WAD - _feeRate(poolState_.rate));
-            }
-        }
 
         lup_ = _lup(deposits_, poolState_.debt);
 

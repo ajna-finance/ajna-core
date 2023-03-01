@@ -332,9 +332,9 @@ contract PoolInfoUtils {
     }
 
     /**
-     *  @notice Calculates fee rate for a pool.
+     *  @notice Calculates origination fee rate for a pool.
      *  @notice Calculated as greater of the current annualized interest rate divided by 52 (one week of interest) or 5 bps.
-     *  @return Fee rate applied to the given interest rate.
+     *  @return Fee rate calculated from the given interest rate.
      */
     function feeRate(
         address ajnaPool_

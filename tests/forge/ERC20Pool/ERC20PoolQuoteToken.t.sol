@@ -727,17 +727,11 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             depositTime: _startTime + 1 minutes
         });
 
-        // lender makes a partial withdrawal, paying an early withdrawal penalty - current annualized interest rate divided by 52 (one week of interest)
-        (uint256 interestRate, ) = _pool.interestRateInfo();
-        uint256 penalty = Maths.WAD - Maths.wdiv(interestRate, 52 * 10**18);
-        assertLt(penalty, Maths.WAD);
-
-        uint256 expectedWithdrawal1 = Maths.wmul(1_700 * 1e18, penalty);
-
-        _removeLiquidityWithPenalty({
+        // lender makes a partial withdrawal
+        uint256 withdrawal1 = 1_700 * 1e18;
+        _removeLiquidity({
             from:          _lender,
-            amount:        1_700 * 1e18,
-            amountRemoved: expectedWithdrawal1,
+            amount:        withdrawal1,
             index:         1606,
             newLup:        _priceAt(1663),
             lpRedeem:      1_699.988795593461528952000000000 * 1e18
@@ -749,7 +743,6 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         assertGt(_priceAt(1606), _htp());
 
         uint256 expectedWithdrawal2 = 1_700.144243451229452671 * 1e18;
-
         _removeAllLiquidity({
             from:     _lender,
             amount:   expectedWithdrawal2,
@@ -758,7 +751,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             lpRedeem: 1_700.011204406538471048000000000 * 1e18
         });
 
-        assertEq(_quote.balanceOf(_lender), lenderBalanceBefore + expectedWithdrawal1 + expectedWithdrawal2);
+        assertEq(_quote.balanceOf(_lender), lenderBalanceBefore + withdrawal1 + expectedWithdrawal2);
 
         _assertBucket({
             index:        1606,
