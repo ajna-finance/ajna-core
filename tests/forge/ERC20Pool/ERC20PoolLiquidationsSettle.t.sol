@@ -730,12 +730,13 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         });
 
         // adding to a different bucket for testing move in same block with bucket bankruptcy
-        _addLiquidity({
-            from:   _lender1,
-            amount: 100 * 1e18,
-            index:  _i9_52,
-            lpAward: 100 * 1e18,
-            newLup: 9.721295865031779605 * 1e18
+        _addLiquidityWithPenalty({
+            from:        _lender1,
+            amount:      100 * 1e18,
+            amountAdded: 99.987671232876712300 * 1e18,
+            index:       _i9_52,
+            lpAward:     99.987671232876712300 * 1e18,
+            newLup:      9.721295865031779605 * 1e18
         });
 
         // settle to make buckets insolvent

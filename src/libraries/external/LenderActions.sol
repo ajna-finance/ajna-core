@@ -14,7 +14,7 @@ import {
     PoolState
 }                     from '../../interfaces/pool/commons/IPoolState.sol';
 
-import { _priceAt, _ptp, MAX_FENWICK_INDEX } from '../helpers/PoolHelper.sol';
+import { _depositFeeRate, _priceAt, _ptp, MAX_FENWICK_INDEX } from '../helpers/PoolHelper.sol';
 
 import { Deposits } from '../internal/Deposits.sol';
 import { Buckets }  from '../internal/Buckets.sol';
@@ -156,16 +156,23 @@ library LenderActions {
         uint256 bucketScale           = Deposits.scale(deposits_, params_.index);
         uint256 bucketDeposit         = Maths.wmul(bucketScale, unscaledBucketDeposit);
         uint256 bucketPrice           = _priceAt(params_.index);
+        uint256 addedAmount           = params_.amount;
+
+        // charge unutilized deposit fee where appropriate
+        uint256 lupIndex = Deposits.findIndexOfSum(deposits_, poolState_.debt);
+        if (lupIndex != 0 && params_.index > lupIndex) {
+            addedAmount = Maths.wmul(addedAmount, Maths.WAD - _depositFeeRate(poolState_.rate));
+        }
 
         bucketLPs_ = Buckets.quoteTokensToLPs(
             bucket.collateral,
             bucket.lps,
             bucketDeposit,
-            params_.amount,
+            addedAmount,
             bucketPrice
         );
 
-        Deposits.unscaledAdd(deposits_, params_.index, Maths.wdiv(params_.amount, bucketScale));
+        Deposits.unscaledAdd(deposits_, params_.index, Maths.wdiv(addedAmount, bucketScale));
 
         // update lender LPs
         Lender storage lender = bucket.lenders[msg.sender];
@@ -180,7 +187,7 @@ library LenderActions {
 
         lup_ = _lup(deposits_, poolState_.debt);
 
-        emit AddQuoteToken(msg.sender, params_.index, params_.amount, bucketLPs_, lup_);
+        emit AddQuoteToken(msg.sender, params_.index, addedAmount, bucketLPs_, lup_);
     }
 
     /**

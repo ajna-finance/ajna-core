@@ -999,25 +999,27 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             lupIndex: 2_552
         });
 
-        _addLiquidity({
-            from:    _lender,
-            amount:  10_000 * 1e18,
-            index:   _indexOf(200 * 1e18),
-            lpAward: 10_000 * 1e18,
-            newLup:  2_981.007422784467321543 * 1e18
+        // add liquidity below LUP, ensuring fee is levied
+        _addLiquidityWithPenalty({
+            from:        _lender,
+            amount:      10_000 * 1e18,
+            amountAdded: 9_998.630136986301370000 * 1e18,
+            index:       _indexOf(200 * 1e18),
+            lpAward:     9_998.630136986301370000 * 1e18,
+            newLup:      2_981.007422784467321543 * 1e18
         });
 
         assertEq(_quote.balanceOf(_lender), 140_000 * 1e18);
 
         _removeAllLiquidity({
             from:     _lender,
-            amount:   10_000 * 1e18,
+            amount:   9_998.630136986301370000 * 1e18,
             index:    _indexOf(200 * 1e18),
             newLup:   2_981.007422784467321543 * 1e18,
-            lpRedeem: 10_000 * 1e18
+            lpRedeem: 9_998.630136986301370000 * 1e18
         });
 
-        assertEq(_quote.balanceOf(_lender), 150_000 * 1e18);
+        assertEq(_quote.balanceOf(_lender), 149_998.630136986301370000 * 1e18);
 
         // repay entire loan
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 40 * 1e18);
@@ -1054,7 +1056,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             lpRedeem: 10_000 * 1e18
         });
 
-        assertEq(_quote.balanceOf(_lender), 160_000 * 1e18);
+        assertEq(_quote.balanceOf(_lender), 159_998.630136986301370000 * 1e18);
 
         vm.revertTo(snapshot);
 
@@ -1078,7 +1080,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             lpRedeem: 10_000 * 1e18
         });
 
-        assertEq(_quote.balanceOf(_lender), 160_000 * 1e18);
+        assertEq(_quote.balanceOf(_lender), 159_998.630136986301370000 * 1e18);
 
         // lender removes everything from price above PTP after 24 hours
         skip(1 days);
@@ -1091,7 +1093,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             lpRedeem: 10_000 * 1e18
         });
 
-        assertEq(_quote.balanceOf(_lender), 170_000 * 1e18);
+        assertEq(_quote.balanceOf(_lender), 169_998.630136986301370000 * 1e18);
     }
 }
 
