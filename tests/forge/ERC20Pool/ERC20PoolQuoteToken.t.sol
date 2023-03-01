@@ -1122,14 +1122,13 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         // lender moves some liquidity below the pool threshold price; penalty should be assessed
         skip(16 hours);
 
-        _moveLiquidityWithPenalty({
+        _moveLiquidity({
             from:         _lender,
             amount:       2_500 * 1e18,
-            amountMoved:  2_497.596153846153845 * 1e18,
             fromIndex:    2873,
             toIndex:      2954,
             lpRedeemFrom: 2_499.899333909953254268000000000 * 1e18,
-            lpAwardTo:    2_497.596153846153845 * 1e18,
+            lpAwardTo:    2_500 * 1e18,
             newLup:       _lup()
         });
 
@@ -1181,10 +1180,10 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
         _removeAllLiquidity({
             from:     _lender,
-            amount:   4_997.596153846153845 * 1e18,
+            amount:   5_000 * 1e18,
             index:    2954,
             newLup:   601.252968524772188572 * 1e18,
-            lpRedeem: 4_997.596153846153845 * 1e18
+            lpRedeem: 5_000 * 1e18
         });
 
         assertGt(_quote.balanceOf(_lender), 200_000 * 1e18);

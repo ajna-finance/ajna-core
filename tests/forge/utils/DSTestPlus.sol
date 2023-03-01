@@ -260,22 +260,9 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 lpAwardTo,
         uint256 newLup
     ) internal {
-        _moveLiquidityWithPenalty(from, amount, amount, fromIndex, toIndex, lpRedeemFrom, lpAwardTo, newLup);
-    }
-
-    function _moveLiquidityWithPenalty(
-        address from,
-        uint256 amount,
-        uint256 amountMoved,    // amount less penalty, where applicable
-        uint256 fromIndex,
-        uint256 toIndex,
-        uint256 lpRedeemFrom,
-        uint256 lpAwardTo,
-        uint256 newLup
-    ) internal {
         changePrank(from);
         vm.expectEmit(true, true, true, true);
-        emit MoveQuoteToken(from, fromIndex, toIndex, amountMoved, lpRedeemFrom, lpAwardTo, newLup);
+        emit MoveQuoteToken(from, fromIndex, toIndex, amount, lpRedeemFrom, lpAwardTo, newLup);
         (uint256 lpbFrom, uint256 lpbTo, ) = _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
         assertEq(lpbFrom, lpRedeemFrom);
         assertEq(lpbTo,   lpAwardTo);
@@ -333,23 +320,12 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 newLup,
         uint256 lpRedeem
     ) internal {
-        _removeLiquidityWithPenalty(from, amount, amount, index, newLup, lpRedeem);
-    }
-
-    function _removeLiquidityWithPenalty(
-        address from,
-        uint256 amount,
-        uint256 amountRemoved,  // amount less penalty, where applicable
-        uint256 index,
-        uint256 newLup,
-        uint256 lpRedeem
-    ) internal {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(from, index, amountRemoved, lpRedeem, newLup);
-        _assertQuoteTokenTransferEvent(address(_pool), from, amountRemoved);
+        emit RemoveQuoteToken(from, index, amount, lpRedeem, newLup);
+        _assertQuoteTokenTransferEvent(address(_pool), from, amount);
         (uint256 removedAmount, uint256 lpRedeemed) = _pool.removeQuoteToken(amount, index);
-        assertEq(removedAmount, amountRemoved);
+        assertEq(removedAmount, amount);
         assertEq(lpRedeemed,    lpRedeem);
     }
 
