@@ -206,8 +206,8 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         assertEq(_poolUtils.momp(address(_pool)), 2_981.007422784467321543 * 1e18);
     }
 
-    function testPoolFeeRate() external {
-        assertEq(_poolUtils.feeRate(address(_pool)), 0.000961538461538462 * 1e18);
+    function testBorrowFeeRate() external {
+        assertEq(_poolUtils.borrowFeeRate(address(_pool)), 0.000961538461538462 * 1e18);
     }
 
     function testPoolInfoUtilsLPsToCollateralAndQuote() external {

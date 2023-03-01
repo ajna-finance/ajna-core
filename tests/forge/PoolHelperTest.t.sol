@@ -113,11 +113,11 @@ contract PoolHelperTest is DSTestPlus {
     /**
      *  @notice Tests fee rate for originations
      */
-    function testFeeRate() external {
+    function testBorrowFeeRate() external {
         uint256 interestRate = 0.12 * 1e18;
-        assertEq(_feeRate(interestRate),  0.002307692307692308 * 1e18);
-        assertEq(_feeRate(0.52 * 1e18),     0.01 * 1e18);
-        assertEq(_feeRate(0.26 * 1e18),     0.005 * 1e18);
+        assertEq(_borrowFeeRate(interestRate),  0.002307692307692308 * 1e18);
+        assertEq(_borrowFeeRate(0.52 * 1e18),     0.01 * 1e18);
+        assertEq(_borrowFeeRate(0.26 * 1e18),     0.005 * 1e18);
     }
 
     /**

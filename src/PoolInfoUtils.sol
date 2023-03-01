@@ -6,7 +6,7 @@ import { IPool, IERC20Token } from './interfaces/pool/IPool.sol';
 
 import {
     _claimableReserves,
-    _feeRate,
+    _borrowFeeRate,
     _indexOf,
     _lpsToCollateral,
     _lpsToQuoteToken,
@@ -336,14 +336,14 @@ contract PoolInfoUtils {
      *  @notice Calculated as greater of the current annualized interest rate divided by 52 (one week of interest) or 5 bps.
      *  @return Fee rate calculated from the given interest rate.
      */
-    function feeRate(
+    function borrowFeeRate(
         address ajnaPool_
     ) external view returns (uint256) {
         IPool pool = IPool(ajnaPool_);
 
         (uint256 interestRate,) = pool.interestRateInfo();
 
-        return _feeRate(interestRate);
+        return _borrowFeeRate(interestRate);
     }
 
     /**

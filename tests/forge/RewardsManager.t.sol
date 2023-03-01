@@ -13,7 +13,7 @@ import 'src/interfaces/position/IPositionManager.sol';
 import 'src/PositionManager.sol';
 import 'src/PoolInfoUtils.sol';
 
-import { _feeRate } from 'src/libraries/helpers/PoolHelper.sol';
+import { _borrowFeeRate } from 'src/libraries/helpers/PoolHelper.sol';
 
 import { DSTestPlus }  from './utils/DSTestPlus.sol';
 import { Token }       from './utils/Tokens.sol';
@@ -1467,7 +1467,7 @@ contract RewardsManagerTest is DSTestPlus {
         // calculate the required collateral based upon the borrow amount and index price
         (uint256 interestRate, ) = pool_.interestRateInfo();
         uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient
-        uint256 expectedDebt = Maths.wmul(borrowAmount, _feeRate(newInterestRate) + Maths.WAD);
+        uint256 expectedDebt = Maths.wmul(borrowAmount, _borrowFeeRate(newInterestRate) + Maths.WAD);
         requiredCollateral_ = Maths.wdiv(expectedDebt, _poolUtils.indexToPrice(indexPrice)) + Maths.WAD;
     }
     
