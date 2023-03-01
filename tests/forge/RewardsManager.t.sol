@@ -1179,9 +1179,49 @@ contract RewardsManagerTest is ERC20HelperContract {
         toIndexes[3] = 2559;
         toIndexes[4] = 2560;
 
+        // check no rewards are claimed on first move
+        vm.expectEmit(true, true, true, true);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenId, _epochsClaimedArray(0, 0), 0);
+
+        // check MoveLiquidity emits
+        for (uint256 i = 0; i < depositIndexes.length; ++i) {
+            vm.expectEmit(true, true, true, true);
+            emit MoveLiquidity(address(_rewardsManager), tokenId, depositIndexes[i], toIndexes[i]);
+        }
+
         vm.expectEmit(true, true, true, true);
         emit MoveStakedLiquidity(tokenId, depositIndexes, toIndexes);
         _rewardsManager.moveStakedLiquidity(tokenId, depositIndexes, toIndexes);
+
+        /***********************/
+        /*** Reserve Auction ***/
+        /***********************/
+
+        TriggerReserveAuctionParams memory triggerReserveAuctionParams = TriggerReserveAuctionParams({
+            borrowAmount: 300 * 1e18,
+            limitIndex: 2560,
+            pool: _poolOne
+        });
+        // first reserve auction happens successfully -> epoch 1
+        uint256 tokensToBurn = _triggerReserveAuctions(triggerReserveAuctionParams);
+
+        /***********************/
+        /*** Move Staked NFT ***/
+        /***********************/
+
+        vm.expectEmit(true, true, true, true);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenId, _epochsClaimedArray(1, 0), 44.235550200545615690 * 1e18);
+
+        // check MoveLiquidity emits
+        for (uint256 i = 0; i < depositIndexes.length; ++i) {
+            vm.expectEmit(true, true, true, true);
+            emit MoveLiquidity(address(_rewardsManager), tokenId, toIndexes[i], depositIndexes[i]);
+        }
+
+        vm.expectEmit(true, true, true, true);
+        emit MoveStakedLiquidity(tokenId, toIndexes, depositIndexes);
+        changePrank(_minterOne);
+        _rewardsManager.moveStakedLiquidity(tokenId, toIndexes, depositIndexes);
     }
 
     function testEarlyAndLateStakerRewards() external {
