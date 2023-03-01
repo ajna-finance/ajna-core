@@ -59,7 +59,9 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
 
         // repay current debt and pull all collateral
         uint256 noOfNfts = borrowerCollateral / 1e18; // round down to pull correct num of NFTs
-        _repayDebtNoLupCheck(borrower, borrower, currentDebt, currentDebt, noOfNfts);
+        if (currentDebt != 0 || noOfNfts != 0) {
+            _repayDebtNoLupCheck(borrower, borrower, currentDebt, currentDebt, noOfNfts);
+        }
 
         // check borrower state after repay of loan and pull Nfts
         (borrowerT0debt, borrowerCollateral, ) = _pool.borrowerInfo(borrower);

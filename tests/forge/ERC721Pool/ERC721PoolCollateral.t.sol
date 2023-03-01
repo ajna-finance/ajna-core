@@ -705,14 +705,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             })
         );
 
-        // force an interest accumulation to assert bucket with interest
-        _addLiquidity({
-            from:   _lender,
-            amount: 0 * 1e18,
-            index:  7000,
-            newLup: 99836282890,
-            lpAward: 0
-        });
+        // interest accumulation to assert bucket with interest
+        _updateInterest();
         _assertBucket({
             index:        3060,
             lpBalance:    20 * 1e18,

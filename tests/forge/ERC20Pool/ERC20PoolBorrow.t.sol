@@ -432,12 +432,10 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         skip(10 days);
 
-        _borrowZeroAmount({
-            from:       _borrower,
-            amount:     0,
-            indexLimit: 3_000,
-            newLup:     2_981.007422784467321543 * 1e18
-        });
+        // accrue debt and restamp Neutral Price of the loan
+        vm.expectEmit(true, true, true, true);
+        emit LoanStamped(_borrower);
+        _pool.stampLoan();
 
         expectedDebt = 21_157.152643010853304038 * 1e18;
 
@@ -469,8 +467,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         skip(10 days);
 
-        // call drawDebt to restamp the loan's neutral price
-        IERC20Pool(address(_pool)).drawDebt(_borrower, 0, 0, 0);
+        _updateInterest();
 
         expectedDebt = 21_199.628356897284442294 * 1e18;
 
@@ -601,6 +598,14 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             amount:     10 * 1e18,
             indexLimit: 3_000,
             newLup:     2_995.912459898389633881 * 1e18
+        });
+
+        // skip to make loan undercolalteralized
+        skip(10000 days);
+
+        // should not allow borrower to restamp the Neutral Price of the loan if under collateralized
+        _assertStampLoanBorrowerUnderCollateralizedRevert({
+            borrower: _borrower2
         });
     }
 

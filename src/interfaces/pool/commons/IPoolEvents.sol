@@ -139,6 +139,14 @@ interface IPoolEvents {
     );
 
     /**
+     *  @notice Emitted when a loan Neutral Price is restamped.
+     *  @param  borrower   Identifies the loan to update the Neutral Price.
+     */
+    event LoanStamped(
+        address indexed borrower
+    );
+
+    /**
      *  @notice Emitted when lender moves quote token from a bucket price to another.
      *  @param  lender         Recipient that moved quote tokens.
      *  @param  from           Price bucket from which quote tokens were moved.

@@ -88,7 +88,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             require(
                 err == keccak256(abi.encodeWithSignature("LUPBelowHTP()")) ||
                 err == keccak256(abi.encodeWithSignature("InsufficientLiquidity()")) ||
-                err == keccak256(abi.encodeWithSignature("MoveToSamePrice()")) ||
+                err == keccak256(abi.encodeWithSignature("MoveToSameIndex()")) ||
                 err == keccak256(abi.encodeWithSignature("DustAmountNotExceeded()")) ||
                 err == keccak256(abi.encodeWithSignature("InvalidIndex()")) ||
                 err == keccak256(abi.encodeWithSignature("BucketBankruptcyBlock()"))

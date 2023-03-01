@@ -394,6 +394,10 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.takeReserves(amount);
     }
 
+    function _updateInterest() internal {
+        _pool.updateInterest();
+    }
+
     function _assertQuoteTokenTransferEvent(
         address from,
         address to,
@@ -877,6 +881,22 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.bucketTake(borrower, true, index);
     }
 
+    function _assertStampLoanAuctionActiveRevert(
+        address borrower
+    ) internal {
+        changePrank(borrower);
+        vm.expectRevert(IPoolErrors.AuctionActive.selector);
+        _pool.stampLoan();
+    }
+
+    function _assertStampLoanBorrowerUnderCollateralizedRevert(
+        address borrower
+    ) internal {
+        changePrank(borrower);
+        vm.expectRevert(IPoolErrors.BorrowerUnderCollateralized.selector);
+        _pool.stampLoan();
+    }
+
     function _assertBorrowAuctionActiveRevert(
         address from,
         uint256,
@@ -1169,14 +1189,14 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
     }
 
-    function _assertMoveLiquidityToSamePriceRevert(
+    function _assertMoveLiquidityToSameIndexRevert(
         address from,
         uint256 amount,
         uint256 fromIndex,
         uint256 toIndex
     ) internal {
         changePrank(from);
-        vm.expectRevert(IPoolErrors.MoveToSamePrice.selector);
+        vm.expectRevert(IPoolErrors.MoveToSameIndex.selector);
         _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
     }
 

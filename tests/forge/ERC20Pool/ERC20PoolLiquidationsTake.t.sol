@@ -1576,22 +1576,29 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             auctionPrice:               0,
             timeRemaining:              0
         });
-
-        // partial clears / debt settled - max buckets to use is 1, remaining will be taken from reserves
+        // partial clears / debt settled - max buckets to use is 0, settle only from reserves
         _settle({
             from:        _lender,
             borrower:    _borrower2,
-            maxDepth:    1,
-            settledDebt: 2_923.975862386543877283 * 1e18
+            maxDepth:    0,
+            settledDebt: 834 * 1e18
         });
-
         _assertReserveAuction({
-            reserves:                   0.989870342666661239 * 1e18,
+            reserves:                   0.989870342666662235 * 1e18,
             claimableReserves :         0,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
         });
+
+        // partial clears / debt settled with max buckets to use is 1
+        _settle({
+            from:        _lender,
+            borrower:    _borrower2,
+            maxDepth:    1,
+            settledDebt: 2_089.975862386543877283 * 1e18
+        });
+
         _assertAuction(
             AuctionParams({
                 borrower:          _borrower2,
@@ -1993,13 +2000,7 @@ contract ERC20PoolLiquidationsTakeAndRepayAllDebtInPoolTest is ERC20HelperContra
     }
 
     function testTakeAuctionRepaidAmountGreaterThanPoolDebt() external tearDown {
-        _repayDebtNoLupCheck({
-            from:             _borrower,
-            borrower:         _borrower,
-            amountToRepay:    0,
-            amountRepaid:     0,
-            collateralToPull: 0
-        });
+        _updateInterest();
 
         _drawDebtNoLupCheck({
             from:               _borrower,

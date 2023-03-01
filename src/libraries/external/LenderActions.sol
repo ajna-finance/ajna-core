@@ -81,12 +81,13 @@ library LenderActions {
     error DustAmountNotExceeded();
     error NoAllowance();
     error InvalidIndex();
+    error InvalidAmount();
     error LUPBelowHTP();
     error NoClaim();
     error InsufficientLPs();
     error InsufficientLiquidity();
     error InsufficientCollateral();
-    error MoveToSamePrice();
+    error MoveToSameIndex();
     error TransferorNotApproved();
     error TransferToSameOwner();
 
@@ -110,6 +111,9 @@ library LenderActions {
         uint256 collateralAmountToAdd_,
         uint256 index_
     ) external returns (uint256 bucketLPs_) {
+        // revert if no amount to be added
+        if (collateralAmountToAdd_ == 0) revert InvalidAmount();
+        // revert if adding at invalid index
         if (index_ == 0 || index_ > MAX_FENWICK_INDEX) revert InvalidIndex();
 
         uint256 bucketDeposit = Deposits.valueAt(deposits_, index_);
@@ -143,6 +147,9 @@ library LenderActions {
         PoolState calldata poolState_,
         AddQuoteParams calldata params_
     ) external returns (uint256 bucketLPs_, uint256 lup_) {
+        // revert if no amount to be added
+        if (params_.amount == 0) revert InvalidAmount();
+        // revert if adding to an invalid index
         if (params_.index == 0 || params_.index > MAX_FENWICK_INDEX) revert InvalidIndex();
 
         Bucket storage bucket = buckets_[params_.index];
@@ -196,7 +203,7 @@ library LenderActions {
      *              - decrement bucket.lps accumulator for from bucket
      *              - increment bucket.lps accumulator for to bucket
      *  @dev    reverts on:
-     *              - same index MoveToSamePrice()
+     *              - same index MoveToSameIndex()
      *              - dust amount DustAmountNotExceeded()
      *              - invalid index InvalidIndex()
      *  @dev    emit events:
@@ -209,8 +216,10 @@ library LenderActions {
         PoolState calldata poolState_,
         MoveQuoteParams calldata params_
     ) external returns (uint256 fromBucketRedeemedLPs_, uint256 toBucketLPs_, uint256 movedAmount_, uint256 lup_) {
+        if (params_.maxAmountToMove == 0)
+            revert InvalidAmount();
         if (params_.fromIndex == params_.toIndex)
-            revert MoveToSamePrice();
+            revert MoveToSameIndex();
         if (params_.maxAmountToMove != 0 && params_.maxAmountToMove < poolState_.quoteDustLimit)
             revert DustAmountNotExceeded();
         if (params_.toIndex == 0 || params_.toIndex > MAX_FENWICK_INDEX) 
@@ -344,6 +353,9 @@ library LenderActions {
         PoolState calldata poolState_,
         RemoveQuoteParams calldata params_
     ) external returns (uint256 removedAmount_, uint256 redeemedLPs_, uint256 lup_) {
+        // revert if no amount to be removed
+        if (params_.maxAmount == 0) revert InvalidAmount();
+
         Bucket storage bucket = buckets_[params_.index];
         Lender storage lender = bucket.lenders[msg.sender];
 
@@ -415,6 +427,9 @@ library LenderActions {
         uint256 amount_,
         uint256 index_
     ) external returns (uint256 lpAmount_) {
+        // revert if no amount to be removed
+        if (amount_ == 0) revert InvalidAmount();
+
         Bucket storage bucket = buckets_[index_];
 
         uint256 bucketCollateral = bucket.collateral;
@@ -480,6 +495,9 @@ library LenderActions {
         uint256 maxAmount_,
         uint256 index_
     ) external returns (uint256, uint256) {
+        // revert if no amount to remove
+        if (maxAmount_ == 0) revert InvalidAmount();
+
         return _removeMaxCollateral(
             buckets_,
             deposits_,

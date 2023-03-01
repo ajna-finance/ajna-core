@@ -627,6 +627,11 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             amount:     1 * 1e18,
             indexLimit: 7000
         });
+
+        // should not allow borrower to restamp the Neutral Price of the loan if auction kicked
+        _assertStampLoanAuctionActiveRevert({
+            borrower: _borrower
+        });
     }
 
     function testInterestsAccumulationWithAllLoansAuctioned() external tearDown {
