@@ -14,14 +14,14 @@ contract RegressionTestBasic is BasicInvariants {
         super.setUp();
     }
 
-    function test_regression_invariantUnderflow_1() external {
+    function test_regression_regression_invariantUnderflow_1() external {
         _basicPoolHandler.addQuoteToken(14227, 5211, 3600000000000000000000);
         // check invariants hold true
         invariant_Lps_B1();
         invariant_quoteTokenBalance_QT1();
     }
 
-    function test_exchange_rate_bug_1() external {
+    function test_regression_exchange_rate_bug_1() external {
         // Action sequence
         // 1. addQuoteToken(6879, 2570)
         // 2. addCollateral(3642907759282013932739218713, 2570)
@@ -63,7 +63,7 @@ contract RegressionTestBasic is BasicInvariants {
     }
 
     // test was failing when actors = 10, buckets = [2570], maxAmount = 1e36
-    function test_exchange_rate_bug_2() external {
+    function test_regression_exchange_rate_bug_2() external {
         uint256 previousExchangeRate = 1e18;
         _basicPoolHandler.addQuoteToken(211670885988646987334214990781526025942, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 6894274025938223490357894120267612065037086600750070030707794233);
 
@@ -153,7 +153,7 @@ contract RegressionTestBasic is BasicInvariants {
     }
 
     // test will fail when actors = 10, buckets = [2570], maxAmount = 1e36
-    function test_exchange_rate_bug_3() external {
+    function test_regression_exchange_rate_bug_3() external {
         uint256 previousExchangeRate = 1e18;
         _basicPoolHandler.addQuoteToken(2842, 304, 2468594405605444095992);
 
@@ -206,7 +206,7 @@ contract RegressionTestBasic is BasicInvariants {
     }
 
     // test was failing when actors = 1, buckets = [2570], maxAmount = 1e36
-    function test_exchange_rate_bug_4() external {
+    function test_regression_exchange_rate_bug_4() external {
         // Actors = 1
         uint256 previousExchangeRate = 1e18;
         _basicPoolHandler.addCollateral(115792089237316195423570985008687907853269984665640564039457584007913129639932, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 587135207579305083672251579076072787077);
@@ -300,7 +300,7 @@ contract RegressionTestBasic is BasicInvariants {
     }
 
     // test was failing when actors = 1, buckets = [2570], maxAmount = 1e36
-    function test_exchange_rate_bug_5() external {
+    function test_regression_exchange_rate_bug_5() external {
         _basicPoolHandler.drawDebt(1156, 1686);
         invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
         _basicPoolHandler.addQuoteToken(711, 2161, 2012); 
@@ -308,7 +308,7 @@ contract RegressionTestBasic is BasicInvariants {
     }
 
     // test was failing when actors = 1, buckets = [2570]
-    function test_exchange_rate_bug_6() external {
+    function test_regression_exchange_rate_bug_6() external {
         uint256 previousExchangeRate = 1e18;
         _basicPoolHandler.addCollateral(999999999000000000000000081002632733724231666, 999999999243662968633890481597751057821356823, 1827379824097500721086759239664926559);
 
@@ -370,7 +370,7 @@ contract RegressionTestBasic is BasicInvariants {
 
     // test was failing when actors = 10, buckets = [2570], maxAmount = 1e36
     // Fixed with commit -> https://github.com/ajna-finance/contracts/pull/613/commits/f106f0f7c96c1662325bdb5151fd745544e6dce0 
-    function test_exchange_rate_bug_7() external {
+    function test_regression_exchange_rate_bug_7() external {
         uint256 previousExchangeRate = 1e18;
         _basicPoolHandler.addCollateral(999999999249784004703856120761629301735818638, 15200, 2324618456838396048595845067026807532884041462750983926777912015561);
 
@@ -429,7 +429,7 @@ contract RegressionTestBasic is BasicInvariants {
     }
 
     // test was failing when actors = 10, buckets = [2570], maxAmount = 1e36
-    function test_exchange_rate_bug_8() external {
+    function test_regression_exchange_rate_bug_8() external {
         _basicPoolHandler.drawDebt(0, 10430);
 
         ( , uint256 quote, uint256 collateral, uint256 lps, , uint256 exchangeRate) = _poolInfo.bucketInfo(address(_pool), 2570);
@@ -455,7 +455,7 @@ contract RegressionTestBasic is BasicInvariants {
         invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
-    function test_exchange_rate_bug_9() external {
+    function test_regression_exchange_rate_bug_9() external {
         _basicPoolHandler.addQuoteToken(179828875014111774829603408358905079754763388655646874, 39999923045226513122629818514849844245682430, 12649859691422584279364490330583846883);
         invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
         _basicPoolHandler.addCollateral(472, 2100, 11836);

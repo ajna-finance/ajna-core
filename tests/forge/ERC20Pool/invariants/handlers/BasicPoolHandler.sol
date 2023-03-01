@@ -124,6 +124,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
                 err == keccak256(abi.encodeWithSignature("MoveToSamePrice()")) ||
                 err == keccak256(abi.encodeWithSignature("DustAmountNotExceeded()")) ||
                 err == keccak256(abi.encodeWithSignature("InvalidIndex()")) ||
+                err == keccak256(abi.encodeWithSignature("RemoveDepositLockedByAuctionDebt()")) ||
                 err == keccak256(abi.encodeWithSignature("BucketBankruptcyBlock()"))
             );
         }

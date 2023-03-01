@@ -12,7 +12,7 @@ contract RegressionTestReserve is ReserveInvariants {
         super.setUp();
     }   
 
-    function test_reserve_1() external {
+    function test_regression_reserve_1() external {
         (uint256 reserve, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
         console.log("Initial Reserve -->", reserve);
         console.log("===========");
@@ -34,7 +34,7 @@ contract RegressionTestReserve is ReserveInvariants {
     }
 
     // test was failing due to error in local fenwickAccureInterest method
-    function test_reserve_2() external {
+    function test_regression_reserve_2() external {
         (uint256 reserve, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
         console.log("Initial Reserve -->", reserve);
         console.log("===========");
@@ -57,7 +57,7 @@ contract RegressionTestReserve is ReserveInvariants {
         console.log("===========");
     }
 
-    function test_reserve_3() external {
+    function test_regression_reserve_3() external {
         (uint256 reserve, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
         console.log("Initial Reserve -->", reserve);
         console.log("===========");
@@ -71,7 +71,7 @@ contract RegressionTestReserve is ReserveInvariants {
         invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10();
     }
 
-    function test_reserve_4() external {
+    function test_regression_reserve_4() external {
         _reservePoolHandler.takeAuction(115792089237316195423570985008687907853269984665640564039457584007913129639934, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 1);  
 
         // Current Reserves --> 58240015324867402996449176812691659
@@ -81,7 +81,7 @@ contract RegressionTestReserve is ReserveInvariants {
         invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10();
     }
 
-    function test_reserve_5() external {
+    function test_regression_reserve_5() external {
         (uint256 reserve, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
         console.log("Initial Reserve -->", reserve);
         console.log("===========");
@@ -101,14 +101,14 @@ contract RegressionTestReserve is ReserveInvariants {
         invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10();
     }
 
-    function test_reserve_6() external {
+    function test_regression_reserve_6() external {
         _reservePoolHandler.addQuoteToken(115792089237316195423570985008687907853269984665640564039457584007913129639933, 115792089237316195423570985008687907853269984665640564039457584007913129639932, 115792089237316195423570985008687907853269984665640564039457584007913129639934);
         _reservePoolHandler.removeQuoteToken(3, 76598848420614737624527356706527, 0);
 
         invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10();
     }
 
-    function test_reserve_7() external {
+    function test_regression_reserve_7() external {
         _reservePoolHandler.addQuoteToken(3457, 669447918254181815570046125126321316, 999999999837564549363536522206516458546098684);
 
         _reservePoolHandler.takeReserves(0, 115792089237316195423570985008687907853269984665640564039457584007913129639935);
@@ -118,7 +118,7 @@ contract RegressionTestReserve is ReserveInvariants {
         invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10();
     }
 
-    function test_reserve_8() external {
+    function test_regression_reserve_8() external {
         _reservePoolHandler.addQuoteToken(0, 16517235514828622102184417372650002297563613398679232953, 3);
 
         _reservePoolHandler.takeReserves(1, 824651);
@@ -128,7 +128,7 @@ contract RegressionTestReserve is ReserveInvariants {
         invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10();
     }
 
-    function test_reserve_9() external {
+    function test_regression_reserve_9() external {
         _reservePoolHandler.addQuoteToken(8167, 13910, 6572);
         _reservePoolHandler.removeQuoteToken(450224344766393467188006446127940623592343232978, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 3);
         _reservePoolHandler.addQuoteToken(1338758958425242459263005073411197235389119160018038412507867175716953081924, 0, 3);
