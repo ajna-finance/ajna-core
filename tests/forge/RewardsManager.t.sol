@@ -46,6 +46,11 @@ contract RewardsManagerTest is ERC20HelperContract {
     event Stake(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
     event UpdateExchangeRates(address indexed caller, address indexed ajnaPool, uint256[] indexesUpdated, uint256 rewardsClaimed);
     event Unstake(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
+    event MoveStakedLiquidity(
+        uint256 tokenId,
+        uint256[] fromIndexes,
+        uint256[] toIndexes
+    );
 
     uint256 constant BLOCKS_IN_DAY = 7200;
     mapping (uint256 => address) internal tokenIdToMinter;
@@ -1135,6 +1140,48 @@ contract RewardsManagerTest is ERC20HelperContract {
         _rewardsManager.claimRewards(tokenIdOne, _poolOne.currentBurnEpoch());
         assertEq(_ajnaToken.balanceOf(_minterOne), rewardsEarned);
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
+    }
+
+    function testMoveStakedLiquidity() external {
+        skip(10);
+
+        /*****************/
+        /*** Stake NFT ***/
+        /*****************/
+
+        uint256[] memory depositIndexes = new uint256[](5);
+        depositIndexes[0] = 2550;
+        depositIndexes[1] = 2551;
+        depositIndexes[2] = 2552;
+        depositIndexes[3] = 2553;
+        depositIndexes[4] = 2555;
+
+        // configure NFT position
+        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+            indexes:    depositIndexes,
+            minter:     _minterOne,
+            mintAmount: 1000 * 1e18,
+            pool:       _poolOne
+        });
+        uint256 tokenId = _mintAndMemorializePositionNFT(mintMemorializeParams);
+
+        // stake nft
+        _stakeToken(address(_poolOne), _minterOne, tokenId);
+
+        /***********************/
+        /*** Move Staked NFT ***/
+        /***********************/
+
+        uint256[] memory toIndexes = new uint256[](5);
+        toIndexes[0] = 2556;
+        toIndexes[1] = 2557;
+        toIndexes[2] = 2558;
+        toIndexes[3] = 2559;
+        toIndexes[4] = 2560;
+
+        vm.expectEmit(true, true, true, true);
+        emit MoveStakedLiquidity(tokenId, depositIndexes, toIndexes);
+        _rewardsManager.moveStakedLiquidity(tokenId, depositIndexes, toIndexes);
     }
 
     function testEarlyAndLateStakerRewards() external {
