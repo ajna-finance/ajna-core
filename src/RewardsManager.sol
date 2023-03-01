@@ -116,6 +116,60 @@ contract RewardsManager is IRewardsManager {
         _claimRewards(stakeInfo, tokenId_, epochToClaim_, true, stakeInfo.ajnaPool);
     }
 
+    struct MoveStakedLiquidityParams {
+        uint256 fromIndex,
+        uint256 toIndex
+    }
+
+    // change to two uint arrays of same size to save gas and know which set of bucket exchange rates to update and claim rewards for
+    function moveStakedLiquidity(
+        uint256 tokenId_,
+        MoveStakedLiquidityParams[] memory params
+    ) external {
+        StakeInfo storage stakeInfo = stakes[tokenId_];
+
+        if (msg.sender != stakeInfo.owner) revert NotOwnerOfDeposit();
+
+        address ajnaPool = stakeInfo.ajnaPool;
+        uint256 curBurnEpoch = IPool(ajnaPool).currentBurnEpoch();
+        uint256 expiry = block.timestamp + 1000;
+
+        // claim rewards before moving liquidity, if any
+        _claimRewards(
+            stakeInfo,
+            tokenId_,
+            curBurnEpoch,
+            false,
+            ajnaPool
+        );
+
+        for (uint256 i = 0; i < params.length; ) {
+            MoveStakedLiquidityParams memory param = params[i];
+
+            BucketState storage fromBucket = stakeInfo.snapshot[param.fromIndex];
+            BucketState storage toBucket = stakeInfo.snapshot[param.toIndex];
+
+            // call out to position manager to move liquidity between buckets
+            MoveLiquidityParams memory moveLiquidityParams = positionManager.MoveLiquidityParams(
+                tokenId_,
+                ajnaPool,
+                param.fromIndex,
+                param.toIndex,
+                expiry
+            );
+            positionManager.moveLiquidity(moveLiquidityParams);
+
+            // update bucket state
+            toBucket.lpsAtStakeTime = fromBucket.lpsAtStakeTime;
+            toBucket.rateAtStakeTime = IPool(ajnaPool).bucketExchangeRate(param.toIndex);
+            delete stakeInfo.snapshot[param.fromIndex];
+
+            unchecked { ++i; }
+        }
+
+        // update to bucket list exchange rates
+    }
+
     /**
      *  @inheritdoc IRewardsManagerOwnerActions
      *  @dev revert on:
