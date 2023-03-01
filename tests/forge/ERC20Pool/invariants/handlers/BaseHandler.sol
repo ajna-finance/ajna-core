@@ -80,8 +80,8 @@ contract BaseHandler is InvariantTest, Test {
     // if take is called on auction first time
     bool public firstTake;
 
-    // mapping borrower address to first take on auction
-    mapping(address => bool) internal isFirstTakeOnAuction;
+    // mapping borrower address to true if auction taken atleast once
+    mapping(address => bool) public alreadyTaken;
 
     // amount of reserve increase after first take
     uint256 public firstTakeIncreaseInReserve;
@@ -91,6 +91,9 @@ contract BaseHandler is InvariantTest, Test {
 
     // amount of reserve increase after draw debt as origination fee
     uint256 public drawDebtIncreaseInReserve;
+
+    // mapping of lender address to bucket index to deposit time
+    mapping(address => mapping(uint256 => uint256)) public lenderDepositTime;
     
     constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) {
         // Tokens
@@ -109,6 +112,18 @@ contract BaseHandler is InvariantTest, Test {
     /*** Helper Functions                                                                                                               ***/
     /**************************************************************************************************************************************/
 
+    function resetReservesAndExchangeRate() internal {
+        // reset the exchange rates before each action
+        for(uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+            previousExchangeRate[bucketIndex] = 0;
+            currentExchangeRate[bucketIndex] = 0;
+        }
+
+        // reset the reserves before each action 
+        previousReserves = 0;
+        currentReserves = 0;
+    }
+
     // resets all local states before each action
     modifier resetAllPreviousLocalState() {
         // reset reserves increase before each action
@@ -118,15 +133,7 @@ contract BaseHandler is InvariantTest, Test {
         isKickerRewarded = false;
         drawDebtIncreaseInReserve = 0;
 
-        // reset the exchange rates before each action
-        for(uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            previousExchangeRate[bucketIndex] = 0;
-            currentExchangeRate[bucketIndex] = 0;
-        }
-
-        // reset the reserves before each action 
-        previousReserves = 0;
-        currentReserves = 0; 
+        resetReservesAndExchangeRate();
         _;
     }
 
@@ -249,7 +256,7 @@ contract BaseHandler is InvariantTest, Test {
 
     function fenwickAccrueInterest() internal {
         // store copy of fenwick deposits
-        for(uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MIN_BUCKET_INDEX; bucketIndex++) {
+        for(uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             copyOfFenwickDeposits[bucketIndex] = fenwickDeposits[bucketIndex];
         }
 
@@ -292,7 +299,6 @@ contract BaseHandler is InvariantTest, Test {
             );
 
             uint256 scale = Maths.wdiv(newInterest_, depositAboveHtp) + Maths.WAD;
-            console.log("Scaling Factor from local fenwick --->", scale);
 
             // simulate scale being applied to all deposits above HTP
             fenwickMult(htpIndex, scale);

@@ -16,7 +16,6 @@ contract RegressionTestLiquidation is LiquidationInvariant {
     function test_regression_quote_token() external {
         _liquidationPoolHandler.addQuoteToken(115792089237316195423570985008687907853269984665640564039457584007913129639932, 3, 115792089237316195423570985008687907853269984665640564039457584007913129639932);
 
-        // check invariants hold true
         invariant_quoteTokenBalance_QT1();
     }
 
@@ -24,25 +23,24 @@ contract RegressionTestLiquidation is LiquidationInvariant {
         _liquidationPoolHandler.kickAuction(128942392769655840156268259377571235707684499808935108685525899532745, 9654010200996517229486923829624352823010316518405842367464881, 135622574118732106350824249104903);
         _liquidationPoolHandler.addQuoteToken(3487, 871, 1654);
 
-        // check invariants hold true
         invariant_quoteTokenBalance_QT1();
     }
 
-    function test_regression_bucket_take_lps_bug() public {
+    function test_regression_bucket_take_lps() external {
         _liquidationPoolHandler.removeQuoteToken(7033457611004217223271238592369692530886316746601644, 0, 115792089237316195423570985008687907853269984665640564039457584007913129639932);
         _liquidationPoolHandler.addQuoteToken(1, 20033186019073, 1);
         _liquidationPoolHandler.bucketTake(0, 0, false, 2876997751);
 
-        invariant_Lps_B1();
+        invariant_Lps_B1_B4();
     }
 
-    function test_regression_interest_rate_bug() public {
+    function test_regression_interest_rate() external {
         _liquidationPoolHandler.bucketTake(18065045387666484532028539614323078235438354477798625297386607289, 14629545458306, true, 1738460279262663206365845078188769);
 
         invariant_interest_rate_I1();
     }
 
-    function test_regression_incorrect_no_of_borrowers() public {
+    function test_regression_incorrect_no_of_borrowers() external {
         _liquidationPoolHandler.moveQuoteToken(18178450611611937161732340858718395124120481640398450530303803, 0, 93537843531612826457318744802930982491, 15596313608676556633725998020226886686244513);
         _liquidationPoolHandler.addCollateral(2208149704044082902772911545020934265, 340235628931125711729099234105522626267587665393753030264689924088, 2997844437211835697043096396926932785920355866486893005710984415271);
         _liquidationPoolHandler.moveQuoteToken(56944009718062971164908977784993293, 737882204379007468599822110965749781465, 1488100463155679769353095066686506252, 11960033727528802202227468733333727294);

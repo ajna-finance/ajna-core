@@ -24,6 +24,8 @@ contract BasicInvariants is TestBase {
         *  B1: totalBucketLPs === totalLenderLps
         *  B2: bucketLps == 0 (if bucket quote and collateral is 0)
         *  B3: exchangeRate == 0 (if bucket quote and collateral is 0)
+        *  B4: bankrupt bucket LPs accumulator = 0; lender LPs for deposits before bankruptcy time = 0
+        *  B5: block.timestamp == lenderDepositTime (if lps are added to lender lp balance)
      * Quote Token
         * QT1: poolQtBal + poolDebt >= totalBondEscrowed + poolDepositSize
         * QT2: pool t0 debt = sum of all borrower's t0 debt
@@ -39,10 +41,14 @@ contract BasicInvariants is TestBase {
 
      * Interest Rate
         * I1: Interest rate should only update once in 12 hours
+        * I2: ReserveAuctionState.totalInterestEarned accrues only once per block and equals to 1e18 if pool debt = 0
         * I3: Inflator should only update once per block
 
     * Fenwick tree
-        * F1: Value represented at index `i` (`Deposits.valueAt(i)`) is equal to the accumulation of scaled values incremented or decremented from index `i`
+        * F1: Value represented at index i (Deposits.valueAt(i)) is equal to the accumulation of scaled values incremented or decremented from index i
+        * F2: For any index i, the prefix sum up to and including i is the sum of values stored in indices j<=i
+        * F3: For any index i < MAX_FENWICK_INDEX, findIndexOfSum(prefixSum(i)) > i
+        * F4: For any index i, there is zero deposit above i and below findIndexOfSum(prefixSum(i) + 1): findIndexOfSum(prefixSum(i)) == findIndexOfSum(prefixSum(j) - deposits.valueAt(j)), where j is the next index from i with deposits != 0
     ****************************************************************************************************************************************/
 
     uint256          internal constant NUM_ACTORS = 10;
@@ -57,6 +63,10 @@ contract BasicInvariants is TestBase {
     uint256 previousInflator;
 
     uint256 previousInflatorUpdate;
+
+    uint256 previousTotalInterestEarned;
+
+    uint256 previousTotalInterestEarnedUpdate;
 
     function setUp() public override virtual{
 
@@ -83,7 +93,7 @@ contract BasicInvariants is TestBase {
     }
 
     // checks pool lps are equal to sum of all lender lps in a bucket 
-    function invariant_Lps_B1() public {
+    function invariant_Lps_B1_B4() public {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             uint256 totalLps;
@@ -107,6 +117,18 @@ contract BasicInvariants is TestBase {
                 require(bucketLps == 0, "Incorrect bucket lps");
                 require(exchangeRate == 1e18, "Incorrect exchange rate");
             }
+        }
+    }
+
+    // checks if lender deposit timestamp is updated when lps are added into lender lp balance
+    function invariant_Bucket_deposit_time_B5() public view {
+        uint256 actorCount = IBaseHandler(_handler).getActorsCount();
+        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+            for (uint256 i = 0; i < actorCount; i++) {
+                address lender = IBaseHandler(_handler).actors(i);
+                (, uint256 depositTime) = _pool.lenderInfo(bucketIndex, lender);
+                require(depositTime == IBaseHandler(_handler).lenderDepositTime(lender, bucketIndex), "Incorrect deposit Time");
+            }   
         }
     }
 
@@ -210,19 +232,92 @@ contract BasicInvariants is TestBase {
         previousInterestRateUpdate = currentInterestRateUpdate;
     }
 
+    // reserve.totalInterestEarned should only update once per block
+    function invariant_total_interest_earned_I2() public {
+        (, , , uint256 totalInterestEarned) = _pool.reservesInfo();
+        if(previousTotalInterestEarnedUpdate == block.number) {
+            require(totalInterestEarned == previousTotalInterestEarned, "Incorrect total interest earned");
+        }
+
+        previousTotalInterestEarnedUpdate = block.number;
+        previousTotalInterestEarned = totalInterestEarned;
+    }
+
     // inflator should only update once per block
     function invariant_inflator_I3() public {
         (uint256 currentInflator, uint256 currentInflatorUpdate) = _pool.inflatorInfo();
         if(currentInflatorUpdate == previousInflatorUpdate) {
             require(currentInflator == previousInflator, "Incorrect inflator update");
         }
+        uint256 poolT0Debt = _pool.totalT0Debt();
+        if(poolT0Debt == 0) {
+            require(currentInflator == 1e18, "Incorrect inflator update");
+        }
         previousInflator = currentInflator;
         previousInflatorUpdate = currentInflatorUpdate;
     }
 
-    // function invariant_fenwickTreeSum() public {
-    //     assertEq(IBaseHandler(_handler).fenwickTreeSum(), _pool.depositSize(), "Fenwick Tree Invariant A Failed");
-    // }
+    // deposits at index i (Deposits.valueAt(i)) is equal to the accumulation of scaled values incremented or decremented from index i
+    function invariant_fenwick_depositAtIndex_F1() public {
+        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+            (, , , uint256 depositAtIndex, ) = _pool.bucketInfo(bucketIndex);
+            console.log("===================Bucket Index : ", bucketIndex, " ===================");
+            console.log("Deposit From Pool -->", depositAtIndex);
+            console.log("Deposit From local fenwick tree -->", IBaseHandler(_handler).fenwickSumAtIndex(bucketIndex));
+            console.log("=========================================");
+            requireWithinDiff(depositAtIndex, IBaseHandler(_handler).fenwickSumAtIndex(bucketIndex), 1e16, "Incorrect deposits in bucket");
+        }
+    }
+
+    // For any index i, the prefix sum up to and including i is the sum of values stored in indices j<=i
+    function invariant_fenwick_depositsTillIndex_F2() public {
+        uint256 depositTillIndex;
+        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+            (, , , uint256 depositAtIndex, ) = _pool.bucketInfo(bucketIndex);
+            depositTillIndex += depositAtIndex;
+            console.log("===================Bucket Index : ", bucketIndex, " ===================");
+            console.log("Deposit From Pool -->", depositTillIndex);
+            console.log("Deposit From local fenwick tree -->", IBaseHandler(_handler).fenwickSumTillIndex(bucketIndex));
+            console.log("=========================================");
+            requireWithinDiff(depositTillIndex, IBaseHandler(_handler).fenwickSumTillIndex(bucketIndex), 1e16, "Incorrect deposits prefix sum");
+        }
+    }
+
+    // For any index i < MAX_FENWICK_INDEX, findIndexOfSum(prefixSum(i)) > i
+    function invariant_fenwick_bucket_index_F3() public {
+        uint256 prefixSum;
+        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+            (, , , uint256 depositAtIndex, ) = _pool.bucketInfo(bucketIndex);
+            if(depositAtIndex != 0) {
+                prefixSum += depositAtIndex;
+                console.log("===================Bucket Index : ", bucketIndex, " ===================");
+                uint256 bucketIndexFromDeposit = _pool.depositIndex(prefixSum);
+                console.log("Bucket Index from deposit-->", bucketIndexFromDeposit);
+                console.log("=========================================");
+                require(bucketIndexFromDeposit >=  bucketIndex, "Incorrect bucket index");
+            }
+        }
+    }
+
+    // For any index i, there is zero deposit above i and below findIndexOfSum(prefixSum(i) + 1): findIndexOfSum(prefixSum(i)) == findIndexOfSum(prefixSum(j) - deposits.valueAt(j)) where j is the next index from i with deposits != 0
+    function invariant_fenwick_prefixSumIndex_F4() public {
+        uint256 prefixSum;
+        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+            (, , , uint256 depositAtIndex, ) = _pool.bucketInfo(bucketIndex);
+            if(depositAtIndex != 0) {
+                prefixSum += depositAtIndex;
+                uint256 nextBucketIndexWithDeposit = _pool.depositIndex(prefixSum + 1);
+                (, , , uint256 depositAtNextBucket, ) = _pool.bucketInfo(nextBucketIndexWithDeposit);
+                uint256 prefixSumTillNextBucket = prefixSum;
+                for(uint256 i = bucketIndex + 1; i <= nextBucketIndexWithDeposit && nextBucketIndexWithDeposit != 7388; i++) {
+                    (, , , depositAtIndex, ) = _pool.bucketInfo(i);
+                    prefixSumTillNextBucket += depositAtIndex;
+                }
+                require(bucketIndex == _pool.depositIndex(prefixSumTillNextBucket - depositAtNextBucket), "Incorrect buckets with 0 deposit");
+            }
+            
+        }
+    }
 
     function invariant_call_summary() external view virtual {
         console.log("\nCall Summary\n");

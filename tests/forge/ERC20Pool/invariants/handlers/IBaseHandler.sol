@@ -14,6 +14,8 @@ interface IBaseHandler {
 
     function fenwickTreeSum() external view returns(uint256); 
 
+    function fenwickSumTillIndex(uint256) external view returns(uint256);
+
     function shouldExchangeRateChange() external view returns(bool);
 
     function previousExchangeRate(uint256) external view returns(uint256);
@@ -32,9 +34,13 @@ interface IBaseHandler {
 
     function firstTake() external view returns(bool);
 
+    function alreadyTaken(address) external view returns(bool);
+
     function firstTakeIncreaseInReserve() external view returns(uint256);
 
     function loanKickIncreaseInReserve() external view returns(uint256);
 
     function drawDebtIncreaseInReserve() external view returns(uint256);
+
+    function lenderDepositTime(address lender, uint256 bucketIndex) external view returns(uint256);
 }

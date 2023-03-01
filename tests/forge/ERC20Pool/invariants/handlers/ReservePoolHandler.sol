@@ -12,18 +12,45 @@ abstract contract UnBoundedReservePoolHandler is BaseHandler {
     function startClaimableReserveAuction() internal resetAllPreviousLocalState {
         (, uint256 claimableReserves, , , ) = _poolInfo.poolReservesInfo(address(_pool));
         if(claimableReserves == 0) return;
+
+        fenwickAccrueInterest();
+        updatePoolState();
+        updatePreviousReserves();
+        updatePreviousExchangeRate();
+
         try _pool.startClaimableReserveAuction(){
-            shouldReserveChange = true;
+            shouldExchangeRateChange = false;
+            shouldReserveChange      = true;
+            updateCurrentReserves();
+            updateCurrentExchangeRate();
         } catch {
-            
+            resetReservesAndExchangeRate();
         }
     }
 
     function takeReserves(uint256 amount) internal resetAllPreviousLocalState {
+
+        (, , uint256 claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
+
+        if(claimableReservesRemaining == 0) {
+            startClaimableReserveAuction();
+        }
+        (, , claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
+
+        amount = constrictToRange(amount, 0, claimableReservesRemaining);
+
+        fenwickAccrueInterest();
+        updatePoolState();
+        updatePreviousReserves();
+        updatePreviousExchangeRate();
+        
         try _pool.takeReserves(amount){
-            shouldReserveChange = true;
+            shouldExchangeRateChange = false;
+            shouldReserveChange      = true;
+            updateCurrentReserves();
+            updateCurrentExchangeRate();
         } catch {
-            
+            resetReservesAndExchangeRate();
         }
     }
 }
@@ -37,14 +64,6 @@ contract ReservePoolHandler is UnBoundedReservePoolHandler, LiquidationPoolHandl
     }
 
     function takeReserves(uint256 actorIndex, uint256 amount) external useRandomActor(actorIndex) {
-        (, , uint256 claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
-
-        if(claimableReservesRemaining == 0) {
-            super.startClaimableReserveAuction();
-        }
-        (, , claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
-
-        amount = constrictToRange(amount, 0, claimableReservesRemaining);
         super.takeReserves(amount);
     }
 }

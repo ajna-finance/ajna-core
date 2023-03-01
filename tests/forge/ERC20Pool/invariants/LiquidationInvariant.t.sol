@@ -19,11 +19,12 @@ contract LiquidationInvariant is BasicInvariants {
     /*** Invariant Tests                                                                                                                ***/
     /***************************************************************************************************************************************
      * Auction
-        *  A1: totalDebtInAuction = sum of all debt of all borrowers kicked
-        *  A2: totalBondEscrowed = sum of all kicker's bond = total Bond in Auction
-        *  A3: number of borrowers with debt = number of loans + number of auctioned borrowers
-        *  A4: number of auctions = total borrowers kicked
-        *  A5: for each auction, kicker locked bond is more than equal to auction bond
+        * A1: totalDebtInAuction = sum of all debt of all borrowers kicked
+        * A2: totalBondEscrowed = sum of all kicker's bond = total Bond in Auction
+        * A3: number of borrowers with debt = number of loans + number of auctioned borrowers
+        * A4: number of auctions = total borrowers kicked
+        * A5: for each auction, kicker locked bond is more than equal to auction bond
+        * A6: if a Liquidation is not taken then the take flag (Liquidation.alreadyTaken) should be False, if already taken then the take flag should be True
     ****************************************************************************************************************************************/
     
     LiquidationPoolHandler internal _liquidationPoolHandler;
@@ -59,8 +60,8 @@ contract LiquidationInvariant is BasicInvariants {
         uint256 totalKickerBond;
         for(uint256 i = 0; i < actorCount; i++) {
             address kicker = IBaseHandler(_handler).actors(i);
-            (uint256 bondLocked, uint256 bondClaimable) = _pool.kickerInfo(kicker);
-            totalKickerBond += (bondLocked + bondClaimable);
+            (, uint256 bond) = _pool.kickerInfo(kicker);
+            totalKickerBond += bond;
         }
 
         uint256 totalBondInAuction;
@@ -105,6 +106,7 @@ contract LiquidationInvariant is BasicInvariants {
         require(borrowersKicked == totalAuction, "Incorrect borrowers in auction");
     }
 
+    // for each auction, kicker locked bond is more than equal to auction bond 
     function invariant_borrowers_A5() public view {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         for(uint256 i = 0; i < actorCount; i++) {
@@ -112,6 +114,16 @@ contract LiquidationInvariant is BasicInvariants {
             (address kicker, , uint256 bondSize, , , , , , , ) = _pool.auctionInfo(borrower);
             (, uint256 lockedAmount) = _pool.kickerInfo(kicker);
             require(lockedAmount >= bondSize, "Incorrect bond locked");
+        }
+    }
+
+    // if a Liquidation is not taken then the take flag (Liquidation.alreadyTaken) should be False, if already taken then the take flag should be True
+    function invariant_auction_taken_A6() public view {
+        uint256 actorCount = IBaseHandler(_handler).getActorsCount();
+        for(uint256 i = 0; i < actorCount; i++) {
+            address borrower = IBaseHandler(_handler).actors(i);
+            (, , , , , , , , , bool alreadyTaken) = _pool.auctionInfo(borrower);
+            require(alreadyTaken == IBaseHandler(_handler).alreadyTaken(borrower), "Incorrect take call on auction");
         }
     }
 

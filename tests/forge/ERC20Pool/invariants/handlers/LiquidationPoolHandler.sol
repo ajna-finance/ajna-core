@@ -12,6 +12,7 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
     function kickAuction(address borrower) internal resetAllPreviousLocalState {
         numberOfCalls['UBLiquidationHandler.kickAuction']++;
 
+        fenwickAccrueInterest();
         updatePoolState();
         updatePreviousReserves();
 
@@ -26,13 +27,15 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
             // reserve increase by 3 months of interest of borrowerDebt
             loanKickIncreaseInReserve = Maths.wmul(borrowerDebt, Maths.wdiv(interestRate, 4 * 1e18));
         }
-        catch {  
+        catch {
+            resetReservesAndExchangeRate();
         }
     }
 
     function takeAuction(address borrower, uint256 amount, address taker) internal resetAllPreviousLocalState {
         numberOfCalls['UBLiquidationHandler.takeAuction']++;
 
+        fenwickAccrueInterest();
         updatePoolState();
         updatePreviousReserves();
 
@@ -53,31 +56,40 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
             // calculate amount of kicker reward/penalty that will decrease/increase reserves
             if(totalBond > claimableBond + lockedBond) {
                 kickerBondChange = totalBond - claimableBond - lockedBond;
-                isKickerRewarded = true;
+                isKickerRewarded = false;
             }
             else {
                 kickerBondChange = claimableBond + lockedBond - totalBond;
-                isKickerRewarded = false;
+                isKickerRewarded = true;
             }
+
+            (kicker, , , , , , , , , ) = _pool.auctionInfo(borrower);
             
-            if(!isFirstTakeOnAuction[borrower]) {
+            if(!alreadyTaken[borrower]) {
                 // reserve increase by 7% of borrower debt on first take
                 firstTakeIncreaseInReserve = Maths.wmul(borrowerDebt, 0.07 * 1e18);
                 firstTake = true;
-                isFirstTakeOnAuction[borrower] = true;
+
+                // if auction is settled by take
+                if(kicker == address(0)) {
+                    alreadyTaken[borrower] = false;
+                } else {
+                    alreadyTaken[borrower] = true;
+                }
             }
             else {
-                isFirstTakeOnAuction[borrower] = false;
                 firstTake = false;
             }
         }
         catch {
+            resetReservesAndExchangeRate();
         }
     }
 
     function bucketTake(address borrower, bool depositTake, uint256 bucketIndex) internal resetAllPreviousLocalState {
         numberOfCalls['UBLiquidationHandler.bucketTake']++;
 
+        fenwickAccrueInterest();
         updatePoolState();
         updatePreviousReserves();
         updatePreviousExchangeRate();
@@ -94,30 +106,42 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
             shouldReserveChange      = true;
             updateCurrentReserves();
             updateCurrentExchangeRate();
+
+            (claimableBond, lockedBond) = _pool.kickerInfo(kicker);
+
+            // deposit time of taker change when he gets lps as reward from bucketTake
+            lenderDepositTime[_actor][bucketIndex] = block.timestamp;
+
+            // calculate amount of kicker reward/penalty that will decrease/increase reserves
+            if(totalBond > claimableBond + lockedBond) {
+                kickerBondChange = totalBond - claimableBond - lockedBond;
+                isKickerRewarded = true;
+            }
+            else {
+                kickerBondChange = claimableBond + lockedBond - totalBond;
+                isKickerRewarded = false;
+            }
+
+            (kicker, , , , , , , , , ) = _pool.auctionInfo(borrower);
             
-            if(!isFirstTakeOnAuction[borrower]) {
+            if(!alreadyTaken[borrower]) {
                 // reserve increase by 7% of borrower debt on first take
                 firstTakeIncreaseInReserve = Maths.wmul(borrowerDebt, 0.07 * 1e18);
                 firstTake = true;
-                isFirstTakeOnAuction[borrower] = true;
+
+                // if auction is settled by take
+                if(kicker == address(0)) {
+                    alreadyTaken[borrower] = false;
+                } else {
+                    alreadyTaken[borrower] = true;
+                }
             }
             else {
-                isFirstTakeOnAuction[borrower] = false;
                 firstTake = false;
-                (claimableBond, lockedBond) = _pool.kickerInfo(kicker);
-
-                // calculate amount of kicker reward/penalty that will decrease/increase reserves
-                if(totalBond > claimableBond + lockedBond) { 
-                    kickerBondChange = totalBond - claimableBond - lockedBond;
-                    isKickerRewarded = true;
-                }
-                else {
-                    kickerBondChange = claimableBond + lockedBond - totalBond;
-                    isKickerRewarded = false;
-                }
             }
         }
         catch {
+            resetReservesAndExchangeRate();
         }
     }
 }
@@ -134,7 +158,7 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
         borrowerIndex    = constrictToRange(borrowerIndex, 0, actors.length - 1);
         address borrower = actors[borrowerIndex];
         address kicker   = _actor;
-        amount           = constrictToRange(amount, 1, 1e36);
+        amount           = constrictToRange(amount, 1, 1e30);
 
         ( , , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
 
@@ -161,7 +185,7 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
     function takeAuction(uint256 borrowerIndex, uint256 amount, uint256 actorIndex) external useRandomActor(actorIndex){
         numberOfCalls['BLiquidationHandler.takeAuction']++;
 
-        amount = constrictToRange(amount, 1, 1e36);
+        amount = constrictToRange(amount, 1, 1e30);
 
         shouldExchangeRateChange = true;
 
