@@ -423,20 +423,22 @@ library BorrowerActions {
     ) external returns (
         uint256 newLup_
     ) {
-        Borrower memory borrower = loans_.borrowers[msg.sender];
-
-        bool inAuction = _inAuction(auctions_, msg.sender);
-
         // revert if loan is in auction
-        if (inAuction) revert AuctionActive();
+        if (_inAuction(auctions_, msg.sender)) revert AuctionActive();
+
+        Borrower memory borrower = loans_.borrowers[msg.sender];
 
         newLup_ = _lup(deposits_, poolState_.debt);
 
-        uint256 borrowerDebt  = Maths.wmul(borrower.t0Debt, poolState_.inflator);
-        bool isCollateralized = _isCollateralized(borrowerDebt, borrower.collateral, newLup_, poolState_.poolType);
-
         // revert if loan is not fully collateralized at current LUP
-        if (!isCollateralized) revert BorrowerUnderCollateralized();
+        if (
+            !_isCollateralized(
+                Maths.wmul(borrower.t0Debt, poolState_.inflator), // current borrower debt
+                borrower.collateral,
+                newLup_,
+                poolState_.poolType
+            )
+        ) revert BorrowerUnderCollateralized();
 
         // update loan state to stamp Neutral Price
         Loans.update(
