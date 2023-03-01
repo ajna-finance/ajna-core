@@ -348,7 +348,7 @@ contract PoolInfoUtils {
     }
 
     /**
-     *  @notice Calculates unutilized deposit fee for a pool.
+     *  @notice Calculates unutilized deposit fee rate for a pool.
      *  @notice Calculated as current annualized rate divided by 365 (24 hours of interest).
      *  @return Fee rate calculated from the pool interest rate.
      */

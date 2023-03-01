@@ -185,7 +185,11 @@ library LenderActions {
         // update bucket LPs
         bucket.lps += bucketLPs_;
 
-        lup_ = _lup(deposits_, poolState_.debt);
+        // only need to recalculate LUP if the deposit was above it
+        if (params_.amount == addedAmount) {
+            lupIndex = Deposits.findIndexOfSum(deposits_, poolState_.debt);
+        }
+        lup_ = _priceAt(lupIndex);
 
         emit AddQuoteToken(msg.sender, params_.index, addedAmount, bucketLPs_, lup_);
     }
@@ -255,8 +259,6 @@ library LenderActions {
                 dustLimit:         poolState_.quoteDustLimit
             })
         );
-
-        vars.ptp = _ptp(poolState_.debt, poolState_.collateral);
 
         vars.toBucketUnscaledDeposit = Deposits.unscaledValueAt(deposits_, params_.toIndex);
         vars.toBucketScale           = Deposits.scale(deposits_, params_.toIndex);
