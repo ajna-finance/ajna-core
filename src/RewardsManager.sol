@@ -8,6 +8,7 @@ import { IERC721 }   from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 
 import { IPool }            from './interfaces/pool/IPool.sol';
 import { IPositionManager } from './interfaces/position/IPositionManager.sol';
+import { IPositionManagerOwnerActions } from './interfaces/position/IPositionManagerOwnerActions.sol';
 
 import { PositionManager }  from './PositionManager.sol';
 
@@ -116,19 +117,27 @@ contract RewardsManager is IRewardsManager {
         _claimRewards(stakeInfo, tokenId_, epochToClaim_, true, stakeInfo.ajnaPool);
     }
 
-    struct MoveStakedLiquidityParams {
-        uint256 fromIndex,
-        uint256 toIndex
-    }
+    error MoveStakedLiquidityInvalid();
+
+    event MoveStakedLiquidity(
+        uint256 tokenId,
+        uint256[] fromIndexes,
+        uint256[] toIndexes
+    );
 
     // change to two uint arrays of same size to save gas and know which set of bucket exchange rates to update and claim rewards for
     function moveStakedLiquidity(
         uint256 tokenId_,
-        MoveStakedLiquidityParams[] memory params
+        uint256[] memory fromBuckets_,
+        uint256[] memory toBuckets_
     ) external {
         StakeInfo storage stakeInfo = stakes[tokenId_];
 
         if (msg.sender != stakeInfo.owner) revert NotOwnerOfDeposit();
+
+        // check move array sizes match to be able to match on index
+        uint256 fromBucketLength = fromBuckets_.length;
+        if (fromBucketLength != toBuckets_.length) revert MoveStakedLiquidityInvalid();
 
         address ajnaPool = stakeInfo.ajnaPool;
         uint256 curBurnEpoch = IPool(ajnaPool).currentBurnEpoch();
@@ -143,31 +152,42 @@ contract RewardsManager is IRewardsManager {
             ajnaPool
         );
 
-        for (uint256 i = 0; i < params.length; ) {
-            MoveStakedLiquidityParams memory param = params[i];
+        for (uint256 i = 0; i < fromBucketLength; ) {
+            uint256 fromIndex = fromBuckets_[i];
+            uint256 toIndex = toBuckets_[i];
 
-            BucketState storage fromBucket = stakeInfo.snapshot[param.fromIndex];
-            BucketState storage toBucket = stakeInfo.snapshot[param.toIndex];
+            BucketState storage fromBucket = stakeInfo.snapshot[fromIndex];
+            BucketState storage toBucket = stakeInfo.snapshot[toIndex];
 
             // call out to position manager to move liquidity between buckets
-            MoveLiquidityParams memory moveLiquidityParams = positionManager.MoveLiquidityParams(
+            IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
                 tokenId_,
                 ajnaPool,
-                param.fromIndex,
-                param.toIndex,
+                fromIndex,
+                toIndex,
                 expiry
             );
             positionManager.moveLiquidity(moveLiquidityParams);
 
             // update bucket state
             toBucket.lpsAtStakeTime = fromBucket.lpsAtStakeTime;
-            toBucket.rateAtStakeTime = IPool(ajnaPool).bucketExchangeRate(param.toIndex);
-            delete stakeInfo.snapshot[param.fromIndex];
+            toBucket.rateAtStakeTime = IPool(ajnaPool).bucketExchangeRate(toIndex);
+            delete stakeInfo.snapshot[fromIndex];
 
             unchecked { ++i; }
         }
 
+        emit MoveStakedLiquidity(tokenId_, fromBuckets_, toBuckets_);
+
         // update to bucket list exchange rates
+        // calculate rewards for updating exchange rates, if any
+        uint256 updateReward = _updateBucketExchangeRates(
+            ajnaPool,
+            toBuckets_
+        );
+
+        // transfer rewards to sender
+        _transferAjnaRewards(updateReward);
     }
 
     /**
