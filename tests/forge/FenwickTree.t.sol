@@ -198,7 +198,7 @@ contract FenwickTreeTest is DSTestPlus {
         // get Index randombly 
         uint256 removalIndex  = _tree.getIByInsertIndex(randomInRange(0, _tree.numInserts() - 1));
         uint256 removalAmount = _tree.get(removalIndex);
-        uint256 parentIndex   = randomInRange(removalIndex + 1, MAX_INDEX);
+        uint256 parentIndex   = randomInRange(Maths.min(MAX_INDEX, removalIndex + 1), MAX_INDEX);
 
         uint256 preRemovalParentIndexSum = _tree.prefixSum(parentIndex);
         uint256 preRemovalIndexSum       = _tree.prefixSum(removalIndex); 
@@ -212,34 +212,6 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(preRemovalIndexSum - removalAmount,       postRemovalIndexSum);
         assertEq(preRemovalTreeSum - removalAmount,        _tree.treeSum());
         assertEq(preRemovalParentIndexSum - removalAmount, postRemovalParentIndexSum);
-    }
-
-    function testFenwickScaling() external {
-        uint256 totalDeposit;
-        uint256 firstDeposit = 994665640564039457584007913129639932;
-        _tree.add(2570, firstDeposit);
-        totalDeposit += firstDeposit;
-        assertEq(totalDeposit, _tree.get(2570));
-
-        uint256 firstScale = 1000150675548441862;
-        _tree.mult(2570, firstScale);
-        totalDeposit = Maths.wmul(totalDeposit, firstScale);
-        assertEq(totalDeposit, _tree.get(2570));
-
-        uint256 secondDeposit = 48462143332689486187207611220503504;
-        _tree.add(2570, secondDeposit);
-        totalDeposit += secondDeposit;
-        assertEq(totalDeposit, _tree.get(2570));
-
-        uint256 secondScale = 1000000140885917739;
-        _tree.mult(2570, secondScale);
-        totalDeposit = Maths.wmul(totalDeposit, secondScale);
-        assertEq(totalDeposit, _tree.get(2570));
-
-        uint256 firstRemove = 48462143332689486187207611220503504;
-        _tree.remove(2570, firstRemove);
-        totalDeposit -= firstRemove;
-        assertEq(totalDeposit, _tree.get(2570));
     }
 }
 

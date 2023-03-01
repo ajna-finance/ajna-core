@@ -59,7 +59,7 @@ contract ERC721TakeWithExternalLiquidityTest is ERC721HelperContract {
         skip(60 days);
         // lender kicks the liquidation
         changePrank(_lender);
-        _pool.kick(_borrower);
+        _pool.kick(_borrower, MAX_FENWICK_INDEX);
         // price becomes favorable
         skip(8 hours);
     }

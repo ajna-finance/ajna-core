@@ -12,7 +12,7 @@ interface IERC721PoolLenderActions {
      *  @param  tokenIds Array of collateral to deposit.
      *  @param  index    The bucket index to which collateral will be deposited.
      *  @param  expiry    Timestamp after which this TX will revert, preventing inclusion in a block with unfavorable price.
-     *  @return lpbChange The amount of LP Tokens changed for the added collateral.
+     *  @return lpbChange The amount of LPs changed for the added collateral.
      */
     function addCollateral(
         uint256[] calldata tokenIds,

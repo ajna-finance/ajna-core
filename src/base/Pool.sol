@@ -96,6 +96,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 
+    mapping(address => mapping(address => bool)) public override approvedTransferors; // owner address -> transferor address -> approved flag
+
     /******************/
     /*** Immutables ***/
     /******************/
@@ -165,11 +167,79 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *          - _lpAllowances mapping
      */
     function approveLpOwnership(
-        address newOwner,
-        uint256 index_,
-        uint256 amount_
-    ) external nonReentrant {
-        _lpAllowances[msg.sender][newOwner][index_] = amount_;
+        address newOwner_,
+        uint256[] calldata indexes_,
+        uint256[] calldata amounts_
+    ) external override nonReentrant {
+        mapping(uint256 => uint256) storage allowances = _lpAllowances[msg.sender][newOwner_];
+
+        uint256 indexesLength = indexes_.length;
+        uint256 index;
+
+        for (uint256 i = 0; i < indexesLength; ) {
+            index = indexes_[i];
+
+            // revert if allowance at index is already set (not 0) and the new allowance does not reset the old one (not 0)
+            // this prevents possible attack where LPs receiver (newOwner) frontruns owner allowance calls to transfer more than allowed
+            if (allowances[index] != 0 && amounts_[i] != 0) revert AllowanceAlreadySet();
+
+            allowances[index] = amounts_[i];
+
+            unchecked { ++i; }
+        }
+
+        emit ApproveLpOwnership(
+            msg.sender,
+            newOwner_,
+            indexes_,
+            amounts_
+        );
+    }
+
+    /**
+     *  @inheritdoc IPoolLenderActions
+     *  @dev write state:
+     *          - approvedTransferors mapping
+     */
+    function approveLpTransferors(
+        address[] calldata transferors_
+    ) external override {
+        mapping(address => bool) storage allowances = approvedTransferors[msg.sender];
+
+        uint256 transferorsLength = transferors_.length;
+        for (uint256 i = 0; i < transferorsLength; ) {
+            allowances[transferors_[i]] = true;
+
+            unchecked { ++i; }
+        }
+
+        emit ApproveLpTransferors(
+            msg.sender,
+            transferors_
+        );
+    }
+
+    /**
+     *  @inheritdoc IPoolLenderActions
+     *  @dev write state:
+     *          - approvedTransferors mapping
+     */
+    function revokeLpTransferors(
+        address[] calldata transferors_
+    ) external override {
+        mapping(address => bool) storage allowances = approvedTransferors[msg.sender];
+
+        uint256 transferorsLength = transferors_.length;
+        for (uint256 i = 0; i < transferorsLength; ) {
+            delete allowances[transferors_[i]];
+
+            unchecked { ++i; }
+        }
+
+        emit RevokeLpTransferors(
+            msg.sender,
+            transferors_
+        );
     }
 
     /// @inheritdoc IPoolLenderActions
@@ -249,6 +319,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         LenderActions.transferLPs(
             buckets,
             _lpAllowances,
+            approvedTransferors,
             owner_,
             newOwner_,
             indexes_
@@ -265,7 +336,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *       - increment poolBalances.t0DebtInAuction and poolBalances.t0Debt accumulators
      */
     function kick(
-        address borrowerAddress_
+        address borrowerAddress_,
+        uint256 limitIndex_
     ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
@@ -275,7 +347,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             deposits,
             loans,
             poolState,
-            borrowerAddress_
+            borrowerAddress_,
+            limitIndex_
         );
 
         // update pool balances state
@@ -295,7 +368,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *       - increment poolBalances.t0DebtInAuction and poolBalances.t0Debt accumulators
      */
     function kickWithDeposit(
-        uint256 index_
+        uint256 index_,
+        uint256 limitIndex_
     ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
@@ -306,7 +380,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             buckets,
             loans,
             poolState,
-            index_
+            index_,
+            limitIndex_
         );
 
         // update pool balances state
@@ -328,6 +403,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      */
     function withdrawBonds(address recipient_) external {
         uint256 claimable = auctions.kickers[msg.sender].claimable;
+        // decrement total bond escrowed
+        auctions.totalBondEscrowed -= claimable;
         auctions.kickers[msg.sender].claimable = 0;
         _transferQuoteToken(recipient_, claimable);
     }
@@ -347,15 +424,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *          - ReserveAuction
      */
     function startClaimableReserveAuction() external override nonReentrant {
-        // retrieve timestamp of latest burn event and last burn timestamp
-        uint256 latestBurnEpoch   = reserveAuction.latestBurnEventEpoch;
-        uint256 lastBurnTimestamp = reserveAuction.burnEvents[latestBurnEpoch].timestamp;
-
-        // check that at least two weeks have passed since the last reserve auction completed, and that the auction was not kicked within the past 72 hours
-        if (block.timestamp < lastBurnTimestamp + 2 weeks || block.timestamp - reserveAuction.kicked <= 72 hours) {
-            revert ReserveAuctionTooSoon();
-        }
-
         // start a new claimable reserve auction, passing in relevant parameters such as the current pool size, debt, balance, and inflator value
         uint256 kickerAward = Auctions.startClaimableReserveAuction(
             auctions,
@@ -367,12 +435,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 inflator:    inflatorState.inflator
             })
         );
-
-        // increment latest burn event epoch and update burn event timestamp
-        latestBurnEpoch += 1;
-
-        reserveAuction.latestBurnEventEpoch = latestBurnEpoch;
-        reserveAuction.burnEvents[latestBurnEpoch].timestamp = block.timestamp;
 
         // transfer kicker award to msg.sender
         _transferQuoteToken(msg.sender, kickerAward);
@@ -392,18 +454,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             reserveAuction,
             maxAmount_
         );
-
-        uint256 totalBurned = reserveAuction.totalAjnaBurned + ajnaRequired;
-        
-        // accumulate additional ajna burned
-        reserveAuction.totalAjnaBurned = totalBurned;
-
-        uint256 burnEventEpoch = reserveAuction.latestBurnEventEpoch;
-
-        // record burn event information to enable querying by staking rewards
-        BurnEvent storage burnEvent = reserveAuction.burnEvents[burnEventEpoch];
-        burnEvent.totalInterest = reserveAuction.totalInterestEarned;
-        burnEvent.totalBurned   = totalBurned;
 
         // burn required number of ajna tokens to take quote from reserves
         IERC20(_getArgAddress(AJNA_ADDRESS)).safeTransferFrom(msg.sender, address(this), ajnaRequired);
@@ -538,7 +588,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 neutralPrice,
         address head,
         address next,
-        address prev
+        address prev,
+        bool alreadyTaken
     ) {
         Liquidation memory liquidation = auctions.liquidations[borrower_];
         return (
@@ -550,7 +601,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             liquidation.neutralPrice,
             auctions.head,
             liquidation.next,
-            liquidation.prev
+            liquidation.prev,
+            liquidation.alreadyTaken
         );
     }
 
@@ -709,11 +761,12 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /// @inheritdoc IPoolState
-    function reservesInfo() external view override returns (uint256, uint256, uint256) {
+    function reservesInfo() external view override returns (uint256, uint256, uint256, uint256) {
         return (
             auctions.totalBondEscrowed,
             reserveAuction.unclaimed,
-            reserveAuction.kicked
+            reserveAuction.kicked,
+            reserveAuction.totalInterestEarned
         );
     }
 

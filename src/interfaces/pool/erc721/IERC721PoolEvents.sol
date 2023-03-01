@@ -10,13 +10,13 @@ interface IERC721PoolEvents {
     /**
      *  @notice Emitted when actor adds claimable collateral to a bucket.
      *  @param  actor     Recipient that added collateral.
-     *  @param  price     Price at which collateral were added.
+     *  @param  index     Index at which collateral were added.
      *  @param  tokenIds  Array of tokenIds to be added to the pool.
      *  @param  lpAwarded Amount of LP awarded for the deposit. 
      */
     event AddCollateralNFT(
         address indexed actor,
-        uint256 indexed price,
+        uint256 indexed index,
         uint256[] tokenIds,
         uint256   lpAwarded
     );
