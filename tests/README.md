@@ -27,6 +27,10 @@ make coverage
 brownie test
 ```
 - to view `stdout` on long-running tests, use `brownie test -s`.
+- run invariant tests (experimental, doesn't have full coverage):
+```bash
+brownie test --stateful true
+```
 
 #### Debugging Brownie integration tests
 - to drop into the console upon test failure:
