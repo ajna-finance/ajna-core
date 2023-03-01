@@ -1175,9 +1175,15 @@ library Auctions {
 
         if (kickerClaimable >= bondSize_) {
             kicker.claimable -= bondSize_;
+
+            // decrement total bond escrowed by bond size 
+            auctions_.totalBondEscrowed -= bondSize_;
         } else {
             bondDifference_  = bondSize_ - kickerClaimable;
             kicker.claimable = 0;
+
+            // decrement total bond escrowed by kicker claimable
+            auctions_.totalBondEscrowed -= kickerClaimable;
         }
     }
 
@@ -1316,9 +1322,6 @@ library Auctions {
 
         // decrement number of active auctions
         -- auctions_.noOfAuctions;
-
-        // remove auction bond size from bond escrow accumulator
-        auctions_.totalBondEscrowed -= liquidation.bondSize;
 
         // update auctions queue
         if (auctions_.head == borrower_ && auctions_.tail == borrower_) {

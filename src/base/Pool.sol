@@ -403,6 +403,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      */
     function withdrawBonds(address recipient_) external {
         uint256 claimable = auctions.kickers[msg.sender].claimable;
+        // decrement total bond escrowed
+        auctions.totalBondEscrowed -= claimable;
         auctions.kickers[msg.sender].claimable = 0;
         _transferQuoteToken(recipient_, claimable);
     }
