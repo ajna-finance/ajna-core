@@ -3,8 +3,9 @@
 pragma solidity 0.8.14;
 
 import { IERC20 }    from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import { IERC721 }   from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
+import { ReentrancyGuard } from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import { IPool }            from './interfaces/pool/IPool.sol';
 import { IPositionManager } from './interfaces/position/IPositionManager.sol';
@@ -33,7 +34,7 @@ import { Maths } from './libraries/internal/Maths.sol';
  *          - claim rewards
  *          - unstake token
  */
-contract RewardsManager is IRewardsManager {
+contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
     using SafeERC20 for IERC20;
 
@@ -117,20 +118,19 @@ contract RewardsManager is IRewardsManager {
         _claimRewards(stakeInfo, tokenId_, epochToClaim_, true, stakeInfo.ajnaPool);
     }
 
-    error MoveStakedLiquidityInvalid();
-
-    event MoveStakedLiquidity(
-        uint256 tokenId,
-        uint256[] fromIndexes,
-        uint256[] toIndexes
-    );
-
-    // change to two uint arrays of same size to save gas and know which set of bucket exchange rates to update and claim rewards for
+    /**
+     *  @inheritdoc IRewardsManagerOwnerActions
+     *  @dev revert on:
+     *          - not owner NotOwnerOfDeposit()
+     *          - invalid index params MoveStakedLiquidityInvalid()
+     *  @dev emit events:
+     *          - MoveStakedLiquidity
+     */
     function moveStakedLiquidity(
         uint256 tokenId_,
         uint256[] memory fromBuckets_,
         uint256[] memory toBuckets_
-    ) external {
+    ) external nonReentrant override {
         StakeInfo storage stakeInfo = stakes[tokenId_];
 
         if (msg.sender != stakeInfo.owner) revert NotOwnerOfDeposit();
@@ -179,9 +179,13 @@ contract RewardsManager is IRewardsManager {
 
         emit MoveStakedLiquidity(tokenId_, fromBuckets_, toBuckets_);
 
-        // update to bucket list exchange rates
+        // update both bucket list exchange rates
         // calculate rewards for updating exchange rates, if any
         uint256 updateReward = _updateBucketExchangeRates(
+            ajnaPool,
+            fromBuckets_
+        );
+        updateReward += _updateBucketExchangeRates(
             ajnaPool,
             toBuckets_
         );
@@ -650,7 +654,6 @@ contract RewardsManager is IRewardsManager {
             totalBurned,
             totalInterest
         );
-
     }
 
     /**
