@@ -115,9 +115,18 @@ contract PoolHelperTest is DSTestPlus {
      */
     function testBorrowFeeRate() external {
         uint256 interestRate = 0.12 * 1e18;
-        assertEq(_borrowFeeRate(interestRate),  0.002307692307692308 * 1e18);
-        assertEq(_borrowFeeRate(0.52 * 1e18),     0.01 * 1e18);
-        assertEq(_borrowFeeRate(0.26 * 1e18),     0.005 * 1e18);
+        assertEq(_borrowFeeRate(interestRate), 0.002307692307692308 * 1e18);
+        assertEq(_borrowFeeRate(0.52 * 1e18),  0.01 * 1e18);
+        assertEq(_borrowFeeRate(0.26 * 1e18),  0.005 * 1e18);
+    }
+
+    /**
+     *  @notice Tests fee rate for depositing under the LUP
+     */
+    function testDepositFeeRate() external {
+        uint256 interestRate = 0.07 * 1e18;
+        assertEq(_depositFeeRate(interestRate), 0.000191780821917808 * 1e18);
+        assertEq(_depositFeeRate(0.2 * 1e18),   0.000547945205479452 * 1e18);
     }
 
     /**
