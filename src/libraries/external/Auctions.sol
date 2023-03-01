@@ -162,7 +162,6 @@ library Auctions {
     error CollateralRoundingNeededButNotPossible();
     error InsufficientLiquidity();
     error InsufficientCollateral();
-    error InvalidBucketDepth();
     error InvalidAmount();
     error NoAuction();
     error NoReserves();
@@ -207,9 +206,6 @@ library Auctions {
         uint256 collateralSettled_,
         uint256 t0DebtSettled_
     ) {
-        // revert if no bucket to settle
-        if (params_.bucketDepth == 0 ) revert InvalidBucketDepth();
-
         uint256 kickTime = auctions_.liquidations[params_.borrower].kickTime;
         if (kickTime == 0) revert NoAuction();
 

@@ -108,11 +108,6 @@ interface IPoolErrors {
     error InsufficientLiquidity();
 
     /**
-     *  @notice When settling pool debt the number of buckets to use should be greater than 0.
-     */
-    error InvalidBucketDepth();
-
-    /**
      *  @notice When transferring LPs between indices, the new index must be a valid index.
      */
     error InvalidIndex();

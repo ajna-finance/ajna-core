@@ -90,12 +90,6 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         ERC721Pool(address(_pool)).removeCollateral(0, 1000);
     }
 
-    function testValidateSettleInput() external tearDown {
-        // revert on zero amount
-        vm.expectRevert(IPoolErrors.InvalidBucketDepth.selector);
-        ERC721Pool(address(_pool)).settle(address(this), 0);
-    }
-
     function testValidateTakeInput() external tearDown {
         // revert on zero amount
         vm.expectRevert(IPoolErrors.InvalidAmount.selector);
