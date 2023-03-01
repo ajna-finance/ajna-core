@@ -32,6 +32,8 @@ library PoolCommons {
     uint256 internal constant DECREASE_COEFFICIENT = 0.9 * 1e18;
     uint256 internal constant LAMBDA_EMA_7D        = 0.905723664263906671 * 1e18; // Lambda used for interest EMAs calculated as exp(-1/7   * ln2)
     uint256 internal constant EMA_7D_RATE_FACTOR   = 1e18 - LAMBDA_EMA_7D;
+    uint256 internal constant LAMBDA_EMA_12H       = 0.999807477651317445 * 1e18; // Lambda used for deposit EMA calculated as exp(-ln(2)*1/3600)
+    uint256 internal constant EMA_12H_RATE_FACTOR  = 1e18 - LAMBDA_EMA_12H;
     int256  internal constant PERCENT_102          = 1.02 * 1e18;
 
     /**************/
@@ -47,6 +49,7 @@ library PoolCommons {
 
     /**
      *  @notice Calculates new pool interest rate params (EMAs and interest rate value) and saves new values in storage.
+     *  @dev    Never called more than once every 12 hours.
      *  @dev    write state:
      *              - interest debt and lup * collateral EMAs accumulators
      *              - interest rate accumulator and interestRateUpdate state
@@ -61,8 +64,9 @@ library PoolCommons {
     ) external {
 
         // current values of EMA samples
-        uint256 curDebtEma   = interestParams_.debtEma;
-        uint256 curLupColEma = interestParams_.lupColEma;
+        uint256 curDepositEma = interestParams_.depositEma;
+        uint256 curDebtEma    = interestParams_.debtEma;
+        uint256 curLupColEma  = interestParams_.lupColEma;
 
         // meaningful actual utilization
         int256 mau;
@@ -70,7 +74,16 @@ library PoolCommons {
         int256 mau102;
 
         if (poolState_.debt != 0) {
+            uint256 meaningfulDeposit = _meaningfulDeposit(deposits_, poolState_.debt, poolState_.collateral);
+
+            // initialize the EMA to the actual value for the first calculation
+            if (curDepositEma == 0) curDepositEma = meaningfulDeposit;
+
             // update pool EMAs for target utilization calculation
+            curDepositEma = 
+                Maths.wmul(meaningfulDeposit, EMA_12H_RATE_FACTOR) +
+                Maths.wmul(curDepositEma,     LAMBDA_EMA_12H
+            );
 
             curDebtEma =
                 Maths.wmul(poolState_.debt,  EMA_7D_RATE_FACTOR) +
@@ -88,12 +101,12 @@ library PoolCommons {
                 Maths.wmul(curLupColEma,                    LAMBDA_EMA_7D);
 
             // save EMA samples in storage
-            interestParams_.debtEma   = curDebtEma;
-            interestParams_.lupColEma = curLupColEma;
+            interestParams_.depositEma = curDepositEma;
+            interestParams_.debtEma    = curDebtEma;
+            interestParams_.lupColEma  = curLupColEma;
 
             // calculate meaningful actual utilization for interest rate update
-            uint256 meaningfulDeposit = _meaningfulDeposit(deposits_, poolState_.debt, poolState_.collateral);
-            mau    = int256(_utilization(meaningfulDeposit, poolState_.debt));
+            mau    = int256(_utilization(curDepositEma, poolState_.debt));
             mau102 = mau * PERCENT_102 / 1e18;
         }
 
@@ -113,6 +126,7 @@ library PoolCommons {
             newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
         }
 
+        // bound rates between 10 bps and 50000%
         newInterestRate = Maths.min(500 * 1e18, Maths.max(0.001 * 1e18, newInterestRate));
 
         if (poolState_.rate != newInterestRate) {
@@ -243,7 +257,7 @@ library PoolCommons {
     function _utilization(
         uint256 meaningfulDeposit_,
         uint256 poolDebt_
-    ) internal view returns (uint256 utilization_) {
+    ) internal pure returns (uint256 utilization_) {
         if (meaningfulDeposit_ != 0) utilization_ = Maths.wdiv(
             poolDebt_,
             meaningfulDeposit_
@@ -275,7 +289,6 @@ library PoolCommons {
     ) internal view returns (uint256 meaningfulDeposit_) {
         uint256 ptp = _ptp(poolDebt_, collateral_);
         if (ptp != 0) {
-            uint256 depositAbove;
             if      (ptp >= MAX_PRICE) meaningfulDeposit_ = 0;
             else if (ptp >= MIN_PRICE) meaningfulDeposit_ = Deposits.prefixSum(deposits, _indexOf(ptp));
             else                       meaningfulDeposit_ = Deposits.treeSum(deposits);
