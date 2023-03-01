@@ -136,7 +136,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         });
     }
 
-    function testBorrowAndRepay() external {
+    function testBorrowAndRepay() external tearDown {
 
         // lender deposits 10000 Quote into 3 buckets
         _addInitialLiquidity({

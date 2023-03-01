@@ -514,7 +514,7 @@ library Auctions {
                   borrower,
                   borrowerAddress_,
                   result_,
-                  t0BorrowerDebt + t0RepayAmount,
+                  t0BorrowerDebt - result_.t0DebtPenalty,
                   borrower.collateral + result_.collateralAmount
         );
 
@@ -583,7 +583,8 @@ library Auctions {
         poolState_.t0Debt += result_.t0DebtPenalty;
         poolState_.t0Debt -= t0RepayAmount;
         poolState_.debt   = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
-
+ 
+        // situation where borrower.t0Debt == 0, we get an overflow because we are attempting to subtract past 0
         result_.t0PoolDebt = poolState_.t0Debt;
         result_.poolDebt   = poolState_.debt;
 
@@ -596,7 +597,7 @@ library Auctions {
                     borrower,
                     borrowerAddress_,
                     result_,
-                    t0BorrowerDebt + t0RepayAmount,
+                    t0BorrowerDebt - result_.t0DebtPenalty,
                     borrower.collateral + result_.collateralAmount
         );
 
@@ -1208,7 +1209,7 @@ library Auctions {
      *              - increment auctions.totalBondEscrowed accumulator
      *              - updates auction queue state
      *  @param  borrowerAddress_ Address of the borrower that is kicked.
-     *  @param  bondSize_        Bond size to cover newly kicked auction.
+     *  @param  bondSize_        Bondt0Debt size to cover newly kicked auction.
      *  @param  bondFactor_      Bond factor of the newly kicked auction.
      *  @param  momp_            Current pool MOMP.
      *  @param  neutralPrice_    Current pool Neutral Price.

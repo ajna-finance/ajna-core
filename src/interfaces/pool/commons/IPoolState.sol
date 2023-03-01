@@ -35,6 +35,11 @@ interface IPoolState {
             address prev
         );
 
+    function poolWeight()
+        external
+        view
+        returns (uint256 poolWeight);
+
     /**
      *  @notice Returns pool related debt values.
      *  @return debt_            Current amount of debt owed by borrowers in pool.

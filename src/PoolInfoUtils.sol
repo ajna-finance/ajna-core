@@ -320,6 +320,12 @@ contract PoolInfoUtils {
         return Maths.wmul(maxThresholdPrice, inflatorSnapshot);
     }
 
+    function poolWeight(address ajnaPool_) external view returns (uint256) {
+        IPool pool = IPool(ajnaPool_);
+        uint256 weight = pool.poolWeight();
+        return weight;
+    }
+
     function momp(
         address ajnaPool_
     ) external view returns (uint256) {

@@ -624,7 +624,6 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                 fromIndex: fromBucketId,
                 toIndex:   toBucketId
             });
-
             return;
         }
 

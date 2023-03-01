@@ -226,7 +226,6 @@ library BorrowerActions {
         if (!vars.pledge && !vars.borrow) {
             result_.newLup = _lup(deposits_, result_.poolDebt);
         }
-
         // update loan state
         Loans.update(
             loans_,

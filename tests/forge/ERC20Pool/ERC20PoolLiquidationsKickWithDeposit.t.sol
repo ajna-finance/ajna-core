@@ -1207,7 +1207,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 encumberedCollateral: 0,
                 poolDebt:             0,
                 actualUtilization:    0,
-                targetUtilization:    0.124942935403867340 * 1e18,
+                targetUtilization:    0.000000006154002810 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),

@@ -61,7 +61,6 @@ library PoolCommons {
         uint256 t0PoolUtilizationDebtWeight_,
         uint256 lup_
     ) external {
-        console.log("interest updating start");
 
         // current values of EMA samples
         uint256 curDebtEma   = interestParams_.debtEma;
@@ -104,13 +103,6 @@ library PoolCommons {
 
         uint256 newInterestRate = poolState_.rate;
 
-        console.log("interest updating TU");
-        console.logInt(tu);
-
-        console.log("interest updating MAU");
-        console.logInt(mau);
-
-
         // raise rates if 4*(tu-1.02*mau) < (tu+1.02*mau-1)^2-1
         if (4 * (tu - mau102) < ((tu + mau102 - 1e18) ** 2) / 1e18 - 1e18) {
             newInterestRate = Maths.wmul(poolState_.rate, INCREASE_COEFFICIENT);
@@ -121,12 +113,9 @@ library PoolCommons {
 
         newInterestRate = Maths.min(500 * 1e18, Maths.max(0.001 * 1e18, newInterestRate));
 
-        console.log("pool rate", poolState_.rate);
-        console.log("newInterestRate", newInterestRate);
         if (poolState_.rate != newInterestRate) {
             interestParams_.interestRate       = uint208(newInterestRate);
             interestParams_.interestRateUpdate = uint48(block.timestamp);
-            console.log("interestRateUpdate", interestParams_.interestRateUpdate);
 
             emit UpdateInterestRate(poolState_.rate, newInterestRate);
         }

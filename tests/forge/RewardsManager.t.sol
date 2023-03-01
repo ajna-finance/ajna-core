@@ -496,7 +496,6 @@ contract RewardsManagerTest is DSTestPlus {
             burned:    0,
             interest:  0
         });
-        return;
 
         _assertBurn({
             pool:      address(_poolOne),
@@ -515,9 +514,10 @@ contract RewardsManagerTest is DSTestPlus {
             pool:              address(_poolOne),
             tokenId:           tokenIdOne,
             claimedArray:      _epochsClaimedArray(2, 0),
-            reward:            80.793427892333608615 * 1e18,
-            updateRatesReward: 3.689026486034825940 * 1e18
+            reward:            89.916916464575457405 * 1e18,
+            updateRatesReward: 4.518434538056813485 * 1e18
         });
+        return;
     }
 
     function testWithdrawAndClaimRewardsNoReserveTake() external {

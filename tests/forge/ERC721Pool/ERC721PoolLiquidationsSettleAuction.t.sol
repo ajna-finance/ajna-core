@@ -1000,7 +1000,6 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             lpAwardTaker:     0,
             lpAwardKicker:    857.142857142857143034 * 1e18
         });
-        return;
 
         _assertBucket({
             index:        2502,

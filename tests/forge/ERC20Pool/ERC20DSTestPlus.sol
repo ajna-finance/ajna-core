@@ -19,6 +19,8 @@ import 'src/PoolInfoUtils.sol';
 
 import 'src/libraries/internal/Maths.sol';
 
+import '@std/console.sol';
+
 abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
 
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -118,6 +120,20 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         assertEq(collateralBalanceNormalized, bucketCollateral + pledgedCollateral);
     }
 
+    function validateDebtWeight(
+        EnumerableSet.AddressSet storage borrowers
+    ) internal {
+        uint256 weight;
+
+        uint256 debt;
+        uint256 collateral;
+        for(uint i = 0; i < borrowers.length(); i++) {
+            (uint256 t0Debt, uint256 collateral, ) = _pool.borrowerInfo(borrowers.at(i));
+            weight = collateral != 0 ? weight + (t0Debt ** 2 / collateral) : weight + 0;
+        }
+        assertEq(weight, _poolUtils.poolWeight(address(_pool)));
+    }
+
     function validateEmpty(
         EnumerableSet.UintSet storage buckets
     ) internal {
@@ -139,6 +155,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
 
     modifier tearDown {
         _;
+        validateDebtWeight(borrowers);
         validateCollateral(bucketsUsed, borrowers);
 
         for(uint i = 0; i < borrowers.length(); i++) {

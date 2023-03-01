@@ -607,7 +607,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 debtEma,
         uint256 lupColEma
     ) internal {
-        (uint256 curDebtEma, uint256 curLupColEma) = _pool.emasInfo();
+        (uint256 curLupColEma, uint256 curDebtEma) = _pool.emasInfo();
 
         assertEq(curDebtEma,   debtEma);
         assertEq(curLupColEma, lupColEma);

@@ -264,10 +264,6 @@ library Loans {
         uint256 debtColAccumPreAction;
         uint256 debtColAccumPostAction;
 
-        // console.log("debt pre", debtPreAction_);
-        // console.log("debt post", debtPostAction_);
-        // console.log("debt col pre", colPreAction_);
-        // console.log("debt col post", colPostAction_);
 
         // only bad debt, already deducted from accumulator when collateral was removed, do nothing.
         if (colPreAction_ == 0 && debtPreAction_ != 0) return;
@@ -283,14 +279,10 @@ library Loans {
             // Auction methods: kick, partial take, partial depositTake, partial arbTake, partial settle
             debtColAccumPostAction = debtPostAction_ ** 2 / colPostAction_;
             
-            // console.log("add to weight: ", debtColAccumPostAction);
-            // console.log("remove from util weight: ", debtColAccumPreAction);
-            // console.log("util weight going in: ", utilWeight);
             utilWeight += debtColAccumPostAction;
             utilWeight -= debtColAccumPreAction;
             loans_.t0PoolUtilizationDebtWeight = utilWeight; 
         }
-        // console.log("util weight aft: ", utilWeight);
     }
 
     /**********************/
