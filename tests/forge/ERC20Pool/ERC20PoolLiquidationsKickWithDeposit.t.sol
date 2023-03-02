@@ -165,6 +165,12 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             exchangeRate: 1 * 1e18
         });
 
+        // should revert if NP goes below limit
+        _assertKickWithDepositNpUnderLimitRevert({
+            from:  _lender1,
+            index: 2500
+        });
+
         _kickWithDeposit({
             from:               _lender1,
             index:              2500,
@@ -290,6 +296,13 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(_borrower3),     20_000 * 1e18);
         assertEq(_quote.balanceOf(_borrower4),     20_000 * 1e18);
         assertEq(_quote.balanceOf(_borrower5),     20_000 * 1e18);
+
+
+        // should revert if NP goes below limit
+        _assertKickWithDepositNpUnderLimitRevert({
+            from:  _lender3,
+            index: 2500
+        });
 
         _kickWithDeposit({
             from:               _lender3,
@@ -418,6 +431,12 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(_borrower4),     20_000 * 1e18);
         assertEq(_quote.balanceOf(_borrower5),     20_000 * 1e18);
 
+        // should revert if NP goes below limit
+        _assertKickWithDepositNpUnderLimitRevert({
+            from:  _lender2,
+            index: 2500
+        });
+
         // lender 2 kicks using all LPs from bucket 2499 (10_000) and sending additional quote tokens to cover auction bond (510.096153846153851000)
         _kickWithDeposit({
             from:               _lender2,
@@ -532,6 +551,12 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             collateral:   10 * 1e18,
             deposit:      60_000 * 1e18,
             exchangeRate: 1 * 1e18
+        });
+
+        // should revert if NP goes below limit
+        _assertKickWithDepositNpUnderLimitRevert({
+            from:  _lender1,
+            index: 2500
         });
 
         _kickWithDeposit({
@@ -677,9 +702,9 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         address head;
         address next;
         address prev;
-        (, , , , , , head, next, prev) = _pool.auctionInfo(address(0));
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(address(0));
         assertEq(head, _borrower1);
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower1);
         assertEq(head, _borrower1);
         assertEq(next, address(0));
         assertEq(prev, address(0));
@@ -713,11 +738,11 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(borrower, address(0));
         assertEq(thresholdPrice, 0);
 
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower1);
         assertEq(head, _borrower1);
         assertEq(next, _borrower5);
         assertEq(prev, address(0));
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower5);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower5);
         assertEq(head, _borrower1);
         assertEq(next, address(0));
         assertEq(prev, _borrower1);
@@ -751,15 +776,15 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(borrower, address(0));
         assertEq(thresholdPrice, 0);
 
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower1);
         assertEq(head, _borrower1);
         assertEq(next, _borrower5);
         assertEq(prev, address(0));
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower5);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower5);
         assertEq(head, _borrower1);
         assertEq(next, _borrower4);
         assertEq(prev, _borrower1);
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower4);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower4);
         assertEq(head, _borrower1);
         assertEq(next, address(0));
         assertEq(prev, _borrower5);
@@ -793,19 +818,19 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(borrower, address(0));
         assertEq(thresholdPrice, 0);
 
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower1);
         assertEq(head, _borrower1);
         assertEq(next, _borrower5);
         assertEq(prev, address(0));
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower5);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower5);
         assertEq(head, _borrower1);
         assertEq(next, _borrower4);
         assertEq(prev, _borrower1);
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower4);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower4);
         assertEq(head, _borrower1);
         assertEq(next, _borrower3);
         assertEq(prev, _borrower5);
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower3);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower3);
         assertEq(head, _borrower1);
         assertEq(next, address(0));
         assertEq(prev, _borrower4);
@@ -839,23 +864,23 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(borrower, address(0));
         assertEq(thresholdPrice, 0);
 
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower1);
         assertEq(head, _borrower1);
         assertEq(next, _borrower5);
         assertEq(prev, address(0));
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower5);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower5);
         assertEq(head, _borrower1);
         assertEq(next, _borrower4);
         assertEq(prev, _borrower1);
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower4);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower4);
         assertEq(head, _borrower1);
         assertEq(next, _borrower3);
         assertEq(prev, _borrower5);
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower3);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower3);
         assertEq(head, _borrower1);
         assertEq(next, _borrower2);
         assertEq(prev, _borrower4);
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower2);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower2);
         assertEq(head, _borrower1);
         assertEq(next, address(0));
         assertEq(prev, _borrower3);
@@ -916,7 +941,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 24_023.076923076923088000 * 1e18,
+                totalBondEscrowed: 30_028.846153846153860000 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     81_114.914934273090436935 * 1e18,
                 thresholdPrice:    0,
@@ -924,23 +949,23 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             })
         );
 
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower1);
         assertEq(head, _borrower1);
         assertEq(next, _borrower5);
         assertEq(prev, address(0));
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower5);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower5);
         assertEq(head, _borrower1);
         assertEq(next, _borrower4);
         assertEq(prev, _borrower1);
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower4);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower4);
         assertEq(head, _borrower1);
         assertEq(next, _borrower3);
         assertEq(prev, _borrower5);
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower3);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower3);
         assertEq(head, _borrower1);
         assertEq(next, address(0));
         assertEq(prev, _borrower4);
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower2);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower2);
         assertEq(head, _borrower1);
         assertEq(next, address(0));
         assertEq(prev, address(0));
@@ -955,7 +980,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 bondFactor:        0.3 * 1e18,
                 kickTime:          _startTime,
                 kickMomp:          3_863.654368867279344664 * 1e18,
-                totalBondEscrowed: 24_023.076923076923088000 * 1e18,
+                totalBondEscrowed: 30_028.846153846153860000 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     81_114.914934273090436935 * 1e18,
                 thresholdPrice:    20.278728733568272609 * 1e18,
@@ -979,7 +1004,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 18_017.307692307692316000 * 1e18,
+                totalBondEscrowed: 30_028.846153846153860000 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     60_836.186200704817827702 * 1e18,
                 thresholdPrice:    0,
@@ -987,23 +1012,23 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             })
         );
 
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower1);
         assertEq(head, _borrower1);
         assertEq(next, _borrower5);
         assertEq(prev, address(0));
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower5);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower5);
         assertEq(head, _borrower1);
         assertEq(next, _borrower3);
         assertEq(prev, _borrower1);
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower4);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower4);
         assertEq(head, _borrower1);
         assertEq(next, address(0));
         assertEq(prev, address(0));
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower3);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower3);
         assertEq(head, _borrower1);
         assertEq(next, address(0));
         assertEq(prev, _borrower5);
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower2);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower2);
         assertEq(head, _borrower1);
         assertEq(next, address(0));
         assertEq(prev, address(0));
@@ -1018,7 +1043,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 bondFactor:        0.3 * 1e18,
                 kickTime:          _startTime,
                 kickMomp:          3_863.654368867279344664 * 1e18,
-                totalBondEscrowed: 18_017.307692307692316000 * 1e18,
+                totalBondEscrowed: 30_028.846153846153860000 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     60_836.186200704817827702 * 1e18,
                 thresholdPrice:    20.278728733568272609 * 1e18,
@@ -1042,7 +1067,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 12_011.538461538461544000 * 1e18,
+                totalBondEscrowed: 30_028.846153846153860000 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     40_557.457467136545218468 * 1e18,
                 thresholdPrice:    0,
@@ -1050,23 +1075,23 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             })
         );
 
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower1);
         assertEq(head, _borrower5);
         assertEq(next, address(0));
         assertEq(prev, address(0));
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower5);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower5);
         assertEq(head, _borrower5);
         assertEq(next, _borrower3);
         assertEq(prev, address(0));
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower4);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower4);
         assertEq(head, _borrower5);
         assertEq(next, address(0));
         assertEq(prev, address(0));
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower3);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower3);
         assertEq(head, _borrower5);
         assertEq(next, address(0));
         assertEq(prev, _borrower5);
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower2);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower2);
         assertEq(head, _borrower5);
         assertEq(next, address(0));
         assertEq(prev, address(0));
@@ -1081,7 +1106,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 bondFactor:        0.3 * 1e18,
                 kickTime:          _startTime,
                 kickMomp:          3_863.654368867279344664 * 1e18,
-                totalBondEscrowed: 12_011.538461538461544000 * 1e18,
+                totalBondEscrowed: 30_028.846153846153860000 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     40_557.457467136545218468 * 1e18,
                 thresholdPrice:    20.278728733568272609 * 1e18,
@@ -1105,7 +1130,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 6_005.769230769230772000 * 1e18,
+                totalBondEscrowed: 30_028.846153846153860000 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     20_278.728733568272609234 * 1e18,
                 thresholdPrice:    0,
@@ -1113,23 +1138,23 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             })
         );
 
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower1);
         assertEq(head, _borrower3);
         assertEq(next, address(0));
         assertEq(prev, address(0));
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower5);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower5);
         assertEq(head, _borrower3);
         assertEq(next, address(0));
         assertEq(prev, address(0));
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower4);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower4);
         assertEq(head, _borrower3);
         assertEq(next, address(0));
         assertEq(prev, address(0));
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower3);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower3);
         assertEq(head, _borrower3);
         assertEq(next, address(0));
         assertEq(prev, address(0));
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower2);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower2);
         assertEq(head, _borrower3);
         assertEq(next, address(0));
         assertEq(prev, address(0));
@@ -1144,13 +1169,22 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 bondFactor:        0.3 * 1e18,
                 kickTime:          _startTime,
                 kickMomp:          3_863.654368867279344664 * 1e18,
-                totalBondEscrowed: 6_005.769230769230772000 * 1e18,
+                totalBondEscrowed: 30_028.846153846153860000 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     20_278.728733568272609234 * 1e18,
                 thresholdPrice:    20.278728733568272609 * 1e18,
                 neutralPrice:      21.125293269230769068 * 1e18
             })
         );
+
+        // add more liquidity to settle auction
+        _addLiquidity({
+            from:    _lender1,
+            amount:  40_000 * 1e18,
+            index:   2500,
+            lpAward: 39_977.146699469273244335 * 1e18,
+            newLup:  3_863.654368867279344664 * 1e18
+        });
 
         _settle({
             from:        _lender1,
@@ -1168,7 +1202,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 0,
+                totalBondEscrowed: 30_028.846153846153860000 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
                 thresholdPrice:    0,
@@ -1176,23 +1210,23 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             })
         );
 
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower1);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower1);
         assertEq(head, address(0));
         assertEq(next, address(0));
         assertEq(prev, address(0));
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower5);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower5);
         assertEq(head, address(0));
         assertEq(next, address(0));
         assertEq(prev, address(0));
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower4);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower4);
         assertEq(head, address(0));
         assertEq(next, address(0));
         assertEq(prev, address(0));
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower3);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower3);
         assertEq(head, address(0));
         assertEq(next, address(0));
         assertEq(prev, address(0));
-        (, , , , , , head, next, prev) = _pool.auctionInfo(_borrower2);
+        (, , , , , , head, next, prev, ) = _pool.auctionInfo(_borrower2);
         assertEq(head, address(0));
         assertEq(next, address(0));
         assertEq(prev, address(0));
@@ -1202,8 +1236,8 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
-                poolSize:             0,
-                pledgedCollateral:    2_984.214316325106204943 * 1e18,
+                poolSize:             19_721.271266431727390766 * 1e18,
+                pledgedCollateral:    3_978.965728641650074189 * 1e18,
                 encumberedCollateral: 0,
                 poolDebt:             0,
                 actualUtilization:    0,
@@ -1219,8 +1253,8 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       2500,
-            lpBalance:   19_971.15384615384614 * 1e18,
-            depositTime: _startTime
+            lpBalance:   59_948.300545623119384335 * 1e18,
+            depositTime: _startTime + 80 hours
         });
         // assert lender1 as a kicker
         _assertKicker({
@@ -1246,7 +1280,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _assertBorrower({
             borrower:                  _borrower3,
             borrowerDebt:              0,
-            borrowerCollateral:        0, // last borrower settled
+            borrowerCollateral:        994.751412316543869246 * 1e18, // last borrower settled
             borrowert0Np:              21.125293269230769068 * 1e18,
             borrowerCollateralization: 1 * 1e18
         });
@@ -1280,12 +1314,13 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         });
 
         // Lender 2 adds Quote token at a much lower price the tries to kick with deposit
-        _addLiquidity({
-            from:    _lender3,
-            amount:  150_000 * 1e18,
-            index:   7000,
-            lpAward: 150_000 * 1e18,
-            newLup:  3_844.432207828138682757 * 1e18
+        _addLiquidityWithPenalty({
+            from:        _lender3,
+            amount:      150_000 * 1e18,
+            amountAdded: 149_979.452054794520550000 * 1e18,
+            index:       7000,
+            lpAward:     149_979.452054794520550000 * 1e18,
+            newLup:      3_844.432207828138682757 * 1e18
         });
 
         _assertKickPriceBelowProposedLupRevert({
@@ -1314,6 +1349,6 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
 
         changePrank(_lender4);
         vm.expectRevert("ERC20: transfer amount exceeds balance");
-        _pool.kickWithDeposit(2499);
+        _pool.kickWithDeposit(2499, MAX_FENWICK_INDEX);
     }
 }

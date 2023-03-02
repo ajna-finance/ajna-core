@@ -6,7 +6,8 @@ import { IPool, IERC20Token } from './interfaces/pool/IPool.sol';
 
 import {
     _claimableReserves,
-    _feeRate,
+    _borrowFeeRate,
+    _depositFeeRate,
     _indexOf,
     _lpsToCollateral,
     _lpsToQuoteToken,
@@ -184,7 +185,7 @@ contract PoolInfoUtils {
 
         uint256 quoteTokenBalance = IERC20Token(pool.quoteTokenAddress()).balanceOf(ajnaPool_) * pool.quoteTokenScale();
 
-        (uint256 bondEscrowed, uint256 unclaimedReserve, uint256 auctionKickTime) = pool.reservesInfo();
+        (uint256 bondEscrowed, uint256 unclaimedReserve, uint256 auctionKickTime, ) = pool.reservesInfo();
 
         // due to rounding issues, especially in Auction.settle, this can be slighly negative
         if( poolDebt + quoteTokenBalance >= poolSize + bondEscrowed + unclaimedReserve) {
@@ -333,29 +334,39 @@ contract PoolInfoUtils {
 
         (uint256 debt, , )       = pool.debtInfo();
         ( , , uint256 noOfLoans) = pool.loansInfo();
+        noOfLoans += pool.totalAuctionsInPool();
         return _priceAt(pool.depositIndex(Maths.wdiv(debt, noOfLoans * 1e18)));
     }
 
     /**
-     *  @notice Calculates fee rate for a pool.
+     *  @notice Calculates origination fee rate for a pool.
      *  @notice Calculated as greater of the current annualized interest rate divided by 52 (one week of interest) or 5 bps.
-     *  @return Fee rate applied to the given interest rate.
+     *  @return Fee rate calculated from the pool interest rate.
      */
-    function feeRate(
+    function borrowFeeRate(
         address ajnaPool_
     ) external view returns (uint256) {
-        IPool pool = IPool(ajnaPool_);
-
-        (uint256 interestRate,) = pool.interestRateInfo();
-
-        return _feeRate(interestRate);
+        (uint256 interestRate,) = IPool(ajnaPool_).interestRateInfo();
+        return _borrowFeeRate(interestRate);
     }
 
     /**
-     *  @notice Calculate the amount of quote tokens in bucket for a given amount of LP Tokens.
+     *  @notice Calculates unutilized deposit fee rate for a pool.
+     *  @notice Calculated as current annualized rate divided by 365 (24 hours of interest).
+     *  @return Fee rate calculated from the pool interest rate.
+     */
+    function unutilizedDepositFeeRate(
+        address ajnaPool_
+    ) external view returns (uint256) {
+        (uint256 interestRate,) = IPool(ajnaPool_).interestRateInfo();
+        return _depositFeeRate(interestRate);  
+    }
+
+    /**
+     *  @notice Calculate the amount of quote tokens in bucket for a given amount of LPs.
      *  @param  lps_         The number of LPs to calculate amounts for.
      *  @param  index_       The price bucket index for which the value should be calculated.
-     *  @return quoteAmount_ The exact amount of quote tokens that can be exchanged for the given LP Tokens, WAD units.
+     *  @return quoteAmount_ The exact amount of quote tokens that can be exchanged for the given LPs, WAD units.
      */
     function lpsToQuoteTokens(
         address ajnaPool_,
@@ -375,10 +386,10 @@ contract PoolInfoUtils {
     }
 
     /**
-     *  @notice Calculate the amount of collateral tokens in bucket for a given amount of LP Tokens.
+     *  @notice Calculate the amount of collateral tokens in bucket for a given amount of LPs.
      *  @param  lps_              The number of LPs to calculate amounts for.
      *  @param  index_            The price bucket index for which the value should be calculated.
-     *  @return collateralAmount_ The exact amount of collateral tokens that can be exchanged for the given LP Tokens, WAD units.
+     *  @return collateralAmount_ The exact amount of collateral tokens that can be exchanged for the given LPs, WAD units.
      */
     function lpsToCollateral(
         address ajnaPool_,

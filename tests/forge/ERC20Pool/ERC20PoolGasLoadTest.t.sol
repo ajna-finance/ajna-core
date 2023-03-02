@@ -320,7 +320,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         vm.startPrank(kicker);
 
         for (uint256 i; i < LOANS_COUNT; i ++) {
-            _pool.kick(_borrowers[i]);
+            _pool.kick(_borrowers[i], MAX_FENWICK_INDEX);
         }
 
         skip(2 hours);
@@ -341,7 +341,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         vm.startPrank(kicker);
 
         for (uint256 i; i < LOANS_COUNT; i ++) {
-            _pool.kick(_borrowers[LOANS_COUNT - 1 - i]);
+            _pool.kick(_borrowers[LOANS_COUNT - 1 - i], MAX_FENWICK_INDEX);
         }
 
         skip(2 hours);
@@ -362,7 +362,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         _pool.addQuoteToken(500_000_000_000_000 * 1e18, 3_000, block.timestamp + 2 minutes);
         vm.warp(100_000 days);
 
-        _pool.kickWithDeposit(3_000); // worst case scenario, pool interest accrues
+        _pool.kickWithDeposit(3_000, MAX_FENWICK_INDEX); // worst case scenario, pool interest accrues
 
         skip(80 hours);
 
@@ -370,7 +370,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
 
         // kick remaining loans with deposit to get average gas cost
         for (uint256 i; i < LOANS_COUNT - 1; i ++) {
-            _pool.kickWithDeposit(3_000);
+            _pool.kickWithDeposit(3_000, MAX_FENWICK_INDEX);
         }
 
         vm.stopPrank();
@@ -404,7 +404,7 @@ contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
         vm.startPrank(kicker);
 
         for (uint256 i; i < LOANS_COUNT; i ++) {
-            _pool.kick(_borrowers[i]);
+            _pool.kick(_borrowers[i], MAX_FENWICK_INDEX);
         }
 
         // add quote tokens in bucket to arb
@@ -434,7 +434,7 @@ contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
         vm.startPrank(kicker);
 
         for (uint256 i; i < LOANS_COUNT; i ++) {
-            _pool.kick(_borrowers[LOANS_COUNT - 1 - i]);
+            _pool.kick(_borrowers[LOANS_COUNT - 1 - i], MAX_FENWICK_INDEX);
         }
 
         // add quote tokens in bucket to arb

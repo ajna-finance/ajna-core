@@ -13,7 +13,7 @@ import 'src/interfaces/position/IPositionManager.sol';
 import 'src/PositionManager.sol';
 import 'src/PoolInfoUtils.sol';
 
-import { _feeRate } from 'src/libraries/helpers/PoolHelper.sol';
+import { _borrowFeeRate } from 'src/libraries/helpers/PoolHelper.sol';
 
 import { DSTestPlus }  from './utils/DSTestPlus.sol';
 import { Token }       from './utils/Tokens.sol';
@@ -962,22 +962,22 @@ contract RewardsManagerTest is DSTestPlus {
             pool:              address(_poolOne),
             tokenId:           tokenIdTwo,
             claimedArray:      _epochsClaimedArray(1, 0),
-            reward:            24.613576001082625330 * 1e18,
+            reward:            35.286340734236753169 * 1e18,
             updateRatesReward: 0
         });
         uint256 minterTwoBalance = _ajnaToken.balanceOf(_minterTwo);
-        assertEq(minterTwoBalance, 24.613576001082625330 * 1e18);
+        assertEq(minterTwoBalance, 35.286340734236753169 * 1e18);
 
         _unstakeToken({
             minter:            _minterThree,
             pool:              address(_poolOne),
             tokenId:           tokenIdThree,
             claimedArray:      _epochsClaimedArray(1, 0),
-            reward:            20.507632222074521165 * 1e18,
+            reward:            29.396758173074299620 * 1e18,
             updateRatesReward: 0
         });
         uint256 minterThreeBalance = _ajnaToken.balanceOf(_minterThree);
-        assertEq(minterThreeBalance, 20.507632222074521165 * 1e18);
+        assertEq(minterThreeBalance, 29.396758173074299620 * 1e18);
 
         assertGt(minterTwoBalance, minterThreeBalance);
     }
@@ -1034,7 +1034,7 @@ contract RewardsManagerTest is DSTestPlus {
         uint256 tokenIdTwo = _mintAndMemorializePositionNFT(mintMemorializeParams);
         // second depositor stakes NFT, generating an update reward
         _stakeToken(address(_poolOne), _minterTwo, tokenIdTwo);
-        assertEq(_ajnaToken.balanceOf(_minterTwo), 8.038884953356772215 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_minterTwo), 8.038364414338976750 * 1e18);
 
         // calculate rewards earned since exchange rates have been updated
         uint256 idOneRewardsAtOne = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
@@ -1100,11 +1100,11 @@ contract RewardsManagerTest is DSTestPlus {
 
         // minter two claims rewards accrued since deposit
         changePrank(_minterTwo);
-        assertEq(_ajnaToken.balanceOf(_minterTwo), 8.038884953356772215 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_minterTwo), 8.038364414338976750 * 1e18);
         vm.expectEmit(true, true, true, true);
         emit ClaimRewards(_minterTwo, address(_poolOne), tokenIdTwo, _epochsClaimedArray(1, 1), idTwoRewardsAtTwo);
         _rewardsManager.claimRewards(tokenIdTwo, _poolOne.currentBurnEpoch());
-        assertEq(_ajnaToken.balanceOf(_minterTwo), idTwoRewardsAtTwo + 8.038884953356772215 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_minterTwo), idTwoRewardsAtTwo + 8.038364414338976750 * 1e18);
 
         // check there are no remaining rewards available after claiming
         uint256 remainingRewards = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
@@ -1468,7 +1468,7 @@ contract RewardsManagerTest is DSTestPlus {
         // calculate the required collateral based upon the borrow amount and index price
         (uint256 interestRate, ) = pool_.interestRateInfo();
         uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient
-        uint256 expectedDebt = Maths.wmul(borrowAmount, _feeRate(newInterestRate) + Maths.WAD);
+        uint256 expectedDebt = Maths.wmul(borrowAmount, _borrowFeeRate(newInterestRate) + Maths.WAD);
         requiredCollateral_ = Maths.wdiv(expectedDebt, _poolUtils.indexToPrice(indexPrice)) + Maths.WAD;
     }
     
