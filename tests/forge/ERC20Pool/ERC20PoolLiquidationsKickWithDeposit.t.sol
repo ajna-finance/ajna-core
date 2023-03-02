@@ -1314,12 +1314,13 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         });
 
         // Lender 2 adds Quote token at a much lower price the tries to kick with deposit
-        _addLiquidity({
-            from:    _lender3,
-            amount:  150_000 * 1e18,
-            index:   7000,
-            lpAward: 150_000 * 1e18,
-            newLup:  3_844.432207828138682757 * 1e18
+        _addLiquidityWithPenalty({
+            from:        _lender3,
+            amount:      150_000 * 1e18,
+            amountAdded: 149_979.452054794520550000 * 1e18,
+            index:       7000,
+            lpAward:     149_979.452054794520550000 * 1e18,
+            newLup:      3_844.432207828138682757 * 1e18
         });
 
         _assertKickPriceBelowProposedLupRevert({

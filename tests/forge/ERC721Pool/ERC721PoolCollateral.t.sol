@@ -1069,7 +1069,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _removeAllLiquidity({
             from:     _lender,
-            amount:   9.987201910492245717 * 1e18,
+            amount:   9.999999987399196031 * 1e18,
             index:    7388,
             newLup:   MAX_PRICE,
             lpRedeem: 9.999999987399196031 * 1e18

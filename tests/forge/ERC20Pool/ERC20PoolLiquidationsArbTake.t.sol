@@ -224,12 +224,13 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         });
 
         // add liquidity to accrue interest and update reserves before arb take
-        _addLiquidity({
-            from:    _lender1,
-            amount:  1 * 1e18,
-            index:   _i9_52,
-            lpAward: 0.99999682656208 * 1e18,
-            newLup:  9.721295865031779605 * 1e18
+        _addLiquidityWithPenalty({
+            from:        _lender1,
+            amount:      1 * 1e18,
+            amountAdded: 0.999876712328767123 * 1e18,
+            index:       _i9_52,
+            lpAward:     0.999873539282092894 * 1e18,
+            newLup:      9.721295865031779605 * 1e18
         });
 
         _assertBucket({
@@ -240,7 +241,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             exchangeRate: 1.013503541960817259 * 1e18
         });
         _assertReserveAuction({
-            reserves:                   23.911413759224212224 * 1e18,
+            reserves:                   23.911537046895445101 * 1e18,
             claimableReserves :         0,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
@@ -306,7 +307,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         });
         // reserves should remain the same after arb take
         _assertReserveAuction({
-            reserves:                   25.295951940381566551 * 1e18,
+            reserves:                   25.296075228052799428 * 1e18,
             claimableReserves :         0,
             claimableReservesRemaining: 0,
             auctionPrice:               0,

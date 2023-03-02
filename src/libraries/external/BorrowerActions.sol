@@ -16,7 +16,7 @@ import {
 }                   from '../../interfaces/pool/commons/IPoolInternals.sol';
 
 import {
-    _feeRate,
+    _borrowFeeRate,
     _priceAt,
     _isCollateralized
 }                           from '../helpers/PoolHelper.sol';
@@ -194,7 +194,7 @@ library BorrowerActions {
             vars.t0BorrowAmount = Maths.wdiv(amountToBorrow_, poolState_.inflator);
 
             // t0 debt change is t0 amount to borrow plus the origination fee
-            vars.t0DebtChange = Maths.wmul(vars.t0BorrowAmount, _feeRate(poolState_.rate) + Maths.WAD);
+            vars.t0DebtChange = Maths.wmul(vars.t0BorrowAmount, _borrowFeeRate(poolState_.rate) + Maths.WAD);
 
             borrower.t0Debt += vars.t0DebtChange;
 

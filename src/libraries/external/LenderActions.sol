@@ -14,7 +14,7 @@ import {
     PoolState
 }                     from '../../interfaces/pool/commons/IPoolState.sol';
 
-import { _feeRate, _priceAt, _ptp, MAX_FENWICK_INDEX } from '../helpers/PoolHelper.sol';
+import { _depositFeeRate, _priceAt, _ptp, MAX_FENWICK_INDEX } from '../helpers/PoolHelper.sol';
 
 import { Deposits } from '../internal/Deposits.sol';
 import { Buckets }  from '../internal/Buckets.sol';
@@ -163,16 +163,24 @@ library LenderActions {
         uint256 bucketScale           = Deposits.scale(deposits_, params_.index);
         uint256 bucketDeposit         = Maths.wmul(bucketScale, unscaledBucketDeposit);
         uint256 bucketPrice           = _priceAt(params_.index);
+        uint256 addedAmount           = params_.amount;
+
+        // charge unutilized deposit fee where appropriate
+        uint256 lupIndex = Deposits.findIndexOfSum(deposits_, poolState_.debt);
+        bool depositBelowLup = lupIndex != 0 && params_.index > lupIndex;
+        if (depositBelowLup) {
+            addedAmount = Maths.wmul(addedAmount, Maths.WAD - _depositFeeRate(poolState_.rate));
+        }
 
         bucketLPs_ = Buckets.quoteTokensToLPs(
             bucket.collateral,
             bucket.lps,
             bucketDeposit,
-            params_.amount,
+            addedAmount,
             bucketPrice
         );
 
-        Deposits.unscaledAdd(deposits_, params_.index, Maths.wdiv(params_.amount, bucketScale));
+        Deposits.unscaledAdd(deposits_, params_.index, Maths.wdiv(addedAmount, bucketScale));
 
         // update lender LPs
         Lender storage lender = bucket.lenders[msg.sender];
@@ -185,9 +193,13 @@ library LenderActions {
         // update bucket LPs
         bucket.lps += bucketLPs_;
 
-        lup_ = _lup(deposits_, poolState_.debt);
+        // only need to recalculate LUP if the deposit was above it
+        if (!depositBelowLup) {
+            lupIndex = Deposits.findIndexOfSum(deposits_, poolState_.debt);
+        }
+        lup_ = _priceAt(lupIndex);
 
-        emit AddQuoteToken(msg.sender, params_.index, params_.amount, bucketLPs_, lup_);
+        emit AddQuoteToken(msg.sender, params_.index, addedAmount, bucketLPs_, lup_);
     }
 
     /**
@@ -257,15 +269,6 @@ library LenderActions {
                 dustLimit:         poolState_.quoteDustLimit
             })
         );
-
-        vars.ptp = _ptp(poolState_.debt, poolState_.collateral);
-
-        // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
-        if (vars.fromBucketDepositTime != 0 && block.timestamp - vars.fromBucketDepositTime < 1 days) {
-            if (vars.fromBucketPrice > vars.ptp && vars.toBucketPrice < vars.ptp) {
-                movedAmount_ = Maths.wmul(movedAmount_, Maths.WAD - _feeRate(poolState_.rate));
-            }
-        }
 
         vars.toBucketUnscaledDeposit = Deposits.unscaledValueAt(deposits_, params_.toIndex);
         vars.toBucketScale           = Deposits.scale(deposits_, params_.toIndex);
@@ -379,13 +382,6 @@ library LenderActions {
             deposits_,
             removeParams
         );
-
-        // apply early withdrawal penalty if quote token is removed from above the PTP
-        if (depositTime != 0 && block.timestamp - depositTime < 1 days) {
-            if (removeParams.price > _ptp(poolState_.debt, poolState_.collateral)) {
-                removedAmount_ = Maths.wmul(removedAmount_, Maths.WAD - _feeRate(poolState_.rate));
-            }
-        }
 
         lup_ = _lup(deposits_, poolState_.debt);
 

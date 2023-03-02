@@ -853,7 +853,7 @@ abstract contract ERC721FuzzyHelperContract is ERC721DSTestPlus {
         // calculate the required collateral based upon the borrow amount and index price
         (uint256 interestRate, ) = _pool.interestRateInfo();
         uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient
-        uint256 expectedDebt = Maths.wmul(borrowAmount, _feeRate(newInterestRate) + Maths.WAD);
+        uint256 expectedDebt = Maths.wmul(borrowAmount, _borrowFeeRate(newInterestRate) + Maths.WAD);
 
         // get an integer amount rounding up
         requiredCollateral_ = 1 + Maths.wdiv(expectedDebt, _poolUtils.indexToPrice(indexPrice)) / 1e18;
