@@ -505,7 +505,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         poolBalances.pledgedCollateral -= collateralSettled;
 
         // update pool interest rate state
-        poolState.debt       = result.poolDebt;
+        poolState.debt       =  result.poolDebt;
         poolState.collateral -= collateralSettled;
         _updateInterestState(poolState, result.newLup);
 
