@@ -58,7 +58,7 @@ library PoolCommons {
         InterestState storage interestParams_,
         DepositsState storage deposits_,
         PoolState memory poolState_,
-        uint256 t0PoolUtilizationDebtWeight_,
+        uint256 t0UtilizationWeight_,
         uint256 lup_
     ) external {
 
@@ -74,14 +74,23 @@ library PoolCommons {
         if (poolState_.debt != 0) {
 
             // update pool EMAs for target utilization calculation
+            // (t0Debt * lup_) * EMA_7D_RATE_FACTOR + (curDebtEma * LAMBDA_EMA_7D) 
+            // curDebtEma =
+            //     Maths.wmul(Maths.wmul(poolState_.t0Debt, lup_), EMA_7D_RATE_FACTOR) +
+            //     Maths.wmul(curDebtEma,        LAMBDA_EMA_7D
+            // );
             curDebtEma =
                 Maths.wmul(poolState_.t0Debt, EMA_7D_RATE_FACTOR) +
                 Maths.wmul(curDebtEma,        LAMBDA_EMA_7D
             );
 
             // current inflator * t0UtilizationDebtWeight / current lup
+            // NEW: current inflator * t0UtilizationDebtWeight
+            // uint256 lupCol = 
+            //     Maths.wmul(poolState_.inflator, t0PoolUtilizationDebtWeight_);
+
             uint256 lupCol = 
-                Maths.wdiv(Maths.wmul(poolState_.inflator, t0PoolUtilizationDebtWeight_), lup_);
+                Maths.wdiv(Maths.wmul(poolState_.inflator, t0UtilizationWeight_), lup_);
 
             curLupColEma =
                 Maths.wmul(lupCol,        EMA_7D_RATE_FACTOR) +

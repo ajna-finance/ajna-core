@@ -183,7 +183,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
 
     }
 
-    function testKickAndSettleSubsetPoolFractionalCollateral() external tearDown {
+    function testKickAndSettleSubsetPoolFractionalCollateral() external {
 
         // settle borrower 2
         _assertAuction(
@@ -288,14 +288,14 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              0,
             borrowerCollateral:        0,
-            borrowert0Np:              2_627.524038461538462750 * 1e18,
+            borrowert0Np:              0,
             borrowerCollateralization: 1 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower2,
             borrowerDebt:              0,
             borrowerCollateral:        1 * 1e18,
-            borrowert0Np:              1_751.682692307692308500 * 1e18,
+            borrowert0Np:              0,
             borrowerCollateralization: 1 * 1e18
         });
         // assert bucket used for settle

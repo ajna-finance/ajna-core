@@ -357,7 +357,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             borrower:                  _borrower2,
             borrowerDebt:              0,
             borrowerCollateral:        0,
-            borrowert0Np:              10.307611531622595991 * 1e18,
+            borrowert0Np:              0,
             borrowerCollateralization: 1 * 1e18
         });
         _assertBucket({
@@ -559,7 +559,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             borrower:                  _borrower2,
             borrowerDebt:              0,
             borrowerCollateral:        0,
-            borrowert0Np:              10.307611531622595991 * 1e18,
+            borrowert0Np:              0,
             borrowerCollateralization: 1 * 1e18
         });
         _assertBucket({

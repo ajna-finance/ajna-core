@@ -124,11 +124,13 @@ library Loans {
             }
         }
 
-        adjustUtilizationWeight(loans_,
-                                t0DebtPreAction_,
-                                borrower_.t0Debt,
-                                collateralPreAction_,
-                                borrower_.collateral);
+        _adjustUtilizationWeight(
+            loans_,
+            t0DebtPreAction_,
+            borrower_.t0Debt,
+            collateralPreAction_,
+            borrower_.collateral
+        );
 
         // save borrower state
         loans_.borrowers[borrowerAddress_] = borrower_;
@@ -253,14 +255,14 @@ library Loans {
      *  @param colPreAction_                Borrower's collateral before the action
      *  @param colPostAction_               Borrower's collateral after the action
      */
-    function adjustUtilizationWeight(
+    function _adjustUtilizationWeight(
         LoansState storage loans_,
         uint256 debtPreAction_,
         uint256 debtPostAction_,
         uint256 colPreAction_,
         uint256 colPostAction_
     ) internal {
-        uint256 utilWeight = loans_.t0PoolUtilizationDebtWeight;
+        uint256 utilWeight = loans_.t0UtilizationWeight;
         uint256 debtColAccumPreAction;
         uint256 debtColAccumPostAction;
 
@@ -272,7 +274,7 @@ library Loans {
 
         if (colPostAction_ == 0) {
             // position is closed, bad debt is created or purely interest update deduct from accumulator
-            loans_.t0PoolUtilizationDebtWeight -= debtColAccumPreAction;
+            loans_.t0UtilizationWeight -= debtColAccumPreAction;
         } else { 
 
             // Pool methods: drawDebt, repayDebt
@@ -281,7 +283,7 @@ library Loans {
             
             utilWeight += debtColAccumPostAction;
             utilWeight -= debtColAccumPreAction;
-            loans_.t0PoolUtilizationDebtWeight = utilWeight; 
+            loans_.t0UtilizationWeight = utilWeight; 
         }
     }
 

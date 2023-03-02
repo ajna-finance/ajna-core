@@ -19,7 +19,6 @@ struct BucketTakeResult {
     uint256 t0PoolDebt;                  // [WAD] t0 pool debt
     uint256 newLup;                      // [WAD] current lup
     uint256 t0DebtInAuctionChange;       // [WAD] the amount of t0 debt recovered by take action
-    uint256 t0PoolUtilizationDebtWeight; // [WAD] utilization weight accumulator, tracks debt and collateral relationship accross borrowers
     bool    settledAuction;              // true if auction is settled by take action
 }
 
@@ -28,7 +27,6 @@ struct KickResult {
     uint256 t0PoolDebt;                  // [WAD] t0 debt in pool after kick
     uint256 t0KickedDebt;                // [WAD] new t0 debt after kick
     uint256 lup;                         // [WAD] current lup
-    uint256 t0PoolUtilizationDebtWeight; // [WAD] utilization weight accumulator, tracks debt and collateral relationship accross borrowers
 }
 
 struct SettleParams {
@@ -51,6 +49,15 @@ struct TakeResult {
     uint256 newLup;                      // [WAD] current lup
     uint256 t0DebtInAuctionChange;       // [WAD] the amount of t0 debt recovered by take action
     bool    settledAuction;              // true if auction is settled by take action
+}
+
+struct SettleDebtResult {
+    uint256 newLup;                      // [WAD] current lup
+    uint256 collateralRemaining;
+    uint256 collateralSettled;
+    uint256 t0DebtSettled;
+    uint256 poolDebt;                    // [WAD] current pool debt
+    bool    settledAuction;              // true if auction is settled by settle action
 }
 
 /******************************************/
@@ -87,7 +94,6 @@ struct DrawDebtResult {
     bool    settledAuction;              // true if collateral pledged settles auction
     uint256 t0DebtInAuctionChange;       // [WAD] change of t0 pool debt in auction after pledge collateral
     uint256 t0PoolDebt;                  // [WAD] amount of t0 debt in pool after draw debt
-    uint256 t0PoolUtilizationDebtWeight; // [WAD] utilization weight accumulator, tracks debt and collateral relationship accross borrowers
 }
 
 struct RepayDebtResult {
@@ -99,5 +105,4 @@ struct RepayDebtResult {
     uint256 t0DebtInAuctionChange;       // [WAD] change of t0 pool debt in auction after repay debt
     uint256 t0PoolDebt;                  // [WAD] amount of t0 debt in pool after repay
     uint256 quoteTokenToRepay;           // [WAD] quote token amount to be transferred from sender to pool
-    uint256 t0PoolUtilizationDebtWeight; // [WAD] utilization weight accumulator, tracks debt and collateral relationship accross borrowers
 }
