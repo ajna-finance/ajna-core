@@ -283,7 +283,6 @@ library Loans {
             utilWeight -= debtColAccumPreAction;
             loans_.t0UtilizationWeight = utilWeight; 
         }
-        console.log("t0PoolUtlizationDebtWeight: %s", loans_.t0UtilizationWeight);
     }
 
     /**********************/

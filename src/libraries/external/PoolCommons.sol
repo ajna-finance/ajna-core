@@ -96,6 +96,7 @@ library PoolCommons {
             console.log("lupCol: %s", lupCol);
             console.log("t0PoolUtilizationDebtWeight_: %s", t0UtilizationWeight_);
             console.log("lup_: %s", lup_);
+            console.log("oldcurLupColEmas: %s", curLupColEma);
 
             curLupColEma =
                 Maths.wmul(lupCol,        EMA_7D_RATE_FACTOR) +

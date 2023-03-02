@@ -207,7 +207,6 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             indexLimit: 2551,
             newLup:     _priceAt(2550)
         });
-        return;
 
         // check token balances after borrow
         assertEq(_collateral.balanceOf(_borrower),      49);
@@ -255,7 +254,6 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         skip(10 days);
 
         // borrower partially repays half their loan
-        return;
         _repayDebt({
             from:             _borrower,
             borrower:         _borrower,
