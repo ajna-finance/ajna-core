@@ -127,8 +127,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         uint256 weight;
 
-        uint256 debt;
-        uint256 collateral;
         for(uint i = 0; i < borrowers.length(); i++) {
             (uint256 t0Debt, uint256 collateral, ) = _pool.borrowerInfo(borrowers.at(i));
             weight = collateral != 0 ? weight + (t0Debt ** 2 / collateral) : weight + 0;
