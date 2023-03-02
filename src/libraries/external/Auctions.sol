@@ -315,7 +315,7 @@ library Auctions {
         collateralSettled_   -= collateralRemaining_;
 
         // update borrower state
-        Loans.adjustUtilizationWeight(
+        Loans._adjustUtilizationWeight(
             loans_,
             t0DebtSettled_ + borrower.t0Debt,
             borrower.t0Debt,
@@ -833,7 +833,7 @@ library Auctions {
 
         // update utilization weight
         // increasing debt, increase debt utilization weight
-        Loans.adjustUtilizationWeight(
+        Loans._adjustUtilizationWeight(
             loans_,
             kickResult_.t0KickedDebt - t0KickPenalty,
             kickResult_.t0KickedDebt,

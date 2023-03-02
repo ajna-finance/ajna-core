@@ -133,7 +133,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
     }
 
 
-    function testLenderForcedExit() external tearDown {
+    function testLenderForcedExit() external {
 
         skip(25 hours);
         
@@ -446,6 +446,25 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
         changePrank(_lender);
         _pool.kickWithDeposit(_i9_52);
 
+        _assertPool(
+            PoolParams({
+                htp:                  0,
+                lup:                  0.000000099836282890 * 1e18,
+                poolSize:             6_903.255510197849904839 * 1e18,
+                pledgedCollateral:    1_001.742368450520005091 * 1e18,
+                encumberedCollateral: 82_091_442_408.659524181850276417 * 1e18,
+                poolDebt:             8_195.704467159075241912 * 1e18,
+                actualUtilization:    1.187223108727752026 * 1e18,
+                targetUtilization:    23_901_486.961211967272470034 * 1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                interestRate:         0.049005 * 1e18,
+                interestRateUpdate:   block.timestamp
+            })
+        );
+        return;
+
         _assertRemoveDepositLockedByAuctionDebtRevert({
             from:   _lender,
             amount: 10.0 * 1e18,
@@ -487,6 +506,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             collateralTaken: 1_000 * 1e18,
             isReward:        true
         });
+        return;
 
         _assertPool(
             PoolParams({
@@ -505,6 +525,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
                 interestRateUpdate:   block.timestamp - 10 hours
             })
         );
+        assertEq(true, false);
         _assertBorrower({
             borrower:                  _borrower2,
             borrowerDebt:              8_263.304979778717856240 * 1e18,

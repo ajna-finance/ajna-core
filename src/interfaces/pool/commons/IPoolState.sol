@@ -322,7 +322,7 @@ struct LoansState {
     Loan[] loans;
     mapping (address => uint)     indices;   // borrower address => loan index mapping
     mapping (address => Borrower) borrowers; // borrower address => Borrower struct mapping
-    uint256 t0PoolUtilizationDebtWeight;     // [WAD] utilization weight accumulator, tracks debt and collateral relationship accross borrowers 
+    uint256 t0UtilizationWeight;             // [WAD] utilization weight accumulator, tracks debt and collateral relationship accross borrowers 
 }
 
 struct Loan {

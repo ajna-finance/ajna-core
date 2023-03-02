@@ -552,7 +552,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     ) internal {
         // if it has been more than 12 hours since the last interest rate update, call updateInterestRate function
         if (block.timestamp - interestState.interestRateUpdate > 12 hours) {
-            PoolCommons.updateInterestRate(interestState, deposits, poolState_, loans.t0PoolUtilizationDebtWeight, lup_);
+            PoolCommons.updateInterestRate(interestState, deposits, poolState_, loans.t0UtilizationWeight, lup_);
         }
 
         // update pool inflator
@@ -591,7 +591,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /**************************/
 
     function poolWeight() external view override returns (uint256) {
-        return loans.t0PoolUtilizationDebtWeight;
+        return loans.t0UtilizationWeight;
     }
 
     /// @inheritdoc IPoolState

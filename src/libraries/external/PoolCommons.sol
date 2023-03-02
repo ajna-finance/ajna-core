@@ -58,7 +58,7 @@ library PoolCommons {
         InterestState storage interestParams_,
         DepositsState storage deposits_,
         PoolState memory poolState_,
-        uint256 t0PoolUtilizationDebtWeight_,
+        uint256 t0UtilizationWeight_,
         uint256 lup_
     ) external {
 
@@ -74,18 +74,35 @@ library PoolCommons {
         if (poolState_.debt != 0) {
 
             // update pool EMAs for target utilization calculation
+            // (t0Debt * lup_) * EMA_7D_RATE_FACTOR + (curDebtEma * LAMBDA_EMA_7D) 
+            // curDebtEma =
+            //     Maths.wmul(Maths.wmul(poolState_.t0Debt, lup_), EMA_7D_RATE_FACTOR) +
+            //     Maths.wmul(curDebtEma,        LAMBDA_EMA_7D
+            // );
             curDebtEma =
                 Maths.wmul(poolState_.t0Debt, EMA_7D_RATE_FACTOR) +
                 Maths.wmul(curDebtEma,        LAMBDA_EMA_7D
             );
 
             // current inflator * t0UtilizationDebtWeight / current lup
+            // NEW: current inflator * t0UtilizationDebtWeight
+            // uint256 lupCol = 
+            //     Maths.wmul(poolState_.inflator, t0PoolUtilizationDebtWeight_);
+
             uint256 lupCol = 
-                Maths.wdiv(Maths.wmul(poolState_.inflator, t0PoolUtilizationDebtWeight_), lup_);
+                Maths.wdiv(Maths.wmul(poolState_.inflator, t0UtilizationWeight_), lup_);
+
+
+            console.log("lupCol: %s", lupCol);
+            console.log("t0PoolUtilizationDebtWeight_: %s", t0UtilizationWeight_);
+            console.log("lup_: %s", lup_);
 
             curLupColEma =
                 Maths.wmul(lupCol,        EMA_7D_RATE_FACTOR) +
                 Maths.wmul(curLupColEma,  LAMBDA_EMA_7D);
+
+            console.log("curLupColEmas: %s", curLupColEma);
+            console.log("curDebtEmas: %s", curDebtEma);
 
             // save EMA samples in storage
             interestParams_.debtEma   = curDebtEma;
@@ -98,6 +115,11 @@ library PoolCommons {
 
         // calculate target utilization
         int256 tu = (curDebtEma != 0 && curLupColEma != 0) ? int256(Maths.wdiv(curLupColEma, curDebtEma)) : int(Maths.WAD);
+        console.log("tu:");
+        console.logInt(tu);
+
+        console.log("mau:");
+        console.logInt(mau);
 
         if (!poolState_.isNewInterestAccrued) poolState_.rate = interestParams_.interestRate;
 
@@ -105,9 +127,11 @@ library PoolCommons {
 
         // raise rates if 4*(tu-1.02*mau) < (tu+1.02*mau-1)^2-1
         if (4 * (tu - mau102) < ((tu + mau102 - 1e18) ** 2) / 1e18 - 1e18) {
+            console.log("updated");
             newInterestRate = Maths.wmul(poolState_.rate, INCREASE_COEFFICIENT);
         // decrease rates if 4*(tu-mau) > 1-(tu+mau-1)^2
         } else if (4 * (tu - mau) > 1e18 - ((tu + mau - 1e18) ** 2) / 1e18) {
+            console.log("updated");
             newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
         }
 
