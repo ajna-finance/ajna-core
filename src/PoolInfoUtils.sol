@@ -340,10 +340,7 @@ contract PoolInfoUtils {
     function borrowFeeRate(
         address ajnaPool_
     ) external view returns (uint256) {
-        IPool pool = IPool(ajnaPool_);
-
-        (uint256 interestRate,) = pool.interestRateInfo();
-
+        (uint256 interestRate,) = IPool(ajnaPool_).interestRateInfo();
         return _borrowFeeRate(interestRate);
     }
 
@@ -355,10 +352,7 @@ contract PoolInfoUtils {
     function unutilizedDepositFeeRate(
         address ajnaPool_
     ) external view returns (uint256) {
-        IPool pool = IPool(ajnaPool_);
-
-        (uint256 interestRate,) = pool.interestRateInfo();
-
+        (uint256 interestRate,) = IPool(ajnaPool_).interestRateInfo();
         return _depositFeeRate(interestRate);  
     }
 
