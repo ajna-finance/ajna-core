@@ -160,7 +160,8 @@ library LenderActions {
 
         // charge unutilized deposit fee where appropriate
         uint256 lupIndex = Deposits.findIndexOfSum(deposits_, poolState_.debt);
-        if (lupIndex != 0 && params_.index > lupIndex) {
+        bool depositBelowLup = lupIndex != 0 && params_.index > lupIndex;
+        if (depositBelowLup) {
             addedAmount = Maths.wmul(addedAmount, Maths.WAD - _depositFeeRate(poolState_.rate));
         }
 
@@ -186,7 +187,7 @@ library LenderActions {
         bucket.lps += bucketLPs_;
 
         // only need to recalculate LUP if the deposit was above it
-        if (params_.amount == addedAmount) {
+        if (!depositBelowLup) {
             lupIndex = Deposits.findIndexOfSum(deposits_, poolState_.debt);
         }
         lup_ = _priceAt(lupIndex);
