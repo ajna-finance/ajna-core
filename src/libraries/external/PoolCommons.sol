@@ -92,18 +92,9 @@ library PoolCommons {
             uint256 lupCol = 
                 Maths.wdiv(Maths.wmul(poolState_.inflator, t0UtilizationWeight_), lup_);
 
-
-            console.log("lupCol: %s", lupCol);
-            console.log("t0PoolUtilizationDebtWeight_: %s", t0UtilizationWeight_);
-            console.log("lup_: %s", lup_);
-            console.log("oldcurLupColEmas: %s", curLupColEma);
-
             curLupColEma =
                 Maths.wmul(lupCol,        EMA_7D_RATE_FACTOR) +
                 Maths.wmul(curLupColEma,  LAMBDA_EMA_7D);
-
-            console.log("curLupColEmas: %s", curLupColEma);
-            console.log("curDebtEmas: %s", curDebtEma);
 
             // save EMA samples in storage
             interestParams_.debtEma   = curDebtEma;
@@ -116,11 +107,6 @@ library PoolCommons {
 
         // calculate target utilization
         int256 tu = (curDebtEma != 0 && curLupColEma != 0) ? int256(Maths.wdiv(curLupColEma, curDebtEma)) : int(Maths.WAD);
-        console.log("tu:");
-        console.logInt(tu);
-
-        console.log("mau:");
-        console.logInt(mau);
 
         if (!poolState_.isNewInterestAccrued) poolState_.rate = interestParams_.interestRate;
 
@@ -128,11 +114,9 @@ library PoolCommons {
 
         // raise rates if 4*(tu-1.02*mau) < (tu+1.02*mau-1)^2-1
         if (4 * (tu - mau102) < ((tu + mau102 - 1e18) ** 2) / 1e18 - 1e18) {
-            console.log("updated");
             newInterestRate = Maths.wmul(poolState_.rate, INCREASE_COEFFICIENT);
         // decrease rates if 4*(tu-mau) > 1-(tu+mau-1)^2
         } else if (4 * (tu - mau) > 1e18 - ((tu + mau - 1e18) ** 2) / 1e18) {
-            console.log("updated");
             newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
         }
 

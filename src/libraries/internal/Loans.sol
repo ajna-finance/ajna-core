@@ -124,11 +124,13 @@ library Loans {
             }
         }
 
-        _adjustUtilizationWeight(loans_,
-                                t0DebtPreAction_,
-                                borrower_.t0Debt,
-                                collateralPreAction_,
-                                borrower_.collateral);
+        _adjustUtilizationWeight(
+            loans_,
+            t0DebtPreAction_,
+            borrower_.t0Debt,
+            collateralPreAction_,
+            borrower_.collateral
+        );
 
         // save borrower state
         loans_.borrowers[borrowerAddress_] = borrower_;

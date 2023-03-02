@@ -22,7 +22,8 @@ import {
     BucketTakeResult,
     KickResult,
     SettleParams,
-    TakeResult
+    TakeResult,
+    SettleDebtResult
 }                                    from '../../interfaces/pool/commons/IPoolInternals.sol';
 import { StartReserveAuctionParams } from '../../interfaces/pool/commons/IPoolReserveAuctionActions.sol';
 
@@ -176,20 +177,17 @@ library Auctions {
      *              - Settle
      *              - BucketBankruptcy
      *  @param  params_ Settle params
-     *  @return collateralRemaining_ The amount of borrower collateral left after settle.
-     *  @return collateralSettled_   The amount of collateral settled.
-     *  @return t0DebtSettled_       The amount of t0 debt settled.
+     *  @return result_ The amount of borrower collateral left after settle.
      */
     function settlePoolDebt(
         AuctionsState storage auctions_,
+        PoolState memory poolState_,
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
         LoansState storage loans_,
         SettleParams memory params_
     ) external returns (
-        uint256 collateralRemaining_,
-        uint256 collateralSettled_,
-        uint256 t0DebtSettled_
+        SettleDebtResult memory result_
     ) {
         uint256 kickTime = auctions_.liquidations[params_.borrower].kickTime;
         if (kickTime == 0) revert NoAuction();
@@ -197,8 +195,8 @@ library Auctions {
         Borrower memory borrower = loans_.borrowers[params_.borrower];
         if ((block.timestamp - kickTime < 72 hours) && (borrower.collateral != 0)) revert AuctionNotClearable();
 
-        t0DebtSettled_     = borrower.t0Debt;
-        collateralSettled_ = borrower.collateral;
+        result_.t0DebtSettled     = borrower.t0Debt;
+        result_.collateralSettled = borrower.collateral;
 
         // auction has debt to cover with remaining collateral
         while (params_.bucketDepth != 0 && borrower.t0Debt != 0 && borrower.collateral != 0) {
@@ -295,12 +293,32 @@ library Auctions {
             }
         }
 
+        // borrower.t0Debt     =  t0BorrowerDebt - t0RepayAmount;
+        // borrower.collateral -= result_.collateralAmount;
+
+        // // update pool debt: apply penalty if case
+        // poolState_.t0Debt += result_.t0DebtPenalty;
+        // poolState_.t0Debt -= t0RepayAmount;
+        // poolState_.debt   = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
+ 
+        // // situation where borrower.t0Debt == 0, we get an overflow because we are attempting to subtract past 0
+        // result_.t0PoolDebt = poolState_.t0Debt;
+        // result_.poolDebt   = poolState_.debt;
+
         // bad debt could not be allocated, remove from system
-        t0DebtSettled_ -= borrower.t0Debt;
-        emit Settle(params_.borrower, t0DebtSettled_);
+        result_.t0DebtSettled -= borrower.t0Debt;
+        poolState_.t0Debt     -= result_.t0DebtSettled;
+        poolState_.debt       = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
+        result_.poolDebt      =  poolState_.debt;
+
+        // calculate new lup with repaid debt from take
+        result_.newLup = _lup(deposits_, poolState_.debt);
+
+        emit Settle(params_.borrower, result_.t0DebtSettled);
 
         if (borrower.t0Debt == 0) {
             // settle auction
+            result_.settledAuction = true;
             (borrower.collateral, ) = _settleAuction(
                 auctions_,
                 buckets_,
@@ -311,18 +329,24 @@ library Auctions {
             );
         }
 
-        collateralRemaining_ =  borrower.collateral;
-        collateralSettled_   -= collateralRemaining_;
+        result_.collateralRemaining =  borrower.collateral;
+        result_.collateralSettled   -= result_.collateralRemaining;
 
         // update borrower state
-        Loans._adjustUtilizationWeight(
+        Loans.update(
             loans_,
-            t0DebtSettled_ + borrower.t0Debt,
-            borrower.t0Debt,
-            collateralSettled_ + collateralRemaining_,
-            borrower.collateral
+            auctions_,
+            deposits_,
+            borrower,
+            params_.borrower,
+            poolState_.debt,
+            poolState_.rate,
+            result_.newLup,
+            !result_.settledAuction,
+            result_.settledAuction, // stamp borrower t0Np if exiting from auction
+            result_.t0DebtSettled + borrower.t0Debt,
+            result_.collateralSettled + result_.collateralRemaining
         );
-        loans_.borrowers[params_.borrower] = borrower;
     }
 
     /**
@@ -1476,7 +1500,6 @@ library Auctions {
 
         return PRBMathSD59x18.mul(int256(bondFactor_), sign);
     }
-
 
     /**
      *  @notice Utility function to validate take and calculate take's parameters.

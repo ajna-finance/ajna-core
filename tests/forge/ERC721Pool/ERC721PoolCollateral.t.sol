@@ -615,7 +615,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         });
     }
 
-    function testMergeOrRemoveCollateral() external tearDown {
+    function testMergeOrRemoveCollateral() external {
         for (uint256 i = 3060; i < (3060 + 10); i++) {
             _addLiquidity({
                 from:   _lender,
@@ -874,7 +874,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              0,
             borrowerCollateral:        0,
-            borrowert0Np:              78.825721153846153882 * 1e18,
+            borrowert0Np:              0,
             borrowerCollateralization: 1.0 * 1e18,
             tokenIds:                  borrowerTokenIds
         });

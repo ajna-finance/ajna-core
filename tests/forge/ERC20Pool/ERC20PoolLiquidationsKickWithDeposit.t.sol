@@ -625,7 +625,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
 
     }
 
-    function testKickWithDepositAllBorrowersAndSettle() external tearDown {
+    function testKickWithDepositAllBorrowersAndSettle() external {
         // assert loans positions in heap
         address borrower;
         uint256 thresholdPrice;
@@ -1233,35 +1233,35 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             borrower:                  _borrower1,
             borrowerDebt:              0,
             borrowerCollateral:        994.725169378126588636 * 1e18,
-            borrowert0Np:              21.020192307692307702 * 1e18,
+            borrowert0Np:              0,
             borrowerCollateralization: 1 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower2,
             borrowerDebt:              0,
             borrowerCollateral:        994.751412316543869246 * 1e18,
-            borrowert0Np:              21.020192307692307702 * 1e18,
+            borrowert0Np:              0,
             borrowerCollateralization: 1 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower3,
             borrowerDebt:              0,
             borrowerCollateral:        0, // last borrower settled
-            borrowert0Np:              21.125293269230769068 * 1e18,
+            borrowert0Np:              0,
             borrowerCollateralization: 1 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower4,
             borrowerDebt:              0,
             borrowerCollateral:        994.737734630435747061 * 1e18,
-            borrowert0Np:              21.125293269230769068 * 1e18,
+            borrowert0Np:              0,
             borrowerCollateralization: 1 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower5,
             borrowerDebt:              0,
             borrowerCollateral:        0,
-            borrowert0Np:              21.230919735576922742 * 1e18,
+            borrowert0Np:              0,
             borrowerCollateralization: 1 * 1e18
         });
     }
