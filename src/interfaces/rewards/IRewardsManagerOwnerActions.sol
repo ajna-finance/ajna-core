@@ -24,15 +24,15 @@ interface IRewardsManagerOwnerActions {
      *  @dev    Automatically claims any available rewards in all existing buckets. Updates exchange rates for each new bucket the NFT is associated with.
      *  @dev    fromBuckets and toBuckets must be the same array length. Liquidity is moved from the fromBuckets to the toBuckets in the same index.
      *  @param  tokenId_     ID of the staked LP NFT.
-     *  @param  expiry_      Timestamp after which this TX will revert, preventing inclusion in a block with unfavorable price.
      *  @param  fromBuckets_ The list of bucket indexes to move liquidity from.
      *  @param  toBuckets_   The list of bucket indexes to move liquidity from.
+     *  @param  expiry_      Timestamp after which this TX will revert, preventing inclusion in a block with unfavorable price.
      */
     function moveStakedLiquidity(
         uint256 tokenId_,
-        uint256 expiry_,
         uint256[] memory fromBuckets_,
-        uint256[] memory toBuckets_
+        uint256[] memory toBuckets_,
+        uint256 expiry_
     ) external;
 
     /**

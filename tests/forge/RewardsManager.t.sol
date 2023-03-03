@@ -1196,7 +1196,7 @@ contract RewardsManagerTest is ERC20HelperContract {
 
         vm.expectEmit(true, true, true, true);
         emit MoveStakedLiquidity(tokenId, firstIndexes, secondIndexes);
-        _rewardsManager.moveStakedLiquidity(tokenId, expiry, firstIndexes, secondIndexes);
+        _rewardsManager.moveStakedLiquidity(tokenId, firstIndexes, secondIndexes, expiry);
 
         /*****************************/
         /*** First Reserve Auction ***/
@@ -1239,7 +1239,7 @@ contract RewardsManagerTest is ERC20HelperContract {
         emit UpdateExchangeRates(_minterOne, address(_poolOne), firstIndexes, 0);
 
         changePrank(_minterOne);
-        _rewardsManager.moveStakedLiquidity(tokenId, expiry, secondIndexes, firstIndexes);
+        _rewardsManager.moveStakedLiquidity(tokenId, secondIndexes, firstIndexes, expiry);
 
         // chceck that no rewards are available yet in the indexes that the staker moved to
         vm.expectRevert(IRewardsManagerErrors.AlreadyClaimed.selector);

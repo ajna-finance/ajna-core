@@ -7,8 +7,8 @@ import { IERC721 }   from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 import { ReentrancyGuard } from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import { IPool }            from './interfaces/pool/IPool.sol';
-import { IPositionManager } from './interfaces/position/IPositionManager.sol';
+import { IPool }                        from './interfaces/pool/IPool.sol';
+import { IPositionManager }             from './interfaces/position/IPositionManager.sol';
 import { IPositionManagerOwnerActions } from './interfaces/position/IPositionManagerOwnerActions.sol';
 
 import { PositionManager }  from './PositionManager.sol';
@@ -128,9 +128,9 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
      */
     function moveStakedLiquidity(
         uint256 tokenId_,
-        uint256 expiry_,
         uint256[] memory fromBuckets_,
-        uint256[] memory toBuckets_
+        uint256[] memory toBuckets_,
+        uint256 expiry_
     ) external nonReentrant override {
         StakeInfo storage stakeInfo = stakes[tokenId_];
 
@@ -152,9 +152,11 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             ajnaPool
         );
 
+        uint256 fromIndex;
+        uint256 toIndex;
         for (uint256 i = 0; i < fromBucketLength; ) {
-            uint256 fromIndex = fromBuckets_[i];
-            uint256 toIndex = toBuckets_[i];
+            fromIndex = fromBuckets_[i];
+            toIndex = toBuckets_[i];
 
             BucketState storage fromBucket = stakeInfo.snapshot[fromIndex];
             BucketState storage toBucket = stakeInfo.snapshot[toIndex];
