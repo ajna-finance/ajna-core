@@ -807,18 +807,18 @@ library Auctions {
     ) {
         Borrower storage borrower = loans_.borrowers[borrowerAddress_];
 
-        kickResult_.debtPreAction        = borrower.t0Debt;
-        kickResult_.collateralPostAction = borrower.collateral;
-        kickResult_.t0KickedDebt         = borrower.t0Debt;
+        kickResult_.debtPreAction       = borrower.t0Debt;
+        kickResult_.collateralPreAction = borrower.collateral;
+        kickResult_.t0KickedDebt        = kickResult_.debtPreAction ;
         // add amount to remove to pool debt in order to calculate proposed LUP
         kickResult_.lup          = _lup(deposits_, poolState_.debt + additionalDebt_);
 
         KickLocalVars memory vars;
         vars.borrowerDebt       = Maths.wmul(kickResult_.t0KickedDebt, poolState_.inflator);
-        vars.borrowerCollateral = borrower.collateral;
+        vars.borrowerCollateral = kickResult_.collateralPreAction;
 
         // revert if kick on a collateralized borrower
-        if (_isCollateralized(vars.borrowerDebt ,vars.borrowerCollateral, kickResult_.lup, poolState_.poolType)) {
+        if (_isCollateralized(vars.borrowerDebt, vars.borrowerCollateral, kickResult_.lup, poolState_.poolType)) {
             revert BorrowerOk();
         }
 

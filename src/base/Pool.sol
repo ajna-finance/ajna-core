@@ -384,8 +384,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _adjustUtilizationWeight(
             result.debtPreAction,
             result.t0KickedDebt,
-            result.collateralPostAction, // collateral doesn't change when auction is kicked
-            result.collateralPostAction  // collateral doesn't change when auction is kicked
+            result.collateralPreAction, // collateral doesn't change when auction is kicked
+            result.collateralPreAction  // collateral doesn't change when auction is kicked
         );
 
         // update pool interest rate state
@@ -425,8 +425,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _adjustUtilizationWeight(
             result.debtPreAction,
             result.t0KickedDebt,
-            result.collateralPostAction, // collateral doesn't change when auction is kicked
-            result.collateralPostAction  // collateral doesn't change when auction is kicked
+            result.collateralPreAction, // collateral doesn't change when auction is kicked
+            result.collateralPreAction  // collateral doesn't change when auction is kicked
         );
 
         // update pool interest rate state
