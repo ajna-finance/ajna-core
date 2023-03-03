@@ -213,11 +213,13 @@ contract RewardsManagerTest is ERC20HelperContract {
 
 
     function _updateExchangeRates(address updater, address pool, uint256[] memory depositIndexes, uint256 reward) internal {
-        // call update exchange rate to enable claiming rewards for epoch 0 - 1
+        uint256 initialUpdaterTokenBalance = _ajnaToken.balanceOf(updater);
+
         changePrank(updater);
         vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(updater, address(pool), depositIndexes, reward);
-        _rewardsManager.updateBucketExchangeRatesAndClaim(address(pool), depositIndexes);
+        emit UpdateExchangeRates(updater, pool, depositIndexes, reward);
+        _rewardsManager.updateBucketExchangeRatesAndClaim(pool, depositIndexes);
+        assertEq(_ajnaToken.balanceOf(updater), initialUpdaterTokenBalance + reward);
     }
 
 
@@ -1182,6 +1184,8 @@ contract RewardsManagerTest is ERC20HelperContract {
 
         // check no rewards are claimed on first move
         vm.expectEmit(true, true, true, true);
+        emit UpdateExchangeRates(_minterOne, address(_poolOne), firstIndexes, 0);
+        vm.expectEmit(true, true, true, true);
         emit ClaimRewards(_minterOne, address(_poolOne), tokenId, _epochsClaimedArray(0, 0), 0);
 
         // check MoveLiquidity emits
@@ -1206,11 +1210,12 @@ contract RewardsManagerTest is ERC20HelperContract {
         // first reserve auction happens successfully -> epoch 1
         _triggerReserveAuctions(triggerReserveAuctionParams);
 
+        uint256 currentBurnEpoch = _poolOne.currentBurnEpoch();
+
         /***********************/
         /*** Move Staked NFT ***/
         /***********************/
 
-        uint256 currentBurnEpoch = _poolOne.currentBurnEpoch();
         expiry = block.timestamp + 1000;
 
         // need to retrieve the position managers index set since positionIndexes are stored unordered in EnnumerableSets
@@ -1238,6 +1243,40 @@ contract RewardsManagerTest is ERC20HelperContract {
 
         // chceck that no rewards are available yet in the indexes that the staker moved to
         vm.expectRevert(IRewardsManagerErrors.AlreadyClaimed.selector);
+        _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
+
+        /******************************/
+        /*** Second Reserve Auction ***/
+        /******************************/
+
+        triggerReserveAuctionParams = TriggerReserveAuctionParams({
+            borrowAmount: 300 * 1e18,
+            limitIndex: 2555,
+            pool: _poolOne
+        });
+        // first reserve auction happens successfully -> epoch 1
+        _triggerReserveAuctions(triggerReserveAuctionParams);
+
+        currentBurnEpoch = _poolOne.currentBurnEpoch();
+
+        /******************************/
+        /*** Exchange Rates Updated ***/
+        /******************************/
+
+        // need to retrieve the position managers index set since positionIndexes are stored unordered in EnnumerableSets
+        firstIndexes = _positionManager.getPositionIndexes(tokenId);
+
+        _updateExchangeRates(_updater, address(_poolOne), firstIndexes, 3.316474694142993919 * 1e18);
+
+        /*********************/
+        /*** Claim Rewards ***/
+        /*********************/
+
+        // claim rewards accrued since second movement of lps
+        changePrank(_minterOne);
+        assertEq(_ajnaToken.balanceOf(_minterOne), 44.235550200545615690 * 1e18);
+        vm.expectEmit(true, true, true, true);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenId, _epochsClaimedArray(1, 1), 33.121903535270272860 * 1e18);
         _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
     }
 

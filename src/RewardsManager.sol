@@ -174,6 +174,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             toBucket.rateAtStakeTime = IPool(ajnaPool).bucketExchangeRate(toIndex);
             delete stakeInfo.snapshot[fromIndex];
 
+            // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
             unchecked { ++i; }
         }
 
