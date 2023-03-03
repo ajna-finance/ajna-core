@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 
 pragma solidity 0.8.14;
-import "forge-std/console.sol";
+// import "forge-std/console.sol";
 
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
@@ -32,7 +32,7 @@ library PoolCommons {
 
     uint256 internal constant INCREASE_COEFFICIENT = 1.1 * 1e18;
     uint256 internal constant DECREASE_COEFFICIENT = 0.9 * 1e18;
-    uint256 internal constant LAMBDA_EMA_7D        = 0.905723664263906671 * 1e18;  // Lambda used for interest EMAs calculated as exp(-1/7   * ln2)
+    uint256 internal constant LAMBDA_EMA_7D        = 0.905723664263906671 * 1e18; // Lambda used for interest EMAs calculated as exp(-1/7   * ln2)
     uint256 internal constant EMA_7D_RATE_FACTOR   = 1e18 - LAMBDA_EMA_7D;
     int256  internal constant PERCENT_102          = 1.02 * 1e18;
     int256  internal constant NEG_H_MAU_HOURS      = -0.057762265046662105 * 1e18; // -ln(2)/12
@@ -48,6 +48,10 @@ library PoolCommons {
     /*** External Functions ***/
     /**************************/
 
+    /**
+     *  @notice Calculates EMAs, caches values required for calculating interest rate, and saves new values in storage.
+     *  @dev    Called after each interaction with the pool.
+     **/
     function updateUtilizationEmas(
         InterestState storage interestParams_,  // TODO: many writes; should we pass as memory and let caller update?
         DepositsState storage deposits_,
@@ -73,7 +77,7 @@ library PoolCommons {
                     PRBMathSD59x18.mul((1e18 - weight), int256(debt))
                 );
             }
-            console.log("debt %s, curDebtEma %s", poolState_.debt, curDebtEma);
+            // console.log("debt %s, curDebtEma %s", poolState_.debt, curDebtEma);
 
             // update the meaningful deposit EMA
             uint256 meaningfulDeposit = interestParams_.meaningfulDeposit;
@@ -87,7 +91,7 @@ library PoolCommons {
                     PRBMathSD59x18.mul((1e18 - weight), int256(meaningfulDeposit))
                 );
             }
-            console.log("meaningfulDeposit %s, curDepositEma %s", meaningfulDeposit, curDepositEma);
+            // console.log("meaningfulDeposit %s, curDepositEma %s", meaningfulDeposit, curDepositEma);
 
             interestParams_.debtEma    = curDebtEma;
             interestParams_.depositEma = curDepositEma;
