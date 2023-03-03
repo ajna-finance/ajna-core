@@ -223,7 +223,14 @@
 
 ### withdrawBonds
 	write state:
-	- reset kicker's claimable accumulator
+	- decrease kicker's claimable accumulator
+	- decrease auctions totalBondEscrowed accumulator
+
+	reverts on:
+	- insufficient liquidity InsufficientLiquidity()
+
+	emit events:
+	- BondWithdrawn
 
 ### startClaimableReserveAuction
 	external libraries call:

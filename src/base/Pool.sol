@@ -424,14 +424,29 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /**
      *  @inheritdoc IPoolLiquidationActions
      *  @dev write state:
-     *       - reset kicker's claimable accumulator
+     *       - decrease kicker's claimable accumulator
+     *       - decrease auctions totalBondEscrowed accumulator
      */
-    function withdrawBonds(address recipient_) external {
+    function withdrawBonds(
+        address recipient_,
+        uint256 maxAmount_
+    ) external override nonReentrant {
         uint256 claimable = auctions.kickers[msg.sender].claimable;
+
+        // the amount to claim is constrained by the claimable balance of sender and by pool balance
+        maxAmount_ = Maths.min(maxAmount_, claimable);
+        maxAmount_ = Maths.min(maxAmount_, _getNormalizedPoolQuoteTokenBalance());
+
+        // revert if no amount to claim
+        if (maxAmount_ == 0) revert InsufficientLiquidity();
+
         // decrement total bond escrowed
-        auctions.totalBondEscrowed -= claimable;
-        auctions.kickers[msg.sender].claimable = 0;
-        _transferQuoteToken(recipient_, claimable);
+        auctions.totalBondEscrowed             -= maxAmount_;
+        auctions.kickers[msg.sender].claimable -= maxAmount_;
+
+        emit BondWithdrawn(msg.sender, recipient_, maxAmount_);
+
+        _transferQuoteToken(recipient_, maxAmount_);
     }
 
     /*********************************/
