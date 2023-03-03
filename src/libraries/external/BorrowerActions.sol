@@ -51,6 +51,8 @@ library BorrowerActions {
         uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LPs (NFTs only)
         uint256 t0BorrowAmount;        // [WAD] t0 amount to borrow
         uint256 t0DebtChange;          // [WAD] additional t0 debt resulted from draw debt action
+        uint256 t0DebtPreAction;
+        uint256 collateralPreAction;
         bool    inAuction;             // true if loan is auctioned
         bool    pledge;                // true if pledge action
         bool    stampT0Np;             // true if loan's t0 neutral price should be restamped (when drawing debt or pledge settles auction)
@@ -63,6 +65,8 @@ library BorrowerActions {
         bool    repay;                 // true if repay action
         bool    stampT0Np;             // true if loan's t0 neutral price should be restamped (when repay settles auction or pull collateral)
         uint256 t0DebtInAuctionChange; // [WAD] t0 change amount of debt after repayment
+        uint256 t0DebtPreAction;
+        uint256 collateralPreAction;
         uint256 t0RepaidDebt;          // [WAD] t0 debt repaid
         uint256 collateralAmountToPull;
     }
@@ -123,7 +127,8 @@ library BorrowerActions {
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
 
         DrawDebtLocalVars memory vars;
-
+        vars.t0DebtPreAction = borrower.t0Debt;
+        vars.collateralPreAction = borrower.collateral;
         vars.pledge       = collateralToPledge_ != 0;
         vars.borrow       = amountToBorrow_ != 0 || limitIndex_ != 0; // enable an intentional 0 borrow loan call to update borrower's loan state
         vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
@@ -238,8 +243,8 @@ library BorrowerActions {
             result_.newLup,
             vars.inAuction,
             vars.stampT0Np,
-            borrower.t0Debt - vars.t0DebtChange,
-            borrower.collateral - collateralToPledge_
+            vars.t0DebtPreAction,
+            vars.collateralPreAction
         );
     }
 
@@ -284,6 +289,9 @@ library BorrowerActions {
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
 
         RepayDebtLocalVars memory vars;
+
+        vars.t0DebtPreAction = borrower.t0Debt;
+        vars.collateralPreAction = borrower.collateral;
 
         vars.repay        = maxQuoteTokenAmountToRepay_ != 0;
         vars.pull         = collateralAmountToPull_     != 0;
@@ -401,8 +409,8 @@ library BorrowerActions {
             result_.newLup,
             vars.inAuction,
             vars.stampT0Np,
-            borrower.t0Debt + vars.t0RepaidDebt,
-            borrower.collateral + vars.collateralAmountToPull
+            vars.t0DebtPreAction,
+            vars.collateralPreAction
         );
     }
 
