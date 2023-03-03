@@ -523,7 +523,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             from:        _lender,
             borrower:    _borrower2,
             maxDepth:    10,
-            settledDebt: 7_469.035011263740962170 * 1e18
+            settledDebt: 7_433.761162745459786285 * 1e18
         });
 
         _assertPool(
@@ -532,8 +532,8 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
                 lup:                  0.000000099836282890 * 1e18,
                 poolSize:             0,
                 pledgedCollateral:    1.742368450520005091 * 1e18,
-                encumberedCollateral: 6848559808.279468915882431047 * 1e18,
-                poolDebt:             683.734754408473222865 * 1e18,
+                encumberedCollateral: 7012727628.807446392899253904 * 1e18,
+                poolDebt:             700.124659380139131420 * 1e18,
                 actualUtilization:    0,
                 targetUtilization:    1.173175843719475841 * 1e18,
                 minDebtAmount:        0,
