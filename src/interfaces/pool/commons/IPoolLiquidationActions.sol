@@ -68,10 +68,10 @@ interface IPoolLiquidationActions {
     /**
      *  @notice Called by kickers to withdraw their auction bonds (the amount of quote tokens that are not locked in active auctions).
      *  @param  recipient Address to receive claimed bonds amount.
-     *  @param  amount    The max amount to withdraw from auction bonds. Constrained by claimable amounts and liquidity
+     *  @param  maxAmount The max amount to withdraw from auction bonds. Constrained by claimable amounts and liquidity
      */
     function withdrawBonds(
         address recipient,
-        uint256 amount
+        uint256 maxAmount
     ) external;
 }
