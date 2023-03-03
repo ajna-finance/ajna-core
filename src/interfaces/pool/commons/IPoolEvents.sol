@@ -71,6 +71,18 @@ interface IPoolEvents {
     );
 
     /**
+     *  @notice Emitted when kickers are withdrawing funds posted as auction bonds.
+     *  @param  kicker   The kicker withdrawing bonds.
+     *  @param  reciever The address receiving withdrawn bond amount.
+     *  @param  amount   The bond amount that was withdrawn.
+     */
+    event BondWithdrawn(
+        address indexed kicker,
+        address indexed reciever,
+        uint256 amount
+    );
+
+    /**
      *  @notice Emitted when LPs are forfeited as a result of the bucket losing all assets.
      *  @param  index       The index of the bucket.
      *  @param  lpForfeited Amount of LP forfeited by lenders.

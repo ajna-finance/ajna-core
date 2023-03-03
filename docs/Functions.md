@@ -225,6 +225,12 @@
 	write state:
 	- reset kicker's claimable accumulator
 
+	reverts on:
+	- insufficient liquidity InsufficientLiquidity()
+
+	emit events:
+	- BondWithdrawn
+
 ### startClaimableReserveAuction
 	external libraries call:
 	- Auctions.startClaimableReserveAuction()

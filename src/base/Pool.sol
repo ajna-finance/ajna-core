@@ -435,9 +435,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         amount_ = Maths.min(amount_, claimable);
         amount_ = Maths.min(amount_, _getNormalizedPoolQuoteTokenBalance());
 
+        if (amount_ == 0) revert InsufficientLiquidity();
+
         // decrement total bond escrowed
         auctions.totalBondEscrowed             -= amount_;
         auctions.kickers[msg.sender].claimable -= amount_;
+
+        emit BondWithdrawn(msg.sender, recipient_, amount_);
 
         _transferQuoteToken(recipient_, amount_);
     }
