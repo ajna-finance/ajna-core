@@ -27,6 +27,7 @@ import {
     BucketTakeResult,
     RepayDebtResult,
     SettleParams,
+    SettleResult,
     TakeResult
 }                    from './interfaces/pool/commons/IPoolInternals.sol';
 import { PoolState } from './interfaces/pool/commons/IPoolState.sol';
@@ -326,11 +327,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
         uint256 liabilities = Deposits.treeSum(deposits) + auctions.totalBondEscrowed + reserveAuction.unclaimed;
 
-        (
-            ,
-            uint256 collateralSettled,
-            uint256 t0DebtSettled
-        ) = Auctions.settlePoolDebt(
+        SettleResult memory result = Auctions.settlePoolDebt(
             auctions,
             buckets,
             deposits,
@@ -345,13 +342,13 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         );
 
         // update pool balances state
-        poolBalances.t0Debt            -= t0DebtSettled;
-        poolBalances.t0DebtInAuction   -= t0DebtSettled;
-        poolBalances.pledgedCollateral -= collateralSettled;
+        poolBalances.t0Debt            -= result.t0DebtSettled;
+        poolBalances.t0DebtInAuction   -= result.t0DebtSettled;
+        poolBalances.pledgedCollateral -= result.collateralSettled;
 
         // update pool interest rate state
-        poolState.debt       -= Maths.wmul(t0DebtSettled, poolState.inflator);
-        poolState.collateral -= collateralSettled;
+        poolState.debt       -= Maths.wmul(result.t0DebtSettled, poolState.inflator);
+        poolState.collateral -= result.collateralSettled;
         _updateInterestState(poolState, _lup(poolState.debt));
     }
 

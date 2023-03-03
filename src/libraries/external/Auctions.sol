@@ -23,6 +23,7 @@ import {
     BucketTakeResult,
     KickResult,
     SettleParams,
+    SettleResult,
     TakeResult
 }                                    from '../../interfaces/pool/commons/IPoolInternals.sol';
 import { StartReserveAuctionParams } from '../../interfaces/pool/commons/IPoolReserveAuctionActions.sol';
@@ -191,9 +192,7 @@ library Auctions {
      *              - Settle
      *              - BucketBankruptcy
      *  @param  params_ Settle params
-     *  @return collateralRemaining_ The amount of borrower collateral left after settle.
-     *  @return collateralSettled_   The amount of collateral settled.
-     *  @return t0DebtSettled_       The amount of t0 debt settled.
+     *  @return result_ The result of settle action.
      */
     function settlePoolDebt(
         AuctionsState storage auctions_,
@@ -201,19 +200,17 @@ library Auctions {
         DepositsState storage deposits_,
         LoansState storage loans_,
         SettleParams memory params_
-    ) external returns (
-        uint256 collateralRemaining_,
-        uint256 collateralSettled_,
-        uint256 t0DebtSettled_
-    ) {
+    ) external returns (SettleResult memory result_) {
         uint256 kickTime = auctions_.liquidations[params_.borrower].kickTime;
         if (kickTime == 0) revert NoAuction();
 
         Borrower memory borrower = loans_.borrowers[params_.borrower];
         if ((block.timestamp - kickTime < 72 hours) && (borrower.collateral != 0)) revert AuctionNotClearable();
 
-        t0DebtSettled_     = borrower.t0Debt;
-        collateralSettled_ = borrower.collateral;
+        result_.debtPreAction       = borrower.t0Debt;
+        result_.collateralPreAction = borrower.collateral;
+        result_.t0DebtSettled       = borrower.t0Debt;
+        result_.collateralSettled   = borrower.collateral;
 
         // auction has debt to cover with remaining collateral
         while (params_.bucketDepth != 0 && borrower.t0Debt != 0 && borrower.collateral != 0) {
@@ -310,9 +307,9 @@ library Auctions {
             }
         }
 
-        t0DebtSettled_ -= borrower.t0Debt;
+        result_.t0DebtSettled -= borrower.t0Debt;
 
-        emit Settle(params_.borrower, t0DebtSettled_);
+        emit Settle(params_.borrower, result_.t0DebtSettled);
 
         if (borrower.t0Debt == 0) {
             // settle auction
@@ -326,8 +323,9 @@ library Auctions {
             );
         }
 
-        collateralRemaining_ =  borrower.collateral;
-        collateralSettled_   -= collateralRemaining_;
+        result_.debtPostAction      = borrower.t0Debt;
+        result_.collateralRemaining =  borrower.collateral;
+        result_.collateralSettled   -= result_.collateralRemaining;
 
         // update borrower state
         loans_.borrowers[params_.borrower] = borrower;
@@ -487,6 +485,9 @@ library Auctions {
 
         if (borrower.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
 
+        result_.debtPreAction       = borrower.t0Debt;
+        result_.collateralPreAction = borrower.collateral;
+
         // bucket take auction
         TakeLocalVars memory vars = _takeBucket(
             auctions_,
@@ -519,10 +520,12 @@ library Auctions {
         ) = _takeLoan(auctions_, buckets_, deposits_, loans_, poolState_, borrower, borrowerAddress_);
 
         // complete take result struct
-        result_.t0PoolDebt       = poolState_.t0Debt;
-        result_.poolDebt         = poolState_.debt;
-        result_.collateralAmount = vars.collateralAmount;
-        result_.t0DebtPenalty    = vars.t0DebtPenalty;
+        result_.debtPostAction       = borrower.t0Debt;
+        result_.collateralPostAction = borrower.collateral;
+        result_.t0PoolDebt           = poolState_.t0Debt;
+        result_.poolDebt             = poolState_.debt;
+        result_.collateralAmount     = vars.collateralAmount;
+        result_.t0DebtPenalty        = vars.t0DebtPenalty;
         // if settled then debt in auction changed is the entire borrower debt, otherwise only repaid amount
         result_.t0DebtInAuctionChange = result_.settledAuction ? vars.t0BorrowerDebt : vars.t0RepayAmount;
     }
@@ -557,6 +560,9 @@ library Auctions {
             revert InsufficientCollateral();
         }
 
+        result_.debtPreAction       = borrower.t0Debt;
+        result_.collateralPreAction = borrower.collateral;
+
         // take auction
         TakeLocalVars memory vars = _take(
             auctions_,
@@ -587,12 +593,14 @@ library Auctions {
         ) = _takeLoan(auctions_, buckets_, deposits_, loans_, poolState_, borrower, borrowerAddress_);
 
         // complete take result struct
-        result_.t0PoolDebt       = poolState_.t0Debt;
-        result_.poolDebt         = poolState_.debt;
-        result_.collateralAmount = vars.collateralAmount;
-        result_.t0DebtPenalty    = vars.t0DebtPenalty;
-        result_.quoteTokenAmount = vars.quoteTokenAmount;
-        result_.excessQuoteToken = vars.excessQuoteToken;
+        result_.debtPostAction       = borrower.t0Debt;
+        result_.collateralPostAction = borrower.collateral;
+        result_.t0PoolDebt           = poolState_.t0Debt;
+        result_.poolDebt             = poolState_.debt;
+        result_.collateralAmount     = vars.collateralAmount;
+        result_.t0DebtPenalty        = vars.t0DebtPenalty;
+        result_.quoteTokenAmount     = vars.quoteTokenAmount;
+        result_.excessQuoteToken     = vars.excessQuoteToken;
         // if settled then debt in auction changed is the entire borrower debt, otherwise only repaid amount
         result_.t0DebtInAuctionChange = result_.settledAuction ? vars.t0BorrowerDebt : vars.t0RepayAmount;
     }
@@ -799,7 +807,9 @@ library Auctions {
     ) {
         Borrower storage borrower = loans_.borrowers[borrowerAddress_];
 
-        kickResult_.t0KickedDebt = borrower.t0Debt;
+        kickResult_.debtPreAction        = borrower.t0Debt;
+        kickResult_.collateralPostAction = borrower.collateral;
+        kickResult_.t0KickedDebt         = borrower.t0Debt;
         // add amount to remove to pool debt in order to calculate proposed LUP
         kickResult_.lup          = _lup(deposits_, poolState_.debt + additionalDebt_);
 
@@ -808,7 +818,7 @@ library Auctions {
         vars.borrowerCollateral = borrower.collateral;
 
         // revert if kick on a collateralized borrower
-        if (_isCollateralized(vars.borrowerDebt , vars.borrowerCollateral, kickResult_.lup, poolState_.poolType)) {
+        if (_isCollateralized(vars.borrowerDebt ,vars.borrowerCollateral, kickResult_.lup, poolState_.poolType)) {
             revert BorrowerOk();
         }
 

@@ -13,6 +13,7 @@ import {
     DrawDebtResult,
     RepayDebtResult,
     SettleParams,
+    SettleResult,
     TakeResult
 }                           from './interfaces/pool/commons/IPoolInternals.sol';
 import { PoolState }        from './interfaces/pool/commons/IPoolState.sol';
@@ -373,11 +374,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
                 poolType:    poolState.poolType
             }
         );
-        (
-            uint256 collateralRemaining,
-            uint256 collateralSettled,
-            uint256 t0DebtSettled
-        ) = Auctions.settlePoolDebt(
+
+        SettleResult memory result = Auctions.settlePoolDebt(
             auctions,
             buckets,
             deposits,
@@ -385,16 +383,16 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             params
         );
 
-        if (collateralSettled > 0) _rebalanceTokens(params.borrower, collateralRemaining);
+        if (result.collateralSettled > 0) _rebalanceTokens(params.borrower, result.collateralRemaining);
 
         // update pool balances state
-        poolBalances.t0Debt            -= t0DebtSettled;
-        poolBalances.t0DebtInAuction   -= t0DebtSettled;
-        poolBalances.pledgedCollateral -= collateralSettled;
+        poolBalances.t0Debt            -= result.t0DebtSettled;
+        poolBalances.t0DebtInAuction   -= result.t0DebtSettled;
+        poolBalances.pledgedCollateral -= result.collateralSettled;
 
         // update pool interest rate state
-        poolState.debt       -= Maths.wmul(t0DebtSettled, poolState.inflator);
-        poolState.collateral -= collateralSettled;
+        poolState.debt       -= Maths.wmul(result.t0DebtSettled, poolState.inflator);
+        poolState.collateral -= result.collateralSettled;
         _updateInterestState(poolState, _lup(poolState.debt));
     }
 
