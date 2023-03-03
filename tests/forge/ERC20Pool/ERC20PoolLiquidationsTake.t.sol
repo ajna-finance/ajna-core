@@ -1668,7 +1668,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         // kicker withdraws his auction bonds
         assertEq(_quote.balanceOf(_lender), 46_248.354604754094247543 * 1e18);
 
-        _pool.withdrawBonds(_lender);
+        _pool.withdrawBonds(_lender, type(uint256).max);
 
         assertEq(_quote.balanceOf(_lender), 46_353.419661702147599360 * 1e18);
 
@@ -1943,7 +1943,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         skip(43000 seconds); // 11.94 hrs
         
         // force pool state update
-        _repayDebtNoLupCheck(_borrower2, _borrower2, 0, 0, 0);
+        _updateInterest();
 
         (uint256 borrowerDebt, ,) = _poolUtils.borrowerInfo(address(_pool), _borrower2);
 

@@ -443,7 +443,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         changePrank(_lender);
 
         // kicker withdraws auction bonds and transfer to a different address
-        _pool.withdrawBonds(_withdrawRecipient);
+        _pool.withdrawBonds(_withdrawRecipient, type(uint256).max);
 
         assertEq(_quote.balanceOf(_withdrawRecipient), 0.195342779771472726 * 1e18);
         assertEq(_quote.balanceOf(_lender), 46_999.804657220228527274 * 1e18);
@@ -451,7 +451,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         vm.revertTo(snapshot);
 
         // kicker withdraws auction bonds
-        _pool.withdrawBonds(_lender);
+        _pool.withdrawBonds(_lender, type(uint256).max);
 
         assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
 
@@ -555,7 +555,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         changePrank(_lender);
         assertEq(_quote.balanceOf(_lender), 46_999.804657220228527274 * 1e18);
 
-        _pool.withdrawBonds(_lender);
+        _pool.withdrawBonds(_lender, type(uint256).max);
 
         assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
 
