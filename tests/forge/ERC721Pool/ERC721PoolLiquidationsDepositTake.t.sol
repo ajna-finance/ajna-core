@@ -164,7 +164,7 @@ contract ERC721PoolLiquidationsDepositTakeTest is ERC721HelperContract {
                 encumberedCollateral: 4.056751649452525709 * 1e18,
                 poolDebt:             40.231555971534224231 * 1e18,
                 actualUtilization:    0.000551117205089510 * 1e18,
-                targetUtilization:    0.811350329890505142 * 1e18,
+                targetUtilization:    0.917855483641149579 * 1e18,
                 minDebtAmount:        4.023155597153422423 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower2),
