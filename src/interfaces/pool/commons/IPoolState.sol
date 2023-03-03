@@ -273,8 +273,7 @@ struct InflatorState {
 struct InterestState {
     uint208 interestRate;       // [WAD] pool's interest rate
     uint48  interestRateUpdate; // [SEC] last time pool's interest rate was updated (not before 12 hours passed)
-    uint256 t0Debt;
-    uint256 t0DebtEma;
+    uint256 debt;               // [WAD] previous update's debt
     uint256 meaningfulDeposit;  // [WAD] previous update's meaningfulDeposit
     uint256 depositEma;         // [WAD] sample of meaningful deposit EMA
     uint256 debtEma;            // [WAD] sample of debt EMA
