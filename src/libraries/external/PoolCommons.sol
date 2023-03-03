@@ -63,7 +63,6 @@ library PoolCommons {
         // current values of EMA samples
         uint256 curDebtEma   = interestParams_.debtEma;
         uint256 curLupColEma = interestParams_.lupColEma;
-        uint256 t0UtilizationWeight = interestParams_.t0UtilizationWeight;
 
         // meaningful actual utilization
         int256 mau;
@@ -75,17 +74,21 @@ library PoolCommons {
             // update pool EMAs for target utilization calculation
             // (t0Debt * lup_) * EMA_7D_RATE_FACTOR + (curDebtEma * LAMBDA_EMA_7D) 
             curDebtEma =
-                Maths.wmul(Maths.wmul(poolState_.t0Debt, lup_), EMA_7D_RATE_FACTOR) +
+                Maths.wmul(poolState_.t0Debt, EMA_7D_RATE_FACTOR) +
                 Maths.wmul(curDebtEma,        LAMBDA_EMA_7D
             );
 
-            // current inflator * t0UtilizationWeight
+            // current inflator * t0UtilizationDebtWeight / current lup
+            // NEW: current inflator * t0UtilizationDebtWeight
+            // uint256 lupCol = 
+            //     Maths.wmul(poolState_.inflator, t0PoolUtilizationDebtWeight_);
+
             uint256 lupCol = 
-                Maths.wmul(poolState_.inflator, t0UtilizationWeight);
+                Maths.wdiv(Maths.wmul(poolState_.inflator, interestParams_.t0UtilizationWeight), lup_);
 
             curLupColEma =
-                Maths.wmul(lupCol,       EMA_7D_RATE_FACTOR) +
-                Maths.wmul(curLupColEma, LAMBDA_EMA_7D);
+                Maths.wmul(lupCol,        EMA_7D_RATE_FACTOR) +
+                Maths.wmul(curLupColEma,  LAMBDA_EMA_7D);
 
             // save EMA samples in storage
             interestParams_.debtEma   = curDebtEma;
@@ -94,7 +97,6 @@ library PoolCommons {
             // calculate meaningful actual utilization for interest rate update
             mau    = int256(_utilization(deposits_, poolState_.debt, poolState_.collateral));
             mau102 = mau * PERCENT_102 / 1e18;
-
         }
 
         // calculate target utilization
@@ -107,9 +109,8 @@ library PoolCommons {
         // raise rates if 4*(tu-1.02*mau) < (tu+1.02*mau-1)^2-1
         if (4 * (tu - mau102) < ((tu + mau102 - 1e18) ** 2) / 1e18 - 1e18) {
             newInterestRate = Maths.wmul(poolState_.rate, INCREASE_COEFFICIENT);
-        }
         // decrease rates if 4*(tu-mau) > 1-(tu+mau-1)^2
-        else if (4 * (tu - mau) > 1e18 - ((tu + mau - 1e18) ** 2) / 1e18) {
+        } else if (4 * (tu - mau) > 1e18 - ((tu + mau - 1e18) ** 2) / 1e18) {
             newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
         }
 

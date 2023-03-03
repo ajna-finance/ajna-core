@@ -445,5 +445,5 @@ contract PoolInfoUtils {
         uint256 debtEma_,
         uint256 lupColEma_
     ) pure returns (uint256) {
-        return (debtEma_ != 0 && lupColEma_ != 0) ? Maths.wdiv(debtEma_, lupColEma_) : Maths.WAD;
+        return (debtEma_ != 0 && lupColEma_ != 0) ? Maths.wdiv(lupColEma_, debtEma_) : Maths.WAD;
     }
