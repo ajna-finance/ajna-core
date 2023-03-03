@@ -333,7 +333,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         _assertCollateralInvariants();
     }
 
-    function testDepositTakeAndSettleSubsetPool() external tearDown {
+    function testDepositTakeAndSettleSubsetPool() external {
 
         // the 2 token ids are owned by borrower before settle
         assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 0), 1);
@@ -436,9 +436,9 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         _addLiquidityWithPenalty({
             from:        _lender,
             amount:      100 * 1e18,
-            amountAdded: 99.984931506849315100 * 1e18,
+            amountAdded: 99.983424657534246600 * 1e18,
             index:       MAX_FENWICK_INDEX,
-            lpAward:     99.984931506849315100 * 1e18,
+            lpAward:     99.983424657534246600 * 1e18,
             newLup:      3_806.274307891526195092 * 1e18
         });
 

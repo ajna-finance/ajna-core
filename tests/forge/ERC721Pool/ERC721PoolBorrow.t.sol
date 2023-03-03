@@ -280,7 +280,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
                 encumberedCollateral: 0.500516446164039921 * 1e18,
                 poolDebt:             1507.000974734143274062 * 1e18,
                 actualUtilization:    0.050227472073642885 * 1e18,
-                targetUtilization:    11.959773039106476726 * 1e18, // TODO: review
+                targetUtilization:    0.083613626841426309 * 1e18, // TODO: review
                 minDebtAmount:        150.700097473414327406 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
@@ -326,7 +326,6 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
 
         assertEq(_collateral.balanceOf(_borrower),      49);
         assertEq(_collateral.balanceOf(address(_pool)), 3);
-
         // borrower repays their debt and pulls collateral from the pool
         _repayDebt({
             from:             _borrower,
@@ -356,7 +355,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
                 encumberedCollateral: 0,
                 poolDebt:             0,
                 actualUtilization:    0,
-                targetUtilization:    11.959773039106476726 * 1e18, // review
+                targetUtilization:    0.083613626841426309 * 1e18, // review
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
@@ -365,8 +364,8 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             })
         );
         _assertEMAs({
-            debtEma:   852_386.416450951155287715 * 1e18,
-            lupColEma: 71_271.119749830433201355 * 1e18
+            debtEma:   283.100958176749487118 * 1e18,
+            lupColEma: 23.671097875440967733 * 1e18
         });
         // check bucket state after fully repay
         _assertBucket({
