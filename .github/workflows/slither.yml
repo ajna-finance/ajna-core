@@ -1,5 +1,5 @@
 name: Slither Analysis
-on: [push]
+on: [fork]
 jobs:
   analyze:
     runs-on: ubuntu-latest

@@ -1,5 +1,5 @@
 name: Size Check
-on: [push]
+on: [fork]
 jobs:
   analyze:
     runs-on: ubuntu-latest
