@@ -1241,7 +1241,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 encumberedCollateral: 0,
                 poolDebt:             0,
                 actualUtilization:    0,
-                targetUtilization:    162666617.400895523288640654 * 1e18,
+                targetUtilization:    162_495_863.399974166319710962 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
@@ -1280,7 +1280,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _assertBorrower({
             borrower:                  _borrower3,
             borrowerDebt:              0,
-            borrowerCollateral:        994.751412316543869246 * 1e18, // last borrower settled
+            borrowerCollateral:        994.751412316543869246 * 1e18,
             borrowert0Np:              21.125293269230769068 * 1e18,
             borrowerCollateralization: 1 * 1e18
         });
