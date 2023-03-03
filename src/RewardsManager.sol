@@ -128,6 +128,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
      */
     function moveStakedLiquidity(
         uint256 tokenId_,
+        uint256 expiry_,
         uint256[] memory fromBuckets_,
         uint256[] memory toBuckets_
     ) external nonReentrant override {
@@ -141,7 +142,6 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
         address ajnaPool = stakeInfo.ajnaPool;
         uint256 curBurnEpoch = IPool(ajnaPool).currentBurnEpoch();
-        uint256 expiry = block.timestamp + 1000;
 
         // claim rewards before moving liquidity, if any
         _claimRewards(
@@ -165,7 +165,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
                 ajnaPool,
                 fromIndex,
                 toIndex,
-                expiry
+                expiry_
             );
             positionManager.moveLiquidity(moveLiquidityParams);
 
@@ -179,13 +179,9 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
         emit MoveStakedLiquidity(tokenId_, fromBuckets_, toBuckets_);
 
-        // update both bucket list exchange rates
+        // update to bucket list exchange rates, from buckets are aready updated on claim
         // calculate rewards for updating exchange rates, if any
         uint256 updateReward = _updateBucketExchangeRates(
-            ajnaPool,
-            fromBuckets_
-        );
-        updateReward += _updateBucketExchangeRates(
             ajnaPool,
             toBuckets_
         );
@@ -807,8 +803,11 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         // if remaining balance is greater, set to remaining balance
         uint256 ajnaBalance = IERC20(ajnaToken).balanceOf(address(this));
         if (rewardsEarned_ > ajnaBalance) rewardsEarned_ = ajnaBalance;
-        // transfer rewards to sender
-        IERC20(ajnaToken).safeTransfer(msg.sender, rewardsEarned_);
+
+        if (rewardsEarned_ != 0) {
+            // transfer rewards to sender
+            IERC20(ajnaToken).safeTransfer(msg.sender, rewardsEarned_);
+        }
     }
 
 }

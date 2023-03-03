@@ -1149,16 +1149,16 @@ contract RewardsManagerTest is ERC20HelperContract {
         /*** Stake NFT ***/
         /*****************/
 
-        uint256[] memory depositIndexes = new uint256[](5);
-        depositIndexes[0] = 2550;
-        depositIndexes[1] = 2551;
-        depositIndexes[2] = 2552;
-        depositIndexes[3] = 2553;
-        depositIndexes[4] = 2555;
+        uint256[] memory firstIndexes = new uint256[](5);
+        firstIndexes[0] = 2550;
+        firstIndexes[1] = 2551;
+        firstIndexes[2] = 2552;
+        firstIndexes[3] = 2553;
+        firstIndexes[4] = 2555;
 
         // configure NFT position
         MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
-            indexes:    depositIndexes,
+            indexes:    firstIndexes,
             minter:     _minterOne,
             mintAmount: 1000 * 1e18,
             pool:       _poolOne
@@ -1172,30 +1172,31 @@ contract RewardsManagerTest is ERC20HelperContract {
         /*** Move Staked NFT ***/
         /***********************/
 
-        uint256[] memory toIndexes = new uint256[](5);
-        toIndexes[0] = 2556;
-        toIndexes[1] = 2557;
-        toIndexes[2] = 2558;
-        toIndexes[3] = 2559;
-        toIndexes[4] = 2560;
+        uint256 expiry = block.timestamp + 1000;
+        uint256[] memory secondIndexes = new uint256[](5);
+        secondIndexes[0] = 2556;
+        secondIndexes[1] = 2557;
+        secondIndexes[2] = 2558;
+        secondIndexes[3] = 2559;
+        secondIndexes[4] = 2560;
 
         // check no rewards are claimed on first move
         vm.expectEmit(true, true, true, true);
         emit ClaimRewards(_minterOne, address(_poolOne), tokenId, _epochsClaimedArray(0, 0), 0);
 
         // check MoveLiquidity emits
-        for (uint256 i = 0; i < depositIndexes.length; ++i) {
+        for (uint256 i = 0; i < firstIndexes.length; ++i) {
             vm.expectEmit(true, true, true, true);
-            emit MoveLiquidity(address(_rewardsManager), tokenId, depositIndexes[i], toIndexes[i]);
+            emit MoveLiquidity(address(_rewardsManager), tokenId, firstIndexes[i], secondIndexes[i]);
         }
 
         vm.expectEmit(true, true, true, true);
-        emit MoveStakedLiquidity(tokenId, depositIndexes, toIndexes);
-        _rewardsManager.moveStakedLiquidity(tokenId, depositIndexes, toIndexes);
+        emit MoveStakedLiquidity(tokenId, firstIndexes, secondIndexes);
+        _rewardsManager.moveStakedLiquidity(tokenId, expiry, firstIndexes, secondIndexes);
 
-        /***********************/
-        /*** Reserve Auction ***/
-        /***********************/
+        /*****************************/
+        /*** First Reserve Auction ***/
+        /*****************************/
 
         TriggerReserveAuctionParams memory triggerReserveAuctionParams = TriggerReserveAuctionParams({
             borrowAmount: 300 * 1e18,
@@ -1203,25 +1204,41 @@ contract RewardsManagerTest is ERC20HelperContract {
             pool: _poolOne
         });
         // first reserve auction happens successfully -> epoch 1
-        uint256 tokensToBurn = _triggerReserveAuctions(triggerReserveAuctionParams);
+        _triggerReserveAuctions(triggerReserveAuctionParams);
 
         /***********************/
         /*** Move Staked NFT ***/
         /***********************/
 
+        uint256 currentBurnEpoch = _poolOne.currentBurnEpoch();
+        expiry = block.timestamp + 1000;
+
+        // need to retrieve the position managers index set since positionIndexes are stored unordered in EnnumerableSets
+        secondIndexes = _positionManager.getPositionIndexes(tokenId);
+
+        // check rewards are claimed from the indexes that the staker is moving away from
+        vm.expectEmit(true, true, true, true);
+        emit UpdateExchangeRates(_minterOne, address(_poolOne), secondIndexes, 4.021413654595047590 * 1e18);
         vm.expectEmit(true, true, true, true);
         emit ClaimRewards(_minterOne, address(_poolOne), tokenId, _epochsClaimedArray(1, 0), 44.235550200545615690 * 1e18);
-
         // check MoveLiquidity emits
-        for (uint256 i = 0; i < depositIndexes.length; ++i) {
+        for (uint256 i = 0; i < firstIndexes.length; ++i) {
             vm.expectEmit(true, true, true, true);
-            emit MoveLiquidity(address(_rewardsManager), tokenId, toIndexes[i], depositIndexes[i]);
+            emit MoveLiquidity(address(_rewardsManager), tokenId, secondIndexes[i], firstIndexes[i]);
         }
-
         vm.expectEmit(true, true, true, true);
-        emit MoveStakedLiquidity(tokenId, toIndexes, depositIndexes);
+        emit MoveStakedLiquidity(tokenId, secondIndexes, firstIndexes);
+
+        // check exchange rates are updated
+        vm.expectEmit(true, true, true, true);
+        emit UpdateExchangeRates(_minterOne, address(_poolOne), firstIndexes, 0);
+
         changePrank(_minterOne);
-        _rewardsManager.moveStakedLiquidity(tokenId, toIndexes, depositIndexes);
+        _rewardsManager.moveStakedLiquidity(tokenId, expiry, secondIndexes, firstIndexes);
+
+        // chceck that no rewards are available yet in the indexes that the staker moved to
+        vm.expectRevert(IRewardsManagerErrors.AlreadyClaimed.selector);
+        _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
     }
 
     function testEarlyAndLateStakerRewards() external {
