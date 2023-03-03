@@ -84,6 +84,7 @@ library Auctions {
     /*************************/
 
     struct KickLocalVars {
+        uint256 t0DebtPreAction;    // [WAD] kicked borrower debt in t0 terms
         uint256 borrowerDebt;       // [WAD] the accrued debt of kicked borrower
         uint256 borrowerCollateral; // [WAD] amount of kicked borrower collateral
         uint256 neutralPrice;       // [WAD] neutral price recorded in kick action
@@ -117,6 +118,14 @@ library Auctions {
         uint256 scale;             // [WAD] scale of settling bucket
         uint256 unscaledDeposit;   // [WAD] unscaled amount of quote tokens in bucket
     }
+
+    struct BucketAndTakeVars {
+        uint256 t0RepayAmount;
+        uint256 t0BorrowerDebt;
+        uint256 t0DebtPreAction;
+        uint256 collateralPreAction; 
+    }
+
     struct TakeLocalVars {
         uint256 auctionPrice;             // [WAD] The price of auction.
         uint256 bondChange;               // [WAD] The change made on the bond size (beeing reward or penalty).
@@ -309,18 +318,6 @@ library Auctions {
                 --params_.bucketDepth;
             }
         }
-
-        // borrower.t0Debt     =  t0BorrowerDebt - t0RepayAmount;
-        // borrower.collateral -= result_.collateralAmount;
-
-        // // update pool debt: apply penalty if case
-        // poolState_.t0Debt += result_.t0DebtPenalty;
-        // poolState_.t0Debt -= t0RepayAmount;
-        // poolState_.debt   = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
- 
-        // // situation where borrower.t0Debt == 0, we get an overflow because we are attempting to subtract past 0
-        // result_.t0PoolDebt = poolState_.t0Debt;
-        // result_.poolDebt   = poolState_.debt;
 
         // bad debt could not be allocated, remove from system
         result_.t0DebtSettled -= borrower.t0Debt;
@@ -517,15 +514,17 @@ library Auctions {
         uint256 collateralScale_
     ) external returns (TakeResult memory result_) {
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
+        BucketAndTakeVars memory vars;
+
+        vars.t0DebtPreAction     = borrower.t0Debt;
+        vars.collateralPreAction = borrower.collateral;
 
         if (borrower.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
 
-        uint256 t0RepayAmount;
-        uint256 t0BorrowerDebt;
         (
             result_.collateralAmount,
-            t0RepayAmount,
-            t0BorrowerDebt,
+            vars.t0RepayAmount,
+            vars.t0BorrowerDebt,
             result_.t0DebtPenalty 
         ) = _takeBucket(
             auctions_,
@@ -542,11 +541,11 @@ library Auctions {
         );
 
         borrower.collateral -= result_.collateralAmount;
-        borrower.t0Debt     = t0BorrowerDebt - t0RepayAmount;
+        borrower.t0Debt     = vars.t0BorrowerDebt - vars.t0RepayAmount;
 
         // update pool debt: apply penalty if case
         poolState_.t0Debt += result_.t0DebtPenalty;
-        poolState_.t0Debt -= t0RepayAmount;
+        poolState_.t0Debt -= vars.t0RepayAmount;
         poolState_.debt   = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
 
         result_.t0PoolDebt = poolState_.t0Debt;
@@ -561,16 +560,16 @@ library Auctions {
                   borrower,
                   borrowerAddress_,
                   result_,
-                  t0BorrowerDebt - result_.t0DebtPenalty,
-                  borrower.collateral + result_.collateralAmount
+                  vars.t0DebtPreAction,
+                  vars.collateralPreAction
         );
 
         if (result_.settledAuction) {
             // the overall debt in auction change is the total borrower debt exiting auction
-            result_.t0DebtInAuctionChange = t0BorrowerDebt;
+            result_.t0DebtInAuctionChange = vars.t0BorrowerDebt;
         } else {
             // the overall debt in auction change is the amount of partially repaid debt
-            result_.t0DebtInAuctionChange = t0RepayAmount;
+            result_.t0DebtInAuctionChange = vars.t0RepayAmount;
         }
     }
 
@@ -596,7 +595,12 @@ library Auctions {
         if (collateral_ == 0) revert InvalidAmount();
 
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
+        BucketAndTakeVars memory vars;
 
+        vars.t0DebtPreAction     = borrower.t0Debt;
+        vars.collateralPreAction = borrower.collateral;
+
+        
         if (
             (poolState_.poolType == uint8(PoolType.ERC721) && borrower.collateral < 1e18) || // revert in case of NFT take when there isn't a full token to be taken
             (poolState_.poolType == uint8(PoolType.ERC20)  && borrower.collateral == 0)      // revert in case of ERC20 take when no collateral to be taken
@@ -604,13 +608,11 @@ library Auctions {
             revert InsufficientCollateral();
         }
 
-        uint256 t0RepayAmount;
-        uint256 t0BorrowerDebt;
         (
             result_.collateralAmount,
             result_.quoteTokenAmount,
-            t0RepayAmount,
-            t0BorrowerDebt,
+            vars.t0RepayAmount,
+            vars.t0BorrowerDebt,
             result_.t0DebtPenalty,
             result_.excessQuoteToken
         ) = _take(
@@ -625,12 +627,12 @@ library Auctions {
             })
         );
 
-        borrower.t0Debt     =  t0BorrowerDebt - t0RepayAmount;
+        borrower.t0Debt     =  vars.t0BorrowerDebt - vars.t0RepayAmount;
         borrower.collateral -= result_.collateralAmount;
 
         // update pool debt: apply penalty if case
         poolState_.t0Debt += result_.t0DebtPenalty;
-        poolState_.t0Debt -= t0RepayAmount;
+        poolState_.t0Debt -= vars.t0RepayAmount;
         poolState_.debt   = Maths.wmul(poolState_.t0Debt, poolState_.inflator);
  
         // situation where borrower.t0Debt == 0, we get an overflow because we are attempting to subtract past 0
@@ -646,16 +648,16 @@ library Auctions {
                     borrower,
                     borrowerAddress_,
                     result_,
-                    t0BorrowerDebt - result_.t0DebtPenalty,
-                    borrower.collateral + result_.collateralAmount
+                    vars.t0DebtPreAction,
+                    vars.collateralPreAction
         );
 
         if (result_.settledAuction) {
             // the overall debt in auction change is the total borrower debt exiting auction
-            result_.t0DebtInAuctionChange = t0BorrowerDebt;
+            result_.t0DebtInAuctionChange = vars.t0BorrowerDebt;
         } else {
             // the overall debt in auction change is the amount of partially repaid debt
-            result_.t0DebtInAuctionChange = t0RepayAmount;
+            result_.t0DebtInAuctionChange = vars.t0RepayAmount;
         }
     }
 
@@ -861,16 +863,20 @@ library Auctions {
     ) {
         Borrower storage borrower = loans_.borrowers[borrowerAddress_];
 
-        kickResult_.t0KickedDebt = borrower.t0Debt;
+        KickLocalVars memory vars;
+        vars.t0DebtPreAction     = borrower.t0Debt;
+        vars.borrowerCollateral  = borrower.collateral; 
+
+        kickResult_.t0KickedDebt = vars.t0DebtPreAction;
+
         // add amount to remove to pool debt in order to calculate proposed LUP
         kickResult_.lup          = _lup(deposits_, poolState_.debt + additionalDebt_);
 
-        KickLocalVars memory vars;
         vars.borrowerDebt       = Maths.wmul(kickResult_.t0KickedDebt, poolState_.inflator);
         vars.borrowerCollateral = borrower.collateral;
 
         // revert if kick on a collateralized borrower
-        if (_isCollateralized(vars.borrowerDebt , vars.borrowerCollateral, kickResult_.lup, poolState_.poolType)) {
+        if (_isCollateralized(vars.borrowerDebt, vars.borrowerCollateral, kickResult_.lup, poolState_.poolType)) {
             revert BorrowerOk();
         }
 
@@ -896,6 +902,7 @@ library Auctions {
         );
 
         // record liquidation info
+        vars.neutralPrice = Maths.wmul(borrower.t0Np, poolState_.inflator);
         _recordAuction(
             auctions_,
             borrowerAddress_,
@@ -914,6 +921,8 @@ library Auctions {
         // when loan is kicked, penalty of three months of interest is added
         vars.t0KickPenalty = Maths.wmul(kickResult_.t0KickedDebt, Maths.wdiv(poolState_.rate, 4 * 1e18));
         vars.kickPenalty   = Maths.wmul(vars.t0KickPenalty, poolState_.inflator);
+        vars.t0KickPenalty = Maths.wmul(kickResult_.t0KickedDebt, Maths.wdiv(poolState_.rate, 4 * 1e18));
+        vars.kickPenalty   = Maths.wmul(vars.t0KickPenalty, poolState_.inflator);
 
         kickResult_.t0PoolDebt   = poolState_.t0Debt + vars.t0KickPenalty;
         kickResult_.t0KickedDebt += vars.t0KickPenalty;
@@ -925,10 +934,10 @@ library Auctions {
         // increasing debt, increase debt utilization weight
         Loans._adjustUtilizationWeight(
             loans_,
-            kickResult_.t0KickedDebt - vars.t0KickPenalty,
+            vars.t0DebtPreAction,
             kickResult_.t0KickedDebt,
-            borrower.collateral,
-            borrower.collateral
+            vars.borrowerCollateral, 
+            vars.borrowerCollateral // collateral is not changed
         );
 
         emit Kick(
