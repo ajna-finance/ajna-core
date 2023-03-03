@@ -378,7 +378,6 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
             })
         );
 
-        return;
         _assertBorrower({
             borrower:                  _borrower,
             borrowerDebt:              0,
