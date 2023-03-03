@@ -150,6 +150,14 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
         emit DrawDebt(borrowerAddress_, amountToBorrow_, collateralToPledge_, result.newLup);
 
+        // adjust utilization weight
+        _adjustUtilizationWeight(
+            result.debtPreAction,
+            result.debtPostAction,
+            result.collateralPreAction,
+            result.collateralPostAction
+        );
+
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
         poolState.collateral = result.poolCollateral;
@@ -210,6 +218,14 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         );
 
         emit RepayDebt(borrowerAddress_, result.quoteTokenToRepay, collateralAmountToPull_, result.newLup);
+
+        // adjust utilization weight
+        _adjustUtilizationWeight(
+            result.debtPreAction,
+            result.debtPostAction,
+            result.collateralPreAction,
+            result.collateralPostAction
+        );
 
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
@@ -346,6 +362,14 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         poolBalances.t0DebtInAuction   -= result.t0DebtSettled;
         poolBalances.pledgedCollateral -= result.collateralSettled;
 
+        // adjust utilization weight
+        _adjustUtilizationWeight(
+            result.debtPreAction,
+            result.debtPostAction,
+            result.collateralPreAction,
+            result.collateralRemaining
+        );
+
         // update pool interest rate state
         poolState.debt       -= Maths.wmul(result.t0DebtSettled, poolState.inflator);
         poolState.collateral -= result.collateralSettled;
@@ -393,6 +417,14 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         poolBalances.t0Debt            =  result.t0PoolDebt;
         poolBalances.t0DebtInAuction   =  t0DebtInAuction;
         poolBalances.pledgedCollateral -= result.collateralAmount;
+
+        // adjust utilization weight
+        _adjustUtilizationWeight(
+            result.debtPreAction,
+            result.debtPostAction,
+            result.collateralPreAction,
+            result.collateralPostAction
+        );
 
         // update pool interest rate state
         poolState.debt       =  result.poolDebt;
@@ -447,6 +479,14 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         poolBalances.t0Debt            =  result.t0PoolDebt;
         poolBalances.t0DebtInAuction   =  t0DebtInAuction;
         poolBalances.pledgedCollateral -= result.collateralAmount;
+
+        // adjust utilization weight
+        _adjustUtilizationWeight(
+            result.debtPreAction,
+            result.debtPostAction,
+            result.collateralPreAction,
+            result.collateralPostAction
+        );
 
         // update pool interest rate state
         poolState.debt       = result.poolDebt;

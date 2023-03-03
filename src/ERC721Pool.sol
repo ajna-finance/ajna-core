@@ -151,6 +151,14 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
         emit DrawDebtNFT(borrowerAddress_, amountToBorrow_, tokenIdsToPledge_, result.newLup);
 
+        // adjust utilization weight
+        _adjustUtilizationWeight(
+            result.debtPreAction,
+            result.debtPostAction,
+            result.collateralPreAction,
+            result.collateralPostAction
+        );
+
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
         poolState.collateral = result.poolCollateral;
@@ -213,6 +221,14 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         emit RepayDebt(borrowerAddress_, result.quoteTokenToRepay, noOfNFTsToPull_, result.newLup);
 
         if (result.settledAuction) _rebalanceTokens(borrowerAddress_, result.remainingCollateral);
+
+        // adjust utilization weight
+        _adjustUtilizationWeight(
+            result.debtPreAction,
+            result.debtPostAction,
+            result.collateralPreAction,
+            result.collateralPostAction
+        );
 
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
@@ -390,6 +406,14 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         poolBalances.t0DebtInAuction   -= result.t0DebtSettled;
         poolBalances.pledgedCollateral -= result.collateralSettled;
 
+        // adjust utilization weight
+        _adjustUtilizationWeight(
+            result.debtPreAction,
+            result.debtPostAction,
+            result.collateralPreAction,
+            result.collateralRemaining
+        );
+
         // update pool interest rate state
         poolState.debt       -= Maths.wmul(result.t0DebtSettled, poolState.inflator);
         poolState.collateral -= result.collateralSettled;
@@ -433,6 +457,14 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         // the total collateral taken from borrower pledged collateral (collateral taken plus collateral compensated if auction settled)
         uint256 collateralSettled = result.collateralAmount + result.compensatedCollateral;
         poolBalances.pledgedCollateral -= collateralSettled;
+
+        // adjust utilization weight
+        _adjustUtilizationWeight(
+            result.debtPreAction,
+            result.debtPostAction,
+            result.collateralPreAction,
+            result.collateralPostAction
+        );
 
         // update pool interest rate state
         poolState.debt       =  result.poolDebt;
@@ -503,6 +535,14 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         // the total collateral taken from borrower pledged collateral (collateral taken plus collateral compensated if auction settled)
         uint256 collateralSettled = result.collateralAmount + result.compensatedCollateral;
         poolBalances.pledgedCollateral -= collateralSettled;
+
+        // adjust utilization weight
+        _adjustUtilizationWeight(
+            result.debtPreAction,
+            result.debtPostAction,
+            result.collateralPreAction,
+            result.collateralPostAction
+        );
 
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
