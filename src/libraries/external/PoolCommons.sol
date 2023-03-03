@@ -63,6 +63,7 @@ library PoolCommons {
         // current values of EMA samples
         uint256 curDebtEma   = interestParams_.debtEma;
         uint256 curLupColEma = interestParams_.lupColEma;
+        uint256 t0UtilizationWeight = interestParams_.t0UtilizationWeight;
 
         // meaningful actual utilization
         int256 mau;
@@ -70,22 +71,21 @@ library PoolCommons {
         int256 mau102;
 
         if (poolState_.debt != 0) {
-            // update pool EMAs for target utilization calculation
 
+            // update pool EMAs for target utilization calculation
+            // (t0Debt * lup_) * EMA_7D_RATE_FACTOR + (curDebtEma * LAMBDA_EMA_7D) 
             curDebtEma =
-                Maths.wmul(poolState_.debt,  EMA_7D_RATE_FACTOR) +
-                Maths.wmul(curDebtEma,       LAMBDA_EMA_7D
+                Maths.wmul(Maths.wmul(poolState_.t0Debt, lup_), EMA_7D_RATE_FACTOR) +
+                Maths.wmul(curDebtEma,        LAMBDA_EMA_7D
             );
 
-            // lup * collateral EMA sample max value is 10 times current debt
-            uint256 maxLupColEma = Maths.wmul(poolState_.debt, Maths.wad(10));
-
-            // current lup * collateral value
-            uint256 lupCol = Maths.wmul(poolState_.collateral, lup_);
+            // current inflator * t0UtilizationWeight
+            uint256 lupCol = 
+                Maths.wmul(poolState_.inflator, t0UtilizationWeight);
 
             curLupColEma =
-                Maths.wmul(Maths.min(lupCol, maxLupColEma), EMA_7D_RATE_FACTOR) +
-                Maths.wmul(curLupColEma,                    LAMBDA_EMA_7D);
+                Maths.wmul(lupCol,       EMA_7D_RATE_FACTOR) +
+                Maths.wmul(curLupColEma, LAMBDA_EMA_7D);
 
             // save EMA samples in storage
             interestParams_.debtEma   = curDebtEma;
@@ -98,7 +98,7 @@ library PoolCommons {
         }
 
         // calculate target utilization
-        int256 tu = (curDebtEma != 0 && curLupColEma != 0) ? int256(Maths.wdiv(curDebtEma, curLupColEma)) : int(Maths.WAD);
+        int256 tu = (curDebtEma != 0 && curLupColEma != 0) ? int256(Maths.wdiv(curLupColEma, curDebtEma)) : int(Maths.WAD);
 
         if (!poolState_.isNewInterestAccrued) poolState_.rate = interestParams_.interestRate;
 
