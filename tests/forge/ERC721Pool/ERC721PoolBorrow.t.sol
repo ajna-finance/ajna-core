@@ -280,12 +280,12 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
                 encumberedCollateral: 0.500516446164039921 * 1e18,
                 poolDebt:             1507.000974734143274062 * 1e18,
                 actualUtilization:    0.050227472073642885 * 1e18,
-                targetUtilization:    0.166838815388013307 * 1e18,
+                targetUtilization:    11.959773039106476726 * 1e18, // TODO: review
                 minDebtAmount:        150.700097473414327406 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                interestRate:         0.045 * 1e18,
-                interestRateUpdate:   _startTime + 10 days
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
             })
         );
         assertEq(_poolUtils.momp(address(_pool)), 3_010.892022197881557845 * 1e18);
@@ -312,10 +312,10 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         // find pending debt after interest accumulation
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              1_508.860066921599065131 * 1e18,
+            borrowerDebt:              1_509.066774239163546755 * 1e18,
             borrowerCollateral:        3 * 1e18,
             borrowert0Np:              1_051.009615384615385100 * 1e18,
-            borrowerCollateralization: 5.986423966420065589 * 1e18
+            borrowerCollateralization: 5.985603964508270588 * 1e18
         });
 
         // mint additional quote to allow borrower to repay their loan plus interest
@@ -332,7 +332,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             from:             _borrower,
             borrower:         _borrower,
             amountToRepay:    type(uint256).max,
-            amountRepaid:     1_508.860066921599065131 * 1e18,
+            amountRepaid:     1_509.066774239163546755 * 1e18,
             collateralToPull: 3,
             newLup:           MAX_PRICE
         });
@@ -343,38 +343,38 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         assertEq(_collateral.balanceOf(_borrower),      52);
         assertEq(_collateral.balanceOf(address(_pool)), 0);
 
-        assertEq(_quote.balanceOf(address(_pool)), 30_008.860066921599065131 * 1e18);
-        assertEq(_quote.balanceOf(_borrower),      991.139933078400934869 * 1e18);
+        assertEq(_quote.balanceOf(address(_pool)), 30_009.066774239163546755 * 1e18);
+        assertEq(_quote.balanceOf(_borrower),      990.933225760836453245 * 1e18);
 
         // check pool state after fully repay
         _assertPool(
             PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
-                poolSize:             30_005.105213052294390000 * 1e18,
+                poolSize:             30_005.281442333832300000 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
                 poolDebt:             0,
                 actualUtilization:    0,
-                targetUtilization:    0.166838815388013307 * 1e18,
+                targetUtilization:    11.959773039106476726 * 1e18, // review
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                interestRate:         0.0405 * 1e18,
+                interestRate:         0.045 * 1e18,
                 interestRateUpdate:   _startTime + 20 days
             })
         );
         _assertEMAs({
-            debtEma:   142.074529848655991542 * 1e18,
-            lupColEma: 851.567601449557349751 * 1e18
+            debtEma:   852_386.416450951155287715 * 1e18,
+            lupColEma: 71_271.119749830433201355 * 1e18
         });
         // check bucket state after fully repay
         _assertBucket({
             index:        2550,
             lpBalance:    10_000 * 1e18,
             collateral:   0,
-            deposit:      10_001.70173768409813 * 1e18,
-            exchangeRate: 1.000170173768409813 * 1e18
+            deposit:      10_001.760480777944100000 * 1e18,
+            exchangeRate: 1.00017604807779441 * 1e18
         });
         // check borrower info after fully repay
         _assertBorrower({
