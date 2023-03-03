@@ -653,13 +653,13 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         changePrank(_lender);
 
         // Kicker claims bond + reward and transfer to a different address
-        _pool.withdrawBonds(_withdrawRecipient);
+        _pool.withdrawBonds(_withdrawRecipient, type(uint256).max);
         assertEq(_quote.balanceOf(_withdrawRecipient), 0.242202920686750816 * 1e18);
 
         vm.revertTo(snapshot);
 
         // Kicker claims bond + reward
-        _pool.withdrawBonds(_lender);
+        _pool.withdrawBonds(_lender, type(uint256).max);
         assertEq(_quote.balanceOf(_lender), 46_998.523343483554970812 * 1e18);
     }
 

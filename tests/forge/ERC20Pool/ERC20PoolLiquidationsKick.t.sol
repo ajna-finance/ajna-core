@@ -3,6 +3,7 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
+import 'src/interfaces/pool/commons/IPoolErrors.sol';
 import 'src/libraries/helpers/PoolHelper.sol';
 
 contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
@@ -435,23 +436,40 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             })
         );
 
-        // kicker balance befor withdraw auction bonds
+        // kicker balance before withdraw auction bonds
         assertEq(_quote.balanceOf(_lender), 46_999.804657220228527274 * 1e18);
+
+        // should revert if user without claimable amount tries to withdraw bond
+        vm.expectRevert(IPoolErrors.InsufficientLiquidity.selector);
+        _pool.withdrawBonds(_withdrawRecipient, type(uint256).max);
 
         snapshot = vm.snapshot();
 
         changePrank(_lender);
 
-        // kicker withdraws auction bonds and transfer to a different address
-        _pool.withdrawBonds(_withdrawRecipient);
+        // should revert if trying to withdraw 0 bond amount
+        vm.expectRevert(IPoolErrors.InsufficientLiquidity.selector);
+        _pool.withdrawBonds(_withdrawRecipient, 0);
 
-        assertEq(_quote.balanceOf(_withdrawRecipient), 0.195342779771472726 * 1e18);
-        assertEq(_quote.balanceOf(_lender), 46_999.804657220228527274 * 1e18);
+        // kicker withdraws partial auction bonds and transfer to a different address
+        vm.expectEmit(true, true, false, true);
+        emit BondWithdrawn(_lender, _withdrawRecipient, 0.1 * 1e18);
+        _pool.withdrawBonds(_withdrawRecipient, 0.1 * 1e18);
+
+        // kicker withdraws remaining auction bonds
+        vm.expectEmit(true, true, false, true);
+        emit BondWithdrawn(_lender, _lender, 0.095342779771472726 * 1e18);
+        _pool.withdrawBonds(_lender, type(uint256).max);
+
+        assertEq(_quote.balanceOf(_withdrawRecipient), 0.1 * 1e18);
+        assertEq(_quote.balanceOf(_lender), 46_999.9 * 1e18);
 
         vm.revertTo(snapshot);
 
-        // kicker withdraws auction bonds
-        _pool.withdrawBonds(_lender);
+        // kicker withdraws entire auction bonds
+        vm.expectEmit(true, true, false, true);
+        emit BondWithdrawn(_lender, _lender, 0.195342779771472726 * 1e18);
+        _pool.withdrawBonds(_lender, type(uint256).max);
 
         assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
 
@@ -555,7 +573,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         changePrank(_lender);
         assertEq(_quote.balanceOf(_lender), 46_999.804657220228527274 * 1e18);
 
-        _pool.withdrawBonds(_lender);
+        _pool.withdrawBonds(_lender, type(uint256).max);
 
         assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
 
