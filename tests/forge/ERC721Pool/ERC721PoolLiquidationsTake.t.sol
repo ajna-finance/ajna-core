@@ -418,7 +418,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_borrower), 128.926004470583381865 * 1e18); // borrower gets quote tokens from the difference of rounded collateral (2) and needed collateral (1.16) at auction price (19.8) = 16.6 additional tokens
     }
 
-    function testTakeCollateralAndSettleSubsetPool() external {
+    function testTakeCollateralAndSettleSubsetPool() external tearDown {
 
         // Skip to make borrower undercollateralized
         skip(1000 days);
