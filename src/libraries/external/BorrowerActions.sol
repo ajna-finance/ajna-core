@@ -133,8 +133,8 @@ library BorrowerActions {
         DrawDebtResult memory result_
     ) {
         DrawDebtLocalVars memory vars;
-        vars.pledge       = collateralToPledge_ != 0;
-        vars.borrow       = amountToBorrow_ != 0 || limitIndex_ != 0; // enable an intentional 0 borrow loan call to update borrower's loan state
+        vars.pledge = collateralToPledge_ != 0;
+        vars.borrow = amountToBorrow_ != 0 || limitIndex_ != 0; // enable an intentional 0 borrow loan call to update borrower's loan state
 
         // revert if no amount to pledge or borrow
         if (!vars.pledge && !vars.borrow) revert InvalidAmount();
@@ -292,16 +292,15 @@ library BorrowerActions {
         RepayDebtResult memory result_
     ) {
         RepayDebtLocalVars memory vars;
-        vars.repay        = maxQuoteTokenAmountToRepay_ != 0;
-        vars.pull         = collateralAmountToPull_     != 0;
-        
+        vars.repay = maxQuoteTokenAmountToRepay_ != 0;
+        vars.pull  = collateralAmountToPull_     != 0;
+
         // revert if no amount to pledge or borrow
         if (!vars.repay && !vars.pull) revert InvalidAmount();
 
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
 
-
-        vars.t0DebtPreAction = borrower.t0Debt;
+        vars.t0DebtPreAction     = borrower.t0Debt;
         vars.collateralPreAction = borrower.collateral;
 
         vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
