@@ -276,6 +276,7 @@ struct InterestState {
     uint256 depositEma;         // [WAD] sample of meaningful deposit EMA
     uint256 debtEma;            // [WAD] sample of debt EMA
     uint256 lupColEma;          // [WAD] sample of LUP price * collateral EMA. capped at 10 times current pool debt
+    uint256 emaUpdate;          // [SEC] last time pool's EMAs were updated
 }
 
 struct PoolBalancesState {

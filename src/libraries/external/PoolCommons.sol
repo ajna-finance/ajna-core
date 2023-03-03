@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
 
 pragma solidity 0.8.14;
+import "forge-std/console.sol";
 
+import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
 import { InterestState, PoolState, DepositsState } from '../../interfaces/pool/commons/IPoolState.sol';
@@ -35,6 +37,8 @@ library PoolCommons {
     uint256 internal constant LAMBDA_EMA_12H       = 0.5 * 1e18;                  // Lambda used for deposit EMA calculated as exp(-ln(2)*1/3600)
     uint256 internal constant EMA_12H_RATE_FACTOR  = 1e18 - LAMBDA_EMA_12H;
     int256  internal constant PERCENT_102          = 1.02 * 1e18;
+    int256  internal constant NEG_H_MAU_SEC        = -0.000016045073624073 * 1e18; // ln(2)/(12*3600)
+    int256  internal constant NEG_H_MAU_HOURS      = -0.057762265046662105 * 1e18; // ln(2)/12
 
     /**************/
     /*** Events ***/
@@ -52,19 +56,34 @@ library PoolCommons {
         DepositsState storage deposits_,
         PoolState memory poolState_
     ) external {
+        // return if a previous transaction in this block updated the EMA
+        if (interestParams_.emaUpdate == block.timestamp) return;
+
+        // FIXME: This should be previous/current meaningful deposit, not new.
+        // May need to record this in InterestState somehow.
         uint256 meaningfulDeposit = _meaningfulDeposit(deposits_, poolState_.debt, poolState_.collateral);
+
         uint256 curDepositEma = interestParams_.depositEma;
         // initialize the EMA to the actual value for the first calculation
         if (curDepositEma == 0) {
             curDepositEma = meaningfulDeposit;    
         } else {
-            curDepositEma = 
-                Maths.wmul(meaningfulDeposit, EMA_12H_RATE_FACTOR) +
-                Maths.wmul(curDepositEma,     LAMBDA_EMA_12H
+            // curDepositEma = 
+            //     Maths.wmul(meaningfulDeposit, EMA_12H_RATE_FACTOR) +
+            //     Maths.wmul(curDepositEma,     LAMBDA_EMA_12H
+            // );
+            int256 elapsed = int256(Maths.wdiv(block.timestamp - interestParams_.emaUpdate, 1 hours));
+            int256 weight = PRBMathSD59x18.exp(PRBMathSD59x18.mul(NEG_H_MAU_HOURS, elapsed));
+            console.log("  %s elapsed, weight %s", uint256(elapsed)/2, uint256(weight));
+            curDepositEma = uint256(
+                PRBMathSD59x18.mul(weight, int256(interestParams_.depositEma)) +
+                PRBMathSD59x18.mul((1e18 - weight), int256(meaningfulDeposit))
             );
         }
+        console.log("meaningfulDeposit %s, curDepositEma %s", meaningfulDeposit, curDepositEma);
 
         interestParams_.depositEma = curDepositEma;
+        interestParams_.emaUpdate = block.timestamp;
     }
 
     /**
