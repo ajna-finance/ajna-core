@@ -757,7 +757,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                interestRate:         0.0405 * 1e18,
+                interestRate:         0.0495 * 1e18,
                 interestRateUpdate:   _startTime + 100 days + 14 hours
             })
         );
