@@ -59,7 +59,7 @@ library PoolCommons {
             // but the conditional to check each time would be more expensive thereafter.
             int256 elapsed = int256(Maths.wdiv(block.timestamp - interestParams_.emaUpdate, 1 hours));
             int256 weight = PRBMathSD59x18.exp(PRBMathSD59x18.mul(NEG_H_MAU_HOURS, elapsed));
-            console.log("  time %s elapsed %s mins", block.timestamp, (block.timestamp - interestParams_.emaUpdate)/60);
+            // console.log("  time %s elapsed %s mins", block.timestamp, (block.timestamp - interestParams_.emaUpdate)/60);
 
             // update the t0 debt EMA
             uint256 debt       = interestParams_.debt;
@@ -114,8 +114,8 @@ library PoolCommons {
     ) external {
 
         // current values of EMA samples
-        uint256 curDebtEma    = interestParams_.debtEma;
-        uint256 curLupColEma  = interestParams_.lupColEma;
+        uint256 curDebtEma   = interestParams_.debtEma;
+        uint256 curLupColEma = interestParams_.lupColEma;
 
         // meaningful actual utilization
         int256 mau;
@@ -134,11 +134,11 @@ library PoolCommons {
                 Maths.wmul(curLupColEma,                    LAMBDA_EMA_7D);
 
             // save EMA samples in storage
-            interestParams_.debtEma    = curDebtEma;
-            interestParams_.lupColEma  = curLupColEma;
+            interestParams_.debtEma   = curDebtEma;
+            interestParams_.lupColEma = curLupColEma;
 
             // calculate meaningful actual utilization for interest rate update
-            mau    = int256(_utilization(interestParams_.depositEma, poolState_.debt));
+            mau    = int256(_utilization(interestParams_.debtEma, interestParams_.depositEma));
             mau102 = mau * PERCENT_102 / 1e18;
         }
 
@@ -206,7 +206,8 @@ library PoolCommons {
 
         if (depositAboveHtp != 0) {
             newInterest_ = Maths.wmul(
-                _lenderInterestMargin(_utilization(meaningfulDeposit, poolState_.debt)),
+                // TODO: should be calculated against EMAs, but we don't have InterestState here
+                _lenderInterestMargin(_utilization(poolState_.debt, meaningfulDeposit)),
                 Maths.wmul(pendingFactor - Maths.WAD, poolState_.debt)
             );
 
@@ -265,36 +266,30 @@ library PoolCommons {
     }
 
     /**
-     *  @notice Calculates pool utilization based on pool size, accrued debt and collateral pledged in pool .
+     *  @notice Calculates pool meaningful actual utilization.
      *  @dev Wrapper of the internal function.
      */
     function utilization(
-        DepositsState storage deposits,
-        uint256 poolDebt_,
-        uint256 collateral_
+        InterestState storage interestParams_
     ) external view returns (uint256 utilization_) {
-        return _utilization(_meaningfulDeposit(deposits, poolDebt_, collateral_), poolDebt_);
+        return _utilization(interestParams_.debtEma, interestParams_.depositEma );
     }
 
     /**************************/
     /*** Internal Functions ***/
     /**************************/
 
-    // TODO: rename parameters, which both become EMAs
     /**
-     *  @notice Calculates pool utilization based on pool size, accrued debt and collateral pledged in pool .
-     *  @param  meaningfulDeposit_  Amount of deposit above the pool threshold price.
-     *  @param  poolDebt_           Pool accrued debt.
-     *  @return utilization_        Pool utilization value.
+     *  @notice Calculates pool meaningful actual utilization.
+     *  @param  debtEma_     EMA of pool debt.
+     *  @param  depositEma_  EMA of meaningful pool deposit.
+     *  @return utilization_ Pool meaningful actual utilization value.
      */
     function _utilization(
-        uint256 meaningfulDeposit_,
-        uint256 poolDebt_
+        uint256 debtEma_,
+        uint256 depositEma_
     ) internal pure returns (uint256 utilization_) {
-        if (meaningfulDeposit_ != 0) utilization_ = Maths.wdiv(
-            poolDebt_,
-            meaningfulDeposit_
-        );
+        if (depositEma_ != 0) utilization_ = Maths.wdiv(debtEma_, depositEma_);
     }
 
     /**

@@ -714,11 +714,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /// @inheritdoc IPoolDerivedState
-    function depositUtilization(
-        uint256 debt_,
-        uint256 collateral_
-    ) external view override returns (uint256) {
-        return PoolCommons.utilization(deposits, debt_, collateral_);
+    function depositUtilization() external view override returns (uint256) {
+        return PoolCommons.utilization(interestState);
     }
 
     /// @inheritdoc IPoolState

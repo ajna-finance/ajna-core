@@ -233,7 +233,7 @@ contract PoolInfoUtils {
         uint256 currentLup = _priceAt(pool.depositIndex(poolDebt));
 
         poolCollateralization_ = _collateralization(poolDebt, poolCollateral, currentLup);
-        poolActualUtilization_ = pool.depositUtilization(poolDebt, poolCollateral);
+        poolActualUtilization_ = pool.depositUtilization();
 
         (uint256 debtEma, uint256 lupColEma) = pool.emasInfo();
         poolTargetUtilization_ = _targetUtilization(debtEma, lupColEma);
@@ -250,9 +250,7 @@ contract PoolInfoUtils {
     {
         IPool pool = IPool(ajnaPool_);
 
-        (uint256 poolDebt,,)   = pool.debtInfo();
-        uint256 poolCollateral = pool.pledgedCollateral();
-        uint256 utilization    = pool.depositUtilization(poolDebt, poolCollateral);
+        uint256 utilization   = pool.depositUtilization();
 
         lenderInterestMargin_ = PoolCommons.lenderInterestMargin(utilization);
     }
