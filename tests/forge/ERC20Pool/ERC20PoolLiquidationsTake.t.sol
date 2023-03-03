@@ -785,7 +785,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 0,
+                totalBondEscrowed: 7_392.730549930529876001 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
                 thresholdPrice:    0.294851536220032779 * 1e18,
@@ -964,7 +964,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 0,
+                totalBondEscrowed: 81.561515934259023258 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
                 thresholdPrice:    9.065908571952299723 * 1e18,
@@ -1173,7 +1173,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 0,
+                totalBondEscrowed: 7_445.449927724026858358 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
                 thresholdPrice:    0,
@@ -1482,7 +1482,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 0,
+                totalBondEscrowed: 105.065056948053351817 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
                 thresholdPrice:    0,
@@ -1576,22 +1576,29 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             auctionPrice:               0,
             timeRemaining:              0
         });
-
-        // partial clears / debt settled - max buckets to use is 1, remaining will be taken from reserves
+        // partial clears / debt settled - max buckets to use is 0, settle only from reserves
         _settle({
             from:        _lender,
             borrower:    _borrower2,
-            maxDepth:    1,
-            settledDebt: 2_923.975862386543877283 * 1e18
+            maxDepth:    0,
+            settledDebt: 834 * 1e18
         });
-
         _assertReserveAuction({
-            reserves:                   0.989870342666661239 * 1e18,
+            reserves:                   0.989870342666662235 * 1e18,
             claimableReserves :         0,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
         });
+
+        // partial clears / debt settled with max buckets to use is 1
+        _settle({
+            from:        _lender,
+            borrower:    _borrower2,
+            maxDepth:    1,
+            settledDebt: 2_089.975862386543877283 * 1e18
+        });
+
         _assertAuction(
             AuctionParams({
                 borrower:          _borrower2,
@@ -1638,7 +1645,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 0,
+                totalBondEscrowed: 105.065056948053351817 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
                 thresholdPrice:    0,
@@ -1849,6 +1856,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 neutralPrice:      10.449783245217816340 * 1e18
             })
         );
+        assertEq(_poolUtils.momp(address(_pool)), 9.818751856078723036 * 1e18);
         _assertBorrower({
             borrower:                  _borrower2,
             borrowerDebt:              9_976.561670003961916237 * 1e18,
@@ -1890,6 +1898,73 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             borrowerCollateralization: 1 * 1e18
         });
     }
+
+    function testReservesAfterTakeSettlesAuction() external tearDown {
+        // Increase neutralPrice so it exceeds TP
+        _addLiquidity({
+            from:    _lender,
+            amount:  10_000 * 1e18,
+            index:   _i1505_26,
+            lpAward: 10_000 * 1e18,
+            newLup:  _p1505_26
+        });
+
+        _pledgeCollateral({
+            from:     _borrower,
+            borrower: _borrower,
+            amount:   1_000 * 1e18
+        });
+        _borrow({
+            from:       _borrower,
+            amount:     9_020 * 1e18,
+            indexLimit: _i9_72,
+            newLup:     _p9_72
+        });
+        
+        // calling borrow stamps loan with new t0NeutralPrice
+        _borrow({
+            from:       _borrower2,
+            amount:     1_700.0 * 1e18,
+            indexLimit: _i9_72,
+            newLup:     _p9_72
+        });
+
+        skip(100 days);
+
+        _kick({
+            from:           _lender,
+            borrower:       _borrower2,
+            debt:           9_945.738101507554206918 * 1e18,
+            collateral:     1_000 * 1e18,
+            bond:           2_946.885363409645690939 * 1e18,
+            transferAmount: 2_946.885363409645690939 * 1e18
+        });
+
+        skip(43000 seconds); // 11.94 hrs
+        
+        // force pool state update
+        _updateInterest();
+
+        (uint256 borrowerDebt, ,) = _poolUtils.borrowerInfo(address(_pool), _borrower2);
+
+        (uint256 reservesBeforeTake, , , , ) = _poolUtils.poolReservesInfo(address(_pool));
+
+        // BPF Positive, Loan Debt constraint
+        _take({
+            from:            _lender,
+            borrower:        _borrower2,
+            maxCollateral:   1_001 * 1e18,
+            bondChange:      4_498.564564314381167419 * 1e18,
+            givenAmount:     15_141.157325863044791651 * 1e18,
+            collateralTaken: 583.842136806534270091 * 1e18,
+            isReward:        true
+        });
+
+        (uint256 reservesAfterTake, , , , ) = _poolUtils.poolReservesInfo(address(_pool));
+
+        // reserves should only increase by 7% of the borrower debt on first take and settle auction
+        assertEq(reservesAfterTake, reservesBeforeTake + Maths.wmul(borrowerDebt, 0.07 * 1e18));
+    }
 }
 
 contract ERC20PoolLiquidationsTakeAndRepayAllDebtInPoolTest is ERC20HelperContract {
@@ -1925,13 +2000,7 @@ contract ERC20PoolLiquidationsTakeAndRepayAllDebtInPoolTest is ERC20HelperContra
     }
 
     function testTakeAuctionRepaidAmountGreaterThanPoolDebt() external tearDown {
-        _repayDebtNoLupCheck({
-            from:             _borrower,
-            borrower:         _borrower,
-            amountToRepay:    0,
-            amountRepaid:     0,
-            collateralToPull: 0
-        });
+        _updateInterest();
 
         _drawDebtNoLupCheck({
             from:               _borrower,

@@ -89,7 +89,8 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
         _startClaimableReserveAuction({
             from:              _bidder,
             remainingReserves: 1.284989524180968870 * 1e18,
-            price:             1000000000 * 1e18
+            price:             1000000000 * 1e18,
+            epoch:             1
         });
 
         skip(60 hours);

@@ -56,8 +56,10 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         // mint quote tokens to borrower address equivalent to the current debt
         deal(_pool.quoteTokenAddress(), borrower, currentDebt);
 
-        // repay current debt and pull all collateral
-        _repayDebtNoLupCheck(borrower, borrower, tokenDebt, currentDebt, borrowerCollateral);
+        // repay current debt and pull all collateral if any
+        if (tokenDebt != 0 || borrowerCollateral != 0) {
+            _repayDebtNoLupCheck(borrower, borrower, tokenDebt, currentDebt, borrowerCollateral);
+        }
 
         // check borrower state after repay of loan and pull collateral
         (borrowerT0debt, borrowerCollateral, ) = _pool.borrowerInfo(borrower);
@@ -125,8 +127,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         uint256 weight;
 
-        uint256 debt;
-        uint256 collateral;
         for(uint i = 0; i < borrowers.length(); i++) {
             (uint256 t0Debt, uint256 collateral, ) = _pool.borrowerInfo(borrowers.at(i));
             weight = collateral != 0 ? weight + (t0Debt ** 2 / collateral) : weight + 0;
@@ -247,22 +247,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         vm.expectEmit(true, true, false, true);
         emit DrawDebt(from, amount, 0, newLup);
         _assertQuoteTokenTransferEvent(address(_pool), from, amount);
-
-        ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
-
-        // Add for tearDown
-        borrowers.add(from);
-    }
-
-    function _borrowZeroAmount(
-        address from,
-        uint256 amount,
-        uint256 indexLimit,
-        uint256 newLup
-    ) internal {
-        changePrank(from);
-        vm.expectEmit(true, true, false, true);
-        emit DrawDebt(from, amount, 0, newLup);
 
         ERC20Pool(address(_pool)).drawDebt(from, amount, indexLimit, 0);
 

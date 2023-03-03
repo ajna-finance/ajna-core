@@ -346,7 +346,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 0,
+                totalBondEscrowed: 103.758834042401124745 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
                 thresholdPrice:    0,
@@ -548,7 +548,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 0,
+                totalBondEscrowed: 98.533942419792216457 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
                 thresholdPrice:    0,
@@ -730,12 +730,13 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         });
 
         // adding to a different bucket for testing move in same block with bucket bankruptcy
-        _addLiquidity({
-            from:   _lender1,
-            amount: 100 * 1e18,
-            index:  _i9_52,
-            lpAward: 100 * 1e18,
-            newLup: 9.721295865031779605 * 1e18
+        _addLiquidityWithPenalty({
+            from:        _lender1,
+            amount:      100 * 1e18,
+            amountAdded: 99.987671232876712300 * 1e18,
+            index:       _i9_52,
+            lpAward:     99.987671232876712300 * 1e18,
+            newLup:      9.721295865031779605 * 1e18
         });
 
         // settle to make buckets insolvent

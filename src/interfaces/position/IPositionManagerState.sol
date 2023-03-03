@@ -15,16 +15,9 @@ interface IPositionManagerState {
     function poolKey(
         uint256 tokenId
     ) external view returns (address);
+}
 
-    /**
-     *  @notice Returns the bucket LPs memorialized in a positions NFT.
-     *  @param  tokenId     The token id of the positions NFT.
-     *  @param  bucketIndex The bucket index memorialized in a positions NFT.
-     *  @return Amount of bucket LPs memorialized in positions NFT.
-     */
-    function positionLPs(
-        uint256 tokenId,
-        uint256 bucketIndex
-    ) external view returns (uint256);
-
+struct Position {
+    uint256 lps;         // [WAD] position LPs
+    uint256 depositTime; // deposit time for position
 }

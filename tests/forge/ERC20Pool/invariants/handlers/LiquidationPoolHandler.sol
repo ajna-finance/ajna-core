@@ -6,6 +6,7 @@ import '@std/Vm.sol';
 
 import { BasicPoolHandler } from './BasicPoolHandler.sol';
 import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BaseHandler } from './BaseHandler.sol';
+import { MAX_FENWICK_INDEX } from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths } from 'src/libraries/internal/Maths.sol';
 
 abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
@@ -14,7 +15,7 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
 
         (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower);
 
-        try _pool.kick(borrower) {
+        try _pool.kick(borrower, MAX_FENWICK_INDEX) {
             shouldExchangeRateChange = true;
             shouldReserveChange      = true;
             loanKickIncreaseInReserve = Maths.wmul(borrowerDebt, 0.25 * 1e18);
@@ -82,7 +83,7 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
         address kicker   = _actor;
         amount           = constrictToRange(amount, 1, 1e36);
 
-        ( , , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower);
+        ( , , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
 
         if (kickTime == 0) {
             (uint256 debt, , ) = _pool.borrowerInfo(borrower);
@@ -116,7 +117,7 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
         address borrower = actors[borrowerIndex];
         address taker    = _actor;
 
-        ( , , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower);
+        ( , , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
 
         if (kickTime == 0) {
             _kickAuction(borrowerIndex, amount * 100, actorIndex);
@@ -137,7 +138,7 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
         address borrower = actors[borrowerIndex];
         address taker    = _actor;
 
-        ( , , , uint256 kickTime, , , , , ) = _pool.auctionInfo(borrower);
+        ( , , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
 
         if (kickTime == 0) {
             _kickAuction(borrowerIndex, 1e24, bucketIndex);

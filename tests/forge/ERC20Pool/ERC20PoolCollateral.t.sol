@@ -898,7 +898,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         });
         _removeAllLiquidity({
             from:     _lender,
-            amount:   2722,
+            amount:   2725,
             index:    2570,
             newLup:   MAX_PRICE,
             lpRedeem: 2725
@@ -929,7 +929,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         // bucket should be cleaned out if quote token swap happens first
         _removeAllLiquidity({
             from:     _lender,
-            amount:   2722,
+            amount:   2725,
             index:    2570,
             newLup:   MAX_PRICE,
             lpRedeem: 2725

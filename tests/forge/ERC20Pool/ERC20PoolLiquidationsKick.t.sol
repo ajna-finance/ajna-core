@@ -155,6 +155,12 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             borrowerCollateralization: 0.995306391810796636 * 1e18
         });
 
+        // should revert if NP goes below limit
+        _assertKickNpUnderLimitRevert({
+            from:     _lender,
+            borrower: _borrower
+        });
+
         _kick({
             from:           _lender,
             borrower:       _borrower,
@@ -218,6 +224,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 neutralPrice:      10.255495938002318100 * 1e18
             })
         );
+        assertEq(_poolUtils.momp(address(_pool)), 9.818751856078723036 * 1e18);
         _assertKicker({
             kicker:    _lender,
             claimable: 0,
@@ -336,7 +343,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 0,
+                totalBondEscrowed: 0.195342779771472726 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
                 thresholdPrice:    8.889228225930806739 * 1e18,
@@ -391,7 +398,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 bondFactor:        0.01 * 1e18,
                 kickTime:          _startTime + 850 days,
                 kickMomp:          9.818751856078723036 * 1e18,
-                totalBondEscrowed: 0.195007546732047806 * 1e18,
+                totalBondEscrowed: 0.195342779771472726 * 1e18,
                 auctionPrice:      329.321295632797165376 * 1e18,
                 debtInAuction:     19.720038163278334392 * 1e18,
                 thresholdPrice:    9.860019081639167196 * 1e18,
@@ -420,7 +427,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 0,
+                totalBondEscrowed: 0.195342779771472726 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
                 thresholdPrice:    4.860069081639167195 * 1e18,
@@ -531,7 +538,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 0,
+                totalBondEscrowed: 0.195342779771472726 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
                 thresholdPrice:    4.944614112965403370 * 1e18,
@@ -619,6 +626,11 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             from:       _borrower,
             amount:     1 * 1e18,
             indexLimit: 7000
+        });
+
+        // should not allow borrower to restamp the Neutral Price of the loan if auction kicked
+        _assertStampLoanAuctionActiveRevert({
+            borrower: _borrower
         });
     }
 

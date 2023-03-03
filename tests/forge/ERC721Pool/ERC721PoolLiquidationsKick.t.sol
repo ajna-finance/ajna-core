@@ -310,6 +310,7 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
                 neutralPrice:      11.932577910666902372 * 1e18
             })
         );
+        assertEq(_poolUtils.momp(address(_pool)), 9.917184843435912074 * 1e18);
         _assertBorrower({
             borrower:                  _borrower,
             borrowerDebt:              23.012828827714740289 * 1e18,
@@ -339,7 +340,7 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 0,
+                totalBondEscrowed: 0.227287198298417188 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
                 thresholdPrice:    0,
@@ -374,7 +375,7 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 0,
+                totalBondEscrowed: 0.227287198298417188 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
                 thresholdPrice:    7.670942942571580096 * 1e18,

@@ -79,7 +79,7 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         skip(100 days);
         vm.prank(_lender);
         // liquidate the borrower
-        _ajnaPool.kick(_borrower);
+        _ajnaPool.kick(_borrower, MAX_FENWICK_INDEX);
         // wait for the price to become profitable
         skip(6.5 hours);
     }

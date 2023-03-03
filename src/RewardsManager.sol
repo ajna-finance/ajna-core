@@ -166,7 +166,7 @@ contract RewardsManager is IRewardsManager {
         emit Stake(msg.sender, ajnaPool, tokenId_);
 
         // transfer LP NFT to this contract
-        IERC721(address(positionManager)).safeTransferFrom(msg.sender, address(this), tokenId_);
+        IERC721(address(positionManager)).transferFrom(msg.sender, address(this), tokenId_);
 
         // calculate rewards for updating exchange rates, if any
         uint256 updateReward = _updateBucketExchangeRates(
@@ -218,7 +218,7 @@ contract RewardsManager is IRewardsManager {
         emit Unstake(msg.sender, ajnaPool, tokenId_);
 
         // transfer LP NFT from contract to sender
-        IERC721(address(positionManager)).safeTransferFrom(address(this), msg.sender, tokenId_);
+        IERC721(address(positionManager)).transferFrom(address(this), msg.sender, tokenId_);
     }
 
     /**
@@ -732,17 +732,6 @@ contract RewardsManager is IRewardsManager {
         if (rewardsEarned_ > ajnaBalance) rewardsEarned_ = ajnaBalance;
         // transfer rewards to sender
         IERC20(ajnaToken).safeTransfer(msg.sender, rewardsEarned_);
-    }
-
-    /************************/
-    /*** Helper Functions ***/
-    /************************/
-
-    /** @notice Implementing this method allows contracts to receive ERC721 tokens
-     *  @dev https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
-     */
-    function onERC721Received(address, address, uint256, bytes memory) external pure returns (bytes4) {
-        return this.onERC721Received.selector;
     }
 
 }
