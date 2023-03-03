@@ -1943,7 +1943,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         skip(43000 seconds); // 11.94 hrs
         
         // force pool state update
-        _repayDebtNoLupCheck(_borrower2, _borrower2, 0, 0, 0);
+        _updateInterest();
 
         (uint256 borrowerDebt, ,) = _poolUtils.borrowerInfo(address(_pool), _borrower2);
 
