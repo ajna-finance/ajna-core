@@ -1139,7 +1139,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             from:    _lender1,
             amount:  1_000 * 1e18,
             index:   2873,
-            lpAward: 999.956320611641422443 * 1e18,
+            lpAward: 999.956661906703638280 * 1e18,
             newLup:  601.252968524772188572 * 1e18
         });
 
@@ -1151,7 +1151,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             amount:       2_500 * 1e18,
             fromIndex:    2873,
             toIndex:      2954,
-            lpRedeemFrom: 2_499.810182702901761331 * 1e18,
+            lpRedeemFrom: 2_499.811035936079517439 * 1e18,
             lpAwardTo:    2_500 * 1e18,
             newLup:       _lup()
         });
@@ -1163,7 +1163,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             from:    _lender1,
             amount:  9_000 * 1e18,
             index:   2873,
-            lpAward: 8_993.373316759001213155 * 1e18,
+            lpAward: 8_993.376387354878192779 * 1e18,
             newLup:  601.252968524772188572 * 1e18
         });
         
@@ -1172,10 +1172,10 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
         _removeAllLiquidity({
             from:     _lender,
-            amount:   5_003.981613396490344248 * 1e18,
+            amount:   5_003.979051028590388555 * 1e18,
             index:    2873,
             newLup:   601.252968524772188572 * 1e18,
-            lpRedeem: 5_000.290483387144984401 * 1e18
+            lpRedeem: 5_000.289630153967228293 * 1e18
         });
 
         _removeAllLiquidity({

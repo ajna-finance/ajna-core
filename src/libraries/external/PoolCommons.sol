@@ -47,6 +47,26 @@ library PoolCommons {
     /*** External Functions ***/
     /**************************/
 
+    function updateUtilizationEmas(
+        InterestState storage interestParams_,
+        DepositsState storage deposits_,
+        PoolState memory poolState_
+    ) external {
+        uint256 meaningfulDeposit = _meaningfulDeposit(deposits_, poolState_.debt, poolState_.collateral);
+        uint256 curDepositEma = interestParams_.depositEma;
+        // initialize the EMA to the actual value for the first calculation
+        if (curDepositEma == 0) {
+            curDepositEma = meaningfulDeposit;    
+        } else {
+            curDepositEma = 
+                Maths.wmul(meaningfulDeposit, EMA_12H_RATE_FACTOR) +
+                Maths.wmul(curDepositEma,     LAMBDA_EMA_12H
+            );
+        }
+
+        interestParams_.depositEma = curDepositEma;
+    }
+
     /**
      *  @notice Calculates new pool interest rate params (EMAs and interest rate value) and saves new values in storage.
      *  @dev    Never called more than once every 12 hours.
@@ -58,13 +78,11 @@ library PoolCommons {
      */
     function updateInterestRate(
         InterestState storage interestParams_,
-        DepositsState storage deposits_,
         PoolState memory poolState_,
         uint256 lup_
     ) external {
 
         // current values of EMA samples
-        uint256 curDepositEma = interestParams_.depositEma;
         uint256 curDebtEma    = interestParams_.debtEma;
         uint256 curLupColEma  = interestParams_.lupColEma;
 
@@ -74,17 +92,7 @@ library PoolCommons {
         int256 mau102;
 
         if (poolState_.debt != 0) {
-            uint256 meaningfulDeposit = _meaningfulDeposit(deposits_, poolState_.debt, poolState_.collateral);
-
-            // initialize the EMA to the actual value for the first calculation
-            if (curDepositEma == 0) curDepositEma = meaningfulDeposit;
-
             // update pool EMAs for target utilization calculation
-            curDepositEma = 
-                Maths.wmul(meaningfulDeposit, EMA_12H_RATE_FACTOR) +
-                Maths.wmul(curDepositEma,     LAMBDA_EMA_12H
-            );
-
             curDebtEma =
                 Maths.wmul(poolState_.debt,  EMA_7D_RATE_FACTOR) +
                 Maths.wmul(curDebtEma,       LAMBDA_EMA_7D
@@ -101,12 +109,11 @@ library PoolCommons {
                 Maths.wmul(curLupColEma,                    LAMBDA_EMA_7D);
 
             // save EMA samples in storage
-            interestParams_.depositEma = curDepositEma;
             interestParams_.debtEma    = curDebtEma;
             interestParams_.lupColEma  = curLupColEma;
 
             // calculate meaningful actual utilization for interest rate update
-            mau    = int256(_utilization(curDepositEma, poolState_.debt));
+            mau    = int256(_utilization(interestParams_.depositEma, poolState_.debt));
             mau102 = mau * PERCENT_102 / 1e18;
         }
 
