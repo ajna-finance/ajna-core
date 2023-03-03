@@ -595,12 +595,11 @@ library Auctions {
         if (collateral_ == 0) revert InvalidAmount();
 
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
-        BucketAndTakeVars memory vars;
 
+        BucketAndTakeVars memory vars;
         vars.t0DebtPreAction     = borrower.t0Debt;
         vars.collateralPreAction = borrower.collateral;
 
-        
         if (
             (poolState_.poolType == uint8(PoolType.ERC721) && borrower.collateral < 1e18) || // revert in case of NFT take when there isn't a full token to be taken
             (poolState_.poolType == uint8(PoolType.ERC20)  && borrower.collateral == 0)      // revert in case of ERC20 take when no collateral to be taken
@@ -868,7 +867,6 @@ library Auctions {
         vars.borrowerCollateral  = borrower.collateral; 
 
         kickResult_.t0KickedDebt = vars.t0DebtPreAction;
-
         // add amount to remove to pool debt in order to calculate proposed LUP
         kickResult_.lup          = _lup(deposits_, poolState_.debt + additionalDebt_);
 
@@ -902,7 +900,6 @@ library Auctions {
         );
 
         // record liquidation info
-        vars.neutralPrice = Maths.wmul(borrower.t0Np, poolState_.inflator);
         _recordAuction(
             auctions_,
             borrowerAddress_,
@@ -919,8 +916,6 @@ library Auctions {
         Loans.remove(loans_, borrowerAddress_, loans_.indices[borrowerAddress_]);
 
         // when loan is kicked, penalty of three months of interest is added
-        vars.t0KickPenalty = Maths.wmul(kickResult_.t0KickedDebt, Maths.wdiv(poolState_.rate, 4 * 1e18));
-        vars.kickPenalty   = Maths.wmul(vars.t0KickPenalty, poolState_.inflator);
         vars.t0KickPenalty = Maths.wmul(kickResult_.t0KickedDebt, Maths.wdiv(poolState_.rate, 4 * 1e18));
         vars.kickPenalty   = Maths.wmul(vars.t0KickPenalty, poolState_.inflator);
 

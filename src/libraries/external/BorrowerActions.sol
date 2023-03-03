@@ -134,17 +134,17 @@ library BorrowerActions {
     ) {
         DrawDebtLocalVars memory vars;
         vars.pledge = collateralToPledge_ != 0;
-        vars.borrow = amountToBorrow_ != 0 || limitIndex_ != 0; // enable an intentional 0 borrow loan call to update borrower's loan state
+        vars.borrow = amountToBorrow_ != 0;
 
         // revert if no amount to pledge or borrow
         if (!vars.pledge && !vars.borrow) revert InvalidAmount();
 
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
 
-        vars.t0DebtPreAction = borrower.t0Debt;
+        vars.t0DebtPreAction     = borrower.t0Debt;
         vars.collateralPreAction = borrower.collateral;
-        vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
-        vars.inAuction    = _inAuction(auctions_, borrowerAddress_);
+        vars.borrowerDebt        = Maths.wmul(borrower.t0Debt, poolState_.inflator);
+        vars.inAuction           = _inAuction(auctions_, borrowerAddress_);
 
         result_.t0PoolDebt          = poolState_.t0Debt;
         result_.poolDebt            = poolState_.debt;
@@ -302,10 +302,8 @@ library BorrowerActions {
 
         vars.t0DebtPreAction     = borrower.t0Debt;
         vars.collateralPreAction = borrower.collateral;
-
-        vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
-        vars.inAuction    = _inAuction(auctions_, borrowerAddress_);
-        vars.collateralAmountToPull = collateralAmountToPull_;
+        vars.borrowerDebt        = Maths.wmul(borrower.t0Debt, poolState_.inflator);
+        vars.inAuction           = _inAuction(auctions_, borrowerAddress_);
 
         result_.t0PoolDebt          = poolState_.t0Debt;
         result_.poolDebt            = poolState_.debt;
