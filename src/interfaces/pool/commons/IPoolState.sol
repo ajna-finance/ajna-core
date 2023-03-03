@@ -279,7 +279,9 @@ struct InterestState {
     uint208 interestRate;       // [WAD] pool's interest rate
     uint48  interestRateUpdate; // [SEC] last time pool's interest rate was updated (not before 12 hours passed)
     uint256 debtEma;            // [WAD] sample of debt EMA
-    uint256 lupColEma;          // [WAD] sample of LUP price * collateral EMA. capped at 10 times current pool debt
+    uint256 debtLupEma;
+    uint256 utilizationWeightEma;
+    uint256 depAboveUtilWeight;
 }
 
 struct PoolBalancesState {
