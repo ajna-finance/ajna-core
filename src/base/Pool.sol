@@ -380,8 +380,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         poolBalances.t0Debt          = result.t0PoolDebt;
         poolBalances.t0DebtInAuction += result.t0KickedDebt;
 
-        // adjust utilization weight
-        _adjustUtilizationWeight(
+        // adjust t0Debt2ToCollateral ratio
+        _updateT0Debt2ToCollateral(
             result.debtPreAction,
             result.t0KickedDebt,
             result.collateralPreAction, // collateral doesn't change when auction is kicked
@@ -421,8 +421,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         poolBalances.t0Debt          = result.t0PoolDebt;
         poolBalances.t0DebtInAuction += result.t0KickedDebt;
 
-        // adjust utilization weight
-        _adjustUtilizationWeight(
+        // adjust t0Debt2ToCollateral ratio
+        _updateT0Debt2ToCollateral(
             result.debtPreAction,
             result.t0KickedDebt,
             result.collateralPreAction, // collateral doesn't change when auction is kicked
@@ -573,29 +573,31 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /**
-     *  @notice Adjusts the utilization debt weight maintained accross all borrowers, interestState.t0UtilizationWeight.
-     *  @dev    Anytime a borrower's debt or collateral changes, the interestState.t0UtilizationWeight must be updated.
+     *  @notice Adjusts the t0 Debt 2 to collateral ratio, interestState.t0Debt2ToCollateral.
+     *  @dev    Anytime a borrower's debt or collateral changes, the interestState.t0Debt2ToCollateral must be updated.
      *  @dev    write state:
-     *              - update interestState.t0UtilizationWeight accumulator
-     *  @param debtPreAction_       Borrower's debt before the action
-     *  @param debtPostAction_      Borrower's debt after the action
-     *  @param colPreAction_        Borrower's collateral before the action
-     *  @param colPostAction_       Borrower's collateral after the action
+     *              - update interestState.t0Debt2ToCollateral accumulator
+     *  @param debtPreAction_  Borrower's debt before the action
+     *  @param debtPostAction_ Borrower's debt after the action
+     *  @param colPreAction_   Borrower's collateral before the action
+     *  @param colPostAction_  Borrower's collateral after the action
      */
-    function _adjustUtilizationWeight(
+    function _updateT0Debt2ToCollateral(
         uint256 debtPreAction_,
         uint256 debtPostAction_,
         uint256 colPreAction_,
         uint256 colPostAction_
     ) internal {
-        uint256 debtColAccumPreAction  = colPreAction_  != 0 ? debtPreAction_  ** 2 / colPreAction_  : 0;
-        uint256 debtColAccumPostAction = colPostAction_ != 0 ? debtPostAction_ ** 2 / colPostAction_ : 0;
+        uint256 debt2ColAccumPreAction  = colPreAction_  != 0 ? debtPreAction_  ** 2 / colPreAction_  : 0;
+        uint256 debt2ColAccumPostAction = colPostAction_ != 0 ? debtPostAction_ ** 2 / colPostAction_ : 0;
 
-        uint256 utilzationWeight = interestState.t0UtilizationWeight;
-        utilzationWeight += debtColAccumPostAction;
-        utilzationWeight -= debtColAccumPreAction;
+        if (debt2ColAccumPreAction != 0 || debt2ColAccumPostAction != 0) {
+            uint256 curT0Debt2ToCollateral = interestState.t0Debt2ToCollateral;
+            curT0Debt2ToCollateral += debt2ColAccumPostAction;
+            curT0Debt2ToCollateral -= debt2ColAccumPreAction;
 
-        interestState.t0UtilizationWeight = utilzationWeight;
+            interestState.t0Debt2ToCollateral = curT0Debt2ToCollateral;
+        }
     }
 
     /**

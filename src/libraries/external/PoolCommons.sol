@@ -84,7 +84,7 @@ library PoolCommons {
             //     Maths.wmul(poolState_.inflator, t0PoolUtilizationDebtWeight_);
 
             uint256 lupCol = 
-                Maths.wdiv(Maths.wmul(poolState_.inflator, interestParams_.t0UtilizationWeight), lup_);
+                Maths.wdiv(Maths.wmul(poolState_.inflator, interestParams_.t0Debt2ToCollateral), lup_);
 
             curLupColEma =
                 Maths.wmul(lupCol,        EMA_7D_RATE_FACTOR) +
