@@ -250,7 +250,7 @@ contract RewardsManager is IRewardsManager {
         uint256 lastBurnEpoch = stakes[tokenId_].lastInteractionBurnEpoch;
         uint256 stakingEpoch  = stakes[tokenId_].stakingEpoch;
 
-        uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
+        uint256[] memory positionIndexes = positionManager.getPositionIndexesFiltered(tokenId_);
 
         // iterate through all burn periods to calculate and claim rewards
         for (uint256 epoch = lastBurnEpoch; epoch < epochToClaim_; ) {
@@ -309,7 +309,7 @@ contract RewardsManager is IRewardsManager {
         uint256 lastBurnEpoch = stakes[tokenId_].lastInteractionBurnEpoch;
         uint256 stakingEpoch  = stakes[tokenId_].stakingEpoch;
 
-        uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
+        uint256[] memory positionIndexes = positionManager.getPositionIndexesFiltered(tokenId_);
 
         // iterate through all burn periods to calculate and claim rewards
         for (uint256 epoch = lastBurnEpoch; epoch < epochToClaim_; ) {
@@ -352,11 +352,11 @@ contract RewardsManager is IRewardsManager {
 
         uint256 nextEpoch = epoch_ + 1;
         uint256 claimedRewardsInNextEpoch = rewardsClaimed[nextEpoch];
+        uint256 bucketIndex;
 
         // iterate through all buckets and calculate epoch rewards for
         for (uint256 i = 0; i < positionIndexes_.length; ) {
-
-            uint256 bucketIndex = positionIndexes_[i];
+            bucketIndex = positionIndexes_[i];
             BucketState memory bucketSnapshot = stakes[tokenId_].snapshot[bucketIndex];
 
             uint256 bucketRate;
@@ -701,9 +701,9 @@ contract RewardsManager is IRewardsManager {
             // retrieve the bucket exchange rate at the previous epoch
             uint256 prevBucketExchangeRate = bucketExchangeRates[pool_][bucketIndex_][burnEpoch_ - 1];
 
-            // skip reward calculation if update at the previous epoch was missed
+            // skip reward calculation if update at the previous epoch was missed and if exchange rate decreased due to bad debt
             // prevents excess rewards from being provided from using a 0 value as an input to the interestFactor calculation below.
-            if (prevBucketExchangeRate != 0) {
+            if (prevBucketExchangeRate != 0 && prevBucketExchangeRate < curBucketExchangeRate) {
 
                 // retrieve current deposit of the bucket
                 (, , , uint256 bucketDeposit, ) = IPool(pool_).bucketInfo(bucketIndex_);

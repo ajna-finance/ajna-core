@@ -12,14 +12,14 @@ import 'src/interfaces/rewards/IRewardsManager.sol';
 import 'src/interfaces/position/IPositionManager.sol';
 import 'src/PositionManager.sol';
 import 'src/PoolInfoUtils.sol';
+import { IPoolErrors } from 'src/interfaces/pool/commons/IPoolErrors.sol';
 
 import { _borrowFeeRate } from 'src/libraries/helpers/PoolHelper.sol';
 
-import { DSTestPlus }  from './utils/DSTestPlus.sol';
 import { Token }       from './utils/Tokens.sol';
-import { IPoolErrors } from 'src/interfaces/pool/commons/IPoolErrors.sol';
+import { ERC20HelperContract } from './ERC20Pool/ERC20DSTestPlus.sol';
 
-contract RewardsManagerTest is DSTestPlus {
+contract RewardsManagerTest is ERC20HelperContract {
 
     address         internal _bidder;
     address         internal _minterOne;
@@ -33,7 +33,6 @@ contract RewardsManagerTest is DSTestPlus {
     ERC20           internal _ajnaToken;
 
     RewardsManager   internal _rewardsManager;
-    ERC20PoolFactory internal _poolFactory;
     PositionManager  internal _positionManager;
 
     Token           internal _collateralOne;
@@ -66,11 +65,9 @@ contract RewardsManagerTest is DSTestPlus {
     }
 
     function setUp() external {
-        vm.createSelectFork(vm.envString("ETH_RPC_URL"));
         vm.makePersistent(_ajna);
 
         _ajnaToken       = ERC20(_ajna);
-        _poolFactory     = new ERC20PoolFactory(_ajna);
         _positionManager = new PositionManager(_poolFactory, new ERC721PoolFactory(_ajna));
         _rewardsManager  = new RewardsManager(_ajna, _positionManager);
         _poolUtils       = new PoolInfoUtils();
@@ -87,7 +84,7 @@ contract RewardsManagerTest is DSTestPlus {
         deal(_ajna, address(_rewardsManager), 100_000_000 * 1e18);
         assertEq(_ajnaToken.balanceOf(address(_rewardsManager)), 100_000_000 * 1e18);
 
-        // instaantiate test minters
+        // instantiate test minters
         _minterOne   = makeAddr("minterOne");
         _minterTwo   = makeAddr("minterTwo");
         _minterThree = makeAddr("minterThree");
@@ -261,6 +258,9 @@ contract RewardsManagerTest is DSTestPlus {
         );
 
         _positionManager.memorializePositions(memorializeParams);
+
+        // register position manager as lender at memorialized indexes (for LP test assertions)
+        _registerLender(address(_positionManager), params_.indexes);
     }
 
     function _triggerReserveAuctions(TriggerReserveAuctionParams memory params_) internal returns (uint256 tokensBurned_) {
@@ -588,6 +588,242 @@ contract RewardsManagerTest is DSTestPlus {
             pool:           address(_poolOne),
             depositIndexes: depositIndexes,
             reward:         3.717337967548990180 * 1e18
+        });
+    }
+
+    // two lenders stake their positions in the pool
+    // staker one bucket bankrupt, staker two bucket active
+    // interest accrued to both buckets, but staker one receives no rewards
+    function testClaimRewardsBankruptBucket() external {
+
+        address borrower = makeAddr("borrower");
+        address borrowerTwo = makeAddr("borrowerTwo");
+
+        deal(address(_collateral), borrower, 4 * 1e18);
+        changePrank(borrower);
+        _collateral.approve(address(_pool), type(uint256).max);
+        _quote.approve(address(_pool), type(uint256).max);
+
+        deal(address(_collateral), borrowerTwo, 1_000 * 1e18);
+        changePrank(borrowerTwo);
+        _collateral.approve(address(_pool), type(uint256).max);
+        _quote.approve(address(_pool), type(uint256).max);
+
+        address[] memory transferors = new address[](1);
+        transferors[0] = address(_positionManager);
+
+        changePrank(_minterOne);
+        deal(address(_quote), _minterOne, 500_000_000 * 1e18);
+        _quote.approve(address(_pool), type(uint256).max);
+        _quote.approve(address(_positionManager), type(uint256).max);
+        _pool.approveLpTransferors(transferors);
+
+        changePrank(_minterTwo);
+        deal(address(_quote), _minterTwo, 500_000_000 * 1e18);
+        _quote.approve(address(_pool), type(uint256).max);
+        _quote.approve(address(_positionManager), type(uint256).max);
+        _pool.approveLpTransferors(transferors);
+
+        /*****************************/
+        /*** Initialize Pool State ***/
+        /*****************************/
+
+        // Lender adds Quote token accross 5 prices
+        _addInitialLiquidity({
+            from:   _minterOne,
+            amount: 2_000 * 1e18,
+            index:  _i9_91
+        });
+        _addInitialLiquidity({
+            from:   _minterOne,
+            amount: 5_000 * 1e18,
+            index:  _i9_81
+        });
+        _addInitialLiquidity({
+            from:   _minterOne,
+            amount: 11_000 * 1e18,
+            index:  _i9_72
+        });
+        _addInitialLiquidity({
+            from:   _minterOne,
+            amount: 25_000 * 1e18,
+            index:  _i9_62
+        });
+        _addInitialLiquidity({
+            from:   _minterOne,
+            amount: 30_000 * 1e18,
+            index:  _i9_52
+        });
+
+        // first borrower adds collateral token and borrows
+        _pledgeCollateral({
+            from:     borrower,
+            borrower: borrower,
+            amount:   2 * 1e18
+        });
+        _borrow({
+            from:       borrower,
+            amount:     19.25 * 1e18,
+            indexLimit: _i9_91,
+            newLup:     9.917184843435912074 * 1e18
+        });
+
+        // second borrower adds collateral token and borrows
+        _pledgeCollateral({
+            from:     borrowerTwo,
+            borrower: borrowerTwo,
+            amount:   1_000 * 1e18
+        });
+        _borrow({
+            from:       borrowerTwo,
+            amount:     7_980 * 1e18,
+            indexLimit: _i9_72,
+            newLup:     9.721295865031779605 * 1e18
+        });
+
+        _borrow({
+            from:       borrowerTwo,
+            amount:     1_730 * 1e18,
+            indexLimit: _i9_72,
+            newLup:     9.721295865031779605 * 1e18
+        });
+
+        /*****************************/
+        /*** Lenders Deposits NFTs ***/
+        /*****************************/
+
+        // set deposit indexes
+        uint256[] memory depositIndexes = new uint256[](1);
+        uint256[] memory depositIndexes2 = new uint256[](1);
+        depositIndexes[0] = _i9_91;
+        depositIndexes2[0] = _i9_81;
+
+        ERC20Pool pool = ERC20Pool(address(_pool));
+
+        // stake NFT position one
+        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+            indexes: depositIndexes,
+            minter: _minterOne,
+            mintAmount: 2_000 * 1e18,
+            pool: pool
+            });
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        changePrank(_minterOne);
+        _stakeToken(address(pool), _minterOne, tokenIdOne);
+
+        // stake NFT position two
+        mintMemorializeParams = MintAndMemorializeParams({
+            indexes: depositIndexes2,
+            minter: _minterTwo,
+            mintAmount: 5_000 * 1e18,
+            pool: pool
+            });
+        uint256 tokenIdTwo = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        changePrank(_minterTwo);
+        _stakeToken(address(pool), _minterTwo, tokenIdTwo);
+
+        /***********************************/
+        /*** Borrower Bankrupts A Bucket ***/
+        /***********************************/
+
+        // Skip to make borrower two undercollateralized
+        skip(100 days);
+
+        deal(address(_quote), _minterTwo, 500_000_000 * 1e18);
+
+        _kick({
+            from:           _minterTwo,
+            borrower:       borrowerTwo,
+            debt:           9_976.561670003961916237 * 1e18,
+            collateral:     1_000 * 1e18,
+            bond:           98.533942419792216457 * 1e18,
+            transferAmount: 98.533942419792216457 * 1e18
+        });
+
+        // skip ahead so take can be called on the loan
+        skip(10 hours);
+
+        // take entire collateral
+        _take({
+            from:            _minterTwo,
+            borrower:        borrowerTwo,
+            maxCollateral:   1_000 * 1e18,
+            bondChange:      6.531114528261135360 * 1e18,
+            givenAmount:     653.111452826113536000 * 1e18,
+            collateralTaken: 1_000 * 1e18,
+            isReward:        true
+        });
+
+        _settle({
+            from:        _minterTwo,
+            borrower:    borrowerTwo,
+            maxDepth:    10,
+            settledDebt: 9_891.935520844277346922 * 1e18
+        });
+
+        // bucket is insolvent, balances are reset
+        _assertBucket({
+            index:        _i9_91,
+            lpBalance:    0, // bucket is bankrupt
+            collateral:   0,
+            deposit:      0,
+            exchangeRate: 1 * 1e18
+        });
+
+        // lower priced bucket isn't bankrupt, but exchange rate has decreased
+        _assertBucket({
+            index:        _i9_81,
+            lpBalance:    10_000 * 1e18,
+            collateral:   0,
+            deposit:      4936.353249567789112549 * 1e18,
+            exchangeRate: 0.493635324956778911 * 1e18
+        });
+
+        /***********************/
+        /*** Reserve Auction ***/
+        /***********************/
+
+        // start reserve auction
+        changePrank(_bidder);
+        _ajnaToken.approve(address(_pool), type(uint256).max);
+        _pool.startClaimableReserveAuction();
+
+        // allow time to pass for the reserve price to decrease
+        skip(24 hours);
+
+        (
+            ,
+            ,
+            uint256 curClaimableReservesRemaining,
+            ,
+        ) = _poolUtils.poolReservesInfo(address(_pool));
+
+        // take claimable reserves
+        changePrank(_bidder);
+        _pool.takeReserves(curClaimableReservesRemaining);
+
+        /*********************/
+        /*** Claim Rewards ***/
+        /*********************/
+
+        // _minterOne withdraws and claims rewards, rewards should be 0
+        _unstakeToken({
+            minter:            _minterOne,
+            pool:              address(_pool),
+            tokenId:           tokenIdOne,
+            claimedArray:      _epochsClaimedArray(1, 0),
+            reward:            0,
+            updateRatesReward: 0
+        });
+
+        // _minterTwo withdraws and claims rewards, rewards should be 0 as their bucket exchange rate decreased
+        _unstakeToken({
+            minter:            _minterTwo,
+            pool:              address(_pool),
+            tokenId:           tokenIdTwo,
+            claimedArray:      _epochsClaimedArray(1, 0),
+            reward:            0,
+            updateRatesReward: 0
         });
     }
 
@@ -1625,7 +1861,7 @@ contract RewardsManagerTest is DSTestPlus {
                 _rewardsManager.claimRewards(randomNfts[j], _poolOne.currentBurnEpoch());
 
                 // ensure user gets reward
-                assertGt( _ajnaToken.balanceOf(minterAddress), minterToBalance[minterAddress]);
+                assertGt(_ajnaToken.balanceOf(minterAddress), minterToBalance[minterAddress]);
                 minterToBalance[minterAddress] = _ajnaToken.balanceOf(minterAddress);
             }
         }
