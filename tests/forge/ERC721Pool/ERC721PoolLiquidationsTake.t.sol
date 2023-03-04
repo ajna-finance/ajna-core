@@ -323,7 +323,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 0,
+                totalBondEscrowed: 0.058535063145029754 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
                 thresholdPrice:    7.749209044755361552 * 1e18,
@@ -635,7 +635,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 0,
+                totalBondEscrowed: 0.242202920686750816 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
                 thresholdPrice:    0,
@@ -653,13 +653,13 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         changePrank(_lender);
 
         // Kicker claims bond + reward and transfer to a different address
-        _pool.withdrawBonds(_withdrawRecipient);
+        _pool.withdrawBonds(_withdrawRecipient, type(uint256).max);
         assertEq(_quote.balanceOf(_withdrawRecipient), 0.242202920686750816 * 1e18);
 
         vm.revertTo(snapshot);
 
         // Kicker claims bond + reward
-        _pool.withdrawBonds(_lender);
+        _pool.withdrawBonds(_lender, type(uint256).max);
         assertEq(_quote.balanceOf(_lender), 46_998.523343483554970812 * 1e18);
     }
 
@@ -774,7 +774,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 0,
+                totalBondEscrowed: 0.227287198298423969 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
                 thresholdPrice:    0,
@@ -828,7 +828,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 0,
+                totalBondEscrowed: 0.227287198298423969 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
                 thresholdPrice:    9.815026122665676714 * 1e18,

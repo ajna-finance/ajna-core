@@ -120,14 +120,8 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         skip(14 hours);
 
         uint256 snapshot = vm.snapshot();
-        // force interest rate update by calling repay debt with 0 amounts
-        _repayDebtNoLupCheck({
-            from:             _borrower,
-            borrower:         _borrower,
-            amountToRepay:    0,
-            amountRepaid:     0,
-            collateralToPull: 0
-        });
+        // update interest rate
+        _updateInterest();
 
         _assertPool(
             PoolParams({
@@ -226,16 +220,10 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             })
         );
 
-        // force an interest rate update
         skip(13 hours);
 
-        _addLiquidity({
-            from:    _lender,
-            amount:  0,
-            index:   3232,
-            lpAward: 0,
-            newLup:  100.332368143282009890 * 1e18
-        });
+        // update interest rate
+        _updateInterest();
 
         _assertPool(
             PoolParams({
@@ -369,12 +357,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             // trigger an interest accumulation
             skip(12 hours);
 
-            _borrowZeroAmount({
-                from:       _borrower,
-                amount:     0,
-                indexLimit: _i1505_26,
-                newLup:     _p1505_26
-            });
+            _updateInterest();
             
             unchecked { ++i; }
         }
@@ -440,12 +423,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             // trigger an interest accumulation
             skip(12 hours);
 
-            _borrowZeroAmount({
-                from:       _borrower,
-                amount:     0,
-                indexLimit: _i1505_26,
-                newLup:     _p1505_26
-            });
+            _updateInterest();
 
             unchecked { ++i; }
         }
@@ -723,12 +701,8 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         (uint256 poolDebt,,) = _pool.debtInfo();
         assertEq(poolDebt, expectedPoolDebt);
 
-        // force accrue interest
-        _addLiquidityNoEventCheck({
-            from:    _lender2,
-            amount:  0,
-            index:   1
-        });
+        // accrue interest
+        _updateInterest();
 
         // check that no interest earned if HTP is over the highest price bucket
         (poolDebt,,) = _pool.debtInfo();

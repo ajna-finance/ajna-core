@@ -10,6 +10,7 @@ import {
     AuctionsState,
     Borrower,
     Bucket,
+    BurnEvent,
     DepositsState,
     Kicker,
     Lender,
@@ -145,7 +146,7 @@ library Auctions {
     event Kick(address indexed borrower, uint256 debt, uint256 collateral, uint256 bond);
     event Take(address indexed borrower, uint256 amount, uint256 collateral, uint256 bondChange, bool isReward);
     event RemoveQuoteToken(address indexed lender, uint256 indexed price, uint256 amount, uint256 lpRedeemed, uint256 lup);
-    event ReserveAuction(uint256 claimableReservesRemaining, uint256 auctionPrice);
+    event ReserveAuction(uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 currentBurnEpoch);
     event Settle(address indexed borrower, uint256 settledDebt);
 
     /**************/
@@ -161,10 +162,12 @@ library Auctions {
     error CollateralRoundingNeededButNotPossible();
     error InsufficientLiquidity();
     error InsufficientCollateral();
+    error InvalidAmount();
     error NoAuction();
     error NoReserves();
     error NoReservesAuction();
     error PriceBelowLUP();
+    error ReserveAuctionTooSoon();
     error TakeNotPastCooldown();
 
     /***************************/
@@ -557,10 +560,12 @@ library Auctions {
         uint256 collateral_,
         uint256 collateralScale_
     ) external returns (TakeResult memory result_) {
+        // revert if no amount to take
+        if (collateral_ == 0) revert InvalidAmount();
+
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
 
         if (
-            (collateral_         == 0)                                                    || // revert if amount to take is 0
             (poolState_.poolType == uint8(PoolType.ERC721) && borrower.collateral < 1e18) || // revert in case of NFT take when there isn't a full token to be taken
             (poolState_.poolType == uint8(PoolType.ERC20)  && borrower.collateral == 0)      // revert in case of ERC20 take when no collateral to be taken
         ) {
@@ -637,6 +642,15 @@ library Auctions {
         ReserveAuctionState storage reserveAuction_,
         StartReserveAuctionParams calldata params_
     ) external returns (uint256 kickerAward_) {
+        // retrieve timestamp of latest burn event and last burn timestamp
+        uint256 latestBurnEpoch   = reserveAuction_.latestBurnEventEpoch;
+        uint256 lastBurnTimestamp = reserveAuction_.burnEvents[latestBurnEpoch].timestamp;
+
+        // check that at least two weeks have passed since the last reserve auction completed, and that the auction was not kicked within the past 72 hours
+        if (block.timestamp < lastBurnTimestamp + 2 weeks || block.timestamp - reserveAuction_.kicked <= 72 hours) {
+            revert ReserveAuctionTooSoon();
+        }
+
         uint256 curUnclaimedAuctionReserve = reserveAuction_.unclaimed;
 
         uint256 claimable = _claimableReserves(
@@ -656,7 +670,17 @@ library Auctions {
         reserveAuction_.unclaimed = curUnclaimedAuctionReserve;
         reserveAuction_.kicked    = block.timestamp;
 
-        emit ReserveAuction(curUnclaimedAuctionReserve, _reserveAuctionPrice(block.timestamp));
+        // increment latest burn event epoch and update burn event timestamp
+        latestBurnEpoch += 1;
+
+        reserveAuction_.latestBurnEventEpoch = latestBurnEpoch;
+        reserveAuction_.burnEvents[latestBurnEpoch].timestamp = block.timestamp;
+
+        emit ReserveAuction(
+            curUnclaimedAuctionReserve,
+            _reserveAuctionPrice(block.timestamp),
+            latestBurnEpoch
+        );
     }
 
     /**
@@ -672,6 +696,9 @@ library Auctions {
         ReserveAuctionState storage reserveAuction_,
         uint256 maxAmount_
     ) external returns (uint256 amount_, uint256 ajnaRequired_) {
+        // revert if no amount to be taken
+        if (maxAmount_ == 0) revert InvalidAmount();
+
         uint256 kicked = reserveAuction_.kicked;
 
         if (kicked != 0 && block.timestamp - kicked <= 72 hours) {
@@ -685,7 +712,19 @@ library Auctions {
 
             reserveAuction_.unclaimed = unclaimed;
 
-            emit ReserveAuction(unclaimed, price);
+            uint256 totalBurned = reserveAuction_.totalAjnaBurned + ajnaRequired_;
+            
+            // accumulate additional ajna burned
+            reserveAuction_.totalAjnaBurned = totalBurned;
+
+            uint256 burnEventEpoch = reserveAuction_.latestBurnEventEpoch;
+
+            // record burn event information to enable querying by staking rewards
+            BurnEvent storage burnEvent = reserveAuction_.burnEvents[burnEventEpoch];
+            burnEvent.totalInterest = reserveAuction_.totalInterestEarned;
+            burnEvent.totalBurned   = totalBurned;
+
+            emit ReserveAuction(unclaimed, price, burnEventEpoch);
         } else {
             revert NoReservesAuction();
         }
@@ -1142,9 +1181,15 @@ library Auctions {
 
         if (kickerClaimable >= bondSize_) {
             kicker.claimable -= bondSize_;
+
+            // decrement total bond escrowed by bond size 
+            auctions_.totalBondEscrowed -= bondSize_;
         } else {
             bondDifference_  = bondSize_ - kickerClaimable;
             kicker.claimable = 0;
+
+            // decrement total bond escrowed by kicker claimable
+            auctions_.totalBondEscrowed -= kickerClaimable;
         }
     }
 
@@ -1283,9 +1328,6 @@ library Auctions {
 
         // decrement number of active auctions
         -- auctions_.noOfAuctions;
-
-        // remove auction bond size from bond escrow accumulator
-        auctions_.totalBondEscrowed -= liquidation.bondSize;
 
         // update auctions queue
         if (auctions_.head == borrower_ && auctions_.tail == borrower_) {

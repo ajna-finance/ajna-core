@@ -113,6 +113,11 @@ interface IPoolErrors {
     error InvalidIndex();
 
     /**
+     *  @notice The amount used for performed action should be greater than 0.
+     */
+    error InvalidAmount();
+
+    /**
      *  @notice Borrower is attempting to borrow more quote token than is available before the supplied limitIndex.
      */
     error LimitIndexExceeded();
@@ -129,9 +134,9 @@ interface IPoolErrors {
     error LUPGreaterThanTP();
 
     /**
-     *  @notice FromIndex_ and toIndex_ arguments to move are the same.
+     *  @notice From index and to index arguments to move are the same.
      */
-    error MoveToSamePrice();
+    error MoveToSameIndex();
 
     /**
      *  @notice Owner of the LPs must have approved the new owner prior to transfer.

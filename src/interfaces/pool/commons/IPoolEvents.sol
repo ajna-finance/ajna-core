@@ -71,6 +71,18 @@ interface IPoolEvents {
     );
 
     /**
+     *  @notice Emitted when kickers are withdrawing funds posted as auction bonds.
+     *  @param  kicker   The kicker withdrawing bonds.
+     *  @param  reciever The address receiving withdrawn bond amount.
+     *  @param  amount   The bond amount that was withdrawn.
+     */
+    event BondWithdrawn(
+        address indexed kicker,
+        address indexed reciever,
+        uint256 amount
+    );
+
+    /**
      *  @notice Emitted when LPs are forfeited as a result of the bucket losing all assets.
      *  @param  index       The index of the bucket.
      *  @param  lpForfeited Amount of LP forfeited by lenders.
@@ -136,6 +148,14 @@ interface IPoolEvents {
         uint256 debt,
         uint256 collateral,
         uint256 bond
+    );
+
+    /**
+     *  @notice Emitted when a loan Neutral Price is restamped.
+     *  @param  borrower   Identifies the loan to update the Neutral Price.
+     */
+    event LoanStamped(
+        address indexed borrower
     );
 
     /**
@@ -206,10 +226,12 @@ interface IPoolEvents {
      *  @notice Emitted when a Claimaible Reserve Auction is started or taken.
      *  @return claimableReservesRemaining Amount of claimable reserves which has not yet been taken.
      *  @return auctionPrice               Current price at which 1 quote token may be purchased, denominated in Ajna.
+     *  @return currentBurnEpoch           Current burn epoch.
      */
     event ReserveAuction(
         uint256 claimableReservesRemaining,
-        uint256 auctionPrice
+        uint256 auctionPrice,
+        uint256 currentBurnEpoch
     );
 
     /**
