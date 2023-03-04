@@ -102,15 +102,19 @@ interface IPoolState {
 
     /**
      *  @notice Returns information about the pool EMA (Exponential Moving Average) variables.
-     *  @return debtEma   Exponential debt moving average.
-     *  @return lupColEma Exponential LUP * pledged collateral moving average.
+     *  @return debtColEma   Debt squared to collateral Exponential, numerator to TU calculation
+     *  @return lupt0DebtEma Exponential of LUP * t0 debt, denominator to TU calculation
+     *  @return debtEma      Exponential debt moving average.
+     *  @return depositEma   sample of meaningful deposit Exponential, denominator to MAU calculation.
      */
     function emasInfo()
         external
         view
         returns (
+            uint256 debtColEma,
+            uint256 lupt0DebtEma,
             uint256 debtEma,
-            uint256 lupColEma
+            uint256 depositEma
     );
 
     /**

@@ -113,8 +113,10 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             })
         );
         _assertEMAs({
-            debtEma:   0,
-            lupColEma: 670.486566033464515042 * 1e18
+            debtColEma:   0,
+            lupt0DebtEma: 670.486566033464515042 * 1e18,
+            debtEma:      0,
+            depositEma:   0
         });
 
         skip(14 hours);
@@ -141,8 +143,10 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             })
         );
         _assertEMAs({
-            debtEma:   4_340.881358710158802477 * 1e18,
-            lupColEma: 1_278.637533654711320024 * 1e18
+            debtColEma:   4_340.881358710158802477 * 1e18,
+            lupt0DebtEma: 1_278.637533654711320024 * 1e18,
+            debtEma:      0,
+            depositEma:   0
         });
 
         vm.revertTo(snapshot);
@@ -178,8 +182,10 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         );
 
         _assertEMAs({
-            debtEma:   0 * 1e18,
-            lupColEma: 670.486566033464515042 * 1e18
+            debtColEma:   0,
+            lupt0DebtEma: 670.486566033464515042 * 1e18,
+            debtEma:      0,
+            depositEma:   0
         });
     }
 
@@ -555,8 +561,10 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             })
         );
         _assertEMAs({
-            debtEma:   0,
-            lupColEma: 0
+            debtColEma:   0,
+            lupt0DebtEma: 0,
+            debtEma:      0,
+            depositEma:   0
         });
 
         // borrower 1 borrows 500 quote from the pool
@@ -580,7 +588,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 pledgedCollateral:    50 * 1e18,
                 encumberedCollateral: 1.529641632103338099 * 1e18,
                 poolDebt:             500.480769230769231000 * 1e18,
-                actualUtilization:    0.025024038461538462 * 1e18,
+                actualUtilization:    0,
                 targetUtilization:    1e18,
                 minDebtAmount:        50.048076923076923100 * 1e18,
                 loans:                1,
@@ -590,8 +598,10 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             })
         );
         _assertEMAs({
-            debtEma:   0,
-            lupColEma: 0
+            debtColEma:   0,
+            lupt0DebtEma: 0,
+            debtEma:      0,
+            depositEma:   0
         });
 
         _pledgeCollateral({
@@ -624,8 +634,10 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             })
         );
         _assertEMAs({
-            debtEma:   0,
-            lupColEma: 0
+            debtColEma:   0,
+            lupt0DebtEma: 0,
+            debtEma:      0,
+            depositEma:   0
         });
 
         skip(10 days);
@@ -656,8 +668,10 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             })
         );
         _assertEMAs({
-            debtEma:   94.366986058916495706 * 1e18,
-            lupColEma: 2.949226520600595208 * 1e18
+            debtColEma:   10_235.360311264941798142 * 1e18,
+            lupt0DebtEma: 327_502.854410935285415297 * 1e18,
+            debtEma:      1_002.333658244714424687 * 1e18,
+            depositEma:   20_001.166301815699560000 * 1e18
         });
     }
 

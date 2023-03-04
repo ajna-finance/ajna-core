@@ -364,8 +364,10 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             })
         );
         _assertEMAs({
-            debtEma:   283.100958176749487118 * 1e18,
-            lupColEma: 23.671097875440967733 * 1e18
+            debtColEma:   755_981.012555885345015825 * 1e18,
+            lupt0DebtEma: 9_041_361.332042292412966942 * 1e18,
+            debtEma:      3_007.000974734143274062 * 1e18,
+            depositEma:   30_003.498905447098710000 * 1e18
         });
         // check bucket state after fully repay
         _assertBucket({
