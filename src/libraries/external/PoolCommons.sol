@@ -293,7 +293,7 @@ library PoolCommons {
     function utilization(
         InterestState storage interestParams_
     ) external view returns (uint256 utilization_) {
-        return _utilization(interestParams_.debtEma, interestParams_.depositEma );
+        return _utilization(interestParams_.debtEma, interestParams_.depositEma);
     }
 
     /**************************/
