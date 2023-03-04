@@ -2,25 +2,23 @@
 
 pragma solidity 0.8.14;
 
-import { IERC20 }    from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import { IERC721 }   from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
+import { IERC20 }          from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import { IERC721 }         from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 import { ReentrancyGuard } from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
-import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import { SafeERC20 }       from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import { IPool }                        from './interfaces/pool/IPool.sol';
 import { IPositionManager }             from './interfaces/position/IPositionManager.sol';
 import { IPositionManagerOwnerActions } from './interfaces/position/IPositionManagerOwnerActions.sol';
-
-import { PositionManager }  from './PositionManager.sol';
-
 import {
     IRewardsManager,
     IRewardsManagerOwnerActions,
     IRewardsManagerState,
     IRewardsManagerDerivedState
 } from './interfaces/rewards/IRewardsManager.sol';
-
 import { StakeInfo, BucketState } from './interfaces/rewards/IRewardsManagerState.sol';
+
+import { PositionManager } from './PositionManager.sol';
 
 import { Maths } from './libraries/internal/Maths.sol';
 
