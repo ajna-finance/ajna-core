@@ -788,7 +788,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         return PoolCommons.utilization(interestState);
     }
 
-    // TODO: update to return all four
     /// @inheritdoc IPoolState
     function emasInfo() external view override returns (uint256, uint256, uint256, uint256) {
         return (
