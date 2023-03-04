@@ -336,12 +336,12 @@ library PoolCommons {
         uint256 t0UtilizationWeight_,
         uint256 t0Debt_
     ) internal view returns (uint256 meaningfulDeposit_) {
-        // calculate the meaningful price, which is different than the debt-weighted average threshold price
-        uint256 mp = t0Debt_ == 0 ? 0 : Maths.wmul(inflator_, Maths.wdiv(t0UtilizationWeight_, t0Debt_));
-        if (mp != 0) {
-            if      (mp >= MAX_PRICE) meaningfulDeposit_ = 0;
-            else if (mp >= MIN_PRICE) meaningfulDeposit_ = Deposits.prefixSum(deposits_, _indexOf(mp));
-            else                      meaningfulDeposit_ = Deposits.treeSum(deposits_);
+        // TODO: calculate DWATP in PoolHelper, where PTP used to be
+        uint256 dwatp = t0Debt_ == 0 ? 0 : Maths.wmul(inflator_, Maths.wdiv(t0UtilizationWeight_, t0Debt_));
+        if (dwatp != 0) {
+            if      (dwatp >= MAX_PRICE) meaningfulDeposit_ = 0;
+            else if (dwatp >= MIN_PRICE) meaningfulDeposit_ = Deposits.prefixSum(deposits_, _indexOf(dwatp));
+            else                         meaningfulDeposit_ = Deposits.treeSum(deposits_);
         }
     }
 }
