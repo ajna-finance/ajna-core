@@ -426,7 +426,6 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             })
         );
 
-        // Bad debt remains
         _assertBorrower({
             borrower:                  _borrower2,
             borrowerDebt:              2_235.600441131995497104 * 1e18,
