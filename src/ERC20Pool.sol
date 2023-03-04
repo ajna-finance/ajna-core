@@ -150,8 +150,8 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
         emit DrawDebt(borrowerAddress_, amountToBorrow_, collateralToPledge_, result.newLup);
 
-        // adjust utilization weight
-        _adjustUtilizationWeight(
+        // adjust t0Debt2ToCollateral ratio
+        _updateT0Debt2ToCollateral(
             result.debtPreAction,
             result.debtPostAction,
             result.collateralPreAction,
@@ -219,8 +219,8 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
         emit RepayDebt(borrowerAddress_, result.quoteTokenToRepay, collateralAmountToPull_, result.newLup);
 
-        // adjust utilization weight
-        _adjustUtilizationWeight(
+        // adjust t0Debt2ToCollateral ratio
+        _updateT0Debt2ToCollateral(
             result.debtPreAction,
             result.debtPostAction,
             result.collateralPreAction,
@@ -362,8 +362,8 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         poolBalances.t0DebtInAuction   -= result.t0DebtSettled;
         poolBalances.pledgedCollateral -= result.collateralSettled;
 
-        // adjust utilization weight
-        _adjustUtilizationWeight(
+        // adjust t0Debt2ToCollateral ratio
+        _updateT0Debt2ToCollateral(
             result.debtPreAction,
             result.debtPostAction,
             result.collateralPreAction,
@@ -418,8 +418,8 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         poolBalances.t0DebtInAuction   =  t0DebtInAuction;
         poolBalances.pledgedCollateral -= result.collateralAmount;
 
-        // adjust utilization weight
-        _adjustUtilizationWeight(
+        // adjust t0Debt2ToCollateral ratio
+        _updateT0Debt2ToCollateral(
             result.debtPreAction,
             result.debtPostAction,
             result.collateralPreAction,
@@ -480,8 +480,8 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         poolBalances.t0DebtInAuction   =  t0DebtInAuction;
         poolBalances.pledgedCollateral -= result.collateralAmount;
 
-        // adjust utilization weight
-        _adjustUtilizationWeight(
+        // adjust t0Debt2ToCollateral ratio
+        _updateT0Debt2ToCollateral(
             result.debtPreAction,
             result.debtPostAction,
             result.collateralPreAction,

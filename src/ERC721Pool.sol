@@ -151,8 +151,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
         emit DrawDebtNFT(borrowerAddress_, amountToBorrow_, tokenIdsToPledge_, result.newLup);
 
-        // adjust utilization weight
-        _adjustUtilizationWeight(
+        // adjust t0Debt2ToCollateral ratio
+        _updateT0Debt2ToCollateral(
             result.debtPreAction,
             result.debtPostAction,
             result.collateralPreAction,
@@ -222,8 +222,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
         if (result.settledAuction) _rebalanceTokens(borrowerAddress_, result.remainingCollateral);
 
-        // adjust utilization weight
-        _adjustUtilizationWeight(
+        // adjust t0Debt2ToCollateral ratio
+        _updateT0Debt2ToCollateral(
             result.debtPreAction,
             result.debtPostAction,
             result.collateralPreAction,
@@ -406,8 +406,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         poolBalances.t0DebtInAuction   -= result.t0DebtSettled;
         poolBalances.pledgedCollateral -= result.collateralSettled;
 
-        // adjust utilization weight
-        _adjustUtilizationWeight(
+        // adjust t0Debt2ToCollateral ratio
+        _updateT0Debt2ToCollateral(
             result.debtPreAction,
             result.debtPostAction,
             result.collateralPreAction,
@@ -458,8 +458,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         uint256 collateralSettled = result.collateralAmount + result.compensatedCollateral;
         poolBalances.pledgedCollateral -= collateralSettled;
 
-        // adjust utilization weight
-        _adjustUtilizationWeight(
+        // adjust t0Debt2ToCollateral ratio
+        _updateT0Debt2ToCollateral(
             result.debtPreAction,
             result.debtPostAction,
             result.collateralPreAction,
@@ -536,8 +536,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         uint256 collateralSettled = result.collateralAmount + result.compensatedCollateral;
         poolBalances.pledgedCollateral -= collateralSettled;
 
-        // adjust utilization weight
-        _adjustUtilizationWeight(
+        // adjust t0Debt2ToCollateral ratio
+        _updateT0Debt2ToCollateral(
             result.debtPreAction,
             result.debtPostAction,
             result.collateralPreAction,
