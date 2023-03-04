@@ -275,11 +275,12 @@ struct InterestState {
     uint48  interestRateUpdate;  // [SEC] last time pool's interest rate was updated (not before 12 hours passed)
     uint256 debt;                // [WAD] previous update's debt
     uint256 meaningfulDeposit;   // [WAD] previous update's meaningfulDeposit
-    uint256 depositEma;          // [WAD] sample of meaningful deposit EMA
-    uint256 debtEma;             // [WAD] sample of debt EMA
-    uint256 lupColEma;           // [WAD] sample of LUP price * collateral EMA. capped at 10 times current pool debt
-    uint256 emaUpdate;           // [SEC] last time pool's EMAs were updated
+    uint256 debtEma;             // [WAD] sample of debt EMA, numerator to MAU calculation
+    uint256 depositEma;          // [WAD] sample of meaningful deposit EMA, denominator to MAU calculation
+    uint256 debtColEma;          // [WAD] debt squared to collateral EMA, numerator to TU calculation
+    uint256 lupt0DebtEma;        // [WAD] EMA of LUP * t0 debt, denominator to TU calculation
     uint256 t0UtilizationWeight; // [WAD] utilization weight accumulator, tracks debt and collateral relationship accross borrowers 
+    uint256 emaUpdate;           // [SEC] last time pool's EMAs were updated
 }
 
 struct PoolBalancesState {
