@@ -22,6 +22,11 @@ interface IRewardsManagerErrors {
     error ExchangeRateUpdateTooLate();
 
     /**
+     *  @notice User provided move index params that didn't match in size.
+     */
+    error MoveStakedLiquidityInvalid();
+
+    /**
      *  @notice User attempted to interact with an NFT they aren't the owner of.
      */
     error NotOwnerOfDeposit();

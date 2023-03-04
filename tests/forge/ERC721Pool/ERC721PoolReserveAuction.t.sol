@@ -121,7 +121,8 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         _startClaimableReserveAuction({
             from:              _bidder,
             remainingReserves: 494.189491516041968090 * 1e18,
-            price:             1_000_000_000 * 1e18
+            price:             1_000_000_000 * 1e18,
+            epoch:             1
         });
 
         _assertReserveAuctionPrice(1_000_000_000 * 1e18);
@@ -188,13 +189,12 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         });
 
         // kick off a new auction
-        _startClaimableReserveAuction(
-            {
-                from:              _bidder,
-                remainingReserves: 494.189491516041968090 * 1e18,
-                price:             1_000_000_000 * 1e18
-            }
-        );
+        _startClaimableReserveAuction({
+            from:              _bidder,
+            remainingReserves: 494.189491516041968090 * 1e18,
+            price:             1_000_000_000 * 1e18,
+            epoch:             1
+        });
 
         // pass time to allow the price to decrease
         skip(24 hours);
@@ -205,14 +205,13 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         (, uint256 unclaimed, , ) = _pool.reservesInfo();
 
         uint256 expectedPrice = 59.604644775390625 * 1e18;
-        _takeReserves(
-            {
-                from:              _bidder,
-                amount:            Maths.wdiv(unclaimed, Maths.wad(2)),
-                remainingReserves: Maths.wdiv(unclaimed, Maths.wad(2)),
-                price:             expectedPrice
-            }
-        );
+        _takeReserves({
+            from:              _bidder,
+            amount:            Maths.wdiv(unclaimed, Maths.wad(2)),
+            remainingReserves: Maths.wdiv(unclaimed, Maths.wad(2)),
+            price:             expectedPrice,
+            epoch:             1
+        });
 
         // pass time to allow auction to complete
         skip(48 hours);
@@ -237,15 +236,13 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         uint256 reserves          = 499.181304561658553626 * 1e18;
         uint256 claimableReserves = reserves;
         uint256 expectedReserves  = reserves;
-        _assertReserveAuction(
-            {
-                reserves:                   reserves,
-                claimableReserves :         claimableReserves,
-                claimableReservesRemaining: 0,
-                auctionPrice:               0,
-                timeRemaining:              0
-            }
-        );
+        _assertReserveAuction({
+            reserves:                   reserves,
+            claimableReserves :         claimableReserves,
+            claimableReservesRemaining: 0,
+            auctionPrice:               0,
+            timeRemaining:              0
+        });
 
         // kick off a new auction
         uint256 expectedPrice = 1_000_000_000 * 1e18;
@@ -254,114 +251,97 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         uint256 expectedQuoteBalance = _quote.balanceOf(_bidder) + kickAward;
         expectedReserves -= kickAward;
 
-        _startClaimableReserveAuction(
-            {
-                from:              _bidder,
-                remainingReserves: expectedReserves,
-                price:             expectedPrice
-            }
-        );
-        _assertReserveAuction(
-            {
-                reserves:                   0,
-                claimableReserves :         0,
-                claimableReservesRemaining: expectedReserves,
-                auctionPrice:               expectedPrice,
-                timeRemaining:              3 days
-            }
-        );
+        _startClaimableReserveAuction({
+            from:              _bidder,
+            remainingReserves: expectedReserves,
+            price:             expectedPrice,
+            epoch:             1
+        });
+        _assertReserveAuction({
+            reserves:                   0,
+            claimableReserves :         0,
+            claimableReservesRemaining: expectedReserves,
+            auctionPrice:               expectedPrice,
+            timeRemaining:              3 days
+        });
         assertEq(_quote.balanceOf(_bidder), expectedQuoteBalance);
 
         // bid once the price becomes attractive
         skip(24 hours);
         expectedPrice = 59.604644775390625 * 1e18;
-        _assertReserveAuction(
-            {
-                reserves:                   0,
-                claimableReserves :         0,
-                claimableReservesRemaining: expectedReserves,
-                auctionPrice:               expectedPrice,
-                timeRemaining:              2 days
-            }
-        );
+        _assertReserveAuction({
+            reserves:                   0,
+            claimableReserves :         0,
+            claimableReservesRemaining: expectedReserves,
+            auctionPrice:               expectedPrice,
+            timeRemaining:              2 days
+        });
 
-        _takeReserves(
-            {
-                from:              _bidder,
-                amount:            300 * 1e18,
-                remainingReserves: 194.189491516041968090 * 1e18,
-                price:             expectedPrice
-            }
-        );
+        _takeReserves({
+            from:              _bidder,
+            amount:            300 * 1e18,
+            remainingReserves: 194.189491516041968090 * 1e18,
+            price:             expectedPrice,
+            epoch:             1
+        });
 
         expectedQuoteBalance += 300 * 1e18;
         assertEq(_quote.balanceOf(_bidder), expectedQuoteBalance);
         assertEq(_ajnaToken.balanceOf(_bidder), 22_118.6065673828125 * 1e18);
         expectedReserves -= 300 * 1e18;
-        _assertReserveAuction(
-            {
-                reserves:                   0,
-                claimableReserves :         0,
-                claimableReservesRemaining: expectedReserves,
-                auctionPrice:               expectedPrice,
-                timeRemaining:              2 days
-            }
-        );
+        _assertReserveAuction({
+            reserves:                   0,
+            claimableReserves :         0,
+            claimableReservesRemaining: expectedReserves,
+            auctionPrice:               expectedPrice,
+            timeRemaining:              2 days
+        });
 
         // bid max amount
         skip(5 minutes);
         expectedPrice = 56.259293120008319416 * 1e18;
-        _assertReserveAuction(
-            {
-                reserves:                   0,
-                claimableReserves :         0,
-                claimableReservesRemaining: expectedReserves,
-                auctionPrice:               expectedPrice,
-                timeRemaining:              2875 minutes
-            }
-        );
+        _assertReserveAuction({
+            reserves:                   0,
+            claimableReserves :         0,
+            claimableReservesRemaining: expectedReserves,
+            auctionPrice:               expectedPrice,
+            timeRemaining:              2875 minutes
+        });
 
-        _takeReserves(
-            {
-                from:              _bidder,
-                amount:            400 * 1e18,
-                remainingReserves: 0,
-                price:             expectedPrice
-            }
-        );
+        _takeReserves({
+            from:              _bidder,
+            amount:            400 * 1e18,
+            remainingReserves: 0,
+            price:             expectedPrice,
+            epoch:             1
+        });
         expectedQuoteBalance += expectedReserves;
         assertEq(_quote.balanceOf(_bidder), expectedQuoteBalance);
         assertEq(_ajnaToken.balanceOf(_bidder),  11_193.643043356438691840 * 1e18);
 
         expectedReserves = 0;
-        _assertReserveAuction(
-            {
-                reserves:                   0,
-                claimableReserves :         0,
-                claimableReservesRemaining: expectedReserves,
-                auctionPrice:               expectedPrice,
-                timeRemaining:              2875 minutes
-            }
-        );
+        _assertReserveAuction({
+            reserves:                   0,
+            claimableReserves :         0,
+            claimableReservesRemaining: expectedReserves,
+            auctionPrice:               expectedPrice,
+            timeRemaining:              2875 minutes
+        });
 
         // ensure take reverts after auction ends
         skip(72 hours);
 
-        _assertTakeReservesNoAuctionRevert(
-            {
-                amount: 777 * 1e18
-            }
-        );
+        _assertTakeReservesNoAuctionRevert({
+            amount: 777 * 1e18
+        });
 
-        _assertReserveAuction(
-            {
-                reserves:                   0,
-                claimableReserves :         0,
-                claimableReservesRemaining: 0,
-                auctionPrice:               0,
-                timeRemaining:              0
-            }
-        );
+        _assertReserveAuction({
+            reserves:                   0,
+            claimableReserves :         0,
+            claimableReservesRemaining: 0,
+            auctionPrice:               0,
+            timeRemaining:              0
+        });
     }
 
     function testReserveAuctionPartiallyTaken() external {
@@ -376,15 +356,13 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         });
         uint256 reserves          = 499.181304561658553626 * 1e18;
         uint256 claimableReserves = 101.229434828705361858 * 1e18;
-        _assertReserveAuction(
-            {
-                reserves:                   reserves,
-                claimableReserves :         claimableReserves,
-                claimableReservesRemaining: 0,
-                auctionPrice:               0,
-                timeRemaining:              0
-            }
-        );
+        _assertReserveAuction({
+            reserves:                   reserves,
+            claimableReserves :         claimableReserves,
+            claimableReservesRemaining: 0,
+            auctionPrice:               0,
+            timeRemaining:              0
+        });
 
         // kick off a new auction
         uint256 expectedPrice     = 1_000_000_000 * 1e18;
@@ -392,60 +370,52 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         uint256 kickAward = Maths.wmul(expectedReserves, 0.01 * 1e18);
         expectedReserves -= kickAward;
 
-        _startClaimableReserveAuction(
-            {
-                from:              _bidder,
-                remainingReserves: expectedReserves,
-                price:             expectedPrice
-            }
-        );
+        _startClaimableReserveAuction({
+            from:              _bidder,
+            remainingReserves: expectedReserves,
+            price:             expectedPrice,
+            epoch:             1
+        });
         reserves          = 610.479702351371553626 * 1e18 - 212.527832618418361858 * 1e18;
         claimableReserves = 0;
-        _assertReserveAuction(
-            {
-                reserves:                   reserves,
-                claimableReserves :         claimableReserves,
-                claimableReservesRemaining: expectedReserves,
-                auctionPrice:               expectedPrice,
-                timeRemaining:              3 days
-            }
-        );
+        _assertReserveAuction({
+            reserves:                   reserves,
+            claimableReserves :         claimableReserves,
+            claimableReservesRemaining: expectedReserves,
+            auctionPrice:               expectedPrice,
+            timeRemaining:              3 days
+        });
 
         // partial take
         skip(1 days);
 
         expectedPrice = 59.604644775390625 * 1e18;
         expectedReserves -= 100 * 1e18;
-        _takeReserves(
-            {
-                from:              _bidder,
-                amount:            100 * 1e18,
-                remainingReserves: expectedReserves,
-                price:             expectedPrice
-            }
-        );
-        _assertReserveAuction(
-            {
-                reserves:                   reserves,
-                claimableReserves :         claimableReserves,
-                claimableReservesRemaining: expectedReserves,
-                auctionPrice:               expectedPrice,
-                timeRemaining:              2 days
-            }
-        );
+        _takeReserves({
+            from:              _bidder,
+            amount:            100 * 1e18,
+            remainingReserves: expectedReserves,
+            price:             expectedPrice,
+            epoch:             1
+        });
+        _assertReserveAuction({
+            reserves:                   reserves,
+            claimableReserves :         claimableReserves,
+            claimableReservesRemaining: expectedReserves,
+            auctionPrice:               expectedPrice,
+            timeRemaining:              2 days
+        });
 
         // wait until auction ends
         skip(3 days);
         expectedPrice = 0;
-        _assertReserveAuction(
-            {
-                reserves:                   610.479702351371553626 * 1e18 - 212.527832618418361858 * 1e18,
-                claimableReserves :         0,
-                claimableReservesRemaining: expectedReserves,
-                auctionPrice:               expectedPrice,
-                timeRemaining:              0
-            }
-        );
+        _assertReserveAuction({
+            reserves:                   610.479702351371553626 * 1e18 - 212.527832618418361858 * 1e18,
+            claimableReserves :         0,
+            claimableReservesRemaining: expectedReserves,
+            auctionPrice:               expectedPrice,
+            timeRemaining:              0
+        });
 
         // after more interest accumulates, borrower repays remaining debt
         skip(4 weeks);
@@ -465,57 +435,49 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
 
         reserves = 442.433476150631444321 * 1e18;
         uint256 newClaimableReserves = reserves;
-        _assertReserveAuction(
-            {
-                reserves:                   reserves,
-                claimableReserves :         newClaimableReserves,
-                claimableReservesRemaining: expectedReserves,
-                auctionPrice:               expectedPrice,
-                timeRemaining:              0
-            }
-        );
+        _assertReserveAuction({
+            reserves:                   reserves,
+            claimableReserves :         newClaimableReserves,
+            claimableReservesRemaining: expectedReserves,
+            auctionPrice:               expectedPrice,
+            timeRemaining:              0
+        });
         expectedPrice = 1_000_000_000 * 1e18;
         kickAward = Maths.wmul(newClaimableReserves, 0.01 * 1e18);
         expectedReserves += newClaimableReserves - kickAward;
-        _startClaimableReserveAuction(
-            {
-                from:              _bidder,
-                remainingReserves: expectedReserves,
-                price:             expectedPrice
-            }
-        );
+        _startClaimableReserveAuction({
+            from:              _bidder,
+            remainingReserves: expectedReserves,
+            price:             expectedPrice,
+            epoch:             2
+        });
 
         // take everything
         skip(28 hours);
         assertEq(expectedReserves, 438.226281869543438117 * 1e18);
         expectedPrice = 3.725290298461914062 * 1e18;
-        _assertReserveAuction(
-            {
-                reserves:                   0,
-                claimableReserves :         0,
-                claimableReservesRemaining: expectedReserves,
-                auctionPrice:               expectedPrice,
-                timeRemaining:              44 hours
-            }
-        );
+        _assertReserveAuction({
+            reserves:                   0,
+            claimableReserves :         0,
+            claimableReservesRemaining: expectedReserves,
+            auctionPrice:               expectedPrice,
+            timeRemaining:              44 hours
+        });
 
         expectedReserves = 0;
-        _takeReserves(
-            {
-                from:              _bidder,
-                amount:            600 * 1e18,
-                remainingReserves: expectedReserves,
-                price:             expectedPrice
-            }
-        );
-        _assertReserveAuction(
-            {
-                reserves:                   0,
-                claimableReserves :         0,
-                claimableReservesRemaining: expectedReserves,
-                auctionPrice:               expectedPrice,
-                timeRemaining:              44 hours
-            }
-        );
+        _takeReserves({
+            from:              _bidder,
+            amount:            600 * 1e18,
+            remainingReserves: expectedReserves,
+            price:             expectedPrice,
+            epoch:             2
+        });
+        _assertReserveAuction({
+            reserves:                   0,
+            claimableReserves :         0,
+            claimableReservesRemaining: expectedReserves,
+            auctionPrice:               expectedPrice,
+            timeRemaining:              44 hours
+        });
     }
 }

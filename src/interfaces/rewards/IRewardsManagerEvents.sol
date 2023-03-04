@@ -23,6 +23,18 @@ interface IRewardsManagerEvents {
         uint256 amount
     );
 
+     /**
+     *  @notice Emitted when moves liquidity in a staked NFT between buckets.
+     *  @param  tokenId     ID of the staked NFT.
+     *  @param  fromIndexes Array of indexes from which liquidity was moved.
+     *  @param  toIndexes   Array of indexes to which liquidity was moved.
+     */
+    event MoveStakedLiquidity(
+        uint256 tokenId,
+        uint256[] fromIndexes,
+        uint256[] toIndexes
+    );
+
     /**
      *  @notice Emitted when lender stakes their LP NFT in the rewards contract.
      *  @param  owner    Owner of the staked NFT.

@@ -252,7 +252,7 @@ contract ERC721PoolLiquidationsDepositTakeTest is ERC721HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 0,
+                totalBondEscrowed: 0.077287198298417188 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
                 thresholdPrice:    9.624359312514645329 * 1e18,

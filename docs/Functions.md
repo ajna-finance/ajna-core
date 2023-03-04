@@ -66,7 +66,7 @@
 	reverts on:
 	- deposits locked RemoveDepositLockedByAuctionDebt()
 	- LenderActions.moveQuoteToken():
-		- same index MoveToSamePrice()
+		- same index MoveToSameIndex()
 		- dust amount DustAmountNotExceeded()
 		- invalid index InvalidIndex()
 
@@ -223,7 +223,14 @@
 
 ### withdrawBonds
 	write state:
-	- reset kicker's claimable accumulator
+	- decrease kicker's claimable accumulator
+	- decrease auctions totalBondEscrowed accumulator
+
+	reverts on:
+	- insufficient liquidity InsufficientLiquidity()
+
+	emit events:
+	- BondWithdrawn
 
 ### startClaimableReserveAuction
 	external libraries call:
@@ -263,6 +270,40 @@
 	emit events:
 	- Auctions.takeReserves():
 		- ReserveAuction
+
+### stampLoan
+	external libraries call:
+	- BorrowerActions.stampLoan()
+
+	write state:
+	- _accruePoolInterest():
+		- PoolCommons.accrueInterest():
+			- Deposits.mult (scale Fenwick tree with new interest accrued):
+				- update scaling array state
+		- increment reserveAuction.totalInterestEarned accumulator
+	- BorrowerActions.stampLoan():
+		- Loans.update():
+			- _upsert():
+				- insert or update loan in loans array
+			- remove():
+				- remove loan from loans array
+			- update borrower in address => borrower mapping
+	- _updateInterestState():
+		- PoolCommons.updateInterestRate():
+			- interest debt and lup * collateral EMAs accumulators
+			- interest rate accumulator and interestRateUpdate state
+		- pool inflator and inflatorUpdate state
+
+	reverts on:
+	- BorrowerActions.stampLoan()
+		- loan in auction AuctionActive()
+		- borrower under collateralized BorrowerUnderCollateralized()
+
+	emit events:
+	- BorrowerActions.stampLoan():
+		- LoanStamped
+	- PoolCommons.updateInterestRate():
+		- UpdateInterestRate
 
 ## ERC20Pool contract
 

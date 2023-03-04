@@ -59,8 +59,8 @@ contract LiquidationInvariant is BasicInvariants {
         uint256 totalKickerBond;
         for(uint256 i = 0; i < actorCount; i++) {
             address kicker = IBaseHandler(_handler).actors(i);
-            (, uint256 bond) = _pool.kickerInfo(kicker);
-            totalKickerBond += bond;
+            (uint256 bondLocked, uint256 bondClaimable) = _pool.kickerInfo(kicker);
+            totalKickerBond += (bondLocked + bondClaimable);
         }
 
         uint256 totalBondInAuction;

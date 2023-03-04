@@ -107,16 +107,28 @@ import { Maths }   from '../internal/Maths.sol';
     }
 
     /**
-     *  @notice Calculates fee rate for a given interest rate.
+     *  @notice Calculates origination fee for a given interest rate.
      *  @notice Calculated as greater of the current annualized interest rate divided by 52 (one week of interest) or 5 bps.
      *  @param  interestRate_ The current interest rate.
-     *  @return Fee rate applied to the given interest rate.
+     *  @return Fee rate based upon the given interest rate.
      */
-    function _feeRate(
+    function _borrowFeeRate(
         uint256 interestRate_
     ) pure returns (uint256) {
         // greater of the current annualized interest rate divided by 52 (one week of interest) or 5 bps
         return Maths.max(Maths.wdiv(interestRate_, 52 * 1e18), 0.0005 * 1e18);
+    }
+
+    /**
+     * @notice Calculates the unutilized deposit fee, charged to lenders who deposit below the LUP.
+     * @param  interestRate_ The current interest rate.
+     * @return Fee rate based upon the given interest rate.
+     */
+    function _depositFeeRate(
+        uint256 interestRate_
+    ) pure returns (uint256) {
+        // current annualized rate divided by 365 (24 hours of interest)
+        return Maths.wdiv(interestRate_, 365 * 1e18);
     }
 
     /**

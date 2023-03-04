@@ -14,7 +14,7 @@ import 'src/PositionManager.sol';
 import 'src/PoolInfoUtils.sol';
 import { IPoolErrors } from 'src/interfaces/pool/commons/IPoolErrors.sol';
 
-import { _feeRate } from 'src/libraries/helpers/PoolHelper.sol';
+import { _borrowFeeRate } from 'src/libraries/helpers/PoolHelper.sol';
 
 import { Token }       from './utils/Tokens.sol';
 import { ERC20HelperContract } from './ERC20Pool/ERC20DSTestPlus.sol';
@@ -46,6 +46,11 @@ contract RewardsManagerTest is ERC20HelperContract {
     event Stake(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
     event UpdateExchangeRates(address indexed caller, address indexed ajnaPool, uint256[] indexesUpdated, uint256 rewardsClaimed);
     event Unstake(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
+    event MoveStakedLiquidity(
+        uint256 tokenId,
+        uint256[] fromIndexes,
+        uint256[] toIndexes
+    );
 
     uint256 constant BLOCKS_IN_DAY = 7200;
     mapping (uint256 => address) internal tokenIdToMinter;
@@ -208,11 +213,13 @@ contract RewardsManagerTest is ERC20HelperContract {
 
 
     function _updateExchangeRates(address updater, address pool, uint256[] memory depositIndexes, uint256 reward) internal {
-        // call update exchange rate to enable claiming rewards for epoch 0 - 1
+        uint256 initialUpdaterTokenBalance = _ajnaToken.balanceOf(updater);
+
         changePrank(updater);
         vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(updater, address(pool), depositIndexes, reward);
-        _rewardsManager.updateBucketExchangeRatesAndClaim(address(pool), depositIndexes);
+        emit UpdateExchangeRates(updater, pool, depositIndexes, reward);
+        _rewardsManager.updateBucketExchangeRatesAndClaim(pool, depositIndexes);
+        assertEq(_ajnaToken.balanceOf(updater), initialUpdaterTokenBalance + reward);
     }
 
 
@@ -1131,6 +1138,142 @@ contract RewardsManagerTest is ERC20HelperContract {
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
     }
 
+    function testMoveStakedLiquidity() external {
+        skip(10);
+
+        /*****************/
+        /*** Stake NFT ***/
+        /*****************/
+
+        uint256[] memory firstIndexes = new uint256[](5);
+        firstIndexes[0] = 2550;
+        firstIndexes[1] = 2551;
+        firstIndexes[2] = 2552;
+        firstIndexes[3] = 2553;
+        firstIndexes[4] = 2555;
+
+        // configure NFT position
+        MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+            indexes:    firstIndexes,
+            minter:     _minterOne,
+            mintAmount: 1000 * 1e18,
+            pool:       _poolOne
+        });
+        uint256 tokenId = _mintAndMemorializePositionNFT(mintMemorializeParams);
+
+        // stake nft
+        _stakeToken(address(_poolOne), _minterOne, tokenId);
+
+        /***********************/
+        /*** Move Staked NFT ***/
+        /***********************/
+
+        uint256 expiry = block.timestamp + 1000;
+        uint256[] memory secondIndexes = new uint256[](5);
+        secondIndexes[0] = 2556;
+        secondIndexes[1] = 2557;
+        secondIndexes[2] = 2558;
+        secondIndexes[3] = 2559;
+        secondIndexes[4] = 2560;
+
+        // check no rewards are claimed on first move
+        vm.expectEmit(true, true, true, true);
+        emit UpdateExchangeRates(_minterOne, address(_poolOne), firstIndexes, 0);
+        vm.expectEmit(true, true, true, true);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenId, _epochsClaimedArray(0, 0), 0);
+
+        // check MoveLiquidity emits
+        for (uint256 i = 0; i < firstIndexes.length; ++i) {
+            vm.expectEmit(true, true, true, true);
+            emit MoveLiquidity(address(_rewardsManager), tokenId, firstIndexes[i], secondIndexes[i]);
+        }
+
+        vm.expectEmit(true, true, true, true);
+        emit MoveStakedLiquidity(tokenId, firstIndexes, secondIndexes);
+        _rewardsManager.moveStakedLiquidity(tokenId, firstIndexes, secondIndexes, expiry);
+
+        /*****************************/
+        /*** First Reserve Auction ***/
+        /*****************************/
+
+        TriggerReserveAuctionParams memory triggerReserveAuctionParams = TriggerReserveAuctionParams({
+            borrowAmount: 300 * 1e18,
+            limitIndex: 2560,
+            pool: _poolOne
+        });
+        // first reserve auction happens successfully -> epoch 1
+        _triggerReserveAuctions(triggerReserveAuctionParams);
+
+        uint256 currentBurnEpoch = _poolOne.currentBurnEpoch();
+
+        /***********************/
+        /*** Move Staked NFT ***/
+        /***********************/
+
+        expiry = block.timestamp + 1000;
+
+        // need to retrieve the position managers index set since positionIndexes are stored unordered in EnnumerableSets
+        secondIndexes = _positionManager.getPositionIndexes(tokenId);
+
+        // check rewards are claimed from the indexes that the staker is moving away from
+        vm.expectEmit(true, true, true, true);
+        emit UpdateExchangeRates(_minterOne, address(_poolOne), secondIndexes, 4.021413654595047590 * 1e18);
+        vm.expectEmit(true, true, true, true);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenId, _epochsClaimedArray(1, 0), 44.235550200545615690 * 1e18);
+        // check MoveLiquidity emits
+        for (uint256 i = 0; i < firstIndexes.length; ++i) {
+            vm.expectEmit(true, true, true, true);
+            emit MoveLiquidity(address(_rewardsManager), tokenId, secondIndexes[i], firstIndexes[i]);
+        }
+        vm.expectEmit(true, true, true, true);
+        emit MoveStakedLiquidity(tokenId, secondIndexes, firstIndexes);
+
+        // check exchange rates are updated
+        vm.expectEmit(true, true, true, true);
+        emit UpdateExchangeRates(_minterOne, address(_poolOne), firstIndexes, 0);
+
+        changePrank(_minterOne);
+        _rewardsManager.moveStakedLiquidity(tokenId, secondIndexes, firstIndexes, expiry);
+
+        // chceck that no rewards are available yet in the indexes that the staker moved to
+        vm.expectRevert(IRewardsManagerErrors.AlreadyClaimed.selector);
+        _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
+
+        /******************************/
+        /*** Second Reserve Auction ***/
+        /******************************/
+
+        triggerReserveAuctionParams = TriggerReserveAuctionParams({
+            borrowAmount: 300 * 1e18,
+            limitIndex: 2555,
+            pool: _poolOne
+        });
+        // first reserve auction happens successfully -> epoch 1
+        _triggerReserveAuctions(triggerReserveAuctionParams);
+
+        currentBurnEpoch = _poolOne.currentBurnEpoch();
+
+        /******************************/
+        /*** Exchange Rates Updated ***/
+        /******************************/
+
+        // need to retrieve the position managers index set since positionIndexes are stored unordered in EnnumerableSets
+        firstIndexes = _positionManager.getPositionIndexes(tokenId);
+
+        _updateExchangeRates(_updater, address(_poolOne), firstIndexes, 3.316474694142993919 * 1e18);
+
+        /*********************/
+        /*** Claim Rewards ***/
+        /*********************/
+
+        // claim rewards accrued since second movement of lps
+        changePrank(_minterOne);
+        assertEq(_ajnaToken.balanceOf(_minterOne), 44.235550200545615690 * 1e18);
+        vm.expectEmit(true, true, true, true);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenId, _epochsClaimedArray(1, 1), 33.121903535270272860 * 1e18);
+        _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
+    }
+
     function testEarlyAndLateStakerRewards() external {
         skip(10);
 
@@ -1197,22 +1340,22 @@ contract RewardsManagerTest is ERC20HelperContract {
             pool:              address(_poolOne),
             tokenId:           tokenIdTwo,
             claimedArray:      _epochsClaimedArray(1, 0),
-            reward:            20.035397317001861795 * 1e18,
+            reward:            28.767569698570175332 * 1e18,
             updateRatesReward: 0
         });
         uint256 minterTwoBalance = _ajnaToken.balanceOf(_minterTwo);
-        assertEq(minterTwoBalance, 20.035397317001861795 * 1e18);
+        assertEq(minterTwoBalance, 28.767569698570175332 * 1e18);
 
         _unstakeToken({
             minter:            _minterThree,
             pool:              address(_poolOne),
             tokenId:           tokenIdThree,
             claimedArray:      _epochsClaimedArray(1, 0),
-            reward:            16.692493739675875940 * 1e18,
+            reward:            23.965537532955127777 * 1e18,
             updateRatesReward: 0
         });
         uint256 minterThreeBalance = _ajnaToken.balanceOf(_minterThree);
-        assertEq(minterThreeBalance, 16.692493739675875940 * 1e18);
+        assertEq(minterThreeBalance, 23.965537532955127777 * 1e18);
 
         assertGt(minterTwoBalance, minterThreeBalance);
     }
@@ -1269,7 +1412,7 @@ contract RewardsManagerTest is ERC20HelperContract {
         uint256 tokenIdTwo = _mintAndMemorializePositionNFT(mintMemorializeParams);
         // second depositor stakes NFT, generating an update reward
         _stakeToken(address(_poolOne), _minterTwo, tokenIdTwo);
-        assertEq(_ajnaToken.balanceOf(_minterTwo), 8.038657281009010230 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_minterTwo), 8.038290823108615564 * 1e18);
 
         // calculate rewards earned since exchange rates have been updated
         uint256 idOneRewardsAtOne = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
@@ -1335,11 +1478,11 @@ contract RewardsManagerTest is ERC20HelperContract {
 
         // minter two claims rewards accrued since deposit
         changePrank(_minterTwo);
-        assertEq(_ajnaToken.balanceOf(_minterTwo), 8.038657281009010230 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_minterTwo), 8.038290823108615564 * 1e18);
         vm.expectEmit(true, true, true, true);
         emit ClaimRewards(_minterTwo, address(_poolOne), tokenIdTwo, _epochsClaimedArray(1, 1), idTwoRewardsAtTwo);
         _rewardsManager.claimRewards(tokenIdTwo, _poolOne.currentBurnEpoch());
-        assertEq(_ajnaToken.balanceOf(_minterTwo), idTwoRewardsAtTwo + 8.038657281009010230 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_minterTwo), idTwoRewardsAtTwo + 8.038290823108615564 * 1e18);
 
         // check there are no remaining rewards available after claiming
         uint256 remainingRewards = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
@@ -1703,7 +1846,7 @@ contract RewardsManagerTest is ERC20HelperContract {
         // calculate the required collateral based upon the borrow amount and index price
         (uint256 interestRate, ) = pool_.interestRateInfo();
         uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient
-        uint256 expectedDebt = Maths.wmul(borrowAmount, _feeRate(newInterestRate) + Maths.WAD);
+        uint256 expectedDebt = Maths.wmul(borrowAmount, _borrowFeeRate(newInterestRate) + Maths.WAD);
         requiredCollateral_ = Maths.wdiv(expectedDebt, _poolUtils.indexToPrice(indexPrice)) + Maths.WAD;
     }
     

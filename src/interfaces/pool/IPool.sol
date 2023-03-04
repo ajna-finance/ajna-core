@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.14;
 
+import { IPoolBorrowerActions }       from './commons/IPoolBorrowerActions.sol';
 import { IPoolLenderActions }         from './commons/IPoolLenderActions.sol';
 import { IPoolLiquidationActions }    from './commons/IPoolLiquidationActions.sol';
 import { IPoolReserveAuctionActions } from './commons/IPoolReserveAuctionActions.sol';
@@ -16,6 +17,7 @@ import { IERC3156FlashLender }        from './IERC3156FlashLender.sol';
  * @title Base Pool
  */
 interface IPool is
+    IPoolBorrowerActions,
     IPoolLenderActions,
     IPoolLiquidationActions,
     IPoolReserveAuctionActions,

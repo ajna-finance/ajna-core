@@ -705,14 +705,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             })
         );
 
-        // force an interest accumulation to assert bucket with interest
-        _addLiquidity({
-            from:   _lender,
-            amount: 0 * 1e18,
-            index:  7000,
-            newLup: 99836282890,
-            lpAward: 0
-        });
+        // interest accumulation to assert bucket with interest
+        _updateInterest();
         _assertBucket({
             index:        3060,
             lpBalance:    20 * 1e18,
@@ -892,7 +886,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 0,
+                totalBondEscrowed: 5.907892720203444346 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     0,
                 thresholdPrice:    0,
@@ -1075,7 +1069,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _removeAllLiquidity({
             from:     _lender,
-            amount:   9.987201910492245717 * 1e18,
+            amount:   9.999999987399196031 * 1e18,
             index:    7388,
             newLup:   MAX_PRICE,
             lpRedeem: 9.999999987399196031 * 1e18

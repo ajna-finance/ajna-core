@@ -103,4 +103,9 @@ interface IPoolLenderActions {
         address newOwner,
         uint256[] calldata indexes
     ) external;
+
+    /**
+     *  @notice Called by lenders to update pool interest rate (can be updated only once in a 12 hours period of time).
+     */
+    function updateInterest() external;
 }
