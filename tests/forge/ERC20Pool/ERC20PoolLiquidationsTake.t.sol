@@ -22,7 +22,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _mintQuoteAndApproveTokens(_lender1, 120_000 * 1e18);
 
         _mintCollateralAndApproveTokens(_borrower,  1_100 * 1e18);
-        _mintCollateralAndApproveTokens(_borrower2, 1_000 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower2, 2_000 * 1e18);
         _mintCollateralAndApproveTokens(_lender1,   4 * 1e18);
 
         // Lender adds Quote token accross 5 prices
@@ -176,7 +176,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         });
     }
 
-    function testTakeLoanColConstraintBpfPosNoResidual() external tearDown {
+    function testTakeLoanColConstraintBpfPosNoResidual() external {
 
         // Increase neutralPrice so it exceeds TP
         _addLiquidity({
@@ -383,6 +383,75 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             borrowert0Np:              1_575.326150647652569911 * 1e18,
             borrowerCollateralization: 0
         });
+
+        _assertPool(
+            PoolParams({
+                htp:                  9.281940892899682703 * 1e18,
+                lup:                  9.917184843435912074 * 1e18,
+                poolSize:             83_223.960237364588690638 * 1e18,
+                pledgedCollateral:    1_002.0 * 1e18,
+                encumberedCollateral: 1_150.422689356386608344 * 1e18,
+                poolDebt:             11_408.954458429937838015 * 1e18,
+                actualUtilization:    1.120079901690385086 * 1e18,
+                targetUtilization:    0.702231725894236380 * 1e18,
+                minDebtAmount:        1_140.895445842993783802 * 1e18,
+                loans:                1,
+                maxBorrower:          address(_borrower),
+                interestRate:         0.0495 * 1e18,
+                interestRateUpdate:   block.timestamp
+            })
+        );
+
+        // borrower recollateralizes themselves by pleding collateral
+        _pledgeCollateral({
+            from:     _borrower2,
+            borrower: _borrower2,
+            amount:   1_000 * 1e18
+        });
+
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower2,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 6_545.487421481141709063 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    2.235600441131995497 * 1e18,
+                neutralPrice:      0
+            })
+        );
+
+        // Bad debt remains
+        _assertBorrower({
+            borrower:                  _borrower2,
+            borrowerDebt:              2_235.600441131995497104 * 1e18,
+            borrowerCollateral:        1_000.0 * 1e18,
+            borrowert0Np:              351.254949370347207955 * 1e18,
+            borrowerCollateralization: 4.436027413921223336 * 1e18
+        });
+
+        _assertPool(
+            PoolParams({
+                htp:                  9.281940892899682703 * 1e18,
+                lup:                  9.917184843435912074 * 1e18,
+                poolSize:             83_223.960237364588690638 * 1e18,
+                pledgedCollateral:    2_002.0 * 1e18,
+                encumberedCollateral: 1_150.422689356386608344 * 1e18,
+                poolDebt:             11_408.954458429937838015 * 1e18,
+                actualUtilization:    0.137087377551972399 * 1e18,
+                targetUtilization:    0.702231725894236380 * 1e18,
+                minDebtAmount:        570.447722921496891901 * 1e18,
+                loans:                2,
+                maxBorrower:          address(_borrower),
+                interestRate:         0.0495 * 1e18,
+                interestRateUpdate:   block.timestamp
+            })
+        );
     }
 
     function testTakeCallerColConstraintBpfPosNoResidual() external tearDown {

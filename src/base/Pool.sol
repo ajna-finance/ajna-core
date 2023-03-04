@@ -588,26 +588,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 colPreAction_,
         uint256 colPostAction_
     ) internal {
-        // only bad debt, already deducted from accumulator when collateral was removed, do nothing.
-        if (colPreAction_ == 0 && debtPreAction_ != 0) return;
-
         uint256 debtColAccumPreAction = colPreAction_ != 0 ? debtPreAction_ ** 2 / colPreAction_ : 0;
+        uint256 debtColAccumPostAction = colPostAction_ != 0 ? debtPostAction_ ** 2 / colPostAction_ : 0;
 
-        if (colPostAction_ == 0) {
-            // position is closed, bad debt is created or purely interest update deduct from accumulator
-            interestState.t0UtilizationWeight -= debtColAccumPreAction;
-        } else { 
-            uint256 utilzationWeight = interestState.t0UtilizationWeight;
+        uint256 utilzationWeight = interestState.t0UtilizationWeight;
+        utilzationWeight += debtColAccumPostAction;
+        utilzationWeight -= debtColAccumPreAction;
 
-            // Pool methods: drawDebt, repayDebt
-            // Auction methods: kick, partial take, partial depositTake, partial arbTake, partial settle
-            uint256 debtColAccumPostAction = debtPostAction_ ** 2 / colPostAction_;
-
-            utilzationWeight += debtColAccumPostAction;
-            utilzationWeight -= debtColAccumPreAction;
-
-            interestState.t0UtilizationWeight = utilzationWeight; 
-        }
+        interestState.t0UtilizationWeight = utilzationWeight;
     }
 
     /**
