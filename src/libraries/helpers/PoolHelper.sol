@@ -131,6 +131,7 @@ import { Maths }   from '../internal/Maths.sol';
         return Maths.wdiv(interestRate_, 365 * 1e18);
     }
 
+    // TODO: replace with DWATP
     /**
      *  @notice Calculates Pool Threshold Price (PTP) for a given debt and collateral amount.
      *  @param  debt_       The debt amount to calculate PTP for.

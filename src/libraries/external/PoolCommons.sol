@@ -34,6 +34,7 @@ library PoolCommons {
     uint256 internal constant DECREASE_COEFFICIENT = 0.9 * 1e18;
     int256  internal constant PERCENT_102          = 1.02 * 1e18;
     int256  internal constant NEG_H_MAU_HOURS      = -0.057762265046662105 * 1e18; // -ln(2)/12
+    int256  internal constant NEG_H_TU_HOURS       = -0.008251752149523158 * 1e18; // -ln(2)/84
 
     /**************/
     /*** Events ***/
@@ -56,67 +57,67 @@ library PoolCommons {
         PoolState memory poolState_,
         uint256 lup_
     ) external {
+        uint256 inflator = poolState_.inflator;
+        uint256 t0Debt   = poolState_.t0Debt;
+
         // if a previous transaction in this block already updated the EMA, only update cached values
         if (interestParams_.emaUpdate != block.timestamp) {
             // We do not need to calculate these during initialization, 
             // but the conditional to check each time would be more expensive thereafter.
-            int256 elapsed = int256(Maths.wdiv(block.timestamp - interestParams_.emaUpdate, 1 hours));
-            int256 weight = PRBMathSD59x18.exp(PRBMathSD59x18.mul(NEG_H_MAU_HOURS, elapsed));
+            int256 elapsed   = int256(Maths.wdiv(block.timestamp - interestParams_.emaUpdate, 1 hours));
+            int256 weightMau = PRBMathSD59x18.exp(PRBMathSD59x18.mul(NEG_H_MAU_HOURS, elapsed));
+            int256 weightTu  = PRBMathSD59x18.exp(PRBMathSD59x18.mul(NEG_H_TU_HOURS,  elapsed));
             // console.log("  time %s elapsed %s mins", block.timestamp, (block.timestamp - interestParams_.emaUpdate)/60);
 
             // update the t0 debt EMA, used for MAU
-            uint256 debt       = interestParams_.debt;
             uint256 curDebtEma = interestParams_.debtEma;
             if (curDebtEma == 0) {
                 // initialize to actual value for the first calculation
-                curDebtEma = Maths.wmul(poolState_.inflator, poolState_.t0Debt);
+                curDebtEma = Maths.wmul(inflator, t0Debt);
             } else {
                 curDebtEma = uint256(
-                    PRBMathSD59x18.mul(weight, int256(curDebtEma)) +
-                    PRBMathSD59x18.mul((1e18 - weight), int256(debt))
+                    PRBMathSD59x18.mul(weightMau, int256(curDebtEma)) +
+                    PRBMathSD59x18.mul((1e18 - weightMau), int256(interestParams_.debt))
                 );
             }
-            // console.log("debt %s, curDebtEma %s", poolState_.debt, curDebtEma);
+            // console.log("debt %s, curDebtEma %s", interestParams_.debt, curDebtEma);
 
             // update the meaningful deposit EMA, used for MAU
-            uint256 meaningfulDeposit = interestParams_.meaningfulDeposit;
             uint256 curDepositEma     = interestParams_.depositEma;
             if (curDepositEma == 0) {
                 // initialize to actual value for the first calculation
-                curDepositEma = _meaningfulDeposit(deposits_, poolState_.debt, poolState_.collateral);    
+                curDepositEma = _meaningfulDeposit(deposits_, inflator, interestParams_.t0UtilizationWeight, t0Debt);    
             } else {
                 curDepositEma = uint256(
-                    PRBMathSD59x18.mul(weight, int256(curDepositEma)) +
-                    PRBMathSD59x18.mul((1e18 - weight), int256(meaningfulDeposit))
+                    PRBMathSD59x18.mul(weightMau, int256(curDepositEma)) +
+                    PRBMathSD59x18.mul((1e18 - weightMau), int256(interestParams_.meaningfulDeposit))
                 );
             }
-            // console.log("meaningfulDeposit %s, curDepositEma %s", meaningfulDeposit, curDepositEma);
+            // console.log("meaningfulDeposit %s, curDepositEma %s", interestParams_.meaningfulDeposit, curDepositEma);
 
             // update the debt squared to collateral EMA, used for TU
-            uint256 debtCol       = interestParams_.utilizationWeight;
             uint256 curDebtColEma = interestParams_.debtColEma;
             if (curDebtColEma == 0) {
-                curDebtColEma = debtCol;
+                curDebtColEma =  Maths.wmul(inflator, interestParams_.t0UtilizationWeight);
             } else {
                 curDebtColEma = uint256(
-                    PRBMathSD59x18.mul(weight, int256(curDebtColEma)) +
-                    PRBMathSD59x18.mul((1e18 - weight), int256(debtCol))
+                    PRBMathSD59x18.mul(weightTu, int256(curDebtColEma)) +
+                    PRBMathSD59x18.mul((1e18 - weightTu), int256(interestParams_.debtCol))
                 );
             }
-            // console.log("debtCol %s, curDebtColEma %s", debtCol, curDebtColEma);
+            // console.log("debtCol %s, curDebtColEma %s", interestParams_.debtCol, curDebtColEma);
 
             // update the EMA of LUP * t0 debt
-            uint256 lupt0Debt       = interestParams_.lupt0Debt;
             uint256 curlupt0DebtEma = interestParams_.lupt0DebtEma;
             if (curlupt0DebtEma == 0) {
-                curlupt0DebtEma = lupt0Debt;
+                curlupt0DebtEma = Maths.wmul(lup_, t0Debt);
             } else {
                 curlupt0DebtEma = uint256(
-                    PRBMathSD59x18.mul(weight, int256(curlupt0DebtEma)) +
-                    PRBMathSD59x18.mul((1e18 - weight), int256(lupt0Debt))
+                    PRBMathSD59x18.mul(weightTu, int256(curlupt0DebtEma)) +
+                    PRBMathSD59x18.mul((1e18 - weightTu), int256(interestParams_.lupt0Debt))
                 );
             }
-            // console.log("lupt0Debt %s, curlupt0DebtEma %s", lupt0Debt, curlupt0DebtEma);
+            // console.log("lupt0Debt %s, curlupt0DebtEma %s", interestParams_.lupt0Debt, curlupt0DebtEma);
 
             interestParams_.debtEma      = curDebtEma;
             interestParams_.depositEma   = curDepositEma;
@@ -126,10 +127,10 @@ library PoolCommons {
             interestParams_.emaUpdate    = block.timestamp;
         }
 
-        interestParams_.debt              = Maths.wmul(poolState_.inflator, poolState_.t0Debt);
-        interestParams_.meaningfulDeposit = _meaningfulDeposit(deposits_, poolState_.debt, poolState_.collateral);
-        interestParams_.utilizationWeight = Maths.wmul(poolState_.inflator, interestParams_.t0UtilizationWeight);
-        interestParams_.lupt0Debt         = Maths.wmul(lup_, poolState_.t0Debt);
+        interestParams_.debt              = Maths.wmul(inflator, t0Debt);
+        interestParams_.meaningfulDeposit = _meaningfulDeposit(deposits_, inflator, interestParams_.t0UtilizationWeight, t0Debt);
+        interestParams_.debtCol           = Maths.wmul(inflator, interestParams_.t0UtilizationWeight);
+        interestParams_.lupt0Debt         = Maths.wmul(lup_, t0Debt);
     }
 
     /**
@@ -163,6 +164,8 @@ library PoolCommons {
         // calculate target utilization
         int256 tu = (interestParams_.lupt0DebtEma != 0) ? 
             int256(Maths.wdiv(interestParams_.debtColEma, interestParams_.lupt0DebtEma)) : int(Maths.WAD);
+
+        // console.log("mau %s, tu %s", uint256(mau), uint256(tu));
 
         if (!poolState_.isNewInterestAccrued) poolState_.rate = interestParams_.interestRate;
 
@@ -198,6 +201,7 @@ library PoolCommons {
      */
     function accrueInterest(
         DepositsState storage deposits_,
+        InterestState storage interestState_,
         PoolState calldata poolState_,
         uint256 thresholdPrice_,
         uint256 elapsed_
@@ -220,12 +224,10 @@ library PoolCommons {
             htpIndex = _indexOf(htp);
 
         uint256 depositAboveHtp   = Deposits.prefixSum(deposits_, htpIndex);
-        uint256 meaningfulDeposit = _meaningfulDeposit(deposits_, poolState_.debt, poolState_.collateral);
 
         if (depositAboveHtp != 0) {
             newInterest_ = Maths.wmul(
-                // TODO: should be calculated against EMAs, but we don't have InterestState here
-                _lenderInterestMargin(_utilization(poolState_.debt, meaningfulDeposit)),
+                _lenderInterestMargin(_utilization(interestState_.debtEma, interestState_.depositEma)),
                 Maths.wmul(pendingFactor - Maths.WAD, poolState_.debt)
             );
 
@@ -328,17 +330,18 @@ library PoolCommons {
         }
     }
 
-    // TODO: update this to use the t0UtilizationWeight accumulator
     function _meaningfulDeposit(
-        DepositsState storage deposits,
-        uint256 poolDebt_,
-        uint256 collateral_
+        DepositsState storage deposits_,
+        uint256 inflator_,
+        uint256 t0UtilizationWeight_,
+        uint256 t0Debt_
     ) internal view returns (uint256 meaningfulDeposit_) {
-        uint256 ptp = _ptp(poolDebt_, collateral_);
-        if (ptp != 0) {
-            if      (ptp >= MAX_PRICE) meaningfulDeposit_ = 0;
-            else if (ptp >= MIN_PRICE) meaningfulDeposit_ = Deposits.prefixSum(deposits, _indexOf(ptp));
-            else                       meaningfulDeposit_ = Deposits.treeSum(deposits);
+        // calculate the meaningful price, which is different than the debt-weighted average threshold price
+        uint256 mp = t0Debt_ == 0 ? 0 : Maths.wmul(inflator_, Maths.wdiv(t0UtilizationWeight_, t0Debt_));
+        if (mp != 0) {
+            if      (mp >= MAX_PRICE) meaningfulDeposit_ = 0;
+            else if (mp >= MIN_PRICE) meaningfulDeposit_ = Deposits.prefixSum(deposits_, _indexOf(mp));
+            else                      meaningfulDeposit_ = Deposits.treeSum(deposits_);
         }
     }
 }

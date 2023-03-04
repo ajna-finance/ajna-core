@@ -558,6 +558,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             if (poolState_.isNewInterestAccrued) {
                 (uint256 newInflator, uint256 newInterest) = PoolCommons.accrueInterest(
                     deposits,
+                    interestState,
                     poolState_,
                     Loans.getMax(loans).thresholdPrice,
                     elapsed
