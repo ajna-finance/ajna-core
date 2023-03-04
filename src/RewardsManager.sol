@@ -2,23 +2,23 @@
 
 pragma solidity 0.8.14;
 
-import { IERC20 }    from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import { IERC721 }   from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
+import { IERC20 }          from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import { IERC721 }         from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
+import { ReentrancyGuard } from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import { SafeERC20 }       from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import { IPool }            from './interfaces/pool/IPool.sol';
-import { IPositionManager } from './interfaces/position/IPositionManager.sol';
-
-import { PositionManager }  from './PositionManager.sol';
-
+import { IPool }                        from './interfaces/pool/IPool.sol';
+import { IPositionManager }             from './interfaces/position/IPositionManager.sol';
+import { IPositionManagerOwnerActions } from './interfaces/position/IPositionManagerOwnerActions.sol';
 import {
     IRewardsManager,
     IRewardsManagerOwnerActions,
     IRewardsManagerState,
     IRewardsManagerDerivedState
 } from './interfaces/rewards/IRewardsManager.sol';
-
 import { StakeInfo, BucketState } from './interfaces/rewards/IRewardsManagerState.sol';
+
+import { PositionManager } from './PositionManager.sol';
 
 import { Maths } from './libraries/internal/Maths.sol';
 
@@ -32,7 +32,7 @@ import { Maths } from './libraries/internal/Maths.sol';
  *          - claim rewards
  *          - unstake token
  */
-contract RewardsManager is IRewardsManager {
+contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
     using SafeERC20 for IERC20;
 
@@ -114,6 +114,81 @@ contract RewardsManager is IRewardsManager {
         if (isEpochClaimed[tokenId_][epochToClaim_]) revert AlreadyClaimed();
 
         _claimRewards(stakeInfo, tokenId_, epochToClaim_, true, stakeInfo.ajnaPool);
+    }
+
+    /**
+     *  @inheritdoc IRewardsManagerOwnerActions
+     *  @dev revert on:
+     *          - not owner NotOwnerOfDeposit()
+     *          - invalid index params MoveStakedLiquidityInvalid()
+     *  @dev emit events:
+     *          - MoveStakedLiquidity
+     */
+    function moveStakedLiquidity(
+        uint256 tokenId_,
+        uint256[] memory fromBuckets_,
+        uint256[] memory toBuckets_,
+        uint256 expiry_
+    ) external nonReentrant override {
+        StakeInfo storage stakeInfo = stakes[tokenId_];
+
+        if (msg.sender != stakeInfo.owner) revert NotOwnerOfDeposit();
+
+        // check move array sizes match to be able to match on index
+        uint256 fromBucketLength = fromBuckets_.length;
+        if (fromBucketLength != toBuckets_.length) revert MoveStakedLiquidityInvalid();
+
+        address ajnaPool = stakeInfo.ajnaPool;
+        uint256 curBurnEpoch = IPool(ajnaPool).currentBurnEpoch();
+
+        // claim rewards before moving liquidity, if any
+        _claimRewards(
+            stakeInfo,
+            tokenId_,
+            curBurnEpoch,
+            false,
+            ajnaPool
+        );
+
+        uint256 fromIndex;
+        uint256 toIndex;
+        for (uint256 i = 0; i < fromBucketLength; ) {
+            fromIndex = fromBuckets_[i];
+            toIndex = toBuckets_[i];
+
+            BucketState storage fromBucket = stakeInfo.snapshot[fromIndex];
+            BucketState storage toBucket = stakeInfo.snapshot[toIndex];
+
+            // call out to position manager to move liquidity between buckets
+            IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
+                tokenId_,
+                ajnaPool,
+                fromIndex,
+                toIndex,
+                expiry_
+            );
+            positionManager.moveLiquidity(moveLiquidityParams);
+
+            // update bucket state
+            toBucket.lpsAtStakeTime = fromBucket.lpsAtStakeTime;
+            toBucket.rateAtStakeTime = IPool(ajnaPool).bucketExchangeRate(toIndex);
+            delete stakeInfo.snapshot[fromIndex];
+
+            // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
+            unchecked { ++i; }
+        }
+
+        emit MoveStakedLiquidity(tokenId_, fromBuckets_, toBuckets_);
+
+        // update to bucket list exchange rates, from buckets are aready updated on claim
+        // calculate rewards for updating exchange rates, if any
+        uint256 updateReward = _updateBucketExchangeRates(
+            ajnaPool,
+            toBuckets_
+        );
+
+        // transfer rewards to sender
+        _transferAjnaRewards(updateReward);
     }
 
     /**
@@ -576,7 +651,6 @@ contract RewardsManager is IRewardsManager {
             totalBurned,
             totalInterest
         );
-
     }
 
     /**
@@ -730,8 +804,11 @@ contract RewardsManager is IRewardsManager {
         // if remaining balance is greater, set to remaining balance
         uint256 ajnaBalance = IERC20(ajnaToken).balanceOf(address(this));
         if (rewardsEarned_ > ajnaBalance) rewardsEarned_ = ajnaBalance;
-        // transfer rewards to sender
-        IERC20(ajnaToken).safeTransfer(msg.sender, rewardsEarned_);
+
+        if (rewardsEarned_ != 0) {
+            // transfer rewards to sender
+            IERC20(ajnaToken).safeTransfer(msg.sender, rewardsEarned_);
+        }
     }
 
 }
