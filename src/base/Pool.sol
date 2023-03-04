@@ -588,7 +588,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 colPreAction_,
         uint256 colPostAction_
     ) internal {
-        uint256 debtColAccumPreAction = colPreAction_ != 0 ? debtPreAction_ ** 2 / colPreAction_ : 0;
+        uint256 debtColAccumPreAction  = colPreAction_  != 0 ? debtPreAction_  ** 2 / colPreAction_  : 0;
         uint256 debtColAccumPostAction = colPostAction_ != 0 ? debtPostAction_ ** 2 / colPostAction_ : 0;
 
         uint256 utilzationWeight = interestState.t0UtilizationWeight;

@@ -176,7 +176,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         });
     }
 
-    function testTakeLoanColConstraintBpfPosNoResidual() external {
+    function testTakeLoanColConstraintBpfPosNoResidual() external tearDown {
 
         // Increase neutralPrice so it exceeds TP
         _addLiquidity({
