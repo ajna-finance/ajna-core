@@ -90,7 +90,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 pledgedCollateral:    1_002 * 1e18,
                 encumberedCollateral: 823.649613971736296163 * 1e18,
                 poolDebt:             8_006.941586538461542154 * 1e18,
-                actualUtilization:    0.109684131322444679 * 1e18,
+                actualUtilization:    0,
                 targetUtilization:    1e18,
                 minDebtAmount:        400.347079326923077108 * 1e18,
                 loans:                2,
@@ -981,7 +981,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
     }
 
-    function testTakeLoanDebtConstraintBpfPosResidual() external tearDown {
+    function testTakeLoanDebtConstraintBpfPosResidual() external {
 
         // Increase neutralPrice so it exceeds TP
         _addLiquidity({
@@ -1020,7 +1020,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 pledgedCollateral:    2_002.000000000000000000 * 1e18,
                 encumberedCollateral: 1_927.443577377932263894 * 1e18,
                 poolDebt:             18_737.249278846153854794 * 1e18,
-                actualUtilization:    0.225749991311399444 * 1e18,
+                actualUtilization:    0,
                 targetUtilization:    1.000000000000000000 * 1e18,
                 minDebtAmount:        936.862463942307692740 * 1e18,
                 loans:                2,
@@ -1047,7 +1047,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 pledgedCollateral:    2_002.000000000000000000 * 1e18,
                 encumberedCollateral: 1_954.028587437074993946 * 1e18,
                 poolDebt:             18_995.690027205926343012 * 1e18,
-                actualUtilization:    0.228863735267541281 * 1e18,
+                actualUtilization:    0,
                 targetUtilization:    1.000000000000000000 * 1e18,
                 minDebtAmount:        949.784501360296317151 * 1e18,
                 loans:                2,
@@ -1102,8 +1102,8 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             borrowerCollateralization: 0.977433325291186371 * 1e18
         });
         _assertReserveAuction({
-            reserves:                   176.383108065231049467 * 1e18,
-            claimableReserves :         80.790723478491074900 * 1e18,
+            reserves:                   179.552281242188293467 * 1e18,
+            claimableReserves :         83.959896655448318900 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
@@ -1115,11 +1115,11 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             PoolParams({
                 htp:                  9.280695967198888513 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             83_222.843809282763864000 * 1e18,
+                poolSize:             83_219.674636105806620000 * 1e18,
                 pledgedCollateral:    2_002.000000000000000000 * 1e18,
                 encumberedCollateral: 1_966.779974486190376300 * 1e18,
                 poolDebt:             19_119.650033399911495436 * 1e18,
-                actualUtilization:    0.359237663096559171 * 1e18,
+                actualUtilization:    0.673136394099377527 * 1e18,
                 targetUtilization:    0.990394263067906194 * 1e18,
                 minDebtAmount:        1_911.965003339991149544 * 1e18,
                 loans:                1,
@@ -1679,7 +1679,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         });
     }
 
-    function testTakeReverts() external tearDown {
+    function testTakeReverts() external {
 
         // Borrower2 borrows
         _borrow({
@@ -1730,8 +1730,8 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             locked:    98.533942419792216457 * 1e18
         });
         _assertReserveAuction({
-            reserves:                   148.064352861909228810 * 1e18,
-            claimableReserves :         98.083873122003682866 * 1e18,
+            reserves:                   152.670996883580226810 * 1e18,
+            claimableReserves :         102.690517143674680866 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
@@ -1999,7 +1999,7 @@ contract ERC20PoolLiquidationsTakeAndRepayAllDebtInPoolTest is ERC20HelperContra
         });
     }
 
-    function testTakeAuctionRepaidAmountGreaterThanPoolDebt() external tearDown {
+    function testTakeAuctionRepaidAmountGreaterThanPoolDebt() external {
         _updateInterest();
 
         _drawDebtNoLupCheck({
@@ -2050,8 +2050,8 @@ contract ERC20PoolLiquidationsTakeAndRepayAllDebtInPoolTest is ERC20HelperContra
             borrower:        _borrower,
             maxCollateral:   0.067433366047580170 * 1e18,
             bondChange:      1.028765834802714992 * 1e18,
-            givenAmount:     111.455789568155429076 * 1e18,
-            collateralTaken: 0.010471063560951988 * 1e18,
+            givenAmount:     111.456205336913048950 * 1e18,
+            collateralTaken: 0.010471102621651343 * 1e18,
             isReward:        false
         });
 

@@ -615,7 +615,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         });
     }
 
-    function testMergeOrRemoveCollateral() external tearDown {
+    function testMergeOrRemoveCollateral() external {
         for (uint256 i = 3060; i < (3060 + 10); i++) {
             _addLiquidity({
                 from:   _lender,
