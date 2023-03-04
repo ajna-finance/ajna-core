@@ -165,6 +165,7 @@ library PoolCommons {
         int256 tu = (interestParams_.lupt0DebtEma != 0) ? 
             int256(Maths.wdiv(interestParams_.debtColEma, interestParams_.lupt0DebtEma)) : int(Maths.WAD);
 
+        // console.log("debtColEma %s, lupt0DebtEma %s", uint256(interestParams_.debtColEma), uint256(interestParams_.lupt0DebtEma));
         // console.log("mau %s, tu %s", uint256(mau), uint256(tu));
 
         if (!poolState_.isNewInterestAccrued) poolState_.rate = interestParams_.interestRate;
