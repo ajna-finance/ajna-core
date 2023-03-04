@@ -415,7 +415,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         );
 
         // update pool interest rate state
-        poolState.debt       -= Maths.wmul(result.t0DebtSettled, poolState.inflator);
+        poolState.debt       -= Maths.wmul(result.t0DebtSettled, poolState.inflator);  // TODO: delete line?
+        poolState.t0Debt     -= result.t0DebtSettled;
         poolState.collateral -= result.collateralSettled;
         _updateInterestState(poolState, _lup(poolState.debt));
     }

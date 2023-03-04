@@ -83,7 +83,7 @@ library PoolCommons {
             // console.log("debt %s, curDebtEma %s", interestParams_.debt, curDebtEma);
 
             // update the meaningful deposit EMA, used for MAU
-            uint256 curDepositEma     = interestParams_.depositEma;
+            uint256 curDepositEma = interestParams_.depositEma;
             if (curDepositEma == 0) {
                 // initialize to actual value for the first calculation
                 curDepositEma = _meaningfulDeposit(deposits_, inflator, interestParams_.t0UtilizationWeight, t0Debt);    
@@ -165,6 +165,7 @@ library PoolCommons {
         int256 tu = (interestParams_.lupt0DebtEma != 0) ? 
             int256(Maths.wdiv(interestParams_.debtColEma, interestParams_.lupt0DebtEma)) : int(Maths.WAD);
 
+        // console.log("debtColEma %s, lupt0DebtEma %s", uint256(interestParams_.debtColEma), uint256(interestParams_.lupt0DebtEma));
         // console.log("mau %s, tu %s", uint256(mau), uint256(tu));
 
         if (!poolState_.isNewInterestAccrued) poolState_.rate = interestParams_.interestRate;
@@ -338,7 +339,9 @@ library PoolCommons {
     ) internal view returns (uint256 meaningfulDeposit_) {
         // TODO: calculate DWATP in PoolHelper, where PTP used to be
         uint256 dwatp = t0Debt_ == 0 ? 0 : Maths.wmul(inflator_, Maths.wdiv(t0UtilizationWeight_, t0Debt_));
-        if (dwatp != 0) {
+        if (dwatp == 0) {
+            meaningfulDeposit_ = Deposits.treeSum(deposits_);
+        } else {
             if      (dwatp >= MAX_PRICE) meaningfulDeposit_ = 0;
             else if (dwatp >= MIN_PRICE) meaningfulDeposit_ = Deposits.prefixSum(deposits_, _indexOf(dwatp));
             else                         meaningfulDeposit_ = Deposits.treeSum(deposits_);
