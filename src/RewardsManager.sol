@@ -170,8 +170,8 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             positionManager.moveLiquidity(moveLiquidityParams);
 
             // update bucket state
-            toBucket.lpsAtStakeTime = fromBucket.lpsAtStakeTime;
-            toBucket.rateAtStakeTime = IPool(ajnaPool).bucketExchangeRate(toIndex);
+            toBucket.lpsAtStakeTime = uint128(fromBucket.lpsAtStakeTime);
+            toBucket.rateAtStakeTime = uint128(IPool(ajnaPool).bucketExchangeRate(toIndex));
             delete stakeInfo.snapshot[fromIndex];
 
             // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
