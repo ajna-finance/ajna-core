@@ -92,11 +92,8 @@ library PoolCommons {
             }
             // console.log("meaningfulDeposit %s, curDepositEma %s", meaningfulDeposit, curDepositEma);
 
-            // TODO: calculations below should be based of previously cached values in pool, 
-            // not current values from poolState_.  Must add to InterestState and update at bottom of method.
-
             // update the debt squared to collateral EMA, used for TU
-            uint256 debtCol       = Maths.wmul(poolState_.inflator, interestParams_.t0UtilizationWeight);
+            uint256 debtCol       = interestParams_.utilizationWeight;
             uint256 curDebtColEma = interestParams_.debtColEma;
             if (curDebtColEma == 0) {
                 curDebtColEma = debtCol;
@@ -109,7 +106,7 @@ library PoolCommons {
             // console.log("debtCol %s, curDebtColEma %s", debtCol, curDebtColEma);
 
             // update the EMA of LUP * t0 debt
-            uint256 lupt0Debt       = Maths.wmul(lup_, poolState_.t0Debt);
+            uint256 lupt0Debt       = interestParams_.lupt0Debt;
             uint256 curlupt0DebtEma = interestParams_.lupt0DebtEma;
             if (curlupt0DebtEma == 0) {
                 curlupt0DebtEma = lupt0Debt;
@@ -119,7 +116,7 @@ library PoolCommons {
                     PRBMathSD59x18.mul((1e18 - weight), int256(lupt0Debt))
                 );
             }
-            console.log("lupt0Debt %s, curlupt0DebtEma %s", lupt0Debt, curlupt0DebtEma);
+            // console.log("lupt0Debt %s, curlupt0DebtEma %s", lupt0Debt, curlupt0DebtEma);
 
             interestParams_.debtEma      = curDebtEma;
             interestParams_.depositEma   = curDepositEma;
@@ -131,6 +128,8 @@ library PoolCommons {
 
         interestParams_.debt              = Maths.wmul(poolState_.inflator, poolState_.t0Debt);
         interestParams_.meaningfulDeposit = _meaningfulDeposit(deposits_, poolState_.debt, poolState_.collateral);
+        interestParams_.utilizationWeight = Maths.wmul(poolState_.inflator, interestParams_.t0UtilizationWeight);
+        interestParams_.lupt0Debt         = Maths.wmul(lup_, poolState_.t0Debt);
     }
 
     /**
