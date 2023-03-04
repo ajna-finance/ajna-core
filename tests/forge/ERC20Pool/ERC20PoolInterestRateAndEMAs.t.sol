@@ -456,7 +456,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         );
     }
 
-    function testPendingInflator() external {
+    function testPendingInflator() external tearDown {
         // add liquidity
         _addInitialLiquidity({
             from:   _lender,

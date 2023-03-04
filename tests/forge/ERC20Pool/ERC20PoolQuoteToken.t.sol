@@ -650,7 +650,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         });
     }
 
-    function testPoolRemoveQuoteTokenWithDebt() external {
+    function testPoolRemoveQuoteTokenWithDebt() external tearDown {
         _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_borrower) + 100 * 1e18);
 
         // lender adds initial quote token
@@ -1088,7 +1088,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         });
     }
 
-    function testMoveQuoteTokenWithDebt() external {
+    function testMoveQuoteTokenWithDebt() external tearDown {
         // lender makes an initial deposit
         skip(1 hours);
 

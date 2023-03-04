@@ -164,11 +164,11 @@ contract RewardsManagerTest is DSTestPlus {
         assertEq(_positionManager.ownerOf(tokenId), address(minter));
 
         // invariant: all bucket snapshots are removed for the token id that was unstaken
-        // for(uint256 bucketIndex = 0; bucketIndex <= 7388; bucketIndex++) {
-        //     (uint256 lps, uint256 rate) = _rewardsManager.getBucketStateStakeInfo(tokenId, bucketIndex);
-        //     assertEq(lps, 0);
-        //     assertEq(rate, 0);
-        // }
+        for(uint256 bucketIndex = 0; bucketIndex <= 7388; bucketIndex++) {
+            (uint256 lps, uint256 rate) = _rewardsManager.getBucketStateStakeInfo(tokenId, bucketIndex);
+            assertEq(lps, 0);
+            assertEq(rate, 0);
+        }
     }
 
     function _triggerReserveAuctionsNoTake(TriggerReserveAuctionParams memory params_) internal {

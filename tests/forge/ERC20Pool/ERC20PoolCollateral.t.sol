@@ -29,7 +29,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
     /**
      *  @notice With 1 lender and 1 borrower test pledgeCollateral, borrow, and pullCollateral.
      */
-    function testPledgeAndPullCollateral() external {
+    function testPledgeAndPullCollateral() external tearDown {
         // lender deposits 10000 Quote into 3 buckets
 
         _addInitialLiquidity({

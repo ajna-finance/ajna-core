@@ -981,7 +981,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
     }
 
-    function testTakeLoanDebtConstraintBpfPosResidual() external {
+    function testTakeLoanDebtConstraintBpfPosResidual() external tearDown {
 
         // Increase neutralPrice so it exceeds TP
         _addLiquidity({
@@ -1679,7 +1679,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         });
     }
 
-    function testTakeReverts() external {
+    function testTakeReverts() external tearDown {
 
         // Borrower2 borrows
         _borrow({
@@ -1999,7 +1999,7 @@ contract ERC20PoolLiquidationsTakeAndRepayAllDebtInPoolTest is ERC20HelperContra
         });
     }
 
-    function testTakeAuctionRepaidAmountGreaterThanPoolDebt() external {
+    function testTakeAuctionRepaidAmountGreaterThanPoolDebt() external tearDown {
         _updateInterest();
 
         _drawDebtNoLupCheck({
