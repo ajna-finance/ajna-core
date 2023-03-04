@@ -235,7 +235,7 @@ contract PoolInfoUtils {
         poolCollateralization_ = _collateralization(poolDebt, poolCollateral, currentLup);
         poolActualUtilization_ = pool.depositUtilization();
 
-        (uint256 debtEma, uint256 lupColEma) = pool.emasInfo();
+        (uint256 debtEma, uint256 lupColEma,,) = pool.emasInfo();
         poolTargetUtilization_ = _targetUtilization(debtEma, lupColEma);
     }
 
@@ -443,5 +443,5 @@ contract PoolInfoUtils {
         uint256 debtEma_,
         uint256 lupColEma_
     ) pure returns (uint256) {
-        return (debtEma_ != 0 && lupColEma_ != 0) ? Maths.wdiv(lupColEma_, debtEma_) : Maths.WAD;
+        return (debtEma_ != 0 && lupColEma_ != 0) ? Maths.wdiv(debtEma_, lupColEma_) : Maths.WAD;
     }
