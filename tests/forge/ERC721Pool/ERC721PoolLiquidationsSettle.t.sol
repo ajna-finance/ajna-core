@@ -257,7 +257,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
                 pledgedCollateral:    1 * 1e18,
                 encumberedCollateral: 0,
                 poolDebt:             0,
-                actualUtilization:    0.389471335647237918 * 1e18,  // FIXME: Is pool really 128% utilized?
+                actualUtilization:    0.389471335647237918 * 1e18,
                 targetUtilization:    0.656073460432016344 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,

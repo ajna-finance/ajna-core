@@ -279,7 +279,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
                 encumberedCollateral: 0.500516446164039921 * 1e18,
                 poolDebt:             1507.000974734143274062 * 1e18,
                 actualUtilization:    0.100221676952091274 * 1e18,
-                targetUtilization:    0.083613626841426309 * 1e18, // TODO: why is this number so large?
+                targetUtilization:    0.083613626841426309 * 1e18,
                 minDebtAmount:        150.700097473414327406 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
@@ -354,7 +354,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
                 encumberedCollateral: 0,
                 poolDebt:             0,
                 actualUtilization:    0.100221676952091274 * 1e18,
-                targetUtilization:    0.083613626841426309 * 1e18, // TODO: review (looks better now though)
+                targetUtilization:    0.083613626841426309 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
