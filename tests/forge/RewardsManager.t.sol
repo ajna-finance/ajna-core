@@ -1102,9 +1102,8 @@ contract RewardsManagerTest is DSTestPlus {
         vm.expectEmit(true, true, true, true);
         emit ClaimRewards(_minterTwo, address(_poolOne), tokenIdTwo, _epochsClaimedArray(1, 1), idTwoRewardsAtTwo);
         _rewardsManager.claimRewards(tokenIdTwo, _poolOne.currentBurnEpoch());
-        assertEq(_ajnaToken.balanceOf(_minterTwo), idTwoRewardsAtTwo + 8.038364414338976750 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_minterTwo), idTwoRewardsAtTwo + 8.175426995292275644 * 1e18);
 
-        return;
         // check there are no remaining rewards available after claiming
         uint256 remainingRewards = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
         assertEq(remainingRewards, 0);

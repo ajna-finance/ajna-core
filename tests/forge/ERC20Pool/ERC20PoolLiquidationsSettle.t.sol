@@ -12,7 +12,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
     address internal _lender;
     address internal _lender1;
 
-    function setUp() external {
+    function testSetUp() external {
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
