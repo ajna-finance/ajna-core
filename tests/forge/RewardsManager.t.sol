@@ -782,8 +782,8 @@ contract RewardsManagerTest is ERC20HelperContract {
             index:        _i9_81,
             lpBalance:    10_000 * 1e18,
             collateral:   0,
-            deposit:      4936.353249567789112549 * 1e18,
-            exchangeRate: 0.493635324956778911 * 1e18
+            deposit:      4_936.350384467466066087 * 1e18,
+            exchangeRate: 0.493635038446746607 * 1e18
         });
 
         /***********************/
@@ -1217,9 +1217,9 @@ contract RewardsManagerTest is ERC20HelperContract {
 
         // check rewards are claimed from the indexes that the staker is moving away from
         vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(_minterOne, address(_poolOne), secondIndexes, 4.021413654595047590 * 1e18);
+        emit UpdateExchangeRates(_minterOne, address(_poolOne), secondIndexes, 4.089968908133134320 * 1e18);
         vm.expectEmit(true, true, true, true);
-        emit ClaimRewards(_minterOne, address(_poolOne), tokenId, _epochsClaimedArray(1, 0), 44.235550200545615690 * 1e18);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenId, _epochsClaimedArray(1, 0), 44.989657989464439745 * 1e18);
         // check MoveLiquidity emits
         for (uint256 i = 0; i < firstIndexes.length; ++i) {
             vm.expectEmit(true, true, true, true);
@@ -1235,7 +1235,7 @@ contract RewardsManagerTest is ERC20HelperContract {
         changePrank(_minterOne);
         _rewardsManager.moveStakedLiquidity(tokenId, secondIndexes, firstIndexes, expiry);
 
-        // chceck that no rewards are available yet in the indexes that the staker moved to
+        // check that no rewards are available yet in the indexes that the staker moved to
         vm.expectRevert(IRewardsManagerErrors.AlreadyClaimed.selector);
         _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
 
@@ -1260,7 +1260,7 @@ contract RewardsManagerTest is ERC20HelperContract {
         // need to retrieve the position managers index set since positionIndexes are stored unordered in EnnumerableSets
         firstIndexes = _positionManager.getPositionIndexes(tokenId);
 
-        _updateExchangeRates(_updater, address(_poolOne), firstIndexes, 4.975441127402494996 * 1e18);
+        _updateExchangeRates(_updater, address(_poolOne), firstIndexes, 4.173045773803754351 * 1e18);
 
         /*********************/
         /*** Claim Rewards ***/
@@ -1268,9 +1268,9 @@ contract RewardsManagerTest is ERC20HelperContract {
 
         // claim rewards accrued since second movement of lps
         changePrank(_minterOne);
-        assertEq(_ajnaToken.balanceOf(_minterOne), 44.235550200545615690 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_minterOne), 44.989657989464439745 * 1e18);
         vm.expectEmit(true, true, true, true);
-        emit ClaimRewards(_minterOne, address(_poolOne), tokenId, _epochsClaimedArray(1, 1), 49.690135290778074505 * 1e18);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenId, _epochsClaimedArray(1, 1), 41.676741657300861210 * 1e18);
         _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
     }
 
