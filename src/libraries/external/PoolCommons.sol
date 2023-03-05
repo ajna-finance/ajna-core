@@ -149,12 +149,6 @@ library PoolCommons {
             interestParams_.emaUpdate    = block.timestamp;
         }
 
-        // save new interest rate params to storage
-        interestParams_.debt              = vars.newDebt;
-        interestParams_.meaningfulDeposit = vars.newMeaningfulDeposit;
-        interestParams_.debtCol           = vars.newDebtCol;
-        interestParams_.lupt0Debt         = vars.newLupt0Debt;
-
         // calculate and update interest rate if it has been more than 12 hours since the last update
         if (block.timestamp - interestParams_.interestRateUpdate > 12 hours) {
             vars.newInterestRate = _calculateInterestRate(
@@ -173,6 +167,12 @@ library PoolCommons {
                 emit UpdateInterestRate(poolState_.rate, vars.newInterestRate);
             }
         }
+
+        // save new interest rate params to storage
+        interestParams_.debt              = vars.newDebt;
+        interestParams_.meaningfulDeposit = vars.newMeaningfulDeposit;
+        interestParams_.debtCol           = vars.newDebtCol;
+        interestParams_.lupt0Debt         = vars.newLupt0Debt;
     }
 
     /**
