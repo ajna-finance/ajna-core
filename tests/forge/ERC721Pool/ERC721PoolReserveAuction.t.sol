@@ -233,7 +233,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         (uint256 debt,,) = _pool.debtInfo();
         assertEq(debt, 0);
 
-        uint256 reserves          = 831.584938142441953626 * 1e18;  // FIXME: why are reserves almost twice what they were in develop?
+        uint256 reserves          = 831.584938142441953626 * 1e18;
         uint256 claimableReserves = reserves;
         uint256 expectedReserves  = reserves;
         _assertReserveAuction({
