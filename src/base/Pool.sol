@@ -389,7 +389,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         // update pool interest rate state
-        poolState.debt = Maths.wmul(result.t0PoolDebt, poolState.inflator);
+        poolState.debt   = Maths.wmul(result.t0PoolDebt, poolState.inflator);
+        poolState.t0Debt = result.t0PoolDebt;
         _updateInterestState(poolState, result.lup);
 
         if(result.amountToCoverBond != 0) _transferQuoteTokenFrom(msg.sender, result.amountToCoverBond);
@@ -430,7 +431,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         // update pool interest rate state
-        poolState.debt = Maths.wmul(result.t0PoolDebt, poolState.inflator);
+        poolState.debt   = Maths.wmul(result.t0PoolDebt, poolState.inflator);
+        poolState.t0Debt = result.t0PoolDebt;
         _updateInterestState(poolState, result.lup);
 
         // transfer from kicker to pool the difference to cover bond
@@ -558,6 +560,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             if (poolState_.isNewInterestAccrued) {
                 (uint256 newInflator, uint256 newInterest) = PoolCommons.accrueInterest(
                     deposits,
+                    interestState,
                     poolState_,
                     Loans.getMax(loans).thresholdPrice,
                     elapsed
@@ -603,14 +606,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /**
      *  @notice Update interest rate and inflator of the pool.
      *  @dev    external libraries call:
-     *              - PoolCommons.updateInterestRate     
+     *              - PoolCommons.updateInterestState     
      *  @dev    write state:
-     *              - PoolCommons.updateInterestRate 
+     *              - PoolCommons.updateInterestState 
      *                  - interest debt and lup * collateral EMAs accumulators
      *                  - interest rate accumulator and interestRateUpdate state
      *              - pool inflator and inflatorUpdate state
      *  @dev    emit events:
-     *              - PoolCommons.updateInterestRate:
+     *              - PoolCommons.updateInterestState:
      *                  - UpdateInterestRate
      *  @param  poolState_ Struct containing pool details.
      *  @param  lup_       Current LUP in pool.
@@ -619,10 +622,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState_,
         uint256 lup_
     ) internal {
-        // if it has been more than 12 hours since the last interest rate update, call updateInterestRate function
-        if (block.timestamp - interestState.interestRateUpdate > 12 hours) {
-            PoolCommons.updateInterestRate(interestState, deposits, poolState_, lup_);
-        }
+
+        PoolCommons.updateInterestState(interestState, deposits, poolState_, lup_);
 
         // update pool inflator
         if (poolState_.isNewInterestAccrued) {
@@ -770,18 +771,17 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /// @inheritdoc IPoolDerivedState
-    function depositUtilization(
-        uint256 debt_,
-        uint256 collateral_
-    ) external view override returns (uint256) {
-        return PoolCommons.utilization(deposits, debt_, collateral_);
+    function depositUtilization() external view override returns (uint256) {
+        return PoolCommons.utilization(interestState);
     }
 
     /// @inheritdoc IPoolState
-    function emasInfo() external view override returns (uint256, uint256) {
+    function emasInfo() external view override returns (uint256, uint256, uint256, uint256) {
         return (
+            interestState.debtColEma,
+            interestState.lupt0DebtEma,
             interestState.debtEma,
-            interestState.lupColEma
+            interestState.depositEma
         );
     }
 

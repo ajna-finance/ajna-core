@@ -27,14 +27,9 @@ interface IPoolDerivedState {
     function depositSize() external view returns (uint256);
 
     /**
-     *  @notice Returns the deposit utilization for given debt and collateral amounts.
-     *  @param  debt_       The debt amount to calculate utilization for.
-     *  @param  collateral_ The collateral amount to calculate utilization for.
+     *  @notice Returns the meaningful actual utilization of the pool.
      *  @return Deposit utilization.
      */
-    function depositUtilization(
-        uint256 debt_,
-        uint256 collateral_
-    ) external view returns (uint256);
+    function depositUtilization() external view returns (uint256);
 
 }

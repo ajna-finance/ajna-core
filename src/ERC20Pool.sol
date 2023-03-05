@@ -160,6 +160,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
+        poolState.t0Debt     = result.t0PoolDebt;
         poolState.collateral = result.poolCollateral;
         _updateInterestState(poolState, result.newLup);
 
@@ -229,6 +230,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
         // update pool interest rate state
         poolState.debt       = result.poolDebt;
+        poolState.t0Debt     = result.t0PoolDebt;
         poolState.collateral = result.poolCollateral;
         _updateInterestState(poolState, result.newLup);
 
@@ -372,6 +374,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
         // update pool interest rate state
         poolState.debt       -= Maths.wmul(result.t0DebtSettled, poolState.inflator);
+        poolState.t0Debt     -= result.t0DebtSettled;
         poolState.collateral -= result.collateralSettled;
         _updateInterestState(poolState, _lup(poolState.debt));
     }
@@ -428,6 +431,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
         // update pool interest rate state
         poolState.debt       =  result.poolDebt;
+        poolState.t0Debt     = result.t0PoolDebt;
         poolState.collateral -= result.collateralAmount;
         _updateInterestState(poolState, result.newLup);
 
@@ -489,7 +493,8 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         );
 
         // update pool interest rate state
-        poolState.debt       = result.poolDebt;
+        poolState.debt       =  result.poolDebt;
+        poolState.t0Debt     =  result.t0PoolDebt;
         poolState.collateral -= result.collateralAmount;
         _updateInterestState(poolState, result.newLup);
     }
