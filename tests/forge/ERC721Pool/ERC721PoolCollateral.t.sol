@@ -695,8 +695,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 pledgedCollateral:    2 * 1e18,
                 encumberedCollateral: 5_992_754_428.551908353085520210 * 1e18,
                 poolDebt:             598.294326419208615388 * 1e18,
-                actualUtilization:    2.953946336992676163 * 1e18,
-                targetUtilization:    3_033_222_453.673747737570105164 * 1e18,  // TODO: investigate
+                actualUtilization:    2.990870666205084615 * 1e18,              // FIXME: MAU shouldn't be 300%
+                targetUtilization:    2_995_775_262.887499112057200872 * 1e18,  // FIXME: investigate
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
@@ -777,8 +777,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 pledgedCollateral:    1.126135947649580007 * 1e18,
                 encumberedCollateral: 4407763624.124663422322253088 * 1e18,
                 poolDebt:             440.054736090361526057 * 1e18,
-                actualUtilization:    18.756390091199132017 * 1e18,
-                targetUtilization:    3_033_222_453.673747737570105164 * 1e18,  // TODO: investigate
+                actualUtilization:    18.990844967339121167 * 1e18,
+                targetUtilization:    2_995_775_262.887499112057200872 * 1e18,  // TODO: investigate
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
@@ -1091,8 +1091,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
                 poolDebt:             0,
-                actualUtilization:    809.075467660193649279 * 1e18,             // FIXME: doesn't look right
-                targetUtilization:    14_798_992_958.518097169698921405 * 1e18,  // TODO: review
+                actualUtilization:    809.309914318771937839 * 1e18,             // FIXME: doesn't look right
+                targetUtilization:    14_683_125_178.238430800914320081 * 1e18,  // TODO: review
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
