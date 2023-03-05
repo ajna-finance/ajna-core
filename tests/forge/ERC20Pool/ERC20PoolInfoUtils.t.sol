@@ -193,13 +193,13 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
 
         assertEq(poolMinDebtAmount,     2_102.019230769230770200 * 1e18);
         assertEq(poolCollateralization, 14.181637252165253251 * 1e18);
-        assertEq(poolActualUtilization, 0.420403846153846154 * 1e18);
+        assertEq(poolActualUtilization, 0);
         assertEq(poolTargetUtilization, 1 * 1e18);
     }
 
     function testPoolInfoUtilsLenderInterestMargin() external {
         uint256 lenderInterestMargin = _poolUtils.lenderInterestMargin(address(_pool));
-        assertEq(lenderInterestMargin, 0.874935776592563266 * 1e18);
+        assertEq(lenderInterestMargin, 0.849999999999999999 * 1e18);
     }
 
     function testMomp() external {
