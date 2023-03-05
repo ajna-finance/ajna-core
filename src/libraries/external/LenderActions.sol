@@ -14,7 +14,7 @@ import {
     PoolState
 }                     from '../../interfaces/pool/commons/IPoolState.sol';
 
-import { _depositFeeRate, _priceAt, _ptp, MAX_FENWICK_INDEX } from '../helpers/PoolHelper.sol';
+import { _depositFeeRate, _priceAt, MAX_FENWICK_INDEX } from '../helpers/PoolHelper.sol';
 
 import { Deposits } from '../internal/Deposits.sol';
 import { Buckets }  from '../internal/Buckets.sol';
