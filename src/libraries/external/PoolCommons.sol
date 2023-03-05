@@ -77,7 +77,7 @@ library PoolCommons {
      *              - UpdateInterestRate
      */
     function updateInterestState(
-        InterestState storage interestParams_,  // TODO: many writes; should we pass as memory and let caller update?
+        InterestState storage interestParams_,
         DepositsState storage deposits_,
         PoolState memory poolState_,
         uint256 lup_
