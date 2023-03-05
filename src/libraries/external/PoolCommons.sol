@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
 pragma solidity 0.8.14;
-import "forge-std/console.sol";
 
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
@@ -272,6 +271,53 @@ library PoolCommons {
         newInterestRate_ = Maths.min(500 * 1e18, Maths.max(0.001 * 1e18, newInterestRate_));
     }
 
+    /**
+     *  @notice Calculates pool meaningful actual utilization.
+     *  @param  debtEma_     EMA of pool debt.
+     *  @param  depositEma_  EMA of meaningful pool deposit.
+     *  @return utilization_ Pool meaningful actual utilization value.
+     */
+    function _utilization(
+        uint256 debtEma_,
+        uint256 depositEma_
+    ) internal pure returns (uint256 utilization_) {
+        if (depositEma_ != 0) utilization_ = Maths.wdiv(debtEma_, depositEma_);
+    }
+
+    /**
+     *  @notice Calculates lender interest margin.
+     *  @param  mau_ Meaningful actual utilization.
+     *  @return The lender interest margin value.
+     */
+    function _lenderInterestMargin(
+        uint256 mau_
+    ) internal pure returns (uint256) {
+        uint256 base = 1_000_000 * 1e18 - Maths.wmul(Maths.min(mau_, 1e18), 1_000_000 * 1e18);
+        if (base < 1e18) {
+            return 1e18;
+        } else {
+            // cubic root of the percentage of meaningful unutilized deposit
+            uint256 crpud = PRBMathUD60x18.pow(base, ONE_THIRD);
+            return 1e18 - Maths.wmul(Maths.wdiv(crpud, CUBIC_ROOT_1000000), 0.15 * 1e18);
+        }
+    }
+
+    function _meaningfulDeposit(
+        DepositsState storage deposits_,
+        uint256 t0Debt_,
+        uint256 inflator_,
+        uint256 t0Debt2ToCollateral_
+    ) internal view returns (uint256 meaningfulDeposit_) {
+        uint256 dwatp = _dwatp(t0Debt_, inflator_, t0Debt2ToCollateral_);
+        if (dwatp == 0) {
+            meaningfulDeposit_ = Deposits.treeSum(deposits_);
+        } else {
+            if      (dwatp >= MAX_PRICE) meaningfulDeposit_ = 0;
+            else if (dwatp >= MIN_PRICE) meaningfulDeposit_ = Deposits.prefixSum(deposits_, _indexOf(dwatp));
+            else                         meaningfulDeposit_ = Deposits.treeSum(deposits_);
+        }
+    }
+
     /**********************/
     /*** View Functions ***/
     /**********************/
@@ -325,56 +371,5 @@ library PoolCommons {
         InterestState storage interestParams_
     ) external view returns (uint256 utilization_) {
         return _utilization(interestParams_.debtEma, interestParams_.depositEma);
-    }
-
-    /**************************/
-    /*** Internal Functions ***/
-    /**************************/
-
-    /**
-     *  @notice Calculates pool meaningful actual utilization.
-     *  @param  debtEma_     EMA of pool debt.
-     *  @param  depositEma_  EMA of meaningful pool deposit.
-     *  @return utilization_ Pool meaningful actual utilization value.
-     */
-    function _utilization(
-        uint256 debtEma_,
-        uint256 depositEma_
-    ) internal pure returns (uint256 utilization_) {
-        if (depositEma_ != 0) utilization_ = Maths.wdiv(debtEma_, depositEma_);
-    }
-
-    /**
-     *  @notice Calculates lender interest margin.
-     *  @param  mau_ Meaningful actual utilization.
-     *  @return The lender interest margin value.
-     */
-    function _lenderInterestMargin(
-        uint256 mau_
-    ) internal pure returns (uint256) {
-        uint256 base = 1_000_000 * 1e18 - Maths.wmul(Maths.min(mau_, 1e18), 1_000_000 * 1e18);
-        if (base < 1e18) {
-            return 1e18;
-        } else {
-            // cubic root of the percentage of meaningful unutilized deposit
-            uint256 crpud = PRBMathUD60x18.pow(base, ONE_THIRD);
-            return 1e18 - Maths.wmul(Maths.wdiv(crpud, CUBIC_ROOT_1000000), 0.15 * 1e18);
-        }
-    }
-
-    function _meaningfulDeposit(
-        DepositsState storage deposits_,
-        uint256 t0Debt_,
-        uint256 inflator_,
-        uint256 t0Debt2ToCollateral_
-    ) internal view returns (uint256 meaningfulDeposit_) {
-        uint256 dwatp = _dwatp(t0Debt_, inflator_, t0Debt2ToCollateral_);
-        if (dwatp == 0) {
-            meaningfulDeposit_ = Deposits.treeSum(deposits_);
-        } else {
-            if      (dwatp >= MAX_PRICE) meaningfulDeposit_ = 0;
-            else if (dwatp >= MIN_PRICE) meaningfulDeposit_ = Deposits.prefixSum(deposits_, _indexOf(dwatp));
-            else                         meaningfulDeposit_ = Deposits.treeSum(deposits_);
-        }
     }
 }
