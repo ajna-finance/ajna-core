@@ -103,7 +103,7 @@ library PoolCommons {
         vars.newLupt0Debt = Maths.wmul(lup_, poolState_.t0Debt);
 
         // update EMAs only once per block
-        if (interestParams_.emaUpdate != block.timestamp) {
+        if (vars.lastEmaUpdate != block.timestamp) {
 
             // We do not need to calculate these during initialization, 
             // but the conditional to check each time would be more expensive thereafter.
