@@ -8,7 +8,7 @@ import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
 import { InterestState, PoolState, DepositsState } from '../../interfaces/pool/commons/IPoolState.sol';
 
-import { _indexOf, _ptp, MAX_FENWICK_INDEX, MIN_PRICE, MAX_PRICE } from '../helpers/PoolHelper.sol';
+import { _dwatp, _indexOf, MAX_FENWICK_INDEX, MIN_PRICE, MAX_PRICE } from '../helpers/PoolHelper.sol';
 
 import { Deposits } from '../internal/Deposits.sol';
 import { Buckets }  from '../internal/Buckets.sol';
@@ -86,7 +86,7 @@ library PoolCommons {
             uint256 curDepositEma = interestParams_.depositEma;
             if (curDepositEma == 0) {
                 // initialize to actual value for the first calculation
-                curDepositEma = _meaningfulDeposit(deposits_, inflator, interestParams_.t0UtilizationWeight, t0Debt);    
+                curDepositEma = _meaningfulDeposit(deposits_, t0Debt, inflator, interestParams_.t0UtilizationWeight);    
             } else {
                 curDepositEma = uint256(
                     PRBMathSD59x18.mul(weightMau, int256(curDepositEma)) +
@@ -128,7 +128,7 @@ library PoolCommons {
         }
 
         interestParams_.debt              = Maths.wmul(inflator, t0Debt);
-        interestParams_.meaningfulDeposit = _meaningfulDeposit(deposits_, inflator, interestParams_.t0UtilizationWeight, t0Debt);
+        interestParams_.meaningfulDeposit = _meaningfulDeposit(deposits_, t0Debt, inflator, interestParams_.t0UtilizationWeight);
         interestParams_.debtCol           = Maths.wmul(inflator, interestParams_.t0UtilizationWeight);
         interestParams_.lupt0Debt         = Maths.wmul(lup_, t0Debt);
     }
@@ -333,12 +333,11 @@ library PoolCommons {
 
     function _meaningfulDeposit(
         DepositsState storage deposits_,
+        uint256 t0Debt_,
         uint256 inflator_,
-        uint256 t0UtilizationWeight_,
-        uint256 t0Debt_
+        uint256 t0UtilizationWeight_
     ) internal view returns (uint256 meaningfulDeposit_) {
-        // TODO: calculate DWATP in PoolHelper, where PTP used to be
-        uint256 dwatp = t0Debt_ == 0 ? 0 : Maths.wmul(inflator_, Maths.wdiv(t0UtilizationWeight_, t0Debt_));
+        uint256 dwatp = _dwatp(t0Debt_, inflator_, t0UtilizationWeight_);
         if (dwatp == 0) {
             meaningfulDeposit_ = Deposits.treeSum(deposits_);
         } else {
