@@ -622,13 +622,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState_,
         uint256 lup_
     ) internal {
-        // update EMAs required to calculate utilization
-        PoolCommons.updateUtilizationEmas(interestState, deposits, poolState_, lup_);
 
-        // if it has been more than 12 hours since the last interest rate update, call updateInterestRate function
-        if (block.timestamp - interestState.interestRateUpdate > 12 hours) {
-            PoolCommons.updateInterestRate(interestState, poolState_);
-        }
+        PoolCommons.updateInterestState(interestState, deposits, poolState_, lup_);
 
         // update pool inflator
         if (poolState_.isNewInterestAccrued) {
