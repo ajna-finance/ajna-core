@@ -281,7 +281,7 @@ struct InterestState {
     uint256 debtEma;             // [WAD] sample of debt EMA, numerator to MAU calculation
     uint256 meaningfulDeposit;   // [WAD] previous update's meaningfulDeposit
     uint256 depositEma;          // [WAD] sample of meaningful deposit EMA, denominator to MAU calculation
-    uint256 t0UtilizationWeight; // [WAD] utilization weight accumulator, tracks debt and collateral relationship accross borrowers 
+    uint256 t0Debt2ToCollateral; // [WAD] utilization weight accumulator, tracks debt and collateral relationship accross borrowers 
     uint256 debtCol;             // [WAD] previous debt squared to collateral
     uint256 debtColEma;          // [WAD] debt squared to collateral EMA, numerator to TU calculation
     uint256 lupt0Debt;           // [WAD] previous LUP * t0 debt

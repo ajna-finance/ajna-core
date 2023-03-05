@@ -86,7 +86,7 @@ library PoolCommons {
             uint256 curDepositEma = interestParams_.depositEma;
             if (curDepositEma == 0) {
                 // initialize to actual value for the first calculation
-                curDepositEma = _meaningfulDeposit(deposits_, t0Debt, inflator, interestParams_.t0UtilizationWeight);    
+                curDepositEma = _meaningfulDeposit(deposits_, t0Debt, inflator, interestParams_.t0Debt2ToCollateral);    
             } else {
                 curDepositEma = uint256(
                     PRBMathSD59x18.mul(weightMau, int256(curDepositEma)) +
@@ -98,7 +98,7 @@ library PoolCommons {
             // update the debt squared to collateral EMA, used for TU
             uint256 curDebtColEma = interestParams_.debtColEma;
             if (curDebtColEma == 0) {
-                curDebtColEma =  Maths.wmul(inflator, interestParams_.t0UtilizationWeight);
+                curDebtColEma =  Maths.wmul(inflator, interestParams_.t0Debt2ToCollateral);
             } else {
                 curDebtColEma = uint256(
                     PRBMathSD59x18.mul(weightTu, int256(curDebtColEma)) +
@@ -128,8 +128,8 @@ library PoolCommons {
         }
 
         interestParams_.debt              = Maths.wmul(inflator, t0Debt);
-        interestParams_.meaningfulDeposit = _meaningfulDeposit(deposits_, t0Debt, inflator, interestParams_.t0UtilizationWeight);
-        interestParams_.debtCol           = Maths.wmul(inflator, interestParams_.t0UtilizationWeight);
+        interestParams_.meaningfulDeposit = _meaningfulDeposit(deposits_, t0Debt, inflator, interestParams_.t0Debt2ToCollateral);
+        interestParams_.debtCol           = Maths.wmul(inflator, interestParams_.t0Debt2ToCollateral);
         interestParams_.lupt0Debt         = Maths.wmul(lup_, t0Debt);
     }
 
@@ -335,9 +335,9 @@ library PoolCommons {
         DepositsState storage deposits_,
         uint256 t0Debt_,
         uint256 inflator_,
-        uint256 t0UtilizationWeight_
+        uint256 t0Debt2ToCollateral_
     ) internal view returns (uint256 meaningfulDeposit_) {
-        uint256 dwatp = _dwatp(t0Debt_, inflator_, t0UtilizationWeight_);
+        uint256 dwatp = _dwatp(t0Debt_, inflator_, t0Debt2ToCollateral_);
         if (dwatp == 0) {
             meaningfulDeposit_ = Deposits.treeSum(deposits_);
         } else {
