@@ -62,13 +62,28 @@ library PoolCommons {
         PoolState memory poolState_,
         uint256 lup_
     ) external {
-        // update EMAs required to calculate utilization
-        _updateUtilizationEmas(
-            interestParams_,
+        uint256 lastEmaUpdate = interestParams_.emaUpdate;
+
+        // if a previous transaction in this block already updated the EMA, only update cached values
+        if (lastEmaUpdate != block.timestamp) {
+            // update EMAs required to calculate utilization
+            _updateUtilizationEmas(
+                interestParams_,
+                deposits_,
+                poolState_,
+                lup_
+            );
+        }
+
+        interestParams_.debt              = Maths.wmul(poolState_.inflator, poolState_.t0Debt);
+        interestParams_.meaningfulDeposit = _meaningfulDeposit(
             deposits_,
-            poolState_,
-            lup_
+            poolState_.t0Debt,
+            poolState_.inflator,
+            interestParams_.t0Debt2ToCollateral
         );
+        interestParams_.debtCol           = Maths.wmul(poolState_.inflator, interestParams_.t0Debt2ToCollateral);
+        interestParams_.lupt0Debt         = Maths.wmul(lup_, poolState_.t0Debt);
 
         uint256 lastInterestUpdate = interestParams_.interestRateUpdate;
         // if it has been more than 12 hours since the last interest rate update, call updateInterestRate function
@@ -90,72 +105,64 @@ library PoolCommons {
         uint256 inflator = poolState_.inflator;
         uint256 t0Debt   = poolState_.t0Debt;
 
-        // if a previous transaction in this block already updated the EMA, only update cached values
-        if (interestParams_.emaUpdate != block.timestamp) {
-            // We do not need to calculate these during initialization, 
-            // but the conditional to check each time would be more expensive thereafter.
-            int256 elapsed   = int256(Maths.wdiv(block.timestamp - interestParams_.emaUpdate, 1 hours));
-            int256 weightMau = PRBMathSD59x18.exp(PRBMathSD59x18.mul(NEG_H_MAU_HOURS, elapsed));
-            int256 weightTu  = PRBMathSD59x18.exp(PRBMathSD59x18.mul(NEG_H_TU_HOURS,  elapsed));
+        // We do not need to calculate these during initialization, 
+        // but the conditional to check each time would be more expensive thereafter.
+        int256 elapsed   = int256(Maths.wdiv(block.timestamp - interestParams_.emaUpdate, 1 hours));
+        int256 weightMau = PRBMathSD59x18.exp(PRBMathSD59x18.mul(NEG_H_MAU_HOURS, elapsed));
+        int256 weightTu  = PRBMathSD59x18.exp(PRBMathSD59x18.mul(NEG_H_TU_HOURS,  elapsed));
 
-            // update the t0 debt EMA, used for MAU
-            uint256 curDebtEma = interestParams_.debtEma;
-            if (curDebtEma == 0) {
-                // initialize to actual value for the first calculation
-                curDebtEma = Maths.wmul(inflator, t0Debt);
-            } else {
-                curDebtEma = uint256(
-                    PRBMathSD59x18.mul(weightMau, int256(curDebtEma)) +
-                    PRBMathSD59x18.mul((1e18 - weightMau), int256(interestParams_.debt))
-                );
-            }
-
-            // update the meaningful deposit EMA, used for MAU
-            uint256 curDepositEma = interestParams_.depositEma;
-            if (curDepositEma == 0) {
-                // initialize to actual value for the first calculation
-                curDepositEma = _meaningfulDeposit(deposits_, t0Debt, inflator, interestParams_.t0Debt2ToCollateral);    
-            } else {
-                curDepositEma = uint256(
-                    PRBMathSD59x18.mul(weightMau, int256(curDepositEma)) +
-                    PRBMathSD59x18.mul((1e18 - weightMau), int256(interestParams_.meaningfulDeposit))
-                );
-            }
-
-            // update the debt squared to collateral EMA, used for TU
-            uint256 curDebtColEma = interestParams_.debtColEma;
-            if (curDebtColEma == 0) {
-                curDebtColEma =  Maths.wmul(inflator, interestParams_.t0Debt2ToCollateral);
-            } else {
-                curDebtColEma = uint256(
-                    PRBMathSD59x18.mul(weightTu, int256(curDebtColEma)) +
-                    PRBMathSD59x18.mul((1e18 - weightTu), int256(interestParams_.debtCol))
-                );
-            }
-
-            // update the EMA of LUP * t0 debt
-            uint256 curlupt0DebtEma = interestParams_.lupt0DebtEma;
-            if (curlupt0DebtEma == 0) {
-                curlupt0DebtEma = Maths.wmul(lup_, t0Debt);
-            } else {
-                curlupt0DebtEma = uint256(
-                    PRBMathSD59x18.mul(weightTu, int256(curlupt0DebtEma)) +
-                    PRBMathSD59x18.mul((1e18 - weightTu), int256(interestParams_.lupt0Debt))
-                );
-            }
-
-            interestParams_.debtEma      = curDebtEma;
-            interestParams_.depositEma   = curDepositEma;
-            interestParams_.debtColEma   = curDebtColEma;
-            interestParams_.lupt0DebtEma = curlupt0DebtEma;
-
-            interestParams_.emaUpdate    = block.timestamp;
+        // update the t0 debt EMA, used for MAU
+        uint256 curDebtEma = interestParams_.debtEma;
+        if (curDebtEma == 0) {
+            // initialize to actual value for the first calculation
+            curDebtEma = Maths.wmul(inflator, t0Debt);
+        } else {
+            curDebtEma = uint256(
+                PRBMathSD59x18.mul(weightMau, int256(curDebtEma)) +
+                PRBMathSD59x18.mul((1e18 - weightMau), int256(interestParams_.debt))
+            );
         }
 
-        interestParams_.debt              = Maths.wmul(inflator, t0Debt);
-        interestParams_.meaningfulDeposit = _meaningfulDeposit(deposits_, t0Debt, inflator, interestParams_.t0Debt2ToCollateral);
-        interestParams_.debtCol           = Maths.wmul(inflator, interestParams_.t0Debt2ToCollateral);
-        interestParams_.lupt0Debt         = Maths.wmul(lup_, t0Debt);
+        // update the meaningful deposit EMA, used for MAU
+        uint256 curDepositEma = interestParams_.depositEma;
+        if (curDepositEma == 0) {
+            // initialize to actual value for the first calculation
+            curDepositEma = _meaningfulDeposit(deposits_, t0Debt, inflator, interestParams_.t0Debt2ToCollateral);    
+        } else {
+            curDepositEma = uint256(
+                PRBMathSD59x18.mul(weightMau, int256(curDepositEma)) +
+                PRBMathSD59x18.mul((1e18 - weightMau), int256(interestParams_.meaningfulDeposit))
+            );
+        }
+
+        // update the debt squared to collateral EMA, used for TU
+        uint256 curDebtColEma = interestParams_.debtColEma;
+        if (curDebtColEma == 0) {
+            curDebtColEma =  Maths.wmul(inflator, interestParams_.t0Debt2ToCollateral);
+        } else {
+            curDebtColEma = uint256(
+                PRBMathSD59x18.mul(weightTu, int256(curDebtColEma)) +
+                PRBMathSD59x18.mul((1e18 - weightTu), int256(interestParams_.debtCol))
+            );
+        }
+
+        // update the EMA of LUP * t0 debt
+        uint256 curlupt0DebtEma = interestParams_.lupt0DebtEma;
+        if (curlupt0DebtEma == 0) {
+            curlupt0DebtEma = Maths.wmul(lup_, t0Debt);
+        } else {
+            curlupt0DebtEma = uint256(
+                PRBMathSD59x18.mul(weightTu, int256(curlupt0DebtEma)) +
+                PRBMathSD59x18.mul((1e18 - weightTu), int256(interestParams_.lupt0Debt))
+            );
+        }
+
+        interestParams_.debtEma      = curDebtEma;
+        interestParams_.depositEma   = curDepositEma;
+        interestParams_.debtColEma   = curDebtColEma;
+        interestParams_.lupt0DebtEma = curlupt0DebtEma;
+
+        interestParams_.emaUpdate    = block.timestamp;
     }
 
     /**
