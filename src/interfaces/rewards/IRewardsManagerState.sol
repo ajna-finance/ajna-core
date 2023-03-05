@@ -74,6 +74,6 @@ struct StakeInfo {
 }
 
 struct BucketState {
-    uint256 lpsAtStakeTime;  // [WAD] LP amount the NFT owner is entitled in current bucket at the time of staking
-    uint256 rateAtStakeTime; // [WAD] current bucket exchange rate at the time of staking
+    uint128 lpsAtStakeTime;  // [WAD] LP amount the NFT owner is entitled in current bucket at the time of staking
+    uint128 rateAtStakeTime; // [WAD] current bucket exchange rate at the time of staking
 }
