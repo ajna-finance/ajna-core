@@ -111,7 +111,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 pledgedCollateral:    100 * 1e18,
                 encumberedCollateral: 7.051372011699988577 * 1e18,
                 poolDebt:             21_020.192307692307702000 * 1e18,
-                actualUtilization:    0, // investigate
+                actualUtilization:    0,
                 targetUtilization:    1e18,
                 minDebtAmount:        2_102.0192307692307702 * 1e18,
                 loans:                1,
@@ -209,7 +209,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 pledgedCollateral:    100 * 1e18,
                 encumberedCollateral: 13.565832411651963522 * 1e18,
                 poolDebt:             40_038.461538461538480000 * 1e18,
-                actualUtilization:    0, // investigate
+                actualUtilization:    0,
                 targetUtilization:    1e18,
                 minDebtAmount:        4_003.846153846153848 * 1e18,
                 loans:                1,
@@ -241,7 +241,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 pledgedCollateral:    100 * 1e18,
                 encumberedCollateral: 10.126997207526425123 * 1e18,
                 poolDebt:             30_038.461538461538480000 * 1e18,
-                actualUtilization:    0, // investigate
+                actualUtilization:    0,
                 targetUtilization:    1e18,
                 minDebtAmount:        3_003.846153846153848000 * 1e18,
                 loans:                1,
