@@ -380,7 +380,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 loans:                1,
                 maxBorrower:          _borrower,
                 interestRate:         0.045 * 1e18,
-                interestRateUpdate:   _startTime + 10 days //TODO: is this wrong? should be 20 days?
+                interestRateUpdate:   _startTime + 10 days
             })
         );
         _assertBorrower({
