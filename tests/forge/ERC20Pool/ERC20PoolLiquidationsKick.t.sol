@@ -128,7 +128,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
 
     }
     
-    function testKick() external tearDown {
+    function testKick() external tearDown{
         // Skip to make borrower undercollateralized
         skip(100 days);
 
@@ -183,7 +183,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 pledgedCollateral:    1_002 * 1e18,
                 encumberedCollateral: 835.035237319063220561 * 1e18,
                 poolDebt:             8_117.624599705640061720 * 1e18,
-                actualUtilization:    0.111054183983070340 * 1e18,
+                actualUtilization:    0,
                 targetUtilization:    0.833474739413608094 * 1e18,
                 minDebtAmount:        811.762459970564006172 * 1e18,
                 loans:                1,
