@@ -1260,7 +1260,7 @@ contract RewardsManagerTest is ERC20HelperContract {
         // need to retrieve the position managers index set since positionIndexes are stored unordered in EnnumerableSets
         firstIndexes = _positionManager.getPositionIndexes(tokenId);
 
-        _updateExchangeRates(_updater, address(_poolOne), firstIndexes, 3.316474694142993919 * 1e18);
+        _updateExchangeRates(_updater, address(_poolOne), firstIndexes, 4.975441127402494996 * 1e18);
 
         /*********************/
         /*** Claim Rewards ***/
@@ -1270,7 +1270,7 @@ contract RewardsManagerTest is ERC20HelperContract {
         changePrank(_minterOne);
         assertEq(_ajnaToken.balanceOf(_minterOne), 44.235550200545615690 * 1e18);
         vm.expectEmit(true, true, true, true);
-        emit ClaimRewards(_minterOne, address(_poolOne), tokenId, _epochsClaimedArray(1, 1), 33.121903535270272860 * 1e18);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenId, _epochsClaimedArray(1, 1), 49.690135290778074505 * 1e18);
         _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
     }
 
