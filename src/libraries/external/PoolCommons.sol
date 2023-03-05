@@ -54,6 +54,9 @@ library PoolCommons {
         uint256 lupt0DebtEma;
         uint256 t0Debt2ToCollateral;
         uint256 newMeaningfulDeposit;
+        uint256 newDebt;
+        uint256 newDebtCol;
+        uint256 newLupt0Debt;
         uint256 lastEmaUpdate;
         int256 elapsed;
         int256 weightMau;
@@ -81,20 +84,24 @@ library PoolCommons {
         uint256 lup_
     ) external {
         UpdateInterestLocalVars memory vars;
-        vars.debtEma      = interestParams_.debtEma;
-        vars.depositEma   = interestParams_.depositEma;
-        vars.debtColEma   = interestParams_.debtColEma;
-        vars.lupt0DebtEma = interestParams_.lupt0DebtEma;
+        vars.debtEma       = interestParams_.debtEma;
+        vars.depositEma    = interestParams_.depositEma;
+        vars.debtColEma    = interestParams_.debtColEma;
+        vars.lupt0DebtEma  = interestParams_.lupt0DebtEma;
+        vars.lastEmaUpdate = interestParams_.emaUpdate;
 
-        vars.t0Debt2ToCollateral  = interestParams_.t0Debt2ToCollateral;
+        vars.t0Debt2ToCollateral = interestParams_.t0Debt2ToCollateral;
+
+        // calculate new interest params
         vars.newMeaningfulDeposit = _meaningfulDeposit(
             deposits_,
             poolState_.t0Debt,
             poolState_.inflator,
             vars.t0Debt2ToCollateral
         );
-
-        vars.lastEmaUpdate = interestParams_.emaUpdate;
+        vars.newDebt      = Maths.wmul(poolState_.inflator, poolState_.t0Debt);
+        vars.newDebtCol   = Maths.wmul(poolState_.inflator, vars.t0Debt2ToCollateral);
+        vars.newLupt0Debt = Maths.wmul(lup_, poolState_.t0Debt);
 
         // update EMAs only once per block
         if (interestParams_.emaUpdate != block.timestamp) {
@@ -105,33 +112,33 @@ library PoolCommons {
             vars.weightMau = PRBMathSD59x18.exp(PRBMathSD59x18.mul(NEG_H_MAU_HOURS, vars.elapsed));
             vars.weightTu  = PRBMathSD59x18.exp(PRBMathSD59x18.mul(NEG_H_TU_HOURS,  vars.elapsed));
 
-            // calculate EMAs
-            vars.debtEma = _calculateDebtEma(
-                poolState_,
-                vars.debtEma,
-                interestParams_.debt,
-                vars.weightMau
-            );
-            vars.depositEma = _calculateDepositEma(
-                vars.depositEma,
-                interestParams_.meaningfulDeposit,
-                vars.newMeaningfulDeposit,
-                vars.weightMau
-            );
-            vars.debtColEma = _calculateDebtColEma(
-                poolState_,
-                vars.debtColEma,
-                interestParams_.debtCol,
-                vars.t0Debt2ToCollateral,
-                vars.weightTu
-            );
-            vars.lupt0DebtEma = _calculateLupt0DebtEma(
-                poolState_,
-                vars.lupt0DebtEma,
-                interestParams_.lupt0Debt,
-                vars.weightTu,
-                lup_
-            );
+            // calculate the t0 debt EMA, used for MAU
+            vars.debtEma = vars.debtEma == 0 ? vars.newDebt :
+                uint256(
+                    PRBMathSD59x18.mul(vars.weightMau, int256(vars.debtEma)) +
+                    PRBMathSD59x18.mul(1e18 - vars.weightMau, int256(interestParams_.debt))
+                );
+
+            // update the meaningful deposit EMA, used for MAU
+            vars.depositEma = vars.depositEma == 0 ? vars.newMeaningfulDeposit :
+                uint256(
+                    PRBMathSD59x18.mul(vars.weightMau, int256(vars.depositEma)) +
+                    PRBMathSD59x18.mul(1e18 - vars.weightMau, int256(interestParams_.meaningfulDeposit))
+                );
+
+            // calculate the debt squared to collateral EMA, used for TU
+            vars.debtColEma = vars.debtColEma == 0 ? vars.newDebtCol :
+                uint256(
+                    PRBMathSD59x18.mul(vars.weightTu, int256(vars.debtColEma)) +
+                    PRBMathSD59x18.mul(1e18 - vars.weightTu, int256(interestParams_.debtCol))
+                );
+
+            // calculate the EMA of LUP * t0 debt
+            vars.lupt0DebtEma = vars.lupt0DebtEma == 0 ? vars.newLupt0Debt :
+                uint256(
+                    PRBMathSD59x18.mul(vars.weightTu, int256(vars.lupt0DebtEma)) +
+                    PRBMathSD59x18.mul(1e18 - vars.weightTu, int256(interestParams_.lupt0Debt))
+                );
 
             // save EMAs in storage
             interestParams_.debtEma      = vars.debtEma;
@@ -143,11 +150,11 @@ library PoolCommons {
             interestParams_.emaUpdate    = block.timestamp;
         }
 
-        // calculate and save interest rate params to storage
-        interestParams_.debt              = Maths.wmul(poolState_.inflator, poolState_.t0Debt);
+        // save new interest rate params to storage
+        interestParams_.debt              = vars.newDebt;
         interestParams_.meaningfulDeposit = vars.newMeaningfulDeposit;
-        interestParams_.debtCol           = Maths.wmul(poolState_.inflator, vars.t0Debt2ToCollateral);
-        interestParams_.lupt0Debt         = Maths.wmul(lup_, poolState_.t0Debt);
+        interestParams_.debtCol           = vars.newDebtCol;
+        interestParams_.lupt0Debt         = vars.newLupt0Debt;
 
         // if it has been more than 12 hours since the last interest rate update, call updateInterestRate function
         if (block.timestamp - interestParams_.interestRateUpdate > 12 hours) {
@@ -222,86 +229,6 @@ library PoolCommons {
     /**************************/
     /*** Internal Functions ***/
     /**************************/
-
-    /**
-     *  @notice Calculates Debt EMA.
-     */
-    function _calculateDebtEma(
-        PoolState memory poolState_,
-        uint256 debtEma_,
-        uint256 debt_,
-        int256 weightMau_
-    ) internal pure returns (uint256) {
-        // update the t0 debt EMA, used for MAU
-        if (debtEma_ == 0) {
-            // initialize to actual value for the first calculation
-            return Maths.wmul(poolState_.inflator, poolState_.t0Debt);
-        } else {
-            return uint256(
-                PRBMathSD59x18.mul(weightMau_, int256(debtEma_)) +
-                PRBMathSD59x18.mul((1e18 - weightMau_), int256(debt_))
-            );
-        }
-    }
-
-    /**
-     *  @notice Calculates Deposit EMA.
-     */
-    function _calculateDepositEma(
-        uint256 depositEma_,
-        uint256 meaningfulDeposit_,
-        uint256 newMeaningfulDeposit_,
-        int256 weightMau_
-    ) internal pure returns (uint256) {
-        if (depositEma_ == 0) {
-            return newMeaningfulDeposit_;    
-        } else {
-            return uint256(
-                PRBMathSD59x18.mul(weightMau_, int256(depositEma_)) +
-                PRBMathSD59x18.mul((1e18 - weightMau_), int256(meaningfulDeposit_))
-            );
-        }
-    }
-
-    /**
-     *  @notice Calculates DebtCol EMA.
-     */
-    function _calculateDebtColEma(
-        PoolState memory poolState_,
-        uint256 debtColEma_,
-        uint256 debtCol_,
-        uint256 t0Debt2ToCollateral_,
-        int256 weightTu_
-    ) internal pure returns (uint256) {
-        if (debtColEma_ == 0) {
-            return Maths.wmul(poolState_.inflator, t0Debt2ToCollateral_);
-        } else {
-            return uint256(
-                PRBMathSD59x18.mul(weightTu_, int256(debtColEma_)) +
-                PRBMathSD59x18.mul((1e18 - weightTu_), int256(debtCol_))
-            );
-        }
-    }
-
-    /**
-     *  @notice Calculates Lupt0Debt EMA.
-     */
-    function _calculateLupt0DebtEma(
-        PoolState memory poolState_,
-        uint256 lupt0DebtEma_,
-        uint256 lupt0Debt_,
-        int256 weightTu_,
-        uint256 lup_
-    ) internal pure returns (uint256) {
-        if (lupt0DebtEma_ == 0) {
-            return Maths.wmul(lup_, poolState_.t0Debt);
-        } else {
-            return uint256(
-                PRBMathSD59x18.mul(weightTu_, int256(lupt0DebtEma_)) +
-                PRBMathSD59x18.mul((1e18 - weightTu_), int256(lupt0Debt_))
-            );
-        }
-    }
 
     /**
      *  @notice Calculates new pool interest rate.
