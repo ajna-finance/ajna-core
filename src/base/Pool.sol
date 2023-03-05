@@ -606,14 +606,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /**
      *  @notice Update interest rate and inflator of the pool.
      *  @dev    external libraries call:
-     *              - PoolCommons.updateInterestRate     
+     *              - PoolCommons.updateInterestState     
      *  @dev    write state:
-     *              - PoolCommons.updateInterestRate 
+     *              - PoolCommons.updateInterestState 
      *                  - interest debt and lup * collateral EMAs accumulators
      *                  - interest rate accumulator and interestRateUpdate state
      *              - pool inflator and inflatorUpdate state
      *  @dev    emit events:
-     *              - PoolCommons.updateInterestRate:
+     *              - PoolCommons.updateInterestState:
      *                  - UpdateInterestRate
      *  @param  poolState_ Struct containing pool details.
      *  @param  lup_       Current LUP in pool.
