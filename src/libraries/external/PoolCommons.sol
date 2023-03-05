@@ -156,7 +156,7 @@ library PoolCommons {
         interestParams_.debtCol           = vars.newDebtCol;
         interestParams_.lupt0Debt         = vars.newLupt0Debt;
 
-        // if it has been more than 12 hours since the last interest rate update, call updateInterestRate function
+        // calculate and update interest rate if it has been more than 12 hours since the last update
         if (block.timestamp - interestParams_.interestRateUpdate > 12 hours) {
             vars.newInterestRate = _calculateInterestRate(
                 poolState_,
