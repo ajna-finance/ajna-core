@@ -216,7 +216,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         stakeInfo.stakingEpoch = uint96(curBurnEpoch);
 
         // initialize last time interaction at staking epoch
-        stakeInfo.lastInteractionBurnEpoch = uint96(curBurnEpoch);
+        stakeInfo.lastClaimedEpoch = uint96(curBurnEpoch);
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
 
@@ -321,14 +321,14 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         uint256 epochToClaim_
     ) external view override returns (uint256 rewards_) {
 
-        address ajnaPool      = stakes[tokenId_].ajnaPool;
-        uint256 lastBurnEpoch = stakes[tokenId_].lastInteractionBurnEpoch;
-        uint256 stakingEpoch  = stakes[tokenId_].stakingEpoch;
+        address ajnaPool         = stakes[tokenId_].ajnaPool;
+        uint256 lastClaimedEpoch = stakes[tokenId_].lastClaimedEpoch;
+        uint256 stakingEpoch     = stakes[tokenId_].stakingEpoch;
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexesFiltered(tokenId_);
 
         // iterate through all burn periods to calculate and claim rewards
-        for (uint256 epoch = lastBurnEpoch; epoch < epochToClaim_; ) {
+        for (uint256 epoch = lastClaimedEpoch; epoch < epochToClaim_; ) {
 
             rewards_ += _calculateNextEpochRewards(
                 tokenId_,
@@ -349,7 +349,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         return (
             stakes[tokenId_].owner,
             stakes[tokenId_].ajnaPool,
-            stakes[tokenId_].lastInteractionBurnEpoch
+            stakes[tokenId_].lastClaimedEpoch
         );
     }
 
@@ -380,14 +380,14 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         uint256 epochToClaim_
     ) internal returns (uint256 rewards_) {
 
-        address ajnaPool      = stakes[tokenId_].ajnaPool;
-        uint256 lastBurnEpoch = stakes[tokenId_].lastInteractionBurnEpoch;
-        uint256 stakingEpoch  = stakes[tokenId_].stakingEpoch;
+        address ajnaPool         = stakes[tokenId_].ajnaPool;
+        uint256 lastClaimedEpoch = stakes[tokenId_].lastClaimedEpoch;
+        uint256 stakingEpoch     = stakes[tokenId_].stakingEpoch;
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexesFiltered(tokenId_);
 
         // iterate through all burn periods to calculate and claim rewards
-        for (uint256 epoch = lastBurnEpoch; epoch < epochToClaim_; ) {
+        for (uint256 epoch = lastClaimedEpoch; epoch < epochToClaim_; ) {
 
             uint256 nextEpochRewards = _calculateNextEpochRewards(
                 tokenId_,
@@ -571,7 +571,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         rewardsEarned += _calculateAndClaimRewards(tokenId_, epochToClaim_);
 
         uint256[] memory burnEpochsClaimed = _getBurnEpochsClaimed(
-            stakeInfo_.lastInteractionBurnEpoch,
+            stakeInfo_.lastClaimedEpoch,
             epochToClaim_
         );
 
@@ -584,7 +584,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         );
 
         // update last interaction burn event
-        stakeInfo_.lastInteractionBurnEpoch = uint96(epochToClaim_);
+        stakeInfo_.lastClaimedEpoch = uint96(epochToClaim_);
 
         // transfer rewards to sender
         _transferAjnaRewards(rewardsEarned);
@@ -592,20 +592,20 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
     /**
      *  @notice Retrieve an array of burn epochs from which a depositor has claimed rewards.
-     *  @param  lastInteractionBurnEpoch_ The last burn period in which a depositor interacted with the rewards contract.
-     *  @param  burnEpochToStartClaim_    The most recent burn period from a depostor earned rewards.
-     *  @return burnEpochsClaimed_        Array of burn epochs from which a depositor has claimed rewards.
+     *  @param  lastClaimedEpoch_      The last burn period in which a depositor claimed rewards.
+     *  @param  burnEpochToStartClaim_ The most recent burn period from a depositor earned rewards.
+     *  @return burnEpochsClaimed_     Array of burn epochs from which a depositor has claimed rewards.
      */
     function _getBurnEpochsClaimed(
-        uint256 lastInteractionBurnEpoch_,
+        uint256 lastClaimedEpoch_,
         uint256 burnEpochToStartClaim_
     ) internal pure returns (uint256[] memory burnEpochsClaimed_) {
-        uint256 numEpochsClaimed = burnEpochToStartClaim_ - lastInteractionBurnEpoch_;
+        uint256 numEpochsClaimed = burnEpochToStartClaim_ - lastClaimedEpoch_;
 
         burnEpochsClaimed_ = new uint256[](numEpochsClaimed);
 
         uint256 i;
-        uint256 claimEpoch = lastInteractionBurnEpoch_ + 1;
+        uint256 claimEpoch = lastClaimedEpoch_ + 1;
         while (claimEpoch <= burnEpochToStartClaim_) {
             burnEpochsClaimed_[i] = claimEpoch;
 
