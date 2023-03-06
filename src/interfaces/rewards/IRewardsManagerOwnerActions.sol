@@ -25,7 +25,7 @@ interface IRewardsManagerOwnerActions {
      *  @dev    fromBuckets and toBuckets must be the same array length. Liquidity is moved from the fromBuckets to the toBuckets in the same index.
      *  @param  tokenId_     ID of the staked LP NFT.
      *  @param  fromBuckets_ The list of bucket indexes to move liquidity from.
-     *  @param  toBuckets_   The list of bucket indexes to move liquidity from.
+     *  @param  toBuckets_   The list of bucket indexes to move liquidity to.
      *  @param  expiry_      Timestamp after which this TX will revert, preventing inclusion in a block with unfavorable price.
      */
     function moveStakedLiquidity(
