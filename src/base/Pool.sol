@@ -855,6 +855,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /// @inheritdoc IPoolState
+    function lpAllowance(
+        uint256 index_,
+        address spender_,
+        address owner_
+    ) external view override returns (uint256 allowance_) {
+        allowance_ = _lpAllowances[owner_][spender_][index_];
+    }
+
+    /// @inheritdoc IPoolState
     function loanInfo(
         uint256 loanId_
     ) external view override returns (address, uint256) {
