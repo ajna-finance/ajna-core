@@ -101,13 +101,14 @@ contract PoolHelperTest is DSTestPlus {
      *  @notice Tests pool target utilization based on varying values of debt and lup estimated moving averages
      */
     function testPoolTargetUtilization() external {
-        uint256 debtEma  = 11_000.143012091382543917 * 1e18;
-        uint256 lupColEma = 1_001.6501589292607751220 * 1e18;
+        // assuming 11_000 debt (10_500 t0), 7 collateral, LUP is 2_000
+        uint256 debtColEma   = 17_285_714.2857 * 1e18;
+        uint256 lupt0DebtEma = 21_000_000 * 1e18;
 
-        assertEq(_targetUtilization(debtEma, lupColEma), 10.98202093218880245 * 1e18);
-        assertEq(_targetUtilization(0, lupColEma),       Maths.WAD);
-        assertEq(_targetUtilization(debtEma, 0),         Maths.WAD);
-        assertEq(_targetUtilization(0, 0),               Maths.WAD);
+        assertEq(_targetUtilization(debtColEma, lupt0DebtEma), 0.8231292517 * 1e18);
+        assertEq(_targetUtilization(0, lupt0DebtEma), 0);
+        assertEq(_targetUtilization(debtColEma, 0),   Maths.WAD);
+        assertEq(_targetUtilization(0, 0),            Maths.WAD);
     }
 
     /**

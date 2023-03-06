@@ -132,16 +132,17 @@ import { Maths }   from '../internal/Maths.sol';
     }
 
     /**
-     *  @notice Calculates Pool Threshold Price (PTP) for a given debt and collateral amount.
-     *  @param  debt_       The debt amount to calculate PTP for.
-     *  @param  collateral_ The amount of collateral to calculate PTP for.
-     *  @return ptp_        Pool Threshold Price value.
+     *  @notice Calculates debt-weighted average threshold price
+     *  @param  t0Debt_              pool debt owed by borrowers in t0 terms
+     *  @param  inflator_            pool's borrower inflator
+     *  @param  t0Debt2ToCollateral_ t0-debt-squared-to-collateral accumulator 
      */
-    function _ptp(
-        uint256 debt_,
-        uint256 collateral_
-    ) pure returns (uint256 ptp_) {
-        if (collateral_ != 0) ptp_ = Maths.wdiv(debt_, collateral_);
+    function _dwatp(
+        uint256 t0Debt_,
+        uint256 inflator_,
+        uint256 t0Debt2ToCollateral_
+    ) pure returns (uint256) {
+        return t0Debt_ == 0 ? 0 : Maths.wmul(inflator_, Maths.wdiv(t0Debt2ToCollateral_, t0Debt_));
     }
 
     /**

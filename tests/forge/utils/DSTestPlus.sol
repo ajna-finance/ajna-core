@@ -621,13 +621,17 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     }
 
     function _assertEMAs(
+        uint256 debtColEma,
+        uint256 lupt0DebtEma,
         uint256 debtEma,
-        uint256 lupColEma
+        uint256 depositEma
     ) internal {
-        (uint256 curDebtEma, uint256 curLupColEma) = _pool.emasInfo();
+        (uint256 curDebtColEma, uint256 curLupt0DebtEma, uint256 curDebtEma, uint256 curDepositEma) = _pool.emasInfo();
 
-        assertEq(curDebtEma,   debtEma);
-        assertEq(curLupColEma, lupColEma);
+        assertEq(curDebtColEma,    debtColEma);
+        assertEq(curLupt0DebtEma,  lupt0DebtEma);
+        assertEq(curDebtEma,       debtEma);
+        assertEq(curDepositEma,    depositEma);
     }
 
     function _assertKicker(

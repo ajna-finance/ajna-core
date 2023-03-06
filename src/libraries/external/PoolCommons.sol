@@ -2,11 +2,12 @@
 
 pragma solidity 0.8.14;
 
+import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
-import { InterestState, PoolState, DepositsState } from '../../interfaces/pool/commons/IPoolState.sol';
+import { InterestState, EmaState, PoolState, DepositsState } from '../../interfaces/pool/commons/IPoolState.sol';
 
-import { _indexOf, _ptp, MAX_FENWICK_INDEX, MIN_PRICE, MAX_PRICE } from '../helpers/PoolHelper.sol';
+import { _dwatp, _indexOf, MAX_FENWICK_INDEX, MIN_PRICE, MAX_PRICE } from '../helpers/PoolHelper.sol';
 
 import { Deposits } from '../internal/Deposits.sol';
 import { Buckets }  from '../internal/Buckets.sol';
@@ -30,9 +31,9 @@ library PoolCommons {
 
     uint256 internal constant INCREASE_COEFFICIENT = 1.1 * 1e18;
     uint256 internal constant DECREASE_COEFFICIENT = 0.9 * 1e18;
-    uint256 internal constant LAMBDA_EMA_7D        = 0.905723664263906671 * 1e18; // Lambda used for interest EMAs calculated as exp(-1/7   * ln2)
-    uint256 internal constant EMA_7D_RATE_FACTOR   = 1e18 - LAMBDA_EMA_7D;
     int256  internal constant PERCENT_102          = 1.02 * 1e18;
+    int256  internal constant NEG_H_MAU_HOURS      = -0.057762265046662105 * 1e18; // -ln(2)/12
+    int256  internal constant NEG_H_TU_HOURS       = -0.008251752149523158 * 1e18; // -ln(2)/84
 
     /**************/
     /*** Events ***/
@@ -41,98 +42,152 @@ library PoolCommons {
     // See `IPoolEvents` for descriptions
     event UpdateInterestRate(uint256 oldRate, uint256 newRate);
 
+    /*************************/
+    /*** Local Var Structs ***/
+    /*************************/
+
+    struct UpdateInterestLocalVars {
+        uint256 debtEma;
+        uint256 depositEma;
+        uint256 debtColEma;
+        uint256 lupt0DebtEma;
+        uint256 t0Debt2ToCollateral;
+        uint256 newMeaningfulDeposit;
+        uint256 newDebt;
+        uint256 newDebtCol;
+        uint256 newLupt0Debt;
+        uint256 lastEmaUpdate;
+        int256 elapsed;
+        int256 weightMau;
+        int256 weightTu;
+        uint256 newInterestRate;
+    }
+
     /**************************/
     /*** External Functions ***/
     /**************************/
 
     /**
-     *  @notice Calculates new pool interest rate params (EMAs and interest rate value) and saves new values in storage.
+     *  @notice Calculates EMAs, caches values required for calculating interest rate, and saves new values in storage.
+     *  @notice Calculates new pool interest rate (Never called more than once every 12 hours) and saves new values in storage.
      *  @dev    write state:
-     *              - interest debt and lup * collateral EMAs accumulators
+     *              - EMAs state
      *              - interest rate accumulator and interestRateUpdate state
      *  @dev    emit events:
      *              - UpdateInterestRate
      */
-    function updateInterestRate(
+    function updateInterestState(
         InterestState storage interestParams_,
+        EmaState      storage emaParams_,
         DepositsState storage deposits_,
         PoolState memory poolState_,
         uint256 lup_
     ) external {
+        UpdateInterestLocalVars memory vars;
+        // load existing EMA values
+        vars.debtEma       = emaParams_.debtEma;
+        vars.depositEma    = emaParams_.depositEma;
+        vars.debtColEma    = emaParams_.debtColEma;
+        vars.lupt0DebtEma  = emaParams_.lupt0DebtEma;
+        vars.lastEmaUpdate = emaParams_.emaUpdate;
 
-        // current values of EMA samples
-        uint256 curDebtEma   = interestParams_.debtEma;
-        uint256 curLupColEma = interestParams_.lupColEma;
+        vars.t0Debt2ToCollateral = interestParams_.t0Debt2ToCollateral;
 
-        // meaningful actual utilization
-        int256 mau;
-        // meaningful actual utilization * 1.02
-        int256 mau102;
+        // calculate new interest params
+        vars.newMeaningfulDeposit = _meaningfulDeposit(
+            deposits_,
+            poolState_.t0Debt,
+            poolState_.inflator,
+            vars.t0Debt2ToCollateral
+        );
+        vars.newDebt      = Maths.wmul(poolState_.inflator, poolState_.t0Debt);
+        vars.newDebtCol   = Maths.wmul(poolState_.inflator, vars.t0Debt2ToCollateral);
+        vars.newLupt0Debt = Maths.wmul(lup_, poolState_.t0Debt);
 
-        if (poolState_.debt != 0) {
-            // update pool EMAs for target utilization calculation
+        // update EMAs only once per block
+        if (vars.lastEmaUpdate != block.timestamp) {
 
-            curDebtEma =
-                Maths.wmul(poolState_.debt,  EMA_7D_RATE_FACTOR) +
-                Maths.wmul(curDebtEma,       LAMBDA_EMA_7D
+            // We do not need to calculate these during initialization, 
+            // but the conditional to check each time would be more expensive thereafter.
+            vars.elapsed   = int256(Maths.wdiv(block.timestamp - vars.lastEmaUpdate, 1 hours));
+            vars.weightMau = PRBMathSD59x18.exp(PRBMathSD59x18.mul(NEG_H_MAU_HOURS, vars.elapsed));
+            vars.weightTu  = PRBMathSD59x18.exp(PRBMathSD59x18.mul(NEG_H_TU_HOURS,  vars.elapsed));
+
+            // calculate the t0 debt EMA, used for MAU
+            vars.debtEma = vars.debtEma == 0 ? vars.newDebt :
+                uint256(
+                    PRBMathSD59x18.mul(vars.weightMau, int256(vars.debtEma)) +
+                    PRBMathSD59x18.mul(1e18 - vars.weightMau, int256(interestParams_.debt))
+                );
+
+            // update the meaningful deposit EMA, used for MAU
+            vars.depositEma = vars.depositEma == 0 ? vars.newMeaningfulDeposit :
+                uint256(
+                    PRBMathSD59x18.mul(vars.weightMau, int256(vars.depositEma)) +
+                    PRBMathSD59x18.mul(1e18 - vars.weightMau, int256(interestParams_.meaningfulDeposit))
+                );
+
+            // calculate the debt squared to collateral EMA, used for TU
+            vars.debtColEma = vars.debtColEma == 0 ? vars.newDebtCol :
+                uint256(
+                    PRBMathSD59x18.mul(vars.weightTu, int256(vars.debtColEma)) +
+                    PRBMathSD59x18.mul(1e18 - vars.weightTu, int256(interestParams_.debtCol))
+                );
+
+            // calculate the EMA of LUP * t0 debt
+            vars.lupt0DebtEma = vars.lupt0DebtEma == 0 ? vars.newLupt0Debt :
+                uint256(
+                    PRBMathSD59x18.mul(vars.weightTu, int256(vars.lupt0DebtEma)) +
+                    PRBMathSD59x18.mul(1e18 - vars.weightTu, int256(interestParams_.lupt0Debt))
+                );
+
+            // save EMAs in storage
+            emaParams_.debtEma      = vars.debtEma;
+            emaParams_.depositEma   = vars.depositEma;
+            emaParams_.debtColEma   = vars.debtColEma;
+            emaParams_.lupt0DebtEma = vars.lupt0DebtEma;
+
+            // save last EMA update time
+            emaParams_.emaUpdate = block.timestamp;
+        }
+
+        // calculate and update interest rate if it has been more than 12 hours since the last update
+        if (block.timestamp - interestParams_.interestRateUpdate > 12 hours) {
+            vars.newInterestRate = _calculateInterestRate(
+                poolState_,
+                interestParams_.interestRate,
+                vars.debtEma,
+                vars.depositEma,
+                vars.debtColEma,
+                vars.lupt0DebtEma
             );
 
-            // lup * collateral EMA sample max value is 10 times current debt
-            uint256 maxLupColEma = Maths.wmul(poolState_.debt, Maths.wad(10));
+            if (poolState_.rate != vars.newInterestRate) {
+                interestParams_.interestRate       = uint208(vars.newInterestRate);
+                interestParams_.interestRateUpdate = uint48(block.timestamp);
 
-            // current lup * collateral value
-            uint256 lupCol = Maths.wmul(poolState_.collateral, lup_);
-
-            curLupColEma =
-                Maths.wmul(Maths.min(lupCol, maxLupColEma), EMA_7D_RATE_FACTOR) +
-                Maths.wmul(curLupColEma,                    LAMBDA_EMA_7D);
-
-            // save EMA samples in storage
-            interestParams_.debtEma   = curDebtEma;
-            interestParams_.lupColEma = curLupColEma;
-
-            // calculate meaningful actual utilization for interest rate update
-            mau    = int256(_utilization(deposits_, poolState_.debt, poolState_.collateral));
-            mau102 = mau * PERCENT_102 / 1e18;
-
+                emit UpdateInterestRate(poolState_.rate, vars.newInterestRate);
+            }
         }
 
-        // calculate target utilization
-        int256 tu = (curDebtEma != 0 && curLupColEma != 0) ? int256(Maths.wdiv(curDebtEma, curLupColEma)) : int(Maths.WAD);
-
-        if (!poolState_.isNewInterestAccrued) poolState_.rate = interestParams_.interestRate;
-
-        uint256 newInterestRate = poolState_.rate;
-
-        // raise rates if 4*(tu-1.02*mau) < (tu+1.02*mau-1)^2-1
-        if (4 * (tu - mau102) < ((tu + mau102 - 1e18) ** 2) / 1e18 - 1e18) {
-            newInterestRate = Maths.wmul(poolState_.rate, INCREASE_COEFFICIENT);
-        }
-        // decrease rates if 4*(tu-mau) > 1-(tu+mau-1)^2
-        else if (4 * (tu - mau) > 1e18 - ((tu + mau - 1e18) ** 2) / 1e18) {
-            newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
-        }
-
-        newInterestRate = Maths.min(500 * 1e18, Maths.max(0.001 * 1e18, newInterestRate));
-
-        if (poolState_.rate != newInterestRate) {
-            interestParams_.interestRate       = uint208(newInterestRate);
-            interestParams_.interestRateUpdate = uint48(block.timestamp);
-
-            emit UpdateInterestRate(poolState_.rate, newInterestRate);
-        }
+        // save new interest rate params to storage
+        interestParams_.debt              = vars.newDebt;
+        interestParams_.meaningfulDeposit = vars.newMeaningfulDeposit;
+        interestParams_.debtCol           = vars.newDebtCol;
+        interestParams_.lupt0Debt         = vars.newLupt0Debt;
     }
 
     /**
      *  @notice Calculates new pool interest and scale the fenwick tree to update amount of debt owed to lenders (saved in storage).
      *  @dev write state:
      *       - Deposits.mult (scale Fenwick tree with new interest accrued):
-     *         - update scaling array state 
+     *         - update scaling array state
      *  @param  thresholdPrice_ Current Pool Threshold Price.
      *  @param  elapsed_        Time elapsed since last inflator update.
      *  @return newInflator_   The new value of pool inflator.
      */
     function accrueInterest(
+        EmaState      storage emaParams_,
         DepositsState storage deposits_,
         PoolState calldata poolState_,
         uint256 thresholdPrice_,
@@ -155,15 +210,15 @@ library PoolCommons {
         else
             htpIndex = _indexOf(htp);
 
-        // Scale the fenwick tree to update amount of debt owed to lenders
-        uint256 depositAboveHtp = Deposits.prefixSum(deposits_, htpIndex);
+        uint256 depositAboveHtp   = Deposits.prefixSum(deposits_, htpIndex);
 
         if (depositAboveHtp != 0) {
             newInterest_ = Maths.wmul(
-                _lenderInterestMargin(_utilization(deposits_, poolState_.debt, poolState_.collateral)),
+                _lenderInterestMargin(_utilization(emaParams_.debtEma, emaParams_.depositEma)),
                 Maths.wmul(pendingFactor - Maths.WAD, poolState_.debt)
             );
 
+            // Scale the fenwick tree to update amount of debt owed to lenders
             Deposits.mult(
                 deposits_,
                 htpIndex,
@@ -173,8 +228,101 @@ library PoolCommons {
     }
 
     /**************************/
-    /*** View Functions ***/
+    /*** Internal Functions ***/
     /**************************/
+
+    /**
+     *  @notice Calculates new pool interest rate.
+     */
+    function _calculateInterestRate(
+        PoolState memory poolState_,
+        uint256 interestRate_,
+        uint256 debtEma_,
+        uint256 depositEma_,
+        uint256 debtColEma_,
+        uint256 lupt0DebtEma_
+    ) internal pure returns (uint256 newInterestRate_)  {
+        // meaningful actual utilization
+        int256 mau;
+        // meaningful actual utilization * 1.02
+        int256 mau102;
+
+        if (poolState_.debt != 0) {
+            // calculate meaningful actual utilization for interest rate update
+            mau    = int256(_utilization(debtEma_, depositEma_));
+            mau102 = mau * PERCENT_102 / 1e18;
+        }
+
+        // calculate target utilization
+        int256 tu = (lupt0DebtEma_ != 0) ? 
+            int256(Maths.wdiv(debtColEma_, lupt0DebtEma_)) : int(Maths.WAD);
+
+        if (!poolState_.isNewInterestAccrued) poolState_.rate = interestRate_;
+
+        newInterestRate_ = poolState_.rate;
+
+        // raise rates if 4*(tu-1.02*mau) < (tu+1.02*mau-1)^2-1
+        if (4 * (tu - mau102) < ((tu + mau102 - 1e18) ** 2) / 1e18 - 1e18) {
+            newInterestRate_ = Maths.wmul(poolState_.rate, INCREASE_COEFFICIENT);
+        // decrease rates if 4*(tu-mau) > 1-(tu+mau-1)^2
+        } else if (4 * (tu - mau) > 1e18 - ((tu + mau - 1e18) ** 2) / 1e18) {
+            newInterestRate_ = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
+        }
+
+        // bound rates between 10 bps and 50000%
+        newInterestRate_ = Maths.min(500 * 1e18, Maths.max(0.001 * 1e18, newInterestRate_));
+    }
+
+    /**
+     *  @notice Calculates pool meaningful actual utilization.
+     *  @param  debtEma_     EMA of pool debt.
+     *  @param  depositEma_  EMA of meaningful pool deposit.
+     *  @return utilization_ Pool meaningful actual utilization value.
+     */
+    function _utilization(
+        uint256 debtEma_,
+        uint256 depositEma_
+    ) internal pure returns (uint256 utilization_) {
+        if (depositEma_ != 0) utilization_ = Maths.wdiv(debtEma_, depositEma_);
+    }
+
+    /**
+     *  @notice Calculates lender interest margin.
+     *  @param  mau_ Meaningful actual utilization.
+     *  @return The lender interest margin value.
+     */
+    function _lenderInterestMargin(
+        uint256 mau_
+    ) internal pure returns (uint256) {
+        uint256 base = 1_000_000 * 1e18 - Maths.wmul(Maths.min(mau_, 1e18), 1_000_000 * 1e18);
+        if (base < 1e18) {
+            return 1e18;
+        } else {
+            // cubic root of the percentage of meaningful unutilized deposit
+            uint256 crpud = PRBMathUD60x18.pow(base, ONE_THIRD);
+            return 1e18 - Maths.wmul(Maths.wdiv(crpud, CUBIC_ROOT_1000000), 0.15 * 1e18);
+        }
+    }
+
+    function _meaningfulDeposit(
+        DepositsState storage deposits_,
+        uint256 t0Debt_,
+        uint256 inflator_,
+        uint256 t0Debt2ToCollateral_
+    ) internal view returns (uint256 meaningfulDeposit_) {
+        uint256 dwatp = _dwatp(t0Debt_, inflator_, t0Debt2ToCollateral_);
+        if (dwatp == 0) {
+            meaningfulDeposit_ = Deposits.treeSum(deposits_);
+        } else {
+            if      (dwatp >= MAX_PRICE) meaningfulDeposit_ = 0;
+            else if (dwatp >= MIN_PRICE) meaningfulDeposit_ = Deposits.prefixSum(deposits_, _indexOf(dwatp));
+            else                         meaningfulDeposit_ = Deposits.treeSum(deposits_);
+        }
+    }
+
+    /**********************/
+    /*** View Functions ***/
+    /**********************/
 
     /**
      *  @notice Calculates pool interest factor for a given interest rate and time elapsed since last inflator update.
@@ -218,65 +366,12 @@ library PoolCommons {
     }
 
     /**
-     *  @notice Calculates pool utilization based on pool size, accrued debt and collateral pledged in pool .
+     *  @notice Calculates pool meaningful actual utilization.
      *  @dev Wrapper of the internal function.
      */
     function utilization(
-        DepositsState storage deposits,
-        uint256 poolDebt_,
-        uint256 collateral_
+        EmaState storage emaParams_
     ) external view returns (uint256 utilization_) {
-        return _utilization(deposits, poolDebt_, collateral_);
+        return _utilization(emaParams_.debtEma, emaParams_.depositEma);
     }
-
-    /**************************/
-    /*** Internal Functions ***/
-    /**************************/
-
-    /**
-     *  @notice Calculates pool utilization based on pool size, accrued debt and collateral pledged in pool .
-     *  @param  poolDebt_    Pool accrued debt.
-     *  @param  collateral_  Amount of collateral pledged in pool.
-     *  @return utilization_ Pool utilization value.
-     */
-    function _utilization(
-        DepositsState storage deposits,
-        uint256 poolDebt_,
-        uint256 collateral_
-    ) internal view returns (uint256 utilization_) {
-        if (collateral_ != 0) {
-            uint256 ptp = _ptp(poolDebt_, collateral_);
-
-            if (ptp != 0) {
-                uint256 depositAbove;
-                if      (ptp >= MAX_PRICE) depositAbove = 0;
-                else if (ptp >= MIN_PRICE) depositAbove = Deposits.prefixSum(deposits, _indexOf(ptp));
-                else                       depositAbove = Deposits.treeSum(deposits);
-
-                if (depositAbove != 0) utilization_ = Maths.wdiv(
-                    poolDebt_,
-                    depositAbove
-                );
-            }
-        }
-    }
-
-    /**
-     *  @notice Calculates lender interest margin.
-     *  @param  mau_ Meaningful actual utilization.
-     *  @return The lender interest margin value.
-     */
-    function _lenderInterestMargin(
-        uint256 mau_
-    ) internal pure returns (uint256) {
-        uint256 base = 1_000_000 * 1e18 - Maths.wmul(Maths.min(mau_, 1e18), 1_000_000 * 1e18);
-        if (base < 1e18) {
-            return 1e18;
-        } else {
-            // cubic root of the percentage of meaningful unutilized deposit
-            uint256 crpud = PRBMathUD60x18.pow(base, ONE_THIRD);
-            return 1e18 - Maths.wmul(Maths.wdiv(crpud, CUBIC_ROOT_1000000), 0.15 * 1e18);
-        }
-    }
-
 }

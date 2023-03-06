@@ -102,15 +102,19 @@ interface IPoolState {
 
     /**
      *  @notice Returns information about the pool EMA (Exponential Moving Average) variables.
-     *  @return debtEma   Exponential debt moving average.
-     *  @return lupColEma Exponential LUP * pledged collateral moving average.
+     *  @return debtColEma   Debt squared to collateral Exponential, numerator to TU calculation
+     *  @return lupt0DebtEma Exponential of LUP * t0 debt, denominator to TU calculation
+     *  @return debtEma      Exponential debt moving average.
+     *  @return depositEma   sample of meaningful deposit Exponential, denominator to MAU calculation.
      */
     function emasInfo()
         external
         view
         returns (
+            uint256 debtColEma,
+            uint256 lupt0DebtEma,
             uint256 debtEma,
-            uint256 lupColEma
+            uint256 depositEma
     );
 
     /**
@@ -271,10 +275,21 @@ struct InflatorState {
 }
 
 struct InterestState {
-    uint208 interestRate;       // [WAD] pool's interest rate
-    uint48  interestRateUpdate; // [SEC] last time pool's interest rate was updated (not before 12 hours passed)
-    uint256 debtEma;            // [WAD] sample of debt EMA
-    uint256 lupColEma;          // [WAD] sample of LUP price * collateral EMA. capped at 10 times current pool debt
+    uint208 interestRate;        // [WAD] pool's interest rate
+    uint48  interestRateUpdate;  // [SEC] last time pool's interest rate was updated (not before 12 hours passed)
+    uint256 debt;                // [WAD] previous update's debt
+    uint256 meaningfulDeposit;   // [WAD] previous update's meaningfulDeposit
+    uint256 t0Debt2ToCollateral; // [WAD] utilization weight accumulator, tracks debt and collateral relationship accross borrowers 
+    uint256 debtCol;             // [WAD] previous debt squared to collateral
+    uint256 lupt0Debt;           // [WAD] previous LUP * t0 debt
+}
+
+struct EmaState {
+    uint256 debtEma;             // [WAD] sample of debt EMA, numerator to MAU calculation
+    uint256 depositEma;          // [WAD] sample of meaningful deposit EMA, denominator to MAU calculation
+    uint256 debtColEma;          // [WAD] debt squared to collateral EMA, numerator to TU calculation
+    uint256 lupt0DebtEma;        // [WAD] EMA of LUP * t0 debt, denominator to TU calculation
+    uint256 emaUpdate;           // [SEC] last time pool's EMAs were updated
 }
 
 struct PoolBalancesState {

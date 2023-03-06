@@ -25,6 +25,7 @@ import {
     DepositsState,
     LoansState,
     InflatorState,
+    EmaState,
     InterestState,
     PoolBalancesState,
     ReserveAuctionState,
@@ -87,6 +88,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     DepositsState       internal deposits;
     LoansState          internal loans;
     InflatorState       internal inflatorState;
+    EmaState            internal emaState;
     InterestState       internal interestState;
     PoolBalancesState   internal poolBalances;
     ReserveAuctionState internal reserveAuction;
@@ -380,8 +382,17 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         poolBalances.t0Debt          = result.t0PoolDebt;
         poolBalances.t0DebtInAuction += result.t0KickedDebt;
 
+        // adjust t0Debt2ToCollateral ratio
+        _updateT0Debt2ToCollateral(
+            result.debtPreAction,
+            result.t0KickedDebt,
+            result.collateralPreAction, // collateral doesn't change when auction is kicked
+            result.collateralPreAction  // collateral doesn't change when auction is kicked
+        );
+
         // update pool interest rate state
-        poolState.debt = Maths.wmul(result.t0PoolDebt, poolState.inflator);
+        poolState.debt   = Maths.wmul(result.t0PoolDebt, poolState.inflator);
+        poolState.t0Debt = result.t0PoolDebt;
         _updateInterestState(poolState, result.lup);
 
         if(result.amountToCoverBond != 0) _transferQuoteTokenFrom(msg.sender, result.amountToCoverBond);
@@ -413,8 +424,17 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         poolBalances.t0Debt          = result.t0PoolDebt;
         poolBalances.t0DebtInAuction += result.t0KickedDebt;
 
+        // adjust t0Debt2ToCollateral ratio
+        _updateT0Debt2ToCollateral(
+            result.debtPreAction,
+            result.t0KickedDebt,
+            result.collateralPreAction, // collateral doesn't change when auction is kicked
+            result.collateralPreAction  // collateral doesn't change when auction is kicked
+        );
+
         // update pool interest rate state
-        poolState.debt = Maths.wmul(result.t0PoolDebt, poolState.inflator);
+        poolState.debt   = Maths.wmul(result.t0PoolDebt, poolState.inflator);
+        poolState.t0Debt = result.t0PoolDebt;
         _updateInterestState(poolState, result.lup);
 
         // transfer from kicker to pool the difference to cover bond
@@ -541,6 +561,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             // if new interest may have accrued, call accrueInterest function and update inflator and debt fields of poolState_ struct
             if (poolState_.isNewInterestAccrued) {
                 (uint256 newInflator, uint256 newInterest) = PoolCommons.accrueInterest(
+                    emaState,
                     deposits,
                     poolState_,
                     Loans.getMax(loans).thresholdPrice,
@@ -557,16 +578,44 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /**
+     *  @notice Adjusts the t0 Debt 2 to collateral ratio, interestState.t0Debt2ToCollateral.
+     *  @dev    Anytime a borrower's debt or collateral changes, the interestState.t0Debt2ToCollateral must be updated.
+     *  @dev    write state:
+     *              - update interestState.t0Debt2ToCollateral accumulator
+     *  @param debtPreAction_  Borrower's debt before the action
+     *  @param debtPostAction_ Borrower's debt after the action
+     *  @param colPreAction_   Borrower's collateral before the action
+     *  @param colPostAction_  Borrower's collateral after the action
+     */
+    function _updateT0Debt2ToCollateral(
+        uint256 debtPreAction_,
+        uint256 debtPostAction_,
+        uint256 colPreAction_,
+        uint256 colPostAction_
+    ) internal {
+        uint256 debt2ColAccumPreAction  = colPreAction_  != 0 ? debtPreAction_  ** 2 / colPreAction_  : 0;
+        uint256 debt2ColAccumPostAction = colPostAction_ != 0 ? debtPostAction_ ** 2 / colPostAction_ : 0;
+
+        if (debt2ColAccumPreAction != 0 || debt2ColAccumPostAction != 0) {
+            uint256 curT0Debt2ToCollateral = interestState.t0Debt2ToCollateral;
+            curT0Debt2ToCollateral += debt2ColAccumPostAction;
+            curT0Debt2ToCollateral -= debt2ColAccumPreAction;
+
+            interestState.t0Debt2ToCollateral = curT0Debt2ToCollateral;
+        }
+    }
+
+    /**
      *  @notice Update interest rate and inflator of the pool.
      *  @dev    external libraries call:
-     *              - PoolCommons.updateInterestRate     
+     *              - PoolCommons.updateInterestState     
      *  @dev    write state:
-     *              - PoolCommons.updateInterestRate 
+     *              - PoolCommons.updateInterestState 
      *                  - interest debt and lup * collateral EMAs accumulators
      *                  - interest rate accumulator and interestRateUpdate state
      *              - pool inflator and inflatorUpdate state
      *  @dev    emit events:
-     *              - PoolCommons.updateInterestRate:
+     *              - PoolCommons.updateInterestState:
      *                  - UpdateInterestRate
      *  @param  poolState_ Struct containing pool details.
      *  @param  lup_       Current LUP in pool.
@@ -575,10 +624,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState_,
         uint256 lup_
     ) internal {
-        // if it has been more than 12 hours since the last interest rate update, call updateInterestRate function
-        if (block.timestamp - interestState.interestRateUpdate > 12 hours) {
-            PoolCommons.updateInterestRate(interestState, deposits, poolState_, lup_);
-        }
+
+        PoolCommons.updateInterestState(interestState, emaState, deposits, poolState_, lup_);
 
         // update pool inflator
         if (poolState_.isNewInterestAccrued) {
@@ -726,18 +773,17 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /// @inheritdoc IPoolDerivedState
-    function depositUtilization(
-        uint256 debt_,
-        uint256 collateral_
-    ) external view override returns (uint256) {
-        return PoolCommons.utilization(deposits, debt_, collateral_);
+    function depositUtilization() external view override returns (uint256) {
+        return PoolCommons.utilization(emaState);
     }
 
     /// @inheritdoc IPoolState
-    function emasInfo() external view override returns (uint256, uint256) {
+    function emasInfo() external view override returns (uint256, uint256, uint256, uint256) {
         return (
-            interestState.debtEma,
-            interestState.lupColEma
+            emaState.debtColEma,
+            emaState.lupt0DebtEma,
+            emaState.debtEma,
+            emaState.depositEma
         );
     }
 

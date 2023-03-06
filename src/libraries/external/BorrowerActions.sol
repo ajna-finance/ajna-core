@@ -137,6 +137,8 @@ library BorrowerActions {
         vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
         vars.inAuction    = _inAuction(auctions_, borrowerAddress_);
 
+        result_.debtPreAction       = borrower.t0Debt;
+        result_.collateralPreAction = borrower.collateral;
         result_.t0PoolDebt          = poolState_.t0Debt;
         result_.poolDebt            = poolState_.debt;
         result_.poolCollateral      = poolState_.collateral;
@@ -240,6 +242,9 @@ library BorrowerActions {
             vars.inAuction,
             vars.stampT0Np
         );
+
+        result_.debtPostAction       = borrower.t0Debt;
+        result_.collateralPostAction = borrower.collateral;
     }
 
     /**
@@ -292,6 +297,8 @@ library BorrowerActions {
         vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
         vars.inAuction    = _inAuction(auctions_, borrowerAddress_);
 
+        result_.debtPreAction       = borrower.t0Debt;
+        result_.collateralPreAction = borrower.collateral;
         result_.t0PoolDebt          = poolState_.t0Debt;
         result_.poolDebt            = poolState_.debt;
         result_.poolCollateral      = poolState_.collateral;
@@ -398,6 +405,9 @@ library BorrowerActions {
             vars.inAuction,
             vars.stampT0Np
         );
+
+        result_.debtPostAction       = borrower.t0Debt;
+        result_.collateralPostAction = borrower.collateral;
     }
 
     /**
