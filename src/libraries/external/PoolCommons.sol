@@ -100,7 +100,7 @@ library PoolCommons {
             poolState_.inflator,
             vars.t0Debt2ToCollateral
         );
-        vars.newDebt      = Maths.wmul(poolState_.inflator, poolState_.t0Debt);
+        vars.newDebt      = poolState_.debt;
         vars.newDebtCol   = Maths.wmul(poolState_.inflator, vars.t0Debt2ToCollateral);
         vars.newLupt0Debt = Maths.wmul(lup_, poolState_.t0Debt);
 
