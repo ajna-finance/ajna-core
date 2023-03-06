@@ -610,7 +610,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[1] = 20_000 * 1e18;
         amounts[2] = 30_000 * 1e18;
         vm.expectEmit(true, true, false, true);
-        emit ApproveLpOwnership(_lender1, _lender2, indexes, amounts);
+        emit ApproveLpTransfer(_lender1, _lender2, indexes, amounts);
         _pool.increaseLPAllowance(_lender2, indexes, amounts);
 
         assertTrue(_pool.approvedTransferors(_lender2, _lender));
@@ -659,7 +659,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
 
         changePrank(_lender1);
         vm.expectEmit(true, true, false, true);
-        emit ApproveLpOwnership(_lender1, _lender2, indexes, amounts);
+        emit ApproveLpTransfer(_lender1, _lender2, indexes, amounts);
         _pool.increaseLPAllowance(_lender2, indexes, amounts);
 
         // check allowance after increasing allowance
@@ -678,7 +678,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[0] = 5_000 * 1e18;
         amounts[1] = 5_000 * 1e18;
         vm.expectEmit(true, true, false, true);
-        emit ApproveLpOwnership(_lender1, _lender2, indexes, amounts);
+        emit ApproveLpTransfer(_lender1, _lender2, indexes, amounts);
         _pool.decreaseLPAllowance(_lender2, indexes, amounts);
 
         // check allowances after decreasing allowance
@@ -726,7 +726,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts = new uint256[](1);
         amounts[0] = 5_000 * 1e18;
         vm.expectEmit(true, true, false, true);
-        emit ApproveLpOwnership(_lender1, _lender2, indexes, amounts);
+        emit ApproveLpTransfer(_lender1, _lender2, indexes, amounts);
         _pool.increaseLPAllowance(_lender2, indexes, amounts);
 
         _assertLpAllowance({

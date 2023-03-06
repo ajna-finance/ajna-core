@@ -181,7 +181,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             unchecked { ++i; }
         }
 
-        emit ApproveLpOwnership(
+        emit ApproveLpTransfer(
             msg.sender,
             spender_,
             indexes_,
@@ -209,7 +209,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         }
 
         // TODO: remove msg.sender since it's already present in tx info
-        emit ApproveLpOwnership(
+        emit ApproveLpTransfer(
             msg.sender,
             spender_,
             indexes_,

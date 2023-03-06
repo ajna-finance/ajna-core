@@ -23,15 +23,15 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when lender approves a new owner of LPs at specified indexes with specified amounts.
-     *  @param  lender    Recipient that approves new owner for LPs.
-     *  @param  newOwner  Recipient approved to transfer LPs.
+     *  @notice Emitted when lender approves a spender owner of LPs at specified indexes with specified amounts.
+     *  @param  lender    Address that approves spender for LPs.
+     *  @param  spender   Address approved to transfer LPs.
      *  @param  indexes   Bucket indexes of LPs approved.
      *  @param  amounts   LP amounts approved (ordered by approved indexes).
      */
-    event ApproveLpOwnership(
+    event ApproveLpTransfer(
         address indexed lender,
-        address indexed newOwner,
+        address indexed spender,
         uint256[] indexes,
         uint256[] amounts
     );
