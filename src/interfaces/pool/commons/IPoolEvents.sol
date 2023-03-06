@@ -28,7 +28,7 @@ interface IPoolEvents {
      *  @param  indexes   Bucket indexes of LPs approved.
      *  @param  amounts   LP amounts approved (ordered by approved indexes).
      */
-    event ApproveLpTransfer(
+    event SetLpAllowance(
         address indexed spender,
         uint256[] indexes,
         uint256[] amounts
@@ -237,7 +237,7 @@ interface IPoolEvents {
      *  @param  spender Address that is having it's allowance revoked.
      *  @param  indexes List of bucket index to remove the allowance from.
      */
-    event RevokeLpAllownace(
+    event RevokeLpAllowance(
         address indexed spender,
         uint256[] indexes
     );

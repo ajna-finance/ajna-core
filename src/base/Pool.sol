@@ -181,7 +181,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             unchecked { ++i; }
         }
 
-        emit ApproveLpTransfer(
+        emit SetLpAllowance(
             spender_,
             indexes_,
             amounts_
@@ -207,7 +207,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             unchecked { ++i; }
         }
 
-        emit ApproveLpTransfer(
+        emit SetLpAllowance(
             spender_,
             indexes_,
             amounts_
@@ -232,7 +232,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             unchecked { ++i; }
         }
 
-        emit RevokeLpAllownace(
+        emit RevokeLpAllowance(
             spender_,
             indexes_
         );

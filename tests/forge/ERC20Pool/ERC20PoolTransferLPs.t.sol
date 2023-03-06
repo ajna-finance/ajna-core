@@ -623,7 +623,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[1] = 20_000 * 1e18;
         amounts[2] = 30_000 * 1e18;
         vm.expectEmit(true, true, false, true);
-        emit ApproveLpTransfer(_lender2, indexes, amounts);
+        emit SetLpAllowance(_lender2, indexes, amounts);
         _pool.increaseLPAllowance(_lender2, indexes, amounts);
 
         assertTrue(_pool.approvedTransferors(_lender2, _lender));
@@ -672,7 +672,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
 
         changePrank(_lender1);
         vm.expectEmit(true, true, false, true);
-        emit ApproveLpTransfer(_lender2, indexes, amounts);
+        emit SetLpAllowance(_lender2, indexes, amounts);
         _pool.increaseLPAllowance(_lender2, indexes, amounts);
 
         // check allowance after increasing allowance
@@ -691,7 +691,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[0] = 5_000 * 1e18;
         amounts[1] = 5_000 * 1e18;
         vm.expectEmit(true, true, false, true);
-        emit ApproveLpTransfer(_lender2, indexes, amounts);
+        emit SetLpAllowance(_lender2, indexes, amounts);
         _pool.decreaseLPAllowance(_lender2, indexes, amounts);
 
         // check allowances after decreasing allowance
@@ -716,7 +716,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[0] = 0;
         amounts[1] = 0;
         vm.expectEmit(true, true, false, true);
-        emit RevokeLpAllownace(_lender2, indexes);
+        emit RevokeLpAllowance(_lender2, indexes);
         _pool.revokeLPAllowance(_lender2, indexes);
 
         // check allowance after revoking allowance
@@ -739,7 +739,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts = new uint256[](1);
         amounts[0] = 5_000 * 1e18;
         vm.expectEmit(true, true, false, true);
-        emit ApproveLpTransfer(_lender2, indexes, amounts);
+        emit SetLpAllowance(_lender2, indexes, amounts);
         _pool.increaseLPAllowance(_lender2, indexes, amounts);
 
         _assertLpAllowance({
