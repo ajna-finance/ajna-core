@@ -231,7 +231,7 @@ interface IPoolEvents {
      *  @param  owner     LPs owner.
      *  @param  spender   Address approved to transfer LPs.
      *  @param  indexes   Bucket indexes of LPs approved.
-     *  @param  amounts   LP amounts added (ordered by approved indexes).
+     *  @param  amounts   LP amounts added (ordered by indexes).
      */
     event IncreaseLPsAllowance(
         address indexed owner,
@@ -245,7 +245,7 @@ interface IPoolEvents {
      *  @param  owner     LPs owner.
      *  @param  spender   Address approved to transfer LPs.
      *  @param  indexes   Bucket indexes of LPs approved.
-     *  @param  amounts   LP amounts added (ordered by approved indexes).
+     *  @param  amounts   LP amounts removed (ordered by indexes).
      */
     event DecreaseLPsAllowance(
         address indexed owner,
