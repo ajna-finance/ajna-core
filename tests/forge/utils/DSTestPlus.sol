@@ -281,9 +281,22 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 lpAwardTo,
         uint256 newLup
     ) internal {
+        _moveLiquidityWithPenalty(from, amount, amount, fromIndex, toIndex, lpRedeemFrom, lpAwardTo, newLup);
+    }
+
+    function _moveLiquidityWithPenalty(
+        address from,
+        uint256 amount,
+        uint256 amountMoved,    // amount less penalty, where applicable
+        uint256 fromIndex,
+        uint256 toIndex,
+        uint256 lpRedeemFrom,
+        uint256 lpAwardTo,
+        uint256 newLup
+    ) internal {
         changePrank(from);
         vm.expectEmit(true, true, true, true);
-        emit MoveQuoteToken(from, fromIndex, toIndex, amount, lpRedeemFrom, lpAwardTo, newLup);
+        emit MoveQuoteToken(from, fromIndex, toIndex, amountMoved, lpRedeemFrom, lpAwardTo, newLup);
         (uint256 lpbFrom, uint256 lpbTo, ) = _pool.moveQuoteToken(amount, fromIndex, toIndex, type(uint256).max);
         assertEq(lpbFrom, lpRedeemFrom);
         assertEq(lpbTo,   lpAwardTo);

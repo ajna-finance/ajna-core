@@ -1076,15 +1076,28 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             expiry:    block.timestamp - 20
         });
 
-        // should be able to moveQuoteToken if properly specified
-        _moveLiquidity({
+        // should be charged unutilized deposit fee if moving below LUP
+        _moveLiquidityWithPenalty({
             from:         _lender,
             amount:       10_000 * 1e18,
+            amountMoved:  9_998.630136986301370000 * 1e18,
             fromIndex:    4549,
-            toIndex:      4550,
+            toIndex:      5000,
             lpRedeemFrom: 10_000 * 1e18,
-            lpAwardTo:    10_000 * 1e18,
-            newLup:       _priceAt(4551)
+            lpAwardTo:    9_998.630136986301370000 * 1e18,
+            newLup:       _priceAt(4651)
+        });
+
+        // should be able to moveQuoteToken if properly specified
+        (uint256 amountToMove,) = _pool.lenderInfo(5000, _lender);
+        _moveLiquidity({
+            from:         _lender,
+            amount:       amountToMove,
+            fromIndex:    5000,
+            toIndex:      4550,
+            lpRedeemFrom: amountToMove,
+            lpAwardTo:    amountToMove,
+            newLup:       _priceAt(4651)
         });
     }
 
