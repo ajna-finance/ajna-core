@@ -257,7 +257,7 @@ contract RewardsManagerTest is ERC20HelperContract {
             (lpBalances[i], ) = params_.pool.lenderInfo(params_.indexes[i], params_.minter);
         }
 
-        params_.pool.increaseLPAllowance(address(_positionManager), params_.indexes, lpBalances);
+        params_.pool.increaseLPsAllowance(address(_positionManager), params_.indexes, lpBalances);
 
         // construct memorialize params struct
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
@@ -623,13 +623,13 @@ contract RewardsManagerTest is ERC20HelperContract {
         deal(address(_quote), _minterOne, 500_000_000 * 1e18);
         _quote.approve(address(_pool), type(uint256).max);
         _quote.approve(address(_positionManager), type(uint256).max);
-        _pool.approveLpTransferors(transferors);
+        _pool.approveLPsTransferors(transferors);
 
         changePrank(_minterTwo);
         deal(address(_quote), _minterTwo, 500_000_000 * 1e18);
         _quote.approve(address(_pool), type(uint256).max);
         _quote.approve(address(_positionManager), type(uint256).max);
-        _pool.approveLpTransferors(transferors);
+        _pool.approveLPsTransferors(transferors);
 
         /*****************************/
         /*** Initialize Pool State ***/

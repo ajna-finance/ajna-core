@@ -165,7 +165,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /// @inheritdoc IPoolLenderActions
-    function decreaseLPAllowance(
+    function decreaseLPsAllowance(
         address spender_,
         uint256[] calldata indexes_,
         uint256[] calldata amounts_
@@ -183,7 +183,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             unchecked { ++i; }
         }
 
-        emit SetLpAllowance(
+        emit SetLPsAllowance(
             spender_,
             indexes_,
             amounts_
@@ -191,7 +191,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /// @inheritdoc IPoolLenderActions
-    function increaseLPAllowance(
+    function increaseLPsAllowance(
         address spender_,
         uint256[] calldata indexes_,
         uint256[] calldata amounts_
@@ -209,7 +209,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             unchecked { ++i; }
         }
 
-        emit SetLpAllowance(
+        emit SetLPsAllowance(
             spender_,
             indexes_,
             amounts_
@@ -217,7 +217,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /// @inheritdoc IPoolLenderActions
-    function revokeLPAllowance(
+    function revokeLPsAllowance(
         address spender_,
         uint256[] calldata indexes_
     ) external override nonReentrant {
@@ -234,7 +234,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             unchecked { ++i; }
         }
 
-        emit RevokeLpAllowance(
+        emit RevokeLPsAllowance(
             spender_,
             indexes_
         );
@@ -245,7 +245,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @dev write state:
      *          - approvedTransferors mapping
      */
-    function approveLpTransferors(
+    function approveLPsTransferors(
         address[] calldata transferors_
     ) external override {
         mapping(address => bool) storage allowances = approvedTransferors[msg.sender];
@@ -257,7 +257,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             unchecked { ++i; }
         }
 
-        emit ApproveLpTransferors(
+        emit ApproveLPsTransferors(
             msg.sender,
             transferors_
         );
@@ -268,7 +268,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @dev write state:
      *          - approvedTransferors mapping
      */
-    function revokeLpTransferors(
+    function revokeLPsTransferors(
         address[] calldata transferors_
     ) external override {
         mapping(address => bool) storage allowances = approvedTransferors[msg.sender];
@@ -280,9 +280,25 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             unchecked { ++i; }
         }
 
-        emit RevokeLpTransferors(
+        emit RevokeLPsTransferors(
             msg.sender,
             transferors_
+        );
+    }
+
+    /// @inheritdoc IPoolLenderActions
+    function transferLPs(
+        address owner_,
+        address newOwner_,
+        uint256[] calldata indexes_
+    ) external override nonReentrant {
+        LenderActions.transferLPs(
+            buckets,
+            _lpAllowances,
+            approvedTransferors,
+            owner_,
+            newOwner_,
+            indexes_
         );
     }
 
@@ -352,22 +368,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // move quote token amount from pool to lender
         _transferQuoteToken(msg.sender, removedAmount_);
-    }
-
-    /// @inheritdoc IPoolLenderActions
-    function transferLPs(
-        address owner_,
-        address newOwner_,
-        uint256[] calldata indexes_
-    ) external override nonReentrant {
-        LenderActions.transferLPs(
-            buckets,
-            _lpAllowances,
-            approvedTransferors,
-            owner_,
-            newOwner_,
-            indexes_
-        );
     }
 
     /// @inheritdoc IPoolLenderActions
