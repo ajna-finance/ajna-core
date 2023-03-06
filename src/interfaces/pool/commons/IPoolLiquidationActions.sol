@@ -31,8 +31,8 @@ interface IPoolLiquidationActions {
 
     /**
      *  @notice Called by actors to initiate a liquidation.
-     *  @param  borrower Identifies the loan to liquidate.
-     *  @param  npLimitIndex Lower bound of NP tolerated when kicking the auction.
+     *  @param  borrower     Identifies the loan to liquidate.
+     *  @param  npLimitIndex Index of the lower bound of NP tolerated when kicking the auction.
      */
     function kick(
         address borrower,
@@ -42,7 +42,7 @@ interface IPoolLiquidationActions {
     /**
      *  @notice Called by lenders to liquidate the top loan using their deposits.
      *  @param  index        The deposit index to use for kicking the top loan.
-     *  @param  npLimitIndex Lower bound of NP tolerated when kicking the auction.
+     *  @param  npLimitIndex Index of the lower bound of NP tolerated when kicking the auction.
      */
     function kickWithDeposit(
         uint256 index,

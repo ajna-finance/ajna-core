@@ -335,7 +335,7 @@ library Auctions {
      *  @notice Called to start borrower liquidation and to update the auctions queue.
      *  @param  poolState_       Current state of the pool.
      *  @param  borrowerAddress_ Address of the borrower to kick.
-     *  @param  limitIndex_      Lower bound of NP tolerated when kicking the auction.
+     *  @param  limitIndex_      Index of the lower bound of NP tolerated when kicking the auction.
      *  @return kickResult_      The result of the kick action.
      */
     function kick(
@@ -370,7 +370,7 @@ library Auctions {
      *              - RemoveQuoteToken
      *  @param  poolState_  Current state of the pool.
      *  @param  index_      The deposit index from where lender removes liquidity.
-     *  @param  limitIndex_ Lower bound of NP tolerated when kicking the auction.
+     *  @param  limitIndex_ Index of the lower bound of NP tolerated when kicking the auction.
      *  @return kickResult_ The result of the kick action.
      */
     function kickWithDeposit(
@@ -790,7 +790,7 @@ library Auctions {
      *              - Kick
      *  @param  poolState_       Current state of the pool.
      *  @param  borrowerAddress_ Address of the borrower to kick.
-     *  @param  limitIndex_      Lower bound of NP tolerated when kicking the auction.
+     *  @param  limitIndex_      Index of the lower bound of NP tolerated when kicking the auction.
      *  @param  additionalDebt_  Additional debt to be used when calculating proposed LUP.
      *  @return kickResult_      The result of the kick action.
      */
@@ -824,7 +824,7 @@ library Auctions {
 
         // calculate auction params
         vars.neutralPrice = Maths.wmul(borrower.t0Np, poolState_.inflator);
-        // check if NP is still greater than the price limit provided by the kicker - done to prevent frontrunning kick auction call with a large amount of loan
+        // check if NP is not less than price at the limit index provided by the kicker - done to prevent frontrunning kick auction call with a large amount of loan
         // which will make it harder for kicker to earn a reward and more likely that the kicker is penalized
         _revertIfPriceDroppedBelowLimit(vars.neutralPrice, limitIndex_);
 
