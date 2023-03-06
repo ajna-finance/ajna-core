@@ -242,9 +242,15 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             uint256 bucketDeposit,
         ) = IPool(params_.pool).bucketInfo(params_.fromIndex);
 
-        // check that bucket hasn't gone bankrupt since memorialization
-        if (positions[params_.tokenId][params_.fromIndex].depositTime < bankruptcyTime) {
-            revert BucketBankrupt();
+        // check for previous deposits
+        if (positions[params_.tokenId][params_.fromIndex].depositTime != 0) {
+            // check that bucket hasn't gone bankrupt since memorialization
+            if (positions[params_.tokenId][params_.fromIndex].depositTime <= bankruptcyTime) {
+                revert BucketBankrupt();
+            }
+        }
+        else {
+            revert RemovePositionFailed();
         }
 
         // calculate the max amount of quote tokens that can be moved, given the tracked LPs
@@ -280,6 +286,8 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         // update position LPs state
         positions[params_.tokenId][params_.fromIndex].lps -= lpbAmountFrom;
         positions[params_.tokenId][params_.toIndex].lps   += lpbAmountTo;
+        // update position deposit time to the from bucket deposit time
+        positions[params_.tokenId][params_.toIndex].depositTime = positions[params_.tokenId][params_.fromIndex].depositTime;
 
         emit MoveLiquidity(ownerOf(params_.tokenId), params_.tokenId, params_.fromIndex, params_.toIndex);
     }
@@ -317,6 +325,8 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             index = params_.indexes[i];
 
             Position memory position = positions[params_.tokenId][index];
+
+            if (position.depositTime == 0 || position.lps == 0) revert RemovePositionFailed();
 
             // check that bucket didn't go bankrupt after memorialization
             if (_bucketBankruptAfterDeposit(pool, index, position.depositTime)) revert BucketBankrupt();
@@ -389,7 +399,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         uint256 depositTime_
     ) internal view returns (bool) {
         (, , uint256 bankruptcyTime, , ) = pool_.bucketInfo(index_);
-        return depositTime_ < bankruptcyTime;
+        return depositTime_ <= bankruptcyTime;
     }
 
     /**********************/
