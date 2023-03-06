@@ -653,6 +653,15 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(poolSize - liquidityAdded, lenderInterest);
     }
 
+    function _assertLpAllowance(
+        address owner,
+        address spender,
+        uint256 index,
+        uint256 lpAllowance
+    ) internal {
+        assertEq(_pool.lpAllowance(index, spender, owner), lpAllowance);
+    }
+
     function _assertLoans(
         uint256 noOfLoans,
         address maxBorrower,

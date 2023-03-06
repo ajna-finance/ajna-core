@@ -317,7 +317,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     /**
      *  @inheritdoc IPositionManagerOwnerActions
      *  @dev External calls to Pool contract:
-     *          - approveLpOwnership(): approve ownership for transfer
+     *          - increaseLPAllowance(): approve ownership for transfer
      *          - transferLPs(): transfer LPs ownership from PositionManager contract
      *  @dev write state:
      *          - positionIndexes: remove from bucket index
@@ -367,7 +367,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         address owner = ownerOf(params_.tokenId);
 
         // approve owner to take over the LPs ownership (required for transferLPs pool call)
-        pool.approveLpOwnership(owner, params_.indexes, lpAmounts);
+        pool.increaseLPAllowance(owner, params_.indexes, lpAmounts);
         // update pool lps accounting and transfer ownership of lps from PositionManager contract
         pool.transferLPs(address(this), owner, params_.indexes);
 

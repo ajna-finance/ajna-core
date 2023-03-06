@@ -23,15 +23,13 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when lender approves a new owner of LPs at specified indexes with specified amounts.
-     *  @param  lender    Recipient that approves new owner for LPs.
-     *  @param  newOwner  Recipient approved to transfer LPs.
+     *  @notice Emitted when lender approves a spender owner of LPs at specified indexes with specified amounts.
+     *  @param  spender   Address approved to transfer LPs.
      *  @param  indexes   Bucket indexes of LPs approved.
      *  @param  amounts   LP amounts approved (ordered by approved indexes).
      */
-    event ApproveLpOwnership(
-        address indexed lender,
-        address indexed newOwner,
+    event SetLpAllowance(
+        address indexed spender,
         uint256[] indexes,
         uint256[] amounts
     );
@@ -232,6 +230,16 @@ interface IPoolEvents {
         uint256 claimableReservesRemaining,
         uint256 auctionPrice,
         uint256 currentBurnEpoch
+    );
+
+    /**
+     *  @notice Emitted when lender removes the allowance of a spender for their LPB.
+     *  @param  spender Address that is having it's allowance revoked.
+     *  @param  indexes List of bucket index to remove the allowance from.
+     */
+    event RevokeLpAllowance(
+        address indexed spender,
+        uint256[] indexes
     );
 
     /**

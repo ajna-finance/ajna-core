@@ -164,17 +164,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToAdd_);
     }
 
-    /**
-     *  @inheritdoc IPoolLenderActions
-     *  @dev write state:
-     *          - _lpAllowances mapping
-     */
-    function approveLpOwnership(
-        address newOwner_,
+    /// @inheritdoc IPoolLenderActions
+    function decreaseLPAllowance(
+        address spender_,
         uint256[] calldata indexes_,
         uint256[] calldata amounts_
     ) external override nonReentrant {
-        mapping(uint256 => uint256) storage allowances = _lpAllowances[msg.sender][newOwner_];
+        mapping(uint256 => uint256) storage allowances = _lpAllowances[msg.sender][spender_];
 
         uint256 indexesLength = indexes_.length;
         uint256 index;
@@ -182,20 +178,65 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         for (uint256 i = 0; i < indexesLength; ) {
             index = indexes_[i];
 
-            // revert if allowance at index is already set (not 0) and the new allowance does not reset the old one (not 0)
-            // this prevents possible attack where LPs receiver (newOwner) frontruns owner allowance calls to transfer more than allowed
-            if (allowances[index] != 0 && amounts_[i] != 0) revert AllowanceAlreadySet();
-
-            allowances[index] = amounts_[i];
+            allowances[index] -= amounts_[i];
 
             unchecked { ++i; }
         }
 
-        emit ApproveLpOwnership(
-            msg.sender,
-            newOwner_,
+        emit SetLpAllowance(
+            spender_,
             indexes_,
             amounts_
+        );
+    }
+
+    /// @inheritdoc IPoolLenderActions
+    function increaseLPAllowance(
+        address spender_,
+        uint256[] calldata indexes_,
+        uint256[] calldata amounts_
+    ) external override nonReentrant {
+        mapping(uint256 => uint256) storage allowances = _lpAllowances[msg.sender][spender_];
+
+        uint256 indexesLength = indexes_.length;
+        uint256 index;
+
+        for (uint256 i = 0; i < indexesLength; ) {
+            index = indexes_[i];
+
+            allowances[index] += amounts_[i];
+
+            unchecked { ++i; }
+        }
+
+        emit SetLpAllowance(
+            spender_,
+            indexes_,
+            amounts_
+        );
+    }
+
+    /// @inheritdoc IPoolLenderActions
+    function revokeLPAllowance(
+        address spender_,
+        uint256[] calldata indexes_
+    ) external override nonReentrant {
+        mapping(uint256 => uint256) storage allowances = _lpAllowances[msg.sender][spender_];
+
+        uint256 indexesLength = indexes_.length;
+        uint256 index;
+
+        for (uint256 i = 0; i < indexesLength; ) {
+            index = indexes_[i];
+
+            allowances[index] = 0;
+
+            unchecked { ++i; }
+        }
+
+        emit RevokeLpAllowance(
+            spender_,
+            indexes_
         );
     }
 
@@ -820,6 +861,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     ) external view override returns (uint256 lpBalance_, uint256 depositTime_) {
         depositTime_ = buckets[index_].lenders[lender_].depositTime;
         if (buckets[index_].bankruptcyTime < depositTime_) lpBalance_ = buckets[index_].lenders[lender_].lps;
+    }
+
+    /// @inheritdoc IPoolState
+    function lpAllowance(
+        uint256 index_,
+        address spender_,
+        address owner_
+    ) external view override returns (uint256 allowance_) {
+        allowance_ = _lpAllowances[owner_][spender_][index_];
     }
 
     /// @inheritdoc IPoolState

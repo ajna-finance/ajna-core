@@ -177,6 +177,19 @@ interface IPoolState {
     );
 
     /**
+     *  @notice Return the LPB allowance a LP owner provided to a spender.
+     *  @param  index   Bucket index.
+     *  @param  spender Address of the LPB spender.
+     *  @param  owner   The initial owner of the LPs.
+     *  @return allowance_ Amount of LPs spender can utilize.
+     */
+    function lpAllowance(
+        uint256 index,
+        address spender,
+        address owner
+    ) external view returns (uint256 allowance_);
+
+    /**
      *  @notice Returns information about a loan in the pool.
      *  @param  loanId Loan's id within loan heap. Max loan is position 1.
      *  @return borrower       Borrower address at the given position.

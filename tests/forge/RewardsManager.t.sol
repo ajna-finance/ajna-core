@@ -257,7 +257,7 @@ contract RewardsManagerTest is ERC20HelperContract {
             (lpBalances[i], ) = params_.pool.lenderInfo(params_.indexes[i], params_.minter);
         }
 
-        params_.pool.approveLpOwnership(address(_positionManager), params_.indexes, lpBalances);
+        params_.pool.increaseLPAllowance(address(_positionManager), params_.indexes, lpBalances);
 
         // construct memorialize params struct
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
