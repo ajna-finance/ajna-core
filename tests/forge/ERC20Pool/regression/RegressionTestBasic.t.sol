@@ -176,4 +176,24 @@ contract RegressionTestBasic is BasicInvariants {
 
         invariant_fenwick_bucket_index_F3();
     }
+
+    function test_regression_transferLps_1() external {
+        _basicPoolHandler.transferLps(0, 1, 200, 2570);
+
+        invariant_Bucket_deposit_time_B5();
+    }
+
+    function test_regression_transferLps_2() external {
+        _basicPoolHandler.transferLps(37233021465377552730514154972012012669272, 45957263314208417069590941186697869465410494677646946058359554, 405, 89727160292150007024940);
+
+        invariant_fenwick_depositAtIndex_F1();
+        invariant_fenwick_depositsTillIndex_F2();
+    }
+
+    function test_regression_transferLps_3() external {
+        _basicPoolHandler.transferLps(1795, 6198, 3110, 11449);
+
+        invariant_Bucket_deposit_time_B5();
+        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
+    }
 }

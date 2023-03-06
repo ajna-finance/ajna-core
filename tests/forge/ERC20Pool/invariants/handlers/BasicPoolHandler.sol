@@ -222,6 +222,41 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         }
     }
 
+    function approvelps(address sender, address receiver, uint256 bucketIndex, uint256 amount) internal resetAllPreviousLocalState {
+        uint256[] memory buckets = new uint256[](1);
+        buckets[0] = bucketIndex;
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = amount;
+        _pool.approveLpOwnership(receiver, buckets, amounts);
+    }
+
+    function transferLps(address sender, address receiver, uint256 bucketIndex) internal resetAllPreviousLocalState {
+        uint256[] memory buckets = new uint256[](1);
+        buckets[0] = bucketIndex;
+
+        fenwickAccrueInterest();
+        updatePoolState();
+
+        updatePreviousExchangeRate();
+        updatePreviousReserves();
+
+        changePrank(receiver);
+        try _pool.transferLPs(sender, receiver, buckets) {
+            shouldExchangeRateChange = false;
+            shouldReserveChange      = false;
+            updateCurrentExchangeRate();
+            updateCurrentReserves();
+
+            (, uint256 senderDepositTime) = _pool.lenderInfo(bucketIndex, sender);
+            (, uint256 receiverDepositTime) = _pool.lenderInfo(bucketIndex, receiver);
+
+            // receiver's deposit time updates when receiver receives lps
+            lenderDepositTime[receiver][bucketIndex] = Maths.max(senderDepositTime, receiverDepositTime);
+        } catch{
+            resetReservesAndExchangeRate();
+        }
+    }
+
     /**************************/
     /*** Borrower Functions ***/
     /**************************/
@@ -443,6 +478,19 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
 
         // Action
         super.removeCollateral(amount, _lenderBucketIndex);
+    }
+
+    function transferLps(uint256 fromActorIndex, uint256 toActorIndex, uint256 lpsToTransfer, uint256 bucketIndex) public useRandomActor(fromActorIndex) useRandomLenderBucket(bucketIndex){
+        (uint256 senderLpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
+        address receiver = actors[constrictToRange(toActorIndex, 0, actors.length - 1)];
+        if(senderLpBalance == 0) {
+            super.addQuoteToken(1e24, _lenderBucketIndex);
+        }
+        (senderLpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
+        lpsToTransfer = constrictToRange(lpsToTransfer, 1, senderLpBalance);
+
+        super.approvelps(_actor, receiver, _lenderBucketIndex, lpsToTransfer);
+        super.transferLps(_actor, receiver, _lenderBucketIndex);
     }
 
 

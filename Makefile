@@ -17,7 +17,7 @@ build   :; forge clean && forge build
 test                 :; forge test --no-match-test "testLoad|invariant|test_regression"  # --ffi # enable if you need the `ffi` cheat code on HEVM
 test-with-gas-report :; FOUNDRY_PROFILE=optimized forge test --no-match-test "testLoad|invariant" --gas-report # --ffi # enable if you need the `ffi` cheat code on HEVM
 test-load            :; FOUNDRY_PROFILE=optimized forge test --match-test testLoad --gas-report
-test-invariant		 :; forge t --mt invariant --nmt test_regression
+test-invariant		 :; forge t --mt invariant --nmc RegressionTest
 test-regression      :; forge t --mt test_regression
 coverage             :; forge coverage --no-match-test "testLoad|invariant"
 

@@ -60,24 +60,14 @@ contract LiquidationInvariant is BasicInvariants {
         uint256 totalKickerBond;
         for(uint256 i = 0; i < actorCount; i++) {
             address kicker = IBaseHandler(_handler).actors(i);
-            (, uint256 bond) = _pool.kickerInfo(kicker);
-            totalKickerBond += bond;
+            (uint256 claimable, uint256 bond) = _pool.kickerInfo(kicker);
+            totalKickerBond += bond + claimable;
         }
-
-        uint256 totalBondInAuction;
-
-        for(uint256 i = 0; i < actorCount; i++) {
-            address borrower = IBaseHandler(_handler).actors(i);
-            (, , uint256 bondSize, , , , , , , ) = _pool.auctionInfo(borrower);
-            totalBondInAuction += bondSize;
-        }
-
-        require(totalBondInAuction == totalKickerBond, "Incorrect bond");
 
         (uint256 totalPoolBond, , , ) = _pool.reservesInfo();
 
         require(totalPoolBond == totalKickerBond, "Incorrect bond");
-    }   
+    }
 
     // checks total borrowers with debt is equals to sum of borrowers unkicked and borrowers kicked
     // checks total auctions is equals to total borrowers kicked 

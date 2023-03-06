@@ -84,7 +84,7 @@ contract ReserveInvariants is LiquidationInvariant {
 
             console.log("firstTakeIncreaseInReserve -->", firstTakeIncreaseInReserve);
 
-            uint256 previousReservesAndBondChange = !isKickerRewarded ? previousReserves + kickerBondChange : previousReserves - kickerBondChange;
+            uint256 previousReservesAndBondChange = !isKickerRewarded ? previousReserves + kickerBondChange : previousReserves;
             
             // reserves should increase by 7% of borrower debt on first take
             if(IBaseHandler(_handler).firstTake()) {

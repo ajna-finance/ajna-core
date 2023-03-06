@@ -239,6 +239,18 @@ contract BaseHandler is InvariantTest, Test {
         return sum;
     }
 
+    function fenwickIndexForSum(uint256 debt) public view returns (uint256) {
+        uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX;
+        while(debt != 0 && bucketIndex <= LENDER_MAX_BUCKET_INDEX) {
+            if(fenwickDeposits[bucketIndex] >= debt) {
+                return bucketIndex;
+            }
+            debt -= fenwickDeposits[bucketIndex];
+            bucketIndex += 1;
+        }
+        return 7388;
+    }
+
     function fenwickSumAtIndex(uint256 index) public view returns(uint256) {
         return fenwickDeposits[index];
     }
