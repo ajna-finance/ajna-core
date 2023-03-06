@@ -580,7 +580,7 @@ library LenderActions {
      *  @dev write state:
      *          - increment LPs allowances
      *  @dev emit events:
-     *          - SetLPsAllowance
+     *          - IncreaseLPsAllowance
      */
     function increaseLPsAllowance(
         mapping(uint256 => uint256) storage allowances_,
@@ -612,7 +612,7 @@ library LenderActions {
      *  @dev write state:
      *          - decrement LPs allowances
      *  @dev emit events:
-     *          - SetLPsAllowance
+     *          - DecreaseLPsAllowance
      */
     function decreaseLPsAllowance(
         mapping(uint256 => uint256) storage allowances_,
@@ -644,7 +644,7 @@ library LenderActions {
      *  @dev write state:
      *          - decrement LPs allowances
      *  @dev emit events:
-     *          - SetLPsAllowance
+     *          - RevokeLPsAllowance
      */
     function revokeLPsAllowance(
         mapping(uint256 => uint256) storage allowances_,
@@ -673,6 +673,8 @@ library LenderActions {
      *  @notice See `IPoolLenderActions` for descriptions
      *  @dev write state:
      *          - approvedTransferors mapping
+     *  @dev emit events:
+     *          - ApproveLPsTransferors
      */
     function approveLPsTransferors(
         mapping(address => bool) storage allowances_,
@@ -695,6 +697,8 @@ library LenderActions {
      *  @notice See `IPoolLenderActions` for descriptions
      *  @dev write state:
      *          - approvedTransferors mapping
+     *  @dev emit events:
+     *          - RevokeLPsTransferors
      */
     function revokeLPsTransferors(
         mapping(address => bool) storage allowances_,
