@@ -243,14 +243,16 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         ) = IPool(params_.pool).bucketInfo(params_.fromIndex);
 
         // check for previous deposits
-        if (positions[params_.tokenId][params_.fromIndex].depositTime != 0) {
-            // check that bucket hasn't gone bankrupt since memorialization
-            if (positions[params_.tokenId][params_.fromIndex].depositTime <= bankruptcyTime) {
-                revert BucketBankrupt();
+        {
+            uint256 depositTime = positions[params_.tokenId][params_.fromIndex].depositTime;
+            if (depositTime != 0) {
+                // check that bucket hasn't gone bankrupt since memorialization
+                if (depositTime <= bankruptcyTime) {
+                    revert BucketBankrupt();
+                }
+            } else {
+                revert RemovePositionFailed();
             }
-        }
-        else {
-            revert RemovePositionFailed();
         }
 
         // calculate the max amount of quote tokens that can be moved, given the tracked LPs
