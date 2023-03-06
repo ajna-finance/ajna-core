@@ -642,7 +642,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         skip(10 days);
 
-        // borrower 1 borrows 500 quote from the pool
+        // borrower 1 borrows 10 quote from the pool
         _borrow({
             from:       _borrower,
             amount:     10 * 1e18,
@@ -672,6 +672,222 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             lupt0DebtEma: 330_773.399686006553854142 * 1e18,
             debtEma:      1_012.343273629329809307 * 1e18,
             depositEma:   19_999.990463256835940000 * 1e18
+        });
+    }
+    function testPoolLargeCollateralPostedTargetUtilization() external tearDown {
+
+        // add initial quote to the pool
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 20_000 * 1e18,
+            index:  3_010
+        });
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 20_000 * 1e18,
+            index:  2_995
+        });
+
+        _assertPool(
+            PoolParams({
+                htp:                  0,
+                lup:                  MAX_PRICE,
+                poolSize:             40_000 * 1e18,
+                pledgedCollateral:    0,
+                encumberedCollateral: 0,
+                poolDebt:             0,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+        _assertEMAs({
+            debtColEma:   0,
+            lupt0DebtEma: 0,
+            debtEma:      0,
+            depositEma:   20_000 * 1e18
+        });
+
+        // borrower 1 borrows 10000 quote from the pool
+        _pledgeCollateral({
+            from:     _borrower,
+            borrower: _borrower,
+            amount:   50 * 1e18
+        });
+        _borrow({
+            from:       _borrower,
+            amount:     10_000 * 1e18,
+            indexLimit: 3_010,
+            newLup:     327.188250324085203338 * 1e18
+        });
+
+        _assertPool(
+            PoolParams({
+                htp:                  200.192307692307692400 * 1e18,
+                lup:                  327.188250324085203338 * 1e18,
+                poolSize:             40_000 * 1e18,
+                pledgedCollateral:    50 * 1e18,
+                encumberedCollateral: 30.592832642066761971 * 1e18,
+                poolDebt:             10009.615384615384620000 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        1000.961538461538462000 * 1e18,
+                loans:                1,
+                maxBorrower:          address(_borrower),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+        _assertEMAs({
+            debtColEma:   0,
+            lupt0DebtEma: 0,
+            debtEma:      0,
+            depositEma:   20_000 * 1e18
+        });
+
+        // borrower 2 borrows 9000 quote from the pool
+        _pledgeCollateral({
+            from:     _borrower2,
+            borrower: _borrower2,
+            amount:   50 * 1e18
+        });
+        _borrow({
+            from:       _borrower2,
+            amount:     9000 * 1e18,
+            indexLimit: 3_010,
+            newLup:     327.188250324085203338 * 1e18
+        });
+
+        _assertPool(
+            PoolParams({
+                htp:                  200.192307692307692400 * 1e18,
+                lup:                  327.188250324085203338 * 1e18,
+                poolSize:             40_000 * 1e18,
+                pledgedCollateral:    100 * 1e18,
+                encumberedCollateral: 58.126382019926847745 * 1e18,
+                poolDebt:             19_018.269230769230778000 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        950.913461538461538900 * 1e18,
+                loans:                2,
+                maxBorrower:          address(_borrower),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+        _assertEMAs({
+            debtColEma:   0,
+            lupt0DebtEma: 0,
+            debtEma:      0,
+            depositEma:   20_000 * 1e18
+        });
+
+        skip(10 days);
+
+        // borrower 1 borrows 10 quote from the pool
+        _borrow({
+            from:       _borrower,
+            amount:     10 * 1e18,
+            indexLimit: 3_010,
+            newLup:     327.188250324085203338 * 1e18
+        });
+
+        _assertPool(
+            PoolParams({
+                htp:                  200.941998518054562754 * 1e18,
+                lup:                  327.188250324085203338 * 1e18,
+                poolSize:             40_022.159734498291800000 * 1e18,
+                pledgedCollateral:    100 * 1e18,
+                encumberedCollateral: 58.236654596124865142 * 1e18,
+                poolDebt:             19_054.349122034189453676 * 1e18,
+                actualUtilization:    0.476358955196505217 * 1e18,
+                targetUtilization:    0.584010402015984926 * 1e18,
+                minDebtAmount:        952.717456101709472684 * 1e18,
+                loans:                2,
+                maxBorrower:          address(_borrower),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+        _assertEMAs({
+            debtColEma:   3635_946.432113250913630238 * 1e18,
+            lupt0DebtEma: 6225_824.779082841691329479 * 1e18,
+            debtEma:      19_054.349122034189453676 * 1e18,
+            depositEma:   39_999.980926513671880000 * 1e18
+        });
+
+        skip(10 days);
+
+        // borrower 3 pledges enormous qty (50,000) of collateral and takes tiny debt (12 QT)
+        _pledgeCollateral({
+            from:     _borrower3,
+            borrower: _borrower3,
+            amount:   50_000 * 1e18
+        });
+        _borrow({
+            from:       _borrower2,
+            amount:     12 * 1e18,
+            indexLimit: 3_010,
+            newLup:     327.188250324085203338 * 1e18
+        });
+        _assertPool(
+            PoolParams({
+                htp:                  201.493279375818240993 * 1e18,
+                lup:                  327.188250324085203338 * 1e18,
+                poolSize:             40_045.121523671487120000 * 1e18,
+                pledgedCollateral:    50_100 * 1e18,
+                encumberedCollateral: 58.353196900686720280 * 1e18,
+                poolDebt:             19_092.480394752519489737 * 1e18,
+                actualUtilization:    0.476094974846641824 * 1e18,
+                targetUtilization:    0.584010402015984926 * 1e18,
+                minDebtAmount:        954.624019737625974487 * 1e18,
+                loans:                2,
+                maxBorrower:          address(_borrower),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+        _assertEMAs({
+            debtColEma:   3_635_946.432113250913630238 * 1e18,
+            lupt0DebtEma: 6_225_824.779082841691329479 * 1e18,
+            debtEma:      19_054.349122034189453676 * 1e18,
+            depositEma:   40_022.159713346932256568 * 1e18
+        });
+
+        skip(1 days);
+        // borrower 3 touches the pool again to force an interest rate update
+        _borrow({
+            from:       _borrower2,
+            amount:     3.14 * 1e18,
+            indexLimit: 3_010,
+            newLup:     327.188250324085203338 * 1e18
+        });
+        _assertPool(
+            PoolParams({
+                htp:                  201.548490576836267720 * 1e18,
+                lup:                  327.188250324085203338 * 1e18,
+                poolSize:             40_047.420826509653040000 * 1e18,
+                pledgedCollateral:    50_100 * 1e18,
+                encumberedCollateral: 58.370797186283932430 * 1e18,
+                poolDebt:             19_098.239001402275530018 * 1e18,
+                actualUtilization:    0.476604459561723991 * 1e18,
+                targetUtilization:    0.584213148132606714 * 1e18, // big col. deposit barely affects
+                minDebtAmount:        954.911950070113776501 * 1e18,
+                loans:                2,
+                maxBorrower:          address(_borrower),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+        _assertEMAs({
+            debtColEma:   3_637_620.071316321624676289 * 1e18, // big col. deposit barely affects 
+            lupt0DebtEma: 6_226_528.935447105141859984 * 1e18,
+            debtEma:      19_082.947576572936979769 * 1e18,
+            depositEma:   40_039.381071090348403568 * 1e18
         });
     }
 
