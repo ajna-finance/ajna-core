@@ -525,6 +525,13 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[2] = 30_000 * 1e18;
         _pool.increaseLPAllowance(_lender2, indexes, amounts);
 
+        _assertLpAllowance({
+            owner:       _lender1,
+            spender:     _lender2,
+            index:       indexes[1],
+            lpAllowance: 20_000 * 1e18
+        });
+
         // transfer LPs for all indexes
         _transferLPs({
             operator:  _lender,
@@ -540,6 +547,12 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
             from:     _lender1,
             to:       _lender2,
             indexes:  indexes
+        });
+        _assertLpAllowance({
+            owner:       _lender1,
+            spender:     _lender2,
+            index:       indexes[1],
+            lpAllowance: 0
         });
 
         // check lenders lp balance
