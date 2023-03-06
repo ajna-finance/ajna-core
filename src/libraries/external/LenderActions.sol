@@ -270,6 +270,12 @@ library LenderActions {
             })
         );
 
+        lup_ = _lup(deposits_, poolState_.debt);
+        // apply unutilized deposit fee if quote token is moved from above the LUP to below the LUP
+        if (vars.fromBucketPrice > lup_ && vars.toBucketPrice <= lup_) {
+            movedAmount_ = Maths.wmul(movedAmount_, Maths.WAD - _depositFeeRate(poolState_.rate));
+        }
+
         vars.toBucketUnscaledDeposit = Deposits.unscaledValueAt(deposits_, params_.toIndex);
         vars.toBucketScale           = Deposits.scale(deposits_, params_.toIndex);
         vars.toBucketDeposit         = Maths.wmul(vars.toBucketUnscaledDeposit, vars.toBucketScale);
@@ -284,7 +290,6 @@ library LenderActions {
 
         Deposits.unscaledAdd(deposits_, params_.toIndex, Maths.wdiv(movedAmount_, vars.toBucketScale));
 
-        lup_     = _lup(deposits_, poolState_.debt);
         vars.htp = Maths.wmul(params_.thresholdPrice, poolState_.inflator);
 
         // check loan book's htp against new lup, revert if move drives LUP below HTP
