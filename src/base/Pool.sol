@@ -182,7 +182,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         }
 
         emit ApproveLpTransfer(
-            msg.sender,
             spender_,
             indexes_,
             amounts_
@@ -208,9 +207,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             unchecked { ++i; }
         }
 
-        // TODO: remove msg.sender since it's already present in tx info
         emit ApproveLpTransfer(
-            msg.sender,
             spender_,
             indexes_,
             amounts_
