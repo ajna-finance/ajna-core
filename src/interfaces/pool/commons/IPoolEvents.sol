@@ -227,23 +227,41 @@ interface IPoolEvents {
     /***************************/
 
     /**
-     *  @notice Emitted when lender approves a spender owner of LPs at specified indexes with specified amounts.
+     *  @notice Emitted when owner increase the LPs allowance of a spender at specified indexes with specified amounts.
+     *  @param  owner     LPs owner.
      *  @param  spender   Address approved to transfer LPs.
      *  @param  indexes   Bucket indexes of LPs approved.
-     *  @param  amounts   LP amounts approved (ordered by approved indexes).
+     *  @param  amounts   LP amounts added (ordered by approved indexes).
      */
-    event SetLPsAllowance(
+    event IncreaseLPsAllowance(
+        address indexed owner,
         address indexed spender,
         uint256[] indexes,
         uint256[] amounts
     );
 
     /**
-     *  @notice Emitted when lender removes the allowance of a spender for their LPB.
+     *  @notice Emitted when owner decrease the LPs allowance of a spender at specified indexes with specified amounts.
+     *  @param  owner     LPs owner.
+     *  @param  spender   Address approved to transfer LPs.
+     *  @param  indexes   Bucket indexes of LPs approved.
+     *  @param  amounts   LP amounts added (ordered by approved indexes).
+     */
+    event DecreaseLPsAllowance(
+        address indexed owner,
+        address indexed spender,
+        uint256[] indexes,
+        uint256[] amounts
+    );
+
+    /**
+     *  @notice Emitted when lender removes the allowance of a spender for their LPs.
+     *  @param  owner   LPs owner.
      *  @param  spender Address that is having it's allowance revoked.
      *  @param  indexes List of bucket index to remove the allowance from.
      */
     event RevokeLPsAllowance(
+        address indexed owner,
         address indexed spender,
         uint256[] indexes
     );

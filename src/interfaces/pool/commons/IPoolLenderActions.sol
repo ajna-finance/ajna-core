@@ -70,7 +70,7 @@ interface IPoolLenderActions {
     /********************************/
 
     /**
-     *  @notice Called by lenders to update pool interest rate (can be updated only once in a 12 hours period of time).
+     *  @notice Called by actors to update pool interest rate (can be updated only once in a 12 hours period of time).
      */
     function updateInterest() external;
 

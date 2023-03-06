@@ -72,8 +72,9 @@ library LenderActions {
 
     event ApproveLPsTransferors(address indexed lender, address[] transferors);
     event RevokeLPsTransferors(address indexed lender, address[] transferors);
-    event SetLPsAllowance(address indexed spender, uint256[] indexes, uint256[] amounts);
-    event RevokeLPsAllowance(address indexed spender, uint256[] indexes);
+    event IncreaseLPsAllowance(address indexed owner, address indexed spender, uint256[] indexes, uint256[] amounts);
+    event DecreaseLPsAllowance(address indexed owner, address indexed spender, uint256[] indexes, uint256[] amounts);
+    event RevokeLPsAllowance(address indexed owner, address indexed spender, uint256[] indexes);
     event TransferLPs(address owner, address newOwner, uint256[] indexes, uint256 lps);
 
     /**************/
@@ -598,7 +599,8 @@ library LenderActions {
             unchecked { ++i; }
         }
 
-        emit SetLPsAllowance(
+        emit IncreaseLPsAllowance(
+            msg.sender,
             spender_,
             indexes_,
             amounts_
@@ -629,7 +631,8 @@ library LenderActions {
             unchecked { ++i; }
         }
 
-        emit SetLPsAllowance(
+        emit DecreaseLPsAllowance(
+            msg.sender,
             spender_,
             indexes_,
             amounts_
@@ -660,6 +663,7 @@ library LenderActions {
         }
 
         emit RevokeLPsAllowance(
+            msg.sender,
             spender_,
             indexes_
         );
