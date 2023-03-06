@@ -162,6 +162,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToAdd_);
     }
 
+    /// @inheritdoc IPoolLenderActions
     function decreaseLPAllowance(
         address spender_,
         uint256[] calldata indexes_,
@@ -175,7 +176,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         for (uint256 i = 0; i < indexesLength; ) {
             index = indexes_[i];
 
-            // FIXME: prevent underflow or rely upon SafeMath?
             allowances[index] -= amounts_[i];
 
             unchecked { ++i; }
@@ -189,6 +189,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
+    /// @inheritdoc IPoolLenderActions
     function increaseLPAllowance(
         address spender_,
         uint256[] calldata indexes_,
@@ -202,7 +203,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         for (uint256 i = 0; i < indexesLength; ) {
             index = indexes_[i];
 
-            // FIXME: prevent underflow
             allowances[index] += amounts_[i];
 
             unchecked { ++i; }
@@ -217,6 +217,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
+    /// @inheritdoc IPoolLenderActions
     function revokeLPAllowance(
         address spender_,
         uint256[] calldata indexes_
