@@ -37,7 +37,7 @@ import { Maths }   from '../internal/Maths.sol';
      *  @dev    Price expected to be inputted as a 18 decimal WAD
      *  @dev    Fenwick index is converted to bucket index
      *  @dev    Fenwick index to bucket index conversion
-     *          1.00      : bucket index 0,     fenwick index 4146: 7388-4156-3232=0
+     *          1.00      : bucket index 0,     fenwick index 4156: 7388-4156-3232=0
      *          MAX_PRICE : bucket index 4156,  fenwick index 0:    7388-0-3232=4156.
      *          MIN_PRICE : bucket index -3232, fenwick index 7388: 7388-7388-3232=-3232.
      *  @dev    V1: price = MIN_PRICE + (FLOAT_STEP * index)
