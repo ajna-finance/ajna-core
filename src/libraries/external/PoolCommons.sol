@@ -5,7 +5,7 @@ pragma solidity 0.8.14;
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
-import { InterestState, PoolState, DepositsState } from '../../interfaces/pool/commons/IPoolState.sol';
+import { InterestState, EmaState, PoolState, DepositsState } from '../../interfaces/pool/commons/IPoolState.sol';
 
 import { _dwatp, _indexOf, MAX_FENWICK_INDEX, MIN_PRICE, MAX_PRICE } from '../helpers/PoolHelper.sol';
 
@@ -78,16 +78,18 @@ library PoolCommons {
      */
     function updateInterestState(
         InterestState storage interestParams_,
+        EmaState      storage emaParams_,
         DepositsState storage deposits_,
         PoolState memory poolState_,
         uint256 lup_
     ) external {
         UpdateInterestLocalVars memory vars;
-        vars.debtEma       = interestParams_.debtEma;
-        vars.depositEma    = interestParams_.depositEma;
-        vars.debtColEma    = interestParams_.debtColEma;
-        vars.lupt0DebtEma  = interestParams_.lupt0DebtEma;
-        vars.lastEmaUpdate = interestParams_.emaUpdate;
+        // load existing EMA values
+        vars.debtEma       = emaParams_.debtEma;
+        vars.depositEma    = emaParams_.depositEma;
+        vars.debtColEma    = emaParams_.debtColEma;
+        vars.lupt0DebtEma  = emaParams_.lupt0DebtEma;
+        vars.lastEmaUpdate = emaParams_.emaUpdate;
 
         vars.t0Debt2ToCollateral = interestParams_.t0Debt2ToCollateral;
 
@@ -140,13 +142,13 @@ library PoolCommons {
                 );
 
             // save EMAs in storage
-            interestParams_.debtEma      = vars.debtEma;
-            interestParams_.depositEma   = vars.depositEma;
-            interestParams_.debtColEma   = vars.debtColEma;
-            interestParams_.lupt0DebtEma = vars.lupt0DebtEma;
+            emaParams_.debtEma      = vars.debtEma;
+            emaParams_.depositEma   = vars.depositEma;
+            emaParams_.debtColEma   = vars.debtColEma;
+            emaParams_.lupt0DebtEma = vars.lupt0DebtEma;
 
             // save last EMA update time
-            interestParams_.emaUpdate    = block.timestamp;
+            emaParams_.emaUpdate = block.timestamp;
         }
 
         // calculate and update interest rate if it has been more than 12 hours since the last update
@@ -185,8 +187,8 @@ library PoolCommons {
      *  @return newInflator_   The new value of pool inflator.
      */
     function accrueInterest(
+        EmaState      storage emaParams_,
         DepositsState storage deposits_,
-        InterestState storage interestState_,
         PoolState calldata poolState_,
         uint256 thresholdPrice_,
         uint256 elapsed_
@@ -212,7 +214,7 @@ library PoolCommons {
 
         if (depositAboveHtp != 0) {
             newInterest_ = Maths.wmul(
-                _lenderInterestMargin(_utilization(interestState_.debtEma, interestState_.depositEma)),
+                _lenderInterestMargin(_utilization(emaParams_.debtEma, emaParams_.depositEma)),
                 Maths.wmul(pendingFactor - Maths.WAD, poolState_.debt)
             );
 
@@ -368,8 +370,8 @@ library PoolCommons {
      *  @dev Wrapper of the internal function.
      */
     function utilization(
-        InterestState storage interestParams_
+        EmaState storage emaParams_
     ) external view returns (uint256 utilization_) {
-        return _utilization(interestParams_.debtEma, interestParams_.depositEma);
+        return _utilization(emaParams_.debtEma, emaParams_.depositEma);
     }
 }
