@@ -2326,7 +2326,6 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
-        // minter allows position manager as transferor too
         _positionManager.reedemPositions(reedemParams);
 
         _assertLenderLpBalance({

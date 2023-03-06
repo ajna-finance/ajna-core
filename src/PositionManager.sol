@@ -63,6 +63,21 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     ERC20PoolFactory  private immutable erc20PoolFactory;  // The ERC20 pools factory contract, used to check if address is an Ajna pool
     ERC721PoolFactory private immutable erc721PoolFactory; // The ERC721 pools factory contract, used to check if address is an Ajna pool
 
+    /*************************/
+    /*** Local Var Structs ***/
+    /*************************/
+
+    struct MoveLiquidityLocalVars {
+        uint256 bucketLPs;        // [WAD] amount of LPs in from bucket
+        uint256 bucketCollateral; // [WAD] amount of collateral in from bucket
+        uint256 bankruptcyTime;   // from bucket bankruptcy time
+        uint256 bucketDeposit;    // [WAD] from bucket deposit
+        uint256 depositTime;      // lender deposit time in from bucekt
+        uint256 maxQuote;         // [WAD] max amount that can be moved from bucket
+        uint256 lpbAmountFrom;    // [WAD] the LPs redeemed from bucket
+        uint256 lpbAmountTo;      // [WAD] the LPs awarded in to bucket
+    }
+
     /*****************/
     /*** Modifiers ***/
     /*****************/
@@ -133,7 +148,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      *          - transferLPs(): transfer LPs ownership to PositionManager contracts
      *  @dev write state:
      *          - positionIndexes: add bucket index
-     *          - positionLPs: update tokenId => bucket id mapping
+     *          - positions: update tokenId => bucket id position
      *  @dev revert on:
      *          - positions token to burn has liquidity LiquidityNotRemoved()
      *  @dev emit events:
@@ -220,8 +235,8 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      *  @dev write state:
      *          - positionIndexes: remove from bucket index
      *          - positionIndexes: add to bucket index
-     *          - positionLPs: decrement from bucket LPs
-     *          - positionLPs: increment to bucket LPs
+     *          - positions: update from bucket position
+     *          - positions: update to bucket position
      *  @dev revert on:
      *          - mayInteract:
      *              - token id is not a valid / minted id
@@ -234,26 +249,32 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     function moveLiquidity(
         MoveLiquidityParams calldata params_
     ) external override mayInteract(params_.pool, params_.tokenId) nonReentrant {
+        Position storage fromPosition = positions[params_.tokenId][params_.fromIndex];
+
+        MoveLiquidityLocalVars memory vars;
+        vars.depositTime = fromPosition.depositTime;
+
+        // handle the case where owner attempts to move liquidity after they've already done so
+        if (vars.depositTime == 0) revert RemovePositionFailed();
+
         // retrieve info of bucket from which liquidity is moved  
         (
-            uint256 bucketLPs,
-            uint256 bucketCollateral,
-            uint256 bankruptcyTime,
-            uint256 bucketDeposit,
+            vars.bucketLPs,
+            vars.bucketCollateral,
+            vars.bankruptcyTime,
+            vars.bucketDeposit,
         ) = IPool(params_.pool).bucketInfo(params_.fromIndex);
 
         // check that bucket hasn't gone bankrupt since memorialization
-        if (positions[params_.tokenId][params_.fromIndex].depositTime < bankruptcyTime) {
-            revert BucketBankrupt();
-        }
+        if (vars.depositTime <= vars.bankruptcyTime) revert BucketBankrupt();
 
         // calculate the max amount of quote tokens that can be moved, given the tracked LPs
-        uint256 maxQuote = _lpsToQuoteToken(
-            bucketLPs,
-            bucketCollateral,
-            bucketDeposit,
-            positions[params_.tokenId][params_.fromIndex].lps,
-            bucketDeposit,
+        vars.maxQuote = _lpsToQuoteToken(
+            vars.bucketLPs,
+            vars.bucketCollateral,
+            vars.bucketDeposit,
+            fromPosition.lps,
+            vars.bucketDeposit,
             _priceAt(params_.fromIndex)
         );
 
@@ -268,20 +289,29 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
         // move quote tokens in pool
         (
-            uint256 lpbAmountFrom,
-            uint256 lpbAmountTo,
+            vars.lpbAmountFrom,
+            vars.lpbAmountTo,
         ) = IPool(params_.pool).moveQuoteToken(
-            maxQuote,
+            vars.maxQuote,
             params_.fromIndex,
             params_.toIndex,
             params_.expiry
         );
 
-        // update position LPs state
-        positions[params_.tokenId][params_.fromIndex].lps -= lpbAmountFrom;
-        positions[params_.tokenId][params_.toIndex].lps   += lpbAmountTo;
+        Position storage toPosition = positions[params_.tokenId][params_.toIndex];
 
-        emit MoveLiquidity(ownerOf(params_.tokenId), params_.tokenId, params_.fromIndex, params_.toIndex);
+        // update position LPs state
+        fromPosition.lps -= vars.lpbAmountFrom;
+        toPosition.lps   += vars.lpbAmountTo;
+        // update position deposit time to the from bucket deposit time
+        toPosition.depositTime = vars.depositTime;
+
+        emit MoveLiquidity(
+            ownerOf(params_.tokenId),
+            params_.tokenId,
+            params_.fromIndex,
+            params_.toIndex
+        );
     }
 
     /**
@@ -291,7 +321,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      *          - transferLPs(): transfer LPs ownership from PositionManager contract
      *  @dev write state:
      *          - positionIndexes: remove from bucket index
-     *          - positionLPs: delete bucket LPs
+     *          - positions: delete bucket position
      *  @dev revert on:
      *          - mayInteract:
      *              - token id is not a valid / minted id
@@ -317,6 +347,8 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             index = params_.indexes[i];
 
             Position memory position = positions[params_.tokenId][index];
+
+            if (position.depositTime == 0 || position.lps == 0) revert RemovePositionFailed();
 
             // check that bucket didn't go bankrupt after memorialization
             if (_bucketBankruptAfterDeposit(pool, index, position.depositTime)) revert BucketBankrupt();
@@ -389,7 +421,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         uint256 depositTime_
     ) internal view returns (bool) {
         (, , uint256 bankruptcyTime, , ) = pool_.bucketInfo(index_);
-        return depositTime_ < bankruptcyTime;
+        return depositTime_ <= bankruptcyTime;
     }
 
     /**********************/
