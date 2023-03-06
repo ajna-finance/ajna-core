@@ -272,7 +272,7 @@ library LenderActions {
 
         lup_ = _lup(deposits_, poolState_.debt);
         // apply unutilized deposit fee if quote token is moved from above the LUP to below the LUP
-        if (vars.fromBucketPrice > lup_ && vars.toBucketPrice <= lup_) {
+        if (vars.fromBucketPrice >= lup_ && vars.toBucketPrice < lup_) {
             movedAmount_ = Maths.wmul(movedAmount_, Maths.WAD - _depositFeeRate(poolState_.rate));
         }
 
