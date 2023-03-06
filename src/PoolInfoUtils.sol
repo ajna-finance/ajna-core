@@ -435,13 +435,13 @@ contract PoolInfoUtils {
 
     /**
      *  @notice Calculates target utilization for given EMA values.
-     *  @param  debtColEma_   The EMA of debt value.
-     *  @param  lupt0DebtEma_ The EMA of lup * collateral value.
+     *  @param  debtColEma_   The EMA of debt squared to collateral.
+     *  @param  lupt0DebtEma_ The EMA of LUP * t0 debt.
      *  @return Target utilization of the pool.
      */
     function _targetUtilization(
         uint256 debtColEma_,
         uint256 lupt0DebtEma_
     ) pure returns (uint256) {
-        return (debtColEma_ != 0 && lupt0DebtEma_ != 0) ? Maths.wdiv(debtColEma_, lupt0DebtEma_) : Maths.WAD;
+        return (lupt0DebtEma_ != 0) ? Maths.wdiv(debtColEma_, lupt0DebtEma_) : Maths.WAD;
     }
