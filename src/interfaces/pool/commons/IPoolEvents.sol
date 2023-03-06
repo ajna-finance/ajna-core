@@ -235,6 +235,16 @@ interface IPoolEvents {
     );
 
     /**
+     *  @notice Emitted when lender removes the allowance of a spender for their LPB.
+     *  @param  spender Address that is having it's allowance revoked.
+     *  @param  indexes List of bucket index to remove the allowance from.
+     */
+    event RevokeLpAllownace(
+        address indexed spender,
+        uint256[] indexes
+    );
+
+    /**
      *  @notice Emitted when lender removes addresses from the LPs transferors whitelist.
      *  @param  lender      Recipient that approves new owner for LPs.
      *  @param  transferors List of addresses that won't be able to transfer LPs to lender anymore.

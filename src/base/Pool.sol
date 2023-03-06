@@ -197,6 +197,84 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
+    function decreaseLPAllowance(
+        address spender_,
+        uint256[] calldata indexes_,
+        uint256[] calldata amounts_
+    ) external override nonReentrant {
+        mapping(uint256 => uint256) storage allowances = _lpAllowances[msg.sender][spender_];
+
+        uint256 indexesLength = indexes_.length;
+        uint256 index;
+
+        for (uint256 i = 0; i < indexesLength; ) {
+            index = indexes_[i];
+
+            // FIXME: prevent underflow or rely upon SafeMath?
+            allowances[index] -= amounts_[i];
+
+            unchecked { ++i; }
+        }
+
+        emit ApproveLpOwnership(
+            msg.sender,
+            spender_,
+            indexes_,
+            amounts_
+        );
+    }
+
+    function increaseLPAllowance(
+        address spender_,
+        uint256[] calldata indexes_,
+        uint256[] calldata amounts_
+    ) external override nonReentrant {
+        mapping(uint256 => uint256) storage allowances = _lpAllowances[msg.sender][spender_];
+
+        uint256 indexesLength = indexes_.length;
+        uint256 index;
+
+        for (uint256 i = 0; i < indexesLength; ) {
+            index = indexes_[i];
+
+            // FIXME: prevent underflow
+            allowances[index] += amounts_[i];
+
+            unchecked { ++i; }
+        }
+
+        // TODO: remove msg.sender since it's already present in tx info
+        emit ApproveLpOwnership(
+            msg.sender,
+            spender_,
+            indexes_,
+            amounts_
+        );
+    }
+
+    function revokeLPAllowance(
+        address spender_,
+        uint256[] calldata indexes_
+    ) external override nonReentrant {
+        mapping(uint256 => uint256) storage allowances = _lpAllowances[msg.sender][spender_];
+
+        uint256 indexesLength = indexes_.length;
+        uint256 index;
+
+        for (uint256 i = 0; i < indexesLength; ) {
+            index = indexes_[i];
+
+            allowances[index] = 0;
+
+            unchecked { ++i; }
+        }
+
+        emit RevokeLpAllownace(
+            spender_,
+            indexes_
+        );
+    }
+
     /**
      *  @inheritdoc IPoolLenderActions
      *  @dev write state:
