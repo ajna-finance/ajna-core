@@ -25,6 +25,7 @@ import {
     DepositsState,
     LoansState,
     InflatorState,
+    EmaState,
     InterestState,
     PoolBalancesState,
     ReserveAuctionState,
@@ -87,6 +88,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     DepositsState       internal deposits;
     LoansState          internal loans;
     InflatorState       internal inflatorState;
+    EmaState            internal emaState;
     InterestState       internal interestState;
     PoolBalancesState   internal poolBalances;
     ReserveAuctionState internal reserveAuction;
@@ -559,8 +561,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             // if new interest may have accrued, call accrueInterest function and update inflator and debt fields of poolState_ struct
             if (poolState_.isNewInterestAccrued) {
                 (uint256 newInflator, uint256 newInterest) = PoolCommons.accrueInterest(
+                    emaState,
                     deposits,
-                    interestState,
                     poolState_,
                     Loans.getMax(loans).thresholdPrice,
                     elapsed
@@ -623,7 +625,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 lup_
     ) internal {
 
-        PoolCommons.updateInterestState(interestState, deposits, poolState_, lup_);
+        PoolCommons.updateInterestState(interestState, emaState, deposits, poolState_, lup_);
 
         // update pool inflator
         if (poolState_.isNewInterestAccrued) {
@@ -772,16 +774,16 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     /// @inheritdoc IPoolDerivedState
     function depositUtilization() external view override returns (uint256) {
-        return PoolCommons.utilization(interestState);
+        return PoolCommons.utilization(emaState);
     }
 
     /// @inheritdoc IPoolState
     function emasInfo() external view override returns (uint256, uint256, uint256, uint256) {
         return (
-            interestState.debtColEma,
-            interestState.lupt0DebtEma,
-            interestState.debtEma,
-            interestState.depositEma
+            emaState.debtColEma,
+            emaState.lupt0DebtEma,
+            emaState.debtEma,
+            emaState.depositEma
         );
     }
 
