@@ -287,7 +287,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     /**
      *  @inheritdoc IPositionManagerOwnerActions
      *  @dev External calls to Pool contract:
-     *          - approveLpOwnership(): approve ownership for transfer
+     *          - increaseLPAllowance(): approve ownership for transfer
      *          - transferLPs(): transfer LPs ownership from PositionManager contract
      *  @dev write state:
      *          - positionIndexes: remove from bucket index

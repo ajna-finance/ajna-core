@@ -162,41 +162,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToAdd_);
     }
 
-    /**
-     *  @inheritdoc IPoolLenderActions
-     *  @dev write state:
-     *          - _lpAllowances mapping
-     */
-    function approveLpOwnership(
-        address newOwner_,
-        uint256[] calldata indexes_,
-        uint256[] calldata amounts_
-    ) external override nonReentrant {
-        mapping(uint256 => uint256) storage allowances = _lpAllowances[msg.sender][newOwner_];
-
-        uint256 indexesLength = indexes_.length;
-        uint256 index;
-
-        for (uint256 i = 0; i < indexesLength; ) {
-            index = indexes_[i];
-
-            // revert if allowance at index is already set (not 0) and the new allowance does not reset the old one (not 0)
-            // this prevents possible attack where LPs receiver (newOwner) frontruns owner allowance calls to transfer more than allowed
-            if (allowances[index] != 0 && amounts_[i] != 0) revert AllowanceAlreadySet();
-
-            allowances[index] = amounts_[i];
-
-            unchecked { ++i; }
-        }
-
-        emit ApproveLpOwnership(
-            msg.sender,
-            newOwner_,
-            indexes_,
-            amounts_
-        );
-    }
-
     function decreaseLPAllowance(
         address spender_,
         uint256[] calldata indexes_,

@@ -20,19 +20,6 @@ interface IPoolLenderActions {
     ) external returns (uint256 lpbChange);
 
     /**
-     *  @notice Called by lenders to approve transfer of LPs to a new owner.
-     *  @dev    Intended for use by the PositionManager contract.
-     *  @param  allowedNewOwner The new owner of the LPs.
-     *  @param  indexes         Bucket indexes from where LPs are transferred.
-     *  @param  amounts         The amounts of LPs approved to transfer.
-     */
-    function approveLpOwnership(
-        address allowedNewOwner,
-        uint256[] calldata indexes,
-        uint256[] calldata amounts
-    ) external;
-
-    /**
      *  @notice Called by lenders to approve transfer of an amount of LPs to a new owner.
      *  @dev    Intended for use by the PositionManager contract.
      *  @param  spender The new owner of the LPs.
