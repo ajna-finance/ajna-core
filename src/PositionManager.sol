@@ -367,7 +367,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         address owner = ownerOf(params_.tokenId);
 
         // approve owner to take over the LPs ownership (required for transferLPs pool call)
-        pool.increaseLPAllowance(owner, params_.indexes, lpAmounts);
+        pool.increaseLPsAllowance(owner, params_.indexes, lpAmounts);
         // update pool lps accounting and transfer ownership of lps from PositionManager contract
         pool.transferLPs(address(this), owner, params_.indexes);
 

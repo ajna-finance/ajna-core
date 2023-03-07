@@ -165,128 +165,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /// @inheritdoc IPoolLenderActions
-    function decreaseLPAllowance(
-        address spender_,
-        uint256[] calldata indexes_,
-        uint256[] calldata amounts_
-    ) external override nonReentrant {
-        mapping(uint256 => uint256) storage allowances = _lpAllowances[msg.sender][spender_];
-
-        uint256 indexesLength = indexes_.length;
-        uint256 index;
-
-        for (uint256 i = 0; i < indexesLength; ) {
-            index = indexes_[i];
-
-            allowances[index] -= amounts_[i];
-
-            unchecked { ++i; }
-        }
-
-        emit SetLpAllowance(
-            spender_,
-            indexes_,
-            amounts_
-        );
-    }
-
-    /// @inheritdoc IPoolLenderActions
-    function increaseLPAllowance(
-        address spender_,
-        uint256[] calldata indexes_,
-        uint256[] calldata amounts_
-    ) external override nonReentrant {
-        mapping(uint256 => uint256) storage allowances = _lpAllowances[msg.sender][spender_];
-
-        uint256 indexesLength = indexes_.length;
-        uint256 index;
-
-        for (uint256 i = 0; i < indexesLength; ) {
-            index = indexes_[i];
-
-            allowances[index] += amounts_[i];
-
-            unchecked { ++i; }
-        }
-
-        emit SetLpAllowance(
-            spender_,
-            indexes_,
-            amounts_
-        );
-    }
-
-    /// @inheritdoc IPoolLenderActions
-    function revokeLPAllowance(
-        address spender_,
-        uint256[] calldata indexes_
-    ) external override nonReentrant {
-        mapping(uint256 => uint256) storage allowances = _lpAllowances[msg.sender][spender_];
-
-        uint256 indexesLength = indexes_.length;
-        uint256 index;
-
-        for (uint256 i = 0; i < indexesLength; ) {
-            index = indexes_[i];
-
-            allowances[index] = 0;
-
-            unchecked { ++i; }
-        }
-
-        emit RevokeLpAllowance(
-            spender_,
-            indexes_
-        );
-    }
-
-    /**
-     *  @inheritdoc IPoolLenderActions
-     *  @dev write state:
-     *          - approvedTransferors mapping
-     */
-    function approveLpTransferors(
-        address[] calldata transferors_
-    ) external override {
-        mapping(address => bool) storage allowances = approvedTransferors[msg.sender];
-
-        uint256 transferorsLength = transferors_.length;
-        for (uint256 i = 0; i < transferorsLength; ) {
-            allowances[transferors_[i]] = true;
-
-            unchecked { ++i; }
-        }
-
-        emit ApproveLpTransferors(
-            msg.sender,
-            transferors_
-        );
-    }
-
-    /**
-     *  @inheritdoc IPoolLenderActions
-     *  @dev write state:
-     *          - approvedTransferors mapping
-     */
-    function revokeLpTransferors(
-        address[] calldata transferors_
-    ) external override {
-        mapping(address => bool) storage allowances = approvedTransferors[msg.sender];
-
-        uint256 transferorsLength = transferors_.length;
-        for (uint256 i = 0; i < transferorsLength; ) {
-            delete allowances[transferors_[i]];
-
-            unchecked { ++i; }
-        }
-
-        emit RevokeLpTransferors(
-            msg.sender,
-            transferors_
-        );
-    }
-
-    /// @inheritdoc IPoolLenderActions
     function moveQuoteToken(
         uint256 maxAmountToMove_,
         uint256 fromIndex_,
@@ -352,22 +230,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // move quote token amount from pool to lender
         _transferQuoteToken(msg.sender, removedAmount_);
-    }
-
-    /// @inheritdoc IPoolLenderActions
-    function transferLPs(
-        address owner_,
-        address newOwner_,
-        uint256[] calldata indexes_
-    ) external override nonReentrant {
-        LenderActions.transferLPs(
-            buckets,
-            _lpAllowances,
-            approvedTransferors,
-            owner_,
-            newOwner_,
-            indexes_
-        );
     }
 
     /// @inheritdoc IPoolLenderActions
@@ -563,6 +425,90 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         // transfer quote token to caller
         _transferQuoteToken(msg.sender, amount_);
+    }
+
+    /******************************/
+    /*** Transfer LPs Functions ***/
+    /******************************/
+
+    /// @inheritdoc IPoolLenderActions
+    function increaseLPsAllowance(
+        address spender_,
+        uint256[] calldata indexes_,
+        uint256[] calldata amounts_
+    ) external override nonReentrant {
+        LenderActions.increaseLPsAllowance(
+            _lpAllowances[msg.sender][spender_],
+            spender_,
+            indexes_,
+            amounts_
+        );
+    }
+
+    /// @inheritdoc IPoolLenderActions
+    function decreaseLPsAllowance(
+        address spender_,
+        uint256[] calldata indexes_,
+        uint256[] calldata amounts_
+    ) external override nonReentrant {
+        LenderActions.decreaseLPsAllowance(
+            _lpAllowances[msg.sender][spender_],
+            spender_,
+            indexes_,
+            amounts_
+        );
+    }
+
+    /// @inheritdoc IPoolLenderActions
+    function revokeLPsAllowance(
+        address spender_,
+        uint256[] calldata indexes_
+    ) external override nonReentrant {
+        LenderActions.revokeLPsAllowance(
+            _lpAllowances[msg.sender][spender_],
+            spender_,
+            indexes_
+        );
+    }
+
+    /// @inheritdoc IPoolLenderActions
+    function approveLPsTransferors(
+        address[] calldata transferors_
+    ) external override {
+        LenderActions.approveLPsTransferors(
+            approvedTransferors[msg.sender],
+            transferors_
+        );
+    }
+
+    /**
+     *  @inheritdoc IPoolLenderActions
+     *  @dev write state:
+     *          - approvedTransferors mapping
+     */
+    function revokeLPsTransferors(
+        address[] calldata transferors_
+    ) external override {
+        LenderActions.revokeLPsTransferors(
+            approvedTransferors[msg.sender],
+            transferors_
+        );
+    }
+
+    /// @inheritdoc IPoolLenderActions
+    function transferLPs(
+        address owner_,
+        address newOwner_,
+        uint256[] calldata indexes_
+    ) external override nonReentrant {
+        LenderActions.transferLPs(
+            buckets,
+            _lpAllowances,
+            approvedTransferors,
+            owner_,
+            newOwner_,
+            indexes_
+        );
     }
 
     /*****************************/

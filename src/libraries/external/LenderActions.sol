@@ -69,6 +69,12 @@ library LenderActions {
     event BucketBankruptcy(uint256 indexed index, uint256 lpForfeited);
     event MoveQuoteToken(address indexed lender, uint256 indexed from, uint256 indexed to, uint256 amount, uint256 lpRedeemedFrom, uint256 lpAwardedTo, uint256 lup);
     event RemoveQuoteToken(address indexed lender, uint256 indexed index, uint256 amount, uint256 lpRedeemed, uint256 lup);
+
+    event ApproveLPsTransferors(address indexed lender, address[] transferors);
+    event RevokeLPsTransferors(address indexed lender, address[] transferors);
+    event IncreaseLPsAllowance(address indexed owner, address indexed spender, uint256[] indexes, uint256[] amounts);
+    event DecreaseLPsAllowance(address indexed owner, address indexed spender, uint256[] indexes, uint256[] amounts);
+    event RevokeLPsAllowance(address indexed owner, address indexed spender, uint256[] indexes);
     event TransferLPs(address owner, address newOwner, uint256[] indexes, uint256 lps);
 
     /**************/
@@ -563,6 +569,152 @@ library LenderActions {
                 toBucketPrice
             );
         }
+    }
+
+    /******************************/
+    /*** Transfer LPs Functions ***/
+    /******************************/
+
+    /**
+     *  @notice See `IPoolLenderActions` for descriptions
+     *  @dev write state:
+     *          - increment LPs allowances
+     *  @dev emit events:
+     *          - IncreaseLPsAllowance
+     */
+    function increaseLPsAllowance(
+        mapping(uint256 => uint256) storage allowances_,
+        address spender_,
+        uint256[] calldata indexes_,
+        uint256[] calldata amounts_
+    ) external {
+        uint256 indexesLength = indexes_.length;
+        uint256 index;
+
+        for (uint256 i = 0; i < indexesLength; ) {
+            index = indexes_[i];
+
+            allowances_[index] += amounts_[i];
+
+            unchecked { ++i; }
+        }
+
+        emit IncreaseLPsAllowance(
+            msg.sender,
+            spender_,
+            indexes_,
+            amounts_
+        );
+    }
+
+    /**
+     *  @notice See `IPoolLenderActions` for descriptions
+     *  @dev write state:
+     *          - decrement LPs allowances
+     *  @dev emit events:
+     *          - DecreaseLPsAllowance
+     */
+    function decreaseLPsAllowance(
+        mapping(uint256 => uint256) storage allowances_,
+        address spender_,
+        uint256[] calldata indexes_,
+        uint256[] calldata amounts_
+    ) external {
+        uint256 indexesLength = indexes_.length;
+        uint256 index;
+
+        for (uint256 i = 0; i < indexesLength; ) {
+            index = indexes_[i];
+
+            allowances_[index] -= amounts_[i];
+
+            unchecked { ++i; }
+        }
+
+        emit DecreaseLPsAllowance(
+            msg.sender,
+            spender_,
+            indexes_,
+            amounts_
+        );
+    }
+
+    /**
+     *  @notice See `IPoolLenderActions` for descriptions
+     *  @dev write state:
+     *          - decrement LPs allowances
+     *  @dev emit events:
+     *          - RevokeLPsAllowance
+     */
+    function revokeLPsAllowance(
+        mapping(uint256 => uint256) storage allowances_,
+        address spender_,
+        uint256[] calldata indexes_
+    ) external {
+        uint256 indexesLength = indexes_.length;
+        uint256 index;
+
+        for (uint256 i = 0; i < indexesLength; ) {
+            index = indexes_[i];
+
+            allowances_[index] = 0;
+
+            unchecked { ++i; }
+        }
+
+        emit RevokeLPsAllowance(
+            msg.sender,
+            spender_,
+            indexes_
+        );
+    }
+
+    /**
+     *  @notice See `IPoolLenderActions` for descriptions
+     *  @dev write state:
+     *          - approvedTransferors mapping
+     *  @dev emit events:
+     *          - ApproveLPsTransferors
+     */
+    function approveLPsTransferors(
+        mapping(address => bool) storage allowances_,
+        address[] calldata transferors_
+    ) external  {
+        uint256 transferorsLength = transferors_.length;
+        for (uint256 i = 0; i < transferorsLength; ) {
+            allowances_[transferors_[i]] = true;
+
+            unchecked { ++i; }
+        }
+
+        emit ApproveLPsTransferors(
+            msg.sender,
+            transferors_
+        );
+    }
+
+    /**
+     *  @notice See `IPoolLenderActions` for descriptions
+     *  @dev write state:
+     *          - approvedTransferors mapping
+     *  @dev emit events:
+     *          - RevokeLPsTransferors
+     */
+    function revokeLPsTransferors(
+        mapping(address => bool) storage allowances_,
+        address[] calldata transferors_
+    ) external  {
+        uint256 transferorsLength = transferors_.length;
+        for (uint256 i = 0; i < transferorsLength; ) {
+            delete allowances_[transferors_[i]];
+
+            unchecked { ++i; }
+        }
+
+        emit RevokeLPsTransferors(
+            msg.sender,
+            transferors_
+        );
     }
 
     /**

@@ -25,7 +25,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         changePrank(_lender2);
         address[] memory transferors = new address[](1);
         transferors[0] = _lender;
-        _pool.approveLpTransferors(transferors);
+        _pool.approveLPsTransferors(transferors);
     }
 
     /**************************/
@@ -52,7 +52,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         approveIndexes[0] = 2550;
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 1_000 * 1e18;
-        _pool.increaseLPAllowance(address(0), approveIndexes, amounts);
+        _pool.increaseLPsAllowance(address(0), approveIndexes, amounts);
 
         _assertTransferNoAllowanceRevert({
             operator: _lender,
@@ -74,7 +74,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[0] = 1_000 * 1e18;
         amounts[1] = 1_000 * 1e18;
         amounts[2] = 1_000 * 1e18;
-        _pool.increaseLPAllowance(_lender2, indexes, amounts);
+        _pool.increaseLPsAllowance(_lender2, indexes, amounts);
 
         _assertTransferNoAllowanceRevert({
             operator: _lender,
@@ -96,7 +96,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[0] = 1_000 * 1e18;
         amounts[1] = 1_000 * 1e18;
         amounts[2] = 1_000 * 1e18;
-        _pool.increaseLPAllowance(_lender2, indexes, amounts);
+        _pool.increaseLPsAllowance(_lender2, indexes, amounts);
 
         _assertTransferInvalidIndexRevert({
             operator: _lender,
@@ -126,7 +126,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         uint256[] memory amounts = new uint256[](2);
         amounts[0] = 10_000 * 1e18;
         amounts[1] = 30_000 * 1e18;
-        _pool.increaseLPAllowance(_lender2, indexes, amounts);
+        _pool.increaseLPsAllowance(_lender2, indexes, amounts);
 
         // only the lender's available balance should be transferred to the new owner
         _transferLPs({
@@ -165,10 +165,10 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         changePrank(_lender1);
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 10_000 * 1e18;
-        _pool.increaseLPAllowance(_lender1, indexes, amounts);
+        _pool.increaseLPsAllowance(_lender1, indexes, amounts);
         address[] memory transferors = new address[](1);
         transferors[0] = _lender;
-        _pool.approveLpTransferors(transferors);
+        _pool.approveLPsTransferors(transferors);
 
         _assertLenderLpBalance({
             lender:      _lender1,
@@ -253,7 +253,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[0] = 10_000 * 1e18;
         amounts[1] = 20_000 * 1e18;
         amounts[2] = 30_000 * 1e18;
-        _pool.increaseLPAllowance(_lender2, indexes, amounts);
+        _pool.increaseLPsAllowance(_lender2, indexes, amounts);
 
         // transfer LPs for all indexes
         _transferLPs({
@@ -379,7 +379,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         uint256[] memory amounts = new uint256[](2);
         amounts[0] = 10_000 * 1e18;
         amounts[1] = 30_000 * 1e18;
-        _pool.increaseLPAllowance(_lender2, transferIndexes, amounts);
+        _pool.increaseLPsAllowance(_lender2, transferIndexes, amounts);
 
         // transfer LPs for 2 indexes
         _transferLPs({
@@ -523,7 +523,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[0] = 10_000 * 1e18;
         amounts[1] = 20_000 * 1e18;
         amounts[2] = 30_000 * 1e18;
-        _pool.increaseLPAllowance(_lender2, indexes, amounts);
+        _pool.increaseLPsAllowance(_lender2, indexes, amounts);
 
         _assertLpAllowance({
             owner:       _lender1,
@@ -623,8 +623,8 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[1] = 20_000 * 1e18;
         amounts[2] = 30_000 * 1e18;
         vm.expectEmit(true, true, false, true);
-        emit SetLpAllowance(_lender2, indexes, amounts);
-        _pool.increaseLPAllowance(_lender2, indexes, amounts);
+        emit IncreaseLPsAllowance(_lender1, _lender2, indexes, amounts);
+        _pool.increaseLPsAllowance(_lender2, indexes, amounts);
 
         assertTrue(_pool.approvedTransferors(_lender2, _lender));
 
@@ -633,8 +633,8 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         address[] memory transferors = new address[](1);
         transferors[0] = _lender;
         vm.expectEmit(true, true, false, true);
-        emit RevokeLpTransferors(_lender2, transferors);
-        _pool.revokeLpTransferors(transferors);
+        emit RevokeLPsTransferors(_lender2, transferors);
+        _pool.revokeLPsTransferors(transferors);
         assertFalse(_pool.approvedTransferors(_lender2, _lender));
 
         // transfer initiated by lender should fail as it is no longer an approved transferor
@@ -645,8 +645,8 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         // reapprove transferor
         changePrank(_lender2);
         vm.expectEmit(true, true, false, true);
-        emit ApproveLpTransferors(_lender2, transferors);
-        _pool.approveLpTransferors(transferors);
+        emit ApproveLPsTransferors(_lender2, transferors);
+        _pool.approveLPsTransferors(transferors);
         assertTrue(_pool.approvedTransferors(_lender2, _lender));
 
         // transfer LPs for all indexes
@@ -672,8 +672,8 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
 
         changePrank(_lender1);
         vm.expectEmit(true, true, false, true);
-        emit SetLpAllowance(_lender2, indexes, amounts);
-        _pool.increaseLPAllowance(_lender2, indexes, amounts);
+        emit IncreaseLPsAllowance(_lender1, _lender2, indexes, amounts);
+        _pool.increaseLPsAllowance(_lender2, indexes, amounts);
 
         // check allowance after increasing allowance
         _assertLpAllowance({
@@ -691,8 +691,8 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[0] = 5_000 * 1e18;
         amounts[1] = 5_000 * 1e18;
         vm.expectEmit(true, true, false, true);
-        emit SetLpAllowance(_lender2, indexes, amounts);
-        _pool.decreaseLPAllowance(_lender2, indexes, amounts);
+        emit DecreaseLPsAllowance(_lender1, _lender2, indexes, amounts);
+        _pool.decreaseLPsAllowance(_lender2, indexes, amounts);
 
         // check allowances after decreasing allowance
         _assertLpAllowance({
@@ -716,8 +716,8 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[0] = 0;
         amounts[1] = 0;
         vm.expectEmit(true, true, false, true);
-        emit RevokeLpAllowance(_lender2, indexes);
-        _pool.revokeLPAllowance(_lender2, indexes);
+        emit RevokeLPsAllowance(_lender1, _lender2, indexes);
+        _pool.revokeLPsAllowance(_lender2, indexes);
 
         // check allowance after revoking allowance
         _assertLpAllowance({
@@ -739,8 +739,8 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts = new uint256[](1);
         amounts[0] = 5_000 * 1e18;
         vm.expectEmit(true, true, false, true);
-        emit SetLpAllowance(_lender2, indexes, amounts);
-        _pool.increaseLPAllowance(_lender2, indexes, amounts);
+        emit IncreaseLPsAllowance(_lender1, _lender2, indexes, amounts);
+        _pool.increaseLPsAllowance(_lender2, indexes, amounts);
 
         _assertLpAllowance({
             owner:       _lender1,
@@ -770,17 +770,17 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         uint256[] memory amounts = new uint256[](2);
         amounts[0] = 5_000 * 1e18;
         amounts[1] = 10_000 * 1e18;
-        _pool.increaseLPAllowance(_lender2, indexes, amounts);
+        _pool.increaseLPsAllowance(_lender2, indexes, amounts);
         amounts = new uint256[](2);
         amounts[0] = 1_000 * 1e18;
         amounts[1] = 2_000 * 1e18;
-        _pool.increaseLPAllowance(_lender, indexes, amounts);
+        _pool.increaseLPsAllowance(_lender, indexes, amounts);
 
         // lender 2 approves lender as transferor of LPs
         changePrank(_lender2);
         address[] memory transferors = new address[](1);
         transferors[0] = _lender;
-        _pool.approveLpTransferors(transferors);
+        _pool.approveLPsTransferors(transferors);
 
         // lender transfers allowed LPs from lender1
         _transferLPs({
