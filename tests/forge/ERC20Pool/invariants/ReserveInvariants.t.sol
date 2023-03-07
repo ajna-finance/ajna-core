@@ -12,7 +12,7 @@ import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BORROWER_MIN_BUCKET_I
 
 import { ReservePoolHandler }   from './handlers/ReservePoolHandler.sol';
 import { LiquidationInvariant } from './LiquidationInvariant.t.sol';
-import { IBaseHandler }         from './handlers/IBaseHandler.sol';
+import { IBaseHandler }         from './interfaces/IBaseHandler.sol';
 
 contract ReserveInvariants is LiquidationInvariant {
 
@@ -40,11 +40,11 @@ contract ReserveInvariants is LiquidationInvariant {
 
         excludeContract(address(_liquidationPoolHandler));
 
-        _reservePoolHandler = new ReservePoolHandler(address(_pool), address(_quote), address(_collateral), address(_poolInfo), NUM_ACTORS);
+        _reservePoolHandler = new ReservePoolHandler(address(_pool), address(_quote), address(_collateral), address(_poolInfo), NUM_ACTORS, address(this));
         _handler = address(_reservePoolHandler);
     }
 
-    function invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10() public {
+    function invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10() public useCurrentTimestamp {
 
         uint256 previousReserves = IBaseHandler(_handler).previousReserves();
         uint256 currentReserves  = IBaseHandler(_handler).currentReserves();

@@ -17,6 +17,7 @@ import { InvariantTest } from '../InvariantTest.sol';
 import { _ptp } from 'src/libraries/helpers/PoolHelper.sol';
 
 import 'src/libraries/internal/Maths.sol';
+import '../interfaces/ITestBase.sol';
 
 
 uint256 constant LENDER_MIN_BUCKET_INDEX = 2570;
@@ -34,6 +35,9 @@ contract BaseHandler is InvariantTest, Test {
     // Pool
     ERC20Pool     internal _pool;
     PoolInfoUtils internal _poolInfo;
+
+    // Test invariant contract
+    ITestBase internal testContract;
 
     // Modifiers
     address       internal _actor;
@@ -95,7 +99,7 @@ contract BaseHandler is InvariantTest, Test {
     // mapping of lender address to bucket index to deposit time
     mapping(address => mapping(uint256 => uint256)) public lenderDepositTime;
     
-    constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) {
+    constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors, address testContract_) {
         // Tokens
         _quote      = Token(quote);
         _collateral = Token(collateral);
@@ -106,6 +110,16 @@ contract BaseHandler is InvariantTest, Test {
 
         // Actors
         actors    = _buildActors(numOfActors);
+
+        // Test invariant contract
+        testContract = ITestBase(testContract_);
+    }
+
+    // use and update test invariant contract timestamp to make timestamp consistent throughout invariant test run
+    modifier useTimestamps() {
+        vm.warp(testContract.currentTimestamp());
+        _;
+        testContract.setCurrentTimestamp(block.timestamp);
     }
 
     /**************************************************************************************************************************************/

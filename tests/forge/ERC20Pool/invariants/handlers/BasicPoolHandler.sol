@@ -25,7 +25,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     /*** Lender Functions                                                                                                               ***/
     /**************************************************************************************************************************************/
 
-    function addQuoteToken(uint256 amount, uint256 bucketIndex) internal {
+    function addQuoteToken(uint256 amount, uint256 bucketIndex) internal useTimestamps {
         numberOfCalls['UBBasicHandler.addQuoteToken']++;
 
         shouldExchangeRateChange = false;
@@ -65,7 +65,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         vm.warp(block.timestamp + 25 hours);
     }
 
-    function removeQuoteToken(uint256 amount, uint256 bucketIndex) internal resetAllPreviousLocalState {
+    function removeQuoteToken(uint256 amount, uint256 bucketIndex) internal useTimestamps resetAllPreviousLocalState {
         numberOfCalls['UBBasicHandler.removeQuoteToken']++;
 
         // // Pre condition
@@ -107,7 +107,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         }
     }
 
-    function moveQuoteToken(uint256 amount, uint256 fromIndex, uint256 toIndex) internal resetAllPreviousLocalState {
+    function moveQuoteToken(uint256 amount, uint256 fromIndex, uint256 toIndex) internal useTimestamps resetAllPreviousLocalState {
         if(fromIndex == toIndex) return;
 
         (uint256 lpBalance, ) = _pool.lenderInfo(fromIndex, _actor);
@@ -153,7 +153,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         }
     }
 
-    function addCollateral(uint256 amount, uint256 bucketIndex) internal resetAllPreviousLocalState {
+    function addCollateral(uint256 amount, uint256 bucketIndex) internal useTimestamps resetAllPreviousLocalState {
         numberOfCalls['UBBasicHandler.addCollateral']++;
 
         shouldExchangeRateChange = false;
@@ -183,7 +183,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         vm.warp(block.timestamp + 25 hours);
     }
 
-    function removeCollateral(uint256 amount, uint256 bucketIndex) internal resetAllPreviousLocalState {
+    function removeCollateral(uint256 amount, uint256 bucketIndex) internal useTimestamps resetAllPreviousLocalState {
         numberOfCalls['UBBasicHandler.removeCollateral']++;
 
         // Pre condition
@@ -222,7 +222,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         }
     }
 
-    function approvelps(address sender, address receiver, uint256 bucketIndex, uint256 amount) internal resetAllPreviousLocalState {
+    function approvelps(address receiver, uint256 bucketIndex, uint256 amount) internal useTimestamps resetAllPreviousLocalState {
         uint256[] memory buckets = new uint256[](1);
         buckets[0] = bucketIndex;
         uint256[] memory amounts = new uint256[](1);
@@ -230,7 +230,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         _pool.approveLpOwnership(receiver, buckets, amounts);
     }
 
-    function transferLps(address sender, address receiver, uint256 bucketIndex) internal resetAllPreviousLocalState {
+    function transferLps(address sender, address receiver, uint256 bucketIndex) internal useTimestamps resetAllPreviousLocalState {
         uint256[] memory buckets = new uint256[](1);
         buckets[0] = bucketIndex;
 
@@ -261,7 +261,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     /*** Borrower Functions ***/
     /**************************/
 
-    function pledgeCollateral(uint256 amount) internal resetAllPreviousLocalState {
+    function pledgeCollateral(uint256 amount) internal useTimestamps resetAllPreviousLocalState {
         numberOfCalls['UBBasicHandler.pledgeCollateral']++;
         
         fenwickAccrueInterest();
@@ -279,7 +279,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
     }
 
-    function pullCollateral(uint256 amount) internal resetAllPreviousLocalState {
+    function pullCollateral(uint256 amount) internal useTimestamps resetAllPreviousLocalState {
         numberOfCalls['UBBasicHandler.pullCollateral']++;
         
         fenwickAccrueInterest();
@@ -304,7 +304,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         }
     }
  
-    function drawDebt(uint256 amount) internal resetAllPreviousLocalState {
+    function drawDebt(uint256 amount) internal useTimestamps resetAllPreviousLocalState {
         numberOfCalls['UBBasicHandler.drawDebt']++;
 
         // Pre Condition
@@ -378,7 +378,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         vm.warp(block.timestamp + 200 days);
     }
 
-    function repayDebt(uint256 amountToRepay) internal resetAllPreviousLocalState {
+    function repayDebt(uint256 amountToRepay) internal useTimestamps resetAllPreviousLocalState {
         numberOfCalls['UBBasicHandler.repayDebt']++;
 
         // Pre condition
@@ -419,13 +419,13 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
  */ 
 contract BasicPoolHandler is UnboundedBasicPoolHandler {
 
-    constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) BaseHandler(pool, quote, collateral, poolInfo, numOfActors) {} 
+    constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors, address testContract) BaseHandler(pool, quote, collateral, poolInfo, numOfActors, testContract) {} 
 
     /**************************/
     /*** Lender Functions ***/
     /**************************/
 
-    function addQuoteToken(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) {
+    function addQuoteToken(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) useTimestamps {
         numberOfCalls['BBasicHandler.addQuoteToken']++;
 
         amount = constrictToRange(amount, 1e6, 1e30);
@@ -434,7 +434,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         super.addQuoteToken(amount, _lenderBucketIndex);
     }
 
-    function removeQuoteToken(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) {
+    function removeQuoteToken(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) useTimestamps {
         numberOfCalls['BBasicHandler.removeQuoteToken']++;
 
         uint256 poolBalance = _quote.balanceOf(address(_pool));
@@ -445,7 +445,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         super.removeQuoteToken(amount, _lenderBucketIndex);
     }
 
-    function moveQuoteToken(uint256 actorIndex, uint256 amount, uint256 fromBucketIndex, uint256 toBucketIndex) public useRandomActor(actorIndex) {
+    function moveQuoteToken(uint256 actorIndex, uint256 amount, uint256 fromBucketIndex, uint256 toBucketIndex) public useRandomActor(actorIndex) useTimestamps {
         numberOfCalls['BBasicHandler.moveQuoteToken']++;
 
         fromBucketIndex = constrictToRange(fromBucketIndex, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
@@ -457,7 +457,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         super.moveQuoteToken(amount, fromBucketIndex, toBucketIndex);
     }
 
-    function addCollateral(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) {
+    function addCollateral(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) useTimestamps {
         numberOfCalls['BBasicHandler.addCollateral']++;
 
         amount = constrictToRange(amount, 1e6, 1e30);
@@ -466,7 +466,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         super.addCollateral(amount, _lenderBucketIndex);
     }
 
-    function removeCollateral(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) {
+    function removeCollateral(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) useTimestamps {
         numberOfCalls['BBasicHandler.removeCollateral']++;
 
         (uint256 lpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
@@ -480,7 +480,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         super.removeCollateral(amount, _lenderBucketIndex);
     }
 
-    function transferLps(uint256 fromActorIndex, uint256 toActorIndex, uint256 lpsToTransfer, uint256 bucketIndex) public useRandomActor(fromActorIndex) useRandomLenderBucket(bucketIndex){
+    function transferLps(uint256 fromActorIndex, uint256 toActorIndex, uint256 lpsToTransfer, uint256 bucketIndex) public useRandomActor(fromActorIndex) useRandomLenderBucket(bucketIndex) useTimestamps {
         (uint256 senderLpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
         address receiver = actors[constrictToRange(toActorIndex, 0, actors.length - 1)];
         if(senderLpBalance == 0) {
@@ -489,7 +489,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         (senderLpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
         lpsToTransfer = constrictToRange(lpsToTransfer, 1, senderLpBalance);
 
-        super.approvelps(_actor, receiver, _lenderBucketIndex, lpsToTransfer);
+        super.approvelps(receiver, _lenderBucketIndex, lpsToTransfer);
         super.transferLps(_actor, receiver, _lenderBucketIndex);
     }
 
@@ -498,7 +498,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     /*** Borrower Functions ***/
     /**************************/
 
-    function pledgeCollateral(uint256 actorIndex, uint256 amountToPledge) public useRandomActor(actorIndex) {
+    function pledgeCollateral(uint256 actorIndex, uint256 amountToPledge) public useRandomActor(actorIndex) useTimestamps {
         numberOfCalls['BBasicHandler.pledgeCollateral']++;
 
         amountToPledge = constrictToRange(amountToPledge, 1, 1e30);
@@ -507,7 +507,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         super.pledgeCollateral(amountToPledge);
     }
 
-    function pullCollateral(uint256 actorIndex, uint256 amountToPull) public useRandomActor(actorIndex) {
+    function pullCollateral(uint256 actorIndex, uint256 amountToPull) public useRandomActor(actorIndex) useTimestamps {
         numberOfCalls['BBasicHandler.pullCollateral']++;
 
         amountToPull = constrictToRange(amountToPull, 1, 1e30);
@@ -516,7 +516,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         super.pullCollateral(amountToPull);
     } 
 
-    function drawDebt(uint256 actorIndex, uint256 amountToBorrow) public useRandomActor(actorIndex) {
+    function drawDebt(uint256 actorIndex, uint256 amountToBorrow) public useRandomActor(actorIndex) useTimestamps {
         numberOfCalls['BBasicHandler.drawDebt']++;
 
         amountToBorrow = constrictToRange(amountToBorrow, 1e6, 1e30);
@@ -525,7 +525,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         super.drawDebt(amountToBorrow);
     }
 
-    function repayDebt(uint256 actorIndex, uint256 amountToRepay) public useRandomActor(actorIndex) {
+    function repayDebt(uint256 actorIndex, uint256 amountToRepay) public useRandomActor(actorIndex) useTimestamps {
         numberOfCalls['BBasicHandler.repayDebt']++;
 
         amountToRepay = constrictToRange(amountToRepay, 1e6, 1e30);

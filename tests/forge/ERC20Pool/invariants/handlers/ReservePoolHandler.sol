@@ -9,7 +9,7 @@ import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BaseHandler } from '.
 import { Auctions } from 'src/libraries/external/Auctions.sol';
 
 abstract contract UnBoundedReservePoolHandler is BaseHandler {
-    function startClaimableReserveAuction() internal resetAllPreviousLocalState {
+    function startClaimableReserveAuction() internal useTimestamps resetAllPreviousLocalState {
         (, uint256 claimableReserves, , , ) = _poolInfo.poolReservesInfo(address(_pool));
         if(claimableReserves == 0) return;
 
@@ -28,7 +28,7 @@ abstract contract UnBoundedReservePoolHandler is BaseHandler {
         }
     }
 
-    function takeReserves(uint256 amount) internal resetAllPreviousLocalState {
+    function takeReserves(uint256 amount) internal useTimestamps resetAllPreviousLocalState {
 
         (, , uint256 claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
 
@@ -57,13 +57,13 @@ abstract contract UnBoundedReservePoolHandler is BaseHandler {
 
 contract ReservePoolHandler is UnBoundedReservePoolHandler, LiquidationPoolHandler {
 
-    constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) LiquidationPoolHandler(pool, quote, collateral, poolInfo, numOfActors) {}
+    constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors, address testContract) LiquidationPoolHandler(pool, quote, collateral, poolInfo, numOfActors, testContract) {}
 
-    function startClaimableReserveAuction(uint256 actorIndex) external useRandomActor(actorIndex) {
+    function startClaimableReserveAuction(uint256 actorIndex) external useRandomActor(actorIndex) useTimestamps {
         super.startClaimableReserveAuction();
     }
 
-    function takeReserves(uint256 actorIndex, uint256 amount) external useRandomActor(actorIndex) {
+    function takeReserves(uint256 actorIndex, uint256 amount) external useRandomActor(actorIndex) useTimestamps {
         super.takeReserves(amount);
     }
 }

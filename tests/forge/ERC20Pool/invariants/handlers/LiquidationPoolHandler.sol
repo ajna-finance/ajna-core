@@ -11,7 +11,7 @@ import { _priceAt } from 'src/libraries/helpers/PoolHelper.sol';
 import '@std/console.sol';
 
 abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
-    function kickAuction(address borrower) internal resetAllPreviousLocalState {
+    function kickAuction(address borrower) internal useTimestamps resetAllPreviousLocalState {
         numberOfCalls['UBLiquidationHandler.kickAuction']++;
 
         fenwickAccrueInterest();
@@ -34,7 +34,7 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
         }
     }
 
-    function kickWithDeposit(uint256 bucketIndex) internal resetAllPreviousLocalState {
+    function kickWithDeposit(uint256 bucketIndex) internal useTimestamps resetAllPreviousLocalState {
 
         fenwickAccrueInterest();
         updatePoolState();
@@ -48,7 +48,7 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
         }
     }
 
-    function withdrawBonds(address kicker) internal resetAllPreviousLocalState {
+    function withdrawBonds(address kicker) internal useTimestamps resetAllPreviousLocalState {
 
         fenwickAccrueInterest();
         updatePoolState();
@@ -66,7 +66,7 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
         }
     }
 
-    function takeAuction(address borrower, uint256 amount, address taker) internal resetAllPreviousLocalState {
+    function takeAuction(address borrower, uint256 amount, address taker) internal useTimestamps resetAllPreviousLocalState {
         numberOfCalls['UBLiquidationHandler.takeAuction']++;
 
         fenwickAccrueInterest();
@@ -120,7 +120,7 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
         }
     }
 
-    function bucketTake(address borrower, bool depositTake, uint256 bucketIndex) internal resetAllPreviousLocalState {
+    function bucketTake(address borrower, bool depositTake, uint256 bucketIndex) internal useTimestamps resetAllPreviousLocalState {
         numberOfCalls['UBLiquidationHandler.bucketTake']++;
 
         fenwickAccrueInterest();
@@ -179,7 +179,7 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
         }
     }
 
-    function settleAuction(address borrower, uint256 maxDepth) internal resetAllPreviousLocalState {
+    function settleAuction(address borrower, uint256 maxDepth) internal useTimestamps resetAllPreviousLocalState {
         
         fenwickAccrueInterest();
         updatePoolState();
@@ -270,7 +270,7 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
 
 contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHandler {
 
-    constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) BasicPoolHandler(pool, quote, collateral, poolInfo, numOfActors) {}
+    constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors, address testContract) BasicPoolHandler(pool, quote, collateral, poolInfo, numOfActors, testContract) {}
 
     function _kickAuction(uint256 borrowerIndex, uint256 amount, uint256 kickerIndex) internal useRandomActor(kickerIndex) {
         numberOfCalls['BLiquidationHandler.kickAuction']++;
@@ -300,19 +300,19 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
         vm.warp(block.timestamp + 2 hours);
     }
 
-    function kickAuction(uint256 borrowerIndex, uint256 amount, uint256 kickerIndex) external {
+    function kickAuction(uint256 borrowerIndex, uint256 amount, uint256 kickerIndex) external useTimestamps {
         _kickAuction(borrowerIndex, amount, kickerIndex);
     }
 
-    function kickWithDeposit(uint256 kickerIndex, uint256 bucketIndex) external useRandomActor(kickerIndex) useRandomLenderBucket(bucketIndex) {
+    function kickWithDeposit(uint256 kickerIndex, uint256 bucketIndex) external useRandomActor(kickerIndex) useRandomLenderBucket(bucketIndex) useTimestamps {
         super.kickWithDeposit(_lenderBucketIndex);
     }
 
-    function withdrawBonds(uint256 kickerIndex) external useRandomActor(kickerIndex) {
+    function withdrawBonds(uint256 kickerIndex) external useRandomActor(kickerIndex) useTimestamps {
         super.withdrawBonds(_actor);
     }
 
-    function takeAuction(uint256 borrowerIndex, uint256 amount, uint256 actorIndex) external useRandomActor(actorIndex){
+    function takeAuction(uint256 borrowerIndex, uint256 amount, uint256 actorIndex) external useRandomActor(actorIndex) useTimestamps {
         numberOfCalls['BLiquidationHandler.takeAuction']++;
 
         amount = constrictToRange(amount, 1, 1e30);
@@ -333,7 +333,7 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
         super.takeAuction(borrower, amount, taker);
     }
 
-    function bucketTake(uint256 borrowerIndex, uint256 bucketIndex, bool depositTake, uint256 takerIndex) external useRandomActor(takerIndex) {
+    function bucketTake(uint256 borrowerIndex, uint256 bucketIndex, bool depositTake, uint256 takerIndex) external useRandomActor(takerIndex) useTimestamps {
         numberOfCalls['BLiquidationHandler.bucketTake']++;
 
         shouldExchangeRateChange = true;
@@ -354,7 +354,7 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
         super.bucketTake(borrower, depositTake, bucketIndex);
     }
 
-    function settleAuction(uint256 actorIndex, uint256 borrowerIndex, uint256 bucketIndex) external useRandomActor(actorIndex) {
+    function settleAuction(uint256 actorIndex, uint256 borrowerIndex, uint256 bucketIndex) external useRandomActor(actorIndex) useTimestamps {
 
         borrowerIndex = constrictToRange(borrowerIndex, 0, actors.length - 1);
         bucketIndex = constrictToRange(bucketIndex, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);

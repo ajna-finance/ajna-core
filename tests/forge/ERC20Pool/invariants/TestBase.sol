@@ -24,6 +24,14 @@ contract TestBase is InvariantTest, Test {
     PoolInfoUtils    internal _poolInfo;
     ERC20PoolFactory internal _poolFactory;
 
+    uint256 public currentTimestamp;
+
+    // use current timestamp for invariants
+    modifier useCurrentTimestamp {
+        vm.warp(currentTimestamp);
+        _;
+    }
+
     function setUp() public virtual {
         // Tokens
         _quote      = new Token("Quote", "Q");
@@ -34,5 +42,12 @@ contract TestBase is InvariantTest, Test {
         _pool        = ERC20Pool(_poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
         _poolInfo    = new PoolInfoUtils();
         _impl        = _poolFactory.implementation();
+        currentTimestamp = block.timestamp;
     }
+
+    function setCurrentTimestamp(uint256 currentTimestamp_) external {
+        currentTimestamp = currentTimestamp_;
+    }
+
+
 }

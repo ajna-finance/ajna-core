@@ -11,7 +11,7 @@ import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BORROWER_MIN_BUCKET_I
 
 import { LiquidationPoolHandler } from './handlers/LiquidationPoolHandler.sol';
 import { BasicInvariants }        from './BasicInvariants.t.sol';
-import { IBaseHandler }           from './handlers/IBaseHandler.sol';
+import { IBaseHandler }           from './interfaces/IBaseHandler.sol';
 
 contract LiquidationInvariant is BasicInvariants {
 
@@ -35,12 +35,12 @@ contract LiquidationInvariant is BasicInvariants {
 
         excludeContract(address(_basicPoolHandler));
 
-        _liquidationPoolHandler = new LiquidationPoolHandler(address(_pool), address(_quote), address(_collateral), address(_poolInfo), NUM_ACTORS);
+        _liquidationPoolHandler = new LiquidationPoolHandler(address(_pool), address(_quote), address(_collateral), address(_poolInfo), NUM_ACTORS, address(this));
         _handler = address(_liquidationPoolHandler);
     }
 
     // checks sum of all borrower's t0debt is equals to total pool t0debtInAuction
-    function invariant_debtInAuction_A1() public view {
+    function invariant_debtInAuction_A1() public useCurrentTimestamp {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         uint256 totalT0debtInAuction;
         for(uint256 i = 0; i < actorCount; i++) {
@@ -55,7 +55,7 @@ contract LiquidationInvariant is BasicInvariants {
     }
 
     // checks sum of all kicker bond is equal to total pool bond
-    function invariant_bond_A2() public view {
+    function invariant_bond_A2() public useCurrentTimestamp {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         uint256 totalKickerBond;
         for(uint256 i = 0; i < actorCount; i++) {
@@ -71,7 +71,7 @@ contract LiquidationInvariant is BasicInvariants {
 
     // checks total borrowers with debt is equals to sum of borrowers unkicked and borrowers kicked
     // checks total auctions is equals to total borrowers kicked 
-    function invariant_auctions_A3_A4() public view {
+    function invariant_auctions_A3_A4() public useCurrentTimestamp {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         uint256 totalBorrowersWithDebt;
         for(uint256 i = 0; i < actorCount; i++) {
@@ -97,7 +97,7 @@ contract LiquidationInvariant is BasicInvariants {
     }
 
     // for each auction, kicker locked bond is more than equal to auction bond 
-    function invariant_borrowers_A5() public view {
+    function invariant_borrowers_A5() public useCurrentTimestamp {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         for(uint256 i = 0; i < actorCount; i++) {
             address borrower = IBaseHandler(_handler).actors(i);
@@ -108,7 +108,7 @@ contract LiquidationInvariant is BasicInvariants {
     }
 
     // if a Liquidation is not taken then the take flag (Liquidation.alreadyTaken) should be False, if already taken then the take flag should be True
-    function invariant_auction_taken_A6() public view {
+    function invariant_auction_taken_A6() public useCurrentTimestamp {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         for(uint256 i = 0; i < actorCount; i++) {
             address borrower = IBaseHandler(_handler).actors(i);
@@ -117,7 +117,7 @@ contract LiquidationInvariant is BasicInvariants {
         }
     }
 
-    function invariant_call_summary() external view virtual override{
+    function invariant_call_summary() external virtual override useCurrentTimestamp {
         console.log("\nCall Summary\n");
         console.log("--Lender----------");
         console.log("BLiquidationHandler.addQuoteToken         ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.addQuoteToken"));
