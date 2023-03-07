@@ -26,6 +26,9 @@ uint256 constant LENDER_MAX_BUCKET_INDEX = 2572;
 uint256 constant BORROWER_MIN_BUCKET_INDEX = 2600;
 uint256 constant BORROWER_MAX_BUCKET_INDEX = 2620;
 
+uint256 constant MIN_PRICE = 99_836_282_890;
+uint256 constant MAX_PRICE = 1_004_968_987.606512354182109771 * 1e18;
+
 contract BaseHandler is InvariantTest, Test {
 
     // Tokens
@@ -310,7 +313,16 @@ contract BaseHandler is InvariantTest, Test {
 
         // get HTP and deposit above HTP
         uint256 htp = Maths.wmul(maxThresholdPrice, pendingInflator);
-        uint256 htpIndex = htp == 0 ? 7388 : _poolInfo.priceToIndex(htp);
+        uint256 htpIndex;
+        if (htp > MAX_PRICE)
+            // if HTP is over the highest price bucket then no buckets earn interest
+            htpIndex = 1;
+        else if (htp < MIN_PRICE)
+            // if HTP is under the lowest price bucket then all buckets earn interest
+            htpIndex = 7388;
+        else
+            htpIndex = _poolInfo.priceToIndex(htp);
+        
         uint256 depositAboveHtp = fenwickSumTillIndex(htpIndex);
 
         if (depositAboveHtp != 0) {

@@ -305,17 +305,20 @@ contract BasicInvariants is TestBase {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             (, , , uint256 depositAtIndex, ) = _pool.bucketInfo(bucketIndex);
             if(depositAtIndex != 0) {
+                console.log("============");
                 prefixSum += depositAtIndex;
+                console.log("Deposit Index of presum -->", _pool.depositIndex(prefixSum));
+                console.log("Presum -->", prefixSum);
                 uint256 nextBucketIndexWithDeposit = _pool.depositIndex(prefixSum + 1);
                 (, , , uint256 depositAtNextBucket, ) = _pool.bucketInfo(nextBucketIndexWithDeposit);
-                uint256 prefixSumTillNextBucket = prefixSum;
-                for(uint256 i = bucketIndex + 1; i <= nextBucketIndexWithDeposit && nextBucketIndexWithDeposit != 7388; i++) {
-                    (, , , depositAtIndex, ) = _pool.bucketInfo(i);
-                    prefixSumTillNextBucket += depositAtIndex;
-                }
+                console.log("depositAtNextBucket ===>", depositAtNextBucket);
+                uint256 prefixSumTillNextBucket = prefixSum + depositAtNextBucket;
+                console.log("prefixSumTillNextBucket -->", prefixSumTillNextBucket);
+                console.log("nextBucketIndexWithDeposit -->", nextBucketIndexWithDeposit);
+                console.log("BucketIndex -->", bucketIndex);
+                console.log("Pool deposit Index -->", _pool.depositIndex(prefixSumTillNextBucket - depositAtNextBucket));
                 require(bucketIndex == _pool.depositIndex(prefixSumTillNextBucket - depositAtNextBucket), "Incorrect buckets with 0 deposit");
             }
-            
         }
     }
 

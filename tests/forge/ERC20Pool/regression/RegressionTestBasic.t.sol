@@ -154,6 +154,15 @@ contract RegressionTestBasic is BasicInvariants {
         invariant_fenwick_depositsTillIndex_F2();
     }
 
+    function test_regression_fenwick_deposit_5() external {
+        _basicPoolHandler.repayDebt(281, 1502);
+        _basicPoolHandler.addCollateral(5529, 1090, 5431);
+        _basicPoolHandler.pullCollateral(3, 115792089237316195423570985008687907853269984665640564039457584007913129639935);
+
+        invariant_fenwick_depositAtIndex_F1();
+        invariant_fenwick_depositsTillIndex_F2();
+    }
+
     function test_regression_fenwick_prefixSum_1() external {
         _basicPoolHandler.addQuoteToken(5851, 999999999999999999999999999999000087, 1938);
         _basicPoolHandler.addCollateral(135454721201807374404103595951250949, 172411742705067521609848985260337891060745418778973, 3);
@@ -194,5 +203,33 @@ contract RegressionTestBasic is BasicInvariants {
 
         invariant_Bucket_deposit_time_B5();
         invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
+    }
+
+    // TODO: Find reason for Arithmetic over/underflow
+    function test_regression_evm_revert_1() external {
+        _basicPoolHandler.drawDebt(1535776046383997344779595, 5191646246012456798576386242824793107669233);
+        _basicPoolHandler.transferLps(17293, 19210, 227780, 999999999999999999999999999999999999999999997);
+        _basicPoolHandler.removeQuoteToken(0, 0, 2);
+        _basicPoolHandler.pullCollateral(115, 149220);
+    }
+
+    // TODO: Find fix for this failing invariant sequence
+    function test_regression_incorrect_zero_deposit_buckets_1() external {
+        _basicPoolHandler.repayDebt(15119, 6786);
+        _basicPoolHandler.moveQuoteToken(115792089237316195423570985008687907853269984665640564039457584007913129639932, 1578322581132549441186648538841, 2, 115792089237316195423570985008687907853269984665640564039457584007913129639933);
+        invariant_fenwick_prefixSumIndex_F4();
+    }
+
+    // TODO: Find fix for this failing invariant sequence
+    function test_regression_fenwick_index_2() external {
+        uint256 depositAt2570 = 570036521745120847917211;
+        uint256 depositAt2571 = 2578324552477056269186646552413;
+        uint256 depositAt2572 = 1212;
+        _basicPoolHandler.addQuoteToken(1, depositAt2570, 2570);
+        _basicPoolHandler.addQuoteToken(1, depositAt2571, 2571);
+        _basicPoolHandler.addQuoteToken(1, depositAt2572, 2572);
+        assertEq(_pool.depositIndex(depositAt2570), 2570);
+        assertEq(_pool.depositIndex(depositAt2570 + depositAt2571), 2571);
+        assertEq(_pool.depositIndex(depositAt2570 + depositAt2571 + depositAt2572), 2572);
     }
 }
