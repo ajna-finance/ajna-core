@@ -232,4 +232,23 @@ contract RegressionTestBasic is BasicInvariants {
         assertEq(_pool.depositIndex(depositAt2570 + depositAt2571), 2571);
         assertEq(_pool.depositIndex(depositAt2570 + depositAt2571 + depositAt2572), 2572);
     }
+
+    function test_regression_collateralBalance_CT1_CT7() external {
+        _basicPoolHandler.pullCollateral(2, 115792089237316195423570985008687907853269984665640564039457584007913129639932);
+        _basicPoolHandler.repayDebt(2712912126128356234217, 251720382485531952743041849848);
+        _basicPoolHandler.addQuoteToken(253022590763482364356576159, 999999999999999273028438503236995092261608400, 712808213364422679443324012750);
+        _basicPoolHandler.removeQuoteToken(121890555084215923472733925382, 0, 3);
+
+        invariant_collateralBalance_CT1_CT7();
+    }
+
+    function test_invariant_quoteTokenBalance_QT1() external {
+        _basicPoolHandler.pledgeCollateral(47134563260349377955683144555119028889734284095914219439962386869, 2323610696462098);
+        _basicPoolHandler.repayDebt(1, 2);
+        _basicPoolHandler.removeCollateral(200953640940463935290718680397023889633667961549, 2481, 3);
+        _basicPoolHandler.moveQuoteToken(695230664226651211376892782958299806602599384639648126900062519785408512, 1000115588871659705, 22812, 1955101796782211288928817909562);
+        _basicPoolHandler.repayDebt(115792089237316195423570985008687907853269984665640564039457584007913129639932, 103);
+
+        invariant_quoteTokenBalance_QT1();
+    }
 }

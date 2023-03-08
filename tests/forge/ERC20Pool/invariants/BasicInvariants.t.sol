@@ -135,9 +135,7 @@ contract BasicInvariants is TestBase {
     // checks pool quote token balance is greater than equals total deposits in pool
     function invariant_quoteTokenBalance_QT1() public useCurrentTimestamp {
         uint256 poolBalance  = _quote.balanceOf(address(_pool));
-        uint256 t0debt       = _pool.totalT0Debt();
-        (uint256 inflator, ) = _pool.inflatorInfo();
-        uint256 poolDebt     = Maths.wmul(t0debt, inflator);
+        (uint256 poolDebt,,) = _pool.debtInfo();
         (uint256 totalBondEscrowed, uint256 unClaimed, , ) = _pool.reservesInfo();
 
         assertGe(poolBalance + poolDebt, totalBondEscrowed + _pool.depositSize() + unClaimed, "Incorrect pool quote token");
@@ -159,7 +157,7 @@ contract BasicInvariants is TestBase {
         uint256 bucketCollateral;
 
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            (, , uint256 collateral , , ) = _pool.bucketInfo(bucketIndex);
+            (, uint256 collateral, , , ) = _pool.bucketInfo(bucketIndex);
             bucketCollateral += collateral;
         }
 

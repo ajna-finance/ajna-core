@@ -328,7 +328,7 @@ contract BaseHandler is InvariantTest, Test {
     }
 
     function updatePoolState() internal {
-        _pool.repayDebt(_actor, 0, 0, _actor, 0);
+        _pool.updateInterest();
     }
 
     function resetFenwickDepositUpdate() internal {

@@ -58,7 +58,10 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             resetReservesAndExchangeRate();
             resetFenwickDepositUpdate();
             bytes32 err = keccak256(_err);
-            require(err == keccak256(abi.encodeWithSignature("BucketBankruptcyBlock()")));
+            require(
+                err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
+                err == keccak256(abi.encodeWithSignature("BucketBankruptcyBlock()"))
+            );
         }
 
         // skip some time to avoid early withdraw penalty
@@ -100,6 +103,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             resetFenwickDepositUpdate();
             bytes32 err = keccak256(_err);
             require(
+                err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
                 err == keccak256(abi.encodeWithSignature("LUPBelowHTP()")) ||
                 err == keccak256(abi.encodeWithSignature("InsufficientLiquidity()")) ||
                 err == keccak256(abi.encodeWithSignature("RemoveDepositLockedByAuctionDebt()")) ||
@@ -142,6 +146,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             resetFenwickDepositUpdate();
             bytes32 err = keccak256(_err);
             require(
+                err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
                 err == keccak256(abi.encodeWithSignature("LUPBelowHTP()")) ||
                 err == keccak256(abi.encodeWithSignature("InsufficientLiquidity()")) ||
                 err == keccak256(abi.encodeWithSignature("MoveToSameIndex()")) ||
@@ -216,6 +221,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             resetFenwickDepositUpdate();
             bytes32 err = keccak256(_err);
             require(
+                err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
                 err == keccak256(abi.encodeWithSignature("InsufficientLPs()")) || 
                 err == keccak256(abi.encodeWithSignature("AuctionNotCleared()"))
             );
@@ -302,6 +308,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             resetFenwickDepositUpdate();
             bytes32 err = keccak256(_err);
             require(
+                err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
                 err == keccak256(abi.encodeWithSignature("InsufficientCollateral()")) ||
                 err == keccak256(abi.encodeWithSignature("AuctionActive()"))
             );
@@ -373,6 +380,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             resetFenwickDepositUpdate();
             bytes32 err = keccak256(_err);
             require(
+                err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
                 err == keccak256(abi.encodeWithSignature("BorrowerUnderCollateralized()")) ||
                 err == keccak256(abi.encodeWithSignature("AuctionActive()"))
             );
@@ -407,6 +415,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             resetFenwickDepositUpdate();
             bytes32 err = keccak256(_err);
             require(
+                err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
                 err == keccak256(abi.encodeWithSignature("NoDebt()")) ||
                 err == keccak256(abi.encodeWithSignature("AmountLTMinDebt()"))
             );
