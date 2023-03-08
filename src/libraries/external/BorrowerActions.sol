@@ -382,7 +382,10 @@ library BorrowerActions {
 
             uint256 encumberedCollateral = borrower.t0Debt != 0 ? Maths.wdiv(vars.borrowerDebt, result_.newLup) : 0;
 
-            if (borrower.collateral - encumberedCollateral < collateralAmountToPull_) revert InsufficientCollateral();
+            if (
+                borrower.collateral < encumberedCollateral ||
+                borrower.collateral - encumberedCollateral < collateralAmountToPull_
+            ) revert InsufficientCollateral();
 
             // stamp borrower t0Np when pull collateral action
             vars.stampT0Np = true;

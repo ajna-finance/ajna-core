@@ -3,6 +3,9 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
+import { ERC20Pool } from 'src/ERC20Pool.sol';
+
+import 'src/interfaces/pool/IPool.sol';
 import 'src/PoolInfoUtils.sol';
 import 'src/libraries/helpers/PoolHelper.sol';
 
@@ -1004,5 +1007,21 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             exchangeRate: 1.000000048285024569 * 1e18
         });
 
+    }
+
+    function testPullBorrowerCollateralLessThanEncumberedCollateral() external {
+        address actor = makeAddr("actor");
+
+        _mintCollateralAndApproveTokens(actor, 1000000000 * 1e18);
+        _mintQuoteAndApproveTokens(actor, 1000000000000 * 1e18);
+
+        changePrank(actor);
+        _pool.addQuoteToken(913597152782868931694946846442, 2572, block.timestamp + 100);
+        ERC20Pool(address(_pool)).drawDebt(actor, 456798576391434465847473423221, 7388, 170152459663184217402759609);
+
+        vm.warp(1689742127);
+        // borrower is undercollateralized and pledged collateral is lower than encumbered collateral, tx should revert with InsufficientCollateral
+        vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
+        ERC20Pool(address(_pool)).repayDebt(actor, 0, 149220, actor, 7388);
     }
 }
