@@ -380,9 +380,9 @@ library BorrowerActions {
 
             _revertIfPriceDroppedBelowLimit(result_.newLup, limitIndex_);
 
-            uint256 encumberedCollateral = borrower.t0Debt != 0 ? Maths.wdiv(vars.borrowerDebt, result_.newLup) : 0;
-
+            uint256 encumberedCollateral = Maths.wdiv(vars.borrowerDebt, result_.newLup);
             if (
+                borrower.t0Debt != 0 && encumberedCollateral == 0 || // case when small amount of debt at a high LUP results in encumbered collateral calculated as 0
                 borrower.collateral < encumberedCollateral ||
                 borrower.collateral - encumberedCollateral < collateralAmountToPull_
             ) revert InsufficientCollateral();
