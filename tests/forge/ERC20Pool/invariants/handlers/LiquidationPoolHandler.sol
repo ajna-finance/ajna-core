@@ -129,8 +129,9 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
         updatePreviousExchangeRate();
 
         (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower);
-        (address kicker, , , , , , , , , ) = _pool.auctionInfo(borrower);
 
+        (address kicker, , , , , , , , , ) = _pool.auctionInfo(borrower);
+        (uint256 lpsBeforeTake, ) = _pool.lenderInfo(bucketIndex, kicker);
         (uint256 claimableBond, uint256 lockedBond) = _pool.kickerInfo(kicker);
 
         uint256 totalBond = claimableBond + lockedBond;
@@ -146,9 +147,12 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
             // deposit time of taker change when he gets lps as reward from bucketTake
             lenderDepositTime[_actor][bucketIndex] = block.timestamp;
 
-            // calculate amount of kicker reward/penalty that will decrease/increase reserves
-            if(totalBond > claimableBond + lockedBond) {
-                kickerBondChange = totalBond - claimableBond - lockedBond;
+            (uint256 lpsAfterTake, ) = _pool.lenderInfo(bucketIndex, kicker);
+
+            // check if kicker was awarded LPs
+            if(lpsAfterTake > lpsBeforeTake) {
+                // update kicker deposit time to reflect LPs reward
+                lenderDepositTime[kicker][bucketIndex] = block.timestamp;
                 isKickerRewarded = true;
             }
             else {
