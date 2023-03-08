@@ -1024,4 +1024,22 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
         ERC20Pool(address(_pool)).repayDebt(actor, 0, 149220, actor, 7388);
     }
+
+    function testPullBorrowerWithDebtCollateralEncumberedCalculatedAsZero() external {
+        address actor = makeAddr("actor");
+
+        _mintCollateralAndApproveTokens(actor, 1000000000 * 1e18);
+        _mintQuoteAndApproveTokens(actor, 1000000000000 * 1e18);
+
+        changePrank(actor);
+        _pool.addQuoteToken(200, 2572, block.timestamp + 100);
+        ERC20Pool(address(_pool)).drawDebt(actor, 100, 7388, 1);
+
+        // actor should not be able to pull his collateral without repaying the debt
+        vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
+        ERC20Pool(address(_pool)).repayDebt(actor, 0, 1, actor, 7388);
+
+        // borrower should be able to repay and pull collateral
+        ERC20Pool(address(_pool)).repayDebt(actor, 120, 1, actor, 7388);
+    }
 }
