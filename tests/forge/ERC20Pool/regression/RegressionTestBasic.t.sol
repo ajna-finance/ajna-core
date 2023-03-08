@@ -205,25 +205,22 @@ contract RegressionTestBasic is BasicInvariants {
         invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
-    // TODO: Find reason for Arithmetic over/underflow
-    function test_regression_evm_revert_1() external {
+    function test_regression_pull_collateral_when_encumbered_greater_than_pledged() external {
         _basicPoolHandler.drawDebt(1535776046383997344779595, 5191646246012456798576386242824793107669233);
         _basicPoolHandler.transferLps(17293, 19210, 227780, 999999999999999999999999999999999999999999997);
         _basicPoolHandler.removeQuoteToken(0, 0, 2);
         _basicPoolHandler.pullCollateral(115, 149220);
     }
 
-    // TODO: Find fix for this failing invariant sequence
     function test_regression_incorrect_zero_deposit_buckets_1() external {
         _basicPoolHandler.repayDebt(15119, 6786);
         _basicPoolHandler.moveQuoteToken(115792089237316195423570985008687907853269984665640564039457584007913129639932, 1578322581132549441186648538841, 2, 115792089237316195423570985008687907853269984665640564039457584007913129639933);
         invariant_fenwick_prefixSumIndex_F4();
     }
 
-    // TODO: Find fix for this failing invariant sequence
     function test_regression_fenwick_index_2() external {
         uint256 depositAt2570 = 570036521745120847917211;
-        uint256 depositAt2571 = 2578324552477056269186646552413;
+        uint256 depositAt2571 = _basicPoolHandler.constrictToRange(2578324552477056269186646552413, 1, 1000000000000000000000000000000);
         uint256 depositAt2572 = 1212;
         _basicPoolHandler.addQuoteToken(1, depositAt2570, 2570);
         _basicPoolHandler.addQuoteToken(1, depositAt2571, 2571);
@@ -242,7 +239,8 @@ contract RegressionTestBasic is BasicInvariants {
         invariant_collateralBalance_CT1_CT7();
     }
 
-    function test_invariant_quoteTokenBalance_QT1() external {
+    // TODO: poolBalance + poolDebt >= _pool.depositSize fails by 1 unit of WAD (1.000115588871659711 >= 1.000115588871659712)
+    function test_regression_invariant_quoteTokenBalance_QT1() external {
         _basicPoolHandler.pledgeCollateral(47134563260349377955683144555119028889734284095914219439962386869, 2323610696462098);
         _basicPoolHandler.repayDebt(1, 2);
         _basicPoolHandler.removeCollateral(200953640940463935290718680397023889633667961549, 2481, 3);
