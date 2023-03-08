@@ -48,14 +48,14 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
         }
     }
 
-    function withdrawBonds(address kicker) internal useTimestamps resetAllPreviousLocalState {
+    function withdrawBonds(address kicker, uint256 maxAmount) internal useTimestamps resetAllPreviousLocalState {
 
         fenwickAccrueInterest();
         updatePoolState();
         updatePreviousExchangeRate();   
         updatePreviousReserves();
 
-        try _pool.withdrawBonds(kicker) {
+        try _pool.withdrawBonds(kicker, maxAmount) {
             shouldExchangeRateChange = false;
             shouldReserveChange      = false;
 
@@ -308,8 +308,8 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
         super.kickWithDeposit(_lenderBucketIndex);
     }
 
-    function withdrawBonds(uint256 kickerIndex) external useRandomActor(kickerIndex) useTimestamps {
-        super.withdrawBonds(_actor);
+    function withdrawBonds(uint256 kickerIndex, uint256 maxAmount) external useRandomActor(kickerIndex) useTimestamps {
+        super.withdrawBonds(_actor, maxAmount);
     }
 
     function takeAuction(uint256 borrowerIndex, uint256 amount, uint256 actorIndex) external useRandomActor(actorIndex) useTimestamps {

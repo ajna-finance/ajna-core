@@ -222,12 +222,16 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         }
     }
 
-    function approvelps(address receiver, uint256 bucketIndex, uint256 amount) internal useTimestamps resetAllPreviousLocalState {
+    function increaseLPsAllowance(address receiver, uint256 bucketIndex, uint256 amount) internal useTimestamps resetAllPreviousLocalState {
+        // approve as transferor
+        address[] memory transferors = new address[](1);
+        transferors[0] = receiver;
+        _pool.approveLPsTransferors(transferors);
         uint256[] memory buckets = new uint256[](1);
         buckets[0] = bucketIndex;
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = amount;
-        _pool.approveLpOwnership(receiver, buckets, amounts);
+        _pool.increaseLPsAllowance(receiver, buckets, amounts);
     }
 
     function transferLps(address sender, address receiver, uint256 bucketIndex) internal useTimestamps resetAllPreviousLocalState {
@@ -428,7 +432,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     function addQuoteToken(uint256 actorIndex, uint256 amount, uint256 bucketIndex) public useRandomActor(actorIndex) useRandomLenderBucket(bucketIndex) useTimestamps {
         numberOfCalls['BBasicHandler.addQuoteToken']++;
 
-        amount = constrictToRange(amount, 1e6, 1e30);
+        amount = constrictToRange(amount, _pool.quoteTokenDust(), 1e30);
 
         // Action
         super.addQuoteToken(amount, _lenderBucketIndex);
@@ -489,7 +493,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         (senderLpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
         lpsToTransfer = constrictToRange(lpsToTransfer, 1, senderLpBalance);
 
-        super.approvelps(receiver, _lenderBucketIndex, lpsToTransfer);
+        super.increaseLPsAllowance(receiver, _lenderBucketIndex, lpsToTransfer);
         super.transferLps(_actor, receiver, _lenderBucketIndex);
     }
 
@@ -501,7 +505,9 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     function pledgeCollateral(uint256 actorIndex, uint256 amountToPledge) public useRandomActor(actorIndex) useTimestamps {
         numberOfCalls['BBasicHandler.pledgeCollateral']++;
 
-        amountToPledge = constrictToRange(amountToPledge, 1, 1e30);
+        uint256 collateralScale = _pool.collateralScale();
+
+        amountToPledge = constrictToRange(amountToPledge, collateralScale, 1e30);
 
         // Action
         super.pledgeCollateral(amountToPledge);
@@ -528,7 +534,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     function repayDebt(uint256 actorIndex, uint256 amountToRepay) public useRandomActor(actorIndex) useTimestamps {
         numberOfCalls['BBasicHandler.repayDebt']++;
 
-        amountToRepay = constrictToRange(amountToRepay, 1e6, 1e30);
+        amountToRepay = constrictToRange(amountToRepay, _pool.quoteTokenDust(), 1e30);
 
         // Action
         super.repayDebt(amountToRepay);

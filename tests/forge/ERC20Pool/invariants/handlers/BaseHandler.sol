@@ -14,7 +14,6 @@ import { Token }            from '../../../utils/Tokens.sol';
 import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
 import { PoolCommons }     from 'src/libraries/external/PoolCommons.sol';
 import { InvariantTest } from '../InvariantTest.sol';
-import { _ptp } from 'src/libraries/helpers/PoolHelper.sol';
 
 import 'src/libraries/internal/Maths.sol';
 import '../interfaces/ITestBase.sol';
@@ -229,19 +228,6 @@ contract BaseHandler is InvariantTest, Test {
     }
 
     function fenwickRemove(uint256 removedAmount, uint256 bucketIndex) internal {
-        // add early withdrawal penalty back to removedAmount if removeQT is occurs above the PTP
-        // as that is the value removed from the fenwick tree
-        (, uint256 depositTime) = _pool.lenderInfo(bucketIndex, _actor);
-        uint256 price = _poolInfo.indexToPrice(bucketIndex);
-        (, uint256 poolDebt ,) = _pool.debtInfo();
-        uint256 poolCollateral  = _pool.pledgedCollateral();
-
-        if (depositTime != 0 && block.timestamp - depositTime < 1 days) {
-            if (price > _ptp(poolDebt, poolCollateral)) {
-                removedAmount = Maths.wdiv(removedAmount, Maths.WAD - _poolInfo.feeRate(address(_pool)));
-            }
-        }
-
         // Fenwick
         uint256 deposit = fenwickDeposits[bucketIndex];
         fenwickDeposits[bucketIndex] = deposit - removedAmount;
@@ -326,9 +312,7 @@ contract BaseHandler is InvariantTest, Test {
         uint256 depositAboveHtp = fenwickSumTillIndex(htpIndex);
 
         if (depositAboveHtp != 0) {
-
-            uint256 poolCollateral  = _pool.pledgedCollateral();
-            uint256 utilization = _pool.depositUtilization(poolDebt, poolCollateral);
+            uint256 utilization           = _pool.depositUtilization();
             uint256 lenderInterestMargin_ = PoolCommons.lenderInterestMargin(utilization);
 
             uint256 newInterest_ = Maths.wmul(
