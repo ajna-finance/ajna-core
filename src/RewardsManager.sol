@@ -2,23 +2,23 @@
 
 pragma solidity 0.8.14;
 
-import { IERC20 }    from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import { SafeERC20 } from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import { IERC721 }   from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
+import { IERC20 }          from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import { IERC721 }         from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
+import { ReentrancyGuard } from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import { SafeERC20 }       from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import { IPool }            from './interfaces/pool/IPool.sol';
-import { IPositionManager } from './interfaces/position/IPositionManager.sol';
-
-import { PositionManager }  from './PositionManager.sol';
-
+import { IPool }                        from './interfaces/pool/IPool.sol';
+import { IPositionManager }             from './interfaces/position/IPositionManager.sol';
+import { IPositionManagerOwnerActions } from './interfaces/position/IPositionManagerOwnerActions.sol';
 import {
     IRewardsManager,
     IRewardsManagerOwnerActions,
     IRewardsManagerState,
     IRewardsManagerDerivedState
 } from './interfaces/rewards/IRewardsManager.sol';
-
 import { StakeInfo, BucketState } from './interfaces/rewards/IRewardsManagerState.sol';
+
+import { PositionManager } from './PositionManager.sol';
 
 import { Maths } from './libraries/internal/Maths.sol';
 
@@ -32,7 +32,7 @@ import { Maths } from './libraries/internal/Maths.sol';
  *          - claim rewards
  *          - unstake token
  */
-contract RewardsManager is IRewardsManager {
+contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
     using SafeERC20 for IERC20;
 
@@ -120,6 +120,81 @@ contract RewardsManager is IRewardsManager {
      *  @inheritdoc IRewardsManagerOwnerActions
      *  @dev revert on:
      *          - not owner NotOwnerOfDeposit()
+     *          - invalid index params MoveStakedLiquidityInvalid()
+     *  @dev emit events:
+     *          - MoveStakedLiquidity
+     */
+    function moveStakedLiquidity(
+        uint256 tokenId_,
+        uint256[] memory fromBuckets_,
+        uint256[] memory toBuckets_,
+        uint256 expiry_
+    ) external nonReentrant override {
+        StakeInfo storage stakeInfo = stakes[tokenId_];
+
+        if (msg.sender != stakeInfo.owner) revert NotOwnerOfDeposit();
+
+        // check move array sizes match to be able to match on index
+        uint256 fromBucketLength = fromBuckets_.length;
+        if (fromBucketLength != toBuckets_.length) revert MoveStakedLiquidityInvalid();
+
+        address ajnaPool = stakeInfo.ajnaPool;
+        uint256 curBurnEpoch = IPool(ajnaPool).currentBurnEpoch();
+
+        // claim rewards before moving liquidity, if any
+        _claimRewards(
+            stakeInfo,
+            tokenId_,
+            curBurnEpoch,
+            false,
+            ajnaPool
+        );
+
+        uint256 fromIndex;
+        uint256 toIndex;
+        for (uint256 i = 0; i < fromBucketLength; ) {
+            fromIndex = fromBuckets_[i];
+            toIndex = toBuckets_[i];
+
+            BucketState storage fromBucket = stakeInfo.snapshot[fromIndex];
+            BucketState storage toBucket = stakeInfo.snapshot[toIndex];
+
+            // call out to position manager to move liquidity between buckets
+            IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
+                tokenId_,
+                ajnaPool,
+                fromIndex,
+                toIndex,
+                expiry_
+            );
+            positionManager.moveLiquidity(moveLiquidityParams);
+
+            // update bucket state
+            toBucket.lpsAtStakeTime = uint128(fromBucket.lpsAtStakeTime);
+            toBucket.rateAtStakeTime = uint128(IPool(ajnaPool).bucketExchangeRate(toIndex));
+            delete stakeInfo.snapshot[fromIndex];
+
+            // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
+            unchecked { ++i; }
+        }
+
+        emit MoveStakedLiquidity(tokenId_, fromBuckets_, toBuckets_);
+
+        // update to bucket list exchange rates, from buckets are aready updated on claim
+        // calculate rewards for updating exchange rates, if any
+        uint256 updateReward = _updateBucketExchangeRates(
+            ajnaPool,
+            toBuckets_
+        );
+
+        // transfer rewards to sender
+        _transferAjnaRewards(updateReward);
+    }
+
+    /**
+     *  @inheritdoc IRewardsManagerOwnerActions
+     *  @dev revert on:
+     *          - not owner NotOwnerOfDeposit()
      *  @dev emit events:
      *          - Stake
      */
@@ -141,7 +216,7 @@ contract RewardsManager is IRewardsManager {
         stakeInfo.stakingEpoch = uint96(curBurnEpoch);
 
         // initialize last time interaction at staking epoch
-        stakeInfo.lastInteractionBurnEpoch = uint96(curBurnEpoch);
+        stakeInfo.lastClaimedEpoch = uint96(curBurnEpoch);
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
 
@@ -152,12 +227,12 @@ contract RewardsManager is IRewardsManager {
             BucketState storage bucketState = stakeInfo.snapshot[bucketId];
 
             // record the number of lps in bucket at the time of staking
-            bucketState.lpsAtStakeTime = positionManager.getLPs(
+            bucketState.lpsAtStakeTime = uint128(positionManager.getLPs(
                 tokenId_,
                 bucketId
-            );
+            ));
             // record the bucket exchange rate at the time of staking
-            bucketState.rateAtStakeTime = IPool(ajnaPool).bucketExchangeRate(bucketId);
+            bucketState.rateAtStakeTime = uint128(IPool(ajnaPool).bucketExchangeRate(bucketId));
 
             // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
             unchecked { ++i; }
@@ -246,14 +321,14 @@ contract RewardsManager is IRewardsManager {
         uint256 epochToClaim_
     ) external view override returns (uint256 rewards_) {
 
-        address ajnaPool      = stakes[tokenId_].ajnaPool;
-        uint256 lastBurnEpoch = stakes[tokenId_].lastInteractionBurnEpoch;
-        uint256 stakingEpoch  = stakes[tokenId_].stakingEpoch;
+        address ajnaPool         = stakes[tokenId_].ajnaPool;
+        uint256 lastClaimedEpoch = stakes[tokenId_].lastClaimedEpoch;
+        uint256 stakingEpoch     = stakes[tokenId_].stakingEpoch;
 
-        uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
+        uint256[] memory positionIndexes = positionManager.getPositionIndexesFiltered(tokenId_);
 
         // iterate through all burn periods to calculate and claim rewards
-        for (uint256 epoch = lastBurnEpoch; epoch < epochToClaim_; ) {
+        for (uint256 epoch = lastClaimedEpoch; epoch < epochToClaim_; ) {
 
             rewards_ += _calculateNextEpochRewards(
                 tokenId_,
@@ -274,7 +349,7 @@ contract RewardsManager is IRewardsManager {
         return (
             stakes[tokenId_].owner,
             stakes[tokenId_].ajnaPool,
-            stakes[tokenId_].lastInteractionBurnEpoch
+            stakes[tokenId_].lastClaimedEpoch
         );
     }
 
@@ -305,14 +380,14 @@ contract RewardsManager is IRewardsManager {
         uint256 epochToClaim_
     ) internal returns (uint256 rewards_) {
 
-        address ajnaPool      = stakes[tokenId_].ajnaPool;
-        uint256 lastBurnEpoch = stakes[tokenId_].lastInteractionBurnEpoch;
-        uint256 stakingEpoch  = stakes[tokenId_].stakingEpoch;
+        address ajnaPool         = stakes[tokenId_].ajnaPool;
+        uint256 lastClaimedEpoch = stakes[tokenId_].lastClaimedEpoch;
+        uint256 stakingEpoch     = stakes[tokenId_].stakingEpoch;
 
-        uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
+        uint256[] memory positionIndexes = positionManager.getPositionIndexesFiltered(tokenId_);
 
         // iterate through all burn periods to calculate and claim rewards
-        for (uint256 epoch = lastBurnEpoch; epoch < epochToClaim_; ) {
+        for (uint256 epoch = lastClaimedEpoch; epoch < epochToClaim_; ) {
 
             uint256 nextEpochRewards = _calculateNextEpochRewards(
                 tokenId_,
@@ -352,11 +427,11 @@ contract RewardsManager is IRewardsManager {
 
         uint256 nextEpoch = epoch_ + 1;
         uint256 claimedRewardsInNextEpoch = rewardsClaimed[nextEpoch];
+        uint256 bucketIndex;
 
         // iterate through all buckets and calculate epoch rewards for
         for (uint256 i = 0; i < positionIndexes_.length; ) {
-
-            uint256 bucketIndex = positionIndexes_[i];
+            bucketIndex = positionIndexes_[i];
             BucketState memory bucketSnapshot = stakes[tokenId_].snapshot[bucketIndex];
 
             uint256 bucketRate;
@@ -496,7 +571,7 @@ contract RewardsManager is IRewardsManager {
         rewardsEarned += _calculateAndClaimRewards(tokenId_, epochToClaim_);
 
         uint256[] memory burnEpochsClaimed = _getBurnEpochsClaimed(
-            stakeInfo_.lastInteractionBurnEpoch,
+            stakeInfo_.lastClaimedEpoch,
             epochToClaim_
         );
 
@@ -509,7 +584,7 @@ contract RewardsManager is IRewardsManager {
         );
 
         // update last interaction burn event
-        stakeInfo_.lastInteractionBurnEpoch = uint96(epochToClaim_);
+        stakeInfo_.lastClaimedEpoch = uint96(epochToClaim_);
 
         // transfer rewards to sender
         _transferAjnaRewards(rewardsEarned);
@@ -517,20 +592,20 @@ contract RewardsManager is IRewardsManager {
 
     /**
      *  @notice Retrieve an array of burn epochs from which a depositor has claimed rewards.
-     *  @param  lastInteractionBurnEpoch_ The last burn period in which a depositor interacted with the rewards contract.
-     *  @param  burnEpochToStartClaim_    The most recent burn period from a depostor earned rewards.
-     *  @return burnEpochsClaimed_        Array of burn epochs from which a depositor has claimed rewards.
+     *  @param  lastClaimedEpoch_      The last burn period in which a depositor claimed rewards.
+     *  @param  burnEpochToStartClaim_ The most recent burn period from a depositor earned rewards.
+     *  @return burnEpochsClaimed_     Array of burn epochs from which a depositor has claimed rewards.
      */
     function _getBurnEpochsClaimed(
-        uint256 lastInteractionBurnEpoch_,
+        uint256 lastClaimedEpoch_,
         uint256 burnEpochToStartClaim_
     ) internal pure returns (uint256[] memory burnEpochsClaimed_) {
-        uint256 numEpochsClaimed = burnEpochToStartClaim_ - lastInteractionBurnEpoch_;
+        uint256 numEpochsClaimed = burnEpochToStartClaim_ - lastClaimedEpoch_;
 
         burnEpochsClaimed_ = new uint256[](numEpochsClaimed);
 
         uint256 i;
-        uint256 claimEpoch = lastInteractionBurnEpoch_ + 1;
+        uint256 claimEpoch = lastClaimedEpoch_ + 1;
         while (claimEpoch <= burnEpochToStartClaim_) {
             burnEpochsClaimed_[i] = claimEpoch;
 
@@ -576,7 +651,6 @@ contract RewardsManager is IRewardsManager {
             totalBurned,
             totalInterest
         );
-
     }
 
     /**
@@ -701,9 +775,9 @@ contract RewardsManager is IRewardsManager {
             // retrieve the bucket exchange rate at the previous epoch
             uint256 prevBucketExchangeRate = bucketExchangeRates[pool_][bucketIndex_][burnEpoch_ - 1];
 
-            // skip reward calculation if update at the previous epoch was missed
+            // skip reward calculation if update at the previous epoch was missed and if exchange rate decreased due to bad debt
             // prevents excess rewards from being provided from using a 0 value as an input to the interestFactor calculation below.
-            if (prevBucketExchangeRate != 0) {
+            if (prevBucketExchangeRate != 0 && prevBucketExchangeRate < curBucketExchangeRate) {
 
                 // retrieve current deposit of the bucket
                 (, , , uint256 bucketDeposit, ) = IPool(pool_).bucketInfo(bucketIndex_);
@@ -730,8 +804,11 @@ contract RewardsManager is IRewardsManager {
         // if remaining balance is greater, set to remaining balance
         uint256 ajnaBalance = IERC20(ajnaToken).balanceOf(address(this));
         if (rewardsEarned_ > ajnaBalance) rewardsEarned_ = ajnaBalance;
-        // transfer rewards to sender
-        IERC20(ajnaToken).safeTransfer(msg.sender, rewardsEarned_);
+
+        if (rewardsEarned_ != 0) {
+            // transfer rewards to sender
+            IERC20(ajnaToken).safeTransfer(msg.sender, rewardsEarned_);
+        }
     }
 
 }

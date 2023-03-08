@@ -20,13 +20,19 @@ struct BucketTakeResult {
     uint256 newLup;                // [WAD] current lup
     uint256 t0DebtInAuctionChange; // [WAD] the amount of t0 debt recovered by take action
     bool    settledAuction;        // true if auction is settled by take action
+    uint256 debtPreAction;         // [WAD] The amount of borrower t0 debt before take
+    uint256 debtPostAction;        // [WAD] The amount of borrower t0 debt after take
+    uint256 collateralPreAction;   // [WAD] The amount of borrower collateral before take
+    uint256 collateralPostAction;  // [WAD] The amount of borrower collateral after take
 }
 
 struct KickResult {
-    uint256 amountToCoverBond; // [WAD] amount of bond that needs to be covered
-    uint256 t0PoolDebt;        // [WAD] t0 debt in pool after kick
-    uint256 t0KickedDebt;      // [WAD] new t0 debt after kick
-    uint256 lup;               // [WAD] current lup
+    uint256 amountToCoverBond;    // [WAD] amount of bond that needs to be covered
+    uint256 t0PoolDebt;           // [WAD] t0 debt in pool after kick
+    uint256 t0KickedDebt;         // [WAD] new t0 debt after kick
+    uint256 lup;                  // [WAD] current lup
+    uint256 debtPreAction;        // [WAD] The amount of borrower t0 debt before kick
+    uint256 collateralPreAction;  // [WAD] The amount of borrower collateral before kick, same as the one after kick
 }
 
 struct SettleParams {
@@ -35,6 +41,15 @@ struct SettleParams {
     uint256 inflator;    // current pool inflator
     uint256 bucketDepth; // number of buckets to use when settle debt
     uint256 poolType;    // number of buckets to use when settle debt
+}
+
+struct SettleResult {
+    uint256 debtPreAction;       // [WAD] The amount of borrower t0 debt before settle
+    uint256 debtPostAction;      // [WAD] The amount of borrower t0 debt remaining after settle
+    uint256 collateralPreAction; // [WAD] The amount of borrower collateral before settle
+    uint256 collateralRemaining; // [WAD] The amount of borrower collateral left after settle
+    uint256 collateralSettled;   // [WAD] The amount of borrower collateral settled
+    uint256 t0DebtSettled;       // [WAD] The amount of t0 debt settled
 }
 
 struct TakeResult {
@@ -49,6 +64,10 @@ struct TakeResult {
     uint256 newLup;                // [WAD] current lup
     uint256 t0DebtInAuctionChange; // [WAD] the amount of t0 debt recovered by take action
     bool    settledAuction;        // true if auction is settled by take action
+    uint256 debtPreAction;         // [WAD] The amount of borrower t0 debt before take
+    uint256 debtPostAction;        // [WAD] The amount of borrower t0 debt after take
+    uint256 collateralPreAction;   // [WAD] The amount of borrower collateral before take
+    uint256 collateralPostAction;  // [WAD] The amount of borrower collateral after take
 }
 
 /******************************************/
@@ -85,6 +104,10 @@ struct DrawDebtResult {
     bool    settledAuction;        // true if collateral pledged settles auction
     uint256 t0DebtInAuctionChange; // [WAD] change of t0 pool debt in auction after pledge collateral
     uint256 t0PoolDebt;            // [WAD] amount of t0 debt in pool after draw debt
+    uint256 debtPreAction;         // [WAD] The amount of borrower t0 debt before draw debt
+    uint256 debtPostAction;        // [WAD] The amount of borrower t0 debt after draw debt
+    uint256 collateralPreAction;   // [WAD] The amount of borrower collateral before draw debt
+    uint256 collateralPostAction;  // [WAD] The amount of borrower collateral after draw debt
 }
 
 struct RepayDebtResult {
@@ -96,4 +119,8 @@ struct RepayDebtResult {
     uint256 t0DebtInAuctionChange; // [WAD] change of t0 pool debt in auction after repay debt
     uint256 t0PoolDebt;            // [WAD] amount of t0 debt in pool after repay
     uint256 quoteTokenToRepay;     // [WAD] quote token amount to be transferred from sender to pool
+    uint256 debtPreAction;         // [WAD] The amount of borrower t0 debt before repay debt
+    uint256 debtPostAction;        // [WAD] The amount of borrower t0 debt after repay debt
+    uint256 collateralPreAction;   // [WAD] The amount of borrower collateral before repay debt
+    uint256 collateralPostAction;  // [WAD] The amount of borrower collateral after repay debt
 }

@@ -6,7 +6,8 @@ import { IPool, IERC20Token } from './interfaces/pool/IPool.sol';
 
 import {
     _claimableReserves,
-    _feeRate,
+    _borrowFeeRate,
+    _depositFeeRate,
     _indexOf,
     _lpsToCollateral,
     _lpsToQuoteToken,
@@ -232,10 +233,10 @@ contract PoolInfoUtils {
         uint256 currentLup = _priceAt(pool.depositIndex(poolDebt));
 
         poolCollateralization_ = _collateralization(poolDebt, poolCollateral, currentLup);
-        poolActualUtilization_ = pool.depositUtilization(poolDebt, poolCollateral);
+        poolActualUtilization_ = pool.depositUtilization();
 
-        (uint256 debtEma, uint256 lupColEma) = pool.emasInfo();
-        poolTargetUtilization_ = _targetUtilization(debtEma, lupColEma);
+        (uint256 debtColEma, uint256 lupt0DebtEma, , ) = pool.emasInfo();
+        poolTargetUtilization_ = _targetUtilization(debtColEma, lupt0DebtEma);
     }
 
     /**
@@ -249,9 +250,7 @@ contract PoolInfoUtils {
     {
         IPool pool = IPool(ajnaPool_);
 
-        (uint256 poolDebt,,)   = pool.debtInfo();
-        uint256 poolCollateral = pool.pledgedCollateral();
-        uint256 utilization    = pool.depositUtilization(poolDebt, poolCollateral);
+        uint256 utilization   = pool.depositUtilization();
 
         lenderInterestMargin_ = PoolCommons.lenderInterestMargin(utilization);
     }
@@ -332,18 +331,27 @@ contract PoolInfoUtils {
     }
 
     /**
-     *  @notice Calculates fee rate for a pool.
+     *  @notice Calculates origination fee rate for a pool.
      *  @notice Calculated as greater of the current annualized interest rate divided by 52 (one week of interest) or 5 bps.
-     *  @return Fee rate applied to the given interest rate.
+     *  @return Fee rate calculated from the pool interest rate.
      */
-    function feeRate(
+    function borrowFeeRate(
         address ajnaPool_
     ) external view returns (uint256) {
-        IPool pool = IPool(ajnaPool_);
+        (uint256 interestRate,) = IPool(ajnaPool_).interestRateInfo();
+        return _borrowFeeRate(interestRate);
+    }
 
-        (uint256 interestRate,) = pool.interestRateInfo();
-
-        return _feeRate(interestRate);
+    /**
+     *  @notice Calculates unutilized deposit fee rate for a pool.
+     *  @notice Calculated as current annualized rate divided by 365 (24 hours of interest).
+     *  @return Fee rate calculated from the pool interest rate.
+     */
+    function unutilizedDepositFeeRate(
+        address ajnaPool_
+    ) external view returns (uint256) {
+        (uint256 interestRate,) = IPool(ajnaPool_).interestRateInfo();
+        return _depositFeeRate(interestRate);  
     }
 
     /**
@@ -427,13 +435,13 @@ contract PoolInfoUtils {
 
     /**
      *  @notice Calculates target utilization for given EMA values.
-     *  @param  debtEma_   The EMA of debt value.
-     *  @param  lupColEma_ The EMA of lup * collateral value.
+     *  @param  debtColEma_   The EMA of debt squared to collateral.
+     *  @param  lupt0DebtEma_ The EMA of LUP * t0 debt.
      *  @return Target utilization of the pool.
      */
     function _targetUtilization(
-        uint256 debtEma_,
-        uint256 lupColEma_
+        uint256 debtColEma_,
+        uint256 lupt0DebtEma_
     ) pure returns (uint256) {
-        return (debtEma_ != 0 && lupColEma_ != 0) ? Maths.wdiv(debtEma_, lupColEma_) : Maths.WAD;
+        return (lupt0DebtEma_ != 0) ? Maths.wdiv(debtColEma_, lupt0DebtEma_) : Maths.WAD;
     }

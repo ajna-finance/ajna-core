@@ -3,6 +3,7 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
+import 'src/interfaces/pool/commons/IPoolErrors.sol';
 import 'src/libraries/helpers/PoolHelper.sol';
 
 contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
@@ -92,7 +93,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 pledgedCollateral:    1_002 * 1e18,
                 encumberedCollateral: 823.649613971736296163 * 1e18,
                 poolDebt:             8_006.941586538461542154 * 1e18,
-                actualUtilization:    0.109684131322444679 * 1e18,
+                actualUtilization:    0,
                 targetUtilization:    1e18,
                 minDebtAmount:        400.347079326923077108 * 1e18,
                 loans:                2,
@@ -178,12 +179,12 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             PoolParams({
                 htp:                  8.209538814158655264 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             73_094.502279691716022000 * 1e18,
+                poolSize:             73_093.873009488594553000 * 1e18,
                 pledgedCollateral:    1_002 * 1e18,
                 encumberedCollateral: 835.035237319063220561 * 1e18,
                 poolDebt:             8_117.624599705640061720 * 1e18,
-                actualUtilization:    0.111056568504208946 * 1e18,
-                targetUtilization:    0.833368500318426368 * 1e18,
+                actualUtilization:    0.111200336982269042 * 1e18,
+                targetUtilization:    0.833449668459897038 * 1e18,
                 minDebtAmount:        811.762459970564006172 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower2),
@@ -231,7 +232,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             locked:    0.195342779771472726 * 1e18
         });
         _assertReserveAuction({
-            reserves:                   23.872320013924039720 * 1e18,
+            reserves:                   24.501590217045508720 * 1e18,
             claimableReserves :         0,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
@@ -435,23 +436,40 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             })
         );
 
-        // kicker balance befor withdraw auction bonds
+        // kicker balance before withdraw auction bonds
         assertEq(_quote.balanceOf(_lender), 46_999.804657220228527274 * 1e18);
+
+        // should revert if user without claimable amount tries to withdraw bond
+        vm.expectRevert(IPoolErrors.InsufficientLiquidity.selector);
+        _pool.withdrawBonds(_withdrawRecipient, type(uint256).max);
 
         snapshot = vm.snapshot();
 
         changePrank(_lender);
 
-        // kicker withdraws auction bonds and transfer to a different address
-        _pool.withdrawBonds(_withdrawRecipient);
+        // should revert if trying to withdraw 0 bond amount
+        vm.expectRevert(IPoolErrors.InsufficientLiquidity.selector);
+        _pool.withdrawBonds(_withdrawRecipient, 0);
 
-        assertEq(_quote.balanceOf(_withdrawRecipient), 0.195342779771472726 * 1e18);
-        assertEq(_quote.balanceOf(_lender), 46_999.804657220228527274 * 1e18);
+        // kicker withdraws partial auction bonds and transfer to a different address
+        vm.expectEmit(true, true, false, true);
+        emit BondWithdrawn(_lender, _withdrawRecipient, 0.1 * 1e18);
+        _pool.withdrawBonds(_withdrawRecipient, 0.1 * 1e18);
+
+        // kicker withdraws remaining auction bonds
+        vm.expectEmit(true, true, false, true);
+        emit BondWithdrawn(_lender, _lender, 0.095342779771472726 * 1e18);
+        _pool.withdrawBonds(_lender, type(uint256).max);
+
+        assertEq(_quote.balanceOf(_withdrawRecipient), 0.1 * 1e18);
+        assertEq(_quote.balanceOf(_lender), 46_999.9 * 1e18);
 
         vm.revertTo(snapshot);
 
-        // kicker withdraws auction bonds
-        _pool.withdrawBonds(_lender);
+        // kicker withdraws entire auction bonds
+        vm.expectEmit(true, true, false, true);
+        emit BondWithdrawn(_lender, _lender, 0.195342779771472726 * 1e18);
+        _pool.withdrawBonds(_lender, type(uint256).max);
 
         assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
 
@@ -555,7 +573,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         changePrank(_lender);
         assertEq(_quote.balanceOf(_lender), 46_999.804657220228527274 * 1e18);
 
-        _pool.withdrawBonds(_lender);
+        _pool.withdrawBonds(_lender, type(uint256).max);
 
         assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
 
@@ -627,6 +645,11 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             amount:     1 * 1e18,
             indexLimit: 7000
         });
+
+        // should not allow borrower to restamp the Neutral Price of the loan if auction kicked
+        _assertStampLoanAuctionActiveRevert({
+            borrower: _borrower
+        });
     }
 
     function testInterestsAccumulationWithAllLoansAuctioned() external tearDown {
@@ -696,12 +719,12 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             PoolParams({
                 htp:                  0,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             73_118.781595119199960000 * 1e18,
+                poolSize:             73_114.174951097528962000 * 1e18,
                 pledgedCollateral:    1_002 * 1e18,
                 encumberedCollateral: 1_028.290450922889736704 * 1e18,
                 poolDebt:             9_996.315708608352095626 * 1e18,
-                actualUtilization:    0,
-                targetUtilization:    1.026215413990712532 * 1e18,
+                actualUtilization:    0.555338663776728288 * 1e18,
+                targetUtilization:    1.026216314846201384 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
@@ -717,7 +740,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             from:    _lender1,
             amount:  1 * 1e18,
             index:   _i9_91,
-            lpAward: 0.943930837199358257 * 1e18,
+            lpAward: 0.945987267750984916 * 1e18,
             newLup:  9.721295865031779605 * 1e18
         });
 
@@ -725,16 +748,16 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             PoolParams({
                 htp:                  0,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             73_120.392693241980910026 * 1e18,
+                poolSize:             73_115.811578712752188477 * 1e18,
                 pledgedCollateral:    1_002 * 1e18,
                 encumberedCollateral: 1_028.364405977643667984 * 1e18,
                 poolDebt:             9_997.034647576329686631 * 1e18,
-                actualUtilization:    0,
-                targetUtilization:    1.026265981879390518 * 1e18,
+                actualUtilization:    1.246708347279785558 * 1e18,
+                targetUtilization:    1.026218700245164092 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                interestRate:         0.0405 * 1e18,
+                interestRate:         0.0495 * 1e18,
                 interestRateUpdate:   _startTime + 100 days + 14 hours
             })
         );

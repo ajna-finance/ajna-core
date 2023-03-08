@@ -37,7 +37,7 @@ import { Maths }   from '../internal/Maths.sol';
      *  @dev    Price expected to be inputted as a 18 decimal WAD
      *  @dev    Fenwick index is converted to bucket index
      *  @dev    Fenwick index to bucket index conversion
-     *          1.00      : bucket index 0,     fenwick index 4146: 7388-4156-3232=0
+     *          1.00      : bucket index 0,     fenwick index 4156: 7388-4156-3232=0
      *          MAX_PRICE : bucket index 4156,  fenwick index 0:    7388-0-3232=4156.
      *          MIN_PRICE : bucket index -3232, fenwick index 7388: 7388-7388-3232=-3232.
      *  @dev    V1: price = MIN_PRICE + (FLOAT_STEP * index)
@@ -107,12 +107,12 @@ import { Maths }   from '../internal/Maths.sol';
     }
 
     /**
-     *  @notice Calculates fee rate for a given interest rate.
+     *  @notice Calculates origination fee for a given interest rate.
      *  @notice Calculated as greater of the current annualized interest rate divided by 52 (one week of interest) or 5 bps.
      *  @param  interestRate_ The current interest rate.
-     *  @return Fee rate applied to the given interest rate.
+     *  @return Fee rate based upon the given interest rate.
      */
-    function _feeRate(
+    function _borrowFeeRate(
         uint256 interestRate_
     ) pure returns (uint256) {
         // greater of the current annualized interest rate divided by 52 (one week of interest) or 5 bps
@@ -120,16 +120,29 @@ import { Maths }   from '../internal/Maths.sol';
     }
 
     /**
-     *  @notice Calculates Pool Threshold Price (PTP) for a given debt and collateral amount.
-     *  @param  debt_       The debt amount to calculate PTP for.
-     *  @param  collateral_ The amount of collateral to calculate PTP for.
-     *  @return ptp_        Pool Threshold Price value.
+     * @notice Calculates the unutilized deposit fee, charged to lenders who deposit below the LUP.
+     * @param  interestRate_ The current interest rate.
+     * @return Fee rate based upon the given interest rate.
      */
-    function _ptp(
-        uint256 debt_,
-        uint256 collateral_
-    ) pure returns (uint256 ptp_) {
-        if (collateral_ != 0) ptp_ = Maths.wdiv(debt_, collateral_);
+    function _depositFeeRate(
+        uint256 interestRate_
+    ) pure returns (uint256) {
+        // current annualized rate divided by 365 (24 hours of interest)
+        return Maths.wdiv(interestRate_, 365 * 1e18);
+    }
+
+    /**
+     *  @notice Calculates debt-weighted average threshold price
+     *  @param  t0Debt_              pool debt owed by borrowers in t0 terms
+     *  @param  inflator_            pool's borrower inflator
+     *  @param  t0Debt2ToCollateral_ t0-debt-squared-to-collateral accumulator 
+     */
+    function _dwatp(
+        uint256 t0Debt_,
+        uint256 inflator_,
+        uint256 t0Debt2ToCollateral_
+    ) pure returns (uint256) {
+        return t0Debt_ == 0 ? 0 : Maths.wmul(inflator_, Maths.wdiv(t0Debt2ToCollateral_, t0Debt_));
     }
 
     /**

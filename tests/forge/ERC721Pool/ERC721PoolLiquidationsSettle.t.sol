@@ -84,7 +84,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
                 pledgedCollateral:    5 * 1e18,
                 encumberedCollateral: 2.590711908723330630 * 1e18,
                 poolDebt:             10_009.615384615384620000 * 1e18,
-                actualUtilization:    0.625600961538461539 * 1e18,
+                actualUtilization:    0,
                 targetUtilization:    1 * 1e18,
                 minDebtAmount:        500.480769230769231000 * 1e18,
                 loans:                2,
@@ -152,7 +152,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
                 pledgedCollateral:    5 * 1e18,
                 encumberedCollateral: 2.624293841728065377 * 1e18,
                 poolDebt:             10_139.364366784136304617 * 1e18,
-                actualUtilization:    0.780124209621624751 * 1e18,
+                actualUtilization:    0,
                 targetUtilization:    1e18,
                 minDebtAmount:        0,
                 loans:                0,
@@ -180,11 +180,9 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_lender),        104_000 * 1e18);
         assertEq(_quote.balanceOf(_borrower),      5_100 * 1e18);
         assertEq(_quote.balanceOf(_borrower2),     13_000 * 1e18);
-
     }
 
     function testKickAndSettleSubsetPoolFractionalCollateral() external tearDown {
-
         // settle borrower 2
         _assertAuction(
             AuctionParams({
@@ -255,12 +253,12 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
             PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
-                poolSize:             2_861.960513526920122158 * 1e18,
+                poolSize:             2_861.685489213148775844 * 1e18,
                 pledgedCollateral:    1 * 1e18,
                 encumberedCollateral: 0,
                 poolDebt:             0,
-                actualUtilization:    0,
-                targetUtilization:    0.437382306954677563 * 1e18,
+                actualUtilization:    0.389471335647237918 * 1e18,
+                targetUtilization:    0.656073460432016344 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
@@ -371,10 +369,10 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
 
         _assertBucket({
             index:        2500,
-            lpBalance:    1_861.033884081553472950 * 1e18,
+            lpBalance:    1_860.819465331537771351 * 1e18,
             collateral:   0,
-            deposit:      1_861.636634299022017158 * 1e18,
-            exchangeRate: 1.000323879227898105 * 1e18
+            deposit:      1_861.382770397052268844 * 1e18,
+            exchangeRate: 1.000302718816096507 * 1e18
         });
     }
 

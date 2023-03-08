@@ -3,6 +3,9 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
+import { ERC20Pool } from 'src/ERC20Pool.sol';
+
+import 'src/interfaces/pool/IPool.sol';
 import 'src/PoolInfoUtils.sol';
 import 'src/libraries/helpers/PoolHelper.sol';
 
@@ -89,7 +92,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 pledgedCollateral:    100 * 1e18,
                 encumberedCollateral: 7.051372011699988577 * 1e18,
                 poolDebt:             21_020.192307692307702000 * 1e18,
-                actualUtilization:    0.700673076923076923 * 1e18,
+                actualUtilization:    0,
                 targetUtilization:    1e18,
                 minDebtAmount:        2_102.019230769230770200 * 1e18,
                 loans:                1,
@@ -124,11 +127,11 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             PoolParams({
                 htp:                  421.557216751451801727 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
-                poolSize:             30_025.923273028334880000 * 1e18,
+                poolSize:             30_024.492338129690940000 * 1e18,
                 pledgedCollateral:    50 * 1e18,
                 encumberedCollateral: 7.061038044473493202 * 1e18,
                 poolDebt:             21_049.0068231390029184310 * 1e18,
-                actualUtilization:    0.701027796272525944 * 1e18,
+                actualUtilization:    0.701634006858188002 * 1e18,
                 targetUtilization:    0.141220760889469864 * 1e18,
                 minDebtAmount:        2_104.900682313900291843 * 1e18,
                 loans:                1,
@@ -160,11 +163,11 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             PoolParams({
                 htp:                  2_985.093792841086761332 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
-                poolSize:             30_025.923273028334880000 * 1e18,
+                poolSize:             30_024.492338129690940000 * 1e18,
                 pledgedCollateral:    7.061038044473493202 * 1e18,
                 encumberedCollateral: 7.061038044473493202 * 1e18,
                 poolDebt:             21_049.0068231390029184310 * 1e18,
-                actualUtilization:    0.701027796272525944 * 1e18,
+                actualUtilization:    0.701634006858188002 * 1e18,
                 targetUtilization:    0.141220760889469864 * 1e18,
                 minDebtAmount:        2_104.900682313900291843 * 1e18,
                 loans:                1,
@@ -232,7 +235,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 pledgedCollateral:    100 * 1e18,
                 encumberedCollateral: 7.051372011699988577 * 1e18,
                 poolDebt:             21_020.192307692307702000 * 1e18,
-                actualUtilization:    0.700673076923076923 * 1e18,
+                actualUtilization:    0,
                 targetUtilization:    1e18,
                 minDebtAmount:        2_102.019230769230770200 * 1e18,
                 loans:                1,
@@ -898,7 +901,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         });
         _removeAllLiquidity({
             from:     _lender,
-            amount:   2722,
+            amount:   2725,
             index:    2570,
             newLup:   MAX_PRICE,
             lpRedeem: 2725
@@ -929,7 +932,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         // bucket should be cleaned out if quote token swap happens first
         _removeAllLiquidity({
             from:     _lender,
-            amount:   2722,
+            amount:   2725,
             index:    2570,
             newLup:   MAX_PRICE,
             lpRedeem: 2725
@@ -1004,5 +1007,21 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             exchangeRate: 1.000000048285024569 * 1e18
         });
 
+    }
+
+    function testPullBorrowerCollateralLessThanEncumberedCollateral() external {
+        address actor = makeAddr("actor");
+
+        _mintCollateralAndApproveTokens(actor, 1000000000 * 1e18);
+        _mintQuoteAndApproveTokens(actor, 1000000000000 * 1e18);
+
+        changePrank(actor);
+        _pool.addQuoteToken(913597152782868931694946846442, 2572, block.timestamp + 100);
+        ERC20Pool(address(_pool)).drawDebt(actor, 456798576391434465847473423221, 7388, 170152459663184217402759609);
+
+        vm.warp(1689742127);
+        // borrower is undercollateralized and pledged collateral is lower than encumbered collateral, tx should revert with InsufficientCollateral
+        vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
+        ERC20Pool(address(_pool)).repayDebt(actor, 0, 149220, actor, 7388);
     }
 }
