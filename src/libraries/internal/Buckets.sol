@@ -77,12 +77,14 @@ library Buckets {
         address lender_,
         uint256 lpsAmount_
     ) internal {
-        Lender storage lender = bucket_.lenders[lender_];
+        if (lpsAmount_ != 0) {
+            Lender storage lender = bucket_.lenders[lender_];
 
-        if (bankruptcyTime_ >= lender.depositTime) lender.lps = lpsAmount_;
-        else lender.lps += lpsAmount_;
+            if (bankruptcyTime_ >= lender.depositTime) lender.lps = lpsAmount_;
+            else lender.lps += lpsAmount_;
 
-        lender.depositTime = block.timestamp;
+            lender.depositTime = block.timestamp;
+        }
     }
 
     /**********************/
