@@ -40,9 +40,18 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         updatePreviousExchangeRate();
         updatePreviousReserves();
 
+        (uint256 poolDebt,,) = _pool.debtInfo();
+        uint256 lupIndex = _pool.depositIndex(poolDebt);
+        (uint256 interestRate,) = _pool.interestRateInfo();
+
         try _pool.addQuoteToken(amount, bucketIndex, block.timestamp + 1 minutes) {
             // lender's deposit time updates when lender adds Quote token into pool
             lenderDepositTime[_actor][bucketIndex] = block.timestamp;
+
+            // deposit fee is charged if deposit is added below lup
+            if(lupIndex < bucketIndex) {
+                amount = Maths.wmul(amount, 1e18 - Maths.wdiv(interestRate, 365 * 1e18));
+            }
 
             fenwickAdd(amount, bucketIndex);
             shouldExchangeRateChange = false;
@@ -70,7 +79,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     function removeQuoteToken(uint256 amount, uint256 bucketIndex) internal useTimestamps resetAllPreviousLocalState {
         numberOfCalls['UBBasicHandler.removeQuoteToken']++;
 
-        // // Pre condition
+        // Pre condition
         (uint256 lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex, _actor);
 
         if (lpBalanceBefore == 0) {
@@ -124,9 +133,17 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         updatePreviousExchangeRate();
         updatePreviousReserves();
 
+        (uint256 poolDebt,,) = _pool.debtInfo();
+        uint256 lupIndex = _pool.depositIndex(poolDebt);
+
         try _pool.moveQuoteToken(amount, fromIndex, toIndex, block.timestamp + 1 minutes) returns(uint256, uint256, uint256 movedAmount) {
-            fenwickRemove(movedAmount, fromIndex);
             fenwickAdd(movedAmount, toIndex);
+
+            // deposit fee is charged if deposit is moved from above the lup to below the lup
+            if(fromIndex >= lupIndex && toIndex < lupIndex) {
+                movedAmount = Maths.wdiv(Maths.wmul(movedAmount, 365 * 1e18), 364 * 1e18);
+                fenwickRemove(movedAmount, fromIndex);
+            }
 
             (, uint256 fromBucketDepositTime) = _pool.lenderInfo(fromIndex, _actor);
             (, uint256 toBucketDepositTime) = _pool.lenderInfo(toIndex, _actor);
