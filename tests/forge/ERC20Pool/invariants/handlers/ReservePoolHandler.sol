@@ -4,32 +4,45 @@ pragma solidity 0.8.14;
 
 import '@std/Vm.sol';
 
-import { LiquidationPoolHandler } from './LiquidationPoolHandler.sol';
-import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BaseHandler } from './BaseHandler.sol';
 import { Auctions } from 'src/libraries/external/Auctions.sol';
 
+import { LiquidationPoolHandler } from './LiquidationPoolHandler.sol';
+
+import {
+    LENDER_MIN_BUCKET_INDEX,
+    LENDER_MAX_BUCKET_INDEX,
+    BaseHandler
+} from './BaseHandler.sol';
+
 abstract contract UnBoundedReservePoolHandler is BaseHandler {
+
     function startClaimableReserveAuction() internal useTimestamps resetAllPreviousLocalState {
         (, uint256 claimableReserves, , , ) = _poolInfo.poolReservesInfo(address(_pool));
-        if(claimableReserves == 0) return;
+        if (claimableReserves == 0) return;
 
-        fenwickAccrueInterest();
-        updatePoolState();
-        updatePreviousReserves();
-        updatePreviousExchangeRate();
+        _fenwickAccrueInterest();
 
-        try _pool.startClaimableReserveAuction(){
+        _updatePoolState();
+
+        _updatePreviousReserves();
+        _updatePreviousExchangeRate();
+
+        try _pool.startClaimableReserveAuction() {
+
             shouldExchangeRateChange = false;
             shouldReserveChange      = true;
-            updateCurrentReserves();
-            updateCurrentExchangeRate();
+
+            _updateCurrentReserves();
+            _updateCurrentExchangeRate();
+
         } catch {
-            resetReservesAndExchangeRate();
+            _resetReservesAndExchangeRate();
         }
     }
 
-    function takeReserves(uint256 amount) internal useTimestamps resetAllPreviousLocalState {
-
+    function takeReserves(
+        uint256 amount_
+    ) internal useTimestamps resetAllPreviousLocalState {
         (, , uint256 claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
 
         if(claimableReservesRemaining == 0) {
@@ -37,33 +50,52 @@ abstract contract UnBoundedReservePoolHandler is BaseHandler {
         }
         (, , claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
 
-        amount = constrictToRange(amount, 0, claimableReservesRemaining);
+        amount_ = constrictToRange(amount_, 0, claimableReservesRemaining);
 
-        fenwickAccrueInterest();
-        updatePoolState();
-        updatePreviousReserves();
-        updatePreviousExchangeRate();
+        _fenwickAccrueInterest();
+
+        _updatePoolState();
+
+        _updatePreviousReserves();
+        _updatePreviousExchangeRate();
         
-        try _pool.takeReserves(amount){
+        try _pool.takeReserves(amount_) {
+
             shouldExchangeRateChange = false;
             shouldReserveChange      = true;
-            updateCurrentReserves();
-            updateCurrentExchangeRate();
+
+            _updateCurrentReserves();
+            _updateCurrentExchangeRate();
+
         } catch {
-            resetReservesAndExchangeRate();
+            _resetReservesAndExchangeRate();
         }
     }
 }
 
 contract ReservePoolHandler is UnBoundedReservePoolHandler, LiquidationPoolHandler {
 
-    constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors, address testContract) LiquidationPoolHandler(pool, quote, collateral, poolInfo, numOfActors, testContract) {}
+    constructor(
+        address pool_,
+        address quote_,
+        address collateral_,
+        address poolInfo_,
+        uint256 numOfActors_,
+        address testContract_
+    ) LiquidationPoolHandler(pool_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
 
-    function startClaimableReserveAuction(uint256 actorIndex) external useRandomActor(actorIndex) useTimestamps {
+    }
+
+    function startClaimableReserveAuction(
+        uint256 actorIndex_
+    ) external useRandomActor(actorIndex_) useTimestamps {
         super.startClaimableReserveAuction();
     }
 
-    function takeReserves(uint256 actorIndex, uint256 amount) external useRandomActor(actorIndex) useTimestamps {
-        super.takeReserves(amount);
+    function takeReserves(
+        uint256 actorIndex_,
+        uint256 amount_
+    ) external useRandomActor(actorIndex_) useTimestamps {
+        super.takeReserves(amount_);
     }
 }
