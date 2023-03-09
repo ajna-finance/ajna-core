@@ -65,4 +65,14 @@ contract RegressionTestLiquidation is LiquidationInvariant {
 
         invariant_auctions_A3_A4();
     }
+
+    // test was failing due to deposit time update even if kicker lp reward is 0.
+    // resolved with PR: https://github.com/ajna-finance/contracts/pull/674
+    function test_regression_bucket_deposit_time() external {
+        _liquidationPoolHandler.kickAuction(115792089237316195423570985008687907853269984665640564039457584007913129639932, 2079356830967144967054363629631641573895835179323954988585146991431, 233005625580787863707944);
+        _liquidationPoolHandler.bucketTake(21616, 1047473235778002354, false, 1062098588952039043823357);
+        _liquidationPoolHandler.bucketTake(1673497622984405133414814181152, 94526073941076989987362055170246, false, 1462);
+
+        invariant_Bucket_deposit_time_B5();
+    }
 }

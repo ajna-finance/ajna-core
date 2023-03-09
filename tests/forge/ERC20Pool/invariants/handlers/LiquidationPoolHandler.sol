@@ -120,7 +120,7 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
         }
     }
 
-    function bucketTake(address borrower, bool depositTake, uint256 bucketIndex) internal useTimestamps resetAllPreviousLocalState {
+    function bucketTake(address taker, address borrower, bool depositTake, uint256 bucketIndex) internal useTimestamps resetAllPreviousLocalState {
         numberOfCalls['UBLiquidationHandler.bucketTake']++;
 
         fenwickAccrueInterest();
@@ -145,7 +145,7 @@ abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
             (claimableBond, lockedBond) = _pool.kickerInfo(kicker);
 
             // deposit time of taker change when he gets lps as reward from bucketTake
-            lenderDepositTime[_actor][bucketIndex] = block.timestamp;
+            lenderDepositTime[taker][bucketIndex] = block.timestamp;
 
             (uint256 lpsAfterTake, ) = _pool.lenderInfo(bucketIndex, kicker);
 
@@ -355,7 +355,7 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
             _kickAuction(borrowerIndex, 1e24, bucketIndex);
         }
         changePrank(taker);
-        super.bucketTake(borrower, depositTake, bucketIndex);
+        super.bucketTake(taker, borrower, depositTake, bucketIndex);
     }
 
     function settleAuction(uint256 actorIndex, uint256 borrowerIndex, uint256 bucketIndex) external useRandomActor(actorIndex) useTimestamps {
