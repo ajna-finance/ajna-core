@@ -998,7 +998,8 @@ library Auctions {
 
         vars_.unscaledDeposit = Deposits.unscaledValueAt(deposits_, params_.index);
 
-        if (vars_.unscaledDeposit == 0) revert InsufficientLiquidity(); // revert if no quote tokens in arbed bucket
+        // revert if no quote tokens in arbed bucket
+        if (vars_.unscaledDeposit == 0) revert InsufficientLiquidity();
 
         vars_.bucketPrice  = _priceAt(params_.index);
 
@@ -1016,6 +1017,9 @@ library Auctions {
             params_.collateralScale,
             vars_
         );
+
+        // revert if bucket deposit cannot cover at least one unit of collateral
+        if (vars_.collateralAmount == 0) revert InsufficientLiquidity();
 
         _rewardBucketTake(
             auctions_,
