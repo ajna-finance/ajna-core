@@ -56,9 +56,6 @@ contract BaseHandler is InvariantTest, Test {
     // Ghost variables
     uint256[7389] internal fenwickDeposits;
 
-    // mapping from bucket index to local fenwick bucket deposit
-    mapping(uint256 => uint256) copyOfFenwickDeposits;
-
     // bucket exchange rate invariant check
     bool public shouldExchangeRateChange;
 
@@ -270,11 +267,6 @@ contract BaseHandler is InvariantTest, Test {
     }
 
     function fenwickAccrueInterest() internal {
-        // store copy of fenwick deposits
-        for(uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            copyOfFenwickDeposits[bucketIndex] = fenwickDeposits[bucketIndex];
-        }
-
         (,,,,uint256 pendingFactor) = _poolInfo.poolLoansInfo(address(_pool));
 
         // poolLoansInfo returns 1e18 if no interest is pending or time elapsed... the contracts calculate 0 time elapsed which causes discrep
@@ -329,13 +321,6 @@ contract BaseHandler is InvariantTest, Test {
 
     function updatePoolState() internal {
         _pool.updateInterest();
-    }
-
-    function resetFenwickDepositUpdate() internal {
-        // reset fenwick deposits to last updated value in case of transaction revert
-        for(uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            fenwickDeposits[bucketIndex] = copyOfFenwickDeposits[bucketIndex];
-        }
     }
 
     // precalculate exchange rate before an action

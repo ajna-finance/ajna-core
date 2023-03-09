@@ -56,7 +56,6 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         }
         catch (bytes memory _err) {
             resetReservesAndExchangeRate();
-            resetFenwickDepositUpdate();
             bytes32 err = keccak256(_err);
             require(
                 err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
@@ -100,7 +99,6 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         }
         catch (bytes memory _err){
             resetReservesAndExchangeRate();
-            resetFenwickDepositUpdate();
             bytes32 err = keccak256(_err);
             require(
                 err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
@@ -143,7 +141,6 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         }
         catch (bytes memory _err){
             resetReservesAndExchangeRate();
-            resetFenwickDepositUpdate();
             bytes32 err = keccak256(_err);
             require(
                 err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
@@ -218,7 +215,6 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         }
         catch (bytes memory _err){
             resetReservesAndExchangeRate();
-            resetFenwickDepositUpdate();
             bytes32 err = keccak256(_err);
             require(
                 err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
@@ -305,7 +301,6 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             updateCurrentReserves();
         } catch (bytes memory _err){
             resetReservesAndExchangeRate();
-            resetFenwickDepositUpdate();
             bytes32 err = keccak256(_err);
             require(
                 err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
@@ -377,7 +372,6 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         }
         catch (bytes memory _err){
             resetReservesAndExchangeRate();
-            resetFenwickDepositUpdate();
             bytes32 err = keccak256(_err);
             require(
                 err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
@@ -412,7 +406,6 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         }
         catch(bytes memory _err) {
             resetReservesAndExchangeRate();
-            resetFenwickDepositUpdate();
             bytes32 err = keccak256(_err);
             require(
                 err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||

@@ -163,6 +163,14 @@ contract RegressionTestBasic is BasicInvariants {
         invariant_fenwick_depositsTillIndex_F2();
     }
 
+    function test_regression_fenwick_deposit_6() external {
+        _basicPoolHandler.repayDebt(115792089237316195423570985008687907853269984665640564039457584007913129639933, 0);
+        _basicPoolHandler.addQuoteToken(1000000000000000, 19319, 308);
+        _basicPoolHandler.pullCollateral(4218, 4175);
+
+        invariant_fenwick_depositAtIndex_F1();
+    }
+
     function test_regression_fenwick_prefixSum_1() external {
         _basicPoolHandler.addQuoteToken(5851, 999999999999999999999999999999000087, 1938);
         _basicPoolHandler.addCollateral(135454721201807374404103595951250949, 172411742705067521609848985260337891060745418778973, 3);
