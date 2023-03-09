@@ -3,6 +3,8 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
+import 'src/ERC20Pool.sol';
+import 'src/interfaces/pool/commons/IPoolErrors.sol';
 import 'src/libraries/helpers/PoolHelper.sol';
 
 contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
@@ -656,8 +658,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             from:     _lender,
             borrower: _borrower,
             index:    _i9_91
-        }
-);
+        });
 
         skip(2.5 hours);
 
@@ -705,5 +706,52 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             borrower: _borrower,
             index:    _i9_91
         });
+    }
+}
+
+contract ERC20PoolLiquidationsDepositTakeRegressionTest is ERC20HelperContract {
+
+    function testDepositTakeCollateralCalculatedAsZero() external {
+        address actor0 = makeAddr("actor0");
+        _mintQuoteAndApproveTokens(actor0, type(uint256).max);
+        _mintCollateralAndApproveTokens(actor0, type(uint256).max);
+
+        address actor2 = makeAddr("actor2");
+        _mintQuoteAndApproveTokens(actor2, type(uint256).max);
+        _mintCollateralAndApproveTokens(actor2, type(uint256).max);
+
+        address actor3 = makeAddr("actor3");
+        _mintQuoteAndApproveTokens(actor3, type(uint256).max);
+        _mintCollateralAndApproveTokens(actor3, type(uint256).max);
+
+        changePrank(actor0);
+        _pool.addQuoteToken(1927834830600.755456044194881800 * 1e18, 2572, block.timestamp + 100);
+        _pool.updateInterest();
+        ERC20Pool(address(_pool)).drawDebt(actor0, 963917415300.377728022097440900 * 1e18, 7388, 359048665.215178534787974447 * 1e18);
+        skip(100 days);
+
+        changePrank(actor2);
+        _pool.updateInterest();
+        _pool.kick(actor0, 7388);
+        skip(5 days);
+
+        changePrank(actor3);
+        _pool.updateInterest();
+        _pool.addQuoteToken(3, 2571, block.timestamp + 100);
+
+        (uint256 bucketLps, uint256 collateral, , uint256 deposit, ) = _pool.bucketInfo(2571);
+        assertEq(bucketLps, 3);
+        assertEq(collateral, 0);
+        assertEq(deposit, 3); // tiny deposit that cannot cover one unit of collateral, collateral to take will be calculated as 0
+
+        changePrank(actor2);
+        _pool.updateInterest();
+        vm.expectRevert(IPoolErrors.InsufficientLiquidity.selector);
+        _pool.bucketTake(actor0, true, 2571);
+
+        (bucketLps, collateral, , deposit, ) = _pool.bucketInfo(2571);
+        assertEq(bucketLps, 3);
+        assertEq(collateral, 0);
+        assertEq(deposit, 3);
     }
 }
