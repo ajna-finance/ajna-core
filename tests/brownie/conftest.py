@@ -108,6 +108,11 @@ class PoolHelper:
 
     # TODO: Move this functionality into SDK to insulate consumer from implementation logic.
 
+    def availableLiquidity(self):
+        quoteBalance = self.quoteToken().balanceOf(self.pool.address)
+        reserves = quoteBalance + self.debt() - self.pool.depositSize()
+        return quoteBalance - reserves;
+
     def borrowerInfo(self, borrower_address):
         # returns (debt, collateral, mompFactor)
         return self.pool_info_utils.borrowerInfo(self.pool.address, borrower_address)
@@ -126,6 +131,10 @@ class PoolHelper:
     def hpb(self):
         (hpb, hpbIndex, htp, htpIndex, lup, lupIndex) = self.pool_info_utils.poolPricesInfo(self.pool.address)
         return hpb
+    
+    def hpbIndex(self):
+        (hpb, hpbIndex, htp, htpIndex, lup, lupIndex) = self.pool_info_utils.poolPricesInfo(self.pool.address)
+        return hpbIndex
 
     def htp(self):
         (hpb, hpbIndex, htp, htpIndex, lup, lupIndex) = self.pool_info_utils.poolPricesInfo(self.pool.address)
@@ -391,22 +400,16 @@ class TestUtils:
             return str.rjust(text, w)
         def nw(wad):
             return wad/1e18
-        def ny(ray):
-            return ray/1e27
         def fw(wad):
             return f"{nw(wad):>{w}.3f}"
-        def fy(ray):
-            return f"{ny(ray):>{w}.3f}"
 
         lup_index = pool_helper.lupIndex()
         htp_index = pool_helper.price_to_index_safe(pool_helper.htp())
 
         pledged_collateral = pool.pledgedCollateral()
-        ptp_index = pool_helper.price_to_index_safe(int(pool_helper.debt() * 1e18 / pledged_collateral)) \
-            if pledged_collateral > 0 else 0
 
         min_bucket_index = max(0, pool_helper.priceToIndex(pool_helper.hpb()) - 3)  # HPB
-        max_bucket_index = min(7388, max(lup_index, htp_index) + 3) if htp_index < 7388 else min(7388, lup_index + 3)
+        max_bucket_index = min(7388, max(lup_index, htp_index) + 3) if htp_index < 7388 else max(7388, lup_index + 42)
         assert min_bucket_index < max_bucket_index
 
         lines = []
@@ -423,8 +426,6 @@ class TestUtils:
                 pointer += "LUP"
             if i == htp_index:
                 pointer += "HTP"
-            if i == ptp_index:
-                pointer += "PTP"
             try:
                 (
                     _,
@@ -439,10 +440,10 @@ class TestUtils:
                 continue
             if csv:
                 lines.append(','.join([j(str(i)), nw(price), pointer, nw(bucket_quote), nw(bucket_collateral),
-                                       ny(bucket_lpAccumulator), nw(bucket_scale)]))
+                                       nw(bucket_lpAccumulator), nw(bucket_scale)]))
             else:
                 lines.append(''.join([j(str(i)), fw(price), j(pointer), fw(bucket_quote), fw(bucket_collateral),
-                                      fy(bucket_lpAccumulator), f"{nw(bucket_scale):>{w}.9f}"]))
+                                      fw(bucket_lpAccumulator), f"{nw(bucket_scale):>{w}.9f}"]))
         return '\n'.join(lines)
 
     @staticmethod
@@ -462,11 +463,6 @@ class TestUtils:
         reserves = contract_quote_balance + poolDebt - pool.depositSize()
         pledged_collateral = pool.pledgedCollateral()
         (interest_rate, _) = pool.interestRateInfo()
-        if pledged_collateral > 0:
-            ptp = poolDebt * 10 ** 18 / pledged_collateral
-            ptp_index = pool_helper.priceToIndex(ptp)
-        else:
-            ptp = 0
         print(f"contract q bal: {contract_quote_balance/1e18:>12.1f}  "
               f"deposit:        {pool.depositSize()/1e18:>12.1f}  "
               f"reserves:       {reserves/1e18:>12.1f}  "
@@ -476,10 +472,8 @@ class TestUtils:
         lup = pool_helper.lup()
         htp = pool_helper.htp()
         poolCollateral = pool.pledgedCollateral()
-        ptp = int(poolDebt * 1e18 / poolCollateral) if poolCollateral else 0
         print(f"lup:            {lup/1e18:>12.3f}  "
-              f"htp:            {htp/1e18:>12.3f}  "
-              f"ptp:            {ptp/1e18:>12.3f}")
+              f"htp:            {htp/1e18:>12.3f}")
 
 
 @pytest.fixture
