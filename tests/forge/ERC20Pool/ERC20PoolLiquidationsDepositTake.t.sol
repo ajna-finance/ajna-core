@@ -763,7 +763,7 @@ contract ERC20PoolLiquidationsDepositTakeRegressionTest is ERC20HelperContract {
             lender:      actor1,
             index:       2572,
             lpBalance:   0,
-            depositTime: _startTime + 200 days // FIXME: kicker didn't get any LP because auction price was zero but deposit time increased
+            depositTime: 0
         });
     }
 }
