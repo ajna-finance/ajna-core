@@ -65,7 +65,7 @@ library Buckets {
 
     /**
      *  @notice Add amount of LPs for a given lender in a given bucket.
-     *  @dev    Increments bucket.collateral and bucket.lps accumulator state.
+     *  @dev    Increments lender lps accumulator and updates the deposit time.
      *  @param  bucket_         Bucket to record lender LPs.
      *  @param  bankruptcyTime_ Time when bucket become insolvent.
      *  @param  lender_         Lender address to add LPs for in the given bucket.
@@ -77,12 +77,14 @@ library Buckets {
         address lender_,
         uint256 lpsAmount_
     ) internal {
-        Lender storage lender = bucket_.lenders[lender_];
+        if (lpsAmount_ != 0) {
+            Lender storage lender = bucket_.lenders[lender_];
 
-        if (bankruptcyTime_ >= lender.depositTime) lender.lps = lpsAmount_;
-        else lender.lps += lpsAmount_;
+            if (bankruptcyTime_ >= lender.depositTime) lender.lps = lpsAmount_;
+            else lender.lps += lpsAmount_;
 
-        lender.depositTime = block.timestamp;
+            lender.depositTime = block.timestamp;
+        }
     }
 
     /**********************/
