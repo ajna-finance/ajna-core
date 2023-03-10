@@ -161,7 +161,9 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         uint256 availableDeposit = _poolInfo.lpsToQuoteTokens(address(_pool), lps, fromIndex_);
         amount_ = Maths.min(amount_, availableDeposit);
 
-        uint256 lupIndex = _calculateLupAfterQuoteTokenRemoved(amount_, fromIndex_);
+        (uint256 poolDebt, , ) = _pool.debtInfo();
+
+        uint256 lupIndex = _pool.depositIndex(poolDebt + amount_);
 
         try _pool.moveQuoteToken(
             amount_,
