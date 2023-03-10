@@ -172,16 +172,18 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             block.timestamp + 1 minutes
         ) returns (uint256, uint256, uint256 movedAmount) {
 
-            _fenwickAdd(movedAmount, toIndex_);
+            _fenwickRemove(movedAmount, fromIndex_);
 
             // deposit fee is charged if deposit is moved from above the lup to below the lup
             if (fromIndex_ <= lupIndex && toIndex_ > lupIndex) {
-                movedAmount = Maths.wdiv(
-                    Maths.wmul(movedAmount, 365 * 1e18),
-                    364 * 1e18
+                (uint256 interestRate, ) = _pool.interestRateInfo();
+                movedAmount = Maths.wmul(
+                    movedAmount,
+                    1e18 - Maths.wdiv(interestRate, 365 * 1e18)
                 );
             }
-            _fenwickRemove(movedAmount, fromIndex_);
+
+            _fenwickAdd(movedAmount, toIndex_);
 
             (, uint256 fromBucketDepositTime) = _pool.lenderInfo(fromIndex_, _actor);
             (, uint256 toBucketDepositTime)   = _pool.lenderInfo(toIndex_,    _actor);
