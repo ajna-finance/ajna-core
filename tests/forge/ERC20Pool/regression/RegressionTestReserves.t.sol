@@ -2,9 +2,7 @@
 
 pragma solidity 0.8.14;
 
-import { ReserveInvariants }            from "../invariants/ReserveInvariants.t.sol";
-
-import '@std/console.sol';
+import { ReserveInvariants } from "../invariants/ReserveInvariants.t.sol";
 
 contract RegressionTestReserve is ReserveInvariants { 
 

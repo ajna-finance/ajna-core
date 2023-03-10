@@ -3,16 +3,15 @@
 pragma solidity 0.8.14;
 
 import '@std/Test.sol';
-import "@std/console.sol";
 
 import { ERC20Pool }        from 'src/ERC20Pool.sol';
 import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
 import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
 
-import { Token }         from '../../utils/Tokens.sol';
-import { InvariantTest } from './InvariantTest.sol';
+import { Token }             from '../../../utils/Tokens.sol';
+import { InvariantTestBase } from './InvariantTestBase.sol';
 
-contract TestBase is InvariantTest, Test {
+abstract contract TestBase is InvariantTestBase, Test {
 
     // Mainnet ajna address
     address internal _ajna = 0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079;
@@ -51,6 +50,4 @@ contract TestBase is InvariantTest, Test {
     function setCurrentTimestamp(uint256 currentTimestamp_) external {
         currentTimestamp = currentTimestamp_;
     }
-
-
 }

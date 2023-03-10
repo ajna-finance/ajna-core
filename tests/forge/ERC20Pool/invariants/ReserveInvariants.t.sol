@@ -4,10 +4,7 @@ pragma solidity 0.8.14;
 
 import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 
-import '@std/Test.sol';
 import "@std/console.sol";
-
-import { TestBase } from './TestBase.sol';
 
 import {
     LENDER_MIN_BUCKET_INDEX,
@@ -15,11 +12,11 @@ import {
     BORROWER_MIN_BUCKET_INDEX
 } from './handlers/BasicPoolHandler.sol';
 
-import { ReservePoolHandler }   from './handlers/ReservePoolHandler.sol';
-import { LiquidationInvariant } from './LiquidationInvariant.t.sol';
-import { IBaseHandler }         from './interfaces/IBaseHandler.sol';
+import { ReservePoolHandler }    from './handlers/ReservePoolHandler.sol';
+import { LiquidationInvariants } from './LiquidationInvariants.t.sol';
+import { IBaseHandler }          from './interfaces/IBaseHandler.sol';
 
-contract ReserveInvariants is LiquidationInvariant {
+contract ReserveInvariants is LiquidationInvariants {
 
     /**************************************************************************************************************************************/
     /*** Invariant Tests                                                                                                                ***/
@@ -108,8 +105,8 @@ contract ReserveInvariants is LiquidationInvariant {
             bool isKickerRewarded              = IBaseHandler(_handler).isKickerRewarded();
             uint256 kickerBondChange           = IBaseHandler(_handler).kickerBondChange();
 
-            console.log("Kicker Rewarded    -->", isKickerRewarded);
-            console.log("Kicker Bond change -->", kickerBondChange);
+            console.log("Kicker Rewarded            -->", isKickerRewarded);
+            console.log("Kicker Bond change         -->", kickerBondChange);
             console.log("firstTakeIncreaseInReserve -->", firstTakeIncreaseInReserve);
 
             uint256 previousReservesAndBondChange = !isKickerRewarded ? previousReserves + kickerBondChange : previousReserves;
@@ -122,7 +119,7 @@ contract ReserveInvariants is LiquidationInvariant {
                     1e17,
                     "Incorrect Reserves change with first take"
                 );
-            } else if(currentReserves != 0 && loanKickIncreaseInReserve == 0 && drawDebtIncreaseInReserve == 0) {
+            } else if (currentReserves != 0 && loanKickIncreaseInReserve == 0 && drawDebtIncreaseInReserve == 0) {
                 requireWithinDiff(
                     currentReserves,
                     previousReservesAndBondChange,

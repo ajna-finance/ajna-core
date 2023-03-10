@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.14;
 
-contract InvariantTest {
+abstract contract InvariantTestBase {
 
     struct FuzzSelector {
         address addr;
