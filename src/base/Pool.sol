@@ -705,6 +705,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
+    function prefixSum(uint256 sumIndex_) external view returns (uint256) {
+        return Deposits.prefixSum(deposits, sumIndex_);
+    }
+
     /// @inheritdoc IPoolDerivedState
     function bucketExchangeRate(
         uint256 index_

@@ -374,34 +374,47 @@ contract BasicInvariants is InvariantsTestBase {
         }
     }
 
-    // For any index i, there is zero deposit above i and below findIndexOfSum(prefixSum(i) + 1): findIndexOfSum(prefixSum(i)) == findIndexOfSum(prefixSum(j) - deposits.valueAt(j)) where j is the next index from i with deposits != 0
+    // For any index i, there is zero deposit above i and below findIndexOfSum(prefixSum(i) + 1): prefixSum(findIndexOfSum(prefixSum(i)+1)-1) == prefixSum(i)
     function invariant_fenwick_prefixSumIndex_F4() public useCurrentTimestamp {
-        uint256 prefixSum;
+        /* uint256 prefixSum; */
 
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             (, , , uint256 depositAtIndex, ) = _pool.bucketInfo(bucketIndex);
 
-            if (depositAtIndex != 0) {
-                prefixSum += depositAtIndex;
-                uint256 nextBucketIndexWithDeposit = _pool.depositIndex(prefixSum + 1);
-                (, , , uint256 depositAtNextBucket, ) = _pool.bucketInfo(nextBucketIndexWithDeposit);
-                uint256 prefixSumTillNextBucket = prefixSum + depositAtNextBucket;
+            uint256 prefixSum                  = _pool.prefixSum(bucketIndex);
+            uint256 nextBucketIndexWithDeposit = _pool.depositIndex(prefixSum + 1);
+            uint256 prefixSumUpToNextBucket    = _pool.prefixSum(nextBucketIndexWithDeposit-1);
 
-                console.log("============");
-                console.log("Deposit Index of presum    -->", _pool.depositIndex(prefixSum));
-                console.log("Presum                     -->", prefixSum);
-                console.log("depositAtNextBucket       ===>", depositAtNextBucket);
-                console.log("prefixSumTillNextBucket    -->", prefixSumTillNextBucket);
-                console.log("nextBucketIndexWithDeposit -->", nextBucketIndexWithDeposit);
-                console.log("BucketIndex                -->", bucketIndex);
-                console.log("Pool deposit Index         -->", _pool.depositIndex(prefixSumTillNextBucket - depositAtNextBucket));
+            console.log("-----------------------------");
+            console.log("Index       : ", bucketIndex);
+            console.log("Next        : ", nextBucketIndexWithDeposit);
+            console.log("PrefixSum   : ",  prefixSum);
+            console.log("NBPS        : ", prefixSumUpToNextBucket);
+            
+            requireWithinDiff(prefixSumUpToNextBucket, prefixSum, 1e8, "F4 failure: deposits aren't zero in range.");
+            
 
-                require(
-                    bucketIndex == _pool.depositIndex(prefixSumTillNextBucket - depositAtNextBucket),
-                    "Incorrect buckets with 0 deposit"
-                );
-            }
-        }
+        /*     if (depositAtIndex != 0) { */
+        /*         prefixSum += depositAtIndex; */
+        /*         uint256 nextBucketIndexWithDeposit = _pool.depositIndex(prefixSum + 1); */
+        /*         (, , , uint256 depositAtNextBucket, ) = _pool.bucketInfo(nextBucketIndexWithDeposit); */
+        /*         uint256 prefixSumTillNextBucket = prefixSum + depositAtNextBucket; */
+
+        /*         console.log("============"); */
+        /*         console.log("Deposit Index of presum    -->", _pool.depositIndex(prefixSum)); */
+        /*         console.log("Presum                     -->", prefixSum); */
+        /*         console.log("depositAtNextBucket       ===>", depositAtNextBucket); */
+        /*         console.log("prefixSumTillNextBucket    -->", prefixSumTillNextBucket); */
+        /*         console.log("nextBucketIndexWithDeposit -->", nextBucketIndexWithDeposit); */
+        /*         console.log("BucketIndex                -->", bucketIndex); */
+        /*         console.log("Pool deposit Index         -->", _pool.depositIndex(prefixSumTillNextBucket - depositAtNextBucket)); */
+
+        /*         require( */
+        /*             prefixSumTillNextBucket ==  */
+        /*             "Incorrect buckets with 0 deposit" */
+        /*         ); */
+        /*     } */
+        } 
     }
 
     function invariant_call_summary() external virtual useCurrentTimestamp {
