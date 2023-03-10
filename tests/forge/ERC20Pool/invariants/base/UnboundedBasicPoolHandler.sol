@@ -54,7 +54,8 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             lenderDepositTime[_actor][bucketIndex_] = block.timestamp;
 
             // deposit fee is charged if deposit is added below lup
-            if (lupIndex < bucketIndex_) {
+            bool depositBelowLup = lupIndex != 0 && bucketIndex_ > lupIndex;
+            if (depositBelowLup) {
                 amount_ = Maths.wmul(
                     amount_,
                     1e18 - Maths.wdiv(interestRate, 365 * 1e18)

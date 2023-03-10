@@ -254,4 +254,10 @@ contract RegressionTestBasic is BasicInvariants {
 
         invariant_quoteTokenBalance_QT1();
     }
+
+    function test_regression_fenwick_deposit_8() external {
+        _basicPoolHandler.drawDebt(226719918559509764892175185709, 228676957600917178383525685311331);
+
+        invariant_fenwick_depositAtIndex_F1();
+    }
 }
