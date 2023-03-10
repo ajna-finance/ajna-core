@@ -72,4 +72,12 @@ contract RegressionTestLiquidation is LiquidationInvariants {
 
         invariant_Bucket_deposit_time_B5();
     }
+
+    function test_regression_transfer_taker_lps_bucket_deposit_time() external {
+        _liquidationPoolHandler.settleAuction(3637866246331061119113494215, 0, 6163485280468362485998190762304829820899757798629605592174295845105660515);
+        _liquidationPoolHandler.transferLps(1610, 1000000000018496758270674070884, 168395863093969200027183125335, 2799494920515362640996160058);
+        _liquidationPoolHandler.bucketTake(0, 10619296457595008969473693936299982020664977642271808785891719078511288, true, 1681500683437506364426133778273769573223975355182845498494263153646356302);
+
+        invariant_Bucket_deposit_time_B5();
+    }
 }

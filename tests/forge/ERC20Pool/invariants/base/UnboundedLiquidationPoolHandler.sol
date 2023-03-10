@@ -173,7 +173,8 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
 
         (address kicker, , , , , , , , , ) = _pool.auctionInfo(borrower_);
-        (uint256 lpsBeforeTake, )          = _pool.lenderInfo(bucketIndex_, kicker);
+        (uint256 kickerLpsBeforeTake, )    = _pool.lenderInfo(bucketIndex_, kicker);
+        (uint256 takerLpsBeforeTake, )     = _pool.lenderInfo(bucketIndex_, _actor);
         (
             uint256 claimableBond,
             uint256 lockedBond
@@ -191,13 +192,14 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
             (claimableBond, lockedBond) = _pool.kickerInfo(kicker);
 
-            // deposit time of taker change when he gets lps as reward from bucketTake
-            lenderDepositTime[taker_][bucketIndex_] = block.timestamp;
+            (uint256 kickerLpsAfterTake, ) = _pool.lenderInfo(bucketIndex_, kicker);
+            (uint256 takerLpsAfterTake, )  = _pool.lenderInfo(bucketIndex_, _actor);
 
-            (uint256 lpsAfterTake, ) = _pool.lenderInfo(bucketIndex_, kicker);
+            // deposit time of taker change when he gets lps as reward from bucketTake
+            if (takerLpsAfterTake > takerLpsBeforeTake) lenderDepositTime[taker_][bucketIndex_] = block.timestamp;
 
             // check if kicker was awarded LPs
-            if (lpsAfterTake > lpsBeforeTake) {
+            if (kickerLpsAfterTake > kickerLpsBeforeTake) {
                 // update kicker deposit time to reflect LPs reward
                 lenderDepositTime[kicker][bucketIndex_] = block.timestamp;
 
