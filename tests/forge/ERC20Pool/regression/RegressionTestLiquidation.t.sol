@@ -94,4 +94,5 @@ contract RegressionTestLiquidation is LiquidationInvariants {
 
         invariant_fenwick_prefixSumIndex_F4();
     }
+
 }

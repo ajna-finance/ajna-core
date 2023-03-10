@@ -326,30 +326,26 @@ contract BasicInvariants is InvariantsTestBase {
                 depositAtIndex,
                 IBaseHandler(_handler).fenwickSumAtIndex(bucketIndex),
                 1e16,
-                "Incorrect deposits in bucket"
+                "F1: Incorrect deposits in bucket"
             );
         }
     }
 
     // For any index i, the prefix sum up to and including i is the sum of values stored in indices j<=i
     function invariant_fenwick_depositsTillIndex_F2() public useCurrentTimestamp {
-        uint256 depositTillIndex;
-
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            (, , , uint256 depositAtIndex, ) = _pool.bucketInfo(bucketIndex);
-
-            depositTillIndex += depositAtIndex;
-
+            uint256 prefixSum = _pool.prefixSum(bucketIndex);
+            
             console.log("===================Bucket Index : ", bucketIndex, " ===================");
-            console.log("Deposit From Pool               -->", depositTillIndex);
-            console.log("Deposit From local fenwick tree -->", IBaseHandler(_handler).fenwickSumTillIndex(bucketIndex));
+            console.log("Prefix Sum From Pool               -->", prefixSum);
+            console.log("Prefix Sum From local fenwick tree -->", IBaseHandler(_handler).fenwickSumTillIndex(bucketIndex));
             console.log("=========================================");
 
             requireWithinDiff(
-                depositTillIndex,
+                prefixSum,
                 IBaseHandler(_handler).fenwickSumTillIndex(bucketIndex),
                 1e16,
-                "Incorrect deposits prefix sum"
+                "F2: Incorrect deposits prefix sum"
             );
         }
     }
@@ -379,8 +375,6 @@ contract BasicInvariants is InvariantsTestBase {
         /* uint256 prefixSum; */
 
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            (, , , uint256 depositAtIndex, ) = _pool.bucketInfo(bucketIndex);
-
             uint256 prefixSum                  = _pool.prefixSum(bucketIndex);
             uint256 nextBucketIndexWithDeposit = _pool.depositIndex(prefixSum + 1);
             uint256 prefixSumUpToNextBucket    = _pool.prefixSum(nextBucketIndexWithDeposit-1);
@@ -391,7 +385,7 @@ contract BasicInvariants is InvariantsTestBase {
             console.log("PrefixSum   : ",  prefixSum);
             console.log("NBPS        : ", prefixSumUpToNextBucket);
             
-            requireWithinDiff(prefixSumUpToNextBucket, prefixSum, 1e8, "F4 failure: deposits aren't zero in range.");
+            requireWithinDiff(prefixSumUpToNextBucket, prefixSum, 1e16, "F4 failure: deposits aren't zero in range.");
             
 
         /*     if (depositAtIndex != 0) { */

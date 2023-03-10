@@ -8,6 +8,8 @@ import { _priceAt, MAX_FENWICK_INDEX } from '../helpers/PoolHelper.sol';
 
 import { Maths } from './Maths.sol';
 
+import "@std/console.sol";
+
 /**
     @title  Deposits library
     @notice Internal library containing common logic for deposits management.
@@ -29,6 +31,7 @@ library Deposits {
         uint256 index_,
         uint256 unscaledAddAmount_
     ) internal {
+        //        console.log("Deposits::unscaledAdd %s %s", index_, unscaledAddAmount_);
         // price buckets are indexed starting at 0, Fenwick bit logic is more elegant starting at 1
         ++index_;
 
@@ -151,6 +154,7 @@ library Deposits {
         uint256 index_,
         uint256 factor_
     ) internal {
+        //        console.log("Deposits::mult  %s %s", index_, factor_);
         // price buckets are indexed starting at 0, Fenwick bit logic is more elegant starting at 1
         ++index_;
 
@@ -267,6 +271,7 @@ library Deposits {
         uint256 index_,
         uint256 unscaledRemoveAmount_
     ) internal {
+        //        console.log("Deposits::unscaledRemove  %s %s", index_, unscaledRemoveAmount_);
         // price buckets are indexed starting at 0, Fenwick bit logic is more elegant starting at 1
         ++index_;
 

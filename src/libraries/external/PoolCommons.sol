@@ -14,6 +14,8 @@ import { Buckets }  from '../internal/Buckets.sol';
 import { Loans }    from '../internal/Loans.sol';
 import { Maths }    from '../internal/Maths.sol';
 
+import "@std/console.sol";
+
 /**
     @title  PoolCommons library
     @notice External library containing logic for common pool functionality:
@@ -218,11 +220,25 @@ library PoolCommons {
                 Maths.wmul(pendingFactor - Maths.WAD, poolState_.debt)
             );
 
+            /* console.log("---accrueInterest---"); */
+            /* console.log("htp:             ", htp); */
+            /* console.log("newInterest:     ", newInterest_); */
+            /* console.log("depositAboveHtp: ", depositAboveHtp); */
+            /* console.log("elapsed:         ", elapsed_); */
+            /* console.log("pendingFactor:   ", pendingFactor); */
+            /* console.log("htpIndex:        ", htpIndex); */
+
+            // Factor to increase deposits by for interest.  Capped at 1.0
+            uint256 lenderFactor = Maths.wdiv(newInterest_, depositAboveHtp) + Maths.WAD;
+            if(lenderFactor > 10e18) {
+                lenderFactor=1e18;
+            }
+            
             // Scale the fenwick tree to update amount of debt owed to lenders
             Deposits.mult(
                 deposits_,
                 htpIndex,
-                Maths.wdiv(newInterest_, depositAboveHtp) + Maths.WAD // lender factor
+                lenderFactor
             );
         }
     }

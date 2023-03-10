@@ -276,6 +276,7 @@ abstract contract BaseHandler is Test {
             );
 
             uint256 scale = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;
+            if(scale>10e18) scale=10e18;
 
             // simulate scale being applied to all deposits above HTP
             _fenwickMult(htpIndex, scale);
