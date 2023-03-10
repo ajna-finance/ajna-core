@@ -155,6 +155,25 @@ abstract contract BaseHandler is Test {
     /*** Pool Helper Functions ***/
     /*****************************/
 
+    // precalculate lup after quote token removed
+    function _calculateLupAfterQuoteTokenRemoved(uint256 amount, uint256 index) internal returns(uint256 lupIndex) {
+        (uint256 poolDebt,,) = _pool.debtInfo();
+        if(poolDebt != 0) {
+            uint256 i;
+            for(i = LENDER_MAX_BUCKET_INDEX; i >= LENDER_MIN_BUCKET_INDEX && poolDebt > 0; i--) {
+                (,,, uint256 depositAtIndex, ) = _pool.bucketInfo(i);
+                if(poolDebt > depositAtIndex - (i == index ? amount : 0)) {
+                    poolDebt -= depositAtIndex - (i == index ? amount : 0);
+                } else {
+                    break;
+                }
+            }
+            if(i >= LENDER_MIN_BUCKET_INDEX) {
+                lupIndex = i;
+            }
+        }
+    }
+
     function _buildActors(uint256 noOfActors_) internal returns(address[] memory) {
         address[] memory actorsAddress = new address[](noOfActors_);
 
