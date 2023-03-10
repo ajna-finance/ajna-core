@@ -13,11 +13,11 @@ import {
     BasicPoolHandler
 } from './handlers/BasicPoolHandler.sol';
 
-import { TestBase }     from './base/TestBase.sol';
+import { InvariantsTestBase }     from './base/InvariantsTestBase.sol';
 import { IBaseHandler } from './interfaces/IBaseHandler.sol';
 
 // contains invariants for the test
-contract BasicInvariants is TestBase {
+contract BasicInvariants is InvariantsTestBase {
 
     /**************************************************************************************************************************************/
     /*** Invariant Tests                                                                                                                ***/
