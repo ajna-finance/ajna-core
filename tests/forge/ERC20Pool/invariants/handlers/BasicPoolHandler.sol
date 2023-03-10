@@ -152,6 +152,9 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
 
         // Action
         _pledgeCollateral(amountToPledge_);
+
+        // auction settle cleanup
+        _auctionSettleStateReset(_actor);
     }
 
     function pullCollateral(
@@ -176,6 +179,9 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         
         // Action
         _drawDebt(amountToBorrow_);
+
+        // auction settle cleanup
+        _auctionSettleStateReset(_actor);
     }
 
     function repayDebt(
@@ -188,5 +194,19 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
 
         // Action
         _repayDebt(amountToRepay_);
+
+        // auction settle cleanup
+        _auctionSettleStateReset(_actor);
+    }
+
+    /************************************/
+    /*** Test State Cleanup Functions ***/
+    /************************************/
+
+    /**
+     * @dev Called by actions that can settle auctions in order to reset test state.
+     */
+    function _auctionSettleStateReset(address actor_) internal virtual {
+        // no implementation, to be overriden in liquidations handler
     }
 }
