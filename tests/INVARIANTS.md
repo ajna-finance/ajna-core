@@ -2,7 +2,7 @@
 
 ## Collateral
 - #### ERC20:  
-  - **CT1**: pool collateral token balance (`Collateral.balanceOf(pool)`) = sum of collateral balances across all borrowers (`Borrower.collateral`) + sum of claimable collateral across all buckets (`Bucket.collateral`)  
+  - **CT1**: pool collateral token balance (`Collateral.balanceOf(pool)`) = sum of collateral balances across all borrowers (`Borrower.collateral`) + sum of claimable collateral across all buckets (`Bucket.collateral`) 
 - #### NFT:  
   - **CT2**: number of tokens owned by the pool (`Collateral.balanceOf(pool)`) * `1e18` = sum of collateral across all borrowers (`Borrower.collateral`) + sum of claimable collateral across all buckets (`Bucket.collateral`)  
   - **CT3**: number of tokens owned by the pool (`Collateral.balanceOf(pool)` = length of borrower array token ids (`ERC721Pool.borrowerTokenIds.length`) + length of buckets array token ids (`ERC721Pool.bucketTokenIds.length`)  
@@ -40,6 +40,7 @@
 - **I1**: interest rate (`InterestState.interestRate`) cannot be updated more than once in a 12 hours period of time (`InterestState.interestRateUpdate`)  
 - **I2**: reserve interest (`ReserveAuctionState.totalInterestEarned`) accrues only once per block (`block.timestamp - InflatorState.inflatorUpdate != 0`) and only if there's debt in the pool (`PoolBalancesState.t0Debt != 0`)  
 - **I3**: pool inflator (`InflatorState.inflator`) cannot be updated more than once per block (`block.timestamp - InflatorState.inflatorUpdate != 0`) and equals `1e18` if there's no debt in the pool (`PoolBalancesState.t0Debt != 0`)
+- **I4**: for all borrowers where (`borrower.collateral != 0`) the sum of borrower debt squared divided by borrower collateral (`borrower.debt^2 / borrower.collateral`) should equal borrower collateralization accumulator (`t0Debt2ToCollateral`)
 
 ## Fenwick tree
 - **F1**: Value represented at index `i` (`Deposits.valueAt(i)`) is equal to the accumulation of scaled values incremented or decremented from index `i`

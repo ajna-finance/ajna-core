@@ -1128,7 +1128,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             newLup:     601.252968524772188572 * 1e18
         });
 
-        (uint256 poolDebt,,) = _pool.debtInfo();
+        (uint256 poolDebt,,,) = _pool.debtInfo();
         uint256 ptp = Maths.wdiv(poolDebt, 10 * 1e18);
         assertEq(ptp, 500.480769230769231000 * 1e18);
 

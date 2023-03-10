@@ -44,7 +44,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         _updatePreviousExchangeRate();
         _updatePreviousReserves();
 
-        (uint256 poolDebt, , )   = _pool.debtInfo();
+        (uint256 poolDebt, , , )   = _pool.debtInfo();
         uint256 lupIndex         = _pool.depositIndex(poolDebt);
         (uint256 interestRate, ) = _pool.interestRateInfo();
 
@@ -161,7 +161,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         uint256 availableDeposit = _poolInfo.lpsToQuoteTokens(address(_pool), lps, fromIndex_);
         amount_ = Maths.min(amount_, availableDeposit);
 
-        (uint256 poolDebt, , ) = _pool.debtInfo();
+        (uint256 poolDebt, , , ) = _pool.debtInfo();
 
         uint256 lupIndex = _pool.depositIndex(poolDebt + amount_);
 
@@ -431,7 +431,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             require(debt == 0, "borrower has debt");
         }
 
-        (uint256 poolDebt, , ) = _pool.debtInfo();
+        (uint256 poolDebt, , , ) = _pool.debtInfo();
 
         // find bucket to borrow quote token
         uint256 bucket = _pool.depositIndex(amount_ + poolDebt) - 1;

@@ -45,6 +45,7 @@ contract BasicInvariants is InvariantsTestBase {
         * I1: Interest rate should only update once in 12 hours
         * I2: ReserveAuctionState.totalInterestEarned accrues only once per block and equals to 1e18 if pool debt = 0
         * I3: Inflator should only update once per block
+        * I4: t0Debt2ToCollateral should sum correctly accross borrowers
 
     * Fenwick tree
         * F1: Value represented at index i (Deposits.valueAt(i)) is equal to the accumulation of scaled values incremented or decremented from index i
@@ -161,7 +162,7 @@ contract BasicInvariants is InvariantsTestBase {
     // checks pool quote token balance is greater than equals total deposits in pool
     function invariant_quoteTokenBalance_QT1() public useCurrentTimestamp {
         uint256 poolBalance    = _quote.balanceOf(address(_pool));
-        (uint256 poolDebt, , ) = _pool.debtInfo();
+        (uint256 poolDebt, , , ) = _pool.debtInfo();
 
         (
             uint256 totalBondEscrowed,
@@ -310,6 +311,27 @@ contract BasicInvariants is InvariantsTestBase {
 
         previousInflator       = currentInflator;
         previousInflatorUpdate = currentInflatorUpdate;
+    }
+
+
+    function invariant_t0Debt2ToCollateral_I4() public useCurrentTimestamp {
+
+        uint256 actorCount = IBaseHandler(_handler).getActorsCount();
+        uint256 manualDebt2ToCollateral;
+
+        for (uint256 i = 0; i < actorCount; i++) {
+            address borrower = IBaseHandler(_handler).actors(i);
+            (uint256 borrowerT0Debt, uint256 borrowerCollateral, ) = _pool.borrowerInfo(borrower);
+
+            uint256 weight = borrowerCollateral != 0 ? borrowerT0Debt ** 2 / borrowerCollateral : 0; 
+
+            manualDebt2ToCollateral += weight;
+        }
+
+        (,,, uint256 t0Debt2ToCollateral) = _pool.debtInfo();
+
+        require(t0Debt2ToCollateral == manualDebt2ToCollateral, "Incorrect debt2ToCollateral");
+        
     }
 
     // deposits at index i (Deposits.valueAt(i)) is equal to the accumulation of scaled values incremented or decremented from index i
