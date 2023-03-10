@@ -2,10 +2,7 @@
 
 pragma solidity 0.8.14;
 
-import '@std/Test.sol';
 import "@std/console.sol";
-
-import { TestBase } from './TestBase.sol';
 
 import {
     LENDER_MIN_BUCKET_INDEX,
@@ -17,7 +14,7 @@ import { LiquidationPoolHandler } from './handlers/LiquidationPoolHandler.sol';
 import { BasicInvariants }        from './BasicInvariants.t.sol';
 import { IBaseHandler }           from './interfaces/IBaseHandler.sol';
 
-contract LiquidationInvariant is BasicInvariants {
+contract LiquidationInvariants is BasicInvariants {
 
     /**************************************************************************************************************************************/
     /*** Invariant Tests                                                                                                                ***/
@@ -114,7 +111,7 @@ contract LiquidationInvariant is BasicInvariants {
 
             (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
 
-            if(kickTime != 0) borrowersKicked += 1;
+            if (kickTime != 0) borrowersKicked += 1;
         }
 
         require(borrowersKicked == totalAuction, "Incorrect borrowers in auction");

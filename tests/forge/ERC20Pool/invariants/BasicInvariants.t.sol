@@ -1,9 +1,7 @@
-
 // SPDX-License-Identifier: UNLICENSED
 
 pragma solidity 0.8.14;
 
-import '@std/Test.sol';
 import "@std/console.sol";
 
 import { Maths } from 'src/libraries/internal/Maths.sol';
@@ -15,11 +13,11 @@ import {
     BasicPoolHandler
 } from './handlers/BasicPoolHandler.sol';
 
-import { TestBase }     from './TestBase.sol';
+import { InvariantsTestBase }     from './base/InvariantsTestBase.sol';
 import { IBaseHandler } from './interfaces/IBaseHandler.sol';
 
 // contains invariants for the test
-contract BasicInvariants is TestBase {
+contract BasicInvariants is InvariantsTestBase {
 
     /**************************************************************************************************************************************/
     /*** Invariant Tests                                                                                                                ***/
@@ -229,9 +227,9 @@ contract BasicInvariants is TestBase {
                 uint256 previousExchangeRate = IBaseHandler(_handler).previousExchangeRate(bucketIndex);
 
                 console.log("======================================");
-                console.log("Bucket Index -->",           bucketIndex);
+                console.log("Bucket Index           -->", bucketIndex);
                 console.log("Previous exchange Rate -->", previousExchangeRate);
-                console.log("Current exchange Rate -->",  currentExchangeRate);
+                console.log("Current exchange Rate  -->", currentExchangeRate);
                 console.log("======================================");
 
                 requireWithinDiff(
@@ -288,7 +286,7 @@ contract BasicInvariants is TestBase {
     function invariant_total_interest_earned_I2() public useCurrentTimestamp {
         (, , , uint256 totalInterestEarned) = _pool.reservesInfo();
 
-        if(previousTotalInterestEarnedUpdate == block.number) {
+        if (previousTotalInterestEarnedUpdate == block.number) {
             require(
                 totalInterestEarned == previousTotalInterestEarned,
                 "Incorrect total interest earned"
@@ -303,7 +301,7 @@ contract BasicInvariants is TestBase {
     function invariant_inflator_I3() public useCurrentTimestamp {
         (uint256 currentInflator, uint256 currentInflatorUpdate) = _pool.inflatorInfo();
 
-        if(currentInflatorUpdate == previousInflatorUpdate) {
+        if (currentInflatorUpdate == previousInflatorUpdate) {
             require(currentInflator == previousInflator, "Incorrect inflator update");
         }
 
@@ -320,7 +318,7 @@ contract BasicInvariants is TestBase {
             (, , , uint256 depositAtIndex, ) = _pool.bucketInfo(bucketIndex);
 
             console.log("===================Bucket Index : ", bucketIndex, " ===================");
-            console.log("Deposit From Pool -->", depositAtIndex);
+            console.log("Deposit From Pool               -->", depositAtIndex);
             console.log("Deposit From local fenwick tree -->", IBaseHandler(_handler).fenwickSumAtIndex(bucketIndex));
             console.log("=========================================");
 
@@ -343,7 +341,7 @@ contract BasicInvariants is TestBase {
             depositTillIndex += depositAtIndex;
 
             console.log("===================Bucket Index : ", bucketIndex, " ===================");
-            console.log("Deposit From Pool -->", depositTillIndex);
+            console.log("Deposit From Pool               -->", depositTillIndex);
             console.log("Deposit From local fenwick tree -->", IBaseHandler(_handler).fenwickSumTillIndex(bucketIndex));
             console.log("=========================================");
 
@@ -363,12 +361,12 @@ contract BasicInvariants is TestBase {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             (, , , uint256 depositAtIndex, ) = _pool.bucketInfo(bucketIndex);
 
-            if(depositAtIndex != 0) {
+            if (depositAtIndex != 0) {
                 prefixSum += depositAtIndex;
                 uint256 bucketIndexFromDeposit = _pool.depositIndex(prefixSum);
 
                 console.log("===================Bucket Index : ", bucketIndex, " ===================");
-                console.log("Bucket Index from deposit-->", bucketIndexFromDeposit);
+                console.log("Bucket Index from deposit -->", bucketIndexFromDeposit);
                 console.log("=========================================");
 
                 require(bucketIndexFromDeposit >=  bucketIndex, "Incorrect bucket index");
@@ -390,13 +388,13 @@ contract BasicInvariants is TestBase {
                 uint256 prefixSumTillNextBucket = prefixSum + depositAtNextBucket;
 
                 console.log("============");
-                console.log("Deposit Index of presum -->", _pool.depositIndex(prefixSum));
-                console.log("Presum -->", prefixSum);
-                console.log("depositAtNextBucket ===>", depositAtNextBucket);
-                console.log("prefixSumTillNextBucket -->", prefixSumTillNextBucket);
+                console.log("Deposit Index of presum    -->", _pool.depositIndex(prefixSum));
+                console.log("Presum                     -->", prefixSum);
+                console.log("depositAtNextBucket       ===>", depositAtNextBucket);
+                console.log("prefixSumTillNextBucket    -->", prefixSumTillNextBucket);
                 console.log("nextBucketIndexWithDeposit -->", nextBucketIndexWithDeposit);
-                console.log("BucketIndex -->", bucketIndex);
-                console.log("Pool deposit Index -->", _pool.depositIndex(prefixSumTillNextBucket - depositAtNextBucket));
+                console.log("BucketIndex                -->", bucketIndex);
+                console.log("Pool deposit Index         -->", _pool.depositIndex(prefixSumTillNextBucket - depositAtNextBucket));
 
                 require(
                     bucketIndex == _pool.depositIndex(prefixSumTillNextBucket - depositAtNextBucket),

@@ -5,8 +5,6 @@ pragma solidity 0.8.14;
 import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 
 import '@std/Test.sol';
-import '@std/Vm.sol';
-import "@std/console.sol";
 
 import { ERC20Pool }        from 'src/ERC20Pool.sol';
 import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
@@ -18,8 +16,7 @@ import {
     MIN_PRICE
 }                           from 'src/libraries/helpers/PoolHelper.sol';
 
-import { Token }         from '../../../utils/Tokens.sol';
-import { InvariantTest } from '../InvariantTest.sol';
+import { Token } from '../../../utils/Tokens.sol';
 
 import 'src/libraries/internal/Maths.sol';
 import '../interfaces/ITestBase.sol';
@@ -30,7 +27,7 @@ uint256 constant LENDER_MAX_BUCKET_INDEX = 2572;
 uint256 constant BORROWER_MIN_BUCKET_INDEX = 2600;
 uint256 constant BORROWER_MAX_BUCKET_INDEX = 2620;
 
-contract BaseHandler is InvariantTest, Test {
+abstract contract BaseHandler is Test {
 
     // Tokens
     Token internal _quote;
@@ -70,10 +67,10 @@ contract BaseHandler is InvariantTest, Test {
     uint256 public drawDebtIncreaseInReserve;  // amount of reserve increase after draw debt as origination fee
 
     // auctions invariant test state
-    bool public isKickerRewarded;                 // kicker is penalized or rewarded after take
-    uint256 public kickerBondChange;              // amount of kicker penalty/reward
-    bool public firstTake;                        // if take is called on auction first time
-    mapping(address => bool) public alreadyTaken; // mapping borrower address to true if auction taken atleast once
+    bool                     public isKickerRewarded; // kicker is penalized or rewarded after take
+    uint256                  public kickerBondChange; // amount of kicker penalty/reward
+    bool                     public firstTake;        // if take is called on auction first time
+    mapping(address => bool) public alreadyTaken;     // mapping borrower address to true if auction taken atleast once
 
     constructor(
         address pool_,

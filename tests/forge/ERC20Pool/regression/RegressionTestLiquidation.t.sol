@@ -2,15 +2,12 @@
 
 pragma solidity 0.8.14;
 
-import { LiquidationInvariant }            from "../invariants/LiquidationInvariant.t.sol";
+import { LiquidationInvariants } from "../invariants/LiquidationInvariants.t.sol";
 
-import '@std/console.sol';
-
-contract RegressionTestLiquidation is LiquidationInvariant { 
+contract RegressionTestLiquidation is LiquidationInvariants { 
 
     function setUp() public override { 
         super.setUp();
-
     }
 
     function test_regression_quote_token() external {
