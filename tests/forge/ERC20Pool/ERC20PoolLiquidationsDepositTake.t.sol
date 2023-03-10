@@ -4,7 +4,6 @@ pragma solidity 0.8.14;
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
 import 'src/ERC20Pool.sol';
-import 'src/interfaces/pool/commons/IPoolErrors.sol';
 import 'src/libraries/helpers/PoolHelper.sol';
 
 contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
@@ -711,47 +710,82 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
 
 contract ERC20PoolLiquidationsDepositTakeRegressionTest is ERC20HelperContract {
 
-    function testDepositTakeCollateralCalculatedAsZero() external {
-        address actor0 = makeAddr("actor0");
-        _mintQuoteAndApproveTokens(actor0, type(uint256).max);
-        _mintCollateralAndApproveTokens(actor0, type(uint256).max);
+    function testDepositTakeOnAuctionPriceZero() external {
+        // initialize kicker to be rewarded after bucket take
+        address actor1 = makeAddr("actor1");
+        _mintQuoteAndApproveTokens(actor1, type(uint256).max);
+        _mintCollateralAndApproveTokens(actor1, type(uint256).max);
 
+        // initialize borrower to be kicked and take
         address actor2 = makeAddr("actor2");
         _mintQuoteAndApproveTokens(actor2, type(uint256).max);
         _mintCollateralAndApproveTokens(actor2, type(uint256).max);
 
-        address actor3 = makeAddr("actor3");
-        _mintQuoteAndApproveTokens(actor3, type(uint256).max);
-        _mintCollateralAndApproveTokens(actor3, type(uint256).max);
+        // initialize taker
+        address actor4 = makeAddr("actor4");
+        _mintQuoteAndApproveTokens(actor4, type(uint256).max);
+        _mintCollateralAndApproveTokens(actor4, type(uint256).max);
 
-        changePrank(actor0);
-        _pool.addQuoteToken(1927834830600.755456044194881800 * 1e18, 2572, block.timestamp + 100);
+        _addInitialLiquidity({
+            from:   actor2,
+            amount: 1_791_670_358_647.909977170293982862 * 1e18,
+            index:  2572
+        });
         _pool.updateInterest();
-        ERC20Pool(address(_pool)).drawDebt(actor0, 963917415300.377728022097440900 * 1e18, 7388, 359048665.215178534787974447 * 1e18);
+        _drawDebtNoLupCheck({
+            from:               actor2,
+            borrower:           actor2,
+            amountToBorrow:     895_835_179_323.954988585146991431 * 1e18,
+            limitIndex:         7388,
+            collateralToPledge: 333_688_779.021420071719646593 * 1e18
+        });
+        // skip to make loan undercollateralized
         skip(100 days);
 
-        changePrank(actor2);
+        // kicker kicks undercollateralized loan
+        changePrank(actor1);
         _pool.updateInterest();
-        _pool.kick(actor0, 7388);
-        skip(5 days);
+        _pool.kick(actor2, 7388);
+        skip(100 days);
 
-        changePrank(actor3);
+        changePrank(actor4);
         _pool.updateInterest();
-        _pool.addQuoteToken(3, 2571, block.timestamp + 100);
 
-        (uint256 bucketLps, uint256 collateral, , uint256 deposit, ) = _pool.bucketInfo(2571);
-        assertEq(bucketLps, 3);
-        assertEq(collateral, 0);
-        assertEq(deposit, 3); // tiny deposit that cannot cover one unit of collateral, collateral to take will be calculated as 0
+        // assert auction before bucket take, enough time passed so auction price is zero
+        _assertAuction(
+            AuctionParams({
+                borrower:          actor2,
+                active:            true,
+                kicker:            actor1,
+                bondSize:          9_090_645_929.673616432967467261 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          _startTime + 100 days,
+                kickMomp:          2_697.999235705754194133 * 1e18,
+                totalBondEscrowed: 9_090_645_929.673616432967467261 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     930_695_454_793.486423224879367583 * 1e18,
+                thresholdPrice:    2_789.112230632554291586 * 1e18,
+                neutralPrice:      2_860.503207254858101199 * 1e18
+            })
+        ); 
 
-        changePrank(actor2);
-        _pool.updateInterest();
-        vm.expectRevert(IPoolErrors.InsufficientLiquidity.selector);
-        _pool.bucketTake(actor0, true, 2571);
+        // assert kicker balances in bucket before bucket take auction with auction price zero
+        _assertLenderLpBalance({
+            lender:      actor1,
+            index:       2572,
+            lpBalance:   0,
+            depositTime: 0
+        });
 
-        (bucketLps, collateral, , deposit, ) = _pool.bucketInfo(2571);
-        assertEq(bucketLps, 3);
-        assertEq(collateral, 0);
-        assertEq(deposit, 3);
+        ERC20Pool(address(_pool)).bucketTake(actor2, false, 2572);
+
+        // assert kicker balances in bucket after take
+        // deposit time should remain the same since auction price was zero / kicker reward is zero
+        _assertLenderLpBalance({
+            lender:      actor1,
+            index:       2572,
+            lpBalance:   0,
+            depositTime: 0
+        });
     }
 }

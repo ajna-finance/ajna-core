@@ -65,7 +65,7 @@ library Buckets {
 
     /**
      *  @notice Add amount of LPs for a given lender in a given bucket.
-     *  @dev    Increments bucket.collateral and bucket.lps accumulator state.
+     *  @dev    Increments lender lps accumulator and updates the deposit time.
      *  @param  bucket_         Bucket to record lender LPs.
      *  @param  bankruptcyTime_ Time when bucket become insolvent.
      *  @param  lender_         Lender address to add LPs for in the given bucket.
