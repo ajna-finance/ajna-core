@@ -105,15 +105,18 @@ library Auctions {
         uint256 redeemedLPs;              // [WAD] LPs used by kick action
     }
     struct SettleLocalVars {
-        uint256 collateralUsed;    // [WAD] collateral used to settle debt
-        uint256 debt;              // [WAD] debt to settle
-        uint256 depositToRemove;   // [WAD] deposit used by settle auction
-        uint256 index;             // index of settling bucket
-        uint256 maxSettleableDebt; // [WAD] max amount that can be settled with existing collateral
-        uint256 price;             // [WAD] price of settling bucket
-        uint256 scaledDeposit;     // [WAD] scaled amount of quote tokens in bucket
-        uint256 scale;             // [WAD] scale of settling bucket
-        uint256 unscaledDeposit;   // [WAD] unscaled amount of quote tokens in bucket
+        uint256 collateralUsed;     // [WAD] collateral used to settle debt
+        uint256 debt;               // [WAD] debt to settle
+        uint256 depositToRemove;    // [WAD] deposit used by settle auction
+        uint256 hpbCollateral;      // [WAD] amount of collateral in HPB bucket
+        uint256 hpbUnscaledDeposit; // [WAD] unscaled amount of of quote tokens in HPB bucket before settle
+        uint256 hpbLPs;             // [WAD] amount of LPs in HPB bucket
+        uint256 index;              // index of settling bucket
+        uint256 maxSettleableDebt;  // [WAD] max amount that can be settled with existing collateral
+        uint256 price;              // [WAD] price of settling bucket
+        uint256 scaledDeposit;      // [WAD] scaled amount of quote tokens in bucket
+        uint256 scale;              // [WAD] scale of settling bucket
+        uint256 unscaledDeposit;    // [WAD] unscaled amount of quote tokens in bucket
     }
     struct TakeLocalVars {
         uint256 auctionPrice;             // [WAD] The price of auction.
@@ -217,44 +220,64 @@ library Auctions {
             SettleLocalVars memory vars;
 
             (vars.index, , vars.scale) = Deposits.findIndexAndSumOfSum(deposits_, 1);
-            vars.unscaledDeposit = Deposits.unscaledValueAt(deposits_, vars.index);
-            vars.price           = _priceAt(vars.index);
+            vars.hpbUnscaledDeposit = Deposits.unscaledValueAt(deposits_, vars.index);
+            vars.unscaledDeposit    = vars.hpbUnscaledDeposit;
+            vars.price              = _priceAt(vars.index);
 
             if (vars.unscaledDeposit != 0) {
-                vars.debt              = Maths.wmul(borrower.t0Debt, params_.inflator);       // current debt to be settled
-                vars.maxSettleableDebt = Maths.wmul(borrower.collateral, vars.price);         // max debt that can be settled with existing collateral
+                vars.debt              = Maths.wmul(borrower.t0Debt, params_.inflator); // current debt to be settled
+                vars.maxSettleableDebt = Maths.wmul(borrower.collateral, vars.price);   // max debt that can be settled with existing collateral
                 vars.scaledDeposit     = Maths.wmul(vars.scale, vars.unscaledDeposit);
 
                 // enough deposit in bucket and collateral avail to settle entire debt
                 if (vars.scaledDeposit >= vars.debt && vars.maxSettleableDebt >= vars.debt) {
-                    borrower.t0Debt      = 0;                                                 // no remaining debt to settle
-
-                    vars.unscaledDeposit = Maths.wdiv(vars.debt, vars.scale);                 // remove only what's needed to settle the debt
+                    // remove only what's needed to settle the debt
+                    vars.unscaledDeposit = Maths.wdiv(vars.debt, vars.scale);
                     vars.collateralUsed  = Maths.wdiv(vars.debt, vars.price);
-                }
 
+                    // settle the entire debt
+                    borrower.t0Debt = 0;
+                }
                 // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
                 else if (vars.maxSettleableDebt >= vars.scaledDeposit) {
-                    borrower.t0Debt     -= Maths.wdiv(vars.scaledDeposit, params_.inflator);  // subtract from debt the corresponding t0 amount of deposit
-
                     vars.collateralUsed = Maths.wdiv(vars.scaledDeposit, vars.price);
-                } 
 
+                    // subtract from debt the corresponding t0 amount of deposit
+                    borrower.t0Debt -= Maths.wdiv(vars.scaledDeposit, params_.inflator);
+                }
                 // settle constrained by collateral available
                 else {
-                    borrower.t0Debt      -= Maths.wdiv(vars.maxSettleableDebt, params_.inflator);
-
                     vars.unscaledDeposit = Maths.wdiv(vars.maxSettleableDebt, vars.scale);
                     vars.collateralUsed  = borrower.collateral;
+
+                    borrower.t0Debt -= Maths.wdiv(vars.maxSettleableDebt, params_.inflator);
                 }
 
-                borrower.collateral             -= vars.collateralUsed;               // move settled collateral from loan into bucket
-                buckets_[vars.index].collateral += vars.collateralUsed;
+                // remove settled collateral from loan
+                borrower.collateral -= vars.collateralUsed;
 
-                Deposits.unscaledRemove(deposits_, vars.index, vars.unscaledDeposit); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
-            }
+                Bucket storage hpb = buckets_[vars.index];
+                vars.hpbLPs        = hpb.lps;
+                vars.hpbCollateral = hpb.collateral + vars.collateralUsed;
 
-            else {
+                // set amount to remove as min of calculated amount and available deposit (to prevent rounding issues)
+                vars.unscaledDeposit    = Maths.min(vars.hpbUnscaledDeposit, vars.unscaledDeposit);
+                vars.hpbUnscaledDeposit -= vars.unscaledDeposit;
+
+                // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
+                Deposits.unscaledRemove(deposits_, vars.index, vars.unscaledDeposit);
+
+                // check if bucket healthy - set bankruptcy if collateral is 0 and entire deposit was used to settle and there's still LPs
+                if (vars.hpbCollateral == 0 && vars.hpbUnscaledDeposit == 0 && vars.hpbLPs != 0) {
+                    emit BucketBankruptcy(vars.index, vars.hpbLPs);
+                    hpb.lps            = 0;
+                    hpb.bankruptcyTime = block.timestamp;
+                } else {
+                    // add settled collateral into bucket
+                    hpb.collateral = vars.hpbCollateral;
+                }
+
+            } else {
                 // Deposits in the tree is zero, insert entire collateral into lowest bucket 7388
                 Buckets.addCollateral(
                     buckets_[vars.index],

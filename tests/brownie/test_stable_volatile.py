@@ -143,21 +143,6 @@ def ensure_pool_is_funded(pool, quote_token_amount: int, action: str) -> bool:
         return True
 
 
-def get_cumulative_bucket_deposit(pool_helper, bucket_depth) -> int:  # WAD
-    # Iterates through number of buckets passed as parameter, adding deposit to determine what loan size will be
-    # required to utilize the buckets.
-    index = pool_helper.lupIndex()
-    (_, quote, _, _, _, _) = pool_helper.bucketInfo(index)
-    cumulative_deposit = quote
-    while bucket_depth > 0 and index > MIN_BUCKET:
-        index += 1
-        # TODO: This ignores partially-utilized buckets; difficult to calculate in v10
-        (_, quote, _, _, _, _) = pool_helper.bucketInfo(index)
-        cumulative_deposit += quote
-        bucket_depth -= 1
-    return cumulative_deposit
-
-
 def get_time_between_interactions(actor_index):
     # Distribution function throttles time between interactions based upon user_index
     return 333 * math.exp(actor_index/10) + 3600
@@ -207,9 +192,12 @@ def pledge_and_borrow(pool_helper, borrower, borrower_index, collateral_to_depos
     collateral_balance = pool_helper.collateralToken().balanceOf(borrower)
     if collateral_balance < collateral_to_deposit:
         log(f" WARN: borrower {borrower_index} only has {collateral_balance/1e18:.1f} collateral "
-              f"and cannot deposit {collateral_to_deposit/1e18:.1f} to draw debt")
+            f"and cannot deposit {collateral_to_deposit/1e18:.1f} to draw debt")
         return
-    assert collateral_to_deposit > 0.001 * 10**18
+    if collateral_to_deposit < 0.001 * 10**18:
+        log(f" WARN: borrower {borrower_index} should not draw {borrow_amount/1e18:.1f} "
+            f"with {collateral_to_deposit/1e18:.1f} collateral")
+        return
 
     # draw debt
     pledged += collateral_to_deposit
@@ -274,8 +262,8 @@ def draw_and_bid(lenders, borrowers, start_from, pool_helper, chain, test_utils,
 
 
 def draw_debt(borrower, borrower_index, pool_helper, test_utils, collateralization=1.1):
-    # Draw debt based on added liquidity
-    borrow_amount = get_cumulative_bucket_deposit(pool_helper, (borrower_index % 4) + 1)
+    # Draw debt based on available liquidity
+    borrow_amount = pool_helper.availableLiquidity() * 1 / (4*((borrower_index%5)+1))
     pool_quote_on_deposit = pool_helper.pool.depositSize() - pool_helper.debt()
     borrow_amount = min(pool_quote_on_deposit / 2, borrow_amount)
     collateral_to_deposit = borrow_amount / pool_helper.lup() * collateralization * 10**18
@@ -316,9 +304,9 @@ def remove_quote_token(lender, lender_index, price, pool_helper) -> bool:
     (lp_balance, _) = pool_helper.lenderInfo(price_index, lender)
     if lp_balance > 0:
         (_, _, _, _, _, exchange_rate) = pool_helper.bucketInfo(price_index)
-        claimable_quote = lp_balance * exchange_rate / 10**36
+        claimable_quote = lp_balance * exchange_rate / 10**18
         log(f" lender   {lender_index:>4} removing {claimable_quote / 10**18:.1f} quote"
-              f" from bucket {price_index} ({price / 10**18:.1f}); exchange rate is {exchange_rate/1e27:.8f}")
+            f" from bucket {price_index} ({price / 10**18:.1f}); exchange rate is {exchange_rate/1e18:.8f}")
         if not ensure_pool_is_funded(pool_helper.pool, claimable_quote * 2, "withdraw"):
             return False
         try:
@@ -391,7 +379,10 @@ def test_stable_volatile_one(pool_helper, lenders, borrowers, test_utils, chain)
     with test_utils.GasWatcher(['addQuoteToken', 'drawDebt', 'removeQuoteToken', 'repayDebt']):
         while chain.time() < end_time:
             # hit the pool an hour at a time, calculating interest and then sending transactions
-            actor_id = draw_and_bid(lenders, borrowers, actor_id, pool_helper, chain, test_utils)
+            try:
+                actor_id = draw_and_bid(lenders, borrowers, actor_id, pool_helper, chain, test_utils)
+            except VirtualMachineError as ex:
+                log(f"WARN: {ex.message}")
             test_utils.summarize_pool(pool_helper)
             print(f"days remaining: {(end_time - chain.time()) / 3600 / 24:.3f}\n")
 

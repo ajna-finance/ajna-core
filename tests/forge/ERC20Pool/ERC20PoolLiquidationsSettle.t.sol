@@ -4,6 +4,7 @@ pragma solidity 0.8.14;
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
 import 'src/ERC20Pool.sol';
+import 'src/interfaces/pool/commons/IPoolEvents.sol';
 
 contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
@@ -882,5 +883,72 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             exchangeRate: 1 * 1e18
         });
     }
+}
 
+contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
+
+    function testSettleAndBankruptcyOnHPBWithTinyDeposit() external {
+        address actor1 = makeAddr("actor1");
+        _mintQuoteAndApproveTokens(actor1, type(uint256).max);
+        _mintCollateralAndApproveTokens(actor1, type(uint256).max);
+
+        address actor2 = makeAddr("actor2");
+        _mintQuoteAndApproveTokens(actor2,  type(uint256).max);
+        _mintCollateralAndApproveTokens(actor2, type(uint256).max);
+
+        address actor3 = makeAddr("actor1");
+        _mintQuoteAndApproveTokens(actor3, type(uint256).max);
+        _mintCollateralAndApproveTokens(actor3, type(uint256).max);
+
+        address actor6 = makeAddr("actor6");
+        _mintQuoteAndApproveTokens(actor6, type(uint256).max);
+        _mintCollateralAndApproveTokens(actor6, type(uint256).max);
+
+        address actor8 = makeAddr("actor8");
+        _mintQuoteAndApproveTokens(actor8, type(uint256).max);
+        _mintCollateralAndApproveTokens(actor8, type(uint256).max);
+
+        changePrank(actor6);
+        _pool.addQuoteToken(2_000_000 * 1e18, 2572, block.timestamp + 100);
+        skip(100 days);
+        ERC20Pool(address(_pool)).drawDebt(actor6, 1000000 * 1e18, 7388, 372.489032271806320214 * 1e18);
+        skip(100 days);
+
+        changePrank(actor1);
+        _pool.updateInterest();
+        _pool.kick(actor6, 7388);
+        skip(100 hours);
+        ERC20Pool(address(_pool)).drawDebt(actor1, 1000000 * 1e18, 7388, 10066231386838.450530455239517417 * 1e18);
+        skip(100 days);
+
+        changePrank(actor2);
+        _pool.updateInterest();
+        _pool.kick(actor1, 7388);
+        skip(10 days);
+
+        changePrank(actor3);
+        _pool.addQuoteToken(2, 2571, block.timestamp + 100);
+
+        (uint256 bucketLps, uint256 collateral, , uint256 deposit, ) = _pool.bucketInfo(2571);
+        assertEq(bucketLps, 2);
+        assertEq(collateral, 0);
+        assertEq(deposit, 2);
+        (uint256 borrowerDebt, uint256 borrowerCollateral, ) = _pool.borrowerInfo(actor1);
+        assertEq(borrowerDebt, 987909.179343464530923023 * 1e18);
+        assertEq(borrowerCollateral, 10066231386838.450530455239517417 * 1e18);
+
+        changePrank(actor8);
+        _pool.updateInterest();
+        vm.expectEmit(true, true, false, true);
+        emit BucketBankruptcy(2571, 2);
+        ERC20Pool(address(_pool)).settle(actor1, 1);
+
+        (bucketLps, collateral, , deposit, ) = _pool.bucketInfo(2571);
+        assertEq(bucketLps, 0); // entire LPs removed from bucket 2571
+        assertEq(collateral, 0); // no collateral added in bucket 2571
+        assertEq(deposit, 0); // entire deposit from bucket 2571 used to settle
+        (borrowerDebt, borrowerCollateral, ) = _pool.borrowerInfo(actor1);
+        assertEq(borrowerDebt, 987909.179343464530923021 * 1e18); // decreased with 2
+        assertEq(borrowerCollateral, 10066231386838.450530455239517417 * 1e18); // same as before settle
+    }
 }
