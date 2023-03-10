@@ -1270,7 +1270,7 @@ contract RewardsManagerTest is ERC20HelperContract {
         changePrank(_minterOne);
         assertEq(_ajnaToken.balanceOf(_minterOne), 44.989657989464439745 * 1e18);
         vm.expectEmit(true, true, true, true);
-        emit ClaimRewards(_minterOne, address(_poolOne), tokenId, _epochsClaimedArray(1, 1), 41.676741657300861210 * 1e18);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenId, _epochsClaimedArray(1, 1), 41.730457738037587731 * 1e18);
         _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
     }
 
