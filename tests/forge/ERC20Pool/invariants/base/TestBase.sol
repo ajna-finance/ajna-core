@@ -8,10 +8,10 @@ import { ERC20Pool }        from 'src/ERC20Pool.sol';
 import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
 import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
 
-import { Token }             from '../../../utils/Tokens.sol';
-import { InvariantTestBase } from './InvariantTestBase.sol';
+import { Token }              from '../../../utils/Tokens.sol';
+import { InvariantsTestBase } from './InvariantsTestBase.sol';
 
-abstract contract TestBase is InvariantTestBase, Test {
+abstract contract TestBase is InvariantsTestBase, Test {
 
     // Mainnet ajna address
     address internal _ajna = 0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079;
