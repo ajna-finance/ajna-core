@@ -80,4 +80,10 @@ contract RegressionTestLiquidation is LiquidationInvariants {
 
         invariant_Bucket_deposit_time_B5();
     }
+
+    function test_regression_invariant_fenwick_depositAtIndex_F1() external {
+        _liquidationPoolHandler.moveQuoteToken(4058, 2725046678043704335543997294802562, 16226066, 4284);
+
+        invariant_fenwick_depositAtIndex_F1();
+    }
 }

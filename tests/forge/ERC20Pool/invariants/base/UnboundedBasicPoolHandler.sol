@@ -161,28 +161,16 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         uint256 availableDeposit = _poolInfo.lpsToQuoteTokens(address(_pool), lps, fromIndex_);
         amount_ = Maths.min(amount_, availableDeposit);
 
-        (uint256 poolDebt, , ) = _pool.debtInfo();
-
-        uint256 lupIndex = _pool.depositIndex(poolDebt + amount_);
-
         try _pool.moveQuoteToken(
             amount_,
             fromIndex_,
             toIndex_,
             block.timestamp + 1 minutes
         ) returns (uint256, uint256, uint256 movedAmount) {
+            // remove initial amount from index
+            _fenwickRemove(amount_, fromIndex_);
 
-            _fenwickRemove(movedAmount, fromIndex_);
-
-            // deposit fee is charged if deposit is moved from above the lup to below the lup
-            if (fromIndex_ <= lupIndex && toIndex_ > lupIndex) {
-                (uint256 interestRate, ) = _pool.interestRateInfo();
-                movedAmount = Maths.wmul(
-                    movedAmount,
-                    1e18 - Maths.wdiv(interestRate, 365 * 1e18)
-                );
-            }
-
+            // add moved amount to index (could be subject of deposit fee penalty)
             _fenwickAdd(movedAmount, toIndex_);
 
             (, uint256 fromBucketDepositTime) = _pool.lenderInfo(fromIndex_, _actor);
