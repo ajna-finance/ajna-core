@@ -4,6 +4,7 @@ pragma solidity 0.8.14;
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
 import 'src/ERC20Pool.sol';
+import 'src/interfaces/pool/commons/IPoolErrors.sol';
 import 'src/libraries/helpers/PoolHelper.sol';
 
 contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
@@ -657,8 +658,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             from:     _lender,
             borrower: _borrower,
             index:    _i9_91
-        }
-);
+        });
 
         skip(2.5 hours);
 
@@ -787,6 +787,80 @@ contract ERC20PoolLiquidationsDepositTakeRegressionTest is ERC20HelperContract {
             index:       2572,
             lpBalance:   0,
             depositTime: 0
+        });
+    }
+
+    function testDepositTakeRevertOnCollateralCalculatedAsZero() external {
+        // initialize borrower to be kicked and take
+        address actor0 = makeAddr("actor0");
+        _mintQuoteAndApproveTokens(actor0, type(uint256).max);
+        _mintCollateralAndApproveTokens(actor0, type(uint256).max);
+
+        // initialize kicker to be rewarded after bucket take
+        address actor2 = makeAddr("actor2");
+        _mintQuoteAndApproveTokens(actor2, type(uint256).max);
+        _mintCollateralAndApproveTokens(actor2, type(uint256).max);
+
+        // initialize taker
+        address actor3 = makeAddr("actor3");
+        _mintQuoteAndApproveTokens(actor3, type(uint256).max);
+        _mintCollateralAndApproveTokens(actor3, type(uint256).max);
+
+        changePrank(actor0);
+        _addInitialLiquidity({
+            from:   actor0,
+            amount: 1_927_834_830_600.755456044194881800 * 1e18,
+            index:  2572
+        });
+        _pool.updateInterest();
+        _drawDebtNoLupCheck({
+            from:               actor0,
+            borrower:           actor0,
+            amountToBorrow:     963_917_415_300.377728022097440900 * 1e18,
+            limitIndex:         7388,
+            collateralToPledge: 359_048_665.215178534787974447 * 1e18
+        });
+        // skip to make loan undercollateralized
+        skip(100 days);
+
+        // kicker kicks undercollateralized loan
+        changePrank(actor2);
+        _pool.updateInterest();
+        _pool.kick(actor0, 7388);
+        skip(5 days);
+
+        changePrank(actor3);
+        _pool.updateInterest();
+        // taker adds a tiny amount of quote token in bucket to take
+        _addLiquidityNoEventCheck({
+            from:   actor3,
+            amount: 3,
+            index:  2571
+        });
+
+        // assert bucket before take
+        _assertBucket({
+            index:        2571,
+            lpBalance:    3,
+            collateral:   0,
+            deposit:      3, // tiny deposit that cannot cover one unit of collateral, collateral to take will be calculated as 0
+            exchangeRate: 1 * 1e18
+        });
+
+        changePrank(actor2);
+        _pool.updateInterest();
+
+        // bucket take with bucket 2571 should revert as deposit of 3 cannot cover at least one unit of collateral
+        vm.expectRevert(IPoolErrors.InsufficientLiquidity.selector);
+        _pool.bucketTake(actor0, true, 2571);
+
+        // assert bucket after take
+        _assertBucket({
+            index:        2571,
+            lpBalance:    3,
+            collateral:   0,
+            deposit:      3,
+            exchangeRate: 1 * 1e18
         });
     }
 }
