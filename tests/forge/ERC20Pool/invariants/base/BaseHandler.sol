@@ -180,6 +180,45 @@ abstract contract BaseHandler is Test {
         _pool.updateInterest();
     }
 
+    /**
+     * @dev Ensure that error is an Pool expected error.
+     */
+    function _ensurePoolError(bytes memory err_) internal pure {
+        bytes32 err = keccak256(err_);
+
+        require(
+            err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
+            err == keccak256(abi.encodeWithSignature("BucketBankruptcyBlock()")) ||
+            err == keccak256(abi.encodeWithSignature("LUPBelowHTP()")) ||
+            err == keccak256(abi.encodeWithSignature("InsufficientLiquidity()")) ||
+            err == keccak256(abi.encodeWithSignature("RemoveDepositLockedByAuctionDebt()")) ||
+            err == keccak256(abi.encodeWithSignature("NoClaim()")) ||
+            err == keccak256(abi.encodeWithSignature("MoveToSameIndex()")) ||
+            err == keccak256(abi.encodeWithSignature("DustAmountNotExceeded()")) ||
+            err == keccak256(abi.encodeWithSignature("InvalidIndex()")) ||
+            err == keccak256(abi.encodeWithSignature("InsufficientLPs()")) || 
+            err == keccak256(abi.encodeWithSignature("AuctionNotCleared()")) ||
+            err == keccak256(abi.encodeWithSignature("TransferorNotApproved()")) ||
+            err == keccak256(abi.encodeWithSignature("TransferToSameOwner()")) ||
+            err == keccak256(abi.encodeWithSignature("NoAllowance()")) ||
+            err == keccak256(abi.encodeWithSignature("InsufficientCollateral()")) ||
+            err == keccak256(abi.encodeWithSignature("AuctionActive()")) ||
+            err == keccak256(abi.encodeWithSignature("BorrowerUnderCollateralized()")) ||
+            err == keccak256(abi.encodeWithSignature("NoDebt()")) ||
+            err == keccak256(abi.encodeWithSignature("AmountLTMinDebt()")) ||
+            err == keccak256(abi.encodeWithSignature("BorrowerOk()")) ||
+            err == keccak256(abi.encodeWithSignature("LimitIndexExceeded()")) ||
+            err == keccak256(abi.encodeWithSignature("PriceBelowLUP()")) ||
+            err == keccak256(abi.encodeWithSignature("NoAuction()")) ||
+            err == keccak256(abi.encodeWithSignature("TakeNotPastCooldown()")) ||
+            err == keccak256(abi.encodeWithSignature("AuctionPriceGtBucketPrice()")) ||
+            err == keccak256(abi.encodeWithSignature("AuctionNotClearable()")) ||
+            err == keccak256(abi.encodeWithSignature("ReserveAuctionTooSoon()")) ||
+            err == keccak256(abi.encodeWithSignature("NoReserves()")) ||
+            err == keccak256(abi.encodeWithSignature("NoReservesAuction()"))
+        );
+    }
+
     /**************************************/
     /*** Exchange Rate Helper Functions ***/
     /**************************************/

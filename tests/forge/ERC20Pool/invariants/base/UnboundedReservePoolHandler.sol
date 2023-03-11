@@ -29,14 +29,10 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
             _updateCurrentReserves();
             _updateCurrentExchangeRate();
 
-        } catch (bytes memory _err){
+        } catch (bytes memory err) {
             _resetReservesAndExchangeRate();
 
-            bytes32 err = keccak256(_err);
-            require(
-                err == keccak256(abi.encodeWithSignature("ReserveAuctionTooSoon()")) ||
-                err == keccak256(abi.encodeWithSignature("NoReserves()"))
-            );
+            _ensurePoolError(err);
         }
     }
 
@@ -70,14 +66,10 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
             _updateCurrentReserves();
             _updateCurrentExchangeRate();
 
-        } catch (bytes memory _err){
+        } catch (bytes memory err) {
             _resetReservesAndExchangeRate();
 
-            bytes32 err = keccak256(_err);
-            require(
-                err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
-                err == keccak256(abi.encodeWithSignature("NoReservesAuction()"))
-            );
+            _ensurePoolError(err);
         }
     }
 }

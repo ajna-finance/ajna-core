@@ -74,14 +74,10 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             (uint256 lpBalanceAfter, ) = _pool.lenderInfo(bucketIndex_, _actor);
             require(lpBalanceAfter > lpBalanceBefore, "LP balance should increase");
 
-        } catch (bytes memory _err) {
+        } catch (bytes memory err) {
             _resetReservesAndExchangeRate();
 
-            bytes32 err = keccak256(_err);
-            require(
-                err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
-                err == keccak256(abi.encodeWithSignature("BucketBankruptcyBlock()"))
-            );
+            _ensurePoolError(err);
         }
 
         // skip some time to avoid early withdraw penalty
@@ -124,16 +120,10 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             (uint256 lpBalanceAfter, ) = _pool.lenderInfo(bucketIndex_, _actor);
             require(lpBalanceAfter < lpBalanceBefore, "LP balance should decrease");
 
-        } catch (bytes memory _err){
+        } catch (bytes memory err) {
             _resetReservesAndExchangeRate();
 
-            bytes32 err = keccak256(_err);
-            require(
-                err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
-                err == keccak256(abi.encodeWithSignature("LUPBelowHTP()")) ||
-                err == keccak256(abi.encodeWithSignature("InsufficientLiquidity()")) ||
-                err == keccak256(abi.encodeWithSignature("RemoveDepositLockedByAuctionDebt()")) ||
-                err == keccak256(abi.encodeWithSignature("NoClaim()")));
+            _ensurePoolError(err);
         }
     }
 
@@ -166,12 +156,12 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             fromIndex_,
             toIndex_,
             block.timestamp + 1 minutes
-        ) returns (uint256, uint256, uint256 movedAmount) {
+        ) returns (uint256, uint256, uint256 movedAmount_) {
             // remove initial amount from index
             _fenwickRemove(amount_, fromIndex_);
 
             // add moved amount to index (could be subject of deposit fee penalty)
-            _fenwickAdd(movedAmount, toIndex_);
+            _fenwickAdd(movedAmount_, toIndex_);
 
             (, uint256 fromBucketDepositTime) = _pool.lenderInfo(fromIndex_, _actor);
             (, uint256 toBucketDepositTime)   = _pool.lenderInfo(toIndex_,    _actor);
@@ -185,20 +175,10 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             _updateCurrentExchangeRate();
             _updateCurrentReserves();
 
-        } catch (bytes memory _err){
+        } catch (bytes memory err) {
             _resetReservesAndExchangeRate();
 
-            bytes32 err = keccak256(_err);
-            require(
-                err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
-                err == keccak256(abi.encodeWithSignature("LUPBelowHTP()")) ||
-                err == keccak256(abi.encodeWithSignature("InsufficientLiquidity()")) ||
-                err == keccak256(abi.encodeWithSignature("MoveToSameIndex()")) ||
-                err == keccak256(abi.encodeWithSignature("DustAmountNotExceeded()")) ||
-                err == keccak256(abi.encodeWithSignature("InvalidIndex()")) ||
-                err == keccak256(abi.encodeWithSignature("RemoveDepositLockedByAuctionDebt()")) ||
-                err == keccak256(abi.encodeWithSignature("BucketBankruptcyBlock()"))
-            );
+            _ensurePoolError(err);
         }
     }
 
@@ -266,15 +246,10 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             (uint256 lpBalanceAfter, ) = _pool.lenderInfo(bucketIndex_, _actor);
             require(lpBalanceAfter < lpBalanceBefore, "LP balance should decrease");
 
-        } catch (bytes memory _err){
+        } catch (bytes memory err) {
             _resetReservesAndExchangeRate();
 
-            bytes32 err = keccak256(_err);
-            require(
-                err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
-                err == keccak256(abi.encodeWithSignature("InsufficientLPs()")) || 
-                err == keccak256(abi.encodeWithSignature("AuctionNotCleared()"))
-            );
+            _ensurePoolError(err);
         }
     }
 
@@ -325,16 +300,10 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             // receiver's deposit time updates when receiver receives lps
             lenderDepositTime[receiver_][bucketIndex_] = Maths.max(senderDepositTime, receiverDepositTime);
 
-        } catch (bytes memory _err) {
+        } catch (bytes memory err) {
             _resetReservesAndExchangeRate();
 
-            bytes32 err = keccak256(_err);
-            require(
-                err == keccak256(abi.encodeWithSignature("TransferorNotApproved()")) ||
-                err == keccak256(abi.encodeWithSignature("TransferToSameOwner()")) ||
-                err == keccak256(abi.encodeWithSignature("InvalidIndex()")) ||
-                err == keccak256(abi.encodeWithSignature("NoAllowance()"))
-            );
+            _ensurePoolError(err);
         }
     }
 
@@ -382,15 +351,10 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             _updateCurrentExchangeRate();
             _updateCurrentReserves();
 
-        } catch (bytes memory _err){
+        } catch (bytes memory err) {
             _resetReservesAndExchangeRate();
 
-            bytes32 err = keccak256(_err);
-            require(
-                err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
-                err == keccak256(abi.encodeWithSignature("InsufficientCollateral()")) ||
-                err == keccak256(abi.encodeWithSignature("AuctionActive()"))
-            );
+            _ensurePoolError(err);
         }
     }
  
@@ -462,15 +426,10 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
                 )
             );
 
-        } catch (bytes memory _err){
+        } catch (bytes memory err) {
             _resetReservesAndExchangeRate();
 
-            bytes32 err = keccak256(_err);
-            require(
-                err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
-                err == keccak256(abi.encodeWithSignature("BorrowerUnderCollateralized()")) ||
-                err == keccak256(abi.encodeWithSignature("AuctionActive()"))
-            );
+            _ensurePoolError(err);
         }
 
         // skip to make borrower undercollateralize
@@ -499,15 +458,10 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             _updateCurrentReserves();
             _updateCurrentExchangeRate();
 
-        } catch (bytes memory _err) {
+        } catch (bytes memory err) {
             _resetReservesAndExchangeRate();
 
-            bytes32 err = keccak256(_err);
-            require(
-                err == keccak256(abi.encodeWithSignature("InvalidAmount()")) ||
-                err == keccak256(abi.encodeWithSignature("NoDebt()")) ||
-                err == keccak256(abi.encodeWithSignature("AmountLTMinDebt()"))
-            );
+            _ensurePoolError(err);
         }
     }
 }
