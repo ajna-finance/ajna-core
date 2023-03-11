@@ -325,8 +325,16 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             // receiver's deposit time updates when receiver receives lps
             lenderDepositTime[receiver_][bucketIndex_] = Maths.max(senderDepositTime, receiverDepositTime);
 
-        } catch{
+        } catch (bytes memory _err) {
             _resetReservesAndExchangeRate();
+
+            bytes32 err = keccak256(_err);
+            require(
+                err == keccak256(abi.encodeWithSignature("TransferorNotApproved()")) ||
+                err == keccak256(abi.encodeWithSignature("TransferToSameOwner()")) ||
+                err == keccak256(abi.encodeWithSignature("InvalidIndex()")) ||
+                err == keccak256(abi.encodeWithSignature("NoAllowance()"))
+            );
         }
     }
 
@@ -491,7 +499,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             _updateCurrentReserves();
             _updateCurrentExchangeRate();
 
-        } catch(bytes memory _err) {
+        } catch (bytes memory _err) {
             _resetReservesAndExchangeRate();
 
             bytes32 err = keccak256(_err);
