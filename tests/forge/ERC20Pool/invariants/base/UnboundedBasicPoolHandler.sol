@@ -5,6 +5,7 @@ pragma solidity 0.8.14;
 import { ERC20Pool }                         from 'src/ERC20Pool.sol';
 import { ERC20PoolFactory }                  from 'src/ERC20PoolFactory.sol';
 import { PoolInfoUtils, _collateralization } from 'src/PoolInfoUtils.sol';
+import { _borrowFeeRate, _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
 
 import "src/libraries/internal/Maths.sol";
 
@@ -58,14 +59,14 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             if (depositBelowLup) {
                 amount_ = Maths.wmul(
                     amount_,
-                    1e18 - Maths.wdiv(interestRate, 365 * 1e18)
+                    Maths.WAD - _depositFeeRate(interestRate)
                 );
             }
 
-            _fenwickAdd(amount_, bucketIndex_);
-
             shouldExchangeRateChange = false;
-            shouldReserveChange      = false;
+            shouldReserveChange      = depositBelowLup; // if deposit below LUP then reserves should increase with fee
+
+            _fenwickAdd(amount_, bucketIndex_);
 
             _updateCurrentExchangeRate();
             _updateCurrentReserves();
@@ -170,7 +171,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             lenderDepositTime[_actor][toIndex_] = Maths.max(fromBucketDepositTime, toBucketDepositTime);
 
             shouldExchangeRateChange = false;
-            shouldReserveChange      = false;
+            shouldReserveChange      = movedAmount_ != amount_; // if amount subject of deposit fee then reserves should increase
 
             _updateCurrentExchangeRate();
             _updateCurrentReserves();
@@ -420,10 +421,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
             // reserve should increase by origination fee on draw debt
             drawDebtIncreaseInReserve = Maths.wmul(
-                amount_,
-                Maths.max(
-                    Maths.wdiv(interestRate, 52 * 1e18), 0.0005 * 1e18
-                )
+                amount_, _borrowFeeRate(interestRate)
             );
 
         } catch (bytes memory err) {
