@@ -29,7 +29,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
         try _pool.kick(borrower_, 7388) {
 
-            // reserve increase by 3 months of interest of borrowerDebt
+            // **RE9**:  Reserves increase by 3 months of interest when a loan is kicked
             increaseInReserves += Maths.wmul(borrowerDebt, Maths.wdiv(interestRate, 4 * 1e18));
 
         } catch (bytes memory err) {
@@ -46,7 +46,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
         try _pool.kickWithDeposit(bucketIndex_, 7388) {
 
-            // reserve increase by 3 months of interest of borrowerDebt
+            // **RE9**:  Reserves increase by 3 months of interest when a loan is kicked
             increaseInReserves += Maths.wmul(borrowerDebt, Maths.wdiv(interestRate, 4 * 1e18));
 
         } catch (bytes memory err) {
@@ -86,13 +86,12 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
             uint256 totalBondAfterTake = _getKickerBond(kicker);
 
-            // calculate amount of kicker reward/penalty that will decrease/increase reserves
             if (totalBondBeforeTake > totalBondAfterTake) {
-                kickerBondChange = totalBondBeforeTake - totalBondAfterTake;
-                isKickerRewarded = false;
+                // **RE7**: Reserves increase by bond penalty on take.
+                increaseInReserves += totalBondBeforeTake - totalBondAfterTake;
             } else {
-                kickerBondChange = totalBondAfterTake - totalBondBeforeTake;
-                isKickerRewarded = true;
+                // **RE7**: Reserves decrease by bond reward on take.
+                decreaseInReserves += totalBondAfterTake - totalBondBeforeTake;
             }
 
             _updateCurrentTakeState(borrower_, borrowerDebt);
@@ -123,17 +122,15 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             (uint256 kickerLpsAfterTake, ) = _pool.lenderInfo(bucketIndex_, kicker);
             (uint256 takerLpsAfterTake, )  = _pool.lenderInfo(bucketIndex_, _actor);
 
-            // deposit time of taker change when he gets lps as reward from bucketTake
+            // **B7**: when awarded bucket take LPs : taker deposit time = timestamp of block when award happened
             if (takerLpsAfterTake > takerLpsBeforeTake) lenderDepositTime[taker_][bucketIndex_] = block.timestamp;
 
-            // check if kicker was awarded LPs
             if (kickerLpsAfterTake > kickerLpsBeforeTake) {
-                // update kicker deposit time to reflect LPs reward
+                // **B7**: when awarded bucket take LPs : kicker deposit time = timestamp of block when award happened
                 lenderDepositTime[kicker][bucketIndex_] = block.timestamp;
-                isKickerRewarded = true;
             } else {
-                kickerBondChange = _getKickerBond(kicker) - totalBondBeforeTake;
-                isKickerRewarded = false;
+                // **RE7**: Reserves increase by bond penalty on take.
+                increaseInReserves += _getKickerBond(kicker) - totalBondBeforeTake;
             }
 
             // **R7**: Exchange rates are unchanged under depositTakes
@@ -206,6 +203,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
             borrowerDebt -= Maths.min(reserves, borrowerDebt);
 
+            // TODO: write invariant
             decreaseInReserves += borrowerDebt;
 
             while (bucketDepth != 0 && borrowerDebt != 0) {

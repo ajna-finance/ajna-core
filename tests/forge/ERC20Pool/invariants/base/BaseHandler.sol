@@ -63,8 +63,6 @@ abstract contract BaseHandler is Test {
     uint256 public decreaseInReserves;  // amount of reserve increase
 
     // auctions invariant test state
-    bool                     public isKickerRewarded; // kicker is penalized or rewarded after take
-    uint256                  public kickerBondChange; // amount of kicker penalty/reward
     bool                     public firstTake;        // if take is called on auction first time
     mapping(address => bool) public alreadyTaken;     // mapping borrower address to true if auction taken atleast once
 
@@ -333,7 +331,7 @@ abstract contract BaseHandler is Test {
         if (!alreadyTaken[borrower_]) {
             alreadyTaken[borrower_] = true;
 
-            // reserve increase by 7% of borrower debt on first take
+            // **RE7**: Reserves increase by 7% of the loan quantity upon the first take.
             increaseInReserves += Maths.wmul(borrowerDebt_, 0.07 * 1e18);
             firstTake = true;
 

@@ -40,10 +40,11 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         try _pool.addQuoteToken(amount_, bucketIndex_, block.timestamp + 1 minutes) {
         
-            // lender's deposit time updates when lender adds Quote token into pool
+            // **B5**: when adding quote tokens: lender deposit time  = timestamp of block when deposit happened
             lenderDepositTime[_actor][bucketIndex_] = block.timestamp;
+            // **R3**: Exchange rates are unchanged by depositing quote token into a bucket
+            exchangeRateShouldNotChange[bucketIndex_] = true;
 
-            // deposit fee is charged if deposit is added below lup
             bool depositBelowLup = lupIndex != 0 && bucketIndex_ > lupIndex;
             if (depositBelowLup) {
                 uint256 intialAmount = amount_;
@@ -51,11 +52,9 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
                     amount_,
                     Maths.WAD - _depositFeeRate(interestRate)
                 );
+                // **RE3**: Reserves increase only when depositing quote token into a bucket below LUP
                 increaseInReserves += intialAmount - amount_;
             }
-
-            // **R3**: Exchange rates are unchanged by depositing quote token into a bucket
-            exchangeRateShouldNotChange[bucketIndex_] = true;
 
             _fenwickAdd(amount_, bucketIndex_);
 
@@ -78,10 +77,10 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         try _pool.removeQuoteToken(amount_, bucketIndex_) returns (uint256 removedAmount_, uint256) {
 
-            _fenwickRemove(removedAmount_, bucketIndex_);
-
             // **R4**: Exchange rates are unchanged by withdrawing deposit (quote token) from a bucket
             exchangeRateShouldNotChange[bucketIndex_] = true;
+
+            _fenwickRemove(removedAmount_, bucketIndex_);
 
             // Post action condition
             (uint256 lpBalanceAfterAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
@@ -104,19 +103,17 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             toIndex_,
             block.timestamp + 1 minutes
         ) returns (uint256, uint256, uint256 movedAmount_) {
-            // remove initial amount from index
-            _fenwickRemove(amount_, fromIndex_);
-
-            // add moved amount to index (could be subject of deposit fee penalty)
-            _fenwickAdd(movedAmount_, toIndex_);
 
             (, uint256 fromBucketDepositTime) = _pool.lenderInfo(fromIndex_, _actor);
             (, uint256 toBucketDepositTime)   = _pool.lenderInfo(toIndex_,    _actor);
             
-            // lender's deposit time updates when lender moves Quote token from one bucket to another
+            // **B5**: when moving quote tokens: lender deposit time = timestamp of block when move happened
             lenderDepositTime[_actor][toIndex_] = Maths.max(fromBucketDepositTime, toBucketDepositTime);
+            // **RE3**: Reserves increase only when moving quote tokens into a bucket below LUP.
+            increaseInReserves += amount_ - movedAmount_;
 
-            increaseInReserves += amount_ - movedAmount_; // if amount subject of deposit fee then reserves should increase
+            _fenwickRemove(amount_, fromIndex_);
+            _fenwickAdd(movedAmount_, toIndex_);
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
@@ -133,11 +130,10 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         _pool.addCollateral(amount_, bucketIndex_, block.timestamp + 1 minutes);
 
+        // **B5**: when adding collateral: lender deposit time = timestamp of block when deposit happened
+        lenderDepositTime[_actor][bucketIndex_] = block.timestamp;
         // **R5**: Exchange rates are unchanged by adding collateral token into a bucket
         exchangeRateShouldNotChange[bucketIndex_] = true;
-
-        // lender's deposit time updates when lender adds collateral token into pool
-        lenderDepositTime[_actor][bucketIndex_] = block.timestamp;
 
         // Post action condition
         (uint256 lpBalanceAfterAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
@@ -198,7 +194,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             (, uint256 senderDepositTime)   = _pool.lenderInfo(bucketIndex_, sender_);
             (, uint256 receiverDepositTime) = _pool.lenderInfo(bucketIndex_, receiver_);
 
-            // receiver's deposit time updates when receiver receives lps
+            // **B6**: when receiving transferred LPs : receiver deposit time (`Lender.depositTime`) = max of sender and receiver deposit time
             lenderDepositTime[receiver_][bucketIndex_] = Maths.max(senderDepositTime, receiverDepositTime);
 
         } catch (bytes memory err) {
@@ -256,7 +252,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
             (uint256 interestRate, ) = _pool.interestRateInfo();
 
-            // reserve should increase by origination fee on draw debt
+            // **RE10**: Reserves increase by origination fee: max(1 week interest, 0.05% of borrow amount), on draw debt
             increaseInReserves += Maths.wmul(
                 amount_, _borrowFeeRate(interestRate)
             );
