@@ -15,19 +15,16 @@ interface IBaseHandler {
 
     function shouldExchangeRateChange() external view returns(bool);
     function previousExchangeRate(uint256) external view returns(uint256);
-    function shouldReserveChange() external view returns(bool);
 
     function isKickerRewarded() external view returns(bool);
     function kickerBondChange() external view returns(uint256);
 
     function previousReserves() external view returns(uint256);
+    function increaseInReserves() external view returns(uint256);
+    function decreaseInReserves() external view returns(uint256);
 
     function firstTake() external view returns(bool);
     function alreadyTaken(address) external view returns(bool);
-
-    function firstTakeIncreaseInReserve() external view returns(uint256);
-    function loanKickIncreaseInReserve() external view returns(uint256);
-    function drawDebtIncreaseInReserve() external view returns(uint256);
 
     function lenderDepositTime(address lender, uint256 bucketIndex) external view returns(uint256);
 }

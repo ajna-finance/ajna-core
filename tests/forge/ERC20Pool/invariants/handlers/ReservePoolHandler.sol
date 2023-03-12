@@ -33,6 +33,13 @@ contract ReservePoolHandler is UnboundedReservePoolHandler, LiquidationPoolHandl
         uint256 actorIndex_,
         uint256 amount_
     ) external useRandomActor(actorIndex_) useTimestamps {
+
+        (, , uint256 claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
+        if (claimableReservesRemaining == 0) _startClaimableReserveAuction();
+
+        (, , claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
+        amount_ = constrictToRange(amount_, 0, claimableReservesRemaining);
+
         _takeReserves(amount_);
     }
 }

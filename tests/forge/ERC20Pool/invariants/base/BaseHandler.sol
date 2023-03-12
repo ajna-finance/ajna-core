@@ -58,11 +58,9 @@ abstract contract BaseHandler is Test {
     mapping(uint256 => uint256) public previousExchangeRate;     // mapping from bucket index to exchange rate before action
 
     // reserves invariant test state
-    bool    public shouldReserveChange;        // should reserve change after a action
-    uint256 public previousReserves;           // reserves before action
-    uint256 public loanKickIncreaseInReserve;  // amount of reserve increase after kicking a loan
-    uint256 public firstTakeIncreaseInReserve; // amount of reserve increase after first take
-    uint256 public drawDebtIncreaseInReserve;  // amount of reserve increase after draw debt as origination fee
+    uint256 public previousReserves;    // reserves before action
+    uint256 public increaseInReserves;  // amount of reserve decrease
+    uint256 public decreaseInReserves;  // amount of reserve increase
 
     // auctions invariant test state
     bool                     public isKickerRewarded; // kicker is penalized or rewarded after take
@@ -112,13 +110,9 @@ abstract contract BaseHandler is Test {
      * @dev Resets all local states before each action.
      */
     modifier resetAllPreviousLocalState() {
-        firstTakeIncreaseInReserve = 0;
-        loanKickIncreaseInReserve  = 0;
-        kickerBondChange           = 0;
-        isKickerRewarded           = false;
-        drawDebtIncreaseInReserve  = 0;
-
-        _resetReservesAndExchangeRate();
+        _fenwickAccrueInterest();
+        _updatePoolState();
+        _recordReservesAndExchangeRate();
 
         _;
     }
@@ -223,24 +217,17 @@ abstract contract BaseHandler is Test {
     /**************************************/
 
     /**
-     * @dev Reset the exchange rates before each action.
+     * @dev Record the reserves and exchange rates before each action.
      */
-    function _resetReservesAndExchangeRate() internal {
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            previousExchangeRate[bucketIndex] = 0;
-        }
-
-        // reset the reserves before each action 
-        previousReserves = 0;
-    }
-
-    /**
-     * @dev Precalculate exchange rate before an action.
-     */
-    function _updatePreviousExchangeRate() internal {
+    function _recordReservesAndExchangeRate() internal {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             previousExchangeRate[bucketIndex] = _pool.bucketExchangeRate(bucketIndex);
         }
+
+        // reset the reserves before each action 
+        increaseInReserves = 0;
+        decreaseInReserves  = 0;
+        (previousReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
     }
 
     /********************************/
@@ -317,17 +304,6 @@ abstract contract BaseHandler is Test {
     }
 
     /*********************************/
-    /*** Reserves Helper Functions ***/
-    /*********************************/
-
-    /**
-     * @dev Precalculate reserves before an action.
-     */
-    function _updatePreviousReserves() internal {
-        (previousReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
-    }
-
-    /*********************************/
     /*** Auctions Helper Functions ***/
     /*********************************/
 
@@ -353,7 +329,7 @@ abstract contract BaseHandler is Test {
             alreadyTaken[borrower_] = true;
 
             // reserve increase by 7% of borrower debt on first take
-            firstTakeIncreaseInReserve = Maths.wmul(borrowerDebt_, 0.07 * 1e18);
+            increaseInReserves += Maths.wmul(borrowerDebt_, 0.07 * 1e18);
             firstTake = true;
 
             // reset taken flag in case auciton was settled by take action

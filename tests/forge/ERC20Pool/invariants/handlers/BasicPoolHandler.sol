@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.14;
 
+import { PoolInfoUtils, _collateralization } from 'src/PoolInfoUtils.sol';
+
 import {
     LENDER_MIN_BUCKET_INDEX,
     LENDER_MAX_BUCKET_INDEX,
@@ -56,6 +58,14 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
 
         if (poolBalance < amount_) return; // (not enough quote token to withdraw / quote tokens are borrowed)
 
+        // Pre condition
+        (uint256 lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex_, _actor);
+
+        if (lpBalanceBefore == 0) {
+            amount_ = constrictToRange(amount_, 1, 1e30);
+            _addQuoteToken(amount_, bucketIndex_);
+        }
+
         // Action
         _removeQuoteToken(amount_, _lenderBucketIndex);
     }
@@ -79,7 +89,13 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
             LENDER_MAX_BUCKET_INDEX
         );
 
+        if (fromBucketIndex_ == toBucketIndex_) return;
+
         amount_ = constrictToRange(amount_, 1, 1e30);
+
+        // ensure actor has LPs to move
+        (uint256 lpBalance, ) = _pool.lenderInfo(fromBucketIndex_, _actor);
+        if (lpBalance == 0) _addQuoteToken(amount_, toBucketIndex_);
         
         _moveQuoteToken(amount_, fromBucketIndex_, toBucketIndex_);
     }
@@ -111,6 +127,10 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         if (lpBalance == 0 || bucketCollateral == 0) return; // no value in bucket
 
         amount_ = constrictToRange(amount_, 1, 1e30);
+
+        // Pre condition
+        (uint256 lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex_, _actor);
+        if(lpBalanceBefore == 0) _addCollateral(amount_, bucketIndex_);
 
         // Action
         _removeCollateral(amount_, _lenderBucketIndex);
@@ -176,6 +196,36 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         numberOfCalls['BBasicHandler.drawDebt']++;
 
         amountToBorrow_ = constrictToRange(amountToBorrow_, 1e6, 1e30);
+
+        // Pre Condition
+        // 1. borrower's debt should exceed minDebt
+        // 2. pool needs sufficent quote token to draw debt
+        // 3. drawDebt should not make borrower under collateralized
+
+        // 1. borrower's debt should exceed minDebt
+        (uint256 debt, uint256 collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
+        (uint256 minDebt, , , ) = _poolInfo.poolUtilizationInfo(address(_pool));
+
+        if (amountToBorrow_ < minDebt) amountToBorrow_ = minDebt + 1;
+
+        // TODO: Need to constrain amount so LUP > HTP
+
+        // 2. pool needs sufficent quote token to draw debt
+        uint256 poolQuoteBalance = _quote.balanceOf(address(_pool));
+
+        if (amountToBorrow_ > poolQuoteBalance) _addQuoteToken(amountToBorrow_ * 2, LENDER_MAX_BUCKET_INDEX);
+
+        // 3. drawing of addition debt will make them under collateralized
+        uint256 lup = _poolInfo.lup(address(_pool));
+        (debt, collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
+
+        if (_collateralization(debt, collateral, lup) < 1) {
+            _repayDebt(debt);
+
+            (debt, collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
+
+            require(debt == 0, "borrower has debt");
+        }
         
         // Action
         _drawDebt(amountToBorrow_);
@@ -191,6 +241,10 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         numberOfCalls['BBasicHandler.repayDebt']++;
 
         amountToRepay_ = constrictToRange(amountToRepay_, _pool.quoteTokenDust(), 1e30);
+
+        // Pre condition
+        (uint256 debt, , ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);
+        if (debt == 0) _drawDebt(amountToRepay_);
 
         // Action
         _repayDebt(amountToRepay_);
