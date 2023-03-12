@@ -33,7 +33,6 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     ) internal useTimestamps resetAllPreviousLocalState {
         numberOfCalls['UBBasicHandler.addQuoteToken']++;
 
-        // Pre condition
         (uint256 lpBalanceBeforeAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
         (uint256 poolDebt, , )   = _pool.debtInfo();
         uint256 lupIndex         = _pool.depositIndex(poolDebt);
@@ -55,11 +54,12 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
                 increaseInReserves += intialAmount - amount_;
             }
 
-            shouldExchangeRateChange = false;
+            // **R3**: Exchange rates are unchanged by depositing quote token into a bucket
+            exchangeRateShouldNotChange[bucketIndex_] = true;
 
             _fenwickAdd(amount_, bucketIndex_);
 
-            // Post condition
+            // Post action condition
             (uint256 lpBalanceAfterAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
             require(lpBalanceAfterAction > lpBalanceBeforeAction, "LP balance should increase");
 
@@ -74,16 +74,16 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     ) internal useTimestamps resetAllPreviousLocalState {
         numberOfCalls['UBBasicHandler.removeQuoteToken']++;
 
-        // Pre condition
         (uint256 lpBalanceBeforeAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
 
         try _pool.removeQuoteToken(amount_, bucketIndex_) returns (uint256 removedAmount_, uint256) {
 
             _fenwickRemove(removedAmount_, bucketIndex_);
 
-            shouldExchangeRateChange = false;
+            // **R4**: Exchange rates are unchanged by withdrawing deposit (quote token) from a bucket
+            exchangeRateShouldNotChange[bucketIndex_] = true;
 
-            // Post condition
+            // Post action condition
             (uint256 lpBalanceAfterAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
             require(lpBalanceAfterAction < lpBalanceBeforeAction, "LP balance should decrease");
 
@@ -97,11 +97,6 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         uint256 fromIndex_,
         uint256 toIndex_
     ) internal useTimestamps resetAllPreviousLocalState {
-        (uint256 lps, ) = _pool.lenderInfo(fromIndex_, _actor);
-
-        // restrict amount to move by available deposit inside bucket
-        uint256 availableDeposit = _poolInfo.lpsToQuoteTokens(address(_pool), lps, fromIndex_);
-        amount_ = Maths.min(amount_, availableDeposit);
 
         try _pool.moveQuoteToken(
             amount_,
@@ -121,8 +116,6 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             // lender's deposit time updates when lender moves Quote token from one bucket to another
             lenderDepositTime[_actor][toIndex_] = Maths.max(fromBucketDepositTime, toBucketDepositTime);
 
-            shouldExchangeRateChange = false;
-
             increaseInReserves += amount_ - movedAmount_; // if amount subject of deposit fee then reserves should increase
 
         } catch (bytes memory err) {
@@ -136,17 +129,17 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     ) internal useTimestamps resetAllPreviousLocalState {
         numberOfCalls['UBBasicHandler.addCollateral']++;
 
-        shouldExchangeRateChange = false;
-
-        // Pre condition
         (uint256 lpBalanceBeforeAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
 
         _pool.addCollateral(amount_, bucketIndex_, block.timestamp + 1 minutes);
 
+        // **R5**: Exchange rates are unchanged by adding collateral token into a bucket
+        exchangeRateShouldNotChange[bucketIndex_] = true;
+
         // lender's deposit time updates when lender adds collateral token into pool
         lenderDepositTime[_actor][bucketIndex_] = block.timestamp;
 
-        // Post condition
+        // Post action condition
         (uint256 lpBalanceAfterAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
         require(lpBalanceAfterAction > lpBalanceBeforeAction, "LP balance should increase");
     }
@@ -161,9 +154,10 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         try _pool.removeCollateral(amount_, bucketIndex_) {
 
-            shouldExchangeRateChange = false;
+            // **R6**: Exchange rates are unchanged by removing collateral token from a bucket
+            exchangeRateShouldNotChange[bucketIndex_] = true;
 
-            // Post condition
+            // Post action condition
             (uint256 lpBalanceAfterAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
             require(lpBalanceAfterAction < lpBalanceBeforeAction, "LP balance should decrease");
 
@@ -201,8 +195,6 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         try _pool.transferLPs(sender_, receiver_, buckets) {
 
-            shouldExchangeRateChange = false;
-
             (, uint256 senderDepositTime)   = _pool.lenderInfo(bucketIndex_, sender_);
             (, uint256 receiverDepositTime) = _pool.lenderInfo(bucketIndex_, receiver_);
 
@@ -223,10 +215,12 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     ) internal useTimestamps resetAllPreviousLocalState {
         numberOfCalls['UBBasicHandler.pledgeCollateral']++;
 
-        _pool.drawDebt(_actor, 0, 0, amount_);   
+        // **R1**: Exchange rates are unchanged by pledging collateral
+        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+            exchangeRateShouldNotChange[bucketIndex] = true;
+        }
 
-        shouldExchangeRateChange = false;
-
+        _pool.drawDebt(_actor, 0, 0, amount_);
     }
 
     function _pullCollateral(
@@ -234,9 +228,12 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     ) internal useTimestamps resetAllPreviousLocalState {
         numberOfCalls['UBBasicHandler.pullCollateral']++;
 
-        try _pool.repayDebt(_actor, 0, amount_, _actor, 7388) {
+        // **R2**: Exchange rates are unchanged by pulling collateral
+        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+            exchangeRateShouldNotChange[bucketIndex] = true;
+        }
 
-            shouldExchangeRateChange = false;
+        try _pool.repayDebt(_actor, 0, amount_, _actor, 7388) {
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
@@ -256,8 +253,6 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         uint256 collateralToPledge = ((amount_ * 1e18 + price / 2) / price) * 101 / 100 + 1;
 
         try _pool.drawDebt(_actor, amount_, 7388, collateralToPledge) {
-
-            shouldExchangeRateChange = false;
 
             (uint256 interestRate, ) = _pool.interestRateInfo();
 
@@ -280,8 +275,6 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         numberOfCalls['UBBasicHandler.repayDebt']++;
 
         try _pool.repayDebt(_actor, amountToRepay_, 0, _actor, 7388) {
-
-            shouldExchangeRateChange = false;
 
         } catch (bytes memory err) {
             _ensurePoolError(err);

@@ -223,7 +223,7 @@ contract BasicInvariants is InvariantsTestBase {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             uint256 currentExchangeRate = _pool.bucketExchangeRate(bucketIndex);
 
-            if (!IBaseHandler(_handler).shouldExchangeRateChange() && currentExchangeRate != 0) {
+            if (IBaseHandler(_handler).exchangeRateShouldNotChange(bucketIndex)) {
                 uint256 previousExchangeRate = IBaseHandler(_handler).previousExchangeRate(bucketIndex);
 
                 console.log("======================================");
@@ -235,7 +235,7 @@ contract BasicInvariants is InvariantsTestBase {
                 requireWithinDiff(
                     currentExchangeRate,
                     previousExchangeRate,
-                    1e17,
+                    1e17, // TODO: check why changing so much
                     "Incorrect exchange Rate changed"
                 );
             }

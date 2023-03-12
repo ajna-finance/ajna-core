@@ -49,7 +49,7 @@
 
 ## Exchange rate invariants ##
 - **R1**: Exchange rates are unchanged by pledging collateral
-- **R2**: Exchange rates are unchanged by removing collateral
+- **R2**: Exchange rates are unchanged by pulling collateral
 - **R3**: Exchange rates are unchanged by depositing quote token into a bucket
 - **R4**: Exchange rates are unchanged by withdrawing deposit (quote token) from a bucket
 - **R5**: Exchange rates are unchanged by adding collateral token into a bucket

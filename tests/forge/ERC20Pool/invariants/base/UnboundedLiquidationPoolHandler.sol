@@ -29,8 +29,6 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
         try _pool.kick(borrower_, 7388) {
 
-            shouldExchangeRateChange = true;
-
             // reserve increase by 3 months of interest of borrowerDebt
             increaseInReserves += Maths.wmul(borrowerDebt, Maths.wdiv(interestRate, 4 * 1e18));
 
@@ -48,8 +46,6 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
         try _pool.kickWithDeposit(bucketIndex_, 7388) {
 
-            shouldExchangeRateChange = true;
-
             // reserve increase by 3 months of interest of borrowerDebt
             increaseInReserves += Maths.wmul(borrowerDebt, Maths.wdiv(interestRate, 4 * 1e18));
 
@@ -64,8 +60,6 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     ) internal useTimestamps resetAllPreviousLocalState {
 
         try _pool.withdrawBonds(kicker_, maxAmount_) {
-
-            shouldExchangeRateChange = false;
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
@@ -89,8 +83,6 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         uint256 totalBondBeforeTake = _getKickerBond(kicker);
         
         try _pool.take(borrower_, amount_, taker_, bytes("")) {
-
-            shouldExchangeRateChange = true;
 
             uint256 totalBondAfterTake = _getKickerBond(kicker);
 
@@ -128,8 +120,6 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
         try _pool.bucketTake(borrower_, depositTake_, bucketIndex_) {
 
-            shouldExchangeRateChange = false;
-
             (uint256 kickerLpsAfterTake, ) = _pool.lenderInfo(bucketIndex_, kicker);
             (uint256 takerLpsAfterTake, )  = _pool.lenderInfo(bucketIndex_, _actor);
 
@@ -145,6 +135,10 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 kickerBondChange = _getKickerBond(kicker) - totalBondBeforeTake;
                 isKickerRewarded = false;
             }
+
+            // **R7**: Exchange rates are unchanged under depositTakes
+            // **R8**: Exchange rates are unchanged under arbTakes
+            exchangeRateShouldNotChange[bucketIndex_] = true;
 
             _updateCurrentTakeState(borrower_, borrowerDebt);
 
@@ -239,8 +233,6 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         }
 
         try _pool.settle(borrower_, maxDepth_) {
-
-            shouldExchangeRateChange = true;
 
             for (uint256 bucket = 0; bucket <= maxDepth_; bucket++) {
                 _fenwickRemove(changeInDeposit[bucket], bucket + LENDER_MIN_BUCKET_INDEX);

@@ -13,7 +13,7 @@ interface IBaseHandler {
     function fenwickTreeSum() external view returns(uint256); 
     function fenwickSumTillIndex(uint256) external view returns(uint256);
 
-    function shouldExchangeRateChange() external view returns(bool);
+    function exchangeRateShouldNotChange(uint256) external view returns(bool);
     function previousExchangeRate(uint256) external view returns(uint256);
 
     function isKickerRewarded() external view returns(bool);

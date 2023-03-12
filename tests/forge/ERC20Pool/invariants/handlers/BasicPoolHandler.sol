@@ -4,6 +4,8 @@ pragma solidity 0.8.14;
 
 import { PoolInfoUtils, _collateralization } from 'src/PoolInfoUtils.sol';
 
+import 'src/libraries/internal/Maths.sol';
+
 import {
     LENDER_MIN_BUCKET_INDEX,
     LENDER_MAX_BUCKET_INDEX,
@@ -73,31 +75,36 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     function moveQuoteToken(
         uint256 actorIndex_,
         uint256 amount_,
-        uint256 fromBucketIndex_,
-        uint256 toBucketIndex_
+        uint256 fromIndex_,
+        uint256 toIndex_
     ) public useRandomActor(actorIndex_) useTimestamps {
         numberOfCalls['BBasicHandler.moveQuoteToken']++;
 
-        fromBucketIndex_ = constrictToRange(
-            fromBucketIndex_,
+        fromIndex_ = constrictToRange(
+            fromIndex_,
             LENDER_MIN_BUCKET_INDEX,
             LENDER_MAX_BUCKET_INDEX
         );
-        toBucketIndex_ = constrictToRange(
-            toBucketIndex_,
+        toIndex_ = constrictToRange(
+            toIndex_,
             LENDER_MIN_BUCKET_INDEX,
             LENDER_MAX_BUCKET_INDEX
         );
 
-        if (fromBucketIndex_ == toBucketIndex_) return;
+        if (fromIndex_ == toIndex_) return;
 
         amount_ = constrictToRange(amount_, 1, 1e30);
 
         // ensure actor has LPs to move
-        (uint256 lpBalance, ) = _pool.lenderInfo(fromBucketIndex_, _actor);
-        if (lpBalance == 0) _addQuoteToken(amount_, toBucketIndex_);
-        
-        _moveQuoteToken(amount_, fromBucketIndex_, toBucketIndex_);
+        (uint256 lpBalance, ) = _pool.lenderInfo(fromIndex_, _actor);
+        if (lpBalance == 0) _addQuoteToken(amount_, toIndex_);
+
+        (uint256 lps, ) = _pool.lenderInfo(fromIndex_, _actor);
+        // restrict amount to move by available deposit inside bucket
+        uint256 availableDeposit = _poolInfo.lpsToQuoteTokens(address(_pool), lps, fromIndex_);
+        amount_ = Maths.min(amount_, availableDeposit);
+
+        _moveQuoteToken(amount_, fromIndex_, toIndex_);
     }
 
     function addCollateral(

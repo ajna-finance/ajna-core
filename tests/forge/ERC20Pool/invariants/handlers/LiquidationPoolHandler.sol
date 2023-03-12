@@ -64,8 +64,6 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
 
         amount_ = constrictToRange(amount_, 1, 1e30);
 
-        shouldExchangeRateChange = true;
-
         borrowerIndex_ = constrictToRange(borrowerIndex_, 0, actors.length - 1);
 
         address borrower = actors[borrowerIndex_];
@@ -86,8 +84,6 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
         uint256 takerIndex_
     ) external useRandomActor(takerIndex_) useTimestamps {
         numberOfCalls['BLiquidationHandler.bucketTake']++;
-
-        shouldExchangeRateChange = true;
 
         borrowerIndex_ = constrictToRange(borrowerIndex_, 0, actors.length - 1);
         bucketIndex_   = constrictToRange(bucketIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
@@ -142,8 +138,6 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
         uint256 kickerIndex_
     ) internal useRandomActor(kickerIndex_) {
         numberOfCalls['BLiquidationHandler.kickAuction']++;
-
-        shouldExchangeRateChange = true;
 
         borrowerIndex_   = constrictToRange(borrowerIndex_, 0, actors.length - 1);
         address borrower = actors[borrowerIndex_];

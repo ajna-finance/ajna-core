@@ -16,8 +16,6 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
 
         try _pool.startClaimableReserveAuction() {
 
-            shouldExchangeRateChange = false;
-
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -31,8 +29,6 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
         uint256 amount_
     ) internal useTimestamps resetAllPreviousLocalState {
         try _pool.takeReserves(amount_) returns (uint256 takenAmount_) {
-
-            shouldExchangeRateChange = false;
 
             decreaseInReserves += takenAmount_;
 

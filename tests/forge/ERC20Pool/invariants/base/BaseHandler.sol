@@ -54,8 +54,8 @@ abstract contract BaseHandler is Test {
     mapping(address => uint256[]) public touchedBuckets; // Bucket tracking
 
     // exchange rate invariant test state
-    bool                        public shouldExchangeRateChange; // bucket exchange rate invariant check
-    mapping(uint256 => uint256) public previousExchangeRate;     // mapping from bucket index to exchange rate before action
+    mapping(uint256 => bool)    public exchangeRateShouldNotChange; // bucket exchange rate invariant check
+    mapping(uint256 => uint256) public previousExchangeRate;        // mapping from bucket index to exchange rate before action
 
     // reserves invariant test state
     uint256 public previousReserves;    // reserves before action
@@ -110,8 +110,9 @@ abstract contract BaseHandler is Test {
      * @dev Resets all local states before each action.
      */
     modifier resetAllPreviousLocalState() {
-        _fenwickAccrueInterest();
         _updatePoolState();
+
+        _fenwickAccrueInterest();
         _recordReservesAndExchangeRate();
 
         _;
@@ -221,12 +222,16 @@ abstract contract BaseHandler is Test {
      */
     function _recordReservesAndExchangeRate() internal {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+            // reset the change flag before each action
+            exchangeRateShouldNotChange[bucketIndex] = false;
+            // record exchange rate before each action
             previousExchangeRate[bucketIndex] = _pool.bucketExchangeRate(bucketIndex);
         }
 
         // reset the reserves before each action 
         increaseInReserves = 0;
         decreaseInReserves  = 0;
+        // record reserves before each action
         (previousReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
     }
 
