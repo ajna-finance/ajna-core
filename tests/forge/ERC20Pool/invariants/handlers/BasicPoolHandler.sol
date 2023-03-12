@@ -198,15 +198,4 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         // auction settle cleanup
         _auctionSettleStateReset(_actor);
     }
-
-    /************************************/
-    /*** Test State Cleanup Functions ***/
-    /************************************/
-
-    /**
-     * @dev Called by actions that can settle auctions in order to reset test state.
-     */
-    function _auctionSettleStateReset(address actor_) internal virtual {
-        // no implementation, to be overriden in liquidations handler
-    }
 }

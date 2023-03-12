@@ -169,14 +169,4 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
         // skip some time for more interest
         vm.warp(block.timestamp + 2 hours);
     }
-
-    /************************************/
-    /*** Test State Cleanup Functions ***/
-    /************************************/
-
-    function _auctionSettleStateReset(address actor_) internal override {
-        (address kicker, , , , , , , , , ) = _pool.auctionInfo(actor_);
-        // reset alreadyTaken flag if auction is settled
-        if (kicker == address(0)) alreadyTaken[actor_] = false;
-    }
 }

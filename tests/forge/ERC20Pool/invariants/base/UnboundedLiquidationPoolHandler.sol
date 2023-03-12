@@ -59,10 +59,19 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
         _updatePreviousReserves();
 
+        (address maxBorrower, , )  = _pool.loansInfo();
+        (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), maxBorrower);
+        (uint256 interestRate, )   = _pool.interestRateInfo();
+
         try _pool.kickWithDeposit(bucketIndex_, 7388) {
 
             shouldExchangeRateChange = true;
             shouldReserveChange      = true;
+
+            _updateCurrentReserves();
+
+            // reserve increase by 3 months of interest of borrowerDebt
+            loanKickIncreaseInReserve = Maths.wmul(borrowerDebt, Maths.wdiv(interestRate, 4 * 1e18));
 
         } catch (bytes memory err) {
             _resetReservesAndExchangeRate();
@@ -116,12 +125,8 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
         (uint256 borrowerDebt, , )         = _poolInfo.borrowerInfo(address(_pool), borrower_);
         (address kicker, , , , , , , , , ) = _pool.auctionInfo(borrower_);
-        (
-            uint256 claimableBond,
-            uint256 lockedBond
-        ) = _pool.kickerInfo(kicker);
 
-        uint256 totalBond = claimableBond + lockedBond;
+        uint256 totalBondBeforeTake = _getKickerBond(kicker);
         
         try _pool.take(borrower_, amount_, taker_, bytes("")) {
 
@@ -130,32 +135,18 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
             _updateCurrentReserves();
 
-            (claimableBond, lockedBond) = _pool.kickerInfo(kicker);
+            uint256 totalBondAfterTake = _getKickerBond(kicker);
 
             // calculate amount of kicker reward/penalty that will decrease/increase reserves
-            if (totalBond > claimableBond + lockedBond) {
-                kickerBondChange = totalBond - claimableBond - lockedBond;
-
+            if (totalBondBeforeTake > totalBondAfterTake) {
+                kickerBondChange = totalBondBeforeTake - totalBondAfterTake;
                 isKickerRewarded = false;
-            }
-            else {
-                kickerBondChange = claimableBond + lockedBond - totalBond;
-
+            } else {
+                kickerBondChange = totalBondAfterTake - totalBondBeforeTake;
                 isKickerRewarded = true;
             }
 
-            (kicker, , , , , , , , , ) = _pool.auctionInfo(borrower_);
-            
-            if (!alreadyTaken[borrower_]) {
-                // reserve increase by 7% of borrower debt on first take
-                firstTakeIncreaseInReserve = Maths.wmul(borrowerDebt, 0.07 * 1e18);
-                firstTake = true;
-
-                // if auction is settled by take
-                if (kicker == address(0))  alreadyTaken[borrower_] = false;
-                else                       alreadyTaken[borrower_] = true;
-            }
-            else firstTake = false;
+            _updateCurrentTakeState(borrower_, borrowerDebt);
 
         } catch (bytes memory err) {
             _resetReservesAndExchangeRate();
@@ -183,12 +174,8 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         (address kicker, , , , , , , , , ) = _pool.auctionInfo(borrower_);
         (uint256 kickerLpsBeforeTake, )    = _pool.lenderInfo(bucketIndex_, kicker);
         (uint256 takerLpsBeforeTake, )     = _pool.lenderInfo(bucketIndex_, _actor);
-        (
-            uint256 claimableBond,
-            uint256 lockedBond
-        ) = _pool.kickerInfo(kicker);
 
-        uint256 totalBond = claimableBond + lockedBond;
+        uint256 totalBondBeforeTake = _getKickerBond(kicker);
 
         try _pool.bucketTake(borrower_, depositTake_, bucketIndex_) {
 
@@ -197,8 +184,6 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
             _updateCurrentReserves();
             _updateCurrentExchangeRate();
-
-            (claimableBond, lockedBond) = _pool.kickerInfo(kicker);
 
             (uint256 kickerLpsAfterTake, ) = _pool.lenderInfo(bucketIndex_, kicker);
             (uint256 takerLpsAfterTake, )  = _pool.lenderInfo(bucketIndex_, _actor);
@@ -210,27 +195,13 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             if (kickerLpsAfterTake > kickerLpsBeforeTake) {
                 // update kicker deposit time to reflect LPs reward
                 lenderDepositTime[kicker][bucketIndex_] = block.timestamp;
-
                 isKickerRewarded = true;
-            }
-            else {
-                kickerBondChange = claimableBond + lockedBond - totalBond;
-
+            } else {
+                kickerBondChange = _getKickerBond(kicker) - totalBondBeforeTake;
                 isKickerRewarded = false;
             }
 
-            (kicker, , , , , , , , , ) = _pool.auctionInfo(borrower_);
-            
-            if (!alreadyTaken[borrower_]) {
-                // reserve increase by 7% of borrower debt on first take
-                firstTakeIncreaseInReserve = Maths.wmul(borrowerDebt, 0.07 * 1e18);
-                firstTake = true;
-
-                // if auction is settled by take
-                if (kicker == address(0)) alreadyTaken[borrower_] = false;
-                else                      alreadyTaken[borrower_] = true;
-            }
-            else firstTake = false;
+            _updateCurrentTakeState(borrower_, borrowerDebt);
 
         } catch (bytes memory err) {
             _resetReservesAndExchangeRate();

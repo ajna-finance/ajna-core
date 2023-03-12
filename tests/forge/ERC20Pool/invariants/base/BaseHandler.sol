@@ -215,7 +215,8 @@ abstract contract BaseHandler is Test {
             err == keccak256(abi.encodeWithSignature("AuctionNotClearable()")) ||
             err == keccak256(abi.encodeWithSignature("ReserveAuctionTooSoon()")) ||
             err == keccak256(abi.encodeWithSignature("NoReserves()")) ||
-            err == keccak256(abi.encodeWithSignature("NoReservesAuction()"))
+            err == keccak256(abi.encodeWithSignature("NoReservesAuction()")),
+            "Unexpected revert error"
         );
     }
 
@@ -345,6 +346,41 @@ abstract contract BaseHandler is Test {
      */
     function _updateCurrentReserves() internal {
         (currentReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool)); 
+    }
+
+    /*********************************/
+    /*** Auctions Helper Functions ***/
+    /*********************************/
+
+    /**
+     * @dev Called by actions that can settle auctions in order to reset test state.
+     */
+    function _auctionSettleStateReset(address actor_) internal {
+        (address kicker, , , , , , , , , ) = _pool.auctionInfo(actor_);
+
+        // auction is settled if kicekr is 0x
+        bool auctionSettled = kicker == address(0);
+        // reset alreadyTaken flag if auction is settled
+        if (auctionSettled) alreadyTaken[actor_] = false;
+    }
+
+    function _getKickerBond(address kicker_) internal view returns (uint256 bond_) {
+        (uint256 claimableBond, uint256 lockedBond) = _pool.kickerInfo(kicker_);
+        bond_ = claimableBond + lockedBond;
+    }
+
+    function _updateCurrentTakeState(address borrower_, uint256 borrowerDebt_) internal {
+        if (!alreadyTaken[borrower_]) {
+            alreadyTaken[borrower_] = true;
+
+            // reserve increase by 7% of borrower debt on first take
+            firstTakeIncreaseInReserve = Maths.wmul(borrowerDebt_, 0.07 * 1e18);
+            firstTake = true;
+
+            // reset taken flag in case auciton was settled by take action
+            _auctionSettleStateReset(borrower_);
+
+        } else firstTake = false;
     }
 
     /**********************************/
