@@ -57,7 +57,7 @@ contract ReserveInvariants is LiquidationInvariants {
     function invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10() public useCurrentTimestamp {
 
         uint256 previousReserves = IBaseHandler(_handler).previousReserves();
-        uint256 currentReserves  = IBaseHandler(_handler).currentReserves();
+        (uint256 currentReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
 
         console.log("Current Reserves  -->", currentReserves);
         console.log("Previous Reserves -->", previousReserves);

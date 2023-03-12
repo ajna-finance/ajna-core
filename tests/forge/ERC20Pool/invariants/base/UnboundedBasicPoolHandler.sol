@@ -30,7 +30,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     function _addQuoteToken(
         uint256 amount_,
         uint256 bucketIndex_
-    ) internal useTimestamps {
+    ) internal useTimestamps resetAllPreviousLocalState {
         numberOfCalls['UBBasicHandler.addQuoteToken']++;
 
         shouldExchangeRateChange = false;
@@ -68,16 +68,11 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
             _fenwickAdd(amount_, bucketIndex_);
 
-            _updateCurrentExchangeRate();
-            _updateCurrentReserves();
-
             // Post condition
             (uint256 lpBalanceAfter, ) = _pool.lenderInfo(bucketIndex_, _actor);
             require(lpBalanceAfter > lpBalanceBefore, "LP balance should increase");
 
         } catch (bytes memory err) {
-            _resetReservesAndExchangeRate();
-
             _ensurePoolError(err);
         }
 
@@ -114,16 +109,11 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             shouldExchangeRateChange = false;
             shouldReserveChange      = false;
 
-            _updateCurrentExchangeRate();
-            _updateCurrentReserves();
-
             // Post condition
             (uint256 lpBalanceAfter, ) = _pool.lenderInfo(bucketIndex_, _actor);
             require(lpBalanceAfter < lpBalanceBefore, "LP balance should decrease");
 
         } catch (bytes memory err) {
-            _resetReservesAndExchangeRate();
-
             _ensurePoolError(err);
         }
     }
@@ -173,12 +163,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             shouldExchangeRateChange = false;
             shouldReserveChange      = movedAmount_ != amount_; // if amount subject of deposit fee then reserves should increase
 
-            _updateCurrentExchangeRate();
-            _updateCurrentReserves();
-
         } catch (bytes memory err) {
-            _resetReservesAndExchangeRate();
-
             _ensurePoolError(err);
         }
     }
@@ -204,9 +189,6 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         // lender's deposit time updates when lender adds collateral token into pool
         lenderDepositTime[_actor][bucketIndex_] = block.timestamp;
-
-        _updateCurrentExchangeRate();
-        _updateCurrentReserves();
 
         // Post condition
         (uint256 lpBalanceAfter, ) = _pool.lenderInfo(bucketIndex_, _actor);
@@ -240,16 +222,11 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             shouldExchangeRateChange = false;
             shouldReserveChange      = false;
 
-            _updateCurrentExchangeRate();
-            _updateCurrentReserves();
-
             // Post condition
             (uint256 lpBalanceAfter, ) = _pool.lenderInfo(bucketIndex_, _actor);
             require(lpBalanceAfter < lpBalanceBefore, "LP balance should decrease");
 
         } catch (bytes memory err) {
-            _resetReservesAndExchangeRate();
-
             _ensurePoolError(err);
         }
     }
@@ -292,9 +269,6 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             shouldExchangeRateChange = false;
             shouldReserveChange      = false;
 
-            _updateCurrentExchangeRate();
-            _updateCurrentReserves();
-
             (, uint256 senderDepositTime)   = _pool.lenderInfo(bucketIndex_, sender_);
             (, uint256 receiverDepositTime) = _pool.lenderInfo(bucketIndex_, receiver_);
 
@@ -302,8 +276,6 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             lenderDepositTime[receiver_][bucketIndex_] = Maths.max(senderDepositTime, receiverDepositTime);
 
         } catch (bytes memory err) {
-            _resetReservesAndExchangeRate();
-
             _ensurePoolError(err);
         }
     }
@@ -327,9 +299,6 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         shouldExchangeRateChange = false;
         shouldReserveChange      = false;
-   
-        _updateCurrentExchangeRate();
-        _updateCurrentReserves();
 
     }
 
@@ -349,12 +318,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             shouldExchangeRateChange = false;
             shouldReserveChange      = false;
 
-            _updateCurrentExchangeRate();
-            _updateCurrentReserves();
-
         } catch (bytes memory err) {
-            _resetReservesAndExchangeRate();
-
             _ensurePoolError(err);
         }
     }
@@ -414,9 +378,6 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             shouldExchangeRateChange = false;
             shouldReserveChange      = true;
 
-            _updateCurrentReserves();
-            _updateCurrentExchangeRate();
-
             (uint256 interestRate, ) = _pool.interestRateInfo();
 
             // reserve should increase by origination fee on draw debt
@@ -425,8 +386,6 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             );
 
         } catch (bytes memory err) {
-            _resetReservesAndExchangeRate();
-
             _ensurePoolError(err);
         }
 
@@ -453,12 +412,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             shouldExchangeRateChange = false;
             shouldReserveChange      = false;
 
-            _updateCurrentReserves();
-            _updateCurrentExchangeRate();
-
         } catch (bytes memory err) {
-            _resetReservesAndExchangeRate();
-
             _ensurePoolError(err);
         }
     }

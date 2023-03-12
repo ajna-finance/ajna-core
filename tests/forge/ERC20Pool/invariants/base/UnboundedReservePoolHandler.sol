@@ -26,12 +26,7 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
             shouldExchangeRateChange = false;
             shouldReserveChange      = true;
 
-            _updateCurrentReserves();
-            _updateCurrentExchangeRate();
-
         } catch (bytes memory err) {
-            _resetReservesAndExchangeRate();
-
             _ensurePoolError(err);
         }
     }
@@ -63,12 +58,7 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
             shouldExchangeRateChange = false;
             shouldReserveChange      = true;
 
-            _updateCurrentReserves();
-            _updateCurrentExchangeRate();
-
         } catch (bytes memory err) {
-            _resetReservesAndExchangeRate();
-
             _ensurePoolError(err);
         }
     }

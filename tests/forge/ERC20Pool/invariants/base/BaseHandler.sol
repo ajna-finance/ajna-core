@@ -56,12 +56,10 @@ abstract contract BaseHandler is Test {
     // exchange rate invariant test state
     bool                        public shouldExchangeRateChange; // bucket exchange rate invariant check
     mapping(uint256 => uint256) public previousExchangeRate;     // mapping from bucket index to exchange rate before action
-    mapping(uint256 => uint256) public currentExchangeRate;      // mapping from bucket index to exchange rate after action
 
     // reserves invariant test state
     bool    public shouldReserveChange;        // should reserve change after a action
     uint256 public previousReserves;           // reserves before action
-    uint256 public currentReserves;            // reserves after action
     uint256 public loanKickIncreaseInReserve;  // amount of reserve increase after kicking a loan
     uint256 public firstTakeIncreaseInReserve; // amount of reserve increase after first take
     uint256 public drawDebtIncreaseInReserve;  // amount of reserve increase after draw debt as origination fee
@@ -230,12 +228,10 @@ abstract contract BaseHandler is Test {
     function _resetReservesAndExchangeRate() internal {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             previousExchangeRate[bucketIndex] = 0;
-            currentExchangeRate[bucketIndex]  = 0;
         }
 
         // reset the reserves before each action 
         previousReserves = 0;
-        currentReserves  = 0;
     }
 
     /**
@@ -244,16 +240,6 @@ abstract contract BaseHandler is Test {
     function _updatePreviousExchangeRate() internal {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             previousExchangeRate[bucketIndex] = _pool.bucketExchangeRate(bucketIndex);
-        }
-    }
-
-    /**
-     * @dev Calculate exchange rate from pool right after an action.
-     */
-    function _updateCurrentExchangeRate() internal {
-        // update exchange rate for all buckets in fuzz bound
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            currentExchangeRate[bucketIndex] = _pool.bucketExchangeRate(bucketIndex);
         }
     }
 
@@ -339,13 +325,6 @@ abstract contract BaseHandler is Test {
      */
     function _updatePreviousReserves() internal {
         (previousReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
-    }
-
-    /**
-     * @dev Update reserve after an action
-     */
-    function _updateCurrentReserves() internal {
-        (currentReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool)); 
     }
 
     /*********************************/

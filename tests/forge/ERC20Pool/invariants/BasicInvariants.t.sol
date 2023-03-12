@@ -221,7 +221,7 @@ contract BasicInvariants is InvariantsTestBase {
 
     function invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8() public useCurrentTimestamp {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            uint256 currentExchangeRate = IBaseHandler(_handler).currentExchangeRate(bucketIndex);
+            uint256 currentExchangeRate = _pool.bucketExchangeRate(bucketIndex);
 
             if (!IBaseHandler(_handler).shouldExchangeRateChange() && currentExchangeRate != 0) {
                 uint256 previousExchangeRate = IBaseHandler(_handler).previousExchangeRate(bucketIndex);

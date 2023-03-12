@@ -38,14 +38,10 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             shouldExchangeRateChange = true;
             shouldReserveChange      = true;
 
-            _updateCurrentReserves();
-
             // reserve increase by 3 months of interest of borrowerDebt
             loanKickIncreaseInReserve = Maths.wmul(borrowerDebt, Maths.wdiv(interestRate, 4 * 1e18));
 
         } catch (bytes memory err) {
-            _resetReservesAndExchangeRate();
-
             _ensurePoolError(err);
         }
     }
@@ -68,14 +64,10 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             shouldExchangeRateChange = true;
             shouldReserveChange      = true;
 
-            _updateCurrentReserves();
-
             // reserve increase by 3 months of interest of borrowerDebt
             loanKickIncreaseInReserve = Maths.wmul(borrowerDebt, Maths.wdiv(interestRate, 4 * 1e18));
 
         } catch (bytes memory err) {
-            _resetReservesAndExchangeRate();
-
             _ensurePoolError(err);
         }
     }
@@ -96,12 +88,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             shouldExchangeRateChange = false;
             shouldReserveChange      = false;
 
-            _updateCurrentExchangeRate();
-            _updateCurrentReserves();
-
         } catch (bytes memory err) {
-            _resetReservesAndExchangeRate();
-
             _ensurePoolError(err);
         }
     }
@@ -133,8 +120,6 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             shouldExchangeRateChange = true;
             shouldReserveChange      = true;
 
-            _updateCurrentReserves();
-
             uint256 totalBondAfterTake = _getKickerBond(kicker);
 
             // calculate amount of kicker reward/penalty that will decrease/increase reserves
@@ -149,8 +134,6 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             _updateCurrentTakeState(borrower_, borrowerDebt);
 
         } catch (bytes memory err) {
-            _resetReservesAndExchangeRate();
-
             _ensurePoolError(err);
         }
     }
@@ -182,9 +165,6 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             shouldExchangeRateChange = false;
             shouldReserveChange      = true;
 
-            _updateCurrentReserves();
-            _updateCurrentExchangeRate();
-
             (uint256 kickerLpsAfterTake, ) = _pool.lenderInfo(bucketIndex_, kicker);
             (uint256 takerLpsAfterTake, )  = _pool.lenderInfo(bucketIndex_, _actor);
 
@@ -204,8 +184,6 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             _updateCurrentTakeState(borrower_, borrowerDebt);
 
         } catch (bytes memory err) {
-            _resetReservesAndExchangeRate();
-
             _ensurePoolError(err);
         }
     }
@@ -277,7 +255,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 uint256 bucketIndex = fenwickIndexForSum(1 + depositUsed);
                 uint256 bucketUsed  = bucketIndex - LENDER_MIN_BUCKET_INDEX;
 
-                if(bucketIndex != MAX_FENWICK_INDEX) {
+                if (bucketIndex != MAX_FENWICK_INDEX) {
 
                     // debt is greater than bucket deposit
                     if (borrowerDebt > (fenwickDeposits[bucketIndex] - changeInDeposit[bucketUsed])) {
@@ -307,8 +285,6 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             }
 
         } catch (bytes memory err) {
-            _resetReservesAndExchangeRate();
-
             _ensurePoolError(err);
         }
     }
