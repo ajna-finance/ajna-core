@@ -204,11 +204,11 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         uint256 amountToRemove_,
         uint256 bucketIndex_
     ) internal returns (uint256 boundedAmount_) {
-        boundedAmount_ = amountToRemove_;
+        boundedAmount_ = constrictToRange(amountToRemove_, 1, 1e30);
 
+        // ensure actor has quote tokens to remove
         (uint256 lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex_, _actor);
         if (lpBalanceBefore == 0) {
-            boundedAmount_ = constrictToRange(boundedAmount_, 1, 1e30);
             _addQuoteToken(boundedAmount_, bucketIndex_);
         }
     }
@@ -244,6 +244,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     ) internal returns (uint256 boundedAmount_) {
         boundedAmount_ = constrictToRange(amountToRemove_, 1, 1e30);
 
+        // ensure actor has collateral to remove
         (uint256 lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex_, _actor);
         if(lpBalanceBefore == 0) _addCollateral(boundedAmount_, bucketIndex_);
     }
@@ -252,6 +253,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         uint256 toActorIndex_,
         uint256 lpsToTransfer_
     ) internal returns (address receiver_, uint256 boundedLps_) {
+        // ensure actor has LPs to transfer
         (uint256 senderLpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
         if(senderLpBalance == 0) _addQuoteToken(1e24, _lenderBucketIndex);
 
@@ -317,7 +319,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     ) internal returns (uint256 boundedAmount_) {
         boundedAmount_ = constrictToRange(amountToRepay_, _pool.quoteTokenDust(), 1e30);
 
-        // Prepare test phase
+        // ensure actor has debt to repay
         (uint256 debt, , ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);
         if (debt == 0) {
             boundedAmount_ = _preDrawDebt(boundedAmount_);
