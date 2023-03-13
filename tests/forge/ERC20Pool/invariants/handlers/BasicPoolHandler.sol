@@ -58,7 +58,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         numberOfCalls['BBasicHandler.removeQuoteToken']++;
 
         // Prepare test phase
-        uint256 boundedAmount = _preRemoveQuoteToken(amountToRemove_, bucketIndex_);
+        uint256 boundedAmount = _preRemoveQuoteToken(amountToRemove_);
 
         // Action phase
         _removeQuoteToken(boundedAmount, _lenderBucketIndex);
@@ -105,7 +105,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         numberOfCalls['BBasicHandler.removeCollateral']++;
 
         // Prepare test phase
-        uint256 boundedAmount = _preRemoveCollateral(amountToRemove_, bucketIndex_);
+        uint256 boundedAmount = _preRemoveCollateral(amountToRemove_);
 
         // Action phase
         _removeCollateral(boundedAmount, _lenderBucketIndex);
@@ -201,15 +201,14 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     }
 
     function _preRemoveQuoteToken(
-        uint256 amountToRemove_,
-        uint256 bucketIndex_
+        uint256 amountToRemove_
     ) internal returns (uint256 boundedAmount_) {
         boundedAmount_ = constrictToRange(amountToRemove_, 1, 1e30);
 
         // ensure actor has quote tokens to remove
-        (uint256 lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex_, _actor);
+        (uint256 lpBalanceBefore, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
         if (lpBalanceBefore == 0) {
-            _addQuoteToken(boundedAmount_, bucketIndex_);
+            _addQuoteToken(boundedAmount_, _lenderBucketIndex);
         }
     }
 
@@ -239,14 +238,13 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     }
 
     function _preRemoveCollateral(
-        uint256 amountToRemove_,
-        uint256 bucketIndex_
+        uint256 amountToRemove_
     ) internal returns (uint256 boundedAmount_) {
         boundedAmount_ = constrictToRange(amountToRemove_, 1, 1e30);
 
         // ensure actor has collateral to remove
-        (uint256 lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex_, _actor);
-        if(lpBalanceBefore == 0) _addCollateral(boundedAmount_, bucketIndex_);
+        (uint256 lpBalanceBefore, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
+        if(lpBalanceBefore == 0) _addCollateral(boundedAmount_, _lenderBucketIndex);
     }
 
     function _preTransferLps(
