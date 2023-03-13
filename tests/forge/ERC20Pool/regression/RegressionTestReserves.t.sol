@@ -132,4 +132,12 @@ contract RegressionTestReserve is ReserveInvariants {
         invariant_bond_A2();
         invariant_fenwick_depositAtIndex_F1();
     }
+
+    function test_regression_invariant_reserves_fenwick_depositAtIndex_F1() external {
+        _reservePoolHandler.kickAuction(14062, 13380, 20332);
+        _reservePoolHandler.kickAuction(115792089237316195423570985008687907853269984665640564039457584007913129639933, 2, 250713412144308447525906089113510093407014793436690623);
+        _reservePoolHandler.bucketTake(2, 115792089237316195423570985008687907853269984665640564039457584007913129639933, true, 115792089237316195423570985008687907853269984665640564039457584007913129639932);
+
+        invariant_fenwick_depositAtIndex_F1();
+    }
 }

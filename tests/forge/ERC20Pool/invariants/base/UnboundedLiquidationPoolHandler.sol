@@ -116,16 +116,18 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
         (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
 
-        (address kicker, , , , , , , , , ) = _pool.auctionInfo(borrower_);
-        (uint256 kickerLpsBeforeTake, )    = _pool.lenderInfo(bucketIndex_, kicker);
-        (uint256 takerLpsBeforeTake, )     = _pool.lenderInfo(bucketIndex_, _actor);
+        (address kicker, , , , , , , , , )     = _pool.auctionInfo(borrower_);
+        (uint256 kickerLpsBeforeTake, )        = _pool.lenderInfo(bucketIndex_, kicker);
+        (uint256 takerLpsBeforeTake, )         = _pool.lenderInfo(bucketIndex_, _actor);
+        ( , , , uint256 depositBeforeAction, ) = _pool.bucketInfo(bucketIndex_);
 
         uint256 totalBondBeforeTake = _getKickerBond(kicker);
 
         try _pool.bucketTake(borrower_, depositTake_, bucketIndex_) {
 
-            (uint256 kickerLpsAfterTake, ) = _pool.lenderInfo(bucketIndex_, kicker);
-            (uint256 takerLpsAfterTake, )  = _pool.lenderInfo(bucketIndex_, _actor);
+            (uint256 kickerLpsAfterTake, )        = _pool.lenderInfo(bucketIndex_, kicker);
+            (uint256 takerLpsAfterTake, )         = _pool.lenderInfo(bucketIndex_, _actor);
+            ( , , , uint256 depositAfterAction, ) = _pool.bucketInfo(bucketIndex_);
 
             // **B7**: when awarded bucket take LPs : taker deposit time = timestamp of block when award happened
             if (takerLpsAfterTake > takerLpsBeforeTake) lenderDepositTime[taker_][bucketIndex_] = block.timestamp;
@@ -141,6 +143,8 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             // **R7**: Exchange rates are unchanged under depositTakes
             // **R8**: Exchange rates are unchanged under arbTakes
             exchangeRateShouldNotChange[bucketIndex_] = true;
+
+            _fenwickRemove(depositBeforeAction - depositAfterAction, bucketIndex_);
 
             _updateCurrentTakeState(borrower_, borrowerDebt);
 
