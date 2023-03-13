@@ -294,12 +294,22 @@ library PoolCommons {
     function _lenderInterestMargin(
         uint256 mau_
     ) internal pure returns (uint256) {
+        // Net Interest Margin = ((1 - MAU1)^(1/3) * 0.15)
+        // Where MAU1 is MAU capped at 100% (min(MAU,1))
+        // Lender Interest Margin = 1 - Net Interest Margin
+
+        // PRBMath library forbids raising a number < 1e18 to a power.  Using the product and quotient rules of 
+        // exponents, rewrite the equation with a coefficient s which provides sufficient precision:
+        // Net Interest Margin = ((s - MAU1) * s)^(1/3) / s^(1/3) * 0.15
+
         uint256 base = 1_000_000 * 1e18 - Maths.wmul(Maths.min(mau_, 1e18), 1_000_000 * 1e18);
+        // If unutilized deposit is infinitessimal, lenders get 100% of interest.
         if (base < 1e18) {
             return 1e18;
         } else {
             // cubic root of the percentage of meaningful unutilized deposit
             uint256 crpud = PRBMathUD60x18.pow(base, ONE_THIRD);
+            // finish calculating Net Interest Margin, and then convert to Lender Interest Margin
             return 1e18 - Maths.wmul(Maths.wdiv(crpud, CUBIC_ROOT_1000000), 0.15 * 1e18);
         }
     }
