@@ -16,6 +16,8 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
 
         try _pool.startClaimableReserveAuction() {
 
+            // **RE11**:  Reserves increase by claimableReserves by startClaimableReserveAuction
+            decreaseInReserves += claimableReserves;            
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }

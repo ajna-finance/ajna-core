@@ -70,3 +70,4 @@
 - **RE8**:  Reserves are unchanged under takes/depositTakes/arbTakes after the first take but increase/decrease by bond penalty/reward on take.
 - **RE9**:  Reserves increase by 3 months of interest when a loan is kicked
 - **RE10**: Reserves increase by origination fee: max(1 week interest, 0.05% of borrow amount), on draw debt
+- **RE11**: Reserves decrease by claimableReserves by startClaimableReserveAuction

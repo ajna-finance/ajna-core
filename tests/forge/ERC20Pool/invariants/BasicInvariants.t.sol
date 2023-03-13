@@ -28,6 +28,8 @@ contract BasicInvariants is InvariantsTestBase {
         *  B3: exchangeRate == 0 (if bucket quote and collateral is 0)
         *  B4: bankrupt bucket LPs accumulator = 0; lender LPs for deposits before bankruptcy time = 0
         *  B5: block.timestamp == lenderDepositTime (if lps are added to lender lp balance)
+        *  B6: block.timestamp == max(sender's depositTime, receiver's depositTime), when receiving transferred LPs
+        *  B7: lenderDepositTime == block.timestamp (timestamp of block when taker is rewarded by bucketTake)
      * Quote Token
         * QT1: poolQtBal + poolDebt >= totalBondEscrowed + poolDepositSize
         * QT2: pool t0 debt = sum of all borrower's t0 debt
