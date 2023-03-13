@@ -15,9 +15,9 @@ import {
 import { UnboundedBasicPoolHandler } from '../base/UnboundedBasicPoolHandler.sol';
 
 /**
- *  @dev this contract manages multiple lenders
+ *  @dev this contract manages multiple actors
  *  @dev methods in this contract are called in random order
- *  @dev randomly selects a lender contract to make a txn
+ *  @dev randomly selects an actor contract to make a txn
  */ 
 contract BasicPoolHandler is UnboundedBasicPoolHandler {
 
@@ -38,109 +38,77 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
 
     function addQuoteToken(
         uint256 actorIndex_,
-        uint256 amount_,
+        uint256 amountToAdd_,
         uint256 bucketIndex_
     ) public useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps {
         numberOfCalls['BBasicHandler.addQuoteToken']++;
 
-        amount_ = constrictToRange(amount_, _pool.quoteTokenDust(), 1e30);
+        // Prepare test phase
+        uint256 boundedAmount = _preAddQuoteToken(amountToAdd_);
 
-        // Action
-        _addQuoteToken(amount_, _lenderBucketIndex);
+        // Action phase
+        _addQuoteToken(boundedAmount, _lenderBucketIndex);
     }
 
     function removeQuoteToken(
         uint256 actorIndex_,
-        uint256 amount_,
+        uint256 amountToRemove_,
         uint256 bucketIndex_
     ) public useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps {
         numberOfCalls['BBasicHandler.removeQuoteToken']++;
 
-        uint256 poolBalance = _quote.balanceOf(address(_pool));
+        // Prepare test phase
+        uint256 boundedAmount = _preRemoveQuoteToken(amountToRemove_, bucketIndex_);
 
-        if (poolBalance < amount_) return; // (not enough quote token to withdraw / quote tokens are borrowed)
-
-        // Pre condition
-        (uint256 lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex_, _actor);
-
-        if (lpBalanceBefore == 0) {
-            amount_ = constrictToRange(amount_, 1, 1e30);
-            _addQuoteToken(amount_, bucketIndex_);
-        }
-
-        // Action
-        _removeQuoteToken(amount_, _lenderBucketIndex);
+        // Action phase
+        _removeQuoteToken(boundedAmount, _lenderBucketIndex);
     }
 
     function moveQuoteToken(
         uint256 actorIndex_,
-        uint256 amount_,
+        uint256 amountToMove_,
         uint256 fromIndex_,
         uint256 toIndex_
     ) public useRandomActor(actorIndex_) useTimestamps {
         numberOfCalls['BBasicHandler.moveQuoteToken']++;
 
-        fromIndex_ = constrictToRange(
-            fromIndex_,
-            LENDER_MIN_BUCKET_INDEX,
-            LENDER_MAX_BUCKET_INDEX
-        );
-        toIndex_ = constrictToRange(
-            toIndex_,
-            LENDER_MIN_BUCKET_INDEX,
-            LENDER_MAX_BUCKET_INDEX
-        );
+        // Prepare test phase
+        (
+            uint256 boundedFromIndex,
+            uint256 boundedToIndex,
+            uint256 boundedAmount
+        ) = _preMoveQuoteToken(amountToMove_, fromIndex_, toIndex_);
 
-        if (fromIndex_ == toIndex_) return;
-
-        amount_ = constrictToRange(amount_, 1, 1e30);
-
-        // ensure actor has LPs to move
-        (uint256 lpBalance, ) = _pool.lenderInfo(fromIndex_, _actor);
-        if (lpBalance == 0) _addQuoteToken(amount_, toIndex_);
-
-        (uint256 lps, ) = _pool.lenderInfo(fromIndex_, _actor);
-        // restrict amount to move by available deposit inside bucket
-        uint256 availableDeposit = _poolInfo.lpsToQuoteTokens(address(_pool), lps, fromIndex_);
-        amount_ = Maths.min(amount_, availableDeposit);
-
-        _moveQuoteToken(amount_, fromIndex_, toIndex_);
+        // Action phase
+        _moveQuoteToken(boundedAmount, boundedFromIndex, boundedToIndex);
     }
 
     function addCollateral(
         uint256 actorIndex_,
-        uint256 amount_,
+        uint256 amountToAdd_,
         uint256 bucketIndex_
     ) public useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps {
         numberOfCalls['BBasicHandler.addCollateral']++;
 
-        amount_ = constrictToRange(amount_, 1e6, 1e30);
+        // Prepare test phase
+        uint256 boundedAmount = _preAddCollateral(amountToAdd_);
 
-        // Action
-        _addCollateral(amount_, _lenderBucketIndex);
+        // Action phase
+        _addCollateral(boundedAmount, _lenderBucketIndex);
     }
 
     function removeCollateral(
         uint256 actorIndex_,
-        uint256 amount_,
+        uint256 amountToRemove_,
         uint256 bucketIndex_
     ) public useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps {
         numberOfCalls['BBasicHandler.removeCollateral']++;
 
-        (uint256 lpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
+        // Prepare test phase
+        uint256 boundedAmount = _preRemoveCollateral(amountToRemove_, bucketIndex_);
 
-        ( , uint256 bucketCollateral, , , ) = _pool.bucketInfo(_lenderBucketIndex);
-
-        if (lpBalance == 0 || bucketCollateral == 0) return; // no value in bucket
-
-        amount_ = constrictToRange(amount_, 1, 1e30);
-
-        // Pre condition
-        (uint256 lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex_, _actor);
-        if(lpBalanceBefore == 0) _addCollateral(amount_, bucketIndex_);
-
-        // Action
-        _removeCollateral(amount_, _lenderBucketIndex);
+        // Action phase
+        _removeCollateral(boundedAmount, _lenderBucketIndex);
     }
 
     function transferLps(
@@ -149,17 +117,11 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         uint256 lpsToTransfer_,
         uint256 bucketIndex_
     ) public useRandomActor(fromActorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps {
-        (uint256 senderLpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
+        // Prepare test phase
+        (address receiver, uint256 boundedLps) = _preTransferLps(toActorIndex_, lpsToTransfer_);
 
-        address receiver = actors[constrictToRange(toActorIndex_, 0, actors.length - 1)];
-
-        if(senderLpBalance == 0) _addQuoteToken(1e24, _lenderBucketIndex);
-
-        (senderLpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
-
-        lpsToTransfer_ = constrictToRange(lpsToTransfer_, 1, senderLpBalance);
-
-        _increaseLPsAllowance(receiver, _lenderBucketIndex, lpsToTransfer_);
+        // Action phase
+        _increaseLPsAllowance(receiver, _lenderBucketIndex, boundedLps);
         _transferLps(_actor, receiver, _lenderBucketIndex);
     }
 
@@ -173,14 +135,13 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     ) public useRandomActor(actorIndex_) useTimestamps {
         numberOfCalls['BBasicHandler.pledgeCollateral']++;
 
-        uint256 collateralScale = _pool.collateralScale();
+        // Prepare test phase
+        uint256 boundedAmount = _prePledgeCollateral(amountToPledge_);
 
-        amountToPledge_ = constrictToRange(amountToPledge_, collateralScale, 1e30);
+        // Action phase
+        _pledgeCollateral(boundedAmount);
 
-        // Action
-        _pledgeCollateral(amountToPledge_);
-
-        // auction settle cleanup
+        // Cleanup phase
         _auctionSettleStateReset(_actor);
     }
 
@@ -190,10 +151,11 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     ) public useRandomActor(actorIndex_) useTimestamps {
         numberOfCalls['BBasicHandler.pullCollateral']++;
 
-        amountToPull_ = constrictToRange(amountToPull_, 1, 1e30);
+        // Prepare test phase
+        uint256 boundedAmount = _prePullCollateral(amountToPull_);
 
-        // Action
-        _pullCollateral(amountToPull_);
+        // Action phase
+        _pullCollateral(boundedAmount);
     } 
 
     function drawDebt(
@@ -202,7 +164,120 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     ) public useRandomActor(actorIndex_) useTimestamps {
         numberOfCalls['BBasicHandler.drawDebt']++;
 
-        amountToBorrow_ = constrictToRange(amountToBorrow_, 1e6, 1e30);
+        // Prepare test phase
+        uint256 boundedAmount = _preDrawDebt(amountToBorrow_);
+        
+        // Action phase
+        _drawDebt(boundedAmount);
+
+        // Cleanup phase
+        _auctionSettleStateReset(_actor);
+    }
+
+    function repayDebt(
+        uint256 actorIndex_,
+        uint256 amountToRepay_
+    ) public useRandomActor(actorIndex_) useTimestamps {
+        numberOfCalls['BBasicHandler.repayDebt']++;
+
+        // Prepare test phase
+        uint256 boundedAmount = _preRepayDebt(amountToRepay_);
+
+        // Action phase
+        _repayDebt(boundedAmount);
+
+        // Cleanup phase
+        _auctionSettleStateReset(_actor);
+    }
+
+    /*******************************/
+    /*** Prepare Tests Functions ***/
+    /*******************************/
+
+    function _preAddQuoteToken(
+        uint256 amountToAdd_
+    ) internal view returns (uint256 boundedAmount_) {
+        boundedAmount_ = constrictToRange(amountToAdd_, _pool.quoteTokenDust(), 1e30);
+    }
+
+    function _preRemoveQuoteToken(
+        uint256 amountToRemove_,
+        uint256 bucketIndex_
+    ) internal returns (uint256 boundedAmount_) {
+        boundedAmount_ = amountToRemove_;
+
+        (uint256 lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex_, _actor);
+        if (lpBalanceBefore == 0) {
+            boundedAmount_ = constrictToRange(boundedAmount_, 1, 1e30);
+            _addQuoteToken(boundedAmount_, bucketIndex_);
+        }
+    }
+
+    function _preMoveQuoteToken(
+        uint256 amountToMove_,
+        uint256 fromIndex_,
+        uint256 toIndex_
+    ) internal returns (uint256 boundedFromIndex_, uint256 boundedToIndex_, uint256 boundedAmount_) {
+        boundedFromIndex_ = constrictToRange(fromIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
+        boundedToIndex_   = constrictToRange(toIndex_,   LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
+        boundedAmount_    = constrictToRange(amountToMove_, 1, 1e30);
+
+        // ensure actor has LPs to move
+        (uint256 lpBalance, ) = _pool.lenderInfo(boundedFromIndex_, _actor);
+        if (lpBalance == 0) _addQuoteToken(boundedAmount_, boundedToIndex_);
+
+        (uint256 lps, ) = _pool.lenderInfo(boundedFromIndex_, _actor);
+        // restrict amount to move by available deposit inside bucket
+        uint256 availableDeposit = _poolInfo.lpsToQuoteTokens(address(_pool), lps, boundedFromIndex_);
+        boundedAmount_ = Maths.min(boundedAmount_, availableDeposit);
+    }
+
+    function _preAddCollateral(
+        uint256 amountToAdd_
+    ) internal pure returns (uint256 boundedAmount_) {
+        boundedAmount_ = constrictToRange(amountToAdd_, 1e6, 1e30);
+    }
+
+    function _preRemoveCollateral(
+        uint256 amountToRemove_,
+        uint256 bucketIndex_
+    ) internal returns (uint256 boundedAmount_) {
+        boundedAmount_ = constrictToRange(amountToRemove_, 1, 1e30);
+
+        (uint256 lpBalanceBefore, ) = _pool.lenderInfo(bucketIndex_, _actor);
+        if(lpBalanceBefore == 0) _addCollateral(boundedAmount_, bucketIndex_);
+    }
+
+    function _preTransferLps(
+        uint256 toActorIndex_,
+        uint256 lpsToTransfer_
+    ) internal returns (address receiver_, uint256 boundedLps_) {
+        (uint256 senderLpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
+        if(senderLpBalance == 0) _addQuoteToken(1e24, _lenderBucketIndex);
+
+        (senderLpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
+
+        boundedLps_ = constrictToRange(lpsToTransfer_, 1, senderLpBalance);
+
+        receiver_ = actors[constrictToRange(toActorIndex_, 0, actors.length - 1)];
+    }
+
+    function _prePledgeCollateral(
+        uint256 amountToPledge_
+    ) internal view returns (uint256 boundedAmount_) {
+        boundedAmount_ =  constrictToRange(amountToPledge_, _pool.collateralScale(), 1e30);
+    }
+
+    function _prePullCollateral(
+        uint256 amountToPull_
+    ) internal pure returns (uint256 boundedAmount_) {
+        boundedAmount_ = constrictToRange(amountToPull_, 1, 1e30);
+    }
+
+    function _preDrawDebt(
+        uint256 amountToBorrow_
+    ) internal returns (uint256 boundedAmount_) {
+        boundedAmount_ = constrictToRange(amountToBorrow_, 1e6, 1e30);
 
         // Pre Condition
         // 1. borrower's debt should exceed minDebt
@@ -213,14 +288,16 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         (uint256 debt, uint256 collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
         (uint256 minDebt, , , ) = _poolInfo.poolUtilizationInfo(address(_pool));
 
-        if (amountToBorrow_ < minDebt) amountToBorrow_ = minDebt + 1;
+        if (boundedAmount_ < minDebt) boundedAmount_ = minDebt + 1;
 
         // TODO: Need to constrain amount so LUP > HTP
 
         // 2. pool needs sufficent quote token to draw debt
         uint256 poolQuoteBalance = _quote.balanceOf(address(_pool));
 
-        if (amountToBorrow_ > poolQuoteBalance) _addQuoteToken(amountToBorrow_ * 2, LENDER_MAX_BUCKET_INDEX);
+        if (boundedAmount_ > poolQuoteBalance) {
+            _addQuoteToken(boundedAmount_ * 2, LENDER_MAX_BUCKET_INDEX);
+        }
 
         // 3. drawing of addition debt will make them under collateralized
         uint256 lup = _poolInfo.lup(address(_pool));
@@ -233,30 +310,18 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
 
             require(debt == 0, "borrower has debt");
         }
-        
-        // Action
-        _drawDebt(amountToBorrow_);
-
-        // auction settle cleanup
-        _auctionSettleStateReset(_actor);
     }
 
-    function repayDebt(
-        uint256 actorIndex_,
+    function _preRepayDebt(
         uint256 amountToRepay_
-    ) public useRandomActor(actorIndex_) useTimestamps {
-        numberOfCalls['BBasicHandler.repayDebt']++;
+    ) internal returns (uint256 boundedAmount_) {
+        boundedAmount_ = constrictToRange(amountToRepay_, _pool.quoteTokenDust(), 1e30);
 
-        amountToRepay_ = constrictToRange(amountToRepay_, _pool.quoteTokenDust(), 1e30);
-
-        // Pre condition
+        // Prepare test phase
         (uint256 debt, , ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);
-        if (debt == 0) _drawDebt(amountToRepay_);
-
-        // Action
-        _repayDebt(amountToRepay_);
-
-        // auction settle cleanup
-        _auctionSettleStateReset(_actor);
+        if (debt == 0) {
+            boundedAmount_ = _preDrawDebt(boundedAmount_);
+            _drawDebt(boundedAmount_);
+        }
     }
 }
