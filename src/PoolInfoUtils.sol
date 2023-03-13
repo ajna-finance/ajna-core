@@ -43,13 +43,13 @@ contract PoolInfoUtils {
         IPool pool = IPool(ajnaPool_);
 
         (
-            uint256 poolInflator,
+            uint256 inflator,
             uint256 lastInflatorUpdate
         ) = pool.inflatorInfo();
 
         (uint256 interestRate,) = pool.interestRateInfo();
 
-        uint256 pendingInflator = PoolCommons.pendingInflator(poolInflator, lastInflatorUpdate, interestRate);
+        uint256 pendingInflator = PoolCommons.pendingInflator(inflator, lastInflatorUpdate, interestRate);
 
         uint256 t0Debt;
         (t0Debt, collateral_, t0Np_)  = pool.borrowerInfo(borrower_);
