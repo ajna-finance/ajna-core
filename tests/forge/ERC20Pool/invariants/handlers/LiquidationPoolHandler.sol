@@ -152,7 +152,8 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
             if (debt == 0) {
                 changePrank(borrower);
                 _actor = borrower;
-                _drawDebt(amount_);
+                uint256 drawDebtAmount = _preDrawDebt(amount_);
+                _drawDebt(drawDebtAmount);
             }
 
             changePrank(kicker);
