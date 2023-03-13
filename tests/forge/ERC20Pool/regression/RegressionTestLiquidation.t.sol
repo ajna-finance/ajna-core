@@ -86,4 +86,11 @@ contract RegressionTestLiquidation is LiquidationInvariants {
 
         invariant_fenwick_depositAtIndex_F1();
     }
+
+    function test_regression_depositKick() external {
+        _liquidationPoolHandler.repayDebt(13418, 1160);
+        _liquidationPoolHandler.kickWithDeposit(143703836638834364678, 470133688850921941603);
+
+        invariant_fenwick_depositAtIndex_F1();
+    }
 }

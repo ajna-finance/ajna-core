@@ -40,14 +40,19 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     function _kickWithDeposit(
         uint256 bucketIndex_
     ) internal useTimestamps updateLocalStateAndPoolInterest {
-        (address maxBorrower, , )  = _pool.loansInfo();
-        (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), maxBorrower);
-        (uint256 interestRate, )   = _pool.interestRateInfo();
+        (address maxBorrower, , )              = _pool.loansInfo();
+        (uint256 borrowerDebt, , )             = _poolInfo.borrowerInfo(address(_pool), maxBorrower);
+        (uint256 interestRate, )               = _pool.interestRateInfo();
+        ( , , , uint256 depositBeforeAction, ) = _pool.bucketInfo(bucketIndex_);
 
         try _pool.kickWithDeposit(bucketIndex_, 7388) {
 
+            ( , , , uint256 depositAfterAction, ) = _pool.bucketInfo(bucketIndex_);
+
             // **RE9**:  Reserves increase by 3 months of interest when a loan is kicked
             increaseInReserves += Maths.wmul(borrowerDebt, Maths.wdiv(interestRate, 4 * 1e18));
+
+            _fenwickRemove(depositBeforeAction - depositAfterAction, bucketIndex_);
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
