@@ -10,7 +10,7 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
     /*** Kicker Helper Functions ***/
     /*******************************/
 
-    function _startClaimableReserveAuction() internal useTimestamps resetAllPreviousLocalState {
+    function _startClaimableReserveAuction() internal useTimestamps updateLocalStateAndPoolInterest {
         (, uint256 claimableReserves, , , ) = _poolInfo.poolReservesInfo(address(_pool));
         if (claimableReserves == 0) return;
 
@@ -27,7 +27,7 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
 
     function _takeReserves(
         uint256 amount_
-    ) internal useTimestamps resetAllPreviousLocalState {
+    ) internal useTimestamps updateLocalStateAndPoolInterest {
         try _pool.takeReserves(amount_) returns (uint256 takenAmount_) {
 
             decreaseInReserves += takenAmount_;

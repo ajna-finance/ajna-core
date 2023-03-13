@@ -21,7 +21,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
     function _kickAuction(
         address borrower_
-    ) internal useTimestamps resetAllPreviousLocalState {
+    ) internal useTimestamps updateLocalStateAndPoolInterest {
         numberOfCalls['UBLiquidationHandler.kickAuction']++;
 
         (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
@@ -39,7 +39,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
     function _kickWithDeposit(
         uint256 bucketIndex_
-    ) internal useTimestamps resetAllPreviousLocalState {
+    ) internal useTimestamps updateLocalStateAndPoolInterest {
         (address maxBorrower, , )  = _pool.loansInfo();
         (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), maxBorrower);
         (uint256 interestRate, )   = _pool.interestRateInfo();
@@ -57,7 +57,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     function _withdrawBonds(
         address kicker_,
         uint256 maxAmount_
-    ) internal useTimestamps resetAllPreviousLocalState {
+    ) internal useTimestamps updateLocalStateAndPoolInterest {
 
         try _pool.withdrawBonds(kicker_, maxAmount_) {
 
@@ -74,7 +74,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         address borrower_,
         uint256 amount_,
         address taker_
-    ) internal useTimestamps resetAllPreviousLocalState {
+    ) internal useTimestamps updateLocalStateAndPoolInterest {
         numberOfCalls['UBLiquidationHandler.takeAuction']++;
 
         (uint256 borrowerDebt, , )         = _poolInfo.borrowerInfo(address(_pool), borrower_);
@@ -106,7 +106,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         address borrower_,
         bool depositTake_,
         uint256 bucketIndex_
-    ) internal useTimestamps resetAllPreviousLocalState {
+    ) internal useTimestamps updateLocalStateAndPoolInterest {
         numberOfCalls['UBLiquidationHandler.bucketTake']++;
 
         (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
@@ -151,7 +151,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     function _settleAuction(
         address borrower_,
         uint256 maxDepth_
-    ) internal useTimestamps resetAllPreviousLocalState {
+    ) internal useTimestamps updateLocalStateAndPoolInterest {
         (
             uint256 borrowerDebt,
             uint256 collateral,

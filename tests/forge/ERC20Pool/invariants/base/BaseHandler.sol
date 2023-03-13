@@ -107,11 +107,11 @@ abstract contract BaseHandler is Test {
     /**
      * @dev Resets all local states before each action.
      */
-    modifier resetAllPreviousLocalState() {
+    modifier updateLocalStateAndPoolInterest() {
         _fenwickAccrueInterest();
         _updatePoolState();
 
-        _recordReservesAndExchangeRate();
+        _resetAndRecordReservesAndExchangeRate();
 
         _;
     }
@@ -218,7 +218,7 @@ abstract contract BaseHandler is Test {
     /**
      * @dev Record the reserves and exchange rates before each action.
      */
-    function _recordReservesAndExchangeRate() internal {
+    function _resetAndRecordReservesAndExchangeRate() internal {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             // reset the change flag before each action
             exchangeRateShouldNotChange[bucketIndex] = false;
