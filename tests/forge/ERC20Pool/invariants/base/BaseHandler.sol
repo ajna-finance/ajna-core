@@ -109,11 +109,11 @@ abstract contract BaseHandler is Test {
      */
     modifier resetAllPreviousLocalState() {
         _updatePoolState();
-
-        _fenwickAccrueInterest();
         _recordReservesAndExchangeRate();
 
         _;
+
+        _fenwickAccrueInterest();
     }
 
     modifier useRandomActor(uint256 actorIndex_) {
