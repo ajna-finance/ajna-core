@@ -21,73 +21,53 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
     function _kickAuction(
         address borrower_
-    ) internal useTimestamps resetAllPreviousLocalState {
+    ) internal useTimestamps updateLocalStateAndPoolInterest {
         numberOfCalls['UBLiquidationHandler.kickAuction']++;
-
-        _fenwickAccrueInterest();
-
-        _updatePoolState();
-
-        _updatePreviousReserves();
 
         (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
         (uint256 interestRate, )   = _pool.interestRateInfo();
 
         try _pool.kick(borrower_, 7388) {
 
-            shouldExchangeRateChange = true;
-            shouldReserveChange      = true;
+            // **RE9**:  Reserves increase by 3 months of interest when a loan is kicked
+            increaseInReserves += Maths.wmul(borrowerDebt, Maths.wdiv(interestRate, 4 * 1e18));
 
-            _updateCurrentReserves();
-
-            // reserve increase by 3 months of interest of borrowerDebt
-            loanKickIncreaseInReserve = Maths.wmul(borrowerDebt, Maths.wdiv(interestRate, 4 * 1e18));
-
-        } catch {
-            _resetReservesAndExchangeRate();
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
         }
     }
 
     function _kickWithDeposit(
         uint256 bucketIndex_
-    ) internal useTimestamps resetAllPreviousLocalState {
-        _fenwickAccrueInterest();
-
-        _updatePoolState();
-
-        _updatePreviousReserves();
+    ) internal useTimestamps updateLocalStateAndPoolInterest {
+        (address maxBorrower, , )              = _pool.loansInfo();
+        (uint256 borrowerDebt, , )             = _poolInfo.borrowerInfo(address(_pool), maxBorrower);
+        (uint256 interestRate, )               = _pool.interestRateInfo();
+        ( , , , uint256 depositBeforeAction, ) = _pool.bucketInfo(bucketIndex_);
 
         try _pool.kickWithDeposit(bucketIndex_, 7388) {
 
-            shouldExchangeRateChange = true;
-            shouldReserveChange      = true;
+            ( , , , uint256 depositAfterAction, ) = _pool.bucketInfo(bucketIndex_);
 
-        } catch {
-            _resetReservesAndExchangeRate();
+            // **RE9**:  Reserves increase by 3 months of interest when a loan is kicked
+            increaseInReserves += Maths.wmul(borrowerDebt, Maths.wdiv(interestRate, 4 * 1e18));
+
+            _fenwickRemove(depositBeforeAction - depositAfterAction, bucketIndex_);
+
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
         }
     }
 
     function _withdrawBonds(
         address kicker_,
         uint256 maxAmount_
-    ) internal useTimestamps resetAllPreviousLocalState {
-        _fenwickAccrueInterest();
-
-        _updatePoolState();
-
-        _updatePreviousExchangeRate();   
-        _updatePreviousReserves();
+    ) internal useTimestamps updateLocalStateAndPoolInterest {
 
         try _pool.withdrawBonds(kicker_, maxAmount_) {
 
-            shouldExchangeRateChange = false;
-            shouldReserveChange      = false;
-
-            _updateCurrentExchangeRate();
-            _updateCurrentReserves();
-
-        } catch {
-            _resetReservesAndExchangeRate();
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
         }
     }
 
@@ -99,60 +79,30 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         address borrower_,
         uint256 amount_,
         address taker_
-    ) internal useTimestamps resetAllPreviousLocalState {
+    ) internal useTimestamps updateLocalStateAndPoolInterest {
         numberOfCalls['UBLiquidationHandler.takeAuction']++;
-
-        _fenwickAccrueInterest();
-
-        _updatePoolState();
-
-        _updatePreviousReserves();
 
         (uint256 borrowerDebt, , )         = _poolInfo.borrowerInfo(address(_pool), borrower_);
         (address kicker, , , , , , , , , ) = _pool.auctionInfo(borrower_);
-        (
-            uint256 claimableBond,
-            uint256 lockedBond
-        ) = _pool.kickerInfo(kicker);
 
-        uint256 totalBond = claimableBond + lockedBond;
+        uint256 totalBondBeforeTake = _getKickerBond(kicker);
         
         try _pool.take(borrower_, amount_, taker_, bytes("")) {
 
-            shouldExchangeRateChange = true;
-            shouldReserveChange      = true;
+            uint256 totalBondAfterTake = _getKickerBond(kicker);
 
-            _updateCurrentReserves();
-
-            (claimableBond, lockedBond) = _pool.kickerInfo(kicker);
-
-            // calculate amount of kicker reward/penalty that will decrease/increase reserves
-            if (totalBond > claimableBond + lockedBond) {
-                kickerBondChange = totalBond - claimableBond - lockedBond;
-
-                isKickerRewarded = false;
-            }
-            else {
-                kickerBondChange = claimableBond + lockedBond - totalBond;
-
-                isKickerRewarded = true;
+            if (totalBondBeforeTake > totalBondAfterTake) {
+                // **RE7**: Reserves increase by bond penalty on take.
+                increaseInReserves += totalBondBeforeTake - totalBondAfterTake;
+            } else {
+                // **RE7**: Reserves decrease by bond reward on take.
+                decreaseInReserves += totalBondAfterTake - totalBondBeforeTake;
             }
 
-            (kicker, , , , , , , , , ) = _pool.auctionInfo(borrower_);
-            
-            if (!alreadyTaken[borrower_]) {
-                // reserve increase by 7% of borrower debt on first take
-                firstTakeIncreaseInReserve = Maths.wmul(borrowerDebt, 0.07 * 1e18);
-                firstTake = true;
+            _updateCurrentTakeState(borrower_, borrowerDebt);
 
-                // if auction is settled by take
-                if (kicker == address(0))  alreadyTaken[borrower_] = false;
-                else                       alreadyTaken[borrower_] = true;
-            }
-            else firstTake = false;
-
-        } catch {
-            _resetReservesAndExchangeRate();
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
         }
     }
 
@@ -161,71 +111,45 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         address borrower_,
         bool depositTake_,
         uint256 bucketIndex_
-    ) internal useTimestamps resetAllPreviousLocalState {
+    ) internal useTimestamps updateLocalStateAndPoolInterest {
         numberOfCalls['UBLiquidationHandler.bucketTake']++;
-
-        _fenwickAccrueInterest();
-        _updatePoolState();
-
-        _updatePreviousReserves();
-        _updatePreviousExchangeRate();
 
         (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
 
-        (address kicker, , , , , , , , , ) = _pool.auctionInfo(borrower_);
-        (uint256 kickerLpsBeforeTake, )    = _pool.lenderInfo(bucketIndex_, kicker);
-        (uint256 takerLpsBeforeTake, )     = _pool.lenderInfo(bucketIndex_, _actor);
-        (
-            uint256 claimableBond,
-            uint256 lockedBond
-        ) = _pool.kickerInfo(kicker);
+        (address kicker, , , , , , , , , )     = _pool.auctionInfo(borrower_);
+        (uint256 kickerLpsBeforeTake, )        = _pool.lenderInfo(bucketIndex_, kicker);
+        (uint256 takerLpsBeforeTake, )         = _pool.lenderInfo(bucketIndex_, _actor);
+        ( , , , uint256 depositBeforeAction, ) = _pool.bucketInfo(bucketIndex_);
 
-        uint256 totalBond = claimableBond + lockedBond;
+        uint256 totalBondBeforeTake = _getKickerBond(kicker);
 
         try _pool.bucketTake(borrower_, depositTake_, bucketIndex_) {
 
-            shouldExchangeRateChange = false;
-            shouldReserveChange      = true;
+            (uint256 kickerLpsAfterTake, )        = _pool.lenderInfo(bucketIndex_, kicker);
+            (uint256 takerLpsAfterTake, )         = _pool.lenderInfo(bucketIndex_, _actor);
+            ( , , , uint256 depositAfterAction, ) = _pool.bucketInfo(bucketIndex_);
 
-            _updateCurrentReserves();
-            _updateCurrentExchangeRate();
-
-            (claimableBond, lockedBond) = _pool.kickerInfo(kicker);
-
-            (uint256 kickerLpsAfterTake, ) = _pool.lenderInfo(bucketIndex_, kicker);
-            (uint256 takerLpsAfterTake, )  = _pool.lenderInfo(bucketIndex_, _actor);
-
-            // deposit time of taker change when he gets lps as reward from bucketTake
+            // **B7**: when awarded bucket take LPs : taker deposit time = timestamp of block when award happened
             if (takerLpsAfterTake > takerLpsBeforeTake) lenderDepositTime[taker_][bucketIndex_] = block.timestamp;
 
-            // check if kicker was awarded LPs
             if (kickerLpsAfterTake > kickerLpsBeforeTake) {
-                // update kicker deposit time to reflect LPs reward
+                // **B7**: when awarded bucket take LPs : kicker deposit time = timestamp of block when award happened
                 lenderDepositTime[kicker][bucketIndex_] = block.timestamp;
-
-                isKickerRewarded = true;
-            }
-            else {
-                kickerBondChange = claimableBond + lockedBond - totalBond;
-
-                isKickerRewarded = false;
+            } else {
+                // **RE7**: Reserves increase by bond penalty on take.
+                increaseInReserves += _getKickerBond(kicker) - totalBondBeforeTake;
             }
 
-            (kicker, , , , , , , , , ) = _pool.auctionInfo(borrower_);
-            
-            if (!alreadyTaken[borrower_]) {
-                // reserve increase by 7% of borrower debt on first take
-                firstTakeIncreaseInReserve = Maths.wmul(borrowerDebt, 0.07 * 1e18);
-                firstTake = true;
+            // **R7**: Exchange rates are unchanged under depositTakes
+            // **R8**: Exchange rates are unchanged under arbTakes
+            exchangeRateShouldNotChange[bucketIndex_] = true;
 
-                // if auction is settled by take
-                if (kicker == address(0)) alreadyTaken[borrower_] = false;
-                else                      alreadyTaken[borrower_] = true;
-            }
-            else firstTake = false;
+            _fenwickRemove(depositBeforeAction - depositAfterAction, bucketIndex_);
 
-        } catch {
-            _resetReservesAndExchangeRate();
+            _updateCurrentTakeState(borrower_, borrowerDebt);
+
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
         }
     }
 
@@ -236,11 +160,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     function _settleAuction(
         address borrower_,
         uint256 maxDepth_
-    ) internal useTimestamps resetAllPreviousLocalState {
-        _fenwickAccrueInterest();
-
-        _updatePoolState();
-
+    ) internal useTimestamps updateLocalStateAndPoolInterest {
         (
             uint256 borrowerDebt,
             uint256 collateral,
@@ -264,13 +184,13 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 if (borrowerDebt > fenwickDeposits[bucketIndex] && maxSettleableDebt >= fenwickDeposits[bucketIndex]) {
                     borrowerDebt                -= fenwickDeposits[bucketIndex];
                     changeInDeposit[bucketUsed] += fenwickDeposits[bucketIndex];
-                    collateral                  -= fenwickDeposits[bucketIndex] / _priceAt(bucketIndex);
+                    collateral                  -= Maths.wdiv(fenwickDeposits[bucketIndex], _priceAt(bucketIndex));
                     depositUsed                 += fenwickDeposits[bucketIndex];
                 }
                 // collateral value is greater than borrower debt then exchange collateral with deposit
                 else if (maxSettleableDebt >= borrowerDebt) {
                     changeInDeposit[bucketUsed] += borrowerDebt;
-                    collateral                  -= borrowerDebt / _priceAt(bucketIndex);
+                    collateral                  -= Maths.wdiv(borrowerDebt, _priceAt(bucketIndex));
                     depositUsed                 += borrowerDebt;
                     borrowerDebt                = 0;
                 }
@@ -286,17 +206,21 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             bucketDepth -= 1;
         }
 
+        // reserves used for settling auction
+        uint256 reserveChange;
+
         // if collateral becomes 0 and still debt is left, settle debt by reserves and hpb making buckets bankrupt
         if (borrowerDebt != 0 && collateral == 0) {
             (uint256 reserves, , , , )= _poolInfo.poolReservesInfo(address(_pool));
-
-            borrowerDebt -= Maths.min(reserves, borrowerDebt);
+            
+            reserveChange = Maths.min(reserves, borrowerDebt);
+            borrowerDebt -= reserveChange;
 
             while (bucketDepth != 0 && borrowerDebt != 0) {
                 uint256 bucketIndex = fenwickIndexForSum(1 + depositUsed);
                 uint256 bucketUsed  = bucketIndex - LENDER_MIN_BUCKET_INDEX;
 
-                if(bucketIndex != MAX_FENWICK_INDEX) {
+                if (bucketIndex != MAX_FENWICK_INDEX) {
 
                     // debt is greater than bucket deposit
                     if (borrowerDebt > (fenwickDeposits[bucketIndex] - changeInDeposit[bucketUsed])) {
@@ -318,15 +242,15 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
         try _pool.settle(borrower_, maxDepth_) {
 
-            shouldExchangeRateChange = true;
-            shouldReserveChange      = true;
+            // **RE12**: Reserves decrease by amount of reserve used to settle a auction
+            decreaseInReserves = reserveChange;
 
             for (uint256 bucket = 0; bucket <= maxDepth_; bucket++) {
                 _fenwickRemove(changeInDeposit[bucket], bucket + LENDER_MIN_BUCKET_INDEX);
             }
 
-        } catch {
-            _resetReservesAndExchangeRate();
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
         }
     }
 }

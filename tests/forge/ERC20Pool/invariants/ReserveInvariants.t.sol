@@ -32,6 +32,8 @@ contract ReserveInvariants is LiquidationInvariants {
         * RE8 : Reserves are unchanged under takes/depositTakes/arbTakes after the first take but increase/decrease by bond penalty/reward on take.
         * RE9 : Reserves increase by 3 months of interest when a loan is kicked
         * RE10: Reserves increase by origination fee: max(1 week interest, 0.05% of borrow amount), on draw debt
+        * RE11: Reserves decrease by claimableReserves by startClaimableReserveAuction
+        * RE12: Reserves decrease by amount of reserve used to settle a auction
     ****************************************************************************************************************************************/
     
     ReservePoolHandler internal _reservePoolHandler;
@@ -54,79 +56,24 @@ contract ReserveInvariants is LiquidationInvariants {
         _handler = address(_reservePoolHandler);
     }
 
-    function invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10() public useCurrentTimestamp {
+    function invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10_RE11_RE12() public useCurrentTimestamp {
 
         uint256 previousReserves = IBaseHandler(_handler).previousReserves();
-        uint256 currentReserves  = IBaseHandler(_handler).currentReserves();
+        uint256 increaseInReserves = IBaseHandler(_handler).increaseInReserves();
+        uint256 decreaseInReserves = IBaseHandler(_handler).decreaseInReserves();
+        (uint256 currentReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
 
-        console.log("Current Reserves  -->", currentReserves);
-        console.log("Previous Reserves -->", previousReserves);
+        console.log("Previous Reserves     -->", previousReserves);
+        console.log("Increase in Reserves  -->", increaseInReserves);
+        console.log("Decrease in Reserves  -->", decreaseInReserves);
+        console.log("Current Reserves      -->", currentReserves);
 
-        // reserves should not change with a action
-        if (!IBaseHandler(_handler).shouldReserveChange() && currentReserves != 0) {
-            requireWithinDiff(
-                currentReserves,
-                previousReserves,
-                1e17,
-                string(abi.encodePacked(Strings.toString(previousReserves),"| -> |", Strings.toString(currentReserves)))
-            );
-        }
-        // reserves should change
-        else {
-            uint256 loanKickIncreaseInReserve = IBaseHandler(_handler).loanKickIncreaseInReserve();
-
-            console.log("loanKickIncreaseInReserve -->", loanKickIncreaseInReserve);
-            
-            // reserves should increase by 0.25% of borrower debt on loan kick
-            if (loanKickIncreaseInReserve != 0) {
-                requireWithinDiff(
-                    currentReserves,
-                    previousReserves + loanKickIncreaseInReserve,
-                    1e17,
-                    "Incorrect Reserves change with kick"
-                );
-            }
-
-            uint256 drawDebtIncreaseInReserve = IBaseHandler(_handler).drawDebtIncreaseInReserve();
-
-            console.log("Draw debt increase in reserve --->", drawDebtIncreaseInReserve);
-
-            // reserves should increase by origination fees on draw debt
-            if (drawDebtIncreaseInReserve != 0) {
-                requireWithinDiff(
-                    currentReserves,
-                    previousReserves + drawDebtIncreaseInReserve,
-                    1e17,
-                    "Incorrect reserve change on draw debt"
-                );
-            }
-
-            uint256 firstTakeIncreaseInReserve = IBaseHandler(_handler).firstTakeIncreaseInReserve();
-            bool isKickerRewarded              = IBaseHandler(_handler).isKickerRewarded();
-            uint256 kickerBondChange           = IBaseHandler(_handler).kickerBondChange();
-
-            console.log("Kicker Rewarded            -->", isKickerRewarded);
-            console.log("Kicker Bond change         -->", kickerBondChange);
-            console.log("firstTakeIncreaseInReserve -->", firstTakeIncreaseInReserve);
-
-            uint256 previousReservesAndBondChange = !isKickerRewarded ? previousReserves + kickerBondChange : previousReserves;
-            
-            // reserves should increase by 7% of borrower debt on first take
-            if (IBaseHandler(_handler).firstTake()) {
-                requireWithinDiff(
-                    currentReserves,
-                    previousReservesAndBondChange + firstTakeIncreaseInReserve,
-                    1e17,
-                    "Incorrect Reserves change with first take"
-                );
-            } else if (currentReserves != 0 && loanKickIncreaseInReserve == 0 && drawDebtIncreaseInReserve == 0) {
-                requireWithinDiff(
-                    currentReserves,
-                    previousReservesAndBondChange,
-                    1e17,
-                    "Incorrect Reserves change with not first take"
-                );
-            }
-        }
+        // TODO: check why rouding of 1 unit of WAD. Decrease reserve on startClaimableReserveAuction too
+        requireWithinDiff(
+            currentReserves,
+            previousReserves + increaseInReserves - decreaseInReserves,
+            1,
+            "Incorrect Reserves change"
+        );
     }
 }

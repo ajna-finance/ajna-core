@@ -10,27 +10,16 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
     /*** Kicker Helper Functions ***/
     /*******************************/
 
-    function _startClaimableReserveAuction() internal useTimestamps resetAllPreviousLocalState {
+    function _startClaimableReserveAuction() internal useTimestamps updateLocalStateAndPoolInterest {
         (, uint256 claimableReserves, , , ) = _poolInfo.poolReservesInfo(address(_pool));
         if (claimableReserves == 0) return;
 
-        _fenwickAccrueInterest();
-
-        _updatePoolState();
-
-        _updatePreviousReserves();
-        _updatePreviousExchangeRate();
-
         try _pool.startClaimableReserveAuction() {
 
-            shouldExchangeRateChange = false;
-            shouldReserveChange      = true;
-
-            _updateCurrentReserves();
-            _updateCurrentExchangeRate();
-
-        } catch {
-            _resetReservesAndExchangeRate();
+            // **RE11**:  Reserves increase by claimableReserves by startClaimableReserveAuction
+            decreaseInReserves += claimableReserves;            
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
         }
     }
 
@@ -40,32 +29,13 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
 
     function _takeReserves(
         uint256 amount_
-    ) internal useTimestamps resetAllPreviousLocalState {
-        (, , uint256 claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
+    ) internal useTimestamps updateLocalStateAndPoolInterest {
+        try _pool.takeReserves(amount_) returns (uint256 takenAmount_) {
 
-        if (claimableReservesRemaining == 0) _startClaimableReserveAuction();
+            decreaseInReserves += takenAmount_;
 
-        (, , claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
-
-        amount_ = constrictToRange(amount_, 0, claimableReservesRemaining);
-
-        _fenwickAccrueInterest();
-
-        _updatePoolState();
-
-        _updatePreviousReserves();
-        _updatePreviousExchangeRate();
-        
-        try _pool.takeReserves(amount_) {
-
-            shouldExchangeRateChange = false;
-            shouldReserveChange      = true;
-
-            _updateCurrentReserves();
-            _updateCurrentExchangeRate();
-
-        } catch {
-            _resetReservesAndExchangeRate();
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
         }
     }
 }
