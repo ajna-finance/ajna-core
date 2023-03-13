@@ -368,7 +368,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  352.454532537342231182 * 1e18,
+                htp:                  351.393939751686889789 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             50_055.509494601600700000 * 1e18,
                 pledgedCollateral:    60 * 1e18,
@@ -406,7 +406,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  424.349858731660857846 * 1e18,
+                htp:                  422.372244265211513602 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             50_086.111097974181150000 * 1e18,
                 pledgedCollateral:    50 * 1e18,
@@ -441,7 +441,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  425.900107294311861922 * 1e18,
+                htp:                  423.143052860217066081 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             50_119.833720983122550000 * 1e18,
                 pledgedCollateral:    50 * 1e18,
@@ -473,7 +473,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  427.611922756860156608 * 1e18,
+                htp:                  423.992567137945688846 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             50_157.001040562732750000 * 1e18,
                 pledgedCollateral:    50 * 1e18,
@@ -503,7 +503,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  427.611922756860156608 * 1e18,
+                htp:                  423.992567137945688846 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             50_157.001040562732750000 * 1e18,
                 pledgedCollateral:    50 * 1e18,

@@ -128,7 +128,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
         _pool.updateInterest();
         _assertPool(
             PoolParams({
-                htp:                  1_159.152924076894437152 * 1e18,
+                htp:                  1_159.080148495302209694 * 1e18,
                 lup:                  _p1505_26,
                 poolSize:             15_000.38784582038918 * 1e18,     // first interest accrual
                 pledgedCollateral:    6 * 1e18,
@@ -200,7 +200,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
         assertEq(depositEma, 19_855.678232854988936290 * 1e18);         // reached (sort of) 20_000
         _assertPool(
             PoolParams({
-                htp:                  1_160.241132852523151748 * 1e18,
+                htp:                  1_159.624091089473286060 * 1e18,
                 lup:                  _p1505_26,
                 poolSize:             25_003.260972741349848786 * 1e18, // reflects additional 10_000 deposit
                 pledgedCollateral:    6 * 1e18,
@@ -260,7 +260,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
         assertEq(debtEma, 17_945.800561906185304271 * 1e18);            // reached 18_000
         _assertPool(
             PoolParams({
-                htp:                  1_499.486002669294859183 * 1e18,
+                htp:                  1_497.940412039697435044 * 1e18,
                 lup:                  _p1505_26,
                 poolSize:             25_011.246566016078933954 * 1e18,
                 pledgedCollateral:    12 * 1e18,                        // 6 additional NFTs deposited
@@ -343,7 +343,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
         });
         _assertPool(
             PoolParams({
-                htp:                  1_276.656276295498190871 * 1e18,
+                htp:                  1_276.218508787651473374 * 1e18,
                 lup:                  _p1505_26,
                 poolSize:             15_002.306593887595240000 * 1e18,
                 pledgedCollateral:    6 * 1e18,

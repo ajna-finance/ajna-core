@@ -506,9 +506,9 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(loansCount,  state_.loans);
         assertEq(maxBorrower, state_.maxBorrower);
 
-        (uint256 poolInflatorSnapshot, ) = _pool.inflatorInfo();
-        assertGe(poolInflatorSnapshot, 1e18);
-        assertGe(pendingInflator,      poolInflatorSnapshot);
+        (uint256 poolInflator, ) = _pool.inflatorInfo();
+        assertGe(poolInflator,    1e18);
+        assertGe(pendingInflator, poolInflator);
 
         (uint256 interestRate, uint256 interestRateUpdate) = _pool.interestRateInfo();
         assertEq(interestRate,       state_.interestRate);

@@ -11,15 +11,15 @@ contract PoolCommonsTest is DSTestPlus {
      *  @notice Tests pending inflator calculation for varying parameters
      */
     function testPendingInflator() external {
-        uint256 inflatorSnapshot = 0.01 * 1e18; 
+        uint256 inflator = 0.01 * 1e18; 
         skip(730 days);
-        uint256 lastInflatorSnapshotUpdate = block.timestamp - 365 days; 
+        uint256 lastInflatorUpdate = block.timestamp - 365 days; 
         uint256 interestRate = 0.1 * 1e18;
-        assertEq(PoolCommons.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate),   Maths.wmul(inflatorSnapshot,PRBMathUD60x18.exp(interestRate)));
-        assertEq(PoolCommons.pendingInflator(inflatorSnapshot, block.timestamp - 1 hours, interestRate),    0.010000114155902715 * 1e18);
-        assertEq(PoolCommons.pendingInflator(inflatorSnapshot, block.timestamp - 10 hours, interestRate),   0.010001141617671002 * 1e18);
-        assertEq(PoolCommons.pendingInflator(inflatorSnapshot, block.timestamp - 1 days, interestRate),     0.010002740101366609 * 1e18);
-        assertEq(PoolCommons.pendingInflator(inflatorSnapshot, block.timestamp - 5 hours, 0.042 * 1e18 ),   0.010000239728900849 * 1e18);
+        assertEq(PoolCommons.pendingInflator(inflator, lastInflatorUpdate, interestRate),   Maths.wmul(inflator, PRBMathUD60x18.exp(interestRate)));
+        assertEq(PoolCommons.pendingInflator(inflator, block.timestamp - 1 hours, interestRate),    0.010000114155902715 * 1e18);
+        assertEq(PoolCommons.pendingInflator(inflator, block.timestamp - 10 hours, interestRate),   0.010001141617671002 * 1e18);
+        assertEq(PoolCommons.pendingInflator(inflator, block.timestamp - 1 days, interestRate),     0.010002740101366609 * 1e18);
+        assertEq(PoolCommons.pendingInflator(inflator, block.timestamp - 5 hours, 0.042 * 1e18 ),   0.010000239728900849 * 1e18);
     }
 
     /**

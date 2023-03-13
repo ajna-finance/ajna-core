@@ -308,7 +308,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  9.280695967198888513 * 1e18,
+                htp:                  9.154429955928583539 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
                 poolSize:             83_219.674636105806620000 * 1e18,
                 pledgedCollateral:    2_002.000000000000000000 * 1e18,
@@ -386,7 +386,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  9.281940892899682703 * 1e18,
+                htp:                  9.155043929439064212 * 1e18,
                 lup:                  9.917184843435912074 * 1e18,
                 poolSize:             83_220.780619576281748675 * 1e18,
                 pledgedCollateral:    1_002.0 * 1e18,
@@ -436,7 +436,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  9.281940892899682703 * 1e18,
+                htp:                  9.155043929439064212 * 1e18,
                 lup:                  9.917184843435912074 * 1e18,
                 poolSize:             83_220.780619576281748675 * 1e18,
                 pledgedCollateral:    2_002.0 * 1e18,
@@ -585,7 +585,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  9.280695967198888513 * 1e18,
+                htp:                  9.154429955928583539 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
                 poolSize:             83_219.674636105806620000 * 1e18,
                 pledgedCollateral:    2_002.000000000000000000 * 1e18,
@@ -754,7 +754,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         );
         _assertBorrower({
             borrower:                  _borrower2,
-            borrowerDebt:              9_822.951211365485636462* 1e18,
+            borrowerDebt:              9_822.951211365485636462 * 1e18,
             borrowerCollateral:        1_000 * 1e18,
             borrowert0Np:              1_575.326150647652569911 * 1e18,
             borrowerCollateralization: 0.989651241857326201 * 1e18
@@ -793,7 +793,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  9.280695967198888513 * 1e18,
+                htp:                  9.154429955928583539 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
                 poolSize:             83_219.674636105806620000 * 1e18,
                 pledgedCollateral:    2_002.000000000000000000 * 1e18,
@@ -955,7 +955,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  9.901856025849255254 * 1e18,
+                htp:                  9.767138988573636287 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
                 poolSize:             73_113.822894306622584000 * 1e18,
                 pledgedCollateral:    1_002 * 1e18,
@@ -1007,7 +1007,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  9.902059490734692431 * 1e18,
+                htp:                  9.767239336407496599 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
                 poolSize:             73_113.913540853182354328 * 1e18,
                 pledgedCollateral:    992.0 * 1e18,
@@ -1142,7 +1142,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         );
         _assertBorrower({
             borrower:                  _borrower2,
-            borrowerDebt:              9_822.951211365485636462* 1e18,
+            borrowerDebt:              9_822.951211365485636462 * 1e18,
             borrowerCollateral:        1_000 * 1e18,
             borrowert0Np:              1_575.326150647652569911 * 1e18,
             borrowerCollateralization: 0.989651241857326201 * 1e18
@@ -1181,7 +1181,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  9.280695967198888513 * 1e18,
+                htp:                  9.154429955928583539 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
                 poolSize:             83_219.674636105806620000 * 1e18,
                 pledgedCollateral:    2_002.000000000000000000 * 1e18,
