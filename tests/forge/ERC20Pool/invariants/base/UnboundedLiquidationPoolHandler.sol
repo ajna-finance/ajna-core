@@ -209,11 +209,12 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         // if collateral becomes 0 and still debt is left, settle debt by reserves and hpb making buckets bankrupt
         if (borrowerDebt != 0 && collateral == 0) {
             (uint256 reserves, , , , )= _poolInfo.poolReservesInfo(address(_pool));
+            
+            uint256 reservesUsedForSettle = Maths.min(reserves, borrowerDebt);
+            borrowerDebt -= reservesUsedForSettle;
 
-            borrowerDebt -= Maths.min(reserves, borrowerDebt);
-
-            // TODO: write invariant
-            decreaseInReserves += borrowerDebt;
+            // **RE12**: Reserves decrease by amount of reserve used to settle a auction
+            decreaseInReserves += reservesUsedForSettle;
 
             while (bucketDepth != 0 && borrowerDebt != 0) {
                 uint256 bucketIndex = fenwickIndexForSum(1 + depositUsed);

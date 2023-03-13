@@ -33,6 +33,7 @@ contract ReserveInvariants is LiquidationInvariants {
         * RE9 : Reserves increase by 3 months of interest when a loan is kicked
         * RE10: Reserves increase by origination fee: max(1 week interest, 0.05% of borrow amount), on draw debt
         * RE11: Reserves decrease by claimableReserves by startClaimableReserveAuction
+        * RE12: Reserves decrease by amount of reserve used to settle a auction
     ****************************************************************************************************************************************/
     
     ReservePoolHandler internal _reservePoolHandler;
@@ -55,7 +56,7 @@ contract ReserveInvariants is LiquidationInvariants {
         _handler = address(_reservePoolHandler);
     }
 
-    function invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10_RE11() public useCurrentTimestamp {
+    function invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10_RE11_RE12() public useCurrentTimestamp {
 
         uint256 previousReserves = IBaseHandler(_handler).previousReserves();
         uint256 increaseInReserves = IBaseHandler(_handler).increaseInReserves();

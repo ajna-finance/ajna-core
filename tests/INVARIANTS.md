@@ -71,3 +71,4 @@
 - **RE9**:  Reserves increase by 3 months of interest when a loan is kicked
 - **RE10**: Reserves increase by origination fee: max(1 week interest, 0.05% of borrow amount), on draw debt
 - **RE11**: Reserves decrease by claimableReserves by startClaimableReserveAuction
+- **RE12**: Reserves decrease by amount of reserve used to settle a auction
