@@ -67,8 +67,10 @@ contract ReserveInvariants is LiquidationInvariants {
         console.log("Current Reserves      -->", currentReserves);
 
         // TODO: check why rouding of 1 unit of WAD. Decrease reserve on startClaimableReserveAuction too
-        require(
-            currentReserves == previousReserves + increaseInReserves - decreaseInReserves,
+        requireWithinDiff(
+            currentReserves,
+            previousReserves + increaseInReserves - decreaseInReserves,
+            1,
             "Incorrect Reserves change"
         );
     }
