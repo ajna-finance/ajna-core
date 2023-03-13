@@ -303,7 +303,7 @@ library PoolCommons {
         // Net Interest Margin = ((s - MAU1) * s)^(1/3) / s^(1/3) * 0.15
 
         uint256 base = 1_000_000 * 1e18 - Maths.wmul(Maths.min(mau_, 1e18), 1_000_000 * 1e18);
-        // If the resulting number is infinitessimal, return 100%.
+        // If unutilized deposit is infinitessimal, lenders get 100% of interest.
         if (base < 1e18) {
             return 1e18;
         } else {
