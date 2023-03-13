@@ -156,9 +156,6 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             fromIndex = fromBuckets_[i];
             toIndex = toBuckets_[i];
 
-            BucketState storage fromBucket = stakeInfo.snapshot[fromIndex];
-            BucketState storage toBucket = stakeInfo.snapshot[toIndex];
-
             // call out to position manager to move liquidity between buckets
             IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
                 tokenId_,
@@ -169,8 +166,9 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             );
             positionManager.moveLiquidity(moveLiquidityParams);
 
-            // update bucket state
-            toBucket.lpsAtStakeTime = uint128(positionManager.getLPs(tokenId_, toIndex));
+            // update to bucket state
+            BucketState storage toBucket = stakeInfo.snapshot[toIndex];
+            toBucket.lpsAtStakeTime  = uint128(positionManager.getLPs(tokenId_, toIndex));
             toBucket.rateAtStakeTime = uint128(IPool(ajnaPool).bucketExchangeRate(toIndex));
             delete stakeInfo.snapshot[fromIndex];
 
