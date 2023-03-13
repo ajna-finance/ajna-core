@@ -206,15 +206,15 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             bucketDepth -= 1;
         }
 
+        // reserves used for settling auction
+        uint256 reserveChange;
+
         // if collateral becomes 0 and still debt is left, settle debt by reserves and hpb making buckets bankrupt
         if (borrowerDebt != 0 && collateral == 0) {
             (uint256 reserves, , , , )= _poolInfo.poolReservesInfo(address(_pool));
             
-            uint256 reservesUsedForSettle = Maths.min(reserves, borrowerDebt);
-            borrowerDebt -= reservesUsedForSettle;
-
-            // **RE12**: Reserves decrease by amount of reserve used to settle a auction
-            decreaseInReserves += reservesUsedForSettle;
+            reserveChange = Maths.min(reserves, borrowerDebt);
+            borrowerDebt -= reserveChange;
 
             while (bucketDepth != 0 && borrowerDebt != 0) {
                 uint256 bucketIndex = fenwickIndexForSum(1 + depositUsed);
@@ -242,14 +242,14 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
         try _pool.settle(borrower_, maxDepth_) {
 
+            // **RE12**: Reserves decrease by amount of reserve used to settle a auction
+            decreaseInReserves = reserveChange;
+
             for (uint256 bucket = 0; bucket <= maxDepth_; bucket++) {
                 _fenwickRemove(changeInDeposit[bucket], bucket + LENDER_MIN_BUCKET_INDEX);
             }
 
         } catch (bytes memory err) {
-
-            // reserves should not decrease in case of transaction revert
-            decreaseInReserves = 0;
             _ensurePoolError(err);
         }
     }
