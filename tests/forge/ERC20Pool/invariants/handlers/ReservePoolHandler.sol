@@ -26,13 +26,33 @@ contract ReservePoolHandler is UnboundedReservePoolHandler, LiquidationPoolHandl
     function startClaimableReserveAuction(
         uint256 actorIndex_
     ) external useRandomActor(actorIndex_) useTimestamps {
+        // Action phase
         _startClaimableReserveAuction();
     }
 
     function takeReserves(
         uint256 actorIndex_,
-        uint256 amount_
+        uint256 amountToTake_
     ) external useRandomActor(actorIndex_) useTimestamps {
-        _takeReserves(amount_);
+        // Prepare test phase
+        uint256 boundedAmount = _preTakeReserves(amountToTake_);
+
+        // Action phase
+        _takeReserves(boundedAmount);
     }
+
+    /*******************************/
+    /*** Prepare Tests Functions ***/
+    /*******************************/
+
+    function _preTakeReserves(
+        uint256 amountToTake_
+    ) internal returns (uint256 boundedAmount_) {
+        (, , uint256 claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
+        if (claimableReservesRemaining == 0) _startClaimableReserveAuction();
+
+        (, , claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
+        boundedAmount_ = constrictToRange(amountToTake_, 0, claimableReservesRemaining);
+    }
+
 }

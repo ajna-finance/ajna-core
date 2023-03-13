@@ -64,8 +64,6 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
 
         amount_ = constrictToRange(amount_, 1, 1e30);
 
-        shouldExchangeRateChange = true;
-
         borrowerIndex_ = constrictToRange(borrowerIndex_, 0, actors.length - 1);
 
         address borrower = actors[borrowerIndex_];
@@ -86,8 +84,6 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
         uint256 takerIndex_
     ) external useRandomActor(takerIndex_) useTimestamps {
         numberOfCalls['BLiquidationHandler.bucketTake']++;
-
-        shouldExchangeRateChange = true;
 
         borrowerIndex_ = constrictToRange(borrowerIndex_, 0, actors.length - 1);
         bucketIndex_   = constrictToRange(bucketIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
@@ -143,8 +139,6 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
     ) internal useRandomActor(kickerIndex_) {
         numberOfCalls['BLiquidationHandler.kickAuction']++;
 
-        shouldExchangeRateChange = true;
-
         borrowerIndex_   = constrictToRange(borrowerIndex_, 0, actors.length - 1);
         address borrower = actors[borrowerIndex_];
         address kicker   = _actor;
@@ -158,7 +152,8 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
             if (debt == 0) {
                 changePrank(borrower);
                 _actor = borrower;
-                _drawDebt(amount_);
+                uint256 drawDebtAmount = _preDrawDebt(amount_);
+                _drawDebt(drawDebtAmount);
             }
 
             changePrank(kicker);
@@ -168,15 +163,5 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
 
         // skip some time for more interest
         vm.warp(block.timestamp + 2 hours);
-    }
-
-    /************************************/
-    /*** Test State Cleanup Functions ***/
-    /************************************/
-
-    function _auctionSettleStateReset(address actor_) internal override {
-        (address kicker, , , , , , , , , ) = _pool.auctionInfo(actor_);
-        // reset alreadyTaken flag if auction is settled
-        if (kicker == address(0)) alreadyTaken[actor_] = false;
     }
 }

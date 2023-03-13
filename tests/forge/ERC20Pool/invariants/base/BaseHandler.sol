@@ -54,21 +54,15 @@ abstract contract BaseHandler is Test {
     mapping(address => uint256[]) public touchedBuckets; // Bucket tracking
 
     // exchange rate invariant test state
-    bool                        public shouldExchangeRateChange; // bucket exchange rate invariant check
-    mapping(uint256 => uint256) public previousExchangeRate;     // mapping from bucket index to exchange rate before action
-    mapping(uint256 => uint256) public currentExchangeRate;      // mapping from bucket index to exchange rate after action
+    mapping(uint256 => bool)    public exchangeRateShouldNotChange; // bucket exchange rate invariant check
+    mapping(uint256 => uint256) public previousExchangeRate;        // mapping from bucket index to exchange rate before action
 
     // reserves invariant test state
-    bool    public shouldReserveChange;        // should reserve change after a action
-    uint256 public previousReserves;           // reserves before action
-    uint256 public currentReserves;            // reserves after action
-    uint256 public loanKickIncreaseInReserve;  // amount of reserve increase after kicking a loan
-    uint256 public firstTakeIncreaseInReserve; // amount of reserve increase after first take
-    uint256 public drawDebtIncreaseInReserve;  // amount of reserve increase after draw debt as origination fee
+    uint256 public previousReserves;    // reserves before action
+    uint256 public increaseInReserves;  // amount of reserve decrease
+    uint256 public decreaseInReserves;  // amount of reserve increase
 
     // auctions invariant test state
-    bool                     public isKickerRewarded; // kicker is penalized or rewarded after take
-    uint256                  public kickerBondChange; // amount of kicker penalty/reward
     bool                     public firstTake;        // if take is called on auction first time
     mapping(address => bool) public alreadyTaken;     // mapping borrower address to true if auction taken atleast once
 
@@ -113,14 +107,11 @@ abstract contract BaseHandler is Test {
     /**
      * @dev Resets all local states before each action.
      */
-    modifier resetAllPreviousLocalState() {
-        firstTakeIncreaseInReserve = 0;
-        loanKickIncreaseInReserve  = 0;
-        kickerBondChange           = 0;
-        isKickerRewarded           = false;
-        drawDebtIncreaseInReserve  = 0;
+    modifier updateLocalStateAndPoolInterest() {
+        _fenwickAccrueInterest();
+        _updatePoolState();
 
-        _resetReservesAndExchangeRate();
+        _resetAndRecordReservesAndExchangeRate();
 
         _;
     }
@@ -215,7 +206,8 @@ abstract contract BaseHandler is Test {
             err == keccak256(abi.encodeWithSignature("AuctionNotClearable()")) ||
             err == keccak256(abi.encodeWithSignature("ReserveAuctionTooSoon()")) ||
             err == keccak256(abi.encodeWithSignature("NoReserves()")) ||
-            err == keccak256(abi.encodeWithSignature("NoReservesAuction()"))
+            err == keccak256(abi.encodeWithSignature("NoReservesAuction()")),
+            "Unexpected revert error"
         );
     }
 
@@ -224,36 +216,21 @@ abstract contract BaseHandler is Test {
     /**************************************/
 
     /**
-     * @dev Reset the exchange rates before each action.
+     * @dev Record the reserves and exchange rates before each action.
      */
-    function _resetReservesAndExchangeRate() internal {
+    function _resetAndRecordReservesAndExchangeRate() internal {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            previousExchangeRate[bucketIndex] = 0;
-            currentExchangeRate[bucketIndex]  = 0;
+            // reset the change flag before each action
+            exchangeRateShouldNotChange[bucketIndex] = false;
+            // record exchange rate before each action
+            previousExchangeRate[bucketIndex] = _pool.bucketExchangeRate(bucketIndex);
         }
 
         // reset the reserves before each action 
-        previousReserves = 0;
-        currentReserves  = 0;
-    }
-
-    /**
-     * @dev Precalculate exchange rate before an action.
-     */
-    function _updatePreviousExchangeRate() internal {
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            previousExchangeRate[bucketIndex] = _pool.bucketExchangeRate(bucketIndex);
-        }
-    }
-
-    /**
-     * @dev Calculate exchange rate from pool right after an action.
-     */
-    function _updateCurrentExchangeRate() internal {
-        // update exchange rate for all buckets in fuzz bound
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            currentExchangeRate[bucketIndex] = _pool.bucketExchangeRate(bucketIndex);
-        }
+        increaseInReserves = 0;
+        decreaseInReserves  = 0;
+        // record reserves before each action
+        (previousReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
     }
 
     /********************************/
@@ -330,21 +307,38 @@ abstract contract BaseHandler is Test {
     }
 
     /*********************************/
-    /*** Reserves Helper Functions ***/
+    /*** Auctions Helper Functions ***/
     /*********************************/
 
     /**
-     * @dev Precalculate reserves before an action.
+     * @dev Called by actions that can settle auctions in order to reset test state.
      */
-    function _updatePreviousReserves() internal {
-        (previousReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
+    function _auctionSettleStateReset(address actor_) internal {
+        (address kicker, , , , , , , , , ) = _pool.auctionInfo(actor_);
+
+        // auction is settled if kicekr is 0x
+        bool auctionSettled = kicker == address(0);
+        // reset alreadyTaken flag if auction is settled
+        if (auctionSettled) alreadyTaken[actor_] = false;
     }
 
-    /**
-     * @dev Update reserve after an action
-     */
-    function _updateCurrentReserves() internal {
-        (currentReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool)); 
+    function _getKickerBond(address kicker_) internal view returns (uint256 bond_) {
+        (uint256 claimableBond, uint256 lockedBond) = _pool.kickerInfo(kicker_);
+        bond_ = claimableBond + lockedBond;
+    }
+
+    function _updateCurrentTakeState(address borrower_, uint256 borrowerDebt_) internal {
+        if (!alreadyTaken[borrower_]) {
+            alreadyTaken[borrower_] = true;
+
+            // **RE7**: Reserves increase by 7% of the loan quantity upon the first take.
+            increaseInReserves += Maths.wmul(borrowerDebt_, 0.07 * 1e18);
+            firstTake = true;
+
+            // reset taken flag in case auciton was settled by take action
+            _auctionSettleStateReset(borrower_);
+
+        } else firstTake = false;
     }
 
     /**********************************/

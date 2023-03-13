@@ -141,7 +141,7 @@ contract BasicInvariants is InvariantsTestBase {
     }
 
     // checks if lender deposit timestamp is updated when lps are added into lender lp balance
-    function invariant_Bucket_deposit_time_B5() public useCurrentTimestamp {
+    function invariant_Bucket_deposit_time_B5_B6_B7() public useCurrentTimestamp {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
@@ -221,9 +221,9 @@ contract BasicInvariants is InvariantsTestBase {
 
     function invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8() public useCurrentTimestamp {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            uint256 currentExchangeRate = IBaseHandler(_handler).currentExchangeRate(bucketIndex);
+            uint256 currentExchangeRate = _pool.bucketExchangeRate(bucketIndex);
 
-            if (!IBaseHandler(_handler).shouldExchangeRateChange() && currentExchangeRate != 0) {
+            if (IBaseHandler(_handler).exchangeRateShouldNotChange(bucketIndex)) {
                 uint256 previousExchangeRate = IBaseHandler(_handler).previousExchangeRate(bucketIndex);
 
                 console.log("======================================");
@@ -235,7 +235,7 @@ contract BasicInvariants is InvariantsTestBase {
                 requireWithinDiff(
                     currentExchangeRate,
                     previousExchangeRate,
-                    1e17,
+                    1e17, // TODO: check why changing so much
                     "Incorrect exchange Rate changed"
                 );
             }
