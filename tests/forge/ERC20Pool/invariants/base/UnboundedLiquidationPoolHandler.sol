@@ -184,13 +184,13 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 if (borrowerDebt > fenwickDeposits[bucketIndex] && maxSettleableDebt >= fenwickDeposits[bucketIndex]) {
                     borrowerDebt                -= fenwickDeposits[bucketIndex];
                     changeInDeposit[bucketUsed] += fenwickDeposits[bucketIndex];
-                    collateral                  -= fenwickDeposits[bucketIndex] / _priceAt(bucketIndex);
+                    collateral                  -= Maths.wdiv(fenwickDeposits[bucketIndex], _priceAt(bucketIndex));
                     depositUsed                 += fenwickDeposits[bucketIndex];
                 }
                 // collateral value is greater than borrower debt then exchange collateral with deposit
                 else if (maxSettleableDebt >= borrowerDebt) {
                     changeInDeposit[bucketUsed] += borrowerDebt;
-                    collateral                  -= borrowerDebt / _priceAt(bucketIndex);
+                    collateral                  -= Maths.wdiv(borrowerDebt, _priceAt(bucketIndex));
                     depositUsed                 += borrowerDebt;
                     borrowerDebt                = 0;
                 }
@@ -247,6 +247,9 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             }
 
         } catch (bytes memory err) {
+
+            // reserves should not decrease in case of transaction revert
+            decreaseInReserves = 0;
             _ensurePoolError(err);
         }
     }
