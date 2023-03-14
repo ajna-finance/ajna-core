@@ -295,7 +295,7 @@ library Auctions {
         // if there's still debt and no collateral
         if (borrower.t0Debt != 0 && borrower.collateral == 0) {
             // settle debt from reserves -- round reserves down however
-            borrower.t0Debt -= Maths.min(borrower.t0Debt, (params_.reserves / params_.inflator) * 1e18);
+            borrower.t0Debt -= Maths.min(borrower.t0Debt, (params_.reserves * 1e18 / params_.inflator));
 
             // if there's still debt after settling from reserves then start to forgive amount from next HPB
             // loop through remaining buckets if there's still debt to settle
