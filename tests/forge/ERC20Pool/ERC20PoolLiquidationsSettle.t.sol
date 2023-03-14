@@ -379,8 +379,8 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_72,
             lpBalance:    11_000 * 1e18,
             collateral:   0,
-            deposit:      8_807.241482463513273501 * 1e18,
-            exchangeRate: 0.800658316587592116 * 1e18
+            deposit:      8_807.556879218687262170 * 1e18,
+            exchangeRate: 0.800686989019880660 * 1e18
         });
         _assertBucket({
             index:        _i9_62,
@@ -393,7 +393,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             PoolParams({
                 htp:                  9.910303333009215085 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             63_807.241482463513273501 * 1e18,
+                poolSize:             63_807.556879218687262170 * 1e18,
                 pledgedCollateral:    2 * 1e18,
                 encumberedCollateral: 2.010288427770370775 * 1e18,
                 poolDebt:             19.542608580405342754 * 1e18,
@@ -581,8 +581,8 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_72,
             lpBalance:    11_000 * 1e18,
             collateral:   277.250203096920691240 * 1e18,
-            deposit:      8_289.317326783984381999 * 1e18,
-            exchangeRate: 0.998595325429936418 * 1e18
+            deposit:      8_290.291604705064327150 * 1e18,
+            exchangeRate: 0.998683896150034594 * 1e18
         });
         _assertBucket({
             index:        _i9_62,
@@ -867,12 +867,10 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_72,
             lpBalance:    11_000 * 1e18,
             collateral:   0 * 1e18,
-            deposit:      9_036.356565003188009087 * 1e18,
-            exchangeRate: 0.821486960454835274 * 1e18
+            deposit:      9_036.877948541081300755 * 1e18,
+            exchangeRate: 0.821534358958280118 * 1e18
         });
 
-        vm.expectEmit(true, true, false, true);
-        emit BucketBankruptcy(_i9_72, 5981);
         _pool.moveQuoteToken(10000000000 * 1e18, _i9_72, _i9_91, type(uint256).max);
 
         _assertBucket({

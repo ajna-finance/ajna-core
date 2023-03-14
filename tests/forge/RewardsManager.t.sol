@@ -782,13 +782,19 @@ contract RewardsManagerTest is ERC20HelperContract {
             index:        _i9_81,
             lpBalance:    10_000 * 1e18,
             collateral:   0,
-            deposit:      4_936.350384467466066087 * 1e18,
-            exchangeRate: 0.493635038446746607 * 1e18
+            deposit:      4_936.865619773958011819 * 1e18,
+            exchangeRate: 0.493686561977395801 * 1e18
         });
 
         /***********************/
         /*** Reserve Auction ***/
         /***********************/
+
+        // skip some time to accumulate reserves
+        skip(50 days);
+
+        // update pool reserves
+        _pool.updateInterest();
 
         // start reserve auction
         changePrank(_bidder);
