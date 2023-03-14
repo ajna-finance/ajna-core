@@ -197,9 +197,9 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         assertEq(interestRate,       0.05 * 10**18);
         assertEq(interestRateUpdate, _startTime);
 
-        (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = _NFTCollectionPool.inflatorInfo();
-        assertEq(poolInflatorSnapshot, 10**18);
-        assertEq(lastInflatorUpdate,   _startTime);
+        (uint256 poolInflator, uint256 lastInflatorUpdate) = _NFTCollectionPool.inflatorInfo();
+        assertEq(poolInflator,       10**18);
+        assertEq(lastInflatorUpdate, _startTime);
     }
 
     /**************************************/
@@ -307,9 +307,9 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         assertEq(interestRate,       0.05 * 10**18);
         assertEq(interestRateUpdate, _startTime);
 
-        (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = _NFTSubsetOnePool.inflatorInfo();
-        assertEq(poolInflatorSnapshot, 10**18);
-        assertEq(lastInflatorUpdate,   _startTime);
+        (uint256 poolInflator, uint256 lastInflatorUpdate) = _NFTSubsetOnePool.inflatorInfo();
+        assertEq(poolInflator,       10**18);
+        assertEq(lastInflatorUpdate, _startTime);
 
         assertTrue(_NFTSubsetOnePool.tokenIdsAllowed(1));
         assertTrue(_NFTSubsetOnePool.tokenIdsAllowed(5));
