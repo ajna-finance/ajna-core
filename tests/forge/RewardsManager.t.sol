@@ -1025,8 +1025,8 @@ contract RewardsManagerTest is ERC20HelperContract {
             limitIndex: 6000,
             pool: _poolOne
         });
-                return;
-                totalTokensBurned += _triggerReserveAuctions(triggerReserveAuctionParams);
+
+        totalTokensBurned += _triggerReserveAuctions(triggerReserveAuctionParams);
 
         // call update exchange rate to enable claiming rewards
         changePrank(_updater);
