@@ -951,4 +951,75 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
         assertEq(borrowerDebt, 987909.179343464530923021 * 1e18); // decreased with 2
         assertEq(borrowerCollateral, 10066231386838.450530455239517417 * 1e18); // same as before settle
     }
+
+    function testSettleWithReserves() external {
+
+        address actor1 = makeAddr("actor1");
+        _mintQuoteAndApproveTokens(actor1,  1e45);
+        _mintCollateralAndApproveTokens(actor1, 1e45);
+
+        address actor2 = makeAddr("actor2");
+        _mintQuoteAndApproveTokens(actor2,  1e45);
+        _mintCollateralAndApproveTokens(actor2, 1e45);
+
+        address actor4 = makeAddr("actor4");
+        _mintQuoteAndApproveTokens(actor4, 1e45);
+        _mintCollateralAndApproveTokens(actor4, 1e45);
+
+        address actor6 = makeAddr("actor6");
+        _mintQuoteAndApproveTokens(actor6, 1e45);
+        _mintCollateralAndApproveTokens(actor6, 1e45);
+
+        address actor7 = makeAddr("actor7");
+        _mintQuoteAndApproveTokens(actor7, 1e45);
+        _mintCollateralAndApproveTokens(actor7, 1e45);
+
+        changePrank(actor2);
+
+        ERC20Pool(address(_pool)).updateInterest();
+        _pool.addQuoteToken(112807891516801582625927986800, 2572, block.timestamp + 1);
+
+        ERC20Pool(address(_pool)).updateInterest();
+        ERC20Pool(address(_pool)).drawDebt(actor2, 56403945758400791312963993400, 7388, 21009851171858165566322122);
+
+        // skip some time to make actor2 undercollateralized
+        skip(200 days);
+
+        changePrank(actor4);
+
+        ERC20Pool(address(_pool)).updateInterest();
+        _pool.kick(actor2, 7388);
+
+        changePrank(actor1);
+
+        ERC20Pool(address(_pool)).updateInterest();
+        _pool.startClaimableReserveAuction();
+
+        changePrank(actor7);
+
+        ERC20Pool(address(_pool)).updateInterest();
+        ERC20Pool(address(_pool)).drawDebt(actor7, 1000000000000000000000000, 7388, 372489032271806320214);
+
+        // skip some time to make actor7 undercollateralized
+        skip(200 days);
+
+        changePrank(actor6);
+
+        ERC20Pool(address(_pool)).updateInterest();
+
+        (uint256 borrowerDebt, , ) = _poolUtils.borrowerInfo(address(_pool), actor2);
+        assertEq(borrowerDebt, 60144029463415046012797744618);
+
+        (uint256 reserves, , , ,) = _poolUtils.poolReservesInfo(address(_pool));
+        assertEq(reserves, 1758290868502349679615580158);
+
+        // settle auction with reserves
+        _pool.settle(actor2, 2);
+
+        (reserves, , , ,) = _poolUtils.poolReservesInfo(address(_pool));
+
+        // reserves remaining after settle auction reduced from 496777425871207656 to 2 after change: https://github.com/ajna-finance/contracts/commit/7d56cb75b36339a9d9def9fb39290083c5f484eb
+        // TODO: Check rounding issue in debt calculations as reserves are not fully utilized for settling borrowerDebt
+        assertEq(reserves, 2);
+    }
 }
