@@ -43,13 +43,13 @@ contract PoolInfoUtils {
         IPool pool = IPool(ajnaPool_);
 
         (
-            uint256 poolInflatorSnapshot,
-            uint256 lastInflatorSnapshotUpdate
+            uint256 inflator,
+            uint256 lastInflatorUpdate
         ) = pool.inflatorInfo();
 
         (uint256 interestRate,) = pool.interestRateInfo();
 
-        uint256 pendingInflator = PoolCommons.pendingInflator(poolInflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
+        uint256 pendingInflator = PoolCommons.pendingInflator(inflator, lastInflatorUpdate, interestRate);
 
         uint256 t0Debt;
         (t0Debt, collateral_, t0Np_)  = pool.borrowerInfo(borrower_);
@@ -112,14 +112,14 @@ contract PoolInfoUtils {
         (maxBorrower_, , loansCount_) = pool.loansInfo();
 
         (
-            uint256 inflatorSnapshot,
-            uint256 lastInflatorSnapshotUpdate
+            uint256 inflator,
+            uint256 inflatorUpdate
         ) = pool.inflatorInfo();
 
         (uint256 interestRate, ) = pool.interestRateInfo();
 
-        pendingInflator_       = PoolCommons.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
-        pendingInterestFactor_ = PoolCommons.pendingInterestFactor(interestRate, block.timestamp - lastInflatorSnapshotUpdate);
+        pendingInflator_       = PoolCommons.pendingInflator(inflator, inflatorUpdate, interestRate);
+        pendingInterestFactor_ = PoolCommons.pendingInterestFactor(interestRate, block.timestamp - inflatorUpdate);
     }
 
     /**
@@ -151,9 +151,8 @@ contract PoolInfoUtils {
         hpb_      = _priceAt(hpbIndex_);
 
         (, uint256 maxThresholdPrice,) = pool.loansInfo();
-        (uint256 inflatorSnapshot,)    = pool.inflatorInfo();
 
-        htp_      = Maths.wmul(maxThresholdPrice, inflatorSnapshot);
+        htp_      = maxThresholdPrice;
         htpIndex_ = htp_ >= MIN_PRICE ? _indexOf(htp_) : MAX_FENWICK_INDEX;
         lupIndex_ = pool.depositIndex(debt);
         lup_      = _priceAt(lupIndex_);
@@ -310,13 +309,8 @@ contract PoolInfoUtils {
 
     function htp(
         address ajnaPool_
-    ) external view returns (uint256) {
-        IPool pool = IPool(ajnaPool_);
-
-        (, uint256 maxThresholdPrice, ) = pool.loansInfo();
-        (uint256 inflatorSnapshot, )    = pool.inflatorInfo();
-
-        return Maths.wmul(maxThresholdPrice, inflatorSnapshot);
+    ) external view returns (uint256 htp_) {
+        (, htp_, ) = IPool(ajnaPool_).loansInfo();
     }
 
     function momp(

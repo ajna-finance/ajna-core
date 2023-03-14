@@ -39,13 +39,13 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         (borrowerT0debt, borrowerCollateral, ) = _pool.borrowerInfo(borrower);
 
         // calculate current pool Inflator
-        (uint256 poolInflatorSnapshot, uint256 lastInflatorSnapshotUpdate) = _pool.inflatorInfo();
+        (uint256 poolInflator, uint256 lastInflatorUpdate) = _pool.inflatorInfo();
 
-        uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
+        uint256 elapsed = block.timestamp - lastInflatorUpdate;
         (uint256 interestRate, ) = _pool.interestRateInfo();
         uint256 factor = PoolCommons.pendingInterestFactor(interestRate, elapsed);
 
-        uint256 currentPoolInflator = Maths.wmul(poolInflatorSnapshot, factor);
+        uint256 currentPoolInflator = Maths.wmul(poolInflator, factor);
 
         // Calculate current debt of borrower, rounding up to token precision
         uint256 currentDebt = Maths.wmul(currentPoolInflator, borrowerT0debt);

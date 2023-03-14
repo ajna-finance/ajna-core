@@ -120,8 +120,8 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         assertEq(interestRate,       0.0543 * 10**18);
         assertEq(interestRateUpdate, _startTime + 333);
 
-        (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = pool.inflatorInfo();
-        assertEq(poolInflatorSnapshot, 10**18);
+        (uint256 poolInflator, uint256 lastInflatorUpdate) = pool.inflatorInfo();
+        assertEq(poolInflator, 10**18);
         assertEq(lastInflatorUpdate,   _startTime + 333);
 
         // check tracking of deployed pools
@@ -151,8 +151,8 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         assertEq(interestRate,       0.0543 * 10**18);
         assertEq(interestRateUpdate, _startTime + 333);
 
-        (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = pool.inflatorInfo();
-        assertEq(poolInflatorSnapshot, 10**18);
+        (uint256 poolInflator, uint256 lastInflatorUpdate) = pool.inflatorInfo();
+        assertEq(poolInflator, 10**18);
         assertEq(lastInflatorUpdate,   _startTime + 333);
     }
 
@@ -176,8 +176,8 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         assertEq(interestRate,       0.0543 * 10**18);
         assertEq(interestRateUpdate, _startTime + 333);
 
-        (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = pool.inflatorInfo();
-        assertEq(poolInflatorSnapshot, 10**18);
+        (uint256 poolInflator, uint256 lastInflatorUpdate) = pool.inflatorInfo();
+        assertEq(poolInflator, 10**18);
         assertEq(lastInflatorUpdate,   _startTime + 333);
     }
 
@@ -201,9 +201,9 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         assertEq(interestRate,       0.0543 * 10**18);
         assertEq(interestRateUpdate, _startTime + 333);
 
-        (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = pool.inflatorInfo();
-        assertEq(poolInflatorSnapshot, 10**18);
-        assertEq(lastInflatorUpdate,   _startTime + 333);
+        (uint256 poolInflator, uint256 lastInflatorUpdate) = pool.inflatorInfo();
+        assertEq(poolInflator,       10**18);
+        assertEq(lastInflatorUpdate, _startTime + 333);
     }
 
     function testDeployERC20CompUsdcPool() external {
@@ -226,9 +226,9 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         assertEq(interestRate,       0.0543 * 10**18);
         assertEq(interestRateUpdate, _startTime + 333);
 
-        (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = pool.inflatorInfo();
-        assertEq(poolInflatorSnapshot, 10**18);
-        assertEq(lastInflatorUpdate,   _startTime + 333);
+        (uint256 poolInflator, uint256 lastInflatorUpdate) = pool.inflatorInfo();
+        assertEq(poolInflator,       10**18);
+        assertEq(lastInflatorUpdate, _startTime + 333);
     }
 
     function testPoolAlreadyInitialized() external {

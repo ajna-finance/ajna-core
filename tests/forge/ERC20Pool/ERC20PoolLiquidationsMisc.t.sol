@@ -315,7 +315,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
         });
         _assertPool(
             PoolParams({
-                htp:                  7.991488192808991114 * 1e18,
+                htp:                  7.989580407145861718 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
                 poolSize:             63_008.830844290339406730 * 1e18,
                 pledgedCollateral:    1_001.742368450520005091 * 1e18,
@@ -388,7 +388,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  7.991488192808991114 * 1e18,
+                htp:                  7.989580407145861718 * 1e18,
                 lup:                  9.529276179422528643 * 1e18,
                 poolSize:             8_000.423065889459267791 * 1e18,
                 pledgedCollateral:    1_001.742368450520005091 * 1e18,
@@ -416,7 +416,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  7.993335753787741967 * 1e18,
+                htp:                  7.990503913730158191 * 1e18,
                 lup:                  9.529276179422528643 * 1e18,
                 poolSize:             8_001.214422208222843222 * 1e18,
                 pledgedCollateral:    1_001.742368450520005091 * 1e18,

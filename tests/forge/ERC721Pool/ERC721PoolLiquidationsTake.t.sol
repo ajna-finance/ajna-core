@@ -183,7 +183,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  6.582216822103492762 * 1e18,
+                htp:                  5.739575714606494647 * 1e18,
                 lup:                  9.917184843435912074 * 1e18,
                 poolSize:             73_000 * 1e18,
                 pledgedCollateral:    5 * 1e18,
@@ -290,7 +290,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  8.887140410855539624 * 1e18,
+                htp:                  7.749209044755361552 * 1e18,
                 lup:                  9.917184843435912074 * 1e18,
                 poolSize:             73_000.000966222327608000 * 1e18,
                 pledgedCollateral:    4 * 1e18,
@@ -362,7 +362,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  6.582588772946404613 * 1e18,
+                htp:                  5.739737879567360457 * 1e18,
                 lup:                  9.917184843435912074 * 1e18,
                 poolSize:             73_000.000966222327608000 * 1e18,
                 pledgedCollateral:    3.0 * 1e18,
@@ -461,7 +461,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  6.582216822103492762 * 1e18,
+                htp:                  5.739575714606494647 * 1e18,
                 lup:                  9.917184843435912074 * 1e18,
                 poolSize:             73_000 * 1e18,
                 pledgedCollateral:    5 * 1e18,
@@ -571,7 +571,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
 
         _assertPool(
             PoolParams({
-                htp:                  6.582893111996772890 * 1e18,
+                htp:                  5.739870563397816903 * 1e18,
                 lup:                  9.917184843435912074 * 1e18,
                 poolSize:             73_000.001756788173660000 * 1e18,
                 pledgedCollateral:    3 * 1e18,
