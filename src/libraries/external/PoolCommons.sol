@@ -202,19 +202,24 @@ library PoolCommons {
         newInflator_ = Maths.wmul(poolState_.inflator, pendingFactor);
         uint256 htp = Maths.wmul(thresholdPrice_, newInflator_);
 
-        uint256 htpIndex;
+        uint256 accrualIndex;
         if (htp > MAX_PRICE)
             // if HTP is over the highest price bucket then no buckets earn interest
-            htpIndex = 1;
+            accrualIndex = 1;
         else if (htp < MIN_PRICE)
             // if HTP is under the lowest price bucket then all buckets earn interest
-            htpIndex = MAX_FENWICK_INDEX;
+            accrualIndex = MAX_FENWICK_INDEX;
         else
-            htpIndex = _indexOf(htp);
+            accrualIndex = _indexOf(htp);
 
-        uint256 depositAboveHtp   = Deposits.prefixSum(deposits_, htpIndex);
+        uint256 lupIndex = Deposits.findIndexOfSum(deposits_, poolState_.debt);
+        // accrual price is less of lup and htp, and prices decrease as index increases
+        if (lupIndex > accrualIndex)
+            accrualIndex = lupIndex;
+        
+        uint256 interestEarningDeposit = Deposits.prefixSum(deposits_, accrualIndex);
 
-        if (depositAboveHtp != 0) {
+        if (interestEarningDeposit != 0) {
             newInterest_ = Maths.wmul(
                 _lenderInterestMargin(_utilization(emaParams_.debtEma, emaParams_.depositEma)),
                 Maths.wmul(pendingFactor - Maths.WAD, poolState_.debt)
@@ -229,15 +234,15 @@ library PoolCommons {
             /* console.log("htpIndex:        ", htpIndex); */
 
             // Factor to increase deposits by for interest.  Capped at 1.0
-            uint256 lenderFactor = Maths.wdiv(newInterest_, depositAboveHtp) + Maths.WAD;
-            if(lenderFactor > 10e18) {
-                lenderFactor=1e18;
-            }
+            uint256 lenderFactor = Maths.wdiv(newInterest_, interestEarningDeposit) + Maths.WAD;
+            /* if(lenderFactor > 10e18) { */
+            /*     lenderFactor=1e18; */
+            /* } */
             
             // Scale the fenwick tree to update amount of debt owed to lenders
             Deposits.mult(
                 deposits_,
-                htpIndex,
+                accrualIndex,
                 lenderFactor
             );
         }
