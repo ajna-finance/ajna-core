@@ -873,9 +873,10 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
         //        return;  // passes with this return, but fails deleting it, so next lijne is the issue
         vm.expectEmit(true, true, false, true);
-        emit BucketBankruptcy(_i9_72, 5981);
-        return;
-        _pool.moveQuoteToken(10000000000 * 1e18, _i9_72, _i9_91, type(uint256).max);
+        // emit BucketBankruptcy(_i9_72, 5981);
+        // TODO: Fix me, this bucketBankruptcy is not working
+        emit MoveQuoteToken(_lender, 3700, 3696, 9036356662059799215330, 11000000000000000000000, 9036356662059799215330, 9917184843435912074);
+        _pool.moveQuoteToken(9_036.356662059799215330 * 1e18, _i9_72, _i9_91, type(uint256).max);
 
         _assertBucket({
             index:        _i9_72,

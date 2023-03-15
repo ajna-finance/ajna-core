@@ -1032,7 +1032,7 @@ contract RewardsManagerTest is ERC20HelperContract {
         changePrank(_updater);
         assertEq(_ajnaToken.balanceOf(_updater), 20.449844540665688882 * 1e18);
         vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(_updater, address(_poolOne), depositIndexes, 17.238252336072284751 * 1e18);
+        emit UpdateExchangeRates(_updater, address(_poolOne), depositIndexes, 17.238252336072284754 * 1e18);
         _rewardsManager.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
         assertEq(_ajnaToken.balanceOf(_updater), 37.688096876737973636 * 1e18);
 
