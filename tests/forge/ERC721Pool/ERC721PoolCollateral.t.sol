@@ -720,7 +720,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.ownerOf(3), address(_pool));
 
         // exchange collateral for lpb 3060 - 3070, going down in price
-        for (uint256 i = _i236_59; i < (3060 + 5); i++) {
+        for (uint256 i = _i236_59; i < (3060 + 10); i++) {
             _depositTake({
                 from:     _lender,
                 borrower: _borrower,
