@@ -341,21 +341,17 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
     ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
-        uint256 assets = Maths.wmul(poolBalances.t0Debt, poolState.inflator) + _getNormalizedPoolQuoteTokenBalance();
-
-        uint256 liabilities = Deposits.treeSum(deposits) + auctions.totalBondEscrowed + reserveAuction.unclaimed;
-
         SettleResult memory result = Auctions.settlePoolDebt(
             auctions,
             buckets,
             deposits,
             loans,
+            reserveAuction,
+            poolState,
             SettleParams({
                 borrower:    borrowerAddress_,
-                reserves:    (assets > liabilities) ? (assets - liabilities) : 0,
-                inflator:    poolState.inflator,
-                bucketDepth: maxDepth_,
-                poolType:    poolState.poolType
+                poolBalance: _getNormalizedPoolQuoteTokenBalance(),
+                bucketDepth: maxDepth_
             })
         );
 

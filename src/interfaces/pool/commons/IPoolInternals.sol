@@ -37,10 +37,8 @@ struct KickResult {
 
 struct SettleParams {
     address borrower;    // borrower address to settle
-    uint256 reserves;    // current reserves in pool
-    uint256 inflator;    // current pool inflator
     uint256 bucketDepth; // number of buckets to use when settle debt
-    uint256 poolType;    // number of buckets to use when settle debt
+    uint256 poolBalance; // current pool quote token balance
 }
 
 struct SettleResult {
