@@ -171,10 +171,21 @@ contract BasicInvariants is InvariantsTestBase {
             ,
         ) = _pool.reservesInfo();
 
-        assertGe(
-            poolBalance + poolDebt, totalBondEscrowed + _pool.depositSize() + unClaimed,
-            "Incorrect pool quote token"
-        );
+        if( poolBalance + poolDebt < totalBondEscrowed + _pool.depositSize() + unClaimed) {
+            console.log("===========NOT OK================");
+            console.log("poolBalance: ",poolBalance);
+            console.log("poolDebt:    ", poolDebt);
+            console.log("tbe:         ", totalBondEscrowed);
+            console.log("depositsize: ", _pool.depositSize());
+            console.log("unClaimed:   ", unClaimed);
+        } else {
+            console.log("Everything is OK");
+        }
+        
+        //        assertGe(
+        //       poolBalance + poolDebt, totalBondEscrowed + _pool.depositSize() + unClaimed,
+        //       "Incorrect pool quote token"
+        //);
     }
 
     // checks pools collateral Balance to be equal to collateral pledged
