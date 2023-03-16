@@ -1,48 +1,58 @@
-
 // SPDX-License-Identifier: UNLICENSED
+
 pragma solidity 0.8.14;
 
-import '@std/Vm.sol';
+import { UnboundedReservePoolHandler } from '../base/UnboundedReservePoolHandler.sol';
 
 import { LiquidationPoolHandler } from './LiquidationPoolHandler.sol';
-import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BaseHandler } from './BaseHandler.sol';
-import { Auctions } from 'src/libraries/external/Auctions.sol';
 
-abstract contract UnBoundedReservePoolHandler is BaseHandler {
-    function startClaimableReserveAuction() internal {
-        (, uint256 claimableReserves, , , ) = _poolInfo.poolReservesInfo(address(_pool));
-        if(claimableReserves == 0) return;
-        try _pool.startClaimableReserveAuction(){
-            shouldReserveChange = true;
-        } catch {
-        }
+contract ReservePoolHandler is UnboundedReservePoolHandler, LiquidationPoolHandler {
+
+    constructor(
+        address pool_,
+        address quote_,
+        address collateral_,
+        address poolInfo_,
+        uint256 numOfActors_,
+        address testContract_
+    ) LiquidationPoolHandler(pool_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
+
     }
 
-    function takeReserves(uint256 amount) internal {
-        try _pool.takeReserves(amount){
-            shouldReserveChange = true;
-        } catch {
-        }
-    }
-}
+    /*******************************/
+    /*** Reserves Test Functions ***/
+    /*******************************/
 
-contract ReservePoolHandler is UnBoundedReservePoolHandler, LiquidationPoolHandler {
-
-    constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) LiquidationPoolHandler(pool, quote, collateral, poolInfo, numOfActors) {}
-
-    function startClaimableReserveAuction(uint256 actorIndex) external useRandomActor(actorIndex) {
-        super.startClaimableReserveAuction();
+    function startClaimableReserveAuction(
+        uint256 actorIndex_
+    ) external useRandomActor(actorIndex_) useTimestamps {
+        // Action phase
+        _startClaimableReserveAuction();
     }
 
-    function takeReserves(uint256 actorIndex, uint256 amount) external useRandomActor(actorIndex) {
+    function takeReserves(
+        uint256 actorIndex_,
+        uint256 amountToTake_
+    ) external useRandomActor(actorIndex_) useTimestamps {
+        // Prepare test phase
+        uint256 boundedAmount = _preTakeReserves(amountToTake_);
+
+        // Action phase
+        _takeReserves(boundedAmount);
+    }
+
+    /*******************************/
+    /*** Prepare Tests Functions ***/
+    /*******************************/
+
+    function _preTakeReserves(
+        uint256 amountToTake_
+    ) internal returns (uint256 boundedAmount_) {
         (, , uint256 claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
+        if (claimableReservesRemaining == 0) _startClaimableReserveAuction();
 
-        if(claimableReservesRemaining == 0) {
-            super.startClaimableReserveAuction();
-        }
         (, , claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
-
-        amount = constrictToRange(amount, 0, claimableReservesRemaining);
-        super.takeReserves(amount);
+        boundedAmount_ = constrictToRange(amountToTake_, 0, claimableReservesRemaining);
     }
+
 }

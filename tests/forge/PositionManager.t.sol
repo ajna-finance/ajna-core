@@ -2131,7 +2131,6 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
-
         changePrank(testReceiver);
         vm.expectEmit(true, true, true, true);
         emit TransferLPs(address(_positionManager), testReceiver, indexes, 15_000 * 1e18);
