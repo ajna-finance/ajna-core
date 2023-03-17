@@ -1143,7 +1143,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             amountMoved:  2_499.657534246575342500 * 1e18,
             fromIndex:    lupIndex,
             toIndex:      2954,
-            lpRedeemFrom: 2_499.902874075010984820 * 1e18,
+            lpRedeemFrom: 2_499.902874075010987320 * 1e18,
             lpAwardTo:    2_499.657534246575342500 * 1e18,
             newLup:       _lup()
         });
@@ -1155,7 +1155,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             from:    _lender1,
             amount:  1_000 * 1e18,
             index:   2873,
-            lpAward: 999.958129650486585454 * 1e18,
+            lpAward: 999.958129650486586454 * 1e18,
             newLup:  601.252968524772188572 * 1e18
         });
 
@@ -1168,7 +1168,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             amountMoved:  2_499.691780821917807500 * 1e18,
             fromIndex:    lupIndex,
             toIndex:      2954,
-            lpRedeemFrom: 2_499.815331532038893923 * 1e18,
+            lpRedeemFrom: 2_499.815331532038898922 * 1e18,
             lpAwardTo:    2_499.691780821917807500 * 1e18,
             newLup:       _lup()
         });
@@ -1180,7 +1180,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             from:    _lender1,
             amount:  9_000 * 1e18,
             index:   2873,
-            lpAward: 8_994.177960110671641166 * 1e18,
+            lpAward: 8_994.177960110671668131 * 1e18,
             newLup:  601.252968524772188572 * 1e18
         });
         
@@ -1189,10 +1189,10 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
         _removeAllLiquidity({
             from:     _lender,
-            amount:   5_003.525624026555367687 * 1e18,
+            amount:   5_003.525624026555345183 * 1e18,
             index:    2873,
             newLup:   601.252968524772188572 * 1e18,
-            lpRedeem: 5_000.281794392950121257 * 1e18
+            lpRedeem: 5_000.281794392950113758 * 1e18
         });
 
         _removeAllLiquidity({

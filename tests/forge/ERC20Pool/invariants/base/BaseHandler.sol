@@ -291,7 +291,7 @@ abstract contract BaseHandler is Test {
                 Maths.wmul(pendingFactor - Maths.WAD, poolDebt)
             );
 
-            uint256 scale = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;
+            uint256 scale = (newInterest * 1e18) / depositAboveHtp + Maths.WAD;
 
             // simulate scale being applied to all deposits above HTP
             _fenwickMult(htpIndex, scale);

@@ -154,7 +154,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             borrowerCollateralization: 1.800750077529217167 * 1e18
         });
 
-        _assertLenderInterest(liquidityAdded, 10.004632566415850000 * 1e18);
+        _assertLenderInterest(liquidityAdded, 10.004632566415800000 * 1e18);
 
         // borrower borrows some additional quote after some time has passed
         skip(10 days);
@@ -178,7 +178,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             borrowerCollateralization: 1.500002057800446964 * 1e18
         });
 
-        _assertLenderInterest(liquidityAdded, 14.290569428855600000 * 1e18);
+        _assertLenderInterest(liquidityAdded, 14.290569428855550000 * 1e18);
 
         // mint additional quote to borrower to enable repayment
         deal(address(_quote), _borrower, 20_000 * 1e18);
@@ -301,7 +301,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             borrowerCollateralization: 1.088376197116173336 * 1e18
         });
 
-        _assertLenderInterest(liquidityAdded, 0.155402195487240000 * 1e18);
+        _assertLenderInterest(liquidityAdded, 0.155402195487210000 * 1e18);
 
         skip(4 hours);
 
@@ -352,7 +352,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             borrowerCollateralization: 1.197213816827790670 * 1e18
         });
 
-        _assertLenderInterest(liquidityAdded, 0.371927286666750000 * 1e18);
+        _assertLenderInterest(liquidityAdded, 0.371927286666690000 * 1e18);
 
         skip(4 hours);
 
@@ -361,7 +361,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             from:    _lender,
             amount:  1 * 1e18,
             index:   2550,
-            lpAward: 0.999978744441788344 * 1e18,
+            lpAward: 0.999978744441788346 * 1e18,
             newLup:  2995.912459898389633881 * 1e18
         });
         liquidityAdded += 1e18;
@@ -372,7 +372,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         (poolDebt,,) = _pool.debtInfo();
         assertEq(poolDebt, expectedPoolDebt);
 
-        _assertLenderInterest(liquidityAdded, 0.637680300600420000 * 1e18);
+        _assertLenderInterest(liquidityAdded, 0.637680300600360000 * 1e18);
 
         expectedBorrower1Debt = 8_008.240798551896146546 * 1e18;
 
