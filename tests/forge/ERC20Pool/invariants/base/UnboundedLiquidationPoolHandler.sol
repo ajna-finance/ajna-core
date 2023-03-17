@@ -162,91 +162,77 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         uint256 maxDepth_
     ) internal useTimestamps updateLocalStateAndPoolInterest {
         (
-            uint256 borrowerDebt,
+            uint256 borrowerT0Debt,
             uint256 collateral,
-        ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
-
-        uint256 noOfBuckets = LENDER_MAX_BUCKET_INDEX - LENDER_MIN_BUCKET_INDEX + 1;
-
-        uint256[] memory changeInDeposit = new uint256[](noOfBuckets);
-        uint256 depositUsed;
-
-        uint256 bucketDepth = maxDepth_;
-
-        // settle borrower debt with exchanging borrower collateral with quote tokens starting from hpb
-        while (bucketDepth != 0 && borrowerDebt != 0 && collateral != 0) {
-            uint256 bucketIndex       = fenwickIndexForSum(1 + depositUsed);
-            uint256 bucketUsed        = bucketIndex - LENDER_MIN_BUCKET_INDEX;
-            uint256 maxSettleableDebt = Maths.wmul(collateral, _priceAt(bucketIndex));
-
-            if (bucketIndex != MAX_FENWICK_INDEX) {
-                // debt is greater than bucket deposit then exchange all deposit with collateral
-                if (borrowerDebt > fenwickDeposits[bucketIndex] && maxSettleableDebt >= fenwickDeposits[bucketIndex]) {
-                    borrowerDebt                -= fenwickDeposits[bucketIndex];
-                    changeInDeposit[bucketUsed] += fenwickDeposits[bucketIndex];
-                    collateral                  -= Maths.wdiv(fenwickDeposits[bucketIndex], _priceAt(bucketIndex));
-                    depositUsed                 += fenwickDeposits[bucketIndex];
-                }
-                // collateral value is greater than borrower debt then exchange collateral with deposit
-                else if (maxSettleableDebt >= borrowerDebt) {
-                    changeInDeposit[bucketUsed] += borrowerDebt;
-                    collateral                  -= Maths.wdiv(borrowerDebt, _priceAt(bucketIndex));
-                    depositUsed                 += borrowerDebt;
-                    borrowerDebt                = 0;
-                }
-                // exchange all collateral with deposit
-                else {
-                    changeInDeposit[bucketUsed] += maxSettleableDebt;
-                    depositUsed                 += maxSettleableDebt;
-                    collateral                  = 0;
-                    borrowerDebt                -= maxSettleableDebt;
-                }
-            } else collateral = 0;
-
-            bucketDepth -= 1;
-        }
-
-        // reserves used for settling auction
-        uint256 reserveChange;
-
-        // if collateral becomes 0 and still debt is left, settle debt by reserves and hpb making buckets bankrupt
-        if (borrowerDebt != 0 && collateral == 0) {
-            (uint256 reserves, , , , )= _poolInfo.poolReservesInfo(address(_pool));
-            
-            reserveChange = Maths.min(reserves, borrowerDebt);
-            borrowerDebt -= reserveChange;
-
-            while (bucketDepth != 0 && borrowerDebt != 0) {
-                uint256 bucketIndex = fenwickIndexForSum(1 + depositUsed);
-                uint256 bucketUsed  = bucketIndex - LENDER_MIN_BUCKET_INDEX;
-
-                if (bucketIndex != MAX_FENWICK_INDEX) {
-
-                    // debt is greater than bucket deposit
-                    if (borrowerDebt > (fenwickDeposits[bucketIndex] - changeInDeposit[bucketUsed])) {
-                        borrowerDebt                -= (fenwickDeposits[bucketIndex] - changeInDeposit[bucketUsed]);
-                        changeInDeposit[bucketUsed] += (fenwickDeposits[bucketIndex] - changeInDeposit[bucketUsed]);
-                        depositUsed                 += (fenwickDeposits[bucketIndex] - changeInDeposit[bucketUsed]);
-                    }
-                    // bucket deposit is greater than debt
-                    else {
-                        changeInDeposit[bucketUsed] += borrowerDebt;
-                        depositUsed                 += borrowerDebt;
-                        borrowerDebt                = 0;
-                    }
-                }
-
-                bucketDepth -= 1;
-            }
-        }
+        ) = _pool.borrowerInfo(borrower_);
+        (uint256 reservesBeforeAction, , , , )= _poolInfo.poolReservesInfo(address(_pool));
 
         try _pool.settle(borrower_, maxDepth_) {
 
-            // **RE12**: Reserves decrease by amount of reserve used to settle a auction
-            decreaseInReserves = reserveChange;
+            (uint256 inflator, ) = _pool.inflatorInfo();
+            uint256 depositUsed;
 
-            for (uint256 bucket = 0; bucket <= maxDepth_; bucket++) {
-                _fenwickRemove(changeInDeposit[bucket], bucket + LENDER_MIN_BUCKET_INDEX);
+            // settle borrower debt with exchanging borrower collateral with quote tokens starting from hpb
+            while (maxDepth_ != 0 && borrowerT0Debt != 0 && collateral != 0) {
+                uint256 bucketIndex       = fenwickIndexForSum(1 + depositUsed);
+                uint256 maxSettleableDebt = Maths.wmul(collateral, _priceAt(bucketIndex));
+
+                if (bucketIndex != MAX_FENWICK_INDEX) {
+                    // debt is greater than bucket deposit then exchange all deposit with collateral
+                    if (Maths.wmul(borrowerT0Debt, inflator) > fenwickDeposits[bucketIndex] && maxSettleableDebt >= fenwickDeposits[bucketIndex]) {
+                        borrowerT0Debt              -= Maths.wdiv(fenwickDeposits[bucketIndex], inflator);
+                        collateral                  -= Maths.wdiv(fenwickDeposits[bucketIndex], _priceAt(bucketIndex));
+                        depositUsed                 += fenwickDeposits[bucketIndex];
+                        fenwickDeposits[bucketIndex] = 0;
+                    }
+                    // collateral value is greater than borrower debt then exchange collateral with deposit
+                    else if (maxSettleableDebt >= Maths.wmul(borrowerT0Debt, inflator)) {
+                        fenwickDeposits[bucketIndex] -= Maths.wmul(borrowerT0Debt, inflator);
+                        collateral                   -= Maths.wdiv(Maths.wmul(borrowerT0Debt, inflator), _priceAt(bucketIndex));
+                        depositUsed                  += Maths.wmul(borrowerT0Debt, inflator);
+                        borrowerT0Debt               = 0;
+                    }
+                    // exchange all collateral with deposit
+                    else {
+                        fenwickDeposits[bucketIndex] -= maxSettleableDebt;
+                        depositUsed                  += maxSettleableDebt;
+                        collateral                   = 0;
+                        borrowerT0Debt               -= Maths.wdiv(maxSettleableDebt, inflator);
+                    }
+                } else collateral = 0;
+
+                maxDepth_ -= 1;
+            }
+
+            // if collateral becomes 0 and still debt is left, settle debt by reserves and hpb making buckets bankrupt
+            if (borrowerT0Debt != 0 && collateral == 0) {
+
+                (uint256 reservesAfterAction, , , , )= _poolInfo.poolReservesInfo(address(_pool));
+                // **RE12**: Reserves decrease by amount of reserve used to settle a auction
+                decreaseInReserves = reservesBeforeAction - reservesAfterAction;
+
+                borrowerT0Debt -= Maths.min(decreaseInReserves, borrowerT0Debt);
+
+                while (maxDepth_ != 0 && borrowerT0Debt != 0) {
+                    uint256 bucketIndex = fenwickIndexForSum(1 + depositUsed);
+
+                    if (bucketIndex != MAX_FENWICK_INDEX) {
+                        // debt is greater than bucket deposit
+                        if (Maths.wmul(borrowerT0Debt, inflator) > (fenwickDeposits[bucketIndex])) {
+                            borrowerT0Debt              -= Maths.wdiv(fenwickDeposits[bucketIndex], inflator);
+                            depositUsed                 += fenwickDeposits[bucketIndex];
+                            fenwickDeposits[bucketIndex] = 0;
+                        }
+                        // bucket deposit is greater than debt
+                        else {
+                            fenwickDeposits[bucketIndex] -= Maths.wmul(borrowerT0Debt, inflator);
+                            depositUsed                  += Maths.wmul(borrowerT0Debt, inflator);
+                            borrowerT0Debt               = 0;
+                        }
+                    }
+
+                    maxDepth_ -= 1;
+                }
             }
 
         } catch (bytes memory err) {
