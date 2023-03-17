@@ -521,8 +521,8 @@ contract RewardsManagerTest is ERC20HelperContract {
             pool:              address(_poolOne),
             tokenId:           tokenIdOne,
             claimedArray:      _epochsClaimedArray(2, 0),
-            reward:            86.809555428378489140 * 1e18,
-            updateRatesReward: 4.173624213367915345 * 1e18
+            reward:            86.809555428378605150 * 1e18,
+            updateRatesReward: 4.173624213367915365 * 1e18
         });
     }
 
@@ -1037,7 +1037,7 @@ contract RewardsManagerTest is ERC20HelperContract {
         changePrank(_updater);
         assertEq(_ajnaToken.balanceOf(_updater), 20.449844540665683990 * 1e18);
         vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(_updater, address(_poolOne), depositIndexes, 17.238252336072284751 * 1e18);
+        emit UpdateExchangeRates(_updater, address(_poolOne), depositIndexes, 17.238252336072314416 * 1e18);
         _rewardsManager.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
         assertEq(_ajnaToken.balanceOf(_updater), 37.688096876737998406 * 1e18);
 
@@ -1276,7 +1276,7 @@ contract RewardsManagerTest is ERC20HelperContract {
         changePrank(_minterOne);
         assertEq(_ajnaToken.balanceOf(_minterOne), 44.989657989464570280 * 1e18);
         vm.expectEmit(true, true, true, true);
-        emit ClaimRewards(_minterOne, address(_poolOne), tokenId, _epochsClaimedArray(1, 1), 41.730457738037587731 * 1e18);
+        emit ClaimRewards(_minterOne, address(_poolOne), tokenId, _epochsClaimedArray(1, 1), 41.730457738037587904 * 1e18);
         _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
     }
 
@@ -1625,7 +1625,7 @@ contract RewardsManagerTest is ERC20HelperContract {
             pool:              address(_poolOne),
             tokenId:           tokenIdOne,
             claimedArray:      _epochsClaimedArray(3, 0),
-            reward:            75.626985109731636395 * 1e18,
+            reward:            75.626985109732100715 * 1e18,
             updateRatesReward: 0
         });
 
@@ -1634,7 +1634,7 @@ contract RewardsManagerTest is ERC20HelperContract {
             pool:              address(_poolOne),
             tokenId:           tokenIdTwo,
             claimedArray:      _epochsClaimedArray(3, 0),
-            reward:            378.134925548658181975 * 1e18,
+            reward:            378.134925548660503565 * 1e18,
             updateRatesReward: 0
         });
     }
