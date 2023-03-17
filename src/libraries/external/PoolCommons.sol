@@ -222,7 +222,7 @@ library PoolCommons {
             Deposits.mult(
                 deposits_,
                 htpIndex,
-                Maths.wdiv(newInterest_, depositAboveHtp) + Maths.WAD // lender factor
+                (newInterest_ * 1e18) / depositAboveHtp + Maths.WAD // lender factor
             );
         }
     }
