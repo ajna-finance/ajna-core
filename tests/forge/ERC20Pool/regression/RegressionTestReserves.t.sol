@@ -161,4 +161,22 @@ contract RegressionTestReserve is ReserveInvariants {
 
         invariant_fenwick_depositAtIndex_F1();
     }
+
+    function test_regression_invariant_reserves_settle_1() external {
+        _reservePoolHandler.settleAuction(2999999999999999543503680529282898884169444286, 999999999999999999999999, 6952);
+        _reservePoolHandler.bucketTake(115792089237316195423570985008687907853269984665640564039457584007913129639932, 0, false, 228076556654255348886);
+        _reservePoolHandler.startClaimableReserveAuction(18407833277983020451007887294192863287187933);
+        _reservePoolHandler.settleAuction(2720, 3319, 516);
+
+        invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10_RE11_RE12();
+    }
+
+    function test_regression_invariant_reserves_settle_2() external {
+        _reservePoolHandler.takeAuction(3, 214198155653990209702223102757081411626927025, 115792089237316195423570985008687907853269984665640564039457584007913129639935);
+        _reservePoolHandler.repayDebt(36, 19087);
+        _reservePoolHandler.drawDebt(2550145944163683156825587547113715005197220288637184, 115792089237316195423570985008687907853269984665640564039457584007913129639932);
+
+        invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10_RE11_RE12();
+    }
+
 }
