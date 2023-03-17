@@ -335,10 +335,10 @@ abstract contract BaseHandler is Test {
             increaseInReserves += Maths.wmul(borrowerDebt_, 0.07 * 1e18);
             firstTake = true;
 
-            // reset taken flag in case auciton was settled by take action
-            _auctionSettleStateReset(borrower_);
-
         } else firstTake = false;
+
+        // reset taken flag in case auction was settled by take action
+        _auctionSettleStateReset(borrower_);
     }
 
     /**********************************/

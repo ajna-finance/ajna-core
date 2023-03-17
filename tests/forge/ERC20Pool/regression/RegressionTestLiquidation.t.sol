@@ -93,4 +93,12 @@ contract RegressionTestLiquidation is LiquidationInvariants {
 
         invariant_fenwick_depositAtIndex_F1();
     }
+
+    function test_regression_invariant_incorrect_take_2() external {
+        _liquidationPoolHandler.kickAuction(13452, 7198, 11328);
+        _liquidationPoolHandler.takeAuction(6772, 18720, 6668);
+        _liquidationPoolHandler.takeAuction(115792089237316195423570985008687907853269984665640564039457584007913129639932, 1666258487708695528254610529989951, 490873240291829575083322665078478117042861655783753);
+
+        invariant_auction_taken_A6();
+    }
 }
