@@ -1,149 +1,167 @@
-
 // SPDX-License-Identifier: UNLICENSED
+
 pragma solidity 0.8.14;
 
-import '@std/Vm.sol';
+import {
+    LENDER_MIN_BUCKET_INDEX,
+    LENDER_MAX_BUCKET_INDEX,
+    BORROWER_MIN_BUCKET_INDEX,
+    BaseHandler
+}                                          from '../base/BaseHandler.sol';
+import { UnboundedLiquidationPoolHandler } from '../base/UnboundedLiquidationPoolHandler.sol';
 
 import { BasicPoolHandler } from './BasicPoolHandler.sol';
-import { LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX, BaseHandler } from './BaseHandler.sol';
-import { MAX_FENWICK_INDEX } from 'src/libraries/helpers/PoolHelper.sol';
-import { Maths } from 'src/libraries/internal/Maths.sol';
 
-abstract contract UnBoundedLiquidationPoolHandler is BaseHandler {
-    function kickAuction(address borrower) internal {
-        numberOfCalls['UBLiquidationHandler.kickAuction']++;
+contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHandler {
 
-        (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower);
+    constructor(
+        address pool_,
+        address quote_,
+        address collateral_,
+        address poolInfo_,
+        uint256 numOfActors_,
+        address testContract_
+    ) BasicPoolHandler(pool_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
 
-        try _pool.kick(borrower, MAX_FENWICK_INDEX) {
-            shouldExchangeRateChange = true;
-            shouldReserveChange      = true;
-            loanKickIncreaseInReserve = Maths.wmul(borrowerDebt, 0.25 * 1e18);
-        }
-        catch {
-        }
     }
 
-    function takeAuction(address borrower, uint256 amount, address taker) internal {
-        numberOfCalls['UBLiquidationHandler.takeAuction']++;
+    /*****************************/
+    /*** Kicker Test Functions ***/
+    /*****************************/
 
-        (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower);
-        
-        try _pool.take(borrower, amount, taker, bytes("")) {
-            shouldExchangeRateChange = true;
-            shouldReserveChange      = true;
-            
-            if(!isFirstTakeOnAuction[borrower]) {
-                firstTakeIncreaseInReserve = Maths.wmul(borrowerDebt, 0.07 * 1e18);
-                firstTake = true;
-                isFirstTakeOnAuction[borrower] = true;
-            }
-            else {
-                isFirstTakeOnAuction[borrower] = false;
-                firstTake = false;
-            }
-        }
-        catch {
-        }
+    function kickAuction(
+        uint256 borrowerIndex_,
+        uint256 amount_,
+        uint256 kickerIndex_
+    ) external useTimestamps {
+        _kickAuction(borrowerIndex_, amount_, kickerIndex_);
     }
 
-    function bucketTake(address borrower, bool depositTake, uint256 bucketIndex) internal {
-        numberOfCalls['UBLiquidationHandler.bucketTake']++;
-
-        (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower);
-
-        try _pool.bucketTake(borrower, depositTake, bucketIndex) {
-            shouldExchangeRateChange = true;
-            shouldReserveChange      = true;
-
-            if(!firstTake) {
-                firstTakeIncreaseInReserve = Maths.wmul(borrowerDebt, 0.07 * 1e18);
-                firstTake = true;
-            }
-            else {
-                firstTake = false;
-            }
-        }
-        catch {
-        }
+    function kickWithDeposit(
+        uint256 kickerIndex_,
+        uint256 bucketIndex_
+    ) external useRandomActor(kickerIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps {
+        _kickWithDeposit(_lenderBucketIndex);
     }
-}
 
-contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHandler {
+    function withdrawBonds(
+        uint256 kickerIndex_,
+        uint256 maxAmount_
+    ) external useRandomActor(kickerIndex_) useTimestamps {
+        _withdrawBonds(_actor, maxAmount_);
+    }
 
-    constructor(address pool, address quote, address collateral, address poolInfo, uint256 numOfActors) BasicPoolHandler(pool, quote, collateral, poolInfo, numOfActors) {}
+    /****************************/
+    /*** Taker Test Functions ***/
+    /****************************/
 
-    function _kickAuction(uint256 borrowerIndex, uint256 amount, uint256 kickerIndex) internal useRandomActor(kickerIndex) {
+    function takeAuction(
+        uint256 borrowerIndex_,
+        uint256 amount_,
+        uint256 actorIndex_
+    ) external useRandomActor(actorIndex_) useTimestamps {
+        numberOfCalls['BLiquidationHandler.takeAuction']++;
+
+        amount_ = constrictToRange(amount_, 1, 1e30);
+
+        borrowerIndex_ = constrictToRange(borrowerIndex_, 0, actors.length - 1);
+
+        address borrower = actors[borrowerIndex_];
+        address taker    = _actor;
+
+        ( , , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
+
+        if (kickTime == 0) _kickAuction(borrowerIndex_, amount_ * 100, actorIndex_);
+
+        changePrank(taker);
+        _takeAuction(borrower, amount_, taker);
+    }
+
+    function bucketTake(
+        uint256 borrowerIndex_,
+        uint256 bucketIndex_,
+        bool depositTake_,
+        uint256 takerIndex_
+    ) external useRandomActor(takerIndex_) useTimestamps {
+        numberOfCalls['BLiquidationHandler.bucketTake']++;
+
+        borrowerIndex_ = constrictToRange(borrowerIndex_, 0, actors.length - 1);
+        bucketIndex_   = constrictToRange(bucketIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
+
+        address borrower = actors[borrowerIndex_];
+        address taker    = _actor;
+
+        ( , , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
+
+        if (kickTime == 0) _kickAuction(borrowerIndex_, 1e24, bucketIndex_);
+
+        changePrank(taker);
+        _bucketTake(taker, borrower, depositTake_, bucketIndex_);
+    }
+
+    /******************************/
+    /*** Settler Test Functions ***/
+    /******************************/
+
+    function settleAuction(
+        uint256 actorIndex_,
+        uint256 borrowerIndex_,
+        uint256 bucketIndex_
+    ) external useRandomActor(actorIndex_) useTimestamps {
+        borrowerIndex_ = constrictToRange(borrowerIndex_, 0, actors.length - 1);
+        bucketIndex_   = constrictToRange(bucketIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
+
+        address borrower = actors[borrowerIndex_];
+        uint256 maxDepth = LENDER_MAX_BUCKET_INDEX - LENDER_MIN_BUCKET_INDEX;
+
+        address actor = _actor;
+
+        ( , , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
+
+        if (kickTime == 0) _kickAuction(borrowerIndex_, 1e24, bucketIndex_);
+
+        changePrank(actor);
+        // skip time to make auction clearable
+        vm.warp(block.timestamp + 73 hours);
+        _settleAuction(borrower, maxDepth);
+
+        _auctionSettleStateReset(borrower);
+    }
+
+    /************************/
+    /*** Helper Functions ***/
+    /************************/
+
+    function _kickAuction(
+        uint256 borrowerIndex_,
+        uint256 amount_,
+        uint256 kickerIndex_
+    ) internal useRandomActor(kickerIndex_) {
         numberOfCalls['BLiquidationHandler.kickAuction']++;
 
-        shouldExchangeRateChange = true;
-
-        borrowerIndex    = constrictToRange(borrowerIndex, 0, actors.length - 1);
-        address borrower = actors[borrowerIndex];
+        borrowerIndex_   = constrictToRange(borrowerIndex_, 0, actors.length - 1);
+        address borrower = actors[borrowerIndex_];
         address kicker   = _actor;
-        amount           = constrictToRange(amount, 1, 1e36);
+        amount_          = constrictToRange(amount_, 1, 1e30);
 
         ( , , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
 
         if (kickTime == 0) {
             (uint256 debt, , ) = _pool.borrowerInfo(borrower);
+
             if (debt == 0) {
                 changePrank(borrower);
                 _actor = borrower;
-                super.drawDebt(amount);
+                uint256 drawDebtAmount = _preDrawDebt(amount_);
+                _drawDebt(drawDebtAmount);
             }
+
             changePrank(kicker);
             _actor = kicker;
-            super.kickAuction(borrower);
+            _kickAuction(borrower);
         }
 
         // skip some time for more interest
         vm.warp(block.timestamp + 2 hours);
     }
-
-    function kickAuction(uint256 borrowerIndex, uint256 amount, uint256 kickerIndex) external {
-        _kickAuction(borrowerIndex, amount, kickerIndex);
-    }
-
-    function takeAuction(uint256 borrowerIndex, uint256 amount, uint256 actorIndex) external useRandomActor(actorIndex){
-        numberOfCalls['BLiquidationHandler.takeAuction']++;
-
-        amount = constrictToRange(amount, 1, 1e36);
-
-        shouldExchangeRateChange = true;
-
-        borrowerIndex = constrictToRange(borrowerIndex, 0, actors.length - 1);
-
-        address borrower = actors[borrowerIndex];
-        address taker    = _actor;
-
-        ( , , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
-
-        if (kickTime == 0) {
-            _kickAuction(borrowerIndex, amount * 100, actorIndex);
-        }
-        changePrank(taker);
-        super.takeAuction(borrower, amount, taker);
-    }
-
-    function bucketTake(uint256 borrowerIndex, uint256 bucketIndex, bool depositTake, uint256 takerIndex) external useRandomActor(takerIndex) {
-        numberOfCalls['BLiquidationHandler.bucketTake']++;
-
-        shouldExchangeRateChange = true;
-
-        borrowerIndex = constrictToRange(borrowerIndex, 0, actors.length - 1);
-
-        bucketIndex = constrictToRange(bucketIndex, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
-
-        address borrower = actors[borrowerIndex];
-        address taker    = _actor;
-
-        ( , , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
-
-        if (kickTime == 0) {
-            _kickAuction(borrowerIndex, 1e24, bucketIndex);
-        }
-        changePrank(taker);
-        super.bucketTake(borrower, depositTake, bucketIndex);
-    } 
 }

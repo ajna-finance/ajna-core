@@ -272,7 +272,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         // check pool state after partial repay
         _assertPool(
             PoolParams({
-                htp:                  503.022258079721182348 * 1e18,
+                htp:                  502.333658244714424687 * 1e18,
                 lup:                  _priceAt(2550),
                 poolSize:             30_003.498905447098710000 * 1e18,
                 pledgedCollateral:    Maths.wad(3),

@@ -51,7 +51,7 @@ interface IPoolState {
      *  @param  borrower   Address of the borrower.
      *  @return t0Debt     Amount of debt borrower would have had if their loan was the first debt drawn from the pool
      *  @return collateral Amount of collateral that the borrower has deposited, in collateral token.
-     *  @return t0Np       Np / borrowerInflatorSnapshot
+     *  @return t0Np       t0 Neutral Price
      */
     function borrowerInfo(address borrower)
         external
@@ -119,14 +119,14 @@ interface IPoolState {
 
     /**
      *  @notice Returns information about pool inflator.
-     *  @return inflatorSnapshot A snapshot of the last inflator value.
-     *  @return lastUpdate       The timestamp of the last `inflatorSnapshot` update.
+     *  @return inflator   Pool inflator value.
+     *  @return lastUpdate The timestamp of the last `inflator` update.
      */
     function inflatorInfo()
         external
         view
         returns (
-            uint256 inflatorSnapshot,
+            uint256 inflator,
             uint256 lastUpdate
     );
 

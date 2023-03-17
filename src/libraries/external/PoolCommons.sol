@@ -349,18 +349,18 @@ library PoolCommons {
 
     /**
      *  @notice Calculates pool pending inflator given the current inflator, time of last update and current interest rate.
-     *  @param  inflatorSnapshot_ Current pool interest rate.
-     *  @param  inflatorUpdate    Timestamp when inflator was updated.
-     *  @param  interestRate_     The interest rate of the pool.
+     *  @param  inflator_      Current pool inflator.
+     *  @param  inflatorUpdate Timestamp when inflator was updated.
+     *  @param  interestRate_  The interest rate of the pool.
      *  @return The pending value of pool inflator.
      */
     function pendingInflator(
-        uint256 inflatorSnapshot_,
+        uint256 inflator_,
         uint256 inflatorUpdate,
         uint256 interestRate_
     ) external view returns (uint256) {
         return Maths.wmul(
-            inflatorSnapshot_,
+            inflator_,
             PRBMathUD60x18.exp((interestRate_ * (block.timestamp - inflatorUpdate)) / 365 days)
         );
     }

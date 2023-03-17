@@ -34,7 +34,9 @@
 - **B2**: bucket LPs accumulator (`Bucket.lps`) = 0 if no deposit / collateral in bucket  
 - **B3**: if no collateral or deposit in bucket then the bucket exchange rate is `1e27`  
 - **B4**: bankrupt bucket LPs accumulator = 0; lender LPs for deposits before bankruptcy time = 0  
-- **B5**: when adding quote tokens: lender deposit time (`Lender.depositTime`) = timestamp of block when deposit happened (`block.timestamp`)  
+- **B5**: when adding / moving quote tokens or adding collateral : lender deposit time (`Lender.depositTime`) = timestamp of block when deposit happened (`block.timestamp`)  
+- **B6**: when receiving transferred LPs : receiver deposit time (`Lender.depositTime`) = max of sender and receiver deposit time  
+- **B7**: when awarded bucket take LPs : taker/kicker deposit time (`Lender.depositTime`) = timestamp of block when award happened (`block.timestamp`)  
 
 ## Interest
 - **I1**: interest rate (`InterestState.interestRate`) cannot be updated more than once in a 12 hours period of time (`InterestState.interestRateUpdate`)  
@@ -45,11 +47,11 @@
 - **F1**: Value represented at index `i` (`Deposits.valueAt(i)`) is equal to the accumulation of scaled values incremented or decremented from index `i`
 - **F2**: For any index `i`, the prefix sum up to and including `i` is the sum of values stored in indices `j<=i`
 - **F3**: For any index `i < MAX_FENWICK_INDEX`,  `findIndexOfSum(prefixSum(i)) > i`
-- **F4**: For any index `i`, there is zero deposit above `i` and below `findIndexOfSum(prefixSum(i))`:  `prefixSum(findIndexOfSum(prefixSum(i))-1 == prefixSum(i)'
+- **F4**: For any index i, there is zero deposit above i and below findIndexOfSum(prefixSum(i) + 1): `findIndexOfSum(prefixSum(i)) == findIndexOfSum(prefixSum(j) - deposits.valueAt(j))`, where j is the next index from i with deposits != 0
 
 ## Exchange rate invariants ##
 - **R1**: Exchange rates are unchanged by pledging collateral
-- **R2**: Exchange rates are unchanged by removing collateral
+- **R2**: Exchange rates are unchanged by pulling collateral
 - **R3**: Exchange rates are unchanged by depositing quote token into a bucket
 - **R4**: Exchange rates are unchanged by withdrawing deposit (quote token) from a bucket
 - **R5**: Exchange rates are unchanged by adding collateral token into a bucket
@@ -58,12 +60,15 @@
 - **R8**: Exchange rates are unchanged under arbTakes
 
 ## Reserves ##
-- **RE1**: Reserves are unchanged by pledging collateral
-- **RE2**: Reserves are unchanged by removing collateral
-- **RE3**: Reserves are unchanged by depositing quote token into a bucket
-- **RE4**: Reserves are unchanged by withdrawing deposit (quote token) from a bucket after the penalty period hes expired
-- **RE5**: Reserves are unchanged by adding collateral token into a bucket
-- **RE6**: Reserves are unchanged by removing collateral token from a bucket
-- **RE7**: Reserves increase by 7% of the loan quantity upon the first take (including depositTake or arbTake)
-- **RE8**: Reserves are unchanged under takes/depositTakes/arbTakes after the first take
-- **RE9**: Reserves increase by .25% of the debt when a loan is kicked
+- **RE1**:  Reserves are unchanged by pledging collateral
+- **RE2**:  Reserves are unchanged by removing collateral
+- **RE3**:  Reserves increase only when depositing quote token into a bucket below LUP. Reserves increase only when moving quote tokens into a bucket below LUP.
+- **RE4**:  Reserves are unchanged by withdrawing deposit (quote token) from a bucket after the penalty period hes expired
+- **RE5**:  Reserves are unchanged by adding collateral token into a bucket
+- **RE6**:  Reserves are unchanged by removing collateral token from a bucket
+- **RE7**:  Reserves increase by 7% of the loan quantity upon the first take (including depositTake or arbTake) and increase/decrease by bond penalty/reward on take.
+- **RE8**:  Reserves are unchanged under takes/depositTakes/arbTakes after the first take but increase/decrease by bond penalty/reward on take.
+- **RE9**:  Reserves increase by 3 months of interest when a loan is kicked
+- **RE10**: Reserves increase by origination fee: max(1 week interest, 0.05% of borrow amount), on draw debt
+- **RE11**: Reserves decrease by claimableReserves by startClaimableReserveAuction
+- **RE12**: Reserves decrease by amount of reserve used to settle a auction
