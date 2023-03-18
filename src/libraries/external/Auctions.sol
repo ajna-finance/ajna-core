@@ -173,6 +173,7 @@ library Auctions {
     error PriceBelowLUP();
     error ReserveAuctionTooSoon();
     error TakeNotPastCooldown();
+    error ZeroAuctionPrice();
 
     /***************************/
     /***  External Functions ***/
@@ -1003,13 +1004,14 @@ library Auctions {
             params_.inflator
         );
 
-        vars_.unscaledDeposit = Deposits.unscaledValueAt(deposits_, params_.index);
+        // cannot arb if auction price is zero
+        if (vars_.auctionPrice == 0) revert ZeroAuctionPrice();
 
-        // revert if no quote tokens in arbed bucket
+        vars_.unscaledDeposit = Deposits.unscaledValueAt(deposits_, params_.index);
+        // cannot arb if no quote tokens in arbed bucket
         if (vars_.unscaledDeposit == 0) revert InsufficientLiquidity();
 
         vars_.bucketPrice  = _priceAt(params_.index);
-
         // cannot arb with a price lower than the auction price
         if (vars_.auctionPrice > vars_.bucketPrice) revert AuctionPriceGtBucketPrice();
         

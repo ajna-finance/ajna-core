@@ -711,7 +711,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
 
 contract ERC20PoolLiquidationsDepositTakeRegressionTest is ERC20HelperContract {
 
-    function testDepositTakeOnAuctionPriceZero() external {
+    function testDepositTakeOnAuctionWithZeroPrice() external {
         // initialize kicker to be rewarded after bucket take
         address actor1 = makeAddr("actor1");
         _mintQuoteAndApproveTokens(actor1, type(uint256).max);
@@ -778,10 +778,12 @@ contract ERC20PoolLiquidationsDepositTakeRegressionTest is ERC20HelperContract {
             depositTime: 0
         });
 
+        // revert since auction price is zero
+        vm.expectRevert(IPoolErrors.ZeroAuctionPrice.selector);
         ERC20Pool(address(_pool)).bucketTake(actor2, false, 2572);
 
         // assert kicker balances in bucket after take
-        // deposit time should remain the same since auction price was zero / kicker reward is zero
+        // deposit time should remain the same
         _assertLenderLpBalance({
             lender:      actor1,
             index:       2572,
@@ -827,7 +829,27 @@ contract ERC20PoolLiquidationsDepositTakeRegressionTest is ERC20HelperContract {
         changePrank(actor2);
         _pool.updateInterest();
         _pool.kick(actor0, 7388);
-        skip(5 days);
+
+        // skip enough to drive auction price under bucket price but not zero
+        skip(10 hours);
+
+        // assert auction before bucket take, enough time passed but auction price is not zero
+        _assertAuction(
+            AuctionParams({
+                borrower:          actor0,
+                active:            true,
+                kicker:            actor2,
+                bondSize:          9_781_522_461.034228618037457178 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          _startTime + 100 days,
+                kickMomp:          2_697.999235705754194133 * 1e18,
+                totalBondEscrowed: 9_781_522_461.034228618037457178 * 1e18,
+                auctionPrice:      178.781450453428631328 * 1e18,
+                debtInAuction:     989_156_458_872.086368999037857076 * 1e18,
+                thresholdPrice:    2_755.078541835520906130 * 1e18,
+                neutralPrice:      2_860.503207254858101199 * 1e18
+            })
+        );
 
         changePrank(actor3);
         _pool.updateInterest();

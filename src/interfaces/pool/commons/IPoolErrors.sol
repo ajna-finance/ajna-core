@@ -214,4 +214,9 @@ interface IPoolErrors {
      */
     error ZeroThresholdPrice();
 
+    /**
+     *  @notice The auction price to be taken with deposit is zero.
+     */
+    error ZeroAuctionPrice();
+
 }

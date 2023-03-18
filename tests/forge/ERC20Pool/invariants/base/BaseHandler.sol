@@ -206,7 +206,8 @@ abstract contract BaseHandler is Test {
             err == keccak256(abi.encodeWithSignature("AuctionNotClearable()")) ||
             err == keccak256(abi.encodeWithSignature("ReserveAuctionTooSoon()")) ||
             err == keccak256(abi.encodeWithSignature("NoReserves()")) ||
-            err == keccak256(abi.encodeWithSignature("NoReservesAuction()")),
+            err == keccak256(abi.encodeWithSignature("NoReservesAuction()")) || 
+            err == keccak256(abi.encodeWithSignature("ZeroAuctionPrice()")),
             "Unexpected revert error"
         );
     }
