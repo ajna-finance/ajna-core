@@ -34,6 +34,9 @@ abstract contract InvariantsTestBase is InvariantsTestHelpers, Test {
     }
 
     function setUp() public virtual {
+        // fork to be able to burn Ajna tokens in take reserves action
+        vm.createSelectFork(vm.envString("ETH_RPC_URL"));
+
         // Tokens
         _quote      = new Token("Quote", "Q");
         _collateral = new Token("Collateral", "C");

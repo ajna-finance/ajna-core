@@ -171,9 +171,15 @@ contract BasicInvariants is InvariantsTestBase {
             ,
         ) = _pool.reservesInfo();
 
+        uint256 assets      = poolBalance + poolDebt;
+        uint256 liabilities = totalBondEscrowed + _pool.depositSize() + unClaimed;
+
+        console.log("assets      -> ", assets);
+        console.log("liabilities -> ", liabilities);
+
         greaterThanWithinDiff(
-            poolBalance + poolDebt,
-            totalBondEscrowed + _pool.depositSize() + unClaimed,
+            assets,
+            liabilities,
             1,
             "Incorrect pool quote token"
         );

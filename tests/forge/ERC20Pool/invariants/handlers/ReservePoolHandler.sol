@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.14;
 
+import 'src/libraries/internal/Maths.sol';
+
 import { UnboundedReservePoolHandler } from '../base/UnboundedReservePoolHandler.sol';
 
 import { LiquidationPoolHandler } from './LiquidationPoolHandler.sol';
@@ -47,12 +49,15 @@ contract ReservePoolHandler is UnboundedReservePoolHandler, LiquidationPoolHandl
 
     function _preTakeReserves(
         uint256 amountToTake_
-    ) internal returns (uint256 boundedAmount_) {
+    ) internal useTimestamps returns (uint256 boundedAmount_) {
         (, , uint256 claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
         if (claimableReservesRemaining == 0) _startClaimableReserveAuction();
 
+        // skip enough time for auction price to decrease
+        skip(24 hours);
+
         (, , claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
-        boundedAmount_ = constrictToRange(amountToTake_, 0, claimableReservesRemaining);
+        boundedAmount_ = constrictToRange(amountToTake_, 0, Maths.min(100_000 * 1e18, claimableReservesRemaining));
     }
 
 }
