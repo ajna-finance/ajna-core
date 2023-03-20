@@ -18,6 +18,10 @@ library Maths {
         return (x * 1e18 + y / 2) / y;
     }
 
+    function wdivUp(uint256 x, uint256 y) internal pure returns (uint256) {
+        return (x * 1e18) / y + 1;
+    }
+
     function max(uint256 x, uint256 y) internal pure returns (uint256) {
         return x >= y ? x : y;
     }

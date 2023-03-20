@@ -1599,7 +1599,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             index:        _i9_72,
             lpBalance:    11_000 * 1e18,
             collateral:   0,
-            deposit:      8_936.865619773958011125 * 1e18,
+            deposit:      8_936.865619773958011124 * 1e18,
             exchangeRate: 0.812442329070359819 * 1e18
         });
         _assertLenderLpBalance({

@@ -316,7 +316,7 @@ library Auctions {
 
                 // enough deposit in bucket to settle entire debt
                 if (vars.depositToRemove >= vars.debt) {
-                    Deposits.unscaledRemove(deposits_, vars.index, Maths.wdiv(vars.debt, vars.scale));
+                    Deposits.unscaledRemove(deposits_, vars.index, Maths.wdivUp(vars.debt, vars.scale));
                     borrower.t0Debt  = 0;                                                              // no remaining debt to settle
 
                 // not enough deposit to settle entire debt, we settle only deposit amount
