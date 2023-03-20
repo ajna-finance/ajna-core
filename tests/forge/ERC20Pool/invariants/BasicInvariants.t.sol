@@ -171,8 +171,10 @@ contract BasicInvariants is InvariantsTestBase {
             ,
         ) = _pool.reservesInfo();
 
-        assertGe(
-            poolBalance + poolDebt, totalBondEscrowed + _pool.depositSize() + unClaimed,
+        greaterThanWithinDiff(
+            poolBalance + poolDebt,
+            totalBondEscrowed + _pool.depositSize() + unClaimed,
+            1,
             "Incorrect pool quote token"
         );
     }

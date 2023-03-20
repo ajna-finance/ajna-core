@@ -257,7 +257,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
 
         (senderLpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
 
-        boundedLps_ = constrictToRange(lpsToTransfer_, 1, senderLpBalance);
+        boundedLps_ = constrictToRange(lpsToTransfer_, 0, senderLpBalance);
 
         receiver_ = actors[constrictToRange(toActorIndex_, 0, actors.length - 1)];
     }
