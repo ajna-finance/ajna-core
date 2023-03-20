@@ -379,7 +379,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_72,
             lpBalance:    11_000 * 1e18,
             collateral:   0,
-            deposit:      8_807.556879218687261408 * 1e18,
+            deposit:      8_807.556879218687261409 * 1e18,
             exchangeRate: 0.800686989019880660 * 1e18
         });
         _assertBucket({
@@ -393,7 +393,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             PoolParams({
                 htp:                  9.771304290202671377 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             63_807.556879218687261408 * 1e18,
+                poolSize:             63_807.556879218687261409 * 1e18,
                 pledgedCollateral:    2 * 1e18,
                 encumberedCollateral: 2.010288427770370775 * 1e18,
                 poolDebt:             19.542608580405342754 * 1e18,
@@ -581,7 +581,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_72,
             lpBalance:    11_000 * 1e18,
             collateral:   277.250203096920692152 * 1e18,
-            deposit:      8_290.291604705064327150 * 1e18,
+            deposit:      8_290.291604705064327151 * 1e18,
             exchangeRate: 0.998683896150034595 * 1e18
         });
         _assertBucket({
@@ -867,7 +867,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_72,
             lpBalance:    11_000 * 1e18,
             collateral:   0 * 1e18,
-            deposit:      9_036.877948541081298778 * 1e18,
+            deposit:      9_036.877948541081298779 * 1e18,
             exchangeRate: 0.821534358958280118 * 1e18
         });
 
@@ -1049,8 +1049,8 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
 
         (reserves, , , ,) = _poolUtils.poolReservesInfo(address(_pool));
 
-        // reserves remaining after settle auction reduced from 496777425871207656 to 3 after change: https://github.com/ajna-finance/contracts/commit/7d56cb75b36339a9d9def9fb39290083c5f484eb
+        // reserves remaining after settle auction reduced from 496777425871207656 to 2 after change: https://github.com/ajna-finance/contracts/commit/7d56cb75b36339a9d9def9fb39290083c5f484eb
         // TODO: Check rounding issue in debt calculations as reserves are not fully utilized for settling borrowerDebt
-        assertEq(reserves, 3);
+        assertEq(reserves, 2);
     }
 }
