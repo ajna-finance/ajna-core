@@ -379,7 +379,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_72,
             lpBalance:    11_000 * 1e18,
             collateral:   0,
-            deposit:      8_807.556879218687261410 * 1e18,
+            deposit:      8_807.556879218687261409 * 1e18,
             exchangeRate: 0.800686989019880660 * 1e18
         });
         _assertBucket({
@@ -393,7 +393,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             PoolParams({
                 htp:                  9.771304290202671377 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             63_807.556879218687261410 * 1e18,
+                poolSize:             63_807.556879218687261409 * 1e18,
                 pledgedCollateral:    2 * 1e18,
                 encumberedCollateral: 2.010288427770370775 * 1e18,
                 poolDebt:             19.542608580405342754 * 1e18,
@@ -867,7 +867,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_72,
             lpBalance:    11_000 * 1e18,
             collateral:   0 * 1e18,
-            deposit:      9_036.877948541081298780 * 1e18,
+            deposit:      9_036.877948541081298779 * 1e18,
             exchangeRate: 0.821534358958280118 * 1e18
         });
 
@@ -946,7 +946,7 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
         assertEq(collateral, 0); // no collateral added in bucket 2571
         assertEq(deposit, 0); // entire deposit from bucket 2571 used to settle
         (borrowerDebt, borrowerCollateral, ) = _pool.borrowerInfo(actor1);
-        assertEq(borrowerDebt, 987909.179343464530923021 * 1e18); // decreased with 2
+        assertEq(borrowerDebt, 987909.179343464530923022 * 1e18); // decreased with 1
         assertEq(borrowerCollateral, 10066231386838.450530455239517417 * 1e18); // same as before settle
     }
 

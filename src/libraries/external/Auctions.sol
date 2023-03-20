@@ -228,7 +228,7 @@ library Auctions {
 
             if (vars.unscaledDeposit != 0) {
                 vars.debt              = Maths.wmul(borrower.t0Debt, poolState_.inflator); // current debt to be settled
-                vars.maxSettleableDebt = Maths.wmul(borrower.collateral, vars.price);      // max debt that can be settled with existing collateral
+                vars.maxSettleableDebt = (borrower.collateral * vars.price) / 1e18;      // max debt that can be settled with existing collateral
                 vars.scaledDeposit     = Maths.wmul(vars.scale, vars.unscaledDeposit);
 
                 // enough deposit in bucket and collateral avail to settle entire debt
@@ -245,14 +245,14 @@ library Auctions {
                     vars.collateralUsed = Maths.wdiv(vars.scaledDeposit, vars.price);
 
                     // subtract from debt the corresponding t0 amount of deposit
-                    borrower.t0Debt -= Maths.wdiv(vars.scaledDeposit, poolState_.inflator);
+                    borrower.t0Debt -= (vars.scaledDeposit * 1e18 / poolState_.inflator);
                 }
                 // settle constrained by collateral available
                 else {
                     vars.unscaledDeposit = Maths.wdiv(vars.maxSettleableDebt, vars.scale);
                     vars.collateralUsed  = borrower.collateral;
 
-                    borrower.t0Debt -= Maths.wdiv(vars.maxSettleableDebt, poolState_.inflator);
+                    borrower.t0Debt -= (vars.maxSettleableDebt * 1e18 / poolState_.inflator);
                 }
 
                 // remove settled collateral from loan
@@ -321,7 +321,7 @@ library Auctions {
 
                 // not enough deposit to settle entire debt, we settle only deposit amount
                 } else {
-                    borrower.t0Debt -= Maths.wdiv(vars.depositToRemove, poolState_.inflator);          // subtract from remaining debt the corresponding t0 amount of deposit
+                    borrower.t0Debt -= (vars.depositToRemove * 1e18 / poolState_.inflator);          // subtract from remaining debt the corresponding t0 amount of deposit
 
                     Deposits.unscaledRemove(deposits_, vars.index, vars.unscaledDeposit);              // Remove all deposit from bucket
                     Bucket storage hpbBucket = buckets_[vars.index];
