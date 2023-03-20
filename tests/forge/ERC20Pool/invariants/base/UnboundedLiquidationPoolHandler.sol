@@ -209,7 +209,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
                 (uint256 reservesAfterAction, , , , )= _poolInfo.poolReservesInfo(address(_pool));
                 // **RE12**: Reserves decrease by amount of reserve used to settle a auction
-                decreaseInReserves = reservesBeforeAction - reservesAfterAction;
+                decreaseInReserves = reservesBeforeAction > reservesAfterAction ? reservesBeforeAction - reservesAfterAction : reservesBeforeAction;
 
                 borrowerT0Debt -= Maths.min(decreaseInReserves, borrowerT0Debt);
 
