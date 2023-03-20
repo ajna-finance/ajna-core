@@ -166,10 +166,10 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             uint256 collateral,
         ) = _pool.borrowerInfo(borrower_);
         (uint256 reservesBeforeAction, , , , )= _poolInfo.poolReservesInfo(address(_pool));
+        (uint256 inflator, ) = _pool.inflatorInfo();
 
         try _pool.settle(borrower_, maxDepth_) {
 
-            (uint256 inflator, ) = _pool.inflatorInfo();
             uint256 depositUsed;
 
             // settle borrower debt with exchanging borrower collateral with quote tokens starting from hpb
