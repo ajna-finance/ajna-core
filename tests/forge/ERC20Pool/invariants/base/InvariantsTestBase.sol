@@ -8,16 +8,15 @@ import { ERC20Pool }        from 'src/ERC20Pool.sol';
 import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
 import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
 
-import { Token }              from '../../../utils/Tokens.sol';
+import { Token, BurnableToken }  from '../../../utils/Tokens.sol';
 import { InvariantsTestHelpers } from './InvariantsTestHelpers.sol';
 
 abstract contract InvariantsTestBase is InvariantsTestHelpers, Test {
 
-    // Mainnet ajna address
-    address internal _ajna = 0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079;
-
     Token internal _quote;
     Token internal _collateral;
+
+    BurnableToken internal _ajna;
 
     ERC20Pool        internal _pool;
     ERC20Pool        internal _impl;
@@ -34,15 +33,13 @@ abstract contract InvariantsTestBase is InvariantsTestHelpers, Test {
     }
 
     function setUp() public virtual {
-        // fork to be able to burn Ajna tokens in take reserves action
-        vm.createSelectFork(vm.envString("ETH_RPC_URL"));
-
         // Tokens
+        _ajna       = new BurnableToken("Ajna", "A");
         _quote      = new Token("Quote", "Q");
         _collateral = new Token("Collateral", "C");
 
         // Pool
-        _poolFactory = new ERC20PoolFactory(_ajna);
+        _poolFactory = new ERC20PoolFactory(address(_ajna));
         _pool        = ERC20Pool(_poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
         _poolInfo    = new PoolInfoUtils();
         _impl        = _poolFactory.implementation();

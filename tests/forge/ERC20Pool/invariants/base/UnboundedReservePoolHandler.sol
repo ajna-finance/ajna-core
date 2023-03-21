@@ -32,12 +32,10 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
     function _takeReserves(
         uint256 amount_
     ) internal useTimestamps updateLocalStateAndPoolInterest {
-        deal(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079, _actor, type(uint256).max);
-        IERC20(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079).approve(address(_pool), type(uint256).max);
+        deal(address(_ajna), _actor, type(uint256).max);
+        IERC20(address(_ajna)).approve(address(_pool), type(uint256).max);
 
-        try _pool.takeReserves(amount_) returns (uint256 takenAmount_) {
-
-            decreaseInReserves += takenAmount_;
+        try _pool.takeReserves(amount_) {
 
         } catch (bytes memory err) {
             _ensurePoolError(err);

@@ -12,12 +12,13 @@ contract ReservePoolHandler is UnboundedReservePoolHandler, LiquidationPoolHandl
 
     constructor(
         address pool_,
+        address ajna_,
         address quote_,
         address collateral_,
         address poolInfo_,
         uint256 numOfActors_,
         address testContract_
-    ) LiquidationPoolHandler(pool_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
+    ) LiquidationPoolHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
 
     }
 

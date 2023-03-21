@@ -23,12 +23,13 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
 
     constructor(
         address pool_,
+        address ajna_,
         address quote_,
         address collateral_,
         address poolInfo_,
         uint256 numOfActors_,
         address testContract_
-    ) BaseHandler(pool_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
+    ) BaseHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
 
     }
 

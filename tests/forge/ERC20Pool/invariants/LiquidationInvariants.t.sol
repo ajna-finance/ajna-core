@@ -38,6 +38,7 @@ contract LiquidationInvariants is BasicInvariants {
 
         _liquidationPoolHandler = new LiquidationPoolHandler(
             address(_pool),
+            address(_ajna),
             address(_quote),
             address(_collateral),
             address(_poolInfo),

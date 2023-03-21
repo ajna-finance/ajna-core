@@ -75,6 +75,7 @@ contract BasicInvariants is InvariantsTestBase {
 
         _basicPoolHandler = new BasicPoolHandler(
             address(_pool),
+            address(_ajna),
             address(_quote),
             address(_collateral),
             address(_poolInfo),
@@ -84,6 +85,7 @@ contract BasicInvariants is InvariantsTestBase {
 
         _handler = address(_basicPoolHandler);
 
+        excludeContract(address(_ajna));
         excludeContract(address(_collateral));
         excludeContract(address(_quote));
         excludeContract(address(_poolFactory));

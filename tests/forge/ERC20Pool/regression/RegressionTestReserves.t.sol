@@ -275,4 +275,11 @@ contract RegressionTestReserve is ReserveInvariants {
         invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10_RE11_RE12();
     }
 
+    function test_regression_invariant_take_reserves() external {
+        _reservePoolHandler.drawDebt(3, 2472487412192096145519673462983934503);
+        _reservePoolHandler.takeReserves(115792089237316195423570985008687907853269984665640564039457584007913129639933, 50482403089838632034016548451617756782);
+
+        invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10_RE11_RE12();
+    }
+
 }
