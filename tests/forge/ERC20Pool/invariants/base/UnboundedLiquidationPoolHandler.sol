@@ -208,9 +208,13 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             if (borrowerT0Debt != 0 && collateral == 0) {
 
                 (uint256 reservesAfterAction, , , , )= _poolInfo.poolReservesInfo(address(_pool));
-                // **RE12**: Reserves decrease by amount of reserve used to settle a auction
-                decreaseInReserves = reservesBeforeAction > reservesAfterAction ? reservesBeforeAction - reservesAfterAction : reservesBeforeAction;
-
+                if (reservesBeforeAction > reservesAfterAction) {
+                    // **RE12**: Reserves decrease by amount of reserve used to settle a auction
+                    decreaseInReserves = reservesBeforeAction - reservesAfterAction;
+                } else {
+                    // Reserves might increase upto 2 WAD due to rounding issue
+                    increaseInReserves = reservesAfterAction - reservesBeforeAction;
+                }
                 borrowerT0Debt -= Maths.min(decreaseInReserves, borrowerT0Debt);
 
                 while (maxDepth_ != 0 && borrowerT0Debt != 0) {
