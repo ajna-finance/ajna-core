@@ -82,14 +82,25 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     ) internal useTimestamps updateLocalStateAndPoolInterest {
         numberOfCalls['UBLiquidationHandler.takeAuction']++;
 
-        (uint256 borrowerDebt, , )         = _poolInfo.borrowerInfo(address(_pool), borrower_);
         (address kicker, , , , , , , , , ) = _pool.auctionInfo(borrower_);
 
-        uint256 totalBondBeforeTake = _getKickerBond(kicker);
+        (uint256 borrowerDebtBeforeTake, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
+        uint256 totalBondBeforeTake          = _getKickerBond(kicker);
+        uint256 totalBalanceBeforeTake       = _quote.balanceOf(address(_pool));
         
         try _pool.take(borrower_, amount_, taker_, bytes("")) {
 
-            uint256 totalBondAfterTake = _getKickerBond(kicker);
+            (uint256 borrowerDebtAfterTake, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
+            uint256 totalBondAfterTake          = _getKickerBond(kicker);
+            uint256 totalBalanceAfterTake      = _quote.balanceOf(address(_pool));
+
+            if (borrowerDebtBeforeTake > borrowerDebtAfterTake) {
+                // **RE7**: Reserves decrease with debt covered by take.
+                decreaseInReserves += borrowerDebtBeforeTake - borrowerDebtAfterTake;
+            } else {
+                // **RE7**: Reserves increase by take penalty on first take.
+                increaseInReserves += borrowerDebtAfterTake - borrowerDebtBeforeTake;
+            }
 
             if (totalBondBeforeTake > totalBondAfterTake) {
                 // **RE7**: Reserves increase by bond penalty on take.
@@ -99,7 +110,18 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 decreaseInReserves += totalBondAfterTake - totalBondBeforeTake;
             }
 
-            _updateCurrentTakeState(borrower_, borrowerDebt);
+            // **RE7**: Reserves increase with the quote token paid by taker.
+            increaseInReserves += totalBalanceAfterTake - totalBalanceBeforeTake;
+
+            if (!alreadyTaken[borrower_]) {
+                alreadyTaken[borrower_] = true;
+
+                firstTake = true;
+
+            } else firstTake = false;
+
+            // reset taken flag in case auction was settled by take action
+            _auctionSettleStateReset(borrower_);
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
