@@ -166,10 +166,10 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             uint256 collateral,
         ) = _pool.borrowerInfo(borrower_);
         (uint256 reservesBeforeAction, , , , )= _poolInfo.poolReservesInfo(address(_pool));
+        (uint256 inflator, ) = _pool.inflatorInfo();
 
         try _pool.settle(borrower_, maxDepth_) {
 
-            (uint256 inflator, ) = _pool.inflatorInfo();
             uint256 depositUsed;
 
             // settle borrower debt with exchanging borrower collateral with quote tokens starting from hpb
@@ -208,9 +208,13 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             if (borrowerT0Debt != 0 && collateral == 0) {
 
                 (uint256 reservesAfterAction, , , , )= _poolInfo.poolReservesInfo(address(_pool));
-                // **RE12**: Reserves decrease by amount of reserve used to settle a auction
-                decreaseInReserves = reservesBeforeAction - reservesAfterAction;
-
+                if (reservesBeforeAction > reservesAfterAction) {
+                    // **RE12**: Reserves decrease by amount of reserve used to settle a auction
+                    decreaseInReserves = reservesBeforeAction - reservesAfterAction;
+                } else {
+                    // Reserves might increase upto 2 WAD due to rounding issue
+                    increaseInReserves = reservesAfterAction - reservesBeforeAction;
+                }
                 borrowerT0Debt -= Maths.min(decreaseInReserves, borrowerT0Debt);
 
                 while (maxDepth_ != 0 && borrowerT0Debt != 0) {

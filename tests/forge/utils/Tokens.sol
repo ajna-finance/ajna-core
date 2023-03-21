@@ -3,6 +3,7 @@ pragma solidity 0.8.14;
 
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
+import '@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol';
 
 contract Token is ERC20 {
 
@@ -47,5 +48,13 @@ contract TokenWithNDecimals is ERC20 {
         _mint(to_, amount_);
     }
 
+}
+
+contract BurnableToken is ERC20, ERC20Burnable {
+    constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {}
+
+    function mint(address to_, uint256 amount_) public {
+        _mint(to_, amount_);
+    }
 }
 
