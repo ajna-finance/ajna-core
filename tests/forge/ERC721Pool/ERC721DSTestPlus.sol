@@ -19,9 +19,6 @@ import 'src/PoolInfoUtils.sol';
 
 import 'src/libraries/internal/Maths.sol';
 
-
-import '@std/console.sol';
-
 abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
 
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -388,7 +385,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
             assertEq(_collateral.ownerOf(tokenId), address(_pool)); // token is owned by pool before take
             tokenIds[i] = tokenId;
         }
-        
+
         super._take(from, borrower, maxCollateral, bondChange, givenAmount, collateralTaken, isReward);
     }
  

@@ -1058,8 +1058,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         });
         _assertBucket({
             index:        3070,
-            lpBalance:    0,                             // new LPs amount accounting collateral merged in bucket
-            collateral:   0,                             // reflects collateral merged in the bucket
+            lpBalance:    0,
+            collateral:   0,
             deposit:      0,
             exchangeRate: 1 * 1e18
         });
@@ -1071,8 +1071,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         });
         _assertBucket({
             index:        7388,
-            lpBalance:    0,                           // LPs awarded to borrower for settled collateral
-            collateral:   0,                           // settled collateral amount
+            lpBalance:    0,
+            collateral:   0,
             deposit:      0,
             exchangeRate: 1 * 1e18
         });
@@ -1153,8 +1153,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _assertBucket({
             index:        7388,
-            lpBalance:    0,                           // LPs in bucket 7388 diminished when NFT merged and removed
-            collateral:   0,                           // no collateral remaining as it was merged and removed
+            lpBalance:    0,            // LPs in bucket 7388 diminished when NFT merged and removed
+            collateral:   0,            // no collateral remaining as it was merged and removed
             deposit:      0,
             exchangeRate: 1 * 1e18
         });

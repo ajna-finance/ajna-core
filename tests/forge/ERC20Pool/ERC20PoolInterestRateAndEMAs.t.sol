@@ -938,21 +938,6 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
     }
 
     function testAccruePoolInterestHtpLup() external tearDown {
-        // add liquidity
-        // borrow draws debt
-        // assert LUP > HTP
-        // accrue interest
-        // assert buckets below LUP accrue interest
-        // have another borrower come along and draw debt push LUP < HTP
-        // accrue interest
-        // check that buckets between HTP and LUP accrue interest
-
-        // uint256 internal _i9_91     = 3696;
-        // uint256 internal _i9_81     = 3698;
-        // uint256 internal _i9_72     = 3700;
-        // uint256 internal _i9_62     = 3702;
-        // uint256 internal _i9_52     = 3704;
-
         _addInitialLiquidity({
             from:   _lender,
             amount: 2_000 * 1e18,

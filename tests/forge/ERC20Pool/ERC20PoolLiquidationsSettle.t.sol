@@ -950,7 +950,7 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
         assertEq(borrowerCollateral, 10066231386838.450530455239517417 * 1e18); // same as before settle
     }
 
-    function testSettleWithReserves() external {
+    function testSettleWithReserves() external tearDown {
 
         address actor1 = makeAddr("actor1");
         _mintQuoteAndApproveTokens(actor1,  1e45);
