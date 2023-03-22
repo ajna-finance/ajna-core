@@ -1013,12 +1013,12 @@ contract RewardsManagerTest is ERC20HelperContract {
         changePrank(_updater);
         assertEq(_ajnaToken.balanceOf(_updater), 0);
         vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(_updater, address(_poolOne), depositIndexes, 20.449844540665683990 * 1e18);
+        emit UpdateExchangeRates(_updater, address(_poolOne), depositIndexes, 20.449844540665688882 * 1e18);
         _rewardsManager.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
-        assertEq(_ajnaToken.balanceOf(_updater), 20.449844540665683990 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_updater), 20.449844540665688882 * 1e18);
 
         uint256 rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarned, 204.498445406656758711 * 1e18);
+        assertEq(rewardsEarned, 204.498445406656758712 * 1e18);
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
         /******************************/
@@ -1035,15 +1035,15 @@ contract RewardsManagerTest is ERC20HelperContract {
 
         // call update exchange rate to enable claiming rewards
         changePrank(_updater);
-        assertEq(_ajnaToken.balanceOf(_updater), 20.449844540665683990 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_updater), 20.449844540665688882 * 1e18);
         vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(_updater, address(_poolOne), depositIndexes, 17.238252336072314416 * 1e18);
+        emit UpdateExchangeRates(_updater, address(_poolOne), depositIndexes, 17.238252336072314418 * 1e18);
         _rewardsManager.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
-        assertEq(_ajnaToken.balanceOf(_updater), 37.688096876737998406 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_updater), 37.688096876738003300 * 1e18);
 
         // check available rewards
         rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarned, 376.880968767380561039 * 1e18);
+        assertEq(rewardsEarned, 376.880968767380567490 * 1e18);
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
         /*****************************/
@@ -1060,7 +1060,7 @@ contract RewardsManagerTest is ERC20HelperContract {
 
         // skip updating exchange rates and check available rewards
         uint256 rewardsEarnedNoUpdate = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());
-        assertEq(rewardsEarnedNoUpdate, 376.880968767380561039 * 1e18);
+        assertEq(rewardsEarnedNoUpdate, 376.880968767380567490 * 1e18);
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
         // snapshot calling update exchange rate
@@ -1072,7 +1072,7 @@ contract RewardsManagerTest is ERC20HelperContract {
         vm.expectEmit(true, true, true, true);
         emit UpdateExchangeRates(_updater2, address(_poolOne), depositIndexes, 14.019164349973606335 * 1e18);
         _rewardsManager.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
-        assertEq(_ajnaToken.balanceOf(_updater2), 14.019164349973606335 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_updater2), 14.019164349973606338 * 1e18);
 
         // check available rewards
         rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _poolOne.currentBurnEpoch());

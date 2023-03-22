@@ -49,6 +49,8 @@ import { Deposits } from '../internal/Deposits.sol';
 import { Loans }    from '../internal/Loans.sol';
 import { Maths }    from '../internal/Maths.sol';
 
+import '@std/console.sol';
+
 /**
     @title  Auctions library
     @notice External library containing actions involving auctions within pool:
@@ -225,6 +227,7 @@ library Auctions {
             vars.hpbUnscaledDeposit = Deposits.unscaledValueAt(deposits_, vars.index);
             vars.unscaledDeposit    = vars.hpbUnscaledDeposit;
             vars.price              = _priceAt(vars.index);
+            console.log("index settle", vars.index);
 
             if (vars.unscaledDeposit != 0) {
                 vars.debt              = Maths.wmul(borrower.t0Debt, poolState_.inflator); // current debt to be settled
@@ -313,6 +316,7 @@ library Auctions {
                 vars.unscaledDeposit = Deposits.unscaledValueAt(deposits_, vars.index);
                 vars.depositToRemove = Maths.wmul(vars.scale, vars.unscaledDeposit);
                 vars.debt            = Maths.wmul(borrower.t0Debt, poolState_.inflator);
+                console.log("index settle", vars.index);
 
                 // enough deposit in bucket to settle entire debt
                 if (vars.depositToRemove >= vars.debt) {

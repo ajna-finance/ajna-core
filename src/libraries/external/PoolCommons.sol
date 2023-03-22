@@ -14,6 +14,8 @@ import { Buckets }  from '../internal/Buckets.sol';
 import { Loans }    from '../internal/Loans.sol';
 import { Maths }    from '../internal/Maths.sol';
 
+import '@std/console.sol';
+
 /**
     @title  PoolCommons library
     @notice External library containing logic for common pool functionality:
@@ -193,6 +195,7 @@ library PoolCommons {
         uint256 thresholdPrice_,
         uint256 elapsed_
     ) external returns (uint256 newInflator_, uint256 newInterest_) {
+
         // Scale the borrower inflator to update amount of interest owed by borrowers
         uint256 pendingFactor = PRBMathUD60x18.exp((poolState_.rate * elapsed_) / 365 days);
 
@@ -200,31 +203,78 @@ library PoolCommons {
         newInflator_ = Maths.wmul(poolState_.inflator, pendingFactor);
         uint256 htp = Maths.wmul(thresholdPrice_, newInflator_);
 
-        uint256 htpIndex;
+        uint256 accrualIndex;
         if (htp > MAX_PRICE)
             // if HTP is over the highest price bucket then no buckets earn interest
-            htpIndex = 1;
+            accrualIndex = 1;
         else if (htp < MIN_PRICE)
             // if HTP is under the lowest price bucket then all buckets earn interest
-            htpIndex = MAX_FENWICK_INDEX;
+            accrualIndex = MAX_FENWICK_INDEX;
         else
-            htpIndex = _indexOf(htp);
+            accrualIndex = _indexOf(htp);
 
-        uint256 depositAboveHtp   = Deposits.prefixSum(deposits_, htpIndex);
+        uint256 lupIndex = Deposits.findIndexOfSum(deposits_, poolState_.debt);
 
-        if (depositAboveHtp != 0) {
+        // accrual price is less of lup and htp, and prices decrease as index increases
+        if (lupIndex > accrualIndex) accrualIndex = lupIndex;
+        
+        uint256 interestEarningDeposit = Deposits.prefixSum(deposits_, accrualIndex);
+
+        if (interestEarningDeposit != 0) {
+
+            // console.log("lenderInterestMargin",_lenderInterestMargin(_utilization(emaParams_.debtEma, emaParams_.depositEma)) );
+
             newInterest_ = Maths.wmul(
                 _lenderInterestMargin(_utilization(emaParams_.debtEma, emaParams_.depositEma)),
                 Maths.wmul(pendingFactor - Maths.WAD, poolState_.debt)
             );
 
-            // Scale the fenwick tree to update amount of debt owed to lenders
+            // Factor to increase deposits by for interest.  Capped at 1.0
+            // uint256 lenderFactor = Maths.wdiv(newInterest_, interestEarningDeposit) + Maths.WAD;
+            /* if(lenderFactor > 10e18) { */
+            /*     lenderFactor=1e18; */
+            /* } */
+             
+            // Scale the fenwick tree to update amount of debt owed to lenders 
             Deposits.mult(
-                deposits_,
-                htpIndex,
-                (newInterest_ * 1e18) / depositAboveHtp + Maths.WAD // lender factor
+                          deposits_,
+                          accrualIndex,
+                          (newInterest_ * 1e18) / interestEarningDeposit + Maths.WAD // lender factor
             );
         }
+    
+        // // Scale the borrower inflator to update amount of interest owed by borrowers
+        // uint256 pendingFactor = PRBMathUD60x18.exp((poolState_.rate * elapsed_) / 365 days);
+
+        // // calculate the highest threshold price
+        // newInflator_ = Maths.wmul(poolState_.inflator, pendingFactor);
+        // uint256 htp = Maths.wmul(thresholdPrice_, newInflator_);
+
+        // uint256 htpIndex;
+        // if (htp > MAX_PRICE)
+        //     // if HTP is over the highest price bucket then no buckets earn interest
+        //     htpIndex = 1;
+        // else if (htp < MIN_PRICE)
+        //     // if HTP is under the lowest price bucket then all buckets earn interest
+        //     htpIndex = MAX_FENWICK_INDEX;
+        // else
+        //     htpIndex = _indexOf(htp);
+
+        // uint256 depositAboveHtp   = Deposits.prefixSum(deposits_, htpIndex);
+
+        // if (depositAboveHtp != 0) {
+        //     newInterest_ = Maths.wmul(
+        //         _lenderInterestMargin(_utilization(emaParams_.debtEma, emaParams_.depositEma)),
+        //         Maths.wmul(pendingFactor - Maths.WAD, poolState_.debt)
+        //     );
+
+        //     // Scale the fenwick tree to update amount of debt owed to lenders
+        //     Deposits.mult(
+        //         deposits_,
+        //         htpIndex,
+        //         (newInterest_ * 1e18) / depositAboveHtp + Maths.WAD // lender factor
+        //     );
+        // }
     }
 
     /**************************/

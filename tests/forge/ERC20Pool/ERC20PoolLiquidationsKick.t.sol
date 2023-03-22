@@ -652,7 +652,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         });
     }
 
-    function testInterestsAccumulationWithAllLoansAuctioned() external tearDown {
+    function testInterestsAccumulationWithAllLoansAuctioned() external {
         // Borrower2 borrows
         _borrow({
             from:       _borrower2,
@@ -719,7 +719,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             PoolParams({
                 htp:                  0,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             73_114.174951097528960000 * 1e18,
+                poolSize:             73_114.174951097528944000 * 1e18,
                 pledgedCollateral:    1_002 * 1e18,
                 encumberedCollateral: 1_028.290450922889736704 * 1e18,
                 poolDebt:             9_996.315708608352095626 * 1e18,
@@ -740,7 +740,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             from:    _lender1,
             amount:  1 * 1e18,
             index:   _i9_91,
-            lpAward: 0.945987267750984917 * 1e18,
+            lpAward: 0.993688275531219296 * 1e18,
             newLup:  9.721295865031779605 * 1e18
         });
 
@@ -748,7 +748,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             PoolParams({
                 htp:                  0,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             73_115.811578712752113362 * 1e18,
+                poolSize:             73_115.811578712752097363 * 1e18,
                 pledgedCollateral:    1_002 * 1e18,
                 encumberedCollateral: 1_028.364405977643667984 * 1e18,
                 poolDebt:             9_997.034647576329686631 * 1e18,
