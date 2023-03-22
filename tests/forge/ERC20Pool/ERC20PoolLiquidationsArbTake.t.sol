@@ -526,7 +526,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         });
     }
 
-    function testArbTakeGTNeutralPrice() external {
+    function testArbTakeGTNeutralPrice() external tearDown {
 
         skip(3 hours);
 
@@ -544,7 +544,6 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             lpBalance:   0,
             depositTime: 0
         });
-        return;
         _assertLenderLpBalance({
             lender:      _lender,
             index:       _i10016,
@@ -558,7 +557,6 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             deposit:      1_000 * 1e18,
             exchangeRate: 1.0 * 1e18
         });
-        return;
         _assertAuction(
             AuctionParams({
                 borrower:          _borrower,
@@ -595,7 +593,6 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             lpAwardTaker:     2_562.597355112798042 * 1e18,
             lpAwardKicker:    0
         });
-        return;
 
         _assertLenderLpBalance({
             lender:      _taker,

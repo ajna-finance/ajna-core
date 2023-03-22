@@ -126,7 +126,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
     }
     
-    function testSettleOnAuctionKicked72HoursAgoAndPartiallyTaken() external {
+    function testSettleOnAuctionKicked72HoursAgoAndPartiallyTaken() external tearDown {
         // Borrower2 borrows
         _borrow({
             from:       _borrower2,
@@ -408,7 +408,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         );
     }
 
-    function testSettleOnAuctionKicked72HoursAgo() external {
+    function testSettleOnAuctionKicked72HoursAgo() external tearDown {
         // Borrower2 borrows
         _borrow({
             from:       _borrower2,
@@ -593,7 +593,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         });
     }
 
-    function testSettleAuctionReverts() external {
+    function testSettleAuctionReverts() external tearDown {
         // Borrower2 borrows
         _borrow({
             from:       _borrower2,

@@ -937,7 +937,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         assertEq(poolDebt, expectedPoolDebt);
     }
 
-    function testAccruePoolInterestHtpLup() external  {
+    function testAccruePoolInterestHtpLup() external tearDown {
         // add liquidity
         // borrow draws debt
         // assert LUP > HTP

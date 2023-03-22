@@ -179,7 +179,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             PoolParams({
                 htp:                  8.097846143253778448 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             73_093.873009488594546000 * 1e18,
+                poolSize:             73_093.873009488594544000 * 1e18,
                 pledgedCollateral:    1_002 * 1e18,
                 encumberedCollateral: 835.035237319063220561 * 1e18,
                 poolDebt:             8_117.624599705640061720 * 1e18,
@@ -232,7 +232,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             locked:    0.195342779771472726 * 1e18
         });
         _assertReserveAuction({
-            reserves:                   24.501590217045515720 * 1e18,
+            reserves:                   24.501590217045517720 * 1e18,
             claimableReserves :         0,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
@@ -652,7 +652,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         });
     }
 
-    function testInterestsAccumulationWithAllLoansAuctioned() external {
+    function testInterestsAccumulationWithAllLoansAuctioned() external tearDown {
         // Borrower2 borrows
         _borrow({
             from:       _borrower2,

@@ -14,8 +14,6 @@ import { Buckets }  from '../internal/Buckets.sol';
 import { Loans }    from '../internal/Loans.sol';
 import { Maths }    from '../internal/Maths.sol';
 
-import '@std/console.sol';
-
 /**
     @title  PoolCommons library
     @notice External library containing logic for common pool functionality:
@@ -221,8 +219,6 @@ library PoolCommons {
         uint256 interestEarningDeposit = Deposits.prefixSum(deposits_, accrualIndex);
 
         if (interestEarningDeposit != 0) {
-
-            // console.log("lenderInterestMargin",_lenderInterestMargin(_utilization(emaParams_.debtEma, emaParams_.depositEma)) );
 
             newInterest_ = Maths.wmul(
                 _lenderInterestMargin(_utilization(emaParams_.debtEma, emaParams_.depositEma)),

@@ -379,22 +379,16 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         uint256 collateralTaken,
         bool isReward
     ) internal override {
-        console.log("noOfTokens");
         (, uint256 noOfTokens, ) = _pool.borrowerInfo(borrower);
-        console.log("noOfTokens");
         noOfTokens = noOfTokens / 1e18;
-        console.log("noOfTokens 1", noOfTokens);
         if (maxCollateral < noOfTokens) noOfTokens = maxCollateral;
         uint256[] memory tokenIds = new uint256[](noOfTokens);
         for (uint256 i = 0; i < noOfTokens + 1; i++) {
-            console.log("inf for");
             uint256 tokenId = ERC721Pool(address(_pool)).borrowerTokenIds(borrower, --noOfTokens);
             assertEq(_collateral.ownerOf(tokenId), address(_pool)); // token is owned by pool before take
             tokenIds[i] = tokenId;
         }
         
-        console.log("noOfTokens 3");
-
         super._take(from, borrower, maxCollateral, bondChange, givenAmount, collateralTaken, isReward);
     }
  
