@@ -211,7 +211,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 // **RE12**: Reserves decrease by amount of reserve used to settle a auction
                 decreaseInReserves = reservesBeforeAction - reservesAfterAction;
 
-                borrowerT0Debt -= Maths.min(decreaseInReserves, borrowerT0Debt);
+                borrowerT0Debt -= Maths.min(Maths.wdiv(decreaseInReserves, inflator), borrowerT0Debt);
 
                 while (maxDepth_ != 0 && borrowerT0Debt != 0) {
                     uint256 bucketIndex = fenwickIndexForSum(1 + depositUsed);
