@@ -47,7 +47,7 @@
 - **F1**: Value represented at index `i` (`Deposits.valueAt(i)`) is equal to the accumulation of scaled values incremented or decremented from index `i`
 - **F2**: For any index `i`, the prefix sum up to and including `i` is the sum of values stored in indices `j<=i`
 - **F3**: For any index `i < MAX_FENWICK_INDEX`,  `findIndexOfSum(prefixSum(i)) > i`
-- **F4**: For any index i, there is zero deposit above i and below findIndexOfSum(prefixSum(i) + 1): `findIndexOfSum(prefixSum(i)) == findIndexOfSum(prefixSum(j) - deposits.valueAt(j))`, where j is the next index from i with deposits != 0
+- **F4**: For any index i, there is zero deposit above i and below findIndexOfSum(prefixSum(i) + 1): `depositAtIndex(j) == 0 for i < j < findIndexOfSum(prefixSum(i)+1)`
 
 ## Exchange rate invariants ##
 - **R1**: Exchange rates are unchanged by pledging collateral
