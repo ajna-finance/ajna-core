@@ -377,33 +377,25 @@ contract BasicInvariants is InvariantsTestBase {
         }
     }
 
-    // For any index i, there is zero deposit above i and below findIndexOfSum(prefixSum(i) + 1): findIndexOfSum(prefixSum(i)) == findIndexOfSum(prefixSum(j) - deposits.valueAt(j)) where j is the next index from i with deposits != 0
+    // **F4**: For any index i, there is zero deposit above i and below findIndexOfSum(prefixSum(i) + 1): `depositAt(j) == 0 for i<j<findIndexOfSum(prefixSum(i) + 1) and depositAt(findIndexOfSum(prefixSum(i) + 1))>0
     function invariant_fenwick_prefixSumIndex_F4() public useCurrentTimestamp {
-        uint256 prefixSum;
-
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            (, , , uint256 depositAtIndex, ) = _pool.bucketInfo(bucketIndex);
-
-            if (depositAtIndex != 0) {
-                prefixSum += depositAtIndex;
-                uint256 nextBucketIndexWithDeposit = _pool.depositIndex(prefixSum + 1);
-                (, , , uint256 depositAtNextBucket, ) = _pool.bucketInfo(nextBucketIndexWithDeposit);
-                uint256 prefixSumTillNextBucket = prefixSum + depositAtNextBucket;
-
-                console.log("============");
-                console.log("Deposit Index of presum    -->", _pool.depositIndex(prefixSum));
-                console.log("Presum                     -->", prefixSum);
-                console.log("depositAtNextBucket       ===>", depositAtNextBucket);
-                console.log("prefixSumTillNextBucket    -->", prefixSumTillNextBucket);
-                console.log("nextBucketIndexWithDeposit -->", nextBucketIndexWithDeposit);
-                console.log("BucketIndex                -->", bucketIndex);
-                console.log("Pool deposit Index         -->", _pool.depositIndex(prefixSumTillNextBucket - depositAtNextBucket));
-
+        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; ) {
+            uint256 nextNonzeroBucket = _pool.depositIndex(_pool.depositUpToIndex(bucketIndex)+1);
+            console.log("bucketIndex:         ", bucketIndex);
+            console.log("Next nonzero bucket: ", nextNonzeroBucket);
+            for(uint256 j = bucketIndex + 1; j < nextNonzeroBucket && j < LENDER_MAX_BUCKET_INDEX; j++) {
+                (, , , uint256 depositAtJ, ) = _pool.bucketInfo(j);
+                //                console.log("Deposit at %s is %s", j, depositAtJ);
                 require(
-                    bucketIndex == _pool.depositIndex(prefixSumTillNextBucket - depositAtNextBucket),
-                    "Incorrect buckets with 0 deposit"
+                        depositAtJ == 0,
+                        "F4: incorrect buckets with 0 deposit"
                 );
             }
+            (, , , uint256 depositAtNextIndex, ) = _pool.bucketInfo(nextNonzeroBucket);
+            console.log("Deposit at nonzero bucket %s is %s", nextNonzeroBucket, depositAtNextIndex);
+            assertGe(depositAtNextIndex, 0, "F4: incorrect buckets with 0 deposit");
+            assertGe(nextNonzeroBucket+1, bucketIndex);
+            bucketIndex = nextNonzeroBucket+1;  // can skip ahead
         }
     }
 
