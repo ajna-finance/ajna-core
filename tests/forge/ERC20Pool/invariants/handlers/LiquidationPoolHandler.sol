@@ -136,7 +136,7 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
         uint256 borrowerIndex_,
         uint256 amount_,
         uint256 kickerIndex_
-    ) internal useRandomActor(kickerIndex_) {
+    ) internal useTimestamps useRandomActor(kickerIndex_) {
         numberOfCalls['BLiquidationHandler.kickAuction']++;
 
         borrowerIndex_   = constrictToRange(borrowerIndex_, 0, actors.length - 1);
