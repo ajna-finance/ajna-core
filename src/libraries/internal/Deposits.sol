@@ -53,7 +53,7 @@ library Deposits {
             // We need to track the precice change in values[i_] in order to ensure
             // obliterated indices remain zero after subsequent adding to related indices
             // if scaling==0, the actual scale value is 1, otherwise it is scaling
-            if (scaling != 0) unscaledAddAmount_ = Maths.wmul(newValue, scaling) - Maths.wmul(value, scaling);
+            if (scaling != 0) unscaledAddAmount_ = Maths.wmul(unscaledAddAmount_, scaling);
 
             deposits_.values[index_] = newValue;
 
@@ -90,7 +90,7 @@ library Deposits {
             // Compute sum up to sumIndex_ + i
             uint256 scaledValue =
                 lowerIndexSum +
-                (scaling != 0 ?  Maths.wmul(Maths.wmul(runningScale, scaling), value) : Maths.wmul(runningScale, value));
+                (scaling != 0 ?  (runningScale * scaling * value + 5e35) / 1e36 : (runningScale * value + 5e17) / 1e18);
 
             if (scaledValue  < targetSum_) {
                 // Target value is too small, need to consider increasing sumIndex_ still
@@ -102,7 +102,7 @@ library Deposits {
             } else {
                 // Target index has this bit set to 0
                 // scaling == 0 means scale factor == 1, otherwise scale factor == scaling
-                if (scaling != 0) runningScale = Maths.wmul(runningScale, scaling);
+                if (scaling != 0) runningScale = (runningScale * scaling + 5e17) / 1e18;
 
                 // Current scaledValue is <= targetSum_, it's a candidate value for sumIndexSum_
                 sumIndexSum_   = scaledValue;
@@ -241,7 +241,7 @@ library Deposits {
                 uint256 value = deposits_.values[index+j];
 
                 // Accumulate in sum_, recall that scaled==0 means that the scale factor is actually 1
-                sum_  += scaled != 0 ? Maths.wmul(Maths.wmul(runningScale, scaled), value) : Maths.wmul(runningScale, value);
+                sum_  += scaled != 0 ? (runningScale * scaled * value + 5e35) / 1e36 : (runningScale * value + 5e17) / 1e18;
                 // Build up index bit by bit
                 index += j;
 
