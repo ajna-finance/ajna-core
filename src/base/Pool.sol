@@ -750,6 +750,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /// @inheritdoc IPoolDerivedState
+    function depositUpToIndex(uint256 index_) external view override returns (uint256) {
+        return Deposits.prefixSum(deposits, index_);
+    }
+    
+    /// @inheritdoc IPoolDerivedState
     function depositIndex(uint256 debt_) external view override returns (uint256) {
         return Deposits.findIndexOfSum(deposits, debt_);
     }

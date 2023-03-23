@@ -12,6 +12,15 @@ interface IPoolDerivedState {
     ) external view returns (uint256 exchangeRate_);
 
     /**
+     *  @notice Returns the prefix sum of a given bucket
+     *  @param  index_  The target index
+     *  @return Prefix sum
+     */
+    function depositUpToIndex(
+        uint256 index_
+    ) external view returns (uint256);
+
+    /**
      *  @notice Returns the bucket index for a given debt amount.
      *  @param  debt_  The debt amount to calculate bucket index for.
      *  @return Bucket index.

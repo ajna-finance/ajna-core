@@ -112,6 +112,7 @@ abstract contract BaseHandler is Test {
      * @dev Resets all local states before each action.
      */
     modifier updateLocalStateAndPoolInterest() {
+        _updateLocalFenwick();
         _fenwickAccrueInterest();
         _updatePoolState();
 
@@ -307,6 +308,14 @@ abstract contract BaseHandler is Test {
             fenwickDeposits[index_] = Maths.wmul(fenwickDeposits[index_], scale_);
 
             index_--;
+        }
+    }
+    
+    // update local fenwick to pool fenwick before each action
+    function _updateLocalFenwick() internal {
+        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+            (, , , uint256 deposits, ) = _pool.bucketInfo(bucketIndex);
+            fenwickDeposits[bucketIndex] = deposits;
         }
     }
 
