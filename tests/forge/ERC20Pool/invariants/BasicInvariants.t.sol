@@ -380,7 +380,7 @@ contract BasicInvariants is InvariantsTestBase {
     // **F4**: For any index i, there is zero deposit above i and below findIndexOfSum(prefixSum(i) + 1): `depositAt(j) == 0 for i<j<findIndexOfSum(prefixSum(i) + 1) and depositAt(findIndexOfSum(prefixSum(i) + 1))>0
     function invariant_fenwick_prefixSumIndex_F4() public useCurrentTimestamp {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; ) {
-            uint256 nextNonzeroBucket = _pool.depositIndex(_pool.prefixSum(bucketIndex)+1);
+            uint256 nextNonzeroBucket = _pool.depositIndex(_pool.depositUpToIndex(bucketIndex)+1);
             console.log("bucketIndex:         ", bucketIndex);
             console.log("Next nonzero bucket: ", nextNonzeroBucket);
             for(uint256 j = bucketIndex + 1; j < nextNonzeroBucket && j < LENDER_MAX_BUCKET_INDEX; j++) {

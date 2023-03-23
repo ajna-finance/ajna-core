@@ -16,7 +16,7 @@ interface IPoolDerivedState {
      *  @param  index_  The target index
      *  @return Prefix sum
      */
-    function prefixSum(
+    function depositUpToIndex(
         uint256 index_
     ) external view returns (uint256);
 
