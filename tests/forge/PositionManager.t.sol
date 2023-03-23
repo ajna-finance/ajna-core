@@ -1486,7 +1486,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.ownerOf(tokenId);
     }
 
-    function testMoveLiquidityPermissions() external {
+    function testMoveLiquidityPermissions() external tearDown {
         // generate a new address
         address testAddress = makeAddr("testAddress");
         address notOwner    = makeAddr("notOwner");
@@ -1512,7 +1512,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.moveLiquidity(moveLiquidityParams);
     }
 
-    function testMoveLiquidity() external {
+    function testMoveLiquidity() external tearDown {
         // generate a new address
         address testAddress1 = makeAddr("testAddress1");
         address testAddress2 = makeAddr("testAddress2");
@@ -1845,8 +1845,8 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
     }
 
     function testMoveLiquidityWithInterest() external tearDown {
-        address lender1 = makeAddr("lender1");
-        address lender2 = makeAddr("lender2");
+        address lender1  = makeAddr("lender1");
+        address lender2  = makeAddr("lender2");
         address borrower = makeAddr("borrower");
         _mintQuoteAndApproveManagerTokens(lender1, 2_000 * 1e18);
         _mintQuoteAndApproveManagerTokens(lender2, 3_000 * 1e18);
@@ -1959,12 +1959,12 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // borrower repays
         _repayDebt({
-            from:               borrower,
-            borrower:           borrower,
-            amountToRepay:      type(uint256).max,
-            amountRepaid:       1_002.608307827389905517 * 1e18,
-            collateralToPull:   250 * 1e18,
-            newLup:             MAX_PRICE
+            from:             borrower,
+            borrower:         borrower,
+            amountToRepay:    type(uint256).max,
+            amountRepaid:     1_002.608307827389905517 * 1e18,
+            collateralToPull: 250 * 1e18,
+            newLup:           MAX_PRICE
         });
 
         // lender2 redeems their NFT
@@ -2635,7 +2635,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // call pool contract directly to add quote tokens
         uint256[] memory indexes = new uint256[](1);
         indexes[0] = 2550;
-        uint256[] memory amounts = new uint256[] (1);
+        uint256[] memory amounts = new uint256[](1);
         amounts[0] = 3_000 * 1e18;
         address[] memory transferors = new address[](1);
         transferors[0] = address(_positionManager);
