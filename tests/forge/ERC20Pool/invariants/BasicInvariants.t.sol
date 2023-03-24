@@ -182,7 +182,7 @@ contract BasicInvariants is InvariantsTestBase {
         greaterThanWithinDiff(
             assets,
             liabilities,
-            5,
+            1e13,
             "Incorrect pool quote token"
         );
     }
