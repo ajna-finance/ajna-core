@@ -310,7 +310,7 @@ library PoolCommons {
             // cubic root of the percentage of meaningful unutilized deposit
             uint256 crpud = PRBMathUD60x18.pow(base, ONE_THIRD);
             // finish calculating Net Interest Margin, and then convert to Lender Interest Margin
-            return 1e18 - Maths.wmul(Maths.wdiv(crpud, CUBIC_ROOT_1000000), 0.15 * 1e18);
+            return 1e18 - Maths.wdiv(Maths.wmul(crpud, 0.15 * 1e18), CUBIC_ROOT_1000000);
         }
     }
 
