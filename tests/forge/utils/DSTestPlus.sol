@@ -8,6 +8,8 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import 'src/interfaces/pool/IPool.sol';
+import 'src/interfaces/rewards/IRewardsManager.sol';
+import 'src/interfaces/position/IPositionManager.sol';
 import 'src/interfaces/pool/commons/IPoolEvents.sol';
 import 'src/interfaces/pool/IERC3156FlashBorrower.sol';
 
@@ -31,9 +33,9 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     /*** Pools ***/
     /*************/
 
-    IPool         internal _pool;
-    PoolInfoUtils internal _poolUtils;
-    uint256       internal _startTime;
+    IPool             internal _pool;
+    PoolInfoUtils     internal _poolUtils;
+    uint256           internal _startTime;
 
     uint256 internal _p1505_26  = 1_505.263728469068226832 * 1e18;
     uint256 internal _p1004_98  = 1_004.989662429170775094 * 1e18;
