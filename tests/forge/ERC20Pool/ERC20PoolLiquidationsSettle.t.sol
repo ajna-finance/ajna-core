@@ -198,8 +198,8 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_91,
             lpBalance:    2_000 * 1e18,
             collateral:   0,
-            deposit:      2_114.174951097528962000 * 1e18,
-            exchangeRate: 1.057087475548764481 * 1e18
+            deposit:      2_114.174951097528960000 * 1e18,
+            exchangeRate: 1.057087475548764480 * 1e18
         });
         _assertBucket({
             index:        _i9_81,
@@ -288,15 +288,15 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_91,
             lpBalance:    2_000 * 1e18,
             collateral:   0,
-            deposit:      2_114.310083596998856000 * 1e18,
-            exchangeRate: 1.057155041798499428 * 1e18
+            deposit:      2_114.310083596998850000 * 1e18,
+            exchangeRate: 1.057155041798499425 * 1e18
         });
         _assertBucket({
             index:        _i9_81,
             lpBalance:    5_000 * 1e18,
             collateral:   0,
-            deposit:      5_000.319586842611445000 * 1e18,
-            exchangeRate: 1.000063917368522289 * 1e18
+            deposit:      5_000.319586842611440000 * 1e18,
+            exchangeRate: 1.000063917368522288 * 1e18
         });
         _assertBucket({
             index:        _i9_72,
@@ -327,8 +327,8 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_91,
             lpBalance:    2_000 * 1e18,
             collateral:   0,
-            deposit:      2_114.310083596998856000 * 1e18,
-            exchangeRate: 1.057155041798499428 * 1e18
+            deposit:      2_114.310083596998850000 * 1e18,
+            exchangeRate: 1.057155041798499425 * 1e18
         });
 
         _settle({
@@ -379,8 +379,8 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_72,
             lpBalance:    11_000 * 1e18,
             collateral:   0,
-            deposit:      8_807.241482463513273501 * 1e18,
-            exchangeRate: 0.800658316587592116 * 1e18
+            deposit:      8_807.556879218687261409 * 1e18,
+            exchangeRate: 0.800686989019880660 * 1e18
         });
         _assertBucket({
             index:        _i9_62,
@@ -393,7 +393,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             PoolParams({
                 htp:                  9.771304290202671377 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             63_807.241482463513273501 * 1e18,
+                poolSize:             63_807.556879218687261409 * 1e18,
                 pledgedCollateral:    2 * 1e18,
                 encumberedCollateral: 2.010288427770370775 * 1e18,
                 poolDebt:             19.542608580405342754 * 1e18,
@@ -480,8 +480,8 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_91,
             lpBalance:    2_000 * 1e18,
             collateral:   0,
-            deposit:      2_114.174951097528962000 * 1e18,
-            exchangeRate: 1.057087475548764481 * 1e18
+            deposit:      2_114.174951097528960000 * 1e18,
+            exchangeRate: 1.057087475548764480 * 1e18
         });
         _assertBucket({
             index:        _i9_81,
@@ -566,23 +566,23 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         _assertBucket({
             index:        _i9_91,
             lpBalance:    2_000 * 1e18,
-            collateral:   213.282459829062995573 * 1e18,
+            collateral:   213.282459829062995170 * 1e18,
             deposit:      0,
-            exchangeRate: 1.057580788993756155 * 1e18
+            exchangeRate: 1.057580788993756153 * 1e18
         });
         _assertBucket({
             index:        _i9_81,
             lpBalance:    5_000 * 1e18,
-            collateral:   509.467337074016313187 * 1e18,
+            collateral:   509.467337074016312678 * 1e18,
             deposit:      0,
-            exchangeRate: 1.000466672301396420 * 1e18
+            exchangeRate: 1.000466672301396419 * 1e18
         });
         _assertBucket({
             index:        _i9_72,
             lpBalance:    11_000 * 1e18,
-            collateral:   277.250203096920691240 * 1e18,
-            deposit:      8_289.317326783984381999 * 1e18,
-            exchangeRate: 0.998595325429936418 * 1e18
+            collateral:   277.250203096920692152 * 1e18,
+            deposit:      8_290.291604705064327151 * 1e18,
+            exchangeRate: 0.998683896150034595 * 1e18
         });
         _assertBucket({
             index:        _i9_62,
@@ -719,14 +719,14 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             from:    _lender1,
             amount:  100 * 1e18,
             index:   _i9_91,
-            lpAward: 94.593504307441637520 * 1e18,
+            lpAward: 94.593504307441637789 * 1e18,
             newLup:  9.721295865031779605 * 1e18
         });
 
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       _i9_91,
-            lpBalance:   94.593504307441637520 * 1e18,
+            lpBalance:   94.593504307441637789 * 1e18,
             depositTime: _startTime + 100 days + 10 hours
         });
 
@@ -867,12 +867,10 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_72,
             lpBalance:    11_000 * 1e18,
             collateral:   0 * 1e18,
-            deposit:      9_036.356565003188009087 * 1e18,
-            exchangeRate: 0.821486960454835274 * 1e18
+            deposit:      9_036.877948541081298779 * 1e18,
+            exchangeRate: 0.821534358958280118 * 1e18
         });
 
-        vm.expectEmit(true, true, false, true);
-        emit BucketBankruptcy(_i9_72, 5981);
         _pool.moveQuoteToken(10000000000 * 1e18, _i9_72, _i9_91, type(uint256).max);
 
         _assertBucket({
@@ -887,27 +885,45 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
 contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
 
-    function testSettleAndBankruptcyOnHPBWithTinyDeposit() external {
-        address actor1 = makeAddr("actor1");
+    address internal actor1;
+    address internal actor2;
+    address internal actor3;
+    address internal actor4;
+    address internal actor6;
+    address internal actor7;
+    address internal actor8;
+
+    function setUp() external {
+        actor1 = makeAddr("actor1");
         _mintQuoteAndApproveTokens(actor1, type(uint256).max);
         _mintCollateralAndApproveTokens(actor1, type(uint256).max);
 
-        address actor2 = makeAddr("actor2");
-        _mintQuoteAndApproveTokens(actor2,  type(uint256).max);
+        actor2 = makeAddr("actor2");
+        _mintQuoteAndApproveTokens(actor2, type(uint256).max);
         _mintCollateralAndApproveTokens(actor2, type(uint256).max);
 
-        address actor3 = makeAddr("actor1");
+        actor3 = makeAddr("actor3");
         _mintQuoteAndApproveTokens(actor3, type(uint256).max);
         _mintCollateralAndApproveTokens(actor3, type(uint256).max);
 
-        address actor6 = makeAddr("actor6");
+        actor4 = makeAddr("actor4");
+        _mintQuoteAndApproveTokens(actor4, type(uint256).max);
+        _mintCollateralAndApproveTokens(actor4, type(uint256).max);
+
+        actor6 = makeAddr("actor6");
         _mintQuoteAndApproveTokens(actor6, type(uint256).max);
         _mintCollateralAndApproveTokens(actor6, type(uint256).max);
 
-        address actor8 = makeAddr("actor8");
+        actor7 = makeAddr("actor7");
+        _mintQuoteAndApproveTokens(actor7, type(uint256).max);
+        _mintCollateralAndApproveTokens(actor7, type(uint256).max);
+
+        actor8 = makeAddr("actor8");
         _mintQuoteAndApproveTokens(actor8, type(uint256).max);
         _mintCollateralAndApproveTokens(actor8, type(uint256).max);
+    }
 
+    function testSettleAndBankruptcyOnHPBWithTinyDeposit() external {
         changePrank(actor6);
         _pool.addQuoteToken(2_000_000 * 1e18, 2572, block.timestamp + 100);
         skip(100 days);
@@ -948,7 +964,88 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
         assertEq(collateral, 0); // no collateral added in bucket 2571
         assertEq(deposit, 0); // entire deposit from bucket 2571 used to settle
         (borrowerDebt, borrowerCollateral, ) = _pool.borrowerInfo(actor1);
-        assertEq(borrowerDebt, 987909.179343464530923021 * 1e18); // decreased with 2
+        assertEq(borrowerDebt, 987909.179343464530923022 * 1e18); // decreased with 1
         assertEq(borrowerCollateral, 10066231386838.450530455239517417 * 1e18); // same as before settle
+    }
+
+    function testSettleWithReserves() external tearDown {
+        changePrank(actor2);
+
+        ERC20Pool(address(_pool)).updateInterest();
+        _addInitialLiquidity({
+            from:   actor2,
+            amount: 112_807_891_516.8015826259279868 * 1e18,
+            index:  2572
+        });
+
+        ERC20Pool(address(_pool)).updateInterest();
+        _drawDebtNoLupCheck({
+            from:               actor2,
+            borrower:           actor2,
+            amountToBorrow:     56_403_945_758.4007913129639934 * 1e18,
+            limitIndex:         7388,
+            collateralToPledge: 21_009_851.171858165566322122 * 1e18
+        });
+
+        // skip some time to make actor2 undercollateralized
+        skip(200 days);
+
+        changePrank(actor4);
+
+        ERC20Pool(address(_pool)).updateInterest();
+        _kick({
+            from:           actor4,
+            borrower:       actor2,
+            debt:           58_679_160_247.182050965227801655 * 1e18,
+            collateral:     21_009_851.171858165566322122 * 1e18,
+            bond:           580_263_636.560514719062821277 * 1e18,
+            transferAmount: 580_263_636.560514719062821277 * 1e18
+        });
+
+        changePrank(actor1);
+
+        ERC20Pool(address(_pool)).updateInterest();
+        _startClaimableReserveAuction({
+            from:              actor1,
+            remainingReserves: 1_962_000_500.669895903463292555 * 1e18,
+            price:             1000000000 * 1e18,
+            epoch:             1
+        });
+
+        changePrank(actor7);
+
+        ERC20Pool(address(_pool)).updateInterest();
+        _drawDebtNoLupCheck({
+            from:               actor7,
+            borrower:           actor7,
+            amountToBorrow:     1_000_000 * 1e18,
+            limitIndex:         7388,
+            collateralToPledge: 372.489032271806320214 * 1e18
+        });
+
+        // skip some time to make actor7 undercollateralized
+        skip(200 days);
+
+        changePrank(actor6);
+
+        ERC20Pool(address(_pool)).updateInterest();
+
+        (uint256 borrowerDebt, , ) = _poolUtils.borrowerInfo(address(_pool), actor2);
+        assertEq(borrowerDebt, 60_144_029_463.415046012797744619 * 1e18);
+
+        (uint256 reserves, , , ,) = _poolUtils.poolReservesInfo(address(_pool));
+        assertEq(reserves, 1_758_290_868.502349679615580158 * 1e18);
+
+        // settle auction with reserves
+        _settle({
+            from:        actor6,
+            borrower:    actor2,
+            maxDepth:    2,
+            settledDebt: 57_093_334_850.248360626382636508 * 1e18
+        });
+
+        (reserves, , , ,) = _poolUtils.poolReservesInfo(address(_pool));
+
+        assertEq(reserves, 2);
     }
 }

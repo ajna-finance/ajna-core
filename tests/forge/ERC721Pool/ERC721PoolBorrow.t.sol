@@ -274,7 +274,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             PoolParams({
                 htp:                  502.333658244714424687 * 1e18,
                 lup:                  _priceAt(2550),
-                poolSize:             30_003.498905447098710000 * 1e18,
+                poolSize:             30_003.498905447098680000 * 1e18,
                 pledgedCollateral:    Maths.wad(3),
                 encumberedCollateral: 0.500516446164039921 * 1e18,
                 poolDebt:             1507.000974734143274062 * 1e18,
@@ -293,8 +293,8 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             index:        2550,
             lpBalance:    10_000 * 1e18,
             collateral:   0,
-            deposit:      10_001.166301815699570000 * 1e18,
-            exchangeRate: 1.000116630181569957 * 1e18
+            deposit:      10_001.166301815699560000 * 1e18,
+            exchangeRate: 1.000116630181569956 * 1e18
         });
         // check borrower info after partial repay
         _assertBorrower({
@@ -349,7 +349,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
-                poolSize:             30_005.083883677219620000 * 1e18,
+                poolSize:             30_005.083883677219590000 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
                 poolDebt:             0,
@@ -366,15 +366,15 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             debtColEma:   755_981.012555885345015825 * 1e18,
             lupt0DebtEma: 4_531_205.827599034360703833 * 1e18,
             debtEma:      1_507.000974734143274062 * 1e18,
-            depositEma:   30_003.498902092092555534 * 1e18
+            depositEma:   30_003.498902092092525534 * 1e18
         });
         // check bucket state after fully repay
         _assertBucket({
             index:        2550,
             lpBalance:    10_000 * 1e18,
             collateral:   0,
-            deposit:      10_001.694627892406540000 * 1e18,
-            exchangeRate: 1.000169462789240654 * 1e18
+            deposit:      10_001.694627892406530000 * 1e18,
+            exchangeRate: 1.000169462789240653 * 1e18
         });
         // check borrower info after fully repay
         _assertBorrower({

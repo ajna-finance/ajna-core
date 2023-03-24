@@ -73,4 +73,8 @@ abstract contract InvariantsTestHelpers {
         require(getDiff(x, y) <= expectedDiff, err);
     }
 
+    function greaterThanWithinDiff(uint256 x, uint256 y, uint256 expectedDiff, string memory err) internal pure {
+        require(x > y || getDiff(x, y) <= expectedDiff, err);
+    }
+
 }

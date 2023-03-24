@@ -142,7 +142,7 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 inflator_,
         uint256 t0Debt2ToCollateral_
     ) pure returns (uint256) {
-        return t0Debt_ == 0 ? 0 : Maths.wmul(inflator_, Maths.wdiv(t0Debt2ToCollateral_, t0Debt_));
+        return t0Debt_ == 0 ? 0 : Maths.wdiv(Maths.wmul(inflator_, t0Debt2ToCollateral_), t0Debt_);
     }
 
     /**

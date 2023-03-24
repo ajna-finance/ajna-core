@@ -16,7 +16,7 @@ import {
     MIN_PRICE
 }                           from 'src/libraries/helpers/PoolHelper.sol';
 
-import { Token } from '../../../utils/Tokens.sol';
+import { Token, BurnableToken } from '../../../utils/Tokens.sol';
 
 import 'src/libraries/internal/Maths.sol';
 import '../interfaces/ITestBase.sol';
@@ -32,6 +32,8 @@ abstract contract BaseHandler is Test {
     // Tokens
     Token internal _quote;
     Token internal _collateral;
+
+    BurnableToken internal _ajna;
 
     // Pool
     ERC20Pool     internal _pool;
@@ -68,6 +70,7 @@ abstract contract BaseHandler is Test {
 
     constructor(
         address pool_,
+        address ajna_,
         address quote_,
         address collateral_,
         address poolInfo_,
@@ -75,6 +78,7 @@ abstract contract BaseHandler is Test {
         address testContract_
     ) {
         // Tokens
+        _ajna       = BurnableToken(ajna_);
         _quote      = Token(quote_);
         _collateral = Token(collateral_);
 
@@ -292,7 +296,7 @@ abstract contract BaseHandler is Test {
                 Maths.wmul(pendingFactor - Maths.WAD, poolDebt)
             );
 
-            uint256 scale = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;
+            uint256 scale = (newInterest * 1e18) / depositAboveHtp + Maths.WAD;
 
             // simulate scale being applied to all deposits above HTP
             _fenwickMult(htpIndex, scale);
