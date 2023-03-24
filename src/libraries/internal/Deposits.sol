@@ -53,7 +53,7 @@ library Deposits {
             // We need to track the precice change in values[i_] in order to ensure
             // obliterated indices remain zero after subsequent adding to related indices
             // if scaling==0, the actual scale value is 1, otherwise it is scaling
-            if (scaling != 0) unscaledAddAmount_ = Maths.wmul(unscaledAddAmount_, scaling);
+            if (scaling != 0) unscaledAddAmount_ = Maths.wmul(newValue, scaling) - Maths.wmul(value, scaling);
 
             deposits_.values[index_] = newValue;
 

@@ -20,7 +20,6 @@ import { Deposits } from '../internal/Deposits.sol';
 import { Buckets }  from '../internal/Buckets.sol';
 import { Maths }    from '../internal/Maths.sol';
 
-
 /**
     @title  LenderActions library
     @notice External library containing logic for pool actors:

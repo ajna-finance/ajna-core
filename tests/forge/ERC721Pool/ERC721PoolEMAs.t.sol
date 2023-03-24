@@ -252,7 +252,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
 
         _skipAndAccrue({
             time:   4 days,
-            mau:    0.897117712497350667 * 1e18,    // reached 90%
+            mau:    0.897117712497350666 * 1e18,    // reached 90%
             tu:     0.947031347885781555 * 1e18,
             rate:   0.0405 * 1e18
         });
@@ -266,7 +266,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
                 pledgedCollateral:    12 * 1e18,                        // 6 additional NFTs deposited
                 encumberedCollateral: 11.941618338706780744 * 1e18,     // all 12 NFTs are encumbered
                 poolDebt:             17_975.284944476369220528 * 1e18, // includes new debt
-                actualUtilization:    0.897117712497350667 * 1e18,
+                actualUtilization:    0.897117712497350666 * 1e18,
                 targetUtilization:    0.947031347885781555 * 1e18,
                 minDebtAmount:        1_797.528494447636922053 * 1e18,
                 loans:                1,
