@@ -90,7 +90,7 @@ library Deposits {
             // Compute sum up to sumIndex_ + i
             uint256 scaledValue =
                 lowerIndexSum +
-                (scaling != 0 ?  (runningScale * scaling * value + 5e35) / 1e36 : (runningScale * value + 5e17) / 1e18);
+                (scaling != 0 ?  (runningScale * scaling * value ) / 1e36 : (runningScale * value ) / 1e18);
 
             if (scaledValue  < targetSum_) {
                 // Target value is too small, need to consider increasing sumIndex_ still
@@ -102,7 +102,7 @@ library Deposits {
             } else {
                 // Target index has this bit set to 0
                 // scaling == 0 means scale factor == 1, otherwise scale factor == scaling
-                if (scaling != 0) runningScale = (runningScale * scaling + 5e17) / 1e18;
+                if (scaling != 0) runningScale = (runningScale * scaling) / 1e18;
 
                 // Current scaledValue is <= targetSum_, it's a candidate value for sumIndexSum_
                 sumIndexSum_   = scaledValue;
@@ -249,7 +249,7 @@ library Deposits {
                 if (index == sumIndex_) break;
             } else {
                 // node is not included in sum, but its scale needs to be included for subsequent sums
-                if (scaled != 0) runningScale = Maths.wmul(runningScale, scaled);
+                if (scaled != 0) runningScale = runningScale * scaled / 1e18;
             }
             // shift j to consider next less signficant bit
             j = j >> 1;
