@@ -2102,7 +2102,7 @@ contract ERC20PoolLiquidationsTakeAndRepayAllDebtInPoolTest is ERC20HelperContra
         _kick({
             from:           _kicker,
             borrower:       _borrower,
-            debt:           104.162540773774892915 * 1e18,
+            debt:           104.162540773774892916 * 1e18,
             collateral:     0.067433366047580170 * 1e18,
             bond:           1.028765834802714992 * 1e18,
             transferAmount: 1.028765834802714992  * 1e18
@@ -2118,7 +2118,7 @@ contract ERC20PoolLiquidationsTakeAndRepayAllDebtInPoolTest is ERC20HelperContra
             borrower:        _borrower,
             maxCollateral:   0.067433366047580170 * 1e18,
             bondChange:      1.028765834802714992 * 1e18,
-            givenAmount:     111.455789568155429076 * 1e18,
+            givenAmount:     111.455789568155429077 * 1e18,
             collateralTaken: 0.010471063560951988 * 1e18,
             isReward:        false
         });
