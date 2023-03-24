@@ -451,8 +451,7 @@ contract RewardsManagerTest is ERC20HelperContract {
 
         // check can't call update exchange rate after the update period has elapsed
         skip(2 weeks);
-        // changePrank(_updater);
-        // vm.expectRevert(IAjnaRewards.ExchangeRateUpdateTooLate.selector);
+
         uint256 updateRewards = _rewardsManager.updateBucketExchangeRatesAndClaim(address(_poolOne), depositIndexes);
         assertEq(updateRewards, 0);
     }

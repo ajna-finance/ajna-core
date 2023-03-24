@@ -22,6 +22,8 @@ import { PositionManager } from './PositionManager.sol';
 
 import { Maths } from './libraries/internal/Maths.sol';
 
+import '@std/console.sol';
+
 /**
  *  @title  Rewards (staking) Manager contract
  *  @notice Pool lenders can optionally mint NFT that represents their positions.
@@ -662,11 +664,23 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         address pool_,
         uint256[] memory indexes_
     ) internal returns (uint256 updatedRewards_) {
-        // get the current burn epoch from the given pool
-        uint256 curBurnEpoch = IPool(pool_).currentBurnEpoch();
 
-        // update exchange rates only if the pool has not yet burned any tokens without calculating any reward
-        if (curBurnEpoch == 0) {
+        // get the current and previous burn epoch
+        uint256 curBurnEpoch = IPool(pool_).currentBurnEpoch();
+        uint256 prevBurnEpoch = curBurnEpoch != 0 ? curBurnEpoch - 1 : 0;
+        (
+            uint256 curBurnTime,
+            uint256 totalBurned,
+            uint256 totalInterestEarned
+        ) = _getPoolAccumulators(pool_, curBurnEpoch, prevBurnEpoch);
+
+        // burn events have occured but update period has passed, exit
+        if (curBurnEpoch != 0 && (block.timestamp > curBurnTime + UPDATE_PERIOD)) {
+            return 0;
+        }
+
+        // no burn events have occured, update exchange rates without reward
+        else if (curBurnEpoch == 0) {
             for (uint256 i = 0; i < indexes_.length; ) {
 
                 _updateBucketExchangeRate(
@@ -680,44 +694,35 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             }
         }
 
+        // burn events have occured and within update period, update exchange rates and reward updater
         else {
-            // retrieve accumulator values used to calculate rewards accrued
-            (
-                uint256 curBurnTime,
-                uint256 totalBurned,
-                uint256 totalInterestEarned
-            ) = _getPoolAccumulators(pool_, curBurnEpoch, curBurnEpoch - 1);
 
-            if (block.timestamp <= curBurnTime + UPDATE_PERIOD) {
+            for (uint256 i = 0; i < indexes_.length; ) {
 
-                // update exchange rates and calculate rewards if tokens were burned and within allowed time period
-                for (uint256 i = 0; i < indexes_.length; ) {
+                // calculate rewards earned for updating bucket exchange rate
+                updatedRewards_ += _updateBucketExchangeRateAndCalculateRewards(
+                    pool_,
+                    indexes_[i],
+                    curBurnEpoch,
+                    totalBurned,
+                    totalInterestEarned
+                );
 
-                    // calculate rewards earned for updating bucket exchange rate
-                    updatedRewards_ += _updateBucketExchangeRateAndCalculateRewards(
-                        pool_,
-                        indexes_[i],
-                        curBurnEpoch,
-                        totalBurned,
-                        totalInterestEarned
-                    );
-
-                    // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
-                    unchecked { ++i; }
-                }
-
-                uint256 rewardsCap            = Maths.wmul(UPDATE_CAP, totalBurned);
-                uint256 rewardsClaimedInEpoch = updateRewardsClaimed[curBurnEpoch];
-
-                // update total tokens claimed for updating bucket exchange rates tracker
-                if (rewardsClaimedInEpoch + updatedRewards_ >= rewardsCap) {
-                    // if update reward is greater than cap, set to remaining difference
-                    updatedRewards_ = rewardsCap - rewardsClaimedInEpoch;
-                }
-
-                // accumulate the full amount of additional rewards
-                updateRewardsClaimed[curBurnEpoch] += updatedRewards_;
+                // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
+                unchecked { ++i; }
             }
+
+            uint256 rewardsCap            = Maths.wmul(UPDATE_CAP, totalBurned);
+            uint256 rewardsClaimedInEpoch = updateRewardsClaimed[curBurnEpoch];
+
+            // update total tokens claimed for updating bucket exchange rates tracker
+            if (rewardsClaimedInEpoch + updatedRewards_ >= rewardsCap) {
+                // if update reward is greater than cap, set to remaining difference
+                updatedRewards_ = rewardsCap - rewardsClaimedInEpoch;
+            }
+
+            // accumulate the full amount of additional rewards
+            updateRewardsClaimed[curBurnEpoch] += updatedRewards_;
         }
 
         // emit event with the list of bucket indexes updated
