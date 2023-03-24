@@ -229,7 +229,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             amount:      1 * 1e18,
             amountAdded: 0.999876712328767123 * 1e18,
             index:       _i9_52,
-            lpAward:     0.999873468712229081 * 1e18,
+            lpAward:     0.999873468712229082 * 1e18,
             newLup:      9.721295865031779605 * 1e18
         });
 
@@ -237,12 +237,12 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             index:        _i9_91,
             lpBalance:    2_000 * 1e18,
             collateral:   0,
-            deposit:      2_000.006488054017914000 * 1e18,
-            exchangeRate: 1.000003244027008957 * 1e18
+            deposit:      2_000.006488054017912000 * 1e18,
+            exchangeRate: 1.000003244027008956 * 1e18
         });
         _assertReserveAuction({
-            reserves:                   286.940599154163800221 * 1e18,
-            claimableReserves :         245.508462704973068079 * 1e18,
+            reserves:                   286.940599154163873221 * 1e18,
+            claimableReserves :         245.508462704973141079 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
@@ -302,13 +302,13 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             index:        _i9_91,
             lpBalance:    2_000.198343053438495848 * 1e18,
             collateral:   2 * 1e18,
-            deposit:      1_980.370462064014808094 * 1e18,
-            exchangeRate: 1.000003244027008957 * 1e18
+            deposit:      1_980.370462064014806094 * 1e18,
+            exchangeRate: 1.000003244027008956 * 1e18
         });
         // reserves should remain the same after deposit take
         _assertReserveAuction({
-            reserves:                   288.353881050812077572 * 1e18,
-            claimableReserves :         247.012858322088119573 * 1e18,
+            reserves:                   288.353881050812150572 * 1e18,
+            claimableReserves :         247.012858322088192573 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0

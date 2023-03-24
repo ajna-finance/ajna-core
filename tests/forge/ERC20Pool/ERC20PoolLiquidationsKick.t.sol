@@ -179,7 +179,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             PoolParams({
                 htp:                  8.097846143253778448 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             73_093.873009488594553000 * 1e18,
+                poolSize:             73_093.873009488594546000 * 1e18,
                 pledgedCollateral:    1_002 * 1e18,
                 encumberedCollateral: 835.035237319063220561 * 1e18,
                 poolDebt:             8_117.624599705640061721 * 1e18,
@@ -232,7 +232,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             locked:    0.195342779771472726 * 1e18
         });
         _assertReserveAuction({
-            reserves:                   24.501590217045508721 * 1e18,
+            reserves:                   24.501590217045515721 * 1e18,
             claimableReserves :         0,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
@@ -719,7 +719,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             PoolParams({
                 htp:                  0,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             73_114.174951097528962000 * 1e18,
+                poolSize:             73_114.174951097528960000 * 1e18,
                 pledgedCollateral:    1_002 * 1e18,
                 encumberedCollateral: 1_028.290450922889736704 * 1e18,
                 poolDebt:             9_996.315708608352095626 * 1e18,
@@ -740,7 +740,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             from:    _lender1,
             amount:  1 * 1e18,
             index:   _i9_91,
-            lpAward: 0.945987267750984916 * 1e18,
+            lpAward: 0.945987267750984917 * 1e18,
             newLup:  9.721295865031779605 * 1e18
         });
 
@@ -748,7 +748,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             PoolParams({
                 htp:                  0,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             73_115.811578712752188477 * 1e18,
+                poolSize:             73_115.811578712752113362 * 1e18,
                 pledgedCollateral:    1_002 * 1e18,
                 encumberedCollateral: 1_028.364405977643667984 * 1e18,
                 poolDebt:             9_997.034647576329686631 * 1e18,

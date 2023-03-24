@@ -16,12 +16,13 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
 
     constructor(
         address pool_,
+        address ajna_,
         address quote_,
         address collateral_,
         address poolInfo_,
         uint256 numOfActors_,
         address testContract_
-    ) BasicPoolHandler(pool_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
+    ) BasicPoolHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
 
     }
 

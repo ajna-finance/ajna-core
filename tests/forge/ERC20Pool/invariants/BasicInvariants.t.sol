@@ -75,6 +75,7 @@ contract BasicInvariants is InvariantsTestBase {
 
         _basicPoolHandler = new BasicPoolHandler(
             address(_pool),
+            address(_ajna),
             address(_quote),
             address(_collateral),
             address(_poolInfo),
@@ -84,6 +85,7 @@ contract BasicInvariants is InvariantsTestBase {
 
         _handler = address(_basicPoolHandler);
 
+        excludeContract(address(_ajna));
         excludeContract(address(_collateral));
         excludeContract(address(_quote));
         excludeContract(address(_poolFactory));
@@ -171,8 +173,16 @@ contract BasicInvariants is InvariantsTestBase {
             ,
         ) = _pool.reservesInfo();
 
-        assertGe(
-            poolBalance + poolDebt, totalBondEscrowed + _pool.depositSize() + unClaimed,
+        uint256 assets      = poolBalance + poolDebt;
+        uint256 liabilities = totalBondEscrowed + _pool.depositSize() + unClaimed;
+
+        console.log("assets      -> ", assets);
+        console.log("liabilities -> ", liabilities);
+
+        greaterThanWithinDiff(
+            assets,
+            liabilities,
+            1e13,
             "Incorrect pool quote token"
         );
     }

@@ -179,34 +179,34 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
             rate:   0.05 * 1e18
         });
         (, , , uint256 depositEma) = _pool.emasInfo();
-        assertEq(depositEma, 12_582.630574533185450994 * 1e18);         // now moving toward 20_000
+        assertEq(depositEma, 12_582.630574533185444544 * 1e18);         // now moving toward 20_000
 
         _skipAndAccrue({
             time:   20 hours,                       // 24 hours since liquidity was added
-            mau:    0.393730664447534870 * 1e18,    // still dropping toward 35%
+            mau:    0.393730664447534871 * 1e18,    // still dropping toward 35%
             tu:     0.769999034610545182 * 1e18,    // still at 77%
             rate:   0.045 * 1e18                    // first interest rate drop
         });
         (, , , depositEma) = _pool.emasInfo();
-        assertEq(depositEma, 17_664.401438069534341122 * 1e18);         // still moving toward 20_000
+        assertEq(depositEma, 17_664.401438069534311691 * 1e18);         // still moving toward 20_000
 
         _skipAndAccrue({
             time:   2 days,                         // 3 days since liquidity was added
-            mau:    0.350326278385275701 * 1e18,    // reached 35%
+            mau:    0.350326278385275702 * 1e18,    // reached 35%
             tu:     0.770061298755197770 * 1e18,    // still at 77%
             rate:   0.0405 * 1e18                   // second interest rate drop
         });                  
         (, , , depositEma) = _pool.emasInfo();
-        assertEq(depositEma, 19_855.678232854988936290 * 1e18);         // reached (sort of) 20_000
+        assertEq(depositEma, 19_855.678232854988878203 * 1e18);         // reached (sort of) 20_000
         _assertPool(
             PoolParams({
                 htp:                  1_159.624091089473286060 * 1e18,
                 lup:                  _p1505_26,
-                poolSize:             25_003.260972741349848786 * 1e18, // reflects additional 10_000 deposit
+                poolSize:             25_003.260972741349788790 * 1e18, // reflects additional 10_000 deposit
                 pledgedCollateral:    6 * 1e18,
                 encumberedCollateral: 4.622276093514343199 * 1e18,
                 poolDebt:             6_957.744546536839716358 * 1e18,
-                actualUtilization:    0.350326278385275701 * 1e18,      // dropped to 35% as expected
+                actualUtilization:    0.350326278385275702 * 1e18,      // dropped to 35% as expected
                 targetUtilization:    0.770061298755197770 * 1e18,
                 minDebtAmount:        695.774454653683971636 * 1e18,
                 loans:                1,
@@ -234,7 +234,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
 
         _skipAndAccrue({
             time:   3 hours,
-            mau:    0.438034189478303511 * 1e18,    // rising from 35% to 90%
+            mau:    0.438034189478303512 * 1e18,    // rising from 35% to 90%
             tu:     0.783712586574747919 * 1e18,    // increases as collateralization decreases
             rate:   0.0405 * 1e18
         });
@@ -243,7 +243,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
 
         _skipAndAccrue({
             time:   9 hours,
-            mau:    0.625264252786034774 * 1e18,    // still rising to 90%
+            mau:    0.625264252786034776 * 1e18,    // still rising to 90%
             tu:     0.817638199962595844 * 1e18,
             rate:   0.0405 * 1e18
         });
@@ -252,7 +252,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
 
         _skipAndAccrue({
             time:   4 days,
-            mau:    0.897117712497350667 * 1e18,    // reached 90%
+            mau:    0.897117712497350670 * 1e18,    // reached 90%
             tu:     0.947031347885781555 * 1e18,
             rate:   0.0405 * 1e18
         });
@@ -262,11 +262,11 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
             PoolParams({
                 htp:                  1_497.940412039697435044 * 1e18,
                 lup:                  _p1505_26,
-                poolSize:             25_011.246566016078933954 * 1e18,
+                poolSize:             25_011.246566016078833928 * 1e18,
                 pledgedCollateral:    12 * 1e18,                        // 6 additional NFTs deposited
                 encumberedCollateral: 11.941618338706780744 * 1e18,     // all 12 NFTs are encumbered
                 poolDebt:             17_975.284944476369220528 * 1e18, // includes new debt
-                actualUtilization:    0.897117712497350667 * 1e18,
+                actualUtilization:    0.897117712497350670 * 1e18,
                 targetUtilization:    0.947031347885781555 * 1e18,
                 minDebtAmount:        1_797.528494447636922053 * 1e18,
                 loans:                1,
@@ -289,7 +289,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
         });
         _skipAndAccrue({
             time:   40 hours,                       // 2 days after liquidity was added
-            mau:    0.744857048522821157 * 1e18,    // 7_647 / 10_000 ~= 76%
+            mau:    0.744857048522821158 * 1e18,    // 7_647 / 10_000 ~= 76%
             tu:     0.793326272355691526 * 1e18,    // starting at 77%
             rate:   0.05 * 1e18
         });
@@ -297,7 +297,7 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
             debtColEma:     8_539_491.492000790693673965 * 1e18,        // reflects newly drawn debt
             lupt0DebtEma:   10_764_160.711133073306706753 * 1e18,       // unchanged from setup
             debtEma:        7_585.487807318324588356 * 1e18,            // increasing toward 7_647
-            depositEma:     10_183.816911394801817581 * 1e18            // decreasing toward 10_000
+            depositEma:     10_183.816911394801808573 * 1e18            // decreasing toward 10_000
         });
 
         // bad actor comes along and deposits large amount for 5 minutes, and then withdraws
@@ -310,10 +310,10 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
         _pool.updateInterest();     // not really needed, since removing liquidity will trigger rate update
         _removeAllLiquidity({
             from:     _attacker,
-            amount:   150_000.003089440923020314 * 1e18,
+            amount:   150_000.003089440922870341 * 1e18,
             index:    _i1505_26,
             newLup:   _p1505_26,
-            lpRedeem: 149_972.484368509876101687 * 1e18
+            lpRedeem: 149_972.484368509876401577 * 1e18
         });
 
         _skipAndAccrue({
@@ -326,12 +326,12 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
             debtColEma:     8_540_370.017841347311996670 * 1e18,
             lupt0DebtEma:   10_764_702.716470726509705193 * 1e18,
             debtEma:        7_585.843823429738778980 * 1e18,
-            depositEma:     10_903.062849361711217820 * 1e18            // still noticably impacted
+            depositEma:     10_903.062849361711208755 * 1e18            // still noticably impacted
         });
 
         _skipAndAccrue({
             time:   12 hours,
-            mau:    0.729141586574051708 * 1e18,    // moving back toward 75%
+            mau:    0.729141586574051710 * 1e18,    // moving back toward 75%
             tu:     0.798822457321421405 * 1e18,
             rate:   0.05 * 1e18
         });
@@ -339,17 +339,17 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
             debtColEma:     8_656_142.490618553816291562 * 1e18,
             lupt0DebtEma:   10_836_128.117434222666947215 * 1e18,
             debtEma:        7_621.315210378439120928 * 1e18,
-            depositEma:     10_452.448949164988301441 * 1e18            // moving down back to 10_000
+            depositEma:     10_452.448949164988281908 * 1e18            // moving down back to 10_000
         });
         _assertPool(
             PoolParams({
                 htp:                  1_276.218508787651473374 * 1e18,
                 lup:                  _p1505_26,
-                poolSize:             15_002.306593887595240000 * 1e18,
+                poolSize:             15_002.306593887595200000 * 1e18,
                 pledgedCollateral:    6 * 1e18,
                 encumberedCollateral: 5.087022896986824909 * 1e18,
                 poolDebt:             7_657.311052725908840244 * 1e18,  // 7_647 principal plus some interest
-                actualUtilization:    0.729141586574051708 * 1e18,
+                actualUtilization:    0.729141586574051710 * 1e18,
                 targetUtilization:    0.798822457321421405 * 1e18,
                 minDebtAmount:        765.731105272590884024 * 1e18,
                 loans:                1,

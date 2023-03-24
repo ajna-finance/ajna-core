@@ -23,12 +23,13 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
 
     constructor(
         address pool_,
+        address ajna_,
         address quote_,
         address collateral_,
         address poolInfo_,
         uint256 numOfActors_,
         address testContract_
-    ) BaseHandler(pool_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
+    ) BaseHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
 
     }
 
@@ -257,7 +258,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
 
         (senderLpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
 
-        boundedLps_ = constrictToRange(lpsToTransfer_, 1, senderLpBalance);
+        boundedLps_ = constrictToRange(lpsToTransfer_, 0, senderLpBalance);
 
         receiver_ = actors[constrictToRange(toActorIndex_, 0, actors.length - 1)];
     }
