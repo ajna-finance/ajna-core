@@ -1922,7 +1922,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         });
 
         // lender 1 moves liquidity
-        changePrank(address(lender1));
+        changePrank(lender1);
         IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = 
             IPositionManagerOwnerActions.MoveLiquidityParams(
             tokenId1, address(_pool), mintIndex, moveIndex, block.timestamp + 30
