@@ -92,7 +92,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
             (uint256 borrowerDebtAfterTake, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
             uint256 totalBondAfterTake          = _getKickerBond(kicker);
-            uint256 totalBalanceAfterTake      = _quote.balanceOf(address(_pool));
+            uint256 totalBalanceAfterTake       = _quote.balanceOf(address(_pool));
 
             if (borrowerDebtBeforeTake > borrowerDebtAfterTake) {
                 // **RE7**: Reserves decrease with debt covered by take.

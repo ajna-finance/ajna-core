@@ -885,27 +885,45 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
 contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
 
-    function testSettleAndBankruptcyOnHPBWithTinyDeposit() external {
-        address actor1 = makeAddr("actor1");
+    address internal actor1;
+    address internal actor2;
+    address internal actor3;
+    address internal actor4;
+    address internal actor6;
+    address internal actor7;
+    address internal actor8;
+
+    function setUp() external {
+        actor1 = makeAddr("actor1");
         _mintQuoteAndApproveTokens(actor1, type(uint256).max);
         _mintCollateralAndApproveTokens(actor1, type(uint256).max);
 
-        address actor2 = makeAddr("actor2");
-        _mintQuoteAndApproveTokens(actor2,  type(uint256).max);
+        actor2 = makeAddr("actor2");
+        _mintQuoteAndApproveTokens(actor2, type(uint256).max);
         _mintCollateralAndApproveTokens(actor2, type(uint256).max);
 
-        address actor3 = makeAddr("actor1");
+        actor3 = makeAddr("actor3");
         _mintQuoteAndApproveTokens(actor3, type(uint256).max);
         _mintCollateralAndApproveTokens(actor3, type(uint256).max);
 
-        address actor6 = makeAddr("actor6");
+        actor4 = makeAddr("actor4");
+        _mintQuoteAndApproveTokens(actor4, type(uint256).max);
+        _mintCollateralAndApproveTokens(actor4, type(uint256).max);
+
+        actor6 = makeAddr("actor6");
         _mintQuoteAndApproveTokens(actor6, type(uint256).max);
         _mintCollateralAndApproveTokens(actor6, type(uint256).max);
 
-        address actor8 = makeAddr("actor8");
+        actor7 = makeAddr("actor7");
+        _mintQuoteAndApproveTokens(actor7, type(uint256).max);
+        _mintCollateralAndApproveTokens(actor7, type(uint256).max);
+
+        actor8 = makeAddr("actor8");
         _mintQuoteAndApproveTokens(actor8, type(uint256).max);
         _mintCollateralAndApproveTokens(actor8, type(uint256).max);
+    }
 
+    function testSettleAndBankruptcyOnHPBWithTinyDeposit() external {
         changePrank(actor6);
         _pool.addQuoteToken(2_000_000 * 1e18, 2572, block.timestamp + 100);
         skip(100 days);
@@ -951,27 +969,6 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
     }
 
     function testSettleWithReserves() external tearDown {
-
-        address actor1 = makeAddr("actor1");
-        _mintQuoteAndApproveTokens(actor1,  1e45);
-        _mintCollateralAndApproveTokens(actor1, 1e45);
-
-        address actor2 = makeAddr("actor2");
-        _mintQuoteAndApproveTokens(actor2,  1e45);
-        _mintCollateralAndApproveTokens(actor2, 1e45);
-
-        address actor4 = makeAddr("actor4");
-        _mintQuoteAndApproveTokens(actor4, 1e45);
-        _mintCollateralAndApproveTokens(actor4, 1e45);
-
-        address actor6 = makeAddr("actor6");
-        _mintQuoteAndApproveTokens(actor6, 1e45);
-        _mintCollateralAndApproveTokens(actor6, 1e45);
-
-        address actor7 = makeAddr("actor7");
-        _mintQuoteAndApproveTokens(actor7, 1e45);
-        _mintCollateralAndApproveTokens(actor7, 1e45);
-
         changePrank(actor2);
 
         ERC20Pool(address(_pool)).updateInterest();
@@ -1049,8 +1046,6 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
 
         (reserves, , , ,) = _poolUtils.poolReservesInfo(address(_pool));
 
-        // reserves remaining after settle auction reduced from 496777425871207656 to 2 after change: https://github.com/ajna-finance/contracts/commit/7d56cb75b36339a9d9def9fb39290083c5f484eb
-        // TODO: Check rounding issue in debt calculations as reserves are not fully utilized for settling borrowerDebt
         assertEq(reserves, 2);
     }
 }
