@@ -234,7 +234,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                     // Reserves might increase upto 2 WAD due to rounding issue
                     increaseInReserves = reservesAfterAction - reservesBeforeAction;
                 }
-                borrowerT0Debt -= Maths.min(decreaseInReserves, borrowerT0Debt);
+                borrowerT0Debt -= Maths.min(Maths.wdiv(decreaseInReserves, inflator), borrowerT0Debt);
 
                 while (maxDepth_ != 0 && borrowerT0Debt != 0) {
                     uint256 bucketIndex    = fenwickIndexForSum(1);

@@ -255,6 +255,23 @@ contract RegressionTestReserve is ReserveInvariants {
         invariant_quoteTokenBalance_QT1();
     }
 
+    function test_regression_invariant_reserves_invariant_quoteTokenBalance_QT1_5() external {
+        _reservePoolHandler.settleAuction(841361270493647884419014561906636, 98291268956781519518581599501066994252857442823583923678216713962377882453983, 1406581758883);
+        _reservePoolHandler.takeAuction(1383411077269858329680139336144799098803584219410295488, 3, 0);
+        _reservePoolHandler.repayDebt(46968019084877, 3);
+        _reservePoolHandler.settleAuction(40124885934647691486197516987534429290957609634434455185985854549948025389553, 7413335529509918122196253760378, 3);
+        // _reservePoolHandler.bucketTake(17377, 2748873005452892812548622619587, false, 999999999999999989712357375741033502535274466);
+        skip(2 hours);
+        _pool.updateInterest();
+        /*
+         TODO: Check why deposit change is more than debt change in accrue interest in "updateInterest"
+         debt change          --> 236352821760996207141053
+         deposit change       --> 236352821761181451576056
+        */
+        currentTimestamp = block.timestamp;
+        invariant_quoteTokenBalance_QT1();
+    }
+
     function test_regression_invariant_reserves_settle_3() external {
         _reservePoolHandler.bucketTake(38522325070060518315904717784000000000, 74804166371079302281493396778, false, 243284095655821418741726406906);
         _reservePoolHandler.removeQuoteToken(63300517263709739718213296806, 544282601310994378458621785271097, 93004761485750531023207874);
