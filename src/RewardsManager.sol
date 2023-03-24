@@ -22,8 +22,6 @@ import { PositionManager } from './PositionManager.sol';
 
 import { Maths } from './libraries/internal/Maths.sol';
 
-import '@std/console.sol';
-
 /**
  *  @title  Rewards (staking) Manager contract
  *  @notice Pool lenders can optionally mint NFT that represents their positions.
