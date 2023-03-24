@@ -257,6 +257,9 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         // handle the case where owner attempts to move liquidity after they've already done so
         if (vars.depositTime == 0) revert RemovePositionFailed();
 
+        // ensure bucketDeposit accounts for accrued interest
+        IPool(params_.pool).updateInterest();
+
         // retrieve info of bucket from which liquidity is moved  
         (
             vars.bucketLPs,
