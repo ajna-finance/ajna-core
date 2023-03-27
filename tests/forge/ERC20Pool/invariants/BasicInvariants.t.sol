@@ -234,7 +234,6 @@ contract BasicInvariants is InvariantsTestBase {
     function invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8() public useCurrentTimestamp {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             uint256 currentExchangeRate = _pool.bucketExchangeRate(bucketIndex);
-            (uint256 currentBucketLps, , , , ) = _pool.bucketInfo(bucketIndex);
 
             if (IBaseHandler(_handler).exchangeRateShouldNotChange(bucketIndex)) {
                 uint256 previousExchangeRate = IBaseHandler(_handler).previousExchangeRate(bucketIndex);
@@ -246,9 +245,9 @@ contract BasicInvariants is InvariantsTestBase {
                 console.log("======================================");
 
                 requireWithinDiff(
-                    Maths.wmul(currentExchangeRate,  currentBucketLps),
-                    Maths.wmul(previousExchangeRate, currentBucketLps),
-                    1e5,
+                    currentExchangeRate,
+                    previousExchangeRate,
+                    1e17,
                     "Incorrect exchange Rate changed"
                 );
             }
@@ -367,17 +366,14 @@ contract BasicInvariants is InvariantsTestBase {
         }
     }
 
-    // For any index i < MAX_FENWICK_INDEX, findIndexOfSum(prefixSum(i)) > i
+    // For any index i < MAX_FENWICK_INDEX, depositIndex(depositUpToIndex(i)) > i
     function invariant_fenwick_bucket_index_F3() public useCurrentTimestamp {
-        uint256 prefixSum;
-
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             (, , , uint256 depositAtIndex, ) = _pool.bucketInfo(bucketIndex);
+            uint256 prefixSum               = _pool.depositUpToIndex(bucketIndex);
+            uint256 bucketIndexFromDeposit  = _pool.depositIndex(prefixSum);
 
             if (depositAtIndex != 0) {
-                prefixSum += depositAtIndex;
-                uint256 bucketIndexFromDeposit = _pool.depositIndex(prefixSum);
-
                 console.log("===================Bucket Index : ", bucketIndex, " ===================");
                 console.log("Bucket Index from deposit -->", bucketIndexFromDeposit);
                 console.log("=========================================");
