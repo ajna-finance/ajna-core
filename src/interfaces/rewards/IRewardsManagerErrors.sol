@@ -17,11 +17,6 @@ interface IRewardsManagerErrors {
     error EpochNotAvailable();
 
     /**
-     *  @notice User attempted to record updated exchange rates outside of the allowed period.
-     */
-    error ExchangeRateUpdateTooLate();
-
-    /**
      *  @notice User provided move index params that didn't match in size.
      */
     error MoveStakedLiquidityInvalid();
