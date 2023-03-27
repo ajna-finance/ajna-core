@@ -6,6 +6,8 @@ import {
     LENDER_MIN_BUCKET_INDEX,
     LENDER_MAX_BUCKET_INDEX,
     BORROWER_MIN_BUCKET_INDEX,
+    MIN_AMOUNT,
+    MAX_AMOUNT,
     BaseHandler
 }                                          from '../base/BaseHandler.sol';
 import { UnboundedLiquidationPoolHandler } from '../base/UnboundedLiquidationPoolHandler.sol';
@@ -63,7 +65,7 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
     ) external useRandomActor(actorIndex_) useTimestamps {
         numberOfCalls['BLiquidationHandler.takeAuction']++;
 
-        amount_ = constrictToRange(amount_, 1, 1e30);
+        amount_ = constrictToRange(amount_, MIN_AMOUNT, MAX_AMOUNT);
 
         borrowerIndex_ = constrictToRange(borrowerIndex_, 0, actors.length - 1);
 
@@ -143,7 +145,7 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
         borrowerIndex_   = constrictToRange(borrowerIndex_, 0, actors.length - 1);
         address borrower = actors[borrowerIndex_];
         address kicker   = _actor;
-        amount_          = constrictToRange(amount_, 1, 1e30);
+        amount_          = constrictToRange(amount_, MIN_AMOUNT, MAX_AMOUNT);
 
         ( , , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
 

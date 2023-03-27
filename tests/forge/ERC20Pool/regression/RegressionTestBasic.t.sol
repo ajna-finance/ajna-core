@@ -225,8 +225,8 @@ contract RegressionTestBasic is BasicInvariants {
 
     function test_regression_fenwick_index_2() external {
         uint256 depositAt2570 = 570036521745120847917211;
-        uint256 depositAt2571 = _basicPoolHandler.constrictToRange(2578324552477056269186646552413, 1, 1000000000000000000000000000000);
-        uint256 depositAt2572 = 1212;
+        uint256 depositAt2571 = _basicPoolHandler.constrictToRange(2578324552477056269186646552413, 1e6, 1e28);
+        uint256 depositAt2572 = _basicPoolHandler.constrictToRange(1212, 1e6, 1e28);
         _basicPoolHandler.addQuoteToken(1, depositAt2570, 2570);
         _basicPoolHandler.addQuoteToken(1, depositAt2571, 2571);
         _basicPoolHandler.addQuoteToken(1, depositAt2572, 2572);

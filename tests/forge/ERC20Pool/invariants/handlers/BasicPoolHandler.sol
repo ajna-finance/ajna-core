@@ -10,6 +10,8 @@ import {
     LENDER_MIN_BUCKET_INDEX,
     LENDER_MAX_BUCKET_INDEX,
     BORROWER_MIN_BUCKET_INDEX,
+    MIN_AMOUNT,
+    MAX_AMOUNT,
     BaseHandler
 }                                    from '../base/BaseHandler.sol';
 import { UnboundedBasicPoolHandler } from '../base/UnboundedBasicPoolHandler.sol';
@@ -198,13 +200,13 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     function _preAddQuoteToken(
         uint256 amountToAdd_
     ) internal view returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToAdd_, _pool.quoteTokenDust(), 1e30);
+        boundedAmount_ = constrictToRange(amountToAdd_, Maths.max(_pool.quoteTokenDust(), MIN_AMOUNT), MAX_AMOUNT);
     }
 
     function _preRemoveQuoteToken(
         uint256 amountToRemove_
     ) internal returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToRemove_, 1, 1e30);
+        boundedAmount_ = constrictToRange(amountToRemove_, MIN_AMOUNT, MAX_AMOUNT);
 
         // ensure actor has quote tokens to remove
         (uint256 lpBalanceBefore, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
@@ -220,7 +222,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     ) internal returns (uint256 boundedFromIndex_, uint256 boundedToIndex_, uint256 boundedAmount_) {
         boundedFromIndex_ = constrictToRange(fromIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
         boundedToIndex_   = constrictToRange(toIndex_,   LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
-        boundedAmount_    = constrictToRange(amountToMove_, 1, 1e30);
+        boundedAmount_    = constrictToRange(amountToMove_, MIN_AMOUNT, MAX_AMOUNT);
 
         // ensure actor has LPs to move
         (uint256 lpBalance, ) = _pool.lenderInfo(boundedFromIndex_, _actor);
@@ -235,13 +237,13 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     function _preAddCollateral(
         uint256 amountToAdd_
     ) internal pure returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToAdd_, 1e6, 1e30);
+        boundedAmount_ = constrictToRange(amountToAdd_, MIN_AMOUNT, MAX_AMOUNT);
     }
 
     function _preRemoveCollateral(
         uint256 amountToRemove_
     ) internal returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToRemove_, 1, 1e30);
+        boundedAmount_ = constrictToRange(amountToRemove_, MIN_AMOUNT, MAX_AMOUNT);
 
         // ensure actor has collateral to remove
         (uint256 lpBalanceBefore, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
@@ -266,19 +268,19 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     function _prePledgeCollateral(
         uint256 amountToPledge_
     ) internal view returns (uint256 boundedAmount_) {
-        boundedAmount_ =  constrictToRange(amountToPledge_, _pool.collateralScale(), 1e30);
+        boundedAmount_ =  constrictToRange(amountToPledge_, _pool.collateralScale(), MAX_AMOUNT);
     }
 
     function _prePullCollateral(
         uint256 amountToPull_
     ) internal pure returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToPull_, 1, 1e30);
+        boundedAmount_ = constrictToRange(amountToPull_, MIN_AMOUNT, MAX_AMOUNT);
     }
 
     function _preDrawDebt(
         uint256 amountToBorrow_
     ) internal returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToBorrow_, 1e6, 1e30);
+        boundedAmount_ = constrictToRange(amountToBorrow_, MIN_AMOUNT, MAX_AMOUNT);
 
         // Pre Condition
         // 1. borrower's debt should exceed minDebt
@@ -316,7 +318,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     function _preRepayDebt(
         uint256 amountToRepay_
     ) internal returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToRepay_, _pool.quoteTokenDust(), 1e30);
+        boundedAmount_ = constrictToRange(amountToRepay_, Maths.max(_pool.quoteTokenDust(), MIN_AMOUNT), MAX_AMOUNT);
 
         // ensure actor has debt to repay
         (uint256 debt, , ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);
