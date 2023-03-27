@@ -323,6 +323,9 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         if (debt == 0) {
             boundedAmount_ = _preDrawDebt(boundedAmount_);
             _drawDebt(boundedAmount_);
+            _updateLocalFenwick();
+            _fenwickAccrueInterest();
+            _updatePoolState();
         }
     }
 }
