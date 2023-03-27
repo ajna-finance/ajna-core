@@ -16,7 +16,7 @@ import {
     MIN_PRICE
 }                           from 'src/libraries/helpers/PoolHelper.sol';
 
-import { Token, BurnableToken } from '../../../utils/Tokens.sol';
+import { TokenWithNDecimals, BurnableToken } from '../../../utils/Tokens.sol';
 
 import 'src/libraries/internal/Maths.sol';
 import '../interfaces/ITestBase.sol';
@@ -30,8 +30,8 @@ uint256 constant BORROWER_MAX_BUCKET_INDEX = 2620;
 abstract contract BaseHandler is Test {
 
     // Tokens
-    Token internal _quote;
-    Token internal _collateral;
+    TokenWithNDecimals internal _quote;
+    TokenWithNDecimals internal _collateral;
 
     BurnableToken internal _ajna;
 
@@ -79,8 +79,8 @@ abstract contract BaseHandler is Test {
     ) {
         // Tokens
         _ajna       = BurnableToken(ajna_);
-        _quote      = Token(quote_);
-        _collateral = Token(collateral_);
+        _quote      = TokenWithNDecimals(quote_);
+        _collateral = TokenWithNDecimals(collateral_);
 
         // Pool
         _pool     = ERC20Pool(pool_);
