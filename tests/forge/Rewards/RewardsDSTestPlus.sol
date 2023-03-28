@@ -215,13 +215,6 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
     }
 
-    // function _assertNotOwRevert(address from , uint256[] memory indexes) internal {
-    //     changePrank(from);
-    //     vm.expectRevert(IRewardsManagerErrors.ExchangeRateUpdateTooLate.selector);
-    //     uint256 updateRewards = _rewardsManager.updateBucketExchangeRatesAndClaim(address(_pool), indexes);
-    //     assertEq(updateRewards, 0);
-    // }
-
     function _assertStake(
         address owner,
         address pool,
