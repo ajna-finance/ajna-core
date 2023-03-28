@@ -332,7 +332,7 @@ abstract contract BaseHandler is Test {
     function _auctionSettleStateReset(address actor_) internal {
         (address kicker, , , , , , , , , ) = _pool.auctionInfo(actor_);
 
-        // auction is settled if kicekr is 0x
+        // auction is settled if kicker is 0x
         bool auctionSettled = kicker == address(0);
         // reset alreadyTaken flag if auction is settled
         if (auctionSettled) alreadyTaken[actor_] = false;

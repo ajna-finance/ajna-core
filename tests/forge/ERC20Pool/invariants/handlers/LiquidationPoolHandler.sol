@@ -77,6 +77,8 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
         if (kickTime == 0) _kickAuction(borrowerIndex_, amount_ * 100, actorIndex_);
 
         changePrank(taker);
+        // skip time to make auction takeable
+        vm.warp(block.timestamp + 2 hours);
         _takeAuction(borrower, amount_, taker);
     }
 
@@ -99,6 +101,8 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
         if (kickTime == 0) _kickAuction(borrowerIndex_, 1e24, bucketIndex_);
 
         changePrank(taker);
+        // skip time to make auction takeable
+        vm.warp(block.timestamp + 2 hours);
         _bucketTake(taker, borrower, depositTake_, bucketIndex_);
     }
 
@@ -167,8 +171,5 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
             _actor = kicker;
             _kickAuction(borrower);
         }
-
-        // skip some time for more interest
-        vm.warp(block.timestamp + 2 hours);
     }
 }
