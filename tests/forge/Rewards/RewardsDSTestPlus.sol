@@ -262,7 +262,6 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
         _ajnaToken       = ERC20(_ajna);
         _positionManager = new PositionManager(_poolFactory, new ERC721PoolFactory(_ajna));
         _rewardsManager  = new RewardsManager(_ajna, _positionManager);
-        // _poolUtils       = new PoolInfoUtils();
 
         _collateralOne = new Token("Collateral 1", "C1");
         _quoteOne      = new Token("Quote 1", "Q1");
@@ -274,22 +273,6 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
         // provide initial ajna tokens to staking rewards contract
         deal(_ajna, address(_rewardsManager), 100_000_000 * 1e18);
         assertEq(_ajnaToken.balanceOf(address(_rewardsManager)), 100_000_000 * 1e18);
-
-        // // instantiate test minters
-        // _minterOne   = makeAddr("minterOne");
-        // _minterTwo   = makeAddr("minterTwo");
-        // _minterThree = makeAddr("minterThree");
-        // _minterFour  = makeAddr("minterFour");
-        // _minterFive  = makeAddr("minterFive");
-
-        // // instantiate test bidder
-        // _bidder    = makeAddr("bidder");
-        // changePrank(_bidder);
-        // deal(_ajna, _bidder, 900_000_000 * 10**18);
-
-        // instantiate test updater
-        // _updater     = makeAddr("updater");
-        // _updater2    = makeAddr("updater2");
     }
 
     // create a new test borrower with quote and collateral sufficient to draw a specified amount of debt
