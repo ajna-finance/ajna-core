@@ -24,6 +24,7 @@ test-load            :; FOUNDRY_PROFILE=optimized forge test --match-test testLo
 test-invariant		 :; eval QUOTE_PRECISION=${QUOTE_PRECISION} COLLATERAL_PRECISION=${COLLATERAL_PRECISION} forge t --mt invariant --nmc RegressionTest
 test-regression      :; eval QUOTE_PRECISION=${QUOTE_PRECISION} COLLATERAL_PRECISION=${COLLATERAL_PRECISION} forge t --mt test_regression
 coverage             :; forge coverage --no-match-test "testLoad|invariant"
+test-multi-precision :; ./test-invariant-multi-precision.sh
 
 # Generate Gas Snapshots
 snapshot :; forge clean && forge snapshot
