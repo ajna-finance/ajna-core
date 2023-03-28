@@ -24,38 +24,7 @@ contract RewardsManagerTest is RewardsHelperContract {
     address internal _borrower3;
     address internal _lender;
     address internal _lender1;
-
-    // address         internal _bidder;
-    // address         internal _minterOne;
-    // address         internal _minterTwo;
-    // address         internal _minterThree;
-    // address         internal _minterFour;
-    // address         internal _minterFive;
-    // address         internal _updater;
-    // address         internal _updater2;
-
-    // ERC20           internal _ajnaToken;
-
-    // RewardsManager   internal _rewardsManager;
-    // PositionManager  internal _positionManager;
-
-    // Token           internal _collateralOne;
-    // Token           internal _quoteOne;
-    // ERC20Pool       internal _pool;
-    // Token           internal _collateralTwo;
-    // Token           internal _quoteTwo;
-    // ERC20Pool       internal _poolTwo;
-
-    // event ClaimRewards(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId, uint256[] epochsClaimed, uint256 amount);
-    // event Stake(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
-    // event UpdateExchangeRates(address indexed caller, address indexed ajnaPool, uint256[] indexesUpdated, uint256 rewardsClaimed);
-    // event Unstake(address indexed owner, address indexed ajnaPool, uint256 indexed tokenId);
-    // event MoveStakedLiquidity(
-    //     uint256 tokenId,
-    //     uint256[] fromIndexes,
-    //     uint256[] toIndexes
-    // );
-
+    
     uint256 constant BLOCKS_IN_DAY = 7200;
     mapping (uint256 => address) internal tokenIdToMinter;
     mapping (address => uint256) internal minterToBalance;
@@ -105,42 +74,6 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         _mintQuoteAndApproveTokens(_minterOne,  500_000_000 * 1e18);
         _mintQuoteAndApproveTokens(_minterTwo,  500_000_000 * 1e18);
-        
-
-        // vm.makePersistent(_ajna);
-
-        // _ajnaToken       = ERC20(_ajna);
-        // _positionManager = new PositionManager(_poolFactory, new ERC721PoolFactory(_ajna));
-        // _rewardsManager  = new RewardsManager(_ajna, _positionManager);
-        // _poolUtils       = new PoolInfoUtils();
-
-        // _collateralOne = new Token("Collateral 1", "C1");
-        // _quoteOne      = new Token("Quote 1", "Q1");
-        // _pool       = ERC20Pool(_poolFactory.deployPool(address(_collateralOne), address(_quoteOne), 0.05 * 10**18));
-
-        // _collateralTwo = new Token("Collateral 2", "C2");
-        // _quoteTwo      = new Token("Quote 2", "Q2");
-        // _poolTwo       = ERC20Pool(_poolFactory.deployPool(address(_collateralTwo), address(_quoteTwo), 0.05 * 10**18));
-
-        // // provide initial ajna tokens to staking rewards contract
-        // deal(_ajna, address(_rewardsManager), 100_000_000 * 1e18);
-        // assertEq(_ajnaToken.balanceOf(address(_rewardsManager)), 100_000_000 * 1e18);
-
-        // // instantiate test minters
-        // _minterOne   = makeAddr("minterOne");
-        // _minterTwo   = makeAddr("minterTwo");
-        // _minterThree = makeAddr("minterThree");
-        // _minterFour  = makeAddr("minterFour");
-        // _minterFive  = makeAddr("minterFive");
-
-        // // instantiate test bidder
-        // _bidder    = makeAddr("bidder");
-        // changePrank(_bidder);
-        // deal(_ajna, _bidder, 900_000_000 * 10**18);
-
-        // // instantiate test updater
-        // _updater     = makeAddr("updater");
-        // _updater2    = makeAddr("updater2");
     }
 
 
