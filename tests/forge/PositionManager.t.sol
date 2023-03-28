@@ -1486,7 +1486,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.ownerOf(tokenId);
     }
 
-    function testMoveLiquidityPermissions() external {
+    function testMoveLiquidityPermissions() external tearDown {
         // generate a new address
         address testAddress = makeAddr("testAddress");
         address notOwner    = makeAddr("notOwner");
@@ -1512,7 +1512,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.moveLiquidity(moveLiquidityParams);
     }
 
-    function testMoveLiquidity() external {
+    function testMoveLiquidity() external tearDown {
         // generate a new address
         address testAddress1 = makeAddr("testAddress1");
         address testAddress2 = makeAddr("testAddress2");
@@ -1842,6 +1842,142 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         changePrank(address(testAddress2));
         vm.expectRevert(IPositionManagerErrors.RemovePositionFailed.selector);
         _positionManager.moveLiquidity(moveLiquidityParams);
+    }
+
+    function testMoveLiquidityWithInterest() external tearDown {
+        address lender1  = makeAddr("lender1");
+        address lender2  = makeAddr("lender2");
+        address borrower = makeAddr("borrower");
+        _mintQuoteAndApproveManagerTokens(lender1, 2_000 * 1e18);
+        _mintQuoteAndApproveManagerTokens(lender2, 3_000 * 1e18);
+        _mintCollateralAndApproveTokens(borrower, 250 * 1e18);
+        _mintQuoteAndApproveTokens(borrower, 500 * 1e18);
+
+        uint256 mintIndex = _i9_91;
+        uint256 moveIndex = _i9_52;
+
+        // two lenders add liquidity to the same bucket
+        _addInitialLiquidity({
+            from:   lender1,
+            amount: 2_000 * 1e18,
+            index:  mintIndex
+        });
+        _addInitialLiquidity({
+            from:   lender2,
+            amount: 3_000 * 1e18,
+            index:  mintIndex
+        });
+        skip(2 hours);
+
+        // borrower draws debt
+        _drawDebt({
+            from:               borrower,
+            borrower:           borrower,
+            amountToBorrow:     1_000 * 1e18,
+            limitIndex:         mintIndex,
+            collateralToPledge: 250 * 1e18,
+            newLup:             _p9_91
+        });
+        skip(22 hours);
+
+        // lenders mint and memorialize positions
+        changePrank(lender1);
+        uint256 tokenId1 = _mintNFT(lender1, lender1, address(_pool));
+        uint256[] memory indexes = new uint256[](1);
+        indexes[0] = mintIndex;
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 2_000 * 1e18;
+        _pool.increaseLPsAllowance(address(_positionManager), indexes, amounts);
+        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = 
+            IPositionManagerOwnerActions.MemorializePositionsParams(tokenId1, indexes);
+        _positionManager.memorializePositions(memorializeParams);
+        skip(1 days);
+
+        changePrank(lender2);
+        uint256 tokenId2 = _mintNFT(lender2, lender2, address(_pool));
+        amounts[0] = 3_000 * 1e18;
+        _pool.increaseLPsAllowance(address(_positionManager), indexes, amounts);
+        memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(tokenId2, indexes);
+        _positionManager.memorializePositions(memorializeParams);
+        skip(1 days);
+
+        // check pool state
+        _assertLenderLpBalance({
+            lender:      lender1,
+            index:       mintIndex,
+            lpBalance:   0,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      lender2,
+            index:       mintIndex,
+            lpBalance:   0,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       mintIndex,
+            lpBalance:   5_000 * 1e18,
+            depositTime: _startTime
+        });
+
+        // lender 1 moves liquidity
+        changePrank(lender1);
+        IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = 
+            IPositionManagerOwnerActions.MoveLiquidityParams(
+            tokenId1, address(_pool), mintIndex, moveIndex, block.timestamp + 30
+        );
+        _positionManager.moveLiquidity(moveLiquidityParams);
+
+        // check pool state
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       mintIndex,
+            lpBalance:   3_000 * 1e18,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       moveIndex,
+            lpBalance:   1_999.870115955512239554 * 1e18,
+            depositTime: _startTime
+        });
+        skip(1 weeks);
+
+        // lender1 redeems their NFT
+        changePrank(lender1);
+        address[] memory transferors = new address[](1);
+        transferors[0] = address(_positionManager);
+        _pool.approveLPsTransferors(transferors);
+        indexes[0] = moveIndex;
+        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = 
+            IPositionManagerOwnerActions.RedeemPositionsParams(
+            tokenId1, address(_pool), indexes
+        );
+        _positionManager.reedemPositions(reedemParams);
+        skip(2 days);
+
+        // borrower repays
+        _repayDebt({
+            from:             borrower,
+            borrower:         borrower,
+            amountToRepay:    type(uint256).max,
+            amountRepaid:     1_002.608307827389905517 * 1e18,
+            collateralToPull: 250 * 1e18,
+            newLup:           MAX_PRICE
+        });
+
+        // lender2 redeems their NFT
+        skip(1 days);
+        changePrank(lender2);
+        _pool.approveLPsTransferors(transferors);
+        indexes[0] = mintIndex;
+        reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+            tokenId2, address(_pool), indexes
+        );
+        _positionManager.reedemPositions(reedemParams);
+
+        // tearDown ensures buckets are empty
     }
 
     function testRedeemPositions() external {
@@ -2499,7 +2635,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // call pool contract directly to add quote tokens
         uint256[] memory indexes = new uint256[](1);
         indexes[0] = 2550;
-        uint256[] memory amounts = new uint256[] (1);
+        uint256[] memory amounts = new uint256[](1);
         amounts[0] = 3_000 * 1e18;
         address[] memory transferors = new address[](1);
         transferors[0] = address(_positionManager);

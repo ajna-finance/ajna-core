@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.14;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 import { BaseHandler } from './BaseHandler.sol';
 
 abstract contract UnboundedReservePoolHandler is BaseHandler {
@@ -30,9 +32,10 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
     function _takeReserves(
         uint256 amount_
     ) internal useTimestamps updateLocalStateAndPoolInterest {
-        try _pool.takeReserves(amount_) returns (uint256 takenAmount_) {
+        deal(address(_ajna), _actor, type(uint256).max);
+        IERC20(address(_ajna)).approve(address(_pool), type(uint256).max);
 
-            decreaseInReserves += takenAmount_;
+        try _pool.takeReserves(amount_) {
 
         } catch (bytes memory err) {
             _ensurePoolError(err);

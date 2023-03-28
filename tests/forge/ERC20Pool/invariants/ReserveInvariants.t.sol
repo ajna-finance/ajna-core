@@ -46,6 +46,7 @@ contract ReserveInvariants is LiquidationInvariants {
 
         _reservePoolHandler = new ReservePoolHandler(
             address(_pool),
+            address(_ajna),
             address(_quote),
             address(_collateral),
             address(_poolInfo),

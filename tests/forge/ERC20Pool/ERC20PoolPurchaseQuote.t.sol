@@ -236,7 +236,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         // bidder purchases all quote from the highest bucket
         uint256 amountToPurchase = 10_100 * 1e18;
         assertGt(_quote.balanceOf(address(_pool)), amountToPurchase);
-        uint256 amountWithInterest = 10_001.282942146414270000 * 1e18;
+        uint256 amountWithInterest = 10_001.282942146414260000 * 1e18;
         // adding extra collateral to account for interest accumulation
         uint256 collateralToPurchaseWith = Maths.wmul(Maths.wdiv(amountToPurchase, p2550), 1.01 * 1e18);
         assertEq(collateralToPurchaseWith, 3.388032491631335842 * 1e18);
@@ -256,17 +256,17 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
             amount:   amountWithInterest,
             index:    2550,
             newLup:   _priceAt(2552),
-            lpRedeem: 10_000.353515519837858817 * 1e18
+            lpRedeem: 10_000.353515519837848818 * 1e18
         });
 
         // bidder withdraws unused collateral
-        uint256 expectedCollateral = 0.066448947605530164 * 1e18;
+        uint256 expectedCollateral = 0.066448947605530167 * 1e18;
 
         _removeAllCollateral({
             from:     _bidder,
             amount:   expectedCollateral,
             index:    2550,
-            lpRedeem: 200.052013519410414906 * 1e18
+            lpRedeem: 200.052013519410424905 * 1e18
         });
 
         _assertLenderLpBalance({
@@ -298,13 +298,13 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         skip(3600);
 
         // lender1 exchanges their LP for collateral
-        expectedCollateral = 1.328633417610322272 * 1e18;
+        expectedCollateral = 1.328633417610322269 * 1e18;
 
         _removeAllCollateral({
             from:     _lender1,
             amount:   expectedCollateral,
             index:    2550,
-            lpRedeem: 4_000 * 1e18
+            lpRedeem: 3_999.999999999999999063 * 1e18
         });
 
         _assertLenderLpBalance({
