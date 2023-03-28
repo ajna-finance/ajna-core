@@ -157,6 +157,10 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
                 _actor = borrower;
                 uint256 drawDebtAmount = _preDrawDebt(amount_);
                 _drawDebt(drawDebtAmount);
+
+                _updateLocalFenwick();
+                _fenwickAccrueInterest();
+                _updatePoolState();
             }
 
             changePrank(kicker);
