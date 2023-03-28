@@ -15,6 +15,7 @@ import {
     _priceAt,
     _reserveAuctionPrice,
     MAX_FENWICK_INDEX,
+    MAX_PRICE,
     MIN_PRICE
 } from './libraries/helpers/PoolHelper.sol';
 
@@ -318,9 +319,10 @@ contract PoolInfoUtils {
     ) external view returns (uint256) {
         IPool pool = IPool(ajnaPool_);
 
-        (uint256 debt, , )       = pool.debtInfo();
         ( , , uint256 noOfLoans) = pool.loansInfo();
         noOfLoans += pool.totalAuctionsInPool();
+        if (noOfLoans == 0) return MAX_PRICE;
+        (uint256 debt, , )       = pool.debtInfo();
         return _priceAt(pool.depositIndex(Maths.wdiv(debt, noOfLoans * 1e18)));
     }
 
