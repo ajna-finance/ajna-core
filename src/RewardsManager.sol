@@ -22,8 +22,6 @@ import { PositionManager } from './PositionManager.sol';
 
 import { Maths } from './libraries/internal/Maths.sol';
 
-import '@std/console.sol';
-
 /**
  *  @title  Rewards (staking) Manager contract
  *  @notice Pool lenders can optionally mint NFT that represents their positions.
@@ -690,8 +688,6 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
                 uint256 totalInterestEarned
             ) = _getPoolAccumulators(pool_, curBurnEpoch, curBurnEpoch - 1);
 
-            console.log("curBurnTime + UPDATE_PERIOD", curBurnTime + UPDATE_PERIOD);
-            console.log("block.timestamp", block.timestamp);
             if (block.timestamp <= curBurnTime + UPDATE_PERIOD) {
 
                 // update exchange rates and calculate rewards if tokens were burned and within allowed time period

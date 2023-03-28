@@ -384,8 +384,8 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
     }
 
     function _triggerReserveAuctions(
-        address pool,
         address borrower,
+        address pool,
         uint256 borrowAmount,
         uint256 limitIndex,
         uint256 tokensToBurn
@@ -426,20 +426,59 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
         // allow time to pass for the reserve price to decrease
         skip(24 hours);
 
-        // (
-        //     ,
-        //     ,
-        //     uint256 curClaimableReservesRemaining,
-        //     ,
-        // ) = _poolUtils.poolReservesInfo(address(pool));
-
-        // // take claimable reserves
-        // ERC20Pool(address(pool)).takeReserves(curClaimableReservesRemaining);
-
-        _takeReserves(_bidder, pool);
+        _takeReserves(pool, _bidder);
 
         (,, tokensBurned_) = IPool(pool).burnInfo(IPool(pool).currentBurnEpoch());
         assertEq(tokensBurned_, tokensToBurn);
+
+        return tokensBurned_;
+    }
+
+    function _triggerReserveAuctionsBurnUnknown(
+        address borrower,
+        address pool,
+        uint256 borrowAmount,
+        uint256 limitIndex
+    ) internal returns (uint256 tokensBurned_) {
+
+        // fund borrower to write state required for reserve auctions
+        changePrank(borrower);
+        Token collateral = Token(ERC20Pool(address(pool)).collateralAddress());
+        Token quote = Token(ERC20Pool(address(pool)).quoteTokenAddress());
+        deal(address(quote), borrower, borrowAmount);
+
+        // approve tokens
+        collateral.approve(address(pool), type(uint256).max);
+        quote.approve(address(pool), type(uint256).max);
+
+        uint256 collateralToPledge = _requiredCollateral(borrowAmount, limitIndex);
+        deal(address(_collateral), borrower, collateralToPledge);
+
+        // borrower drawsDebt from the pool
+        ERC20Pool(address(pool)).drawDebt(borrower, borrowAmount, limitIndex, collateralToPledge);
+
+        // allow time to pass for interest to accumulate
+        skip(26 weeks);
+
+        // borrower repays some of their debt, providing reserves to be claimed
+        // don't pull any collateral, as such functionality is unrelated to reserve auctions
+        ERC20Pool(address(pool)).repayDebt(borrower, borrowAmount, 0, borrower, MAX_FENWICK_INDEX);
+
+        // start reserve auction
+        changePrank(_bidder);
+        _ajnaToken.approve(address(pool), type(uint256).max);
+        ERC20Pool(address(pool)).startClaimableReserveAuction();
+
+        // Can't trigger reserve auction if less than two weeks have passed since last auction
+        vm.expectRevert(IPoolErrors.ReserveAuctionTooSoon.selector);
+        ERC20Pool(address(pool)).startClaimableReserveAuction();
+
+        // allow time to pass for the reserve price to decrease
+        skip(24 hours);
+
+        _takeReserves(pool, _bidder);
+
+        (,, tokensBurned_) = IPool(pool).burnInfo(IPool(pool).currentBurnEpoch());
 
         return tokensBurned_;
     }
@@ -454,5 +493,36 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
         ) = _poolUtils.poolReservesInfo(pool);
 
         ERC20Pool(pool).takeReserves(curClaimableReservesRemaining);
+    }
+
+    function _requiredCollateral(ERC20Pool pool_, uint256 borrowAmount, uint256 indexPrice) internal view returns (uint256 requiredCollateral_) {
+        // calculate the required collateral based upon the borrow amount and index price
+        (uint256 interestRate, ) = pool_.interestRateInfo();
+        uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient
+        uint256 expectedDebt = Maths.wmul(borrowAmount, _borrowFeeRate(newInterestRate) + Maths.WAD);
+        requiredCollateral_ = Maths.wdiv(expectedDebt, _poolUtils.indexToPrice(indexPrice)) + Maths.WAD;
+    }
+    
+    // // Helper function that returns a random subset from array
+    function _getRandomSubsetFromArray(uint256[] memory array) internal returns (uint256[] memory subsetArray) {
+        uint256[] memory copyOfArray = new uint256[](array.length);
+        for(uint j = 0; j < copyOfArray.length; j++){
+            copyOfArray[j] = array[j];
+        }
+        uint256 randomNoOfNfts = randomInRange(1, copyOfArray.length);
+        subsetArray = new uint256[](randomNoOfNfts);
+        for(uint256 i = 0; i < randomNoOfNfts; i++) {
+            uint256 randomIndex = randomInRange(0, copyOfArray.length - i - 1);
+            subsetArray[i] = copyOfArray[randomIndex];
+            copyOfArray[randomIndex] = copyOfArray[copyOfArray.length - i - 1];
+        }
+    }
+
+    // Returns N addresses array
+    function _getAddresses(uint256 noOfAddress) internal returns(address[] memory addresses_) {
+        addresses_ = new address[](noOfAddress);
+        for(uint i = 0; i < noOfAddress; i++) {
+            addresses_[i] = makeAddr(string(abi.encodePacked("Minter", Strings.toString(i))));
+        }
     }
 }

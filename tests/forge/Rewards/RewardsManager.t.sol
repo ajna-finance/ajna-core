@@ -862,37 +862,37 @@ contract RewardsManagerTest is RewardsHelperContract {
         });
     }
 
-    // function testMultiPeriodRewardsSingleClaim() external {
-    //     skip(10);
+    function testMultiPeriodRewardsSingleClaim() external {
+        skip(10);
 
-    //     uint256 totalTokensBurned;
+        uint256 totalTokensBurned;
 
-    //     // configure NFT position
-    //     uint256[] memory depositIndexes = new uint256[](10);
-    //     depositIndexes[0] = 5995;
-    //     depositIndexes[1] = 5996;
-    //     depositIndexes[2] = 5997;
-    //     depositIndexes[3] = 5998;
-    //     depositIndexes[4] = 5999;
-    //     depositIndexes[5] = 6000;
-    //     depositIndexes[6] = 6001;
-    //     depositIndexes[7] = 6002;
-    //     depositIndexes[8] = 6003;
-    //     depositIndexes[9] = 6004;
+        // configure NFT position
+        uint256[] memory depositIndexes = new uint256[](10);
+        depositIndexes[0] = 5995;
+        depositIndexes[1] = 5996;
+        depositIndexes[2] = 5997;
+        depositIndexes[3] = 5998;
+        depositIndexes[4] = 5999;
+        depositIndexes[5] = 6000;
+        depositIndexes[6] = 6001;
+        depositIndexes[7] = 6002;
+        depositIndexes[8] = 6003;
+        depositIndexes[9] = 6004;
 
-    //     // mint memorialize and deposit NFT
-    //     uint256 tokenIdOne = _mintAndMemorializePositionNFT({
-    //         indexes:    depositIndexes,
-    //         minter:     _minterOne,
-    //         mintAmount: 1_000 * 1e18,
-    //         pool:       address(_pool)
-    //     });
+        // mint memorialize and deposit NFT
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT({
+            indexes:    depositIndexes,
+            minter:     _minterOne,
+            mintAmount: 1_000 * 1e18,
+            pool:       address(_pool)
+        });
 
-    //     _stakeToken({
-    //         pool:    address(_pool),
-    //         owner:   _minterOne,
-    //         tokenId: tokenIdOne
-    //     });
+        _stakeToken({
+            pool:    address(_pool),
+            owner:   _minterOne,
+            tokenId: tokenIdOne
+        });
 
         /*****************************/
         /*** First Reserve Auction ***/
@@ -900,162 +900,158 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         // borrower takes actions providing reserves enabling reserve auctions
         // bidder takes reserve auctions by providing ajna tokens to be burned
-        // TriggerReserveAuctionParams memory triggerReserveAuctionParams = TriggerReserveAuctionParams({
-        //     borrowAmount: 1_500 * 1e18,
-        //     limitIndex: 6000,
-        //     pool: _pool
-        // });
+        totalTokensBurned += _triggerReserveAuctions({
+            borrower:     _borrower,
+            tokensToBurn: 408.996890813313521802 * 1e18,
+            borrowAmount: 1_500 * 1e18,
+            limitIndex:   6000,
+            pool:         address(_pool)
+        });
 
-        // totalTokensBurned += _triggerReserveAuctions({
-        //     borrowAmount: 1_500 * 1e18,
-        //     limitIndex: 6000,
-        //     pool: _pool
-        // });
+        // call update exchange rate to enable claiming rewards
+        _updateExchangeRates({
+            updater:        _updater,
+            pool:           address(_pool),
+            indexes:        depositIndexes,
+            reward:         20.449844540665683990 * 1e18
+        });
+        assertEq(_ajnaToken.balanceOf(_updater), 20.449844540665683990 * 1e18);
 
-        // totalTokensBurned = _triggerReserveAuctions({
-        //     borrower:     _borrower,
-        //     tokensToBurn: 81.799378162662704349 * 1e18,
-        //     borrowAmount: 1_500 * 1e18,
-        //     limitIndex:   6000,
-        //     pool:         address(_pool)
-        // });
+        uint256 rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
+        assertEq(rewardsEarned, 204.498445406656758711 * 1e18);
+        assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
-        // return;
+        /******************************/
+        /*** Second Reserve Auction ***/
+        /******************************/
+        // trigger second reserve auction
+        totalTokensBurned += _triggerReserveAuctions({
+            borrower:     _borrower,
+            tokensToBurn: 753.761937534760743379 * 1e18,
+            borrowAmount: 1_500 * 1e18,
+            limitIndex:   6_000,
+            pool:         address(_pool)
+        });
 
-        // // call update exchange rate to enable claiming rewards
-        // changePrank(_updater);
-        // assertEq(_ajnaToken.balanceOf(_updater), 0);
-        // vm.expectEmit(true, true, true, true);
-        // emit UpdateExchangeRates(_updater, address(_pool), depositIndexes, 20.449844540665683990 * 1e18);
-        // _rewardsManager.updateBucketExchangeRatesAndClaim(address(_pool), depositIndexes);
-        // assertEq(_ajnaToken.balanceOf(_updater), 20.449844540665683990 * 1e18);
+        // call update exchange rate to enable claiming rewards
+        _updateExchangeRates({
+            updater:        _updater,
+            pool:           address(_pool),
+            indexes:        depositIndexes,
+            reward:         17.238252336072284751 * 1e18
+        });
+        assertEq(_ajnaToken.balanceOf(_updater), 37.688096876737968741 * 1e18);
 
-        // uint256 rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
-        // assertEq(rewardsEarned, 204.498445406656758711 * 1e18);
-        // assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
+        // check available rewards
+        rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
+        assertEq(rewardsEarned, 376.880968767380328766 * 1e18);
+        assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
-        // /******************************/
-        // /*** Second Reserve Auction ***/
-        // /******************************/
+        /*****************************/
+        /*** Third Reserve Auction ***/
+        /*****************************/
 
-        // // trigger second reserve auction
-        // triggerReserveAuctionParams = TriggerReserveAuctionParams({
-        //     borrowAmount: 1_500 * 1e18,
-        //     limitIndex: 6000,
-        //     pool: _pool
-        // });
-        // totalTokensBurned += _triggerReserveAuctions(triggerReserveAuctionParams);
+        // trigger third reserve auction
+        totalTokensBurned += _triggerReserveAuctions({
+            borrower:     _borrower,
+            tokensToBurn: 1_034.145224534231650710 * 1e18,
+            borrowAmount: 1_500 * 1e18,
+            limitIndex:   6_000,
+            pool:         address(_pool)
+        });
 
-        // // call update exchange rate to enable claiming rewards
-        // changePrank(_updater);
-        // assertEq(_ajnaToken.balanceOf(_updater), 20.449844540665683990 * 1e18);
-        // vm.expectEmit(true, true, true, true);
-        // emit UpdateExchangeRates(_updater, address(_pool), depositIndexes, 17.238252336072284751 * 1e18);
-        // _rewardsManager.updateBucketExchangeRatesAndClaim(address(_pool), depositIndexes);
-        // assertEq(_ajnaToken.balanceOf(_updater), 37.688096876737968741 * 1e18);
+        // skip updating exchange rates and check available rewards
+        uint256 rewardsEarnedNoUpdate = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
+        assertEq(rewardsEarnedNoUpdate, 376.880968767380328766 * 1e18);
+        assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
-        // // check available rewards
-        // rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
-        // assertEq(rewardsEarned, 376.880968767380328766 * 1e18);
-        // assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
+        // snapshot calling update exchange rate
+        uint256 snapshot = vm.snapshot();
 
-        // /*****************************/
-        // /*** Third Reserve Auction ***/
-        // /*****************************/
+        // call update exchange rate
+        _updateExchangeRates({
+            updater:        _updater2,
+            pool:           address(_pool),
+            indexes:        depositIndexes,
+            reward:         14.019164349973576689 * 1e18
+        });
 
-        // // trigger third reserve auction
-        // triggerReserveAuctionParams = TriggerReserveAuctionParams({
-        //     borrowAmount: 1_500 * 1e18,
-        //     limitIndex: 6000,
-        //     pool: _pool
-        // });
-        // totalTokensBurned += _triggerReserveAuctions(triggerReserveAuctionParams);
+        assertEq(_ajnaToken.balanceOf(_updater2), 14.019164349973576689 * 1e18);
 
-        // // skip updating exchange rates and check available rewards
-        // uint256 rewardsEarnedNoUpdate = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
-        // assertEq(rewardsEarnedNoUpdate, 376.880968767380328766 * 1e18);
-        // assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
+        // check available rewards
+        rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch()); // assertEq(rewardsEarned, 517.072612267115797118 * 1e18);
+        assertGt(rewardsEarned, rewardsEarnedNoUpdate);
+        assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
-        // // snapshot calling update exchange rate
-        // uint256 snapshot = vm.snapshot();
+        // revert to no update state
+        vm.revertTo(snapshot);
 
-        // // call update exchange rate
-        // changePrank(_updater2);
-        // assertEq(_ajnaToken.balanceOf(_updater2), 0);
-        // vm.expectEmit(true, true, true, true);
-        // emit UpdateExchangeRates(_updater2, address(_pool), depositIndexes, 14.019164349973576689 * 1e18);
-        // _rewardsManager.updateBucketExchangeRatesAndClaim(address(_pool), depositIndexes);
-        // assertEq(_ajnaToken.balanceOf(_updater2), 14.019164349973576689 * 1e18);
+        /******************************/
+        /*** Fourth Reserve Auction ***/
+        /******************************/
 
-        // // check available rewards
-        // rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
-        // assertEq(rewardsEarned, 517.072612267115797118 * 1e18);
-        // assertGt(rewardsEarned, rewardsEarnedNoUpdate);
-        // assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
+        // triger fourth reserve auction
+        totalTokensBurned += _triggerReserveAuctions({
+            borrower:     _borrower,
+            tokensToBurn: 1_289.513636917167681873 * 1e18,
+            borrowAmount: 1_500 * 1e18,
+            limitIndex:   6_000,
+            pool:         address(_pool)
+        });
 
-        // // revert to no update state
-        // vm.revertTo(snapshot);
+        // check rewards earned
+        rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
+        assertEq(rewardsEarned, 376.880968767380328766 * 1e18);
 
-        // /******************************/
-        // /*** Fourth Reserve Auction ***/
-        // /******************************/
+        // call update exchange rate
+        _updateExchangeRates({
+            updater:        _updater2,
+            pool:           address(_pool),
+            indexes:        depositIndexes,
+            reward:         0
+        });
+        assertEq(_ajnaToken.balanceOf(_updater2), 0);
 
-        // // triger fourth reserve auction
-        // triggerReserveAuctionParams = TriggerReserveAuctionParams({
-        //     borrowAmount: 1_500 * 1e18,
-        //     limitIndex: 6000,
-        //     pool: _pool
-        // });
-        // totalTokensBurned += _triggerReserveAuctions(triggerReserveAuctionParams);
+        // check rewards earned won't increase since previous update was missed
+        rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
+        assertEq(rewardsEarned, 376.880968767380328766 * 1e18);
 
-        // // check rewards earned
-        // rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
-        // assertEq(rewardsEarned, 376.880968767380328766 * 1e18);
+        /*****************************/
+        /*** Fifth Reserve Auction ***/
+        /*****************************/
 
-        // // call update exchange rate
-        // changePrank(_updater2);
-        // assertEq(_ajnaToken.balanceOf(_updater2), 0);
-        // vm.expectEmit(true, true, true, true);
-        // emit UpdateExchangeRates(_updater2, address(_pool), depositIndexes, 0);
-        // _rewardsManager.updateBucketExchangeRatesAndClaim(address(_pool), depositIndexes);
-        // assertEq(_ajnaToken.balanceOf(_updater2), 0);
+        // triger fifth reserve auction
+        totalTokensBurned += _triggerReserveAuctions({
+            borrower:     _borrower,
+            tokensToBurn: 1_521.830620022505056799 * 1e18,
+            borrowAmount: 1_500 * 1e18,
+            limitIndex:   6_000,
+            pool:         address(_pool)
+        });
 
-        // // check rewards earned won't increase since previous update was missed
-        // rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
-        // assertEq(rewardsEarned, 376.880968767380328766 * 1e18);
+        // call update exchange rate
+        _updateExchangeRates({
+            updater:        _updater2,
+            pool:           address(_pool),
+            indexes:        depositIndexes,
+            reward:         11.615849155266846067 * 1e18
+        });
+        assertEq(_ajnaToken.balanceOf(_updater2), 11.615849155266846067 * 1e18);
 
-        // /*****************************/
-        // /*** Fifth Reserve Auction ***/
-        // /*****************************/
+        rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
+        assertEq(rewardsEarned, 493.039460320049032067 * 1e18);
 
-        // // triger fourth reserve auction
-        // triggerReserveAuctionParams = TriggerReserveAuctionParams({
-        //     borrowAmount: 1_500 * 1e18,
-        //     limitIndex: 6000,
-        //     pool: _pool
-        // });
-        // totalTokensBurned += _triggerReserveAuctions(triggerReserveAuctionParams);
-
-        // // call update exchange rate
-        // changePrank(_updater2);
-        // assertEq(_ajnaToken.balanceOf(_updater2), 0);
-        // vm.expectEmit(true, true, true, true);
-        // emit UpdateExchangeRates(_updater2, address(_pool), depositIndexes, 11.615849155266846067 * 1e18);
-        // _rewardsManager.updateBucketExchangeRatesAndClaim(address(_pool), depositIndexes);
-        // assertEq(_ajnaToken.balanceOf(_updater2), 11.615849155266846067 * 1e18);
-
-        // rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
-        // assertEq(rewardsEarned, 493.039460320049032067 * 1e18);
-
-        // // claim all rewards accrued since deposit
-        // changePrank(_minterOne);
-        // assertEq(_ajnaToken.balanceOf(_minterOne), 0);
-        // vm.expectEmit(true, true, true, true);
-        // emit ClaimRewards(_minterOne, address(_pool), tokenIdOne, _epochsClaimedArray(5, 0), rewardsEarned);
-        // _rewardsManager.claimRewards(tokenIdOne, _pool.currentBurnEpoch());
-        // assertEq(_ajnaToken.balanceOf(_minterOne), rewardsEarned);
-        // assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
-    // }
+        // claim all rewards accrued since deposit
+        _claimRewards({
+            pool:          address(_pool),
+            from:          _minterOne,
+            tokenId:       tokenIdOne,
+            epochsClaimed: _epochsClaimedArray(5,0),
+            reward:        493.039460320049032067 * 1e18
+        });
+        assertEq(_ajnaToken.balanceOf(_minterOne), rewardsEarned);
+        assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
+    }
 
     function testMoveStakedLiquidity() external {
         skip(10);
@@ -1785,206 +1781,184 @@ contract RewardsManagerTest is RewardsHelperContract {
 
     }
 
-    // /********************/
-    // /*** FUZZ TESTING ***/
-    // /********************/
+    /********************/
+    /*** FUZZ TESTING ***/
+    /********************/
 
-    // function _requiredCollateral(ERC20Pool pool_, uint256 borrowAmount, uint256 indexPrice) internal view returns (uint256 requiredCollateral_) {
-    //     // calculate the required collateral based upon the borrow amount and index price
-    //     (uint256 interestRate, ) = pool_.interestRateInfo();
-    //     uint256 newInterestRate = Maths.wmul(interestRate, 1.1 * 10**18); // interest rate multipled by increase coefficient
-    //     uint256 expectedDebt = Maths.wmul(borrowAmount, _borrowFeeRate(newInterestRate) + Maths.WAD);
-    //     requiredCollateral_ = Maths.wdiv(expectedDebt, _poolUtils.indexToPrice(indexPrice)) + Maths.WAD;
-    // }
-    
-    // // Helper function that returns a random subset from array
-    // function _getRandomSubsetFromArray(uint256[] memory array) internal returns (uint256[] memory subsetArray) {
-    //     uint256[] memory copyOfArray = new uint256[](array.length);
-    //     for(uint j = 0; j < copyOfArray.length; j++){
-    //         copyOfArray[j] = array[j];
-    //     }
-    //     uint256 randomNoOfNfts = randomInRange(1, copyOfArray.length);
-    //     subsetArray = new uint256[](randomNoOfNfts);
-    //     for(uint256 i = 0; i < randomNoOfNfts; i++) {
-    //         uint256 randomIndex = randomInRange(0, copyOfArray.length - i - 1);
-    //         subsetArray[i] = copyOfArray[randomIndex];
-    //         copyOfArray[randomIndex] = copyOfArray[copyOfArray.length - i - 1];
-    //     }
-    // }
+    function testClaimRewardsFuzzy(uint256 indexes, uint256 mintAmount) external {
+        indexes    = bound(indexes, 3, 10); // number of indexes to add liquidity to
+        mintAmount = bound(mintAmount, 1 * 1e18, 100_000 * 1e18); // bound mint amount and dynamically determine borrow amount and collateral based upon provided index and mintAmount
 
-    // // Returns N addresses array
-    // function _getAddresses(uint256 noOfAddress) internal returns(address[] memory addresses_) {
-    //     addresses_ = new address[](noOfAddress);
-    //     for(uint i = 0; i < noOfAddress; i++) {
-    //         addresses_[i] = makeAddr(string(abi.encodePacked("Minter", Strings.toString(i))));
-    //     }
-    // }
+        // configure NFT position
+        uint256[] memory depositIndexes = new uint256[](indexes);
+        for (uint256 i = 0; i < indexes; ++i) {
+            depositIndexes[i] = _randomIndex();
+        }
 
-    // function testClaimRewardsFuzzy(uint256 indexes, uint256 mintAmount) external {
-    //     indexes = bound(indexes, 3, 10); // number of indexes to add liquidity to
-    //     mintAmount = bound(mintAmount, 1 * 1e18, 100_000 * 1e18); // bound mint amount and dynamically determine borrow amount and collateral based upon provided index and mintAmount
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT({
+            indexes:    depositIndexes,
+            minter:     _minterOne,
+            mintAmount: mintAmount,
+            pool:       address(_pool)
+        });
 
-    //     // configure NFT position
-    //     uint256[] memory depositIndexes = new uint256[](indexes);
-    //     for (uint256 i = 0; i < indexes; ++i) {
-    //         depositIndexes[i] = _randomIndex();
-    //     }
-    //     MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
-    //         indexes: depositIndexes,
-    //         minter: _minterOne,
-    //         mintAmount: mintAmount,
-    //         pool: _pool
-    //     });
-    //     uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
+        // stake NFT
+        _stakeToken(address(_pool), _minterOne, tokenIdOne);
 
-    //     // stake NFT
-    //     _stakeToken(address(_pool), _minterOne, tokenIdOne);
+        // calculates a limit index leaving one index above the htp to accrue interest
+        uint256 limitIndex = _findSecondLowestIndexPrice(depositIndexes);
 
-    //     // calculates a limit index leaving one index above the htp to accrue interest
-    //     uint256 limitIndex = _findSecondLowestIndexPrice(depositIndexes);
-    //     TriggerReserveAuctionParams memory triggerReserveAuctionParams = TriggerReserveAuctionParams({
-    //         borrowAmount: Maths.wdiv(mintAmount, Maths.wad(3)),
-    //         limitIndex: limitIndex,
-    //         pool: _pool
-    //     });
+        // start and end new reserve auction 
+        uint256 tokensToBurn= _triggerReserveAuctionsBurnUnknown({
+            borrower: _borrower,
+            borrowAmount: Maths.wdiv(mintAmount, Maths.wad(3)),
+            limitIndex:   limitIndex,
+            pool:         address(_pool)
+        });
 
-    //     uint256 tokensToBurn = _triggerReserveAuctions(triggerReserveAuctionParams);
+        // call update exchange rate to enable claiming rewards
+        changePrank(_updater);
+        assertEq(_ajnaToken.balanceOf(_updater), 0);
+        _rewardsManager.updateBucketExchangeRatesAndClaim(address(_pool), depositIndexes);
+        assertGt(_ajnaToken.balanceOf(_updater), 0);
 
-    //     // call update exchange rate to enable claiming rewards
-    //     changePrank(_updater);
-    //     assertEq(_ajnaToken.balanceOf(_updater), 0);
-    //     _rewardsManager.updateBucketExchangeRatesAndClaim(address(_pool), depositIndexes);
-    //     assertGt(_ajnaToken.balanceOf(_updater), 0);
+        // calculate rewards earned and compare to percentages for updating and claiming
+        uint256 rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
+        assertGt(rewardsEarned, 0);
 
-    //     // calculate rewards earned and compare to percentages for updating and claiming
-    //     uint256 rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
-    //     assertGt(rewardsEarned, 0);
+        // claim rewards accrued since deposit
+        _claimRewards({
+            pool:          address(_pool),
+            from:          _minterOne,
+            tokenId:       tokenIdOne,
+            reward:        rewardsEarned,
+            epochsClaimed: _epochsClaimedArray(1, 0)
+        });
 
-    //     // claim rewards accrued since deposit
-    //     changePrank(_minterOne);
-    //     assertEq(_ajnaToken.balanceOf(_minterOne), 0);
-    //     vm.expectEmit(true, true, true, true);
-    //     emit ClaimRewards(_minterOne, address(_pool), tokenIdOne, _epochsClaimedArray(1, 0), rewardsEarned);
-    //     _rewardsManager.claimRewards(tokenIdOne, _pool.currentBurnEpoch());
-    //     assertEq(_ajnaToken.balanceOf(_minterOne), rewardsEarned);
+        // assert rewards claimed is less than ajna tokens burned cap
+        assertLt(_ajnaToken.balanceOf(_minterOne), Maths.wmul(tokensToBurn, 0.800000000000000000 * 1e18));
+    }
 
-    //     // assert rewards claimed is less than ajna tokens burned cap
-    //     assertLt(_ajnaToken.balanceOf(_minterOne), Maths.wmul(tokensToBurn, 0.800000000000000000 * 1e18));
-    // }
+    function testStakingRewardsFuzzy(uint256 deposits, uint256 reserveAuctions) external {
+        deposits        = bound(deposits, 1, 25); // number of deposits to make
+        reserveAuctions = bound(reserveAuctions, 1, 25); // number of reserve Auctions to complete
 
-    // function testStakingRewardsFuzzy(uint256 deposits, uint256 reserveAuctions) external {
-    //     deposits        = bound(deposits, 1, 25); // number of deposits to make
-    //     reserveAuctions = bound(reserveAuctions, 1, 25); // number of reserve Auctions to complete
+        uint256[] memory tokenIds = new uint256[](deposits);
 
-    //     uint256[] memory tokenIds = new uint256[](deposits);
+        // configure NFT position
+        uint256[] memory depositIndexes = new uint256[](3);
+        for (uint256 j = 0; j < 3; ++j) {
+            depositIndexes[j] = _randomIndex();
+            vm.roll(block.number + 1); // advance block to ensure that the index price is different
+        }
 
-    //     // configure NFT position
-    //     uint256[] memory depositIndexes = new uint256[](3);
-    //     for (uint256 j = 0; j < 3; ++j) {
-    //         depositIndexes[j] = _randomIndex();
-    //         vm.roll(block.number + 1); // advance block to ensure that the index price is different
-    //     }
+        address[] memory minters = _getAddresses(deposits);
 
-    //     address[] memory minters = _getAddresses(deposits);
+        // stake variable no of deposits
+        for(uint256 i = 0; i < deposits; ++i) {
+            // mint and memorilize Positions
+            MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
+                indexes: depositIndexes,
+                minter: minters[i],
+                mintAmount: 1_000_000_000 * 1e18,
+                pool: _pool
+            });
 
-    //     // stake variable no of deposits
-    //     for(uint256 i = 0; i < deposits; ++i) {
-    //         // mint and memorilize Positions
-    //         MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
-    //             indexes: depositIndexes,
-    //             minter: minters[i],
-    //             mintAmount: 1_000_000_000 * 1e18,
-    //             pool: _pool
-    //         });
+            tokenIds[i] = _mintAndMemorializePositionNFT({
+                indexes: depositIndexes,
+                minter: minters[i],
+                mintAmount: 1_000_000_000 * 1e18,
+                pool: address(_pool)
+            });
+            tokenIdToMinter[tokenIds[i]] = minters[i];
+            _stakeToken(address(_pool), minters[i], tokenIds[i]);
+        }
 
-    //         tokenIds[i] = _mintAndMemorializePositionNFT(mintMemorializeParams);
-    //         tokenIdToMinter[tokenIds[i]] = minters[i];
-    //         _stakeToken(address(_pool), minters[i], tokenIds[i]);
-    //     }
+        uint256 updaterBalance = _ajnaToken.balanceOf(_updater);
 
-    //     uint256 updaterBalance = _ajnaToken.balanceOf(_updater);
+        for(uint i = 0; i < deposits; i++) {
+            minterToBalance[minters[i]] = _ajnaToken.balanceOf(minters[i]);
+        }
 
-    //     for(uint i = 0; i < deposits; i++) {
-    //         minterToBalance[minters[i]] = _ajnaToken.balanceOf(minters[i]);
-    //     }
+        // start variable no of reserve Auctions and claim rewards for random tokenIds in each epoch
+        for(uint i = 0; i < reserveAuctions; ++i) {
+            uint256 limitIndex = _findSecondLowestIndexPrice(depositIndexes);
 
-    //     // start variable no of reserve Auctions and claim rewards for random tokenIds in each epoch
-    //     for(uint i = 0; i < reserveAuctions; ++i) {
-    //         uint256 limitIndex = _findSecondLowestIndexPrice(depositIndexes);
-    //         TriggerReserveAuctionParams memory triggerReserveAuctionParams = TriggerReserveAuctionParams({
-    //             borrowAmount: 10_000 * 1e18,
-    //             limitIndex: limitIndex,
-    //             pool: _pool
-    //         });
+            // start and end new reserve auction 
+            uint256 tokensBurned = _triggerReserveAuctionsBurnUnknown({
+                borrower: _borrower,
+                borrowAmount: 10_000 * 1e18,
+                limitIndex:   limitIndex,
+                pool:         address(_pool)
+            });
 
-    //         // start and end new reserve auction 
-    //         uint256 tokensBurned = _triggerReserveAuctions(triggerReserveAuctionParams);
+            // call update exchange rate to enable claiming rewards
+            assertEq(_ajnaToken.balanceOf(_updater), updaterBalance);
 
-    //         // call update exchange rate to enable claiming rewards
-    //         changePrank(_updater);
-    //         assertEq(_ajnaToken.balanceOf(_updater), updaterBalance);
-    //         _rewardsManager.updateBucketExchangeRatesAndClaim(address(_pool), depositIndexes);
+            changePrank(_updater);
+            assertEq(_ajnaToken.balanceOf(_updater), updaterBalance);
+            _rewardsManager.updateBucketExchangeRatesAndClaim(address(_pool), depositIndexes);
 
-    //         // ensure updater gets reward for updating exchange rate
-    //         assertGt(_ajnaToken.balanceOf(_updater), updaterBalance);
+            // ensure updater gets reward for updating exchange rate
+            assertGt(_ajnaToken.balanceOf(_updater), updaterBalance);
 
-    //         // ensure update rewards in each epoch is less than or equals to 10% of tokensBurned
-    //         assertLe(_ajnaToken.balanceOf(_updater) - updaterBalance, tokensBurned / 10);
+            // ensure update rewards in each epoch is less than or equals to 10% of tokensBurned
+            assertLe(_ajnaToken.balanceOf(_updater) - updaterBalance, tokensBurned / 10);
 
-    //         updaterBalance = _ajnaToken.balanceOf(_updater);
+            updaterBalance = _ajnaToken.balanceOf(_updater);
 
-    //         // pick random NFTs from all NFTs to claim rewards
-    //         uint256[] memory randomNfts = _getRandomSubsetFromArray(tokenIds);
+            // pick random NFTs from all NFTs to claim rewards
+            uint256[] memory randomNfts = _getRandomSubsetFromArray(tokenIds);
 
-    //         for(uint j = 0; j < randomNfts.length; j++) {
-    //             address minterAddress = tokenIdToMinter[randomNfts[j]];
-    //             changePrank(minterAddress);
+            for(uint j = 0; j < randomNfts.length; j++) {
+                address minterAddress = tokenIdToMinter[randomNfts[j]];
+                changePrank(minterAddress);
 
-    //             (, , uint256 lastInteractionEpoch) = _rewardsManager.getStakeInfo(randomNfts[j]);
+                (, , uint256 lastInteractionEpoch) = _rewardsManager.getStakeInfo(randomNfts[j]);
 
-    //             // select random epoch to claim reward
-    //             uint256 epochToClaim = lastInteractionEpoch < _pool.currentBurnEpoch() ? randomInRange(lastInteractionEpoch + 1, _pool.currentBurnEpoch()) : lastInteractionEpoch; 
+                // select random epoch to claim reward
+                uint256 epochToClaim = lastInteractionEpoch < _pool.currentBurnEpoch() ? randomInRange(lastInteractionEpoch + 1, _pool.currentBurnEpoch()) : lastInteractionEpoch; 
                 
-    //             uint256 rewardsEarned = _rewardsManager.calculateRewards(randomNfts[j], epochToClaim);
-    //             assertGt(rewardsEarned, 0);
+                uint256 rewardsEarned = _rewardsManager.calculateRewards(randomNfts[j], epochToClaim);
+                assertGt(rewardsEarned, 0);
 
-    //             _rewardsManager.claimRewards(randomNfts[j], _pool.currentBurnEpoch());
+                _rewardsManager.claimRewards(randomNfts[j], _pool.currentBurnEpoch());
 
-    //             // ensure user gets reward
-    //             assertGt(_ajnaToken.balanceOf(minterAddress), minterToBalance[minterAddress]);
-    //             minterToBalance[minterAddress] = _ajnaToken.balanceOf(minterAddress);
-    //         }
-    //     }
-    // }
+                // ensure user gets reward
+                assertGt(_ajnaToken.balanceOf(minterAddress), minterToBalance[minterAddress]);
+                minterToBalance[minterAddress] = _ajnaToken.balanceOf(minterAddress);
+            }
+        }
+    }
 
-    // function testClaimRewardsFreezeUnclaimedYield() external {
-    //     skip(10);
+    function testClaimRewardsFreezeUnclaimedYield() external {
+        skip(10);
 
-    //     uint256[] memory depositIndexes = new uint256[](5);
-    //     depositIndexes[0] = 9;
-    //     depositIndexes[1] = 1;
-    //     depositIndexes[2] = 2;
-    //     depositIndexes[3] = 3;
-    //     depositIndexes[4] = 4;
-    //     MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
-    //         indexes: depositIndexes,
-    //         minter: _minterOne,
-    //         mintAmount: 1000 * 1e18,
-    //         pool: _pool
-    //     });
+        uint256[] memory depositIndexes = new uint256[](5);
+        depositIndexes[0] = 9;
+        depositIndexes[1] = 1;
+        depositIndexes[2] = 2;
+        depositIndexes[3] = 3;
+        depositIndexes[4] = 4;
 
-    //     uint256 tokenIdOne = _mintAndMemorializePositionNFT(mintMemorializeParams);
-    //     _stakeToken(address(_pool), _minterOne, tokenIdOne);
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT({
+            indexes:    depositIndexes,
+            minter:     _minterOne,
+            mintAmount: 1_000 * 1e18,
+            pool:       address(_pool)
+        });
 
-    //     uint256 currentBurnEpoch = _pool.currentBurnEpoch();
+        _stakeToken(address(_pool), _minterOne, tokenIdOne);
 
-    //     changePrank(_minterOne);
-    //     // should revert if the epoch to claim is not available yet
-    //     vm.expectRevert(IRewardsManagerErrors.EpochNotAvailable.selector);
-    //     _rewardsManager.claimRewards(tokenIdOne, currentBurnEpoch + 10);
+        uint256 currentBurnEpoch = _pool.currentBurnEpoch();
 
-    //     // user should be able to claim rewards for current epoch
-    //     _rewardsManager.claimRewards(tokenIdOne, currentBurnEpoch);
-    // }
+        changePrank(_minterOne);
+        // should revert if the epoch to claim is not available yet
+        vm.expectRevert(IRewardsManagerErrors.EpochNotAvailable.selector);
+        _rewardsManager.claimRewards(tokenIdOne, currentBurnEpoch + 10);
+
+        // user should be able to claim rewards for current epoch
+        _rewardsManager.claimRewards(tokenIdOne, currentBurnEpoch);
+    }
 
 }
