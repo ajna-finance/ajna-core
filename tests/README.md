@@ -16,6 +16,14 @@ make test-load
 ```bash
 make test-invariant
 ```
+- run invariant tests for specific quote and collateral token precision, default values (18, 18):
+```bash
+make test-invariant QUOTE_PRECISION=<quote_precision> COLLATERAL_PRECISION=<collateral_precision>
+```
+- run invariant tests for most popular token precision combinations(6,8 and 18):
+```bash
+make test-multi-precision
+```
 - generate code coverage report:
 ```bash
 make coverage
