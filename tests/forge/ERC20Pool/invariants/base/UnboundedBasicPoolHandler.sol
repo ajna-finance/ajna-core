@@ -260,9 +260,6 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
-
-        // skip to make borrower undercollateralize
-        vm.warp(block.timestamp + 200 days);
     }
 
     function _repayDebt(

@@ -162,9 +162,10 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
                 uint256 drawDebtAmount = _preDrawDebt(amount_);
                 _drawDebt(drawDebtAmount);
 
-                _updateLocalFenwick();
-                _fenwickAccrueInterest();
-                _updatePoolState();
+                // skip to make borrower undercollateralize
+                vm.warp(block.timestamp + 200 days);
+
+                testContract.setCurrentTimestamp(block.timestamp);
             }
 
             changePrank(kicker);
