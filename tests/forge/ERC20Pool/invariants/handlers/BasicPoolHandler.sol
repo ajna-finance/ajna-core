@@ -43,7 +43,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         uint256 actorIndex_,
         uint256 amountToAdd_,
         uint256 bucketIndex_
-    ) public useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps {
         numberOfCalls['BBasicHandler.addQuoteToken']++;
 
         // Prepare test phase
@@ -57,7 +57,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         uint256 actorIndex_,
         uint256 amountToRemove_,
         uint256 bucketIndex_
-    ) public useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps {
         numberOfCalls['BBasicHandler.removeQuoteToken']++;
 
         // Prepare test phase
@@ -72,7 +72,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         uint256 amountToMove_,
         uint256 fromIndex_,
         uint256 toIndex_
-    ) public useRandomActor(actorIndex_) useTimestamps {
+    ) external useRandomActor(actorIndex_) useTimestamps {
         numberOfCalls['BBasicHandler.moveQuoteToken']++;
 
         // Prepare test phase
@@ -90,7 +90,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         uint256 actorIndex_,
         uint256 amountToAdd_,
         uint256 bucketIndex_
-    ) public useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps {
         numberOfCalls['BBasicHandler.addCollateral']++;
 
         // Prepare test phase
@@ -104,7 +104,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         uint256 actorIndex_,
         uint256 amountToRemove_,
         uint256 bucketIndex_
-    ) public useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps {
         numberOfCalls['BBasicHandler.removeCollateral']++;
 
         // Prepare test phase
@@ -119,7 +119,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
         uint256 toActorIndex_,
         uint256 lpsToTransfer_,
         uint256 bucketIndex_
-    ) public useRandomActor(fromActorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps {
+    ) external useRandomActor(fromActorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps {
         // Prepare test phase
         (address receiver, uint256 boundedLps) = _preTransferLps(toActorIndex_, lpsToTransfer_);
 
@@ -135,7 +135,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     function pledgeCollateral(
         uint256 actorIndex_,
         uint256 amountToPledge_
-    ) public useRandomActor(actorIndex_) useTimestamps {
+    ) external useRandomActor(actorIndex_) useTimestamps {
         numberOfCalls['BBasicHandler.pledgeCollateral']++;
 
         // Prepare test phase
@@ -151,7 +151,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     function pullCollateral(
         uint256 actorIndex_,
         uint256 amountToPull_
-    ) public useRandomActor(actorIndex_) useTimestamps {
+    ) external useRandomActor(actorIndex_) useTimestamps {
         numberOfCalls['BBasicHandler.pullCollateral']++;
 
         // Prepare test phase
@@ -164,7 +164,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     function drawDebt(
         uint256 actorIndex_,
         uint256 amountToBorrow_
-    ) public useRandomActor(actorIndex_) useTimestamps {
+    ) external useRandomActor(actorIndex_) useTimestamps {
         numberOfCalls['BBasicHandler.drawDebt']++;
 
         // Prepare test phase
@@ -180,7 +180,7 @@ contract BasicPoolHandler is UnboundedBasicPoolHandler {
     function repayDebt(
         uint256 actorIndex_,
         uint256 amountToRepay_
-    ) public useRandomActor(actorIndex_) useTimestamps {
+    ) external useRandomActor(actorIndex_) useTimestamps {
         numberOfCalls['BBasicHandler.repayDebt']++;
 
         // Prepare test phase

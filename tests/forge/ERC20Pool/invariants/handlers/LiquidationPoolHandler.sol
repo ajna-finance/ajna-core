@@ -143,7 +143,7 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
         uint256 borrowerIndex_,
         uint256 amount_,
         uint256 kickerIndex_
-    ) internal useTimestamps useRandomActor(kickerIndex_) {
+    ) internal useRandomActor(kickerIndex_) {
         numberOfCalls['BLiquidationHandler.kickAuction']++;
 
         borrowerIndex_   = constrictToRange(borrowerIndex_, 0, actors.length - 1);
@@ -164,8 +164,6 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
 
                 // skip to make borrower undercollateralized
                 vm.warp(block.timestamp + 200 days);
-
-                testContract.setCurrentTimestamp(block.timestamp);
 
                 // update local fenwick and accrue interest before kick
                 _updateLocalFenwick();

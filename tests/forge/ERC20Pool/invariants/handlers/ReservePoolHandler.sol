@@ -51,7 +51,7 @@ contract ReservePoolHandler is UnboundedReservePoolHandler, LiquidationPoolHandl
 
     function _preTakeReserves(
         uint256 amountToTake_
-    ) internal useTimestamps returns (uint256 boundedAmount_) {
+    ) internal returns (uint256 boundedAmount_) {
         (, , uint256 claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
         if (claimableReservesRemaining == 0) _startClaimableReserveAuction();
 
