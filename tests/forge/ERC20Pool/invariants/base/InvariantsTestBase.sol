@@ -8,13 +8,13 @@ import { ERC20Pool }        from 'src/ERC20Pool.sol';
 import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
 import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
 
-import { Token, BurnableToken }  from '../../../utils/Tokens.sol';
+import { TokenWithNDecimals, BurnableToken }  from '../../../utils/Tokens.sol';
 import { InvariantsTestHelpers } from './InvariantsTestHelpers.sol';
 
 abstract contract InvariantsTestBase is InvariantsTestHelpers, Test {
 
-    Token internal _quote;
-    Token internal _collateral;
+    TokenWithNDecimals internal _quote;
+    TokenWithNDecimals internal _collateral;
 
     BurnableToken internal _ajna;
 
@@ -35,8 +35,8 @@ abstract contract InvariantsTestBase is InvariantsTestHelpers, Test {
     function setUp() public virtual {
         // Tokens
         _ajna       = new BurnableToken("Ajna", "A");
-        _quote      = new Token("Quote", "Q");
-        _collateral = new Token("Collateral", "C");
+        _quote      = new TokenWithNDecimals("Quote", "Q", uint8(vm.envUint("QUOTE_PRECISION")));
+        _collateral = new TokenWithNDecimals("Collateral", "C", uint8(vm.envUint("COLLATERAL_PRECISION")));
 
         // Pool
         _poolFactory = new ERC20PoolFactory(address(_ajna));

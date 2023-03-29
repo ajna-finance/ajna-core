@@ -164,7 +164,8 @@ contract BasicInvariants is InvariantsTestBase {
 
     // checks pool quote token balance is greater than equals total deposits in pool
     function invariant_quoteTokenBalance_QT1() public useCurrentTimestamp {
-        uint256 poolBalance    = _quote.balanceOf(address(_pool));
+        // convert pool quote balance into WAD
+        uint256 poolBalance    = _quote.balanceOf(address(_pool)) * 10**(18 - _quote.decimals());
         (uint256 poolDebt, , ) = _pool.debtInfo();
 
         (
@@ -202,7 +203,8 @@ contract BasicInvariants is InvariantsTestBase {
 
         assertEq(_pool.pledgedCollateral(), totalCollateralPledged, "Incorrect Collateral Pledged");
 
-        uint256 collateralBalance = _collateral.balanceOf(address(_pool));
+        // convert pool collateral balance into WAD
+        uint256 collateralBalance = _collateral.balanceOf(address(_pool)) * 10**(18 - _collateral.decimals());
         uint256 bucketCollateral;
 
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
