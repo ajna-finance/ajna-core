@@ -942,6 +942,9 @@ library LenderActions {
         scaledRemaining_ = scaledDepositAvailable - removedAmount_;
 
         uint256 unscaledRemovedAmount = Maths.min(unscaledDepositAvailable, Maths.wdiv(removedAmount_, depositScale));
+
+        if (unscaledRemovedAmount == unscaledDepositAvailable) scaledRemaining_ = 0;
+
         Deposits.unscaledRemove(deposits_, params_.index, unscaledRemovedAmount); // update FenwickTree
     }
 
