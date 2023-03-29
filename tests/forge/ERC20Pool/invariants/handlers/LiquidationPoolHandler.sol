@@ -164,11 +164,6 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
 
                 // skip to make borrower undercollateralized
                 vm.warp(block.timestamp + 200 days);
-
-                // update local fenwick and accrue interest before kick
-                _updateLocalFenwick();
-                _fenwickAccrueInterest();
-                _updatePoolState();
             }
 
             changePrank(kicker);
