@@ -6,6 +6,8 @@ import {
     LENDER_MIN_BUCKET_INDEX,
     LENDER_MAX_BUCKET_INDEX,
     BORROWER_MIN_BUCKET_INDEX,
+    MIN_AMOUNT,
+    MAX_AMOUNT,
     BaseHandler
 }                                          from '../base/BaseHandler.sol';
 import { UnboundedLiquidationPoolHandler } from '../base/UnboundedLiquidationPoolHandler.sol';
@@ -63,7 +65,7 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
     ) external useRandomActor(actorIndex_) useTimestamps {
         numberOfCalls['BLiquidationHandler.takeAuction']++;
 
-        amount_ = constrictToRange(amount_, 1, 1e30);
+        amount_ = constrictToRange(amount_, MIN_AMOUNT, MAX_AMOUNT);
 
         borrowerIndex_ = constrictToRange(borrowerIndex_, 0, actors.length - 1);
 
@@ -75,6 +77,8 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
         if (kickTime == 0) _kickAuction(borrowerIndex_, amount_ * 100, actorIndex_);
 
         changePrank(taker);
+        // skip time to make auction takeable
+        vm.warp(block.timestamp + 2 hours);
         _takeAuction(borrower, amount_, taker);
     }
 
@@ -97,6 +101,8 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
         if (kickTime == 0) _kickAuction(borrowerIndex_, 1e24, bucketIndex_);
 
         changePrank(taker);
+        // skip time to make auction takeable
+        vm.warp(block.timestamp + 2 hours);
         _bucketTake(taker, borrower, depositTake_, bucketIndex_);
     }
 
@@ -137,13 +143,13 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
         uint256 borrowerIndex_,
         uint256 amount_,
         uint256 kickerIndex_
-    ) internal useTimestamps useRandomActor(kickerIndex_) {
+    ) internal useRandomActor(kickerIndex_) {
         numberOfCalls['BLiquidationHandler.kickAuction']++;
 
         borrowerIndex_   = constrictToRange(borrowerIndex_, 0, actors.length - 1);
         address borrower = actors[borrowerIndex_];
         address kicker   = _actor;
-        amount_          = constrictToRange(amount_, 1, 1e30);
+        amount_          = constrictToRange(amount_, MIN_AMOUNT, MAX_AMOUNT);
 
         ( , , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
 
@@ -155,14 +161,14 @@ contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHan
                 _actor = borrower;
                 uint256 drawDebtAmount = _preDrawDebt(amount_);
                 _drawDebt(drawDebtAmount);
+
+                // skip to make borrower undercollateralized
+                vm.warp(block.timestamp + 200 days);
             }
 
             changePrank(kicker);
             _actor = kicker;
             _kickAuction(borrower);
         }
-
-        // skip some time for more interest
-        vm.warp(block.timestamp + 2 hours);
     }
 }

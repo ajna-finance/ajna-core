@@ -27,6 +27,9 @@ uint256 constant LENDER_MAX_BUCKET_INDEX = 2572;
 uint256 constant BORROWER_MIN_BUCKET_INDEX = 2600;
 uint256 constant BORROWER_MAX_BUCKET_INDEX = 2620;
 
+uint256 constant MIN_AMOUNT = 1e6;
+uint256 constant MAX_AMOUNT = 1e28;
+
 abstract contract BaseHandler is Test {
 
     // Tokens
@@ -329,7 +332,7 @@ abstract contract BaseHandler is Test {
     function _auctionSettleStateReset(address actor_) internal {
         (address kicker, , , , , , , , , ) = _pool.auctionInfo(actor_);
 
-        // auction is settled if kicekr is 0x
+        // auction is settled if kicker is 0x
         bool auctionSettled = kicker == address(0);
         // reset alreadyTaken flag if auction is settled
         if (auctionSettled) alreadyTaken[actor_] = false;
