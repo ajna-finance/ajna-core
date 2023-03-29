@@ -137,11 +137,6 @@ contract BasicInvariants is InvariantsTestBase {
                 uint256 exchangeRate
             ) = _poolInfo.bucketInfo(address(_pool), bucketIndex);
 
-            console.log("bucketIndex ->", bucketIndex);
-            console.log("collateral ->", collateral);
-            console.log("deposit ->", deposit);
-            console.log("bucketLps ->", bucketLps);
-
             if (collateral == 0 && deposit == 0) {
                 require(bucketLps == 0, "Incorrect bucket lps");
                 require(exchangeRate == 1e18, "Incorrect exchange rate");
