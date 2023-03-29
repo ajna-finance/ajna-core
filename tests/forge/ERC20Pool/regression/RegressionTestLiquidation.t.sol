@@ -271,6 +271,7 @@ contract RegressionTestLiquidation is LiquidationInvariants {
         invariant_fenwick_prefixSumIndex_F4();
     }
 
+    // FIXME: This test is failing
     function test_regression_invariant_bucketlps_B2_B3() external {
 
         _liquidationPoolHandler.takeAuction(267050932349, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 3887647445238399127687813856507958874);
