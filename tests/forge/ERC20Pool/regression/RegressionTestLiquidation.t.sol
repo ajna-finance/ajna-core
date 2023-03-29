@@ -102,8 +102,7 @@ contract RegressionTestLiquidation is LiquidationInvariants {
         invariant_auction_taken_A6();
     }
 
-    // FIXME: bucket take with 0 auction price
-    function _test_regression_invariant_exchange_rate_bucket_take_1() external {
+    function test_regression_invariant_exchange_rate_bucket_take_1() external {
         _liquidationPoolHandler.bucketTake(183325863789657771277097526117552930424549597961930161, 34356261125910963886574176318851973698031483479551872234291832833800, true, 115792089237316195423570985008687907853269984665640564039457584007913129639932);
         _liquidationPoolHandler.settleAuction(52219427432114632, 2227306986719506048214107429, 154672727048162052261854237547755782166311596848556350861587480089015671);
         _liquidationPoolHandler.removeQuoteToken(1999999999999999943017433781133248199223345020, 9070, 3519433319314336634208412746825);
@@ -112,8 +111,7 @@ contract RegressionTestLiquidation is LiquidationInvariants {
         invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
-    // FIXME: bucket take with 0 auction price
-    function _test_regression_invariant_exchange_rate_bucket_take_2() external {
+    function test_regression_invariant_exchange_rate_bucket_take_2() external {
         _liquidationPoolHandler.moveQuoteToken(1676213736466301051643762607860, 1344, 2018879446031241805536743752775, 4101);
         _liquidationPoolHandler.settleAuction(186120755740, 2, 59199623628501455128);
         _liquidationPoolHandler.kickAuction(115792089237316195423570985008687907853269984665640564039457584007913129639935, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 29888344);

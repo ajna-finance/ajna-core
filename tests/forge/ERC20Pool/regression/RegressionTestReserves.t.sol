@@ -379,7 +379,7 @@ contract RegressionTestReserve is ReserveInvariants {
     }
 
     // FIXME: Seems to be an issue with Deposits.mult() in accrue interest or some issue with timestamp in invariant setup
-    function _test_regression_kick_F1_f2() external {
+    function _test_regression_kick_F1_F2() external {
         _reservePoolHandler.bucketTake(115792089237316195423570985008687907853269984665640564039457584007913129639932, 1513638311409397559820116, false, 1107177539379);
         _reservePoolHandler.removeQuoteToken(11979868839631132246101, 1137392, 2);
         _reservePoolHandler.takeReserves(3, 398628895133942030524702233785087782308780160336206641843430908);
