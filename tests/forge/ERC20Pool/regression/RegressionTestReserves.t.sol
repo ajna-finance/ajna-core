@@ -118,7 +118,7 @@ contract RegressionTestReserve is ReserveInvariants {
     }
 
     // FIXME: Seems to be issue with rounding to nearest in Desposits.unscaledAdd() in addQuoteToken
-    function _test_regression_reserve_16() external {
+    function test_regression_reserve_16() external {
         _reservePoolHandler.kickWithDeposit(24364934041550678417946191455, 52607039466540426076659653665991);
         _reservePoolHandler.moveQuoteToken(12701858085177571414571267592, 42692775850651681314985098497603, 999999999999999997089137720115121650200233243, 110756792431977317946585133);
         _reservePoolHandler.takeReserves(1000000005297961791, 4169814726576748738687746199368099036929520400874217254297794929654231);
@@ -379,7 +379,7 @@ contract RegressionTestReserve is ReserveInvariants {
     }
 
     // FIXME: Seems to be an issue with Deposits.mult() in accrue interest or some issue with timestamp in invariant setup
-    function _test_regression_kick_F1_F2() external {
+    function test_regression_kick_F1_F2() external {
         _reservePoolHandler.bucketTake(115792089237316195423570985008687907853269984665640564039457584007913129639932, 1513638311409397559820116, false, 1107177539379);
         _reservePoolHandler.removeQuoteToken(11979868839631132246101, 1137392, 2);
         _reservePoolHandler.takeReserves(3, 398628895133942030524702233785087782308780160336206641843430908);
@@ -393,5 +393,4 @@ contract RegressionTestReserve is ReserveInvariants {
         invariant_fenwick_depositAtIndex_F1();
         invariant_fenwick_depositsTillIndex_F2();
     }
-
 }

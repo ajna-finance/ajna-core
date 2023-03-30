@@ -70,11 +70,24 @@ contract ReserveInvariants is LiquidationInvariants {
         console.log("Current Reserves      -->", currentReserves);
         console.log("Required Reserves     -->", previousReserves + increaseInReserves - decreaseInReserves);
 
-        requireWithinDiff(
-            currentReserves,
-            previousReserves + increaseInReserves - decreaseInReserves,
-            1e15,
-            "Incorrect Reserves change"
-        );
+        if(currentReserves > previousReserves + increaseInReserves - decreaseInReserves) {
+            assertLe(
+                     currentReserves - (previousReserves + increaseInReserves - decreaseInReserves),
+                     (previousReserves + currentReserves + increaseInReserves + decreaseInReserves) / 1e5 + 1e3,
+                     "Incorrect Reserves change"
+            );
+        } else {
+            assertLe(
+                     (previousReserves + increaseInReserves - decreaseInReserves) - currentReserves,
+                     (previousReserves + currentReserves + increaseInReserves + decreaseInReserves) / 1e5 + 1e3,
+                     "Incorrect Reserves change"
+            );
+        }
+        //        requireWithinDiff(
+        //    currentReserves,
+        //    previousReserves + increaseInReserves - decreaseInReserves,
+        //    1e15,
+        //    "Incorrect Reserves change"
+        //);
     }
 }

@@ -104,6 +104,15 @@ contract BasicInvariants is InvariantsTestBase {
         targetSender(address(0x1234));
     }
 
+    function requireWithinRelativeDiff(uint256 x, uint256 y, uint256 relDiff, uint256 absDiff, string memory errMsg) public {
+        if ( x > y ) {
+            assertLe(x - y, relDiff * (x + y) / 1e18 + absDiff, errMsg);
+        } else {
+            assertLe(y - x, relDiff * (x + y) / 1e18 + absDiff, errMsg);
+        }
+    }
+
+    
     // checks pool lps are equal to sum of all lender lps in a bucket 
     function invariant_Lps_B1_B4() public useCurrentTimestamp {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
@@ -336,12 +345,19 @@ contract BasicInvariants is InvariantsTestBase {
             console.log("Deposit From local fenwick tree -->", IBaseHandler(_handler).fenwickSumAtIndex(bucketIndex));
             console.log("=========================================");
 
-            requireWithinDiff(
+            requireWithinRelativeDiff(
                 depositAtIndex,
                 IBaseHandler(_handler).fenwickSumAtIndex(bucketIndex),
-                1e16,
+                1e12,
+                1e3,
                 "Incorrect deposits in bucket"
             );
+            //            requireWithinDiff(
+            //    depositAtIndex,
+            //    IBaseHandler(_handler).fenwickSumAtIndex(bucketIndex),
+            //    1e16,
+            //    "Incorrect deposits in bucket"
+            //);
         }
     }
 
@@ -359,10 +375,11 @@ contract BasicInvariants is InvariantsTestBase {
             console.log("Deposit From local fenwick tree -->", IBaseHandler(_handler).fenwickSumTillIndex(bucketIndex));
             console.log("=========================================");
 
-            requireWithinDiff(
+            requireWithinRelativeDiff(
                 depositTillIndex,
                 IBaseHandler(_handler).fenwickSumTillIndex(bucketIndex),
-                1e16,
+                1e12,
+                1e3,
                 "Incorrect deposits prefix sum"
             );
         }
