@@ -117,8 +117,7 @@ contract RegressionTestReserve is ReserveInvariants {
         invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10_RE11_RE12();
     }
 
-    // FIXME: Seems to be issue with rounding to nearest in Desposits.unscaledAdd() in addQuoteToken
-    function _test_regression_reserve_16() external {
+    function test_regression_reserve_16() external {
         _reservePoolHandler.kickWithDeposit(24364934041550678417946191455, 52607039466540426076659653665991);
         _reservePoolHandler.moveQuoteToken(12701858085177571414571267592, 42692775850651681314985098497603, 999999999999999997089137720115121650200233243, 110756792431977317946585133);
         _reservePoolHandler.takeReserves(1000000005297961791, 4169814726576748738687746199368099036929520400874217254297794929654231);
@@ -392,6 +391,19 @@ contract RegressionTestReserve is ReserveInvariants {
 
         invariant_fenwick_depositAtIndex_F1();
         invariant_fenwick_depositsTillIndex_F2();
+    }
+
+    function test_remove_regression_R1() external {
+        _reservePoolHandler.takeAuction(1000000000147122258, 3919731510820678131056801, 158441107709132461742605107);
+        _reservePoolHandler.repayDebt(15097247704276523502490912, 5821681489746654725611665637);
+        _reservePoolHandler.addQuoteToken(409278183265946161107935122, 13459778251101474251175765782, 17131651646875762675637482511491680925564181440856864512);
+        _reservePoolHandler.kickWithDeposit(3000000000000000000003060052276861736589117902, 10971651541557993591476169);
+        _reservePoolHandler.drawDebt(99176811231448450752542388131222351, 4756085816094695387473840);
+        _reservePoolHandler.transferLps(345464481275697722, 1, 1571, 636770839146216364947817981246144824780203402016795537219680499840300283500);
+        _reservePoolHandler.takeReserves(1, 115792089237316195423570985008687907853269984665640564039457584007913129639934);
+        _reservePoolHandler.removeQuoteToken(2921676640197348125883567882, 110429299813004951706741973, 5838113258459267571531065497);
+
+        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
 }

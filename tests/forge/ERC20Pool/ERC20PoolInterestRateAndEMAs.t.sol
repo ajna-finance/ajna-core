@@ -936,4 +936,173 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         (poolDebt,,) = _pool.debtInfo();
         assertEq(poolDebt, expectedPoolDebt);
     }
+
+    function testAccruePoolInterestHtpLup() external tearDown {
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 2_000 * 1e18,
+            index:  _i9_91
+        });
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 5_000 * 1e18,
+            index:  _i9_81
+        });
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 11_000 * 1e18,
+            index:  _i9_72
+        });
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 25_000 * 1e18,
+            index:  _i9_62
+        });
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 30_000 * 1e18,
+            index:  _i9_52
+        });
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 1_000 * 1e18,
+            index:  4000
+        });
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 30_000 * 1e18,
+            index:  5000
+        });
+
+        uint256 snapshot = vm.snapshot();
+
+        // first borrower pledge collateral and borrows
+        _pledgeCollateral({
+            from:     _borrower,
+            borrower: _borrower,
+            amount:   1000 * 1e18
+        });
+        _borrow({
+            from:       _borrower,
+            amount:     100 * 1e18,
+            indexLimit: _i9_72,
+            newLup:     _p9_91
+        });
+
+
+        // Assert that HTP < LUP, meaning on accual interest should accrue between HTP - LUP
+        _assertPool(
+            PoolParams({
+                htp:                  0.100096153846153846 * 1e18,
+                lup:                  _p9_91,
+                poolSize:             104_000.00 * 1e18,
+                pledgedCollateral:    1_000 * 1e18,
+                encumberedCollateral: 10.093202398300210588 * 1e18,
+                poolDebt:             100.096153846153846200 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    1 * 1e18,
+                minDebtAmount:        10.009615384615384620 * 1e18,
+                loans:                1,
+                maxBorrower:          address(_borrower),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+
+        skip(100 days);
+
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    0.0001 * 1e18,
+            amountRepaid:     0.0001 * 1e18,
+            collateralToPull: 0,
+            newLup:           _p9_91
+        });
+
+        // Proof that interest accrued between HTP and LUP
+        _assertBucket({
+            index:        _i9_62,
+            lpBalance:    25_000.00 * 1e18,
+            collateral:   0,
+            deposit:      25_000.396460350119775000 * 1e18,
+            exchangeRate: 1.000015858414004791 * 1e18
+        });
+
+        vm.revertTo(snapshot);
+
+        // first borrower pledge collateral and borrows
+        _pledgeCollateral({
+            from:     _borrower,
+            borrower: _borrower,
+            amount:   1000 * 1e18
+        });
+        _borrow({
+            from:       _borrower,
+            amount:     9_500 * 1e18,
+            indexLimit: _i9_72,
+            newLup:     _p9_72
+        });
+
+        // borrower3 pledge collateral and borrows so we have a lower LUP value
+        _pledgeCollateral({
+            from:     _borrower3,
+            borrower: _borrower3,
+            amount:   10_000_000 * 1e18
+        });
+        _borrow({
+            from:       _borrower3,
+            amount:     65_000 * 1e18,
+            indexLimit: 7_000,
+            newLup:    0.014854015662334135 * 1e18
+        });
+
+        // Assert that HTP < LUP, meaning on accual interest should accrue between HTP - LUP
+        _assertPool(
+            PoolParams({
+                htp:                  9.509134615384615389 * 1e18,
+                lup:                  0.014854015662334135 * 1e18,
+                poolSize:             104_000.00 * 1e18,
+                pledgedCollateral:    10_001_000.0 * 1e18,
+                encumberedCollateral: 5_020_301.332014790293374287 * 1e18,
+                poolDebt:             74_571.634615384615419000 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    1 * 1e18,
+                minDebtAmount:        3_728.581730769230770950 * 1e18,
+                loans:                2,
+                maxBorrower:          address(_borrower),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+
+        skip(100 days);
+
+        // Proof that no interest accrued since no actions have been called against the book
+        _assertBucket({
+            index:        4_000,
+            lpBalance:    1_000.00 * 1e18,
+            collateral:   0,
+            deposit:      1_000.00 * 1e18,
+            exchangeRate: 1.0 * 1e18
+        });
+
+        _repayDebt({
+            from:             _borrower3,
+            borrower:         _borrower3,
+            amountToRepay:    0.0001 * 1e18,
+            amountRepaid:     0.0001 * 1e18,
+            collateralToPull: 0,
+            newLup:           0.014854015662334135 * 1e18
+        });
+
+        // Proof that interest accrued between LUP and HTP
+        _assertBucket({
+            index:        4_000,
+            lpBalance:    1000.00 * 1e18,
+            collateral:   0,
+            deposit:      1_008.406484270040092000 * 1e18,
+            exchangeRate: 1.008406484270040092 * 1e18
+        });
+    }
 }
