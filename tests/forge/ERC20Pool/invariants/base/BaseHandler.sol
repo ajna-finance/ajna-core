@@ -282,15 +282,20 @@ abstract contract BaseHandler is Test {
 
         // get HTP and deposit above HTP
         uint256 htp = Maths.wmul(maxThresholdPrice, pendingInflator);
-        uint256 htpIndex;
+        uint256 accrualIndex;
 
-        if (htp > MAX_PRICE)      htpIndex = 1;                          // if HTP is over the highest price bucket then no buckets earn interest
-        else if (htp < MIN_PRICE) htpIndex = MAX_FENWICK_INDEX;          // if HTP is under the lowest price bucket then all buckets earn interest
-        else                      htpIndex = _poolInfo.priceToIndex(htp);
+        if (htp > MAX_PRICE)      accrualIndex = 1;                          // if HTP is over the highest price bucket then no buckets earn interest
+        else if (htp < MIN_PRICE) accrualIndex = MAX_FENWICK_INDEX;          // if HTP is under the lowest price bucket then all buckets earn interest
+        else                      accrualIndex = _poolInfo.priceToIndex(htp);
+
+        uint256 lupIndex = _pool.depositIndex(poolDebt);
+
+        // accrual price is less of lup and htp, and prices decrease as index increases
+        if (lupIndex > accrualIndex) accrualIndex = lupIndex;
         
-        uint256 depositAboveHtp = fenwickSumTillIndex(htpIndex);
+        uint256 interestEarningDeposit = fenwickSumTillIndex(accrualIndex);
 
-        if (depositAboveHtp != 0) {
+        if (interestEarningDeposit != 0) {
             uint256 utilization          = _pool.depositUtilization();
             uint256 lenderInterestMargin = PoolCommons.lenderInterestMargin(utilization);
 
@@ -299,10 +304,10 @@ abstract contract BaseHandler is Test {
                 Maths.wmul(pendingFactor - Maths.WAD, poolDebt)
             );
 
-            uint256 scale = (newInterest * 1e18) / depositAboveHtp + Maths.WAD;
+            uint256 scale = (newInterest * 1e18) / interestEarningDeposit + Maths.WAD;
 
             // simulate scale being applied to all deposits above HTP
-            _fenwickMult(htpIndex, scale);
+            _fenwickMult(accrualIndex, scale);
         } 
     }
 
