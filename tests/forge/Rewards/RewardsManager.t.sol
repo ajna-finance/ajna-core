@@ -1,20 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.14;
 
-import 'src/RewardsManager.sol';
 import 'src/PoolInfoUtils.sol';
 import 'src/PositionManager.sol';
 import 'src/interfaces/rewards/IRewardsManager.sol';
-import 'src/interfaces/position/IPositionManager.sol';
-
-import { Token }               from '../utils/Tokens.sol';
-import { Strings }             from '@openzeppelin/contracts/utils/Strings.sol';
 
 import { ERC20Pool }           from 'src/ERC20Pool.sol';
-// import { IPoolErrors }         from 'src/interfaces/pool/commons/IPoolErrors.sol';
-import { _borrowFeeRate }      from 'src/libraries/helpers/PoolHelper.sol';
-import { ERC20PoolFactory }    from 'src/ERC20PoolFactory.sol';
-
 import { RewardsHelperContract }   from './RewardsDSTestPlus.sol';
 
 contract RewardsManagerTest is RewardsHelperContract {

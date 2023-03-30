@@ -8,15 +8,11 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import 'src/interfaces/pool/IPool.sol';
-import 'src/interfaces/rewards/IRewardsManager.sol';
-import 'src/interfaces/position/IPositionManager.sol';
 import 'src/interfaces/pool/commons/IPoolEvents.sol';
 import 'src/interfaces/pool/IERC3156FlashBorrower.sol';
-
 import 'src/PoolInfoUtils.sol';
 
 import 'src/libraries/external/Auctions.sol';
-import 'src/libraries/internal/Maths.sol';
 
 abstract contract DSTestPlus is Test, IPoolEvents {
 
