@@ -160,12 +160,13 @@ contract RewardsManagerTest is RewardsHelperContract {
         uint256[] memory claimedArray = new uint256[](0);
 
         _unstakeToken({
-            pool:    address(_pool),
-            owner:   _minterOne,
-            tokenId: tokenIdOne,
-            claimedArray: claimedArray, // no rewards as no reserve auctions have occured
-            reward: 0,
-            updateRatesReward: 0
+            pool:              address(_pool),
+            owner:             _minterOne,
+            tokenId:           tokenIdOne,
+            claimedArray:      claimedArray, // no rewards as no reserve auctions have occured
+            reward:            0,
+            indexes:           depositIndexes,
+            updateExchangeRatesReward: 0
         });
     }
 
@@ -238,10 +239,9 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:          address(_pool),
             tokenId:       tokenIdOne,
             burnEvent:     1,
-            rewardsEarned: 40.899689081331351737 * 1e18
+            rewardsEarned: 0
         });
-
-        // assertEq(_ajnaToken.balanceOf(_minterOne), 0);
+        assertEq(_ajnaToken.balanceOf(_minterOne), 40.899689081331351737 * 1e18);
 
         _assertBurn({
             pool:             address(_pool),
@@ -326,12 +326,13 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         // check owner can withdraw the NFT and rewards will be automatically claimed
         _unstakeToken({
-            owner:            _minterOne,
-            pool:              address(_pool),
-            tokenId:           tokenIdOne,
-            claimedArray:      _epochsClaimedArray(2, 0),
-            reward:            78.852344077558527015 * 1e18,
-            updateRatesReward: 4.173624213367915345 * 1e18
+            owner:                     _minterOne,
+            pool:                      address(_pool),
+            tokenId:                   tokenIdOne,
+            claimedArray:              _epochsClaimedArray(2, 0),
+            reward:                    78.852344077558527015 * 1e18,
+            indexes:                   depositIndexes,
+            updateExchangeRatesReward: 3.450241363293378951 * 1e18
         });
     }
 
@@ -613,25 +614,26 @@ contract RewardsManagerTest is RewardsHelperContract {
         /*********************/
         /*** Claim Rewards ***/
         /*********************/
-
         // _minterOne withdraws and claims rewards, rewards should be 0
         _unstakeToken({
-            owner:            _minterOne,
-            pool:              address(_pool),
-            tokenId:           tokenIdOne,
-            claimedArray:      _epochsClaimedArray(1, 0),
-            reward:            0,
-            updateRatesReward: 0
+            owner:                     _minterOne,
+            pool:                      address(_pool),
+            tokenId:                   tokenIdOne,
+            claimedArray:              _epochsClaimedArray(1, 0),
+            reward:                    0,
+            indexes:                   depositIndexes,
+            updateExchangeRatesReward: 0
         });
 
         // _minterTwo withdraws and claims rewards, rewards should be 0 as their bucket exchange rate decreased
         _unstakeToken({
-            owner:            _minterTwo,
-            pool:              address(_pool),
-            tokenId:           tokenIdTwo,
-            claimedArray:      _epochsClaimedArray(1, 0),
-            reward:            0,
-            updateRatesReward: 0
+            owner:                     _minterTwo,
+            pool:                      address(_pool),
+            tokenId:                   tokenIdTwo,
+            claimedArray:              _epochsClaimedArray(1, 0),
+            reward:                    0,
+            indexes:                   depositIndexes2,
+            updateExchangeRatesReward: 0
         });
     }
 
@@ -788,7 +790,8 @@ contract RewardsManagerTest is RewardsHelperContract {
             tokenId:           tokenIdOne,
             claimedArray:      _epochsClaimedArray(1, 0),
             reward:            0.298393228234161298 * 1e18,
-            updateRatesReward: 0
+            indexes:           depositIndexes,
+            updateExchangeRatesReward: 0
         });
     }
 
@@ -1045,7 +1048,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         /*****************************/
 
         // first reserve auction happens successfully -> epoch 1
-        uint256 tokensToBurn = _triggerReserveAuctions({
+        _triggerReserveAuctions({
             borrower:     _borrower,
             tokensToBurn: 462.029442387557878852 * 1e18,
             borrowAmount: 300 * 1e18,
@@ -1053,14 +1056,12 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:         address(_pool)
         });
 
-        uint256 currentBurnEpoch = _pool.currentBurnEpoch();
-
         /***********************/
         /*** Move Staked NFT ***/
         /***********************/
 
         // need to retrieve the position managers index set since positionIndexes are stored unordered in EnnumerableSets
-        //secondIndexes = _positionManager.getPositionIndexes(tokenIdOne); //TODO: investigate why commenting this out or keeping it doesn't do anything
+        secondIndexes = _positionManager.getPositionIndexes(tokenIdOne); //TODO: investigate why commenting this out or keeping it doesn't do anything
 
         _moveStakedLiquidity({
             from:             _minterOne,
@@ -1196,19 +1197,21 @@ contract RewardsManagerTest is RewardsHelperContract {
             tokenId:           tokenIdTwo,
             claimedArray:      _epochsClaimedArray(1, 0),
             reward:            266.615874256912407614 * 1e18,
-            updateRatesReward: 44.433744918714141439 * 1e18
+            indexes:           depositIndexes,
+            updateExchangeRatesReward: 44.433744918468261849 * 1e18
         });
 
         uint256 minterTwoBalance = _ajnaToken.balanceOf(_minterTwo);
         assertEq(minterTwoBalance, 266.615874256912407614 * 1e18);
 
         _unstakeToken({
-            owner:            _minterThree,
-            pool:              address(_pool),
-            tokenId:           tokenIdThree,
-            claimedArray:      _epochsClaimedArray(1, 0),
-            reward:            78.843436266764514308 * 1e18,
-            updateRatesReward: 0
+            owner:                     _minterThree,
+            pool:                      address(_pool),
+            tokenId:                   tokenIdThree,
+            claimedArray:              _epochsClaimedArray(1, 0),
+            reward:                    78.843436266764514308 * 1e18,
+            indexes:                   depositIndexes,
+            updateExchangeRatesReward: 0
         });
         uint256 minterThreeBalance = _ajnaToken.balanceOf(_minterThree);
         assertEq(minterThreeBalance, 78.843436266764514308 * 1e18);
@@ -1374,30 +1377,30 @@ contract RewardsManagerTest is RewardsHelperContract {
 
     function testClaimRewardsMultipleDepositsDifferentBucketsMultipleAuctions() external {
         // configure _minterOne's NFT position
-        uint256[] memory depositIndexesMinterOne = new uint256[](5);
-        depositIndexesMinterOne[0] = 2550;
-        depositIndexesMinterOne[1] = 2551;
-        depositIndexesMinterOne[2] = 2552;
-        depositIndexesMinterOne[3] = 2553;
-        depositIndexesMinterOne[4] = 2555;
+        uint256[] memory firstIndexes = new uint256[](5);
+        firstIndexes[0] = 2550;
+        firstIndexes[1] = 2551;
+        firstIndexes[2] = 2552;
+        firstIndexes[3] = 2553;
+        firstIndexes[4] = 2555;
 
         uint256 tokenIdOne = _mintAndMemorializePositionNFT({
-            indexes:    depositIndexesMinterOne,
+            indexes:    firstIndexes,
             minter:     _minterOne,
             mintAmount: 1_000 * 1e18,
             pool:       address(_pool)
         });
 
         // configure _minterTwo's NFT position
-        uint256[] memory depositIndexesMinterTwo = new uint256[](5);
-        depositIndexesMinterTwo[0] = 2550;
-        depositIndexesMinterTwo[1] = 2551;
-        depositIndexesMinterTwo[2] = 2200;
-        depositIndexesMinterTwo[3] = 2221;
-        depositIndexesMinterTwo[4] = 2222;
+        uint256[] memory secondIndexes = new uint256[](5);
+        secondIndexes[0] = 2550;
+        secondIndexes[1] = 2551;
+        secondIndexes[2] = 2200;
+        secondIndexes[3] = 2221;
+        secondIndexes[4] = 2222;
 
         uint256 tokenIdTwo = _mintAndMemorializePositionNFT({
-            indexes:    depositIndexesMinterTwo,
+            indexes:    secondIndexes,
             minter:     _minterTwo,
             mintAmount: 5_000 * 1e18,
             pool:       address(_pool)
@@ -1513,21 +1516,23 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         // both stakers claim rewards
         _unstakeToken({
-            owner:            _minterOne,
-            pool:              address(_pool),
-            tokenId:           tokenIdOne,
-            claimedArray:      _epochsClaimedArray(3, 0),
-            reward:            51.511621814050026070 * 1e18,
-            updateRatesReward: 0
+            owner:                     _minterOne,
+            pool:                      address(_pool),
+            tokenId:                   tokenIdOne,
+            claimedArray:              _epochsClaimedArray(3, 0),
+            reward:                    51.511621814050026070 * 1e18,
+            indexes:                   firstIndexes,   
+            updateExchangeRatesReward: 0
         });
 
         _unstakeToken({
-            owner:            _minterTwo,
-            pool:              address(_pool),
-            tokenId:           tokenIdTwo,
-            claimedArray:      _epochsClaimedArray(3, 0),
-            reward:            286.817794557471160699 * 1e18,
-            updateRatesReward: 0
+            owner:                     _minterTwo,
+            pool:                      address(_pool),
+            tokenId:                   tokenIdTwo,
+            claimedArray:              _epochsClaimedArray(3, 0),
+            reward:                    286.817794557471160699 * 1e18,
+            indexes:                   secondIndexes,
+            updateExchangeRatesReward: 0
         });
     }
 
@@ -1588,12 +1593,13 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         // _minterOne unstakes staked position
         _unstakeToken({
-            owner:            _minterOne,
-            pool:              address(_pool),
-            tokenId:           tokenIdOne,
-            claimedArray:      _epochsClaimedArray(1, 0),
-            reward:            40.899689081331351737 * 1e18,
-            updateRatesReward: 0
+            owner:                     _minterOne,
+            pool:                      address(_pool),
+            tokenId:                   tokenIdOne,
+            claimedArray:              _epochsClaimedArray(1, 0),
+            reward:                    40.899689081331351737 * 1e18,
+            indexes:                   depositIndexes,
+            updateExchangeRatesReward: 0
         });
 
         // minter one receives only the amount of 5 ajna tokens available in manager balance instead calculated rewards of 40.214136545950568150
@@ -1606,12 +1612,13 @@ contract RewardsManagerTest is RewardsHelperContract {
         // test when enough tokens in rewards manager contracts
         // _minterOne unstakes staked position
         _unstakeToken({
-            owner:            _minterOne,
-            pool:              address(_pool),
-            tokenId:           tokenIdOne,
-            claimedArray:      _epochsClaimedArray(1, 0),
-            reward:            40.899689081331351737 * 1e18,
-            updateRatesReward: 0
+            owner:                      _minterOne,
+            pool:                       address(_pool),
+            tokenId:                    tokenIdOne,
+            claimedArray:               _epochsClaimedArray(1, 0),
+            reward:                     40.899689081331351737 * 1e18,
+            indexes:                    depositIndexes,
+            updateExchangeRatesReward:  0
         });
 
         assertEq(PositionManager(address(_positionManager)).ownerOf(tokenIdOne), _minterOne);
@@ -1786,13 +1793,6 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         // stake variable no of deposits
         for(uint256 i = 0; i < deposits; ++i) {
-            // mint and memorilize Positions
-            MintAndMemorializeParams memory mintMemorializeParams = MintAndMemorializeParams({
-                indexes: depositIndexes,
-                minter: minters[i],
-                mintAmount: 1_000_000_000 * 1e18,
-                pool: _pool
-            });
 
             tokenIds[i] = _mintAndMemorializePositionNFT({
                 indexes: depositIndexes,

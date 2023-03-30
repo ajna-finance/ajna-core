@@ -70,17 +70,24 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         uint256[] memory claimedArray,
         uint256 tokenId,
         uint256 reward,
-        uint256 updateRatesReward
+        uint256[] memory indexes,
+        uint256 updateExchangeRatesReward
     ) internal {
 
         changePrank(owner);
 
+        // when the token is unstaked updateExchangeRates emits
+        vm.expectEmit(true, true, true, true);
+        emit UpdateExchangeRates(owner, pool, indexes, updateExchangeRatesReward);
+
+        // when the token is unstaked claimRewards emits
         vm.expectEmit(true, true, true, true);
         emit ClaimRewards(owner, pool,  tokenId, claimedArray, reward);
+
+        // when the token is unstaked unstake emits
         vm.expectEmit(true, true, true, true);
         emit Unstake(owner, address(pool), tokenId);
         _rewardsManager.unstake(tokenId);
-        return;
         assertEq(PositionManager(address(_positionManager)).ownerOf(tokenId), owner);
 
         // check token was transferred from rewards contract to minter
@@ -93,10 +100,10 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
             assertEq(rate, 0);
         }
 
-        (address owner, address pool, uint256 interactionBlock) = _rewardsManager.getStakeInfo(tokenId);
-        assertEq(owner, address(0));
-        assertEq(pool, address(0));
-        assertEq(interactionBlock, 0);
+        (address ownerInf, address poolInf, uint256 interactionBlockInf) = _rewardsManager.getStakeInfo(tokenId);
+        assertEq(ownerInf, address(0));
+        assertEq(poolInf, address(0));
+        assertEq(interactionBlockInf, 0);
     }
 
     function _assertBurn(
@@ -226,9 +233,10 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         (address ownerInf, address poolInf, uint256 interactionBurnEvent) = _rewardsManager.getStakeInfo(tokenId);
         uint256 rewardsEarnedInf = _rewardsManager.calculateRewards(tokenId, currentBurnEpoch);
 
-        assertEq(owner, ownerInf);
-        assertEq(pool, poolInf);
-        assertEq(burnEvent, interactionBurnEvent);
+        assertEq(ownerInf, owner);
+        assertEq(poolInf, pool);
+        assertEq(interactionBurnEvent, burnEvent);
+        assertEq(rewardsEarnedInf, rewardsEarned);
         assertEq(PositionManager(address(_positionManager)).ownerOf(tokenId), address(_rewardsManager));
     }
 
