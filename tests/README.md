@@ -12,9 +12,17 @@ make test-with-gas-report
 ```bash
 make test-load
 ```
-- run invariant tests:
+- run ERC20 Pool invariant tests:
 ```bash
-make test-invariant
+make test-invariant-erc20
+```
+- run ERC20 Pool invariant tests for specific quote and collateral token precision, default values (18, 18):
+```bash
+make test-invariant-erc20 QUOTE_PRECISION=<quote_precision> COLLATERAL_PRECISION=<collateral_precision>
+```
+- run ERC20 Pool invariant tests for most popular token precision combinations(6,8 and 18):
+```bash
+make test-invariant-erc20-precision
 ```
 - generate code coverage report:
 ```bash

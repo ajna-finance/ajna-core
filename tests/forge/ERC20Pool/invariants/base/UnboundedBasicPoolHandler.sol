@@ -30,7 +30,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     function _addQuoteToken(
         uint256 amount_,
         uint256 bucketIndex_
-    ) internal useTimestamps updateLocalStateAndPoolInterest {
+    ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.addQuoteToken']++;
 
         (uint256 lpBalanceBeforeAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
@@ -70,7 +70,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     function _removeQuoteToken(
         uint256 amount_,
         uint256 bucketIndex_
-    ) internal useTimestamps updateLocalStateAndPoolInterest {
+    ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.removeQuoteToken']++;
 
         (uint256 lpBalanceBeforeAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
@@ -95,7 +95,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         uint256 amount_,
         uint256 fromIndex_,
         uint256 toIndex_
-    ) internal useTimestamps updateLocalStateAndPoolInterest {
+    ) internal updateLocalStateAndPoolInterest {
 
         try _pool.moveQuoteToken(
             amount_,
@@ -123,7 +123,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     function _addCollateral(
         uint256 amount_,
         uint256 bucketIndex_
-    ) internal useTimestamps updateLocalStateAndPoolInterest {
+    ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.addCollateral']++;
 
         (uint256 lpBalanceBeforeAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
@@ -143,7 +143,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     function _removeCollateral(
         uint256 amount_,
         uint256 bucketIndex_
-    ) internal useTimestamps updateLocalStateAndPoolInterest {
+    ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.removeCollateral']++;
 
         (uint256 lpBalanceBeforeAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
@@ -166,7 +166,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         address receiver_,
         uint256 bucketIndex_,
         uint256 amount_
-    ) internal useTimestamps updateLocalStateAndPoolInterest {
+    ) internal updateLocalStateAndPoolInterest {
         // approve as transferor
         address[] memory transferors = new address[](1);
         transferors[0] = receiver_;
@@ -183,7 +183,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         address sender_,
         address receiver_,
         uint256 bucketIndex_
-    ) internal useTimestamps updateLocalStateAndPoolInterest {
+    ) internal updateLocalStateAndPoolInterest {
         uint256[] memory buckets = new uint256[](1);
         buckets[0] = bucketIndex_;
 
@@ -208,7 +208,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
     function _pledgeCollateral(
         uint256 amount_
-    ) internal useTimestamps updateLocalStateAndPoolInterest {
+    ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.pledgeCollateral']++;
 
         // **R1**: Exchange rates are unchanged by pledging collateral
@@ -221,7 +221,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
     function _pullCollateral(
         uint256 amount_
-    ) internal useTimestamps updateLocalStateAndPoolInterest {
+    ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.pullCollateral']++;
 
         // **R2**: Exchange rates are unchanged by pulling collateral
@@ -238,7 +238,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
  
     function _drawDebt(
         uint256 amount_
-    ) internal useTimestamps updateLocalStateAndPoolInterest {
+    ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.drawDebt']++;
 
         (uint256 poolDebt, , ) = _pool.debtInfo();
@@ -260,14 +260,11 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
-
-        // skip to make borrower undercollateralize
-        vm.warp(block.timestamp + 200 days);
     }
 
     function _repayDebt(
         uint256 amountToRepay_
-    ) internal useTimestamps updateLocalStateAndPoolInterest {
+    ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.repayDebt']++;
 
         try _pool.repayDebt(_actor, amountToRepay_, 0, _actor, 7388) {

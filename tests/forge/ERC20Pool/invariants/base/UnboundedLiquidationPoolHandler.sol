@@ -21,7 +21,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
     function _kickAuction(
         address borrower_
-    ) internal useTimestamps updateLocalStateAndPoolInterest {
+    ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBLiquidationHandler.kickAuction']++;
 
         (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
@@ -39,7 +39,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
     function _kickWithDeposit(
         uint256 bucketIndex_
-    ) internal useTimestamps updateLocalStateAndPoolInterest {
+    ) internal updateLocalStateAndPoolInterest {
         (address maxBorrower, , )              = _pool.loansInfo();
         (uint256 borrowerDebt, , )             = _poolInfo.borrowerInfo(address(_pool), maxBorrower);
         (uint256 interestRate, )               = _pool.interestRateInfo();
@@ -62,7 +62,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     function _withdrawBonds(
         address kicker_,
         uint256 maxAmount_
-    ) internal useTimestamps updateLocalStateAndPoolInterest {
+    ) internal updateLocalStateAndPoolInterest {
 
         try _pool.withdrawBonds(kicker_, maxAmount_) {
 
@@ -79,20 +79,20 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         address borrower_,
         uint256 amount_,
         address taker_
-    ) internal useTimestamps updateLocalStateAndPoolInterest {
+    ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBLiquidationHandler.takeAuction']++;
 
         (address kicker, , , , , , , , , ) = _pool.auctionInfo(borrower_);
 
         (uint256 borrowerDebtBeforeTake, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
         uint256 totalBondBeforeTake          = _getKickerBond(kicker);
-        uint256 totalBalanceBeforeTake       = _quote.balanceOf(address(_pool));
+        uint256 totalBalanceBeforeTake       = _quote.balanceOf(address(_pool)) * 10**(18 - _quote.decimals());
         
         try _pool.take(borrower_, amount_, taker_, bytes("")) {
 
             (uint256 borrowerDebtAfterTake, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
             uint256 totalBondAfterTake          = _getKickerBond(kicker);
-            uint256 totalBalanceAfterTake       = _quote.balanceOf(address(_pool));
+            uint256 totalBalanceAfterTake       = _quote.balanceOf(address(_pool)) * 10**(18 - _quote.decimals());
 
             if (borrowerDebtBeforeTake > borrowerDebtAfterTake) {
                 // **RE7**: Reserves decrease with debt covered by take.
@@ -133,7 +133,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         address borrower_,
         bool depositTake_,
         uint256 bucketIndex_
-    ) internal useTimestamps updateLocalStateAndPoolInterest {
+    ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBLiquidationHandler.bucketTake']++;
 
         (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
@@ -182,7 +182,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     function _settleAuction(
         address borrower_,
         uint256 maxDepth_
-    ) internal useTimestamps updateLocalStateAndPoolInterest {
+    ) internal updateLocalStateAndPoolInterest {
         (
             uint256 borrowerT0Debt,
             uint256 collateral,

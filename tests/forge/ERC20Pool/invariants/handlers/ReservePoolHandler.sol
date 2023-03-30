@@ -7,6 +7,7 @@ import 'src/libraries/internal/Maths.sol';
 import { UnboundedReservePoolHandler } from '../base/UnboundedReservePoolHandler.sol';
 
 import { LiquidationPoolHandler } from './LiquidationPoolHandler.sol';
+import { MIN_AMOUNT } from '../base/BaseHandler.sol';
 
 contract ReservePoolHandler is UnboundedReservePoolHandler, LiquidationPoolHandler {
 
@@ -50,7 +51,7 @@ contract ReservePoolHandler is UnboundedReservePoolHandler, LiquidationPoolHandl
 
     function _preTakeReserves(
         uint256 amountToTake_
-    ) internal useTimestamps returns (uint256 boundedAmount_) {
+    ) internal returns (uint256 boundedAmount_) {
         (, , uint256 claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
         if (claimableReservesRemaining == 0) _startClaimableReserveAuction();
 
@@ -58,7 +59,7 @@ contract ReservePoolHandler is UnboundedReservePoolHandler, LiquidationPoolHandl
         skip(24 hours);
 
         (, , claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
-        boundedAmount_ = constrictToRange(amountToTake_, 0, Maths.min(100_000 * 1e18, claimableReservesRemaining));
+        boundedAmount_ = constrictToRange(amountToTake_, 0, Maths.min(MIN_AMOUNT, claimableReservesRemaining));
     }
 
 }

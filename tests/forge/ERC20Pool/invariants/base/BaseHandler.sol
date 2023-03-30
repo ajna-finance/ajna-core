@@ -16,7 +16,7 @@ import {
     MIN_PRICE
 }                           from 'src/libraries/helpers/PoolHelper.sol';
 
-import { Token, BurnableToken } from '../../../utils/Tokens.sol';
+import { TokenWithNDecimals, BurnableToken } from '../../../utils/Tokens.sol';
 
 import 'src/libraries/internal/Maths.sol';
 import '../interfaces/ITestBase.sol';
@@ -27,11 +27,14 @@ uint256 constant LENDER_MAX_BUCKET_INDEX = 2572;
 uint256 constant BORROWER_MIN_BUCKET_INDEX = 2600;
 uint256 constant BORROWER_MAX_BUCKET_INDEX = 2620;
 
+uint256 constant MIN_AMOUNT = 1e6;
+uint256 constant MAX_AMOUNT = 1e28;
+
 abstract contract BaseHandler is Test {
 
     // Tokens
-    Token internal _quote;
-    Token internal _collateral;
+    TokenWithNDecimals internal _quote;
+    TokenWithNDecimals internal _collateral;
 
     BurnableToken internal _ajna;
 
@@ -79,8 +82,8 @@ abstract contract BaseHandler is Test {
     ) {
         // Tokens
         _ajna       = BurnableToken(ajna_);
-        _quote      = Token(quote_);
-        _collateral = Token(collateral_);
+        _quote      = TokenWithNDecimals(quote_);
+        _collateral = TokenWithNDecimals(collateral_);
 
         // Pool
         _pool     = ERC20Pool(pool_);
@@ -329,7 +332,7 @@ abstract contract BaseHandler is Test {
     function _auctionSettleStateReset(address actor_) internal {
         (address kicker, , , , , , , , , ) = _pool.auctionInfo(actor_);
 
-        // auction is settled if kicekr is 0x
+        // auction is settled if kicker is 0x
         bool auctionSettled = kicker == address(0);
         // reset alreadyTaken flag if auction is settled
         if (auctionSettled) alreadyTaken[actor_] = false;
