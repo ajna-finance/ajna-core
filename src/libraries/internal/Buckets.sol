@@ -107,9 +107,9 @@ library Buckets {
         uint256 collateral_,
         uint256 bucketPrice_
     ) internal pure returns (uint256 lps_) {
-        uint256 rate = getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_);
+        uint256 rate = getInverseExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_);
 
-        lps_ = Maths.wdiv(Maths.wmul(collateral_, bucketPrice_), rate);
+        lps_ = (collateral_ * bucketPrice_ * rate + 5e35) / 1e36;
     }
 
     /**
@@ -130,7 +130,7 @@ library Buckets {
     ) internal pure returns (uint256) {
         return Maths.wdiv(
             quoteTokens_,
-            getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_)
+            getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_)  // we might want to not call get exchange rate nd operate on raw values?
         );
     }
 
@@ -148,6 +148,23 @@ library Buckets {
         uint256 bucketPrice_
     ) internal pure returns (uint256) {
         return bucketLPs_ == 0 ? Maths.WAD :
-            Maths.wdiv(bucketDeposit_ + Maths.wmul(bucketPrice_, bucketCollateral_), bucketLPs_);
+            Maths.wdiv(bucketDeposit_ + Maths.wmul(bucketPrice_, bucketCollateral_), bucketLPs_);   // make similar change here?
+    }
+
+    /**
+     *  @notice Returns the inverse exchange rate for a given bucket.
+     *  @param  bucketCollateral_ Amount of collateral in bucket.
+     *  @param  bucketLPs_        Amount of LPs in bucket.
+     *  @param  bucketDeposit_    The amount of quote tokens deposited in the given bucket.
+     *  @param  bucketPrice_      Bucket's price.
+     */
+    function getInverseExchangeRate(
+        uint256 bucketCollateral_,
+        uint256 bucketLPs_,
+        uint256 bucketDeposit_,
+        uint256 bucketPrice_
+    ) internal pure returns (uint256) {
+        return bucketLPs_ == 0 ? Maths.WAD :
+            bucketLPs_ / (bucketDeposit_ + bucketPrice_ * bucketCollateral_);
     }
 }

@@ -20,7 +20,6 @@ import { Deposits } from '../internal/Deposits.sol';
 import { Buckets }  from '../internal/Buckets.sol';
 import { Maths }    from '../internal/Maths.sol';
 
-
 /**
     @title  LenderActions library
     @notice External library containing logic for pool actors:
@@ -819,6 +818,7 @@ library LenderActions {
         uint256 maxAmount_,
         uint256 index_
     ) internal returns (uint256 collateralAmount_, uint256 lpAmount_) {
+
         Bucket storage bucket = buckets_[index_];
 
         uint256 bucketCollateral = bucket.collateral;
@@ -853,7 +853,7 @@ library LenderActions {
             lpAmount_ = requiredLPs;
         } else {
             lpAmount_         = lenderLpBalance;
-            collateralAmount_ = Maths.wdiv(Maths.wmul(lenderLpBalance, collateralAmount_), requiredLPs);
+            collateralAmount_ = (lenderLpBalance * collateralAmount_) / requiredLPs;
 
             if (collateralAmount_ == 0) revert InsufficientLPs();
         }
