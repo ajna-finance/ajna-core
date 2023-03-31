@@ -321,9 +321,14 @@ contract PoolInfoUtils {
 
         ( , , uint256 noOfLoans) = pool.loansInfo();
         noOfLoans += pool.totalAuctionsInPool();
-        if (noOfLoans == 0) return MAX_PRICE;
-        (uint256 debt, , )       = pool.debtInfo();
-        return _priceAt(pool.depositIndex(Maths.wdiv(debt, noOfLoans * 1e18)));
+        if (noOfLoans == 0) {
+            // if there are no borrowers, return the HPB
+            return _priceAt(pool.depositIndex(1));
+        } else {
+            // otherwise, calculate the MOMP
+            (uint256 debt, , ) = pool.debtInfo();
+            return _priceAt(pool.depositIndex(Maths.wdiv(debt, noOfLoans * 1e18)));
+        }
     }
 
     /**
