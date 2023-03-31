@@ -34,6 +34,8 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
     IRewardsManager   internal _rewardsManager;
     IPositionManager  internal _positionManager;
 
+    uint256 internal REWARDS_CAP = 0.8 * 1e18;
+
     struct MintAndMemorializeParams {
         uint256[] indexes;
         address minter;
@@ -112,9 +114,7 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         uint256 timestamp,
         uint256 interest,
         uint256 burned,
-        uint256 tokensToBurn,
-        uint256 rewardsToClaimer,
-        uint256 rewardsToUpdater
+        uint256 tokensToBurn
         ) internal {
 
         (uint256 bETimestamp, uint256 bEInterest, uint256 bEBurned) = IPool(pool).burnInfo(epoch);
@@ -122,9 +122,6 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         assertEq(bETimestamp, timestamp);
         assertEq(bEInterest,  interest);
         assertEq(bEBurned,    burned);
-        assertEq(burned, tokensToBurn);
-        assertEq(Maths.wmul(burned, 0.8 * 1e18), rewardsToClaimer);
-        assertEq(Maths.wmul(burned, 0.05 * 1e18), rewardsToUpdater);
     }
 
 

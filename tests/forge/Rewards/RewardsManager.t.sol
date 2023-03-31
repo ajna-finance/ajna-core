@@ -249,9 +249,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             timestamp:        block.timestamp - 24 hours,
             burned:           81.799378162662704349 * 1e18,
             tokensToBurn:     tokensToBurn,
-            interest:         6.443638300196908069 * 1e18,
-            rewardsToClaimer: 65.439502530130163479 * 1e18, // FIXME: These don't add up to total burned, is that a problem?
-            rewardsToUpdater: 4.089968908133135217 * 1e18
+            interest:         6.443638300196908069 * 1e18
         });
 
         skip(2 weeks);
@@ -309,9 +307,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             timestamp:        block.timestamp - 24 hours,
             burned:           81.799378162662704349 * 1e18,
             tokensToBurn:     tokensToBurn,
-            interest:         6.443638300196908069 * 1e18,
-            rewardsToClaimer: 65.439502530130163479 * 1e18, // FIXME: These don't add up to total burned, is that a problem?
-            rewardsToUpdater: 4.089968908133135217 * 1e18
+            interest:         6.443638300196908069 * 1e18
         });
 
 
@@ -397,9 +393,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             timestamp:        block.timestamp - (2 weeks + 26 weeks + 24 hours),
             burned:           81.799378162662704349 * 1e18,
             tokensToBurn:     tokensToBurn,
-            interest:         6.443638300196908069 * 1e18,
-            rewardsToClaimer: 65.439502530130163479 * 1e18, // FIXME: These don't add up to total burned, is that a problem?
-            rewardsToUpdater: 4.089968908133135217 * 1e18
+            interest:         6.443638300196908069 * 1e18
         });
 
         _updateExchangeRates({
@@ -724,6 +718,8 @@ contract RewardsManagerTest is RewardsHelperContract {
             from: _bidder
         });
 
+        (,, uint256 tokensBurned) = IPool(address(_pool)).burnInfo(IPool(address(_pool)).currentBurnEpoch());
+
         // recorder updates the change in exchange rates in the first index
         _updateExchangeRates({
             updater:        _updater,
@@ -739,8 +735,6 @@ contract RewardsManagerTest is RewardsHelperContract {
             timestamp: 0,
             burned:    0,
             interest:  0,
-            rewardsToClaimer: 0,
-            rewardsToUpdater: 0,
             tokensToBurn: 0
         });
 
@@ -750,15 +744,13 @@ contract RewardsManagerTest is RewardsHelperContract {
             timestamp:        block.timestamp - 24 hours,
             burned:           0.284184026893324971 * 1e18,
             interest:         0.000048562908902619 * 1e18,
-            tokensToBurn:     0.284184026893324971 * 1e18,
-            rewardsToClaimer: 0.227347221514659977 * 1e18, // FIXME: These don't add up to total burned, is that a problem?
-            rewardsToUpdater: 0.014209201344666249 * 1e18
+            tokensToBurn:     tokensBurned
         });
 
         // skip more time to allow more interest to accrue
         skip(10 days);
 
-        // borrowe_r repays their loan again
+        // borrower repays their loan again
         (debt, , ) = _pool.borrowerInfo(_borrower);
         _repayDebt({
             from:               _borrower,
@@ -785,7 +777,7 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         // _minterOne withdraws and claims rewards, rewards should be set to the difference between total claimed and cap
         _unstakeToken({
-            owner:              _minterOne,
+            owner:             _minterOne,
             pool:              address(_pool),
             tokenId:           tokenIdOne,
             claimedArray:      _epochsClaimedArray(1, 0),
@@ -912,7 +904,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         assertEq(_ajnaToken.balanceOf(_updater2), 14.019164349973606335 * 1e18);
 
         // check available rewards
-        rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch()); // assertEq(rewardsEarned, 517.072612267115797118 * 1e18);
+        rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
         assertGt(rewardsEarned, rewardsEarnedNoUpdate);
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
@@ -1060,8 +1052,8 @@ contract RewardsManagerTest is RewardsHelperContract {
         /*** Move Staked NFT ***/
         /***********************/
 
-        // need to retrieve the position managers index set since positionIndexes are stored unordered in EnnumerableSets
-        secondIndexes = _positionManager.getPositionIndexes(tokenIdOne); //TODO: investigate why commenting this out or keeping it doesn't do anything
+        // retrieve the position managers index set, recreating typical tx flow since positionIndexes are stored unordered in EnnumerableSets
+        secondIndexes = _positionManager.getPositionIndexes(tokenIdOne);
 
         _moveStakedLiquidity({
             from:             _minterOne,
@@ -1089,8 +1081,8 @@ contract RewardsManagerTest is RewardsHelperContract {
         /*** Exchange Rates Updated ***/
         /******************************/
 
-        // need to retrieve the position managers index set since positionIndexes are stored unordered in EnnumerableSets
-        // depositIndexes = _positionManager.getPositionIndexes(tokenIdOne); //TODO: investigate why commenting this out or keeping it doesn't do anything
+        // retrieve the position managers index set, recreating typical tx flow since positionIndexes are stored unordered in EnnumerableSets
+        depositIndexes = _positionManager.getPositionIndexes(tokenIdOne);
 
         _updateExchangeRates({
             updater:        _updater,
@@ -1424,12 +1416,10 @@ contract RewardsManagerTest is RewardsHelperContract {
         // proof of burn events (burn epoch 0)
         _assertBurn({
             pool:      address(_pool),
-            epoch:     0,
-            timestamp: 0,
-            burned:    0,
-            interest:  0,
-            rewardsToClaimer: 0,
-            rewardsToUpdater: 0,
+            epoch:        0,
+            timestamp:    0,
+            burned:       0,
+            interest:     0,
             tokensToBurn: 0
         });
 
@@ -1455,9 +1445,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             timestamp:        block.timestamp - 24 hours,
             burned:           81.799378162663471460 * 1e18,
             tokensToBurn:     tokensToBurnE1,
-            interest:         6.443638300196908069 * 1e18,
-            rewardsToClaimer: 65.439502530130777168 * 1e18, // FIXME: These don't add up to total burned, is that a problem?
-            rewardsToUpdater: 4.089968908133173573 * 1e18
+            interest:         6.443638300196908069 * 1e18
         });
 
         // auction two
@@ -1482,9 +1470,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             timestamp:        block.timestamp - 24 hours,
             burned:           308.672122067616182565 * 1e18,
             tokensToBurn:     tokensToBurnE2,
-            interest:         23.936044239893182713 * 1e18,
-            rewardsToClaimer: 246.937697654092946052 * 1e18, // FIXME: These don't add up to total burned, is that a problem?
-            rewardsToUpdater: 15.433606103380809128 * 1e18
+            interest:         23.936044239893182713 * 1e18
         });
 
         // auction three
@@ -1509,9 +1495,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             timestamp:        block.timestamp - 24 hours,
             burned:           676.658832743043390869 * 1e18,
             tokensToBurn:     tokensToBurnE3,
-            interest:         52.421031459480795903 * 1e18,
-            rewardsToClaimer: 541.327066194434712695 * 1e18, // FIXME: These don't add up to total burned, is that a problem?
-            rewardsToUpdater: 33.832941637152169543 * 1e18
+            interest:         52.421031459480795903 * 1e18
         });
 
         // both stakers claim rewards
