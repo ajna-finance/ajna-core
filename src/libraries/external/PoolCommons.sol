@@ -200,19 +200,18 @@ library PoolCommons {
         newInflator_ = Maths.wmul(poolState_.inflator, pendingFactor);
         uint256 htp = Maths.wmul(thresholdPrice_, newInflator_);
 
-        uint256 htpIndex;
-        if (htp > MAX_PRICE)
-            // if HTP is over the highest price bucket then no buckets earn interest
-            htpIndex = 1;
-        else if (htp < MIN_PRICE)
-            // if HTP is under the lowest price bucket then all buckets earn interest
-            htpIndex = MAX_FENWICK_INDEX;
-        else
-            htpIndex = _indexOf(htp);
+        uint256 accrualIndex;
+        if (htp > MAX_PRICE)      accrualIndex = 1;                 // if HTP is over the highest price bucket then no buckets earn interest
+        else if (htp < MIN_PRICE) accrualIndex = MAX_FENWICK_INDEX; // if HTP is under the lowest price bucket then all buckets earn interest
+        else                      accrualIndex = _indexOf(htp);     // else HPT bucket earn interest
 
-        uint256 depositAboveHtp   = Deposits.prefixSum(deposits_, htpIndex);
+        uint256 lupIndex = Deposits.findIndexOfSum(deposits_, poolState_.debt);
+        // accrual price is less of lup and htp, and prices decrease as index increases
+        if (lupIndex > accrualIndex) accrualIndex = lupIndex;
 
-        if (depositAboveHtp != 0) {
+        uint256 interestEarningDeposit = Deposits.prefixSum(deposits_, accrualIndex);
+
+        if (interestEarningDeposit != 0) {
             newInterest_ = Maths.wmul(
                 _lenderInterestMargin(_utilization(emaParams_.debtEma, emaParams_.depositEma)),
                 Maths.wmul(pendingFactor - Maths.WAD, poolState_.debt)
@@ -221,8 +220,8 @@ library PoolCommons {
             // Scale the fenwick tree to update amount of debt owed to lenders
             Deposits.mult(
                 deposits_,
-                htpIndex,
-                (newInterest_ * 1e18) / depositAboveHtp + Maths.WAD // lender factor
+                accrualIndex,
+                Maths.floorWdiv(newInterest_, interestEarningDeposit) + Maths.WAD // lender factor
             );
         }
     }
