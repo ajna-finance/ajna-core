@@ -373,7 +373,7 @@ contract BasicInvariants is InvariantsTestBase {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             (, , , uint256 depositAtIndex, ) = _pool.bucketInfo(bucketIndex);
             uint256 prefixSum               = _pool.depositUpToIndex(bucketIndex);
-            uint256 bucketIndexFromDeposit  = _pool.depositIndex(prefixSum);
+            uint256 bucketIndexFromDeposit  = _pool.depositIndex(Maths.wmul(prefixSum, 1e18 + 1e1));
 
             if (depositAtIndex != 0) {
                 console.log("===================Bucket Index : ", bucketIndex, " ===================");
