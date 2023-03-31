@@ -32,16 +32,26 @@ import { PoolCommons } from './libraries/external/PoolCommons.sol';
  */
 contract PoolInfoUtils {
 
+    /**
+     *  @notice Exposes status of a liquidation auction
+     *  @param  borrower_         Identifies the loan being liquidated
+     *  @return kickTime_         Time auction was kicked, implying end time
+     *  @return collateral_       Remaining collateral available to be purchased               (WAD)
+     *  @return debtToCover_      Borrower debt to be covered                                  (WAD)
+     *  @return isCollateralized_ If true, takes will revert
+     *  @return price_            Current price of the auction                                 (WAD)
+     *  @return neutralPrice_     Price at which bond holder is neither rewarded nor penalized (WAD)
+     */
     function auctionStatus(address ajnaPool_, address borrower_)
         external
         view
         returns (
-            uint256 kickTime_,         // time auction was kicked, implying end time
-            uint256 collateral_,       // remaining collateral available to be purchased               (WAD)
-            uint256 debtToCover_,      // borrower debt to be covered                                  (WAD)
-            bool    isCollateralized_, // if true, takes will revert
-            uint256 price_,            // current price of the auction                                 (WAD)
-            uint256 neutralPrice_      // price at which bond holder is neither rewarded nor penalized (WAD)
+            uint256 kickTime_,
+            uint256 collateral_,
+            uint256 debtToCover_,
+            bool    isCollateralized_,
+            uint256 price_,
+            uint256 neutralPrice_
         )
     {
         IPool pool = IPool(ajnaPool_);
