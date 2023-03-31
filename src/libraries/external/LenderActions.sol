@@ -20,6 +20,8 @@ import { Deposits } from '../internal/Deposits.sol';
 import { Buckets }  from '../internal/Buckets.sol';
 import { Maths }    from '../internal/Maths.sol';
 
+import "@std/console.sol";
+
 /**
     @title  LenderActions library
     @notice External library containing logic for pool actors:
@@ -835,6 +837,8 @@ library LenderActions {
         uint256 bucketLPs     = bucket.lps;
         uint256 bucketDeposit = Deposits.valueAt(deposits_, index_);
 
+        console.log("removeMaxColl %s %s", maxAmount_, bucketCollateral);
+        
         // limit amount by what is available in the bucket
         collateralAmount_ = Maths.min(maxAmount_, bucketCollateral);
 
@@ -847,6 +851,11 @@ library LenderActions {
             bucketPrice
         );
 
+        console.log("  lps %s requiredLPs %s", bucketLPs, requiredLPs);
+        console.log("  lps %s requiredLPs %s", lenderLpBalance, requiredLPs);
+
+        console.log("  collateralAmount %s", collateralAmount_);
+
         // limit withdrawal by the lender's LPB
         if (requiredLPs <= lenderLpBalance) {
             // withdraw collateralAmount_ as is
@@ -857,6 +866,8 @@ library LenderActions {
 
             if (collateralAmount_ == 0) revert InsufficientLPs();
         }
+
+        console.log("  collateralAmount %s", collateralAmount_);
 
         // update bucket LPs and collateral balance
         bucketLPs -= Maths.min(bucketLPs, lpAmount_);

@@ -6,6 +6,8 @@ import { Bucket, Lender } from '../../interfaces/pool/commons/IPoolState.sol';
 
 import { Maths } from './Maths.sol';
 
+import "@std/console.sol";
+
 /**
     @title  Buckets library
     @notice Internal library containing common logic for buckets management.
@@ -45,6 +47,9 @@ library Buckets {
         uint256 bankruptcyTime = bucket_.bankruptcyTime;
         if (bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
 
+        console.log("addCollateral %s %s", collateralAmountToAdd_, bucketPrice_);
+        console.log("  existing coll ", bucket_.collateral);
+        
         // calculate amount of LPs to be added for the amount of collateral added to bucket
         addedLPs_ = collateralToLPs(
             bucket_.collateral,
@@ -58,6 +63,8 @@ library Buckets {
         // update bucket collateral
         bucket_.collateral += collateralAmountToAdd_;
         // update bucket and lender LPs balance and deposit timestamp
+        console.log("  deposit %s", deposit_);
+        console.log("  lps and lpstoadd %s %s", bucket_.lps, addedLPs_);
         bucket_.lps += addedLPs_;
 
         addLenderLPs(bucket_, bankruptcyTime, lender_, addedLPs_);
@@ -109,7 +116,11 @@ library Buckets {
     ) internal pure returns (uint256 lps_) {
         uint256 rate = getInverseExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_);
 
-        lps_ = (collateral_ * bucketPrice_ * rate + 5e35) / 1e36;
+        if (bucketLPs_ == 0) {
+            lps_ = Maths.wmul(collateral_, bucketPrice_);
+        } else {
+            lps_ = (collateral_ * bucketLPs_) / (bucketCollateral_ + Maths.wdiv(deposit_, bucketPrice_));
+        }
     }
 
     /**
@@ -165,6 +176,6 @@ library Buckets {
         uint256 bucketPrice_
     ) internal pure returns (uint256) {
         return bucketLPs_ == 0 ? Maths.WAD :
-            bucketLPs_ / (bucketDeposit_ + bucketPrice_ * bucketCollateral_);
+            (bucketLPs_ * 1e36) / (bucketDeposit_ * 1e18 + bucketPrice_ * bucketCollateral_);
     }
 }
