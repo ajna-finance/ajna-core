@@ -388,8 +388,8 @@ library LenderActions {
         removeParams.index             = params_.index;
         removeParams.dustLimit         = poolState_.quoteDustLimit;
 
-        uint256 scaledRemaining;
-        (removedAmount_, redeemedLPs_, scaledRemaining) = _removeMaxDeposit(
+        uint256 unscaledRemaining;
+        (removedAmount_, redeemedLPs_, unscaledRemaining) = _removeMaxDeposit(
             deposits_,
             removeParams
         );
@@ -403,7 +403,7 @@ library LenderActions {
 
         uint256 lpsRemaining = removeParams.bucketLPs - redeemedLPs_;
 
-        if (removeParams.bucketCollateral == 0 && scaledRemaining == 0 && lpsRemaining != 0) {
+        if (removeParams.bucketCollateral == 0 && unscaledRemaining == 0 && lpsRemaining != 0) {
             emit BucketBankruptcy(params_.index, lpsRemaining);
             bucket.lps            = 0;
             bucket.bankruptcyTime = block.timestamp;
@@ -887,14 +887,14 @@ library LenderActions {
      *  @dev    write state:
      *          - Deposits.unscaledRemove (remove amount in Fenwick tree, from index):
      *              - update values array state
-     *  @return removedAmount_   Amount of scaled deposit removed.
-     *  @return redeemedLPs_     Amount of bucket LPs corresponding for calculated scaled deposit amount.
-     *  @return scaledRemaining_ Amount of scaled deposit remaining.
+     *  @return removedAmount_     Amount of scaled deposit removed.
+     *  @return redeemedLPs_       Amount of bucket LPs corresponding for calculated scaled deposit amount.
+     *  @return unscaledRemaining_ Amount of unscaled deposit remaining.
      */
     function _removeMaxDeposit(
         DepositsState storage deposits_,
         RemoveDepositParams memory params_
-    ) internal returns (uint256 removedAmount_, uint256 redeemedLPs_, uint256 scaledRemaining_) {
+    ) internal returns (uint256 removedAmount_, uint256 redeemedLPs_, uint256 unscaledRemaining_) {
 
         uint256 unscaledDepositAvailable = Deposits.unscaledValueAt(deposits_, params_.index);
         if (unscaledDepositAvailable == 0) revert InsufficientLiquidity(); // revert if there's no liquidity available to remove
@@ -939,9 +939,9 @@ library LenderActions {
             removedAmount_ = scaledDepositAvailable;
         }
 
-        scaledRemaining_ = scaledDepositAvailable - removedAmount_;
-
         uint256 unscaledRemovedAmount = Maths.min(unscaledDepositAvailable, Maths.wdiv(removedAmount_, depositScale));
+        unscaledRemaining_ = unscaledDepositAvailable - unscaledRemovedAmount;
+
         Deposits.unscaledRemove(deposits_, params_.index, unscaledRemovedAmount); // update FenwickTree
     }
 
