@@ -426,6 +426,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         uint256 nextEpoch = epoch_ + 1;
         uint256 claimedRewardsInNextEpoch = rewardsClaimed[nextEpoch];
         uint256 bucketIndex;
+        uint256 interestEarned;
 
         // iterate through all buckets and calculate epoch rewards for
         for (uint256 i = 0; i < positionIndexes_.length; ) {
@@ -444,26 +445,25 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             }
 
             // calculate the amount of interest accrued in current epoch
-            uint256 interestEarned = _calculateExchangeRateInterestEarned(
+            interestEarned += _calculateExchangeRateInterestEarned(
                 ajnaPool_,
                 nextEpoch,
                 bucketIndex,
                 bucketSnapshot.lpsAtStakeTime,
                 bucketRate
-            );
-
-            // calculate and accumulate rewards if interest earned
-            if (interestEarned != 0) {
-                epochRewards_ += _calculateNewRewards(
-                    ajnaPool_,
-                    interestEarned,
-                    nextEpoch,
-                    epoch_,
-                    claimedRewardsInNextEpoch
-                );
-            }
-
+            ); 
             unchecked { ++i; }
+        }
+
+        // calculate and accumulate rewards if interest earned
+        if (interestEarned != 0) {
+            epochRewards_ = _calculateNewRewards(
+                ajnaPool_,
+                interestEarned,
+                nextEpoch,
+                epoch_,
+                claimedRewardsInNextEpoch
+            );
         }
     }
 
