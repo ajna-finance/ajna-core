@@ -9,6 +9,7 @@ import {
     _borrowFeeRate,
     _depositFeeRate,
     _indexOf,
+    _isCollateralized,
     _lpsToCollateral,
     _lpsToQuoteToken,
     _minDebtAmount,
@@ -30,6 +31,32 @@ import { PoolCommons } from './libraries/external/PoolCommons.sol';
  *  @dev    Pool info is calculated using same helper functions / logic as in Pool contracts.
  */
 contract PoolInfoUtils {
+
+    function auctionStatus(address ajnaPool_, address borrower_)
+        external
+        view
+        returns (
+            uint256 kickTime_,         // time auction was kicked, implying end time
+            uint256 collateral_,       // remaining collateral available to be purchased               (WAD)
+            uint256 debtToCover_,      // borrower debt to be covered                                  (WAD)
+            bool    isCollateralized_, // if true, takes will revert
+            uint256 price_,            // current price of the auction                                 (WAD)
+            uint256 neutralPrice_      // price at which bond holder is neither rewarded nor penalized (WAD)
+        )
+    {
+        IPool pool = IPool(ajnaPool_);
+        uint256 kickMomp;
+        ( , , , kickTime_, kickMomp, neutralPrice_, , , , ) = pool.auctionInfo(borrower_);
+        if (kickTime_ != 0) {
+            (debtToCover_, collateral_, ) = this.borrowerInfo(ajnaPool_, borrower_);
+            
+            (uint256 poolDebt, , ) = pool.debtInfo();
+            uint256 lup_           = _priceAt(pool.depositIndex(poolDebt));
+            isCollateralized_      = _isCollateralized(debtToCover_, collateral_, lup_, pool.poolType());
+
+            price_ = Auctions._auctionPrice(kickMomp, neutralPrice_, kickTime_);
+        }
+    }
 
     function borrowerInfo(address ajnaPool_, address borrower_)
         external
