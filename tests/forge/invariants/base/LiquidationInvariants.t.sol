@@ -4,17 +4,10 @@ pragma solidity 0.8.14;
 
 import "@std/console.sol";
 
-import {
-    LENDER_MIN_BUCKET_INDEX,
-    LENDER_MAX_BUCKET_INDEX,
-    BORROWER_MIN_BUCKET_INDEX
-} from './handlers/BasicPoolHandler.sol';
-
-import { LiquidationPoolHandler } from './handlers/LiquidationPoolHandler.sol';
+import { IBaseHandler }           from '../interfaces/IBaseHandler.sol';
 import { BasicInvariants }        from './BasicInvariants.t.sol';
-import { IBaseHandler }           from './interfaces/IBaseHandler.sol';
 
-contract LiquidationInvariants is BasicInvariants {
+abstract contract LiquidationInvariants is BasicInvariants {
 
     /**************************************************************************************************************************************/
     /*** Invariant Tests                                                                                                                ***/
@@ -27,27 +20,6 @@ contract LiquidationInvariants is BasicInvariants {
         * A5: for each auction, kicker locked bond is more than equal to auction bond
         * A6: if a Liquidation is not taken then the take flag (Liquidation.alreadyTaken) should be False, if already taken then the take flag should be True
     ****************************************************************************************************************************************/
-    
-    LiquidationPoolHandler internal _liquidationPoolHandler;
-
-    function setUp() public override virtual{
-
-        super.setUp();
-
-        excludeContract(address(_basicPoolHandler));
-
-        _liquidationPoolHandler = new LiquidationPoolHandler(
-            address(_pool),
-            address(_ajna),
-            address(_quote),
-            address(_collateral),
-            address(_poolInfo),
-            NUM_ACTORS,
-            address(this)
-        );
-
-        _handler = address(_liquidationPoolHandler);
-    }
 
     // checks sum of all borrower's t0debt is equals to total pool t0debtInAuction
     function invariant_debtInAuction_A1() public useCurrentTimestamp {
@@ -146,7 +118,7 @@ contract LiquidationInvariants is BasicInvariants {
         }
     }
 
-    function invariant_call_summary() external virtual override useCurrentTimestamp {
+    function invariant_call_summary() public virtual override useCurrentTimestamp {
         console.log("\nCall Summary\n");
         console.log("--Lender----------");
         console.log("BLiquidationHandler.addQuoteToken         ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.addQuoteToken"));

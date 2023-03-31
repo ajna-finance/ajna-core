@@ -2,26 +2,13 @@
 
 pragma solidity 0.8.14;
 
-import 'src/libraries/internal/Maths.sol';
+import { Maths } from 'src/libraries/internal/Maths.sol';
 
-import { UnboundedReservePoolHandler } from '../base/UnboundedReservePoolHandler.sol';
+import { UnboundedReservePoolHandler } from '../../base/handlers/unbounded/UnboundedReservePoolHandler.sol';
+import { MIN_AMOUNT }                  from '../../base/handlers/unbounded/BaseHandler.sol';
+import { LiquidationPoolHandler }      from './LiquidationPoolHandler.sol';
 
-import { LiquidationPoolHandler } from './LiquidationPoolHandler.sol';
-import { MIN_AMOUNT } from '../base/BaseHandler.sol';
-
-contract ReservePoolHandler is UnboundedReservePoolHandler, LiquidationPoolHandler {
-
-    constructor(
-        address pool_,
-        address ajna_,
-        address quote_,
-        address collateral_,
-        address poolInfo_,
-        uint256 numOfActors_,
-        address testContract_
-    ) LiquidationPoolHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
-
-    }
+abstract contract ReservePoolHandler is UnboundedReservePoolHandler, LiquidationPoolHandler {
 
     /*******************************/
     /*** Reserves Test Functions ***/

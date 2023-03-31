@@ -4,24 +4,36 @@ pragma solidity 0.8.14;
 
 import '@std/Test.sol';
 
-import { ERC20Pool }        from 'src/ERC20Pool.sol';
-import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
 import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
+import { Pool }             from 'src/base/Pool.sol';
 
-import { TokenWithNDecimals, BurnableToken }  from '../../../utils/Tokens.sol';
+import { TokenWithNDecimals, BurnableToken }  from '../../utils/Tokens.sol';
+
 import { InvariantsTestHelpers } from './InvariantsTestHelpers.sol';
 
-abstract contract InvariantsTestBase is InvariantsTestHelpers, Test {
+abstract contract BaseInvariants is InvariantsTestHelpers, Test {
 
     TokenWithNDecimals internal _quote;
-    TokenWithNDecimals internal _collateral;
 
     BurnableToken internal _ajna;
 
-    ERC20Pool        internal _pool;
-    ERC20Pool        internal _impl;
+    Pool             internal _pool;
     PoolInfoUtils    internal _poolInfo;
-    ERC20PoolFactory internal _poolFactory;
+
+    // bucket exchange rate tracking
+    mapping(uint256 => uint256) internal previousBucketExchangeRate;
+
+    // inflator tracking
+    uint256 previousInflator;
+    uint256 previousInflatorUpdate;
+
+    // interest rate tracking
+    uint256 previousInterestRateUpdate;
+    uint256 previousTotalInterestEarned;
+    uint256 previousTotalInterestEarnedUpdate;
+
+    // address of pool handler
+    address          internal _handler;
 
     uint256 public currentTimestamp;
 
@@ -36,13 +48,9 @@ abstract contract InvariantsTestBase is InvariantsTestHelpers, Test {
         // Tokens
         _ajna       = new BurnableToken("Ajna", "A");
         _quote      = new TokenWithNDecimals("Quote", "Q", uint8(vm.envUint("QUOTE_PRECISION")));
-        _collateral = new TokenWithNDecimals("Collateral", "C", uint8(vm.envUint("COLLATERAL_PRECISION")));
 
         // Pool
-        _poolFactory = new ERC20PoolFactory(address(_ajna));
-        _pool        = ERC20Pool(_poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
         _poolInfo    = new PoolInfoUtils();
-        _impl        = _poolFactory.implementation();
 
         currentTimestamp = block.timestamp;
     }

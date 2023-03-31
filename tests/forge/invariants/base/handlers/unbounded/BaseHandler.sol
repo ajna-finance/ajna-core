@@ -2,12 +2,9 @@
 
 pragma solidity 0.8.14;
 
-import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
-
 import '@std/Test.sol';
 
-import { ERC20Pool }        from 'src/ERC20Pool.sol';
-import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
+import { Pool }             from 'src/base/Pool.sol';
 import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
 import { PoolCommons }      from 'src/libraries/external/PoolCommons.sol';
 import {
@@ -15,11 +12,11 @@ import {
     MAX_PRICE,
     MIN_PRICE
 }                           from 'src/libraries/helpers/PoolHelper.sol';
+import { Maths }            from 'src/libraries/internal/Maths.sol';
 
-import { TokenWithNDecimals, BurnableToken } from '../../../utils/Tokens.sol';
+import { TokenWithNDecimals, BurnableToken } from '../../../../utils/Tokens.sol';
 
-import 'src/libraries/internal/Maths.sol';
-import '../interfaces/ITestBase.sol';
+import '../../../interfaces/ITestBase.sol';
 
 uint256 constant LENDER_MIN_BUCKET_INDEX = 2570;
 uint256 constant LENDER_MAX_BUCKET_INDEX = 2572;
@@ -34,12 +31,11 @@ abstract contract BaseHandler is Test {
 
     // Tokens
     TokenWithNDecimals internal _quote;
-    TokenWithNDecimals internal _collateral;
 
     BurnableToken internal _ajna;
 
     // Pool
-    ERC20Pool     internal _pool;
+    Pool     internal _pool;
     PoolInfoUtils internal _poolInfo;
 
     // Test invariant contract
@@ -75,22 +71,16 @@ abstract contract BaseHandler is Test {
         address pool_,
         address ajna_,
         address quote_,
-        address collateral_,
         address poolInfo_,
-        uint256 numOfActors_,
         address testContract_
     ) {
         // Tokens
         _ajna       = BurnableToken(ajna_);
         _quote      = TokenWithNDecimals(quote_);
-        _collateral = TokenWithNDecimals(collateral_);
 
         // Pool
-        _pool     = ERC20Pool(pool_);
+        _pool     = Pool(pool_);
         _poolInfo = PoolInfoUtils(poolInfo_);
-
-        // Actors
-        actors = _buildActors(numOfActors_);
 
         // Test invariant contract
         testContract = ITestBase(testContract_);
@@ -153,27 +143,6 @@ abstract contract BaseHandler is Test {
     /*****************************/
     /*** Pool Helper Functions ***/
     /*****************************/
-
-    function _buildActors(uint256 noOfActors_) internal returns(address[] memory) {
-        address[] memory actorsAddress = new address[](noOfActors_);
-
-        for (uint i = 0; i < noOfActors_; i++) {
-            address actor = makeAddr(string(abi.encodePacked("Actor", Strings.toString(i))));
-            actorsAddress[i] = actor;
-
-            vm.startPrank(actor);
-
-            _quote.mint(actor, 1e45);
-            _quote.approve(address(_pool), 1e45);
-
-            _collateral.mint(actor, 1e45);
-            _collateral.approve(address(_pool), 1e45);
-
-            vm.stopPrank();
-        }
-
-        return actorsAddress;
-    }
 
     function _updatePoolState() internal {
         _pool.updateInterest();

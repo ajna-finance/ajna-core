@@ -4,20 +4,15 @@ pragma solidity 0.8.14;
 
 import "@std/console.sol";
 
-import { Maths } from 'src/libraries/internal/Maths.sol';
-
+import { IBaseHandler }  from '../interfaces/IBaseHandler.sol';
 import {
     LENDER_MIN_BUCKET_INDEX,
-    LENDER_MAX_BUCKET_INDEX,
-    BORROWER_MIN_BUCKET_INDEX,
-    BasicPoolHandler
-} from './handlers/BasicPoolHandler.sol';
-
-import { InvariantsTestBase }     from './base/InvariantsTestBase.sol';
-import { IBaseHandler } from './interfaces/IBaseHandler.sol';
+    LENDER_MAX_BUCKET_INDEX
+}                         from './handlers/unbounded/BaseHandler.sol';
+import { BaseInvariants } from '../base/BaseInvariants.sol';
 
 // contains invariants for the test
-contract BasicInvariants is InvariantsTestBase {
+abstract contract BasicInvariants is BaseInvariants {
 
     /**************************************************************************************************************************************/
     /*** Invariant Tests                                                                                                                ***/
@@ -33,10 +28,6 @@ contract BasicInvariants is InvariantsTestBase {
      * Quote Token
         * QT1: poolQtBal + poolDebt >= totalBondEscrowed + poolDepositSize
         * QT2: pool t0 debt = sum of all borrower's t0 debt
-
-     * Collateral Token
-        * CT1: poolCtBal >= sum of all borrower's collateral + sum of all bucket's claimable collateral
-        * CT7: pool Pledged collateral = sum of all borrower's pledged collateral
     
      * Loan
         * L1: for each Loan in loans array (LoansState.loans) starting from index 1, the corresponding address (Loan.borrower) is not 0x, the threshold price (Loan.thresholdPrice) is different than 0
@@ -54,55 +45,6 @@ contract BasicInvariants is InvariantsTestBase {
         * F3: For any index i < MAX_FENWICK_INDEX, findIndexOfSum(prefixSum(i)) > i
         * F4: For any index i, there is zero deposit above i and below findIndexOfSum(prefixSum(i) + 1): findIndexOfSum(prefixSum(i)) == findIndexOfSum(prefixSum(j) - deposits.valueAt(j)), where j is the next index from i with deposits != 0
     ****************************************************************************************************************************************/
-
-    uint256          internal constant NUM_ACTORS = 10;
-    BasicPoolHandler internal _basicPoolHandler;
-    address          internal _handler;
-
-    // bucket exchange rate tracking
-    mapping(uint256 => uint256) internal previousBucketExchangeRate;
-
-    uint256 previousInflator;
-    uint256 previousInflatorUpdate;
-
-    uint256 previousInterestRateUpdate;
-    uint256 previousTotalInterestEarned;
-    uint256 previousTotalInterestEarnedUpdate;
-
-    function setUp() public override virtual{
-
-        super.setUp();
-
-        _basicPoolHandler = new BasicPoolHandler(
-            address(_pool),
-            address(_ajna),
-            address(_quote),
-            address(_collateral),
-            address(_poolInfo),
-            NUM_ACTORS,
-            address(this)
-        );
-
-        _handler = address(_basicPoolHandler);
-
-        excludeContract(address(_ajna));
-        excludeContract(address(_collateral));
-        excludeContract(address(_quote));
-        excludeContract(address(_poolFactory));
-        excludeContract(address(_pool));
-        excludeContract(address(_poolInfo));
-        excludeContract(address(_impl));
-
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            ( , , , , ,uint256 exchangeRate) = _poolInfo.bucketInfo(address(_pool), bucketIndex);
-            previousBucketExchangeRate[bucketIndex] = exchangeRate;
-        }
-
-        (, previousInterestRateUpdate) = _pool.interestRateInfo();
-
-        // TODO: Change once this issue is resolved -> https://github.com/foundry-rs/foundry/issues/2963
-        targetSender(address(0x1234));
-    }
 
     // checks pool lps are equal to sum of all lender lps in a bucket 
     function invariant_Lps_B1_B4() public useCurrentTimestamp {
@@ -186,34 +128,6 @@ contract BasicInvariants is InvariantsTestBase {
             1e13,
             "Incorrect pool quote token"
         );
-    }
-
-    // checks pools collateral Balance to be equal to collateral pledged
-    function invariant_collateralBalance_CT1_CT7() public useCurrentTimestamp {
-        uint256 actorCount = IBaseHandler(_handler).getActorsCount();
-
-        uint256 totalCollateralPledged;
-        for (uint256 i = 0; i < actorCount; i++) {
-            address borrower = IBaseHandler(_handler).actors(i);
-
-            ( , uint256 borrowerCollateral, ) = _pool.borrowerInfo(borrower);
-
-            totalCollateralPledged += borrowerCollateral;
-        }
-
-        assertEq(_pool.pledgedCollateral(), totalCollateralPledged, "Incorrect Collateral Pledged");
-
-        // convert pool collateral balance into WAD
-        uint256 collateralBalance = _collateral.balanceOf(address(_pool)) * 10**(18 - _collateral.decimals());
-        uint256 bucketCollateral;
-
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            (, uint256 collateral, , , ) = _pool.bucketInfo(bucketIndex);
-
-            bucketCollateral += collateral;
-        }
-
-        assertGe(collateralBalance, bucketCollateral + _pool.pledgedCollateral());
     }
 
     // checks pool debt is equal to sum of all borrowers debt
@@ -407,7 +321,7 @@ contract BasicInvariants is InvariantsTestBase {
         }
     }
 
-    function invariant_call_summary() external virtual useCurrentTimestamp {
+    function invariant_call_summary() public virtual useCurrentTimestamp {
         console.log("\nCall Summary\n");
         console.log("--Lender----------");
         console.log("BBasicHandler.addQuoteToken         ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.addQuoteToken"));

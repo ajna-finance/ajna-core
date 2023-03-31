@@ -2,21 +2,12 @@
 
 pragma solidity 0.8.14;
 
-import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
-
 import "@std/console.sol";
 
-import {
-    LENDER_MIN_BUCKET_INDEX,
-    LENDER_MAX_BUCKET_INDEX,
-    BORROWER_MIN_BUCKET_INDEX
-} from './handlers/BasicPoolHandler.sol';
-
-import { ReservePoolHandler }    from './handlers/ReservePoolHandler.sol';
+import { IBaseHandler }          from '../interfaces/IBaseHandler.sol';
 import { LiquidationInvariants } from './LiquidationInvariants.t.sol';
-import { IBaseHandler }          from './interfaces/IBaseHandler.sol';
 
-contract ReserveInvariants is LiquidationInvariants {
+abstract contract ReserveInvariants is LiquidationInvariants {
 
     /**************************************************************************************************************************************/
     /*** Invariant Tests                                                                                                                ***/
@@ -35,27 +26,6 @@ contract ReserveInvariants is LiquidationInvariants {
         * RE11: Reserves decrease by claimableReserves by startClaimableReserveAuction
         * RE12: Reserves decrease by amount of reserve used to settle a auction
     ****************************************************************************************************************************************/
-    
-    ReservePoolHandler internal _reservePoolHandler;
-
-    function setUp() public override virtual {
-
-        super.setUp();
-
-        excludeContract(address(_liquidationPoolHandler));
-
-        _reservePoolHandler = new ReservePoolHandler(
-            address(_pool),
-            address(_ajna),
-            address(_quote),
-            address(_collateral),
-            address(_poolInfo),
-            NUM_ACTORS,
-            address(this)
-        );
-
-        _handler = address(_reservePoolHandler);
-    }
 
     function invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10_RE11_RE12() public useCurrentTimestamp {
 
