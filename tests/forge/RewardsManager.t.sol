@@ -783,7 +783,7 @@ contract RewardsManagerTest is ERC20HelperContract {
             lpBalance:    10_000 * 1e18,
             collateral:   0,
             deposit:      4_936.865619773958005817 * 1e18,
-            exchangeRate: 0.493686561977395801 * 1e18
+            exchangeRate: 0.493686561977395800 * 1e18
         });
 
         /***********************/
@@ -1323,11 +1323,11 @@ contract RewardsManagerTest is ERC20HelperContract {
         });
         uint256 tokenIdThree = _mintAndMemorializePositionNFT(mintMemorializeParams);
         // bucket exchange rates are higher at the time minter three stakes
-        assertEq(_poolOne.bucketExchangeRate(2550), 1.000000116558299385 * 1e18);
-        assertEq(_poolOne.bucketExchangeRate(2551), 1.000000116558299385 * 1e18);
-        assertEq(_poolOne.bucketExchangeRate(2552), 1.000000116558299385 * 1e18);
-        assertEq(_poolOne.bucketExchangeRate(2553), 1.000000116558299385 * 1e18);
-        assertEq(_poolOne.bucketExchangeRate(2555), 1.000000116558299385 * 1e18);
+        assertEq(_poolOne.bucketExchangeRate(2550), 1.000000116558299384 * 1e18);
+        assertEq(_poolOne.bucketExchangeRate(2551), 1.000000116558299384 * 1e18);
+        assertEq(_poolOne.bucketExchangeRate(2552), 1.000000116558299384 * 1e18);
+        assertEq(_poolOne.bucketExchangeRate(2553), 1.000000116558299384 * 1e18);
+        assertEq(_poolOne.bucketExchangeRate(2555), 1.000000116558299384 * 1e18);
         _stakeToken(address(_poolOne), _minterThree, tokenIdThree);
 
         skip(1 days);
@@ -1346,11 +1346,11 @@ contract RewardsManagerTest is ERC20HelperContract {
             pool:              address(_poolOne),
             tokenId:           tokenIdTwo,
             claimedArray:      _epochsClaimedArray(1, 0),
-            reward:            39.908019526547891790 * 1e18,
+            reward:            39.908019526547849960 * 1e18,
             updateRatesReward: 0
         });
         uint256 minterTwoBalance = _ajnaToken.balanceOf(_minterTwo);
-        assertEq(minterTwoBalance, 39.908019526547891790 * 1e18);
+        assertEq(minterTwoBalance, 39.908019526547849960 * 1e18);
         _unstakeToken({
             minter:            _minterThree,
             pool:              address(_poolOne),
