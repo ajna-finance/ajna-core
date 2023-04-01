@@ -39,10 +39,10 @@ interface IPoolState {
 
     /**
      *  @notice Returns pool related debt values.
-     *  @return debt_                Current amount of debt owed by borrowers in pool.
-     *  @return accruedDebt_         Debt owed by borrowers based on last inflator snapshot.
+     *  @return debt_            Current amount of debt owed by borrowers in pool.
+     *  @return accruedDebt_     Debt owed by borrowers based on last inflator snapshot.
      *  @return debtInAuction_       Total amount of debt in auction.
-     *  @return t0Debt2ToCollateral_ Total amount of debt in auction.
+     *  @return t0Debt2ToCollateral_ t0debt accross all borrowers divided by their collateral, used in determining a collateraliation weighted debt.
      */
     function debtInfo() external view returns (uint256 debt_, uint256 accruedDebt_, uint256 debtInAuction_, uint256 t0Debt2ToCollateral_);
 
