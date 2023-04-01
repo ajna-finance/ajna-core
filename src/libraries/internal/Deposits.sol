@@ -90,7 +90,7 @@ library Deposits {
             // Compute sum up to sumIndex_ + i
             uint256 scaledValue =
                 lowerIndexSum +
-                (scaling != 0 ?  (runningScale * scaling * value ) / 1e36 : (runningScale * value ) / 1e18);
+                (scaling != 0 ?  (runningScale * scaling * value + 5e35) / 1e36 : (runningScale * value + 5e17) / 1e18);
 
             if (scaledValue  < targetSum_) {
                 // Target value is too small, need to consider increasing sumIndex_ still

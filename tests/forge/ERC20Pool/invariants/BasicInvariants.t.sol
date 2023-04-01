@@ -405,7 +405,7 @@ contract BasicInvariants is InvariantsTestBase {
             console.log("Next nonzero bucket: ", nextNonzeroBucket);
             for(uint256 j = bucketIndex + 1; j < nextNonzeroBucket && j < LENDER_MAX_BUCKET_INDEX; j++) {
                 (, , , uint256 depositAtJ, ) = _pool.bucketInfo(j);
-                //                console.log("Deposit at %s is %s", j, depositAtJ);
+                console.log("Deposit at %s is %s", j, depositAtJ);
                 require(
                         depositAtJ == 0,
                         "F4: incorrect buckets with 0 deposit"
