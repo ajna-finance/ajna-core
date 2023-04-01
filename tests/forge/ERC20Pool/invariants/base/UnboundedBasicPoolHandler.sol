@@ -34,7 +34,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         numberOfCalls['UBBasicHandler.addQuoteToken']++;
 
         (uint256 lpBalanceBeforeAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
-        (uint256 poolDebt, , )   = _pool.debtInfo();
+        (uint256 poolDebt, , ,)   = _pool.debtInfo();
         uint256 lupIndex         = _pool.depositIndex(poolDebt);
         (uint256 interestRate, ) = _pool.interestRateInfo();
 
@@ -241,7 +241,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.drawDebt']++;
 
-        (uint256 poolDebt, , ) = _pool.debtInfo();
+        (uint256 poolDebt, , ,) = _pool.debtInfo();
 
         // find bucket to borrow quote token
         uint256 bucket = _pool.depositIndex(amount_ + poolDebt) - 1;
