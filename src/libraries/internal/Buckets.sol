@@ -159,7 +159,7 @@ library Buckets {
         uint256 bucketPrice_
     ) internal pure returns (uint256) {
         return bucketLPs_ == 0 ? Maths.WAD :
-            Maths.wdiv(bucketDeposit_ + Maths.wmul(bucketPrice_, bucketCollateral_), bucketLPs_);   // make similar change here?
+            (bucketDeposit_ * 1e18 + bucketPrice_ * bucketCollateral_) / bucketLPs_;
     }
 
     /**

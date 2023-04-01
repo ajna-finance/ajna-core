@@ -927,7 +927,14 @@ library LenderActions {
         // scaledRemovedAmount = min ( maxAmount_, scaledDeposit, lenderLPsBalance*exchangeRate)
         // redeemedLPs_ = min ( maxAmount_/scaledExchangeRate, scaledDeposit/exchangeRate, lenderLPsBalance)
 
+        console.log("removeMaxdeposit depositConstaint %s", params_.depositConstraint);
+        console.log("                 scaledDepAvail   %s", scaledDepositAvailable);
+        console.log("                 bucketCollateral %s", params_.bucketCollateral);
+        console.log("                 bucketLPs        %s", params_.bucketLPs);
+        console.log("                 params LP cons   %s", params_.lpConstraint);
+        
         uint256 scaledLpConstraint = Maths.wmul(params_.lpConstraint, exchangeRate);
+        console.log("                 scaledLpConsta   %s", scaledLpConstraint);
         if (
             params_.depositConstraint < scaledDepositAvailable &&
             params_.depositConstraint < scaledLpConstraint
@@ -941,19 +948,31 @@ library LenderActions {
             redeemedLPs_   = Maths.wdiv(removedAmount_, exchangeRate);
         } else {
             // redeeming all LPs
+            console.log("Here");
             redeemedLPs_   = params_.lpConstraint;
             removedAmount_ = Maths.wmul(redeemedLPs_, exchangeRate);
         }
+        
+        console.log("                 removedAmount %s", removedAmount_);
+        console.log("                 redeemedLPs   %s", redeemedLPs_);
+        console.log("                 exchangerate  %s", exchangeRate);
+        
 
+        
         // If clearing out the bucket deposit, ensure it's zeroed out
         if (redeemedLPs_ == params_.bucketLPs) {
-            removedAmount_ = scaledDepositAvailable;
+            removedAmount_ = scaledDepositAvailable;  // TODO: shouldn't this be moved below the below, and use unscaled amount?
         }
 
+        console.log("  unscaledDepAvial %s depositScale %s", unscaledDepositAvailable, depositScale);
+        
         uint256 unscaledRemovedAmount = Maths.min(unscaledDepositAvailable, Maths.wdiv(removedAmount_, depositScale));
+        console.log("  unsclaedRemoveAmount %s", unscaledRemovedAmount);
         unscaledRemaining_ = unscaledDepositAvailable - unscaledRemovedAmount;
 
         Deposits.unscaledRemove(deposits_, params_.index, unscaledRemovedAmount); // update FenwickTree
+
+        console.log("  redeemed LPs %s removedAmount %s", redeemedLPs_, removedAmount_);
     }
 
     /**********************/
