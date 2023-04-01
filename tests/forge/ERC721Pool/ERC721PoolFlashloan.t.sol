@@ -53,7 +53,7 @@ contract ERC721PoolFlashloanTest is ERC721HelperContract {
             newLup:     _bucketPrice
         });
 
-        (uint256 poolDebt,,) = _pool.debtInfo();
+        (uint256 poolDebt,,,) = _pool.debtInfo();
         assertEq(poolDebt, 200.192307692307692400 * 1e18);
     }
 

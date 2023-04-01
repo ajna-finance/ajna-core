@@ -54,7 +54,7 @@ contract ERC20PoolFlashloanTest is ERC20HelperContract {
             newLup:     _bucketPrice
         });
 
-        (uint256 poolDebt,,) = _pool.debtInfo();
+        (uint256 poolDebt,,,) = _pool.debtInfo();
         assertEq(poolDebt, 25_024.038461538461550000 * 1e18);
     }
 

@@ -43,7 +43,7 @@ interface IPoolState {
      *  @return accruedDebt_     Debt owed by borrowers based on last inflator snapshot.
      *  @return debtInAuction_   Total amount of debt in auction.
      */
-    function debtInfo() external view returns (uint256 debt_, uint256 accruedDebt_, uint256 debtInAuction_);
+    function debtInfo() external view returns (uint256 debt_, uint256 accruedDebt_, uint256 debtInAuction_, uint256 t0Debt2ToCollateral_);
 
     /**
      *  @notice Mapping of borrower addresses to {Borrower} structs.
