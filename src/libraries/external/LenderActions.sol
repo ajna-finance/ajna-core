@@ -933,7 +933,15 @@ library LenderActions {
         console.log("                 bucketLPs        %s", params_.bucketLPs);
         console.log("                 params LP cons   %s", params_.lpConstraint);
         
-        uint256 scaledLpConstraint = Maths.wmul(params_.lpConstraint, exchangeRate);
+        //        uint256 scaledLpConstraint = Maths.wmul(params_.lpConstraint, exchangeRate);
+        uint256 scaledLpConstraint = Buckets.multiplyByExchangeRate(
+            params_.lpConstraint,
+            params_.bucketCollateral,
+            params_.bucketLPs,
+            scaledDepositAvailable,
+            params_.price
+        );
+ 
         console.log("                 scaledLpConsta   %s", scaledLpConstraint);
         if (
             params_.depositConstraint < scaledDepositAvailable &&
@@ -950,7 +958,13 @@ library LenderActions {
             // redeeming all LPs
             console.log("Here");
             redeemedLPs_   = params_.lpConstraint;
-            removedAmount_ = Maths.wmul(redeemedLPs_, exchangeRate);
+            removedAmount_ = Buckets.multiplyByExchangeRate(
+                                                            redeemedLPs_,
+                                                            params_.bucketCollateral,
+                                                            params_.bucketLPs,
+                                                            scaledDepositAvailable,
+                                                            params_.price
+            );
         }
         
         console.log("                 removedAmount %s", removedAmount_);
