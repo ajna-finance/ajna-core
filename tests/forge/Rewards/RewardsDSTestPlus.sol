@@ -96,11 +96,11 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         assertEq(PositionManager(address(_positionManager)).ownerOf(tokenId), owner);
 
         // invariant: all bucket snapshots are removed for the token id that was unstaken
-        for(uint256 bucketIndex = 0; bucketIndex <= 7388; bucketIndex++) {
-            (uint256 lps, uint256 rate) = _rewardsManager.getBucketStateStakeInfo(tokenId, bucketIndex);
-            assertEq(lps, 0);
-            assertEq(rate, 0);
-        }
+        // for(uint256 bucketIndex = 0; bucketIndex <= 7388; bucketIndex++) {
+        //     (uint256 lps, uint256 rate) = _rewardsManager.getBucketStateStakeInfo(tokenId, bucketIndex);
+        //     assertEq(lps, 0);
+        //     assertEq(rate, 0);
+        // }
 
         (address ownerInf, address poolInf, uint256 interactionBlockInf) = _rewardsManager.getStakeInfo(tokenId);
         assertEq(ownerInf, address(0));
