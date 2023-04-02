@@ -568,21 +568,21 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             lpBalance:    2_000 * 1e18,
             collateral:   202.986535499495858324 * 1e18,
             deposit:      0,
-            exchangeRate: 1.006527496638583020 * 1e18
+            exchangeRate: 1.006527496638583021 * 1e18
         });
         _assertBucket({
             index:        _i9_81,
             lpBalance:    5_000 * 1e18,
             collateral:   512.553688794695752468 * 1e18,
             deposit:      0,
-            exchangeRate: 1.006527496638583020 * 1e18
+            exchangeRate: 1.006527496638583021 * 1e18
         });
         _assertBucket({
             index:        _i9_72,
             lpBalance:    11_000 * 1e18,
             collateral:   284.459775705808389208 * 1e18,
             deposit:      8_290.291604705064327150 * 1e18,
-            exchangeRate: 1.005055386003800626 * 1e18
+            exchangeRate: 1.005055386003800627 * 1e18
         });
         _assertBucket({
             index:        _i9_62,
@@ -868,7 +868,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             lpBalance:    11_000 * 1e18,
             collateral:   0 * 1e18,
             deposit:      9_036.878045597692505047 * 1e18,
-            exchangeRate: 0.821534367781608409 * 1e18
+            exchangeRate: 0.821534367781608410 * 1e18
         });
 
         _pool.moveQuoteToken(10000000000 * 1e18, _i9_72, _i9_91, type(uint256).max);

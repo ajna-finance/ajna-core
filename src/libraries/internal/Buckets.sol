@@ -6,8 +6,6 @@ import { Bucket, Lender } from '../../interfaces/pool/commons/IPoolState.sol';
 
 import { Maths } from './Maths.sol';
 
-import "@std/console.sol";
-
 /**
     @title  Buckets library
     @notice Internal library containing common logic for buckets management.
@@ -47,9 +45,6 @@ library Buckets {
         uint256 bankruptcyTime = bucket_.bankruptcyTime;
         if (bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
 
-        console.log("addCollateral %s %s", collateralAmountToAdd_, bucketPrice_);
-        console.log("  existing coll ", bucket_.collateral);
-        
         // calculate amount of LPs to be added for the amount of collateral added to bucket
         addedLPs_ = collateralToLPs(
             bucket_.collateral,
@@ -63,8 +58,6 @@ library Buckets {
         // update bucket collateral
         bucket_.collateral += collateralAmountToAdd_;
         // update bucket and lender LPs balance and deposit timestamp
-        console.log("  deposit %s", deposit_);
-        console.log("  lps and lpstoadd %s %s", bucket_.lps, addedLPs_);
         bucket_.lps += addedLPs_;
 
         addLenderLPs(bucket_, bankruptcyTime, lender_, addedLPs_);

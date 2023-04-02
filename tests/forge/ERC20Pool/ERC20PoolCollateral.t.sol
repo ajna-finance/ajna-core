@@ -445,7 +445,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             from:     _bidder,
             amount:   0.5 * 1e18,
             index:    1530,
-            lpRedeem: 243_808.126330587520990920 * 1e18
+            lpRedeem: 243_808.126330587520990921 * 1e18
         });
 
         // check bucket state and bidder's LPs
@@ -966,7 +966,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
     }
 
     function testAddRemoveCollateralBucketExchangeRateInvariantDifferentActor2() external tearDown {
-        _mintCollateralAndApproveTokens(_lender,  1.000015410380886211 * 1e18);
+        _mintCollateralAndApproveTokens(_lender,  1000000000000000000 * 1e18);
         _mintCollateralAndApproveTokens(_bidder,  50000000000 * 1e18);
 
         _addCollateral({
