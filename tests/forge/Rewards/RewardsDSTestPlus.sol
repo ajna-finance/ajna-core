@@ -96,11 +96,11 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         assertEq(PositionManager(address(_positionManager)).ownerOf(tokenId), owner);
 
         // invariant: all bucket snapshots are removed for the token id that was unstaken
-        // for(uint256 bucketIndex = 0; bucketIndex <= 7388; bucketIndex++) {
-        //     (uint256 lps, uint256 rate) = _rewardsManager.getBucketStateStakeInfo(tokenId, bucketIndex);
-        //     assertEq(lps, 0);
-        //     assertEq(rate, 0);
-        // }
+        for(uint256 bucketIndex = 0; bucketIndex <= 7388; bucketIndex++) {
+            (uint256 lps, uint256 rate) = _rewardsManager.getBucketStateStakeInfo(tokenId, bucketIndex);
+            assertEq(lps, 0);
+            assertEq(rate, 0);
+        }
 
         (address ownerInf, address poolInf, uint256 interactionBlockInf) = _rewardsManager.getStakeInfo(tokenId);
         assertEq(ownerInf, address(0));
@@ -154,7 +154,7 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         uint256 tokenId,
         uint256 reward,
         uint256[] memory epochsClaimed
-        ) internal {
+    ) internal {
         changePrank(from);
         uint256 fromAjnaBal = _ajnaToken.balanceOf(from);
 
@@ -236,12 +236,7 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         assertEq(rewardsEarnedInf, rewardsEarned);
         assertEq(PositionManager(address(_positionManager)).ownerOf(tokenId), address(_rewardsManager));
     }
-
-
 }
-
-
-
 
 abstract contract RewardsHelperContract is RewardsDSTestPlus {
 
@@ -334,7 +329,6 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
         Token quote = Token(ERC20Pool(address(pool)).quoteTokenAddress());
 
         // deal tokens to the minter
-        deal(address(collateral), minter, 250_000 * 1e18);
         deal(address(quote), minter, mintAmount * indexes.length);
 
         // approve tokens
@@ -484,7 +478,7 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
         requiredCollateral_ = Maths.wdiv(expectedDebt, _poolUtils.indexToPrice(indexPrice)) + Maths.WAD;
     }
     
-    // // Helper function that returns a random subset from array
+    // Helper function that returns a random subset from array
     function _getRandomSubsetFromArray(uint256[] memory array) internal returns (uint256[] memory subsetArray) {
         uint256[] memory copyOfArray = new uint256[](array.length);
         for(uint j = 0; j < copyOfArray.length; j++){
