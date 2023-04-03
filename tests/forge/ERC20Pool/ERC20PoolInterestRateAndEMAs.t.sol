@@ -926,14 +926,14 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             })
         );
 
-        (uint256 poolDebt,,) = _pool.debtInfo();
+        (uint256 poolDebt,,,) = _pool.debtInfo();
         assertEq(poolDebt, expectedPoolDebt);
 
         // accrue interest
         _updateInterest();
 
         // check that no interest earned if HTP is over the highest price bucket
-        (poolDebt,,) = _pool.debtInfo();
+        (poolDebt,,,) = _pool.debtInfo();
         assertEq(poolDebt, expectedPoolDebt);
     }
 

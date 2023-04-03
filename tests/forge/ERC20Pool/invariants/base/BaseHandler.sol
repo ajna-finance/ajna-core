@@ -264,7 +264,7 @@ abstract contract BaseHandler is Test {
         uint256 pendingInflator;
         uint256 poolDebt;
         {
-            (, poolDebt ,) = _pool.debtInfo();
+            (, poolDebt ,,) = _pool.debtInfo();
 
             (uint256 inflator, uint256 inflatorUpdate) = _pool.inflatorInfo();
 

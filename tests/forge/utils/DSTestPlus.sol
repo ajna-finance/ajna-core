@@ -457,7 +457,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         (uint256 borrowerDebt, uint256 borrowerCollateral , ) = _poolUtils.borrowerInfo(address(_pool), state_.borrower);
         (, uint256 lockedBonds) = _pool.kickerInfo(state_.kicker);
         (vars.auctionTotalBondEscrowed,,,) = _pool.reservesInfo();
-        (,, vars.auctionDebtInAuction)  = _pool.debtInfo(); 
+        (,, vars.auctionDebtInAuction,)  = _pool.debtInfo(); 
         vars.borrowerThresholdPrice = borrowerCollateral > 0 ? borrowerDebt * Maths.WAD / borrowerCollateral : 0;
 
         assertEq(vars.auctionKickTime != 0,     state_.active);
@@ -524,7 +524,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
             uint256 poolTargetUtilization
         ) = _poolUtils.poolUtilizationInfo(address(_pool));
 
-        (uint256 poolDebt,,) = _pool.debtInfo();
+        (uint256 poolDebt,,,) = _pool.debtInfo();
 
         assertEq(htp, state_.htp);
         assertEq(lup, state_.lup);
