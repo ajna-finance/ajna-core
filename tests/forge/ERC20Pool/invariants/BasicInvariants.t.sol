@@ -251,17 +251,17 @@ contract BasicInvariants is InvariantsTestBase {
 
                 if( bucketLps < 1e9) {
                     requireWithinDiff(
-                                      Maths.wmul(currentExchangeRate, bucketLps),
-                                      Maths.wmul(previousExchangeRate, bucketLps),
-                                      1e16,  // allow changes up to 1 qt in value, 
-                                      "Incorrect exchange Rate changed"
+                        Maths.wmul(currentExchangeRate, bucketLps),
+                        Maths.wmul(previousExchangeRate, bucketLps),
+                        1e16,  // allow changes up to 1 qt in value
+                        "Incorrect exchange Rate changed"
                     );
                 } else {
                     requireWithinDiff(
-                                      currentExchangeRate,
-                                      previousExchangeRate,
-                                      1e14,  
-                                      "Incorrect exchange Rate changed"
+                        currentExchangeRate,
+                        previousExchangeRate,
+                        1e14,
+                        "Incorrect exchange Rate changed"
                     );
                 }
             }

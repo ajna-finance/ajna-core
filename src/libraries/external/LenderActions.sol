@@ -939,11 +939,11 @@ library LenderActions {
             // redeeming all LPs
             redeemedLPs_   = params_.lpConstraint;
             removedAmount_ = Buckets.multiplyByExchangeRate(
-                                                            redeemedLPs_,
-                                                            params_.bucketCollateral,
-                                                            params_.bucketLPs,
-                                                            scaledDepositAvailable,
-                                                            params_.price
+                redeemedLPs_,
+                params_.bucketCollateral,
+                params_.bucketLPs,
+                scaledDepositAvailable,
+                params_.price
             );
         }
         

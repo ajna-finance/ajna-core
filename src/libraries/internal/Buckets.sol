@@ -132,7 +132,7 @@ library Buckets {
     ) internal pure returns (uint256) {
         return Maths.wdiv(
             quoteTokens_,
-            getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_)  // we might want to not call get exchange rate nd operate on raw values?
+            getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_)
         );
     }
 
@@ -155,20 +155,20 @@ library Buckets {
 
     /**
      *  @notice Returns the exchange rate for a given bucket.
-     *  @param  x_                Quanity to multiply by exchange rate
+     *  @param  amount_           Amount to multiply by exchange rate
      *  @param  bucketCollateral_ Amount of collateral in bucket.
      *  @param  bucketLPs_        Amount of LPs in bucket.
      *  @param  bucketDeposit_    The amount of quote tokens deposited in the given bucket.
      *  @param  bucketPrice_      Bucket's price.
      */
     function multiplyByExchangeRate(
-        uint256 x_,
+        uint256 amount_,
         uint256 bucketCollateral_,
         uint256 bucketLPs_,
         uint256 bucketDeposit_,
         uint256 bucketPrice_
     ) internal pure returns (uint256) {
-        return bucketLPs_ == 0 ? x_ :
-            (bucketDeposit_ * x_ * 1e18 + bucketPrice_ * bucketCollateral_ * x_) / (bucketLPs_ * 1e18);
+        return bucketLPs_ == 0 ? amount_ :
+            (bucketDeposit_ * amount_ * 1e18 + bucketPrice_ * bucketCollateral_ * amount_) / (bucketLPs_ * 1e18);
     }
 }
