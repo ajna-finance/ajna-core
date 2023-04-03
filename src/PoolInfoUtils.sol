@@ -15,7 +15,6 @@ import {
     _priceAt,
     _reserveAuctionPrice,
     MAX_FENWICK_INDEX,
-    MAX_PRICE,
     MIN_PRICE
 } from './libraries/helpers/PoolHelper.sol';
 
