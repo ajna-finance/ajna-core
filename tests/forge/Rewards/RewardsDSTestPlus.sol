@@ -122,6 +122,7 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         assertEq(bETimestamp, timestamp);
         assertEq(bEInterest,  interest);
         assertEq(bEBurned,    burned);
+        assertEq(burned,      tokensToBurn);
     }
 
 

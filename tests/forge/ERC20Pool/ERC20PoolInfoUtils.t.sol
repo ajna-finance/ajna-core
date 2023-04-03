@@ -2,6 +2,7 @@
 pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
+import { Token }               from '../utils/Tokens.sol';
 
 import 'src/libraries/helpers/PoolHelper.sol';
 import 'src/interfaces/pool/erc20/IERC20Pool.sol';
@@ -204,6 +205,18 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
 
     function testMomp() external {
         assertEq(_poolUtils.momp(address(_pool)), 2_981.007422784467321543 * 1e18);
+
+        // ensure calculation does not revert on pools with no loans and no deposit
+        IERC20     otherCollateral = new Token("MompTestCollateral", "MTC");
+        IERC20Pool emptyPool       = ERC20Pool(_poolFactory.deployPool(address(otherCollateral), address(_quote), 0.05 * 10**18));
+        assertEq(_poolUtils.momp(address(emptyPool)), MIN_PRICE);
+
+        // should return HPB on pools with liquidity but no loans
+        changePrank(_lender);
+        uint256 hpbIndex = 369;
+        _quote.approve(address(emptyPool), type(uint256).max);
+        emptyPool.addQuoteToken(0.0213 * 1e18, hpbIndex, type(uint256).max);
+        assertEq(_poolUtils.momp(address(emptyPool)), _priceAt(hpbIndex));
     }
 
     function testBorrowFeeRate() external {
