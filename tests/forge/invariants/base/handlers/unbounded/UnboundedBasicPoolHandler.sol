@@ -26,8 +26,8 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         (uint256 lpBalanceBeforeAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
         (uint256 poolDebt, , ,)   = _pool.debtInfo();
-        uint256 lupIndex          = _pool.depositIndex(poolDebt);
-        (uint256 interestRate, )  = _pool.interestRateInfo();
+        uint256 lupIndex         = _pool.depositIndex(poolDebt);
+        (uint256 interestRate, ) = _pool.interestRateInfo();
 
         try _pool.addQuoteToken(amount_, bucketIndex_, block.timestamp + 1 minutes) {
         
