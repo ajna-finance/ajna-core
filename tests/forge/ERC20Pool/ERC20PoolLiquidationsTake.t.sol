@@ -1929,9 +1929,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         });
 
         // Take should revert
-        vm.expectRevert(abi.encodeWithSignature('NoAuction()'));
-        changePrank(_borrower2);
-        _pool.take(_borrower2, 1_000 * 1e18, _borrower2, new bytes(0));
+        _assertTakeNoAuctionRevert(_borrower2, _borrower2, 1_000 * 1e18);
     }
 
     function testTakeAuctionPriceLtNeutralPrice() external tearDown {
