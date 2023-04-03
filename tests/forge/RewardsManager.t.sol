@@ -17,7 +17,7 @@ import { IPoolErrors } from 'src/interfaces/pool/commons/IPoolErrors.sol';
 import { _borrowFeeRate } from 'src/libraries/helpers/PoolHelper.sol';
 
 import { Token }       from './utils/Tokens.sol';
-import { ERC20HelperContract } from './ERC20Pool/ERC20DSTestPlus.sol';
+import { ERC20HelperContract } from './unit/ERC20Pool/ERC20DSTestPlus.sol';
 
 contract RewardsManagerTest is ERC20HelperContract {
 

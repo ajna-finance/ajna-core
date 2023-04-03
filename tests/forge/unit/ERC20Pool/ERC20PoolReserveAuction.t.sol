@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 
 import { ERC20HelperContract }                 from './ERC20DSTestPlus.sol';
-import { FlashloanBorrower, SomeDefiStrategy } from '../utils/FlashloanBorrower.sol';
+import { FlashloanBorrower, SomeDefiStrategy } from '../../utils/FlashloanBorrower.sol';
 
 import 'src/libraries/helpers/PoolHelper.sol';
 import 'src/ERC20Pool.sol';

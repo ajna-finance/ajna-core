@@ -37,6 +37,7 @@ contract BasicERC20PoolInvariants is BasicInvariants {
 
     TokenWithNDecimals    internal _collateral;
     ERC20Pool             internal _erc20pool;
+    ERC20Pool             internal _impl;
     ERC20PoolFactory      internal _erc20poolFactory;
     BasicERC20PoolHandler internal _basicERC20PoolHandler;
 
@@ -46,6 +47,7 @@ contract BasicERC20PoolInvariants is BasicInvariants {
 
         _collateral       = new TokenWithNDecimals("Collateral", "C", uint8(vm.envUint("COLLATERAL_PRECISION")));
         _erc20poolFactory = new ERC20PoolFactory(address(_ajna));
+        _impl             = _erc20poolFactory.implementation();
         _erc20pool        = ERC20Pool(_erc20poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
         _pool             = Pool(address(_erc20pool));
 
@@ -67,6 +69,7 @@ contract BasicERC20PoolInvariants is BasicInvariants {
         excludeContract(address(_erc20poolFactory));
         excludeContract(address(_erc20pool));
         excludeContract(address(_poolInfo));
+        excludeContract(address(_impl));
 
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             ( , , , , ,uint256 exchangeRate) = _poolInfo.bucketInfo(address(_erc20pool), bucketIndex);

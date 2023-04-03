@@ -8,7 +8,7 @@ import {
     FlashloanBorrower,
     SomeDefiStrategy,
     SomeDefiStrategyWithRepayment
-} from '../utils/FlashloanBorrower.sol';
+} from '../../utils/FlashloanBorrower.sol';
 
 import 'src/libraries/helpers/PoolHelper.sol';
 import 'src/ERC20Pool.sol';

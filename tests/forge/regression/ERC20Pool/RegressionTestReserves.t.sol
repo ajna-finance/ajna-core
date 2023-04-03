@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.14;
 
-import { ReserveERC20PoolInvariants } from "../../ERC20Pool/ReserveERC20PoolInvariants.t.sol";
+import { ReserveERC20PoolInvariants } from "../../invariants/ERC20Pool/ReserveERC20PoolInvariants.t.sol";
 
 contract RegressionTestReserve is ReserveERC20PoolInvariants { 
 

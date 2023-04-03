@@ -27,6 +27,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
 
     NFTCollateralToken     internal _collateral;
     ERC721Pool             internal _erc721pool;
+    ERC721Pool             internal _impl;
     ERC721PoolFactory      internal _erc721poolFactory;
     BasicERC721PoolHandler internal _basicERC721PoolHandler;
 
@@ -35,10 +36,11 @@ contract BasicERC721PoolInvariants is BasicInvariants {
         super.setUp();
 
         uint256[] memory tokenIds;
-        _collateral       = new NFTCollateralToken();
+        _collateral        = new NFTCollateralToken();
         _erc721poolFactory = new ERC721PoolFactory(address(_ajna));
+        _impl              = _erc721poolFactory.implementation();
         _erc721pool        = ERC721Pool(_erc721poolFactory.deployPool(address(_collateral), address(_quote), tokenIds, 0.05 * 10**18));
-        _pool             = Pool(address(_erc721pool));
+        _pool              = Pool(address(_erc721pool));
 
         _basicERC721PoolHandler = new BasicERC721PoolHandler(
             address(_erc721pool),
@@ -58,6 +60,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
         excludeContract(address(_erc721poolFactory));
         excludeContract(address(_erc721pool));
         excludeContract(address(_poolInfo));
+        excludeContract(address(_impl));
 
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             ( , , , , ,uint256 exchangeRate) = _poolInfo.bucketInfo(address(_erc721pool), bucketIndex);

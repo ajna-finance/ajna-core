@@ -3,7 +3,7 @@ pragma solidity 0.8.14;
 
 import { ERC721HelperContract } from "./ERC721DSTestPlus.sol";
 
-import { NFTNoopTakeExample } from "../interactions/NFTTakeExample.sol";
+import { NFTNoopTakeExample } from "../../interactions/NFTTakeExample.sol";
 
 import 'src/libraries/helpers/PoolHelper.sol';
 

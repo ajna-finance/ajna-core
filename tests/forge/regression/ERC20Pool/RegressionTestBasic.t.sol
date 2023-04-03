@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.14;
 
-import { BasicERC20PoolInvariants } from "../../ERC20Pool/BasicERC20PoolInvariants.t.sol";
+import { BasicERC20PoolInvariants } from "../../invariants/ERC20Pool/BasicERC20PoolInvariants.t.sol";
 
 contract RegressionTestBasic is BasicERC20PoolInvariants { 
 

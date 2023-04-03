@@ -5,8 +5,8 @@ import { ERC20 } from '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
-import { DSTestPlus }        from '../utils/DSTestPlus.sol';
-import { NFTCollateralToken, Token, TokenWithNDecimals } from '../utils/Tokens.sol';
+import { DSTestPlus }        from '../../utils/DSTestPlus.sol';
+import { NFTCollateralToken, Token, TokenWithNDecimals } from '../../utils/Tokens.sol';
 
 import { ERC721Pool }        from 'src/ERC721Pool.sol';
 import { ERC721PoolFactory } from 'src/ERC721PoolFactory.sol';

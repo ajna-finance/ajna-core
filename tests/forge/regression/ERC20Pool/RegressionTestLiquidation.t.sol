@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.14;
 
-import { LiquidationERC20PoolInvariants } from "../../ERC20Pool/LiquidationERC20PoolInvariants.t.sol";
+import { LiquidationERC20PoolInvariants } from "../../invariants/ERC20Pool/LiquidationERC20PoolInvariants.t.sol";
 
 contract RegressionTestLiquidation is LiquidationERC20PoolInvariants { 
 

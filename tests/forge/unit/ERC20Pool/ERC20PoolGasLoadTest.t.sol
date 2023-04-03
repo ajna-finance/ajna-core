@@ -3,7 +3,7 @@ pragma solidity 0.8.14;
 
 import { ERC20DSTestPlus } from './ERC20DSTestPlus.sol';
 
-import '../utils/Tokens.sol';
+import '../../utils/Tokens.sol';
 
 import 'src/ERC20Pool.sol';
 import 'src/ERC20PoolFactory.sol';

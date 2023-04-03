@@ -53,7 +53,7 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
             _quote.mint(actor, 1e45);
             _quote.approve(address(_pool), 1e45);
 
-            _collateral.mint(actor, 100);
+            _collateral.mint(actor, 1);
             _collateral.setApprovalForAll(address(_pool), true);
 
             vm.stopPrank();

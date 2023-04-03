@@ -2,7 +2,7 @@
 pragma solidity 0.8.14;
 
 import { ERC721HelperContract }      from './ERC721DSTestPlus.sol';
-import { NFTCollateralToken, TokenWithNDecimals } from '../utils/Tokens.sol';
+import { NFTCollateralToken, TokenWithNDecimals } from '../../utils/Tokens.sol';
 
 import { ERC721Pool }        from 'src/ERC721Pool.sol';
 import { ERC721PoolFactory } from 'src/ERC721PoolFactory.sol';

@@ -3,8 +3,8 @@ pragma solidity 0.8.14;
 
 import { Base64 } from '@base64-sol/base64.sol';
 
-import { ERC20HelperContract } from './ERC20Pool/ERC20DSTestPlus.sol';
-import { ERC721HelperContract } from './ERC721Pool/ERC721DSTestPlus.sol';
+import { ERC20HelperContract } from './unit/ERC20Pool/ERC20DSTestPlus.sol';
+import { ERC721HelperContract } from './unit/ERC721Pool/ERC721DSTestPlus.sol';
 
 import 'src/interfaces/position/IPositionManager.sol';
 import 'src/PositionManager.sol';

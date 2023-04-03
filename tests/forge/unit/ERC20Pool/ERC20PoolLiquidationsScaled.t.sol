@@ -6,7 +6,7 @@ import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import { ERC20DSTestPlus }     from './ERC20DSTestPlus.sol';
 import { ERC20Pool }           from 'src/ERC20Pool.sol';
 import { ERC20PoolFactory }    from 'src/ERC20PoolFactory.sol';
-import { TokenWithNDecimals }  from '../utils/Tokens.sol';
+import { TokenWithNDecimals }  from '../../utils/Tokens.sol';
 
 import 'src/PoolInfoUtils.sol';
 import 'src/libraries/helpers/PoolHelper.sol';
