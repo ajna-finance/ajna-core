@@ -107,8 +107,6 @@ library Buckets {
         uint256 collateral_,
         uint256 bucketPrice_
     ) internal pure returns (uint256 lps_) {
-        uint256 rate = getInverseExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_);
-
         if (bucketLPs_ == 0) {
             lps_ = Maths.wmul(collateral_, bucketPrice_);
         } else {
@@ -172,22 +170,5 @@ library Buckets {
     ) internal pure returns (uint256) {
         return bucketLPs_ == 0 ? x_ :
             (bucketDeposit_ * x_ * 1e18 + bucketPrice_ * bucketCollateral_ * x_) / (bucketLPs_ * 1e18);
-    }
-
-    /**
-     *  @notice Returns the inverse exchange rate for a given bucket.
-     *  @param  bucketCollateral_ Amount of collateral in bucket.
-     *  @param  bucketLPs_        Amount of LPs in bucket.
-     *  @param  bucketDeposit_    The amount of quote tokens deposited in the given bucket.
-     *  @param  bucketPrice_      Bucket's price.
-     */
-    function getInverseExchangeRate(
-        uint256 bucketCollateral_,
-        uint256 bucketLPs_,
-        uint256 bucketDeposit_,
-        uint256 bucketPrice_
-    ) internal pure returns (uint256) {
-        return bucketLPs_ == 0 ? Maths.WAD :
-            (bucketLPs_ * 1e36) / (bucketDeposit_ * 1e18 + bucketPrice_ * bucketCollateral_);
     }
 }
