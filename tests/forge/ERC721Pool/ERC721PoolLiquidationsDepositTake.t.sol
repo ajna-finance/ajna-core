@@ -159,7 +159,7 @@ contract ERC721PoolLiquidationsDepositTakeTest is ERC721HelperContract {
             PoolParams({
                 htp:                  5.739575714606494647 * 1e18,
                 lup:                  9.917184843435912074 * 1e18,
-                poolSize:             73_000 * 1e18,
+                poolSize:             73_004.346887619919714000 * 1e18,
                 pledgedCollateral:    5 * 1e18,
                 encumberedCollateral: 4.056751649452525709 * 1e18,
                 poolDebt:             40.231555971534224231 * 1e18,

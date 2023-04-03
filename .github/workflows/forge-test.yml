@@ -8,6 +8,9 @@ env:
 
 jobs:
   check:
+    env:
+        QUOTE_PRECISION: 18
+        COLLATERAL_PRECISION: 18
     strategy:
       fail-fast: true
 

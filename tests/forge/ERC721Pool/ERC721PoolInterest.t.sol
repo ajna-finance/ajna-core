@@ -94,7 +94,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         });
 
         uint256 expectedDebt = 5_004.326923076923075000 * 1e18;
-        (uint256 poolDebt,,) = _pool.debtInfo();
+        (uint256 poolDebt,,,) = _pool.debtInfo();
         assertEq(poolDebt, expectedDebt);
 
         _assertBorrower({
@@ -118,7 +118,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         });
 
         expectedDebt = 5_010.500446015624727374 * 1e18;
-        (poolDebt,,) = _pool.debtInfo();
+        (poolDebt,,,) = _pool.debtInfo();
         assertEq(poolDebt, expectedDebt);
 
         _assertBorrower({
@@ -143,7 +143,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         });
 
         expectedDebt = 5_016.063127975675193806 * 1e18;
-        (poolDebt,,) = _pool.debtInfo();
+        (poolDebt,,,) = _pool.debtInfo();
         assertEq(poolDebt, expectedDebt);
 
         _assertBorrower({
@@ -167,7 +167,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         });
 
         expectedDebt = 6_021.775783320497493092 * 1e18;
-        (poolDebt,,) = _pool.debtInfo();
+        (poolDebt,,,) = _pool.debtInfo();
         assertEq(poolDebt, expectedDebt);
 
         _assertBorrower({
@@ -195,7 +195,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             newLup:           MAX_PRICE
         });
 
-        (poolDebt,,) = _pool.debtInfo();
+        (poolDebt,,,) = _pool.debtInfo();
         assertEq(poolDebt, 0);  
 
         _assertBorrower({
@@ -250,7 +250,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         });
 
         uint256 expectedBorrower1Debt = 8_007.692307692307696000 * 1e18;
-        (uint256 poolDebt,,) = _pool.debtInfo();
+        (uint256 poolDebt,,,) = _pool.debtInfo();
         assertEq(poolDebt, expectedBorrower1Debt);
 
         _assertBorrower({
@@ -283,7 +283,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         expectedBorrower1Debt = 8_007.875133804645608008 * 1e18;
         uint256 expectedBorrower2Debt = 2_752.644230769230770500 * 1e18;
         uint256 expectedPoolDebt = 10_760.519364573876378508 * 1e18;
-        (poolDebt,,) = _pool.debtInfo();
+        (poolDebt,,,) = _pool.debtInfo();
         assertEq(poolDebt, expectedPoolDebt);
 
         _assertBorrower({
@@ -327,7 +327,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         uint256 expectedBorrower3Debt = 2_502.403846153846154999 * 1e18;
         expectedPoolDebt = 13_263.168887490336411730 * 1e18;
 
-        (poolDebt,,) = _pool.debtInfo();
+        (poolDebt,,,) = _pool.debtInfo();
         assertEq(poolDebt, expectedPoolDebt);
 
         _assertBorrower({
@@ -369,7 +369,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         // check pool and borrower debt to confirm interest has accumulated
         expectedPoolDebt = 13_263.471703022178416339 * 1e18;
 
-        (poolDebt,,) = _pool.debtInfo();
+        (poolDebt,,,) = _pool.debtInfo();
         assertEq(poolDebt, expectedPoolDebt);
 
         _assertLenderInterest(liquidityAdded, 0.637680300600360000 * 1e18);
@@ -457,7 +457,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         });
 
         uint256 expectedDebt = 5_004.326923076923075000 * 1e18;
-        (uint256 poolDebt, , ) = _pool.debtInfo();
+        (uint256 poolDebt, , ,) = _pool.debtInfo();
         assertEq(poolDebt, expectedDebt);
 
         _assertBorrower({
@@ -472,7 +472,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         skip(30 days);
 
         expectedDebt = 5_022.870348947539432923 * 1e18;
-        (poolDebt, , ) = _pool.debtInfo();
+        (poolDebt, , ,) = _pool.debtInfo();
         assertEq(poolDebt, expectedDebt);
 
         _assertBorrower({
@@ -498,7 +498,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             newLup:           MAX_PRICE
         });
 
-        (poolDebt, , ) = _pool.debtInfo();
+        (poolDebt, , ,) = _pool.debtInfo();
         assertEq(poolDebt, 0);
 
         _assertBorrower({
@@ -520,7 +520,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         });
 
         expectedDebt = 5_003.894230769230769999 * 1e18;
-        (poolDebt, , ) = _pool.debtInfo();
+        (poolDebt, , ,) = _pool.debtInfo();
         assertEq(poolDebt, expectedDebt);
 
         _assertBorrower({
@@ -545,7 +545,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         });
 
         expectedDebt = 5_009.449578476990224065 * 1e18;
-        (poolDebt, , ) = _pool.debtInfo();
+        (poolDebt, , ,) = _pool.debtInfo();
         assertEq(poolDebt, expectedDebt);
 
         _assertBorrower({
@@ -570,7 +570,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         });
 
         expectedDebt = 5_014.454664494689841709 * 1e18;
-        (poolDebt, , ) = _pool.debtInfo();
+        (poolDebt, , ,) = _pool.debtInfo();
         assertEq(poolDebt, expectedDebt);
 
         _assertBorrower({
@@ -594,7 +594,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         });
 
         expectedDebt = 6_019.594382773827921756 * 1e18;
-        (poolDebt, , ) = _pool.debtInfo();
+        (poolDebt, , ,) = _pool.debtInfo();
         assertEq(poolDebt, expectedDebt);
 
         _assertBorrower({
@@ -622,7 +622,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             newLup:           MAX_PRICE
         });
 
-        (poolDebt, , ) = _pool.debtInfo();
+        (poolDebt, , ,) = _pool.debtInfo();
         assertEq(poolDebt, 0);
 
         _assertBorrower({

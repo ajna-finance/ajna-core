@@ -16,7 +16,7 @@ import {
     MIN_PRICE
 }                           from 'src/libraries/helpers/PoolHelper.sol';
 
-import { Token, BurnableToken } from '../../../utils/Tokens.sol';
+import { TokenWithNDecimals, BurnableToken } from '../../../utils/Tokens.sol';
 
 import 'src/libraries/internal/Maths.sol';
 import '../interfaces/ITestBase.sol';
@@ -27,11 +27,14 @@ uint256 constant LENDER_MAX_BUCKET_INDEX = 2572;
 uint256 constant BORROWER_MIN_BUCKET_INDEX = 2600;
 uint256 constant BORROWER_MAX_BUCKET_INDEX = 2620;
 
+uint256 constant MIN_AMOUNT = 1e6;
+uint256 constant MAX_AMOUNT = 1e28;
+
 abstract contract BaseHandler is Test {
 
     // Tokens
-    Token internal _quote;
-    Token internal _collateral;
+    TokenWithNDecimals internal _quote;
+    TokenWithNDecimals internal _collateral;
 
     BurnableToken internal _ajna;
 
@@ -79,8 +82,8 @@ abstract contract BaseHandler is Test {
     ) {
         // Tokens
         _ajna       = BurnableToken(ajna_);
-        _quote      = Token(quote_);
-        _collateral = Token(collateral_);
+        _quote      = TokenWithNDecimals(quote_);
+        _collateral = TokenWithNDecimals(collateral_);
 
         // Pool
         _pool     = ERC20Pool(pool_);
@@ -261,7 +264,7 @@ abstract contract BaseHandler is Test {
         uint256 pendingInflator;
         uint256 poolDebt;
         {
-            (, poolDebt ,) = _pool.debtInfo();
+            (, poolDebt ,,) = _pool.debtInfo();
 
             (uint256 inflator, uint256 inflatorUpdate) = _pool.inflatorInfo();
 
@@ -279,15 +282,20 @@ abstract contract BaseHandler is Test {
 
         // get HTP and deposit above HTP
         uint256 htp = Maths.wmul(maxThresholdPrice, pendingInflator);
-        uint256 htpIndex;
+        uint256 accrualIndex;
 
-        if (htp > MAX_PRICE)      htpIndex = 1;                          // if HTP is over the highest price bucket then no buckets earn interest
-        else if (htp < MIN_PRICE) htpIndex = MAX_FENWICK_INDEX;          // if HTP is under the lowest price bucket then all buckets earn interest
-        else                      htpIndex = _poolInfo.priceToIndex(htp);
+        if (htp > MAX_PRICE)      accrualIndex = 1;                          // if HTP is over the highest price bucket then no buckets earn interest
+        else if (htp < MIN_PRICE) accrualIndex = MAX_FENWICK_INDEX;          // if HTP is under the lowest price bucket then all buckets earn interest
+        else                      accrualIndex = _poolInfo.priceToIndex(htp);
+
+        uint256 lupIndex = _pool.depositIndex(poolDebt);
+
+        // accrual price is less of lup and htp, and prices decrease as index increases
+        if (lupIndex > accrualIndex) accrualIndex = lupIndex;
         
-        uint256 depositAboveHtp = fenwickSumTillIndex(htpIndex);
+        uint256 interestEarningDeposit = fenwickSumTillIndex(accrualIndex);
 
-        if (depositAboveHtp != 0) {
+        if (interestEarningDeposit != 0) {
             uint256 utilization          = _pool.depositUtilization();
             uint256 lenderInterestMargin = PoolCommons.lenderInterestMargin(utilization);
 
@@ -296,10 +304,10 @@ abstract contract BaseHandler is Test {
                 Maths.wmul(pendingFactor - Maths.WAD, poolDebt)
             );
 
-            uint256 scale = (newInterest * 1e18) / depositAboveHtp + Maths.WAD;
+            uint256 scale = (newInterest * 1e18) / interestEarningDeposit + Maths.WAD;
 
             // simulate scale being applied to all deposits above HTP
-            _fenwickMult(htpIndex, scale);
+            _fenwickMult(accrualIndex, scale);
         } 
     }
 
@@ -329,7 +337,7 @@ abstract contract BaseHandler is Test {
     function _auctionSettleStateReset(address actor_) internal {
         (address kicker, , , , , , , , , ) = _pool.auctionInfo(actor_);
 
-        // auction is settled if kicekr is 0x
+        // auction is settled if kicker is 0x
         bool auctionSettled = kicker == address(0);
         // reset alreadyTaken flag if auction is settled
         if (auctionSettled) alreadyTaken[actor_] = false;
