@@ -90,7 +90,7 @@ library Deposits {
             // Compute sum up to sumIndex_ + i
             uint256 scaledValue =
                 lowerIndexSum +
-                (scaling != 0 ?  (runningScale * scaling * value + 5e35) / 1e36 : (runningScale * value + 5e17) / 1e18);
+                (scaling != 0 ?  (runningScale * scaling * value + 5e35) / 1e36 : Maths.wmul(runningScale, value));
 
             if (scaledValue  < targetSum_) {
                 // Target value is too small, need to consider increasing sumIndex_ still
@@ -241,7 +241,7 @@ library Deposits {
                 uint256 value = deposits_.values[index+j];
 
                 // Accumulate in sum_, recall that scaled==0 means that the scale factor is actually 1
-                sum_  += scaled != 0 ? (runningScale * scaled * value + 5e35) / 1e36 : (runningScale * value + 5e17) / 1e18;
+                sum_  += scaled != 0 ? (runningScale * scaled * value + 5e35) / 1e36 : Maths.wmul(runningScale, value);
                 // Build up index bit by bit
                 index += j;
 
