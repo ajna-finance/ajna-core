@@ -145,7 +145,7 @@ contract PoolInfoUtils {
     {
         IPool pool = IPool(ajnaPool_);
 
-        (uint256 debt,,) = pool.debtInfo();
+        (uint256 debt,,,) = pool.debtInfo();
 
         hpbIndex_ = pool.depositIndex(1);
         hpb_      = _priceAt(hpbIndex_);
@@ -179,8 +179,8 @@ contract PoolInfoUtils {
     {
         IPool pool = IPool(ajnaPool_);
 
-        (,uint256 poolDebt,) = pool.debtInfo();
-        uint256 poolSize     = pool.depositSize();
+        (,uint256 poolDebt,,) = pool.debtInfo();
+        uint256 poolSize      = pool.depositSize();
 
         uint256 quoteTokenBalance = IERC20Token(pool.quoteTokenAddress()).balanceOf(ajnaPool_) * pool.quoteTokenScale();
 
@@ -223,7 +223,7 @@ contract PoolInfoUtils {
     {
         IPool pool = IPool(ajnaPool_);
 
-        (uint256 poolDebt,,)    = pool.debtInfo();
+        (uint256 poolDebt,,,)    = pool.debtInfo();
         uint256 poolCollateral  = pool.pledgedCollateral();
         (, , uint256 noOfLoans) = pool.loansInfo();
 
@@ -273,7 +273,7 @@ contract PoolInfoUtils {
     ) external view returns (uint256) {
         IPool pool = IPool(ajnaPool_);
 
-        (uint256 debt,,) = pool.debtInfo();
+        (uint256 debt,,,) = pool.debtInfo();
         uint256 currentLupIndex = pool.depositIndex(debt);
 
         return _priceAt(currentLupIndex);
@@ -284,7 +284,7 @@ contract PoolInfoUtils {
     ) external view returns (uint256) {
         IPool pool = IPool(ajnaPool_);
 
-        (uint256 debt,,) = pool.debtInfo();
+        (uint256 debt,,,) = pool.debtInfo();
 
         return pool.depositIndex(debt);
     }
@@ -318,7 +318,7 @@ contract PoolInfoUtils {
     ) external view returns (uint256) {
         IPool pool = IPool(ajnaPool_);
 
-        (uint256 debt, , )       = pool.debtInfo();
+        (uint256 debt, , ,)       = pool.debtInfo();
         ( , , uint256 noOfLoans) = pool.loansInfo();
         noOfLoans += pool.totalAuctionsInPool();
         return _priceAt(pool.depositIndex(Maths.wdiv(debt, noOfLoans * 1e18)));

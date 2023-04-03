@@ -49,12 +49,12 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
             newLup:     251_183.992399245533703810 * 1e18
         });
 
-        (uint256 poolDebt,,) = _pool.debtInfo();
+        (uint256 poolDebt,,,) = _pool.debtInfo();
         assertEq(poolDebt - 175_000 * 1e18, 168.26923076923085 * 1e18);
 
         skip(26 weeks);
 
-        (poolDebt,,) = _pool.debtInfo();
+        (poolDebt,,,) = _pool.debtInfo();
         assertEq(poolDebt - 175_000 * 1e18, 4_590.373946590638353626 * 1e18);  // debt matches develop
     }
 
@@ -230,7 +230,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
             collateralToPull: 0,
             newLup:           MAX_PRICE
         });
-        (uint256 debt,,) = _pool.debtInfo();
+        (uint256 debt,,,) = _pool.debtInfo();
         assertEq(debt, 0);
 
         uint256 reserves          = 831.584938142442153626 * 1e18;

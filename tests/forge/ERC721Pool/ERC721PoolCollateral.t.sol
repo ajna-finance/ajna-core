@@ -490,7 +490,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         });
 
         // check collateralization after pledge
-        (uint256 poolDebt,,) = _pool.debtInfo();
+        (uint256 poolDebt,,,) = _pool.debtInfo();
         assertEq(_encumberance(poolDebt, _lup()), 0);
 
         // borrower borrows some quote
@@ -502,7 +502,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         });
 
         // check collateralization after borrow
-        (poolDebt,,) = _pool.debtInfo();
+        (poolDebt,,,) = _pool.debtInfo();
         assertEq(_encumberance(poolDebt, _lup()), 2.992021560300836411 * 1e18);
 
         // should revert if borrower attempts to pull more collateral than is unencumbered
