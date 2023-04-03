@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 
 import { LiquidationERC20PoolInvariants } from "../../invariants/ERC20Pool/LiquidationERC20PoolInvariants.t.sol";
 
-contract RegressionTestLiquidation is LiquidationERC20PoolInvariants { 
+contract RegressionTestLiquidationERC20Pool is LiquidationERC20PoolInvariants { 
 
     function setUp() public override { 
         super.setUp();
@@ -102,8 +102,7 @@ contract RegressionTestLiquidation is LiquidationERC20PoolInvariants {
         invariant_auction_taken_A6();
     }
 
-    // FIXME: bucket take with 0 auction price
-    function _test_regression_invariant_exchange_rate_bucket_take_1() external {
+    function test_regression_invariant_exchange_rate_bucket_take_1() external {
         _liquidationERC20PoolHandler.bucketTake(183325863789657771277097526117552930424549597961930161, 34356261125910963886574176318851973698031483479551872234291832833800, true, 115792089237316195423570985008687907853269984665640564039457584007913129639932);
         _liquidationERC20PoolHandler.settleAuction(52219427432114632, 2227306986719506048214107429, 154672727048162052261854237547755782166311596848556350861587480089015671);
         _liquidationERC20PoolHandler.removeQuoteToken(1999999999999999943017433781133248199223345020, 9070, 3519433319314336634208412746825);
@@ -112,8 +111,7 @@ contract RegressionTestLiquidation is LiquidationERC20PoolInvariants {
         invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
-    // FIXME: bucket take with 0 auction price
-    function _test_regression_invariant_exchange_rate_bucket_take_2() external {
+    function test_regression_invariant_exchange_rate_bucket_take_2() external {
         _liquidationERC20PoolHandler.moveQuoteToken(1676213736466301051643762607860, 1344, 2018879446031241805536743752775, 4101);
         _liquidationERC20PoolHandler.settleAuction(186120755740, 2, 59199623628501455128);
         _liquidationERC20PoolHandler.kickAuction(115792089237316195423570985008687907853269984665640564039457584007913129639935, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 29888344);
@@ -271,6 +269,17 @@ contract RegressionTestLiquidation is LiquidationERC20PoolInvariants {
         _liquidationERC20PoolHandler.kickAuction(2, 2, 115792089237316195423570985008687907853269984665640564039457584007913129639932);
 
         invariant_fenwick_prefixSumIndex_F4();
+    }
+
+    function test_regression_invariant_bucketlps_B2_B3() external {
+
+        _liquidationERC20PoolHandler.takeAuction(267050932349, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 3887647445238399127687813856507958874);
+        _liquidationERC20PoolHandler.takeAuction(115792089237316195423570985008687907853269984665640564039457584007913129639934, 103646259621272362812910538669334394369354710213939195837836110291707517186914, 22729901925249217583);
+        _liquidationERC20PoolHandler.takeAuction(100662313874952447676789537887446294, 36755077739534085766246321257993, 20000000001077187985112900413);
+        _liquidationERC20PoolHandler.settleAuction(999999999999999970610520171679024221920138860, 4339, 19021013243589608614756959415948670046791);
+        _liquidationERC20PoolHandler.removeQuoteToken(7393406237507791712904627, 1097992169037390343, 30);
+
+        invariant_Buckets_B2_B3();
     }
 
 }

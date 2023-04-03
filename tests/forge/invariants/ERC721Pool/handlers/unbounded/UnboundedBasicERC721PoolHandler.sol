@@ -117,7 +117,7 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
     ) internal virtual override updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.drawDebt']++;
 
-        (uint256 poolDebt, , ) = _erc721Pool.debtInfo();
+        (uint256 poolDebt, , , ) = _erc721Pool.debtInfo();
 
         // find bucket to borrow quote token
         uint256 bucket = _erc721Pool.depositIndex(amount_ + poolDebt) - 1;

@@ -20,6 +20,14 @@ make test-invariant-erc20
 ```bash
 make test-invariant-erc20 QUOTE_PRECISION=<quote_precision> COLLATERAL_PRECISION=<collateral_precision>
 ```
+- run ERC721 Pool invariant tests:
+```bash
+make test-invariant-erc721
+```
+- run ERC721 Pool invariant tests for specific quote token precision, default value(18):
+```bash
+make test-invariant-erc721 QUOTE_PRECISION=<quote_precision>
+```
 - run ERC20 Pool invariant tests for most popular token precision combinations(6,8 and 18):
 ```bash
 make test-invariant-erc20-precision

@@ -343,7 +343,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             maxThresholdPrice: 200.173076923076923000 * 1e18
         });
 
-        (uint256 poolDebt,,) = _pool.debtInfo();
+        (uint256 poolDebt,,,) = _pool.debtInfo();
 
         assertEq(_pool.depositSize(),       150_000 * POOL_PRECISION);
         assertEq(poolDebt,                  debt);
@@ -405,7 +405,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             maxThresholdPrice: 100.173076923076923000 * 1e18
         });
 
-        (poolDebt,,) = _pool.debtInfo();
+        (poolDebt,,,) = _pool.debtInfo();
 
         assertEq(_pool.depositSize(),       150_000 * 1e18);
         assertEq(poolDebt,                  debt);

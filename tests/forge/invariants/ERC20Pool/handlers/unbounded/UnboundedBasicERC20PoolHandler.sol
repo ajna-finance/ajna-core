@@ -107,7 +107,7 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
     ) internal virtual override updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.drawDebt']++;
 
-        (uint256 poolDebt, , ) = _erc20Pool.debtInfo();
+        (uint256 poolDebt, , , ) = _erc20Pool.debtInfo();
 
         // find bucket to borrow quote token
         uint256 bucket = _erc20Pool.depositIndex(amount_ + poolDebt) - 1;

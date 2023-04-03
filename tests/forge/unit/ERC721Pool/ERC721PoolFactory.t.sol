@@ -132,7 +132,6 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         assertEq(_factory.getNumberOfDeployedPools(), 3);
     }
 
-    // FIXME: This test is exceeding block gas limit
     function testDeployERC721CollectionPoolWithNonNFTAddress() external {
         // should revert if trying to deploy with non NFT
         _assertDeployWithNonNFTRevert({
