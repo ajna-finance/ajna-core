@@ -117,7 +117,6 @@ contract RegressionTestReserveERC20Pool is ReserveERC20PoolInvariants {
         invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10_RE11_RE12();
     }
 
-    // FIXME: Seems to be issue with rounding to nearest in Desposits.unscaledAdd() in addQuoteToken
     function test_regression_reserve_16() external {
         _reserveERC20PoolHandler.kickWithDeposit(24364934041550678417946191455, 52607039466540426076659653665991);
         _reserveERC20PoolHandler.moveQuoteToken(12701858085177571414571267592, 42692775850651681314985098497603, 999999999999999997089137720115121650200233243, 110756792431977317946585133);
