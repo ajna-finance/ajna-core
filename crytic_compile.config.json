@@ -1,0 +1,13 @@
+{
+    "solc_remaps": [
+      "@solmate=lib/solmate/src/",
+      "@std=lib/forge-std/src/",
+      "@clones=lib/clones-with-immutable-args/src/",
+      "@openzeppelin/contracts=lib/openzeppelin-contracts/contracts",
+      "@prb-math=lib/prb-math/",
+      "@base64-sol=lib/base64/"
+    ],
+    "compile_force_framework":  "foundry",
+    "foundry_out_directory": "forge_out",
+    "compile_libraries": "(Auctions,0x1f00000000000000000000000000000000000000),(BorrowerActions,0x2f00000000000000000000000000000000000000),(LenderActions,0x3f00000000000000000000000000000000000000),(PoolCommons,0x4f00000000000000000000000000000000000000),(PositionNFTSVG,0x5f00000000000000000000000000000000000000)"
+  }

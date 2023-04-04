@@ -88,11 +88,11 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
         if (kickTime == 0) {
             (uint256 debt, , ) = _pool.borrowerInfo(borrower);
             if (debt == 0) {
-                vm.prank(borrower);
+                changePrank(borrower);
                 _actor = borrower;
                 super.drawDebt(amount);
             }
-            vm.prank(kicker);
+            changePrank(kicker);
             _actor = kicker;
             super.kickAuction(borrower);
         }
@@ -122,7 +122,7 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
         if (kickTime == 0) {
             _kickAuction(borrowerIndex, amount * 100, actorIndex);
         }
-        vm.prank(taker);
+        changePrank(taker);
         super.takeAuction(borrower, amount, taker);
     }
 
@@ -143,7 +143,7 @@ contract LiquidationPoolHandler is UnBoundedLiquidationPoolHandler, BasicPoolHan
         if (kickTime == 0) {
             _kickAuction(borrowerIndex, 1e24, bucketIndex);
         }
-        vm.prank(taker);
+        changePrank(taker);
         super.bucketTake(borrower, depositTake, bucketIndex);
     } 
 }

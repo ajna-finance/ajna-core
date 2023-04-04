@@ -82,13 +82,13 @@ contract BaseHandler is InvariantTest, Test {
         firstTakeIncreaseInReserve = 0;
         loanKickIncreaseInReserve = 0;
 
-        //vm.stopPrank();
+        vm.stopPrank();
 
         address actor = actors[constrictToRange(actorIndex, 0, actors.length - 1)];
         _actor = actor;
-        vm.prank(actor);
+        vm.startPrank(actor);
         _;
-        //vm.stopPrank();
+        vm.stopPrank();
     }
 
     modifier useRandomLenderBucket(uint256 bucketIndex) {
@@ -106,20 +106,19 @@ contract BaseHandler is InvariantTest, Test {
  
     function _buildActors(uint256 noOfActors_) internal returns(address[] memory) {
         address[] memory actorsAddress = new address[](noOfActors_);
-        uint256 initialActor = 0x10000;
-        for(uint i = 1; i < noOfActors_ + 1; i++) {
-            address actor = address(uint160(i * initialActor));
-            actorsAddress[i - 1] = actor;
+        for(uint i = 0; i < noOfActors_; i++) {
+            address actor = makeAddr(string(abi.encodePacked("Actor", Strings.toString(i))));
+            actorsAddress[i] = actor;
 
-            vm.prank(actor);
+            vm.startPrank(actor);
+
             _quote.mint(actor, 1e45);
-            vm.prank(actor);
             _quote.approve(address(_pool), 1e45);
 
-            vm.prank(actor);
             _collateral.mint(actor, 1e45);
-            vm.prank(actor);
             _collateral.approve(address(_pool), 1e45);
+
+            vm.stopPrank();
         }
         return actorsAddress;
     }

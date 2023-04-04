@@ -29,10 +29,10 @@ contract LiquidationInvariant is BasicInvariants {
     LiquidationPoolHandler internal _liquidationPoolHandler;
 
     function setUp() public override virtual{
-        require(address(_handler) == address(0));
+
         super.setUp();
 
-        //excludeContract(address(_basicPoolHandler));
+        excludeContract(address(_basicPoolHandler));
 
         _liquidationPoolHandler = new LiquidationPoolHandler(address(_pool), address(_quote), address(_collateral), address(_poolInfo), NUM_ACTORS);
         _handler = address(_liquidationPoolHandler);

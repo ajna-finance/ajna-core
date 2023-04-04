@@ -42,7 +42,7 @@ contract BasicInvariants is TestBase {
         * I3: Inflator should only update once per block
     ****************************************************************************************************************************************/
 
-    uint256          internal constant NUM_ACTORS = 3;
+    uint256          internal constant NUM_ACTORS = 10;
     BasicPoolHandler internal _basicPoolHandler;
     address          internal _handler;
 
@@ -55,21 +55,18 @@ contract BasicInvariants is TestBase {
 
     uint256 previousInflatorUpdate;
 
-    function invariant_failed() public { require(!failed, "failed!"); }
-
     function setUp() public override virtual{
 
-        require(address(_basicPoolHandler) == address(0));
         super.setUp();
 
         _basicPoolHandler = new BasicPoolHandler(address(_pool), address(_quote), address(_collateral), address(_poolInfo), NUM_ACTORS);
         _handler = address(_basicPoolHandler);
-        //excludeContract(address(_collateral));
-        //excludeContract(address(_quote));
-        //excludeContract(address(_poolFactory));
-        //excludeContract(address(_pool));
-        //excludeContract(address(_poolInfo));
-        //excludeContract(address(_impl));
+        excludeContract(address(_collateral));
+        excludeContract(address(_quote));
+        excludeContract(address(_poolFactory));
+        excludeContract(address(_pool));
+        excludeContract(address(_poolInfo));
+        excludeContract(address(_impl));
 
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             ( , , , , ,uint256 exchangeRate) = _poolInfo.bucketInfo(address(_pool), bucketIndex);
@@ -79,7 +76,7 @@ contract BasicInvariants is TestBase {
         (, previousInterestRateUpdate) = _pool.interestRateInfo();
 
         // TODO: Change once this issue is resolved -> https://github.com/foundry-rs/foundry/issues/2963
-        //targetSender(address(0x1234));
+        targetSender(address(0x1234));
     }
 
     // checks pool lps are equal to sum of all lender lps in a bucket 
