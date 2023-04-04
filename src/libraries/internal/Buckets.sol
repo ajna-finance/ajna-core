@@ -169,6 +169,6 @@ library Buckets {
         uint256 bucketPrice_
     ) internal pure returns (uint256) {
         return bucketLPs_ == 0 ? amount_ :
-            (bucketDeposit_ * amount_ * 1e18 + bucketPrice_ * bucketCollateral_ * amount_) / (bucketLPs_ * 1e18);
+            (bucketDeposit_ * amount_ * 1e6 + (bucketPrice_ * bucketCollateral_ / 1e12) * amount_) / (bucketLPs_ * 1e6);
     }
 }
