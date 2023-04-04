@@ -9,6 +9,7 @@ import {
     _borrowFeeRate,
     _depositFeeRate,
     _indexOf,
+    _isCollateralized,
     _lpsToCollateral,
     _lpsToQuoteToken,
     _minDebtAmount,
@@ -30,6 +31,42 @@ import { PoolCommons } from './libraries/external/PoolCommons.sol';
  *  @dev    Pool info is calculated using same helper functions / logic as in Pool contracts.
  */
 contract PoolInfoUtils {
+
+    /**
+     *  @notice Exposes status of a liquidation auction
+     *  @param  borrower_         Identifies the loan being liquidated
+     *  @return kickTime_         Time auction was kicked, implying end time
+     *  @return collateral_       Remaining collateral available to be purchased               (WAD)
+     *  @return debtToCover_      Borrower debt to be covered                                  (WAD)
+     *  @return isCollateralized_ If true, takes will revert
+     *  @return price_            Current price of the auction                                 (WAD)
+     *  @return neutralPrice_     Price at which bond holder is neither rewarded nor penalized (WAD)
+     */
+    function auctionStatus(address ajnaPool_, address borrower_)
+        external
+        view
+        returns (
+            uint256 kickTime_,
+            uint256 collateral_,
+            uint256 debtToCover_,
+            bool    isCollateralized_,
+            uint256 price_,
+            uint256 neutralPrice_
+        )
+    {
+        IPool pool = IPool(ajnaPool_);
+        uint256 kickMomp;
+        ( , , , kickTime_, kickMomp, neutralPrice_, , , , ) = pool.auctionInfo(borrower_);
+        if (kickTime_ != 0) {
+            (debtToCover_, collateral_, ) = this.borrowerInfo(ajnaPool_, borrower_);
+            
+            (uint256 poolDebt,,,)  = pool.debtInfo();
+            uint256 lup_           = _priceAt(pool.depositIndex(poolDebt));
+            isCollateralized_      = _isCollateralized(debtToCover_, collateral_, lup_, pool.poolType());
+
+            price_ = Auctions._auctionPrice(kickMomp, neutralPrice_, kickTime_);
+        }
+    }
 
     function borrowerInfo(address ajnaPool_, address borrower_)
         external
@@ -145,7 +182,7 @@ contract PoolInfoUtils {
     {
         IPool pool = IPool(ajnaPool_);
 
-        (uint256 debt,,) = pool.debtInfo();
+        (uint256 debt,,,) = pool.debtInfo();
 
         hpbIndex_ = pool.depositIndex(1);
         hpb_      = _priceAt(hpbIndex_);
@@ -179,8 +216,8 @@ contract PoolInfoUtils {
     {
         IPool pool = IPool(ajnaPool_);
 
-        (,uint256 poolDebt,) = pool.debtInfo();
-        uint256 poolSize     = pool.depositSize();
+        (,uint256 poolDebt,,) = pool.debtInfo();
+        uint256 poolSize      = pool.depositSize();
 
         uint256 quoteTokenBalance = IERC20Token(pool.quoteTokenAddress()).balanceOf(ajnaPool_) * pool.quoteTokenScale();
 
@@ -223,7 +260,7 @@ contract PoolInfoUtils {
     {
         IPool pool = IPool(ajnaPool_);
 
-        (uint256 poolDebt,,)    = pool.debtInfo();
+        (uint256 poolDebt,,,)    = pool.debtInfo();
         uint256 poolCollateral  = pool.pledgedCollateral();
         (, , uint256 noOfLoans) = pool.loansInfo();
 
@@ -273,7 +310,7 @@ contract PoolInfoUtils {
     ) external view returns (uint256) {
         IPool pool = IPool(ajnaPool_);
 
-        (uint256 debt,,) = pool.debtInfo();
+        (uint256 debt,,,) = pool.debtInfo();
         uint256 currentLupIndex = pool.depositIndex(debt);
 
         return _priceAt(currentLupIndex);
@@ -284,7 +321,7 @@ contract PoolInfoUtils {
     ) external view returns (uint256) {
         IPool pool = IPool(ajnaPool_);
 
-        (uint256 debt,,) = pool.debtInfo();
+        (uint256 debt,,,) = pool.debtInfo();
 
         return pool.depositIndex(debt);
     }
@@ -318,10 +355,16 @@ contract PoolInfoUtils {
     ) external view returns (uint256) {
         IPool pool = IPool(ajnaPool_);
 
-        (uint256 debt, , )       = pool.debtInfo();
         ( , , uint256 noOfLoans) = pool.loansInfo();
         noOfLoans += pool.totalAuctionsInPool();
-        return _priceAt(pool.depositIndex(Maths.wdiv(debt, noOfLoans * 1e18)));
+        if (noOfLoans == 0) {
+            // if there are no borrowers, return the HPB
+            return _priceAt(pool.depositIndex(1));
+        } else {
+            // otherwise, calculate the MOMP
+            (uint256 debt, , , ) = pool.debtInfo();
+            return _priceAt(pool.depositIndex(Maths.wdiv(debt, noOfLoans * 1e18)));
+        }
     }
 
     /**
