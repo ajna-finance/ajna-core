@@ -327,6 +327,7 @@ library PoolCommons {
             else if (dwatp >= MIN_PRICE) meaningfulDeposit_ = Deposits.prefixSum(deposits_, _indexOf(dwatp));
             else                         meaningfulDeposit_ = Deposits.treeSum(deposits_);
         }
+        meaningfulDeposit_ = Maths.max(meaningfulDeposit_, Maths.wmul(t0Debt_, inflator_));
     }
 
     /**********************/
