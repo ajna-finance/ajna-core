@@ -94,13 +94,17 @@ library PoolCommons {
         vars.t0Debt2ToCollateral = interestParams_.t0Debt2ToCollateral;
 
         // calculate new interest params
-        vars.newMeaningfulDeposit = _meaningfulDeposit(
-            deposits_,
-            poolState_.t0Debt,
-            poolState_.inflator,
-            vars.t0Debt2ToCollateral
+        vars.newDebt = poolState_.debt;
+        // new meaningful deposit cannot exceed pool's debt
+        vars.newMeaningfulDeposit = Maths.max(
+            _meaningfulDeposit(
+                deposits_,
+                poolState_.t0Debt,
+                poolState_.inflator,
+                vars.t0Debt2ToCollateral
+            ),
+            vars.newDebt
         );
-        vars.newDebt      = poolState_.debt;
         vars.newDebtCol   = Maths.wmul(poolState_.inflator, vars.t0Debt2ToCollateral);
         vars.newLupt0Debt = Maths.wmul(lup_, poolState_.t0Debt);
 
@@ -327,7 +331,6 @@ library PoolCommons {
             else if (dwatp >= MIN_PRICE) meaningfulDeposit_ = Deposits.prefixSum(deposits_, _indexOf(dwatp));
             else                         meaningfulDeposit_ = Deposits.treeSum(deposits_);
         }
-        meaningfulDeposit_ = Maths.max(meaningfulDeposit_, Maths.wmul(t0Debt_, inflator_));
     }
 
     /**********************/
