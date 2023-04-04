@@ -9,7 +9,7 @@ import { NFTCollateralToken } from '../utils/Tokens.sol';
 import { ERC721Pool }         from 'src/ERC721Pool.sol';
 import { ERC721PoolFactory }  from 'src/ERC721PoolFactory.sol';
 
-import { ERC721HelperContract } from '../ERC721Pool/ERC721DSTestPlus.sol';
+import { ERC721HelperContract } from '../unit/ERC721Pool/ERC721DSTestPlus.sol';
 
 import 'src/PoolInfoUtils.sol';
 import "./NFTTakeExample.sol";
