@@ -25,6 +25,7 @@ import {
     IERC721PoolLenderActions
 }                               from './interfaces/pool/erc721/IERC721Pool.sol';
 import { IERC721Taker }         from './interfaces/pool/erc721/IERC721Taker.sol';
+import { IERC721PoolState }     from './interfaces/pool/erc721/IERC721PoolState.sol';
 
 import { FlashloanablePool } from './base/FlashloanablePool.sol';
 
@@ -647,6 +648,20 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     function _transferNFT(address from_, address to_, uint256 tokenId_) internal {
         // slither-disable-next-line calls-loop
         IERC721Token(_getArgAddress(COLLATERAL_ADDRESS)).transferFrom(from_, to_, tokenId_);
+    }
+
+    /**************************/
+    /*** External Functions ***/
+    /**************************/
+
+    /// @inheritdoc IERC721PoolState
+    function totalBorrowerTokens(address borrower_) external view override returns(uint256) {
+        return borrowerTokenIds[borrower_].length;
+    }
+
+    /// @inheritdoc IERC721PoolState
+    function totalBucketTokens() external view override returns(uint256) {
+        return bucketTokenIds.length;
     }
 
 }
