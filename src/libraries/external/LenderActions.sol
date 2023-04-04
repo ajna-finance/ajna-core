@@ -86,6 +86,7 @@ library LenderActions {
     error CannotMergeToHigherPrice();
     error DustAmountNotExceeded();
     error NoAllowance();
+    error InvalidAllowancesInput();
     error InvalidIndex();
     error InvalidAmount();
     error LUPBelowHTP();
@@ -579,6 +580,8 @@ library LenderActions {
      *  @notice See `IPoolLenderActions` for descriptions
      *  @dev write state:
      *          - increment LPs allowances
+     *  @dev reverts on:
+     *          - invalid indexes and amounts input InvalidAllowancesInput()
      *  @dev emit events:
      *          - IncreaseLPsAllowance
      */
@@ -589,8 +592,10 @@ library LenderActions {
         uint256[] calldata amounts_
     ) external {
         uint256 indexesLength = indexes_.length;
-        uint256 index;
 
+        if (indexesLength != amounts_.length) revert InvalidAllowancesInput();
+
+        uint256 index;
         for (uint256 i = 0; i < indexesLength; ) {
             index = indexes_[i];
 
@@ -611,6 +616,8 @@ library LenderActions {
      *  @notice See `IPoolLenderActions` for descriptions
      *  @dev write state:
      *          - decrement LPs allowances
+     *  @dev reverts on:
+     *          - invalid indexes and amounts input InvalidAllowancesInput()
      *  @dev emit events:
      *          - DecreaseLPsAllowance
      */
@@ -621,6 +628,9 @@ library LenderActions {
         uint256[] calldata amounts_
     ) external {
         uint256 indexesLength = indexes_.length;
+
+        if (indexesLength != amounts_.length) revert InvalidAllowancesInput();
+
         uint256 index;
 
         for (uint256 i = 0; i < indexesLength; ) {

@@ -186,6 +186,25 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         });
     }
 
+    function testIncreaseDecreaseLPsWithInvalidInput() external tearDown {
+        uint256[] memory indexes = new uint256[](3);
+        indexes[0] = 2550;
+        indexes[1] = 2551;
+        indexes[2] = 2552;
+
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 10_000 * 1e18;
+        amounts[1] = 30_000 * 1e18;
+
+        // increase allowance should revert for invalid input
+        vm.expectRevert(IPoolErrors.InvalidAllowancesInput.selector);
+        _pool.increaseLPsAllowance(_lender2, indexes, amounts);
+
+        // decrease allowance should revert for invalid input
+        vm.expectRevert(IPoolErrors.InvalidAllowancesInput.selector);
+        _pool.decreaseLPsAllowance(_lender2, indexes, amounts);
+    }
+
     function testTransferLPsForAllIndexes() external tearDown {
         uint256[] memory indexes = new uint256[](3);
         indexes[0] = 2550;

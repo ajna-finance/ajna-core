@@ -426,14 +426,27 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     /*** State asserts ***/
     /*********************/
 
+    struct AuctionLocalVars {
+        address auctionKicker;
+        uint256 auctionBondFactor;
+        uint256 auctionBondSize;
+        uint256 auctionKickTime;
+        uint256 auctionKickMomp;
+        uint256 auctionNeutralPrice;
+        uint256 auctionTotalBondEscrowed;
+        uint256 auctionDebtInAuction;
+        uint256 borrowerThresholdPrice;
+    }
+
     function _assertAuction(AuctionParams memory state_) internal {
+        AuctionLocalVars memory vars;
         (
-            address auctionKicker,
-            uint256 auctionBondFactor,
-            uint256 auctionBondSize,
-            uint256 auctionKickTime,
-            uint256 auctionKickMomp,
-            uint256 auctionNeutralPrice,
+            vars.auctionKicker,
+            vars.auctionBondFactor,
+            vars.auctionBondSize,
+            vars.auctionKickTime,
+            vars.auctionKickMomp,
+            vars.auctionNeutralPrice,
             ,
             ,
             ,
@@ -441,25 +454,51 @@ abstract contract DSTestPlus is Test, IPoolEvents {
 
         (uint256 borrowerDebt, uint256 borrowerCollateral , ) = _poolUtils.borrowerInfo(address(_pool), state_.borrower);
         (, uint256 lockedBonds) = _pool.kickerInfo(state_.kicker);
-        (uint256 auctionTotalBondEscrowed,,,) = _pool.reservesInfo();
-        (,,uint256 auctionDebtInAuction,)  = _pool.debtInfo(); 
-        uint256 borrowerThresholdPrice = borrowerCollateral > 0 ? borrowerDebt * Maths.WAD / borrowerCollateral : 0;
+        (vars.auctionTotalBondEscrowed,,,) = _pool.reservesInfo();
+        (,, vars.auctionDebtInAuction,)  = _pool.debtInfo(); 
+        vars.borrowerThresholdPrice = borrowerCollateral > 0 ? borrowerDebt * Maths.WAD / borrowerCollateral : 0;
 
-        assertEq(auctionKickTime != 0,     state_.active);
-        assertEq(auctionKicker,            state_.kicker);
-        assertGe(lockedBonds,              auctionBondSize);
-        assertEq(auctionBondSize,          state_.bondSize);
-        assertEq(auctionBondFactor,        state_.bondFactor);
-        assertEq(auctionKickTime,          state_.kickTime);
-        assertEq(auctionKickMomp,          state_.kickMomp);
-        assertEq(auctionTotalBondEscrowed, state_.totalBondEscrowed);
+        assertEq(vars.auctionKickTime != 0,     state_.active);
+        assertEq(vars.auctionKicker,            state_.kicker);
+        assertGe(lockedBonds,                   vars.auctionBondSize);
+        assertEq(vars.auctionBondSize,          state_.bondSize);
+        assertEq(vars.auctionBondFactor,        state_.bondFactor);
+        assertEq(vars.auctionKickTime,          state_.kickTime);
+        assertEq(vars.auctionKickMomp,          state_.kickMomp);
+        assertEq(vars.auctionTotalBondEscrowed, state_.totalBondEscrowed);
         assertEq(Auctions._auctionPrice(
-            auctionKickMomp,
-            auctionNeutralPrice,
-            auctionKickTime),              state_.auctionPrice);
-        assertEq(auctionDebtInAuction,     state_.debtInAuction);
-        assertEq(auctionNeutralPrice,      state_.neutralPrice);
-        assertEq(borrowerThresholdPrice,   state_.thresholdPrice);
+            vars.auctionKickMomp,
+            vars.auctionNeutralPrice,
+            vars.auctionKickTime),              state_.auctionPrice);
+        assertEq(vars.auctionDebtInAuction,     state_.debtInAuction);
+        assertEq(vars.auctionNeutralPrice,      state_.neutralPrice);
+        assertEq(vars.borrowerThresholdPrice,   state_.thresholdPrice);
+
+        (
+            uint256 kickTime, 
+            uint256 collateral, 
+            uint256 debtToCover, 
+            bool    isCollateralized,      
+            uint256 price,          
+            uint256 neutralPrice    
+        ) = _poolUtils.auctionStatus(address(_pool), state_.borrower);
+        assertEq(kickTime,     state_.kickTime);
+        assertEq(neutralPrice, state_.neutralPrice);
+        if (kickTime == 0) {
+            assertEq(collateral,  0);
+            assertEq(debtToCover, 0);
+            assertEq(price,       0);
+        } else {
+            assertEq(collateral,       borrowerCollateral);
+            assertEq(debtToCover,      borrowerDebt);
+            assertEq(isCollateralized, _isCollateralized(
+                borrowerDebt, 
+                borrowerCollateral, 
+                _lup(), 
+                _pool.poolType())
+            );
+            assertEq(price,            state_.auctionPrice);
+        }
     }
 
     function _assertPool(PoolParams memory state_) internal {

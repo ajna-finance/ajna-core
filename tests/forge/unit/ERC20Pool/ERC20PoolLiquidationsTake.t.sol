@@ -1878,6 +1878,60 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         });
     }
 
+    function testTakeAfterSettleReverts() external {
+        // Borrower draws debt
+        _borrow({
+            from:       _borrower2,
+            amount:     1_730 * 1e18,
+            indexLimit: _i9_72,
+            newLup:     9.721295865031779605 * 1e18
+        });
+
+        // Skip to make borrower undercollateralized and kick auction
+        skip(100 days);
+        _kick({
+            from:           _lender,
+            borrower:       _borrower2,
+            debt:           9_976.561670003961916237 * 1e18,
+            collateral:     1_000 * 1e18,
+            bond:           98.533942419792216457 * 1e18,
+            transferAmount: 98.533942419792216457 * 1e18
+        });
+
+        // Take everything
+        skip(10 hours);
+        _take({
+            from:            _lender,
+            borrower:        _borrower2,
+            maxCollateral:   1_000 * 1e18,
+            bondChange:      6.531114528261135360 * 1e18,
+            givenAmount:     653.111452826113536000 * 1e18,
+            collateralTaken: 1_000 * 1e18,
+            isReward:        true
+        });
+
+        // Partially settle the auction, such that it is not removed from queue
+        _settle({
+            from:        _lender,
+            borrower:    _borrower2,
+            maxDepth:    1,
+            settledDebt: 2_824.753001999316079070 * 1e18
+        });
+
+        // Borrower draws more debt
+        _drawDebt({
+            from:               _borrower2,
+            borrower:           _borrower2,
+            amountToBorrow:     1_000 * 1e18,
+            limitIndex:         _i9_72,
+            collateralToPledge: 1_000 * 1e18,
+            newLup:             9.721295865031779605 * 1e18
+        });
+
+        // Take should revert
+        _assertTakeNoAuctionRevert(_borrower2, _borrower2, 1_000 * 1e18);
+    }
+
     function testTakeAuctionPriceLtNeutralPrice() external tearDown {
 
         _addLiquidity({
