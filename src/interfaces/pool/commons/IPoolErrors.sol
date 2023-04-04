@@ -108,6 +108,11 @@ interface IPoolErrors {
     error InsufficientLiquidity();
 
     /**
+     *  @notice When increasing / decreasing LPs allowances indexes and amounts arrays parameters should have same length.
+     */
+    error InvalidAllowancesInput();
+
+    /**
      *  @notice When transferring LPs between indices, the new index must be a valid index.
      */
     error InvalidIndex();
