@@ -752,12 +752,12 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 pledgedCollateral:    1_002 * 1e18,
                 encumberedCollateral: 1_028.364405977643667984 * 1e18,
                 poolDebt:             9_997.034647576329686631 * 1e18,
-                actualUtilization:    1.246708347279785558 * 1e18,
+                actualUtilization:    0.737099854301327286 * 1e18,
                 targetUtilization:    1.026218700245164092 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                interestRate:         0.0495 * 1e18,
+                interestRate:         0.0405 * 1e18,
                 interestRateUpdate:   _startTime + 100 days + 14 hours
             })
         );
