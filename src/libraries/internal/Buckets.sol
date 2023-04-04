@@ -110,7 +110,7 @@ library Buckets {
         if (bucketLPs_ == 0) {
             lps_ = Maths.wmul(collateral_, bucketPrice_);
         } else {
-            lps_ = (bucketPrice_ * collateral_ * bucketLPs_) / (bucketPrice_ * bucketCollateral_ + deposit_ * 1e18);
+            lps_ = ((bucketPrice_ * collateral_ / 1e12) * bucketLPs_) / (bucketPrice_ * bucketCollateral_ / 1e12 + deposit_ * 1e6);
         }
     }
 
