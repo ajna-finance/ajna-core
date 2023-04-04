@@ -10,7 +10,7 @@ import 'src/interfaces/position/IPositionManager.sol';
 
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 
-import { Token }               from '../utils/Tokens.sol';
+import { Token }               from '../../utils/Tokens.sol';
 import { Strings }             from '@openzeppelin/contracts/utils/Strings.sol';
 
 import { IPoolErrors }         from 'src/interfaces/pool/commons/IPoolErrors.sol';

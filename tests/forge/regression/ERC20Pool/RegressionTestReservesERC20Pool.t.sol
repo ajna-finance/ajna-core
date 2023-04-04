@@ -394,7 +394,7 @@ contract RegressionTestReserveERC20Pool is ReserveERC20PoolInvariants {
         invariant_fenwick_depositsTillIndex_F2();
     }
 
-    function test_remove_regression_R1() external {
+    function test_regression_remove_R1() external {
         _reserveERC20PoolHandler.takeAuction(1000000000147122258, 3919731510820678131056801, 158441107709132461742605107);
         _reserveERC20PoolHandler.repayDebt(15097247704276523502490912, 5821681489746654725611665637);
         _reserveERC20PoolHandler.addQuoteToken(409278183265946161107935122, 13459778251101474251175765782, 17131651646875762675637482511491680925564181440856864512);

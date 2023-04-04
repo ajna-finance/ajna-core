@@ -2,7 +2,7 @@
 pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
-import { Token }               from '../utils/Tokens.sol';
+import { Token }               from '../../utils/Tokens.sol';
 
 import 'src/libraries/helpers/PoolHelper.sol';
 import 'src/interfaces/pool/erc20/IERC20Pool.sol';
