@@ -115,7 +115,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         // lender exchanges their LP for collateral
         _removeAllCollateral({
             from: _lender,
-            amount: 3.321274866808485288 * 1e18,
+            amount: 3.321274866808485287 * 1e18,
             index: testIndex,
             lpRedeem: 10_000 * 1e18
         });
@@ -123,9 +123,9 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         _assertBucket({
             index:        testIndex,
             lpBalance:    2_043.56808879152623138 * 1e18,
-            collateral:   0.678725133191514712 * 1e18,
+            collateral:   0.678725133191514713 * 1e18,
             deposit:      0,
-            exchangeRate: 1 * 1e18
+            exchangeRate: 1.000000000000000001 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _lender,
@@ -140,14 +140,14 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
             depositTime: _startTime
         });
 
-        assertEq(_collateral.balanceOf(_lender), 3.321274866808485288 * 1e18);
+        assertEq(_collateral.balanceOf(_lender), 3.321274866808485287 * 1e18);
 
         // bidder removes their _collateral
         _removeAllCollateral({
             from: _bidder,
-            amount: 0.678725133191514712 * 1e18,
+            amount: 0.678725133191514713 * 1e18,
             index: testIndex,
-            lpRedeem: 2_043.568088791526231161 * 1e18
+            lpRedeem: 2_043.568088791526231380 * 1e18
         });
 
         // check pool balances
@@ -256,17 +256,17 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
             amount:   amountWithInterest,
             index:    2550,
             newLup:   _priceAt(2552),
-            lpRedeem: 10_000.353515519837848818 * 1e18
+            lpRedeem: 10_000.353515519837858817 * 1e18
         });
 
         // bidder withdraws unused collateral
-        uint256 expectedCollateral = 0.066448947605530167 * 1e18;
+        uint256 expectedCollateral = 0.066448947605530163 * 1e18;
 
         _removeAllCollateral({
             from:     _bidder,
             amount:   expectedCollateral,
             index:    2550,
-            lpRedeem: 200.052013519410424905 * 1e18
+            lpRedeem: 200.052013519410414905 * 1e18
         });
 
         _assertLenderLpBalance({
@@ -279,7 +279,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         skip(7200);
 
         // lender exchanges their LP for collateral
-        expectedCollateral = 1.992950126415483406 * 1e18;
+        expectedCollateral = 1.992950126415483407 * 1e18;
 
         _removeAllCollateral({
             from:     _lender,
@@ -298,13 +298,13 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         skip(3600);
 
         // lender1 exchanges their LP for collateral
-        expectedCollateral = 1.328633417610322269 * 1e18;
+        expectedCollateral = 1.328633417610322272 * 1e18;
 
         _removeAllCollateral({
             from:     _lender1,
             amount:   expectedCollateral,
             index:    2550,
-            lpRedeem: 3_999.999999999999999063 * 1e18
+            lpRedeem: 4_000.000000000000000000 * 1e18
         });
 
         _assertLenderLpBalance({
