@@ -12,6 +12,10 @@ make test-with-gas-report
 ```bash
 make test-load
 ```
+- run both ERC20 and ERC721 Pool invariant tests:
+```bash
+make test-invariant
+```
 - run ERC20 Pool invariant tests:
 ```bash
 make test-invariant-erc20
@@ -31,6 +35,18 @@ make test-invariant-erc721 QUOTE_PRECISION=<quote_precision>
 - run ERC20 Pool invariant tests for most popular token precision combinations(6,8 and 18):
 ```bash
 make test-invariant-erc20-precision
+```
+- run regression test for both ERC20 and ERC721 Pool:
+```bash
+make test-regression
+```
+- run regression test for ERC20 Pool:
+```bash
+make test-regression-erc20
+```
+- run regression test for ERC721 Pool:
+```bash
+make test-regression-erc721
 ```
 - generate code coverage report:
 ```bash
