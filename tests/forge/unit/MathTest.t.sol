@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.14;
 
-import './utils/DSTestPlus.sol';
+import '../utils/DSTestPlus.sol';
 
 import '@prb-math/contracts/PRBMathSD59x18.sol';
 import '@prb-math/contracts/PRBMathUD60x18.sol';
