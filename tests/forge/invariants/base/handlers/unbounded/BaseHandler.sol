@@ -24,8 +24,8 @@ uint256 constant LENDER_MAX_BUCKET_INDEX = 2572;
 uint256 constant BORROWER_MIN_BUCKET_INDEX = 2600;
 uint256 constant BORROWER_MAX_BUCKET_INDEX = 2620;
 
-uint256 constant MIN_AMOUNT = 1e6;
-uint256 constant MAX_AMOUNT = 1e28;
+uint256 constant MIN_AMOUNT = 1e3;
+uint256 constant MAX_AMOUNT = 1e30;
 
 abstract contract BaseHandler is Test {
 

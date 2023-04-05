@@ -166,18 +166,18 @@ abstract contract BasicInvariants is BaseInvariants {
                 console.log("======================================");
 
 
-                if (bucketLps < 1e9) {
+                if (bucketLps < 1e12) {
                     requireWithinDiff(
                         Maths.wmul(currentExchangeRate, bucketLps),
                         Maths.wmul(previousExchangeRate, bucketLps),
-                        1e16,  // allow changes up to 1 qt in value
+                        1e16,  // allow changes up to 0.01 qt in value if bucket LPs < 1e-6
                         "Incorrect exchange Rate changed"
                     );
                 } else {
                     requireWithinDiff(
                         currentExchangeRate,
                         previousExchangeRate,
-                        1e14,
+                        1e12,  // otherwise require exchange rates to be within 1e-6
                         "Incorrect exchange Rate changed"
                     );
                 }

@@ -107,11 +107,9 @@ library Buckets {
         uint256 collateral_,
         uint256 bucketPrice_
     ) internal pure returns (uint256 lps_) {
-        if (bucketLPs_ == 0) {
-            lps_ = Maths.wmul(collateral_, bucketPrice_);
-        } else {
-            lps_ = ((bucketPrice_ * collateral_ / 1e12) * bucketLPs_) / (bucketPrice_ * bucketCollateral_ / 1e12 + deposit_ * 1e6);
-        }
+        uint256 rate = getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_);
+
+        lps_ = Maths.wdiv(Maths.wmul(collateral_, bucketPrice_), rate);
     }
 
     /**
@@ -150,25 +148,6 @@ library Buckets {
         uint256 bucketPrice_
     ) internal pure returns (uint256) {
         return bucketLPs_ == 0 ? Maths.WAD :
-            (bucketDeposit_ * 1e18 + bucketPrice_ * bucketCollateral_) / bucketLPs_;
-    }
-
-    /**
-     *  @notice Returns the exchange rate for a given bucket.
-     *  @param  amount_           Amount to multiply by exchange rate
-     *  @param  bucketCollateral_ Amount of collateral in bucket.
-     *  @param  bucketLPs_        Amount of LPs in bucket.
-     *  @param  bucketDeposit_    The amount of quote tokens deposited in the given bucket.
-     *  @param  bucketPrice_      Bucket's price.
-     */
-    function multiplyByExchangeRate(
-        uint256 amount_,
-        uint256 bucketCollateral_,
-        uint256 bucketLPs_,
-        uint256 bucketDeposit_,
-        uint256 bucketPrice_
-    ) internal pure returns (uint256) {
-        return bucketLPs_ == 0 ? amount_ :
-            (bucketDeposit_ * amount_ * 1e6 + (bucketPrice_ * bucketCollateral_ / 1e12) * amount_) / (bucketLPs_ * 1e6);
+            Maths.wdiv(bucketDeposit_ + Maths.wmul(bucketPrice_, bucketCollateral_), bucketLPs_);
     }
 }

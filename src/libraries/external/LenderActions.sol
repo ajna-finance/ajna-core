@@ -926,14 +926,7 @@ library LenderActions {
         // scaledRemovedAmount = min ( maxAmount_, scaledDeposit, lenderLPsBalance*exchangeRate)
         // redeemedLPs_ = min ( maxAmount_/scaledExchangeRate, scaledDeposit/exchangeRate, lenderLPsBalance)
 
-        uint256 scaledLpConstraint = Buckets.multiplyByExchangeRate(
-            params_.lpConstraint,
-            params_.bucketCollateral,
-            params_.bucketLPs,
-            scaledDepositAvailable,
-            params_.price
-        );
- 
+        uint256 scaledLpConstraint = Maths.wmul(params_.lpConstraint, exchangeRate);
         if (
             params_.depositConstraint < scaledDepositAvailable &&
             params_.depositConstraint < scaledLpConstraint
@@ -948,15 +941,9 @@ library LenderActions {
         } else {
             // redeeming all LPs
             redeemedLPs_   = params_.lpConstraint;
-            removedAmount_ = Buckets.multiplyByExchangeRate(
-                redeemedLPs_,
-                params_.bucketCollateral,
-                params_.bucketLPs,
-                scaledDepositAvailable,
-                params_.price
-            );
+            removedAmount_ = Maths.wmul(redeemedLPs_, exchangeRate);
         }
-        
+
         // If clearing out the bucket deposit, ensure it's zeroed out
         if (redeemedLPs_ == params_.bucketLPs) {
             removedAmount_ = scaledDepositAvailable;  // TODO: shouldn't this be moved below the below, and use unscaled amount?
