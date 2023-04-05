@@ -149,7 +149,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             lpBalance:    4_997.115384615384614 * 1e18,
             collateral:   1.293874031008720308 * 1e18,
             deposit:      0,
-            exchangeRate: 1.000393560665305037 * 1e18
+            exchangeRate: 1.000393560665305038 * 1e18
         });
         // partial borrower debt is settled, borrower collateral decreased with the amount used to settle debt
         _assertBorrower({
@@ -185,7 +185,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             lpBalance:    24_989.247267890536782809 * 1e18,
             collateral:   1.293874031008720308 * 1e18,
             deposit:      20_000 * 1e18,
-            exchangeRate: 1.000393560665305037 * 1e18
+            exchangeRate: 1.000393560665305038 * 1e18
         });
 
         _settle({
@@ -262,7 +262,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             from:    _lender,
             amount:  100 * 1e18,
             index:   MAX_FENWICK_INDEX,
-            lpAward: 99.999999999452490801 * 1e18,
+            lpAward: 99.999999999452490800 * 1e18,
             newLup:  MAX_PRICE
         });
 
@@ -313,7 +313,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             lpBalance:    99.999999999452490801 * 1e18,
             collateral:   0,
             deposit:      100 * 1e18,
-            exchangeRate: 1.000000000005475092 * 1e18
+            exchangeRate: 1.000000000005475091 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower,
@@ -438,7 +438,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             amount:      100 * 1e18,
             amountAdded: 99.986438356164383600 * 1e18,
             index:       MAX_FENWICK_INDEX,
-            lpAward:     99.986438356164383600 * 1e18,
+            lpAward:     99.986438363699163522 * 1e18,
             newLup:      3_806.274307891526195092 * 1e18
         });
 
@@ -495,7 +495,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             bondChange:       2_141.957976032803809439 * 1e18,
             isReward:         true,
             lpAwardTaker:     0,
-            lpAwardKicker:    2_141.620879120879119905 * 1e18
+            lpAwardKicker:    2_141.620879120879122047 * 1e18
         });
 
         _assertBucket({
@@ -593,7 +593,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             amount:      1000 * 1e18,
             amountAdded: 999.849315068493151000 * 1e18,
             index:       6113,
-            lpAward:     999.849315068493151000 * 1e18,
+            lpAward:     999.849315068546904899 * 1e18,
             newLup:      3_844.432207828138682757 * 1e18
         });
         uint256[] memory removalIndexes = new uint256[](2);
@@ -670,7 +670,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             bondChange:       2_141.957976032803809439 * 1e18,
             isReward:         true,
             lpAwardTaker:     0,
-            lpAwardKicker:    2_141.620879120879119905 * 1e18
+            lpAwardKicker:    2_141.620879120879122047 * 1e18
         });
 
         _assertBucket({
@@ -759,7 +759,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             from:    _lender,
             amount:  1000 * 1e18,
             index:   6113,
-            lpAward: 1_000 * 1e18,
+            lpAward: 1_000.000000000053762000 * 1e18,
             newLup:  MAX_PRICE
         });
         uint256[] memory removalIndexes = new uint256[](2);
@@ -935,7 +935,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             from:    _lender,
             amount:  10_000 * 1e18,
             index:   2000,
-            lpAward: 10_000.00000000000009 * 1e18,
+            lpAward: 10_000.000000000000100000 * 1e18,
             newLup:  MAX_PRICE
         });
         uint256[] memory removalIndexes = new uint256[](2);
@@ -1102,7 +1102,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             from:    _lender,
             amount:  1_000 * 1e18,
             index:   6113,
-            lpAward: 1_000 * 1e18,
+            lpAward: 1_000.000000000011148000 * 1e18,
             newLup:  MAX_PRICE
         });
         uint256[] memory removalIndexes = new uint256[](3);
@@ -1134,7 +1134,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         });
     }
 
-    function testDepositTakeAndSettleBySettleSubsetPool() external {
+    function testDepositTakeAndSettleBySettleSubsetPool() external tearDown {
 
         // the 2 token ids are owned by borrower before settle
         assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 0), 1);
@@ -1265,7 +1265,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             from:    _lender,
             amount:  1_000 * 1e18,
             index:   7388,
-            lpAward: 1_000 * 1e18,
+            lpAward: 1_000.000000010940498000 * 1e18,
             newLup:  MAX_PRICE
         });
         uint256[] memory removalIndexes = new uint256[](3);

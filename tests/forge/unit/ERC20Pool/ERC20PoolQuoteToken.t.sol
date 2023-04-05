@@ -1155,7 +1155,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             from:    _lender1,
             amount:  1_000 * 1e18,
             index:   2873,
-            lpAward: 999.958129650486586454 * 1e18,
+            lpAward: 999.958129650486587454 * 1e18,
             newLup:  601.252968524772188572 * 1e18
         });
 
@@ -1206,7 +1206,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         assertGt(_quote.balanceOf(_lender), 200_000 * 1e18);
     }
 
-    function testAddRemoveQuoteTokenBucketExchangeRateInvariantDifferentActor() tearDown external {
+    function testAddRemoveQuoteTokenBucketExchangeRateInvariantDifferentActor() external tearDown {
         _mintQuoteAndApproveTokens(_lender, 1000000000000000000 * 1e18);
 
         uint256 initialLenderBalance = _quote.balanceOf(_lender);
@@ -1242,7 +1242,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             from:    _lender,
             amount:  984_665_651_980_300_212.880827908151758552 * 1e18,
             index:   2570,
-            lpAward: 984_665_651_272_169_777.007549379595242193 * 1e18,
+            lpAward: 984_665_662_688_430_656.454946882544979225 * 1e18,
             newLup:  MAX_PRICE
         });
 

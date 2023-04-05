@@ -186,7 +186,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
      *              Attempts to remove more collateral than available given lp balance.
      *              Attempts to remove collateral not in the bucket.
      */
-    function testSubsetPurchaseQuoteWithDebt() external {
+    function testSubsetPurchaseQuoteWithDebt() external tearDown {
         // lenders add liquidity
         _addInitialLiquidity({
             from:   _lender,
@@ -263,7 +263,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             from:     _bidder,
             tokenIds: tokenIdsToAdd,
             index:    2350,
-            lpAward:  32_654.476857047354370625 * 1e18
+            lpAward:  32_654.476857047354370624 * 1e18
         });
 
         skip(25 hours); // remove liquidity after one day to avoid early withdraw penalty

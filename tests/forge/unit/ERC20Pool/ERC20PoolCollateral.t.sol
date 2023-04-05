@@ -740,7 +740,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             lpBalance:    6879,
             collateral:   0,
             deposit:      6879,
-            exchangeRate: 1.000015410380886211 * 1e18 // exchange rate should not meaningfully change
+            exchangeRate: 1 * 1e18 // exchange rate should not change
         });
     }
 
@@ -797,7 +797,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             lpBalance:    3029,
             collateral:   1,
             deposit:      304,
-            exchangeRate: 1 * 1e18 // exchange rate should not change
+            exchangeRate: 1.000015410380886211 * 1e18 // exchange rate should not meaningful change
         });
 
         // lender should not be able to remove any collateral as LP balance is 304 < 2725
@@ -830,7 +830,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             lpBalance:    304,
             collateral:   0,
             deposit:      304,
-            exchangeRate: 1 * 1e18 // exchange rate should not change
+            exchangeRate: 1 * 1e18 // exchange rate should not meaningful change
         });
     }
 

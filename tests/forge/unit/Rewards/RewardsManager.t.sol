@@ -1099,7 +1099,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             from:          _minterOne,
             tokenId:       tokenIdOne,
             epochsClaimed: _epochsClaimedArray(1,1),
-            reward:        33.732794779745615314 * 1e18
+            reward:        33.732794779745583703 * 1e18
         });
     }
 

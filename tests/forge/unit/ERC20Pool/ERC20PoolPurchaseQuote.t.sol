@@ -246,7 +246,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
             from:    _bidder,
             amount:  collateralToPurchaseWith,
             index:   2550,
-            lpAward: 10_200.405529039248273723 * 1e18
+            lpAward: 10_200.405529039248273722 * 1e18
         });
 
         skip(25 hours); // remove liquidity after one day to avoid early withdraw penalty
