@@ -9,9 +9,9 @@ import {
     MAX_AMOUNT
 }                                               from '../../base/handlers/unbounded/BaseHandler.sol';
 import { LiquidationPoolHandler }               from '../../base/handlers/LiquidationPoolHandler.sol';
-import { BasicERC20PoolHandler }                from './BasicERC20PoolHandler.sol';
+import { BasicERC721PoolHandler }                from './BasicERC721PoolHandler.sol';
 
-contract LiquidationERC20PoolHandler is LiquidationPoolHandler, BasicERC20PoolHandler {
+contract LiquidationERC721PoolHandler is LiquidationPoolHandler, BasicERC721PoolHandler {
 
     constructor(
         address pool_,
@@ -21,12 +21,12 @@ contract LiquidationERC20PoolHandler is LiquidationPoolHandler, BasicERC20PoolHa
         address poolInfo_,
         uint256 numOfActors_,
         address testContract_
-    ) BasicERC20PoolHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
+    ) BasicERC721PoolHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
 
     }
 
     function _preTake(uint256 amountToTake_) internal override returns(uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToTake_, MIN_AMOUNT, MAX_AMOUNT);
+        boundedAmount_ = constrictToRange(amountToTake_, 1, 5);
     }
 
 }

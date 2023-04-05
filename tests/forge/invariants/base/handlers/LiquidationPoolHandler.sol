@@ -43,6 +43,30 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
     /*** Taker Test Functions ***/
     /****************************/
 
+    function takeAuction(
+        uint256 borrowerIndex_,
+        uint256 amount_,
+        uint256 actorIndex_
+    ) external useRandomActor(actorIndex_) useTimestamps {
+        numberOfCalls['BLiquidationHandler.takeAuction']++;
+
+        amount_ = _preTake(amount_);
+
+        borrowerIndex_ = constrictToRange(borrowerIndex_, 0, actors.length - 1);
+
+        address borrower = actors[borrowerIndex_];
+        address taker    = _actor;
+
+        ( , , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
+
+        if (kickTime == 0) _kickAuction(borrowerIndex_, amount_ * 100, actorIndex_);
+
+        changePrank(taker);
+        // skip time to make auction takeable
+        vm.warp(block.timestamp + 2 hours);
+        _takeAuction(borrower, amount_, taker);
+    }
+
     function bucketTake(
         uint256 borrowerIndex_,
         uint256 bucketIndex_,
@@ -65,6 +89,35 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         // skip time to make auction takeable
         vm.warp(block.timestamp + 2 hours);
         _bucketTake(taker, borrower, depositTake_, bucketIndex_);
+    }
+
+    /******************************/
+    /*** Settler Test Functions ***/
+    /******************************/
+
+    function settleAuction(
+        uint256 actorIndex_,
+        uint256 borrowerIndex_,
+        uint256 bucketIndex_
+    ) external useRandomActor(actorIndex_) useTimestamps {
+        borrowerIndex_ = constrictToRange(borrowerIndex_, 0, actors.length - 1);
+        bucketIndex_   = constrictToRange(bucketIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
+
+        address borrower = actors[borrowerIndex_];
+        uint256 maxDepth = LENDER_MAX_BUCKET_INDEX - LENDER_MIN_BUCKET_INDEX;
+
+        address actor = _actor;
+
+        ( , , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
+
+        if (kickTime == 0) _kickAuction(borrowerIndex_, 1e24, bucketIndex_);
+
+        changePrank(actor);
+        // skip time to make auction clearable
+        vm.warp(block.timestamp + 73 hours);
+        _settleAuction(borrower, maxDepth);
+
+        _auctionSettleStateReset(borrower);
     }
 
     /************************/
@@ -103,4 +156,10 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
             _kickAuction(borrower);
         }
     }
+
+    /*******************************/
+    /*** Prepare Tests Functions ***/
+    /*******************************/
+
+    function _preTake(uint256 amountToTake_) internal virtual returns(uint256 boundedAmount_);
 }
