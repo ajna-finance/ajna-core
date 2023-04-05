@@ -246,7 +246,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
             from:    _bidder,
             amount:  collateralToPurchaseWith,
             index:   2550,
-            lpAward: 10_200.405529039248273722 * 1e18
+            lpAward: 10_200.405529039248273723 * 1e18
         });
 
         skip(25 hours); // remove liquidity after one day to avoid early withdraw penalty
@@ -256,17 +256,17 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
             amount:   amountWithInterest,
             index:    2550,
             newLup:   _priceAt(2552),
-            lpRedeem: 10_000.353515519837858817 * 1e18
+            lpRedeem: 10_000.353515519837848818 * 1e18
         });
 
         // bidder withdraws unused collateral
-        uint256 expectedCollateral = 0.066448947605530163 * 1e18;
+        uint256 expectedCollateral = 0.066448947605530166 * 1e18;
 
         _removeAllCollateral({
             from:     _bidder,
             amount:   expectedCollateral,
             index:    2550,
-            lpRedeem: 200.052013519410414905 * 1e18
+            lpRedeem: 200.052013519410424905 * 1e18
         });
 
         _assertLenderLpBalance({
@@ -279,7 +279,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         skip(7200);
 
         // lender exchanges their LP for collateral
-        expectedCollateral = 1.992950126415483407 * 1e18;
+        expectedCollateral = 1.992950126415483405 * 1e18;
 
         _removeAllCollateral({
             from:     _lender,
@@ -298,13 +298,13 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         skip(3600);
 
         // lender1 exchanges their LP for collateral
-        expectedCollateral = 1.328633417610322272 * 1e18;
+        expectedCollateral = 1.328633417610322271 * 1e18;
 
         _removeAllCollateral({
             from:     _lender1,
             amount:   expectedCollateral,
             index:    2550,
-            lpRedeem: 4_000.000000000000000000 * 1e18
+            lpRedeem: 4_000 * 1e18
         });
 
         _assertLenderLpBalance({

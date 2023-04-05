@@ -946,7 +946,7 @@ library LenderActions {
 
         // If clearing out the bucket deposit, ensure it's zeroed out
         if (redeemedLPs_ == params_.bucketLPs) {
-            removedAmount_ = scaledDepositAvailable;  // TODO: shouldn't this be moved below the below, and use unscaled amount?
+            removedAmount_ = scaledDepositAvailable;
         }
 
         uint256 unscaledRemovedAmount = Maths.min(unscaledDepositAvailable, Maths.wdiv(removedAmount_, depositScale));

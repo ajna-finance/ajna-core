@@ -156,7 +156,7 @@ abstract contract BasicInvariants is BaseInvariants {
             (uint256 bucketLps, , , , ) = _pool.bucketInfo(bucketIndex);
 
             if (IBaseHandler(_handler).exchangeRateShouldNotChange(bucketIndex)) {
-                uint256 previousExchangeRate = IBaseHandler(_handler).previousExchangeRate(bucketIndex);  // would be good to get previous bucket LPs too
+                uint256 previousExchangeRate = IBaseHandler(_handler).previousExchangeRate(bucketIndex);
 
                 console.log("======================================");
                 console.log("Bucket Index           -->", bucketIndex);
