@@ -237,6 +237,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         if (result.quoteTokenToRepay != 0) {
             // update pool balances state
             poolBalances.t0Debt = result.t0PoolDebt;
+            if (result.t0PoolDebt == 0) poolBalances.lastZeroDebtTime = block.timestamp;
             if (result.t0DebtInAuctionChange != 0) {
                 poolBalances.t0DebtInAuction -= result.t0DebtInAuctionChange;
             }
@@ -358,6 +359,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         // update pool balances state
         poolBalances.t0Debt            -= result.t0DebtSettled;
         poolBalances.t0DebtInAuction   -= result.t0DebtSettled;
+        if (result.t0DebtSettled == 0) poolBalances.lastZeroDebtTime = block.timestamp;
         poolBalances.pledgedCollateral -= result.collateralSettled;
 
         // adjust t0Debt2ToCollateral ratio
@@ -414,6 +416,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         t0DebtInAuction -= result.t0DebtInAuctionChange;
 
         poolBalances.t0Debt            =  result.t0PoolDebt;
+        if (result.t0PoolDebt == 0) poolBalances.lastZeroDebtTime = block.timestamp;
         poolBalances.t0DebtInAuction   =  t0DebtInAuction;
         poolBalances.pledgedCollateral -= result.collateralAmount;
 
@@ -477,6 +480,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         t0DebtInAuction -= result.t0DebtInAuctionChange;
 
         poolBalances.t0Debt            =  result.t0PoolDebt;
+        if (result.t0PoolDebt == 0) poolBalances.lastZeroDebtTime = block.timestamp;
         poolBalances.t0DebtInAuction   =  t0DebtInAuction;
         poolBalances.pledgedCollateral -= result.collateralAmount;
 

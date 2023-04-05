@@ -512,6 +512,22 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /*****************************/
+    /*** Reset Interest Rates ****/
+    /*****************************/
+
+    function resetInterestRate(uint256 rate_) external override {
+        bool withinResetWindow = block.timestamp - poolBalances.lastZeroDebtTime > 2 weeks;
+
+        if (poolBalances.t0Debt == 0 && withinResetWindow) {
+            interestState.interestRate       = uint208(rate_);
+            interestState.interestRateUpdate = uint48(block.timestamp);
+        }
+    }
+
+
+
+
+    /*****************************/
     /*** Pool Helper Functions ***/
     /*****************************/
 

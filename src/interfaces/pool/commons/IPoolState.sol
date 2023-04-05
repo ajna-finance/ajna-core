@@ -288,6 +288,7 @@ struct InflatorState {
     uint48  inflatorUpdate; // [SEC] last time pool's inflator was updated
 }
 
+// used as global storage for interest variables
 struct InterestState {
     uint208 interestRate;        // [WAD] pool's interest rate
     uint48  interestRateUpdate;  // [SEC] last time pool's interest rate was updated (not before 12 hours passed)
@@ -298,6 +299,7 @@ struct InterestState {
     uint256 lupt0Debt;           // [WAD] previous LUP * t0 debt
 }
 
+// used as global storage for ema variables 
 struct EmaState {
     uint256 debtEma;             // [WAD] sample of debt EMA, numerator to MAU calculation
     uint256 depositEma;          // [WAD] sample of meaningful deposit EMA, denominator to MAU calculation
@@ -306,12 +308,15 @@ struct EmaState {
     uint256 emaUpdate;           // [SEC] last time pool's EMAs were updated
 }
 
+// used as global storage for pool variables
 struct PoolBalancesState {
     uint256 pledgedCollateral; // [WAD] total collateral pledged in pool
     uint256 t0DebtInAuction;   // [WAD] Total debt in auction used to restrict LPB holder from withdrawing
     uint256 t0Debt;            // [WAD] Pool debt as if the whole amount was incurred upon the first loan
+    uint256 lastZeroDebtTime;  // timestamp of last time pool debt was zero
 }
 
+// used to pass pool state bewteen functions
 struct PoolState {
     uint8   poolType;             // pool type, can be ERC20 or ERC721
     uint256 t0Debt;               // [WAD] t0 debt in pool

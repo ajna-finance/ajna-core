@@ -144,4 +144,13 @@ interface IPoolLenderActions {
         address newOwner,
         uint256[] calldata indexes
     ) external;
+
+    /**
+     *  @notice Called by lenders to reset the interest rate of the pool.
+     *  @dev    poolBalances.t0Debt must be zero for over two weeks.
+     *  @param  rate_  Rate that the lender wishes to reset the interest rate to.
+     */
+    function resetInterestRate(
+        uint256 rate_
+    ) external;
 }
