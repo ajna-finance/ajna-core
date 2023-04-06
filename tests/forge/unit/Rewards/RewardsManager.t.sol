@@ -2,6 +2,7 @@
 pragma solidity 0.8.14;
 
 import 'src/PoolInfoUtils.sol';
+import 'src/RewardsManager.sol';
 import 'src/PositionManager.sol';
 import 'src/interfaces/rewards/IRewardsManager.sol';
 
@@ -67,6 +68,12 @@ contract RewardsManagerTest is RewardsHelperContract {
         _mintQuoteAndApproveTokens(_minterTwo,  500_000_000 * 1e18);
     }
 
+    function testDeployWith0xAddressRevert() external {
+        PositionManager positionManager = new PositionManager(_poolFactory, new ERC721PoolFactory(_ajna));
+
+        vm.expectRevert(IRewardsManagerErrors.DeployWithZeroAddress.selector);
+        new RewardsManager(address(0), positionManager);
+    }
 
     function testStakeToken() external {
         skip(10);
