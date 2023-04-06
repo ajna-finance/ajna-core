@@ -25,7 +25,7 @@ contract LiquidationERC20PoolHandler is LiquidationPoolHandler, BasicERC20PoolHa
 
     }
 
-    function _preTake(uint256 amountToTake_) internal override returns(uint256 boundedAmount_) {
+    function _constrictTakeAmount(uint256 amountToTake_) internal pure override returns(uint256 boundedAmount_) {
         boundedAmount_ = constrictToRange(amountToTake_, MIN_AMOUNT, MAX_AMOUNT);
     }
 
