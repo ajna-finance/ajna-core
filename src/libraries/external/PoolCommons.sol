@@ -95,7 +95,7 @@ library PoolCommons {
 
         // calculate new interest params
         vars.newDebt = poolState_.debt;
-        // new meaningful deposit cannot exceed pool's debt
+        // new meaningful deposit cannot be less than pool's debt
         vars.newMeaningfulDeposit = Maths.max(
             _meaningfulDeposit(
                 deposits_,
