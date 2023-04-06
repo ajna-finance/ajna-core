@@ -87,6 +87,8 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     /*******************/
 
     constructor(address ajnaToken_, IPositionManager positionManager_) {
+        if (ajnaToken_ == address(0)) revert DeployWithZeroAddress();
+
         ajnaToken = ajnaToken_;
         positionManager = positionManager_;
     }
