@@ -56,7 +56,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     /**
      * @notice Reward factor by which to scale rewards earned for updating a buckets exchange rate.
      */
-    uint256 internal UPDATE_CLAIM_REWARD = 0.05 * 1e18;
+    uint256 internal constant UPDATE_CLAIM_REWARD = 0.05 * 1e18;
     /**
      * @notice Time period after a burn event in which buckets exchange rates can be updated.
      */
