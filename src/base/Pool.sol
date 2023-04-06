@@ -515,17 +515,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*** Reset Interest Rates ****/
     /*****************************/
 
-    function resetInterestRate(uint256 rate_) external override {
-        bool withinResetWindow = block.timestamp - poolBalances.lastZeroDebtTime > 2 weeks;
+    function resetInterestRate() external override {
 
-        if (poolBalances.t0Debt == 0 && withinResetWindow) {
-            interestState.interestRate       = uint208(rate_);
-            interestState.interestRateUpdate = uint48(block.timestamp);
-        }
+        // revert if pool is not eligible for a reset
+        if (poolBalances.t0Debt != 0 || block.timestamp - poolBalances.lastZeroDebtTime < 2 weeks) revert PoolNotEligibleForResetInterest();
+
+        // reset interest rate
+        interestState.interestRate       = uint208(0.05 * 1e18);
+        interestState.interestRateUpdate = uint48(block.timestamp);
     }
-
-
-
 
     /*****************************/
     /*** Pool Helper Functions ***/
@@ -637,8 +635,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         // if the debt in the current pool state is 0, also update the inflator and inflatorUpdate fields in inflatorState
         // slither-disable-next-line incorrect-equality
         } else if (poolState_.debt == 0) {
-            inflatorState.inflator       = uint208(Maths.WAD);
-            inflatorState.inflatorUpdate = uint48(block.timestamp);
+            inflatorState.inflator        = uint208(Maths.WAD);
+            inflatorState.inflatorUpdate  = uint48(block.timestamp);
+            poolBalances.lastZeroDebtTime = uint48(block.timestamp); 
         }
     }
 

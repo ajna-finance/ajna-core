@@ -219,4 +219,9 @@ interface IPoolErrors {
      */
     error ZeroThresholdPrice();
 
+    /**
+     *  @notice The pool's debt != 0 or the pool has not has zero debt for longer than 2 weeks.
+     */
+    error PoolNotEligibleForResetInterest();
+
 }

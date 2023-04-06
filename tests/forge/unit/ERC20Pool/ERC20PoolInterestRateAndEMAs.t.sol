@@ -6,6 +6,8 @@ import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 import 'src/libraries/helpers/PoolHelper.sol';
 import 'src/interfaces/pool/erc20/IERC20Pool.sol';
 
+import '@std/console.sol';
+
 contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
     address internal _borrower;
@@ -30,6 +32,8 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         _mintQuoteAndApproveTokens(_lender,   200_000 * 1e18);
         _mintQuoteAndApproveTokens(_lender1,  200_000 * 1e18);
         _mintQuoteAndApproveTokens(_lender2,  100_000_000_000_000_000 * 1e18);
+
+        _mintQuoteAndApproveTokens(_borrower,  30_000 * 1e18);
     }
 
     function testPoolInterestRateIncreaseDecrease() external tearDown {
@@ -1105,4 +1109,116 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             exchangeRate: 1.008406484270040092 * 1e18
         });
     }
+
+
+function testResetInterestRate() external {
+
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 20 * 1e18,
+            index:  4150 // 1.030377509393765575 
+        });
+
+        // first borrower pledge collateral and borrows
+        _pledgeCollateral({
+            from:     _borrower,
+            borrower: _borrower,
+            amount:   1_000 * 1e18
+        });
+        _borrow({
+            from:       _borrower,
+            amount:     10 * 1e18,
+            indexLimit: 4200,
+            newLup:     1.030377509393765575 * 1e18
+        });
+
+        for (uint256 i = 0; i < 97; i++) {
+            skip(13 hours);
+            _pool.updateInterest();
+        }
+
+        _assertPool(
+            PoolParams({
+                htp:                  21.704037925422272159 * 1e18,
+                lup:                  0.000000099836282890 * 1e18,
+                poolSize:             21_699.748996105767130276 * 1e18,
+                pledgedCollateral:    1_000.00 * 1e18,
+                encumberedCollateral: 217_396_294_184.308361077043700820 * 1e18,
+                poolDebt:             21_704.037925422271335480 * 1e18,
+                actualUtilization:    551.458131807131008470 * 1e18,
+                targetUtilization:    7.050172813952741668 * 1e18,
+                minDebtAmount:        2_170.403792542227133548 * 1e18,
+                loans:                1,
+                maxBorrower:          address(_borrower),
+                interestRate:         500.000000000000000000 * 1e18,
+                interestRateUpdate:   block.timestamp
+            })
+        );
+
+        _assertBorrower({
+            borrower:                  _borrower,
+            borrowerCollateral:        1_000.00 * 1e18,
+            borrowerDebt:              21_704.037925422271335480 * 1e18,
+            borrowert0Np:              0.010510096153846154 * 1e18,
+            borrowerCollateralization: 0.000000004599894417 * 1e18
+        });
+
+        // set t0Debt to 0 because borrower repays
+        _repayDebt({
+            from:             _borrower,
+            borrower:         _borrower,
+            amountToRepay:    type(uint256).max,
+            amountRepaid:     21_704.037925422271335480 * 1e18,
+            collateralToPull: 0,
+            newLup:           MAX_PRICE
+        });
+
+        // assert that interest rate still very high
+        _assertPool(
+            PoolParams({
+                htp:                  0,
+                lup:                  1004968987.606512354182109771 * 1e18,
+                poolSize:             21_699.748996105767130276 * 1e18,
+                pledgedCollateral:    1_000.00 * 1e18,
+                encumberedCollateral: 0,
+                poolDebt:             0,
+                actualUtilization:    551.458131807131008470 * 1e18,
+                targetUtilization:    7.050172813952741668 * 1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                interestRate:         500.000000000000000000 * 1e18,
+                interestRateUpdate:   block.timestamp
+            })
+        );
+
+        // cannot reset interest as 2 weeks haven't passed
+        _assertPoolNotEligibleForResetInterestRevert({
+            from: _lender
+        });
+
+        skip(2 weeks + 1 hours);
+
+        // reset interest rate
+        _pool.resetInterestRate();
+
+        // assert that interest rate is reset
+        _assertPool(
+            PoolParams({
+                htp:                  0,
+                lup:                  1004968987.606512354182109771 * 1e18,
+                poolSize:             21_699.748996105767130276 * 1e18,
+                pledgedCollateral:    1_000.00 * 1e18,
+                encumberedCollateral: 0,
+                poolDebt:             0,
+                actualUtilization:    551.458131807131008470 * 1e18,
+                targetUtilization:    7.050172813952741668 * 1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   block.timestamp
+            })
+        );
+     }
 }
