@@ -54,6 +54,8 @@ abstract contract FlashloanablePool is Pool {
         if (tokenContract.balanceOf(address(this)) != initialBalance) revert FlashloanIncorrectBalance();
 
         success_ = true;
+
+        emit Flashloan(address(receiver_), token_, amount_);
     }
 
     /**

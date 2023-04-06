@@ -78,6 +78,9 @@ contract ERC721PoolFlashloanTest is ERC721HelperContract {
         // Use a flashloan to interact with the strategy
         assertEq(_quote.balanceOf(address(flasher)), 0);
         assertTrue(!flasher.callbackInvoked());
+
+        vm.expectEmit(true, true, false, true);
+        emit Flashloan(address(flasher), address(_quote), loanAmount);
         _pool.flashLoan(flasher, address(_quote), loanAmount, new bytes(0));
         assertTrue(flasher.callbackInvoked());
         assertEq(_quote.balanceOf(address(flasher)), 3.5 * 1e18);

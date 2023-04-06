@@ -316,6 +316,18 @@ interface IPoolEvents {
     );
 
     /**
+     *  @notice Emitted when a flashloan is taken from pool.
+     *  @param  receiver The address receiving the flashloan.
+     *  @param  token    The address of token flashloaned from pool.
+     *  @param  amount   The amount of tokens flashloaned from pool.
+     */
+    event Flashloan(
+        address indexed receiver,
+        address indexed token,
+        uint256 amount
+    );
+
+    /**
      *  @notice Emitted when a loan Neutral Price is restamped.
      *  @param  borrower   Identifies the loan to update the Neutral Price.
      */

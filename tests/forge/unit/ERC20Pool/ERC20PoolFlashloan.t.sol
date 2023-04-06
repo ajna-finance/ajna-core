@@ -3,7 +3,7 @@ pragma solidity 0.8.14;
 
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 
-import { ERC20HelperContract }                 from './ERC20DSTestPlus.sol';
+import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 import {
     FlashloanBorrower,
     SomeDefiStrategy,
@@ -79,6 +79,9 @@ contract ERC20PoolFlashloanTest is ERC20HelperContract {
         // Use a flashloan to interact with the strategy
         assertEq(_collateral.balanceOf(address(flasher)), 0);
         assertTrue(!flasher.callbackInvoked());
+
+        vm.expectEmit(true, true, false, true);
+        emit Flashloan(address(flasher), address(_collateral), loanAmount);
         _pool.flashLoan(flasher, address(_collateral), loanAmount, new bytes(0));
         assertTrue(flasher.callbackInvoked());
         assertEq(_collateral.balanceOf(address(flasher)), 3.5 * 1e18);
@@ -228,6 +231,9 @@ contract ERC20PoolFlashloanPrecisionTest is ERC20HelperContract {
         // Use a flashloan to interact with the strategy
         assertEq(WBTC.balanceOf(address(flasher)), 0);
         assertTrue(!flasher.callbackInvoked());
+
+        vm.expectEmit(true, true, false, true);
+        emit Flashloan(address(flasher), address(WBTC), loanAmount);
         _pool.flashLoan(flasher, address(WBTC), loanAmount, new bytes(0));
         assertTrue(flasher.callbackInvoked());
         assertEq(WBTC.balanceOf(address(flasher)), 0.35 * 1e8);
@@ -258,6 +264,9 @@ contract ERC20PoolFlashloanPrecisionTest is ERC20HelperContract {
         // Use a flashloan to interact with the strategy
         assertEq(USDC.balanceOf(address(flasher)), 0);
         assertTrue(!flasher.callbackInvoked());
+
+        vm.expectEmit(true, true, false, true);
+        emit Flashloan(address(flasher), address(USDC), loanAmount);
         _pool.flashLoan(flasher, address(USDC), loanAmount, new bytes(0));
         assertTrue(flasher.callbackInvoked());
         assertEq(USDC.balanceOf(address(flasher)), 350 * 1e6);
