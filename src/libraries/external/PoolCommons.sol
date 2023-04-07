@@ -167,7 +167,6 @@ library PoolCommons {
         else if (block.timestamp - interestParams_.interestRateUpdate > 12 hours) {
             vars.newInterestRate = _calculateInterestRate(
                 poolState_,
-                interestParams_.interestRate,
                 vars.debtEma,
                 vars.depositEma,
                 vars.debtColEma,
@@ -247,7 +246,6 @@ library PoolCommons {
      */
     function _calculateInterestRate(
         PoolState memory poolState_,
-        uint256 interestRate_,
         uint256 debtEma_,
         uint256 depositEma_,
         uint256 debtColEma_,
@@ -267,8 +265,6 @@ library PoolCommons {
         // calculate target utilization
         int256 tu = (lupt0DebtEma_ != 0) ? 
             int256(Maths.wdiv(debtColEma_, lupt0DebtEma_)) : int(Maths.WAD);
-
-        if (!poolState_.isNewInterestAccrued) poolState_.rate = interestRate_;
 
         newInterestRate_ = poolState_.rate;
 
