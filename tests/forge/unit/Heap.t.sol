@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.14;
 
-import './utils/DSTestPlus.sol';
-import './utils/HeapInstance.sol';
+import '../utils/DSTestPlus.sol';
+import '../utils/HeapInstance.sol';
 
 contract HeapTest is DSTestPlus {
     HeapInstance private _loans;
