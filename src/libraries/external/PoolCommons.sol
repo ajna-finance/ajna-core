@@ -40,6 +40,7 @@ library PoolCommons {
     /**************/
 
     // See `IPoolEvents` for descriptions
+    event ResetInterestRate(uint256 oldRate, uint256 newRate);
     event UpdateInterestRate(uint256 oldRate, uint256 newRate);
 
     /*************************/
@@ -151,11 +152,21 @@ library PoolCommons {
             emaParams_.emaUpdate = block.timestamp;
         }
 
-        // calculate and update interest rate if it has been more than 12 hours since the last update
-        if (block.timestamp - interestParams_.interestRateUpdate > 12 hours) {
+        // reset interest rate if pool rate > 10% and debtEma < 5% of depositEma
+        if (
+            poolState_.rate > 0.1 * 1e18
+            &&
+            vars.debtEma < Maths.wmul(vars.depositEma, 0.05 * 1e18)
+        ) {
+            interestParams_.interestRate       = uint208(0.1 * 1e18);
+            interestParams_.interestRateUpdate = uint48(block.timestamp);
+
+            emit ResetInterestRate(poolState_.rate, 0.1 * 1e18);
+        }
+        // otherwise calculate and update interest rate if it has been more than 12 hours since the last update
+        else if (block.timestamp - interestParams_.interestRateUpdate > 12 hours) {
             vars.newInterestRate = _calculateInterestRate(
                 poolState_,
-                interestParams_.interestRate,
                 vars.debtEma,
                 vars.depositEma,
                 vars.debtColEma,
@@ -235,7 +246,6 @@ library PoolCommons {
      */
     function _calculateInterestRate(
         PoolState memory poolState_,
-        uint256 interestRate_,
         uint256 debtEma_,
         uint256 depositEma_,
         uint256 debtColEma_,
@@ -255,8 +265,6 @@ library PoolCommons {
         // calculate target utilization
         int256 tu = (lupt0DebtEma_ != 0) ? 
             int256(Maths.wdiv(debtColEma_, lupt0DebtEma_)) : int(Maths.WAD);
-
-        if (!poolState_.isNewInterestAccrued) poolState_.rate = interestRate_;
 
         newInterestRate_ = poolState_.rate;
 
