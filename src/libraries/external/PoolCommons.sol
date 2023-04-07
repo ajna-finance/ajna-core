@@ -152,9 +152,9 @@ library PoolCommons {
             emaParams_.emaUpdate = block.timestamp;
         }
 
-        // reset interest rate if debtEma < 3% of depositEma and pool rate > 10%
+        // reset interest rate if debtEma < 5% of depositEma and pool rate > 10%
         if (
-            vars.debtEma < Maths.wmul(vars.depositEma, 0.03 * 1e18)
+            vars.debtEma < Maths.wmul(vars.depositEma, 0.05 * 1e18)
             &&
             poolState_.rate > 0.1 * 1e18
         ) {

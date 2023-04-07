@@ -1347,17 +1347,11 @@ contract ERC20PoolBorrowFuzzyTest is ERC20FuzzyHelperContract {
         (interestRate,) = _pool.interestRateInfo();
         assertEq(interestRate, 0.107179440500000000 * 1e18); // interest rate increased over 10% to 10.7%
 
-        // any repay action (even if 12 hours not passed) should reset interest rate to 10%
+        // lender can reset interest rate to 10% (even if 12 hours not passed) by triggering any action
+        changePrank(_lender);
         vm.expectEmit(true, true, true, true);
         emit ResetInterestRate(0.107179440500000000 * 1e18, 0.1 * 1e18);
-        _repayDebt({
-            from:             _borrower,
-            borrower:         _borrower,
-            amountToRepay:    10 * 1e18,
-            amountRepaid:     10 * 1e18,
-            collateralToPull: 0,
-            newLup:           0
-        });
+        _pool.updateInterest();
         (interestRate,) = _pool.interestRateInfo();
         assertEq(interestRate, 0.1 * 1e18); // interest rate resetted to 10%
     }
@@ -1399,17 +1393,11 @@ contract ERC20PoolBorrowFuzzyTest is ERC20FuzzyHelperContract {
         (interestRate,) = _pool.interestRateInfo();
         assertEq(interestRate, 0.107179440500000000 * 1e18); // interest rate increased over 10% to 10.7%
 
-        // any repay action (even if 12 hours not passed) should reset interest rate to 10%
+        // lender can reset interest rate to 10% (even if 12 hours not passed) by triggering any action
+        changePrank(_lender);
         vm.expectEmit(true, true, true, true);
         emit ResetInterestRate(0.107179440500000000 * 1e18, 0.1 * 1e18);
-        _repayDebt({
-            from:             otherBorrowers[0],
-            borrower:         otherBorrowers[0],
-            amountToRepay:    1 * 1e18,
-            amountRepaid:     1 * 1e18,
-            collateralToPull: 0,
-            newLup:           0
-        });
+        _pool.updateInterest();
         (interestRate,) = _pool.interestRateInfo();
         assertEq(interestRate, 0.1 * 1e18); // interest rate resetted to 10%
     }

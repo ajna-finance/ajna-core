@@ -324,7 +324,7 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when pool interest rate is reset. This happens when interest rate > 10% and debtEma < 3% of depositEma
+     *  @notice Emitted when pool interest rate is reset. This happens when interest rate > 10% and debtEma < 5% of depositEma
      *  @param  oldRate Old pool interest rate.
      *  @param  newRate New pool interest rate.
      */
