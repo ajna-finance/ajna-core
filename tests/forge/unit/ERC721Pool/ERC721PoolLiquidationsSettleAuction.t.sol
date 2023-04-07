@@ -408,8 +408,8 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             index:        2501,
             lpBalance:    2_000 * 1e18,
             collateral:   0.110649792292326223 * 1e18,
-            deposit:      1_575.729756218596961193 * 1e18,
-            exchangeRate: 1.000557690748354813 * 1e18
+            deposit:      1_575.729756218596960768 * 1e18,
+            exchangeRate: 1.000557690748354812 * 1e18
         });
         _assertBucket({
             index:        MAX_FENWICK_INDEX,
@@ -1134,7 +1134,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         });
     }
 
-    function testDepositTakeAndSettleBySettleSubsetPool() external {
+    function testDepositTakeAndSettleBySettleSubsetPool() external tearDown {
 
         // the 2 token ids are owned by borrower before settle
         assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 0), 1);

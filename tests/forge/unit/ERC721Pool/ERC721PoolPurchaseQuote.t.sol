@@ -186,7 +186,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
      *              Attempts to remove more collateral than available given lp balance.
      *              Attempts to remove collateral not in the bucket.
      */
-    function testSubsetPurchaseQuoteWithDebt() external {
+    function testSubsetPurchaseQuoteWithDebt() external tearDown {
         // lenders add liquidity
         _addInitialLiquidity({
             from:   _lender,
