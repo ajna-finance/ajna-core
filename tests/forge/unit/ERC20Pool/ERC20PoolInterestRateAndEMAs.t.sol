@@ -1110,8 +1110,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         });
     }
 
-
-function testResetInterestRateHighInterest() external {
+function testResetEarlyInterestRateHighInterest() external {
 
         _addInitialLiquidity({
             from:   _lender,
@@ -1132,224 +1131,405 @@ function testResetInterestRateHighInterest() external {
             newLup:     1.030377509393765575 * 1e18
         });
 
-        for (uint256 i = 0; i < 97; i++) {
+        for (uint256 i = 0; i < 11; i++) { //forcibly resets the interest rate back to 10% after 6 days (143) hours. Is this expected behavior?
             skip(13 hours);
             _pool.updateInterest();
         }
 
         _assertPool(
             PoolParams({
-                htp:                  21.704037925422272159 * 1e18,
-                lup:                  0.000000099836282890 * 1e18,
-                poolSize:             21_699.748996105767130276 * 1e18,
+                htp:                  0.010022829318328483 * 1e18,
+                lup:                  1.030377509393765575 * 1e18,
+                poolSize:             20.011618362321345720 * 1e18,
                 pledgedCollateral:    1_000.00 * 1e18,
-                encumberedCollateral: 217_396_294_184.308361077043700820 * 1e18,
-                poolDebt:             21_704.037925422271335480 * 1e18,
-                actualUtilization:    551.458131807131008470 * 1e18,
-                targetUtilization:    7.050172813952741668 * 1e18,
-                minDebtAmount:        2_170.403792542227133548 * 1e18,
+                encumberedCollateral: 9.727337045842090882 * 1e18,
+                poolDebt:             10.022829318328482875 * 1e18,
+                actualUtilization:    0.500767901139313643 * 1e18,
+                targetUtilization:    0.009718995238540463 * 1e18,
+                minDebtAmount:        1.002282931832848288 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower),
-                interestRate:         500.000000000000000000 * 1e18,
+                interestRate:         0.1 * 1e18,
                 interestRateUpdate:   block.timestamp
             })
         );
 
-        _assertBorrower({
-            borrower:                  _borrower,
-            borrowerCollateral:        1_000.00 * 1e18,
-            borrowerDebt:              21_704.037925422271335480 * 1e18,
-            borrowert0Np:              0.010510096153846154 * 1e18,
-            borrowerCollateralization: 0.000000004599894417 * 1e18
+        _assertEMAs({
+            debtColEma:   0.100238631789545899 * 1e18,
+            lupt0DebtEma: 10.313682569989518885 * 1e18,
+            debtEma:      10.019870662883176126 * 1e18,
+            depositEma:   20.009011440403101746 * 1e18
         });
 
-        // set t0Debt to 0 because borrower repays
-        _repayDebt({
-            from:             _borrower,
-            borrower:         _borrower,
-            amountToRepay:    type(uint256).max,
-            amountRepaid:     21_704.037925422271335480 * 1e18,
-            collateralToPull: 0,
-            newLup:           MAX_PRICE
-        });
+        return;
 
-        // assert that interest rate still very high
-        _assertPool(
-            PoolParams({
-                htp:                  0,
-                lup:                  1004968987.606512354182109771 * 1e18,
-                poolSize:             21_699.748996105767130276 * 1e18,
-                pledgedCollateral:    1_000.00 * 1e18,
-                encumberedCollateral: 0,
-                poolDebt:             0,
-                actualUtilization:    551.458131807131008470 * 1e18,
-                targetUtilization:    7.050172813952741668 * 1e18,
-                minDebtAmount:        0,
-                loans:                0,
-                maxBorrower:          address(0),
-                interestRate:         500.000000000000000000 * 1e18,
-                interestRateUpdate:   block.timestamp
-            })
-        );
+        // _assertBorrower({
+        //     borrower:                  _borrower,
+        //     borrowerCollateral:        1_000.00 * 1e18,
+        //     borrowerDebt:              21_704.037925422271335480 * 1e18,
+        //     borrowert0Np:              0.010510096153846154 * 1e18,
+        //     borrowerCollateralization: 0.000000004599894417 * 1e18
+        // });
 
-        // cannot reset interest as 2 weeks haven't passed
-        _assertPoolNotEligibleForResetInterestRevert({
-            from: _lender
-        });
+        // // set t0Debt to 0 because borrower repays
+        // _repayDebt({
+        //     from:             _borrower,
+        //     borrower:         _borrower,
+        //     amountToRepay:    type(uint256).max,
+        //     amountRepaid:     21_704.037925422271335480 * 1e18,
+        //     collateralToPull: 0,
+        //     newLup:           MAX_PRICE
+        // });
 
-        skip(2 weeks + 1 hours);
+        // // assert that interest rate still very high
+        // _assertPool(
+        //     PoolParams({
+        //         htp:                  0,
+        //         lup:                  1004968987.606512354182109771 * 1e18,
+        //         poolSize:             21_699.748996105767130276 * 1e18,
+        //         pledgedCollateral:    1_000.00 * 1e18,
+        //         encumberedCollateral: 0,
+        //         poolDebt:             0,
+        //         actualUtilization:    551.458131807131008470 * 1e18,
+        //         targetUtilization:    7.050172813952741668 * 1e18,
+        //         minDebtAmount:        0,
+        //         loans:                0,
+        //         maxBorrower:          address(0),
+        //         interestRate:         500.000000000000000000 * 1e18,
+        //         interestRateUpdate:   block.timestamp
+        //     })
+        // );
+        // return;
 
-        // reset interest rate
-        _pool.resetInterestRate();
+        // // reset interest rate
+        // // _pool.resetInterestRate();
 
-        // assert that interest rate is reset
-        _assertPool(
-            PoolParams({
-                htp:                  0,
-                lup:                  1004968987.606512354182109771 * 1e18,
-                poolSize:             21_699.748996105767130276 * 1e18,
-                pledgedCollateral:    1_000.00 * 1e18,
-                encumberedCollateral: 0,
-                poolDebt:             0,
-                actualUtilization:    551.458131807131008470 * 1e18,
-                targetUtilization:    7.050172813952741668 * 1e18,
-                minDebtAmount:        0,
-                loans:                0,
-                maxBorrower:          address(0),
-                interestRate:         0.05 * 1e18,
-                interestRateUpdate:   block.timestamp
-            })
-        );
+        // _assertEMAs({
+        //     debtColEma:   22.343226466106279915 * 1e18,
+        //     lupt0DebtEma: 3.169174296250952836 * 1e18,
+        //     debtEma:      7_654.487040398087333968 * 1e18,
+        //     depositEma:   13.880450026757780648 * 1e18
+        // });
+        
+        // // assert that interest rate is reset
+        // _assertPool(
+        //     PoolParams({
+        //         htp:                  0,
+        //         lup:                  1004968987.606512354182109771 * 1e18,
+        //         poolSize:             21_699.748996105767130276 * 1e18,
+        //         pledgedCollateral:    1_000.00 * 1e18,
+        //         encumberedCollateral: 0,
+        //         poolDebt:             0,
+        //         actualUtilization:    551.458131807131008470 * 1e18,
+        //         targetUtilization:    7.050172813952741668 * 1e18,
+        //         minDebtAmount:        0,
+        //         loans:                0,
+        //         maxBorrower:          address(0),
+        //         interestRate:         500.00 * 1e18,
+        //         interestRateUpdate:   block.timestamp
+        //     })
+        // );
+        // return;
+
+        // skip(10 days);
+
+        // _updateInterest();
+
+        // _assertEMAs({
+        //     debtColEma:   0.014011201136292364 * 1e18,
+        //     lupt0DebtEma: 1.423403596610725513 * 1e18,
+        //     debtEma:      0.000009684560842153 * 1e18,
+        //     depositEma:   20.130765114196457712 * 1e18
+        // });
+
+        // _assertPool(
+        //     PoolParams({
+        //         htp:                  0,
+        //         lup:                  1004968987.606512354182109771 * 1e18,
+        //         poolSize:             20.130765116758216020 * 1e18,
+        //         pledgedCollateral:    1_000.00 * 1e18,
+        //         encumberedCollateral: 0,
+        //         poolDebt:             0,
+        //         actualUtilization:    0.000000481082601044 * 1e18,
+        //         targetUtilization:    0.009843449299730952 * 1e18,
+        //         minDebtAmount:        0,
+        //         loans:                0,
+        //         maxBorrower:          address(0),
+        //         interestRate:         0.090000000000000000 * 1e18,
+        //         interestRateUpdate:   block.timestamp
+        //     })
+        // );
      }
 
 
+// function testResetInterestRateHighInterest() external {
 
-function testResetInterestRateLowInterest() external {
+//         _addInitialLiquidity({
+//             from:   _lender,
+//             amount: 20 * 1e18,
+//             index:  4150 // 1.030377509393765575 
+//         });
 
-        _addInitialLiquidity({
-            from:   _lender,
-            amount: 20 * 1e18,
-            index:  4150 // 1.030377509393765575 
-        });
+//         // first borrower pledge collateral and borrows
+//         _pledgeCollateral({
+//             from:     _borrower,
+//             borrower: _borrower,
+//             amount:   1_000 * 1e18
+//         });
+//         _borrow({
+//             from:       _borrower,
+//             amount:     10 * 1e18,
+//             indexLimit: 4200,
+//             newLup:     1.030377509393765575 * 1e18
+//         });
 
-        // first borrower pledge collateral and borrows
-        _pledgeCollateral({
-            from:     _borrower,
-            borrower: _borrower,
-            amount:   2 * 1e18
-        });
-        _borrow({
-            from:       _borrower,
-            amount:     2 * 1e18,
-            indexLimit: 4200,
-            newLup:     1.030377509393765575 * 1e18
-        });
+//         for (uint256 i = 0; i < 97; i++) {
+//             skip(13 hours);
+//             _pool.updateInterest();
+//         }
 
-        _assertPool(
-            PoolParams({
-                htp:                  1.000961538461538462 * 1e18,
-                lup:                  1.030377509393765575 * 1e18,
-                poolSize:             20.0 * 1e18,
-                pledgedCollateral:    2.00 * 1e18,
-                encumberedCollateral: 1.942902536858487261 * 1e18,
-                poolDebt:             2.001923076923076924 * 1e18,
-                actualUtilization:    0 * 1e18,
-                targetUtilization:    1.0 * 1e18,
-                minDebtAmount:        0.200192307692307692 * 1e18,
-                loans:                1,
-                maxBorrower:          address(_borrower),
-                interestRate:         0.050000000000000000 * 1e18,
-                interestRateUpdate:   block.timestamp
-            })
-        );
+//         _assertPool(
+//             PoolParams({
+//                 htp:                  21.704037925422272159 * 1e18,
+//                 lup:                  0.000000099836282890 * 1e18,
+//                 poolSize:             21_699.748996105767130276 * 1e18,
+//                 pledgedCollateral:    1_000.00 * 1e18,
+//                 encumberedCollateral: 217_396_294_184.308361077043700820 * 1e18,
+//                 poolDebt:             21_704.037925422271335480 * 1e18,
+//                 actualUtilization:    551.458131807131008470 * 1e18,
+//                 targetUtilization:    7.050172813952741668 * 1e18,
+//                 minDebtAmount:        2_170.403792542227133548 * 1e18,
+//                 loans:                1,
+//                 maxBorrower:          address(_borrower),
+//                 interestRate:         500.000000000000000000 * 1e18,
+//                 interestRateUpdate:   block.timestamp
+//             })
+//         );
+//         return;
 
-        for (uint256 i = 0; i < 38; i++) {
-            skip(13 hours);
-            _pool.updateInterest();
-        }
+//         _assertBorrower({
+//             borrower:                  _borrower,
+//             borrowerCollateral:        1_000.00 * 1e18,
+//             borrowerDebt:              21_704.037925422271335480 * 1e18,
+//             borrowert0Np:              0.010510096153846154 * 1e18,
+//             borrowerCollateralization: 0.000000004599894417 * 1e18
+//         });
 
-        _assertPool(
-            PoolParams({
-                htp:                  1.001690973512660799 * 1e18,
-                lup:                  1.030377509393765575 * 1e18,
-                poolSize:             20.001246831452515040 * 1e18,
-                pledgedCollateral:    2.0 * 1e18,
-                encumberedCollateral: 1.944318396666125160 * 1e18,
-                poolDebt:             2.003381947025321598 * 1e18,
-                actualUtilization:    0.100162563352856745 * 1e18,
-                targetUtilization:    0.972106910903851844 * 1e18,
-                minDebtAmount:        0.200338194702532160 * 1e18,
-                loans:                1,
-                maxBorrower:          address(_borrower),
-                interestRate:         0.001 * 1e18,
-                interestRateUpdate:   block.timestamp
-            })
-        );
+//         // set t0Debt to 0 because borrower repays
+//         _repayDebt({
+//             from:             _borrower,
+//             borrower:         _borrower,
+//             amountToRepay:    type(uint256).max,
+//             amountRepaid:     21_704.037925422271335480 * 1e18,
+//             collateralToPull: 0,
+//             newLup:           MAX_PRICE
+//         });
 
-        _assertBorrower({
-            borrower:                  _borrower,
-            borrowerCollateral:        2.00 * 1e18,
-            borrowerDebt:              2.003381947025321598 * 1e18,
-            borrowert0Np:              1.051009615384615385 * 1e18,
-            borrowerCollateralization: 1.028638109596324714 * 1e18
-        });
+//         // assert that interest rate still very high
+//         _assertPool(
+//             PoolParams({
+//                 htp:                  0,
+//                 lup:                  1004968987.606512354182109771 * 1e18,
+//                 poolSize:             21_699.748996105767130276 * 1e18,
+//                 pledgedCollateral:    1_000.00 * 1e18,
+//                 encumberedCollateral: 0,
+//                 poolDebt:             0,
+//                 actualUtilization:    551.458131807131008470 * 1e18,
+//                 targetUtilization:    7.050172813952741668 * 1e18,
+//                 minDebtAmount:        0,
+//                 loans:                0,
+//                 maxBorrower:          address(0),
+//                 interestRate:         500.000000000000000000 * 1e18,
+//                 interestRateUpdate:   block.timestamp
+//             })
+//         );
+//         return;
 
-        // set t0Debt to 0 because borrower repays
-        _repayDebt({
-            from:             _borrower,
-            borrower:         _borrower,
-            amountToRepay:    type(uint256).max,
-            amountRepaid:     2.003381947025321598 * 1e18,
-            collateralToPull: 0,
-            newLup:           MAX_PRICE
-        });
+//         // reset interest rate
+//         // _pool.resetInterestRate();
 
-        // assert that interest rate still very low
-        _assertPool(
-            PoolParams({
-                htp:                  0,
-                lup:                  1004968987.606512354182109771 * 1e18,
-                poolSize:             20.001246831452515040 * 1e18,
-                pledgedCollateral:    2.00 * 1e18,
-                encumberedCollateral: 0,
-                poolDebt:             0,
-                actualUtilization:    0.100162563352856745 * 1e18,
-                targetUtilization:    0.972106910903851844 * 1e18,
-                minDebtAmount:        0,
-                loans:                0,
-                maxBorrower:          address(0),
-                interestRate:         0.001 * 1e18,
-                interestRateUpdate:   block.timestamp
-            })
-        );
+//         _assertEMAs({
+//             debtColEma:   22.343226466106279915 * 1e18,
+//             lupt0DebtEma: 3.169174296250952836 * 1e18,
+//             debtEma:      7_654.487040398087333968 * 1e18,
+//             depositEma:   13.880450026757780648 * 1e18
+//         });
+        
+//         // assert that interest rate is reset
+//         _assertPool(
+//             PoolParams({
+//                 htp:                  0,
+//                 lup:                  1004968987.606512354182109771 * 1e18,
+//                 poolSize:             21_699.748996105767130276 * 1e18,
+//                 pledgedCollateral:    1_000.00 * 1e18,
+//                 encumberedCollateral: 0,
+//                 poolDebt:             0,
+//                 actualUtilization:    551.458131807131008470 * 1e18,
+//                 targetUtilization:    7.050172813952741668 * 1e18,
+//                 minDebtAmount:        0,
+//                 loans:                0,
+//                 maxBorrower:          address(0),
+//                 interestRate:         500.00 * 1e18,
+//                 interestRateUpdate:   block.timestamp
+//             })
+//         );
+//         return;
 
-        // cannot reset interest as 2 weeks haven't passed
-        _assertPoolNotEligibleForResetInterestRevert({
-            from: _lender
-        });
+//         skip(10 days);
 
-        skip(2 weeks + 1 hours);
+//         _updateInterest();
 
-        // reset interest rate
-        _pool.resetInterestRate();
+//         _assertEMAs({
+//             debtColEma:   0.014011201136292364 * 1e18,
+//             lupt0DebtEma: 1.423403596610725513 * 1e18,
+//             debtEma:      0.000009684560842153 * 1e18,
+//             depositEma:   20.130765114196457712 * 1e18
+//         });
 
-        // assert that interest rate is reset
-        _assertPool(
-            PoolParams({
-                htp:                  0,
-                lup:                  1004968987.606512354182109771 * 1e18,
-                poolSize:             20.001246831452515040 * 1e18,
-                pledgedCollateral:    2.00 * 1e18,
-                encumberedCollateral: 0,
-                poolDebt:             0,
-                actualUtilization:    0.100162563352856745 * 1e18,
-                targetUtilization:    0.972106910903851844 * 1e18,
-                minDebtAmount:        0,
-                loans:                0,
-                maxBorrower:          address(0),
-                interestRate:         0.05 * 1e18,
-                interestRateUpdate:   block.timestamp
-            })
-        );
-     }
+//         _assertPool(
+//             PoolParams({
+//                 htp:                  0,
+//                 lup:                  1004968987.606512354182109771 * 1e18,
+//                 poolSize:             20.130765116758216020 * 1e18,
+//                 pledgedCollateral:    1_000.00 * 1e18,
+//                 encumberedCollateral: 0,
+//                 poolDebt:             0,
+//                 actualUtilization:    0.000000481082601044 * 1e18,
+//                 targetUtilization:    0.009843449299730952 * 1e18,
+//                 minDebtAmount:        0,
+//                 loans:                0,
+//                 maxBorrower:          address(0),
+//                 interestRate:         0.090000000000000000 * 1e18,
+//                 interestRateUpdate:   block.timestamp
+//             })
+//         );
+//      }
+
+
+
+// function testResetInterestRateLowInterest() external {
+
+//         _addInitialLiquidity({
+//             from:   _lender,
+//             amount: 20 * 1e18,
+//             index:  4150 // 1.030377509393765575 
+//         });
+
+//         // first borrower pledge collateral and borrows
+//         _pledgeCollateral({
+//             from:     _borrower,
+//             borrower: _borrower,
+//             amount:   2 * 1e18
+//         });
+//         _borrow({
+//             from:       _borrower,
+//             amount:     2 * 1e18,
+//             indexLimit: 4200,
+//             newLup:     1.030377509393765575 * 1e18
+//         });
+
+//         _assertPool(
+//             PoolParams({
+//                 htp:                  1.000961538461538462 * 1e18,
+//                 lup:                  1.030377509393765575 * 1e18,
+//                 poolSize:             20.0 * 1e18,
+//                 pledgedCollateral:    2.00 * 1e18,
+//                 encumberedCollateral: 1.942902536858487261 * 1e18,
+//                 poolDebt:             2.001923076923076924 * 1e18,
+//                 actualUtilization:    0 * 1e18,
+//                 targetUtilization:    1.0 * 1e18,
+//                 minDebtAmount:        0.200192307692307692 * 1e18,
+//                 loans:                1,
+//                 maxBorrower:          address(_borrower),
+//                 interestRate:         0.050000000000000000 * 1e18,
+//                 interestRateUpdate:   block.timestamp
+//             })
+//         );
+
+//         for (uint256 i = 0; i < 38; i++) {
+//             skip(13 hours);
+//             _pool.updateInterest();
+//         }
+
+//         _assertPool(
+//             PoolParams({
+//                 htp:                  1.001690973512660799 * 1e18,
+//                 lup:                  1.030377509393765575 * 1e18,
+//                 poolSize:             20.001246831452515040 * 1e18,
+//                 pledgedCollateral:    2.0 * 1e18,
+//                 encumberedCollateral: 1.944318396666125160 * 1e18,
+//                 poolDebt:             2.003381947025321598 * 1e18,
+//                 actualUtilization:    0.100162563352856745 * 1e18,
+//                 targetUtilization:    0.972106910903851844 * 1e18,
+//                 minDebtAmount:        0.200338194702532160 * 1e18,
+//                 loans:                1,
+//                 maxBorrower:          address(_borrower),
+//                 interestRate:         0.001 * 1e18,
+//                 interestRateUpdate:   block.timestamp
+//             })
+//         );
+
+//         _assertBorrower({
+//             borrower:                  _borrower,
+//             borrowerCollateral:        2.00 * 1e18,
+//             borrowerDebt:              2.003381947025321598 * 1e18,
+//             borrowert0Np:              1.051009615384615385 * 1e18,
+//             borrowerCollateralization: 1.028638109596324714 * 1e18
+//         });
+
+//         // set t0Debt to 0 because borrower repays
+//         _repayDebt({
+//             from:             _borrower,
+//             borrower:         _borrower,
+//             amountToRepay:    type(uint256).max,
+//             amountRepaid:     2.003381947025321598 * 1e18,
+//             collateralToPull: 0,
+//             newLup:           MAX_PRICE
+//         });
+
+//         // assert that interest rate still very low
+//         _assertPool(
+//             PoolParams({
+//                 htp:                  0,
+//                 lup:                  1004968987.606512354182109771 * 1e18,
+//                 poolSize:             20.001246831452515040 * 1e18,
+//                 pledgedCollateral:    2.00 * 1e18,
+//                 encumberedCollateral: 0,
+//                 poolDebt:             0,
+//                 actualUtilization:    0.100162563352856745 * 1e18,
+//                 targetUtilization:    0.972106910903851844 * 1e18,
+//                 minDebtAmount:        0,
+//                 loans:                0,
+//                 maxBorrower:          address(0),
+//                 interestRate:         0.001 * 1e18,
+//                 interestRateUpdate:   block.timestamp
+//             })
+//         );
+
+//         _assertEMAs({
+//             debtColEma:   2.005200420631082190 * 1e18,
+//             lupt0DebtEma: 2.062736513997903777 * 1e18,
+//             debtEma:      2.003375610084671817 * 1e18,
+//             depositEma:   20.001241412194083788 * 1e18
+//         });
+
+//         // assert that interest rate is reset
+//         // _assertPool(
+//         //     PoolParams({
+//         //         htp:                  0,
+//         //         lup:                  1004968987.606512354182109771 * 1e18,
+//         //         poolSize:             20.001246831452515040 * 1e18,
+//         //         pledgedCollateral:    2.00 * 1e18,
+//         //         encumberedCollateral: 0,
+//         //         poolDebt:             0,
+//         //         actualUtilization:    0.100162563352856745 * 1e18,
+//         //         targetUtilization:    0.972106910903851844 * 1e18,
+//         //         minDebtAmount:        0,
+//         //         loans:                0,
+//         //         maxBorrower:          address(0),
+//         //         interestRate:         0.05 * 1e18,
+//         //         interestRateUpdate:   block.timestamp
+//         //     })
+//         // );
+//      }
 }

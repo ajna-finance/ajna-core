@@ -14,6 +14,8 @@ import { Buckets }  from '../internal/Buckets.sol';
 import { Loans }    from '../internal/Loans.sol';
 import { Maths }    from '../internal/Maths.sol';
 
+import '@std/console.sol';
+
 /**
     @title  PoolCommons library
     @notice External library containing logic for common pool functionality:
@@ -151,8 +153,17 @@ library PoolCommons {
             emaParams_.emaUpdate = block.timestamp;
         }
 
+        console.log("debtEma: %s", vars.debtEma);
+        console.log("depositEma: %s", vars.depositEma);
+        console.log("newINterestRate: %s", poolState_.rate);
+
+        // reset interest rate if newRate > 10% or debtEma < 1% of depositEma
+        if (poolState_.rate > 0.1 * 1e18 && vars.debtEma < (0.01 * 1e18 * vars.depositEma)) {
+            interestParams_.interestRate       = uint208(0.1 * 1e18);
+            interestParams_.interestRateUpdate = uint48(block.timestamp);
+
         // calculate and update interest rate if it has been more than 12 hours since the last update
-        if (block.timestamp - interestParams_.interestRateUpdate > 12 hours) {
+        } else if (block.timestamp - interestParams_.interestRateUpdate > 12 hours) {
             vars.newInterestRate = _calculateInterestRate(
                 poolState_,
                 interestParams_.interestRate,
