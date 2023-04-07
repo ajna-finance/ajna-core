@@ -40,6 +40,7 @@ library PoolCommons {
     /**************/
 
     // See `IPoolEvents` for descriptions
+    event ResetInterestRate(uint256 oldRate, uint256 newRate);
     event UpdateInterestRate(uint256 oldRate, uint256 newRate);
 
     /*************************/
@@ -151,8 +152,19 @@ library PoolCommons {
             emaParams_.emaUpdate = block.timestamp;
         }
 
-        // calculate and update interest rate if it has been more than 12 hours since the last update
-        if (block.timestamp - interestParams_.interestRateUpdate > 12 hours) {
+        // reset interest rate if debtEma < 3% of depositEma and pool rate > 10%
+        if (
+            vars.debtEma < Maths.wmul(vars.depositEma, 0.03 * 1e18)
+            &&
+            poolState_.rate > 0.1 * 1e18
+        ) {
+            interestParams_.interestRate       = uint208(0.1 * 1e18);
+            interestParams_.interestRateUpdate = uint48(block.timestamp);
+
+            emit ResetInterestRate(poolState_.rate, 0.1 * 1e18);
+        }
+        // otherwise calculate and update interest rate if it has been more than 12 hours since the last update
+        else if (block.timestamp - interestParams_.interestRateUpdate > 12 hours) {
             vars.newInterestRate = _calculateInterestRate(
                 poolState_,
                 interestParams_.interestRate,
