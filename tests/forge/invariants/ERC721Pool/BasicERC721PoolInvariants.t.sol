@@ -11,11 +11,6 @@ import { Maths }            from 'src/libraries/internal/Maths.sol';
 
 import { NFTCollateralToken } from '../../utils/Tokens.sol';
 
-import {
-    LENDER_MIN_BUCKET_INDEX,
-    LENDER_MAX_BUCKET_INDEX
-} from '../base/handlers/unbounded/BaseHandler.sol';
-
 import { BasicERC721PoolHandler } from './handlers/BasicERC721PoolHandler.sol';
 import { BasicInvariants }       from '../base/BasicInvariants.t.sol';
 import { IBaseHandler }          from '../interfaces/IBaseHandler.sol';
@@ -74,6 +69,9 @@ contract BasicERC721PoolInvariants is BasicInvariants {
         excludeContract(address(_erc721pool));
         excludeContract(address(_poolInfo));
         excludeContract(address(_impl));
+
+        LENDER_MIN_BUCKET_INDEX = IBaseHandler(_handler).LENDER_MIN_BUCKET_INDEX();
+        LENDER_MAX_BUCKET_INDEX = IBaseHandler(_handler).LENDER_MAX_BUCKET_INDEX();
 
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             ( , , , , ,uint256 exchangeRate) = _poolInfo.bucketInfo(address(_erc721pool), bucketIndex);

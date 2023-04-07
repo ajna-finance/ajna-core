@@ -27,6 +27,10 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
         uint256 numOfActors_,
         address testContract_
     ) BaseHandler(pool_, ajna_, quote_, poolInfo_, testContract_) {
+
+        LENDER_MIN_BUCKET_INDEX = 850;
+        LENDER_MAX_BUCKET_INDEX = 852;
+
         // Tokens
         _collateral = NFTCollateralToken(collateral_);
 
@@ -52,9 +56,6 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
 
             _quote.mint(actor, 1e45);
             _quote.approve(address(_pool), 1e45);
-
-            _collateral.mint(actor, 100);
-            _collateral.setApprovalForAll(address(_pool), true);
 
             vm.stopPrank();
         }

@@ -27,6 +27,10 @@ abstract contract BaseERC20PoolHandler is BaseHandler {
         uint256 numOfActors_,
         address testContract_
     ) BaseHandler(pool_, ajna_, quote_, poolInfo_, testContract_) {
+
+        LENDER_MIN_BUCKET_INDEX = 2570;
+        LENDER_MAX_BUCKET_INDEX = 2572;
+
         // Tokens
         _collateral = TokenWithNDecimals(collateral_);
 

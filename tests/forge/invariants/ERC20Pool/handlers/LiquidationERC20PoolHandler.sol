@@ -3,8 +3,6 @@
 pragma solidity 0.8.14;
 
 import {
-    LENDER_MIN_BUCKET_INDEX,
-    LENDER_MAX_BUCKET_INDEX,
     MIN_AMOUNT,
     MAX_AMOUNT
 }                                               from '../../base/handlers/unbounded/BaseHandler.sol';

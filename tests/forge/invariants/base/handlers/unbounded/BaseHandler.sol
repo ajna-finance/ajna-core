@@ -18,9 +18,6 @@ import { TokenWithNDecimals, BurnableToken } from '../../../../utils/Tokens.sol'
 
 import '../../../interfaces/ITestBase.sol';
 
-uint256 constant LENDER_MIN_BUCKET_INDEX = 2570;
-uint256 constant LENDER_MAX_BUCKET_INDEX = 2572;
-
 uint256 constant BORROWER_MIN_BUCKET_INDEX = 2600;
 uint256 constant BORROWER_MAX_BUCKET_INDEX = 2620;
 
@@ -31,12 +28,15 @@ abstract contract BaseHandler is Test {
 
     // Tokens
     TokenWithNDecimals internal _quote;
-
-    BurnableToken internal _ajna;
+    BurnableToken      internal _ajna;
 
     // Pool
-    Pool     internal _pool;
+    Pool          internal _pool;
     PoolInfoUtils internal _poolInfo;
+
+    // Lender bucket index
+    uint256 public LENDER_MIN_BUCKET_INDEX;
+    uint256 public LENDER_MAX_BUCKET_INDEX;
 
     // Test invariant contract
     ITestBase internal testContract;

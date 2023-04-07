@@ -6,8 +6,6 @@ import { PoolInfoUtils, _collateralization } from 'src/PoolInfoUtils.sol';
 import { Maths }                             from 'src/libraries/internal/Maths.sol';
 
 import {
-    LENDER_MIN_BUCKET_INDEX,
-    LENDER_MAX_BUCKET_INDEX,
     BORROWER_MIN_BUCKET_INDEX,
     MIN_AMOUNT,
     MAX_AMOUNT

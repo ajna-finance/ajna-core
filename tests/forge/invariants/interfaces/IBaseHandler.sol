@@ -4,6 +4,9 @@ pragma solidity 0.8.14;
 
 interface IBaseHandler {
 
+    function LENDER_MIN_BUCKET_INDEX() external view returns(uint256);
+    function LENDER_MAX_BUCKET_INDEX() external view returns(uint256);
+
     function getActorsCount() external view returns(uint256);
     function actors(uint256) external view returns(address);
 

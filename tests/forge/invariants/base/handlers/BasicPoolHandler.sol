@@ -5,8 +5,6 @@ pragma solidity 0.8.14;
 import { Maths } from 'src/libraries/internal/Maths.sol';
 
 import {
-    LENDER_MIN_BUCKET_INDEX,
-    LENDER_MAX_BUCKET_INDEX,
     MIN_AMOUNT,
     MAX_AMOUNT
 }                                    from './unbounded/BaseHandler.sol';

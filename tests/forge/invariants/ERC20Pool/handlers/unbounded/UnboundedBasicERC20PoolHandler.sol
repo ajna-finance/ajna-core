@@ -8,10 +8,6 @@ import { PoolInfoUtils }                     from 'src/PoolInfoUtils.sol';
 import { _borrowFeeRate, _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }                             from "src/libraries/internal/Maths.sol";
 
-import {
-    LENDER_MIN_BUCKET_INDEX,
-    LENDER_MAX_BUCKET_INDEX
-}                                    from '../../../base/handlers/unbounded/BaseHandler.sol';
 import { UnboundedBasicPoolHandler } from "../../../base/handlers/unbounded/UnboundedBasicPoolHandler.sol";
 import { BaseERC20PoolHandler }      from './BaseERC20PoolHandler.sol';
 

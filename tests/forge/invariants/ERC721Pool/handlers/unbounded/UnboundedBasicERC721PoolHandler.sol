@@ -8,10 +8,6 @@ import { PoolInfoUtils }                     from 'src/PoolInfoUtils.sol';
 import { _borrowFeeRate, _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }                             from "src/libraries/internal/Maths.sol";
 
-import {
-    LENDER_MIN_BUCKET_INDEX,
-    LENDER_MAX_BUCKET_INDEX
-}                                    from '../../../base/handlers/unbounded/BaseHandler.sol';
 import { UnboundedBasicPoolHandler } from "../../../base/handlers/unbounded/UnboundedBasicPoolHandler.sol";
 import { BaseERC721PoolHandler }      from './BaseERC721PoolHandler.sol';
 
@@ -34,6 +30,8 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
 
         (uint256 lpBalanceBeforeAction, ) = _erc721Pool.lenderInfo(bucketIndex_, _actor);
 
+        _collateral.mint(_actor, amount_);
+        _collateral.setApprovalForAll(address(_pool), true);
         uint256[] memory tokenIds = new uint256[](amount_);
         for(uint256 i = 0; i < amount_; i++) {
             tokenIds[i] = _collateral.tokenOfOwnerByIndex(_actor, i);
@@ -87,6 +85,8 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
             exchangeRateShouldNotChange[bucketIndex] = true;
         }
 
+        _collateral.mint(_actor, amount_);
+        _collateral.setApprovalForAll(address(_pool), true);
         uint256[] memory tokenIds = new uint256[](amount_);
         for(uint256 i = 0; i < amount_; i++) {
             tokenIds[i] = _collateral.tokenOfOwnerByIndex(_actor, i);
@@ -122,8 +122,14 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
         // find bucket to borrow quote token
         uint256 bucket = _erc721Pool.depositIndex(amount_ + poolDebt) - 1;
         uint256 price = _poolInfo.indexToPrice(bucket);
-        uint256 collateralToPledge = (((amount_ * 1e18 + price / 2) / price) * 101 / 100 ) % 1e18 + 1;
 
+        // Pool doesn't have enough deposits to draw debt
+        if (bucket > LENDER_MAX_BUCKET_INDEX) return;
+
+        uint256 collateralToPledge = (((amount_ * 1e18 + price / 2) / price) * 101 / 100 ) / 1e18 + 1;
+
+        _collateral.mint(_actor, collateralToPledge);
+        _collateral.setApprovalForAll(address(_pool), true);
         uint256[] memory tokenIds = new uint256[](collateralToPledge);
         for(uint256 i = 0; i < collateralToPledge; i++) {
             tokenIds[i] = _collateral.tokenOfOwnerByIndex(_actor, i);
