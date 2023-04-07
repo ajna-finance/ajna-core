@@ -42,16 +42,20 @@ interface IPositionManagerEvents {
 
     /**
      *  @notice Emitted when a position's liquidity is moved between buckets.
-     *  @param  lender    Lender address.
-     *  @param  tokenId   The tokenId of the newly minted NFT.
-     *  @param  fromIndex Index of bucket from where liquidity is moved.
-     *  @param  toIndex   Index of bucket where liquidity is moved.
+     *  @param  lender         Lender address.
+     *  @param  tokenId        The tokenId of the newly minted NFT.
+     *  @param  fromIndex      Index of bucket from where liquidity is moved.
+     *  @param  toIndex        Index of bucket where liquidity is moved.
+     *  @param  lpRedeemedFrom Amount of LP removed from the `from` bucket.
+     *  @param  lpAwardedTo    Amount of LP credited to the `to` bucket.
      */
     event MoveLiquidity(
         address indexed lender,
         uint256 tokenId,
         uint256 fromIndex,
-        uint256 toIndex
+        uint256 toIndex,
+        uint256 lpRedeemedFrom,
+        uint256 lpAwardedTo
     );
 
     /**

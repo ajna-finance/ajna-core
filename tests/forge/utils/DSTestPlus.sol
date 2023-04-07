@@ -1366,7 +1366,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     event Burn(address indexed lender_, uint256 indexed price_);
     event MemorializePosition(address indexed lender_, uint256 tokenId_, uint256[] indexes_);
     event Mint(address indexed lender_, address indexed pool_, uint256 tokenId_);
-    event MoveLiquidity(address indexed owner_, uint256 tokenId_, uint256 fromIndex_, uint256 toIndex_);
+    event MoveLiquidity(address indexed owner_, uint256 tokenId_, uint256 fromIndex_, uint256 toIndex_, uint256 lpRedeemedFrom_, uint256 lpAwardedTo_);
     event RedeemPosition(address indexed lender_, uint256 tokenId_, uint256[] indexes_);
 
 
