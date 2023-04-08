@@ -74,7 +74,8 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         });
 
         // should deploy different pool
-        address poolTwo = _poolFactory.deployPool(address(_collateral), address(_collateral), 0.05 * 10**18);
+        address compAddress = 0xc00e94Cb662C3520282E6f5717214004A7f26888;
+        address poolTwo = _poolFactory.deployPool(address(_collateral), compAddress, 0.05 * 10**18);
         assertFalse(poolOne == poolTwo);
 
         // check tracking of deployed pools
@@ -238,6 +239,14 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
 
         vm.expectRevert(IPoolErrors.AlreadyInitialized.selector);
         ERC20Pool(pool).initialize(0.05 * 10**18);
+    }
+
+    function testDeployERC20SameQuoteCollateral() external {
+        skip(333);
+
+        address usdcAddress = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+        vm.expectRevert(IPoolFactory.DeployQuoteCollateralSameToken.selector);
+        _poolFactory.deployPool(usdcAddress, usdcAddress, 0.0543 * 1e18 );
     }
 
 }
