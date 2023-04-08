@@ -114,16 +114,16 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         // should revert if trying to deploy with interest rate lower than accepted
         _assertDeployWithInvalidRateRevert({
             poolFactory:  address(_factory),
-            collateral:   address(_quote),
-            quote:        address(new NFTCollateralToken()),
+            collateral:   address(new NFTCollateralToken()),
+            quote:        address(_quote),
             interestRate: 10**18
         });
 
         // should revert if trying to deploy with interest rate higher than accepted
         _assertDeployWithInvalidRateRevert({
             poolFactory:  address(_factory),
-            collateral:   address(_quote),
-            quote:        address(new NFTCollateralToken()),
+            collateral:   address(new NFTCollateralToken()),
+            quote:        address(_quote),
             interestRate: 2 * 10**18
         });
 
