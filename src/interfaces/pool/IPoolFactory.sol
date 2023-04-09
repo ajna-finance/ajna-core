@@ -11,6 +11,10 @@ interface IPoolFactory {
     /**************/
     /*** Errors ***/
     /**************/
+    /**
+     *  @notice Can't deploy if quote and collateral are the same token.
+     */
+    error DeployQuoteCollateralSameToken();
 
     /**
      *  @notice Can't deploy with one of the args pointing to the 0x0 address.
