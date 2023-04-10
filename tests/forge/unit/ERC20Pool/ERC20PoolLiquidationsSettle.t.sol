@@ -397,7 +397,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 pledgedCollateral:    2 * 1e18,
                 encumberedCollateral: 2.010288427770370775 * 1e18,
                 poolDebt:             19.542608580405342754 * 1e18,
-                actualUtilization:    0.993531222480240308 * 1e18, // check why
+                actualUtilization:    0.993531222480240308 * 1e18,
                 targetUtilization:    2.940996143103583563 * 1e18,
                 minDebtAmount:        1.954260858040534275 * 1e18,
                 loans:                1,
