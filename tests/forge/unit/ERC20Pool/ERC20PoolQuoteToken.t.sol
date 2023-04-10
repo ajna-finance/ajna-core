@@ -1206,7 +1206,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         assertGt(_quote.balanceOf(_lender), 200_000 * 1e18);
     }
 
-    function testAddRemoveQuoteTokenBucketExchangeRateInvariantDifferentActor() tearDown external {
+    function testAddRemoveQuoteTokenBucketExchangeRateInvariantDifferentActor() external tearDown {
         _mintQuoteAndApproveTokens(_lender, 1000000000000000000 * 1e18);
 
         uint256 initialLenderBalance = _quote.balanceOf(_lender);

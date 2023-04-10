@@ -1319,4 +1319,87 @@ contract ERC20PoolBorrowFuzzyTest is ERC20FuzzyHelperContract {
         assertEq(_poolUtils.lup(address(_pool)), MAX_PRICE);
     }
 
+    function testPOCOverCollateralized_SingleBorrower() external {
+        // _borrower borrows 1,000 USDC collateralized by 100 eth
+        _drawDebt({
+            from: _borrower,
+            borrower: _borrower,
+            amountToBorrow: 1000 * 1e18,
+            limitIndex: 3_000,
+            collateralToPledge: 100 * 1e18,
+            newLup:0
+        });
+        (uint interestRate,) = _pool.interestRateInfo();
+        assertEq(interestRate, 0.05 * 1e18); // 5% initial interest rate
+
+        //pay down a little ($10) every 12 hours to trigger interestRate update
+        for (uint index; index < 8; ++index) {
+            skip(12.01 hours); // actually needs to be > 12 hours to trigger interestRate update
+            _repayDebt({
+                from:             _borrower,
+                borrower:         _borrower,
+                amountToRepay:    10 * 1e18,
+                amountRepaid:     10 * 1e18,
+                collateralToPull: 0,
+                newLup:           0
+            });
+        }
+        (interestRate,) = _pool.interestRateInfo();
+        assertEq(interestRate, 0.107179440500000000 * 1e18); // interest rate increased over 10% to 10.7%
+
+        // lender can reset interest rate to 10% (even if 12 hours not passed) by triggering any action
+        changePrank(_lender);
+        vm.expectEmit(true, true, true, true);
+        emit ResetInterestRate(0.107179440500000000 * 1e18, 0.1 * 1e18);
+        _pool.updateInterest();
+        (interestRate,) = _pool.interestRateInfo();
+        assertEq(interestRate, 0.1 * 1e18); // interest rate resetted to 10%
+    }
+
+    function testPOCOverCollateralized_MultipleBorrowers_LowDebt() external {
+
+        // 10 borrowers borrow 120 usdc collateralized by 10 eth
+        address[] memory otherBorrowers = new address[](10);
+        for (uint index; index < 10; ++index) {
+            otherBorrowers[index] = address(bytes20(keccak256(abi.encodePacked(index + 0x1000))));
+            vm.stopPrank(); // test helper contains a startPrank without a stopPrank
+
+            _mintCollateralAndApproveTokens(otherBorrowers[index],  100 * 1e18);
+            _drawDebt({
+                from: otherBorrowers[index],
+                borrower: otherBorrowers[index],
+                amountToBorrow: 120 * 1e18, // borrow 120 usdc
+                limitIndex: 3_000,
+                collateralToPledge: 10 * 1e18, // collateralized by 10 eth
+                newLup:0
+            });
+        }
+
+        (uint interestRate,) = _pool.interestRateInfo();
+        assertEq(interestRate, 0.05 * 1e18); // 5% initial interest rate
+
+        //pay down a little ($1) every 12 hours to trigger interestRate update
+        for (uint index; index < 8; ++index) {
+            skip(12.01 hours); // actually needs to be > 12 hours to trigger interestRate update
+            _repayDebt({
+                from:             otherBorrowers[0],
+                borrower:         otherBorrowers[0],
+                amountToRepay:    1 * 1e18,
+                amountRepaid:     1 * 1e18,
+                collateralToPull: 0,
+                newLup:           0
+            });
+        }
+        (interestRate,) = _pool.interestRateInfo();
+        assertEq(interestRate, 0.107179440500000000 * 1e18); // interest rate increased over 10% to 10.7%
+
+        // lender can reset interest rate to 10% (even if 12 hours not passed) by triggering any action
+        changePrank(_lender);
+        vm.expectEmit(true, true, true, true);
+        emit ResetInterestRate(0.107179440500000000 * 1e18, 0.1 * 1e18);
+        _pool.updateInterest();
+        (interestRate,) = _pool.interestRateInfo();
+        assertEq(interestRate, 0.1 * 1e18); // interest rate resetted to 10%
+    }
+
 }

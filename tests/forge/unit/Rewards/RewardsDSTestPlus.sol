@@ -22,17 +22,17 @@ import { IRewardsManagerEvents } from 'src/interfaces/rewards/IRewardsManagerEve
 
 abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContract {
 
-    address         internal _minterOne;
-    address         internal _minterTwo;
-    address         internal _minterThree;
-    address         internal _minterFour;
-    address         internal _minterFive;
+    address internal _minterOne;
+    address internal _minterTwo;
+    address internal _minterThree;
+    address internal _minterFour;
+    address internal _minterFive;
 
-    ERC20           internal _ajnaToken;
+    ERC20 internal _ajnaToken;
 
-    IPool             internal _poolTwo;
-    IRewardsManager   internal _rewardsManager;
-    IPositionManager  internal _positionManager;
+    IPool            internal _poolTwo;
+    IRewardsManager  internal _rewardsManager;
+    IPositionManager internal _positionManager;
 
     uint256 internal REWARDS_CAP = 0.8 * 1e18;
 
