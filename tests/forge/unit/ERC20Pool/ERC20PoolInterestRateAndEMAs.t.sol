@@ -432,21 +432,21 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             unchecked { ++i; }
         }
 
-        // show the rate maxed out at 50000%
+        // show the rate reset to 10%
         _assertPool(
             PoolParams({
-                htp:                  0.001443490644739886 * 1e18,
+                htp:                  1028117286,
                 lup:                  _p1505_26,
-                poolSize:             10_012.269795822390450000 * 1e18,
+                poolSize:             10_000.000000230822950000 * 1e18,
                 pledgedCollateral:    10_000.0 * 1e18,
-                encumberedCollateral: 0.009589619533804370 * 1e18,
-                poolDebt:             14.434906454054174087 * 1e18,
-                actualUtilization:    0.000516541356456424 * 1e18,
-                targetUtilization:    0.000000093921320113 * 1e18,
-                minDebtAmount:        1.443490645405417409 * 1e18,
+                encumberedCollateral: 0.000000006830147214 * 1e18,
+                poolDebt:             0.000010281172862060 * 1e18,
+                actualUtilization:    0.000000001027819578 * 1e18,
+                targetUtilization:    0.000000000000681949 * 1e18,
+                minDebtAmount:        0.000001028117286206 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                interestRate:         500.0 * 1e18,
+                interestRate:         0.1 * 1e18, // rate reset to 10%
                 interestRateUpdate:   _startTime + (194 * 12 hours)
             })
         );
