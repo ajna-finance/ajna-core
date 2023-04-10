@@ -650,9 +650,9 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         IERC721Token(_getArgAddress(COLLATERAL_ADDRESS)).transferFrom(from_, to_, tokenId_);
     }
 
-    /**************************/
-    /*** External Functions ***/
-    /**************************/
+    /*******************************/
+    /*** External View Functions ***/
+    /*******************************/
 
     /// @inheritdoc IERC721PoolState
     function totalBorrowerTokens(address borrower_) external view override returns(uint256) {

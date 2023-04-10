@@ -1248,7 +1248,6 @@ library Auctions {
      *  @dev    write state:
      *              - borrower -> liquidation mapping update
      *              - increment auctions count accumulator
-     *              - increment auctions.totalBondEscrowed accumulator
      *              - updates auction queue state
      *  @param  borrowerAddress_ Address of the borrower that is kicked.
      *  @param  bondSize_        Bond size to cover newly kicked auction.
@@ -1300,7 +1299,6 @@ library Auctions {
      *  @dev    write state:
      *              - decrement kicker locked accumulator, increment kicker claimable accumumlator
      *              - decrement auctions count accumulator
-     *              - decrement auctions.totalBondEscrowed accumulator
      *              - update auction queue state
      *  @param  borrower_ Auctioned borrower address.
      */
