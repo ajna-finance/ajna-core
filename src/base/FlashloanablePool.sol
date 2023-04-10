@@ -21,7 +21,7 @@ abstract contract FlashloanablePool is Pool {
      *  @notice Called by flashloan borrowers to borrow liquidity which must be repaid in the same transaction.
      *  @param  receiver_ Address of the contract which implements the appropriate interface to receive tokens.
      *  @param  token_    Address of the ERC20 token caller wants to borrow.
-     *  @param  amount_   The amount of tokens to borrow.
+     *  @param  amount_   The denormalized amount (dependent upon token precision) of tokens to borrow.
      *  @param  data_     User-defined calldata passed to the receiver.
      *  @return success_  True if flashloan was successful.
      */
