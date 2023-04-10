@@ -219,7 +219,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             deposits,
             poolState,
             RemoveQuoteParams({
-                maxAmount:      Maths.min(maxAmount_, _getNormalizedPoolQuoteTokenBalance()),
+                maxAmount:      maxAmount_,
                 index:          index_,
                 thresholdPrice: Loans.getMax(loans).thresholdPrice
             })

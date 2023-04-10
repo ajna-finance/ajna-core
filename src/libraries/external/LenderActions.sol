@@ -20,7 +20,6 @@ import { Deposits } from '../internal/Deposits.sol';
 import { Buckets }  from '../internal/Buckets.sol';
 import { Maths }    from '../internal/Maths.sol';
 
-
 /**
     @title  LenderActions library
     @notice External library containing logic for pool actors:
@@ -963,6 +962,9 @@ library LenderActions {
         DepositsState storage deposits_,
         uint256 debt_
     ) internal view returns (uint256) {
+        if (debt_ > Deposits.treeSum(deposits_))
+            return 0;
+
         return _priceAt(Deposits.findIndexOfSum(deposits_, debt_));
     }
 }
