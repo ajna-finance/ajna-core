@@ -56,7 +56,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     /**
      * @notice Reward factor by which to scale rewards earned for updating a buckets exchange rate.
      */
-    uint256 internal UPDATE_CLAIM_REWARD = 0.05 * 1e18;
+    uint256 internal constant UPDATE_CLAIM_REWARD = 0.05 * 1e18;
     /**
      * @notice Time period after a burn event in which buckets exchange rates can be updated.
      */
@@ -87,6 +87,8 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     /*******************/
 
     constructor(address ajnaToken_, IPositionManager positionManager_) {
+        if (ajnaToken_ == address(0)) revert DeployWithZeroAddress();
+
         ajnaToken = ajnaToken_;
         positionManager = positionManager_;
     }

@@ -20,6 +20,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
     ERC721PoolFactory  internal _factory;
     uint256[]          internal _tokenIdsSubsetOne;
     uint256[]          internal _tokenIdsSubsetTwo;
+    uint256[]          internal tokenIds;
 
     function setUp() external {
         _startTime   = block.timestamp;
@@ -30,7 +31,6 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         _factory = new ERC721PoolFactory(_ajna);
 
         // deploy NFT collection pool
-        uint256[] memory tokenIds;
         _NFTCollectionPoolAddress = _factory.deployPool(address(_collateral), address(_quote), tokenIds, 0.05 * 10**18);
         _NFTCollectionPool        = ERC721Pool(_NFTCollectionPoolAddress);
 
@@ -114,7 +114,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         // should revert if trying to deploy with interest rate lower than accepted
         _assertDeployWithInvalidRateRevert({
             poolFactory:  address(_factory),
-            collateral:   address(_quote),
+            collateral:   address(new NFTCollateralToken()),
             quote:        address(_quote),
             interestRate: 10**18
         });
@@ -122,7 +122,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         // should revert if trying to deploy with interest rate higher than accepted
         _assertDeployWithInvalidRateRevert({
             poolFactory:  address(_factory),
-            collateral:   address(_quote),
+            collateral:   address(new NFTCollateralToken()),
             quote:        address(_quote),
             interestRate: 2 * 10**18
         });
@@ -153,7 +153,6 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
     }
 
     function testDeployERC721PoolWithMinRate() external {
-        uint256[] memory tokenIds = new uint256[](0);
         _factory.deployPool(
             address(new NFTCollateralToken()), 
             address(new TokenWithNDecimals("Quote", "Q1", 18)), 
@@ -167,7 +166,6 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
     }
 
     function testDeployERC721PoolWithMaxRate() external {
-        uint256[] memory tokenIds = new uint256[](0);
         _factory.deployPool(
             address(new NFTCollateralToken()), 
             address(new TokenWithNDecimals("Quote", "Q1", 18)), 
@@ -316,6 +314,20 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         assertTrue(_NFTSubsetOnePool.tokenIdsAllowed(61));
 
         assertFalse(_NFTSubsetOnePool.tokenIdsAllowed(10));
+    }
+
+    function testDeployERC721SameQuoteCollateral() external {
+        skip(333);
+
+        address NFTCollectionAddress = address(new NFTCollateralToken());
+
+        vm.expectRevert(IPoolFactory.DeployQuoteCollateralSameToken.selector);
+        _factory.deployPool(
+            address(NFTCollectionAddress), 
+            address(NFTCollectionAddress), 
+            tokenIds, 
+            0.5 * 10**18
+        );
     }
 
 }

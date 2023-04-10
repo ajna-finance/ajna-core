@@ -4,6 +4,8 @@ pragma solidity 0.8.14;
 
 import "@std/console.sol";
 
+import { Maths } from 'src/libraries/internal/Maths.sol';
+
 import { IBaseHandler }  from '../interfaces/IBaseHandler.sol';
 import {
     LENDER_MIN_BUCKET_INDEX,
@@ -151,6 +153,7 @@ abstract contract BasicInvariants is BaseInvariants {
     function invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8() public useCurrentTimestamp {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             uint256 currentExchangeRate = _pool.bucketExchangeRate(bucketIndex);
+            (uint256 bucketLps, , , , ) = _pool.bucketInfo(bucketIndex);
 
             if (IBaseHandler(_handler).exchangeRateShouldNotChange(bucketIndex)) {
                 uint256 previousExchangeRate = IBaseHandler(_handler).previousExchangeRate(bucketIndex);
@@ -159,14 +162,25 @@ abstract contract BasicInvariants is BaseInvariants {
                 console.log("Bucket Index           -->", bucketIndex);
                 console.log("Previous exchange Rate -->", previousExchangeRate);
                 console.log("Current exchange Rate  -->", currentExchangeRate);
+                console.log("Current bucket lps     -->", bucketLps);
                 console.log("======================================");
 
-                requireWithinDiff(
-                    currentExchangeRate,
-                    previousExchangeRate,
-                    1e17,
-                    "Incorrect exchange Rate changed"
-                );
+
+                if (bucketLps < 1e12) {
+                    requireWithinDiff(
+                        Maths.wmul(currentExchangeRate, bucketLps),
+                        Maths.wmul(previousExchangeRate, bucketLps),
+                        1e16,  // allow changes up to 0.01 qt in value if bucket LPs < 1e-6
+                        "Incorrect exchange Rate changed"
+                    );
+                } else {
+                    requireWithinDiff(
+                        currentExchangeRate,
+                        previousExchangeRate,
+                        1e12,  // otherwise require exchange rates to be within 1e-6
+                        "Incorrect exchange Rate changed"
+                    );
+                }
             }
         }
     }
@@ -308,7 +322,7 @@ abstract contract BasicInvariants is BaseInvariants {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             (, , , uint256 depositAtIndex, ) = _pool.bucketInfo(bucketIndex);
             uint256 prefixSum               = _pool.depositUpToIndex(bucketIndex);
-            uint256 bucketIndexFromDeposit  = _pool.depositIndex(prefixSum);
+            uint256 bucketIndexFromDeposit  = _pool.depositIndex(Maths.wmul(prefixSum, 1e18 + 1e1));
 
             if (depositAtIndex != 0) {
                 console.log("===================Bucket Index : ", bucketIndex, " ===================");
@@ -328,7 +342,7 @@ abstract contract BasicInvariants is BaseInvariants {
             console.log("Next nonzero bucket: ", nextNonzeroBucket);
             for(uint256 j = bucketIndex + 1; j < nextNonzeroBucket && j < LENDER_MAX_BUCKET_INDEX; j++) {
                 (, , , uint256 depositAtJ, ) = _pool.bucketInfo(j);
-                //                console.log("Deposit at %s is %s", j, depositAtJ);
+                console.log("Deposit at %s is %s", j, depositAtJ);
                 require(
                         depositAtJ == 0,
                         "F4: incorrect buckets with 0 deposit"
