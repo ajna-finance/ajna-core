@@ -1298,4 +1298,94 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
         assertEq(_quote.balanceOf(_lender), initialLenderBalance);
     }
+
+    function testRemoveQuoteTokenPoolBalanceLimit() external tearDown {
+        _addLiquidity({
+            from:    _lender,
+            amount:  0.000000059754288926 * 1e18,
+            index:   852,
+            lpAward: 0.000000059754288926 * 1e18,
+            newLup:  MAX_PRICE
+        });
+
+        _assertLenderLpBalance({
+            lender:      _lender,
+            index:       852,
+            lpBalance:   0.000000059754288926 * 1e18,
+            depositTime: _startTime
+        });
+
+        _assertPool(
+            PoolParams({
+                htp:                  0,
+                lup:                  MAX_PRICE,
+                poolSize:             0.000000059754288926 * 1e18,
+                pledgedCollateral:    0,
+                encumberedCollateral: 0,
+                poolDebt:             0,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+
+        _drawDebt({
+            from:               _borrower,
+            borrower:           _borrower,
+            amountToBorrow:     0.000000029877144463 * 1e18,
+            limitIndex:         7388,
+            collateralToPledge: 1 * 1e18,
+            newLup:             14_343_926.246295999585280544 * 1e18
+        });
+
+        _assertPool(
+            PoolParams({
+                htp:                  0.000000029905872487 * 1e18,
+                lup:                  14_343_926.246295999585280544 * 1e18,
+                poolSize:             0.000000059754288926 * 1e18,
+                pledgedCollateral:    1 * 1e18,
+                encumberedCollateral: 2085,
+                poolDebt:             0.000000029905872487 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        0.000000002990587249 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+
+        skip(200 days);
+
+        _assertPool(
+            PoolParams({
+                htp:                  0.000000029905872487 * 1e18,
+                lup:                  14_343_926.246295999585280544 * 1e18,
+                poolSize:             0.000000059754288926 * 1e18,
+                pledgedCollateral:    1 * 1e18,
+                encumberedCollateral: 2143,
+                poolDebt:             0.000000030736538487 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        0.000000003073653849 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+
+        assertEq(_quote.balanceOf(address(_pool)), 0.000000029877144463 * 1e18);
+
+        // removeQuoteToken should revert as LUP is bellow HTP
+        _assertRemoveAllLiquidityLupBelowHtpRevert({
+            from:     _lender,
+            index:    852
+        });
+    }
 }

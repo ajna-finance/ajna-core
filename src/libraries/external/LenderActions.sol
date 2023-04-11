@@ -20,7 +20,6 @@ import { Deposits } from '../internal/Deposits.sol';
 import { Buckets }  from '../internal/Buckets.sol';
 import { Maths }    from '../internal/Maths.sol';
 
-
 /**
     @title  LenderActions library
     @notice External library containing logic for pool actors:
@@ -394,8 +393,14 @@ library LenderActions {
 
         uint256 htp = Maths.wmul(params_.thresholdPrice, poolState_.inflator);
 
-        // check loan book's htp against new lup
-        if (htp > lup_) revert LUPBelowHTP();
+        if (
+            // check loan book's htp doesn't exceed new lup
+            htp > lup_
+            ||
+            // ensure that pool debt < deposits after removal
+            // this can happen if lup and htp are less than min bucket price and htp > lup (since LUP is capped at min bucket price)
+            (poolState_.debt != 0 && poolState_.debt > Deposits.treeSum(deposits_))
+        ) revert LUPBelowHTP();
 
         uint256 lpsRemaining = removeParams.bucketLPs - redeemedLPs_;
 
