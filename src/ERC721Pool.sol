@@ -396,7 +396,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             params
         );
 
-        if (result.collateralSettled > 0) _rebalanceTokens(params.borrower, result.collateralRemaining);
+        if (result.collateralSettled != 0) _rebalanceTokens(params.borrower, result.collateralRemaining);
 
         // update pool balances state
         poolBalances.t0Debt            -= result.t0DebtSettled;
@@ -487,7 +487,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             );
         }
 
-        if (result.settledAuction) _rebalanceTokens(borrowerAddress_, result.remainingCollateral);
+        if (collateralSettled != 0) _rebalanceTokens(borrowerAddress_, result.remainingCollateral);
 
         // transfer from taker to pool the amount of quote tokens needed to cover collateral auctioned (including excess for rounded collateral)
         _transferQuoteTokenFrom(msg.sender, totalQuoteTokenAmount);
@@ -549,7 +549,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         poolState.collateral -= collateralSettled;
         _updateInterestState(poolState, result.newLup);
 
-        if (result.settledAuction) _rebalanceTokens(borrowerAddress_, result.remainingCollateral);
+        if (collateralSettled != 0) _rebalanceTokens(borrowerAddress_, result.remainingCollateral);
     }
 
     /**************************/

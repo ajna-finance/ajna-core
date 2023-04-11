@@ -565,12 +565,12 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         _assertCollateralInvariants();
 
         // the 3 new token ids pledged are owned by borrower
-        assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 0), 1);
-        assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 1), 3);
-        assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 2), 2);
+        assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 0), 2);
+        assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 1), 4);
+        assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 2), 5);
         // tokens used to settle auction are moved to pool claimable array
-        assertEq(ERC721Pool(address(_pool)).bucketTokenIds(0), 5);
-        assertEq(ERC721Pool(address(_pool)).bucketTokenIds(1), 4);
+        assertEq(ERC721Pool(address(_pool)).bucketTokenIds(0), 3);
+        assertEq(ERC721Pool(address(_pool)).bucketTokenIds(1), 1);
 
         _assertBucket({
             index:        2500,
@@ -627,12 +627,12 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         });
 
         // the 3 NFTs pulled from pool are owned by borrower
-        assertEq(_collateral.ownerOf(1), _borrower);
         assertEq(_collateral.ownerOf(2), _borrower);
-        assertEq(_collateral.ownerOf(3), _borrower);
+        assertEq(_collateral.ownerOf(4), _borrower);
+        assertEq(_collateral.ownerOf(5), _borrower);
         // the 2 NFTs claimed from pool are owned by lender
-        assertEq(_collateral.ownerOf(5), _lender);
-        assertEq(_collateral.ownerOf(4), _lender);
+        assertEq(_collateral.ownerOf(1), _lender);
+        assertEq(_collateral.ownerOf(3), _lender);
 
         _assertCollateralInvariants();
     }
@@ -906,7 +906,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         _assertCollateralInvariants();
 
         // remaining token is moved to pool claimable array
-        assertEq(ERC721Pool(address(_pool)).bucketTokenIds(0), 1);
+        assertEq(ERC721Pool(address(_pool)).bucketTokenIds(0), 3);
 
         _assertBucket({
             index:        2000,

@@ -931,9 +931,9 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             tokenIds:                  borrowerTokenIds
         });
 
-        // after take: NFT with ID 1, pledged by liquidated borrower is owned by the taker
-        assertEq(_collateral.ownerOf(1), address(_pool));
-        assertEq(_collateral.ownerOf(3), _lender);
+        // after take: NFT with ID 3, pledged by liquidated borrower is owned by the taker
+        assertEq(_collateral.ownerOf(1), _lender);
+        assertEq(_collateral.ownerOf(3), address(_pool));
 
         // subsequent take should fail as there's less than 1 NFT remaining in the loan
         _assertTakeInsufficentCollateralRevert({
@@ -978,9 +978,9 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             tokenIds:                  borrowerTokenIds
         });
 
-        // after take: NFT, 1 pledged by liquidated borrower is owned by the taker
-        assertEq(_collateral.ownerOf(1), address(_pool));
-        assertEq(_collateral.ownerOf(3), _lender);
+        // after take: NFT, 3 pledged by liquidated borrower is owned by the taker
+        assertEq(_collateral.ownerOf(1), _lender);
+        assertEq(_collateral.ownerOf(3), address(_pool));
 
         _assertAuction( 
              AuctionParams({
