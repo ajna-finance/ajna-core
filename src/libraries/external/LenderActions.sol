@@ -393,9 +393,14 @@ library LenderActions {
 
         uint256 htp = Maths.wmul(params_.thresholdPrice, poolState_.inflator);
 
-        // check loan book's htp against new lup
-        // make sure that removal doesn't leave pool with more debt than deposits (lup below min bucket price)
-        if (htp > lup_ || poolState_.debt > Deposits.treeSum(deposits_)) revert LUPBelowHTP();
+        if (
+            // check loan book's htp doesn't exceed new lup
+            htp > lup_
+            ||
+            // make sure that removal doesn't leave pool with more debt than deposits
+            // this can happen when both lup and htp are under min bucket price and htp > lup (since lup is capped at min bucket price) 
+            (poolState_.debt != 0 && poolState_.debt > Deposits.treeSum(deposits_))
+        ) revert LUPBelowHTP();
 
         uint256 lpsRemaining = removeParams.bucketLPs - redeemedLPs_;
 
