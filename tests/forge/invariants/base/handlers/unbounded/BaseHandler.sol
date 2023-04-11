@@ -222,7 +222,8 @@ abstract contract BaseHandler is Test {
     }
 
     function _fenwickRemove(uint256 removedAmount_, uint256 bucketIndex_) internal {
-        fenwickDeposits[bucketIndex_] -= removedAmount_;
+        // removedAmount can be slightly greater than fenwickDeposits due to rounding in accrue interest
+        fenwickDeposits[bucketIndex_] -= fenwickDeposits[bucketIndex_] > removedAmount_ ? removedAmount_ : fenwickDeposits[bucketIndex_];
     }
 
     function _fenwickAccrueInterest() internal {
