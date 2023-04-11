@@ -1382,40 +1382,9 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
         assertEq(_quote.balanceOf(address(_pool)), 0.000000029877144463 * 1e18);
 
-        // removeQuoteToken should remove available pool balance
-        _removeAllLiquidity({
-            from:     _lender,
-            amount:   0.000000029877144463 * 1e18,
-            index:    852,
-            newLup:   MIN_PRICE,
-            lpRedeem: 0.000000029528234192 * 1e18
-        });
-
-        _assertLenderLpBalance({
-            lender:      _lender,
-            index:       852,
-            lpBalance:   0.000000030226054734 * 1e18,
-            depositTime: _startTime
-        });
-
-        assertEq(_quote.balanceOf(address(_pool)), 0);
-
-        _assertPool(
-            PoolParams({
-                htp:                  0.000000030736538487 * 1e18,
-                lup:                  MIN_PRICE,
-                poolSize:             0.000000030583210563 * 1e18,
-                pledgedCollateral:    1 * 1e18,
-                encumberedCollateral: 0.307869419786648469 * 1e18,
-                poolDebt:             0.000000030736538487 * 1e18,
-                actualUtilization:    0.514382131215121273 * 1e18,
-                targetUtilization:    0.307769591426657736 * 1e18,
-                minDebtAmount:        0.000000003073653849 * 1e18,
-                loans:                1,
-                maxBorrower:          _borrower,
-                interestRate:         0.05 * 1e18,
-                interestRateUpdate:   _startTime
-            })
-        );
+        // removeQuoteToken should revert as LUP is bellow HTP
+        changePrank(_lender);
+        vm.expectRevert(IPoolErrors.LUPBelowHTP.selector);
+        _pool.removeQuoteToken(type(uint256).max, 852);
     }
 }

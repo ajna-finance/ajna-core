@@ -42,10 +42,10 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         vm.expectRevert(IPoolErrors.InvalidAmount.selector);
         _pool.removeQuoteToken(0, 1000);
         // revert on zero index
-        vm.expectRevert(IPoolErrors.InvalidAmount.selector);
+        vm.expectRevert(IPoolErrors.NoClaim.selector);
         _pool.removeQuoteToken(1000, 0);
         // revert on index greater than max index
-        vm.expectRevert(IPoolErrors.InvalidAmount.selector);
+        vm.expectRevert(IPoolErrors.NoClaim.selector);
         _pool.removeQuoteToken(1000, MAX_FENWICK_INDEX + 1);
     }
 
