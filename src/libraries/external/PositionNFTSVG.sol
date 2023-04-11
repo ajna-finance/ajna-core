@@ -26,9 +26,9 @@ library PositionNFTSVG {
         uint256[] indexes;            // the array of price buckets index with LPs to be tracked by the NFT
     }
 
-    /**************************/
-    /*** External Functions ***/
-    /**************************/
+    /*******************************/
+    /*** External View Functions ***/
+    /*******************************/
 
     function constructTokenURI(ConstructTokenURIParams memory params_) external pure returns (string memory) {
         // set token metadata

@@ -19,8 +19,8 @@ build   :; forge clean && forge build
 
 # Tests
 test                           :; forge test --no-match-test "testLoad|invariant|test_regression"  # --ffi # enable if you need the `ffi` cheat code on HEVM
-test-with-gas-report           :; FOUNDRY_PROFILE=optimized forge test --no-match-test "testLoad|invariant|test_regression" --gas-report # --ffi # enable if you need the `ffi` cheat code on HEVM
-test-load                      :; FOUNDRY_PROFILE=optimized forge test --match-test testLoad --gas-report
+test-with-gas-report           :; forge test --no-match-test "testLoad|invariant|test_regression" --gas-report # --ffi # enable if you need the `ffi` cheat code on HEVM
+test-load                      :; forge test --match-test testLoad --gas-report
 test-invariant				   :; eval QUOTE_PRECISION=${QUOTE_PRECISION} COLLATERAL_PRECISION=${COLLATERAL_PRECISION} forge t --mt invariant --nmc RegressionTest
 test-invariant-erc20           :; eval QUOTE_PRECISION=${QUOTE_PRECISION} COLLATERAL_PRECISION=${COLLATERAL_PRECISION} forge t --mt invariant --nmc RegressionTest --mc ERC20
 test-invariant-erc721          :; eval QUOTE_PRECISION=${QUOTE_PRECISION} forge t --mt invariant --nmc RegressionTest --mc ERC721

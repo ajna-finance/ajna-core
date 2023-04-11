@@ -42,9 +42,9 @@ abstract contract PoolDeployer {
         _;
     }
 
-    /**************************/
-    /*** External Functions ***/
-    /**************************/
+    /*******************************/
+    /*** External View Functions ***/
+    /*******************************/
 
     /**
      * @notice Returns the list of all deployed pools.
