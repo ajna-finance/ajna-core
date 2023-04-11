@@ -21,7 +21,7 @@ interface IPositionManagerOwnerActions {
      *  @dev    The array of buckets is expected to be constructed off chain by scanning events for that lender.
      *  @dev    The NFT must have already been created, and the number of buckets to be memorialized at a time determined by function caller.
      *  @dev    An additional call is made to the pool to transfer the LPs from their previous owner, to the Position Manager.
-     *  @dev    Pool.setPositionOwner() must be called prior to calling this method.
+     *  @dev    `Pool.increaseLPsAllowance` must be called prior to calling this method in order to allow Position manager contract to transfer LPs to be memorialized.
      *  @param  params Calldata struct supplying inputs required to conduct the memorialization.
      */
     function memorializePositions(
@@ -51,7 +51,7 @@ interface IPositionManagerOwnerActions {
      *  @dev    The array of buckets is expected to be constructed off chain by scanning events for that lender.
      *  @dev    The NFT must have already been created, and the number of buckets to be memorialized at a time determined by function caller.
      *  @dev    An additional call is made to the pool to transfer the LPs Position Manager to owner.
-     *  @dev    Pool.setPositionOwner() must be called prior to calling this method.
+     *  @dev    `Pool.approveLPsTransferors` must be called prior to calling this method in order to allow Position manager contract to transfer redeemed LPs.
      *  @param  params Calldata struct supplying inputs required to conduct the redeem.
      */
     function reedemPositions(

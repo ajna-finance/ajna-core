@@ -645,9 +645,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         return _priceAt(Deposits.findIndexOfSum(deposits, debt_));
     }
 
-    /**************************/
-    /*** External Functions ***/
-    /**************************/
+    /*******************************/
+    /*** External View Functions ***/
+    /*******************************/
 
     /// @inheritdoc IPoolState
     function auctionInfo(

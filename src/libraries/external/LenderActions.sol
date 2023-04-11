@@ -190,12 +190,7 @@ library LenderActions {
         Deposits.unscaledAdd(deposits_, params_.index, Maths.wdiv(addedAmount, bucketScale));
 
         // update lender LPs
-        Lender storage lender = bucket.lenders[msg.sender];
-
-        if (bankruptcyTime >= lender.depositTime) lender.lps = bucketLPs_;
-        else lender.lps += bucketLPs_;
-
-        lender.depositTime = block.timestamp;
+        Buckets.addLenderLPs(bucket, bankruptcyTime, msg.sender, bucketLPs_);
 
         // update bucket LPs
         bucket.lps += bucketLPs_;
