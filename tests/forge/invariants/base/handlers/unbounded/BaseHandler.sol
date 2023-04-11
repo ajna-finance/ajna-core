@@ -21,9 +21,6 @@ import '../../../interfaces/ITestBase.sol';
 uint256 constant BORROWER_MIN_BUCKET_INDEX = 2600;
 uint256 constant BORROWER_MAX_BUCKET_INDEX = 2620;
 
-uint256 constant MIN_AMOUNT = 1e3;
-uint256 constant MAX_AMOUNT = 1e30;
-
 abstract contract BaseHandler is Test {
 
     // Tokens
@@ -37,6 +34,12 @@ abstract contract BaseHandler is Test {
     // Lender bucket index
     uint256 public LENDER_MIN_BUCKET_INDEX;
     uint256 public LENDER_MAX_BUCKET_INDEX;
+
+    uint256 public MIN_QUOTE_AMOUNT;
+    uint256 public MAX_QUOTE_AMOUNT;
+
+    uint256 internal MIN_COLLATERAL_AMOUNT;
+    uint256 internal MAX_COLLATERAL_AMOUNT;
 
     // Test invariant contract
     ITestBase internal testContract;

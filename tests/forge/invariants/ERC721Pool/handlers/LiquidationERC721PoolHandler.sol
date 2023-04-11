@@ -2,10 +2,6 @@
 
 pragma solidity 0.8.14;
 
-import {
-    MIN_AMOUNT,
-    MAX_AMOUNT
-}                                               from '../../base/handlers/unbounded/BaseHandler.sol';
 import { LiquidationPoolHandler }               from '../../base/handlers/LiquidationPoolHandler.sol';
 import { BasicERC721PoolHandler }                from './BasicERC721PoolHandler.sol';
 
@@ -23,8 +19,8 @@ contract LiquidationERC721PoolHandler is LiquidationPoolHandler, BasicERC721Pool
 
     }
 
-    function _constrictTakeAmount(uint256 amountToTake_) internal pure override returns(uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToTake_, 1, 5);
+    function _constrictTakeAmount(uint256 amountToTake_) internal view override returns(uint256 boundedAmount_) {
+        boundedAmount_ = constrictToRange(amountToTake_, MIN_COLLATERAL_AMOUNT, MAX_COLLATERAL_AMOUNT);
     }
 
 }

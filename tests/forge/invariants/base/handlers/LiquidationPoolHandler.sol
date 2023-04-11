@@ -2,10 +2,6 @@
 
 pragma solidity 0.8.14;
 
-import {
-    MIN_AMOUNT,
-    MAX_AMOUNT
-}                                          from './unbounded/BaseHandler.sol';
 import { UnboundedLiquidationPoolHandler } from './unbounded/UnboundedLiquidationPoolHandler.sol';
 import { BasicPoolHandler }                from './BasicPoolHandler.sol';
 
@@ -106,14 +102,16 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
     /*** Prepare Tests Functions ***/
     /*******************************/
 
-    function _preKick(uint256 borrowerIndex_, uint256 amount_) internal returns(address borrower_) {
+    function _preKick(uint256 borrowerIndex_, uint256 amount_) internal returns(address borrower_, bool borrowerKicked_) {
         borrowerIndex_ = constrictToRange(borrowerIndex_, 0, actors.length - 1);
         borrower_      = actors[borrowerIndex_];
-        amount_        = constrictToRange(amount_, MIN_AMOUNT, MAX_AMOUNT);
+        amount_        = constrictToRange(amount_, MIN_QUOTE_AMOUNT, MAX_QUOTE_AMOUNT);
 
         ( , , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower_);
 
-        if (kickTime == 0) {
+        borrowerKicked_ = kickTime != 0;
+
+        if (!borrowerKicked_) {
             (uint256 debt, , ) = _pool.borrowerInfo(borrower_);
 
             if (debt == 0) {
@@ -156,12 +154,13 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
 
         // Prepare test phase
         address kicker   = _actor;
-        borrower_        = _preKick(borrowerIndex_, amount_);
+        bool borrowerKicked;
+        (borrower_, borrowerKicked)= _preKick(borrowerIndex_, amount_);
 
         // Action phase
         _actor = kicker;
-        _kickAuction(borrower_);
+        if(!borrowerKicked) _kickAuction(borrower_);
     }
 
-    function _constrictTakeAmount(uint256 amountToTake_) internal pure virtual returns(uint256 boundedAmount_);
+    function _constrictTakeAmount(uint256 amountToTake_) internal view virtual returns(uint256 boundedAmount_);
 }

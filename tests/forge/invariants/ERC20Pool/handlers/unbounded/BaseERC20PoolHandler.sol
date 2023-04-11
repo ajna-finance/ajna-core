@@ -31,6 +31,12 @@ abstract contract BaseERC20PoolHandler is BaseHandler {
         LENDER_MIN_BUCKET_INDEX = 2570;
         LENDER_MAX_BUCKET_INDEX = 2572;
 
+        MIN_QUOTE_AMOUNT = 1e3;
+        MAX_QUOTE_AMOUNT = 1e30;
+
+        MIN_COLLATERAL_AMOUNT = 1e3;
+        MAX_COLLATERAL_AMOUNT = 1e30;
+
         // Tokens
         _collateral = TokenWithNDecimals(collateral_);
 

@@ -31,6 +31,12 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
         LENDER_MIN_BUCKET_INDEX = 850;
         LENDER_MAX_BUCKET_INDEX = 852;
 
+        MIN_QUOTE_AMOUNT = 1e3;
+        MAX_QUOTE_AMOUNT = 1e28;
+
+        MIN_COLLATERAL_AMOUNT = 1;
+        MAX_COLLATERAL_AMOUNT = 5;
+
         // Tokens
         _collateral = NFTCollateralToken(collateral_);
 

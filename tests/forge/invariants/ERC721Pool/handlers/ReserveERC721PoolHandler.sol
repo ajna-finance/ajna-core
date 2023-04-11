@@ -4,7 +4,6 @@ pragma solidity 0.8.14;
 
 import { UnboundedReservePoolHandler } from '../../base/handlers/unbounded/UnboundedReservePoolHandler.sol';
 import { ReservePoolHandler }          from '../../base/handlers/ReservePoolHandler.sol';
-import { MIN_AMOUNT }                  from '../../base/handlers/unbounded/BaseHandler.sol';
 import { LiquidationERC721PoolHandler } from './LiquidationERC721PoolHandler.sol';
 
 contract ReserveERC721PoolHandler is ReservePoolHandler, LiquidationERC721PoolHandler {
