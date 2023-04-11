@@ -397,8 +397,8 @@ library LenderActions {
             // check loan book's htp doesn't exceed new lup
             htp > lup_
             ||
-            // make sure that removal doesn't leave pool with more debt than deposits
-            // this can happen when both lup and htp are under min bucket price and htp > lup (since lup is capped at min bucket price) 
+            // ensure that pool debt < deposits after removal
+            // this can happen if lup and htp are less than min bucket price and htp > lup (since LUP is capped at min bucket price)
             (poolState_.debt != 0 && poolState_.debt > Deposits.treeSum(deposits_))
         ) revert LUPBelowHTP();
 

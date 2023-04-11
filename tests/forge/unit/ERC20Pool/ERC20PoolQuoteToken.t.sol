@@ -1383,8 +1383,9 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(address(_pool)), 0.000000029877144463 * 1e18);
 
         // removeQuoteToken should revert as LUP is bellow HTP
-        changePrank(_lender);
-        vm.expectRevert(IPoolErrors.LUPBelowHTP.selector);
-        _pool.removeQuoteToken(type(uint256).max, 852);
+        _assertRemoveAllLiquidityLupBelowHtpRevert({
+            from:     _lender,
+            index:    852
+        });
     }
 }
