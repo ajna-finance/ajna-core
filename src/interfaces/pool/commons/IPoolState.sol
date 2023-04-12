@@ -14,7 +14,7 @@ interface IPoolState {
      *  @return bondFactor   The factor used for calculating bond size.
      *  @return bondSize     The bond amount in quote token terms.
      *  @return kickTime     Time the liquidation was initiated.
-     *  @return kickMomp     Highest Price Bucket at time of liquidation (MOMP).
+     *  @return kickMomp     Price where the average loan utilizes deposit, at the time when the loan is liquidated (kicked).
      *  @return neutralPrice Neutral Price of auction.
      *  @return head         Address of the head auction.
      *  @return next         Address of the next auction in queue.
