@@ -226,7 +226,13 @@ library KickerActions {
         lender.lps -= vars.redeemedLPs;
         bucket.lps -= vars.redeemedLPs;
 
-        emit RemoveQuoteToken(msg.sender, index_, vars.amountToDebitFromDeposit, vars.redeemedLPs, kickResult_.lup);
+        emit RemoveQuoteToken(
+            msg.sender,
+            index_,
+            vars.amountToDebitFromDeposit,
+            vars.redeemedLPs,
+            kickResult_.lup
+        );
     }
 
     /*************************/

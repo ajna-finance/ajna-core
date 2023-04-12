@@ -174,9 +174,13 @@ library SettlerActions {
 
                 // check if bucket healthy - set bankruptcy if collateral is 0 and entire deposit was used to settle and there's still LPs
                 if (vars.hpbCollateral == 0 && vars.hpbUnscaledDeposit == 0 && vars.hpbLPs != 0) {
-                    emit BucketBankruptcy(vars.index, vars.hpbLPs);
                     hpb.lps            = 0;
                     hpb.bankruptcyTime = block.timestamp;
+
+                    emit BucketBankruptcy(
+                        vars.index,
+                        vars.hpbLPs
+                    );
                 } else {
                     // add settled collateral into bucket
                     hpb.collateral = vars.hpbCollateral;
@@ -228,11 +232,15 @@ library SettlerActions {
 
                     Deposits.unscaledRemove(deposits_, vars.index, vars.unscaledDeposit);              // Remove all deposit from bucket
                     Bucket storage hpbBucket = buckets_[vars.index];
-                    
+
                     if (hpbBucket.collateral == 0) {                                                   // existing LPs for the bucket shall become unclaimable.
-                        emit BucketBankruptcy(vars.index, hpbBucket.lps);
                         hpbBucket.lps            = 0;
                         hpbBucket.bankruptcyTime = block.timestamp;
+
+                        emit BucketBankruptcy(
+                            vars.index,
+                            hpbBucket.lps
+                        );
                     }
                 }
 
@@ -242,7 +250,10 @@ library SettlerActions {
 
         result_.t0DebtSettled -= borrower.t0Debt;
 
-        emit Settle(params_.borrower, result_.t0DebtSettled);
+        emit Settle(
+            params_.borrower,
+            result_.t0DebtSettled
+        );
 
         if (borrower.t0Debt == 0) {
             // settle auction
@@ -318,12 +329,20 @@ library SettlerActions {
                 );
             }
 
-            emit AuctionNFTSettle(borrowerAddress_, remainingCollateral_, lps, bucketIndex);
+            emit AuctionNFTSettle(
+                borrowerAddress_,
+                remainingCollateral_,
+                lps,
+                bucketIndex
+            );
 
         } else {
             remainingCollateral_ = borrowerCollateral_;
 
-            emit AuctionSettle(borrowerAddress_, remainingCollateral_);
+            emit AuctionSettle(
+                borrowerAddress_,
+                remainingCollateral_
+            );
         }
 
         _removeAuction(auctions_, borrowerAddress_);

@@ -294,10 +294,15 @@ library LenderActions {
         // update lender and bucket LPs balance in from bucket
         vars.fromBucketRemainingLPs = vars.fromBucketLPs - fromBucketRedeemedLPs_;
 
+        // check if from bucket healthy after move quote tokens - set bankruptcy if collateral and deposit are 0 but there's still LPs
         if (vars.fromBucketCollateral == 0 && vars.fromBucketRemainingDeposit == 0 && vars.fromBucketRemainingLPs != 0) {
-            emit BucketBankruptcy(params_.fromIndex, vars.fromBucketRemainingLPs);
             fromBucket.lps            = 0;
             fromBucket.bankruptcyTime = block.timestamp;
+
+            emit BucketBankruptcy(
+                params_.fromIndex,
+                vars.fromBucketRemainingLPs
+            );
         } else {
             // update lender and bucket LPs balance
             fromBucketLender.lps -= fromBucketRedeemedLPs_;
@@ -399,10 +404,15 @@ library LenderActions {
 
         uint256 lpsRemaining = removeParams.bucketLPs - redeemedLPs_;
 
+        // check if bucket healthy after remove quote tokens - set bankruptcy if collateral and deposit are 0 but there's still LPs
         if (removeParams.bucketCollateral == 0 && unscaledRemaining == 0 && lpsRemaining != 0) {
-            emit BucketBankruptcy(params_.index, lpsRemaining);
             bucket.lps            = 0;
             bucket.bankruptcyTime = block.timestamp;
+
+            emit BucketBankruptcy(
+                params_.index,
+                lpsRemaining
+            );
         } else {
             // update lender and bucket LPs balances
             lender.lps -= redeemedLPs_;
@@ -474,10 +484,15 @@ library LenderActions {
         bucketCollateral  -= Maths.min(bucketCollateral, amount_);
         bucket.collateral = bucketCollateral;
 
+        // check if bucket healthy after collateral remove - set bankruptcy if collateral and deposit are 0 but there's still LPs
         if (bucketCollateral == 0 && bucketDeposit == 0 && bucketLPs != 0) {
-            emit BucketBankruptcy(index_, bucketLPs);
             bucket.lps            = 0;
             bucket.bankruptcyTime = block.timestamp;
+
+            emit BucketBankruptcy(
+                index_,
+                bucketLPs
+            );
         } else {
             // update lender LPs balance
             lender.lps -= lpAmount_;
@@ -646,10 +661,15 @@ library LenderActions {
         bucketCollateral  -= Maths.min(bucketCollateral, collateralAmount_);
         bucket.collateral = bucketCollateral;
 
+        // check if bucket healthy after collateral remove - set bankruptcy if collateral and deposit are 0 but there's still LPs
         if (bucketCollateral == 0 && bucketDeposit == 0 && bucketLPs != 0) {
-            emit BucketBankruptcy(index_, bucketLPs);
             bucket.lps            = 0;
             bucket.bankruptcyTime = block.timestamp;
+
+            emit BucketBankruptcy(
+                index_,
+                bucketLPs
+            );
         } else {
             // update lender LPs balance
             lender.lps -= lpAmount_;

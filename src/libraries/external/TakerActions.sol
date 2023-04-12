@@ -308,7 +308,11 @@ library TakerActions {
             burnEvent.totalInterest = reserveAuction_.totalInterestEarned;
             burnEvent.totalBurned   = totalBurned;
 
-            emit ReserveAuction(unclaimed, price, burnEventEpoch);
+            emit ReserveAuction(
+                unclaimed,
+                price,
+                burnEventEpoch
+            );
         } else {
             revert NoReservesAuction();
         }
