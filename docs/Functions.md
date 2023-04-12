@@ -112,24 +112,24 @@
 	- PoolCommons.updateInterestRate():
 		- UpdateInterestRate
 
-### transferLPs
+### transferLP
 	external libraries call:
-	- LenderActions.transferLPs()
+	- LenderActions.transferLP()
 
 	write state:
-	- LenderActions.transferLPs():
+	- LenderActions.transferLP():
 		- delete allowance mapping
 		- increment new lender.lps accumulator and lender.depositTime state
 		- delete old lender from bucket -> lender mapping
 
 	reverts on:
-	- LenderActions.transferLPs():
+	- LenderActions.transferLP():
 		- invalid index InvalidIndex()
 		- no allowance NoAllowance()
 
 	emit events:
-	- LenderActions.transferLPs():
-		- TransferLPs
+	- LenderActions.transferLP():
+		- TransferLP
 
 ### kick
 	external libraries call:

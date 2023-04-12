@@ -69,12 +69,12 @@ library LenderActions {
     event MoveQuoteToken(address indexed lender, uint256 indexed from, uint256 indexed to, uint256 amount, uint256 lpRedeemedFrom, uint256 lpAwardedTo, uint256 lup);
     event RemoveQuoteToken(address indexed lender, uint256 indexed index, uint256 amount, uint256 lpRedeemed, uint256 lup);
 
-    event ApproveLPsTransferors(address indexed lender, address[] transferors);
-    event RevokeLPsTransferors(address indexed lender, address[] transferors);
-    event IncreaseLPsAllowance(address indexed owner, address indexed spender, uint256[] indexes, uint256[] amounts);
-    event DecreaseLPsAllowance(address indexed owner, address indexed spender, uint256[] indexes, uint256[] amounts);
-    event RevokeLPsAllowance(address indexed owner, address indexed spender, uint256[] indexes);
-    event TransferLPs(address owner, address newOwner, uint256[] indexes, uint256 lps);
+    event ApproveLPTransferors(address indexed lender, address[] transferors);
+    event RevokeLPTransferors(address indexed lender, address[] transferors);
+    event IncreaseLPAllowance(address indexed owner, address indexed spender, uint256[] indexes, uint256[] amounts);
+    event DecreaseLPAllowance(address indexed owner, address indexed spender, uint256[] indexes, uint256[] amounts);
+    event RevokeLPAllowance(address indexed owner, address indexed spender, uint256[] indexes);
+    event TransferLP(address owner, address newOwner, uint256[] indexes, uint256 lps);
 
     /**************/
     /*** Errors ***/
@@ -583,9 +583,9 @@ library LenderActions {
      *  @dev reverts on:
      *          - invalid indexes and amounts input InvalidAllowancesInput()
      *  @dev emit events:
-     *          - IncreaseLPsAllowance
+     *          - IncreaseLPAllowance
      */
-    function increaseLPsAllowance(
+    function increaseLPAllowance(
         mapping(uint256 => uint256) storage allowances_,
         address spender_,
         uint256[] calldata indexes_,
@@ -604,7 +604,7 @@ library LenderActions {
             unchecked { ++i; }
         }
 
-        emit IncreaseLPsAllowance(
+        emit IncreaseLPAllowance(
             msg.sender,
             spender_,
             indexes_,
@@ -619,9 +619,9 @@ library LenderActions {
      *  @dev reverts on:
      *          - invalid indexes and amounts input InvalidAllowancesInput()
      *  @dev emit events:
-     *          - DecreaseLPsAllowance
+     *          - DecreaseLPAllowance
      */
-    function decreaseLPsAllowance(
+    function decreaseLPAllowance(
         mapping(uint256 => uint256) storage allowances_,
         address spender_,
         uint256[] calldata indexes_,
@@ -641,7 +641,7 @@ library LenderActions {
             unchecked { ++i; }
         }
 
-        emit DecreaseLPsAllowance(
+        emit DecreaseLPAllowance(
             msg.sender,
             spender_,
             indexes_,
@@ -654,9 +654,9 @@ library LenderActions {
      *  @dev write state:
      *          - decrement LPs allowances
      *  @dev emit events:
-     *          - RevokeLPsAllowance
+     *          - RevokeLPAllowance
      */
-    function revokeLPsAllowance(
+    function revokeLPAllowance(
         mapping(uint256 => uint256) storage allowances_,
         address spender_,
         uint256[] calldata indexes_
@@ -672,7 +672,7 @@ library LenderActions {
             unchecked { ++i; }
         }
 
-        emit RevokeLPsAllowance(
+        emit RevokeLPAllowance(
             msg.sender,
             spender_,
             indexes_
@@ -684,9 +684,9 @@ library LenderActions {
      *  @dev write state:
      *          - approvedTransferors mapping
      *  @dev emit events:
-     *          - ApproveLPsTransferors
+     *          - ApproveLPTransferors
      */
-    function approveLPsTransferors(
+    function approveLPTransferors(
         mapping(address => bool) storage allowances_,
         address[] calldata transferors_
     ) external  {
@@ -697,7 +697,7 @@ library LenderActions {
             unchecked { ++i; }
         }
 
-        emit ApproveLPsTransferors(
+        emit ApproveLPTransferors(
             msg.sender,
             transferors_
         );
@@ -708,9 +708,9 @@ library LenderActions {
      *  @dev write state:
      *          - approvedTransferors mapping
      *  @dev emit events:
-     *          - RevokeLPsTransferors
+     *          - RevokeLPTransferors
      */
-    function revokeLPsTransferors(
+    function revokeLPTransferors(
         mapping(address => bool) storage allowances_,
         address[] calldata transferors_
     ) external  {
@@ -721,7 +721,7 @@ library LenderActions {
             unchecked { ++i; }
         }
 
-        emit RevokeLPsTransferors(
+        emit RevokeLPTransferors(
             msg.sender,
             transferors_
         );
@@ -737,9 +737,9 @@ library LenderActions {
      *          - invalid index InvalidIndex()
      *          - no allowance NoAllowance()
      *  @dev emit events:
-     *          - TransferLPs
+     *          - TransferLP
      */
-    function transferLPs(
+    function transferLP(
         mapping(uint256 => Bucket) storage buckets_,
         mapping(address => mapping(address => mapping(uint256 => uint256))) storage allowances_,
         mapping(address => mapping(address => bool)) storage approvedTransferors_,
@@ -803,7 +803,12 @@ library LenderActions {
             unchecked { ++i; }
         }
 
-        emit TransferLPs(ownerAddress_, newOwnerAddress_, indexes_, lpsTransferred);
+        emit TransferLP(
+            ownerAddress_,
+            newOwnerAddress_,
+            indexes_,
+            lpsTransferred
+        );
     }
 
     /**************************/

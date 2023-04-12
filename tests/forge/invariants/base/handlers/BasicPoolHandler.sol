@@ -80,7 +80,7 @@ abstract contract BasicPoolHandler is UnboundedBasicPoolHandler {
         (address receiver, uint256 boundedLps) = _preTransferLps(toActorIndex_, lpsToTransfer_);
 
         // Action phase
-        _increaseLPsAllowance(receiver, _lenderBucketIndex, boundedLps);
+        _increaseLPAllowance(receiver, _lenderBucketIndex, boundedLps);
         _transferLps(_actor, receiver, _lenderBucketIndex);
     }
 

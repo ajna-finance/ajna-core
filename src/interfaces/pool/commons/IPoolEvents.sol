@@ -233,7 +233,7 @@ interface IPoolEvents {
      *  @param  indexes   Bucket indexes of LPs approved.
      *  @param  amounts   LP amounts added (ordered by indexes).
      */
-    event IncreaseLPsAllowance(
+    event IncreaseLPAllowance(
         address indexed owner,
         address indexed spender,
         uint256[] indexes,
@@ -247,7 +247,7 @@ interface IPoolEvents {
      *  @param  indexes   Bucket indexes of LPs approved.
      *  @param  amounts   LP amounts removed (ordered by indexes).
      */
-    event DecreaseLPsAllowance(
+    event DecreaseLPAllowance(
         address indexed owner,
         address indexed spender,
         uint256[] indexes,
@@ -260,7 +260,7 @@ interface IPoolEvents {
      *  @param  spender Address that is having it's allowance revoked.
      *  @param  indexes List of bucket index to remove the allowance from.
      */
-    event RevokeLPsAllowance(
+    event RevokeLPAllowance(
         address indexed owner,
         address indexed spender,
         uint256[] indexes
@@ -271,7 +271,7 @@ interface IPoolEvents {
      *  @param  lender      Recipient that approves new owner for LPs.
      *  @param  transferors List of addresses that can transfer LPs to lender.
      */
-    event ApproveLPsTransferors(
+    event ApproveLPTransferors(
         address indexed lender,
         address[] transferors
     );
@@ -281,7 +281,7 @@ interface IPoolEvents {
      *  @param  lender      Recipient that approves new owner for LPs.
      *  @param  transferors List of addresses that won't be able to transfer LPs to lender anymore.
      */
-    event RevokeLPsTransferors(
+    event RevokeLPTransferors(
         address indexed lender,
         address[] transferors
     );
@@ -294,7 +294,7 @@ interface IPoolEvents {
      *  @param  indexes  Array of price bucket indexes at which LPs were transferred.
      *  @param  lps      Amount of LPs transferred.
      */
-    event TransferLPs(
+    event TransferLP(
         address owner,
         address newOwner,
         uint256[] indexes,

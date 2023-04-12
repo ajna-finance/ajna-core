@@ -421,11 +421,11 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         changePrank(_minterOne);
         _quote.approve(address(_positionManager), type(uint256).max);
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
 
         changePrank(_minterTwo);
         _quote.approve(address(_positionManager), type(uint256).max);
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
 
         /*****************************/
         /*** Initialize Pool State ***/

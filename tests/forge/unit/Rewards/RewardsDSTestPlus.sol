@@ -346,7 +346,7 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
             (lpBalances[i], ) = ERC20Pool(address(pool)).lenderInfo(indexes[i], minter);
         }
 
-        ERC20Pool(address(pool)).increaseLPsAllowance(address(_positionManager), indexes, lpBalances);
+        ERC20Pool(address(pool)).increaseLPAllowance(address(_positionManager), indexes, lpBalances);
 
         // construct memorialize params struct
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(

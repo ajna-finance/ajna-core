@@ -85,7 +85,7 @@ interface IPoolLenderActions {
      *  @param  indexes Bucket indexes from where LPs are transferred.
      *  @param  amounts The amounts of LPs approved to transfer.
      */
-    function increaseLPsAllowance(
+    function increaseLPAllowance(
         address spender,
         uint256[] calldata indexes,
         uint256[] calldata amounts
@@ -98,7 +98,7 @@ interface IPoolLenderActions {
      *  @param  indexes Bucket indexes from where LPs are transferred.
      *  @param  amounts The amounts of LPs disapproved to transfer.
      */
-    function decreaseLPsAllowance(
+    function decreaseLPAllowance(
         address spender,
         uint256[] calldata indexes,
         uint256[] calldata amounts
@@ -109,7 +109,7 @@ interface IPoolLenderActions {
      *  @param  spender Address that is having it's allowance revoked.
      *  @param  indexes List of bucket index to remove the allowance from.
      */
-    function revokeLPsAllowance(
+    function revokeLPAllowance(
         address spender,
         uint256[] calldata indexes
     ) external;
@@ -119,7 +119,7 @@ interface IPoolLenderActions {
      *  @dev    Intended for use by the PositionManager contract.
      *  @param  transferors Addresses that are allowed to transfer LPs to lender.
      */
-    function approveLPsTransferors(
+    function approveLPTransferors(
         address[] calldata transferors
     ) external;
 
@@ -128,7 +128,7 @@ interface IPoolLenderActions {
      *  @dev    Intended for use by the PositionManager contract.
      *  @param  transferors Addresses that are revoked to transfer LPs to lender.
      */
-    function revokeLPsTransferors(
+    function revokeLPTransferors(
         address[] calldata transferors
     ) external;
 
@@ -139,7 +139,7 @@ interface IPoolLenderActions {
      *  @param  newOwner The new owner address of the position.
      *  @param  indexes  Array of price buckets index at which LPs were moved.
      */
-    function transferLPs(
+    function transferLP(
         address owner,
         address newOwner,
         uint256[] calldata indexes

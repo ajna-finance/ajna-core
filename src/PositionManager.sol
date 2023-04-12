@@ -145,7 +145,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      *  @inheritdoc IPositionManagerOwnerActions
      *  @dev External calls to Pool contract:
      *          - lenderInfo(): get lender position in bucket
-     *          - transferLPs(): transfer LPs ownership to PositionManager contracts
+     *          - transferLP(): transfer LPs ownership to PositionManager contracts
      *  @dev write state:
      *          - positionIndexes: add bucket index
      *          - positions: update tokenId => bucket id position
@@ -197,7 +197,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         }
 
         // update pool lps accounting and transfer ownership of lps to PositionManager contract
-        pool.transferLPs(owner, address(this), params_.indexes);
+        pool.transferLP(owner, address(this), params_.indexes);
 
         emit MemorializePosition(owner, params_.tokenId, params_.indexes);
     }
@@ -321,7 +321,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      *  @inheritdoc IPositionManagerOwnerActions
      *  @dev External calls to Pool contract:
      *          - increaseLPAllowance(): approve ownership for transfer
-     *          - transferLPs(): transfer LPs ownership from PositionManager contract
+     *          - transferLP(): transfer LPs ownership from PositionManager contract
      *  @dev write state:
      *          - positionIndexes: remove from bucket index
      *          - positions: delete bucket position
@@ -369,10 +369,10 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
         address owner = ownerOf(params_.tokenId);
 
-        // approve owner to take over the LPs ownership (required for transferLPs pool call)
-        pool.increaseLPsAllowance(owner, params_.indexes, lpAmounts);
+        // approve owner to take over the LPs ownership (required for transferLP pool call)
+        pool.increaseLPAllowance(owner, params_.indexes, lpAmounts);
         // update pool lps accounting and transfer ownership of lps from PositionManager contract
-        pool.transferLPs(address(this), owner, params_.indexes);
+        pool.transferLP(address(this), owner, params_.indexes);
 
         emit RedeemPosition(owner, params_.tokenId, params_.indexes);
     }

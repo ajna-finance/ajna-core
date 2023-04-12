@@ -31,11 +31,11 @@ abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract 
         _quote.approve(address(_pool), type(uint256).max);
         address[] memory transferors = new address[](1);
         transferors[0] = address(_positionManager);
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
 
         vm.prank(operator_);
         _quote.approve(address(_positionManager), type(uint256).max);
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
     }
 
     /**
@@ -168,11 +168,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         amounts[0] = 3_000 * 1e18;
         amounts[1] = 3_000 * 1e18;
         amounts[2] = 3_000 * 1e18;
-        _pool.increaseLPsAllowance(address(_positionManager), indexes, amounts);
+        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
 
         // memorialize quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
-        emit TransferLPs(testAddress, address(_positionManager), indexes, 9_000 * 1e18);
+        emit TransferLP(testAddress, address(_positionManager), indexes, 9_000 * 1e18);
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testAddress, tokenId, indexes);
         _positionManager.memorializePositions(memorializeParams);
@@ -276,11 +276,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         amounts[0] = 3_000 * 1e18;
         amounts[1] = 3_000 * 1e18;
         amounts[2] = 3_000 * 1e18;
-        _pool.increaseLPsAllowance(address(_positionManager), indexes, amounts);
+        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
 
         // memorialize quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
-        emit TransferLPs(testAddress, address(_positionManager), indexes, 9_000 * 1e18);
+        emit TransferLP(testAddress, address(_positionManager), indexes, 9_000 * 1e18);
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testAddress, tokenId, indexes);
         _positionManager.memorializePositions(memorializeParams);
@@ -410,11 +410,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         amounts[0] = 1_000 * 1e18;
         amounts[1] = 2_000 * 1e18;
         amounts[2] = 3_000 * 1e18;
-        _pool.increaseLPsAllowance(address(_positionManager), indexes, amounts);
+        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
 
         // rememorialize quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
-        emit TransferLPs(testAddress, address(_positionManager), indexes, 6_000 * 1e18);
+        emit TransferLP(testAddress, address(_positionManager), indexes, 6_000 * 1e18);
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testAddress, tokenId, indexes);
         _positionManager.memorializePositions(memorializeParams);
@@ -620,11 +620,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         amounts[0] = 3_000 * 1e18;
         amounts[1] = 3_000 * 1e18;
         amounts[2] = 3_000 * 1e18;
-        _pool.increaseLPsAllowance(address(_positionManager), transferIndexes, amounts);
+        _pool.increaseLPAllowance(address(_positionManager), transferIndexes, amounts);
 
         // memorialize lender 1 quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
-        emit TransferLPs(testLender1, address(_positionManager), lender1Indexes, 9_000 * 1e18);
+        emit TransferLP(testLender1, address(_positionManager), lender1Indexes, 9_000 * 1e18);
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testLender1, tokenId1, lender1Indexes);
         _positionManager.memorializePositions(memorializeParams);
@@ -694,7 +694,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         amounts = new uint256[](2);
         amounts[0] = 3_000 * 1e18;
         amounts[1] = 3_000 * 1e18;
-        _pool.increaseLPsAllowance(address(_positionManager), transferIndexes, amounts);
+        _pool.increaseLPAllowance(address(_positionManager), transferIndexes, amounts);
 
         // memorialize lender 2 quote tokens into minted NFT
         uint256[] memory newIndexes = new uint256[](2);
@@ -706,7 +706,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         vm.expectEmit(true, true, true, true);
-        emit TransferLPs(testLender2, address(_positionManager), newIndexes, 6_000 * 1e18);
+        emit TransferLP(testLender2, address(_positionManager), newIndexes, 6_000 * 1e18);
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testLender2, tokenId2, newIndexes);
         _positionManager.memorializePositions(memorializeParams);
@@ -880,11 +880,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // allow position manager to take ownership of the position of testMinter
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 2_000 * 1e18;
-        _pool.increaseLPsAllowance(address(_positionManager), indexes, amounts);
+        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
 
         address[] memory transferors = new address[](1);
         transferors[0] = address(_positionManager);
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
 
         // memorialize positions of testMinter
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
@@ -1001,8 +1001,8 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         changePrank(testMinter);
         _pool.addQuoteToken(amounts[0], _i9_91, type(uint256).max);
 
-        _pool.increaseLPsAllowance(address(_positionManager), indexes, amounts);
-        _pool.approveLPsTransferors(transferors);
+        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
+        _pool.approveLPTransferors(transferors);
         memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
             tokenId, indexes
         );
@@ -1106,12 +1106,12 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 15_000 * 1e18;
         // allow position manager to take ownership of the position of testMinter
-        _pool.increaseLPsAllowance(address(_positionManager), indexes, amounts);
+        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
 
         // allow position manager as transferor
         address[] memory transferors = new address[](1);
         transferors[0] = address(_positionManager);
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
 
         // memorialize positions of testMinter
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
@@ -1161,7 +1161,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // check new owner can redeem positions
         changePrank(testReceiver);
         // allow position manager as transferor
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
 
         _positionManager.reedemPositions(reedemParams);
 
@@ -1245,7 +1245,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 15_000 * 1e18;
         // allow position manager to take ownership of the position of testMinter
-        _pool.increaseLPsAllowance(address(_positionManager), indexes, amounts);
+        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
         // memorialize positions of testMinter
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
             tokenId, indexes
@@ -1303,7 +1303,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // allow position manager as transferor
         address[] memory transferors = new address[](1);
         transferors[0] = address(_positionManager);
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
 
         _positionManager.reedemPositions(reedemParams);
 
@@ -1449,12 +1449,12 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 15_000 * 1e18;
         // allow position manager to take ownership of the position of testMinter
-        _pool.increaseLPsAllowance(address(_positionManager), indexes, amounts);
+        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
 
         // approve position manager as a transferor
         address[] memory transferors = new address[](1);
         transferors[0] = address(_positionManager);
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
 
         // memorialize positions of testMinter
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
@@ -1593,7 +1593,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         indexes[0] = mintIndex;
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 2_500 * 1e18;
-        _pool.increaseLPsAllowance(address(_positionManager), indexes, amounts);
+        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
 
         // memorialize positions of testAddress1
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
@@ -1712,7 +1712,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // allow position manager to take ownership of the position of testAddress2
         changePrank(testAddress2);
         amounts[0] = 5_500 * 1e18;
-        _pool.increaseLPsAllowance(address(_positionManager), indexes, amounts);
+        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
 
         // memorialize positions of testAddress2
         memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
@@ -1887,7 +1887,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         indexes[0] = mintIndex;
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 2_000 * 1e18;
-        _pool.increaseLPsAllowance(address(_positionManager), indexes, amounts);
+        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = 
             IPositionManagerOwnerActions.MemorializePositionsParams(tokenId1, indexes);
         _positionManager.memorializePositions(memorializeParams);
@@ -1896,7 +1896,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         changePrank(lender2);
         uint256 tokenId2 = _mintNFT(lender2, lender2, address(_pool));
         amounts[0] = 3_000 * 1e18;
-        _pool.increaseLPsAllowance(address(_positionManager), indexes, amounts);
+        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
         memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(tokenId2, indexes);
         _positionManager.memorializePositions(memorializeParams);
         skip(1 days);
@@ -1948,7 +1948,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         changePrank(lender1);
         address[] memory transferors = new address[](1);
         transferors[0] = address(_positionManager);
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
         indexes[0] = moveIndex;
         IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = 
             IPositionManagerOwnerActions.RedeemPositionsParams(
@@ -1970,7 +1970,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // lender2 redeems their NFT
         skip(1 days);
         changePrank(lender2);
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
         indexes[0] = mintIndex;
         reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId2, address(_pool), indexes
@@ -2023,11 +2023,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // allow position manager to take ownership of the position of testMinter
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 15_000 * 1e18;
-        _pool.increaseLPsAllowance(address(_positionManager), indexes, amounts);
+        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
 
         address[] memory transferors = new address[](1);
         transferors[0] = address(_positionManager);
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
 
         // memorialize positions of testMinter
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
@@ -2190,11 +2190,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // allow position manager to take ownership of the position of testMinter
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 15_000 * 1e18;
-        _pool.increaseLPsAllowance(address(_positionManager), indexes, amounts);
+        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
         // approve position manager as transferor
         address[] memory transferors = new address[](1);
         transferors[0] = address(_positionManager);
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
         // memorialize positions of testMinter
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
             tokenId, indexes
@@ -2269,10 +2269,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
         changePrank(testReceiver);
         vm.expectEmit(true, true, true, true);
-        emit TransferLPs(address(_positionManager), testReceiver, indexes, 15_000 * 1e18);
+        emit TransferLP(address(_positionManager), testReceiver, indexes, 15_000 * 1e18);
         vm.expectEmit(true, true, true, true);
         emit RedeemPosition(testReceiver, tokenId, indexes);
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
         _positionManager.reedemPositions(reedemParams);
 
         // check pool state
@@ -2356,10 +2356,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // allow position manager to take ownership of the position
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 10_000 * 1e18;
-        _pool.increaseLPsAllowance(address(_positionManager), indexes, amounts);
+        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
         address[] memory transferors = new address[](1);
         transferors[0] = address(_positionManager);
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
 
         // 3rd party minter mints NFT and memorialize lender positions
         uint256 tokenId = _mintNFT(minter, lender, address(_pool));
@@ -2500,7 +2500,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // allow position manager to take ownership of the position
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 10_000 * 1e18;
-        _pool.increaseLPsAllowance(address(_positionManager), indexes, amounts);
+        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
 
         // 3rd party minter mints NFT and memorialize lender positions
         changePrank(minter);
@@ -2525,7 +2525,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // minter approves position manager as a transferor
         address[] memory transferors = new address[](1);
         transferors[0] = address(_positionManager);
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
 
         _positionManager.reedemPositions(reedemParams);
 
@@ -2607,7 +2607,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // allow position manager to take ownership of the position
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 3_000 * 1e18;
-        _pool.increaseLPsAllowance(address(_positionManager), indexes, amounts);
+        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
 
         // memorialize position
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
@@ -2683,12 +2683,12 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
             // allow position manager to take ownership of the position
             changePrank(addresses[i]);
-            _pool.approveLPsTransferors(transferors);
-            _pool.increaseLPsAllowance(address(_positionManager), indexes, amounts);
+            _pool.approveLPTransferors(transferors);
+            _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
 
             // memorialize quote tokens into minted NFT
             vm.expectEmit(true, true, true, true);
-            emit TransferLPs(addresses[i], address(_positionManager), indexes, amounts[0]);
+            emit TransferLP(addresses[i], address(_positionManager), indexes, amounts[0]);
             vm.expectEmit(true, true, true, true);
             emit MemorializePosition(addresses[i], tokenIds[i], indexes);
 
@@ -2859,16 +2859,16 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         amounts[0] = 3_000 * 1e18;
         amounts[1] = 3_000 * 1e18;
         amounts[2] = 3_000 * 1e18;
-        _pool.increaseLPsAllowance(address(_positionManager), indexes, amounts);
+        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
 
         // approve position manager as transferor
         address[] memory transferors = new address[](1);
         transferors[0] = address(_positionManager);
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
 
         // memorialize quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
-        emit TransferLPs(testAddress1, address(_positionManager), indexes, 9_000 * 1e18);
+        emit TransferLP(testAddress1, address(_positionManager), indexes, 9_000 * 1e18);
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testAddress1, tokenId, indexes);
         _positionManager.memorializePositions(memorializeParams);
@@ -2986,14 +2986,14 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         amounts[0] = 1_000 * 1e18;
         amounts[1] = 2_000 * 1e18;
         amounts[2] = 3_000 * 1e18;
-        _pool.increaseLPsAllowance(address(_positionManager), indexes, amounts);
+        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
 
         // approve position manager as transferor
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
 
         // rememorialize quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
-        emit TransferLPs(testAddress1, address(_positionManager), indexes, 6_000 * 1e18);
+        emit TransferLP(testAddress1, address(_positionManager), indexes, 6_000 * 1e18);
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testAddress1, tokenId, indexes);
         _positionManager.memorializePositions(memorializeParams);
@@ -3136,7 +3136,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
 
         // check new owner can redeem positions
         changePrank(testAddress2);
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
         _positionManager.reedemPositions(reedemParams);
 
          // check pool state
