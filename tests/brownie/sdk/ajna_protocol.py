@@ -10,7 +10,7 @@ from brownie import (
     SettlerActions,
     PoolCommons,
     LenderActions,
-    LPOwnerActions,
+    LPActions,
     BorrowerActions,
     Deposits,
     Maths,
@@ -39,7 +39,7 @@ class AjnaProtocol:
         self.maths = Maths.deploy({"from": self.deployer})
         self.loans = Loans.deploy({"from": self.deployer})
         self.lender_actions = LenderActions.deploy({"from": self.deployer})
-        self.transfer_actions = LPOwnerActions.deploy({"from": self.deployer})
+        self.transfer_actions = LPActions.deploy({"from": self.deployer})
         self.borrower_actions = BorrowerActions.deploy({"from": self.deployer})
         self.kicker_actions = KickerActions.deploy({"from": self.deployer})
         self.taker_auctions = TakerActions.deploy({"from": self.deployer})

@@ -9,11 +9,11 @@ import { MAX_FENWICK_INDEX } from '../helpers/PoolHelper.sol';
 import { Maths } from '../internal/Maths.sol';
 
 /**
-    @title  LPOwnerActions library
+    @title  LPActions library
     @notice External library containing logic for LP owners to:
             - increase/decrease/revoke LP allowance; approve/revoke LP transferors; transfer LPs
  */
-library LPOwnerActions {
+library LPActions {
 
     /**************/
     /*** Events ***/

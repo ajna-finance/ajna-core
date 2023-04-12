@@ -196,7 +196,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             unchecked { ++i; }
         }
 
-        // update pool lps accounting and transfer ownership of lps to PositionManager contract
+        // update pool LP accounting and transfer ownership of LP to PositionManager contract
         pool.transferLP(owner, address(this), params_.indexes);
 
         emit MemorializePosition(owner, params_.tokenId, params_.indexes);

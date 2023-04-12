@@ -2,26 +2,26 @@
 
 pragma solidity 0.8.14;
 
-import { IPoolBorrowerActions }       from './commons/IPoolBorrowerActions.sol';
-import { IPoolLPOwnerActions }        from './commons/IPoolLPOwnerActions.sol';
-import { IPoolLenderActions }         from './commons/IPoolLenderActions.sol';
-import { IPoolKickerActions }         from './commons/IPoolKickerActions.sol';
-import { IPoolTakerActions }          from './commons/IPoolTakerActions.sol';
-import { IPoolSettlerActions }        from './commons/IPoolSettlerActions.sol';
+import { IPoolBorrowerActions } from './commons/IPoolBorrowerActions.sol';
+import { IPoolLPActions }       from './commons/IPoolLPActions.sol';
+import { IPoolLenderActions }   from './commons/IPoolLenderActions.sol';
+import { IPoolKickerActions }   from './commons/IPoolKickerActions.sol';
+import { IPoolTakerActions }    from './commons/IPoolTakerActions.sol';
+import { IPoolSettlerActions }  from './commons/IPoolSettlerActions.sol';
 
-import { IPoolImmutables }            from './commons/IPoolImmutables.sol';
-import { IPoolState }                 from './commons/IPoolState.sol';
-import { IPoolDerivedState }          from './commons/IPoolDerivedState.sol';
-import { IPoolEvents }                from './commons/IPoolEvents.sol';
-import { IPoolErrors }                from './commons/IPoolErrors.sol';
-import { IERC3156FlashLender }        from './IERC3156FlashLender.sol';
+import { IPoolImmutables }      from './commons/IPoolImmutables.sol';
+import { IPoolState }           from './commons/IPoolState.sol';
+import { IPoolDerivedState }    from './commons/IPoolDerivedState.sol';
+import { IPoolEvents }          from './commons/IPoolEvents.sol';
+import { IPoolErrors }          from './commons/IPoolErrors.sol';
+import { IERC3156FlashLender }  from './IERC3156FlashLender.sol';
 
 /**
  * @title Base Pool
  */
 interface IPool is
     IPoolBorrowerActions,
-    IPoolLPOwnerActions,
+    IPoolLPActions,
     IPoolLenderActions,
     IPoolKickerActions,
     IPoolTakerActions,

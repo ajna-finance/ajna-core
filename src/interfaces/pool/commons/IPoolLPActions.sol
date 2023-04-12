@@ -3,9 +3,9 @@
 pragma solidity 0.8.14;
 
 /**
- * @title Pool LP Owner Actions
+ * @title Pool LP Actions
  */
-interface IPoolLPOwnerActions {
+interface IPoolLPActions {
 
     /**
      *  @notice Called by LP owners to approve transfer of an amount of LPs to a new owner.

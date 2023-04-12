@@ -10,7 +10,7 @@ def main():
     Deposits.deploy({"from": accounts[0]})
     PoolCommons.deploy({"from": accounts[0]})
     LenderActions.deploy({"from": accounts[0]})
-    LPOwnerActions.deploy({"from": accounts[0]})
+    LPActions.deploy({"from": accounts[0]})
     BorrowerActions.deploy({"from": accounts[0]})
     KickerActions.deploy({"from": accounts[0]}})
     TakerActions.deploy({"from": accounts[0]}})

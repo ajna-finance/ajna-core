@@ -12,7 +12,7 @@ import {
     IPool,
     IPoolImmutables,
     IPoolBorrowerActions,
-    IPoolLPOwnerActions,
+    IPoolLPActions,
     IPoolLenderActions,
     IPoolKickerActions,
     IPoolTakerActions,
@@ -60,7 +60,7 @@ import { Maths }    from '../libraries/internal/Maths.sol';
 
 import { BorrowerActions } from '../libraries/external/BorrowerActions.sol';
 import { LenderActions }   from '../libraries/external/LenderActions.sol';
-import { LPOwnerActions }  from '../libraries/external/LPOwnerActions.sol';
+import { LPActions }       from '../libraries/external/LPActions.sol';
 import { KickerActions }   from '../libraries/external/KickerActions.sol';
 import { TakerActions }    from '../libraries/external/TakerActions.sol';
 import { PoolCommons }     from '../libraries/external/PoolCommons.sol';
@@ -435,13 +435,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*** Transfer LPs Functions ***/
     /******************************/
 
-    /// @inheritdoc IPoolLPOwnerActions
+    /// @inheritdoc IPoolLPActions
     function increaseLPAllowance(
         address spender_,
         uint256[] calldata indexes_,
         uint256[] calldata amounts_
     ) external override nonReentrant {
-        LPOwnerActions.increaseLPAllowance(
+        LPActions.increaseLPAllowance(
             _lpAllowances[msg.sender][spender_],
             spender_,
             indexes_,
@@ -449,13 +449,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
-    /// @inheritdoc IPoolLPOwnerActions
+    /// @inheritdoc IPoolLPActions
     function decreaseLPAllowance(
         address spender_,
         uint256[] calldata indexes_,
         uint256[] calldata amounts_
     ) external override nonReentrant {
-        LPOwnerActions.decreaseLPAllowance(
+        LPActions.decreaseLPAllowance(
             _lpAllowances[msg.sender][spender_],
             spender_,
             indexes_,
@@ -463,49 +463,49 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
-    /// @inheritdoc IPoolLPOwnerActions
+    /// @inheritdoc IPoolLPActions
     function revokeLPAllowance(
         address spender_,
         uint256[] calldata indexes_
     ) external override nonReentrant {
-        LPOwnerActions.revokeLPAllowance(
+        LPActions.revokeLPAllowance(
             _lpAllowances[msg.sender][spender_],
             spender_,
             indexes_
         );
     }
 
-    /// @inheritdoc IPoolLPOwnerActions
+    /// @inheritdoc IPoolLPActions
     function approveLPTransferors(
         address[] calldata transferors_
     ) external override {
-        LPOwnerActions.approveLPTransferors(
+        LPActions.approveLPTransferors(
             approvedTransferors[msg.sender],
             transferors_
         );
     }
 
     /**
-     *  @inheritdoc IPoolLPOwnerActions
+     *  @inheritdoc IPoolLPActions
      *  @dev write state:
      *          - approvedTransferors mapping
      */
     function revokeLPTransferors(
         address[] calldata transferors_
     ) external override {
-        LPOwnerActions.revokeLPTransferors(
+        LPActions.revokeLPTransferors(
             approvedTransferors[msg.sender],
             transferors_
         );
     }
 
-    /// @inheritdoc IPoolLPOwnerActions
+    /// @inheritdoc IPoolLPActions
     function transferLP(
         address owner_,
         address newOwner_,
         uint256[] calldata indexes_
     ) external override nonReentrant {
-        LPOwnerActions.transferLP(
+        LPActions.transferLP(
             buckets,
             _lpAllowances,
             approvedTransferors,
