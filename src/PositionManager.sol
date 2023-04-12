@@ -313,7 +313,9 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             ownerOf(params_.tokenId),
             params_.tokenId,
             params_.fromIndex,
-            params_.toIndex
+            params_.toIndex,
+            vars.lpbAmountFrom,
+            vars.lpbAmountTo
         );
     }
 

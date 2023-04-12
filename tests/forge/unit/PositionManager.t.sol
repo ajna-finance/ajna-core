@@ -1656,8 +1656,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // move liquidity called by testAddress1 owner
+        uint256 lpRedeemed = 2_500 * 1e18;
+        uint256 lpAwarded  = 2_500 * 1e18;
         vm.expectEmit(true, true, true, true);
-        emit MoveLiquidity(testAddress1, tokenId1, mintIndex, moveIndex);
+        emit MoveLiquidity(testAddress1, tokenId1, mintIndex, moveIndex, lpRedeemed, lpAwarded);
         changePrank(address(testAddress1));
         _positionManager.moveLiquidity(moveLiquidityParams);
 
@@ -1782,8 +1784,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         });
 
         // move liquidity called by testAddress2 owner
+        lpRedeemed = 5_500 * 1e18;
+        lpAwarded  = 5_500 * 1e18;
         vm.expectEmit(true, true, true, true);
-        emit MoveLiquidity(testAddress2, tokenId2, mintIndex, moveIndex);
+        emit MoveLiquidity(testAddress2, tokenId2, mintIndex, moveIndex, lpRedeemed, lpAwarded);
         changePrank(address(testAddress2));
         _positionManager.moveLiquidity(moveLiquidityParams);
 
@@ -3050,8 +3054,10 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         );
 
         // move liquidity called by testAddress1
+        uint256 lpRedeemed = 4_000 * 1e18;
+        uint256 lpAwarded  = 4_000 * 1e18;
         vm.expectEmit(true, true, true, true);
-        emit MoveLiquidity(testAddress1, tokenId, indexes[0], indexes[1]);
+        emit MoveLiquidity(testAddress1, tokenId, indexes[0], indexes[1], lpRedeemed, lpAwarded);
         changePrank(testAddress1);
         _positionManager.moveLiquidity(moveLiquidityParams);
 

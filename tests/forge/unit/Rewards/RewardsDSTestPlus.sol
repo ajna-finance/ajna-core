@@ -171,8 +171,10 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         address from,
         uint256 tokenId,
         uint256[] memory fromIndexes,
+        uint256[] memory lpsRedeemed,
         bool fromIndStaked,
         uint256[] memory toIndexes,
+        uint256[] memory lpsAwarded,
         uint256 expiry
     ) internal {
         
@@ -181,7 +183,7 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         // check MoveLiquidity emits
         for (uint256 i = 0; i < fromIndexes.length; ++i) {
             vm.expectEmit(true, true, true, true);
-            emit MoveLiquidity(address(_rewardsManager), tokenId, fromIndexes[i], toIndexes[i]);
+            emit MoveLiquidity(address(_rewardsManager), tokenId, fromIndexes[i], toIndexes[i], lpsRedeemed[i], lpsAwarded[i]);
         }
 
         vm.expectEmit(true, true, true, true);

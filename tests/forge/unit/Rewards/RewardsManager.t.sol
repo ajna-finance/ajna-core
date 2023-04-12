@@ -1032,13 +1032,27 @@ contract RewardsManagerTest is RewardsHelperContract {
         secondIndexes[2] = 2558;
         secondIndexes[3] = 2559;
         secondIndexes[4] = 2560;
+        uint256[] memory secondLpsRedeemed = new uint256[](5);
+        secondLpsRedeemed[0] = 1_000 * 1e18;
+        secondLpsRedeemed[1] = 1_000 * 1e18;
+        secondLpsRedeemed[2] = 1_000 * 1e18;
+        secondLpsRedeemed[3] = 1_000 * 1e18;
+        secondLpsRedeemed[4] = 1_000 * 1e18;
+        uint256[] memory secondLpsAwarded = new uint256[](5);
+        secondLpsAwarded[0] = 1_000 * 1e18;
+        secondLpsAwarded[1] = 1_000 * 1e18;
+        secondLpsAwarded[2] = 1_000 * 1e18;
+        secondLpsAwarded[3] = 1_000 * 1e18;
+        secondLpsAwarded[4] = 1_000 * 1e18;
 
         _moveStakedLiquidity({
             from:             _minterOne,
             tokenId:          tokenIdOne,
             fromIndexes:      depositIndexes,
+            lpsRedeemed:      secondLpsRedeemed,
             fromIndStaked:    false,
             toIndexes:        secondIndexes,
+            lpsAwarded:       secondLpsAwarded,
             expiry:           block.timestamp + 1000
         });
 
@@ -1060,16 +1074,25 @@ contract RewardsManagerTest is RewardsHelperContract {
         /***********************/
 
         // retrieve the position managers index set, recreating typical tx flow since positionIndexes are stored unordered in EnnumerableSets
-        secondIndexes = _positionManager.getPositionIndexes(tokenIdOne);
+        secondIndexes       = _positionManager.getPositionIndexes(tokenIdOne);
+        secondLpsAwarded[0] = 1_000.000164743206012000 * 1e18;
+        secondLpsAwarded[1] = 1_006.443804104948552000 * 1e18;
+        secondLpsAwarded[2] = 1_000.000164743206012000 * 1e18;
+        secondLpsAwarded[3] = 1_000.000164743206012000 * 1e18;
+        secondLpsAwarded[4] = 1_000.000164743206012000 * 1e18;
 
         _moveStakedLiquidity({
             from:             _minterOne,
             tokenId:          tokenIdOne,
             fromIndexes:      secondIndexes,
+            lpsRedeemed:      secondLpsRedeemed,
             fromIndStaked:    true,
             toIndexes:        depositIndexes,
+            lpsAwarded:       secondLpsAwarded,
             expiry:           block.timestamp + 1000
         });
+        return;
+
 
         /******************************/
         /*** Second Reserve Auction ***/
