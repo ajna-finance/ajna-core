@@ -289,7 +289,7 @@ library BorrowerActions {
         vars.repay = maxQuoteTokenAmountToRepay_ != 0;
         vars.pull  = collateralAmountToPull_     != 0;
 
-        // revert if no amount to pledge or borrow
+        // revert if no amount to pull or repay
         if (!vars.repay && !vars.pull) revert InvalidAmount();
 
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];

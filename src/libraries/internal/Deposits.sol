@@ -192,7 +192,7 @@ library Deposits {
                 // Unset the bit in index to continue traversing up the Fenwick tree
                 index_ -= bit;
             } else {
-                // Case 1 above.  superRangeIndex is the index of the node to consider that
+                // Case 2 above.  superRangeIndex is the index of the node to consider that
                 //                contains the sub range that was already scaled in prior iteration
                 uint256 superRangeIndex = index_ + bit;
 
