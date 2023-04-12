@@ -296,3 +296,99 @@ import { Maths }   from '../internal/Maths.sol';
             _price = Maths.rayToWad(1_000_000_000 * Maths.rmul(hoursComponent, minutesComponent));
         }
     }
+
+    /*************************/
+    /*** Auction Utilities ***/
+    /*************************/
+
+    /**
+     *  @notice Calculates auction price.
+     *  @param  kickMomp_     MOMP recorded at the time of kick.
+     *  @param  neutralPrice_ Neutral Price of the auction.
+     *  @param  kickTime_     Time when auction was kicked.
+     *  @return price_        Calculated auction price.
+     */
+    function _auctionPrice(
+        uint256 kickMomp_,
+        uint256 neutralPrice_,
+        uint256 kickTime_
+    ) view returns (uint256 price_) {
+        uint256 elapsedHours = Maths.wdiv((block.timestamp - kickTime_) * 1e18, 1 hours * 1e18);
+
+        elapsedHours -= Maths.min(elapsedHours, 1e18);  // price locked during cure period
+
+        int256 timeAdjustment  = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours)); 
+        uint256 referencePrice = Maths.max(kickMomp_, neutralPrice_); 
+
+        price_ = 32 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
+    }
+
+    /**
+     *  @notice Calculates bond penalty factor.
+     *  @dev    Called in kick and take.
+     *  @param debt_         Borrower debt.
+     *  @param collateral_   Borrower collateral.
+     *  @param neutralPrice_ NP of auction.
+     *  @param bondFactor_   Factor used to determine bondSize.
+     *  @param auctionPrice_ Auction price at the time of call.
+     *  @return bpf_         Factor used in determining bond Reward (positive) or penalty (negative).
+     */
+    function _bpf(
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 neutralPrice_,
+        uint256 bondFactor_,
+        uint256 auctionPrice_
+    ) pure returns (int256) {
+        int256 thresholdPrice = int256(Maths.wdiv(debt_, collateral_));
+
+        int256 sign;
+        if (thresholdPrice < int256(neutralPrice_)) {
+            // BPF = BondFactor * min(1, max(-1, (neutralPrice - price) / (neutralPrice - thresholdPrice)))
+            sign = Maths.minInt(
+                1e18,
+                Maths.maxInt(
+                    -1 * 1e18,
+                    PRBMathSD59x18.div(
+                        int256(neutralPrice_) - int256(auctionPrice_),
+                        int256(neutralPrice_) - thresholdPrice
+                    )
+                )
+            );
+        } else {
+            int256 val = int256(neutralPrice_) - int256(auctionPrice_);
+            if (val < 0 )      sign = -1e18;
+            else if (val != 0) sign = 1e18;
+        }
+
+        return PRBMathSD59x18.mul(int256(bondFactor_), sign);
+    }
+
+    /**
+     *  @notice Calculates bond parameters of an auction.
+     *  @param  borrowerDebt_ Borrower's debt before entering in liquidation.
+     *  @param  collateral_   Borrower's collateral before entering in liquidation.
+     *  @param  momp_         Current pool momp.
+     */
+    function _bondParams(
+        uint256 borrowerDebt_,
+        uint256 collateral_,
+        uint256 momp_
+    ) pure returns (uint256 bondFactor_, uint256 bondSize_) {
+        uint256 thresholdPrice = borrowerDebt_  * Maths.WAD / collateral_;
+
+        // bondFactor = min(30%, max(1%, (MOMP - thresholdPrice) / MOMP))
+        if (thresholdPrice >= momp_) {
+            bondFactor_ = 0.01 * 1e18;
+        } else {
+            bondFactor_ = Maths.min(
+                0.3 * 1e18,
+                Maths.max(
+                    0.01 * 1e18,
+                    1e18 - Maths.wdiv(thresholdPrice, momp_)
+                )
+            );
+        }
+
+        bondSize_ = Maths.wmul(bondFactor_,  borrowerDebt_);
+    }

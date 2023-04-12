@@ -896,7 +896,6 @@ library LenderActions {
         }
     }
 
-
     /**
      *  @notice Removes the amount of quote tokens calculated for the given amount of LPs.
      *  @dev    write state:

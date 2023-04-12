@@ -351,7 +351,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
 
         // confirm LPs were awarded to the kicker
         (address kicker, , , uint256 kickTime, uint256 kickMomp, uint256 neutralPrice, , , , ) = _pool.auctionInfo(_borrower);
-        uint256 auctionPrice = Auctions._auctionPrice(kickMomp, neutralPrice, kickTime);
+        uint256 auctionPrice = _auctionPrice(kickMomp, neutralPrice, kickTime);
         if (auctionPrice < neutralPrice) {
             uint256 kickerLPs = _kickerLPs(bucketId);
             assertGt(kickerLPs, lastKickerLPs);
@@ -422,11 +422,11 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         uint256 auctionCollateral_
     ){
         (, , , uint256 kickTime, uint256 kickMomp, uint256 neutralPrice, , , , ) = _pool.auctionInfo(_borrower);
-        uint256 lastAuctionPrice = Auctions._auctionPrice(kickMomp, neutralPrice, kickTime);
+        uint256 lastAuctionPrice = _auctionPrice(kickMomp, neutralPrice, kickTime);
         (uint256 lastAuctionDebt, uint256 lastAuctionCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         if (secondsToSkip != 0) {
             skip(secondsToSkip);
-            auctionPrice_ = Auctions._auctionPrice(kickMomp, neutralPrice, kickTime);
+            auctionPrice_ = _auctionPrice(kickMomp, neutralPrice, kickTime);
             (uint256 auctionDebt, uint256 auctionCollateral, ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
             // ensure auction price decreases and auction debt increases as time passes
             assertLt(auctionPrice_,     lastAuctionPrice);
@@ -439,11 +439,6 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
             auctionDebt_       = lastAuctionDebt;
             auctionCollateral_ = lastAuctionCollateral;
         }
-    }
-
-    function _auctionPrice() internal view returns (uint256) {
-        (, , , uint256 kickTime, uint256 kickMomp, uint256 neutralPrice, , , , ) = _pool.auctionInfo(_borrower);
-        return Auctions._auctionPrice(kickMomp, neutralPrice, kickTime);
     }
 
     function _borrowerCollateralization(address borrower) internal view returns (uint256) {

@@ -38,9 +38,10 @@ import { Maths }    from './libraries/internal/Maths.sol';
 import { Deposits } from './libraries/internal/Deposits.sol';
 import { Loans }    from './libraries/internal/Loans.sol';
 
-import { Auctions }        from './libraries/external/Auctions.sol';
 import { LenderActions }   from './libraries/external/LenderActions.sol';
 import { BorrowerActions } from './libraries/external/BorrowerActions.sol';
+import { SettlerActions }  from './libraries/external/SettlerActions.sol';
+import { TakerActions }    from './libraries/external/TakerActions.sol';
 
 /**
  *  @title  ERC721 Pool contract
@@ -54,7 +55,7 @@ import { BorrowerActions } from './libraries/external/BorrowerActions.sol';
  *          - Flash borrowers: initiate flash loans on ERC20 quote tokens
  *  @dev    Contract is FlashloanablePool with flash loan logic.
  *  @dev    Contract is base Pool with logic to handle ERC721 collateral.
- *  @dev    Calls logic from external PoolCommons, LenderActions, BorrowerActions and Auctions libraries.
+ *  @dev    Calls logic from external PoolCommons, LenderActions, BorrowerActions and auction actions libraries.
  */
 contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
@@ -386,7 +387,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             bucketDepth: maxDepth_
         });
 
-        SettleResult memory result = Auctions.settlePoolDebt(
+        SettleResult memory result = SettlerActions.settlePoolDebt(
             auctions,
             buckets,
             deposits,
@@ -433,7 +434,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
-        TakeResult memory result = Auctions.take(
+        TakeResult memory result = TakerActions.take(
             auctions,
             buckets,
             deposits,
@@ -511,7 +512,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
         PoolState memory poolState = _accruePoolInterest();
 
-        BucketTakeResult memory result = Auctions.bucketTake(
+        BucketTakeResult memory result = TakerActions.bucketTake(
             auctions,
             buckets,
             deposits,

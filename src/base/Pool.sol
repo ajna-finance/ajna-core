@@ -56,9 +56,10 @@ import { Deposits } from '../libraries/internal/Deposits.sol';
 import { Loans }    from '../libraries/internal/Loans.sol';
 import { Maths }    from '../libraries/internal/Maths.sol';
 
-import { Auctions }        from '../libraries/external/Auctions.sol';
 import { BorrowerActions } from '../libraries/external/BorrowerActions.sol';
 import { LenderActions }   from '../libraries/external/LenderActions.sol';
+import { KickerActions }   from '../libraries/external/KickerActions.sol';
+import { TakerActions }    from '../libraries/external/TakerActions.sol';
 import { PoolCommons }     from '../libraries/external/PoolCommons.sol';
 
 /**
@@ -272,7 +273,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
 
         // kick auction
-        KickResult memory result = Auctions.kick(
+        KickResult memory result = KickerActions.kick(
             auctions,
             deposits,
             loans,
@@ -313,7 +314,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
 
         // kick auctions
-        KickResult memory result = Auctions.kickWithDeposit(
+        KickResult memory result = KickerActions.kickWithDeposit(
             auctions,
             deposits,
             buckets,
@@ -388,7 +389,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      */
     function kickReserveAuction() external override nonReentrant {
         // start a new claimable reserve auction, passing in relevant parameters such as the current pool size, debt, balance, and inflator value
-        uint256 kickerAward = Auctions.kickReserveAuction(
+        uint256 kickerAward = KickerActions.kickReserveAuction(
             auctions,
             reserveAuction,
             KickReserveAuctionParams({
@@ -413,7 +414,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 maxAmount_
     ) external override nonReentrant returns (uint256 amount_) {
         uint256 ajnaRequired;
-        (amount_, ajnaRequired) = Auctions.takeReserves(
+        (amount_, ajnaRequired) = TakerActions.takeReserves(
             reserveAuction,
             maxAmount_
         );

@@ -5,6 +5,7 @@ pragma solidity 0.8.14;
 import { IPool, IERC20Token } from './interfaces/pool/IPool.sol';
 
 import {
+    _auctionPrice,
     _claimableReserves,
     _borrowFeeRate,
     _depositFeeRate,
@@ -22,7 +23,6 @@ import {
 import { Buckets } from './libraries/internal/Buckets.sol';
 import { Maths }   from './libraries/internal/Maths.sol';
 
-import { Auctions }    from './libraries/external/Auctions.sol';
 import { PoolCommons } from './libraries/external/PoolCommons.sol';
 
 /**
@@ -64,7 +64,7 @@ contract PoolInfoUtils {
             uint256 lup_           = _priceAt(pool.depositIndex(poolDebt));
             isCollateralized_      = _isCollateralized(debtToCover_, collateral_, lup_, pool.poolType());
 
-            price_ = Auctions._auctionPrice(kickMomp, neutralPrice_, kickTime_);
+            price_ = _auctionPrice(kickMomp, neutralPrice_, kickTime_);
         }
     }
 

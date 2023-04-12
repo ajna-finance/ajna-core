@@ -50,7 +50,8 @@ import { Maths }    from './libraries/internal/Maths.sol';
 
 import { BorrowerActions } from './libraries/external/BorrowerActions.sol';
 import { LenderActions }   from './libraries/external/LenderActions.sol';
-import { Auctions }        from './libraries/external/Auctions.sol';
+import { SettlerActions }  from './libraries/external/SettlerActions.sol';
+import { TakerActions }    from './libraries/external/TakerActions.sol';
 
 /**
  *  @title  ERC20 Pool contract
@@ -64,7 +65,7 @@ import { Auctions }        from './libraries/external/Auctions.sol';
  *          - Flash borrowers: initiate flash loans on quote tokens and collateral
  *  @dev    Contract is FlashloanablePool with flash loan logic.
  *  @dev    Contract is base Pool with logic to handle ERC20 collateral.
- *  @dev    Calls logic from external PoolCommons, LenderActions, BorrowerActions and Auctions libraries.
+ *  @dev    Calls logic from external PoolCommons, LenderActions, BorrowerActions and auction actions libraries.
  */
 contract ERC20Pool is FlashloanablePool, IERC20Pool {
     using SafeERC20 for IERC20;
@@ -341,7 +342,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
     ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
-        SettleResult memory result = Auctions.settlePoolDebt(
+        SettleResult memory result = SettlerActions.settlePoolDebt(
             auctions,
             buckets,
             deposits,
@@ -395,7 +396,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         // round requested collateral to an amount which can actually be transferred
         collateral_ = _roundToScale(collateral_, collateralDust);
 
-        TakeResult memory result = Auctions.take(
+        TakeResult memory result = TakerActions.take(
             auctions,
             buckets,
             deposits,
@@ -459,7 +460,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
         PoolState memory poolState = _accruePoolInterest();
 
-        BucketTakeResult memory result = Auctions.bucketTake(
+        BucketTakeResult memory result = TakerActions.bucketTake(
             auctions,
             buckets,
             deposits,

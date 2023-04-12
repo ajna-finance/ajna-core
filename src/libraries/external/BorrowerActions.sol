@@ -30,7 +30,7 @@ import { Deposits } from '../internal/Deposits.sol';
 import { Loans }    from '../internal/Loans.sol';
 import { Maths }    from '../internal/Maths.sol';
 
-import { Auctions } from './Auctions.sol';
+import { SettlerActions } from './SettlerActions.sol';
 
 /**
     @title  BorrowerActions library
@@ -91,7 +91,7 @@ library BorrowerActions {
     /**
      *  @notice See `IERC20PoolBorrowerActions` and `IERC721PoolBorrowerActions` for descriptions
      *  @dev    write state:
-     *              - Auctions._settleAuction:
+     *              - SettlerActions._settleAuction:
      *                  - _removeAuction:
      *                      - decrement kicker locked accumulator, increment kicker claimable accumumlator
      *                      - decrement auctions count accumulator
@@ -109,7 +109,7 @@ library BorrowerActions {
      *              - limit price reached LimitIndexExceeded()
      *              - borrower cannot draw more debt BorrowerUnderCollateralized()
      *  @dev    emit events:
-     *              - Auctions._settleAuction:
+     *              - SettlerActions._settleAuction:
      *                  - AuctionNFTSettle or AuctionSettle
      */
     function drawDebt(
@@ -168,7 +168,7 @@ library BorrowerActions {
                 (
                     result_.remainingCollateral,
                     vars.compensatedCollateral
-                ) = Auctions._settleAuction(
+                ) = SettlerActions._settleAuction(
                     auctions_,
                     buckets_,
                     deposits_,
@@ -250,7 +250,7 @@ library BorrowerActions {
     /**
      *  @notice See `IERC20PoolBorrowerActions` and `IERC721PoolBorrowerActions` for descriptions
      *  @dev    write state:
-     *              - Auctions._settleAuction:
+     *              - SettlerActions._settleAuction:
      *                  - _removeAuction:
      *                      - decrement kicker locked accumulator, increment kicker claimable accumumlator
      *                      - decrement auctions count accumulator
@@ -269,7 +269,7 @@ library BorrowerActions {
      *              - not enough collateral to pull InsufficientCollateral()
      *              - limit price reached LimitIndexExceeded()
      *  @dev    emit events:
-     *              - Auctions._settleAuction:
+     *              - SettlerActions._settleAuction:
      *                  - AuctionNFTSettle or AuctionSettle
      */
     function repayDebt(
@@ -347,7 +347,7 @@ library BorrowerActions {
                     (
                         result_.remainingCollateral,
                         vars.compensatedCollateral
-                    ) = Auctions._settleAuction(
+                    ) = SettlerActions._settleAuction(
                         auctions_,
                         buckets_,
                         deposits_,

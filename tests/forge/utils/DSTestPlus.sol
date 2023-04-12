@@ -12,7 +12,7 @@ import 'src/interfaces/pool/commons/IPoolEvents.sol';
 import 'src/interfaces/pool/IERC3156FlashBorrower.sol';
 import 'src/PoolInfoUtils.sol';
 
-import 'src/libraries/external/Auctions.sol';
+import { _auctionPrice, _bpf, MAX_PRICE } from 'src/libraries/helpers/PoolHelper.sol';
 
 abstract contract DSTestPlus is Test, IPoolEvents {
 
@@ -466,7 +466,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(vars.auctionKickTime,          state_.kickTime);
         assertEq(vars.auctionKickMomp,          state_.kickMomp);
         assertEq(vars.auctionTotalBondEscrowed, state_.totalBondEscrowed);
-        assertEq(Auctions._auctionPrice(
+        assertEq(_auctionPrice(
             vars.auctionKickMomp,
             vars.auctionNeutralPrice,
             vars.auctionKickTime),              state_.auctionPrice);
