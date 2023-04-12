@@ -68,6 +68,13 @@ struct TakeResult {
     uint256 collateralPostAction;  // [WAD] The amount of borrower collateral after take
 }
 
+struct KickReserveAuctionParams {
+    uint256 poolSize;    // [WAD] total deposits in pool (with accrued debt)
+    uint256 t0PoolDebt;  // [WAD] current t0 pool debt
+    uint256 poolBalance; // [WAD] pool quote token balance
+    uint256 inflator;    // [WAD] pool current inflator
+}
+
 /******************************************/
 /*** Liquidity Management Param Structs ***/
 /******************************************/

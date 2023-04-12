@@ -6,7 +6,9 @@ import {
     IERC721Token,
     IPoolErrors,
     IPoolLenderActions,
-    IPoolLiquidationActions
+    IPoolKickerActions,
+    IPoolTakerActions,
+    IPoolSettlerActions
 }                           from './interfaces/pool/IPool.sol';
 import {
     BucketTakeResult,
@@ -369,7 +371,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     /*******************************/
 
     /**
-     *  @inheritdoc IPoolLiquidationActions
+     *  @inheritdoc IPoolSettlerActions
      *  @dev write state:
      *          - decrement poolBalances.t0Debt accumulator
      *          - decrement poolBalances.t0DebtInAuction accumulator
@@ -420,7 +422,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     }
 
     /**
-     *  @inheritdoc IPoolLiquidationActions
+     *  @inheritdoc IPoolTakerActions
      *  @dev write state:
      *          - decrement poolBalances.t0Debt accumulator
      *          - decrement poolBalances.t0DebtInAuction accumulator
@@ -498,7 +500,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     }
 
     /**
-     *  @inheritdoc IPoolLiquidationActions
+     *  @inheritdoc IPoolTakerActions
      *  @dev write state:
      *          - decrement poolBalances.t0Debt accumulator
      *          - decrement poolBalances.t0DebtInAuction accumulator

@@ -15,7 +15,9 @@ import { IERC20Taker }         from './interfaces/pool/erc20/IERC20Taker.sol';
 
 import {
     IPoolLenderActions,
-    IPoolLiquidationActions
+    IPoolKickerActions,
+    IPoolTakerActions,
+    IPoolSettlerActions
 }                            from './interfaces/pool/IPool.sol';
 import {
     IERC3156FlashBorrower,
@@ -330,7 +332,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
     /*******************************/
 
     /**
-     *  @inheritdoc IPoolLiquidationActions
+     *  @inheritdoc IPoolSettlerActions
      *  @dev write state:
      *          - decrement poolBalances.t0Debt accumulator
      *          - decrement poolBalances.t0DebtInAuction accumulator
@@ -377,7 +379,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
     }
 
     /**
-     *  @inheritdoc IPoolLiquidationActions
+     *  @inheritdoc IPoolTakerActions
      *  @dev write state:
      *          - decrement poolBalances.t0Debt accumulator
      *          - decrement poolBalances.t0DebtInAuction accumulator
@@ -446,7 +448,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
     }
 
     /**
-     *  @inheritdoc IPoolLiquidationActions
+     *  @inheritdoc IPoolTakerActions
      *  @dev write state:
      *          - decrement poolBalances.t0Debt accumulator
      *          - decrement poolBalances.t0DebtInAuction accumulator

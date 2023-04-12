@@ -12,10 +12,12 @@ import {
     IPool,
     IPoolImmutables,
     IPoolBorrowerActions,
+    IPoolLPOwnerActions,
     IPoolLenderActions,
+    IPoolKickerActions,
+    IPoolTakerActions,
+    IPoolSettlerActions,
     IPoolState,
-    IPoolLiquidationActions,
-    IPoolReserveAuctionActions,
     IPoolDerivedState,
     IERC20Token
 }                                    from '../interfaces/pool/IPool.sol';
@@ -37,9 +39,9 @@ import {
     KickResult,
     RemoveQuoteParams,
     MoveQuoteParams,
-    AddQuoteParams
+    AddQuoteParams,
+    KickReserveAuctionParams
 }                                   from '../interfaces/pool/commons/IPoolInternals.sol';
-import { KickReserveAuctionParams } from '../interfaces/pool/commons/IPoolReserveAuctionActions.sol';
 
 import {
     _priceAt,
@@ -263,7 +265,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*****************************/
 
     /**
-     *  @inheritdoc IPoolLiquidationActions
+     *  @inheritdoc IPoolKickerActions
      *  @dev write state:
      *       - increment poolBalances.t0DebtInAuction and poolBalances.t0Debt accumulators
      */
@@ -304,7 +306,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /**
-     *  @inheritdoc IPoolLiquidationActions
+     *  @inheritdoc IPoolKickerActions
      *  @dev write state:
      *       - increment poolBalances.t0DebtInAuction and poolBalances.t0Debt accumulators
      */
@@ -347,7 +349,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /**
-     *  @inheritdoc IPoolLiquidationActions
+     *  @inheritdoc IPoolKickerActions
      *  @dev write state:
      *       - decrease kicker's claimable accumulator
      *       - decrease auctions totalBondEscrowed accumulator
@@ -379,7 +381,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*********************************/
 
     /**
-     *  @inheritdoc IPoolReserveAuctionActions
+     *  @inheritdoc IPoolKickerActions
      *  @dev  write state:
      *          - increment latestBurnEpoch counter
      *          - update reserveAuction.latestBurnEventEpoch and burn event timestamp state
@@ -406,7 +408,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /**
-     *  @inheritdoc IPoolReserveAuctionActions
+     *  @inheritdoc IPoolTakerActions
      *  @dev  write state:
      *          - increment reserveAuction.totalAjnaBurned accumulator
      *          - update burn event totalInterest and totalBurned accumulators
@@ -433,7 +435,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*** Transfer LPs Functions ***/
     /******************************/
 
-    /// @inheritdoc IPoolLenderActions
+    /// @inheritdoc IPoolLPOwnerActions
     function increaseLPAllowance(
         address spender_,
         uint256[] calldata indexes_,
@@ -447,7 +449,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
-    /// @inheritdoc IPoolLenderActions
+    /// @inheritdoc IPoolLPOwnerActions
     function decreaseLPAllowance(
         address spender_,
         uint256[] calldata indexes_,
@@ -461,7 +463,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
-    /// @inheritdoc IPoolLenderActions
+    /// @inheritdoc IPoolLPOwnerActions
     function revokeLPAllowance(
         address spender_,
         uint256[] calldata indexes_
@@ -473,7 +475,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
-    /// @inheritdoc IPoolLenderActions
+    /// @inheritdoc IPoolLPOwnerActions
     function approveLPTransferors(
         address[] calldata transferors_
     ) external override {
@@ -484,7 +486,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /**
-     *  @inheritdoc IPoolLenderActions
+     *  @inheritdoc IPoolLPOwnerActions
      *  @dev write state:
      *          - approvedTransferors mapping
      */
@@ -497,7 +499,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
     }
 
-    /// @inheritdoc IPoolLenderActions
+    /// @inheritdoc IPoolLPOwnerActions
     function transferLP(
         address owner_,
         address newOwner_,

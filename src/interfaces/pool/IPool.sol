@@ -3,9 +3,12 @@
 pragma solidity 0.8.14;
 
 import { IPoolBorrowerActions }       from './commons/IPoolBorrowerActions.sol';
+import { IPoolLPOwnerActions }        from './commons/IPoolLPOwnerActions.sol';
 import { IPoolLenderActions }         from './commons/IPoolLenderActions.sol';
-import { IPoolLiquidationActions }    from './commons/IPoolLiquidationActions.sol';
-import { IPoolReserveAuctionActions } from './commons/IPoolReserveAuctionActions.sol';
+import { IPoolKickerActions }         from './commons/IPoolKickerActions.sol';
+import { IPoolTakerActions }          from './commons/IPoolTakerActions.sol';
+import { IPoolSettlerActions }        from './commons/IPoolSettlerActions.sol';
+
 import { IPoolImmutables }            from './commons/IPoolImmutables.sol';
 import { IPoolState }                 from './commons/IPoolState.sol';
 import { IPoolDerivedState }          from './commons/IPoolDerivedState.sol';
@@ -18,9 +21,11 @@ import { IERC3156FlashLender }        from './IERC3156FlashLender.sol';
  */
 interface IPool is
     IPoolBorrowerActions,
+    IPoolLPOwnerActions,
     IPoolLenderActions,
-    IPoolLiquidationActions,
-    IPoolReserveAuctionActions,
+    IPoolKickerActions,
+    IPoolTakerActions,
+    IPoolSettlerActions,
     IPoolImmutables,
     IPoolState,
     IPoolDerivedState,

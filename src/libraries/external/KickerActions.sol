@@ -15,9 +15,11 @@ import {
     LoansState,
     PoolState,
     ReserveAuctionState
-}                                   from '../../interfaces/pool/commons/IPoolState.sol';
-import { KickResult }               from '../../interfaces/pool/commons/IPoolInternals.sol';
-import { KickReserveAuctionParams } from '../../interfaces/pool/commons/IPoolReserveAuctionActions.sol';
+}                             from '../../interfaces/pool/commons/IPoolState.sol';
+import {
+    KickResult,
+    KickReserveAuctionParams
+}                             from '../../interfaces/pool/commons/IPoolInternals.sol';
 
 import {
     _auctionPrice,
