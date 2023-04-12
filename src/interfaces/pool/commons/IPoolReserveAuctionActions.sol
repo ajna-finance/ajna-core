@@ -9,7 +9,7 @@ interface IPoolReserveAuctionActions {
     /**
      *  @notice Called by actor to start a Claimable Reserve Auction (CRA).
      */
-    function startClaimableReserveAuction() external;
+    function kickReserveAuction() external;
 
     /**
      *  @notice Purchases claimable reserves during a CRA using Ajna token.
@@ -25,7 +25,7 @@ interface IPoolReserveAuctionActions {
 /*** Param Structs ***/
 /*********************/
 
-struct StartReserveAuctionParams {
+struct KickReserveAuctionParams {
     uint256 poolSize;    // [WAD] total deposits in pool (with accrued debt)
     uint256 t0PoolDebt;  // [WAD] current t0 pool debt
     uint256 poolBalance; // [WAD] pool quote token balance

@@ -14,11 +14,11 @@ abstract contract ReservePoolHandler is UnboundedReservePoolHandler, Liquidation
     /*** Reserves Test Functions ***/
     /*******************************/
 
-    function startClaimableReserveAuction(
+    function kickReserveAuction(
         uint256 actorIndex_
     ) external useRandomActor(actorIndex_) useTimestamps {
         // Action phase
-        _startClaimableReserveAuction();
+        _kickReserveAuction();
     }
 
     function takeReserves(
@@ -40,7 +40,7 @@ abstract contract ReservePoolHandler is UnboundedReservePoolHandler, Liquidation
         uint256 amountToTake_
     ) internal returns (uint256 boundedAmount_) {
         (, , uint256 claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
-        if (claimableReservesRemaining == 0) _startClaimableReserveAuction();
+        if (claimableReservesRemaining == 0) _kickReserveAuction();
 
         // skip enough time for auction price to decrease
         skip(24 hours);

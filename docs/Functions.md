@@ -232,12 +232,12 @@
 	emit events:
 	- BondWithdrawn
 
-### startClaimableReserveAuction
+### kickReserveAuction
 	external libraries call:
-	- Auctions.startClaimableReserveAuction()
+	- Auctions.kickReserveAuction()
 
 	write state:
-	- Auctions.startClaimableReserveAuction():
+	- Auctions.kickReserveAuction():
 		- update reserveAuction.unclaimed accumulator
 		- update reserveAuction.kicked timestamp state
 	- increment latestBurnEpoch counter
@@ -245,12 +245,12 @@
 
 	reverts on:
 	- 2 weeks not passed ReserveAuctionTooSoon()
-	- Auctions.startClaimableReserveAuction():
+	- Auctions.kickReserveAuction():
 		- no reserves to claim NoReserves()
 
 	emit events:
-	- Auctions.startClaimableReserveAuction():
-		- ReserveAuction
+	- Auctions.kickReserveAuction():
+		- KickReserveAuction
 
 
 ### takeReserves

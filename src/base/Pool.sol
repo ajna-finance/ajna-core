@@ -32,14 +32,14 @@ import {
     Bucket,
     BurnEvent,
     Liquidation
-}                                    from '../interfaces/pool/commons/IPoolState.sol';
+}                                   from '../interfaces/pool/commons/IPoolState.sol';
 import {
     KickResult,
     RemoveQuoteParams,
     MoveQuoteParams,
     AddQuoteParams
-}                                    from '../interfaces/pool/commons/IPoolInternals.sol';
-import { StartReserveAuctionParams } from '../interfaces/pool/commons/IPoolReserveAuctionActions.sol';
+}                                   from '../interfaces/pool/commons/IPoolInternals.sol';
+import { KickReserveAuctionParams } from '../interfaces/pool/commons/IPoolReserveAuctionActions.sol';
 
 import {
     _priceAt,
@@ -384,14 +384,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @dev reverts on:
      *          - 2 weeks not passed ReserveAuctionTooSoon()
      *  @dev emit events:
-     *          - ReserveAuction
+     *          - KickReserveAuction
      */
-    function startClaimableReserveAuction() external override nonReentrant {
+    function kickReserveAuction() external override nonReentrant {
         // start a new claimable reserve auction, passing in relevant parameters such as the current pool size, debt, balance, and inflator value
-        uint256 kickerAward = Auctions.startClaimableReserveAuction(
+        uint256 kickerAward = Auctions.kickReserveAuction(
             auctions,
             reserveAuction,
-            StartReserveAuctionParams({
+            KickReserveAuctionParams({
                 poolSize:    Deposits.treeSum(deposits),
                 t0PoolDebt:  poolBalances.t0Debt,
                 poolBalance: _getNormalizedPoolQuoteTokenBalance(),

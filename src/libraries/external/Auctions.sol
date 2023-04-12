@@ -18,15 +18,15 @@ import {
     LoansState,
     PoolState,
     ReserveAuctionState
-}                                    from '../../interfaces/pool/commons/IPoolState.sol';
+}                                   from '../../interfaces/pool/commons/IPoolState.sol';
 import {
     BucketTakeResult,
     KickResult,
     SettleParams,
     SettleResult,
     TakeResult
-}                                    from '../../interfaces/pool/commons/IPoolInternals.sol';
-import { StartReserveAuctionParams } from '../../interfaces/pool/commons/IPoolReserveAuctionActions.sol';
+}                                   from '../../interfaces/pool/commons/IPoolInternals.sol';
+import { KickReserveAuctionParams } from '../../interfaces/pool/commons/IPoolReserveAuctionActions.sol';
 
 import {
     _claimableReserves,
@@ -150,6 +150,7 @@ library Auctions {
     event Kick(address indexed borrower, uint256 debt, uint256 collateral, uint256 bond);
     event Take(address indexed borrower, uint256 amount, uint256 collateral, uint256 bondChange, bool isReward);
     event RemoveQuoteToken(address indexed lender, uint256 indexed price, uint256 amount, uint256 lpRedeemed, uint256 lup);
+    event KickReserveAuction(uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 currentBurnEpoch);
     event ReserveAuction(uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 currentBurnEpoch);
     event Settle(address indexed borrower, uint256 settledDebt);
 
@@ -643,12 +644,12 @@ library Auctions {
      *  @dev    reverts on:
      *          - no reserves to claim NoReserves()
      *  @dev    emit events:
-     *              - ReserveAuction
+     *              - KickReserveAuction
      */
-    function startClaimableReserveAuction(
+    function kickReserveAuction(
         AuctionsState storage auctions_,
         ReserveAuctionState storage reserveAuction_,
-        StartReserveAuctionParams calldata params_
+        KickReserveAuctionParams calldata params_
     ) external returns (uint256 kickerAward_) {
         // retrieve timestamp of latest burn event and last burn timestamp
         uint256 latestBurnEpoch   = reserveAuction_.latestBurnEventEpoch;
@@ -684,7 +685,7 @@ library Auctions {
         reserveAuction_.latestBurnEventEpoch = latestBurnEpoch;
         reserveAuction_.burnEvents[latestBurnEpoch].timestamp = block.timestamp;
 
-        emit ReserveAuction(
+        emit KickReserveAuction(
             curUnclaimedAuctionReserve,
             _reserveAuctionPrice(block.timestamp),
             latestBurnEpoch

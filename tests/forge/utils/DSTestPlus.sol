@@ -361,7 +361,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(lpRedeemed,    lpRedeem);
     }
 
-    function _startClaimableReserveAuction(
+    function _kickReserveAuction(
         address from,
         uint256 remainingReserves,
         uint256 price,
@@ -369,8 +369,8 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectEmit(true, true, true, true);
-        emit ReserveAuction(remainingReserves, price, epoch);
-        _pool.startClaimableReserveAuction();
+        emit KickReserveAuction(remainingReserves, price, epoch);
+        _pool.kickReserveAuction();
     }
 
     function _take(
@@ -764,7 +764,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
 
     function _assertReserveAuctionTooSoon() internal {
         vm.expectRevert(IPoolErrors.ReserveAuctionTooSoon.selector);
-        _pool.startClaimableReserveAuction();
+        _pool.kickReserveAuction();
     }
 
     /**********************/
@@ -1330,7 +1330,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
 
     function _assertTakeReservesNoReservesRevert() internal {
         vm.expectRevert(IPoolErrors.NoReserves.selector);
-        _pool.startClaimableReserveAuction();
+        _pool.kickReserveAuction();
     }
 
     function _lup() internal view returns (uint256 lup_) {

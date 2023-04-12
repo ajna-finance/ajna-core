@@ -593,7 +593,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         _pool.updateInterest();
 
         // start reserve auction
-        _startClaimableReserveAuction({
+        _kickReserveAuction({
             pool: address(_pool),
             bidder: _bidder
         });
@@ -702,7 +702,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         /*** First Reserve Auction ***/
         /*****************************/
         // start reserve auction
-        _startClaimableReserveAuction({
+        _kickReserveAuction({
             pool: address(_pool),
             bidder: _bidder
         });

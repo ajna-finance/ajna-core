@@ -86,7 +86,7 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
         });
 
         // kick off a new auction
-        _startClaimableReserveAuction({
+        _kickReserveAuction({
             from:              _bidder,
             remainingReserves: 1.411317962805061080 * 1e18,
             price:             1000000000 * 1e18,

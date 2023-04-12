@@ -1005,7 +1005,7 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
         changePrank(actor1);
 
         ERC20Pool(address(_pool)).updateInterest();
-        _startClaimableReserveAuction({
+        _kickReserveAuction({
             from:              actor1,
             remainingReserves: 785_271_398.552730383160590325 * 1e18,
             price:             1_000_000_000 * 1e18,

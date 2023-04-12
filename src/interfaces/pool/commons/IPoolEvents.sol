@@ -211,7 +211,19 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when a Claimaible Reserve Auction is started or taken.
+     *  @notice Emitted when a Claimaible Reserve Auction is started.
+     *  @return claimableReservesRemaining Amount of claimable reserves which has not yet been taken.
+     *  @return auctionPrice               Current price at which 1 quote token may be purchased, denominated in Ajna.
+     *  @return currentBurnEpoch           Current burn epoch.
+     */
+    event KickReserveAuction(
+        uint256 claimableReservesRemaining,
+        uint256 auctionPrice,
+        uint256 currentBurnEpoch
+    );
+
+    /**
+     *  @notice Emitted when a Claimaible Reserve Auction is taken.
      *  @return claimableReservesRemaining Amount of claimable reserves which has not yet been taken.
      *  @return auctionPrice               Current price at which 1 quote token may be purchased, denominated in Ajna.
      *  @return currentBurnEpoch           Current burn epoch.

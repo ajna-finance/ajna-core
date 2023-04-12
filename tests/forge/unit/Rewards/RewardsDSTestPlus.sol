@@ -306,16 +306,16 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
         ERC20Pool(address(pool)).repayDebt(borrower, Maths.wdiv(borrowAmount, Maths.wad(2)), 0, borrower, MAX_FENWICK_INDEX);
 
         // start reserve auction
-        _startClaimableReserveAuction(address(pool), _bidder);
+        _kickReserveAuction(address(pool), _bidder);
     }
 
-    function _startClaimableReserveAuction(
+    function _kickReserveAuction(
         address pool,
         address bidder
     ) internal {
         changePrank(bidder);
         _ajnaToken.approve(address(pool), type(uint256).max);
-        ERC20Pool(address(pool)).startClaimableReserveAuction();
+        ERC20Pool(address(pool)).kickReserveAuction();
     }
 
     function _mintAndMemorializePositionNFT(
@@ -393,11 +393,11 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
         // start reserve auction
         changePrank(_bidder);
         _ajnaToken.approve(address(pool), type(uint256).max);
-        ERC20Pool(address(pool)).startClaimableReserveAuction();
+        ERC20Pool(address(pool)).kickReserveAuction();
 
         // Can't trigger reserve auction if less than two weeks have passed since last auction
         vm.expectRevert(IPoolErrors.ReserveAuctionTooSoon.selector);
-        ERC20Pool(address(pool)).startClaimableReserveAuction();
+        ERC20Pool(address(pool)).kickReserveAuction();
 
         // allow time to pass for the reserve price to decrease
         skip(24 hours);
@@ -443,11 +443,11 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
         // start reserve auction
         changePrank(_bidder);
         _ajnaToken.approve(address(pool), type(uint256).max);
-        ERC20Pool(address(pool)).startClaimableReserveAuction();
+        ERC20Pool(address(pool)).kickReserveAuction();
 
         // Can't trigger reserve auction if less than two weeks have passed since last auction
         vm.expectRevert(IPoolErrors.ReserveAuctionTooSoon.selector);
-        ERC20Pool(address(pool)).startClaimableReserveAuction();
+        ERC20Pool(address(pool)).kickReserveAuction();
 
         // allow time to pass for the reserve price to decrease
         skip(24 hours);
