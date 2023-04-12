@@ -286,7 +286,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         emit AddCollateralNFT(msg.sender, index_, tokenIdsToAdd_, bucketLPs_);
 
         // update pool interest rate state
-        _updateInterestState(poolState, _lup(poolState.debt));
+        _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
 
         // move required collateral from sender to pool
         _transferFromSenderToPool(bucketTokenIds, tokenIdsToAdd_);
@@ -323,7 +323,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         emit MergeOrRemoveCollateralNFT(msg.sender, collateralMerged_, bucketLPs_);
 
         // update pool interest rate state
-        _updateInterestState(poolState, _lup(poolState.debt));
+        _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
 
         if (collateralMerged_ == collateralAmount) {
             // Total collateral in buckets meets the requested removal amount, noOfNFTsToRemove_
@@ -358,7 +358,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         emit RemoveCollateral(msg.sender, index_, noOfNFTsToRemove_, lpAmount_);
 
         // update pool interest rate state
-        _updateInterestState(poolState, _lup(poolState.debt));
+        _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
 
         _transferFromPoolToAddress(msg.sender, bucketTokenIds, noOfNFTsToRemove_);
     }
@@ -415,7 +415,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         poolState.debt       -= Maths.wmul(result.t0DebtSettled, poolState.inflator);
         poolState.t0Debt     -= result.t0DebtSettled;
         poolState.collateral -= result.collateralSettled;
-        _updateInterestState(poolState, _lup(poolState.debt));
+        _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
     }
 
     /**

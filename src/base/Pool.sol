@@ -235,7 +235,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /// @inheritdoc IPoolLenderActions
     function updateInterest() external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
-        _updateInterestState(poolState, _lup(poolState.debt));
+        _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
     }
 
     /***********************************/
@@ -639,10 +639,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      */
     function _getNormalizedPoolQuoteTokenBalance() internal view returns (uint256) {
         return IERC20(_getArgAddress(QUOTE_ADDRESS)).balanceOf(address(this)) * _getArgUint256(QUOTE_SCALE);
-    }
-
-    function _lup(uint256 debt_) internal view returns (uint256) {
-        return _priceAt(Deposits.findIndexOfSum(deposits, debt_));
     }
 
     /*******************************/

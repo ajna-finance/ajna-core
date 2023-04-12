@@ -457,12 +457,12 @@ library Auctions {
 
         // amount to remove from deposit covers entire bond amount
         if (vars.amountToDebitFromDeposit > kickResult_.amountToCoverBond) {
-            vars.amountToDebitFromDeposit = kickResult_.amountToCoverBond;                      // cap amount to remove from deposit at amount to cover bond
+            vars.amountToDebitFromDeposit = kickResult_.amountToCoverBond;                                 // cap amount to remove from deposit at amount to cover bond
 
-            kickResult_.lup = _lup(deposits_, poolState_.debt + vars.amountToDebitFromDeposit); // recalculate the LUP with the amount to cover bond
-            kickResult_.amountToCoverBond = 0;                                                  // entire bond is covered from deposit, no additional amount to be send by lender
+            kickResult_.lup = Deposits.getLup(deposits_, poolState_.debt + vars.amountToDebitFromDeposit); // recalculate the LUP with the amount to cover bond
+            kickResult_.amountToCoverBond = 0;                                                             // entire bond is covered from deposit, no additional amount to be send by lender
         } else {
-            kickResult_.amountToCoverBond -= vars.amountToDebitFromDeposit;                     // lender should send additional amount to cover bond
+            kickResult_.amountToCoverBond -= vars.amountToDebitFromDeposit;                                // lender should send additional amount to cover bond
         }
 
         // revert if the bucket price used to kick and remove is below new LUP
@@ -842,7 +842,7 @@ library Auctions {
         kickResult_.collateralPreAction = borrower.collateral;
         kickResult_.t0KickedDebt        = kickResult_.debtPreAction ;
         // add amount to remove to pool debt in order to calculate proposed LUP
-        kickResult_.lup          = _lup(deposits_, poolState_.debt + additionalDebt_);
+        kickResult_.lup          = Deposits.getLup(deposits_, poolState_.debt + additionalDebt_);
 
         KickLocalVars memory vars;
         vars.borrowerDebt       = Maths.wmul(kickResult_.t0KickedDebt, poolState_.inflator);
@@ -1088,7 +1088,7 @@ library Auctions {
         );
 
         // calculate new lup with repaid debt from take
-        newLup_ = _lup(deposits_, poolState_.debt);
+        newLup_ = Deposits.getLup(deposits_, poolState_.debt);
 
         remainingCollateral_ = borrower_.collateral;
 
@@ -1564,17 +1564,6 @@ library Auctions {
         vars.factor       = uint256(1e18 - Maths.maxInt(0, vars.bpf));
         vars.kicker       = liquidation_.kicker;
         vars.isRewarded   = (vars.bpf  >= 0);
-    }
-
-    /**********************/
-    /*** View Functions ***/
-    /**********************/
-
-    function _lup(
-        DepositsState storage deposits_,
-        uint256 debt_
-    ) internal view returns (uint256) {
-        return _priceAt(Deposits.findIndexOfSum(deposits_, debt_));
     }
 
 }

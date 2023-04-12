@@ -149,7 +149,7 @@ library BorrowerActions {
             borrower.collateral  += collateralToPledge_;
 
             result_.remainingCollateral += collateralToPledge_;
-            result_.newLup              = _lup(deposits_, result_.poolDebt);
+            result_.newLup              = Deposits.getLup(deposits_, result_.poolDebt);
 
             // if loan is auctioned and becomes collateralized by newly pledged collateral then settle auction
             if (
@@ -213,7 +213,7 @@ library BorrowerActions {
             // add debt change to pool's debt
             result_.t0PoolDebt += vars.t0DebtChange;
             result_.poolDebt   = Maths.wmul(result_.t0PoolDebt, poolState_.inflator);
-            result_.newLup     = _lup(deposits_, result_.poolDebt);
+            result_.newLup     = Deposits.getLup(deposits_, result_.poolDebt);
 
             // revert if borrow drives LUP price under the specified price limit
             _revertIfPriceDroppedBelowLimit(result_.newLup, limitIndex_);
@@ -330,7 +330,7 @@ library BorrowerActions {
                 poolState_.quoteDustLimit
             );
 
-            result_.newLup = _lup(deposits_, result_.poolDebt);
+            result_.newLup = Deposits.getLup(deposits_, result_.poolDebt);
 
             // if loan is auctioned and becomes collateralized by repaying debt then settle auction
             if (vars.inAuction) {
@@ -376,7 +376,7 @@ library BorrowerActions {
             if (vars.inAuction) revert AuctionActive();
 
             // calculate LUP only if it wasn't calculated in repay action
-            if (!vars.repay) result_.newLup = _lup(deposits_, result_.poolDebt);
+            if (!vars.repay) result_.newLup = Deposits.getLup(deposits_, result_.poolDebt);
 
             _revertIfPriceDroppedBelowLimit(result_.newLup, limitIndex_);
 
@@ -441,7 +441,7 @@ library BorrowerActions {
 
         Borrower memory borrower = loans_.borrowers[msg.sender];
 
-        newLup_ = _lup(deposits_, poolState_.debt);
+        newLup_ = Deposits.getLup(deposits_, poolState_.debt);
 
         // revert if loan is not fully collateralized at current LUP
         if (
@@ -485,13 +485,6 @@ library BorrowerActions {
         address borrower_
     ) internal view returns (bool) {
         return auctions_.liquidations[borrower_].kickTime != 0;
-    }
-
-    function _lup(
-        DepositsState storage deposits_,
-        uint256 debt_
-    ) internal view returns (uint256) {
-        return _priceAt(Deposits.findIndexOfSum(deposits_, debt_));
     }
 
 }

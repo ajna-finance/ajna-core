@@ -286,7 +286,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         emit AddCollateral(msg.sender, index_, amountToAdd_, bucketLPs_);
 
         // update pool interest rate state
-        _updateInterestState(poolState, _lup(poolState.debt));
+        _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
 
         // move required collateral from sender to pool
         _transferCollateralFrom(msg.sender, amountToAdd_);
@@ -318,7 +318,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         emit RemoveCollateral(msg.sender, index_, collateralAmount_, lpAmount_);
 
         // update pool interest rate state
-        _updateInterestState(poolState, _lup(poolState.debt));
+        _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
 
         // move collateral from pool to lender
         _transferCollateral(msg.sender, collateralAmount_);
@@ -372,7 +372,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         poolState.debt       -= Maths.wmul(result.t0DebtSettled, poolState.inflator);
         poolState.t0Debt     -= result.t0DebtSettled;
         poolState.collateral -= result.collateralSettled;
-        _updateInterestState(poolState, _lup(poolState.debt));
+        _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
     }
 
     /**

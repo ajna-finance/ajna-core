@@ -271,7 +271,7 @@ library LenderActions {
             })
         );
 
-        lup_ = _lup(deposits_, poolState_.debt);
+        lup_ = Deposits.getLup(deposits_, poolState_.debt);
         // apply unutilized deposit fee if quote token is moved from above the LUP to below the LUP
         if (vars.fromBucketPrice >= lup_ && vars.toBucketPrice < lup_) {
             movedAmount_ = Maths.wmul(movedAmount_, Maths.WAD - _depositFeeRate(poolState_.rate));
@@ -389,7 +389,7 @@ library LenderActions {
             removeParams
         );
 
-        lup_ = _lup(deposits_, poolState_.debt);
+        lup_ = Deposits.getLup(deposits_, poolState_.debt);
 
         uint256 htp = Maths.wmul(params_.thresholdPrice, poolState_.inflator);
 
@@ -958,16 +958,5 @@ library LenderActions {
         unscaledRemaining_ = unscaledDepositAvailable - unscaledRemovedAmount;
 
         Deposits.unscaledRemove(deposits_, params_.index, unscaledRemovedAmount); // update FenwickTree
-    }
-
-    /**********************/
-    /*** View Functions ***/
-    /**********************/
-
-    function _lup(
-        DepositsState storage deposits_,
-        uint256 debt_
-    ) internal view returns (uint256) {
-        return _priceAt(Deposits.findIndexOfSum(deposits_, debt_));
     }
 }
