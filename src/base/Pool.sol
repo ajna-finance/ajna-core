@@ -58,6 +58,7 @@ import { Maths }    from '../libraries/internal/Maths.sol';
 
 import { BorrowerActions } from '../libraries/external/BorrowerActions.sol';
 import { LenderActions }   from '../libraries/external/LenderActions.sol';
+import { LPOwnerActions }  from '../libraries/external/LPOwnerActions.sol';
 import { KickerActions }   from '../libraries/external/KickerActions.sol';
 import { TakerActions }    from '../libraries/external/TakerActions.sol';
 import { PoolCommons }     from '../libraries/external/PoolCommons.sol';
@@ -438,7 +439,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256[] calldata indexes_,
         uint256[] calldata amounts_
     ) external override nonReentrant {
-        LenderActions.increaseLPAllowance(
+        LPOwnerActions.increaseLPAllowance(
             _lpAllowances[msg.sender][spender_],
             spender_,
             indexes_,
@@ -452,7 +453,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256[] calldata indexes_,
         uint256[] calldata amounts_
     ) external override nonReentrant {
-        LenderActions.decreaseLPAllowance(
+        LPOwnerActions.decreaseLPAllowance(
             _lpAllowances[msg.sender][spender_],
             spender_,
             indexes_,
@@ -465,7 +466,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         address spender_,
         uint256[] calldata indexes_
     ) external override nonReentrant {
-        LenderActions.revokeLPAllowance(
+        LPOwnerActions.revokeLPAllowance(
             _lpAllowances[msg.sender][spender_],
             spender_,
             indexes_
@@ -476,7 +477,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function approveLPTransferors(
         address[] calldata transferors_
     ) external override {
-        LenderActions.approveLPTransferors(
+        LPOwnerActions.approveLPTransferors(
             approvedTransferors[msg.sender],
             transferors_
         );
@@ -490,7 +491,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     function revokeLPTransferors(
         address[] calldata transferors_
     ) external override {
-        LenderActions.revokeLPTransferors(
+        LPOwnerActions.revokeLPTransferors(
             approvedTransferors[msg.sender],
             transferors_
         );
@@ -502,7 +503,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         address newOwner_,
         uint256[] calldata indexes_
     ) external override nonReentrant {
-        LenderActions.transferLP(
+        LPOwnerActions.transferLP(
             buckets,
             _lpAllowances,
             approvedTransferors,

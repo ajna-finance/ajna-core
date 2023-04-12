@@ -11,7 +11,7 @@ import { IPoolErrors }      from 'src/interfaces/pool/commons/IPoolErrors.sol';
 import { IPoolFactory }     from 'src/interfaces/pool/IPoolFactory.sol';
 
 contract ERC20PoolFactoryTest is ERC20HelperContract {
-    address immutable poolAddress = 0xd3c5C58c7AC356e596494E2A31a6000dFf41EFC4;
+    address immutable poolAddress = 0x3Cd0C8d97cD0291E178560E5675dD27AeD0A90d1;
 
     function setUp() external {
         // deploy new pool factory for factory tests
