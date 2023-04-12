@@ -164,7 +164,7 @@ abstract contract BaseHandler is Test {
             err == keccak256(abi.encodeWithSignature("MoveToSameIndex()")) ||
             err == keccak256(abi.encodeWithSignature("DustAmountNotExceeded()")) ||
             err == keccak256(abi.encodeWithSignature("InvalidIndex()")) ||
-            err == keccak256(abi.encodeWithSignature("InsufficientLPs()")) || 
+            err == keccak256(abi.encodeWithSignature("InsufficientLP()")) || 
             err == keccak256(abi.encodeWithSignature("AuctionNotCleared()")) ||
             err == keccak256(abi.encodeWithSignature("TransferorNotApproved()")) ||
             err == keccak256(abi.encodeWithSignature("TransferToSameOwner()")) ||

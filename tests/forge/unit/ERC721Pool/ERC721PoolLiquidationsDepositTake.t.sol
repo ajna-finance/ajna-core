@@ -259,7 +259,7 @@ contract ERC721PoolLiquidationsDepositTakeTest is ERC721HelperContract {
                 neutralPrice:      0
             })
         );
-        // borrower is compensated LPs for fractional collateral
+        // borrower is compensated LP for fractional collateral
         _assertLenderLpBalance({
             lender:      _borrower,
             index:       3519,

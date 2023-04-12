@@ -186,15 +186,15 @@ import { Maths }   from '../internal/Maths.sol';
     }
 
     /**
-     *  @notice Returns the amount of collateral calculated for the given amount of LPs.
+     *  @notice Returns the amount of collateral calculated for the given amount of LP.
      *  @param  bucketCollateral_ Amount of collateral in bucket.
-     *  @param  bucketLPs_        Amount of LPs in bucket.
-     *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs.
-     *  @param  lenderLPsBalance_ The amount of LPs to calculate collateral for.
+     *  @param  bucketLPs_        Amount of LP in bucket.
+     *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LP.
+     *  @param  lenderLPsBalance_ The amount of LP to calculate collateral for.
      *  @param  bucketPrice_      Bucket price.
-     *  @return collateralAmount_ Amount of collateral calculated for the given LPs amount.
+     *  @return collateralAmount_ Amount of collateral calculated for the given LP amount.
      */
-    function _lpsToCollateral(
+    function _lpToCollateral(
         uint256 bucketCollateral_,
         uint256 bucketLPs_,
         uint256 deposit_,
@@ -213,16 +213,16 @@ import { Maths }   from '../internal/Maths.sol';
     }
 
     /**
-     *  @notice Returns the amount of quote tokens calculated for the given amount of LPs.
-     *  @param  bucketLPs_        Amount of LPs in bucket.
+     *  @notice Returns the amount of quote tokens calculated for the given amount of LP.
+     *  @param  bucketLPs_        Amount of LP in bucket.
      *  @param  bucketCollateral_ Amount of collateral in bucket.
-     *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs.
-     *  @param  lenderLPsBalance_ The amount of LPs to calculate quote token amount for.
-     *  @param  maxQuoteToken_    The max quote token amount to calculate LPs for.
+     *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LP.
+     *  @param  lenderLPsBalance_ The amount of LP to calculate quote token amount for.
+     *  @param  maxQuoteToken_    The max quote token amount to calculate LP for.
      *  @param  bucketPrice_      Bucket price.
-     *  @return quoteTokenAmount_ Amount of quote tokens calculated for the given LPs amount.
+     *  @return quoteTokenAmount_ Amount of quote tokens calculated for the given LP amount.
      */
-    function _lpsToQuoteToken(
+    function _lpToQuoteToken(
         uint256 bucketLPs_,
         uint256 bucketCollateral_,
         uint256 deposit_,

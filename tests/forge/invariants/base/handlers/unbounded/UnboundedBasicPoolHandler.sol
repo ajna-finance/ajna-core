@@ -143,7 +143,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             (, uint256 senderDepositTime)   = _pool.lenderInfo(bucketIndex_, sender_);
             (, uint256 receiverDepositTime) = _pool.lenderInfo(bucketIndex_, receiver_);
 
-            // **B6**: when receiving transferred LPs : receiver deposit time (`Lender.depositTime`) = max of sender and receiver deposit time
+            // **B6**: when receiving transferred LP : receiver deposit time (`Lender.depositTime`) = max of sender and receiver deposit time
             lenderDepositTime[receiver_][bucketIndex_] = Maths.max(senderDepositTime, receiverDepositTime);
 
         } catch (bytes memory err) {

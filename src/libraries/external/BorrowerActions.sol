@@ -46,7 +46,7 @@ library BorrowerActions {
     struct DrawDebtLocalVars {
         bool    borrow;                // true if borrow action
         uint256 borrowerDebt;          // [WAD] borrower's accrued debt
-        uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LPs (NFTs only)
+        uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LP (NFTs only)
         uint256 t0BorrowAmount;        // [WAD] t0 amount to borrow
         uint256 t0DebtChange;          // [WAD] additional t0 debt resulted from draw debt action
         bool    inAuction;             // true if loan is auctioned
@@ -55,7 +55,7 @@ library BorrowerActions {
     }
     struct RepayDebtLocalVars {
         uint256 borrowerDebt;          // [WAD] borrower's accrued debt
-        uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LPs (NFTs only)
+        uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LP (NFTs only)
         bool    inAuction;             // true if loan still in auction after repay, false otherwise
         bool    pull;                  // true if pull action
         bool    repay;                 // true if repay action

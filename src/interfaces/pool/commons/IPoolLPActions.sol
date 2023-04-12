@@ -8,11 +8,11 @@ pragma solidity 0.8.14;
 interface IPoolLPActions {
 
     /**
-     *  @notice Called by LP owners to approve transfer of an amount of LPs to a new owner.
+     *  @notice Called by LP owners to approve transfer of an amount of LP to a new owner.
      *  @dev    Intended for use by the PositionManager contract.
-     *  @param  spender The new owner of the LPs.
-     *  @param  indexes Bucket indexes from where LPs are transferred.
-     *  @param  amounts The amounts of LPs approved to transfer.
+     *  @param  spender The new owner of the LP.
+     *  @param  indexes Bucket indexes from where LP are transferred.
+     *  @param  amounts The amounts of LP approved to transfer.
      */
     function increaseLPAllowance(
         address spender,
@@ -21,11 +21,11 @@ interface IPoolLPActions {
     ) external;
 
     /**
-     *  @notice Called by LP owners to decrease the amount of LPs that can be spend by a new owner.
+     *  @notice Called by LP owners to decrease the amount of LP that can be spend by a new owner.
      *  @dev    Intended for use by the PositionManager contract.
-     *  @param  spender The new owner of the LPs.
-     *  @param  indexes Bucket indexes from where LPs are transferred.
-     *  @param  amounts The amounts of LPs disapproved to transfer.
+     *  @param  spender The new owner of the LP.
+     *  @param  indexes Bucket indexes from where LP are transferred.
+     *  @param  amounts The amounts of LP disapproved to transfer.
      */
     function decreaseLPAllowance(
         address spender,
@@ -34,7 +34,7 @@ interface IPoolLPActions {
     ) external;
 
     /**
-     *  @notice Called by LP owners to decrease the amount of LPs that can be spend by a new owner.
+     *  @notice Called by LP owners to decrease the amount of LP that can be spend by a new owner.
      *  @param  spender Address that is having it's allowance revoked.
      *  @param  indexes List of bucket index to remove the allowance from.
      */
@@ -44,29 +44,29 @@ interface IPoolLPActions {
     ) external;
 
     /**
-     *  @notice Called by LP owners to allow addresses that can transfer LPs.
+     *  @notice Called by LP owners to allow addresses that can transfer LP.
      *  @dev    Intended for use by the PositionManager contract.
-     *  @param  transferors Addresses that are allowed to transfer LPs to new owner.
+     *  @param  transferors Addresses that are allowed to transfer LP to new owner.
      */
     function approveLPTransferors(
         address[] calldata transferors
     ) external;
 
     /**
-     *  @notice Called by LP owners to revoke addresses that can transfer LPs.
+     *  @notice Called by LP owners to revoke addresses that can transfer LP.
      *  @dev    Intended for use by the PositionManager contract.
-     *  @param  transferors Addresses that are revoked to transfer LPs to new owner.
+     *  @param  transferors Addresses that are revoked to transfer LP to new owner.
      */
     function revokeLPTransferors(
         address[] calldata transferors
     ) external;
 
     /**
-     *  @notice Called by LP owners to transfers their LPs to a different address. approveLpOwnership needs to be run first
+     *  @notice Called by LP owners to transfers their LP to a different address. approveLpOwnership needs to be run first
      *  @dev    Used by PositionManager.memorializePositions().
      *  @param  owner    The original owner address of the position.
      *  @param  newOwner The new owner address of the position.
-     *  @param  indexes  Array of price buckets index at which LPs were moved.
+     *  @param  indexes  Array of price buckets index at which LP were moved.
      */
     function transferLP(
         address owner,

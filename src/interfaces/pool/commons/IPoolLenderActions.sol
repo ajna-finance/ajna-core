@@ -16,7 +16,7 @@ interface IPoolLenderActions {
      *  @param  amount    The amount of quote token to be added by a lender.
      *  @param  index     The index of the bucket to which the quote tokens will be added.
      *  @param  expiry    Timestamp after which this TX will revert, preventing inclusion in a block with unfavorable price.
-     *  @return lpbChange The amount of LPs changed for the added quote tokens.
+     *  @return lpbChange The amount of LP changed for the added quote tokens.
      */
     function addQuoteToken(
         uint256 amount,
@@ -30,8 +30,8 @@ interface IPoolLenderActions {
      *  @param  fromIndex        The bucket index from which the quote tokens will be removed.
      *  @param  toIndex          The bucket index to which the quote tokens will be added.
      *  @param  expiry           Timestamp after which this TX will revert, preventing inclusion in a block with unfavorable price.
-     *  @return lpbAmountFrom    The amount of LPs moved out from bucket.
-     *  @return lpbAmountTo      The amount of LPs moved to destination bucket.
+     *  @return lpbAmountFrom    The amount of LP moved out from bucket.
+     *  @return lpbAmountTo      The amount of LP moved to destination bucket.
      *  @return quoteTokenAmount The amount of quote token moved.
      */
     function moveQuoteToken(
@@ -58,7 +58,7 @@ interface IPoolLenderActions {
      *  @param  maxAmount        The max amount of quote token to be removed by a lender.
      *  @param  index            The bucket index from which quote tokens will be removed.
      *  @return quoteTokenAmount The amount of quote token removed.
-     *  @return lpAmount         The amount of LPs used for removing quote tokens amount.
+     *  @return lpAmount         The amount of LP used for removing quote tokens amount.
      */
     function removeQuoteToken(
         uint256 maxAmount,

@@ -431,9 +431,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _transferQuoteToken(msg.sender, amount_);
     }
 
-    /******************************/
-    /*** Transfer LPs Functions ***/
-    /******************************/
+    /*****************************/
+    /*** Transfer LP Functions ***/
+    /*****************************/
 
     /// @inheritdoc IPoolLPActions
     function increaseLPAllowance(

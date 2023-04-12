@@ -48,7 +48,7 @@ interface IRewardsManagerState {
     ) external view returns (address, address, uint256);
 
     /**
-     *  @notice Retrieve information about recorded LPs and rate values for a given bucket and a given stake, at stake time.
+     *  @notice Retrieve information about recorded LP and rate values for a given bucket and a given stake, at stake time.
      *  @param  tokenId  ID of the NFT staked in the rewards contract to retrieve information about.
      *  @param  bucketId ID of the bucket to retrieve recorded information at stake time.
      *  @return [WAD] LP amount the NFT owner is entitled in current bucket at the time of staking.

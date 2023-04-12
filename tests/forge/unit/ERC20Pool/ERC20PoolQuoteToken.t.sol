@@ -538,7 +538,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             newLup:  MAX_PRICE
         });
 
-        // add collateral in order to give lender LPs in bucket 5_000 with 0 deposit
+        // add collateral in order to give lender LP in bucket 5_000 with 0 deposit
         // used to test revert on remove when bucket deposit is 0
         _addCollateral({
             from:    _lender,
@@ -1285,7 +1285,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2570,
-            lpBalance:   0, // LPs should get back to same value as before add / remove collateral
+            lpBalance:   0, // LP should get back to same value as before add / remove collateral
             depositTime: _startTime
         });
         _assertBucket({

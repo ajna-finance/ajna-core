@@ -35,10 +35,10 @@ library LenderActions {
     struct MoveQuoteLocalVars {
         uint256 fromBucketPrice;            // [WAD] Price of the bucket to move amount from.
         uint256 fromBucketCollateral;       // [WAD] Total amount of collateral in from bucket.
-        uint256 fromBucketLPs;              // [WAD] Total amount of LPs in from bucket.
-        uint256 fromBucketLenderLPs;        // [WAD] Amount of LPs owned by lender in from bucket.
+        uint256 fromBucketLPs;              // [WAD] Total amount of LP in from bucket.
+        uint256 fromBucketLenderLPs;        // [WAD] Amount of LP owned by lender in from bucket.
         uint256 fromBucketDepositTime;      // Time of lender deposit in the bucket to move amount from.
-        uint256 fromBucketRemainingLPs;     // Amount of LPs remaining in from bucket after move.
+        uint256 fromBucketRemainingLPs;     // Amount of LP remaining in from bucket after move.
         uint256 fromBucketRemainingDeposit; // Amount of scaled deposit remaining in from bucket after move.
         uint256 toBucketPrice;              // [WAD] Price of the bucket to move amount to.
         uint256 toBucketBankruptcyTime;     // Time the bucket to move amount to was marked as insolvent.
@@ -81,7 +81,7 @@ library LenderActions {
     error InvalidAmount();
     error LUPBelowHTP();
     error NoClaim();
-    error InsufficientLPs();
+    error InsufficientLP();
     error InsufficientLiquidity();
     error InsufficientCollateral();
     error MoveToSameIndex();
@@ -95,7 +95,7 @@ library LenderActions {
      *  @dev    write state:
      *              - Buckets.addCollateral:
      *                  - increment bucket.collateral and bucket.lps accumulator
-     *                  - addLenderLPs:
+     *                  - addLenderLP:
      *                      - increment lender.lps accumulator and lender.depositTime state
      *  @dev    reverts on:
      *              - invalid bucket index InvalidIndex()
@@ -167,7 +167,7 @@ library LenderActions {
             addedAmount = Maths.wmul(addedAmount, Maths.WAD - _depositFeeRate(poolState_.rate));
         }
 
-        bucketLPs_ = Buckets.quoteTokensToLPs(
+        bucketLPs_ = Buckets.quoteTokensToLP(
             bucket.collateral,
             bucket.lps,
             bucketDeposit,
@@ -177,10 +177,10 @@ library LenderActions {
 
         Deposits.unscaledAdd(deposits_, params_.index, Maths.wdiv(addedAmount, bucketScale));
 
-        // update lender LPs
-        Buckets.addLenderLPs(bucket, bankruptcyTime, msg.sender, bucketLPs_);
+        // update lender LP
+        Buckets.addLenderLP(bucket, bankruptcyTime, msg.sender, bucketLPs_);
 
-        // update bucket LPs
+        // update bucket LP
         bucket.lps += bucketLPs_;
 
         // only need to recalculate LUP if the deposit was above it
@@ -276,7 +276,7 @@ library LenderActions {
         vars.toBucketScale           = Deposits.scale(deposits_, params_.toIndex);
         vars.toBucketDeposit         = Maths.wmul(vars.toBucketUnscaledDeposit, vars.toBucketScale);
 
-        toBucketLPs_ = Buckets.quoteTokensToLPs(
+        toBucketLPs_ = Buckets.quoteTokensToLP(
             toBucket.collateral,
             toBucket.lps,
             vars.toBucketDeposit,
@@ -291,10 +291,10 @@ library LenderActions {
         // check loan book's htp against new lup, revert if move drives LUP below HTP
         if (params_.fromIndex < params_.toIndex && vars.htp > lup_) revert LUPBelowHTP();
 
-        // update lender and bucket LPs balance in from bucket
+        // update lender and bucket LP balance in from bucket
         vars.fromBucketRemainingLPs = vars.fromBucketLPs - fromBucketRedeemedLPs_;
 
-        // check if from bucket healthy after move quote tokens - set bankruptcy if collateral and deposit are 0 but there's still LPs
+        // check if from bucket healthy after move quote tokens - set bankruptcy if collateral and deposit are 0 but there's still LP
         if (vars.fromBucketCollateral == 0 && vars.fromBucketRemainingDeposit == 0 && vars.fromBucketRemainingLPs != 0) {
             fromBucket.lps            = 0;
             fromBucket.bankruptcyTime = block.timestamp;
@@ -304,13 +304,13 @@ library LenderActions {
                 vars.fromBucketRemainingLPs
             );
         } else {
-            // update lender and bucket LPs balance
+            // update lender and bucket LP balance
             fromBucketLender.lps -= fromBucketRedeemedLPs_;
 
             fromBucket.lps = vars.fromBucketRemainingLPs;
         }
 
-        // update lender and bucket LPs balance in target bucket
+        // update lender and bucket LP balance in target bucket
         Lender storage toBucketLender = toBucket.lenders[msg.sender];
 
         vars.toBucketDepositTime = toBucketLender.depositTime;
@@ -327,7 +327,7 @@ library LenderActions {
         // set deposit time to the greater of the lender's from bucket and the target bucket
         toBucketLender.depositTime = Maths.max(vars.fromBucketDepositTime, vars.toBucketDepositTime);
 
-        // update bucket LPs balance
+        // update bucket LP balance
         toBucket.lps += toBucketLPs_;
 
         emit MoveQuoteToken(
@@ -350,7 +350,7 @@ library LenderActions {
      *              - decrement lender.lps accumulator
      *              - decrement bucket.lps accumulator
      *  @dev    reverts on:
-     *              - no LPs NoClaim()
+     *              - no LP NoClaim()
      *              - LUP lower than HTP LUPBelowHTP()
      *  @dev    emit events:
      *              - RemoveQuoteToken
@@ -404,7 +404,7 @@ library LenderActions {
 
         uint256 lpsRemaining = removeParams.bucketLPs - redeemedLPs_;
 
-        // check if bucket healthy after remove quote tokens - set bankruptcy if collateral and deposit are 0 but there's still LPs
+        // check if bucket healthy after remove quote tokens - set bankruptcy if collateral and deposit are 0 but there's still LP
         if (removeParams.bucketCollateral == 0 && unscaledRemaining == 0 && lpsRemaining != 0) {
             bucket.lps            = 0;
             bucket.bankruptcyTime = block.timestamp;
@@ -414,7 +414,7 @@ library LenderActions {
                 lpsRemaining
             );
         } else {
-            // update lender and bucket LPs balances
+            // update lender and bucket LP balances
             lender.lps -= redeemedLPs_;
 
             bucket.lps = lpsRemaining;
@@ -436,7 +436,7 @@ library LenderActions {
      *              - decrement bucket.collateral and bucket.lps accumulator
      *  @dev    reverts on:
      *              - not enough collateral InsufficientCollateral()
-     *              - insufficient LPs InsufficientLPs()
+     *              - insufficient LP InsufficientLP()
      *  @dev    emit events:
      *              - BucketBankruptcy
      */
@@ -459,7 +459,7 @@ library LenderActions {
         uint256 bucketLPs     = bucket.lps;
         uint256 bucketDeposit = Deposits.valueAt(deposits_, index_);
 
-        lpAmount_ = Buckets.collateralToLPs(
+        lpAmount_ = Buckets.collateralToLP(
             bucketCollateral,
             bucketLPs,
             bucketDeposit,
@@ -471,9 +471,9 @@ library LenderActions {
 
         uint256 lenderLpBalance;
         if (bucket.bankruptcyTime < lender.depositTime) lenderLpBalance = lender.lps;
-        if (lenderLpBalance == 0 || lpAmount_ > lenderLpBalance) revert InsufficientLPs();
+        if (lenderLpBalance == 0 || lpAmount_ > lenderLpBalance) revert InsufficientLP();
 
-        // update bucket LPs and collateral balance
+        // update bucket LP and collateral balance
         bucketLPs -= lpAmount_;
 
         // If clearing out the bucket collateral, ensure it's zeroed out
@@ -484,7 +484,7 @@ library LenderActions {
         bucketCollateral  -= Maths.min(bucketCollateral, amount_);
         bucket.collateral = bucketCollateral;
 
-        // check if bucket healthy after collateral remove - set bankruptcy if collateral and deposit are 0 but there's still LPs
+        // check if bucket healthy after collateral remove - set bankruptcy if collateral and deposit are 0 but there's still LP
         if (bucketCollateral == 0 && bucketDeposit == 0 && bucketLPs != 0) {
             bucket.lps            = 0;
             bucket.bankruptcyTime = block.timestamp;
@@ -494,7 +494,7 @@ library LenderActions {
                 bucketLPs
             );
         } else {
-            // update lender LPs balance
+            // update lender LP balance
             lender.lps -= lpAmount_;
 
             bucket.lps = bucketLPs;
@@ -511,7 +511,7 @@ library LenderActions {
      *              - not enough collateral InsufficientCollateral()
      *              - no claim NoClaim()
      *  @return Amount of collateral that was removed.
-     *  @return Amount of LPs redeemed for removed collateral amount.
+     *  @return Amount of LP redeemed for removed collateral amount.
      */
     function removeMaxCollateral(
         mapping(uint256 => Bucket) storage buckets_,
@@ -535,7 +535,7 @@ library LenderActions {
      *  @dev    write state:
      *              - Buckets.addCollateral:
      *                  - increment bucket.collateral and bucket.lps accumulator
-     *                  - addLenderLPs:
+     *                  - addLenderLP:
      *                      - increment lender.lps accumulator and lender.depositTime state
      *  @dev    reverts on:
      *              - invalid merge index CannotMergeToHigherPrice()
@@ -631,7 +631,7 @@ library LenderActions {
         collateralAmount_ = Maths.min(maxAmount_, bucketCollateral);
 
         // determine how much LP would be required to remove the requested amount
-        uint256 requiredLPs = Buckets.collateralToLPs(
+        uint256 requiredLPs = Buckets.collateralToLP(
             bucketCollateral,
             bucketLPs,
             bucketDeposit,
@@ -647,7 +647,7 @@ library LenderActions {
             lpAmount_         = lenderLpBalance;
             collateralAmount_ = Maths.wdiv(Maths.wmul(lenderLpBalance, collateralAmount_), requiredLPs);
 
-            if (collateralAmount_ == 0) revert InsufficientLPs();
+            if (collateralAmount_ == 0) revert InsufficientLP();
         }
 
         // update bucket LPs and collateral balance
@@ -661,7 +661,7 @@ library LenderActions {
         bucketCollateral  -= Maths.min(bucketCollateral, collateralAmount_);
         bucket.collateral = bucketCollateral;
 
-        // check if bucket healthy after collateral remove - set bankruptcy if collateral and deposit are 0 but there's still LPs
+        // check if bucket healthy after collateral remove - set bankruptcy if collateral and deposit are 0 but there's still LP
         if (bucketCollateral == 0 && bucketDeposit == 0 && bucketLPs != 0) {
             bucket.lps            = 0;
             bucket.bankruptcyTime = block.timestamp;
@@ -671,7 +671,7 @@ library LenderActions {
                 bucketLPs
             );
         } else {
-            // update lender LPs balance
+            // update lender LP balance
             lender.lps -= lpAmount_;
 
             bucket.lps = bucketLPs;
@@ -679,12 +679,12 @@ library LenderActions {
     }
 
     /**
-     *  @notice Removes the amount of quote tokens calculated for the given amount of LPs.
+     *  @notice Removes the amount of quote tokens calculated for the given amount of LP.
      *  @dev    write state:
      *          - Deposits.unscaledRemove (remove amount in Fenwick tree, from index):
      *              - update values array state
      *  @return removedAmount_     Amount of scaled deposit removed.
-     *  @return redeemedLPs_       Amount of bucket LPs corresponding for calculated scaled deposit amount.
+     *  @return redeemedLPs_       Amount of bucket LP corresponding for calculated scaled deposit amount.
      *  @return unscaledRemaining_ Amount of unscaled deposit remaining.
      */
     function _removeMaxDeposit(

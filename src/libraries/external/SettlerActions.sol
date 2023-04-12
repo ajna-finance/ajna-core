@@ -50,7 +50,7 @@ library SettlerActions {
         uint256 depositToRemove;    // [WAD] deposit used by settle auction
         uint256 hpbCollateral;      // [WAD] amount of collateral in HPB bucket
         uint256 hpbUnscaledDeposit; // [WAD] unscaled amount of of quote tokens in HPB bucket before settle
-        uint256 hpbLPs;             // [WAD] amount of LPs in HPB bucket
+        uint256 hpbLPs;             // [WAD] amount of LP in HPB bucket
         uint256 index;              // index of settling bucket
         uint256 maxSettleableDebt;  // [WAD] max amount that can be settled with existing collateral
         uint256 price;              // [WAD] price of settling bucket
@@ -88,7 +88,7 @@ library SettlerActions {
      *              - update values array state
      *          - Buckets.addCollateral:
      *              - increment bucket.collateral and bucket.lps accumulator
-     *              - addLenderLPs:
+     *              - addLenderLP:
      *                  - increment lender.lps accumulator and lender.depositTime state
      *          - update borrower state
      *  @dev    reverts on:
@@ -233,7 +233,7 @@ library SettlerActions {
                     Deposits.unscaledRemove(deposits_, vars.index, vars.unscaledDeposit);              // Remove all deposit from bucket
                     Bucket storage hpbBucket = buckets_[vars.index];
 
-                    if (hpbBucket.collateral == 0) {                                                   // existing LPs for the bucket shall become unclaimable.
+                    if (hpbBucket.collateral == 0) {                                                   // existing LP for the bucket shall become unclaimable.
                         hpbBucket.lps            = 0;
                         hpbBucket.bankruptcyTime = block.timestamp;
 
@@ -304,10 +304,10 @@ library SettlerActions {
 
             remainingCollateral_ = (borrowerCollateral_ / Maths.WAD) * Maths.WAD; // floor collateral of borrower
 
-            // if there's fraction of NFTs remaining then reward difference to borrower as LPs in auction price bucket
+            // if there's fraction of NFTs remaining then reward difference to borrower as LP in auction price bucket
             if (remainingCollateral_ != borrowerCollateral_) {
 
-                // calculate the amount of collateral that should be compensated with LPs
+                // calculate the amount of collateral that should be compensated with LP
                 compensatedCollateral_ = borrowerCollateral_ - remainingCollateral_;
 
                 uint256 auctionPrice = _auctionPrice(
@@ -319,7 +319,7 @@ library SettlerActions {
                 // determine the bucket index to compensate fractional collateral
                 bucketIndex = auctionPrice > MIN_PRICE ? _indexOf(auctionPrice) : MAX_FENWICK_INDEX;
 
-                // deposit collateral in bucket and reward LPs to compensate fractional collateral
+                // deposit collateral in bucket and reward LP to compensate fractional collateral
                 lps = Buckets.addCollateral(
                     buckets_[bucketIndex],
                     borrowerAddress_,

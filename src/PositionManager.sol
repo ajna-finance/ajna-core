@@ -22,7 +22,7 @@ import { ERC721PoolFactory } from './ERC721PoolFactory.sol';
 import { PermitERC721 } from './base/PermitERC721.sol';
 
 import {
-    _lpsToQuoteToken,
+    _lpToQuoteToken,
     _priceAt
 }                      from './libraries/helpers/PoolHelper.sol';
 import { tokenSymbol } from './libraries/helpers/SafeTokenNamer.sol';
@@ -68,14 +68,14 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     /*************************/
 
     struct MoveLiquidityLocalVars {
-        uint256 bucketLPs;        // [WAD] amount of LPs in from bucket
+        uint256 bucketLPs;        // [WAD] amount of LP in from bucket
         uint256 bucketCollateral; // [WAD] amount of collateral in from bucket
         uint256 bankruptcyTime;   // from bucket bankruptcy time
         uint256 bucketDeposit;    // [WAD] from bucket deposit
         uint256 depositTime;      // lender deposit time in from bucekt
         uint256 maxQuote;         // [WAD] max amount that can be moved from bucket
-        uint256 lpbAmountFrom;    // [WAD] the LPs redeemed from bucket
-        uint256 lpbAmountTo;      // [WAD] the LPs awarded in to bucket
+        uint256 lpbAmountFrom;    // [WAD] the LP redeemed from bucket
+        uint256 lpbAmountTo;      // [WAD] the LP awarded in to bucket
     }
 
     /*****************/
@@ -145,7 +145,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      *  @inheritdoc IPositionManagerOwnerActions
      *  @dev External calls to Pool contract:
      *          - lenderInfo(): get lender position in bucket
-     *          - transferLP(): transfer LPs ownership to PositionManager contracts
+     *          - transferLP(): transfer LP ownership to PositionManager contracts
      *  @dev write state:
      *          - positionIndexes: add bucket index
      *          - positions: update tokenId => bucket id position
@@ -180,12 +180,12 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             if (position.depositTime != 0) {
                 // check that bucket didn't go bankrupt after prior memorialization
                 if (_bucketBankruptAfterDeposit(pool, index, position.depositTime)) {
-                    // if bucket did go bankrupt, zero out the LPs tracked by position manager
+                    // if bucket did go bankrupt, zero out the LP tracked by position manager
                     position.lps = 0;
                 }
             }
 
-            // update token position LPs
+            // update token position LP
             position.lps += lpBalance;
             // set token's position deposit time to the original lender's deposit time
             position.depositTime = depositTime;
@@ -271,8 +271,8 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         // check that bucket hasn't gone bankrupt since memorialization
         if (vars.depositTime <= vars.bankruptcyTime) revert BucketBankrupt();
 
-        // calculate the max amount of quote tokens that can be moved, given the tracked LPs
-        vars.maxQuote = _lpsToQuoteToken(
+        // calculate the max amount of quote tokens that can be moved, given the tracked LP
+        vars.maxQuote = _lpToQuoteToken(
             vars.bucketLPs,
             vars.bucketCollateral,
             vars.bucketDeposit,
@@ -303,7 +303,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
         Position storage toPosition = positions[params_.tokenId][params_.toIndex];
 
-        // update position LPs state
+        // update position LP state
         fromPosition.lps -= vars.lpbAmountFrom;
         toPosition.lps   += vars.lpbAmountTo;
         // update position deposit time to the from bucket deposit time
@@ -321,7 +321,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      *  @inheritdoc IPositionManagerOwnerActions
      *  @dev External calls to Pool contract:
      *          - increaseLPAllowance(): approve ownership for transfer
-     *          - transferLP(): transfer LPs ownership from PositionManager contract
+     *          - transferLP(): transfer LP ownership from PositionManager contract
      *  @dev write state:
      *          - positionIndexes: remove from bucket index
      *          - positions: delete bucket position
@@ -361,7 +361,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
             lpAmounts[i] = position.lps;
 
-            // remove LPs tracked by position manager at bucket index
+            // remove LP tracked by position manager at bucket index
             delete positions[params_.tokenId][index];
 
             unchecked { ++i; }
@@ -369,7 +369,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
         address owner = ownerOf(params_.tokenId);
 
-        // approve owner to take over the LPs ownership (required for transferLP pool call)
+        // approve owner to take over the LP ownership (required for transferLP pool call)
         pool.increaseLPAllowance(owner, params_.indexes, lpAmounts);
         // update pool lps accounting and transfer ownership of lps from PositionManager contract
         pool.transferLP(address(this), owner, params_.indexes);
@@ -432,7 +432,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     /**********************/
 
     /// @inheritdoc IPositionManagerDerivedState
-    function getLPs(
+    function getLP(
         uint256 tokenId_,
         uint256 index_
     ) external override view returns (uint256) {

@@ -1137,13 +1137,13 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.removeQuoteToken(amount, index);
     }
 
-    function _assertRemoveLiquidityInsufficientLPsRevert(
+    function _assertRemoveLiquidityInsufficientLPRevert(
         address from,
         uint256 amount,
         uint256 index
     ) internal {
         changePrank(from);
-        vm.expectRevert(IPoolErrors.InsufficientLPs.selector);
+        vm.expectRevert(IPoolErrors.InsufficientLP.selector);
         _pool.removeQuoteToken(amount, index);
     }
 

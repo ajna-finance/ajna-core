@@ -25,7 +25,7 @@ interface IERC721PoolEvents {
      *  @notice Emitted when actor adds claimable collateral to a bucket.
      *  @param  actor            Recipient that added collateral.
      *  @param  collateralMerged Amount of collateral merged.
-     *  @param  toIndexLps              If non-zero, amount of LPs in toIndex when collateral is merged into bucket. If 0, no collateral is merged.
+     *  @param  toIndexLps              If non-zero, amount of LP in toIndex when collateral is merged into bucket. If 0, no collateral is merged.
      */
     event MergeOrRemoveCollateralNFT(
         address indexed actor,

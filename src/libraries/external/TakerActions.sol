@@ -568,7 +568,7 @@ library TakerActions {
     /**
      *  @notice Rewards actors of a bucket take action.
      *  @dev    write state:
-     *              - Buckets.addLenderLPs:
+     *              - Buckets.addLenderLP:
      *                  - increment taker lender.lps accumulator and lender.depositTime state
      *                  - increment kicker lender.lps accumulator and lender.depositTime state
      *              - update liquidation bond size accumulator
@@ -610,7 +610,7 @@ library TakerActions {
 
             totalLPsReward = Maths.wdiv(takerReward, exchangeRate);
 
-            Buckets.addLenderLPs(bucket, bankruptcyTime, msg.sender, totalLPsReward);
+            Buckets.addLenderLP(bucket, bankruptcyTime, msg.sender, totalLPsReward);
         }
 
         uint256 kickerLPsReward;
@@ -620,7 +620,7 @@ library TakerActions {
             kickerLPsReward = Maths.wdiv(vars.bondChange, exchangeRate);
             totalLPsReward  += kickerLPsReward;
 
-            Buckets.addLenderLPs(bucket, bankruptcyTime, vars.kicker, kickerLPsReward);
+            Buckets.addLenderLP(bucket, bankruptcyTime, vars.kicker, kickerLPsReward);
         } else {
             // take is above neutralPrice, Kicker is penalized
             vars.bondChange = Maths.min(liquidation_.bondSize, vars.bondChange);
@@ -633,7 +633,7 @@ library TakerActions {
 
         Deposits.unscaledRemove(deposits_, bucketIndex_, vars.unscaledQuoteTokenAmount); // remove quote tokens from bucket’s deposit
 
-        // total rewarded LPs are added to the bucket LP balance
+        // total rewarded LP are added to the bucket LP balance
         bucket.lps += totalLPsReward;
 
         // collateral is added to the bucket’s claimable collateral

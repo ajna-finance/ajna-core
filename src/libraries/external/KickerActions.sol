@@ -65,13 +65,13 @@ library KickerActions {
         uint256 amountToDebitFromDeposit; // [WAD] the amount of quote tokens used to kick and debited from lender deposit
         uint256 bucketCollateral;         // [WAD] amount of collateral in bucket
         uint256 bucketDeposit;            // [WAD] amount of quote tokens in bucket
-        uint256 bucketLPs;                // [WAD] LPs of the bucket
+        uint256 bucketLPs;                // [WAD] LP of the bucket
         uint256 bucketPrice;              // [WAD] bucket price
         uint256 bucketRate;               // [WAD] bucket exchange rate
         uint256 bucketScale;              // [WAD] bucket scales
         uint256 bucketUnscaledDeposit;    // [WAD] unscaled amount of quote tokens in bucket
-        uint256 lenderLPs;                // [WAD] LPs of lender in bucket
-        uint256 redeemedLPs;              // [WAD] LPs used by kick action
+        uint256 lenderLPs;                // [WAD] LP of lender in bucket
+        uint256 redeemedLPs;              // [WAD] LP used by kick action
     }
 
     /**************/
@@ -166,7 +166,7 @@ library KickerActions {
         vars.bucketScale           = Deposits.scale(deposits_, index_);
         vars.bucketDeposit         = Maths.wmul(vars.bucketUnscaledDeposit, vars.bucketScale);
 
-        // calculate max amount that can be removed (constrained by lender LPs in bucket, bucket deposit and the amount lender wants to remove)
+        // calculate max amount that can be removed (constrained by lender LP in bucket, bucket deposit and the amount lender wants to remove)
         vars.bucketRate = Buckets.getExchangeRate(
             vars.bucketCollateral,
             vars.bucketLPs,
@@ -174,7 +174,7 @@ library KickerActions {
             vars.bucketPrice
         );
 
-        vars.amountToDebitFromDeposit = Maths.wmul(vars.lenderLPs, vars.bucketRate);  // calculate amount to remove based on lender LPs in bucket
+        vars.amountToDebitFromDeposit = Maths.wmul(vars.lenderLPs, vars.bucketRate);  // calculate amount to remove based on lender LP in bucket
 
         if (vars.amountToDebitFromDeposit > vars.bucketDeposit) vars.amountToDebitFromDeposit = vars.bucketDeposit; // cap the amount to remove at bucket deposit
 
@@ -222,7 +222,7 @@ library KickerActions {
             );
         }
 
-        // remove bucket LPs coresponding to the amount removed from deposits
+        // remove bucket LP coresponding to the amount removed from deposits
         lender.lps -= vars.redeemedLPs;
         bucket.lps -= vars.redeemedLPs;
 

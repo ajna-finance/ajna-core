@@ -352,7 +352,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             lpAward: 12_043.56808879152623138 * 1e18
         });
 
-        // check bucket state and bidder's LPs
+        // check bucket state and bidder's LP
         _assertBucket({
             index:        2550,
             lpBalance:    12_043.56808879152623138 * 1e18,
@@ -380,7 +380,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             lpRedeem: 4_606.664793962758783503 * 1e18
         });
 
-        // check bucket state and bidder's LPs
+        // check bucket state and bidder's LP
         _assertBucket({
             index:        2550,
             lpBalance:    7_436.903294828767447877 * 1e18,
@@ -408,7 +408,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             lpRedeem: 7_436.903294828767447877 * 1e18
         });
 
-        // check bucket state and bidder's LPs
+        // check bucket state and bidder's LP
         _assertBucket({
             index:        2550,
             lpBalance:    0,
@@ -448,7 +448,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             lpRedeem: 243_808.126330587520990921 * 1e18
         });
 
-        // check bucket state and bidder's LPs
+        // check bucket state and bidder's LP
         _assertBucket({
             index:        1530,
             lpBalance:    243_808.126330587520990920 * 1e18,
@@ -476,7 +476,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             lpRedeem: 243_808.126330587520990920 * 1e18
         });
 
-        // check bucket state and bidder's LPs
+        // check bucket state and bidder's LP
         _assertBucket({
             index:        1530,
             lpBalance:    0,
@@ -660,13 +660,13 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2570,
-            lpBalance:   0, // LPs should get back to same value as before add / remove collateral
+            lpBalance:   0, // LP should get back to same value as before add / remove collateral
             depositTime: _startTime
         });
         _assertLenderLpBalance({
             lender:      _bidder,
             index:       2570,
-            lpBalance:   6879, // LPs should get back to same value as before add / remove collateral
+            lpBalance:   6879, // LP should get back to same value as before add / remove collateral
             depositTime: _startTime
         });
         _assertBucket({
@@ -732,7 +732,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2570,
-            lpBalance:   6879, // LPs should get back to same value as before add / remove collateral
+            lpBalance:   6879, // LP should get back to same value as before add / remove collateral
             depositTime: _startTime
         });
         _assertBucket({
@@ -801,7 +801,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         });
 
         // lender should not be able to remove any collateral as LP balance is 304 < 2725
-        _assertRemoveAllCollateralInsufficientLPsRevert({
+        _assertRemoveAllCollateralInsufficientLPRevert({
             from:  _bidder,
             index: 2570
         });

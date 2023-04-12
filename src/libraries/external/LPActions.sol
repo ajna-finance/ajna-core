@@ -11,7 +11,7 @@ import { Maths } from '../internal/Maths.sol';
 /**
     @title  LPActions library
     @notice External library containing logic for LP owners to:
-            - increase/decrease/revoke LP allowance; approve/revoke LP transferors; transfer LPs
+            - increase/decrease/revoke LP allowance; approve/revoke LP transferors; transfer LP
  */
 library LPActions {
 
@@ -46,7 +46,7 @@ library LPActions {
     /**
      *  @notice See `IPoolLenderActions` for descriptions
      *  @dev write state:
-     *          - increment LPs allowances
+     *          - increment LP allowances
      *  @dev reverts on:
      *          - invalid indexes and amounts input InvalidAllowancesInput()
      *  @dev emit events:
@@ -82,7 +82,7 @@ library LPActions {
     /**
      *  @notice See `IPoolLenderActions` for descriptions
      *  @dev write state:
-     *          - decrement LPs allowances
+     *          - decrement LP allowances
      *  @dev reverts on:
      *          - invalid indexes and amounts input InvalidAllowancesInput()
      *  @dev emit events:
@@ -119,7 +119,7 @@ library LPActions {
     /**
      *  @notice See `IPoolLenderActions` for descriptions
      *  @dev write state:
-     *          - decrement LPs allowances
+     *          - decrement LP allowances
      *  @dev emit events:
      *          - RevokeLPAllowance
      */
@@ -250,21 +250,21 @@ library LPActions {
                 uint256 newOwnerDepositTime = newOwner.depositTime;
 
                 if (newOwnerDepositTime > bankruptcyTime) {
-                    // deposit happened in a healthy bucket, add amount of LPs to new owner
+                    // deposit happened in a healthy bucket, add amount of LP to new owner
                     newOwner.lps += allowedAmount;
                 } else {
-                    // bucket bankruptcy happened after deposit, reset balance and add amount of LPs to new owner
+                    // bucket bankruptcy happened after deposit, reset balance and add amount of LP to new owner
                     newOwner.lps = allowedAmount;
                 }
 
-                owner.lps      -= allowedAmount; // remove amount of LPs from old owner
-                lpsTransferred += allowedAmount; // add amount of LPs to total LPs transferred
+                owner.lps      -= allowedAmount; // remove amount of LP from old owner
+                lpsTransferred += allowedAmount; // add amount of LP to total LP transferred
 
                 // set the deposit time as the max of transferred deposit and current deposit time
                 newOwner.depositTime = Maths.max(ownerDepositTime, newOwnerDepositTime);
             }
 
-            // reset allowances of transferred LPs
+            // reset allowances of transferred LP
             delete allowances_[ownerAddress_][newOwnerAddress_][index];
 
             unchecked { ++i; }

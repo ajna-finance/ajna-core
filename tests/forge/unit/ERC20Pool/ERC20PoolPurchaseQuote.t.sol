@@ -49,7 +49,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
             lpAward: 12_043.56808879152623138 * 1e18
         });
 
-        // check bucket state and LPs
+        // check bucket state and LP
         _assertBucket({
             index:        testIndex,
             lpBalance:    22_043.56808879152623138 * 1e18,

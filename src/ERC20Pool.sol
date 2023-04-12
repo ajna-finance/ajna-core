@@ -58,7 +58,7 @@ import { TakerActions }    from './libraries/external/TakerActions.sol';
 /**
  *  @title  ERC20 Pool contract
  *  @notice Entrypoint of ERC20 Pool actions for pool actors:
- *          - Lenders: add, remove and move quote tokens; transfer LPs
+ *          - Lenders: add, remove and move quote tokens; transfer LP
  *          - Borrowers: draw and repay debt
  *          - Traders: add, remove and move quote tokens; add and remove collateral
  *          - Kickers: kick undercollateralized loans; settle auctions; claim bond rewards

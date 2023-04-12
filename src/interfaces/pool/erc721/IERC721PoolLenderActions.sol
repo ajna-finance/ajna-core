@@ -12,7 +12,7 @@ interface IERC721PoolLenderActions {
      *  @param  tokenIds Array of collateral to deposit.
      *  @param  index    The bucket index to which collateral will be deposited.
      *  @param  expiry    Timestamp after which this TX will revert, preventing inclusion in a block with unfavorable price.
-     *  @return lpbChange The amount of LPs changed for the added collateral.
+     *  @return lpbChange The amount of LP changed for the added collateral.
      */
     function addCollateral(
         uint256[] calldata tokenIds,
@@ -26,7 +26,7 @@ interface IERC721PoolLenderActions {
      *  @param  toIndex_             The bucket index to which merge collateral into.
      *  @param  noOfNFTsToRemove_    Intergral number of NFTs to remove if collateral amount is met noOfNFTsToRemove_, else merge at bucket index, toIndex_.
      *  @return collateralMerged_     Amount of collateral merged into toIndex.
-     *  @return bucketLPs_           If non-zero, amount of LPs in toIndex when collateral is merged into bucket. If 0, no collateral is merged.
+     *  @return bucketLPs_           If non-zero, amount of LP in toIndex when collateral is merged into bucket. If 0, no collateral is merged.
      */
     function mergeOrRemoveCollateral(
         uint256[] calldata removeAmountAtIndex_,

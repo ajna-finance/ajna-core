@@ -327,7 +327,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         assertGt(lastAuctionDebt,       0);
         assertGt(lastAuctionCollateral, 0);
         (, uint256 lastBucketDeposit, uint256 lastBucketCollateral, uint256 lastBucketLPs, , ) = _poolUtils.bucketInfo(address(_pool), bucketId);
-        uint256 lastKickerLPs = _kickerLPs(bucketId);
+        uint256 lastKickerLPs = _kickerLP(bucketId);
         assertGt(lastAuctionDebt,       0);
         assertGt(lastAuctionCollateral, 0);
 
@@ -349,11 +349,11 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
             assertEq(bucketCollateral, lastBucketCollateral + collateralTaken);
         }
 
-        // confirm LPs were awarded to the kicker
+        // confirm LP were awarded to the kicker
         (address kicker, , , uint256 kickTime, uint256 kickMomp, uint256 neutralPrice, , , , ) = _pool.auctionInfo(_borrower);
         uint256 auctionPrice = _auctionPrice(kickMomp, neutralPrice, kickTime);
         if (auctionPrice < neutralPrice) {
-            uint256 kickerLPs = _kickerLPs(bucketId);
+            uint256 kickerLPs = _kickerLP(bucketId);
             assertGt(kickerLPs, lastKickerLPs);
             uint256 kickerLpChange = kickerLPs - lastKickerLPs;            
             assertEq(bucketLPs, lastBucketLPs + kickerLpChange);
@@ -446,7 +446,7 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         return _collateralization(debt, collateral, _lup());
     }
 
-    function _kickerLPs(uint256 bucketId) internal view returns (uint256) {
+    function _kickerLP(uint256 bucketId) internal view returns (uint256) {
         (address kicker, , , , , , , , , ) = _pool.auctionInfo(_borrower);
         (uint256 kickerLPs, ) = _pool.lenderInfo(bucketId, kicker);
         return kickerLPs;
