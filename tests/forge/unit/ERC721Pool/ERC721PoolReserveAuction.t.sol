@@ -118,7 +118,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         });
 
         // kick off a new auction
-        _startClaimableReserveAuction({
+        _kickReserveAuction({
             from:              _bidder,
             remainingReserves: 823.269088761017732090 * 1e18,
             price:             1_000_000_000 * 1e18,
@@ -189,7 +189,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         });
 
         // kick off a new auction
-        _startClaimableReserveAuction({
+        _kickReserveAuction({
             from:              _bidder,
             remainingReserves: 823.269088761017732090 * 1e18,
             price:             1_000_000_000 * 1e18,
@@ -251,7 +251,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         uint256 expectedQuoteBalance = _quote.balanceOf(_bidder) + kickAward;
         expectedReserves -= kickAward;
 
-        _startClaimableReserveAuction({
+        _kickReserveAuction({
             from:              _bidder,
             remainingReserves: expectedReserves,
             price:             expectedPrice,
@@ -370,7 +370,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         uint256 kickAward = Maths.wmul(expectedReserves, 0.01 * 1e18);
         expectedReserves -= kickAward;
 
-        _startClaimableReserveAuction({
+        _kickReserveAuction({
             from:              _bidder,
             remainingReserves: expectedReserves,
             price:             expectedPrice,
@@ -445,7 +445,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         expectedPrice = 1_000_000_000 * 1e18;
         kickAward = Maths.wmul(newClaimableReserves, 0.01 * 1e18);
         expectedReserves += newClaimableReserves - kickAward;
-        _startClaimableReserveAuction({
+        _kickReserveAuction({
             from:              _bidder,
             remainingReserves: expectedReserves,
             price:             expectedPrice,

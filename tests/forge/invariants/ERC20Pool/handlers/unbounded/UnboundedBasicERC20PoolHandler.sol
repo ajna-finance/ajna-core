@@ -8,10 +8,6 @@ import { PoolInfoUtils }                     from 'src/PoolInfoUtils.sol';
 import { _borrowFeeRate, _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }                             from "src/libraries/internal/Maths.sol";
 
-import {
-    LENDER_MIN_BUCKET_INDEX,
-    LENDER_MAX_BUCKET_INDEX
-}                                    from '../../../base/handlers/unbounded/BaseHandler.sol';
 import { UnboundedBasicPoolHandler } from "../../../base/handlers/unbounded/UnboundedBasicPoolHandler.sol";
 import { BaseERC20PoolHandler }      from './BaseERC20PoolHandler.sol';
 
@@ -34,16 +30,18 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
 
         (uint256 lpBalanceBeforeAction, ) = _erc20Pool.lenderInfo(bucketIndex_, _actor);
 
-        _erc20Pool.addCollateral(amount_, bucketIndex_, block.timestamp + 1 minutes);
+        try _erc20Pool.addCollateral(amount_, bucketIndex_, block.timestamp + 1 minutes) {
+            // **B5**: when adding collateral: lender deposit time = timestamp of block when deposit happened
+            lenderDepositTime[_actor][bucketIndex_] = block.timestamp;
+            // **R5**: Exchange rates are unchanged by adding collateral token into a bucket
+            exchangeRateShouldNotChange[bucketIndex_] = true;
 
-        // **B5**: when adding collateral: lender deposit time = timestamp of block when deposit happened
-        lenderDepositTime[_actor][bucketIndex_] = block.timestamp;
-        // **R5**: Exchange rates are unchanged by adding collateral token into a bucket
-        exchangeRateShouldNotChange[bucketIndex_] = true;
-
-        // Post action condition
-        (uint256 lpBalanceAfterAction, ) = _erc20Pool.lenderInfo(bucketIndex_, _actor);
-        require(lpBalanceAfterAction > lpBalanceBeforeAction, "LP balance should increase");
+            // Post action condition
+            (uint256 lpBalanceAfterAction, ) = _erc20Pool.lenderInfo(bucketIndex_, _actor);
+            require(lpBalanceAfterAction > lpBalanceBeforeAction, "LP balance should increase");
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
+        }
     }
 
     function _removeCollateral(
@@ -82,7 +80,10 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
             exchangeRateShouldNotChange[bucketIndex] = true;
         }
 
-        _erc20Pool.drawDebt(_actor, 0, 0, amount_);
+        try _erc20Pool.drawDebt(_actor, 0, 0, amount_) {
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
+        }
     }
 
     function _pullCollateral(

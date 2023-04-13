@@ -12,13 +12,13 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
     /*** Kicker Helper Functions ***/
     /*******************************/
 
-    function _startClaimableReserveAuction() internal updateLocalStateAndPoolInterest {
+    function _kickReserveAuction() internal updateLocalStateAndPoolInterest {
         (, uint256 claimableReserves, , , ) = _poolInfo.poolReservesInfo(address(_pool));
         if (claimableReserves == 0) return;
 
-        try _pool.startClaimableReserveAuction() {
+        try _pool.kickReserveAuction() {
 
-            // **RE11**:  Reserves increase by claimableReserves by startClaimableReserveAuction
+            // **RE11**:  Reserves increase by claimableReserves by kickReserveAuction
             decreaseInReserves += claimableReserves;            
         } catch (bytes memory err) {
             _ensurePoolError(err);

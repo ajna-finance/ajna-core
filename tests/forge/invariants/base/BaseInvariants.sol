@@ -13,6 +13,9 @@ import { InvariantsTestHelpers } from './InvariantsTestHelpers.sol';
 
 abstract contract BaseInvariants is InvariantsTestHelpers, Test {
 
+    uint256 internal LENDER_MIN_BUCKET_INDEX;
+    uint256 internal LENDER_MAX_BUCKET_INDEX;
+
     TokenWithNDecimals internal _quote;
 
     BurnableToken internal _ajna;

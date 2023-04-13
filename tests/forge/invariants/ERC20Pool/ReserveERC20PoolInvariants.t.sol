@@ -11,7 +11,7 @@ import { ReserveERC20PoolHandler }        from './handlers/ReserveERC20PoolHandl
 import { LiquidationERC20PoolInvariants } from './LiquidationERC20PoolInvariants.t.sol';
 
 contract ReserveERC20PoolInvariants is ReserveInvariants, LiquidationERC20PoolInvariants {
- 
+    
     ReserveERC20PoolHandler internal _reserveERC20PoolHandler;
 
     function setUp() public override(BaseInvariants, LiquidationERC20PoolInvariants) virtual {

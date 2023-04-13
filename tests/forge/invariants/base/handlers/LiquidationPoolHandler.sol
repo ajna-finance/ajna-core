@@ -2,12 +2,6 @@
 
 pragma solidity 0.8.14;
 
-import {
-    LENDER_MIN_BUCKET_INDEX,
-    LENDER_MAX_BUCKET_INDEX,
-    MIN_AMOUNT,
-    MAX_AMOUNT
-}                                          from './unbounded/BaseHandler.sol';
 import { UnboundedLiquidationPoolHandler } from './unbounded/UnboundedLiquidationPoolHandler.sol';
 import { BasicPoolHandler }                from './BasicPoolHandler.sol';
 
@@ -43,6 +37,25 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
     /*** Taker Test Functions ***/
     /****************************/
 
+    function takeAuction(
+        uint256 borrowerIndex_,
+        uint256 amount_,
+        uint256 takerIndex_
+    ) external useRandomActor(takerIndex_) useTimestamps {
+        numberOfCalls['BLiquidationHandler.takeAuction']++;
+
+        // Prepare test phase
+        address borrower;
+        address taker       = _actor;
+        (amount_, borrower) = _preTake(amount_, borrowerIndex_, takerIndex_);
+
+        // Action phase
+        changePrank(taker);
+        // skip time to make auction takeable
+        vm.warp(block.timestamp + 2 hours);
+        _takeAuction(borrower, amount_, taker);
+    }
+
     function bucketTake(
         uint256 borrowerIndex_,
         uint256 bucketIndex_,
@@ -51,20 +64,81 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
     ) external useRandomActor(takerIndex_) useTimestamps {
         numberOfCalls['BLiquidationHandler.bucketTake']++;
 
-        borrowerIndex_ = constrictToRange(borrowerIndex_, 0, actors.length - 1);
-        bucketIndex_   = constrictToRange(bucketIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
-
-        address borrower = actors[borrowerIndex_];
-        address taker    = _actor;
-
-        ( , , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
-
-        if (kickTime == 0) _kickAuction(borrowerIndex_, 1e24, bucketIndex_);
+        // Prepare test phase
+        address taker                           = _actor;
+        (address borrower, uint256 bucketIndex) = _preBucketTake(borrowerIndex_, takerIndex_, bucketIndex_);
 
         changePrank(taker);
         // skip time to make auction takeable
         vm.warp(block.timestamp + 2 hours);
-        _bucketTake(taker, borrower, depositTake_, bucketIndex_);
+        _bucketTake(taker, borrower, depositTake_, bucketIndex);
+    }
+
+    /******************************/
+    /*** Settler Test Functions ***/
+    /******************************/
+
+    function settleAuction(
+        uint256 actorIndex_,
+        uint256 borrowerIndex_,
+        uint256 kickerIndex_
+    ) external useRandomActor(actorIndex_) useTimestamps {
+
+        // prepare phase
+        address actor                        = _actor;
+        (address borrower, uint256 maxDepth) = _preSettleAuction(borrowerIndex_, kickerIndex_);
+
+        // Action phase
+        changePrank(actor);
+        // skip time to make auction clearable
+        vm.warp(block.timestamp + 73 hours);
+        _settleAuction(borrower, maxDepth);
+
+        // Cleanup phase
+        _auctionSettleStateReset(borrower);
+    }
+
+    /*******************************/
+    /*** Prepare Tests Functions ***/
+    /*******************************/
+
+    function _preKick(uint256 borrowerIndex_, uint256 amount_) internal returns(address borrower_, bool borrowerKicked_) {
+        borrowerIndex_ = constrictToRange(borrowerIndex_, 0, actors.length - 1);
+        borrower_      = actors[borrowerIndex_];
+        amount_        = constrictToRange(amount_, MIN_QUOTE_AMOUNT, MAX_QUOTE_AMOUNT);
+
+        ( , , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower_);
+
+        borrowerKicked_ = kickTime != 0;
+
+        if (!borrowerKicked_) {
+            (uint256 debt, , ) = _pool.borrowerInfo(borrower_);
+
+            if (debt == 0) {
+                changePrank(borrower_);
+                _actor = borrower_;
+                uint256 drawDebtAmount = _preDrawDebt(amount_);
+                _drawDebt(drawDebtAmount);
+
+                // skip to make borrower undercollateralized
+                vm.warp(block.timestamp + 200 days);
+            }
+        }
+    }
+
+    function _preTake(uint256 amount_, uint256 borrowerIndex_, uint256 kickerIndex_) internal returns(uint256 boundedAmount_, address borrower_){
+        boundedAmount_ = _constrictTakeAmount(amount_);
+        borrower_      = _kickAuction(borrowerIndex_, boundedAmount_ * 100, kickerIndex_);
+    }
+
+    function _preBucketTake(uint256 borrowerIndex_, uint256 kickerIndex_, uint256 bucketIndex_) internal returns(address borrower_, uint256 bucket_) {
+        bucket_   = constrictToRange(bucketIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
+        borrower_ = _kickAuction(borrowerIndex_, 1e24, kickerIndex_);
+    }
+
+    function _preSettleAuction(uint256 borrowerIndex_, uint256 kickerIndex_) internal returns(address borrower_, uint256 maxDepth_) {
+        maxDepth_ = LENDER_MAX_BUCKET_INDEX - LENDER_MIN_BUCKET_INDEX;
+        borrower_ = _kickAuction(borrowerIndex_, 1e24, kickerIndex_);
     }
 
     /************************/
@@ -75,32 +149,18 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         uint256 borrowerIndex_,
         uint256 amount_,
         uint256 kickerIndex_
-    ) internal useRandomActor(kickerIndex_) {
+    ) internal useRandomActor(kickerIndex_) returns(address borrower_) {
         numberOfCalls['BLiquidationHandler.kickAuction']++;
 
-        borrowerIndex_   = constrictToRange(borrowerIndex_, 0, actors.length - 1);
-        address borrower = actors[borrowerIndex_];
+        // Prepare test phase
         address kicker   = _actor;
-        amount_          = constrictToRange(amount_, MIN_AMOUNT, MAX_AMOUNT);
+        bool borrowerKicked;
+        (borrower_, borrowerKicked)= _preKick(borrowerIndex_, amount_);
 
-        ( , , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
-
-        if (kickTime == 0) {
-            (uint256 debt, , ) = _pool.borrowerInfo(borrower);
-
-            if (debt == 0) {
-                changePrank(borrower);
-                _actor = borrower;
-                uint256 drawDebtAmount = _preDrawDebt(amount_);
-                _drawDebt(drawDebtAmount);
-
-                // skip to make borrower undercollateralized
-                vm.warp(block.timestamp + 200 days);
-            }
-
-            changePrank(kicker);
-            _actor = kicker;
-            _kickAuction(borrower);
-        }
+        // Action phase
+        _actor = kicker;
+        if(!borrowerKicked) _kickAuction(borrower_);
     }
+
+    function _constrictTakeAmount(uint256 amountToTake_) internal view virtual returns(uint256 boundedAmount_);
 }

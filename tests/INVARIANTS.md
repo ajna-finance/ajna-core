@@ -30,13 +30,13 @@
 - **L3**: Loans array (`LoansState.loans`) is a max-heap with respect to t0-threshold price: the t0TP of loan at index `i` is >= the t0-threshold price of the loans at index `2*i` and `2*i+1`
 
 ## Buckets
-- **B1**: sum of LPs of lenders in bucket (`Lender.lps`) = bucket LPs accumulator (`Bucket.lps`)  
-- **B2**: bucket LPs accumulator (`Bucket.lps`) = 0 if no deposit / collateral in bucket  
-- **B3**: if no collateral or deposit in bucket then the bucket exchange rate is `1e18`
-- **B4**: bankrupt bucket LPs accumulator = 0; lender LPs for deposits before bankruptcy time = 0 // FIXME: invariant appears redundant with B1.
-- **B5**: when adding / moving quote tokens or adding collateral : lender deposit time (`Lender.depositTime`) = timestamp of block when deposit happened (`block.timestamp`)
-- **B6**: when receiving transferred LPs : receiver deposit time (`Lender.depositTime`) = max of sender and receiver deposit time
-- **B7**: when awarded bucket take LPs : taker/kicker deposit time (`Lender.depositTime`) = timestamp of block when award happened (`block.timestamp`)  
+- **B1**: sum of LP of lenders in bucket (`Lender.lps`) = bucket LP accumulator (`Bucket.lps`)  
+- **B2**: bucket LP accumulator (`Bucket.lps`) = 0 if no deposit / collateral in bucket  
+- **B3**: if no collateral or deposit in bucket then the bucket exchange rate is `1e27`  
+- **B4**: bankrupt bucket LP accumulator = 0; lender LP for deposits before bankruptcy time = 0 // FIXME: invariant appears redundant with B1. 
+- **B5**: when adding / moving quote tokens or adding collateral : lender deposit time (`Lender.depositTime`) = timestamp of block when deposit happened (`block.timestamp`)  
+- **B6**: when receiving transferred LP : receiver deposit time (`Lender.depositTime`) = max of sender and receiver deposit time  
+- **B7**: when awarded bucket take LP : taker/kicker deposit time (`Lender.depositTime`) = timestamp of block when award happened (`block.timestamp`)  
 
 ## Interest
 - **I1**: interest rate (`InterestState.interestRate`) cannot be updated more than once in a 12 hours period of time (`InterestState.interestRateUpdate`)  

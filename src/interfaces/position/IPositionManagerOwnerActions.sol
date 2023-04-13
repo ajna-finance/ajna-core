@@ -20,8 +20,8 @@ interface IPositionManagerOwnerActions {
      *  @notice Called to memorialize existing positions with a given NFT.
      *  @dev    The array of buckets is expected to be constructed off chain by scanning events for that lender.
      *  @dev    The NFT must have already been created, and the number of buckets to be memorialized at a time determined by function caller.
-     *  @dev    An additional call is made to the pool to transfer the LPs from their previous owner, to the Position Manager.
-     *  @dev    `Pool.increaseLPsAllowance` must be called prior to calling this method in order to allow Position manager contract to transfer LPs to be memorialized.
+     *  @dev    An additional call is made to the pool to transfer the LP from their previous owner, to the Position Manager.
+     *  @dev    `Pool.increaseLPAllowance` must be called prior to calling this method in order to allow Position manager contract to transfer LP to be memorialized.
      *  @param  params Calldata struct supplying inputs required to conduct the memorialization.
      */
     function memorializePositions(
@@ -50,8 +50,8 @@ interface IPositionManagerOwnerActions {
      *  @notice Called to reedem existing positions with a given NFT.
      *  @dev    The array of buckets is expected to be constructed off chain by scanning events for that lender.
      *  @dev    The NFT must have already been created, and the number of buckets to be memorialized at a time determined by function caller.
-     *  @dev    An additional call is made to the pool to transfer the LPs Position Manager to owner.
-     *  @dev    `Pool.approveLPsTransferors` must be called prior to calling this method in order to allow Position manager contract to transfer redeemed LPs.
+     *  @dev    An additional call is made to the pool to transfer the LP Position Manager to owner.
+     *  @dev    `Pool.approveLPTransferors` must be called prior to calling this method in order to allow Position manager contract to transfer redeemed LP.
      *  @param  params Calldata struct supplying inputs required to conduct the redeem.
      */
     function reedemPositions(

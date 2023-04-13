@@ -6,7 +6,9 @@ import {
     IERC721Token,
     IPoolErrors,
     IPoolLenderActions,
-    IPoolLiquidationActions
+    IPoolKickerActions,
+    IPoolTakerActions,
+    IPoolSettlerActions
 }                           from './interfaces/pool/IPool.sol';
 import {
     BucketTakeResult,
@@ -38,14 +40,15 @@ import { Maths }    from './libraries/internal/Maths.sol';
 import { Deposits } from './libraries/internal/Deposits.sol';
 import { Loans }    from './libraries/internal/Loans.sol';
 
-import { Auctions }        from './libraries/external/Auctions.sol';
 import { LenderActions }   from './libraries/external/LenderActions.sol';
 import { BorrowerActions } from './libraries/external/BorrowerActions.sol';
+import { SettlerActions }  from './libraries/external/SettlerActions.sol';
+import { TakerActions }    from './libraries/external/TakerActions.sol';
 
 /**
  *  @title  ERC721 Pool contract
  *  @notice Entrypoint of ERC721 Pool actions for pool actors:
- *          - Lenders: add, remove and move quote tokens; transfer LPs
+ *          - Lenders: add, remove and move quote tokens; transfer LP
  *          - Borrowers: draw and repay debt
  *          - Traders: add, remove and move quote tokens; add and remove collateral
  *          - Kickers: auction undercollateralized loans; settle auctions; claim bond rewards
@@ -54,7 +57,7 @@ import { BorrowerActions } from './libraries/external/BorrowerActions.sol';
  *          - Flash borrowers: initiate flash loans on ERC20 quote tokens
  *  @dev    Contract is FlashloanablePool with flash loan logic.
  *  @dev    Contract is base Pool with logic to handle ERC721 collateral.
- *  @dev    Calls logic from external PoolCommons, LenderActions, BorrowerActions and Auctions libraries.
+ *  @dev    Calls logic from external PoolCommons, LenderActions, BorrowerActions and auction actions libraries.
  */
 contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
@@ -286,7 +289,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         emit AddCollateralNFT(msg.sender, index_, tokenIdsToAdd_, bucketLPs_);
 
         // update pool interest rate state
-        _updateInterestState(poolState, _lup(poolState.debt));
+        _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
 
         // move required collateral from sender to pool
         _transferFromSenderToPool(bucketTokenIds, tokenIdsToAdd_);
@@ -323,7 +326,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         emit MergeOrRemoveCollateralNFT(msg.sender, collateralMerged_, bucketLPs_);
 
         // update pool interest rate state
-        _updateInterestState(poolState, _lup(poolState.debt));
+        _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
 
         if (collateralMerged_ == collateralAmount) {
             // Total collateral in buckets meets the requested removal amount, noOfNFTsToRemove_
@@ -358,7 +361,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         emit RemoveCollateral(msg.sender, index_, noOfNFTsToRemove_, lpAmount_);
 
         // update pool interest rate state
-        _updateInterestState(poolState, _lup(poolState.debt));
+        _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
 
         _transferFromPoolToAddress(msg.sender, bucketTokenIds, noOfNFTsToRemove_);
     }
@@ -368,7 +371,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     /*******************************/
 
     /**
-     *  @inheritdoc IPoolLiquidationActions
+     *  @inheritdoc IPoolSettlerActions
      *  @dev write state:
      *          - decrement poolBalances.t0Debt accumulator
      *          - decrement poolBalances.t0DebtInAuction accumulator
@@ -386,7 +389,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             bucketDepth: maxDepth_
         });
 
-        SettleResult memory result = Auctions.settlePoolDebt(
+        SettleResult memory result = SettlerActions.settlePoolDebt(
             auctions,
             buckets,
             deposits,
@@ -415,11 +418,11 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         poolState.debt       -= Maths.wmul(result.t0DebtSettled, poolState.inflator);
         poolState.t0Debt     -= result.t0DebtSettled;
         poolState.collateral -= result.collateralSettled;
-        _updateInterestState(poolState, _lup(poolState.debt));
+        _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
     }
 
     /**
-     *  @inheritdoc IPoolLiquidationActions
+     *  @inheritdoc IPoolTakerActions
      *  @dev write state:
      *          - decrement poolBalances.t0Debt accumulator
      *          - decrement poolBalances.t0DebtInAuction accumulator
@@ -433,7 +436,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     ) external override nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
 
-        TakeResult memory result = Auctions.take(
+        TakeResult memory result = TakerActions.take(
             auctions,
             buckets,
             deposits,
@@ -497,7 +500,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     }
 
     /**
-     *  @inheritdoc IPoolLiquidationActions
+     *  @inheritdoc IPoolTakerActions
      *  @dev write state:
      *          - decrement poolBalances.t0Debt accumulator
      *          - decrement poolBalances.t0DebtInAuction accumulator
@@ -511,7 +514,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
         PoolState memory poolState = _accruePoolInterest();
 
-        BucketTakeResult memory result = Auctions.bucketTake(
+        BucketTakeResult memory result = TakerActions.bucketTake(
             auctions,
             buckets,
             deposits,

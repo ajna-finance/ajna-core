@@ -5,13 +5,14 @@ pragma solidity 0.8.14;
 import { IPool, IERC20Token } from './interfaces/pool/IPool.sol';
 
 import {
+    _auctionPrice,
     _claimableReserves,
     _borrowFeeRate,
     _depositFeeRate,
     _indexOf,
     _isCollateralized,
-    _lpsToCollateral,
-    _lpsToQuoteToken,
+    _lpToCollateral,
+    _lpToQuoteToken,
     _minDebtAmount,
     _priceAt,
     _reserveAuctionPrice,
@@ -22,7 +23,6 @@ import {
 import { Buckets } from './libraries/internal/Buckets.sol';
 import { Maths }   from './libraries/internal/Maths.sol';
 
-import { Auctions }    from './libraries/external/Auctions.sol';
 import { PoolCommons } from './libraries/external/PoolCommons.sol';
 
 /**
@@ -64,7 +64,7 @@ contract PoolInfoUtils {
             uint256 lup_           = _priceAt(pool.depositIndex(poolDebt));
             isCollateralized_      = _isCollateralized(debtToCover_, collateral_, lup_, pool.poolType());
 
-            price_ = Auctions._auctionPrice(kickMomp, neutralPrice_, kickTime_);
+            price_ = _auctionPrice(kickMomp, neutralPrice_, kickTime_);
         }
     }
 
@@ -392,19 +392,19 @@ contract PoolInfoUtils {
     }
 
     /**
-     *  @notice Calculate the amount of quote tokens in bucket for a given amount of LPs.
-     *  @param  lps_         The number of LPs to calculate amounts for.
+     *  @notice Calculate the amount of quote tokens in bucket for a given amount of LP.
+     *  @param  lps_         The number of LP to calculate amounts for.
      *  @param  index_       The price bucket index for which the value should be calculated.
-     *  @return quoteAmount_ The exact amount of quote tokens that can be exchanged for the given LPs, WAD units.
+     *  @return quoteAmount_ The exact amount of quote tokens that can be exchanged for the given LP, WAD units.
      */
-    function lpsToQuoteTokens(
+    function lpToQuoteTokens(
         address ajnaPool_,
         uint256 lps_,
         uint256 index_
     ) external view returns (uint256 quoteAmount_) {
         IPool pool = IPool(ajnaPool_);
         (uint256 bucketLPs_, uint256 bucketCollateral , , uint256 bucketDeposit, ) = pool.bucketInfo(index_);
-        quoteAmount_ = _lpsToQuoteToken(
+        quoteAmount_ = _lpToQuoteToken(
             bucketLPs_,
             bucketCollateral,
             bucketDeposit,
@@ -415,19 +415,19 @@ contract PoolInfoUtils {
     }
 
     /**
-     *  @notice Calculate the amount of collateral tokens in bucket for a given amount of LPs.
-     *  @param  lps_              The number of LPs to calculate amounts for.
+     *  @notice Calculate the amount of collateral tokens in bucket for a given amount of LP.
+     *  @param  lps_              The number of LP to calculate amounts for.
      *  @param  index_            The price bucket index for which the value should be calculated.
-     *  @return collateralAmount_ The exact amount of collateral tokens that can be exchanged for the given LPs, WAD units.
+     *  @return collateralAmount_ The exact amount of collateral tokens that can be exchanged for the given LP, WAD units.
      */
-    function lpsToCollateral(
+    function lpToCollateral(
         address ajnaPool_,
         uint256 lps_,
         uint256 index_
     ) external view returns (uint256 collateralAmount_) {
         IPool pool = IPool(ajnaPool_);
         (uint256 bucketLPs_, uint256 bucketCollateral , , uint256 bucketDeposit, ) = pool.bucketInfo(index_);
-        collateralAmount_ = _lpsToCollateral(
+        collateralAmount_ = _lpToCollateral(
             bucketCollateral,
             bucketLPs_,
             bucketDeposit,

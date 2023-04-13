@@ -165,7 +165,10 @@ library PoolCommons {
             interestParams_.interestRate       = uint208(0.1 * 1e18);
             interestParams_.interestRateUpdate = uint48(block.timestamp);
 
-            emit ResetInterestRate(poolState_.rate, 0.1 * 1e18);
+            emit ResetInterestRate(
+                poolState_.rate,
+                0.1 * 1e18
+            );
         }
         // otherwise calculate and update interest rate if it has been more than 12 hours since the last update
         else if (block.timestamp - interestParams_.interestRateUpdate > 12 hours) {
@@ -181,7 +184,10 @@ library PoolCommons {
                 interestParams_.interestRate       = uint208(vars.newInterestRate);
                 interestParams_.interestRateUpdate = uint48(block.timestamp);
 
-                emit UpdateInterestRate(poolState_.rate, vars.newInterestRate);
+                emit UpdateInterestRate(
+                    poolState_.rate,
+                    vars.newInterestRate
+                );
             }
         }
 

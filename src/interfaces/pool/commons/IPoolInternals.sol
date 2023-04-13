@@ -12,7 +12,7 @@ pragma solidity 0.8.14;
 
 struct BucketTakeResult {
     uint256 collateralAmount;      // [WAD] amount of collateral taken
-    uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LPs
+    uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LP
     uint256 t0DebtPenalty;         // [WAD] t0 penalty applied on first take
     uint256 remainingCollateral;   // [WAD] amount of borrower collateral remaining after take
     uint256 poolDebt;              // [WAD] current pool debt
@@ -52,7 +52,7 @@ struct SettleResult {
 
 struct TakeResult {
     uint256 collateralAmount;      // [WAD] amount of collateral taken
-    uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LPs
+    uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LP
     uint256 quoteTokenAmount;      // [WAD] amount of quote tokens paid by taker for taken collateral
     uint256 t0DebtPenalty;         // [WAD] t0 penalty applied on first take
     uint256 excessQuoteToken;      // [WAD] (NFT only) amount of quote tokens to be paid by taker to borrower for fractional collateral
@@ -66,6 +66,13 @@ struct TakeResult {
     uint256 debtPostAction;        // [WAD] The amount of borrower t0 debt after take
     uint256 collateralPreAction;   // [WAD] The amount of borrower collateral before take
     uint256 collateralPostAction;  // [WAD] The amount of borrower collateral after take
+}
+
+struct KickReserveAuctionParams {
+    uint256 poolSize;    // [WAD] total deposits in pool (with accrued debt)
+    uint256 t0PoolDebt;  // [WAD] current t0 pool debt
+    uint256 poolBalance; // [WAD] pool quote token balance
+    uint256 inflator;    // [WAD] pool current inflator
 }
 
 /******************************************/

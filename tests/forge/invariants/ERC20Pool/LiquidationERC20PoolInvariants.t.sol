@@ -8,7 +8,7 @@ import { BasicInvariants }             from '../base/BasicInvariants.t.sol';
 import { LiquidationERC20PoolHandler } from './handlers/LiquidationERC20PoolHandler.sol';
 import { BasicERC20PoolInvariants }    from './BasicERC20PoolInvariants.t.sol';
 
-contract LiquidationERC20PoolInvariants is LiquidationInvariants, BasicERC20PoolInvariants {
+contract LiquidationERC20PoolInvariants is BasicERC20PoolInvariants, LiquidationInvariants {
     
     LiquidationERC20PoolHandler internal _liquidationERC20PoolHandler;
 
