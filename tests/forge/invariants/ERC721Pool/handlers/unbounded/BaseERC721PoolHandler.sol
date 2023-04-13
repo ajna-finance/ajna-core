@@ -38,7 +38,7 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
         MAX_QUOTE_AMOUNT = 1e28;
 
         MIN_COLLATERAL_AMOUNT = 1;
-        MAX_COLLATERAL_AMOUNT = 5;
+        MAX_COLLATERAL_AMOUNT = 100;
 
         for (uint256 bucket = LENDER_MIN_BUCKET_INDEX; bucket <= LENDER_MAX_BUCKET_INDEX; bucket++) {
             collateralBuckets.add(bucket);
