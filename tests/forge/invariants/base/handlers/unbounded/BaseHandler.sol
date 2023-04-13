@@ -3,6 +3,7 @@
 pragma solidity 0.8.14;
 
 import '@std/Test.sol';
+import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { Pool }             from 'src/base/Pool.sol';
 import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
@@ -18,25 +19,30 @@ import { TokenWithNDecimals, BurnableToken } from '../../../../utils/Tokens.sol'
 
 import '../../../interfaces/ITestBase.sol';
 
-uint256 constant LENDER_MIN_BUCKET_INDEX = 2570;
-uint256 constant LENDER_MAX_BUCKET_INDEX = 2572;
-
 uint256 constant BORROWER_MIN_BUCKET_INDEX = 2600;
 uint256 constant BORROWER_MAX_BUCKET_INDEX = 2620;
 
-uint256 constant MIN_AMOUNT = 1e3;
-uint256 constant MAX_AMOUNT = 1e30;
-
 abstract contract BaseHandler is Test {
+
+    using EnumerableSet for EnumerableSet.UintSet;
 
     // Tokens
     TokenWithNDecimals internal _quote;
-
-    BurnableToken internal _ajna;
+    BurnableToken      internal _ajna;
 
     // Pool
-    Pool     internal _pool;
+    Pool          internal _pool;
     PoolInfoUtils internal _poolInfo;
+
+    // Lender bucket index
+    uint256 public LENDER_MIN_BUCKET_INDEX;
+    uint256 public LENDER_MAX_BUCKET_INDEX;
+
+    uint256 internal MIN_QUOTE_AMOUNT;
+    uint256 internal MAX_QUOTE_AMOUNT;
+
+    uint256 internal MIN_COLLATERAL_AMOUNT;
+    uint256 internal MAX_COLLATERAL_AMOUNT;
 
     // Test invariant contract
     ITestBase internal testContract;
@@ -62,6 +68,9 @@ abstract contract BaseHandler is Test {
     uint256 public previousReserves;    // reserves before action
     uint256 public increaseInReserves;  // amount of reserve decrease
     uint256 public decreaseInReserves;  // amount of reserve increase
+
+    // Buckets where collateral is added when a borrower is in auction and has partial NFT
+    EnumerableSet.UintSet internal collateralBuckets;
 
     // auctions invariant test state
     bool                     public firstTake;        // if take is called on auction first time
@@ -183,6 +192,7 @@ abstract contract BaseHandler is Test {
             err == keccak256(abi.encodeWithSignature("AuctionNotClearable()")) ||
             err == keccak256(abi.encodeWithSignature("ReserveAuctionTooSoon()")) ||
             err == keccak256(abi.encodeWithSignature("NoReserves()")) ||
+            err == keccak256(abi.encodeWithSignature("ZeroThresholdPrice()")) ||
             err == keccak256(abi.encodeWithSignature("NoReservesAuction()")),
             "Unexpected revert error"
         );
@@ -219,7 +229,8 @@ abstract contract BaseHandler is Test {
     }
 
     function _fenwickRemove(uint256 removedAmount_, uint256 bucketIndex_) internal {
-        fenwickDeposits[bucketIndex_] -= removedAmount_;
+        // removedAmount can be slightly greater than fenwickDeposits due to rounding in accrue interest
+        fenwickDeposits[bucketIndex_] -= Maths.min(fenwickDeposits[bucketIndex_], removedAmount_);
     }
 
     function _fenwickAccrueInterest() internal {
@@ -394,6 +405,10 @@ abstract contract BaseHandler is Test {
 
         // Account for decrementing x to make max inclusive.
         if (max_ == type(uint256).max && x_ != 0) result_++;
+    }
+
+    function getCollateralBuckets() external view returns(uint256[] memory) {
+        return collateralBuckets.values();
     }
 
 }

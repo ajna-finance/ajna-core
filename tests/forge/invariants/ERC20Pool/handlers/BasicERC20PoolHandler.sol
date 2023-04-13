@@ -5,13 +5,6 @@ pragma solidity 0.8.14;
 import { PoolInfoUtils, _collateralization } from 'src/PoolInfoUtils.sol';
 import { Maths }                             from 'src/libraries/internal/Maths.sol';
 
-import {
-    LENDER_MIN_BUCKET_INDEX,
-    LENDER_MAX_BUCKET_INDEX,
-    BORROWER_MIN_BUCKET_INDEX,
-    MIN_AMOUNT,
-    MAX_AMOUNT
-}                                         from '../../base/handlers/unbounded/BaseHandler.sol';
 import { BasicPoolHandler }               from '../../base/handlers/BasicPoolHandler.sol';
 import { UnboundedBasicPoolHandler }      from '../../base/handlers/unbounded/UnboundedBasicPoolHandler.sol';
 import { UnboundedBasicERC20PoolHandler } from './unbounded/UnboundedBasicERC20PoolHandler.sol';
@@ -139,14 +132,14 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
 
     function _preAddCollateral(
         uint256 amountToAdd_
-    ) internal pure returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToAdd_, MIN_AMOUNT, MAX_AMOUNT);
+    ) internal view returns (uint256 boundedAmount_) {
+        boundedAmount_ = constrictToRange(amountToAdd_, MIN_COLLATERAL_AMOUNT, MAX_COLLATERAL_AMOUNT);
     }
 
     function _preRemoveCollateral(
         uint256 amountToRemove_
     ) internal returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToRemove_, MIN_AMOUNT, MAX_AMOUNT);
+        boundedAmount_ = constrictToRange(amountToRemove_, MIN_COLLATERAL_AMOUNT, MAX_COLLATERAL_AMOUNT);
 
         // ensure actor has collateral to remove
         (uint256 lpBalanceBefore, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
@@ -156,19 +149,19 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
     function _prePledgeCollateral(
         uint256 amountToPledge_
     ) internal view returns (uint256 boundedAmount_) {
-        boundedAmount_ =  constrictToRange(amountToPledge_, _erc20Pool.collateralScale(), MAX_AMOUNT);
+        boundedAmount_ =  constrictToRange(amountToPledge_, _erc20Pool.collateralScale(), MAX_COLLATERAL_AMOUNT);
     }
 
     function _prePullCollateral(
         uint256 amountToPull_
-    ) internal pure returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToPull_, MIN_AMOUNT, MAX_AMOUNT);
+    ) internal view returns (uint256 boundedAmount_) {
+        boundedAmount_ = constrictToRange(amountToPull_, MIN_COLLATERAL_AMOUNT, MAX_COLLATERAL_AMOUNT);
     }
 
     function _preDrawDebt(
         uint256 amountToBorrow_
     ) internal override returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToBorrow_, MIN_AMOUNT, MAX_AMOUNT);
+        boundedAmount_ = constrictToRange(amountToBorrow_, MIN_QUOTE_AMOUNT, MAX_QUOTE_AMOUNT);
 
         // Pre Condition
         // 1. borrower's debt should exceed minDebt
@@ -206,7 +199,7 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
     function _preRepayDebt(
         uint256 amountToRepay_
     ) internal returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToRepay_, Maths.max(_pool.quoteTokenDust(), MIN_AMOUNT), MAX_AMOUNT);
+        boundedAmount_ = constrictToRange(amountToRepay_, Maths.max(_pool.quoteTokenDust(), MIN_QUOTE_AMOUNT), MAX_QUOTE_AMOUNT);
 
         // ensure actor has debt to repay
         (uint256 debt, , ) = PoolInfoUtils(_poolInfo).borrowerInfo(address(_pool), _actor);

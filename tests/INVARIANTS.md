@@ -6,7 +6,7 @@
 - #### NFT:  
   - **CT2**: number of tokens owned by the pool (`Collateral.balanceOf(pool)`) * `1e18` = sum of collateral across all borrowers (`Borrower.collateral`) + sum of claimable collateral across all buckets (`Bucket.collateral`)  
   - **CT3**: number of tokens owned by the pool (`Collateral.balanceOf(pool)` = length of borrower array token ids (`ERC721Pool.borrowerTokenIds.length`) + length of buckets array token ids (`ERC721Pool.bucketTokenIds.length`)  
-  - **CT4**: number of borrower token ids (`ERC721Pool.borrowerTokenIds.length`) * `1e18` <= borrower balance (`Borrower.collateral`) Note: can be lower in case when fractional collateral that is rebalanced / moved to buckets claimable token ids  
+  - **CT4**: number of borrower token ids (`ERC721Pool.borrowerTokenIds.length`) * `1e18` >= borrower balance (`Borrower.collateral`) Note: can be lower in case when fractional collateral that is rebalanced / moved to buckets claimable token ids  
   - **CT5**: token ids in buckets array (`ERC721Pool.bucketTokenIds`) and in borrowers array (`ERC721Pool.borrowerTokenIds`) are owned by pool contract (`Collateral.ownerOf(tokenId)`)  
   - **CT6**: in case of subset pools: token ids in buckets array (`ERC721Pool.bucketTokenIds`) and in borrowers array (`ERC721Pool.borrowerTokenIds`) should have a mapping of `True` in allowed token ids mapping (`ERC721Pool.tokenIdsAllowed`)  
 

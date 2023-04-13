@@ -7,10 +7,6 @@ import "@std/console.sol";
 import { Maths } from 'src/libraries/internal/Maths.sol';
 
 import { IBaseHandler }  from '../interfaces/IBaseHandler.sol';
-import {
-    LENDER_MIN_BUCKET_INDEX,
-    LENDER_MAX_BUCKET_INDEX
-}                         from './handlers/unbounded/BaseHandler.sol';
 import { BaseInvariants } from '../base/BaseInvariants.sol';
 
 // contains invariants for the test
