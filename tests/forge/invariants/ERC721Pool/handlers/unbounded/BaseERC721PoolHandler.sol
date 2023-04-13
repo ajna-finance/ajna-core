@@ -16,7 +16,10 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
     NFTCollateralToken internal _collateral;
 
     // ERC721Pool
-    ERC721Pool     internal _erc721Pool;
+    ERC721Pool internal _erc721Pool;
+
+    // Buckets where collateral is added when a borrower is in auction and has partial NFT
+    uint256[] internal collateralBuckets;
 
     constructor(
         address pool_,
@@ -41,7 +44,7 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
         _collateral = NFTCollateralToken(collateral_);
 
         // ERC721Pool
-        _erc721Pool  = ERC721Pool(pool_);
+        _erc721Pool = ERC721Pool(pool_);
 
         // Actors
         actors = _buildActors(numOfActors_);
@@ -67,6 +70,10 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
         }
 
         return actorsAddress;
+    }
+
+    function getCollateralBuckets() external view returns(uint256[] memory) {
+        return collateralBuckets;
     }
 
 }

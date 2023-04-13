@@ -5,7 +5,7 @@ pragma solidity 0.8.14;
 import { ERC20Pool }                         from 'src/ERC20Pool.sol';
 import { ERC20PoolFactory }                  from 'src/ERC20PoolFactory.sol';
 import { PoolInfoUtils }                     from 'src/PoolInfoUtils.sol';
-import { _borrowFeeRate, _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
+import { _borrowFeeRate, _depositFeeRate, _indexOf, MIN_PRICE, MAX_PRICE }   from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }                             from "src/libraries/internal/Maths.sol";
 
 import { UnboundedBasicPoolHandler } from "../../../base/handlers/unbounded/UnboundedBasicPoolHandler.sol";
@@ -37,16 +37,18 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
             tokenIds[i] = _collateral.tokenOfOwnerByIndex(_actor, i);
         }
 
-        _erc721Pool.addCollateral(tokenIds, bucketIndex_, block.timestamp + 1 minutes);
+        try _erc721Pool.addCollateral(tokenIds, bucketIndex_, block.timestamp + 1 minutes) {
+            // **B5**: when adding collateral: lender deposit time = timestamp of block when deposit happened
+            lenderDepositTime[_actor][bucketIndex_] = block.timestamp;
+            // **R5**: Exchange rates are unchanged by adding collateral token into a bucket
+            exchangeRateShouldNotChange[bucketIndex_] = true;
 
-        // **B5**: when adding collateral: lender deposit time = timestamp of block when deposit happened
-        lenderDepositTime[_actor][bucketIndex_] = block.timestamp;
-        // **R5**: Exchange rates are unchanged by adding collateral token into a bucket
-        exchangeRateShouldNotChange[bucketIndex_] = true;
-
-        // Post action condition
-        (uint256 lpBalanceAfterAction, ) = _erc721Pool.lenderInfo(bucketIndex_, _actor);
-        require(lpBalanceAfterAction > lpBalanceBeforeAction, "LP balance should increase");
+            // Post action condition
+            (uint256 lpBalanceAfterAction, ) = _erc721Pool.lenderInfo(bucketIndex_, _actor);
+            require(lpBalanceAfterAction > lpBalanceBeforeAction, "LP balance should increase");
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
+        }
     }
 
     function _removeCollateral(
@@ -80,6 +82,8 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.pledgeCollateral']++;
 
+        (uint256 kickTimeBefore, , , , uint256 auctionPrice, ) =_poolInfo.auctionStatus(address(_erc721Pool), _actor);
+
         // **R1**: Exchange rates are unchanged by pledging collateral
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             exchangeRateShouldNotChange[bucketIndex] = true;
@@ -92,7 +96,22 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
             tokenIds[i] = _collateral.tokenOfOwnerByIndex(_actor, i);
         }
 
-        _erc721Pool.drawDebt(_actor, 0, 0, tokenIds);
+        try _erc721Pool.drawDebt(_actor, 0, 0, tokenIds) {
+            (uint256 kickTimeAfter, , , , , ) =_poolInfo.auctionStatus(address(_erc721Pool), _actor);
+
+            // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
+            if(kickTimeBefore != 0 && kickTimeAfter == 0) {
+                if(auctionPrice < MIN_PRICE) {
+                    collateralBuckets.push(7388);
+                } else if(auctionPrice > MAX_PRICE) {
+                    collateralBuckets.push(0);
+                } else {
+                    collateralBuckets.push(_indexOf(auctionPrice));
+                }
+            }
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
+        }
     }
 
     function _pullCollateral(
@@ -154,7 +173,21 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.repayDebt']++;
 
+        (uint256 kickTimeBefore, , , , uint256 auctionPrice, ) =_poolInfo.auctionStatus(address(_erc721Pool), _actor);
+
         try _erc721Pool.repayDebt(_actor, amountToRepay_, 0, _actor, 7388) {
+            (uint256 kickTimeAfter, , , , , ) =_poolInfo.auctionStatus(address(_erc721Pool), _actor);
+
+            // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
+            if(kickTimeBefore != 0 && kickTimeAfter == 0) {
+                if(auctionPrice < MIN_PRICE) {
+                    collateralBuckets.push(7388);
+                } else if(auctionPrice > MAX_PRICE) {
+                    collateralBuckets.push(0);
+                } else {
+                    collateralBuckets.push(_indexOf(auctionPrice));
+                }
+            }
 
         } catch (bytes memory err) {
             _ensurePoolError(err);

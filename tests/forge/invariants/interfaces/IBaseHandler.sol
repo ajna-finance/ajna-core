@@ -30,4 +30,6 @@ interface IBaseHandler {
     function alreadyTaken(address) external view returns(bool);
 
     function lenderDepositTime(address lender, uint256 bucketIndex) external view returns(uint256);
+
+    function getCollateralBuckets() external view returns(uint256[] memory);
 }

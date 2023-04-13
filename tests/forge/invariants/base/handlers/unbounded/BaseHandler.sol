@@ -35,8 +35,8 @@ abstract contract BaseHandler is Test {
     uint256 public LENDER_MIN_BUCKET_INDEX;
     uint256 public LENDER_MAX_BUCKET_INDEX;
 
-    uint256 public MIN_QUOTE_AMOUNT;
-    uint256 public MAX_QUOTE_AMOUNT;
+    uint256 internal MIN_QUOTE_AMOUNT;
+    uint256 internal MAX_QUOTE_AMOUNT;
 
     uint256 internal MIN_COLLATERAL_AMOUNT;
     uint256 internal MAX_COLLATERAL_AMOUNT;
@@ -224,7 +224,7 @@ abstract contract BaseHandler is Test {
 
     function _fenwickRemove(uint256 removedAmount_, uint256 bucketIndex_) internal {
         // removedAmount can be slightly greater than fenwickDeposits due to rounding in accrue interest
-        fenwickDeposits[bucketIndex_] -= fenwickDeposits[bucketIndex_] > removedAmount_ ? removedAmount_ : fenwickDeposits[bucketIndex_];
+        fenwickDeposits[bucketIndex_] -= Maths.min(fenwickDeposits[bucketIndex_], removedAmount_);
     }
 
     function _fenwickAccrueInterest() internal {

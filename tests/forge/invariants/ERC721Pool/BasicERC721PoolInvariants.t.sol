@@ -87,10 +87,17 @@ contract BasicERC721PoolInvariants is BasicInvariants {
     function invariant_CT2() public useCurrentTimestamp {
         uint256 collateralBalance = _collateral.balanceOf(address(_erc721pool)) * 1e18;
         uint256 bucketCollateral;
+        uint256 collateral;
 
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            (, uint256 collateral, , , ) = _erc721pool.bucketInfo(bucketIndex);
+            (, collateral, , , ) = _erc721pool.bucketInfo(bucketIndex);
+            bucketCollateral += collateral;
+        }
 
+        uint256[] memory collateralBuckets = IBaseHandler(_handler).getCollateralBuckets();
+        for(uint256 i = 0; i < collateralBuckets.length; i++) {
+            uint256 bucketIndex = collateralBuckets[i];
+            (, collateral, , , ) = _erc721pool.bucketInfo(bucketIndex);
             bucketCollateral += collateral;
         }
 

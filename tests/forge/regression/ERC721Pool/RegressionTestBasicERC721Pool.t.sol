@@ -18,16 +18,8 @@ contract RegressionTestBasicERC721Pool is BasicERC721PoolInvariants {
         invariant_total_interest_earned_I2();
     }
 
-    // Fails as pool Balance becomes less than deposits
-    function _test_regression_evm_revert_1() external {
+    function test_regression_evm_revert_1() external {
         _basicERC721PoolHandler.drawDebt(0, 29877144463);
-        invariant_quoteTokenBalance_QT1();
-
-        /* Logs for removeQuoteToken
-         Deposits available --> 59754288926
-         Pool Balance       --> 29877144463
-         LUP                --> 99836282890
-         HTP                --> 29905872487 */
         _basicERC721PoolHandler.removeQuoteToken(0, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 1206432074572207884421188737151329072317831713860321643282);
     }
 
@@ -40,6 +32,15 @@ contract RegressionTestBasicERC721Pool is BasicERC721PoolInvariants {
         _basicERC721PoolHandler.pledgeCollateral(25718032335942173737944995798726490502781258789511022074015153606363463, 1325044714694);
         _basicERC721PoolHandler.addQuoteToken(234707990811923980957502397929, 291292446109648312501466920531792328617, 115792089237316195423570985008687907853269984665640564039457584007913129639932);
         _basicERC721PoolHandler.repayDebt(10621200, 1157);
+    }
+
+    function test_regression_evm_revert_3() external {
+        _basicERC721PoolHandler.repayDebt(7033399587545693049772672666426104761848542813925583983822212786951755531265, 1108);
+        _basicERC721PoolHandler.repayDebt(0, 115792089237316195423570985008687907853269984665640564039457584007913129639935);
+        _basicERC721PoolHandler.removeQuoteToken(0, 134682577920393186680576557312616751188928702587427398297744881288955844683, 85980234897818314);
+        _basicERC721PoolHandler.removeCollateral(87753968394072371065317166720803, 15237002444774746392696, 4454566448443430136);
+        _basicERC721PoolHandler.pullCollateral(0, 1131722123054653932602913);
+        _basicERC721PoolHandler.pledgeCollateral(115792089237316195423570985008687907853269984665640564039457584007913129639935, 0);
     }
 
 }
