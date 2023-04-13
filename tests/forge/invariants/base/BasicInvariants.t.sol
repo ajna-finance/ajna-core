@@ -12,42 +12,6 @@ import { BaseInvariants } from '../base/BaseInvariants.sol';
 // contains invariants for the test
 abstract contract BasicInvariants is BaseInvariants {
 
-<<<<<<< HEAD
-=======
-    /**************************************************************************************************************************************/
-    /*** Invariant Tests                                                                                                                ***/
-    /***************************************************************************************************************************************
-     * Bucket
-        *  B1: totalBucketLP === totalLenderLps
-        *  B2: bucketLps == 0 (if bucket quote and collateral is 0)
-        *  B3: exchangeRate == 0 (if bucket quote and collateral is 0)
-        *  B4: bankrupt bucket LP accumulator = 0; lender LP for deposits before bankruptcy time = 0
-        *  B5: block.timestamp == lenderDepositTime (if lps are added to lender lp balance)
-        *  B6: block.timestamp == max(sender's depositTime, receiver's depositTime), when receiving transferred LP
-        *  B7: lenderDepositTime == block.timestamp (timestamp of block when taker is rewarded by bucketTake)
-     * Quote Token
-        * QT1: poolQtBal + poolDebt >= totalBondEscrowed + poolDepositSize
-        * QT2: pool t0 debt = sum of all borrower's t0 debt
-    
-     * Loan
-        * L1: for each Loan in loans array (LoansState.loans) starting from index 1, the corresponding address (Loan.borrower) is not 0x, the threshold price (Loan.thresholdPrice) is different than 0
-        * L2: Loan in loans array (LoansState.loans) at index 0 has the corresponding address (Loan.borrower) equal with 0x address and the threshold price (Loan.thresholdPrice) equal with 0
-        * L3: Loans array (LoansState.loans) is a max-heap with respect to t0-threshold price: the t0TP of loan at index i is >= the t0-threshold price of the loans at index 2i and 2i+1
-
-     * Interest Rate
-        * I1: Interest rate should only update once in 12 hours
-        * I2: ReserveAuctionState.totalInterestEarned accrues only once per block and equals to 1e18 if pool debt = 0
-        * I3: Inflator should only update once per block
-        * I4: t0Debt2ToCollateral should sum correctly accross borrowers
-
-    * Fenwick tree
-        * F1: Value represented at index i (Deposits.valueAt(i)) is equal to the accumulation of scaled values incremented or decremented from index i
-        * F2: For any index i, the prefix sum up to and including i is the sum of values stored in indices j<=i
-        * F3: For any index i < MAX_FENWICK_INDEX, findIndexOfSum(prefixSum(i)) > i
-        * F4: For any index i, there is zero deposit above i and below findIndexOfSum(prefixSum(i) + 1): findIndexOfSum(prefixSum(i)) == findIndexOfSum(prefixSum(j) - deposits.valueAt(j)), where j is the next index from i with deposits != 0
-    ****************************************************************************************************************************************/
-
->>>>>>> develop
     // checks pool lps are equal to sum of all lender lps in a bucket 
     function invariant_Lps_B1_B4() public useCurrentTimestamp {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
