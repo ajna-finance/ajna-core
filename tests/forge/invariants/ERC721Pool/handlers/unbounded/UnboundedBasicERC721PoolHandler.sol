@@ -155,7 +155,8 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
         // Pool doesn't have enough deposits to draw debt
         if (bucket > LENDER_MAX_BUCKET_INDEX) return;
 
-        uint256 collateralToPledge = (((amount_ * 1e18 + price / 2) / price) * 101 / 100 ) / 1e18 + 1;
+        // calculates collateral required to borrow <amount_> quote tokens, added 1 for roundup such that 0.8 NFT will become 1
+        uint256 collateralToPledge = Maths.wdiv(amount_, price) / 1e18 + 1;
 
         _collateral.mint(_actor, collateralToPledge);
         _collateral.setApprovalForAll(address(_pool), true);
