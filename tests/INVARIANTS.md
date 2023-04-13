@@ -50,26 +50,26 @@
 - **F3**: For any index `i < MAX_FENWICK_INDEX`,  `findIndexOfSum(prefixSum(i)) > i`
 - **F4**: For any index i, there is zero deposit above i and below findIndexOfSum(prefixSum(i) + 1): `depositAtIndex(j) == 0 for i < j < findIndexOfSum(prefixSum(i)+1)`
 
-## Exchange rate invariants ## FIXME: help with diff wording below
-- **R1**: Exchange rates can differ by _ when pledging collateral
-- **R2**: Exchange rates can differ by _ when pulling collateral
-- **R3**: Exchange rates can differ by _ when depositing quote token into a bucket
-- **R4**: Exchange rates can differ by _ when withdrawing deposit (quote token) from a bucket
-- **R5**: Exchange rates can differ by _ when adding collateral token into a bucket
-- **R6**: Exchange rates can differ by _ when removing collateral token from a bucket
-- **R7**: Exchange rates can differ by _ when depositTake is called
-- **R8**: Exchange rates can differ by _ when arbTake is called
+## Exchange rate (Margin of 1e12 - 1e16 on comparisons, dependent on amounts)
+- **R1**: Exchange rates are unchanged by pledging collateral
+- **R2**: Exchange rates are unchanged by pulling collateral
+- **R3**: Exchange rates are unchanged by depositing quote token into a bucket
+- **R4**: Exchange rates are unchanged by withdrawing deposit (quote token) from a bucket
+- **R5**: Exchange rates are unchanged by adding collateral token into a bucket
+- **R6**: Exchange rates are unchanged by removing collateral token from a bucket
+- **R7**: Exchange rates are unchanged under depositTakes
+- **R8**: Exchange rates are unchanged under arbTakes
 
-## Reserves ##
-- **RE1**:  Reserves can differ by `1e15` when pledging collateral
-- **RE2**:  Reserves can differ by `1e15` when removing collateral
-- **RE3**:  Reserves increase only when depositing quote token into a bucket below LUP. Reserves increase only when moving quote tokens into a bucket below LUP. FIXME: don't beleive we are checking the directional increase of hte reserves here
-- **RE4**:  Reserves can differ by `1e15` when withdrawing deposit (quote token) from a bucket after the penalty period hes expired
-- **RE5**:  Reserves can differ by `1e15` when adding collateral token into a bucket
-- **RE6**:  Reserves can differ by `1e15` when removing collateral token from a bucket
-- **RE7**:  Reserves increase by 7% (with a `1e15` margin) of the loan quantity upon the first take (including depositTake or arbTake) and increase/decrease by bond penalty/reward on take.
-- **RE8**:  Reserves can differ by `1e15` during takes/depositTakes/arbTakes after the first take but increase/decrease by bond penalty/reward on take.
-- **RE9**:  Reserves increase by 3 months of interest when a loan is kicked (with a `1e15` margin)
-- **RE10**: Reserves increase by origination fee (with a `1e15` margin): max(1 week interest, 0.05% of borrow amount), on draw debt
-- **RE11**: Reserves decrease by claimableReserves by startClaimableReserveAuction (with a `1e15` margin)
-- **RE12**: Reserves decrease by amount of reserve used to settle a auction (with a `1e15` margin)
+## Reserves (margin of 1e15 on comparisons)
+- **RE1**:  Reserves are unchanged by pledging collateral
+- **RE2**:  Reserves are unchanged by removing collateral
+- **RE3**:  Reserves increase only when depositing quote token into a bucket below LUP. Reserves increase only when moving quote tokens into a bucket below LUP.
+- **RE4**:  Reserves are unchanged by withdrawing deposit (quote token) from a bucket after the penalty period hes expired
+- **RE5**:  Reserves are unchanged by adding collateral token into a bucket
+- **RE6**:  Reserves are unchanged by removing collateral token from a bucket
+- **RE7**:  Reserves increase by 7% of the loan quantity upon the first take (including depositTake or arbTake) and increase/decrease by bond penalty/reward on take.
+- **RE8**:  Reserves are unchanged under takes/depositTakes/arbTakes after the first take but increase/decrease by bond penalty/reward on take.
+- **RE9**:  Reserves increase by 3 months of interest when a loan is kicked
+- **RE10**: Reserves increase by origination fee: max(1 week interest, 0.05% of borrow amount), on draw debt
+- **RE11**: Reserves decrease by claimableReserves by kickReserveAuction
+- **RE12**: Reserves decrease by amount of reserve used to settle a auction
