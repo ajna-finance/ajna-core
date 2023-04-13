@@ -493,10 +493,10 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         // addQuoteToken should add scaled quote token amount validate LP
         _addLiquidityNoEventCheck(_lender, quoteAmount, bucketId);
 
-        // deposit collateral and sanity check bidder LPs
+        // deposit collateral and sanity check bidder LP
         _addCollateralWithoutCheckingLP(_bidder, collateralAmount, bucketId);
 
-        // check bucket quantities and LPs
+        // check bucket quantities and LP
         (, uint256 curDeposit, uint256 availableCollateral, uint256 bucketLpBalance,,) = _poolUtils.bucketInfo(address(_pool), bucketId);
         assertEq(curDeposit,          _roundToScale(quoteAmount, quoteScale));
         assertEq(availableCollateral, _roundToScale(collateralAmount, colScale));
@@ -611,7 +611,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             newLup:       MAX_PRICE
         });
 
-        // validate from and to buckets have appropriate amounts of deposit and LPs
+        // validate from and to buckets have appropriate amounts of deposit and LP
         (, uint256 deposit,, uint256 lps,,) = _poolUtils.bucketInfo(address(_pool), fromBucketId);
         uint256 remaining = _lenderDepositNormalized - amountToMove;
 

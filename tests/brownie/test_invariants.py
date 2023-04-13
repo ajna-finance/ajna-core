@@ -75,7 +75,7 @@ class _BasePoolStateMachine:
         #   - added collateral in bucket (bidder swap)
         # collateral outflows:
         #   - pull collateral (borrower)
-        #   - remove collateral from buckets (any actor with LPs in bucket: lender, borrower, kicker, taker)
+        #   - remove collateral from buckets (any actor with LP in bucket: lender, borrower, kicker, taker)
         #   - auction take
 
         buckets_collateral = 0
@@ -105,7 +105,7 @@ class _BasePoolStateMachine:
         #   - kick loan (kicker, lender)
         # quote outflows:
         #   - draw debt (borrower)
-        #   - remove quote tokens from bucket (any actor with LPs in bucket: lender, borrower, kicker, taker)
+        #   - remove quote tokens from bucket (any actor with LP in bucket: lender, borrower, kicker, taker)
         #   - claim bonds (kicker, lender)
         #   - reward reserves auction 
 
@@ -157,7 +157,7 @@ class _BasePoolStateMachine:
             # Invariant 5: sum of actors lps in bucket = bucket lps accumulator
             assert bucket_lps == total_lenders_lps
 
-            # Invariant 6: if no deposit / collateral in bucket then bucket LPs should be 0
+            # Invariant 6: if no deposit / collateral in bucket then bucket LP should be 0
             if bucket_collateral == 0 and bucket_deposit == 0:
                 assert bucket_lps == 0
 

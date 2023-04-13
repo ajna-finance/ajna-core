@@ -795,7 +795,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:  _i9_91
         });
 
-        // cannot move LPs in same block when bucket marked insolvent
+        // cannot move LP in same block when bucket marked insolvent
         _assertMoveLiquidityBankruptcyBlockRevert({
             from:      _lender1,
             amount:    10 * 1e18,
@@ -960,7 +960,7 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
         ERC20Pool(address(_pool)).settle(actor1, 1);
 
         (bucketLps, collateral, , deposit, ) = _pool.bucketInfo(2571);
-        assertEq(bucketLps, 0); // entire LPs removed from bucket 2571
+        assertEq(bucketLps, 0); // entire LP removed from bucket 2571
         assertEq(collateral, 0); // no collateral added in bucket 2571
         assertEq(deposit, 0); // entire deposit from bucket 2571 used to settle
         (borrowerDebt, borrowerCollateral, ) = _pool.borrowerInfo(actor1);
@@ -1005,7 +1005,7 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
         changePrank(actor1);
 
         ERC20Pool(address(_pool)).updateInterest();
-        _startClaimableReserveAuction({
+        _kickReserveAuction({
             from:              actor1,
             remainingReserves: 785_271_398.552730383160590325 * 1e18,
             price:             1_000_000_000 * 1e18,

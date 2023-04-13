@@ -170,7 +170,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
             // update to bucket state
             BucketState storage toBucket = stakeInfo.snapshot[toIndex];
-            toBucket.lpsAtStakeTime  = uint128(positionManager.getLPs(tokenId_, toIndex));
+            toBucket.lpsAtStakeTime  = uint128(positionManager.getLP(tokenId_, toIndex));
             toBucket.rateAtStakeTime = uint128(IPool(ajnaPool).bucketExchangeRate(toIndex));
             delete stakeInfo.snapshot[fromIndex];
 
@@ -227,7 +227,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             BucketState storage bucketState = stakeInfo.snapshot[bucketId];
 
             // record the number of lps in bucket at the time of staking
-            bucketState.lpsAtStakeTime = uint128(positionManager.getLPs(
+            bucketState.lpsAtStakeTime = uint128(positionManager.getLP(
                 tokenId_,
                 bucketId
             ));
@@ -470,11 +470,11 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     }
 
     /**
-     *  @notice Calculate the amount of interest that has accrued to a lender in a bucket based upon their LPs.
+     *  @notice Calculate the amount of interest that has accrued to a lender in a bucket based upon their LP.
      *  @param  pool_           Address of the pool whose exchange rates are being checked.
      *  @param  nextEventEpoch_ The next event epoch to check the exchange rate for.
      *  @param  bucketIndex_    Index of the bucket to check the exchange rate for.
-     *  @param  bucketLPs       Amount of LPs in bucket.
+     *  @param  bucketLPs       Amount of LP in bucket.
      *  @param  exchangeRate_   Exchange rate in current epoch.
      *  @return interestEarned_ The amount of interest accrued.
      */

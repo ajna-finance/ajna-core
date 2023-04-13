@@ -7,7 +7,7 @@ import 'src/interfaces/pool/commons/IPoolErrors.sol';
 
 import 'src/libraries/helpers/PoolHelper.sol';
 
-contract ERC20PoolTransferLPsTest is ERC20HelperContract {
+contract ERC20PoolTransferLPTest is ERC20HelperContract {
 
     address internal _lender;
     address internal _lender1;
@@ -25,14 +25,14 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         changePrank(_lender2);
         address[] memory transferors = new address[](1);
         transferors[0] = _lender;
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
     }
 
-    /**************************/
-    /*** Transfer LPs Tests ***/
-    /**************************/
+    /*************************/
+    /*** Transfer LP Tests ***/
+    /*************************/
 
-    function testTransferLPsToZeroAddress() external tearDown {
+    function testTransferLPToZeroAddress() external tearDown {
         uint256[] memory indexes = new uint256[](3);
         indexes[0] = 2550;
         indexes[1] = 2551;
@@ -52,7 +52,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         approveIndexes[0] = 2550;
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 1_000 * 1e18;
-        _pool.increaseLPsAllowance(address(0), approveIndexes, amounts);
+        _pool.increaseLPAllowance(address(0), approveIndexes, amounts);
 
         _assertTransferNoAllowanceRevert({
             operator: _lender,
@@ -62,7 +62,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         });
     }
 
-    function testTransferLPsToUnallowedAddress() external tearDown {
+    function testTransferLPToUnallowedAddress() external tearDown {
         uint256[] memory indexes = new uint256[](3);
         indexes[0] = 2550;
         indexes[1] = 2551;
@@ -74,7 +74,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[0] = 1_000 * 1e18;
         amounts[1] = 1_000 * 1e18;
         amounts[2] = 1_000 * 1e18;
-        _pool.increaseLPsAllowance(_lender2, indexes, amounts);
+        _pool.increaseLPAllowance(_lender2, indexes, amounts);
 
         _assertTransferNoAllowanceRevert({
             operator: _lender,
@@ -84,7 +84,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         });
     }
 
-    function testTransferLPsToInvalidIndex() external tearDown {
+    function testTransferLPToInvalidIndex() external tearDown {
         uint256[] memory indexes = new uint256[](3);
         indexes[0] = 9999;
         indexes[1] = 2550;
@@ -96,7 +96,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[0] = 1_000 * 1e18;
         amounts[1] = 1_000 * 1e18;
         amounts[2] = 1_000 * 1e18;
-        _pool.increaseLPsAllowance(_lender2, indexes, amounts);
+        _pool.increaseLPAllowance(_lender2, indexes, amounts);
 
         _assertTransferInvalidIndexRevert({
             operator: _lender,
@@ -106,7 +106,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         });
     }
 
-    function testTransferLPsGreaterThanBalance() external tearDown {
+    function testTransferLPGreaterThanBalance() external tearDown {
         uint256[] memory indexes = new uint256[](2);
         indexes[0] = 2550;
         indexes[1] = 2551;
@@ -126,10 +126,10 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         uint256[] memory amounts = new uint256[](2);
         amounts[0] = 10_000 * 1e18;
         amounts[1] = 30_000 * 1e18;
-        _pool.increaseLPsAllowance(_lender2, indexes, amounts);
+        _pool.increaseLPAllowance(_lender2, indexes, amounts);
 
         // only the lender's available balance should be transferred to the new owner
-        _transferLPs({
+        _transferLP({
             operator:  _lender2,
             from:      _lender1,
             to:        _lender2,
@@ -150,7 +150,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         });
     }
 
-    function testTransferLPsToSameOwner() external {
+    function testTransferLPToSameOwner() external {
         uint256[] memory indexes = new uint256[](1);
         indexes[0] = 2550;
 
@@ -165,10 +165,10 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         changePrank(_lender1);
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = 10_000 * 1e18;
-        _pool.increaseLPsAllowance(_lender1, indexes, amounts);
+        _pool.increaseLPAllowance(_lender1, indexes, amounts);
         address[] memory transferors = new address[](1);
         transferors[0] = _lender;
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
 
         _assertLenderLpBalance({
             lender:      _lender1,
@@ -177,7 +177,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
             depositTime: _startTime + 1 hours
         });
 
-        // should revert if trying to transfer LPs to same address
+        // should revert if trying to transfer LP to same address
         _assertTransferToSameOwnerRevert({
             operator: _lender,
             from:     _lender1,
@@ -198,14 +198,14 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
 
         // increase allowance should revert for invalid input
         vm.expectRevert(IPoolErrors.InvalidAllowancesInput.selector);
-        _pool.increaseLPsAllowance(_lender2, indexes, amounts);
+        _pool.increaseLPAllowance(_lender2, indexes, amounts);
 
         // decrease allowance should revert for invalid input
         vm.expectRevert(IPoolErrors.InvalidAllowancesInput.selector);
-        _pool.decreaseLPsAllowance(_lender2, indexes, amounts);
+        _pool.decreaseLPAllowance(_lender2, indexes, amounts);
     }
 
-    function testTransferLPsForAllIndexes() external tearDown {
+    function testTransferLPForAllIndexes() external tearDown {
         uint256[] memory indexes = new uint256[](3);
         indexes[0] = 2550;
         indexes[1] = 2551;
@@ -272,10 +272,10 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[0] = 10_000 * 1e18;
         amounts[1] = 20_000 * 1e18;
         amounts[2] = 30_000 * 1e18;
-        _pool.increaseLPsAllowance(_lender2, indexes, amounts);
+        _pool.increaseLPAllowance(_lender2, indexes, amounts);
 
-        // transfer LPs for all indexes
-        _transferLPs({
+        // transfer LP for all indexes
+        _transferLP({
             operator:  _lender,
             from:      _lender1,
             to:        _lender2,
@@ -330,7 +330,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         });
     }
 
-    function testTransferLPsForTwoIndexes() external tearDown {
+    function testTransferLPForTwoIndexes() external tearDown {
         uint256[] memory depositIndexes = new uint256[](3);
         depositIndexes[0] = 2550;
         depositIndexes[1] = 2551;
@@ -398,10 +398,10 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         uint256[] memory amounts = new uint256[](2);
         amounts[0] = 10_000 * 1e18;
         amounts[1] = 30_000 * 1e18;
-        _pool.increaseLPsAllowance(_lender2, transferIndexes, amounts);
+        _pool.increaseLPAllowance(_lender2, transferIndexes, amounts);
 
-        // transfer LPs for 2 indexes
-        _transferLPs({
+        // transfer LP for 2 indexes
+        _transferLP({
             operator:  _lender,
             from:      _lender1,
             to:        _lender2,
@@ -456,7 +456,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         });
     }
 
-    function testTransferLPsToLenderWithLPs() external tearDown {
+    function testTransferLPToLenderWithLP() external tearDown {
         uint256[] memory indexes = new uint256[](3);
         indexes[0] = 2550;
         indexes[1] = 2551;
@@ -542,7 +542,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[0] = 10_000 * 1e18;
         amounts[1] = 20_000 * 1e18;
         amounts[2] = 30_000 * 1e18;
-        _pool.increaseLPsAllowance(_lender2, indexes, amounts);
+        _pool.increaseLPAllowance(_lender2, indexes, amounts);
 
         _assertLpAllowance({
             owner:       _lender1,
@@ -551,8 +551,8 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
             lpAllowance: 20_000 * 1e18
         });
 
-        // transfer LPs for all indexes
-        _transferLPs({
+        // transfer LP for all indexes
+        _transferLP({
             operator:  _lender,
             from:      _lender1,
             to:        _lender2,
@@ -613,7 +613,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         });
     }
 
-    function testTransferLPsApproveRevokeTransferors() external tearDown {
+    function testTransferLPApproveRevokeTransferors() external tearDown {
         uint256[] memory indexes = new uint256[](3);
         indexes[0] = 2550;
         indexes[1] = 2551;
@@ -642,8 +642,8 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[1] = 20_000 * 1e18;
         amounts[2] = 30_000 * 1e18;
         vm.expectEmit(true, true, false, true);
-        emit IncreaseLPsAllowance(_lender1, _lender2, indexes, amounts);
-        _pool.increaseLPsAllowance(_lender2, indexes, amounts);
+        emit IncreaseLPAllowance(_lender1, _lender2, indexes, amounts);
+        _pool.increaseLPAllowance(_lender2, indexes, amounts);
 
         assertTrue(_pool.approvedTransferors(_lender2, _lender));
 
@@ -652,24 +652,24 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         address[] memory transferors = new address[](1);
         transferors[0] = _lender;
         vm.expectEmit(true, true, false, true);
-        emit RevokeLPsTransferors(_lender2, transferors);
-        _pool.revokeLPsTransferors(transferors);
+        emit RevokeLPTransferors(_lender2, transferors);
+        _pool.revokeLPTransferors(transferors);
         assertFalse(_pool.approvedTransferors(_lender2, _lender));
 
         // transfer initiated by lender should fail as it is no longer an approved transferor
         changePrank(_lender);
         vm.expectRevert(IPoolErrors.TransferorNotApproved.selector);
-        _pool.transferLPs(_lender1, _lender2, indexes);
+        _pool.transferLP(_lender1, _lender2, indexes);
 
         // reapprove transferor
         changePrank(_lender2);
         vm.expectEmit(true, true, false, true);
-        emit ApproveLPsTransferors(_lender2, transferors);
-        _pool.approveLPsTransferors(transferors);
+        emit ApproveLPTransferors(_lender2, transferors);
+        _pool.approveLPTransferors(transferors);
         assertTrue(_pool.approvedTransferors(_lender2, _lender));
 
-        // transfer LPs for all indexes
-        _transferLPs({
+        // transfer LP for all indexes
+        _transferLP({
             operator:  _lender,
             from:      _lender1,
             to:        _lender2,
@@ -678,7 +678,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         });
     }
 
-    function testTransferLPsAllowances() external tearDown {
+    function testTransferLPAllowances() external tearDown {
         uint256[] memory indexes = new uint256[](3);
         indexes[0] = 2550;
         indexes[1] = 2551;
@@ -691,8 +691,8 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
 
         changePrank(_lender1);
         vm.expectEmit(true, true, false, true);
-        emit IncreaseLPsAllowance(_lender1, _lender2, indexes, amounts);
-        _pool.increaseLPsAllowance(_lender2, indexes, amounts);
+        emit IncreaseLPAllowance(_lender1, _lender2, indexes, amounts);
+        _pool.increaseLPAllowance(_lender2, indexes, amounts);
 
         // check allowance after increasing allowance
         _assertLpAllowance({
@@ -710,8 +710,8 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[0] = 5_000 * 1e18;
         amounts[1] = 5_000 * 1e18;
         vm.expectEmit(true, true, false, true);
-        emit DecreaseLPsAllowance(_lender1, _lender2, indexes, amounts);
-        _pool.decreaseLPsAllowance(_lender2, indexes, amounts);
+        emit DecreaseLPAllowance(_lender1, _lender2, indexes, amounts);
+        _pool.decreaseLPAllowance(_lender2, indexes, amounts);
 
         // check allowances after decreasing allowance
         _assertLpAllowance({
@@ -735,8 +735,8 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts[0] = 0;
         amounts[1] = 0;
         vm.expectEmit(true, true, false, true);
-        emit RevokeLPsAllowance(_lender1, _lender2, indexes);
-        _pool.revokeLPsAllowance(_lender2, indexes);
+        emit RevokeLPAllowance(_lender1, _lender2, indexes);
+        _pool.revokeLPAllowance(_lender2, indexes);
 
         // check allowance after revoking allowance
         _assertLpAllowance({
@@ -758,8 +758,8 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         amounts = new uint256[](1);
         amounts[0] = 5_000 * 1e18;
         vm.expectEmit(true, true, false, true);
-        emit IncreaseLPsAllowance(_lender1, _lender2, indexes, amounts);
-        _pool.increaseLPsAllowance(_lender2, indexes, amounts);
+        emit IncreaseLPAllowance(_lender1, _lender2, indexes, amounts);
+        _pool.increaseLPAllowance(_lender2, indexes, amounts);
 
         _assertLpAllowance({
             owner:       _lender1,
@@ -769,7 +769,7 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         });
     }
 
-    function testTransferPartialLPs() external tearDown {
+    function testTransferPartialLP() external tearDown {
         uint256[] memory indexes = new uint256[](2);
         indexes[0] = 2550;
         indexes[1] = 2551;
@@ -789,20 +789,20 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
         uint256[] memory amounts = new uint256[](2);
         amounts[0] = 5_000 * 1e18;
         amounts[1] = 10_000 * 1e18;
-        _pool.increaseLPsAllowance(_lender2, indexes, amounts);
+        _pool.increaseLPAllowance(_lender2, indexes, amounts);
         amounts = new uint256[](2);
         amounts[0] = 1_000 * 1e18;
         amounts[1] = 2_000 * 1e18;
-        _pool.increaseLPsAllowance(_lender, indexes, amounts);
+        _pool.increaseLPAllowance(_lender, indexes, amounts);
 
-        // lender 2 approves lender as transferor of LPs
+        // lender 2 approves lender as transferor of LP
         changePrank(_lender2);
         address[] memory transferors = new address[](1);
         transferors[0] = _lender;
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
 
-        // lender transfers allowed LPs from lender1
-        _transferLPs({
+        // lender transfers allowed LP from lender1
+        _transferLP({
             operator:  _lender,
             from:      _lender1,
             to:        _lender,
@@ -816,8 +816,8 @@ contract ERC20PoolTransferLPsTest is ERC20HelperContract {
             lpAllowance: 0
         });
 
-        // lender transfers allowed LPs from lender1 to lender2
-        _transferLPs({
+        // lender transfers allowed LP from lender1 to lender2
+        _transferLP({
             operator:  _lender,
             from:      _lender1,
             to:        _lender2,

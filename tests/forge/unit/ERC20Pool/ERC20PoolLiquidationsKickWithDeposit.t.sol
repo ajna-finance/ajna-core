@@ -152,8 +152,8 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
     function testKickWithDepositAmountHigherThanAuctionBond() external tearDown {
 
         /**
-            - kick with deposit amount lower than deposit available (lender can redeem less LPs from bucket than deposit)
-            - auction bond is covered entirely from lender deposit (bucket still contains LPs)
+            - kick with deposit amount lower than deposit available (lender can redeem less LP from bucket than deposit)
+            - auction bond is covered entirely from lender deposit (bucket still contains LP)
          */
 
         // assert bucket state pre kick with deposit
@@ -215,7 +215,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(_borrower4),     20_000 * 1e18);
         assertEq(_quote.balanceOf(_borrower5),     20_000 * 1e18);
 
-        // assert lenders LPs in bucket used to kick
+        // assert lenders LP in bucket used to kick
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       2500,
@@ -228,7 +228,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             lpBalance:   10_000 * 1e18,
             depositTime: _startTime
         });
-        // assert bucket LPs
+        // assert bucket LP
         _assertBucket({
             index:        2500,
             lpBalance:    53_994.230769230769228 * 1e18,    // reduced by amount used to cover auction bond
@@ -264,8 +264,8 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
 
     function testKickWithDepositAmountLowerThanAuctionBond() external tearDown {
         /**
-            - kick with deposit amount lower than deposit available (lender can redeem less LPs from bucket than deposit)
-            - bond auction is not covered entirely by removed deposit (bucket still contains LPs), difference to cover bond is sent by lender
+            - kick with deposit amount lower than deposit available (lender can redeem less LP from bucket than deposit)
+            - bond auction is not covered entirely by removed deposit (bucket still contains LP), difference to cover bond is sent by lender
          */
 
         // borrower 1 draws more debt from pool, bond size will increase from 6_005.769230769230772000 in prev scenario to 8_708.365384615384619400
@@ -349,7 +349,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(_borrower4),     20_000 * 1e18);
         assertEq(_quote.balanceOf(_borrower5),     20_000 * 1e18);
 
-        // assert lenders LPs in bucket used
+        // assert lenders LP in bucket used
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       2500,
@@ -362,7 +362,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             lpBalance:   0,
             depositTime: _startTime
         });
-        // assert bucket LPs
+        // assert bucket LP
         _assertBucket({
             index:        2500,
             lpBalance:    60_000 * 1e18,
@@ -397,7 +397,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
 
     function testKickWithDepositUsingAllLpsWithinBucket() external tearDown {
         /**
-            - kick using entire deposit / LPs from bucket
+            - kick using entire deposit / LP from bucket
             - bond auction is not covered entirely by deposit, deposit is obliterated and difference to cover bond is sent by lender
          */
 
@@ -437,7 +437,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             index: 2500
         });
 
-        // lender 2 kicks using all LPs from bucket 2499 (10_000) and sending additional quote tokens to cover auction bond (510.096153846153851000)
+        // lender 2 kicks using all LP from bucket 2499 (10_000) and sending additional quote tokens to cover auction bond (510.096153846153851000)
         _kickWithDeposit({
             from:               _lender2,
             index:              2499,
@@ -483,14 +483,14 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(_borrower4),     20_000 * 1e18);
         assertEq(_quote.balanceOf(_borrower5),     20_000 * 1e18);
 
-        // assert lenders LPs in bucket used
+        // assert lenders LP in bucket used
         _assertLenderLpBalance({
             lender:      _lender2,
             index:       2499,
             lpBalance:   0,
             depositTime: _startTime
         });
-        // assert bucket - LPs and deposit obliterated
+        // assert bucket - LP and deposit obliterated
         _assertBucket({
             index:        2499,
             lpBalance:    0,
@@ -526,7 +526,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
     function testKickWithDepositAmountHigherThanAvailableDeposit() external tearDown {
 
         /**
-            - kick with deposit amount higher than deposit available (lender can redeem more LPs from bucket than deposit)
+            - kick with deposit amount higher than deposit available (lender can redeem more LP from bucket than deposit)
             - auction bond is covered entirely from lender deposit
          */
 
@@ -603,7 +603,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(_borrower4),     20_000 * 1e18);
         assertEq(_quote.balanceOf(_borrower5),     20_000 * 1e18);
 
-        // assert lenders LPs in bucket used
+        // assert lenders LP in bucket used
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       2500,
@@ -616,7 +616,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             lpBalance:   10_000 * 1e18,
             depositTime: _startTime
         });
-        // assert bucket LPs
+        // assert bucket LP
         _assertBucket({
             index:        2500,
             lpBalance:    92_630.77445790356267464 * 1e18,  // reduced by amount used to cover auction bond
@@ -1328,7 +1328,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             index:  7000
         });
 
-        // asert failure when lender has LPs but insufficient quote token balance to post remaining bond
+        // asert failure when lender has LP but insufficient quote token balance to post remaining bond
         _addLiquidity({
             from:    _lender4,
             amount:  5_000 * 1e18,

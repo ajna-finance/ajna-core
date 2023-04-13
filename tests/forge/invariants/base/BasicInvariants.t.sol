@@ -20,12 +20,12 @@ abstract contract BasicInvariants is BaseInvariants {
     /*** Invariant Tests                                                                                                                ***/
     /***************************************************************************************************************************************
      * Bucket
-        *  B1: totalBucketLPs === totalLenderLps
+        *  B1: totalBucketLP === totalLenderLps
         *  B2: bucketLps == 0 (if bucket quote and collateral is 0)
         *  B3: exchangeRate == 0 (if bucket quote and collateral is 0)
-        *  B4: bankrupt bucket LPs accumulator = 0; lender LPs for deposits before bankruptcy time = 0
+        *  B4: bankrupt bucket LP accumulator = 0; lender LP for deposits before bankruptcy time = 0
         *  B5: block.timestamp == lenderDepositTime (if lps are added to lender lp balance)
-        *  B6: block.timestamp == max(sender's depositTime, receiver's depositTime), when receiving transferred LPs
+        *  B6: block.timestamp == max(sender's depositTime, receiver's depositTime), when receiving transferred LP
         *  B7: lenderDepositTime == block.timestamp (timestamp of block when taker is rewarded by bucketTake)
      * Quote Token
         * QT1: poolQtBal + poolDebt >= totalBondEscrowed + poolDepositSize
@@ -170,7 +170,7 @@ abstract contract BasicInvariants is BaseInvariants {
                     requireWithinDiff(
                         Maths.wmul(currentExchangeRate, bucketLps),
                         Maths.wmul(previousExchangeRate, bucketLps),
-                        1e16,  // allow changes up to 0.01 qt in value if bucket LPs < 1e-6
+                        1e16,  // allow changes up to 0.01 qt in value if bucket LP < 1e-6
                         "Incorrect exchange Rate changed"
                     );
                 } else {

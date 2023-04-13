@@ -80,7 +80,7 @@ abstract contract BasicPoolHandler is UnboundedBasicPoolHandler {
         (address receiver, uint256 boundedLps) = _preTransferLps(toActorIndex_, lpsToTransfer_);
 
         // Action phase
-        _increaseLPsAllowance(receiver, _lenderBucketIndex, boundedLps);
+        _increaseLPAllowance(receiver, _lenderBucketIndex, boundedLps);
         _transferLps(_actor, receiver, _lenderBucketIndex);
     }
 
@@ -115,13 +115,13 @@ abstract contract BasicPoolHandler is UnboundedBasicPoolHandler {
         boundedToIndex_   = constrictToRange(toIndex_,   LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
         boundedAmount_    = constrictToRange(amountToMove_, MIN_AMOUNT, MAX_AMOUNT);
 
-        // ensure actor has LPs to move
+        // ensure actor has LP to move
         (uint256 lpBalance, ) = _pool.lenderInfo(boundedFromIndex_, _actor);
         if (lpBalance == 0) _addQuoteToken(boundedAmount_, boundedToIndex_);
 
         (uint256 lps, ) = _pool.lenderInfo(boundedFromIndex_, _actor);
         // restrict amount to move by available deposit inside bucket
-        uint256 availableDeposit = _poolInfo.lpsToQuoteTokens(address(_pool), lps, boundedFromIndex_);
+        uint256 availableDeposit = _poolInfo.lpToQuoteTokens(address(_pool), lps, boundedFromIndex_);
         boundedAmount_ = Maths.min(boundedAmount_, availableDeposit);
     }
 
@@ -129,7 +129,7 @@ abstract contract BasicPoolHandler is UnboundedBasicPoolHandler {
         uint256 toActorIndex_,
         uint256 lpsToTransfer_
     ) internal returns (address receiver_, uint256 boundedLps_) {
-        // ensure actor has LPs to transfer
+        // ensure actor has LP to transfer
         (uint256 senderLpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
         if(senderLpBalance == 0) _addQuoteToken(1e24, _lenderBucketIndex);
 

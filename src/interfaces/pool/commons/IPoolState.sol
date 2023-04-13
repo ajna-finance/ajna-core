@@ -14,7 +14,7 @@ interface IPoolState {
      *  @return bondFactor   The factor used for calculating bond size.
      *  @return bondSize     The bond amount in quote token terms.
      *  @return kickTime     Time the liquidation was initiated.
-     *  @return kickPrice    Highest Price Bucket at time of liquidation.
+     *  @return kickMomp     Price where the average loan utilizes deposit, at the time when the loan is liquidated (kicked).
      *  @return neutralPrice Neutral Price of auction.
      *  @return head         Address of the head auction.
      *  @return next         Address of the next auction in queue.
@@ -29,7 +29,7 @@ interface IPoolState {
             uint256 bondFactor,
             uint256 bondSize,
             uint256 kickTime,
-            uint256 kickPrice,
+            uint256 kickMomp,
             uint256 neutralPrice,
             address head,
             address next,
@@ -67,7 +67,7 @@ interface IPoolState {
      *  @notice Mapping of buckets indexes to {Bucket} structs.
      *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
      *  @param  index               Bucket index.
-     *  @return lpAccumulator       Amount of LPs accumulated in current bucket.
+     *  @return lpAccumulator       Amount of LP accumulated in current bucket.
      *  @return availableCollateral Amount of collateral available in current bucket.
      *  @return bankruptcyTime      Timestamp when bucket become insolvent, 0 if healthy.
      *  @return bucketDeposit       Amount of quote tokens in bucket.
@@ -163,7 +163,7 @@ interface IPoolState {
      *  @notice Mapping of buckets indexes and owner addresses to {Lender} structs.
      *  @param  index            Bucket index.
      *  @param  lp               Address of the liquidity provider.
-     *  @return lpBalance        Amount of LPs owner has in current bucket.
+     *  @return lpBalance        Amount of LP owner has in current bucket.
      *  @return lastQuoteDeposit Time the user last deposited quote token.
      */
     function lenderInfo(
@@ -181,8 +181,8 @@ interface IPoolState {
      *  @notice Return the LPB allowance a LP owner provided to a spender.
      *  @param  index   Bucket index.
      *  @param  spender Address of the LPB spender.
-     *  @param  owner   The initial owner of the LPs.
-     *  @return allowance_ Amount of LPs spender can utilize.
+     *  @param  owner   The initial owner of the LP.
+     *  @return allowance_ Amount of LP spender can utilize.
      */
     function lpAllowance(
         uint256 index,
@@ -265,9 +265,9 @@ interface IPoolState {
     function totalT0DebtInAuction() external view returns (uint256);
 
     /**
-     *  @notice Mapping of addresses that can transfer LPs to a given lender.
-     *  @param  lender     Lender that receives LPs.
-     *  @param  transferor Transferor that transfers LPs.
+     *  @notice Mapping of addresses that can transfer LP to a given lender.
+     *  @param  lender     Lender that receives LP.
+     *  @param  transferor Transferor that transfers LP.
      *  @return True if the transferor is approved by lender.
      */
     function approvedTransferors(

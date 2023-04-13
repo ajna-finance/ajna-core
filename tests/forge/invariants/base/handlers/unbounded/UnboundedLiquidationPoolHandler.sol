@@ -144,11 +144,11 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             (uint256 takerLpsAfterTake, )         = _pool.lenderInfo(bucketIndex_, _actor);
             ( , , , uint256 depositAfterAction, ) = _pool.bucketInfo(bucketIndex_);
 
-            // **B7**: when awarded bucket take LPs : taker deposit time = timestamp of block when award happened
+            // **B7**: when awarded bucket take LP : taker deposit time = timestamp of block when award happened
             if (takerLpsAfterTake > takerLpsBeforeTake) lenderDepositTime[taker_][bucketIndex_] = block.timestamp;
 
             if (kickerLpsAfterTake > kickerLpsBeforeTake) {
-                // **B7**: when awarded bucket take LPs : kicker deposit time = timestamp of block when award happened
+                // **B7**: when awarded bucket take LP : kicker deposit time = timestamp of block when award happened
                 lenderDepositTime[kicker][bucketIndex_] = block.timestamp;
             } else {
                 // **RE7**: Reserves increase by bond penalty on take.

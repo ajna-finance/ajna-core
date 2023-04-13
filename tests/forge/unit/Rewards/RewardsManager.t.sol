@@ -421,11 +421,11 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         changePrank(_minterOne);
         _quote.approve(address(_positionManager), type(uint256).max);
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
 
         changePrank(_minterTwo);
         _quote.approve(address(_positionManager), type(uint256).max);
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
 
         /*****************************/
         /*** Initialize Pool State ***/
@@ -593,7 +593,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         _pool.updateInterest();
 
         // start reserve auction
-        _startClaimableReserveAuction({
+        _kickReserveAuction({
             pool: address(_pool),
             bidder: _bidder
         });
@@ -702,7 +702,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         /*** First Reserve Auction ***/
         /*****************************/
         // start reserve auction
-        _startClaimableReserveAuction({
+        _kickReserveAuction({
             pool: address(_pool),
             bidder: _bidder
         });

@@ -12,7 +12,7 @@ import 'src/interfaces/pool/commons/IPoolEvents.sol';
 import 'src/interfaces/pool/IERC3156FlashBorrower.sol';
 import 'src/PoolInfoUtils.sol';
 
-import 'src/libraries/external/Auctions.sol';
+import { _auctionPrice, _bpf, MAX_PRICE } from 'src/libraries/helpers/PoolHelper.sol';
 
 abstract contract DSTestPlus is Test, IPoolEvents {
 
@@ -361,7 +361,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(lpRedeemed,    lpRedeem);
     }
 
-    function _startClaimableReserveAuction(
+    function _kickReserveAuction(
         address from,
         uint256 remainingReserves,
         uint256 price,
@@ -369,8 +369,8 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     ) internal {
         changePrank(from);
         vm.expectEmit(true, true, true, true);
-        emit ReserveAuction(remainingReserves, price, epoch);
-        _pool.startClaimableReserveAuction();
+        emit KickReserveAuction(remainingReserves, price, epoch);
+        _pool.kickReserveAuction();
     }
 
     function _take(
@@ -466,7 +466,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(vars.auctionKickTime,          state_.kickTime);
         assertEq(vars.auctionKickMomp,          state_.kickMomp);
         assertEq(vars.auctionTotalBondEscrowed, state_.totalBondEscrowed);
-        assertEq(Auctions._auctionPrice(
+        assertEq(_auctionPrice(
             vars.auctionKickMomp,
             vars.auctionNeutralPrice,
             vars.auctionKickTime),              state_.auctionPrice);
@@ -764,7 +764,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
 
     function _assertReserveAuctionTooSoon() internal {
         vm.expectRevert(IPoolErrors.ReserveAuctionTooSoon.selector);
-        _pool.startClaimableReserveAuction();
+        _pool.kickReserveAuction();
     }
 
     /**********************/
@@ -1137,13 +1137,13 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         _pool.removeQuoteToken(amount, index);
     }
 
-    function _assertRemoveLiquidityInsufficientLPsRevert(
+    function _assertRemoveLiquidityInsufficientLPRevert(
         address from,
         uint256 amount,
         uint256 index
     ) internal {
         changePrank(from);
-        vm.expectRevert(IPoolErrors.InsufficientLPs.selector);
+        vm.expectRevert(IPoolErrors.InsufficientLP.selector);
         _pool.removeQuoteToken(amount, index);
     }
 
@@ -1330,7 +1330,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
 
     function _assertTakeReservesNoReservesRevert() internal {
         vm.expectRevert(IPoolErrors.NoReserves.selector);
-        _pool.startClaimableReserveAuction();
+        _pool.kickReserveAuction();
     }
 
     function _lup() internal view returns (uint256 lup_) {

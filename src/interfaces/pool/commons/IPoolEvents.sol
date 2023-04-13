@@ -145,7 +145,7 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when LPs are awarded to a taker or kicker in a bucket take.
+     *  @notice Emitted when LP are awarded to a taker or kicker in a bucket take.
      *  @param  taker           Actor who invoked the bucket take.
      *  @param  kicker          Actor who started the auction.
      *  @param  lpAwardedTaker  Amount of LP awarded to the taker.
@@ -200,8 +200,8 @@ interface IPoolEvents {
      *  @notice Emitted when NFT auction is completed.
      *  @param  borrower   Address of borrower that exits auction.
      *  @param  collateral Borrower's remaining collateral when auction completed.
-     *  @param  lps        Amount of LPs given to the borrower to compensate fractional collateral (if any).
-     *  @param  index      Index of the bucket with LPs to compensate fractional collateral.
+     *  @param  lps        Amount of LP given to the borrower to compensate fractional collateral (if any).
+     *  @param  index      Index of the bucket with LP to compensate fractional collateral.
      */
     event AuctionNFTSettle(
         address indexed borrower,
@@ -211,7 +211,19 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when a Claimaible Reserve Auction is started or taken.
+     *  @notice Emitted when a Claimaible Reserve Auction is started.
+     *  @return claimableReservesRemaining Amount of claimable reserves which has not yet been taken.
+     *  @return auctionPrice               Current price at which 1 quote token may be purchased, denominated in Ajna.
+     *  @return currentBurnEpoch           Current burn epoch.
+     */
+    event KickReserveAuction(
+        uint256 claimableReservesRemaining,
+        uint256 auctionPrice,
+        uint256 currentBurnEpoch
+    );
+
+    /**
+     *  @notice Emitted when a Claimaible Reserve Auction is taken.
      *  @return claimableReservesRemaining Amount of claimable reserves which has not yet been taken.
      *  @return auctionPrice               Current price at which 1 quote token may be purchased, denominated in Ajna.
      *  @return currentBurnEpoch           Current burn epoch.
@@ -222,18 +234,18 @@ interface IPoolEvents {
         uint256 currentBurnEpoch
     );
 
-    /***************************/
-    /*** LPs transfer events ***/
-    /***************************/
+    /**************************/
+    /*** LP transfer events ***/
+    /**************************/
 
     /**
-     *  @notice Emitted when owner increase the LPs allowance of a spender at specified indexes with specified amounts.
-     *  @param  owner     LPs owner.
-     *  @param  spender   Address approved to transfer LPs.
-     *  @param  indexes   Bucket indexes of LPs approved.
+     *  @notice Emitted when owner increase the LP allowance of a spender at specified indexes with specified amounts.
+     *  @param  owner     LP owner.
+     *  @param  spender   Address approved to transfer LP.
+     *  @param  indexes   Bucket indexes of LP approved.
      *  @param  amounts   LP amounts added (ordered by indexes).
      */
-    event IncreaseLPsAllowance(
+    event IncreaseLPAllowance(
         address indexed owner,
         address indexed spender,
         uint256[] indexes,
@@ -241,13 +253,13 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when owner decrease the LPs allowance of a spender at specified indexes with specified amounts.
-     *  @param  owner     LPs owner.
-     *  @param  spender   Address approved to transfer LPs.
-     *  @param  indexes   Bucket indexes of LPs approved.
+     *  @notice Emitted when owner decrease the LP allowance of a spender at specified indexes with specified amounts.
+     *  @param  owner     LP owner.
+     *  @param  spender   Address approved to transfer LP.
+     *  @param  indexes   Bucket indexes of LP approved.
      *  @param  amounts   LP amounts removed (ordered by indexes).
      */
-    event DecreaseLPsAllowance(
+    event DecreaseLPAllowance(
         address indexed owner,
         address indexed spender,
         uint256[] indexes,
@@ -255,46 +267,46 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when lender removes the allowance of a spender for their LPs.
-     *  @param  owner   LPs owner.
+     *  @notice Emitted when lender removes the allowance of a spender for their LP.
+     *  @param  owner   LP owner.
      *  @param  spender Address that is having it's allowance revoked.
      *  @param  indexes List of bucket index to remove the allowance from.
      */
-    event RevokeLPsAllowance(
+    event RevokeLPAllowance(
         address indexed owner,
         address indexed spender,
         uint256[] indexes
     );
 
     /**
-     *  @notice Emitted when lender whitelists addresses to accept LPs from.
-     *  @param  lender      Recipient that approves new owner for LPs.
-     *  @param  transferors List of addresses that can transfer LPs to lender.
+     *  @notice Emitted when lender whitelists addresses to accept LP from.
+     *  @param  lender      Recipient that approves new owner for LP.
+     *  @param  transferors List of addresses that can transfer LP to lender.
      */
-    event ApproveLPsTransferors(
+    event ApproveLPTransferors(
         address indexed lender,
         address[] transferors
     );
 
     /**
-     *  @notice Emitted when lender removes addresses from the LPs transferors whitelist.
-     *  @param  lender      Recipient that approves new owner for LPs.
-     *  @param  transferors List of addresses that won't be able to transfer LPs to lender anymore.
+     *  @notice Emitted when lender removes addresses from the LP transferors whitelist.
+     *  @param  lender      Recipient that approves new owner for LP.
+     *  @param  transferors List of addresses that won't be able to transfer LP to lender anymore.
      */
-    event RevokeLPsTransferors(
+    event RevokeLPTransferors(
         address indexed lender,
         address[] transferors
     );
 
     /**
-     *  @notice Emitted when a lender transfers their LPs to a different address.
+     *  @notice Emitted when a lender transfers their LP to a different address.
      *  @dev    Used by PositionManager.memorializePositions().
      *  @param  owner    The original owner address of the position.
      *  @param  newOwner The new owner address of the position.
-     *  @param  indexes  Array of price bucket indexes at which LPs were transferred.
-     *  @param  lps      Amount of LPs transferred.
+     *  @param  indexes  Array of price bucket indexes at which LP were transferred.
+     *  @param  lps      Amount of LP transferred.
      */
-    event TransferLPs(
+    event TransferLP(
         address owner,
         address newOwner,
         uint256[] indexes,
@@ -306,7 +318,7 @@ interface IPoolEvents {
     /**************************/
 
     /**
-     *  @notice Emitted when LPs are forfeited as a result of the bucket losing all assets.
+     *  @notice Emitted when LP are forfeited as a result of the bucket losing all assets.
      *  @param  index       The index of the bucket.
      *  @param  lpForfeited Amount of LP forfeited by lenders.
      */

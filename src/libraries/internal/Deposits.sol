@@ -362,4 +362,16 @@ library Deposits {
             j = j << 1;
         }
     }
+
+    /**
+     *  @notice Returns LUP for a given debt value (capped at min bucket price).
+     *  @param  debt_ The debt amount to calculate LUP for.
+     *  @return LUP for given debt.
+     */
+    function getLup(
+        DepositsState storage deposits_,
+        uint256 debt_
+    ) internal view returns (uint256) {
+        return _priceAt(findIndexOfSum(deposits_, debt_));
+    }
 }
