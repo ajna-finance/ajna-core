@@ -13,7 +13,7 @@ import { BaseInvariants } from '../base/BaseInvariants.sol';
 abstract contract BasicInvariants is BaseInvariants {
 
     // checks pool lps are equal to sum of all lender lps in a bucket 
-    function invariant_Lps_B1_B4() public useCurrentTimestamp {
+    function invariant_Lps_B1() public useCurrentTimestamp {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
@@ -28,7 +28,7 @@ abstract contract BasicInvariants is BaseInvariants {
 
             (uint256 bucketLps, , , , ) = _pool.bucketInfo(bucketIndex);
 
-            assertEq(bucketLps, totalLps, "Buckets Invariant B1 or B4");
+            assertEq(bucketLps, totalLps, "Buckets Invariant B1");
         }
     }
 
