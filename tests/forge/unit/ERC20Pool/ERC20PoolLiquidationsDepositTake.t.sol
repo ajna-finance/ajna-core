@@ -6,7 +6,6 @@ import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 import 'src/ERC20Pool.sol';
 import 'src/interfaces/pool/commons/IPoolErrors.sol';
 import 'src/libraries/helpers/PoolHelper.sol';
-import '@std/console.sol';
 
 contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
 
