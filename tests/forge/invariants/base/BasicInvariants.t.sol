@@ -47,7 +47,7 @@ abstract contract BasicInvariants is BaseInvariants {
 
             if (collateral == 0 && deposit == 0) {
                 require(bucketLps == 0,       "Buckets Invariant B2");
-                require(exchangeRate == 1e18, "Buckets Invariant B4");
+                require(exchangeRate == 1e18, "Buckets Invariant B3");
             }
         }
     }
