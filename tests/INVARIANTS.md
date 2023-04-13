@@ -5,7 +5,7 @@
   - **CT1**: pool collateral token balance (`Collateral.balanceOf(pool)`) = sum of collateral balances across all borrowers (`Borrower.collateral`) + sum of claimable collateral across all buckets (`Bucket.collateral`)  
 - #### NFT:  
   - **CT2**: number of tokens owned by the pool (`Collateral.balanceOf(pool)`) * `1e18` = sum of collateral across all borrowers (`Borrower.collateral`) + sum of claimable collateral across all buckets (`Bucket.collateral`)  
-  - **CT3**: number of tokens owned by the pool (`Collateral.balanceOf(pool)` = length of borrower array token ids (`ERC721Pool.borrowerTokenIds.length`) + length of buckets array token ids (`ERC721Pool.bucketTokenIds.length`)  
+  - **CT3**: number of tokens owned by the pool (`Collateral.balanceOf(pool)`) = length of borrower array token ids (`ERC721Pool.borrowerTokenIds.length`) + length of buckets array token ids (`ERC721Pool.bucketTokenIds.length`)  
   - **CT4**: number of borrower token ids (`ERC721Pool.borrowerTokenIds.length`) * `1e18` <= borrower balance (`Borrower.collateral`) Note: can be lower in case when fractional collateral that is rebalanced / moved to buckets claimable token ids  
   - **CT5**: token ids in buckets array (`ERC721Pool.bucketTokenIds`) and in borrowers array (`ERC721Pool.borrowerTokenIds`) are owned by pool contract (`Collateral.ownerOf(tokenId)`)  
   - **CT6**: in case of subset pools: token ids in buckets array (`ERC721Pool.bucketTokenIds`) and in borrowers array (`ERC721Pool.borrowerTokenIds`) should have a mapping of `True` in allowed token ids mapping (`ERC721Pool.tokenIdsAllowed`)  
@@ -13,7 +13,7 @@
 - **CT7**: total pledged collateral in pool (`PoolBalancesState.pledgedCollateral`) = sum of collateral balances across all borrowers (`Borrower.collateral`)
 
 ## Quote Token
-- **QT1**: pool quote token balance (`Quote.balanceOf(pool)`) >= liquidation bonds (`AuctionsState.totalBondEscrowed`) + pool deposit size (`Pool.depositSize()`) + reserve auction unclaimed amount (`reserveAuction.unclaimed`) - pool t0 debt (`PoolBalancesState.t0Debt`)  
+- **QT1**: pool quote token balance (`Quote.balanceOf(pool)`) >= liquidation bonds (`AuctionsState.totalBondEscrowed`) + pool deposit size (`Pool.depositSize()`) + reserve auction unclaimed amount (`reserveAuction.unclaimed`) - pool t0 debt (`PoolBalancesState.t0Debt`) (with a `1e13` margin)
 - **QT2**: pool t0 debt (`PoolBalancesState.t0Debt`) = sum of t0 debt across all borrowers (`Borrower.t0Debt`)
 
 ## Auctions
@@ -32,10 +32,10 @@
 ## Buckets
 - **B1**: sum of LPs of lenders in bucket (`Lender.lps`) = bucket LPs accumulator (`Bucket.lps`)  
 - **B2**: bucket LPs accumulator (`Bucket.lps`) = 0 if no deposit / collateral in bucket  
-- **B3**: if no collateral or deposit in bucket then the bucket exchange rate is `1e27`  
-- **B4**: bankrupt bucket LPs accumulator = 0; lender LPs for deposits before bankruptcy time = 0  
-- **B5**: when adding / moving quote tokens or adding collateral : lender deposit time (`Lender.depositTime`) = timestamp of block when deposit happened (`block.timestamp`)  
-- **B6**: when receiving transferred LPs : receiver deposit time (`Lender.depositTime`) = max of sender and receiver deposit time  
+- **B3**: if no collateral or deposit in bucket then the bucket exchange rate is `1e18`
+- **B4**: bankrupt bucket LPs accumulator = 0; lender LPs for deposits before bankruptcy time = 0 // FIXME: invariant appears redundant with B1.
+- **B5**: when adding / moving quote tokens or adding collateral : lender deposit time (`Lender.depositTime`) = timestamp of block when deposit happened (`block.timestamp`)
+- **B6**: when receiving transferred LPs : receiver deposit time (`Lender.depositTime`) = max of sender and receiver deposit time
 - **B7**: when awarded bucket take LPs : taker/kicker deposit time (`Lender.depositTime`) = timestamp of block when award happened (`block.timestamp`)  
 
 ## Interest
@@ -50,26 +50,26 @@
 - **F3**: For any index `i < MAX_FENWICK_INDEX`,  `findIndexOfSum(prefixSum(i)) > i`
 - **F4**: For any index i, there is zero deposit above i and below findIndexOfSum(prefixSum(i) + 1): `depositAtIndex(j) == 0 for i < j < findIndexOfSum(prefixSum(i)+1)`
 
-## Exchange rate invariants ##
-- **R1**: Exchange rates are unchanged by pledging collateral
-- **R2**: Exchange rates are unchanged by pulling collateral
-- **R3**: Exchange rates are unchanged by depositing quote token into a bucket
-- **R4**: Exchange rates are unchanged by withdrawing deposit (quote token) from a bucket
-- **R5**: Exchange rates are unchanged by adding collateral token into a bucket
-- **R6**: Exchange rates are unchanged by removing collateral token from a bucket
-- **R7**: Exchange rates are unchanged under depositTakes
-- **R8**: Exchange rates are unchanged under arbTakes
+## Exchange rate invariants ## FIXME: help with diff wording below
+- **R1**: Exchange rates can differ by _ when pledging collateral
+- **R2**: Exchange rates can differ by _ when pulling collateral
+- **R3**: Exchange rates can differ by _ when depositing quote token into a bucket
+- **R4**: Exchange rates can differ by _ when withdrawing deposit (quote token) from a bucket
+- **R5**: Exchange rates can differ by _ when adding collateral token into a bucket
+- **R6**: Exchange rates can differ by _ when removing collateral token from a bucket
+- **R7**: Exchange rates can differ by _ when depositTake is called
+- **R8**: Exchange rates can differ by _ when arbTake is called
 
 ## Reserves ##
-- **RE1**:  Reserves are unchanged by pledging collateral
-- **RE2**:  Reserves are unchanged by removing collateral
-- **RE3**:  Reserves increase only when depositing quote token into a bucket below LUP. Reserves increase only when moving quote tokens into a bucket below LUP.
-- **RE4**:  Reserves are unchanged by withdrawing deposit (quote token) from a bucket after the penalty period hes expired
-- **RE5**:  Reserves are unchanged by adding collateral token into a bucket
-- **RE6**:  Reserves are unchanged by removing collateral token from a bucket
-- **RE7**:  Reserves increase by 7% of the loan quantity upon the first take (including depositTake or arbTake) and increase/decrease by bond penalty/reward on take.
-- **RE8**:  Reserves are unchanged under takes/depositTakes/arbTakes after the first take but increase/decrease by bond penalty/reward on take.
-- **RE9**:  Reserves increase by 3 months of interest when a loan is kicked
-- **RE10**: Reserves increase by origination fee: max(1 week interest, 0.05% of borrow amount), on draw debt
-- **RE11**: Reserves decrease by claimableReserves by startClaimableReserveAuction
-- **RE12**: Reserves decrease by amount of reserve used to settle a auction
+- **RE1**:  Reserves can differ by `1e15` when pledging collateral
+- **RE2**:  Reserves can differ by `1e15` when removing collateral
+- **RE3**:  Reserves increase only when depositing quote token into a bucket below LUP. Reserves increase only when moving quote tokens into a bucket below LUP. FIXME: don't beleive we are checking the directional increase of hte reserves here
+- **RE4**:  Reserves can differ by `1e15` when withdrawing deposit (quote token) from a bucket after the penalty period hes expired
+- **RE5**:  Reserves can differ by `1e15` when adding collateral token into a bucket
+- **RE6**:  Reserves can differ by `1e15` when removing collateral token from a bucket
+- **RE7**:  Reserves increase by 7% (with a `1e15` margin) of the loan quantity upon the first take (including depositTake or arbTake) and increase/decrease by bond penalty/reward on take.
+- **RE8**:  Reserves can differ by `1e15` during takes/depositTakes/arbTakes after the first take but increase/decrease by bond penalty/reward on take.
+- **RE9**:  Reserves increase by 3 months of interest when a loan is kicked (with a `1e15` margin)
+- **RE10**: Reserves increase by origination fee (with a `1e15` margin): max(1 week interest, 0.05% of borrow amount), on draw debt
+- **RE11**: Reserves decrease by claimableReserves by startClaimableReserveAuction (with a `1e15` margin)
+- **RE12**: Reserves decrease by amount of reserve used to settle a auction (with a `1e15` margin)

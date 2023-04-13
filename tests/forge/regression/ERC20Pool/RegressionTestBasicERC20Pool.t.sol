@@ -25,7 +25,6 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8(); 
     }
 
-    // test was failing when actors = 10, buckets = [2570], maxAmount = 1e36
     function test_regression_exchange_rate_2() external {
         _basicERC20PoolHandler.addQuoteToken(211670885988646987334214990781526025942, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 6894274025938223490357894120267612065037086600750070030707794233);
         _basicERC20PoolHandler.addCollateral(117281, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 2);
@@ -38,7 +37,6 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
-    // test will fail when actors = 10, buckets = [2570], maxAmount = 1e36
     function test_regression_exchange_rate_3() external {
         _basicERC20PoolHandler.addQuoteToken(2842, 304, 2468594405605444095992);
         _basicERC20PoolHandler.addCollateral(0, 1, 3);
@@ -48,7 +46,6 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
-    // test was failing when actors = 1, buckets = [2570], maxAmount = 1e36
     function test_regression_exchange_rate_4() external {
         _basicERC20PoolHandler.addCollateral(115792089237316195423570985008687907853269984665640564039457584007913129639932, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 587135207579305083672251579076072787077);
         _basicERC20PoolHandler.removeCollateral(712291886391993882782748602346033231793324080118979183300958, 673221151277569661050873992210938589, 999999997387885196930781163353866909746906615);
@@ -61,7 +58,6 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
-    // test was failing when actors = 1, buckets = [2570], maxAmount = 1e36
     function test_regression_exchange_rate_5() external {
         _basicERC20PoolHandler.drawDebt(1156, 1686);
         
@@ -71,7 +67,6 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();   
     }
 
-    // test was failing when actors = 1, buckets = [2570]
     function test_regression_exchange_rate_6() external {
         _basicERC20PoolHandler.addCollateral(999999999000000000000000081002632733724231666, 999999999243662968633890481597751057821356823, 1827379824097500721086759239664926559);
         _basicERC20PoolHandler.addQuoteToken(108018811574020559, 3, 617501271956497833026154369680502407518122199901237699791086943);
