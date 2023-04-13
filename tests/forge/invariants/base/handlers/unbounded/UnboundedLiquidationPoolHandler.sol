@@ -298,7 +298,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         (bucketTakeVars.kickerLps, )      = _pool.lenderInfo(bucketIndex_, kicker_);
         (bucketTakeVars.takerLps, )       = _pool.lenderInfo(bucketIndex_, taker_);
         ( , , , bucketTakeVars.deposit, ) = _pool.bucketInfo(bucketIndex_);
-        bucketTakeVars.kickerBond         = _getKickerBond(kicker);
+        bucketTakeVars.kickerBond         = _getKickerBond(kicker_);
     }
 
 }
