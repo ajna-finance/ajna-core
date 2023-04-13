@@ -332,7 +332,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         });
 
         // should revert if lender2 attempts to remove more collateral than lp is available for
-        _assertRemoveCollateralInsufficientLPsRevert({
+        _assertRemoveCollateralInsufficientLPRevert({
             from:   _lender2,
             amount: 1,
             index:  2350

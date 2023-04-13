@@ -621,7 +621,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         });
         _assertBucket({
             index:        _i10016,
-            lpBalance:    1_000 * 1e18,      // LP balance in arbed bucket increased with LPs awarded for deposit taker
+            lpBalance:    1_000 * 1e18,      // LP balance in arbed bucket increased with LP awarded for deposit taker
             collateral:   0.002156704581707556 * 1e18,          // arbed collateral added to the arbed bucket
             deposit:      978.397365129691616480 * 1e18,        // quote token amount is diminished in arbed bucket
             exchangeRate: 1 * 1e18

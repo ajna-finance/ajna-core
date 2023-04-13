@@ -2,7 +2,6 @@
 pragma solidity ^0.8.14;
 
 import './Interfaces.sol';
-import 'src/interfaces/pool/commons/IPoolLiquidationActions.sol';
 import 'src/interfaces/pool/erc20/IERC20Taker.sol';
 
 contract UniswapTakeExample is IERC20Taker {

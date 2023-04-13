@@ -111,7 +111,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         }
     }
 
-    function _increaseLPsAllowance(
+    function _increaseLPAllowance(
         address receiver_,
         uint256 bucketIndex_,
         uint256 amount_
@@ -119,13 +119,13 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         // approve as transferor
         address[] memory transferors = new address[](1);
         transferors[0] = receiver_;
-        _pool.approveLPsTransferors(transferors);
+        _pool.approveLPTransferors(transferors);
 
         uint256[] memory buckets = new uint256[](1);
         buckets[0] = bucketIndex_;
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = amount_;
-        _pool.increaseLPsAllowance(receiver_, buckets, amounts);
+        _pool.increaseLPAllowance(receiver_, buckets, amounts);
     }
 
     function _transferLps(
@@ -138,12 +138,12 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         changePrank(receiver_);
 
-        try _pool.transferLPs(sender_, receiver_, buckets) {
+        try _pool.transferLP(sender_, receiver_, buckets) {
 
             (, uint256 senderDepositTime)   = _pool.lenderInfo(bucketIndex_, sender_);
             (, uint256 receiverDepositTime) = _pool.lenderInfo(bucketIndex_, receiver_);
 
-            // **B6**: when receiving transferred LPs : receiver deposit time (`Lender.depositTime`) = max of sender and receiver deposit time
+            // **B6**: when receiving transferred LP : receiver deposit time (`Lender.depositTime`) = max of sender and receiver deposit time
             lenderDepositTime[receiver_][bucketIndex_] = Maths.max(senderDepositTime, receiverDepositTime);
 
         } catch (bytes memory err) {

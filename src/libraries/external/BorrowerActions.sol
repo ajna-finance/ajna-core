@@ -30,7 +30,7 @@ import { Deposits } from '../internal/Deposits.sol';
 import { Loans }    from '../internal/Loans.sol';
 import { Maths }    from '../internal/Maths.sol';
 
-import { Auctions } from './Auctions.sol';
+import { SettlerActions } from './SettlerActions.sol';
 
 /**
     @title  BorrowerActions library
@@ -46,7 +46,7 @@ library BorrowerActions {
     struct DrawDebtLocalVars {
         bool    borrow;                // true if borrow action
         uint256 borrowerDebt;          // [WAD] borrower's accrued debt
-        uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LPs (NFTs only)
+        uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LP (NFTs only)
         uint256 t0BorrowAmount;        // [WAD] t0 amount to borrow
         uint256 t0DebtChange;          // [WAD] additional t0 debt resulted from draw debt action
         bool    inAuction;             // true if loan is auctioned
@@ -55,7 +55,7 @@ library BorrowerActions {
     }
     struct RepayDebtLocalVars {
         uint256 borrowerDebt;          // [WAD] borrower's accrued debt
-        uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LPs (NFTs only)
+        uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LP (NFTs only)
         bool    inAuction;             // true if loan still in auction after repay, false otherwise
         bool    pull;                  // true if pull action
         bool    repay;                 // true if repay action
@@ -91,7 +91,7 @@ library BorrowerActions {
     /**
      *  @notice See `IERC20PoolBorrowerActions` and `IERC721PoolBorrowerActions` for descriptions
      *  @dev    write state:
-     *              - Auctions._settleAuction:
+     *              - SettlerActions._settleAuction:
      *                  - _removeAuction:
      *                      - decrement kicker locked accumulator, increment kicker claimable accumumlator
      *                      - decrement auctions count accumulator
@@ -109,7 +109,7 @@ library BorrowerActions {
      *              - limit price reached LimitIndexExceeded()
      *              - borrower cannot draw more debt BorrowerUnderCollateralized()
      *  @dev    emit events:
-     *              - Auctions._settleAuction:
+     *              - SettlerActions._settleAuction:
      *                  - AuctionNFTSettle or AuctionSettle
      */
     function drawDebt(
@@ -149,7 +149,7 @@ library BorrowerActions {
             borrower.collateral  += collateralToPledge_;
 
             result_.remainingCollateral += collateralToPledge_;
-            result_.newLup              = _lup(deposits_, result_.poolDebt);
+            result_.newLup              = Deposits.getLup(deposits_, result_.poolDebt);
 
             // if loan is auctioned and becomes collateralized by newly pledged collateral then settle auction
             if (
@@ -168,7 +168,7 @@ library BorrowerActions {
                 (
                     result_.remainingCollateral,
                     vars.compensatedCollateral
-                ) = Auctions._settleAuction(
+                ) = SettlerActions._settleAuction(
                     auctions_,
                     buckets_,
                     deposits_,
@@ -213,7 +213,7 @@ library BorrowerActions {
             // add debt change to pool's debt
             result_.t0PoolDebt += vars.t0DebtChange;
             result_.poolDebt   = Maths.wmul(result_.t0PoolDebt, poolState_.inflator);
-            result_.newLup     = _lup(deposits_, result_.poolDebt);
+            result_.newLup     = Deposits.getLup(deposits_, result_.poolDebt);
 
             // revert if borrow drives LUP price under the specified price limit
             _revertIfPriceDroppedBelowLimit(result_.newLup, limitIndex_);
@@ -250,7 +250,7 @@ library BorrowerActions {
     /**
      *  @notice See `IERC20PoolBorrowerActions` and `IERC721PoolBorrowerActions` for descriptions
      *  @dev    write state:
-     *              - Auctions._settleAuction:
+     *              - SettlerActions._settleAuction:
      *                  - _removeAuction:
      *                      - decrement kicker locked accumulator, increment kicker claimable accumumlator
      *                      - decrement auctions count accumulator
@@ -269,7 +269,7 @@ library BorrowerActions {
      *              - not enough collateral to pull InsufficientCollateral()
      *              - limit price reached LimitIndexExceeded()
      *  @dev    emit events:
-     *              - Auctions._settleAuction:
+     *              - SettlerActions._settleAuction:
      *                  - AuctionNFTSettle or AuctionSettle
      */
     function repayDebt(
@@ -330,7 +330,7 @@ library BorrowerActions {
                 poolState_.quoteDustLimit
             );
 
-            result_.newLup = _lup(deposits_, result_.poolDebt);
+            result_.newLup = Deposits.getLup(deposits_, result_.poolDebt);
 
             // if loan is auctioned and becomes collateralized by repaying debt then settle auction
             if (vars.inAuction) {
@@ -347,7 +347,7 @@ library BorrowerActions {
                     (
                         result_.remainingCollateral,
                         vars.compensatedCollateral
-                    ) = Auctions._settleAuction(
+                    ) = SettlerActions._settleAuction(
                         auctions_,
                         buckets_,
                         deposits_,
@@ -376,7 +376,7 @@ library BorrowerActions {
             if (vars.inAuction) revert AuctionActive();
 
             // calculate LUP only if it wasn't calculated in repay action
-            if (!vars.repay) result_.newLup = _lup(deposits_, result_.poolDebt);
+            if (!vars.repay) result_.newLup = Deposits.getLup(deposits_, result_.poolDebt);
 
             _revertIfPriceDroppedBelowLimit(result_.newLup, limitIndex_);
 
@@ -441,7 +441,7 @@ library BorrowerActions {
 
         Borrower memory borrower = loans_.borrowers[msg.sender];
 
-        newLup_ = _lup(deposits_, poolState_.debt);
+        newLup_ = Deposits.getLup(deposits_, poolState_.debt);
 
         // revert if loan is not fully collateralized at current LUP
         if (
@@ -485,13 +485,6 @@ library BorrowerActions {
         address borrower_
     ) internal view returns (bool) {
         return auctions_.liquidations[borrower_].kickTime != 0;
-    }
-
-    function _lup(
-        DepositsState storage deposits_,
-        uint256 debt_
-    ) internal view returns (uint256) {
-        return _priceAt(Deposits.findIndexOfSum(deposits_, debt_));
     }
 
 }

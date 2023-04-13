@@ -171,8 +171,10 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         address from,
         uint256 tokenId,
         uint256[] memory fromIndexes,
+        uint256[] memory lpsRedeemed,
         bool fromIndStaked,
         uint256[] memory toIndexes,
+        uint256[] memory lpsAwarded,
         uint256 expiry
     ) internal {
         
@@ -181,7 +183,7 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         // check MoveLiquidity emits
         for (uint256 i = 0; i < fromIndexes.length; ++i) {
             vm.expectEmit(true, true, true, true);
-            emit MoveLiquidity(address(_rewardsManager), tokenId, fromIndexes[i], toIndexes[i]);
+            emit MoveLiquidity(address(_rewardsManager), tokenId, fromIndexes[i], toIndexes[i], lpsRedeemed[i], lpsAwarded[i]);
         }
 
         vm.expectEmit(true, true, true, true);
@@ -306,16 +308,16 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
         ERC20Pool(address(pool)).repayDebt(borrower, Maths.wdiv(borrowAmount, Maths.wad(2)), 0, borrower, MAX_FENWICK_INDEX);
 
         // start reserve auction
-        _startClaimableReserveAuction(address(pool), _bidder);
+        _kickReserveAuction(address(pool), _bidder);
     }
 
-    function _startClaimableReserveAuction(
+    function _kickReserveAuction(
         address pool,
         address bidder
     ) internal {
         changePrank(bidder);
         _ajnaToken.approve(address(pool), type(uint256).max);
-        ERC20Pool(address(pool)).startClaimableReserveAuction();
+        ERC20Pool(address(pool)).kickReserveAuction();
     }
 
     function _mintAndMemorializePositionNFT(
@@ -346,7 +348,7 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
             (lpBalances[i], ) = ERC20Pool(address(pool)).lenderInfo(indexes[i], minter);
         }
 
-        ERC20Pool(address(pool)).increaseLPsAllowance(address(_positionManager), indexes, lpBalances);
+        ERC20Pool(address(pool)).increaseLPAllowance(address(_positionManager), indexes, lpBalances);
 
         // construct memorialize params struct
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
@@ -393,11 +395,11 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
         // start reserve auction
         changePrank(_bidder);
         _ajnaToken.approve(address(pool), type(uint256).max);
-        ERC20Pool(address(pool)).startClaimableReserveAuction();
+        ERC20Pool(address(pool)).kickReserveAuction();
 
         // Can't trigger reserve auction if less than two weeks have passed since last auction
         vm.expectRevert(IPoolErrors.ReserveAuctionTooSoon.selector);
-        ERC20Pool(address(pool)).startClaimableReserveAuction();
+        ERC20Pool(address(pool)).kickReserveAuction();
 
         // allow time to pass for the reserve price to decrease
         skip(24 hours);
@@ -443,11 +445,11 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
         // start reserve auction
         changePrank(_bidder);
         _ajnaToken.approve(address(pool), type(uint256).max);
-        ERC20Pool(address(pool)).startClaimableReserveAuction();
+        ERC20Pool(address(pool)).kickReserveAuction();
 
         // Can't trigger reserve auction if less than two weeks have passed since last auction
         vm.expectRevert(IPoolErrors.ReserveAuctionTooSoon.selector);
-        ERC20Pool(address(pool)).startClaimableReserveAuction();
+        ERC20Pool(address(pool)).kickReserveAuction();
 
         // allow time to pass for the reserve price to decrease
         skip(24 hours);

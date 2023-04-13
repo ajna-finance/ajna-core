@@ -18,6 +18,6 @@ interface IPositionManagerState {
 }
 
 struct Position {
-    uint256 lps;         // [WAD] position LPs
+    uint256 lps;         // [WAD] position LP
     uint256 depositTime; // deposit time for position
 }

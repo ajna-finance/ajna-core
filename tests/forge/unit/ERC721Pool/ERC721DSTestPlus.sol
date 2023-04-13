@@ -92,7 +92,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
             uint256 noOfBucketNftsRedeemable = _wadToIntRoundingDown(bucketCollateral);
 
             // Calculating redeemable Quote and Collateral Token for Lenders lps
-            uint256 lpsAsCollateral = _poolUtils.lpsToCollateral(address(_pool), lenderLpBalance, bucketIndex);
+            uint256 lpsAsCollateral = _poolUtils.lpToCollateral(address(_pool), lenderLpBalance, bucketIndex);
 
             // Deposit additional quote token to redeem for all NFTs
             uint256 lpsRedeemed;
@@ -109,7 +109,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
                     Token(_pool.quoteTokenAddress()).approve(address(_pool) , depositRequired);
                     _pool.addQuoteToken(depositRequired, bucketIndex, block.timestamp + 1 minutes);
                     (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
-                    lpsAsCollateral = _poolUtils.lpsToCollateral(address(_pool), lenderLpBalance, bucketIndex);
+                    lpsAsCollateral = _poolUtils.lpToCollateral(address(_pool), lenderLpBalance, bucketIndex);
                 }
 
                 // First redeem LP for collateral
@@ -646,13 +646,13 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         ERC721Pool(address(_pool)).removeCollateral(amount, index);
     }
 
-    function _assertRemoveCollateralInsufficientLPsRevert(
+    function _assertRemoveCollateralInsufficientLPRevert(
         address from,
         uint256 amount,
         uint256 index
     ) internal {
         changePrank(from);
-        vm.expectRevert(IPoolErrors.InsufficientLPs.selector);
+        vm.expectRevert(IPoolErrors.InsufficientLP.selector);
         _pool.removeCollateral(amount, index);
     }
 }

@@ -408,7 +408,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         _repayDebt(from, borrower, amountToRepay, amountRepaid, collateralToPull, 0);
     }
 
-    function _transferLPs(
+    function _transferLP(
         address operator,
         address from,
         address to,
@@ -417,8 +417,8 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         changePrank(operator);
         vm.expectEmit(true, true, true, true);
-        emit TransferLPs(from, to, indexes, lpBalance);
-        _pool.transferLPs(from, to, indexes);
+        emit TransferLP(from, to, indexes, lpBalance);
+        _pool.transferLP(from, to, indexes);
 
         for(uint256 i = 0; i < indexes.length ;i++ ){
             if(lenders.contains(from)){
@@ -580,12 +580,12 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         ERC20Pool(address(_pool)).removeCollateral(amount, index);
     }
 
-    function _assertRemoveAllCollateralInsufficientLPsRevert(
+    function _assertRemoveAllCollateralInsufficientLPRevert(
         address from,
         uint256 index
     ) internal {
         changePrank(from);
-        vm.expectRevert(IPoolErrors.InsufficientLPs.selector);
+        vm.expectRevert(IPoolErrors.InsufficientLP.selector);
         ERC20Pool(address(_pool)).removeCollateral(type(uint256).max, index);
     }
 
@@ -597,7 +597,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         changePrank(operator);
         vm.expectRevert(IPoolErrors.InvalidIndex.selector);
-        _pool.transferLPs(from, to, indexes);
+        _pool.transferLP(from, to, indexes);
     }
 
     function _assertTransferNoAllowanceRevert(
@@ -608,7 +608,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         changePrank(operator);
         vm.expectRevert(IPoolErrors.NoAllowance.selector);
-        _pool.transferLPs(from, to, indexes);
+        _pool.transferLP(from, to, indexes);
     }
 
     function _assertTransferToSameOwnerRevert(
@@ -619,7 +619,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
     ) internal {
         changePrank(operator);
         vm.expectRevert(IPoolErrors.TransferToSameOwner.selector);
-        _pool.transferLPs(from, to, indexes);
+        _pool.transferLP(from, to, indexes);
     }
 
     function _assertDepositLockedByAuctionDebtRevert(

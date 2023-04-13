@@ -229,7 +229,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
 
     function testPoolInfoUtilsLPsToCollateralAndQuote() external {
         assertEq(
-            _poolUtils.lpsToCollateral(
+            _poolUtils.lpToCollateral(
                 address(_pool),
                 100 * 1e18,
                 high
@@ -240,35 +240,35 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         ERC20Pool(address(_pool)).addCollateral(10 * 1e18, high, block.timestamp + 5 minutes);
 
         assertEq(
-            _poolUtils.lpsToCollateral(
+            _poolUtils.lpToCollateral(
                 address(_pool),
                 5 * 1e18,
                 high
             ), 1668940620571264
         );
         assertEq(
-            _poolUtils.lpsToCollateral(
+            _poolUtils.lpToCollateral(
                 address(_pool),
                 20 * 1e18,
                 high
             ), 6675762482285055
         );
         assertEq(
-            _poolUtils.lpsToQuoteTokens(
+            _poolUtils.lpToQuoteTokens(
                 address(_pool),
                 100 * 1e18,
                 high
             ), 100000000000000000000
         );
         assertEq(
-            _poolUtils.lpsToQuoteTokens(
+            _poolUtils.lpToQuoteTokens(
                 address(_pool),
                 5 * 1e18,
                 high
             ), 5000000000000000000
         );
         assertEq(
-            _poolUtils.lpsToQuoteTokens(
+            _poolUtils.lpToQuoteTokens(
                 address(_pool),
                 20 * 1e18,
                 high

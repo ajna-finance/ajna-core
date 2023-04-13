@@ -11,7 +11,7 @@ interface IPoolErrors {
     /**************************/
 
     /**
-     *  @notice LPs allowance is already set by the owner.
+     *  @notice LP allowance is already set by the owner.
      */
     error AllowanceAlreadySet();
 
@@ -98,9 +98,9 @@ interface IPoolErrors {
     /**
      *  @notice Lender is attempting to move or remove more collateral they have claim to in the bucket.
      *  @notice Lender is attempting to remove more collateral they have claim to in the bucket.
-     *  @notice Lender must have enough LPs to claim the desired amount of quote from the bucket.
+     *  @notice Lender must have enough LP to claim the desired amount of quote from the bucket.
      */
-    error InsufficientLPs();
+    error InsufficientLP();
 
     /**
      *  @notice Bucket must have more quote available in the bucket than the lender is attempting to claim.
@@ -108,12 +108,12 @@ interface IPoolErrors {
     error InsufficientLiquidity();
 
     /**
-     *  @notice When increasing / decreasing LPs allowances indexes and amounts arrays parameters should have same length.
+     *  @notice When increasing / decreasing LP allowances indexes and amounts arrays parameters should have same length.
      */
     error InvalidAllowancesInput();
 
     /**
-     *  @notice When transferring LPs between indices, the new index must be a valid index.
+     *  @notice When transferring LP between indices, the new index must be a valid index.
      */
     error InvalidIndex();
 
@@ -144,7 +144,7 @@ interface IPoolErrors {
     error MoveToSameIndex();
 
     /**
-     *  @notice Owner of the LPs must have approved the new owner prior to transfer.
+     *  @notice Owner of the LP must have approved the new owner prior to transfer.
      */
     error NoAllowance();
 
@@ -205,12 +205,12 @@ interface IPoolErrors {
     error TransactionExpired();
 
     /**
-     *  @notice The address that transfer LPs is not approved by the LPs receiving address.
+     *  @notice The address that transfer LP is not approved by the LP receiving address.
      */
     error TransferorNotApproved();
 
     /**
-     *  @notice Owner of the LPs attemps to transfer LPs to same address.
+     *  @notice Owner of the LP attemps to transfer LP to same address.
      */
     error TransferToSameOwner();
 

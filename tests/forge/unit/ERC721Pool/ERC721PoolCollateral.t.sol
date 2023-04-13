@@ -538,7 +538,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         });
 
         // should revert if the actor does not have any LP to remove a token
-        _assertRemoveCollateralInsufficientLPsRevert({
+        _assertRemoveCollateralInsufficientLPRevert({
             from:   _borrower2,
             amount: 1,
             index:  1530
@@ -1017,7 +1017,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(_borrower),      50);
         assertEq(_collateral.balanceOf(address(_pool)), 1);
 
-        // lender merge his entitled collateral (based on their LPs) in bucket 3069
+        // lender merge his entitled collateral (based on their LP) in bucket 3069
         uint256[] memory removalIndexes = new uint256[](10);
         uint256 removalI = 0;
         for (uint256 i = 3060; i < (3060 + 10); i++) {
@@ -1086,14 +1086,14 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             from:    _lender,
             amount:  10 * 1e18,
             index:   7388,
-            lpAward: 10 * 1e18, // LPs awarded to lender for depositing quote tokens in bucket 7388
+            lpAward: 10 * 1e18, // LP awarded to lender for depositing quote tokens in bucket 7388
             newLup:  MAX_PRICE
         });
 
         _assertLenderLpBalance({
             lender:      _lender,
             index:       7388,
-            lpBalance:   10 * 1e18, // lender now owns LPs in bucket 7388 which can be used to merge bucket collateral
+            lpBalance:   10 * 1e18, // lender now owns LP in bucket 7388 which can be used to merge bucket collateral
             depositTime: _startTime + 10000 days + (32 hours + 4210 minutes)
         });
 
@@ -1125,7 +1125,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         });   
         _assertBucket({
             index:        7388,
-            lpBalance:    10 * 1e18, // LPs in bucket 7388 diminished when NFT merged and removed
+            lpBalance:    10 * 1e18, // LP in bucket 7388 diminished when NFT merged and removed
             collateral:   0,         // no collateral remaining as it was merged and removed
             deposit:      10 * 1e18,
             exchangeRate: 1 * 1e18
@@ -1133,13 +1133,13 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         _assertLenderLpBalance({
             lender:      _lender,
             index:       7388,
-            lpBalance:   10 * 1e18, // lender LPs decreased with the amount used to merge NFT
+            lpBalance:   10 * 1e18, // lender LP decreased with the amount used to merge NFT
             depositTime: _startTime + 10000 days + (32 hours + 4210 minutes)
         });
         _assertLenderLpBalance({
             lender:      _borrower,
             index:       7388,
-            lpBalance:   0, // Borrower LPs remain the same in the bucket
+            lpBalance:   0, // Borrower LP remain the same in the bucket
             depositTime: 0
         });
 
@@ -1153,7 +1153,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         _assertBucket({
             index:        7388,
-            lpBalance:    0,            // LPs in bucket 7388 diminished when NFT merged and removed
+            lpBalance:    0,            // LP in bucket 7388 diminished when NFT merged and removed
             collateral:   0,            // no collateral remaining as it was merged and removed
             deposit:      0,
             exchangeRate: 1 * 1e18
