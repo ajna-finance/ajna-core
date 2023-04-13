@@ -1091,8 +1091,6 @@ contract RewardsManagerTest is RewardsHelperContract {
             lpsAwarded:       secondLpsAwarded,
             expiry:           block.timestamp + 1000
         });
-        return;
-
 
         /******************************/
         /*** Second Reserve Auction ***/
