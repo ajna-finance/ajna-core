@@ -28,7 +28,7 @@ contract RegressionTestLiquidationERC20Pool is LiquidationERC20PoolInvariants {
         _liquidationERC20PoolHandler.addQuoteToken(1, 20033186019073, 1);
         _liquidationERC20PoolHandler.bucketTake(0, 0, false, 2876997751);
 
-        invariant_Lps_B1_B4();
+        invariant_Lps_B1();
     }
 
     function test_regression_interest_rate() external {
