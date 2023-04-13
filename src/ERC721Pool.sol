@@ -401,7 +401,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
         // move balances from borrower token ids array to pool / claimable token ids array
         // if entire bad debt was settled or if all available collateral was used to settle bad debt
-        if (result.debtPostAction == 0 || result.collateralRemaining == 0) _rebalanceTokens(params.borrower, result.collateralRemaining);
+                _rebalanceTokens(params.borrower, result.collateralRemaining);
 
         // update pool balances state
         poolBalances.t0Debt            -= result.t0DebtSettled;
@@ -578,7 +578,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         uint256[] storage borrowerTokens = borrowerTokenIds[borrowerAddress_];
 
         uint256 noOfTokensPledged    = borrowerTokens.length;
-        uint256 noOfTokensToTransfer = borrowerCollateral_ != 0 ? noOfTokensPledged - borrowerCollateral_ / 1e18 : noOfTokensPledged;
+        uint256 noOfTokensToTransfer = borrowerCollateral_ != 0 ? noOfTokensPledged - (borrowerCollateral_ +1e18 - 1)/ 1e18 : noOfTokensPledged;
 
         for (uint256 i = 0; i < noOfTokensToTransfer;) {
             uint256 tokenId = borrowerTokens[--noOfTokensPledged]; // start with moving the last token pledged by borrower

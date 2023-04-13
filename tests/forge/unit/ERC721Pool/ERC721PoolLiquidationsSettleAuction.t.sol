@@ -163,10 +163,9 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         _assertCollateralInvariants();
 
         // the 2 token ids are still in borrower token ids array after partial bad debt settle (rebalance happens only on auction settle)
-        assertEq(ERC721Pool(address(_pool)).totalBorrowerTokens(_borrower), 2);
-        assertEq(ERC721Pool(address(_pool)).totalBucketTokens(), 0);
+        assertEq(ERC721Pool(address(_pool)).totalBorrowerTokens(_borrower), 1);
+        assertEq(ERC721Pool(address(_pool)).totalBucketTokens(), 1);
         assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 0), 1);
-        assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 1), 3);
 
         // all NFTs are owned by the pool
         assertEq(_collateral.ownerOf(1),  address(_pool));
