@@ -3,6 +3,7 @@
 pragma solidity 0.8.14;
 
 import '@std/Test.sol';
+import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { Pool }             from 'src/base/Pool.sol';
 import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
@@ -22,6 +23,8 @@ uint256 constant BORROWER_MIN_BUCKET_INDEX = 2600;
 uint256 constant BORROWER_MAX_BUCKET_INDEX = 2620;
 
 abstract contract BaseHandler is Test {
+
+    using EnumerableSet for EnumerableSet.UintSet;
 
     // Tokens
     TokenWithNDecimals internal _quote;
@@ -65,6 +68,9 @@ abstract contract BaseHandler is Test {
     uint256 public previousReserves;    // reserves before action
     uint256 public increaseInReserves;  // amount of reserve decrease
     uint256 public decreaseInReserves;  // amount of reserve increase
+
+    // Buckets where collateral is added when a borrower is in auction and has partial NFT
+    EnumerableSet.UintSet internal collateralBuckets;
 
     // auctions invariant test state
     bool                     public firstTake;        // if take is called on auction first time
@@ -399,6 +405,10 @@ abstract contract BaseHandler is Test {
 
         // Account for decrementing x to make max inclusive.
         if (max_ == type(uint256).max && x_ != 0) result_++;
+    }
+
+    function getCollateralBuckets() external view returns(uint256[] memory) {
+        return collateralBuckets.values();
     }
 
 }

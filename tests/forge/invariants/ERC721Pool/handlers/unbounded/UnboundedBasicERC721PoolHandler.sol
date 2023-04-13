@@ -2,14 +2,22 @@
 
 pragma solidity 0.8.14;
 
+import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+
 import { ERC20Pool }                         from 'src/ERC20Pool.sol';
 import { ERC20PoolFactory }                  from 'src/ERC20PoolFactory.sol';
 import { PoolInfoUtils }                     from 'src/PoolInfoUtils.sol';
-import { _borrowFeeRate, _depositFeeRate, _indexOf, MIN_PRICE, MAX_PRICE }   from 'src/libraries/helpers/PoolHelper.sol';
+import { 
+    _borrowFeeRate,
+    _depositFeeRate,
+    _indexOf,
+    MIN_PRICE,
+    MAX_PRICE 
+}                                            from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }                             from "src/libraries/internal/Maths.sol";
 
 import { UnboundedBasicPoolHandler } from "../../../base/handlers/unbounded/UnboundedBasicPoolHandler.sol";
-import { BaseERC721PoolHandler }      from './BaseERC721PoolHandler.sol';
+import { BaseERC721PoolHandler }     from './BaseERC721PoolHandler.sol';
 
 /**
  *  @dev this contract manages multiple lenders
@@ -17,6 +25,8 @@ import { BaseERC721PoolHandler }      from './BaseERC721PoolHandler.sol';
  *  @dev randomly selects a lender contract to make a txn
  */ 
 abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, BaseERC721PoolHandler {
+
+    using EnumerableSet for EnumerableSet.UintSet;
     
     /*******************************/
     /*** Lender Helper Functions ***/
@@ -100,13 +110,13 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
             (uint256 kickTimeAfter, , , , , ) =_poolInfo.auctionStatus(address(_erc721Pool), _actor);
 
             // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
-            if(kickTimeBefore != 0 && kickTimeAfter == 0) {
-                if(auctionPrice < MIN_PRICE) {
-                    collateralBuckets.push(7388);
-                } else if(auctionPrice > MAX_PRICE) {
-                    collateralBuckets.push(0);
+            if (kickTimeBefore != 0 && kickTimeAfter == 0) {
+                if (auctionPrice < MIN_PRICE) {
+                    collateralBuckets.add(7388);
+                } else if (auctionPrice > MAX_PRICE) {
+                    collateralBuckets.add(0);
                 } else {
-                    collateralBuckets.push(_indexOf(auctionPrice));
+                    collateralBuckets.add(_indexOf(auctionPrice));
                 }
             }
         } catch (bytes memory err) {
@@ -179,13 +189,13 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
             (uint256 kickTimeAfter, , , , , ) =_poolInfo.auctionStatus(address(_erc721Pool), _actor);
 
             // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
-            if(kickTimeBefore != 0 && kickTimeAfter == 0) {
-                if(auctionPrice < MIN_PRICE) {
-                    collateralBuckets.push(7388);
-                } else if(auctionPrice > MAX_PRICE) {
-                    collateralBuckets.push(0);
+            if (kickTimeBefore != 0 && kickTimeAfter == 0) {
+                if (auctionPrice < MIN_PRICE) {
+                    collateralBuckets.add(7388);
+                } else if (auctionPrice > MAX_PRICE) {
+                    collateralBuckets.add(0);
                 } else {
-                    collateralBuckets.push(_indexOf(auctionPrice));
+                    collateralBuckets.add(_indexOf(auctionPrice));
                 }
             }
 

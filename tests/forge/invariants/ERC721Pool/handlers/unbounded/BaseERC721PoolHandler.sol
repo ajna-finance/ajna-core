@@ -3,6 +3,7 @@
 pragma solidity 0.8.14;
 
 import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
+import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { ERC721Pool }        from 'src/ERC721Pool.sol';
 
@@ -12,14 +13,13 @@ import { BaseHandler } from '../../../base/handlers/unbounded/BaseHandler.sol';
 
 abstract contract BaseERC721PoolHandler is BaseHandler {
 
+    using EnumerableSet for EnumerableSet.UintSet;
+
     // Token
     NFTCollateralToken internal _collateral;
 
     // ERC721Pool
     ERC721Pool internal _erc721Pool;
-
-    // Buckets where collateral is added when a borrower is in auction and has partial NFT
-    uint256[] internal collateralBuckets;
 
     constructor(
         address pool_,
@@ -39,6 +39,10 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
 
         MIN_COLLATERAL_AMOUNT = 1;
         MAX_COLLATERAL_AMOUNT = 5;
+
+        for (uint256 bucket = LENDER_MIN_BUCKET_INDEX; bucket <= LENDER_MAX_BUCKET_INDEX; bucket++) {
+            collateralBuckets.add(bucket);
+        }
 
         // Tokens
         _collateral = NFTCollateralToken(collateral_);
@@ -70,10 +74,6 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
         }
 
         return actorsAddress;
-    }
-
-    function getCollateralBuckets() external view returns(uint256[] memory) {
-        return collateralBuckets;
     }
 
 }
