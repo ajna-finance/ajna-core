@@ -110,7 +110,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
 
             (, uint256 borrowerCollateral, ) = _erc721pool.borrowerInfo(borrower);
 
-            assertLe(borrowerTokens * 1e18, borrowerCollateral, "Collateral Invariant CT4");
+            assertGe(borrowerTokens * 1e18, borrowerCollateral, "Collateral Invariant CT4");
         }
     }
 
