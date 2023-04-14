@@ -11,6 +11,8 @@ jobs:
     env:
         QUOTE_PRECISION: 18
         COLLATERAL_PRECISION: 18
+        BUCKET_INDEX_ERC20: 2570
+        BUCKET_INDEX_ERC721: 850
     strategy:
       fail-fast: true
 
