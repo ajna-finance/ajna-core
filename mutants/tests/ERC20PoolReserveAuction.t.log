@@ -1,0 +1,19 @@
+14 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/ERC20Pool/ERC20PoolReserveAuction.t.sol: dry running
+tests/forge/ERC20Pool/ERC20PoolReserveAuction.t.sol: mutilating
+tests/forge/ERC20Pool/ERC20PoolReserveAuction.t.sol:80:9-86:12: `_assertReserveAuction({
+            reserves:                   1.425573699803092 * 1e18,
+            claimableReserves :         1.425573699803092 * 1e18,
+            claimableReservesRemaining: 0,
+            auctionPrice:               0,
+            timeRemaining:              0
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolReserveAuction.t.sol:98:9-104:12: `_assertReserveAuction({
+            reserves:                   0.000000736998030920 * 1e18,
+            claimableReserves :         0.000000736998030920 * 1e18,
+            claimableReservesRemaining: 1.411317962805061080 * 1e18,
+            auctionPrice:               0.000000000867361737 * 1e18,
+            timeRemaining:              43200
+        });` passed

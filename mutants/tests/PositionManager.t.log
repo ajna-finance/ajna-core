@@ -1,0 +1,504 @@
+380 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/PositionManager.t.sol: dry running
+tests/forge/PositionManager.t.sol: mutilating
+tests/forge/PositionManager.t.sol:90:9-90:68: `_mintQuoteAndApproveManagerTokens(testAddress, mintAmount);` passed
+tests/forge/PositionManager.t.sol:225:9-230:12: `_assertLenderLpBalance({
+            lender:      testAddress,
+            index:       indexes[0],
+            lpBalance:   3_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:231:9-236:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[0],
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:237:9-242:12: `_assertLenderLpBalance({
+            lender:      testAddress,
+            index:       indexes[1],
+            lpBalance:   3_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:243:9-248:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[1],
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:249:9-254:12: `_assertLenderLpBalance({
+            lender:      testAddress,
+            index:       indexes[2],
+            lpBalance:   3_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:255:9-260:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[2],
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:520:9-525:12: `_assertLenderLpBalance({
+            lender:      testLender1,
+            index:       indexes[0],
+            lpBalance:   3_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:526:9-531:12: `_assertLenderLpBalance({
+            lender:      testLender2,
+            index:       indexes[0],
+            lpBalance:   3_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:532:9-537:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[0],
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:538:9-543:12: `_assertLenderLpBalance({
+            lender:      testLender1,
+            index:       indexes[1],
+            lpBalance:   3_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:544:9-549:12: `_assertLenderLpBalance({
+            lender:      testLender2,
+            index:       indexes[1],
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:550:9-555:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[1],
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:556:9-561:12: `_assertLenderLpBalance({
+            lender:      testLender1,
+            index:       indexes[2],
+            lpBalance:   3_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:562:9-567:12: `_assertLenderLpBalance({
+            lender:      testLender2,
+            index:       indexes[2],
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:568:9-573:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[2],
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:574:9-579:12: `_assertLenderLpBalance({
+            lender:      testLender1,
+            index:       indexes[3],
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:580:9-585:12: `_assertLenderLpBalance({
+            lender:      testLender2,
+            index:       indexes[3],
+            lpBalance:   3_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:586:9-591:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[3],
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:807:9-811:12: `_addInitialLiquidity({
+            from:   testMinter,
+            amount: 25_000 * 1e18,
+            index:  _i9_62
+        });` passed
+tests/forge/PositionManager.t.sol:812:9-816:12: `_addInitialLiquidity({
+            from:   testMinter,
+            amount: 30_000 * 1e18,
+            index:  _i9_52
+        });` passed
+tests/forge/PositionManager.t.sol:860:9-865:12: `_assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndex,
+            lpBalance:   2_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:866:9-871:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:886:9-886:52: `transferors[0] = address(_positionManager);` passed
+tests/forge/PositionManager.t.sol:887:14-887:48: `.approveLpTransferors(transferors)` passed
+tests/forge/PositionManager.t.sol:896:9-901:12: `_assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndex,
+            lpBalance:   0,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:902:9-907:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndex,
+            lpBalance:   2_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:956:9-962:12: `_assertBucket({
+            index:        _i9_91,
+            lpBalance:    0, // bucket is bankrupt
+            collateral:   0,
+            deposit:      0,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/PositionManager.t.sol:1080:9-1085:12: `_assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndexPrice,
+            lpBalance:   15_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:1086:9-1091:12: `_assertLenderLpBalance({
+            lender:      testReceiver,
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:1092:9-1097:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:1114:14-1114:48: `.approveLpTransferors(transferors)` passed
+tests/forge/PositionManager.t.sol:1122:9-1127:12: `_assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:1128:9-1133:12: `_assertLenderLpBalance({
+            lender:      testReceiver,
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:1134:9-1139:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndexPrice,
+            lpBalance:   15_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:1146:25-1146:57: `.approve(address(this), tokenId)` passed
+tests/forge/PositionManager.t.sol:1219:9-1224:12: `_assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndexPrice,
+            lpBalance:   15_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:1225:9-1230:12: `_assertLenderLpBalance({
+            lender:      testReceiver,
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:1231:9-1236:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:1256:9-1261:12: `_assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:1262:9-1267:12: `_assertLenderLpBalance({
+            lender:      testReceiver,
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:1268:9-1273:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndexPrice,
+            lpBalance:   15_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:1285:13-1285:37: `changePrank(testMinter);` passed
+tests/forge/PositionManager.t.sol:1370:9-1370:33: `changePrank(testMinter);` passed
+tests/forge/PositionManager.t.sol:1495:9-1499:12: `_addInitialLiquidity({
+            from:   testAddress,
+            amount: 10_000 * 1e18,
+            index:  2550
+        });` passed
+tests/forge/PositionManager.t.sol:1543:9-1548:12: `_assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       mintIndex,
+            lpBalance:   2_500 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:1549:9-1554:12: `_assertLenderLpBalance({
+            lender:      testAddress2,
+            index:       mintIndex,
+            lpBalance:   5_500 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:1555:9-1560:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       mintIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:1561:9-1566:12: `_assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       moveIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:1567:9-1572:12: `_assertLenderLpBalance({
+            lender:      testAddress2,
+            index:       moveIndex,
+            lpBalance:   0 * 1e18,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:1573:9-1578:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       moveIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:1602:9-1602:35: `changePrank(testAddress1);` passed
+tests/forge/PositionManager.t.sol:1606:9-1611:12: `_assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       mintIndex,
+            lpBalance:   0,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:1612:9-1617:12: `_assertLenderLpBalance({
+            lender:      testAddress2,
+            index:       mintIndex,
+            lpBalance:   5_500 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:1618:9-1623:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       mintIndex,
+            lpBalance:   2_500 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:1624:9-1629:12: `_assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       moveIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:1630:9-1635:12: `_assertLenderLpBalance({
+            lender:      testAddress2,
+            index:       moveIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:1636:9-1641:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       moveIndex,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:1867:9-1872:12: `_assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndexPrice,
+            lpBalance:   15_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:1873:9-1878:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:1903:9-1908:12: `_assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:1909:9-1914:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndexPrice,
+            lpBalance:   15_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:1973:9-1973:33: `changePrank(testMinter);` passed
+tests/forge/PositionManager.t.sol:2010:9-2015:12: `_assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndexPrice,
+            lpBalance:   15_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:2016:9-2021:12: `_assertLenderLpBalance({
+            lender:      testReceiver,
+            index:       testIndexPrice,
+            lpBalance:   25_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:2022:9-2027:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:2028:9-2033:12: `_assertLenderLpBalance({
+            lender:      testMinter,
+            index:       2551,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:2034:9-2039:12: `_assertLenderLpBalance({
+            lender:      testReceiver,
+            index:       2551,
+            lpBalance:   15_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:2040:9-2045:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       2551,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:2061:14-2061:48: `.approveLpTransferors(transferors)` passed
+tests/forge/PositionManager.t.sol:2069:9-2074:12: `_assertLenderLpBalance({
+            lender:      testMinter,
+            index:       testIndexPrice,
+            lpBalance:   0,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:2075:9-2080:12: `_assertLenderLpBalance({
+            lender:      testReceiver,
+            index:       testIndexPrice,
+            lpBalance:   25_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:2081:9-2086:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       testIndexPrice,
+            lpBalance:   15_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:2087:9-2092:12: `_assertLenderLpBalance({
+            lender:      testMinter,
+            index:       2551,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:2093:9-2098:12: `_assertLenderLpBalance({
+            lender:      testReceiver,
+            index:       2551,
+            lpBalance:   15_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:2099:9-2104:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       2551,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:2111:25-2111:57: `.approve(address(this), tokenId)` passed
+tests/forge/PositionManager.t.sol:2202:9-2207:12: `_assertLenderLpBalance({
+            lender:      lender,
+            index:       2550,
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:2208:9-2213:12: `_assertLenderLpBalance({
+            lender:      minter,
+            index:       2550,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:2214:9-2219:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       2550,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:2237:9-2242:12: `_assertLenderLpBalance({
+            lender:      lender,
+            index:       2550,
+            lpBalance:   0,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:2243:9-2248:12: `_assertLenderLpBalance({
+            lender:      minter,
+            index:       2550,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:2249:9-2254:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       2550,
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:2352:9-2357:12: `_assertLenderLpBalance({
+            lender:      lender,
+            index:       2550,
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:2358:9-2363:12: `_assertLenderLpBalance({
+            lender:      minter,
+            index:       2550,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:2371:9-2371:29: `changePrank(minter);` passed
+tests/forge/PositionManager.t.sol:2397:9-2402:12: `_assertLenderLpBalance({
+            lender:      lender,
+            index:       2550,
+            lpBalance:   0,
+            depositTime: _startTime
+        });` passed
+tests/forge/PositionManager.t.sol:2415:9-2415:29: `changePrank(lender);` passed
+tests/forge/PositionManager.t.sol:2587:9-2587:70: `(lpBalance, depositTime) = _pool.lenderInfo(indexes[0], bob);` passed
+tests/forge/PositionManager.t.sol:2673:9-2678:12: `_assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       indexes[0],
+            lpBalance:   3_000 * 1e18,
+            depositTime: currentTime
+        });` passed
+tests/forge/PositionManager.t.sol:2679:9-2684:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[0],
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:2685:9-2690:12: `_assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       indexes[1],
+            lpBalance:   3_000 * 1e18,
+            depositTime: currentTime
+        });` passed
+tests/forge/PositionManager.t.sol:2691:9-2696:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[1],
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:2697:9-2702:12: `_assertLenderLpBalance({
+            lender:      testAddress1,
+            index:       indexes[2],
+            lpBalance:   3_000 * 1e18,
+            depositTime: currentTime
+        });` passed
+tests/forge/PositionManager.t.sol:2703:9-2708:12: `_assertLenderLpBalance({
+            lender:      address(_positionManager),
+            index:       indexes[2],
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/PositionManager.t.sol:2732:14-2732:48: `.approveLpTransferors(transferors)` passed

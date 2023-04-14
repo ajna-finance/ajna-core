@@ -1,0 +1,319 @@
+160 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol: dry running
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol: mutilating
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:37:9-37:27: `indexes[0] = 2550;` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:38:9-38:27: `indexes[1] = 2551;` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:39:9-39:27: `indexes[2] = 2552;` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:42:9-47:12: `_assertTransferNoAllowanceRevert({
+            operator: _lender,
+            from:     _lender1,
+            to:       _lender2,
+            indexes:  indexes
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:50:9-50:31: `changePrank(_lender1);` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:52:9-52:34: `approveIndexes[0] = 2550;` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:54:9-54:35: `amounts[0] = 1_000 * 1e18;` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:55:14-55:71: `.increaseLPAllowance(address(0), approveIndexes, amounts)` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:67:9-67:27: `indexes[0] = 2550;` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:68:9-68:27: `indexes[1] = 2551;` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:69:9-69:27: `indexes[2] = 2552;` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:72:9-72:31: `changePrank(_lender1);` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:74:9-74:35: `amounts[0] = 1_000 * 1e18;` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:75:9-75:35: `amounts[1] = 1_000 * 1e18;` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:76:9-76:35: `amounts[2] = 1_000 * 1e18;` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:77:14-77:62: `.increaseLPAllowance(_lender2, indexes, amounts)` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:90:9-90:27: `indexes[1] = 2550;` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:91:9-91:27: `indexes[2] = 2552;` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:94:9-94:31: `changePrank(_lender1);` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:96:9-96:35: `amounts[0] = 1_000 * 1e18;` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:97:9-97:35: `amounts[1] = 1_000 * 1e18;` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:98:9-98:35: `amounts[2] = 1_000 * 1e18;` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:99:14-99:62: `.increaseLPAllowance(_lender2, indexes, amounts)` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:139:9-144:12: `_assertLenderLpBalance({
+            lender:      _lender2,
+            index:       indexes[0],
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:165:9-165:31: `changePrank(_lender1);` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:167:9-167:36: `amounts[0] = 10_000 * 1e18;` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:168:14-168:62: `.increaseLPAllowance(_lender1, indexes, amounts)` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:173:9-178:12: `_assertLenderLpBalance({
+            lender:      _lender1,
+            index:       indexes[0],
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime + 1 hours
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:214:9-219:12: `_assertLenderLpBalance({
+            lender:      _lender1,
+            index:       indexes[0],
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime + 1 hours
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:220:9-225:12: `_assertLenderLpBalance({
+            lender:      _lender2,
+            index:       indexes[0],
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:226:9-231:12: `_assertLenderLpBalance({
+            lender:      _lender1,
+            index:       indexes[1],
+            lpBalance:   20_000 * 1e18,
+            depositTime: _startTime + 1 hours
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:232:9-237:12: `_assertLenderLpBalance({
+            lender:      _lender2,
+            index:       indexes[1],
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:238:9-243:12: `_assertLenderLpBalance({
+            lender:      _lender1,
+            index:       indexes[2],
+            lpBalance:   30_000 * 1e18,
+            depositTime: _startTime + 1 hours
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:244:9-249:12: `_assertLenderLpBalance({
+            lender:      _lender2,
+            index:       indexes[2],
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:268:9-273:12: `_assertTransferNoAllowanceRevert({
+            operator: _lender,
+            from:     _lender1,
+            to:       _lender2,
+            indexes:  indexes
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:276:9-281:12: `_assertLenderLpBalance({
+            lender:      _lender1,
+            index:       indexes[0],
+            lpBalance:   0,
+            depositTime: _startTime + 1 hours
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:282:9-287:12: `_assertLenderLpBalance({
+            lender:      _lender2,
+            index:       indexes[0],
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime + 1 hours
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:288:9-293:12: `_assertLenderLpBalance({
+            lender:      _lender1,
+            index:       indexes[1],
+            lpBalance:   0,
+            depositTime: _startTime + 1 hours
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:294:9-299:12: `_assertLenderLpBalance({
+            lender:      _lender2,
+            index:       indexes[1],
+            lpBalance:   20_000 * 1e18,
+            depositTime: _startTime + 1 hours
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:300:9-305:12: `_assertLenderLpBalance({
+            lender:      _lender1,
+            index:       indexes[2],
+            lpBalance:   0,
+            depositTime: _startTime + 1 hours
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:341:9-346:12: `_assertLenderLpBalance({
+            lender:      _lender1,
+            index:       depositIndexes[0],
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:347:9-352:12: `_assertLenderLpBalance({
+            lender:      _lender2,
+            index:       depositIndexes[0],
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:353:9-358:12: `_assertLenderLpBalance({
+            lender:      _lender1,
+            index:       depositIndexes[1],
+            lpBalance:   20_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:359:9-364:12: `_assertLenderLpBalance({
+            lender:      _lender2,
+            index:       depositIndexes[1],
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:365:9-370:12: `_assertLenderLpBalance({
+            lender:      _lender1,
+            index:       depositIndexes[2],
+            lpBalance:   30_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:371:9-376:12: `_assertLenderLpBalance({
+            lender:      _lender2,
+            index:       depositIndexes[2],
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:394:9-399:12: `_assertTransferNoAllowanceRevert({
+            operator: _lender,
+            from:     _lender1,
+            to:       _lender2,
+            indexes:  transferIndexes
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:402:9-407:12: `_assertLenderLpBalance({
+            lender:      _lender1,
+            index:       depositIndexes[0],
+            lpBalance:   0,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:408:9-413:12: `_assertLenderLpBalance({
+            lender:      _lender2,
+            index:       depositIndexes[0],
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:414:9-419:12: `_assertLenderLpBalance({
+            lender:      _lender1,
+            index:       depositIndexes[1],
+            lpBalance:   20_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:420:9-425:12: `_assertLenderLpBalance({
+            lender:      _lender2,
+            index:       depositIndexes[1],
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:426:9-431:12: `_assertLenderLpBalance({
+            lender:      _lender1,
+            index:       depositIndexes[2],
+            lpBalance:   0,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:483:9-488:12: `_assertLenderLpBalance({
+            lender:      _lender1,
+            index:       indexes[0],
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime + 1 hours
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:489:9-494:12: `_assertLenderLpBalance({
+            lender:      _lender2,
+            index:       indexes[0],
+            lpBalance:   5_000 * 1e18,
+            depositTime: _startTime + 2 hours
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:495:9-500:12: `_assertLenderLpBalance({
+            lender:      _lender1,
+            index:       indexes[1],
+            lpBalance:   20_000 * 1e18,
+            depositTime: _startTime + 1 hours
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:501:9-506:12: `_assertLenderLpBalance({
+            lender:      _lender2,
+            index:       indexes[1],
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime + 2 hours
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:507:9-512:12: `_assertLenderLpBalance({
+            lender:      _lender1,
+            index:       indexes[2],
+            lpBalance:   30_000 * 1e18,
+            depositTime: _startTime + 1 hours
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:513:9-518:12: `_assertLenderLpBalance({
+            lender:      _lender2,
+            index:       indexes[2],
+            lpBalance:   15_000 * 1e18,
+            depositTime: _startTime + 2 hours
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:528:9-533:12: `_assertLpAllowance({
+            owner:       _lender1,
+            spender:     _lender2,
+            index:       indexes[1],
+            lpAllowance: 20_000 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:545:9-550:12: `_assertTransferNoAllowanceRevert({
+            operator: _lender,
+            from:     _lender1,
+            to:       _lender2,
+            indexes:  indexes
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:551:9-556:12: `_assertLpAllowance({
+            owner:       _lender1,
+            spender:     _lender2,
+            index:       indexes[1],
+            lpAllowance: 0
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:559:9-564:12: `_assertLenderLpBalance({
+            lender:      _lender1,
+            index:       indexes[0],
+            lpBalance:   0,
+            depositTime: _startTime + 1 hours
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:565:9-570:12: `_assertLenderLpBalance({
+            lender:      _lender2,
+            index:       indexes[0],
+            lpBalance:   15_000 * 1e18,
+            depositTime: _startTime + 2 hours
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:571:9-576:12: `_assertLenderLpBalance({
+            lender:      _lender1,
+            index:       indexes[1],
+            lpBalance:   0,
+            depositTime: _startTime + 1 hours
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:577:9-582:12: `_assertLenderLpBalance({
+            lender:      _lender2,
+            index:       indexes[1],
+            lpBalance:   30_000 * 1e18,
+            depositTime: _startTime + 2 hours
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:583:9-588:12: `_assertLenderLpBalance({
+            lender:      _lender1,
+            index:       indexes[2],
+            lpBalance:   0,
+            depositTime: _startTime + 1 hours
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:603:9-603:23: `skip(1 hours);` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:666:9-666:27: `indexes[2] = 2552;` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:671:9-671:36: `amounts[2] = 30_000 * 1e18;` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:774:9-774:36: `amounts = new uint256[](2);` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:780:9-780:31: `changePrank(_lender2);` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:782:9-782:34: `transferors[0] = _lender;` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:783:14-783:48: `.approveLpTransferors(transferors)` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:793:9-798:12: `_assertLpAllowance({
+            owner:       _lender1,
+            spender:     _lender,
+            index:       indexes[0],
+            lpAllowance: 0
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:809:9-814:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       indexes[0],
+            lpBalance:   1_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:815:9-820:12: `_assertLenderLpBalance({
+            lender:      _lender1,
+            index:       indexes[0],
+            lpBalance:   4_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:821:9-826:12: `_assertLenderLpBalance({
+            lender:      _lender2,
+            index:       indexes[0],
+            lpBalance:   5_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:827:9-832:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       indexes[1],
+            lpBalance:   2_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolTransferLPs.t.sol:833:9-838:12: `_assertLenderLpBalance({
+            lender:      _lender1,
+            index:       indexes[1],
+            lpBalance:   8_000 * 1e18,
+            depositTime: _startTime
+        });` passed

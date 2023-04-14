@@ -1,0 +1,12 @@
+35 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/ERC20Pool/ERC20PoolLiquidationsScaled.t.sol: dry running
+tests/forge/ERC20Pool/ERC20PoolLiquidationsScaled.t.sol: mutilating
+tests/forge/ERC20Pool/ERC20PoolLiquidationsScaled.t.sol:152:30-152:33: `++i` passed
+tests/forge/ERC20Pool/ERC20PoolLiquidationsScaled.t.sol:160:9-160:42: `_take(collateralToTake, _bidder);` passed
+tests/forge/ERC20Pool/ERC20PoolLiquidationsScaled.t.sol:163:9-163:37: `_advanceAuction(17 minutes);` passed
+tests/forge/ERC20Pool/ERC20PoolLiquidationsScaled.t.sol:164:9-164:38: `_depositTake(_startBucketId);` passed
+tests/forge/ERC20Pool/ERC20PoolLiquidationsScaled.t.sol:167:9-167:37: `_advanceAuction(16 minutes);` passed
+tests/forge/ERC20Pool/ERC20PoolLiquidationsScaled.t.sol:168:9-168:47: `_arbTake(_startBucketId + 1, _bidder);` passed
+tests/forge/ERC20Pool/ERC20PoolLiquidationsScaled.t.sol:171:9-171:35: `_advanceAuction(72 hours);` passed

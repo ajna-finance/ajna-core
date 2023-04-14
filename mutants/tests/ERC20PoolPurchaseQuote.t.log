@@ -1,0 +1,96 @@
+53 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/ERC20Pool/ERC20PoolPurchaseQuote.t.sol: dry running
+tests/forge/ERC20Pool/ERC20PoolPurchaseQuote.t.sol: mutilating
+tests/forge/ERC20Pool/ERC20PoolPurchaseQuote.t.sol:53:9-59:12: `_assertBucket({
+            index:        testIndex,
+            lpBalance:    22_043.56808879152623138 * 1e18,
+            collateral:   collateralToPurchaseWith,
+            deposit:      10_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPurchaseQuote.t.sol:60:9-65:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       testIndex,
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPurchaseQuote.t.sol:66:9-71:12: `_assertLenderLpBalance({
+            lender:      _bidder,
+            index:       testIndex,
+            lpBalance:   12_043.56808879152623138 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPurchaseQuote.t.sol:75:9-75:22: `skip(1 days);` passed
+tests/forge/ERC20Pool/ERC20PoolPurchaseQuote.t.sol:89:9-95:12: `_assertBucket({
+            index:        testIndex,
+            lpBalance:    12_043.56808879152623138 * 1e18,
+            collateral:   collateralToPurchaseWith,
+            deposit:      0,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPurchaseQuote.t.sol:96:9-101:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       testIndex,
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPurchaseQuote.t.sol:102:9-107:12: `_assertLenderLpBalance({
+            lender:      _bidder,
+            index:       testIndex,
+            lpBalance:   2_043.56808879152623138 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPurchaseQuote.t.sol:123:9-129:12: `_assertBucket({
+            index:        testIndex,
+            lpBalance:    2_043.56808879152623138 * 1e18,
+            collateral:   0.678725133191514712 * 1e18,
+            deposit:      0,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPurchaseQuote.t.sol:130:9-135:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       testIndex,
+            lpBalance:   0,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPurchaseQuote.t.sol:136:9-141:12: `_assertLenderLpBalance({
+            lender:      _bidder,
+            index:       testIndex,
+            lpBalance:   2_043.56808879152623138 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPurchaseQuote.t.sol:158:9-164:12: `_assertBucket({
+            index:        testIndex,
+            lpBalance:    0,
+            collateral:   0,
+            deposit:      0,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPurchaseQuote.t.sol:165:9-170:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       testIndex,
+            lpBalance:   0,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPurchaseQuote.t.sol:272:9-277:12: `_assertLenderLpBalance({
+            lender:      _bidder,
+            index:       2550,
+            lpBalance:   0,
+            depositTime: _startTime + 3600 + 86400
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPurchaseQuote.t.sol:279:9-279:20: `skip(7200);` passed
+tests/forge/ERC20Pool/ERC20PoolPurchaseQuote.t.sol:291:9-296:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2550,
+            lpBalance:   0,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPurchaseQuote.t.sol:298:9-298:20: `skip(3600);` passed
+tests/forge/ERC20Pool/ERC20PoolPurchaseQuote.t.sol:310:9-315:12: `_assertLenderLpBalance({
+            lender:      _lender1,
+            index:       2550,
+            lpBalance:   0,
+            depositTime: _startTime
+        });` passed

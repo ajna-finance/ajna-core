@@ -1,0 +1,6 @@
+22 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/PoolCommonsTest.t.sol: dry running
+tests/forge/PoolCommonsTest.t.sol: mutilating
+tests/forge/PoolCommonsTest.t.sol:15:9-15:24: `skip(730 days);` passed

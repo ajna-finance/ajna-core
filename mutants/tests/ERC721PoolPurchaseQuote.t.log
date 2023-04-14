@@ -1,0 +1,96 @@
+65 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/ERC721Pool/ERC721PoolPurchaseQuote.t.sol: dry running
+tests/forge/ERC721Pool/ERC721PoolPurchaseQuote.t.sol: mutilating
+tests/forge/ERC721Pool/ERC721PoolPurchaseQuote.t.sol:51:9-57:12: `_assertBucket({
+            index:        testIndex,
+            lpBalance:    0,
+            collateral:   0,
+            deposit:      0,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolPurchaseQuote.t.sol:74:9-80:12: `_assertBucket({
+            index:        testIndex,
+            lpBalance:    10_000 * 1e18,
+            collateral:   0,
+            deposit:      10_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolPurchaseQuote.t.sol:83:9-83:30: `changePrank(_bidder);` passed
+tests/forge/ERC721Pool/ERC721PoolPurchaseQuote.t.sol:98:9-104:12: `_assertBucket({
+            index:        testIndex,
+            lpBalance:    19_032.676066593644673535 * 1e18,
+            collateral:   Maths.wad(3),
+            deposit:      10_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolPurchaseQuote.t.sol:105:9-110:12: `_assertLenderLpBalance({
+            lender:      _bidder,
+            index:       testIndex,
+            lpBalance:   lpBalanceChange,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolPurchaseQuote.t.sol:120:9-120:22: `skip(1 days);` passed
+tests/forge/ERC721Pool/ERC721PoolPurchaseQuote.t.sol:134:9-140:12: `_assertBucket({
+            index:        testIndex,
+            lpBalance:    10_000 * 1e18,
+            collateral:   Maths.wad(3),
+            deposit:      967.323933406355326465 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolPurchaseQuote.t.sol:141:9-146:12: `_assertLenderLpBalance({
+            lender:      _bidder,
+            index:       testIndex,
+            lpBalance:   0,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolPurchaseQuote.t.sol:156:9-162:12: `_assertBucket({
+            index:        testIndex,
+            lpBalance:    967.323933406355326465 * 1e18,
+            collateral:   0,
+            deposit:      967.323933406355326465 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolPurchaseQuote.t.sol:243:9-249:12: `_assertBucket({
+            index:        2350,
+            lpBalance:    24_000 * 1e18,
+            collateral:   0,
+            deposit:      24_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolPurchaseQuote.t.sol:252:9-252:42: `tokenIdsToAdd = new uint256[](4);` passed
+tests/forge/ERC721Pool/ERC721PoolPurchaseQuote.t.sol:282:9-288:12: `_assertBucket({
+            index:        2350,
+            lpBalance:    32_653.618582201813497294 * 1e18,
+            collateral:   Maths.wad(4),
+            deposit:      0,
+            exchangeRate: 1.000083375498348170 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolPurchaseQuote.t.sol:298:9-303:12: `_assertLenderLpBalance({
+            lender:      _bidder,
+            index:       2350,
+            lpBalance:   490.213936651360125902 * 1e18,
+            depositTime: _startTime + 25 hours
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolPurchaseQuote.t.sol:305:9-305:20: `skip(7200);` passed
+tests/forge/ERC721Pool/ERC721PoolPurchaseQuote.t.sol:307:9-307:30: `changePrank(_lender);` passed
+tests/forge/ERC721Pool/ERC721PoolPurchaseQuote.t.sol:316:9-321:12: `_assertLenderLpBalance({
+            lender:      _bidder,
+            index:       2350,
+            lpBalance:   490.213936651360125902 * 1e18,
+            depositTime: _startTime + 25 hours
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolPurchaseQuote.t.sol:323:9-323:20: `skip(3600);` passed
+tests/forge/ERC721Pool/ERC721PoolPurchaseQuote.t.sol:326:9-332:12: `_assertBucket({
+            index:        2350,
+            lpBalance:    16_326.809291100906754510 * 1e18,
+            collateral:   Maths.wad(2),
+            deposit:      0,
+            exchangeRate: 1.000083375498348169 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolPurchaseQuote.t.sol:335:9-339:12: `_assertRemoveCollateralInsufficientLPsRevert({
+            from:   _lender2,
+            amount: 1,
+            index:  2350
+        });` passed

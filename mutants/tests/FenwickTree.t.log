@@ -1,0 +1,12 @@
+130 candidates in 1 test file
+tests/forge/FenwickTree.t.sol: dry running
+tests/forge/FenwickTree.t.sol: Warning: dry run failed: Output {
+    status: ExitStatus(
+        unix_wait_status(
+            2,
+        ),
+    ),
+    stdout: "",
+    stderr: "",
+}
+Silence this warning with: --allow dry-run-failed

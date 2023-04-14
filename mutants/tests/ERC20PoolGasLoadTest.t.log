@@ -1,0 +1,33 @@
+60 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol: dry running
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol: mutilating
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol:106:9-106:24: `skip(15 hours);` passed
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol:119:9-119:24: `skip(15 hours);` passed
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol:133:11-133:46: `.assume(borrowerId_ <= LOANS_COUNT)` passed
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol:135:9-135:24: `skip(15 hours);` passed
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol:159:9-159:68: `_mintQuoteAndApproveTokens(newBorrower,      2_000 * 1e18);` passed
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol:164:9-164:24: `skip(15 hours);` passed
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol:175:9-175:24: `skip(15 hours);` passed
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol:198:13-198:28: `skip(15 hours);` passed
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol:219:13-219:28: `skip(15 hours);` passed
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol:242:13-242:28: `skip(15 hours);` passed
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol:248:13-254:16: `_drawDebtNoLupCheck({
+                from:               borrower,
+                borrower:           borrower,
+                amountToBorrow:     1_000 * 1e18,
+                limitIndex:         5000,
+                collateralToPledge: 0
+            });` passed
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol:272:9-272:24: `skip(15 hours);` passed
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol:275:9-275:24: `skip(15 hours);` passed
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol:276:14-276:53: `.removeQuoteToken(5_000 * 1e18, index_)` passed
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol:278:9-278:24: `skip(15 hours);` passed
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol:279:14-279:92: `.moveQuoteToken(1_000 * 1e18, index_, index_ + 1, block.timestamp + 2 minutes)` passed
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol:281:9-281:24: `skip(15 hours);` passed
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol:282:14-282:58: `.removeQuoteToken(type(uint256).max, index_)` passed
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol:329:38-329:92: `.take(_borrowers[i], 100 * 1e18, kicker, new bytes(0))` passed
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol:350:38-350:110: `.take(_borrowers[LOANS_COUNT - 1 - i], 100 * 1e18, kicker, new bytes(0))` passed
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol:369:14-369:54: `.settle(_borrowers[LOANS_COUNT - 1], 10)` passed
+tests/forge/ERC20Pool/ERC20PoolGasLoadTest.t.sol:373:18-373:60: `.kickWithDeposit(3_000, MAX_FENWICK_INDEX)` passed

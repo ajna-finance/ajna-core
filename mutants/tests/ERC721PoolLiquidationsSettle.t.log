@@ -1,0 +1,152 @@
+46 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettle.t.sol: dry running
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettle.t.sol: mutilating
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettle.t.sol:187:9-202:11: `_assertAuction(
+            AuctionParams({
+                borrower:          _borrower2,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          1_501.442307692307693000 * 1e18,
+                bondFactor:        0.3 * 1e18,
+                kickTime:          _startTime,
+                kickMomp:          3_863.654368867279344664 * 1e18,
+                totalBondEscrowed: 3_002.884615384615386000 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     10_134.735576923076927750 * 1e18,
+                thresholdPrice:    1_689.894061130689384102 * 1e18,
+                neutralPrice:      1_751.682692307692308500 * 1e18
+            })
+        );` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettle.t.sol:205:9-210:12: `_assertMergeRemoveCollateralAuctionNotClearedRevert({
+            from:                    _lender,
+            toIndex:                 MAX_FENWICK_INDEX,
+            noOfNFTsToRemove:        2,
+            removeCollateralAtIndex: new uint256[](0)
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettle.t.sol:219:9-234:11: `_assertAuction(
+            AuctionParams({
+                borrower:          _borrower2,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 3_002.884615384615386000 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     5_069.682183392068152308 * 1e18,
+                thresholdPrice:    0,
+                neutralPrice:      0
+            })
+        );` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettle.t.sol:237:9-242:12: `_assertMergeRemoveCollateralAuctionNotClearedRevert({
+            from:                    _lender,
+            toIndex:                 MAX_FENWICK_INDEX,
+            noOfNFTsToRemove:        2,
+            removeCollateralAtIndex: new uint256[](0)
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettle.t.sol:252:9-268:11: `_assertPool(
+            PoolParams({
+                htp:                  0,
+                lup:                  MAX_PRICE,
+                poolSize:             2_861.685489213148775844 * 1e18,
+                pledgedCollateral:    1 * 1e18,
+                encumberedCollateral: 0,
+                poolDebt:             0,
+                actualUtilization:    0.389471335647237918 * 1e18,
+                targetUtilization:    0.656073460432016344 * 1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   _startTime + 80 hours
+            })
+        );` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettle.t.sol:269:9-284:11: `_assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 3_002.884615384615386000 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    0,
+                neutralPrice:      0
+            })
+        );` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettle.t.sol:285:9-291:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              0,
+            borrowerCollateral:        0,
+            borrowert0Np:              2_627.524038461538462750 * 1e18,
+            borrowerCollateralization: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettle.t.sol:292:9-298:12: `_assertBorrower({
+            borrower:                  _borrower2,
+            borrowerDebt:              0,
+            borrowerCollateral:        1 * 1e18,
+            borrowert0Np:              1_751.682692307692308500 * 1e18,
+            borrowerCollateralization: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettle.t.sol:300:9-306:12: `_assertBucket({
+            index:        MAX_FENWICK_INDEX,
+            lpBalance:    0.000000137345389190 * 1e18,
+            collateral:   1.375706158271934624 * 1e18,
+            deposit:      0,
+            exchangeRate: 1.000000000007280914 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettle.t.sol:324:9-324:34: `removalIndexes[1] = 2501;` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettle.t.sol:325:9-325:47: `removalIndexes[2] = MAX_FENWICK_INDEX;` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettle.t.sol:336:9-336:43: `removalIndexes = new uint256[](2);` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettle.t.sol:394:9-409:11: `_assertAuction(
+            AuctionParams({
+                borrower:          _borrower2,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 3_002.884615384615386000 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     5_069.682183392068152308 * 1e18,
+                thresholdPrice:    0,
+                neutralPrice:      0
+            })
+        );` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettle.t.sol:410:9-416:12: `_assertBorrower({
+            borrower:                  _borrower2,
+            borrowerDebt:              0,
+            borrowerCollateral:        0,
+            borrowert0Np:              0,
+            borrowerCollateralization: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettle.t.sol:436:9-451:11: `_assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 3_002.884615384615386000 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    0,
+                neutralPrice:      0
+            })
+        );` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettle.t.sol:452:9-458:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              0,
+            borrowerCollateral:        0,
+            borrowert0Np:              0,
+            borrowerCollateralization: 1 * 1e18
+        });` passed

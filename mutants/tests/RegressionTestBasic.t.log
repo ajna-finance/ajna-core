@@ -1,0 +1,80 @@
+82 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol: dry running
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol: mutilating
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:16:26-16:77: `.addQuoteToken(14227, 5211, 3600000000000000000000)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:18:9-18:28: `invariant_Lps_B1();` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:29:26-29:99: `.addQuoteToken(999999999844396154169639088436193915956854451, 6879, 2809)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:31:16-31:55: `.log("After addQuoteToken(6879, 2570)")` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:32:16-32:36: `.log("============")` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:33:16-33:47: `.log("Quote Tokens -->", quote)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:34:16-34:57: `.log("Collateral Tokens -->", collateral)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:35:16-35:36: `.log("Lps -->", lps)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:36:16-36:54: `.log("Exchange Rate-->", exchangeRate)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:37:16-37:36: `.log("============")` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:38:9-38:82: `require(previousExchangeRate == exchangeRate, "Incorrect exchange rate");` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:39:9-39:45: `previousExchangeRate = exchangeRate;` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:40:26-40:97: `.addCollateral(2, 36429077592820139327392187131, 202214962129783771592)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:41:9-41:98: `( , quote, collateral, lps, , exchangeRate) = _poolInfo.bucketInfo(address(_pool), 2570);` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:42:16-42:79: `.log("After addCollateral(3642907759282013932739218713, 2570)")` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:43:16-43:36: `.log("============")` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:44:16-44:47: `.log("Quote Tokens -->", quote)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:45:16-45:57: `.log("Collateral Tokens -->", collateral)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:46:16-46:36: `.log("Lps -->", lps)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:47:16-47:54: `.log("Exchange Rate-->", exchangeRate)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:48:16-48:36: `.log("============")` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:49:9-49:82: `require(previousExchangeRate == exchangeRate, "Incorrect exchange rate");` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:50:9-50:45: `previousExchangeRate = exchangeRate;` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:51:26-51:164: `.removeCollateral(1, 2296695924278944779257290397234298756, 10180568736759156593834642286260647915348262280903719122483474452532722106636)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:52:9-52:98: `( , quote, collateral, lps, , exchangeRate) = _poolInfo.bucketInfo(address(_pool), 2570);` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:53:16-53:90: `.log("After removeCollateral(296695924278944779257290397234298756, 2570)")` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:54:16-54:36: `.log("============")` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:55:16-55:47: `.log("Quote Tokens -->", quote)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:56:16-56:57: `.log("Collateral Tokens -->", collateral)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:57:16-57:36: `.log("Lps -->", lps)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:58:16-58:54: `.log("Exchange Rate-->", exchangeRate)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:59:16-59:36: `.log("============")` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:65:26-65:227: `.addQuoteToken(211670885988646987334214990781526025942, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 6894274025938223490357894120267612065037086600750070030707794233)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:68:16-68:230: `.log("After addQuoteToken(211670885988646987334214990781526025942, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 6894274025938223490357894120267612065037086600750070030707794233)")` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:69:16-69:36: `.log("============")` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:70:16-70:47: `.log("Quote Tokens -->", quote)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:71:16-71:57: `.log("Collateral Tokens -->", collateral)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:72:16-72:36: `.log("Lps -->", lps)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:73:16-73:54: `.log("Exchange Rate-->", exchangeRate)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:74:16-74:36: `.log("============")` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:75:9-75:82: `require(previousExchangeRate == exchangeRate, "Incorrect exchange rate");` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:76:9-76:45: `previousExchangeRate = exchangeRate;` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:77:26-77:131: `.addCollateral(117281, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 2)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:79:9-79:98: `( , quote, collateral, lps, , exchangeRate) = _poolInfo.bucketInfo(address(_pool), 2570);` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:80:16-80:134: `.log("After addCollateral(117281, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 2)")` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:81:16-81:36: `.log("============")` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:82:16-82:47: `.log("Quote Tokens -->", quote)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:83:16-83:57: `.log("Collateral Tokens -->", collateral)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:84:16-84:36: `.log("Lps -->", lps)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:85:16-85:54: `.log("Exchange Rate-->", exchangeRate)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:86:16-86:36: `.log("============")` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:87:9-87:82: `require(previousExchangeRate == exchangeRate, "Incorrect exchange rate");` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:88:9-88:45: `previousExchangeRate = exchangeRate;` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:90:26-90:240: `.removeCollateral(115792089237316195423570985008687907853269984665640564039457584007913129639932, 12612911637698029036253737442696522, 115792089237316195423570985008687907853269984665640564039457584007913129639933)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:92:9-92:98: `( , quote, collateral, lps, , exchangeRate) = _poolInfo.bucketInfo(address(_pool), 2570);` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:93:16-93:243: `.log("After removeCollateral(115792089237316195423570985008687907853269984665640564039457584007913129639932, 12612911637698029036253737442696522, 115792089237316195423570985008687907853269984665640564039457584007913129639933)")` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:94:16-94:36: `.log("============")` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:95:16-95:47: `.log("Quote Tokens -->", quote)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:96:16-96:57: `.log("Collateral Tokens -->", collateral)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:97:16-97:36: `.log("Lps -->", lps)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:98:16-98:54: `.log("Exchange Rate-->", exchangeRate)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:99:16-99:36: `.log("============")` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:101:9-101:45: `previousExchangeRate = exchangeRate;` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:103:26-103:58: `.removeCollateral(1, 1e36, 2570)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:104:26-104:58: `.removeQuoteToken(1, 1e36, 2570)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:106:26-106:58: `.removeCollateral(2, 1e36, 2570)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:107:26-107:58: `.removeQuoteToken(2, 1e36, 2570)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:109:9-109:98: `( , quote, collateral, lps, , exchangeRate) = _poolInfo.bucketInfo(address(_pool), 2570);` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:110:16-110:243: `.log("After removeCollateral(115792089237316195423570985008687907853269984665640564039457584007913129639932, 12612911637698029036253737442696522, 115792089237316195423570985008687907853269984665640564039457584007913129639933)")` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:111:16-111:36: `.log("============")` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:112:16-112:47: `.log("Quote Tokens -->", quote)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:113:16-113:57: `.log("Collateral Tokens -->", collateral)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:114:16-114:36: `.log("Lps -->", lps)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:115:16-115:54: `.log("Exchange Rate-->", exchangeRate)` passed
+tests/forge/ERC20Pool/regression/RegressionTestBasic.t.sol:116:16-116:36: `.log("============")` passed

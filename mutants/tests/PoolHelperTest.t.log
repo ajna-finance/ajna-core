@@ -1,0 +1,11 @@
+8 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/PoolHelperTest.t.sol: dry running
+tests/forge/PoolHelperTest.t.sol: mutilating
+tests/forge/PoolHelperTest.t.sol:14:9-14:69: `_assertBucketPriceOutOfBoundsRevert(2_000_000_000 * 10**18);` passed
+tests/forge/PoolHelperTest.t.sol:15:9-15:88: `_assertBucketPriceOutOfBoundsRevert(1_004_968_987.606512354182109772 * 10**18);` passed
+tests/forge/PoolHelperTest.t.sol:37:9-37:61: `_assertBucketPriceOutOfBoundsRevert(99_836_282_889);` passed
+tests/forge/PoolHelperTest.t.sol:38:9-38:48: `_assertBucketPriceOutOfBoundsRevert(1);` passed
+tests/forge/PoolHelperTest.t.sol:67:9-67:51: `_assertBucketIndexOutOfBoundsRevert(7389);` passed
+tests/forge/PoolHelperTest.t.sol:68:9-68:51: `_assertBucketIndexOutOfBoundsRevert(8191);` passed

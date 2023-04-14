@@ -1,0 +1,6 @@
+20 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/interactions/ERC20TakeWithExternalLiquidity.t.sol: dry running
+tests/forge/interactions/ERC20TakeWithExternalLiquidity.t.sol: mutilating
+tests/forge/interactions/ERC20TakeWithExternalLiquidity.t.sol:123:13-123:49: `.approve(address(taker), takeAmount)` passed

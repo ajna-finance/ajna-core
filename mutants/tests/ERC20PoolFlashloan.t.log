@@ -1,0 +1,12 @@
+44 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/ERC20Pool/ERC20PoolFlashloan.t.sol: dry running
+tests/forge/ERC20Pool/ERC20PoolFlashloan.t.sol: mutilating
+tests/forge/ERC20Pool/ERC20PoolFlashloan.t.sol:62:9-62:22: `skip(1 days);` passed
+tests/forge/ERC20Pool/ERC20PoolFlashloan.t.sol:95:9-95:64: `fee = _pool.flashFee(address(_collateral), loanAmount);` passed
+tests/forge/ERC20Pool/ERC20PoolFlashloan.t.sol:112:9-112:91: `_assertFlashloanTooLargeRevert(flasher, _pool.quoteTokenAddress(), 90_000 * 1e18);` passed
+tests/forge/ERC20Pool/ERC20PoolFlashloan.t.sol:137:15-137:51: `.approve(address(_pool), loanAmount)` passed
+tests/forge/ERC20Pool/ERC20PoolFlashloan.t.sol:146:9-146:22: `skip(1 days);` passed
+tests/forge/ERC20Pool/ERC20PoolFlashloan.t.sol:207:9-207:22: `skip(1 days);` passed
+tests/forge/ERC20Pool/ERC20PoolFlashloan.t.sol:237:9-237:22: `skip(1 days);` passed

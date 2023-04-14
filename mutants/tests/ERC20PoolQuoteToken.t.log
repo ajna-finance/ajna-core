@@ -1,0 +1,580 @@
+184 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol: dry running
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol: mutilating
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:38:9-41:12: `_assertAddLiquidityAtIndex0Revert({
+            from:   _lender,
+            amount: 10_000 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:50:9-66:11: `_assertPool(
+            PoolParams({
+                htp:                  0,
+                lup:                  MAX_PRICE,
+                poolSize:             10_000 * 1e18,
+                pledgedCollateral:    0,
+                encumberedCollateral: 0,
+                poolDebt:             0,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:67:9-73:12: `_assertBucket({
+            index:        2550,
+            lpBalance:    10_000 * 1e18,
+            collateral:   0,
+            deposit:      10_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:74:9-79:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2550,
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:92:9-108:11: `_assertPool(
+            PoolParams({
+                htp:                  0,
+                lup:                  MAX_PRICE,
+                poolSize:             30_000 * 1e18,
+                pledgedCollateral:    0,
+                encumberedCollateral: 0,
+                poolDebt:             0,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:109:9-115:12: `_assertBucket({
+            index:        2550,
+            lpBalance:    10_000 * 1e18,
+            collateral:   0,
+            deposit:      10_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:116:9-121:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2550,
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:122:9-128:12: `_assertBucket({
+            index:        2551,
+            lpBalance:    20_000 * 1e18,
+            collateral:   0,
+            deposit:      20_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:129:9-134:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2551,
+            lpBalance:   20_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:147:9-163:11: `_assertPool(
+            PoolParams({
+                htp:                  0,
+                lup:                  MAX_PRICE,
+                poolSize:             70_000 * 1e18,
+                pledgedCollateral:    0,
+                encumberedCollateral: 0,
+                poolDebt:             0,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:164:9-170:12: `_assertBucket({
+            index:        2549,
+            lpBalance:    40_000 * 1e18,
+            collateral:   0,
+            deposit:      40_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:171:9-176:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2549,
+            lpBalance:   40_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:177:9-183:12: `_assertBucket({
+            index:        2550,
+            lpBalance:    10_000 * 1e18,
+            collateral:   0,
+            deposit:      10_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:184:9-189:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2550,
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:190:9-196:12: `_assertBucket({
+            index:        2551,
+            lpBalance:    20_000 * 1e18,
+            collateral:   0,
+            deposit:      20_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:197:9-202:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2551,
+            lpBalance:   20_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:211:9-214:12: `_assertAddLiquidityAtIndex0Revert({
+            from:   _lender,
+            amount: 10_000 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:217:9-222:12: `_assertAddLiquidityExpiredRevert({
+            from:   _lender,
+            amount: 100_000 * 1e18,
+            index:  3232,
+            expiry: block.timestamp - 1 minutes
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:237:9-237:25: `skip(6 minutes);` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:265:9-281:11: `_assertPool(
+            PoolParams({
+                htp:                  0,
+                lup:                  MAX_PRICE,
+                poolSize:             70_000 * 1e18,
+                pledgedCollateral:    0,
+                encumberedCollateral: 0,
+                poolDebt:             0,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:282:9-288:12: `_assertBucket({
+            index:        2549,
+            lpBalance:    40_000 * 1e18,
+            collateral:   0,
+            deposit:      40_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:289:9-294:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2549,
+            lpBalance:   40_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:295:9-301:12: `_assertBucket({
+            index:        2550,
+            lpBalance:    10_000 * 1e18,
+            collateral:   0,
+            deposit:      10_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:302:9-307:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2550,
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:308:9-314:12: `_assertBucket({
+            index:        2551,
+            lpBalance:    20_000 * 1e18,
+            collateral:   0,
+            deposit:      20_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:315:9-320:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2551,
+            lpBalance:   20_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:336:9-352:11: `_assertPool(
+            PoolParams({
+                htp:                  0,
+                lup:                  MAX_PRICE,
+                poolSize:             65_000 * 1e18,
+                pledgedCollateral:    0,
+                encumberedCollateral: 0,
+                poolDebt:             0,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   _startTime + 1 days
+            })
+        );` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:353:9-359:12: `_assertBucket({
+            index:        2549,
+            lpBalance:    35_000 * 1e18,
+            collateral:   0,
+            deposit:      35_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:360:9-365:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2549,
+            lpBalance:   35_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:366:9-372:12: `_assertBucket({
+            index:        2550,
+            lpBalance:    10_000 * 1e18,
+            collateral:   0,
+            deposit:      10_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:373:9-378:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2550,
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:379:9-385:12: `_assertBucket({
+            index:        2551,
+            lpBalance:    20_000 * 1e18,
+            collateral:   0,
+            deposit:      20_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:386:9-391:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2551,
+            lpBalance:   20_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:405:9-421:11: `_assertPool(
+            PoolParams({
+                htp:                  0,
+                lup:                  MAX_PRICE,
+                poolSize:             30_000 * 1e18,
+                pledgedCollateral:    0,
+                encumberedCollateral: 0,
+                poolDebt:             0,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   _startTime + 1 days
+            })
+        );` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:422:9-428:12: `_assertBucket({
+            index:        2549,
+            lpBalance:    0,
+            collateral:   0,
+            deposit:      0,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:429:9-434:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2549,
+            lpBalance:   0,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:435:9-441:12: `_assertBucket({
+            index:        2550,
+            lpBalance:    10_000 * 1e18,
+            collateral:   0,
+            deposit:      10_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:442:9-447:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2550,
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:448:9-454:12: `_assertBucket({
+            index:        2551,
+            lpBalance:    20_000 * 1e18,
+            collateral:   0,
+            deposit:      20_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:455:9-460:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2551,
+            lpBalance:   20_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:563:9-566:12: `_assertRemoveAllLiquidityNoClaimRevert({
+            from:  _lender1,
+            index: 4550
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:569:9-573:12: `_assertRemoveInsufficientLiquidityRevert({
+            from:  _lender,
+            amount: 1 * 1e18,
+            index:  5000
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:576:9-580:12: `_assertRemoveLiquidityLupBelowHtpRevert({
+            from:   _lender,
+            amount: 20_000 * 1e18,
+            index:  4551
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:590:9-590:22: `skip(1 days);` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:625:9-625:22: `skip(1 days);` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:654:9-654:99: `_mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_borrower) + 100 * 1e18);` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:674:9-680:12: `_assertBucket({
+            index:        1606,
+            lpBalance:    3_400 * 1e18,
+            collateral:   0,
+            deposit:      3_400 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:681:9-686:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       1606,
+            lpBalance:   3_400 * 1e18,
+            depositTime: _startTime + 1 minutes
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:687:9-693:12: `_assertBucket({
+            index:        1663,
+            lpBalance:    3_400 * 1e18,
+            collateral:   0,
+            deposit:      3_400 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:694:9-699:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       1663,
+            lpBalance:   3_400 * 1e18,
+            depositTime: _startTime + 1 minutes
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:717:9-722:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       1663,
+            lpBalance:   3_400 * 1e18,
+            depositTime: _startTime + 1 minutes
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:723:9-728:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       1663,
+            lpBalance:   3_400 * 1e18,
+            depositTime: _startTime + 1 minutes
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:756:9-762:12: `_assertBucket({
+            index:        1606,
+            lpBalance:    0,
+            collateral:   0,
+            deposit:      0,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:763:9-768:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       1606,
+            lpBalance:   0,
+            depositTime: _startTime + 1 minutes
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:769:9-775:12: `_assertBucket({
+            index:        1663,
+            lpBalance:    3_400 * 1e18,
+            collateral:   0,
+            deposit:      3_400.272254470191528600 * 1e18,
+            exchangeRate: 1.000080074844173979 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:792:9-798:12: `_addLiquidity({
+            from:    _lender,
+            amount:  10_000 * 1e18,
+            index:   2550,
+            lpAward: 10_000 * 1e18,
+            newLup:  MAX_PRICE
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:807:9-812:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2549,
+            lpBalance:   40_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:813:9-818:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2552,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:830:9-835:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2549,
+            lpBalance:   35_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:836:9-841:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2552,
+            lpBalance:   5_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:853:9-858:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2540,
+            lpBalance:   5_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:859:9-864:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2549,
+            lpBalance:   30_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:865:9-870:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2552,
+            lpBalance:   5_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:882:9-887:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2540,
+            lpBalance:   5_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:888:9-893:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2549,
+            lpBalance:   30_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:894:9-899:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2551,
+            lpBalance:   5_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:900:9-905:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2552,
+            lpBalance:   5_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:932:9-937:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2549,
+            lpBalance:   40_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:938:9-943:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2550,
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime + 7 days
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:955:9-960:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2549,
+            lpBalance:   35_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:961:9-966:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2550,
+            lpBalance:   15_000 * 1e18,
+            depositTime: _startTime + 7 days
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:978:9-983:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2549,
+            lpBalance:   40_000 * 1e18,
+            depositTime: _startTime + 7 days
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:1001:9-1001:101: `_mintCollateralAndApproveTokens(_lender1, _collateral.balanceOf(_lender1) + 100_000 * 1e18);` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:1035:9-1040:12: `_assertMoveLiquidityToSameIndexRevert({
+            from:      _lender,
+            amount:    5_000 * 1e18,
+            fromIndex: 4549,
+            toIndex:   4549
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:1043:9-1047:12: `_assertMoveLiquidityToIndex0Revert({
+            from:      _lender,
+            amount:    5_000 * 1e18,
+            fromIndex: 4549
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:1063:9-1068:12: `_assertMoveLiquidityLupBelowHtpRevert({
+            from:      _lender,
+            amount:    40_000 * 1e18,
+            fromIndex: 4549,
+            toIndex:   6000
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:1071:9-1077:12: `_assertMoveLiquidityExpiredRevert({
+            from:      _lender,
+            amount:    30_000 * 1e18,
+            fromIndex: 4549,
+            toIndex:   4459,
+            expiry:    block.timestamp - 20
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:1106:9-1106:23: `skip(1 hours);` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:1117:9-1117:23: `skip(2 hours);` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:1217:9-1222:12: `_assertLenderLpBalance({
+            lender:      _borrower,
+            index:       2570,
+            lpBalance:   35880690,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:1223:9-1228:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2570,
+            lpBalance:   0,
+            depositTime: 0
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:1229:9-1235:12: `_assertBucket({
+            index:        2570,
+            lpBalance:    35880690,
+            collateral:   13167,
+            deposit:      0,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:1245:9-1250:12: `_assertLenderLpBalance({
+            lender:      _borrower,
+            index:       2570,
+            lpBalance:   35880690,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:1251:9-1256:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2570,
+            lpBalance:   984665640564039457.584007913129639933 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:1257:9-1263:12: `_assertBucket({
+            index:        2570,
+            lpBalance:    984665640564039457.584007913165520623 * 1e18,
+            collateral:   13167,
+            deposit:      984665640564039457.584007913129639933 * 1e18,
+            exchangeRate: 1 * 1e18 // exchange rate should not change
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:1265:9-1265:24: `skip(48 hours);` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:1275:9-1280:12: `_assertLenderLpBalance({
+            lender:      _borrower,
+            index:       2570,
+            lpBalance:   35880690,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:1281:9-1286:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2570,
+            lpBalance:   0, // LPs should get back to same value as before add / remove collateral
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolQuoteToken.t.sol:1287:9-1293:12: `_assertBucket({
+            index:        2570,
+            lpBalance:    35880690,
+            collateral:   13167,
+            deposit:      0,
+            exchangeRate: 1 * 1e18 // exchange rate should not change
+        });` passed

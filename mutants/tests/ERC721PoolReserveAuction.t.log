@@ -1,0 +1,141 @@
+110 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol: dry running
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol: mutilating
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:63:9-69:12: `_assertReserveAuction({
+            reserves:                   168.26923076923085 * 1e18,
+            claimableReserves :         0,
+            claimableReservesRemaining: 0,
+            auctionPrice:               0,
+            timeRemaining:              0
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:88:9-94:12: `_assertReserveAuction({
+            reserves:                   831.584938142441953626 * 1e18,
+            claimableReserves :         0,
+            claimableReservesRemaining: 0,
+            auctionPrice:               0,
+            timeRemaining:              0
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:96:9-96:30: `changePrank(_bidder);` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:112:9-118:12: `_assertReserveAuction({
+            reserves:                   831.584938142441953626 * 1e18,
+            claimableReserves :         831.584938142441953626 * 1e18,
+            claimableReservesRemaining: 0,
+            auctionPrice:               0,
+            timeRemaining:              0
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:128:9-128:58: `_assertReserveAuctionPrice(1_000_000_000 * 1e18);` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:132:9-132:73: `_assertReserveAuctionPrice(652176034.882782126826643053 * 1e18);` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:135:9-135:66: `_assertReserveAuctionPrice(77.745441780421987394 * 1e18);` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:138:9-138:63: `_assertReserveAuctionPrice(59.604644775390625 * 1e18);` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:141:9-141:66: `_assertReserveAuctionPrice(58.243272807255146201 * 1e18);` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:144:9-144:64: `_assertReserveAuctionPrice(29.8023223876953125 * 1e18);` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:147:9-147:65: `_assertReserveAuctionPrice(0.931322574615478515 * 1e18);` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:150:9-150:65: `_assertReserveAuctionPrice(0.230156355619639189 * 1e18);` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:153:9-153:65: `_assertReserveAuctionPrice(0.052459681325756842 * 1e18);` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:156:9-156:65: `_assertReserveAuctionPrice(0.000204920630178738 * 1e18);` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:159:9-159:65: `_assertReserveAuctionPrice(0.000003201884846542 * 1e18);` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:162:9-162:65: `_assertReserveAuctionPrice(0.000001755953640897 * 1e18);` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:165:9-165:65: `_assertReserveAuctionPrice(0.000000054873551278 * 1e18);` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:168:9-168:65: `_assertReserveAuctionPrice(0.000000000013396863 * 1e18);` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:171:9-171:65: `_assertReserveAuctionPrice(0.000000000000006541 * 1e18);` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:174:9-174:65: `_assertReserveAuctionPrice(0.000000000000003308 * 1e18);` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:203:9-203:40: `_assertReserveAuctionTooSoon();` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:208:9-214:12: `_takeReserves({
+            from:              _bidder,
+            amount:            Maths.wdiv(unclaimed, Maths.wad(2)),
+            remainingReserves: Maths.wdiv(unclaimed, Maths.wad(2)),
+            price:             expectedPrice,
+            epoch:             1
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:217:9-217:24: `skip(48 hours);` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:239:9-245:12: `_assertReserveAuction({
+            reserves:                   reserves,
+            claimableReserves :         claimableReserves,
+            claimableReservesRemaining: 0,
+            auctionPrice:               0,
+            timeRemaining:              0
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:260:9-266:12: `_assertReserveAuction({
+            reserves:                   0,
+            claimableReserves :         0,
+            claimableReservesRemaining: expectedReserves,
+            auctionPrice:               expectedPrice,
+            timeRemaining:              3 days
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:272:9-278:12: `_assertReserveAuction({
+            reserves:                   0,
+            claimableReserves :         0,
+            claimableReservesRemaining: expectedReserves,
+            auctionPrice:               expectedPrice,
+            timeRemaining:              2 days
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:292:9-298:12: `_assertReserveAuction({
+            reserves:                   0,
+            claimableReserves :         0,
+            claimableReservesRemaining: expectedReserves,
+            auctionPrice:               expectedPrice,
+            timeRemaining:              2 days
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:303:9-309:12: `_assertReserveAuction({
+            reserves:                   0,
+            claimableReserves :         0,
+            claimableReservesRemaining: expectedReserves,
+            auctionPrice:               expectedPrice,
+            timeRemaining:              2875 minutes
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:323:9-329:12: `_assertReserveAuction({
+            reserves:                   0,
+            claimableReserves :         0,
+            claimableReservesRemaining: expectedReserves,
+            auctionPrice:               expectedPrice,
+            timeRemaining:              2875 minutes
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:334:9-336:12: `_assertTakeReservesNoAuctionRevert({
+            amount: 777 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:359:9-365:12: `_assertReserveAuction({
+            reserves:                   reserves,
+            claimableReserves :         claimableReserves,
+            claimableReservesRemaining: 0,
+            auctionPrice:               0,
+            timeRemaining:              0
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:381:9-387:12: `_assertReserveAuction({
+            reserves:                   reserves,
+            claimableReserves :         claimableReserves,
+            claimableReservesRemaining: expectedReserves,
+            auctionPrice:               expectedPrice,
+            timeRemaining:              3 days
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:401:9-407:12: `_assertReserveAuction({
+            reserves:                   reserves,
+            claimableReserves :         claimableReserves,
+            claimableReservesRemaining: expectedReserves,
+            auctionPrice:               expectedPrice,
+            timeRemaining:              2 days
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:412:9-418:12: `_assertReserveAuction({
+            reserves:                   610.479702351371553626 * 1e18 - 212.527832618418361858 * 1e18,
+            claimableReserves :         0,
+            claimableReservesRemaining: expectedReserves,
+            auctionPrice:               expectedPrice,
+            timeRemaining:              0
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:422:11-422:40: `.roll(block.number + 201_600)` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:434:9-434:22: `skip(1 days);` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:438:9-444:12: `_assertReserveAuction({
+            reserves:                   reserves,
+            claimableReserves :         newClaimableReserves,
+            claimableReservesRemaining: expectedReserves,
+            auctionPrice:               expectedPrice,
+            timeRemaining:              0
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolReserveAuction.t.sol:459:9-465:12: `_assertReserveAuction({
+            reserves:                   0,
+            claimableReserves :         0,
+            claimableReservesRemaining: expectedReserves,
+            auctionPrice:               expectedPrice,
+            timeRemaining:              44 hours
+        });` passed

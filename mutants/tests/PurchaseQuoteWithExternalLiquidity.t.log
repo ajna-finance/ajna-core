@@ -1,0 +1,5 @@
+6 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/interactions/PurchaseQuoteWithExternalLiquidity.t.sol: dry running
+tests/forge/interactions/PurchaseQuoteWithExternalLiquidity.t.sol: mutilating

@@ -1,0 +1,517 @@
+223 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol: dry running
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol: mutilating
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:123:9-129:12: `_assertBucket({
+            index:        2500,
+            lpBalance:    4_997.115384615384614 * 1e18,
+            collateral:   0,
+            deposit:      4_997.115384615384614 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:130:9-136:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              5_069.682183392068152308 * 1e18,
+            borrowerCollateral:        2 * 1e18,
+            borrowert0Np:              2_627.524038461538462750 * 1e18,
+            borrowerCollateralization: 0.000000000039385618 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:147:9-153:12: `_assertBucket({
+            index:        2500,
+            lpBalance:    4_997.115384615384614 * 1e18,
+            collateral:   1.293874031008720309 * 1e18,
+            deposit:      0,
+            exchangeRate: 1.000393560665305039 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:155:9-161:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              70.600130721308261690 * 1e18,
+            borrowerCollateral:        0.706125968991279691 * 1e18,
+            borrowert0Np:              2_627.524038461538462750 * 1e18,
+            borrowerCollateralization: 0.000000000998539114 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:163:9-163:39: `_assertCollateralInvariants();` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:183:9-189:12: `_assertBucket({
+            index:        2500,
+            lpBalance:    24_989.247267890536762825 * 1e18,
+            collateral:   1.293874031008720309 * 1e18,
+            deposit:      20_000 * 1e18,
+            exchangeRate: 1.000393560665305039 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:199:9-205:12: `_assertBucket({
+            index:        2500,
+            lpBalance:    24_989.247267890536762825 * 1e18,
+            collateral:   1.312146920864032688 * 1e18,
+            deposit:      19_929.399869278691738310 * 1e18,
+            exchangeRate: 1.000393560665305039 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:206:9-212:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              0,
+            borrowerCollateral:        0,
+            borrowert0Np:              2_627.524038461538462750 * 1e18,
+            borrowerCollateralization: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:214:9-214:39: `_assertCollateralInvariants();` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:223:9-229:12: `_assertBucket({
+            index:        2500,
+            lpBalance:    24_989.247267890536762825 * 1e18,
+            collateral:   2.624293841728065376 * 1e18,
+            deposit:      14_859.717685886623586002 * 1e18,
+            exchangeRate: 1.000393560665305039 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:230:9-236:12: `_assertBucket({
+            index:        7388,
+            lpBalance:    0.000000137345389190 * 1e18,
+            collateral:   1.375706158271934624 * 1e18,
+            deposit:      0,
+            exchangeRate: 1.000000000007280914 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:238:9-244:12: `_assertBorrower({
+            borrower:                  _borrower2,
+            borrowerDebt:              0,
+            borrowerCollateral:        1 * 1e18,
+            borrowert0Np:              1_769.243311298076895206 * 1e18,
+            borrowerCollateralization: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:246:9-246:39: `_assertCollateralInvariants();` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:257:9-257:30: `changePrank(_lender);` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:304:9-310:12: `_assertBucket({
+            index:        2500,
+            lpBalance:    14_853.871786224081491640 * 1e18,
+            collateral:   0,
+            deposit:      14_859.717685886623586002 * 1e18,
+            exchangeRate: 1.000393560665305039 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:311:9-317:12: `_assertBucket({
+            index:        MAX_FENWICK_INDEX,
+            lpBalance:    99.999999999271908600 * 1e18,
+            collateral:   0,
+            deposit:      100 * 1e18,
+            exchangeRate: 1.000000000007280914 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:318:9-324:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              0,
+            borrowerCollateral:        0,
+            borrowert0Np:              2_627.524038461538462750 * 1e18,
+            borrowerCollateralization: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:325:9-331:12: `_assertBorrower({
+            borrower:                  _borrower2,
+            borrowerDebt:              0,
+            borrowerCollateral:        0,
+            borrowert0Np:              0,
+            borrowerCollateralization: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:342:9-348:12: `_assertBucket({
+            index:        2500,
+            lpBalance:    4997.115384615384614 * 1e18,
+            collateral:   0,
+            deposit:      4_997.115384615384614 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:349:9-355:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              5_067.367788461538463875 * 1e18,
+            borrowerCollateral:        2 * 1e18,
+            borrowert0Np:              2_627.524038461538462750 * 1e18,
+            borrowerCollateralization: 0.000000000039403606 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:365:9-371:12: `_assertBucket({
+            index:        2500,
+            lpBalance:    7_138.736263736263733905 * 1e18,
+            collateral:   1.847955132229532990 * 1e18,
+            deposit:      0,
+            exchangeRate: 1.000157402701482377 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:372:9-378:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              425.172014916344732952 * 1e18,
+            borrowerCollateral:        0.152044867770467010 * 1e18,
+            borrowert0Np:              2_627.524038461538462750 * 1e18,
+            borrowerCollateralization: 0.000000000035702243 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:380:9-380:39: `_assertCollateralInvariants();` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:400:9-406:12: `_assertBucket({
+            index:        2500,
+            lpBalance:    7_138.736263736263733905 * 1e18,
+            collateral:   1.847955132229532990 * 1e18,
+            deposit:      0,
+            exchangeRate: 1.000157402701482377 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:407:9-413:12: `_assertBucket({
+            index:        2501,
+            lpBalance:    2_000 * 1e18,
+            collateral:   0.110649792292326223 * 1e18,
+            deposit:      1_575.729756218596961193 * 1e18,
+            exchangeRate: 1.000557690748354813 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:414:9-420:12: `_assertBucket({
+            index:        MAX_FENWICK_INDEX,
+            lpBalance:    4132730466,
+            collateral:   0.041395075478140787 * 1e18,
+            deposit:      0,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:421:9-427:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              0,
+            borrowerCollateral:        0,
+            borrowert0Np:              2_627.524038461538462750 * 1e18,
+            borrowerCollateralization: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:429:9-429:39: `_assertCollateralInvariants();` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:471:9-477:12: `_assertBucket({
+            index:        2500,
+            lpBalance:    4_997.115384615384614000 * 1e18,
+            collateral:   0,
+            deposit:      4_997.115384615384614000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:478:9-484:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              5_067.367788461538463875 * 1e18,
+            borrowerCollateral:        2 * 1e18,
+            borrowert0Np:              2_627.524038461538462750 * 1e18,
+            borrowerCollateralization: 0.000000000039403606 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:501:9-507:12: `_assertBucket({
+            index:        2500,
+            lpBalance:    7_138.736263736263733905 * 1e18,
+            collateral:   1.847955132229532990 * 1e18,
+            deposit:      0,
+            exchangeRate: 1.000157402701482377 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:508:9-514:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              425.172014916344732952 * 1e18,
+            borrowerCollateral:        0.152044867770467010 * 1e18,
+            borrowert0Np:              2_627.524038461538462750 * 1e18,
+            borrowerCollateralization: 0.000000000035702243 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:516:9-516:39: `_assertCollateralInvariants();` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:541:9-547:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              425.172014916344732952 * 1e18,
+            borrowerCollateral:        3 * 1e18,
+            borrowert0Np:              149.491518364962118535 * 1e18,
+            borrowerCollateralization: 27.126189445355815944 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:548:9-563:11: `_assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 3_002.884615384615386000 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    141.724004972114910984 * 1e18,
+                neutralPrice:      0
+            })
+        );` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:565:9-565:39: `_assertCollateralInvariants();` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:575:9-581:12: `_assertBucket({
+            index:        2500,
+            lpBalance:    7_138.736263736263733905 * 1e18,
+            collateral:   1.847955132229532990 * 1e18,
+            deposit:      0,
+            exchangeRate: 1.000157402701482377 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:582:9-588:12: `_assertBucket({
+            index:        6113,
+            lpBalance:    0.000008769784221045 * 1e18,
+            collateral:   0.152044867770467010 * 1e18,
+            deposit:      0,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:646:9-652:12: `_assertBucket({
+            index:        2500,
+            lpBalance:    4997.115384615384614 * 1e18,
+            collateral:   0,
+            deposit:      4_997.115384615384614000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:653:9-659:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              5_067.367788461538463875 * 1e18,
+            borrowerCollateral:        2 * 1e18,
+            borrowert0Np:              2_627.524038461538462750 * 1e18,
+            borrowerCollateralization: 0.000000000039403606 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:676:9-682:12: `_assertBucket({
+            index:        2500,
+            lpBalance:    7_138.736263736263733905 * 1e18,
+            collateral:   1.847955132229532990 * 1e18,
+            deposit:      0,
+            exchangeRate: 1.000157402701482377 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:683:9-689:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              425.172014916344732952 * 1e18,
+            borrowerCollateral:        0.152044867770467010 * 1e18,
+            borrowert0Np:              2_627.524038461538462750 * 1e18,
+            borrowerCollateralization: 0.000000000035702243 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:691:9-691:39: `_assertCollateralInvariants();` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:712:9-718:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              0,
+            borrowerCollateral:        0,
+            borrowert0Np:              0,
+            borrowerCollateralization: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:719:9-734:11: `_assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 3_002.884615384615386000 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    0,
+                neutralPrice:      0
+            })
+        );` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:736:9-736:39: `_assertCollateralInvariants();` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:742:9-748:12: `_assertBucket({
+            index:        2500,
+            lpBalance:    7_138.736263736263733905 * 1e18,
+            collateral:   1.847955132229532990 * 1e18,
+            deposit:      0,
+            exchangeRate: 1.000157402701482377 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:749:9-755:12: `_assertBucket({
+            index:        6113,
+            lpBalance:    0.000008769784221045 * 1e18,
+            collateral:   0.152044867770467010 * 1e18,
+            deposit:      0,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:781:9-781:39: `_assertCollateralInvariants();` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:800:9-806:12: `_assertBucket({
+            index:        2502,
+            lpBalance:    2_000 * 1e18,
+            collateral:   0,
+            deposit:      2_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:807:9-813:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              5_067.367788461538463875 * 1e18,
+            borrowerCollateral:        2 * 1e18,
+            borrowert0Np:              2_627.524038461538462750 * 1e18,
+            borrowerCollateralization: 0.000000000039403606 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:838:9-844:12: `_assertBucket({
+            index:        2000,
+            lpBalance:    1_000 * 1e18,
+            collateral:   0.021378186081598093 * 1e18,
+            deposit:      0,
+            exchangeRate: 0.999999999999999991 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:845:9-851:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              4_422.207326928504959735 * 1e18,
+            borrowerCollateral:        1.978621813918401907 * 1e18,
+            borrowert0Np:              2_627.524038461538462750 * 1e18,
+            borrowerCollateralization: 1.703035796058482710 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:853:9-853:39: `_assertCollateralInvariants();` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:882:9-888:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              0,
+            borrowerCollateral:        0,
+            borrowert0Np:              0,
+            borrowerCollateralization: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:889:9-904:11: `_assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 1_501.442307692307693000 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    0,
+                neutralPrice:      0
+            })
+        );` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:906:9-906:39: `_assertCollateralInvariants();` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:911:9-917:12: `_assertBucket({
+            index:        2000,
+            lpBalance:    1_000 * 1e18,
+            collateral:   0.021378186081598093 * 1e18,
+            deposit:      0,
+            exchangeRate: 0.999999999999999991 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:918:9-924:12: `_assertBucket({
+            index:        2222,
+            lpBalance:    15_127.888999922350308085 * 1e18,
+            collateral:   0.978621813918401907 * 1e18,
+            deposit:      0,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:934:9-940:12: `_addLiquidity({
+            from:    _lender,
+            amount:  10_000 * 1e18,
+            index:   2000,
+            lpAward: 10_000.00000000000009 * 1e18,
+            newLup:  MAX_PRICE
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:957:9-957:39: `_assertCollateralInvariants();` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:975:9-981:12: `_assertBucket({
+            index:        2502,
+            lpBalance:    2_000 * 1e18,
+            collateral:   0,
+            deposit:      2_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:983:9-989:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              5_067.367788461538463875 * 1e18,
+            borrowerCollateral:        2 * 1e18,
+            borrowert0Np:              2_627.524038461538462750 * 1e18,
+            borrowerCollateralization: 0.000000000039403606 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:1006:9-1012:12: `_assertBucket({
+            index:        2502,
+            lpBalance:    2_857.142857142857142798 * 1e18,
+            collateral:   0.747023327968958780 * 1e18,
+            deposit:      0,
+            exchangeRate: 1.000157402701482377 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:1013:9-1019:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              3_422.759153589922201864 * 1e18,
+            borrowerCollateral:        1.252976672031041220 * 1e18,
+            borrowert0Np:              2_627.524038461538462750 * 1e18,
+            borrowerCollateralization: 0.000000000036547279 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:1021:9-1021:39: `_assertCollateralInvariants();` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:1055:9-1061:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              0,
+            borrowerCollateral:        0,
+            borrowert0Np:              0,
+            borrowerCollateralization: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:1062:9-1077:11: `_assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 3_002.884615384615386000 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    0,
+                neutralPrice:      0
+            })
+        );` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:1079:9-1079:39: `_assertCollateralInvariants();` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:1085:9-1091:12: `_assertBucket({
+            index:        2400,
+            lpBalance:    11_466.896780109966657942 * 1e18,
+            collateral:   0.768553060151988915 * 1e18,
+            deposit:      6_577.240846410077798136 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:1092:9-1098:12: `_assertBucket({
+            index:        6113,
+            lpBalance:    0.000027941032210122 * 1e18,
+            collateral:   0.484423611879052305 * 1e18,
+            deposit:      0,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:1125:9-1125:39: `_assertCollateralInvariants();` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:1143:9-1149:12: `_assertBucket({
+            index:        2502,
+            lpBalance:    2_000 * 1e18,
+            collateral:   0,
+            deposit:      2_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:1151:9-1157:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              5_067.367788461538463875 * 1e18,
+            borrowerCollateral:        2 * 1e18,
+            borrowert0Np:              2_627.524038461538462750 * 1e18,
+            borrowerCollateralization: 0.000000000039403606 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:1174:9-1180:12: `_assertBucket({
+            index:        2502,
+            lpBalance:    2_857.142857142857142798 * 1e18,
+            collateral:   0.747023327968958780 * 1e18,
+            deposit:      0,
+            exchangeRate: 1.000157402701482377 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:1181:9-1187:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              3_422.759153589922201864 * 1e18,
+            borrowerCollateral:        1.252976672031041220 * 1e18,
+            borrowert0Np:              2_627.524038461538462750 * 1e18,
+            borrowerCollateralization: 0.000000000036547279 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:1189:9-1189:39: `_assertCollateralInvariants();` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:1211:9-1217:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              0,
+            borrowerCollateral:        0,
+            borrowert0Np:              2_627.524038461538462750 * 1e18,
+            borrowerCollateralization: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:1218:9-1233:11: `_assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 3_002.884615384615386000 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    0,
+                neutralPrice:      0
+            })
+        );` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:1235:9-1235:39: `_assertCollateralInvariants();` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:1241:9-1247:12: `_assertBucket({
+            index:        2500,
+            lpBalance:    4_997.115384615384614000 * 1e18,
+            collateral:   0.886287035829988542 * 1e18,
+            deposit:      1_574.490070004654380295 * 1e18,
+            exchangeRate: 1.000336486815856336 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:1248:9-1254:12: `_assertBucket({
+            index:        2502,
+            lpBalance:    2_857.142857142857142798 * 1e18,
+            collateral:   0.747023327968958780 * 1e18,
+            deposit:      0,
+            exchangeRate: 1.000157402701482377 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsSettleAuction.t.sol:1255:9-1261:12: `_assertBucket({
+            index:        7388,
+            lpBalance:    0.000000036608930253 * 1e18,
+            collateral:   0.366689636201052678 * 1e18,
+            deposit:      0,
+            exchangeRate: 1 * 1e18
+        });` passed

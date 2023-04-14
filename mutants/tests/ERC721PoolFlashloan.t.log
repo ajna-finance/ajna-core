@@ -1,0 +1,11 @@
+19 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/ERC721Pool/ERC721PoolFlashloan.t.sol: dry running
+tests/forge/ERC721Pool/ERC721PoolFlashloan.t.sol: mutilating
+tests/forge/ERC721Pool/ERC721PoolFlashloan.t.sol:61:9-61:22: `skip(1 days);` passed
+tests/forge/ERC721Pool/ERC721PoolFlashloan.t.sol:94:9-94:78: `_assertFlashloanFeeRevertsForToken(address(_collateral), loanAmount);` passed
+tests/forge/ERC721Pool/ERC721PoolFlashloan.t.sol:104:9-104:88: `_assertFlashloanTooLargeRevert(flasher, _pool.quoteTokenAddress(), 350 * 1e18);` passed
+tests/forge/ERC721Pool/ERC721PoolFlashloan.t.sol:114:9-114:79: `_assertFlashloanUnavailableForToken(flasher, address(_collateral), 1);` passed
+tests/forge/ERC721Pool/ERC721PoolFlashloan.t.sol:131:9-131:39: `changePrank(address(flasher));` passed
+tests/forge/ERC721Pool/ERC721PoolFlashloan.t.sol:132:15-132:54: `.approve(address(_pool),    loanAmount)` passed

@@ -1,0 +1,408 @@
+170 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol: dry running
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol: mutilating
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:126:9-126:17: `print();` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:139:9-139:17: `print();` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:152:9-152:17: `print();` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:171:9-187:11: `_assertPool(
+            PoolParams({
+                htp:                  210.201923076923077020 * 1e18,
+                lup:                  2_981.007422784467321543 * 1e18,
+                poolSize:             50_000 * 1e18,
+                pledgedCollateral:    100 * 1e18,
+                encumberedCollateral: 7.051372011699988577 * 1e18,
+                poolDebt:             21_020.192307692307702000 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        2_102.0192307692307702 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:193:9-198:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       highest,
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:199:9-204:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       high,
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:205:9-210:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       med,
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:211:9-216:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       low,
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:217:9-222:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       lowest,
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:225:9-231:12: `_assertBucket({
+            index:        highest,
+            lpBalance:    10_000 * 1e18,
+            collateral:   0,
+            deposit:      10_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:232:9-238:12: `_assertBucket({
+            index:        high,
+            lpBalance:    10_000 * 1e18,
+            collateral:   0,
+            deposit:      10_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:239:9-245:12: `_assertBucket({
+            index:        med,
+            lpBalance:    10_000 * 1e18,
+            collateral:   0,
+            deposit:      10_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:246:9-252:12: `_assertBucket({
+            index:        low,
+            lpBalance:    10_000 * 1e18,
+            collateral:   0,
+            deposit:      10_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:253:9-259:12: `_assertBucket({
+            index:        lowest,
+            lpBalance:    10_000 * 1e18,
+            collateral:   0,
+            deposit:      10_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:269:9-285:11: `_assertPool(
+            PoolParams({
+                htp:                  400.384615384615384800 * 1e18,
+                lup:                  2_951.419442869698640451 * 1e18,  // FIMXE: actual is 2_995.912459898389633881,
+                poolSize:             50_000 * 1e18,
+                pledgedCollateral:    100 * 1e18,
+                encumberedCollateral: 13.565832411651963522 * 1e18,
+                poolDebt:             40_038.461538461538480000 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        4_003.846153846153848 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:301:9-317:11: `_assertPool(
+            PoolParams({
+                htp:                  300.384615384615384800 * 1e18,
+                lup:                  2_966.176540084047110076 * 1e18,
+                poolSize:             50_000 * 1e18,
+                pledgedCollateral:    100 * 1e18,
+                encumberedCollateral: 10.126997207526425123 * 1e18,
+                poolDebt:             30_038.461538461538480000 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        3_003.846153846153848000 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:334:9-350:11: `_assertPool(
+            PoolParams({
+                htp:                  0,
+                lup:                  MAX_PRICE,
+                poolSize:             50_000 * 1e18,
+                pledgedCollateral:    100 * 1e18,
+                encumberedCollateral: 0,
+                poolDebt:             0,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:399:9-415:11: `_assertPool(
+            PoolParams({
+                htp:                  420.403846153846154040 * 1e18,
+                lup:                  2_981.007422784467321543 * 1e18,
+                poolSize:             50_000 * 1e18,
+                pledgedCollateral:    50 * 1e18,
+                encumberedCollateral: 7.062005376213123432 * 1e18,
+                poolDebt:             expectedDebt,
+                actualUtilization:    0.420404166896771338 * 1e18,
+                targetUtilization:    0.141027440233999772 * 1e18,
+                minDebtAmount:        2_105.189044623513564801 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.055 * 1e18,
+                interestRateUpdate:   _startTime + 10 days
+            })
+        );` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:416:9-422:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              expectedDebt,
+            borrowerCollateral:        50 * 1e18,
+            borrowert0Np:              441.424038461538461742 * 1e18,
+            borrowerCollateralization: 7.080141877038845214 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:434:9-450:11: `_assertPool(
+            PoolParams({
+                htp:                  352.454532537342231182 * 1e18,
+                lup:                  2_981.007422784467321543 * 1e18,
+                poolSize:             50_055.509494601600700000 * 1e18,
+                pledgedCollateral:    60 * 1e18,
+                encumberedCollateral: 7.072654775682389039 * 1e18,
+                poolDebt:             expectedDebt,
+                actualUtilization:    0.420403846154152038 * 1e18,
+                targetUtilization:    0.141027440233999772 * 1e18,
+                minDebtAmount:        2_108.363638510121338731 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.0605 * 1e18,
+                interestRateUpdate:   _startTime + 10 days + 10 days
+            })
+        );` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:451:9-457:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              expectedDebt,
+            borrowerCollateral:        60 * 1e18,
+            borrowert0Np:              441.424038461538461742 * 1e18,
+            borrowerCollateralization: 8.483377444958217435 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:458:9-458:77: `_assertLenderInterest(liquidityAdded, 55.509494601600700000 * 1e18);` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:472:9-488:11: `_assertPool(
+            PoolParams({
+                htp:                  424.349858731660857846 * 1e18,
+                lup:                  2_981.007422784467321543 * 1e18,
+                poolSize:             50_086.111097974181150000 * 1e18,
+                pledgedCollateral:    50 * 1e18,
+                encumberedCollateral: 7.084387664333398317 * 1e18,
+                poolDebt:             expectedDebt,
+                actualUtilization:    0.421205109283081156 * 1e18,
+                targetUtilization:    0.121072519391563216 * 1e18,
+                minDebtAmount:        2_111.861221326057568008 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.06655 * 1e18,
+                interestRateUpdate:   _startTime + 30 days
+            })
+        );` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:489:9-495:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              expectedDebt,
+            borrowerCollateral:        50 * 1e18,
+            borrowert0Np:              445.838278846153846359 * 1e18,
+            borrowerCollateralization: 7.057773002983275247 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:496:9-496:77: `_assertLenderInterest(liquidityAdded, 86.111097974181150000 * 1e18);` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:606:9-610:12: `_assertBorrowLimitIndexRevert({
+            from:       _borrower,
+            amount:     1_000 * 1e18,
+            indexLimit: 1000
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:613:9-618:12: `_assertBorrowBorrowerNotSenderRevert({
+            from:       _borrower,
+            borrower:   _borrower2,
+            amount:     1 * 1e18,
+            indexLimit: 7000
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:621:9-625:12: `_assertBorrowBorrowerUnderCollateralizedRevert({
+            from:       _borrower,
+            amount:     500 * 1e18,
+            indexLimit: 3000
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:633:9-638:12: `_borrow({
+            from:       _borrower,
+            amount:     500 * 1e18,
+            indexLimit: 3_000,
+            newLup:     3_010.892022197881557845 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:654:9-658:12: `_assertBorrowBorrowerUnderCollateralizedRevert({
+            from:       _borrower2,
+            amount:     2_976 * 1e18,
+            indexLimit: 3000
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:661:9-666:12: `_borrow({
+            from:       _borrower2,
+            amount:     10 * 1e18,
+            indexLimit: 3_000,
+            newLup:     2_995.912459898389633881 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:686:9-690:12: `_pledgeCollateral({
+            from:     _borrower,
+            borrower: _borrower,
+            amount:   100 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:708:9-708:88: `deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 10_000 * 1e18);` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:711:9-715:12: `_assertRepayNoDebtRevert({
+            from:     _borrower,
+            borrower: _borrower,
+            amount:   10_000 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:717:9-721:12: `_assertPullBorrowerNotSenderRevert({
+            from:     _borrower,
+            borrower: _borrower2,
+            amount:   10_000 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:736:9-752:11: `_assertPool(
+            PoolParams({
+                htp:                  20.019230769230769240 * 1e18,
+                lup:                  3_010.892022197881557845 * 1e18,
+                poolSize:             50_000 * 1e18,
+                pledgedCollateral:    50 * 1e18,
+                encumberedCollateral: 0.332446840033426268 * 1e18,
+                poolDebt:             1_000.961538461538462000 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    1 * 1e18,
+                minDebtAmount:        100.096153846153846200 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:767:9-783:11: `_assertPool(
+            PoolParams({
+                htp:                  100.096153846153846200 * 1e18,
+                lup:                  3_010.892022197881557845 * 1e18,
+                poolSize:             50_000 * 1e18,
+                pledgedCollateral:    100 * 1e18,
+                encumberedCollateral: 1.994681040200557607 * 1e18,
+                poolDebt:             6_005.769230769230772000 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    1 * 1e18,
+                minDebtAmount:        300.288461538461538600 * 1e18,
+                loans:                2,
+                maxBorrower:          _borrower2,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:787:9-791:12: `_assertPullLimitIndexRevert({
+            from:       _borrower,
+            amount:     20 * 1e18,
+            indexLimit: lupIndex - 1
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:863:9-879:11: `_assertPool(
+            PoolParams({
+                htp:                  20.019230769230769240 * 1e18,
+                lup:                  3_010.892022197881557845 * 1e18,
+                poolSize:             50_000 * 1e18,
+                pledgedCollateral:    50 * 1e18,
+                encumberedCollateral: 0.332446840033426268 * 1e18,
+                poolDebt:             1_000.961538461538462000 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    1 * 1e18,
+                minDebtAmount:        100.096153846153846200 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:972:9-988:11: `_assertPool(
+            PoolParams({
+                htp:                  10.009615384615384620 * 1e18,
+                lup:                  3_010.892022197881557845 * 1e18,
+                poolSize:             50_000 * 1e18,
+                pledgedCollateral:    50 * 1e18,
+                encumberedCollateral: 0.166223420016713134 * 1e18,
+                poolDebt:             500.480769230769231000 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    1 * 1e18,
+                minDebtAmount:        50.048076923076923100 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:990:9-996:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              500.480769230769231 * 1e18,
+            borrowerCollateral:        50 * 1e18,
+            borrowert0Np:              10.510096153846153851 * 1e18,
+            borrowerCollateralization: 300.799971477982403259 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:1037:9-1042:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       highest,
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:1063:9-1070:12: `_assertPoolPrices({
+            htp:      210.201923076923077020 * 1e18,
+            htpIndex: 3_083,
+            hpb:      3_010.892022197881557845 * 1e18,
+            hpbIndex: 2550,
+            lup:      2_981.007422784467321543 * 1e18,
+            lupIndex: 2_552
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:1109:9-1116:12: `_assertPoolPrices({
+            htp:      0,
+            htpIndex: 7_388,
+            hpb:      3_010.892022197881557845 * 1e18,
+            hpbIndex: 2550,
+            lup:      MAX_PRICE,
+            lupIndex: 0
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:1156:9-1156:22: `skip(1 days);` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:1256:9-1256:30: `changePrank(_lender);` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:1259:13-1259:57: `deal(address(_quote), _lender, mintAmount_);` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:1271:13-1277:16: `_assertBucket({
+                index:      indexes[i],
+                lpBalance:  mintAmount_,
+                collateral: 0,
+                deposit:    mintAmount_,
+                exchangeRate: 1e18
+            });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:1281:9-1281:32: `changePrank(_borrower);` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:1299:13-1305:16: `_assertBucket({
+                index:        indexes[i],
+                lpBalance:    mintAmount_,
+                collateral:   0,
+                deposit:      mintAmount_,
+                exchangeRate: 1e18
+            });` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:1315:9-1331:11: `_assertPool(
+            PoolParams({
+                htp:                  Maths.wdiv(debt, requiredCollateral),
+                lup:                  _poolUtils.lup(address(_pool)),
+                poolSize:             (50_000 * 1e18) + (indexes.length * mintAmount_),
+                pledgedCollateral:    requiredCollateral,
+                encumberedCollateral: Maths.wdiv(debt, _poolUtils.lup(address(_pool))),
+                poolDebt:             debt,
+                actualUtilization:    poolActualUtilization,
+                targetUtilization:    poolTargetUtilization,
+                minDebtAmount:        minDebt,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );` passed
+tests/forge/ERC20Pool/ERC20PoolBorrow.t.sol:1369:13-1375:16: `_assertBucket({
+                index:        indexes[i],
+                lpBalance:    mintAmount_,
+                collateral:   0,
+                deposit:      deposit,
+                exchangeRate: exchangeRate
+            });` passed

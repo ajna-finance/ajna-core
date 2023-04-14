@@ -1,0 +1,7 @@
+23 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/Auctions.t.sol: dry running
+tests/forge/Auctions.t.sol: mutilating
+tests/forge/Auctions.t.sol:32:9-32:20: `skip(6238);` passed
+tests/forge/Auctions.t.sol:62:9-62:22: `skip(5 days);` passed

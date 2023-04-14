@@ -1,0 +1,25 @@
+14 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/ERC20Pool/ERC20PoolLoanHeap.t.sol: dry running
+tests/forge/ERC20Pool/ERC20PoolLoanHeap.t.sol: mutilating
+tests/forge/ERC20Pool/ERC20PoolLoanHeap.t.sol:116:9-120:12: `_assertLoans({
+            noOfLoans:         6,
+            maxBorrower:       _borrower6,
+            maxThresholdPrice: 6.005769230769230772 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolLoanHeap.t.sol:132:9-136:12: `_assertLoans({
+            noOfLoans:         6,
+            maxBorrower:       _borrower4,
+            maxThresholdPrice: 14.013461538461538468 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolLoanHeap.t.sol:148:9-152:12: `_assertLoans({
+            noOfLoans:         6,
+            maxBorrower:       _borrower6,
+            maxThresholdPrice: 6.005769230769230772 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolLoanHeap.t.sol:164:9-168:12: `_assertLoans({
+            noOfLoans:         6,
+            maxBorrower:       _borrower5,
+            maxThresholdPrice: 5.004807692307692310 * 1e18
+        });` passed

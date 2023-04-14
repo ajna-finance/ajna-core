@@ -1,0 +1,5 @@
+11 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/ERC20Pool/ERC20PoolMulticall.t.sol: dry running
+tests/forge/ERC20Pool/ERC20PoolMulticall.t.sol: mutilating

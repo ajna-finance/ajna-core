@@ -1,0 +1,46 @@
+62 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/ERC721Pool/ERC721PoolFactory.t.sol: dry running
+tests/forge/ERC721Pool/ERC721PoolFactory.t.sol: mutilating
+tests/forge/ERC721Pool/ERC721PoolFactory.t.sol:79:9-79:47: `_tokenIdsSubsetOne = new uint256[](2);` passed
+tests/forge/ERC721Pool/ERC721PoolFactory.t.sol:80:9-80:35: `_tokenIdsSubsetOne[0] = 2;` passed
+tests/forge/ERC721Pool/ERC721PoolFactory.t.sol:81:9-81:35: `_tokenIdsSubsetOne[1] = 3;` passed
+tests/forge/ERC721Pool/ERC721PoolFactory.t.sol:93:9-98:12: `_assertDeployWith0xAddressRevert({
+            poolFactory:  address(_factory),
+            collateral:   address(0),
+            quote:        address(_quote),
+            interestRate: 0.05 * 10**18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolFactory.t.sol:101:9-106:12: `_assertDeployWith0xAddressRevert({
+            poolFactory:  address(_factory),
+            collateral:   address(_collateral),
+            quote:        address(0),
+            interestRate: 0.05 * 10**18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolFactory.t.sol:115:9-120:12: `_assertDeployWithInvalidRateRevert({
+            poolFactory:  address(_factory),
+            collateral:   address(_quote),
+            quote:        address(_quote),
+            interestRate: 10**18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolFactory.t.sol:123:9-128:12: `_assertDeployWithInvalidRateRevert({
+            poolFactory:  address(_factory),
+            collateral:   address(_quote),
+            quote:        address(_quote),
+            interestRate: 2 * 10**18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolFactory.t.sol:211:9-211:28: `tokenIdsOne[0] = 1;` passed
+tests/forge/ERC721Pool/ERC721PoolFactory.t.sol:212:9-212:29: `tokenIdsOne[1] = 70;` passed
+tests/forge/ERC721Pool/ERC721PoolFactory.t.sol:213:9-213:28: `tokenIdsOne[2] = 3;` passed
+tests/forge/ERC721Pool/ERC721PoolFactory.t.sol:215:9-215:28: `tokenIdsTwo[0] = 1;` passed
+tests/forge/ERC721Pool/ERC721PoolFactory.t.sol:219:9-219:30: `tokenIdsThree[0] = 1;` passed
+tests/forge/ERC721Pool/ERC721PoolFactory.t.sol:220:9-220:30: `tokenIdsThree[1] = 2;` passed
+tests/forge/ERC721Pool/ERC721PoolFactory.t.sol:221:9-221:30: `tokenIdsThree[2] = 2;` passed
+tests/forge/ERC721Pool/ERC721PoolFactory.t.sol:237:9-237:35: `tokenIdsTestSubset[0] = 1;` passed
+tests/forge/ERC721Pool/ERC721PoolFactory.t.sol:238:9-238:35: `tokenIdsTestSubset[1] = 2;` passed
+tests/forge/ERC721Pool/ERC721PoolFactory.t.sol:239:9-239:35: `tokenIdsTestSubset[2] = 3;` passed
+tests/forge/ERC721Pool/ERC721PoolFactory.t.sol:255:9-255:35: `tokenIdsTestSubset[0] = 1;` passed
+tests/forge/ERC721Pool/ERC721PoolFactory.t.sol:256:9-256:35: `tokenIdsTestSubset[1] = 2;` passed
+tests/forge/ERC721Pool/ERC721PoolFactory.t.sol:257:9-257:35: `tokenIdsTestSubset[2] = 3;` passed
+tests/forge/ERC721Pool/ERC721PoolFactory.t.sol:272:9-272:35: `tokenIdsTestSubset[0] = 1;` passed

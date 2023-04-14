@@ -1,0 +1,178 @@
+29 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsKick.t.sol: dry running
+tests/forge/ERC721Pool/ERC721PoolLiquidationsKick.t.sol: mutilating
+tests/forge/ERC721Pool/ERC721PoolLiquidationsKick.t.sol:141:10-156:11: `_assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    11.364359914920859402 * 1e18,
+                neutralPrice:      0
+            })
+        );` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsKick.t.sol:157:9-163:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              22.728719829841718804 * 1e18,
+            borrowerCollateral:        2 * 1e18,
+            borrowert0Np:              10.404995192307692312 * 1e18,
+            borrowerCollateralization: 0.872656701977127996 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsKick.t.sol:178:9-194:11: `_assertPool(
+            PoolParams({
+                htp:                  6.582216822103492762 * 1e18,
+                lup:                  9.917184843435912074 * 1e18,
+                poolSize:             73_000 * 1e18,
+                pledgedCollateral:    5 * 1e18,
+                encumberedCollateral: 4.056751649452525709 * 1e18,
+                poolDebt:             40.231555971534224231 * 1e18,
+                actualUtilization:    0.00055111720508951 * 1e18,
+                targetUtilization:    0.911373730814237973 * 1e18,
+                minDebtAmount:        4.023155597153422423 * 1e18,
+                loans:                1,
+                maxBorrower:          address(_borrower2),
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   block.timestamp
+            })
+        );` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsKick.t.sol:195:9-210:11: `_assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          0.227287198298417188 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp,
+                kickMomp:          9.917184843435912074 * 1e18,
+                totalBondEscrowed: 0.227287198298417188 * 1e18,
+                auctionPrice:      381.842493141340875904 * 1e18,
+                debtInAuction:     23.012828827714740289 * 1e18,
+                thresholdPrice:    11.506414413857370144 * 1e18,
+                neutralPrice:      11.932577910666902372 * 1e18
+            })
+        );` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsKick.t.sol:211:9-217:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              23.012828827714740289 * 1e18,
+            borrowerCollateral:        2 * 1e18,
+            borrowert0Np:              10.404995192307692312 * 1e18,
+            borrowerCollateralization: 0.861883162446546169 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsKick.t.sol:218:9-224:12: `_assertBorrower({
+            borrower:                  _borrower2,
+            borrowerDebt:              17.218727143819483942 * 1e18,
+            borrowerCollateral:        3 * 1e18,
+            borrowert0Np:              5.255048076923076925 * 1e18,
+            borrowerCollateralization: 1.727860269914713433 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsKick.t.sol:225:9-229:12: `_assertKicker({
+            kicker:    _lender,
+            claimable: 0,
+            locked:    0.227287198298417188 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsKick.t.sol:234:9-237:12: `_assertKickAuctionActiveRevert({
+            from:       _lender,
+            borrower:   _borrower
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsKick.t.sol:240:9-243:12: `_assertKickCollateralizedBorrowerRevert({
+            from:       _lender,
+            borrower:   _borrower2
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsKick.t.sol:247:9-251:12: `_assertRemoveLiquidityAuctionNotClearedRevert({
+            from:   _lender,
+            amount: 1_000 * 1e18,
+            index:  _i9_91
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsKick.t.sol:264:9-279:11: `_assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    11.364359914920859402 * 1e18,
+                neutralPrice:      0
+            })
+        );` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsKick.t.sol:280:9-286:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              22.728719829841718804 * 1e18,
+            borrowerCollateral:        2 * 1e18,
+            borrowert0Np:              10.404995192307692312 * 1e18,
+            borrowerCollateralization: 0.872656701977127996 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsKick.t.sol:297:9-312:11: `_assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          0.227287198298417188 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp,
+                kickMomp:          9.917184843435912074 * 1e18,
+                totalBondEscrowed: 0.227287198298417188 * 1e18,
+                auctionPrice:      381.842493141340875904 * 1e18,
+                debtInAuction:     23.012828827714740289 * 1e18,
+                thresholdPrice:    11.506414413857370144 * 1e18,
+                neutralPrice:      11.932577910666902372 * 1e18
+            })
+        );` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsKick.t.sol:314:9-320:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              23.012828827714740289 * 1e18,
+            borrowerCollateral:        2 * 1e18,
+            borrowert0Np:              10.404995192307692312 * 1e18,
+            borrowerCollateralization: 0.861883162446546169 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsKick.t.sol:334:9-349:11: `_assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0.227287198298417188 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    0,
+                neutralPrice:      0
+            })
+        );` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsKick.t.sol:350:9-356:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              0,
+            borrowerCollateral:        2 * 1e18,
+            borrowert0Np:              0,
+            borrowerCollateralization: 1 * 1e18
+        });` passed
+tests/forge/ERC721Pool/ERC721PoolLiquidationsKick.t.sol:369:9-384:11: `_assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0.227287198298417188 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    7.670942942571580096 * 1e18,
+                neutralPrice:      0
+            })
+        );` passed

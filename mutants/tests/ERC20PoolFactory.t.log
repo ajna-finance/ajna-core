@@ -1,0 +1,29 @@
+20 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/ERC20Pool/ERC20PoolFactory.t.sol: dry running
+tests/forge/ERC20Pool/ERC20PoolFactory.t.sol: mutilating
+tests/forge/ERC20Pool/ERC20PoolFactory.t.sol:28:9-33:12: `_assertDeployWith0xAddressRevert({
+            poolFactory:  address(_poolFactory),
+            collateral:   address(0),
+            quote:        address(_quote),
+            interestRate: 0.05 * 10**18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolFactory.t.sol:46:9-51:12: `_assertDeployWithInvalidRateRevert({
+            poolFactory:  address(_poolFactory),
+            collateral:   address(_collateral),
+            quote:        address(_quote),
+            interestRate: 10**18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolFactory.t.sol:54:9-59:12: `_assertDeployWithInvalidRateRevert({
+            poolFactory:  address(_poolFactory),
+            collateral:   address(_collateral),
+            quote:        address(_quote),
+            interestRate: 2 * 10**18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolFactory.t.sol:69:9-74:12: `_assertDeployMultipleTimesRevert({
+            poolFactory:  address(_poolFactory),
+            collateral:   address(_collateral),
+            quote:        address(_quote),
+            interestRate: 0.05 * 10**18
+        });` passed

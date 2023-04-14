@@ -1,0 +1,189 @@
+158 candidates in 1 test file
+Warning: Configuration or test files have changed since necessist.db was created
+Silence this warning with: --allow files-changed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol: dry running
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol: mutilating
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:115:9-122:12: `_assertPoolPrices({
+            htp:      0,
+            htpIndex: 7388,
+            hpb:      3_025.946482308870940904 * 1e18,
+            hpbIndex: 2549,
+            lup:      MAX_PRICE,
+            lupIndex: 0
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:123:9-127:12: `_assertLoans({
+            noOfLoans:         0,
+            maxBorrower:       address(0),
+            maxThresholdPrice: 0
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:131:9-137:12: `_assertBucket({
+            index:        2549,
+            lpBalance:    50_000 * 1e18,
+            collateral:   0,
+            deposit:      50_000 * POOL_PRECISION,
+            exchangeRate: 1 * LP_PRECISION
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:138:9-143:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2549,
+            lpBalance:   50_000 * 1e18,
+            depositTime: start
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:145:9-145:22: `skip(1 days);` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:160:9-167:12: `_assertPoolPrices({
+            htp:      0,
+            htpIndex: 7388,
+            hpb:      3_025.946482308870940904 * 1e18,
+            hpbIndex: 2549,
+            lup:      MAX_PRICE,
+            lupIndex: 0
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:168:9-172:12: `_assertLoans({
+            noOfLoans:         0,
+            maxBorrower:       address(0),
+            maxThresholdPrice: 0
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:176:9-182:12: `_assertBucket({
+            index:        2549,
+            lpBalance:    25_000 * 1e18,
+            collateral:   0,
+            deposit:      25_000 * POOL_PRECISION,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:204:9-208:12: `_addInitialLiquidity({
+            from:   _lender,
+            amount: _lenderDepositNormalized,
+            index:  bucketId
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:218:13-218:83: `_assertAddCollateralDustRevert(_bidder, collateralDust / 2, bucketId);` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:221:13-221:90: `_addCollateralWithoutCheckingLP(_bidder, unscaledCollateralAmount, bucketId);` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:225:9-225:71: `_removeCollateralWithoutLPCheck(_bidder, 50 * 1e18, bucketId);` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:275:9-282:12: `_assertPoolPrices({
+            htp:      0,
+            htpIndex: 7388,
+            hpb:      3_025.946482308870940904 * 1e18,
+            hpbIndex: 2549,
+            lup:      MAX_PRICE,
+            lupIndex: 0
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:283:9-287:12: `_assertLoans({
+            noOfLoans:         0,
+            maxBorrower:       address(0),
+            maxThresholdPrice: 0
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:291:9-297:12: `_assertBucket({
+            index:        2549,
+            lpBalance:    50_000 * LP_PRECISION,
+            collateral:   0,
+            deposit:      50_000 * POOL_PRECISION,
+            exchangeRate: 1 * LP_PRECISION
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:298:9-303:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2549,
+            lpBalance:   50_000 * LP_PRECISION,
+            depositTime: start
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:325:9-331:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              debt,
+            borrowerCollateral:        col,
+            borrowert0Np:              209.180865384615384535 * 1e18,
+            borrowerCollateralization: 15.116650694597107214 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:332:9-339:12: `_assertPoolPrices({
+            htp:      200.173076923076923000 * 1e18,
+            htpIndex: 3093,
+            hpb:      3_025.946482308870940904 * 1e18,
+            hpbIndex: 2549,
+            lup:      price,
+            lupIndex: 2549
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:340:9-344:12: `_assertLoans({
+            noOfLoans:         1,
+            maxBorrower:       _borrower,
+            maxThresholdPrice: 200.173076923076923000 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:352:9-358:12: `_assertBucket({
+            index:        2549,
+            lpBalance:    50_000 * LP_PRECISION,
+            collateral:   0,
+            deposit:      50_000 * POOL_PRECISION,
+            exchangeRate: 1 * LP_PRECISION
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:359:9-364:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2549,
+            lpBalance:   50_000 * LP_PRECISION,
+            depositTime: start
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:385:9-385:26: `col  = 50 * 1e18;` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:387:9-393:12: `_assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              debt,
+            borrowerCollateral:        col,
+            borrowert0Np:              209.180865384615384535 * 1e18,
+            borrowerCollateralization: 30.207183159927296805 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:394:9-401:12: `_assertPoolPrices({
+            htp:      100.173076923076923000 * 1e18,
+            htpIndex: 3232,
+            hpb:      3_025.946482308870940904 * 1e18,
+            hpbIndex: 2549,
+            lup:      price,
+            lupIndex: 2549
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:402:9-406:12: `_assertLoans({
+            noOfLoans:         1,
+            maxBorrower:       _borrower,
+            maxThresholdPrice: 100.173076923076923000 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:414:9-420:12: `_assertBucket({
+            index:        2549,
+            lpBalance:    50_000 * LP_PRECISION,
+            collateral:   0,
+            deposit:      50_000 * 1e18,
+            exchangeRate: 1 * 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:421:9-426:12: `_assertLenderLpBalance({
+            lender:      _lender,
+            index:       2549,
+            lpBalance:   50_000 * LP_PRECISION,
+            depositTime: start
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:478:9-478:30: `changePrank(_lender);` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:479:9-479:71: `deal(address(_quote), _lender, quoteAmount * _quotePrecision);` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:481:9-481:30: `changePrank(_bidder);` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:482:9-482:86: `deal(address(_collateral), _bidder, collateralAmount * _collateralPrecision);` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:485:9-491:12: `_assertBucket({
+            index:        bucketId,
+            lpBalance:    0,
+            collateral:   0,
+            deposit:      0,
+            exchangeRate: 1e18
+        });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:534:9-534:72: `deal(address(_quote), _lender, quoteAmount1 * _quotePrecision);` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:536:15-536:71: `.approve(address(_pool), quoteAmount1 * _quotePrecision)` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:583:13-588:16: `_assertMoveLiquidityToSameIndexRevert({
+                from:      _lender,
+                amount:    amountToMove,
+                fromIndex: fromBucketId,
+                toIndex:   toBucketId
+            });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:594:13-599:16: `_assertMoveLiquidityDustRevert({
+                from:      _lender,
+                amount:    amountToMove,
+                fromIndex: fromBucketId,
+                toIndex:   toBucketId
+            });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:657:21-661:24: `_assertBorrowDustRevert({
+                        from:       _borrower,
+                        amount:     1,
+                        indexLimit: bucketId
+                    });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:664:17-668:20: `_assertBorrowMinDebtRevert({
+                    from:       _borrower,
+                    amount:     Maths.wdiv(debtToDraw, 11 * 1e18),
+                    indexLimit: bucketId
+                });` passed
+tests/forge/ERC20Pool/ERC20PoolPrecision.t.sol:751:9-751:66: `_mintAndApproveCollateral(_borrower, collateralToPledge);` passed
