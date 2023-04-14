@@ -31,7 +31,7 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
         (uint256 lpBalanceBeforeAction, ) = _erc20Pool.lenderInfo(bucketIndex_, _actor);
 
         try _erc20Pool.addCollateral(amount_, bucketIndex_, block.timestamp + 1 minutes) {
-            // **B5**: when adding collateral: lender deposit time = timestamp of block when deposit happened
+            // **B4**: when adding collateral: lender deposit time = timestamp of block when deposit happened
             lenderDepositTime[_actor][bucketIndex_] = block.timestamp;
             // **R5**: Exchange rates are unchanged by adding collateral token into a bucket
             exchangeRateShouldNotChange[bucketIndex_] = true;

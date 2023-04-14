@@ -70,7 +70,7 @@ contract RegressionTestLiquidationERC20Pool is LiquidationERC20PoolInvariants {
         _liquidationERC20PoolHandler.bucketTake(21616, 1047473235778002354, false, 1062098588952039043823357);
         _liquidationERC20PoolHandler.bucketTake(1673497622984405133414814181152, 94526073941076989987362055170246, false, 1462);
 
-        invariant_Bucket_deposit_time_B5_B6_B7();
+        invariant_Bucket_deposit_time_B4_B5_B6();
     }
 
     function test_regression_transfer_taker_lps_bucket_deposit_time() external {
@@ -78,7 +78,7 @@ contract RegressionTestLiquidationERC20Pool is LiquidationERC20PoolInvariants {
         _liquidationERC20PoolHandler.transferLps(1610, 1000000000018496758270674070884, 168395863093969200027183125335, 2799494920515362640996160058);
         _liquidationERC20PoolHandler.bucketTake(0, 10619296457595008969473693936299982020664977642271808785891719078511288, true, 1681500683437506364426133778273769573223975355182845498494263153646356302);
 
-        invariant_Bucket_deposit_time_B5_B6_B7();
+        invariant_Bucket_deposit_time_B4_B5_B6();
     }
 
     function test_regression_invariant_fenwick_depositAtIndex_F1() external {

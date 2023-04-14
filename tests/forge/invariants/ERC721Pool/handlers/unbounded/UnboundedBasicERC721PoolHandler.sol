@@ -48,7 +48,7 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
         }
 
         try _erc721Pool.addCollateral(tokenIds, bucketIndex_, block.timestamp + 1 minutes) {
-            // **B5**: when adding collateral: lender deposit time = timestamp of block when deposit happened
+            // **B4**: when adding collateral: lender deposit time = timestamp of block when deposit happened
             lenderDepositTime[_actor][bucketIndex_] = block.timestamp;
             // **R5**: Exchange rates are unchanged by adding collateral token into a bucket
             exchangeRateShouldNotChange[bucketIndex_] = true;

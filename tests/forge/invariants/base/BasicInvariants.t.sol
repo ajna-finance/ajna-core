@@ -53,7 +53,7 @@ abstract contract BasicInvariants is BaseInvariants {
     }
 
     // checks if lender deposit timestamp is updated when lps are added into lender lp balance
-    function invariant_Bucket_deposit_time_B5_B6_B7() public useCurrentTimestamp {
+    function invariant_Bucket_deposit_time_B4_B5_B6() public useCurrentTimestamp {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
@@ -64,7 +64,7 @@ abstract contract BasicInvariants is BaseInvariants {
 
                 require(
                     depositTime == IBaseHandler(_handler).lenderDepositTime(lender, bucketIndex),
-                    "Buckets Invariant B5, B6 or B7"
+                    "Buckets Invariant B4, B5 or B6"
                 );
             }   
         }
