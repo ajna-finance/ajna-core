@@ -29,6 +29,7 @@ test-regression-erc20          :; eval QUOTE_PRECISION=${QUOTE_PRECISION} COLLAT
 test-regression-erc721         :; eval QUOTE_PRECISION=${QUOTE_PRECISION} forge t --mt test_regression --mc ERC721
 coverage                       :; forge coverage --no-match-test "testLoad|invariant"
 test-invariant-erc20-precision :; ./tests/forge/invariants/test-invariant-erc20-precision.sh
+mutate                         :; bash ./scripts/mutate.sh
 
 # Generate Gas Snapshots
 snapshot :; forge clean && forge snapshot

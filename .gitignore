@@ -15,3 +15,10 @@ coverage/
 report/
 keystore/
 broadcast/
+
+#mutation testing
+*.um.backup.*
+mutants/
+.tmp_mutant.*
+.um.mutant_output.*
+
