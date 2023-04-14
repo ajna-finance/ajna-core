@@ -31,11 +31,11 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
         address testContract_
     ) BaseHandler(pool_, ajna_, quote_, poolInfo_, testContract_) {
 
-        LENDER_MIN_BUCKET_INDEX = 850;
-        LENDER_MAX_BUCKET_INDEX = 852;
+        LENDER_MIN_BUCKET_INDEX = vm.envUint("BUCKET_INDEX");
+        LENDER_MAX_BUCKET_INDEX = LENDER_MIN_BUCKET_INDEX + 2;
 
         MIN_QUOTE_AMOUNT = 1e3;
-        MAX_QUOTE_AMOUNT = 1e28;
+        MAX_QUOTE_AMOUNT = 10 ** (31 - LENDER_MIN_BUCKET_INDEX / 225 );
 
         MIN_COLLATERAL_AMOUNT = 1;
         MAX_COLLATERAL_AMOUNT = 100;

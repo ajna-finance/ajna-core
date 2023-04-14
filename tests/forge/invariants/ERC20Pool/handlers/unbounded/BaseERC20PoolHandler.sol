@@ -31,7 +31,7 @@ abstract contract BaseERC20PoolHandler is BaseHandler {
         address testContract_
     ) BaseHandler(pool_, ajna_, quote_, poolInfo_, testContract_) {
 
-        LENDER_MIN_BUCKET_INDEX = vm.envUint("BUCKET_INDEX_ERC20POOL");
+        LENDER_MIN_BUCKET_INDEX = vm.envUint("BUCKET_INDEX");
         LENDER_MAX_BUCKET_INDEX = LENDER_MIN_BUCKET_INDEX + 2;
 
         MIN_QUOTE_AMOUNT = 1e3;
