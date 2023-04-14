@@ -36,6 +36,10 @@ make test-invariant-erc721 QUOTE_PRECISION=<quote_precision>
 ```bash
 make test-invariant-erc20-precision
 ```
+- run ERC721 Pool invariant tests for most popular token precision(6,8 and 18):
+```bash
+make test-invariant-erc721-precision
+```
 - run regression test for both ERC20 and ERC721 Pool:
 ```bash
 make test-regression

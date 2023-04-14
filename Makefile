@@ -18,17 +18,18 @@ install :; git submodule update --init --recursive
 build   :; forge clean && forge build
 
 # Tests
-test                           :; forge test --no-match-test "testLoad|invariant|test_regression"  # --ffi # enable if you need the `ffi` cheat code on HEVM
-test-with-gas-report           :; forge test --no-match-test "testLoad|invariant|test_regression" --gas-report # --ffi # enable if you need the `ffi` cheat code on HEVM
-test-load                      :; forge test --match-test testLoad --gas-report
-test-invariant				   :; eval QUOTE_PRECISION=${QUOTE_PRECISION} COLLATERAL_PRECISION=${COLLATERAL_PRECISION} forge t --mt invariant --nmc RegressionTest
-test-invariant-erc20           :; eval QUOTE_PRECISION=${QUOTE_PRECISION} COLLATERAL_PRECISION=${COLLATERAL_PRECISION} forge t --mt invariant --nmc RegressionTest --mc ERC20
-test-invariant-erc721          :; eval QUOTE_PRECISION=${QUOTE_PRECISION} forge t --mt invariant --nmc RegressionTest --mc ERC721
-test-regression                :; eval QUOTE_PRECISION=${QUOTE_PRECISION} COLLATERAL_PRECISION=${COLLATERAL_PRECISION} forge t --mt test_regression
-test-regression-erc20          :; eval QUOTE_PRECISION=${QUOTE_PRECISION} COLLATERAL_PRECISION=${COLLATERAL_PRECISION} forge t --mt test_regression --mc ERC20
-test-regression-erc721         :; eval QUOTE_PRECISION=${QUOTE_PRECISION} forge t --mt test_regression --mc ERC721
-coverage                       :; forge coverage --no-match-test "testLoad|invariant"
-test-invariant-erc20-precision :; ./tests/forge/invariants/test-invariant-erc20-precision.sh
+test                            :; forge test --no-match-test "testLoad|invariant|test_regression"  # --ffi # enable if you need the `ffi` cheat code on HEVM
+test-with-gas-report            :; forge test --no-match-test "testLoad|invariant|test_regression" --gas-report # --ffi # enable if you need the `ffi` cheat code on HEVM
+test-load                       :; forge test --match-test testLoad --gas-report
+test-invariant				    :; eval QUOTE_PRECISION=${QUOTE_PRECISION} COLLATERAL_PRECISION=${COLLATERAL_PRECISION} forge t --mt invariant --nmc RegressionTest
+test-invariant-erc20            :; eval QUOTE_PRECISION=${QUOTE_PRECISION} COLLATERAL_PRECISION=${COLLATERAL_PRECISION} forge t --mt invariant --nmc RegressionTest --mc ERC20
+test-invariant-erc721           :; eval QUOTE_PRECISION=${QUOTE_PRECISION} forge t --mt invariant --nmc RegressionTest --mc ERC721
+test-regression                 :; eval QUOTE_PRECISION=${QUOTE_PRECISION} COLLATERAL_PRECISION=${COLLATERAL_PRECISION} forge t --mt test_regression
+test-regression-erc20           :; eval QUOTE_PRECISION=${QUOTE_PRECISION} COLLATERAL_PRECISION=${COLLATERAL_PRECISION} forge t --mt test_regression --mc ERC20
+test-regression-erc721          :; eval QUOTE_PRECISION=${QUOTE_PRECISION} forge t --mt test_regression --mc ERC721
+coverage                        :; forge coverage --no-match-test "testLoad|invariant"
+test-invariant-erc20-precision  :; ./tests/forge/invariants/test-invariant-erc20-precision.sh
+test-invariant-erc721-precision :; ./tests/forge/invariants/test-invariant-erc721-precision.sh
 
 # Generate Gas Snapshots
 snapshot :; forge clean && forge snapshot
