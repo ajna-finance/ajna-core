@@ -525,7 +525,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         ) = _getPoolAccumulators(ajnaPool_, nextEpoch_, epoch_);
 
         // calculate rewards earned
-        newRewards_ = Maths.wmul(
+        newRewards_ = totalInterestEarnedInPeriod == 0 ? 0 : Maths.wmul(
             REWARD_FACTOR,
             Maths.wdiv(
                 Maths.wmul(interestEarned_, totalBurnedInPeriod),
@@ -783,7 +783,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
                 (, , , uint256 bucketDeposit, ) = IPool(pool_).bucketInfo(bucketIndex_);
 
                 uint256 burnFactor     = Maths.wmul(totalBurned_, bucketDeposit);
-                uint256 interestFactor = Maths.wdiv(
+                uint256 interestFactor = interestEarned_ == 0 ? 0 : Maths.wdiv(
                     Maths.WAD - Maths.wdiv(prevBucketExchangeRate, curBucketExchangeRate),
                     interestEarned_
                 );
