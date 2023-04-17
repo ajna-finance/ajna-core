@@ -290,7 +290,6 @@ contract RewardsManagerTest is RewardsHelperContract {
         changePrank(_minterOne);
         vm.expectEmit(true, true, true, true);
         emit Unstake(_minterOne, address(_pool), tokenId);
-        // FIXME: reverts with a DIV/0
         _rewardsManager.unstake(tokenId);
         assertEq(PositionManager(address(_positionManager)).ownerOf(tokenId), _minterOne);
     }
