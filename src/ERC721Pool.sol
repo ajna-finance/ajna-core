@@ -399,9 +399,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             params
         );
 
-        // move balances from borrower token ids array to pool / claimable token ids array
-        // if entire bad debt was settled or if all available collateral was used to settle bad debt
-        if(result.collateralSettled != 0) _rebalanceTokens(params.borrower, result.collateralRemaining);
+        // move token ids from borrower array to pool claimable array if any collateral used to settle bad debt
+        if (result.collateralSettled != 0) _rebalanceTokens(params.borrower, result.collateralRemaining);
 
         // update pool balances state
         poolBalances.t0Debt            -= result.t0DebtSettled;
