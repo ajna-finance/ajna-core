@@ -282,4 +282,9 @@ contract RegressionTestLiquidationERC20Pool is LiquidationERC20PoolInvariants {
         invariant_Buckets_B2_B3();
     }
 
+    function test_regression_evm_revert_1() external {
+        _liquidationERC20PoolHandler.settleAuction(91509897037395202876797812344977844707030753189520454312427981040645023300162, 2439649222, 11529);
+        _liquidationERC20PoolHandler.bucketTake(6611, 46752666614331262781920, false, 2023645493297626462000000);
+    }
+
 }
