@@ -36,7 +36,7 @@ import { Maths }    from '../internal/Maths.sol';
 /**
     @title  Auction settler library
     @notice External library containing actions involving auctions within pool:
-            - settle auctions
+            - `settle` auctions
  */
 library SettlerActions {
 
@@ -44,6 +44,7 @@ library SettlerActions {
     /*** Local Var Structs ***/
     /*************************/
 
+    /// @dev Struct used for `settlePoolDebt` function local vars.
     struct SettleLocalVars {
         uint256 collateralUsed;     // [WAD] collateral used to settle debt
         uint256 debt;               // [WAD] debt to settle
@@ -82,23 +83,21 @@ library SettlerActions {
     /***************************/
 
     /**
-     *  @notice Settles the debt of the given loan / borrower.
-     *  @dev    write state:
-     *          - Deposits.unscaledRemove() (remove amount in Fenwick tree, from index):
-     *              - update values array state
-     *          - Buckets.addCollateral:
-     *              - increment bucket.collateral and bucket.lps accumulator
-     *              - addLenderLP:
-     *                  - increment lender.lps accumulator and lender.depositTime state
-     *          - update borrower state
-     *  @dev    reverts on:
-     *              - loan is not in auction NoAuction()
-     *              - 72 hours didn't pass and auction still has collateral AuctionNotClearable()
-     *  @dev    emit events:
-     *              - Settle
-     *              - BucketBankruptcy
-     *  @param  params_ Settle params
-     *  @return result_ The result of settle action.
+     *  @notice See `IPoolSettlerActions` for descriptions.
+     *  @dev    === Write state ===
+     *  @dev    - `Deposits.unscaledRemove()` (remove amount in `Fenwick` tree, from index):
+     *  @dev      update `values` array state
+     *  @dev    - `Buckets.addCollateral`:
+     *  @dev      increment `bucket.collateral` and `bucket.lps` accumulator
+     *  @dev      increment `lender.lps` accumulator and `lender.depositTime` state
+     *  @dev    - update borrower state
+     *  @dev    === Reverts on ===
+     *  @dev    loan is not in auction `NoAuction()`
+     *  @dev    `72` hours didn't pass and auction still has collateral `AuctionNotClearable()`
+     *  @dev    === Emit events ===
+     *  @dev    - `Settle`
+     *  @dev    - `BucketBankruptcy`
+     *  @return result_ The `SettleResult` struct result of settle action.
      */
     function settlePoolDebt(
         AuctionsState storage auctions_,
@@ -282,13 +281,16 @@ library SettlerActions {
 
     /**
      *  @notice Performs auction settle based on pool type, emits settle event and removes auction from auctions queue.
-     *  @dev    emit events:
-     *              - AuctionNFTSettle or AuctionSettle
+     *  @dev    === Emit events ===
+     *  @dev    - `AuctionNFTSettle` or `AuctionSettle`
+     *  @param  auctions_              Struct for pool auctions state.
+     *  @param  buckets_               Struct for pool buckets state.
+     *  @param  deposits_              Struct for pool deposits state.
      *  @param  borrowerAddress_       Address of the borrower that exits auction.
-     *  @param  borrowerCollateral_    Borrower collateral amount before auction exit (in NFT could be fragmented as result of partial takes).
-     *  @param  poolType_              Type of the pool (can be ERC20 or NFT).
-     *  @return remainingCollateral_   Collateral remaining after auction is settled (same amount for ERC20 pool, rounded collateral for NFT pool).
-     *  @return compensatedCollateral_ Amount of collateral compensated (NFT settle only), to be deducted from pool pledged collateral accumulator. 0 for ERC20 pools.
+     *  @param  borrowerCollateral_    Borrower collateral amount before auction exit (in `NFT` could be fragmented as result of partial takes).
+     *  @param  poolType_              Type of the pool (can be `ERC20` or `ERC721`).
+     *  @return remainingCollateral_   Collateral remaining after auction is settled (same amount for `ERC20` pool, rounded collateral for `ERC721` pool).
+     *  @return compensatedCollateral_ Amount of collateral compensated (`ERC721` settle only), to be deducted from pool pledged collateral accumulator. Always `0` for `ERC20` pools.
      */
     function _settleAuction(
         AuctionsState storage auctions_,
@@ -351,11 +353,12 @@ library SettlerActions {
 
     /**
      *  @notice Removes auction and repairs the queue order.
-     *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from liquidationBondEscrowed.
-     *  @dev    write state:
-     *              - decrement kicker locked accumulator, increment kicker claimable accumumlator
-     *              - decrement auctions count accumulator
-     *              - update auction queue state
+     *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from `liquidationBondEscrowed`.
+     *  @dev    === Write state ===
+     *  @dev    decrement kicker locked accumulator, increment kicker claimable accumumlator
+     *  @dev    decrement auctions count accumulator
+     *  @dev    update auction queue state
+     *  @param  auctions_ Struct for pool auctions state.
      *  @param  borrower_ Auctioned borrower address.
      */
     function _removeAuction(

@@ -128,13 +128,13 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
     /**
      *  @inheritdoc IERC721PoolBorrowerActions
-     *  @dev write state:
-     *          - decrement `poolBalances.t0DebtInAuction` accumulator
-     *          - increment `poolBalances.pledgedCollateral` accumulator
-     *          - increment `poolBalances.t0Debt` accumulator
-     *          - update `borrowerTokenIds` and `bucketTokenIds` arrays
-     *  @dev emit events:
-     *          - `DrawDebtNFT`
+     *  @dev    === Write state ===
+     *  @dev    - decrement `poolBalances.t0DebtInAuction` accumulator
+     *  @dev    - increment `poolBalances.pledgedCollateral` accumulator
+     *  @dev    - increment `poolBalances.t0Debt` accumulator
+     *  @dev    - update `borrowerTokenIds` and `bucketTokenIds` arrays
+     *  @dev    === Emit events ===
+     *  @dev    - `DrawDebtNFT`
      */
     function drawDebt(
         address borrowerAddress_,
@@ -197,13 +197,13 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
     /**
      *  @inheritdoc IERC721PoolBorrowerActions
-     *  @dev write state:
-     *          - decrement `poolBalances.t0Debt` accumulator
-     *          - decrement `poolBalances.t0DebtInAuction` accumulator
-     *          - decrement `poolBalances.pledgedCollateral` accumulator
-     *          - update `borrowerTokenIds` and bucketTokenIds` arrays
-     *  @dev emit events:
-     *          - `RepayDebt`
+     *  @dev    === Write state ===
+     *  @dev    - decrement `poolBalances.t0Debt accumulator`
+     *  @dev    - decrement `poolBalances.t0DebtInAuction accumulator`
+     *  @dev    - decrement `poolBalances.pledgedCollateral accumulator`
+     *  @dev    - update `borrowerTokenIds` and `bucketTokenIds` arrays
+     *  @dev    === Emit events ===
+     *  @dev    - `RepayDebt`
      */
     function repayDebt(
         address borrowerAddress_,
@@ -269,10 +269,10 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
     /**
      *  @inheritdoc IERC721PoolLenderActions
-     *  @dev write state:
-     *          - update `bucketTokenIds` arrays
-     *  @dev emit events:
-     *          - `AddCollateralNFT`
+     *  @dev    === Write state ===
+     *  @dev    - update `bucketTokenIds` arrays
+     *  @dev    === Emit events ===
+     *  @dev    - `AddCollateralNFT`
      */
     function addCollateral(
         uint256[] calldata tokenIds_,
@@ -300,10 +300,10 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
     /**
      *  @inheritdoc IERC721PoolLenderActions
-     *  @dev write state:
-     *          - update `bucketTokenIds` arrays
-     *  @dev emit events:
-     *          - `MergeOrRemoveCollateralNFT`
+     *  @dev    === Write state ===
+     *  @dev    - update `bucketTokenIds` arrays
+     *  @dev    === Emit events ===
+     *  @dev    - `MergeOrRemoveCollateralNFT`
      */
     function mergeOrRemoveCollateral(
         uint256[] calldata removalIndexes_,
@@ -340,10 +340,10 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
     /**
      *  @inheritdoc IPoolLenderActions
-     *  @dev write state:
-     *          - update `bucketTokenIds` arrays
-     *  @dev emit events:
-     *          - `RemoveCollateral`
+     *  @dev    === Write state ===
+     *  @dev    - update `bucketTokenIds` arrays
+     *  @dev    === Emit events ===
+     *  @dev    - `RemoveCollateral`
      *  @param noOfNFTsToRemove_ Number of `NFT` tokens to remove.
      */
     function removeCollateral(
@@ -376,10 +376,10 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
     /**
      *  @inheritdoc IPoolSettlerActions
-     *  @dev write state:
-     *          - decrement `poolBalances.t0Debt` accumulator
-     *          - decrement `poolBalances.t0DebtInAuction` accumulator
-     *          - decrement `poolBalances.pledgedCollateral` accumulator
+     *  @dev    === Write state ===
+     *  @dev    - decrement `poolBalances.t0Debt` accumulator
+     *  @dev    - decrement `poolBalances.t0DebtInAuction` accumulator
+     *  @dev    - decrement `poolBalances.pledgedCollateral` accumulator
      */
     function settle(
         address borrowerAddress_,
@@ -428,10 +428,10 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
     /**
      *  @inheritdoc IPoolTakerActions
-     *  @dev write state:
-     *          - decrement `poolBalances.t0Debt` accumulator
-     *          - decrement `poolBalances.t0DebtInAuction` accumulator
-     *          - decrement `poolBalances.pledgedCollateral` accumulator
+     *  @dev    === Write state ===
+     *  @dev    - decrement `poolBalances.t0Debt` accumulator
+     *  @dev    - decrement `poolBalances.t0DebtInAuction` accumulator
+     *  @dev    - decrement `poolBalances.pledgedCollateral` accumulator
      */
     function take(
         address        borrowerAddress_,
@@ -506,10 +506,10 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
     /**
      *  @inheritdoc IPoolTakerActions
-     *  @dev write state:
-     *          - decrement `poolBalances.t0Debt` accumulator
-     *          - decrement `poolBalances.t0DebtInAuction` accumulator
-     *          - decrement `poolBalances.pledgedCollateral` accumulator
+     *  @dev    === Write state ===
+     *  @dev    - decrement `poolBalances.t0Debt` accumulator
+     *  @dev    - decrement `poolBalances.t0DebtInAuction` accumulator
+     *  @dev    - decrement `poolBalances.pledgedCollateral` accumulator
      */
     function bucketTake(
         address borrowerAddress_,
@@ -566,10 +566,10 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
     /**
      *  @notice Rebalance `NFT` token and transfer difference to floor collateral from borrower to pool claimable array.
-     *  @dev    write state:
-     *              - update `borrowerTokens` and `bucketTokenIds` arrays
-     *  @dev    emit events:
-     *              - `RemoveCollateral`
+     *  @dev    === Write state ===
+     *  @dev    - update `borrowerTokens` and `bucketTokenIds` arrays
+     *  @dev    === Emit events ===
+     *  @dev    - `RemoveCollateral`
      *  @param  borrowerAddress_    Address of borrower.
      *  @param  borrowerCollateral_ Current borrower collateral to be rebalanced.
      */

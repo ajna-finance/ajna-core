@@ -9,8 +9,8 @@ interface IPoolTakerActions {
 
     /**
      *  @notice Called by actors to use quote token to arb higher-priced deposit off the book.
-     *  @param  borrowerAddress_  Identifies the loan to liquidate.
-     *  @param  depositTake_      If true then the take will happen at an auction price equal with bucket price. Auction price is used otherwise.
+     *  @param  borrowerAddress_  Address of the borower take is being called upon.
+     *  @param  depositTake_      If `true` then the take will happen at an auction price equal with bucket price. Auction price is used otherwise.
      *  @param  index_            Index of a bucket, likely the `HPB`, in which collateral will be deposited.
      */
     function bucketTake(

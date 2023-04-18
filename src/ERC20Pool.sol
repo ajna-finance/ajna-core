@@ -121,12 +121,12 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
     /**
      *  @inheritdoc IERC20PoolBorrowerActions
-     *  @dev write state:
-     *          - decrement `poolBalances.t0DebtInAuction` accumulator
-     *          - increment `poolBalances.pledgedCollateral` accumulator
-     *          - increment `poolBalances.t0Debt` accumulator
-     *  @dev emit events:
-     *          - `DrawDebt`
+     *  @dev    === Write state ===
+     *  @dev    - decrement `poolBalances.t0DebtInAuction` accumulator
+     *  @dev    - increment `poolBalances.pledgedCollateral` accumulator
+     *  @dev    - increment `poolBalances.t0Debt` accumulator
+     *  @dev    === Emit events ===
+     *  @dev    - `DrawDebt`
      */
     function drawDebt(
         address borrowerAddress_,
@@ -189,12 +189,12 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
     /**
      *  @inheritdoc IERC20PoolBorrowerActions
-     *  @dev write state:
-     *          - decrement `poolBalances.t0Debt accumulator`
-     *          - decrement `poolBalances.t0DebtInAuction accumulator`
-     *          - decrement `poolBalances.pledgedCollateral accumulator`
-     *  @dev emit events:
-     *          - `RepayDebt`
+     *  @dev    === Write state ===
+     *  @dev    - decrement `poolBalances.t0Debt accumulator`
+     *  @dev    - decrement `poolBalances.t0DebtInAuction accumulator`
+     *  @dev    - decrement `poolBalances.pledgedCollateral accumulator`
+     *  @dev    === Emit events ===
+     *  @dev    - `RepayDebt`
      */
     function repayDebt(
         address borrowerAddress_,
@@ -262,10 +262,10 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
     /**
      *  @inheritdoc IERC20PoolLenderActions
-     *  @dev reverts on:
-     *          - `DustAmountNotExceeded()`
-     *  @dev emit events:
-     *          - `AddCollateral`
+     *  @dev    === Reverts on ===
+     *  @dev    - `DustAmountNotExceeded()`
+     *  @dev    === Emit events ===
+     *  @dev    - `AddCollateral`
      */
     function addCollateral(
         uint256 amountToAdd_,
@@ -297,8 +297,8 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
     /**
      *  @inheritdoc IPoolLenderActions
-     *  @dev emit events:
-     *          - `RemoveCollateral`
+     *  @dev    === Emit events ===
+     *  @dev    - `RemoveCollateral`
      */
     function removeCollateral(
         uint256 maxAmount_,
@@ -333,10 +333,10 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
     /**
      *  @inheritdoc IPoolSettlerActions
-     *  @dev write state:
-     *          - decrement `poolBalances.t0Debt` accumulator
-     *          - decrement `poolBalances.t0DebtInAuction` accumulator
-     *          - decrement `poolBalances.pledgedCollateral` accumulator
+     *  @dev    === Write state ===
+     *  @dev    - decrement `poolBalances.t0Debt` accumulator
+     *  @dev    - decrement `poolBalances.t0DebtInAuction` accumulator
+     *  @dev    - decrement `poolBalances.pledgedCollateral` accumulator
      */
     function settle(
         address borrowerAddress_,
@@ -380,10 +380,10 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
     /**
      *  @inheritdoc IPoolTakerActions
-     *  @dev write state:
-     *          - decrement `poolBalances.t0Debt` accumulator
-     *          - decrement `poolBalances.t0DebtInAuction` accumulator
-     *          - decrement `poolBalances.pledgedCollateral` accumulator
+     *  @dev    === Write state ===
+     *  @dev    - decrement `poolBalances.t0Debt` accumulator
+     *  @dev    - decrement `poolBalances.t0DebtInAuction` accumulator
+     *  @dev    - decrement `poolBalances.pledgedCollateral` accumulator
      */
     function take(
         address        borrowerAddress_,
@@ -449,10 +449,10 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
     /**
      *  @inheritdoc IPoolTakerActions
-     *  @dev write state:
-     *          - decrement `poolBalances.t0Debt` accumulator
-     *          - decrement `poolBalances.t0DebtInAuction` accumulator
-     *          - decrement `poolBalances.pledgedCollateral` accumulator
+     *  @dev    === Write state ===
+     *  @dev    - decrement `poolBalances.t0Debt` accumulator
+     *  @dev    - decrement `poolBalances.t0DebtInAuction` accumulator
+     *  @dev    - decrement `poolBalances.pledgedCollateral` accumulator
      */
     function bucketTake(
         address borrowerAddress_,

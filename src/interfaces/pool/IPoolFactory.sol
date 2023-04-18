@@ -17,7 +17,7 @@ interface IPoolFactory {
     error DeployQuoteCollateralSameToken();
 
     /**
-     *  @notice Can't deploy with one of the args pointing to the 0x0 address.
+     *  @notice Can't deploy with one of the args pointing to the `0x` address.
      */
     error DeployWithZeroAddress();
 

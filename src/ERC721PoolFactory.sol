@@ -23,6 +23,7 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
 
     using ClonesWithImmutableArgs for address;
 
+    /// @dev `ERC721` clonable pool contract used to deploy the new pool.
     ERC721Pool public implementation;
 
     /// @dev Default `bytes32` hash used by `ERC721` `Non-NFTSubset` pool types
@@ -38,18 +39,17 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
 
     /**
      *  @inheritdoc IERC721PoolFactory
-     *  @dev  immutable args:
-     *          - pool type; ajna, collateral and quote address; quote scale; number of token ids in subset; NFT type
-     *  @dev  write state:
-     *          - `deployedPools` mapping
-     *          - `deployedPoolsList` array
-     *  @dev reverts on:
-     *          - `0x` address provided as quote or collateral `DeployWithZeroAddress()`
-     *          - pool with provided quote / collateral pair already exists `PoolAlreadyExists()`
-     *          - invalid interest rate provided `PoolInterestRateInvalid()`
-     *          - not supported `NFT` provided `NFTNotSupported()`
-     *  @dev emit events:
-     *          - `PoolCreated`
+     *  @dev  immutable args: pool type; ajna, collateral and quote address; quote scale; number of token ids in subset
+     *  @dev    === Write state ===
+     *  @dev    - `deployedPools` mapping
+     *  @dev    - `deployedPoolsList` array
+     *  @dev    === Reverts on ===
+     *  @dev    - `0x` address provided as quote or collateral `DeployWithZeroAddress()`
+     *  @dev    - pool with provided quote / collateral pair already exists `PoolAlreadyExists()`
+     *  @dev    - invalid interest rate provided `PoolInterestRateInvalid()`
+     *  @dev    - not supported `NFT` provided `NFTNotSupported()`
+     *  @dev    === Emit events ===
+     *  @dev    - `PoolCreated`
      */
     function deployPool(
         address collateral_, address quote_, uint256[] memory tokenIds_, uint256 interestRate_

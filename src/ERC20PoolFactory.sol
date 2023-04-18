@@ -21,6 +21,7 @@ contract ERC20PoolFactory is PoolDeployer, IERC20PoolFactory {
 
     using ClonesWithImmutableArgs for address;
 
+    /// @dev `ERC20` clonable pool contract used to deploy the new pool.
     ERC20Pool public implementation;
 
     /// @dev Default `bytes32` hash used by `ERC20` `Non-NFTSubset` pool types
@@ -37,15 +38,15 @@ contract ERC20PoolFactory is PoolDeployer, IERC20PoolFactory {
     /**
      *  @inheritdoc IERC20PoolFactory
      *  @dev  immutable args: pool type; ajna, collateral and quote address; quote and collateral scale
-     *  @dev  write state:
-     *          - `deployedPools` mapping
-     *          - `deployedPoolsList` array
-     *  @dev reverts on:
-     *          - `0x` address provided as quote or collateral `DeployWithZeroAddress()`
-     *          - pool with provided quote / collateral pair already exists `PoolAlreadyExists()`
-     *          - invalid interest rate provided `PoolInterestRateInvalid()`
-     *  @dev emit events:
-     *          - `PoolCreated`
+     *  @dev    === Write state ===
+     *  @dev    - `deployedPools` mapping
+     *  @dev    - `deployedPoolsList` array
+     *  @dev    === Reverts on ===
+     *  @dev    - `0x` address provided as quote or collateral `DeployWithZeroAddress()`
+     *  @dev    - pool with provided quote / collateral pair already exists `PoolAlreadyExists()`
+     *  @dev    - invalid interest rate provided `PoolInterestRateInvalid()`
+     *  @dev    === Emit events ===
+     *  @dev    - `PoolCreated`
      */
     function deployPool(
         address collateral_, address quote_, uint256 interestRate_

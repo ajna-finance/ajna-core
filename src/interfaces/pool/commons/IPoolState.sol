@@ -93,7 +93,7 @@ interface IPoolState {
         );
 
     /**
-     *  @notice Mapping of burnEventEpoch to {BurnEvent} structs.
+     *  @notice Mapping of burnEventEpoch to `BurnEvent` structs.
      *  @dev    Reserve auctions correspond to burn events.
      *  @param  burnEventEpoch_  Id of the current reserve auction.
      *  @return burnBlock_       Block in which a reserve auction started.

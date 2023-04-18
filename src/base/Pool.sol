@@ -273,8 +273,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     /**
      *  @inheritdoc IPoolKickerActions
-     *  @dev write state:
-     *       - increment `poolBalances.t0DebtInAuction` and `poolBalances.t0Debt` accumulators
+     *  @dev    === Write state ===
+     *  @dev    increment `poolBalances.t0DebtInAuction` and `poolBalances.t0Debt` accumulators
      */
     function kick(
         address borrower_,
@@ -314,8 +314,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     /**
      *  @inheritdoc IPoolKickerActions
-     *  @dev write state:
-     *       - increment `poolBalances.t0DebtInAuction` and `poolBalances.t0Debt` accumulators
+     *  @dev    === Write state ===
+     *  @dev    increment `poolBalances.t0DebtInAuction` and `poolBalances.t0Debt` accumulators
      */
     function kickWithDeposit(
         uint256 index_,
@@ -357,9 +357,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     /**
      *  @inheritdoc IPoolKickerActions
-     *  @dev write state:
-     *       - decrease kicker's `claimable` accumulator
-     *       - decrease auctions `totalBondEscrowed` accumulator
+     *  @dev    === Write state ===
+     *  @dev    decrease kicker's `claimable` accumulator
+     *  @dev    decrease auctions `totalBondEscrowed` accumulator
      */
     function withdrawBonds(
         address recipient_,
@@ -389,13 +389,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     /**
      *  @inheritdoc IPoolKickerActions
-     *  @dev  write state:
-     *          - increment `latestBurnEpoch` counter
-     *          - update `reserveAuction.latestBurnEventEpoch` and burn event `timestamp` state
-     *  @dev reverts on:
-     *          - 2 weeks not passed `ReserveAuctionTooSoon()`
-     *  @dev emit events:
-     *          - `KickReserveAuction`
+     *  @dev    === Write state ===
+     *  @dev    increment `latestBurnEpoch` counter
+     *  @dev    update `reserveAuction.latestBurnEventEpoch` and burn event `timestamp` state
+     *  @dev    === Reverts on ===
+     *  @dev    2 weeks not passed `ReserveAuctionTooSoon()`
+     *  @dev    === Emit events ===
+     *  @dev    - `KickReserveAuction`
      */
     function kickReserveAuction() external override nonReentrant {
         // start a new claimable reserve auction, passing in relevant parameters such as the current pool size, debt, balance, and inflator value
@@ -416,9 +416,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     /**
      *  @inheritdoc IPoolTakerActions
-     *  @dev  write state:
-     *          - increment `reserveAuction.totalAjnaBurned` accumulator
-     *          - update burn event `totalInterest` and `totalBurned` accumulators
+     *  @dev    === Write state ===
+     *  @dev    increment `reserveAuction.totalAjnaBurned` accumulator
+     *  @dev    update burn event `totalInterest` and `totalBurned` accumulators
      */
     function takeReserves(
         uint256 maxAmount_
@@ -524,13 +524,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     /**
      *  @notice Accrues pool interest in current block and returns pool details.
-     *  @dev    external libraries call:
-     *              - `PoolCommons.accrueInterest`
-     *  @dev    write state:
-     *              - `PoolCommons.accrueInterest`:
-     *                  - `Deposits.mult` (scale `Fenwick` tree with new interest accrued):
-     *                      - update scaling array state 
-     *              - increment `reserveAuction.totalInterestEarned` accumulator
+     *  @dev    external libraries call: `PoolCommons.accrueInterest`
+     *  @dev    === Write state ===
+     *  @dev    - `PoolCommons.accrueInterest` - `Deposits.mult` (scale `Fenwick` tree with new interest accrued):
+     *  @dev      update scaling array state 
+     *  @dev    - increment `reserveAuction.totalInterestEarned` accumulator
      *  @return poolState_ Struct containing pool details.
      */
     function _accruePoolInterest() internal returns (PoolState memory poolState_) {
@@ -574,8 +572,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /**
      *  @notice Adjusts the `t0` debt 2 to collateral ratio, `interestState.t0Debt2ToCollateral`.
      *  @dev    Anytime a borrower's debt or collateral changes, the `interestState.t0Debt2ToCollateral` must be updated.
-     *  @dev    write state:
-     *              - update `interestState.t0Debt2ToCollateral` accumulator
+     *  @dev    === Write state ===
+     *  @dev    update `interestState.t0Debt2ToCollateral` accumulator
      *  @param debtPreAction_  Borrower's debt before the action
      *  @param debtPostAction_ Borrower's debt after the action
      *  @param colPreAction_   Borrower's collateral before the action
@@ -601,16 +599,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
     /**
      *  @notice Update interest rate and inflator of the pool.
-     *  @dev    external libraries call:
-     *              - `PoolCommons.updateInterestState`
-     *  @dev    write state:
-     *              - `PoolCommons.updateInterestState `
-     *                  - `EMA`s accumulators
-     *                  - interest rate accumulator and `interestRateUpdate` state
-     *              - pool inflator and `inflatorUpdate` state
-     *  @dev    emit events:
-     *              - `PoolCommons.updateInterestState`:
-     *                  - `UpdateInterestRate`
+     *  @dev    external libraries call: `PoolCommons.updateInterestState`
+     *  @dev    === Write state ===
+     *  @dev    - `PoolCommons.updateInterestState`
+     *  @dev      `EMA`s accumulators
+     *  @dev      interest rate accumulator and `interestRateUpdate` state
+     *  @dev      pool inflator and `inflatorUpdate` state
+     *  @dev    === Emit events ===
+     *  @dev    `PoolCommons.updateInterestState`: `UpdateInterestRate`
      *  @param  poolState_ Struct containing pool details.
      *  @param  lup_       Current `LUP` in pool.
      */

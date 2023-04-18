@@ -47,6 +47,7 @@ library PoolCommons {
     /*** Local Var Structs ***/
     /*************************/
 
+    /// @dev Struct used for `updateInterestState` function local vars.
     struct UpdateInterestLocalVars {
         uint256 debtEma;
         uint256 depositEma;
@@ -71,11 +72,11 @@ library PoolCommons {
     /**
      *  @notice Calculates EMAs, caches values required for calculating interest rate, and saves new values in storage.
      *  @notice Calculates new pool interest rate (Never called more than once every 12 hours) and saves new values in storage.
-     *  @dev    write state:
-     *              - EMAs state
-     *              - interest rate accumulator and interestRateUpdate state
-     *  @dev    emit events:
-     *              - UpdateInterestRate
+     *  @dev    === Write state ===
+     *  @dev    `EMA`s state
+     *  @dev    interest rate accumulator and `interestRateUpdate` state
+     *  @dev    === Emit events ===
+     *  @dev    - `UpdateInterestRate` / `ResetInterestRate`
      */
     function updateInterestState(
         InterestState storage interestParams_,
@@ -200,12 +201,15 @@ library PoolCommons {
 
     /**
      *  @notice Calculates new pool interest and scale the fenwick tree to update amount of debt owed to lenders (saved in storage).
-     *  @dev write state:
-     *       - Deposits.mult (scale Fenwick tree with new interest accrued):
-     *         - update scaling array state
+     *  @dev    === Write state ===
+     *  @dev    - `Deposits.mult` (scale `Fenwick` tree with new interest accrued):
+     *  @dev      update `scaling` array state
+     *  @param  emaParams_      Struct for pool `EMA`s state.
+     *  @param  deposits_       Struct for pool deposits state.
+     *  @param  poolState_      Current state of the pool.
      *  @param  thresholdPrice_ Current Pool Threshold Price.
      *  @param  elapsed_        Time elapsed since last inflator update.
-     *  @return newInflator_   The new value of pool inflator.
+     *  @return newInflator_    The new value of pool inflator.
      */
     function accrueInterest(
         EmaState      storage emaParams_,
@@ -292,8 +296,8 @@ library PoolCommons {
 
     /**
      *  @notice Calculates pool meaningful actual utilization.
-     *  @param  debtEma_     EMA of pool debt.
-     *  @param  depositEma_  EMA of meaningful pool deposit.
+     *  @param  debtEma_     `EMA` of pool debt.
+     *  @param  depositEma_  `EMA` of meaningful pool deposit.
      *  @return utilization_ Pool meaningful actual utilization value.
      */
     function _utilization(

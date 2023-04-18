@@ -50,6 +50,7 @@ library KickerActions {
     /*** Local Var Structs ***/
     /*************************/
 
+    /// @dev Struct used for `kick` function local vars.
     struct KickLocalVars {
         uint256 borrowerDebt;       // [WAD] the accrued debt of kicked borrower
         uint256 borrowerCollateral; // [WAD] amount of kicked borrower collateral
@@ -61,6 +62,8 @@ library KickerActions {
         uint256 t0KickPenalty;      // [WAD] t0 debt added as kick penalty
         uint256 kickPenalty;        // [WAD] current debt added as kick penalty
     }
+
+    /// @dev Struct used for `kickWithDeposit` function local vars.
     struct KickWithDepositLocalVars {
         uint256 amountToDebitFromDeposit; // [WAD] the amount of quote tokens used to kick and debited from lender deposit
         uint256 bucketCollateral;         // [WAD] amount of collateral in bucket
@@ -100,11 +103,8 @@ library KickerActions {
     /***************************/
 
     /**
-     *  @notice Called to start borrower liquidation and to update the auctions queue.
-     *  @param  poolState_       Current state of the pool.
-     *  @param  borrowerAddress_ Address of the borrower to kick.
-     *  @param  limitIndex_      Index of the lower bound of NP tolerated when kicking the auction.
-     *  @return kickResult_      The result of the kick action.
+     *  @notice See `IPoolKickerActions` for descriptions.
+     *  @return The `KickResult` struct result of the kick action.
      */
     function kick(
         AuctionsState storage auctions_,
@@ -128,18 +128,14 @@ library KickerActions {
     }
 
     /**
-     *  @notice Called by lenders to kick loans using their deposits.
-     *  @dev    write state:
-     *              - Deposits.unscaledRemove (remove amount in Fenwick tree, from index):
-     *                  - update values array state
-     *              - decrement lender.lps accumulator
-     *              - decrement bucket.lps accumulator
-     *  @dev    emit events:
-     *              - RemoveQuoteToken
-     *  @param  poolState_  Current state of the pool.
-     *  @param  index_      The deposit index from where lender removes liquidity.
-     *  @param  limitIndex_ Index of the lower bound of NP tolerated when kicking the auction.
-     *  @return kickResult_ The result of the kick action.
+     *  @notice See `IPoolKickerActions` for descriptions.
+     *  @dev    === Write state ===
+     *  @dev   - `Deposits.unscaledRemove` (remove amount in `Fenwick` tree, from index): update `values` array state
+     *  @dev   - decrement `lender.lps` accumulator
+     *  @dev   - decrement `bucket.lps` accumulator
+     *  @dev    === Emit events ===
+     *  @dev    - `RemoveQuoteToken`
+     *  @return kickResult_ The `KickResult` struct result of the kick action.
      */
     function kickWithDeposit(
         AuctionsState storage auctions_,
@@ -240,14 +236,15 @@ library KickerActions {
     /*************************/
 
     /**
-     *  @notice See `IPoolReserveAuctionActions` for descriptions.
-     *  @dev    write state:
-     *              - update reserveAuction.unclaimed accumulator
-     *              - update reserveAuction.kicked timestamp state
-     *  @dev    reverts on:
-     *          - no reserves to claim NoReserves()
-     *  @dev    emit events:
-     *              - KickReserveAuction
+     *  @notice See `IPoolKickerActions` for descriptions.
+     *  @dev    === Write state ===
+     *  @dev    update `reserveAuction.unclaimed` accumulator
+     *  @dev    update `reserveAuction.kicked` timestamp state
+     *  @dev    === Reverts on ===
+     *  @dev    no reserves to claim `NoReserves()`
+     *  @dev    === Emit events ===
+     *  @dev    - `KickReserveAuction`
+     *  @return kickerAward_ The `LP`s awarded to reserve auction kicker.
      */
     function kickReserveAuction(
         AuctionsState storage auctions_,
@@ -301,24 +298,27 @@ library KickerActions {
 
     /**
      *  @notice Called to start borrower liquidation and to update the auctions queue.
-     *  @dev    write state:
-     *              - _recordAuction:
-     *                  - borrower -> liquidation mapping update
-     *                  - increment auctions count accumulator
-     *                  - increment auctions.totalBondEscrowed accumulator
-     *                  - updates auction queue state
-     *              - _updateKicker:
-     *                  - update locked and claimable kicker accumulators
-     *              - Loans.remove:
-     *                  - delete borrower from indices => borrower address mapping
-     *                  - remove loan from loans array
-     *  @dev    emit events:
-     *              - Kick
+     *  @dev    === Write state ===
+     *  @dev    - `_recordAuction`:
+     *  @dev      `borrower -> liquidation` mapping update
+     *  @dev      increment `auctions count` accumulator
+     *  @dev      increment `auctions.totalBondEscrowed` accumulator
+     *  @dev      updates auction queue state
+     *  @dev    - `_updateKicker`:
+     *  @dev      update `locked` and `claimable` kicker accumulators
+     *  @dev    - `Loans.remove`:
+     *  @dev      delete borrower from `indices => borrower` address mapping
+     *  @dev      remove loan from loans array
+     *  @dev    === Emit events ===
+     *  @dev    - `Kick`
+     *  @param  auctions_        Struct for pool auctions state.
+     *  @param  deposits_        Struct for pool deposits state.
+     *  @param  loans_           Struct for pool loans state.
      *  @param  poolState_       Current state of the pool.
      *  @param  borrowerAddress_ Address of the borrower to kick.
-     *  @param  limitIndex_      Index of the lower bound of NP tolerated when kicking the auction.
-     *  @param  additionalDebt_  Additional debt to be used when calculating proposed LUP.
-     *  @return kickResult_      The result of the kick action.
+     *  @param  limitIndex_      Index of the lower bound of `NP` tolerated when kicking the auction.
+     *  @param  additionalDebt_  Additional debt to be used when calculating proposed `LUP`.
+     *  @return kickResult_      The `KickResult` struct result of the kick action.
      */
     function _kick(
         AuctionsState storage auctions_,
@@ -405,8 +405,9 @@ library KickerActions {
 
     /**
      *  @notice Updates kicker balances.
-     *  @dev    write state:
-     *              - update locked and claimable kicker accumulators
+     *  @dev    === Write state ===
+     *  @dev    update `locked` and `claimable` kicker accumulators
+     *  @param  auctions_       Struct for pool auctions state.
      *  @param  bondSize_       Bond size to cover newly kicked auction.
      *  @return bondDifference_ The amount that kicker should send to pool to cover auction bond.
      */
@@ -435,16 +436,17 @@ library KickerActions {
     }
 
     /**
-     *  @notice Saves a new liquidation that was kicked.
-     *  @dev    write state:
-     *              - borrower -> liquidation mapping update
-     *              - increment auctions count accumulator
-     *              - updates auction queue state
+     *  @notice Saves in storage a new liquidation that was kicked.
+     *  @dev    === Write state ===
+     *  @dev    `borrower -> liquidation` mapping update
+     *  @dev    increment auctions count accumulator
+     *  @dev    updates auction queue state
+     *  @param  auctions_        Struct for pool auctions state.
      *  @param  borrowerAddress_ Address of the borrower that is kicked.
      *  @param  bondSize_        Bond size to cover newly kicked auction.
      *  @param  bondFactor_      Bond factor of the newly kicked auction.
-     *  @param  momp_            Current pool MOMP.
-     *  @param  neutralPrice_    Current pool Neutral Price.
+     *  @param  momp_            Current pool `MOMP`.
+     *  @param  neutralPrice_    Current pool `Neutral Price`.
      */
     function _recordAuction(
         AuctionsState storage auctions_,
