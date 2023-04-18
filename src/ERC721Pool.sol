@@ -581,7 +581,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             eg1. borrowerCollateral_ = 4.1, noOfTokensPledged = 6; noOfTokensToTransfer = 1
             eg2. borrowerCollateral_ = 4, noOfTokensPledged = 6; noOfTokensToTransfer = 2
         */
-        uint256 noOfTokensToTransfer = borrowerCollateral_ != 0 ? noOfTokensPledged - (borrowerCollateral_ + 1e18 - 1) / 1e18 : noOfTokensPledged;
+        uint256 borrowerCollateralRoundedUp = (borrowerCollateral_ + 1e18 - 1) / 1e18;
+        uint256 noOfTokensToTransfer = noOfTokensPledged - borrowerCollateralRoundedUp;
 
         for (uint256 i = 0; i < noOfTokensToTransfer;) {
             uint256 tokenId = borrowerTokens[--noOfTokensPledged]; // start with moving the last token pledged by borrower
