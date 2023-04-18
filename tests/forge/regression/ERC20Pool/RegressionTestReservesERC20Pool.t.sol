@@ -293,14 +293,8 @@ contract RegressionTestReserveERC20Pool is ReserveERC20PoolInvariants {
         _reserveERC20PoolHandler.takeAuction(1383411077269858329680139336144799098803584219410295488, 3, 0);
         _reserveERC20PoolHandler.repayDebt(46968019084877, 3);
         _reserveERC20PoolHandler.settleAuction(40124885934647691486197516987534429290957609634434455185985854549948025389553, 7413335529509918122196253760378, 3);
-        // _reserveERC20PoolHandler.bucketTake(17377, 2748873005452892812548622619587, false, 999999999999999989712357375741033502535274466);
         skip(2 hours);
         _pool.updateInterest();
-        /*
-         TODO: Check why deposit change is more than debt change in accrue interest in "updateInterest"
-         debt change          --> 236352821760996207141053
-         deposit change       --> 236352821761181451576056
-        */
         currentTimestamp = block.timestamp;
         invariant_quoteTokenBalance_QT1();
     }

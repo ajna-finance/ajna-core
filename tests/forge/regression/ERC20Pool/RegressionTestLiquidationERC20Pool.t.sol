@@ -283,7 +283,7 @@ contract RegressionTestLiquidationERC20Pool is LiquidationERC20PoolInvariants {
     }
 
     /* 
-        Test was reverting when kicker is penalized.
+        Test was reverting when kicker is penalized when auction price > neutral price.
         Fixed by making changes in increaseInReserve calculation in case of kicker penalty in 'bucketTake' handler
     */
     function test_regression_evm_revert_1() external {
