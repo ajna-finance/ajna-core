@@ -162,9 +162,11 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
 
         _assertCollateralInvariants();
 
-        // the 2 token ids are rebalanced and transferred to pool claimable tokens array after settle
+        // 1 token id (token id 3, the most recent pledged token) was moved from borrower token ids array to pool claimable token ids array after partial bad debt settle
+        assertEq(ERC721Pool(address(_pool)).totalBorrowerTokens(_borrower), 1);
+        assertEq(ERC721Pool(address(_pool)).totalBucketTokens(), 1);
+        assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 0), 1);
         assertEq(ERC721Pool(address(_pool)).bucketTokenIds(0), 3);
-        assertEq(ERC721Pool(address(_pool)).bucketTokenIds(1), 1);
 
         // all NFTs are owned by the pool
         assertEq(_collateral.ownerOf(1),  address(_pool));
@@ -195,6 +197,12 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             settledDebt: 70.567900577736070940 * 1e18
         });
 
+        // no token id left in borrower token ids array
+        assertEq(ERC721Pool(address(_pool)).totalBorrowerTokens(_borrower), 0);
+        assertEq(ERC721Pool(address(_pool)).totalBucketTokens(), 2);
+        // tokens used to settle entire bad debt (settle auction) are moved to pool claimable array
+        assertEq(ERC721Pool(address(_pool)).bucketTokenIds(0), 3);
+        assertEq(ERC721Pool(address(_pool)).bucketTokenIds(1), 1);
 
         _assertBucket({
             index:        2500,
