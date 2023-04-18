@@ -80,13 +80,13 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
             uint256 lpRedeemed;
 
             // redeem LP for quote token if available
-            if(lenderLpBalance != 0 && bucketQuote != 0) {
+            if (lenderLpBalance != 0 && bucketQuote != 0) {
                 (, lpRedeemed) = _pool.removeQuoteToken(type(uint256).max, bucketIndex);
                 lenderLpBalance -= lpRedeemed;
             }
 
             // redeem LP for collateral if available
-            if(lenderLpBalance != 0 && bucketCollateral != 0) {
+            if (lenderLpBalance != 0 && bucketCollateral != 0) {
                 (, lpRedeemed) = ERC20Pool(address(_pool)).removeCollateral(type(uint256).max, bucketIndex);
                 lenderLpBalance -= lpRedeemed;
             }
@@ -108,7 +108,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         }
 
         uint256 pledgedCollateral = 0;
-        for(uint i = 0; i < borrowers.length(); i++) {
+        for (uint i = 0; i < borrowers.length(); i++) {
             (, uint256 collateral,) = _poolUtils.borrowerInfo(address(_pool), borrowers.at(i));
             pledgedCollateral += collateral;
         }
@@ -143,11 +143,11 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         _;
         validateCollateral(bucketsUsed, borrowers);
 
-        for(uint i = 0; i < borrowers.length(); i++) {
+        for (uint i = 0; i < borrowers.length(); i++) {
             repayDebt(borrowers.at(i));
         }
 
-        for(uint i = 0; i < lenders.length(); i++) {
+        for (uint i = 0; i < lenders.length(); i++) {
             redeemLendersLp(lenders.at(i), lendersDepositedIndex[lenders.at(i)]);
         }
 
@@ -420,8 +420,8 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         emit TransferLP(from, to, indexes, lpBalance);
         _pool.transferLP(from, to, indexes);
 
-        for(uint256 i = 0; i < indexes.length ;i++ ){
-            if(lenders.contains(from)){
+        for (uint256 i = 0; i < indexes.length ;i++ ){
+            if (lenders.contains(from)){
                 lenders.add(to);
                 lendersDepositedIndex[to].add(indexes[i]);
             }

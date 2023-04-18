@@ -96,7 +96,7 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         assertEq(PositionManager(address(_positionManager)).ownerOf(tokenId), owner);
 
         // invariant: all bucket snapshots are removed for the token id that was unstaken
-        for(uint256 bucketIndex = 0; bucketIndex <= 7388; bucketIndex++) {
+        for (uint256 bucketIndex = 0; bucketIndex <= 7388; bucketIndex++) {
             (uint256 lps, uint256 rate) = _rewardsManager.getBucketStateStakeInfo(tokenId, bucketIndex);
             assertEq(lps, 0);
             assertEq(rate, 0);
@@ -484,12 +484,12 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
     // Helper function that returns a random subset from array
     function _getRandomSubsetFromArray(uint256[] memory array) internal returns (uint256[] memory subsetArray) {
         uint256[] memory copyOfArray = new uint256[](array.length);
-        for(uint j = 0; j < copyOfArray.length; j++){
+        for (uint j = 0; j < copyOfArray.length; j++){
             copyOfArray[j] = array[j];
         }
         uint256 randomNoOfNfts = randomInRange(1, copyOfArray.length);
         subsetArray = new uint256[](randomNoOfNfts);
-        for(uint256 i = 0; i < randomNoOfNfts; i++) {
+        for (uint256 i = 0; i < randomNoOfNfts; i++) {
             uint256 randomIndex = randomInRange(0, copyOfArray.length - i - 1);
             subsetArray[i] = copyOfArray[randomIndex];
             copyOfArray[randomIndex] = copyOfArray[copyOfArray.length - i - 1];
@@ -499,7 +499,7 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
     // Returns N addresses array
     function _getAddresses(uint256 noOfAddress) internal returns(address[] memory addresses_) {
         addresses_ = new address[](noOfAddress);
-        for(uint i = 0; i < noOfAddress; i++) {
+        for (uint i = 0; i < noOfAddress; i++) {
             addresses_[i] = makeAddr(string(abi.encodePacked("Minter", Strings.toString(i))));
         }
     }

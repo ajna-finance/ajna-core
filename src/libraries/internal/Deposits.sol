@@ -168,7 +168,7 @@ library Deposits {
         //             subtree what was scaled earlier.  Therefore: we need to increment it's stored value
         //             (in sum) which was set in a prior interation in case 1.
         while (bit <= SIZE) {
-            if((bit & index_) != 0) {
+            if ((bit & index_) != 0) {
                 // Case 1 as described above
                 value   = deposits_.values[index_];
                 scaling = deposits_.scaling[index_];

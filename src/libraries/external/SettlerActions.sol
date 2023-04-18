@@ -381,12 +381,12 @@ library SettlerActions {
             auctions_.head = address(0);
             auctions_.tail = address(0);
         }
-        else if(auctions_.head == borrower_) {
+        else if (auctions_.head == borrower_) {
             // liquidation is the head
             auctions_.liquidations[liquidation.next].prev = address(0);
             auctions_.head = liquidation.next;
         }
-        else if(auctions_.tail == borrower_) {
+        else if (auctions_.tail == borrower_) {
             // liquidation is the tail
             auctions_.liquidations[liquidation.prev].next = address(0);
             auctions_.tail = liquidation.prev;

@@ -2679,7 +2679,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         tokenIds[1] = _mintNFT(alice, alice, address(_pool));
         assertFalse(_positionManager.isIndexInPosition(tokenIds[1], 2550));
 
-        for(uint256 i = 0; i < addresses.length; ++i) {
+        for (uint256 i = 0; i < addresses.length; ++i) {
             // construct memorialize params struct
             IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
                 tokenIds[i], indexes
@@ -2711,7 +2711,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertEq(depositTime, aliceDepositTime + 1 hours);
 
         // both alice and bob redeem
-        for(uint256 i = 0; i < addresses.length; ++i) {
+        for (uint256 i = 0; i < addresses.length; ++i) {
             // construct memorialize params struct
             IPositionManagerOwnerActions.RedeemPositionsParams memory params = IPositionManagerOwnerActions.RedeemPositionsParams(
                 tokenIds[i], address(_pool), indexes
@@ -2731,7 +2731,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertEq(depositTime, aliceDepositTime + 1 hours);
 
         // attempt to redeem again should fail
-        for(uint256 i = 0; i < addresses.length; ++i) {
+        for (uint256 i = 0; i < addresses.length; ++i) {
             // construct memorialize params struct
             IPositionManagerOwnerActions.RedeemPositionsParams memory params = IPositionManagerOwnerActions.RedeemPositionsParams(
                 tokenIds[i], address(_pool), indexes

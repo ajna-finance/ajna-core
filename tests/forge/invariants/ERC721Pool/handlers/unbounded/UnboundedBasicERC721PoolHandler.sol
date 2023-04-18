@@ -43,7 +43,7 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
         _collateral.mint(_actor, amount_);
         _collateral.setApprovalForAll(address(_pool), true);
         uint256[] memory tokenIds = new uint256[](amount_);
-        for(uint256 i = 0; i < amount_; i++) {
+        for (uint256 i = 0; i < amount_; i++) {
             tokenIds[i] = _collateral.tokenOfOwnerByIndex(_actor, i);
         }
 
@@ -102,7 +102,7 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
         _collateral.mint(_actor, amount_);
         _collateral.setApprovalForAll(address(_pool), true);
         uint256[] memory tokenIds = new uint256[](amount_);
-        for(uint256 i = 0; i < amount_; i++) {
+        for (uint256 i = 0; i < amount_; i++) {
             tokenIds[i] = _collateral.tokenOfOwnerByIndex(_actor, i);
         }
 
@@ -161,7 +161,7 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
         _collateral.mint(_actor, collateralToPledge);
         _collateral.setApprovalForAll(address(_pool), true);
         uint256[] memory tokenIds = new uint256[](collateralToPledge);
-        for(uint256 i = 0; i < collateralToPledge; i++) {
+        for (uint256 i = 0; i < collateralToPledge; i++) {
             tokenIds[i] = _collateral.tokenOfOwnerByIndex(_actor, i);
         }
 
