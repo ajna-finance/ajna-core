@@ -40,12 +40,12 @@ interface IPoolTakerActions {
     /***********************/
 
     /**
-     *  @notice Purchases claimable reserves during a CRA using Ajna token.
-     *  @param  maxAmount Maximum amount of quote token to purchase at the current auction price.
-     *  @return amount    Actual amount of reserves taken.
+     *  @notice Purchases claimable reserves during a `CRA` using `Ajna` token.
+     *  @param  maxAmount_ Maximum amount of quote token to purchase at the current auction price.
+     *  @return amount_    Actual amount of reserves taken.
      */
     function takeReserves(
-        uint256 maxAmount
-    ) external returns (uint256 amount);
+        uint256 maxAmount_
+    ) external returns (uint256 amount_);
 
 }
