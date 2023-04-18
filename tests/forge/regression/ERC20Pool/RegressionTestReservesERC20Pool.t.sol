@@ -117,6 +117,10 @@ contract RegressionTestReserveERC20Pool is ReserveERC20PoolInvariants {
         invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10_RE11_RE12();
     }
 
+    /*
+        Test was reverting when kicker and taker are same and kicker is penalized while taker is getting lps.
+        Fixed by separating kicker and taker condition in 'bucketTake' handler
+    */
     function test_regression_reserve_15() external {
         _reserveERC20PoolHandler.settleAuction(412239579320, 197270, 115792089237316195423570985008687907853269984665640564039457584007913129639934);
         _reserveERC20PoolHandler.bucketTake(2751494394076294863634, 102579647081354295527475262786, false, 20636732314060673687564);
@@ -426,6 +430,10 @@ contract RegressionTestReserveERC20Pool is ReserveERC20PoolInvariants {
         invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
+    /* 
+        Test was reverting when movedQuoteToken > amountPassed, this happens in case when buckets gets empty.
+        Fixed by adding check in increaseInReserve calculation in 'moveQuoteToken' handler
+    */
     function test_regression_evm_revert_1() external {
         _reserveERC20PoolHandler.takeAuction(2520000968586068692750846759781727871330432521653849554728884, 842011260485420553676704792240552622539346320776828594643332095169708168242, 8055807);
         _reserveERC20PoolHandler.moveQuoteToken(1, 231772084031809103573597600784780758697344200147089918620804085, 2, 664746035165900383390596853874831864040676775434826512224949736661840288899);
@@ -434,6 +442,10 @@ contract RegressionTestReserveERC20Pool is ReserveERC20PoolInvariants {
         _reserveERC20PoolHandler.moveQuoteToken(8974296309703512994561526975050221771958436087084360221, 0, 12487898, 0);
     }
 
+    /*
+        Test was reverting when redeemedLps = bucketLps but lenderlps < redeemedLps, this happens due to slight rounding error in deposit calculation from lps
+        Fixed by updating lenderLps calculations to `lender.lps -= Maths.min(lender.lps, vars.redeemedLPs)`
+    */
     function test_regression_evm_revert_2() external {
         _reserveERC20PoolHandler.moveQuoteToken(1, 2, 115792089237316195423570985008687907853269984665640564039457584007913129639932, 158129467307529830729349478455);
         _reserveERC20PoolHandler.removeQuoteToken(2999999999999999484865294266928579000517539849, 20462, 1576762402919713971836094859031);
