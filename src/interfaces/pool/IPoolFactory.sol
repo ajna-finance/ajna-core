@@ -3,7 +3,7 @@
 pragma solidity 0.8.14;
 
 /**
- *  @title Pool Factory Interface
+ *  @title Pool Factory Interface.
  *  @dev   Used to deploy both funigible and non fungible pools.
  */
 interface IPoolFactory {

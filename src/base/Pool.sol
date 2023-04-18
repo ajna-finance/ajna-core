@@ -77,11 +77,15 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /*** Constants ***/
     /*****************/
 
-    // immutable args offset
+    /// @dev Immutable pool type arg offset.
     uint256 internal constant POOL_TYPE          = 0;
+    /// @dev Immutable `Ajna` token address arg offset.
     uint256 internal constant AJNA_ADDRESS       = 1;
+    /// @dev Immutable collateral token address arg offset.
     uint256 internal constant COLLATERAL_ADDRESS = 21;
+    /// @dev Immutable quote token address arg offset.
     uint256 internal constant QUOTE_ADDRESS      = 41;
+    /// @dev Immutable quote token scale arg offset.
     uint256 internal constant QUOTE_SCALE        = 61;
 
     /***********************/
@@ -97,7 +101,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     PoolBalancesState   internal poolBalances;
     ReserveAuctionState internal reserveAuction;
 
-    /// @dev  deposit index -> bucket mapping
+    /// @dev deposit index -> bucket mapping
     mapping(uint256 => Bucket) internal buckets;
 
     bool internal isPoolInitialized;

@@ -43,15 +43,15 @@ interface IPoolLenderActions {
 
     /**
      *  @notice Called by lenders to claim collateral from a price bucket.
-     *  @param  maxAmount        The amount of collateral (or the number of NFT tokens) to claim.
-     *  @param  index            The bucket index from which collateral will be removed.
-     *  @return collateralAmount The amount of collateral removed.
-     *  @return lpAmount         The amount of LP used for removing collateral amount.
+     *  @param  maxAmount_     The amount of collateral (or the number of `NFT` tokens) to claim.
+     *  @param  index_         The bucket index from which collateral will be removed.
+     *  @return removedAmount_ The amount of collateral removed.
+     *  @return redeemedLP_    The amount of `LP` used for removing collateral amount.
      */
     function removeCollateral(
-        uint256 maxAmount,
-        uint256 index
-    ) external returns (uint256 collateralAmount, uint256 lpAmount);
+        uint256 maxAmount_,
+        uint256 index_
+    ) external returns (uint256 removedAmount_, uint256 redeemedLP_);
 
     /**
      *  @notice Called by lenders to remove an amount of credit at a specified price bucket.

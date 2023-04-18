@@ -175,8 +175,8 @@ interface IPoolState {
      *  @return depositTime_ Time the user last deposited quote token.
      */
     function lenderInfo(
-        uint256 index,
-        address lp
+        uint256 index_,
+        address lender_
     )
         external
         view
@@ -279,8 +279,8 @@ interface IPoolState {
      *  @return True if the transferor is approved by lender.
      */
     function approvedTransferors(
-        address lender,
-        address transferor
+        address lender_,
+        address transferor_
     ) external view returns (bool);
 
 }
@@ -289,13 +289,17 @@ interface IPoolState {
 /*** State Structs ***/
 /*********************/
 
+/******************/
 /*** Pool State ***/
+/******************/
 
+/// @dev Struct holding inflator state.
 struct InflatorState {
     uint208 inflator;       // [WAD] pool's inflator
     uint48  inflatorUpdate; // [SEC] last time pool's inflator was updated
 }
 
+/// @dev Struct holding pool interest state.
 struct InterestState {
     uint208 interestRate;        // [WAD] pool's interest rate
     uint48  interestRateUpdate;  // [SEC] last time pool's interest rate was updated (not before 12 hours passed)
@@ -306,6 +310,7 @@ struct InterestState {
     uint256 lupt0Debt;           // [WAD] previous LUP * t0 debt
 }
 
+/// @dev Struct holding pool EMAs state.
 struct EmaState {
     uint256 debtEma;             // [WAD] sample of debt EMA, numerator to MAU calculation
     uint256 depositEma;          // [WAD] sample of meaningful deposit EMA, denominator to MAU calculation
@@ -314,12 +319,14 @@ struct EmaState {
     uint256 emaUpdate;           // [SEC] last time pool's EMAs were updated
 }
 
+/// @dev Struct holding pool balances state.
 struct PoolBalancesState {
     uint256 pledgedCollateral; // [WAD] total collateral pledged in pool
     uint256 t0DebtInAuction;   // [WAD] Total debt in auction used to restrict LPB holder from withdrawing
     uint256 t0Debt;            // [WAD] Pool debt as if the whole amount was incurred upon the first loan
 }
 
+/// @dev Struct holding pool params (in memory only).
 struct PoolState {
     uint8   poolType;             // pool type, can be ERC20 or ERC721
     uint256 t0Debt;               // [WAD] t0 debt in pool
@@ -331,13 +338,17 @@ struct PoolState {
     uint256 quoteDustLimit;       // [WAD] quote token dust limit of the pool
 }
 
+/*********************/
 /*** Buckets State ***/
+/*********************/
 
+/// @dev Struct holding lender state.
 struct Lender {
     uint256 lps;         // [WAD] Lender LP accumulator
     uint256 depositTime; // timestamp of last deposit
 }
 
+/// @dev Struct holding bucket state.
 struct Bucket {
     uint256 lps;                        // [WAD] Bucket LP accumulator
     uint256 collateral;                 // [WAD] Available collateral tokens deposited in the bucket
@@ -345,34 +356,45 @@ struct Bucket {
     mapping(address => Lender) lenders; // lender address to Lender struct mapping
 }
 
+/**********************/
 /*** Deposits State ***/
+/**********************/
 
+/// @dev Struct holding deposits (Fenwick) values and scaling.
 struct DepositsState {
     uint256[8193] values;  // Array of values in the FenwickTree.
     uint256[8193] scaling; // Array of values which scale (multiply) the FenwickTree accross indexes.
 }
 
+/*******************/
 /*** Loans State ***/
+/*******************/
 
+/// @dev Struct holding loans state.
 struct LoansState {
     Loan[] loans;
     mapping (address => uint)     indices;   // borrower address => loan index mapping
     mapping (address => Borrower) borrowers; // borrower address => Borrower struct mapping
 }
 
+/// @dev Struct holding loan state.
 struct Loan {
     address borrower;       // borrower address
     uint96  thresholdPrice; // [WAD] Loan's threshold price.
 }
 
+/// @dev Struct holding borrower state.
 struct Borrower {
     uint256 t0Debt;     // [WAD] Borrower debt time-adjusted as if it was incurred upon first loan of pool.
     uint256 collateral; // [WAD] Collateral deposited by borrower.
     uint256 t0Np;       // [WAD] Neutral Price time-adjusted as if it was incurred upon first loan of pool.
 }
 
+/**********************/
 /*** Auctions State ***/
+/**********************/
 
+/// @dev Struct holding pool auctions state.
 struct AuctionsState {
     uint96  noOfAuctions;                         // total number of auctions in pool
     address head;                                 // first address in auction queue
@@ -382,6 +404,7 @@ struct AuctionsState {
     mapping(address => Kicker)      kickers;      // mapping of kicker address and kicker balances
 }
 
+/// @dev Struct holding liquidation state.
 struct Liquidation {
     address kicker;       // address that initiated liquidation
     uint96  bondFactor;   // [WAD] bond factor used to start liquidation
@@ -394,13 +417,17 @@ struct Liquidation {
     bool    alreadyTaken; // true if take has been called on auction
 }
 
+/// @dev Struct holding kicker state.
 struct Kicker {
     uint256 claimable; // [WAD] kicker's claimable balance
     uint256 locked;    // [WAD] kicker's balance of tokens locked in auction bonds
 }
 
-/*** Reserve Auction State ***/
+/******************************/
+/*** Reserve Auctions State ***/
+/******************************/
 
+/// @dev Struct holding reserve auction state.
 struct ReserveAuctionState {
     uint256 kicked;                            // Time a Claimable Reserve Auction was last kicked.
     uint256 unclaimed;                         // [WAD] Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
@@ -410,6 +437,7 @@ struct ReserveAuctionState {
     mapping (uint256 => BurnEvent) burnEvents; // Mapping burnEventEpoch => BurnEvent.
 }
 
+/// @dev Struct holding burn event state.
 struct BurnEvent {
     uint256 timestamp;     // time at which the burn event occured
     uint256 totalInterest; // [WAD] current pool interest accumulator `PoolCommons.accrueInterest().newInterest`

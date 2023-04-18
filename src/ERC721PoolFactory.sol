@@ -14,8 +14,9 @@ import { PoolDeployer } from './base/PoolDeployer.sol';
 
 /**
  *  @title  ERC721 Pool Factory
- *  @notice Pool factory contract for creating ERC721 pools. If a list with token ids is provided then a subset ERC721 pool is created for the NFT.
- *  @notice Pool creators can: create pool by providing a fungible token for quote, a non fungible token for collateral and an interest rate between 1-10%
+ *  @notice Pool factory contract for creating `ERC721` pools. If a list with token ids is provided then a subset `ERC721` pool is created for the `NFT`.
+ *  @notice Pool factory contract for creating `ERC20` pools.  If a list with token ids is provided then a subset `ERC721` pool is created for the `NFT`. Actors actions:
+ *          - `Pool creators`: create pool by providing a fungible token for quote, a non fungible token for collateral and an interest rate between `1%-10%`.
  *  @dev    Reverts if pool is already created or if params to deploy new pool are invalid.
  */
 contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
@@ -24,7 +25,7 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
 
     ERC721Pool public implementation;
 
-    /// @dev Default bytes32 hash used by ERC721 Non-NFTSubset pool types
+    /// @dev Default `bytes32` hash used by `ERC721` `Non-NFTSubset` pool types
     bytes32 public constant ERC721_NON_SUBSET_HASH = keccak256("ERC721_NON_SUBSET_HASH");
 
     constructor(address ajna_) {
@@ -40,15 +41,15 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
      *  @dev  immutable args:
      *          - pool type; ajna, collateral and quote address; quote scale; number of token ids in subset; NFT type
      *  @dev  write state:
-     *          - deployedPools mapping
-     *          - deployedPoolsList array
+     *          - `deployedPools` mapping
+     *          - `deployedPoolsList` array
      *  @dev reverts on:
-     *          - 0x address provided as quote or collateral DeployWithZeroAddress()
-     *          - pool with provided quote / collateral pair already exists PoolAlreadyExists()
-     *          - invalid interest rate provided PoolInterestRateInvalid()
-     *          - not supported NFT provided NFTNotSupported()
+     *          - `0x` address provided as quote or collateral `DeployWithZeroAddress()`
+     *          - pool with provided quote / collateral pair already exists `PoolAlreadyExists()`
+     *          - invalid interest rate provided `PoolInterestRateInvalid()`
+     *          - not supported `NFT` provided `NFTNotSupported()`
      *  @dev emit events:
-     *          - PoolCreated
+     *          - `PoolCreated`
      */
     function deployPool(
         address collateral_, address quote_, uint256[] memory tokenIds_, uint256 interestRate_
@@ -91,10 +92,10 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
     /*******************************/
 
     /**
-     *  @notice Get the hash of the subset of NFTs that will be used to create the pool
-     *  @dev    If no tokenIds are provided, the default ERC721_NON_SUBSET_HASH is returned
-     *  @param  tokenIds_ The array of token ids that will be used to create the pool
-     *  @return bytes32 The hash of the subset of NFTs that will be used to create the pool
+     *  @notice Get the hash of the subset of `NFT`s that will be used to create the pool.
+     *  @dev    If no `tokenIds` are provided, the default `ERC721_NON_SUBSET_HASH` is returned.
+     *  @param  tokenIds_ The array of token ids that will be used to create the pool.
+     *  @return The hash of the subset of `NFT`s that will be used to create the pool.
      */
     function getNFTSubsetHash(uint256[] memory tokenIds_) public pure returns (bytes32) {
         if (tokenIds_.length == 0) return ERC721_NON_SUBSET_HASH;
@@ -110,8 +111,8 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
 
     /**
      *  @notice Check that the array of token ids is sorted in ascending order, else revert.
-     *  @dev    The counters are modified in unchecked blocks due to being bounded by array length
-     *  @param  tokenIds_ The array of token ids to check for sorting
+     *  @dev    The counters are modified in unchecked blocks due to being bounded by array length.
+     *  @param  tokenIds_ The array of token ids to check for sorting.
      */
     function _checkTokenIdSortOrder(uint256[] memory tokenIds_) internal pure {
         for (uint256 i = 0; i < tokenIds_.length - 1; ) {

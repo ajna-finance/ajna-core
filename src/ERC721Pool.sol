@@ -47,17 +47,17 @@ import { TakerActions }    from './libraries/external/TakerActions.sol';
 
 /**
  *  @title  ERC721 Pool contract
- *  @notice Entrypoint of ERC721 Pool actions for pool actors:
- *          - Lenders: add, remove and move quote tokens; transfer LP
- *          - Borrowers: draw and repay debt
- *          - Traders: add, remove and move quote tokens; add and remove collateral
- *          - Kickers: auction undercollateralized loans; settle auctions; claim bond rewards
- *          - Bidders: take auctioned collateral
- *          - Reserve purchasers: start auctions; take reserves
- *          - Flash borrowers: initiate flash loans on ERC20 quote tokens
- *  @dev    Contract is FlashloanablePool with flash loan logic.
- *  @dev    Contract is base Pool with logic to handle ERC721 collateral.
- *  @dev    Calls logic from external PoolCommons, LenderActions, BorrowerActions and auction actions libraries.
+ *  @notice Entrypoint of `ERC721` Pool actions for pool actors:
+ *          - `Lenders`: add, remove and move quote tokens; transfer `LP`
+ *          - `Borrowers`: draw and repay debt
+ *          - `Traders`: add, remove and move quote tokens; add and remove collateral
+ *          - `Kickers`: auction undercollateralized loans; settle auctions; claim bond rewards
+ *          - `Bidders`: take auctioned collateral
+ *          - `Reserve purchasers`: start auctions; take reserves
+ *          - `Flash borrowers`: initiate flash loans on ERC20 quote tokens
+ *  @dev    Contract is `FlashloanablePool` with flashloan logic.
+ *  @dev    Contract is base `Pool` with logic to handle `ERC721` collateral.
+ *  @dev    Calls logic from external `PoolCommons`, `LenderActions`, `BorrowerActions` and `Auction` actions libraries.
  */
 contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
@@ -65,16 +65,19 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     /*** Constants ***/
     /*****************/
 
-    // immutable args offset
-    uint256 internal constant SUBSET   = 93;
+    /// @dev Immutable NFT subset pool arg offset.
+    uint256 internal constant SUBSET = 93;
 
     /***********************/
     /*** State Variables ***/
     /***********************/
 
-    mapping(uint256 => bool)      public tokenIdsAllowed;  // set of tokenIds that can be used for a given NFT Subset type pool
-    mapping(address => uint256[]) public borrowerTokenIds; // borrower address => array of tokenIds pledged by borrower
-    uint256[]                     public bucketTokenIds;   // array of tokenIds added in pool buckets
+    /// @dev Mapping of `tokenIds` allowed in `NFT` Subset type pool.
+    mapping(uint256 => bool)      public tokenIdsAllowed;
+    /// @dev Borrower `address => array` of tokenIds pledged by borrower mapping.
+    mapping(address => uint256[]) public borrowerTokenIds;
+    /// @dev Array of `tokenIds` in pool buckets (claimable from pool).
+    uint256[]                     public bucketTokenIds;
 
     /****************************/
     /*** Initialize Functions ***/
@@ -126,12 +129,12 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     /**
      *  @inheritdoc IERC721PoolBorrowerActions
      *  @dev write state:
-     *          - decrement poolBalances.t0DebtInAuction accumulator
-     *          - increment poolBalances.pledgedCollateral accumulator
-     *          - increment poolBalances.t0Debt accumulator
-     *          - update borrowerTokenIds and bucketTokenIds arrays
+     *          - decrement `poolBalances.t0DebtInAuction` accumulator
+     *          - increment `poolBalances.pledgedCollateral` accumulator
+     *          - increment `poolBalances.t0Debt` accumulator
+     *          - update `borrowerTokenIds` and `bucketTokenIds` arrays
      *  @dev emit events:
-     *          - DrawDebtNFT
+     *          - `DrawDebtNFT`
      */
     function drawDebt(
         address borrowerAddress_,
@@ -195,12 +198,12 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     /**
      *  @inheritdoc IERC721PoolBorrowerActions
      *  @dev write state:
-     *          - decrement poolBalances.t0Debt accumulator
-     *          - decrement poolBalances.t0DebtInAuction accumulator
-     *          - decrement poolBalances.pledgedCollateral accumulator
-     *          - update borrowerTokenIds and bucketTokenIds arrays
+     *          - decrement `poolBalances.t0Debt` accumulator
+     *          - decrement `poolBalances.t0DebtInAuction` accumulator
+     *          - decrement `poolBalances.pledgedCollateral` accumulator
+     *          - update `borrowerTokenIds` and bucketTokenIds` arrays
      *  @dev emit events:
-     *          - RepayDebt
+     *          - `RepayDebt`
      */
     function repayDebt(
         address borrowerAddress_,
@@ -267,46 +270,46 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     /**
      *  @inheritdoc IERC721PoolLenderActions
      *  @dev write state:
-     *          - update bucketTokenIds arrays
+     *          - update `bucketTokenIds` arrays
      *  @dev emit events:
-     *          - AddCollateralNFT
+     *          - `AddCollateralNFT`
      */
     function addCollateral(
-        uint256[] calldata tokenIdsToAdd_,
+        uint256[] calldata tokenIds_,
         uint256 index_,
         uint256 expiry_
-    ) external override nonReentrant returns (uint256 bucketLPs_) {
+    ) external override nonReentrant returns (uint256 bucketLP_) {
         _revertOnExpiry(expiry_);
         PoolState memory poolState = _accruePoolInterest();
 
-        bucketLPs_ = LenderActions.addCollateral(
+        bucketLP_ = LenderActions.addCollateral(
             buckets,
             deposits,
-            Maths.wad(tokenIdsToAdd_.length),
+            Maths.wad(tokenIds_.length),
             index_
         );
 
-        emit AddCollateralNFT(msg.sender, index_, tokenIdsToAdd_, bucketLPs_);
+        emit AddCollateralNFT(msg.sender, index_, tokenIds_, bucketLP_);
 
         // update pool interest rate state
         _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
 
         // move required collateral from sender to pool
-        _transferFromSenderToPool(bucketTokenIds, tokenIdsToAdd_);
+        _transferFromSenderToPool(bucketTokenIds, tokenIds_);
     }
 
     /**
      *  @inheritdoc IERC721PoolLenderActions
      *  @dev write state:
-     *          - update bucketTokenIds arrays
+     *          - update `bucketTokenIds` arrays
      *  @dev emit events:
-     *          - MergeOrRemoveCollateralNFT
+     *          - `MergeOrRemoveCollateralNFT`
      */
     function mergeOrRemoveCollateral(
         uint256[] calldata removalIndexes_,
         uint256 noOfNFTsToRemove_,
         uint256 toIndex_
-    ) external override nonReentrant returns (uint256 collateralMerged_, uint256 bucketLPs_) {
+    ) external override nonReentrant returns (uint256 collateralMerged_, uint256 bucketLP_) {
         _revertIfAuctionClearable(auctions, loans);
 
         PoolState memory poolState = _accruePoolInterest();
@@ -314,7 +317,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
         (
             collateralMerged_,
-            bucketLPs_
+            bucketLP_
         ) = LenderActions.mergeOrRemoveCollateral(
             buckets,
             deposits,
@@ -323,7 +326,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             toIndex_
         );
 
-        emit MergeOrRemoveCollateralNFT(msg.sender, collateralMerged_, bucketLPs_);
+        emit MergeOrRemoveCollateralNFT(msg.sender, collateralMerged_, bucketLP_);
 
         // update pool interest rate state
         _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
@@ -338,27 +341,28 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     /**
      *  @inheritdoc IPoolLenderActions
      *  @dev write state:
-     *          - update bucketTokenIds arrays
+     *          - update `bucketTokenIds` arrays
      *  @dev emit events:
-     *          - RemoveCollateral
+     *          - `RemoveCollateral`
+     *  @param noOfNFTsToRemove_ Number of `NFT` tokens to remove.
      */
     function removeCollateral(
         uint256 noOfNFTsToRemove_,
         uint256 index_
-    ) external override nonReentrant returns (uint256 collateralAmount_, uint256 lpAmount_) {
+    ) external override nonReentrant returns (uint256 removedAmount_, uint256 redeemedLP_) {
         _revertIfAuctionClearable(auctions, loans);
 
         PoolState memory poolState = _accruePoolInterest();
 
-        collateralAmount_ = Maths.wad(noOfNFTsToRemove_);
-        lpAmount_ = LenderActions.removeCollateral(
+        removedAmount_ = Maths.wad(noOfNFTsToRemove_);
+        redeemedLP_ = LenderActions.removeCollateral(
             buckets,
             deposits,
-            collateralAmount_,
+            removedAmount_,
             index_
         );
 
-        emit RemoveCollateral(msg.sender, index_, noOfNFTsToRemove_, lpAmount_);
+        emit RemoveCollateral(msg.sender, index_, noOfNFTsToRemove_, redeemedLP_);
 
         // update pool interest rate state
         _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
@@ -373,9 +377,9 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     /**
      *  @inheritdoc IPoolSettlerActions
      *  @dev write state:
-     *          - decrement poolBalances.t0Debt accumulator
-     *          - decrement poolBalances.t0DebtInAuction accumulator
-     *          - decrement poolBalances.pledgedCollateral accumulator
+     *          - decrement `poolBalances.t0Debt` accumulator
+     *          - decrement `poolBalances.t0DebtInAuction` accumulator
+     *          - decrement `poolBalances.pledgedCollateral` accumulator
      */
     function settle(
         address borrowerAddress_,
@@ -425,9 +429,9 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     /**
      *  @inheritdoc IPoolTakerActions
      *  @dev write state:
-     *          - decrement poolBalances.t0Debt accumulator
-     *          - decrement poolBalances.t0DebtInAuction accumulator
-     *          - decrement poolBalances.pledgedCollateral accumulator
+     *          - decrement `poolBalances.t0Debt` accumulator
+     *          - decrement `poolBalances.t0DebtInAuction` accumulator
+     *          - decrement `poolBalances.pledgedCollateral` accumulator
      */
     function take(
         address        borrowerAddress_,
@@ -503,9 +507,9 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     /**
      *  @inheritdoc IPoolTakerActions
      *  @dev write state:
-     *          - decrement poolBalances.t0Debt accumulator
-     *          - decrement poolBalances.t0DebtInAuction accumulator
-     *          - decrement poolBalances.pledgedCollateral accumulator
+     *          - decrement `poolBalances.t0Debt` accumulator
+     *          - decrement `poolBalances.t0DebtInAuction` accumulator
+     *          - decrement `poolBalances.pledgedCollateral` accumulator
      */
     function bucketTake(
         address borrowerAddress_,
@@ -561,11 +565,11 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     /**************************/
 
     /**
-     *  @notice Rebalance NFT token and transfer difference to floor collateral from borrower to pool claimable array
+     *  @notice Rebalance `NFT` token and transfer difference to floor collateral from borrower to pool claimable array.
      *  @dev    write state:
-     *              - update borrowerTokens and bucketTokenIds arrays
+     *              - update `borrowerTokens` and `bucketTokenIds` arrays
      *  @dev    emit events:
-     *              - RemoveCollateral
+     *              - `RemoveCollateral`
      *  @param  borrowerAddress_    Address of borrower.
      *  @param  borrowerCollateral_ Current borrower collateral to be rebalanced.
      */
@@ -594,10 +598,10 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     }
 
     /**
-     *  @notice Helper function for transferring multiple NFT tokens from msg.sender to pool.
-     *  @notice Reverts in case token id is not supported by subset pool.
-     *  @param  poolTokens_ Array in pool that tracks NFT ids (could be tracking NFTs pledged by borrower or NFTs added by a lender in a specific bucket).
-     *  @param  tokenIds_   Array of NFT token ids to transfer from msg.sender to pool.
+     *  @notice Helper function for transferring multiple `NFT` tokens from msg.sender to pool.
+     *  @dev    Reverts in case token id is not supported by subset pool.
+     *  @param  poolTokens_ Array in pool that tracks `NFT` ids (could be tracking `NFT`s pledged by borrower or `NFT`s added by a lender in a specific bucket).
+     *  @param  tokenIds_   Array of `NFT` token ids to transfer from `msg.sender` to pool.
      */
     function _transferFromSenderToPool(
         uint256[] storage poolTokens_,
@@ -617,11 +621,11 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     }
 
     /**
-     *  @notice Helper function for transferring multiple NFT tokens from pool to given address.
-     *  @notice It transfers NFTs from the most recent one added into the pool (pop from array tracking NFTs in pool).
+     *  @notice Helper function for transferring multiple `NFT` tokens from pool to given address.
+     *  @dev    It transfers `NFT`s from the most recent one added into the pool (pop from array tracking `NFT`s in pool).
      *  @param  toAddress_      Address where pool should transfer tokens to.
-     *  @param  poolTokens_     Array in pool that tracks NFT ids (could be tracking NFTs pledged by borrower or NFTs added by a lender in a specific bucket).
-     *  @param  amountToRemove_ Number of NFT tokens to transfer from pool to given address.
+     *  @param  poolTokens_     Array in pool that tracks `NFT` ids (could be tracking `NFT`s pledged by borrower or `NFT`s added by a lender in a specific bucket).
+     *  @param  amountToRemove_ Number of `NFT` tokens to transfer from pool to given address.
      *  @return Array containing token ids that were transferred from pool to address.
      */
     function _transferFromPoolToAddress(
@@ -648,11 +652,11 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     }
 
     /**
-     *  @dev Helper function to transfer an NFT from owner to target address (reused in code to reduce contract deployment bytecode size).
-     *  @dev Since transferFrom is used instead of safeTransferFrom, calling smart contracts must be careful to check that they support any received NFTs.
-     *  @param from_    NFT owner address.
-     *  @param to_      New NFT owner address.
-     *  @param tokenId_ NFT token id to be transferred.
+     *  @notice Helper function to transfer an `NFT` from owner to target address (reused in code to reduce contract deployment bytecode size).
+     *  @dev    Since `transferFrom` is used instead of `safeTransferFrom`, calling smart contracts must be careful to check that they support any received `NFT`s.
+     *  @param  from_    `NFT` owner address.
+     *  @param  to_      New `NFT` owner address.
+     *  @param  tokenId_ `NFT` token id to be transferred.
      */
     function _transferNFT(address from_, address to_, uint256 tokenId_) internal {
         // slither-disable-next-line calls-loop

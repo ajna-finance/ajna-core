@@ -46,7 +46,7 @@ interface IPoolKickerActions {
     /***********************/
 
     /**
-     *  @notice Called by actor to start a Claimable Reserve Auction (CRA).
+     *  @notice Called by actor to start a `Claimable Reserve Auction` (`CRA`).
      */
     function kickReserveAuction() external;
 }
