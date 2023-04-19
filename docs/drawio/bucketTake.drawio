@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2023-04-18T06:31:19.027Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/112.0" etag="5NSluXj7iqME5ixExWyS" version="21.1.8" type="device">
+<mxfile host="app.diagrams.net" modified="2023-04-19T04:56:00.459Z" agent="Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/112.0" version="21.1.9" etag="qqc42GKUYHlkn5nOCzpD" type="device">
   <diagram name="Page-1" id="13e1069c-82ec-6db2-03f1-153e76fe0fe0">
     <mxGraphModel dx="2534" dy="790" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" background="none" math="0" shadow="0">
       <root>
@@ -112,7 +112,7 @@
             <mxPoint x="155" y="347" as="sourcePoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="4Fi33i3VNf01kXt7bkc9-24" value="take(borrower, collateral)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontFamily=Verdana;" parent="4Fi33i3VNf01kXt7bkc9-23" vertex="1" connectable="0">
+        <mxCell id="4Fi33i3VNf01kXt7bkc9-24" value="&lt;div&gt;bucketTake&lt;/div&gt;&lt;div&gt;(borrower, collateral)&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;fontFamily=Verdana;" parent="4Fi33i3VNf01kXt7bkc9-23" vertex="1" connectable="0">
           <mxGeometry x="-0.1515" y="-2" relative="1" as="geometry">
             <mxPoint x="9" y="-1" as="offset" />
           </mxGeometry>
@@ -225,7 +225,7 @@
         <mxCell id="OZIXumOx-P3Wxb6WJyRX-19" value="&lt;div&gt;remove amount from Fenwick Tree&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;update values array&lt;br&gt;&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=10;" parent="1" vertex="1">
           <mxGeometry x="682" y="442" width="170" height="58" as="geometry" />
         </mxCell>
-        <mxCell id="KZQ-e0Mt4PpiLpDVvZ3g-2" value="decrement poolBalances.t0Debt&lt;br&gt;decrement poolBalances.t0DebtInAuction&lt;br&gt;&lt;div&gt;decrement poolBalances.pledgedCollateral&lt;/div&gt;&lt;div&gt;update interestState.t0Debt2ToCollateral&lt;br&gt;&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=10;" vertex="1" parent="1">
+        <mxCell id="KZQ-e0Mt4PpiLpDVvZ3g-2" value="decrement poolBalances.t0Debt&lt;br&gt;decrement poolBalances.t0DebtInAuction&lt;br&gt;&lt;div&gt;decrement poolBalances.pledgedCollateral&lt;/div&gt;&lt;div&gt;update interestState.t0Debt2ToCollateral&lt;br&gt;&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=10;" parent="1" vertex="1">
           <mxGeometry x="-100" y="590" width="235" height="54" as="geometry" />
         </mxCell>
       </root>
