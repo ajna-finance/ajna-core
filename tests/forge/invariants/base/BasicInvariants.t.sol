@@ -13,7 +13,7 @@ import { BaseInvariants } from '../base/BaseInvariants.sol';
 abstract contract BasicInvariants is BaseInvariants {
 
     // checks pool lps are equal to sum of all lender lps in a bucket 
-    function invariant_Lps_B1() public useCurrentTimestamp {
+    function invariant_Lps_B1_B4() public useCurrentTimestamp {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
@@ -53,7 +53,7 @@ abstract contract BasicInvariants is BaseInvariants {
     }
 
     // checks if lender deposit timestamp is updated when lps are added into lender lp balance
-    function invariant_Bucket_deposit_time_B4_B5_B6() public useCurrentTimestamp {
+    function invariant_Bucket_deposit_time_B5_B6_B7() public useCurrentTimestamp {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {

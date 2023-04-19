@@ -31,7 +31,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         try _pool.addQuoteToken(amount_, bucketIndex_, block.timestamp + 1 minutes) {
         
-            // **B4**: when adding quote tokens: lender deposit time  = timestamp of block when deposit happened
+            // **B5**: when adding quote tokens: lender deposit time  = timestamp of block when deposit happened
             lenderDepositTime[_actor][bucketIndex_] = block.timestamp;
             // **R3**: Exchange rates are unchanged by depositing quote token into a bucket
             exchangeRateShouldNotChange[bucketIndex_] = true;
@@ -97,7 +97,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             (, uint256 fromBucketDepositTime) = _pool.lenderInfo(fromIndex_, _actor);
             (, uint256 toBucketDepositTime)   = _pool.lenderInfo(toIndex_,    _actor);
             
-            // **B4**: when moving quote tokens: lender deposit time = timestamp of block when move happened
+            // **B5**: when moving quote tokens: lender deposit time = timestamp of block when move happened
             lenderDepositTime[_actor][toIndex_] = Maths.max(fromBucketDepositTime, toBucketDepositTime);
             // **RE3**: Reserves increase only when moving quote tokens into a bucket below LUP.
             increaseInReserves += amount_ - movedAmount_;
@@ -142,7 +142,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             (, uint256 senderDepositTime)   = _pool.lenderInfo(bucketIndex_, sender_);
             (, uint256 receiverDepositTime) = _pool.lenderInfo(bucketIndex_, receiver_);
 
-            // **B5**: when receiving transferred LP : receiver deposit time (`Lender.depositTime`) = max of sender and receiver deposit time
+            // **B6**: when receiving transferred LP : receiver deposit time (`Lender.depositTime`) = max of sender and receiver deposit time
             lenderDepositTime[receiver_][bucketIndex_] = Maths.max(senderDepositTime, receiverDepositTime);
 
         } catch (bytes memory err) {

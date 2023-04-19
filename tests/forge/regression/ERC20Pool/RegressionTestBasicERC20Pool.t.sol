@@ -188,7 +188,7 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
     function test_regression_transferLps_1() external {
         _basicERC20PoolHandler.transferLps(0, 1, 200, 2570);
 
-        invariant_Bucket_deposit_time_B4_B5_B6();
+        invariant_Bucket_deposit_time_B5_B6_B7();
     }
 
     function test_regression_transferLps_2() external {
@@ -201,7 +201,7 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
     function test_regression_transferLps_3() external {
         _basicERC20PoolHandler.transferLps(1795, 6198, 3110, 11449);
 
-        invariant_Bucket_deposit_time_B4_B5_B6();
+        invariant_Bucket_deposit_time_B5_B6_B7();
         invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
