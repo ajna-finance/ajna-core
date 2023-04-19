@@ -64,7 +64,7 @@ abstract contract BasicInvariants is BaseInvariants {
 
                 require(
                     depositTime == IBaseHandler(_handler).lenderDepositTime(lender, bucketIndex),
-                    "Buckets Invariant B4, B5 or B6"
+                    "Buckets Invariant B5, B6 or B7"
                 );
             }   
         }
