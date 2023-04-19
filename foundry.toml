@@ -25,6 +25,6 @@ runs = 300
 
 [invariant]
 runs           = 1000   # Number of times that a sequence of function calls is generated and run
-depth          = 20    # Number of function calls made in a given run.
+depth          = 20     # Number of function calls made in a given run.
 call_override  = false  # Override calls
-fail_on_revert = true  # Fail the test if the contract reverts
+fail_on_revert = true   # Fail the test if the contract reverts

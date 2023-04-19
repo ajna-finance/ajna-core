@@ -36,6 +36,14 @@ make test-invariant-erc721 QUOTE_PRECISION=<quote_precision>
 ```bash
 make test-invariant-erc20-precision
 ```
+- run ERC20 Pool invariant tests for multiple bucket ranges:
+```bash
+make test-invariant-erc20-buckets
+```
+- run ERC721 Pool invariant tests for multiple bucket ranges:
+```bash
+make test-invariant-erc721-buckets
+```
 - run regression test for both ERC20 and ERC721 Pool:
 ```bash
 make test-regression
