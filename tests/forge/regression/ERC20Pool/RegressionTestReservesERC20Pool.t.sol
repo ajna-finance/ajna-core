@@ -3,7 +3,6 @@
 pragma solidity 0.8.14;
 
 import { ReserveERC20PoolInvariants } from "../../invariants/ERC20Pool/ReserveERC20PoolInvariants.t.sol";
-import "@std/console.sol";
 
 contract RegressionTestReserveERC20Pool is ReserveERC20PoolInvariants { 
 

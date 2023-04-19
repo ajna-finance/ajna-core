@@ -102,7 +102,7 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
             lenderDepositTime[_actor][toIndex_] = Maths.max(fromBucketDepositTime, toBucketDepositTime);
             // **RE3**: Reserves increase only when moving quote tokens into a bucket below LUP.
             // movedAmount_ can be greater than amount_ in case when bucket gets empty by moveQuoteToken
-            if(amount_ > movedAmount_) increaseInReserves += amount_ - movedAmount_;
+            if (amount_ > movedAmount_) increaseInReserves += amount_ - movedAmount_;
 
             _fenwickRemove(amount_, fromIndex_);
             _fenwickAdd(movedAmount_, toIndex_);
