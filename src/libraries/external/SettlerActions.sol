@@ -47,7 +47,6 @@ library SettlerActions {
     struct SettleLocalVars {
         uint256 collateralUsed;     // [WAD] collateral used to settle debt
         uint256 debt;               // [WAD] debt to settle
-        uint256 depositToRemove;    // [WAD] deposit used by settle auction
         uint256 hpbCollateral;      // [WAD] amount of collateral in HPB bucket
         uint256 hpbUnscaledDeposit; // [WAD] unscaled amount of of quote tokens in HPB bucket before settle
         uint256 hpbLPs;             // [WAD] amount of LP in HPB bucket
@@ -369,6 +368,7 @@ library SettlerActions {
                 // remove settled collateral from loan
                 remainingCollateral_ -= vars.collateralUsed;
 
+                // use HPB bucket to swap loan collateral for loan debt
                 Bucket storage hpb = buckets_[vars.index];
                 vars.hpbLPs        = hpb.lps;
                 vars.hpbCollateral = hpb.collateral + vars.collateralUsed;
@@ -431,35 +431,34 @@ library SettlerActions {
 
         // loop through remaining buckets if there's still debt to forgive
         while (params_.bucketDepth != 0 && remainingt0Debt_ != 0) {
-            SettleLocalVars memory vars;
 
-            (vars.index, , vars.scale) = Deposits.findIndexAndSumOfSum(deposits_, 1);
-            vars.unscaledDeposit       = Deposits.unscaledValueAt(deposits_, vars.index);
-            vars.depositToRemove       = Maths.wmul(vars.scale, vars.unscaledDeposit);
-            vars.debt                  = Maths.wmul(remainingt0Debt_, inflator_);
+            (uint256 index, , uint256 scale) = Deposits.findIndexAndSumOfSum(deposits_, 1);
+            uint256 unscaledDeposit          = Deposits.unscaledValueAt(deposits_, index);
+            uint256 depositToRemove          = Maths.wmul(scale, unscaledDeposit);
+            uint256 debt                     = Maths.wmul(remainingt0Debt_, inflator_);
 
-            // enough deposit in bucket to forgive entire debt
-            if (vars.depositToRemove >= vars.debt) {
-                Deposits.unscaledRemove(deposits_, vars.index, Maths.wdiv(vars.debt, vars.scale));
+            // 1) bucket deposit covers entire loan debt to settle, no constraints needed
+            if (depositToRemove >= debt) {
+                Deposits.unscaledRemove(deposits_, index, Maths.wdiv(debt, scale));
                 // no remaining debt to forgive
                 remainingt0Debt_ = 0;
 
-            // not enough deposit to forgive entire debt, we forgive only deposit amount
+            // 2) loan debt to settle exceeds bucket deposit, bucket deposit is the constraint
             } else {
                 // subtract from remaining debt the corresponding t0 amount of deposit
-                remainingt0Debt_ -= Maths.floorWdiv(vars.depositToRemove, inflator_);
+                remainingt0Debt_ -= Maths.floorWdiv(depositToRemove, inflator_);
 
                 // Remove all deposit from bucket
-                Deposits.unscaledRemove(deposits_, vars.index, vars.unscaledDeposit);
+                Deposits.unscaledRemove(deposits_, index, unscaledDeposit);
 
-                Bucket storage hpbBucket = buckets_[vars.index];
+                Bucket storage hpbBucket = buckets_[index];
                 if (hpbBucket.collateral == 0) {
                     // existing LP for the bucket shall become unclaimable
                     hpbBucket.lps            = 0;
                     hpbBucket.bankruptcyTime = block.timestamp;
 
                     emit BucketBankruptcy(
-                        vars.index,
+                        index,
                         hpbBucket.lps
                     );
                 }
