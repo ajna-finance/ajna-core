@@ -460,7 +460,10 @@ contract RegressionTestReserveERC20Pool is ReserveERC20PoolInvariants {
         _reserveERC20PoolHandler.kickWithDeposit(2999999999999999574088451549152362060347655934, 48090144344287028180951883593);
     }
 
-    //  Test reverting with overflow in (tu + mau102 - 1e18) ** 2) calculation in _calculateInterestRate
+    /*
+        Test was reverting with overflow in `(tu + mau102 - 1e18) ** 2)` calculation in _calculateInterestRate
+        Fixed by updating `((tu + mau102 - 1e18) ** 2) / 1e18` to `((tu / 1e9 + mau102 / 1e9 - 1e9) ** 2)`
+    */
     function test_regression_evm_revert_3() external {
         _reserveERC20PoolHandler.drawDebt(1000011592650618236, 427626464706163901647666438633);
         _reserveERC20PoolHandler.takeReserves(115792089237316195423570985008687907853269984665640564039457584007913129639933, 1);
@@ -481,15 +484,6 @@ contract RegressionTestReserveERC20Pool is ReserveERC20PoolInvariants {
         _reserveERC20PoolHandler.pledgeCollateral(3990116583418393958345352592252524240487111685089080421377559185333257001186, 63643723788868280847);
         _reserveERC20PoolHandler.drawDebt(2420222920583996676329196545, 1);
         _reserveERC20PoolHandler.transferLps(2999999999999999866089865785362154170272346882, 1201303985144971, 3000000000000000000069282600099281847535823208, 2516);
-        
-        /*  Logs for _calculateInterestRate in updateInterestState in kickAution
-            debtColEma_   = 183343603958589523158159097385150007651378619373588176007
-            lupt0DebtEma_ = 5926375911632434376017224226705215
-            tu            = 30936883973005872027744522863737652631073 (~ 3 * 1e40)
-            mau102        = 1020000000000000000
-            (tu + mau102 - 1e18) = 30936883973005872027744542863737652631073  (~ 3 * 1e40)
-            Overflow with (tu + mau102 - 1e18) ** 2)
-        */
         _reserveERC20PoolHandler.kickAuction(11585421328272707882885111971840751049901594256465502255118203311426017450, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 115792089237316195423570985008687907853269984665640564039457584007913129639935);
     }
 }
