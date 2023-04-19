@@ -27,8 +27,7 @@ contract RegressionTestReserveERC721Pool is ReserveERC721PoolInvariants {
         invariant_CT4();
     }
 
-    // FIXME: Failing due to rebalance of tokens in case of partial settle
-    function _test_regression_CT4_2() external {
+    function test_regression_CT4_2() external {
         _reserveERC721PoolHandler.drawDebt(0, 3);
         _reserveERC721PoolHandler.addQuoteToken(110722066303045195479382873847756822996893052638415787811385263327686542008, 2595467720355805256177, 44804955487212801727231000414524018578);
         _reserveERC721PoolHandler.moveQuoteToken(43739203749898257092507987414800731, 45406433371816793948702636, 12374955966170596958032853251, 781);

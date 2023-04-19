@@ -206,10 +206,11 @@ library SettlerActions {
 
             uint256 assets      = Maths.wmul(poolState_.t0Debt - result_.t0DebtSettled + borrower.t0Debt, poolState_.inflator) + params_.poolBalance;
             uint256 liabilities = Deposits.treeSum(deposits_) + auctions_.totalBondEscrowed + reserveAuction_.unclaimed;
-            uint256 reserves    = (assets > liabilities) ? (assets - liabilities) : 0;
 
-            // settle debt from reserves -- round reserves down however
-            borrower.t0Debt -= Maths.min(borrower.t0Debt, Maths.floorWdiv(reserves, poolState_.inflator));
+            // settle debt from reserves (assets - liabilities) if reserves positive, round reserves down however
+            if (assets > liabilities) {
+                borrower.t0Debt -= Maths.min(borrower.t0Debt, Maths.floorWdiv(assets - liabilities, poolState_.inflator));
+            }
 
             // if there's still debt after settling from reserves then start to forgive amount from next HPB
             // loop through remaining buckets if there's still debt to settle
