@@ -324,15 +324,18 @@ contract RegressionTestLiquidationERC20Pool is LiquidationERC20PoolInvariants {
         _liquidationERC20PoolHandler.removeCollateral(1, 5658503566441554287849, 301974090866276112427896384335355);
         
         /* Logs for t0Debt2ToCollateral, dwatp calculation in `drawDebt(AmountToBorrow: 0 ,collateralPledged: 1)`
-            colPreAction_                                         = 0
-            colPostAction_                                        = 1
-            debt2ColAccumPreAction                                = 0
-            debt2ColAccumPostAction                               = 731968601380048024642438738674823616825204760499344279586756
-            t0Debt2ToCollateral Before _updateT0Debt2ToCollateral = 2387420128063989411532277676228153
-            t0Debt2ToCollateral After _updateT0Debt2ToCollateral  = 731968601380048024642438741062243744889194172031621955814909
-            inflator_                                             = 1140475256675307106
-            t0Debt2ToCollateral_                                  = 731968601380048024642438741062243744889194172031621955814909
-            t0Debt_                                               = 1783948099616302823918411453377
+            Time skipped after previous t0Debt2ToCollateral update = 2 hours
+            colPreAction_                                          = 0
+            colPostAction_                                         = 1
+            debtPreAction_                                         = 855551635718176874927403250766
+            debtPostAction_                                        = 855551635718176874927403250766
+            debt2ColAccumPreAction                                 = 0
+            debt2ColAccumPostAction                                = 731968601380048024642438738674823616825204760499344279586756
+            t0Debt2ToCollateral Before _updateT0Debt2ToCollateral  = 2387420128063989411532277676228153
+            t0Debt2ToCollateral After _updateT0Debt2ToCollateral   = 731968601380048024642438741062243744889194172031621955814909
+            inflator_                                              = 1140475256675307106
+            t0Debt2ToCollateral_                                   = 731968601380048024642438741062243744889194172031621955814909
+            t0Debt_                                                = 1783948099616302823918411453377
         */
         _liquidationERC20PoolHandler.pledgeCollateral(115792089237316195423570985008687907853269984665640564039457584007913129639934, 1);
     }
