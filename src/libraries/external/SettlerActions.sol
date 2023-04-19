@@ -82,10 +82,10 @@ library SettlerActions {
     /***************************/
 
     /**
-     *  @notice Settles the debt of the given loan / borrower using following steps:
-     *          1. settle debt with `HPB`s deposit
-     *          2. settle debt with pool reserves (if there's still debt and no collateral left after step 1)
-     *          3. forgive bad debt from next `HPB` (if there's still debt after step 2)
+     *  @notice Settles the debt of the given loan / borrower by performing following steps:
+     *          1. settle debt with `HPB`s deposit, up to specified buckets depth.
+     *          2. settle debt with pool reserves (if there's still debt and no collateral left after step 1).
+     *          3. forgive bad debt from next `HPB`, up to remaining buckets depth (and if there's still debt after step 2).
      *  @dev    write state:
      *          - Deposits.unscaledRemove() (remove amount in Fenwick tree, from index):
      *              - update values array state
@@ -403,7 +403,8 @@ library SettlerActions {
                     remainingCollateral_,
                     vars.price
                 );
-                remainingCollateral_ = 0; // entire collateral added into bucket
+                // entire collateral added into bucket, no borrower pledged collateral remaining
+                remainingCollateral_ = 0;
             }
 
             --bucketDepth_;
@@ -412,11 +413,11 @@ library SettlerActions {
 
     /**
      *  @notice Called to forgive bad debt starting from next `HPB`.
-     *  @param  buckets_             Struct for pool buckets state.
-     *  @param  deposits_            Struct for pool deposits state.
-     *  @param  params_              Struct containing params for settle action.
-     *  @param  borrower_            Struct containing borrower details.
-     *  @param  inflator_            Current pool inflator.
+     *  @param  buckets_         Struct for pool buckets state.
+     *  @param  deposits_        Struct for pool deposits state.
+     *  @param  params_          Struct containing params for settle action.
+     *  @param  borrower_        Struct containing borrower details.
+     *  @param  inflator_        Current pool inflator.
      *  @return remainingt0Debt_ Remaining borrower `t0` debt after forgiving bad debt in case not enough buckets used.
      */
     function _forgiveBadDebt(
