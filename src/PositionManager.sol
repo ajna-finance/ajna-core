@@ -76,7 +76,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
     /// @dev Struct used for `moveLiquidity` function local vars.
     struct MoveLiquidityLocalVars {
-        uint256 bucketLPs;        // [WAD] amount of LP in from bucket
+        uint256 bucketLP;         // [WAD] amount of LP in from bucket
         uint256 bucketCollateral; // [WAD] amount of collateral in from bucket
         uint256 bankruptcyTime;   // from bucket bankruptcy time
         uint256 bucketDeposit;    // [WAD] from bucket deposit
@@ -275,7 +275,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
         // retrieve info of bucket from which liquidity is moved  
         (
-            vars.bucketLPs,
+            vars.bucketLP,
             vars.bucketCollateral,
             vars.bankruptcyTime,
             vars.bucketDeposit,
@@ -286,7 +286,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
         // calculate the max amount of quote tokens that can be moved, given the tracked LP
         vars.maxQuote = _lpToQuoteToken(
-            vars.bucketLPs,
+            vars.bucketLP,
             vars.bucketCollateral,
             vars.bucketDeposit,
             fromPosition.lps,

@@ -51,7 +51,7 @@ library SettlerActions {
         uint256 depositToRemove;    // [WAD] deposit used by settle auction
         uint256 hpbCollateral;      // [WAD] amount of collateral in HPB bucket
         uint256 hpbUnscaledDeposit; // [WAD] unscaled amount of of quote tokens in HPB bucket before settle
-        uint256 hpbLPs;             // [WAD] amount of LP in HPB bucket
+        uint256 hpbLP;              // [WAD] amount of LP in HPB bucket
         uint256 index;              // index of settling bucket
         uint256 maxSettleableDebt;  // [WAD] max amount that can be settled with existing collateral
         uint256 price;              // [WAD] price of settling bucket
@@ -66,7 +66,7 @@ library SettlerActions {
 
     // See `IPoolEvents` for descriptions
     event AuctionSettle(address indexed borrower, uint256 collateral);
-    event AuctionNFTSettle(address indexed borrower, uint256 collateral, uint256 lps, uint256 index);
+    event AuctionNFTSettle(address indexed borrower, uint256 collateral, uint256 lp, uint256 index);
     event BucketBankruptcy(uint256 indexed index, uint256 lpForfeited);
     event Settle(address indexed borrower, uint256 settledDebt);
 
@@ -161,7 +161,7 @@ library SettlerActions {
                 borrower.collateral -= vars.collateralUsed;
 
                 Bucket storage hpb = buckets_[vars.index];
-                vars.hpbLPs        = hpb.lps;
+                vars.hpbLP         = hpb.lps;
                 vars.hpbCollateral = hpb.collateral + vars.collateralUsed;
 
                 // set amount to remove as min of calculated amount and available deposit (to prevent rounding issues)
@@ -171,14 +171,14 @@ library SettlerActions {
                 // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
                 Deposits.unscaledRemove(deposits_, vars.index, vars.unscaledDeposit);
 
-                // check if bucket healthy - set bankruptcy if collateral is 0 and entire deposit was used to settle and there's still LPs
-                if (vars.hpbCollateral == 0 && vars.hpbUnscaledDeposit == 0 && vars.hpbLPs != 0) {
+                // check if bucket healthy - set bankruptcy if collateral is 0 and entire deposit was used to settle and there's still LP
+                if (vars.hpbCollateral == 0 && vars.hpbUnscaledDeposit == 0 && vars.hpbLP != 0) {
                     hpb.lps            = 0;
                     hpb.bankruptcyTime = block.timestamp;
 
                     emit BucketBankruptcy(
                         vars.index,
-                        vars.hpbLPs
+                        vars.hpbLP
                     );
                 } else {
                     // add settled collateral into bucket
@@ -302,7 +302,7 @@ library SettlerActions {
     ) internal returns (uint256 remainingCollateral_, uint256 compensatedCollateral_) {
 
         if (poolType_ == uint8(PoolType.ERC721)) {
-            uint256 lps;
+            uint256 lp;
             uint256 bucketIndex;
 
             remainingCollateral_ = (borrowerCollateral_ / Maths.WAD) * Maths.WAD; // floor collateral of borrower
@@ -323,7 +323,7 @@ library SettlerActions {
                 bucketIndex = auctionPrice > MIN_PRICE ? _indexOf(auctionPrice) : MAX_FENWICK_INDEX;
 
                 // deposit collateral in bucket and reward LP to compensate fractional collateral
-                lps = Buckets.addCollateral(
+                lp = Buckets.addCollateral(
                     buckets_[bucketIndex],
                     borrowerAddress_,
                     Deposits.valueAt(deposits_, bucketIndex),
@@ -335,7 +335,7 @@ library SettlerActions {
             emit AuctionNFTSettle(
                 borrowerAddress_,
                 remainingCollateral_,
-                lps,
+                lp,
                 bucketIndex
             );
 

@@ -101,7 +101,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
             uint256 price,
             uint256 quoteTokens,
             uint256 collateral,
-            uint256 bucketLPs,
+            uint256 bucketLP,
             uint256 scale,
             uint256 exchangeRate
         ) = _poolUtils.bucketInfo(address(_pool), 5000);
@@ -109,7 +109,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         assertEq(price,        0.014854015662334135 * 1e18);
         assertEq(quoteTokens,  0);
         assertEq(collateral,   0);
-        assertEq(bucketLPs,    0);
+        assertEq(bucketLP,     0);
         assertEq(scale,        1 * 1e18);
         assertEq(exchangeRate, 1 * 1e18);
 
@@ -117,14 +117,14 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
             price,
             quoteTokens,
             collateral,
-            bucketLPs,
+            bucketLP,
             scale,
             exchangeRate
         ) = _poolUtils.bucketInfo(address(_pool), high);
         assertEq(price,        2_995.912459898389633881 * 1e18);
         assertEq(quoteTokens,  10_000 * 1e18);
         assertEq(collateral,   0);
-        assertEq(bucketLPs,    10_000 * 1e18);
+        assertEq(bucketLP,     10_000 * 1e18);
         assertEq(scale,        1 * 1e18);
         assertEq(exchangeRate, 1 * 1e18);
     }
@@ -227,7 +227,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
         assertEq(_poolUtils.unutilizedDepositFeeRate(address(_pool)), 0.000136986301369863 * 1e18);
     }
 
-    function testPoolInfoUtilsLPsToCollateralAndQuote() external {
+    function testPoolInfoUtilsLPToCollateralAndQuote() external {
         assertEq(
             _poolUtils.lpToCollateral(
                 address(_pool),

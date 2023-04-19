@@ -178,12 +178,12 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.memorializePositions(memorializeParams);
 
         // check memorialization success
-        uint256 positionAtPriceOneLPs = _positionManager.getLP(tokenId, indexes[0]);
-        assertGt(positionAtPriceOneLPs, 0);
+        uint256 positionAtPriceOneLP = _positionManager.getLP(tokenId, indexes[0]);
+        assertGt(positionAtPriceOneLP, 0);
 
         // check lps at non added to price
-        uint256 positionAtWrongPriceLPs = _positionManager.getLP(tokenId, uint256(MAX_BUCKET_INDEX));
-        assertEq(positionAtWrongPriceLPs, 0);
+        uint256 positionAtWrongPriceLP = _positionManager.getLP(tokenId, uint256(MAX_BUCKET_INDEX));
+        assertEq(positionAtWrongPriceLP, 0);
 
         assertTrue(_positionManager.isIndexInPosition(tokenId, 2550));
         assertTrue(_positionManager.isIndexInPosition(tokenId, 2551));

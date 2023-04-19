@@ -443,9 +443,9 @@ contract PoolInfoUtils {
         uint256 index_
     ) external view returns (uint256 quoteAmount_) {
         IPool pool = IPool(ajnaPool_);
-        (uint256 bucketLPs_, uint256 bucketCollateral , , uint256 bucketDeposit, ) = pool.bucketInfo(index_);
+        (uint256 bucketLP_, uint256 bucketCollateral , , uint256 bucketDeposit, ) = pool.bucketInfo(index_);
         quoteAmount_ = _lpToQuoteToken(
-            bucketLPs_,
+            bucketLP_,
             bucketCollateral,
             bucketDeposit,
             lp_,
@@ -466,10 +466,10 @@ contract PoolInfoUtils {
         uint256 index_
     ) external view returns (uint256 collateralAmount_) {
         IPool pool = IPool(ajnaPool_);
-        (uint256 bucketLPs_, uint256 bucketCollateral , , uint256 bucketDeposit, ) = pool.bucketInfo(index_);
+        (uint256 bucketLP_, uint256 bucketCollateral , , uint256 bucketDeposit, ) = pool.bucketInfo(index_);
         collateralAmount_ = _lpToCollateral(
             bucketCollateral,
-            bucketLPs_,
+            bucketLP_,
             bucketDeposit,
             lp_,
             _priceAt(index_)

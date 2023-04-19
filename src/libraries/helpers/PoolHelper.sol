@@ -187,7 +187,7 @@ import { Maths }   from '../internal/Maths.sol';
      *  @param  bucketCollateral_ Amount of collateral in bucket.
      *  @param  bucketLP_         Amount of `LP` in bucket.
      *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / `LP`.
-     *  @param  lenderLPsBalance_ The amount of LP to calculate collateral for.
+     *  @param  lenderLPBalance_  The amount of `LP` to calculate collateral for.
      *  @param  bucketPrice_      Bucket's price.
      *  @return collateralAmount_ Amount of collateral calculated for the given `LP `amount.
      */
@@ -195,13 +195,13 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 bucketCollateral_,
         uint256 bucketLP_,
         uint256 deposit_,
-        uint256 lenderLPsBalance_,
+        uint256 lenderLPBalance_,
         uint256 bucketPrice_
     ) pure returns (uint256 collateralAmount_) {
-        // max collateral to lps
+        // max collateral to lp
         uint256 rate = Buckets.getExchangeRate(bucketCollateral_, bucketLP_, deposit_, bucketPrice_);
 
-        collateralAmount_ = Maths.wdiv(Maths.wmul(lenderLPsBalance_, rate), bucketPrice_);
+        collateralAmount_ = Maths.wdiv(Maths.wmul(lenderLPBalance_, rate), bucketPrice_);
 
         if (collateralAmount_ > bucketCollateral_) {
             // user is owed more collateral than is available in the bucket
@@ -214,7 +214,7 @@ import { Maths }   from '../internal/Maths.sol';
      *  @param  bucketLP_         Amount of `LP` in bucket.
      *  @param  bucketCollateral_ Amount of collateral in bucket.
      *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / `LP`.
-     *  @param  lenderLPsBalance_ The amount of `LP` to calculate quote token amount for.
+     *  @param  lenderLPBalance_  The amount of `LP` to calculate quote token amount for.
      *  @param  maxQuoteToken_    The max quote token amount to calculate `LP` for.
      *  @param  bucketPrice_      Bucket's price.
      *  @return quoteTokenAmount_ Amount of quote tokens calculated for the given `LP` amount.
@@ -223,13 +223,13 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 bucketLP_,
         uint256 bucketCollateral_,
         uint256 deposit_,
-        uint256 lenderLPsBalance_,
+        uint256 lenderLPBalance_,
         uint256 maxQuoteToken_,
         uint256 bucketPrice_
     ) pure returns (uint256 quoteTokenAmount_) {
         uint256 rate = Buckets.getExchangeRate(bucketCollateral_, bucketLP_, deposit_, bucketPrice_);
 
-        quoteTokenAmount_ = Maths.wmul(lenderLPsBalance_, rate);
+        quoteTokenAmount_ = Maths.wmul(lenderLPBalance_, rate);
 
         if (quoteTokenAmount_ > deposit_)       quoteTokenAmount_ = deposit_;
         if (quoteTokenAmount_ > maxQuoteToken_) quoteTokenAmount_ = maxQuoteToken_;

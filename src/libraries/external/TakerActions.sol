@@ -619,25 +619,25 @@ library TakerActions {
         );
 
         uint256 bankruptcyTime = bucket.bankruptcyTime;
-        uint256 totalLPsReward;
+        uint256 totalLPReward;
 
         // if arb take - taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
         if (!depositTake_) {
             uint256 takerReward = Maths.wmul(vars.collateralAmount, vars.bucketPrice - vars.auctionPrice);
 
-            totalLPsReward = Maths.wdiv(takerReward, exchangeRate);
+            totalLPReward = Maths.wdiv(takerReward, exchangeRate);
 
-            Buckets.addLenderLP(bucket, bankruptcyTime, msg.sender, totalLPsReward);
+            Buckets.addLenderLP(bucket, bankruptcyTime, msg.sender, totalLPReward);
         }
 
-        uint256 kickerLPsReward;
+        uint256 kickerLPReward;
 
         // the bondholder/kicker is awarded bond change worth of LPB in the bucket
         if (vars.isRewarded) {
-            kickerLPsReward = Maths.wdiv(vars.bondChange, exchangeRate);
-            totalLPsReward  += kickerLPsReward;
+            kickerLPReward = Maths.wdiv(vars.bondChange, exchangeRate);
+            totalLPReward  += kickerLPReward;
 
-            Buckets.addLenderLP(bucket, bankruptcyTime, vars.kicker, kickerLPsReward);
+            Buckets.addLenderLP(bucket, bankruptcyTime, vars.kicker, kickerLPReward);
         } else {
             // take is above neutralPrice, Kicker is penalized
             vars.bondChange = Maths.min(liquidation_.bondSize, vars.bondChange);
@@ -651,7 +651,7 @@ library TakerActions {
         Deposits.unscaledRemove(deposits_, bucketIndex_, vars.unscaledQuoteTokenAmount); // remove quote tokens from bucket’s deposit
 
         // total rewarded LP are added to the bucket LP balance
-        bucket.lps += totalLPsReward;
+        bucket.lps += totalLPReward;
 
         // collateral is added to the bucket’s claimable collateral
         bucket.collateral += vars.collateralAmount;
@@ -659,8 +659,8 @@ library TakerActions {
         emit BucketTakeLPAwarded(
             msg.sender,
             vars.kicker,
-            totalLPsReward - kickerLPsReward,
-            kickerLPsReward
+            totalLPReward - kickerLPReward,
+            kickerLPReward
         );
     }
 

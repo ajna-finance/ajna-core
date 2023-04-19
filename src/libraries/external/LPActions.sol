@@ -25,7 +25,7 @@ library LPActions {
     event IncreaseLPAllowance(address indexed owner, address indexed spender, uint256[] indexes, uint256[] amounts);
     event DecreaseLPAllowance(address indexed owner, address indexed spender, uint256[] indexes, uint256[] amounts);
     event RevokeLPAllowance(address indexed owner, address indexed spender, uint256[] indexes);
-    event TransferLP(address owner, address newOwner, uint256[] indexes, uint256 lps);
+    event TransferLP(address owner, address newOwner, uint256[] indexes, uint256 lp);
 
     /**************/
     /*** Errors ***/
@@ -222,7 +222,7 @@ library LPActions {
 
         uint256 indexesLength = indexes_.length;
         uint256 index;
-        uint256 lpsTransferred;
+        uint256 lpTransferred;
 
         for (uint256 i = 0; i < indexesLength; ) {
             index = indexes_[i];
@@ -243,7 +243,7 @@ library LPActions {
             // transfer allowed amount or entire LP balance
             allowedAmount = Maths.min(allowedAmount, ownerLpBalance);
 
-            // move owner lps (if any) to the new owner
+            // move owner LP (if any) to the new owner
             if (allowedAmount != 0) {
                 Lender storage newOwner = bucket.lenders[newOwnerAddress_];
 
@@ -257,8 +257,8 @@ library LPActions {
                     newOwner.lps = allowedAmount;
                 }
 
-                owner.lps      -= allowedAmount; // remove amount of LP from old owner
-                lpsTransferred += allowedAmount; // add amount of LP to total LP transferred
+                owner.lps     -= allowedAmount; // remove amount of LP from old owner
+                lpTransferred += allowedAmount; // add amount of LP to total LP transferred
 
                 // set the deposit time as the max of transferred deposit and current deposit time
                 newOwner.depositTime = Maths.max(ownerDepositTime, newOwnerDepositTime);
@@ -274,7 +274,7 @@ library LPActions {
             ownerAddress_,
             newOwnerAddress_,
             indexes_,
-            lpsTransferred
+            lpTransferred
         );
     }
 }

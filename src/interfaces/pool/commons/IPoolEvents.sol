@@ -200,13 +200,13 @@ interface IPoolEvents {
      *  @notice Emitted when `NFT` auction is completed.
      *  @param  borrower   Address of borrower that exits auction.
      *  @param  collateral Borrower's remaining collateral when auction completed.
-     *  @param  lps        Amount of `LP` given to the borrower to compensate fractional collateral (if any).
+     *  @param  lp         Amount of `LP` given to the borrower to compensate fractional collateral (if any).
      *  @param  index      Index of the bucket with `LP` to compensate fractional collateral.
      */
     event AuctionNFTSettle(
         address indexed borrower,
         uint256 collateral,
-        uint256 lps,
+        uint256 lp,
         uint256 index
     );
 
@@ -304,13 +304,13 @@ interface IPoolEvents {
      *  @param  owner    The original owner address of the position.
      *  @param  newOwner The new owner address of the position.
      *  @param  indexes  Array of price bucket indexes at which `LP` were transferred.
-     *  @param  lps      Amount of `LP` transferred.
+     *  @param  lp       Amount of `LP` transferred.
      */
     event TransferLP(
         address owner,
         address newOwner,
         uint256[] indexes,
-        uint256 lps
+        uint256 lp
     );
 
     /**************************/
