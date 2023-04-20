@@ -210,7 +210,7 @@ library Deposits {
 
     /**
      *  @notice Get prefix sum of all indexes from provided index downwards.
-     *  @dev    Starts at tree root and decrements through range parent nodes summing from index `i_`'s range to index `0`.
+     *  @dev    Starts at tree root and decrements through range parent nodes summing from index `sumIndex_`'s range to index `0`.
      *  @param  sumIndex_  The index to receive the prefix sum.
      *  @param  sum_       The prefix sum from current index downwards.
      */
@@ -232,13 +232,13 @@ library Deposits {
             // Skip considering indices outside bounds of Fenwick tree
             if (index + j > SIZE) continue;
 
-            // We are considering whether to include node index_+j in the sum or not.  Either way, we need to scaling[index_+j],
+            // We are considering whether to include node index + j in the sum or not.  Either way, we need to scaling[index + j],
             // either to increment sum_ or to accumulate in runningScale
-            uint256 scaled = deposits_.scaling[index+j];
+            uint256 scaled = deposits_.scaling[index + j];
 
             if (sumIndex_ & j != 0) {
-                // node index+j of tree is included in sum
-                uint256 value = deposits_.values[index+j];
+                // node index + j of tree is included in sum
+                uint256 value = deposits_.values[index + j];
 
                 // Accumulate in sum_, recall that scaled==0 means that the scale factor is actually 1
                 sum_  += scaled != 0 ? (runningScale * scaled * value + 5e35) / 1e36 : Maths.wmul(runningScale, value);

@@ -258,7 +258,7 @@ library Loans {
     /**
      *  @notice Returns number of loans in pool.
      *  @param loans_ Holds loans heap data.
-     *  @return umber of loans in pool.
+     *  @return Number of loans in pool.
      */
     function noOfLoans(LoansState storage loans_) internal view returns (uint256) {
         return loans_.loans.length - 1;
