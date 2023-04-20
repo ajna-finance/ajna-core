@@ -433,7 +433,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
 
     function _assertCollateralInvariants() internal {
         uint256 collateralInBuckets;
-        for(uint256 bucketIndex = 0; bucketIndex <= 7388; bucketIndex++) {
+        for (uint256 bucketIndex = 0; bucketIndex <= 7388; bucketIndex++) {
             (, uint256 bucketCollateral, , , ) = _pool.bucketInfo(bucketIndex);
             collateralInBuckets += bucketCollateral;
         }

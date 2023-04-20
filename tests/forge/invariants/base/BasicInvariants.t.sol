@@ -238,7 +238,7 @@ abstract contract BasicInvariants is BaseInvariants {
         }
 
         uint256 poolT0Debt = _pool.totalT0Debt();
-        if(poolT0Debt == 0) require(currentInflator == 1e18, "Incorrect inflator update");
+        if (poolT0Debt == 0) require(currentInflator == 1e18, "Incorrect inflator update");
 
         previousInflator       = currentInflator;
         previousInflatorUpdate = currentInflatorUpdate;
@@ -329,7 +329,7 @@ abstract contract BasicInvariants is BaseInvariants {
             uint256 nextNonzeroBucket = _pool.depositIndex(_pool.depositUpToIndex(bucketIndex)+1);
             console.log("bucketIndex:         ", bucketIndex);
             console.log("Next nonzero bucket: ", nextNonzeroBucket);
-            for(uint256 j = bucketIndex + 1; j < nextNonzeroBucket && j < LENDER_MAX_BUCKET_INDEX; j++) {
+            for (uint256 j = bucketIndex + 1; j < nextNonzeroBucket && j < LENDER_MAX_BUCKET_INDEX; j++) {
                 (, , , uint256 depositAtJ, ) = _pool.bucketInfo(j);
                 console.log("Deposit at %s is %s", j, depositAtJ);
                 require(
@@ -343,6 +343,11 @@ abstract contract BasicInvariants is BaseInvariants {
             assertGe(nextNonzeroBucket+1, bucketIndex);
             bucketIndex = nextNonzeroBucket+1;  // can skip ahead
         }
+    }
+
+    // **F5**: Global scalar is never updated (`DepositsState.scaling[8192]` is always 0)
+    function invariant_fenwick_globalscalar_F5() public useCurrentTimestamp {
+        require(_pool.depositScale(8192) == 0, "F5: Global scalar was updated");
     }
 
     function invariant_call_summary() public virtual useCurrentTimestamp {

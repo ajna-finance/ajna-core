@@ -12,7 +12,7 @@ interface IERC20PoolEvents {
      *  @param  actor     Recipient that added collateral.
      *  @param  index     Index at which collateral were added.
      *  @param  amount    Amount of collateral added to the pool.
-     *  @param  lpAwarded Amount of LP awarded for the deposit. 
+     *  @param  lpAwarded Amount of `LP` awarded for the deposit. 
      */
     event AddCollateral(
         address indexed actor,
@@ -26,7 +26,7 @@ interface IERC20PoolEvents {
      *  @param  borrower          The borrower to whom collateral was pledged, and/or debt was drawn for.
      *  @param  amountBorrowed    Amount of quote tokens borrowed from the pool.
      *  @param  collateralPledged Amount of collateral locked in the pool.
-     *  @param  lup               LUP after borrow.
+     *  @param  lup               `LUP` after borrow.
      */
     event DrawDebt(
         address indexed borrower,

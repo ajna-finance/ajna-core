@@ -3,7 +3,7 @@
 pragma solidity 0.8.14;
 
 /**
- * @title Pool Errors
+ * @title Pool Errors.
  */
 interface IPoolErrors {
     /**************************/
@@ -11,7 +11,7 @@ interface IPoolErrors {
     /**************************/
 
     /**
-     *  @notice LP allowance is already set by the owner.
+     *  @notice `LP` allowance is already set by the owner.
      */
     error AllowanceAlreadySet();
 
@@ -46,7 +46,7 @@ interface IPoolErrors {
     error AmountLTMinDebt();
 
     /**
-     *  @notice Recipient of borrowed quote tokens doesn't match the caller of the drawDebt function.
+     *  @notice Recipient of borrowed quote tokens doesn't match the caller of the `drawDebt` function.
      */
     error BorrowerNotSender();
 
@@ -76,12 +76,12 @@ interface IPoolErrors {
     error DustAmountNotExceeded();
 
     /**
-     *  @notice Callback invoked by flashLoan function did not return the expected hash (see ERC-3156 spec).
+     *  @notice Callback invoked by `flashLoan` function did not return the expected hash (see `ERC-3156` spec).
      */
     error FlashloanCallbackFailed();
 
     /**
-     *  @notice Balance of pool contract before flash loan is different than the balance after flash loan.
+     *  @notice Balance of pool contract before flashloan is different than the balance after flashloan.
      */
     error FlashloanIncorrectBalance();
 
@@ -98,7 +98,7 @@ interface IPoolErrors {
     /**
      *  @notice Lender is attempting to move or remove more collateral they have claim to in the bucket.
      *  @notice Lender is attempting to remove more collateral they have claim to in the bucket.
-     *  @notice Lender must have enough LP to claim the desired amount of quote from the bucket.
+     *  @notice Lender must have enough `LP` to claim the desired amount of quote from the bucket.
      */
     error InsufficientLP();
 
@@ -108,33 +108,33 @@ interface IPoolErrors {
     error InsufficientLiquidity();
 
     /**
-     *  @notice When increasing / decreasing LP allowances indexes and amounts arrays parameters should have same length.
+     *  @notice When increasing / decreasing `LP` allowances indexes and amounts arrays parameters should have same length.
      */
     error InvalidAllowancesInput();
 
     /**
-     *  @notice When transferring LP between indices, the new index must be a valid index.
+     *  @notice When transferring `LP` between indices, the new index must be a valid index.
      */
     error InvalidIndex();
 
     /**
-     *  @notice The amount used for performed action should be greater than 0.
+     *  @notice The amount used for performed action should be greater than `0`.
      */
     error InvalidAmount();
 
     /**
-     *  @notice Borrower is attempting to borrow more quote token than is available before the supplied limitIndex.
+     *  @notice Borrower is attempting to borrow more quote token than is available before the supplied `limitIndex`.
      */
     error LimitIndexExceeded();
 
     /**
-     *  @notice When moving quote token HTP must stay below LUP.
-     *  @notice When removing quote token HTP must stay below LUP.
+     *  @notice When moving quote token `HTP` must stay below `LUP`.
+     *  @notice When removing quote token `HTP` must stay below `LUP`.
      */
     error LUPBelowHTP();
 
     /**
-     *  @notice Liquidation must result in LUP below the borrowers threshold price.
+     *  @notice Liquidation must result in `LUP` below the borrowers threshold price.
      */
     error LUPGreaterThanTP();
 
@@ -144,7 +144,7 @@ interface IPoolErrors {
     error MoveToSameIndex();
 
     /**
-     *  @notice Owner of the LP must have approved the new owner prior to transfer.
+     *  @notice Owner of the `LP` must have approved the new owner prior to transfer.
      */
     error NoAllowance();
 
@@ -164,7 +164,7 @@ interface IPoolErrors {
     error NoReservesAuction();
 
     /**
-     *  @notice Lender must have non-zero LPB when attemptign to remove quote token from the pool.
+     *  @notice Lender must have non-zero `LP` when attemptign to remove quote token from the pool.
      */
     error NoClaim();
 
@@ -180,7 +180,7 @@ interface IPoolErrors {
     error PoolUnderCollateralized();
 
     /**
-     *  @notice Actor is attempting to remove using a bucket with price below the LUP.
+     *  @notice Actor is attempting to remove using a bucket with price below the `LUP`.
      */
     error PriceBelowLUP();
 
@@ -190,12 +190,12 @@ interface IPoolErrors {
     error RemoveDepositLockedByAuctionDebt();
 
     /**
-     * @notice User attempted to kick off a new auction less than 2 weeks since the last auction completed.
+     * @notice User attempted to kick off a new auction less than `2` weeks since the last auction completed.
      */
     error ReserveAuctionTooSoon();
 
     /**
-     *  @notice Take was called before 1 hour had passed from kick time.
+     *  @notice Take was called before `1` hour had passed from kick time.
      */
     error TakeNotPastCooldown();
 
@@ -205,12 +205,12 @@ interface IPoolErrors {
     error TransactionExpired();
 
     /**
-     *  @notice The address that transfer LP is not approved by the LP receiving address.
+     *  @notice The address that transfer `LP` is not approved by the `LP` receiving address.
      */
     error TransferorNotApproved();
 
     /**
-     *  @notice Owner of the LP attemps to transfer LP to same address.
+     *  @notice Owner of the `LP` attemps to transfer `LP` to same address.
      */
     error TransferToSameOwner();
 

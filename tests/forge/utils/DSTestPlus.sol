@@ -246,7 +246,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit Kick(borrower, debt, collateral, bond);
-        if(transferAmount != 0) _assertQuoteTokenTransferEvent(from, address(_pool), transferAmount);
+        if (transferAmount != 0) _assertQuoteTokenTransferEvent(from, address(_pool), transferAmount);
         _pool.kick(borrower, MAX_FENWICK_INDEX);
     }
 
@@ -266,7 +266,7 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         emit Kick(borrower, debt, collateral, bond);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(from, index, removedFromDeposit, removedFromDeposit, lup);
-        if(transferAmount != 0) _assertQuoteTokenTransferEvent(from, address(_pool), transferAmount);
+        if (transferAmount != 0) _assertQuoteTokenTransferEvent(from, address(_pool), transferAmount);
         _pool.kickWithDeposit(index, MAX_FENWICK_INDEX);
     }
 
@@ -595,12 +595,12 @@ abstract contract DSTestPlus is Test, IPoolEvents {
 
         uint256 curLpBalance;
         // sum up LP across lenders
-        for(uint i = 0; i < lenders.length(); i++ ){
+        for (uint i = 0; i < lenders.length(); i++ ){
             (curLpBalance, ) = _pool.lenderInfo(index, lenders.at(i));
             lenderLps += curLpBalance;
         }
         // handle borrowers awarded LP from liquidation
-        for(uint i = 0; i < borrowers.length(); i++ ){
+        for (uint i = 0; i < borrowers.length(); i++ ){
             address borrower = borrowers.at(i);
             if (!lenders.contains(borrower)) {
                 (curLpBalance, ) = _pool.lenderInfo(index, borrowers.at(i));

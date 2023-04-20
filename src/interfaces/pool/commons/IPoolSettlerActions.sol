@@ -9,13 +9,13 @@ interface IPoolSettlerActions {
 
     /**
      *  @notice Called by actors to settle an amount of debt in a completed liquidation.
-     *  @param  borrowerAddress Address of the auctioned borrower.
-     *  @param  maxDepth        Measured from HPB, maximum number of buckets deep to settle debt.
-     *  @dev    maxDepth is used to prevent unbounded iteration clearing large liquidations.
+     *  @param  borrowerAddress_ Address of the auctioned borrower.
+     *  @param  maxDepth_        Measured from `HPB`, maximum number of buckets deep to settle debt.
+     *  @dev    `maxDepth_` is used to prevent unbounded iteration clearing large liquidations.
      */
     function settle(
-        address borrowerAddress,
-        uint256 maxDepth
+        address borrowerAddress_,
+        uint256 maxDepth_
     ) external;
 
 }
