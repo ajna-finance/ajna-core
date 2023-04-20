@@ -106,12 +106,7 @@ library PoolCommons {
             ),
             vars.newDebt
         );
-
-        if ( vars.t0Debt2ToCollateral < 1e36 ) {
-            vars.newDebtCol   = Maths.wmul(poolState_.inflator, vars.t0Debt2ToCollateral);
-        } else {
-            vars.newDebtCol   = poolState_.inflator * (vars.t0Debt2ToCollateral / 1e18);
-        }
+        vars.newDebtCol   = Maths.wmul(poolState_.inflator, vars.t0Debt2ToCollateral);
         vars.newLupt0Debt = Maths.wmul(lup_, poolState_.t0Debt);
 
         // update EMAs only once per block

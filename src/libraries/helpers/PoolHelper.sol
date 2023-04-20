@@ -141,12 +141,8 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 t0Debt_,
         uint256 inflator_,
         uint256 t0Debt2ToCollateral_
-    ) view returns (uint256) {
-        if ( t0Debt2ToCollateral_ < 1e45) {
-            return t0Debt_ == 0 ? 0 : Maths.wdiv(Maths.wmul(inflator_, t0Debt2ToCollateral_), t0Debt_);
-        } else {
-            return t0Debt_ == 0 ? 0 : inflator_ * (t0Debt2ToCollateral_ / t0Debt_);
-        }
+    ) pure returns (uint256) {
+        return t0Debt_ == 0 ? 0 : Maths.wdiv(Maths.wmul(inflator_, t0Debt2ToCollateral_), t0Debt_);
     }
 
     /**
