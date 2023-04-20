@@ -31,11 +31,26 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
         address testContract_
     ) BaseHandler(pool_, ajna_, quote_, poolInfo_, testContract_) {
 
-        LENDER_MIN_BUCKET_INDEX = 850;
-        LENDER_MAX_BUCKET_INDEX = 852;
+        LENDER_MIN_BUCKET_INDEX = vm.envUint("BUCKET_INDEX_ERC721");
+        LENDER_MAX_BUCKET_INDEX = LENDER_MIN_BUCKET_INDEX + vm.envUint("NO_OF_BUCKETS") - 1;
 
         MIN_QUOTE_AMOUNT = 1e3;
-        MAX_QUOTE_AMOUNT = 1e28;
+        /* 
+            Lower the bucket price, higher number of NFT mints and transfers.
+            So this formulae is used to avoid out of gas error and also run the invariants in a reasonable time
+
+            BUCKET_INDEX        MAX_QUOTE_AMOUNT
+            1                   1e31
+            500                 1e30
+            1500                1e26
+            2500                1e22
+            3500                1e18
+            4500                1e14
+            5500                1e10
+            6500                1e6
+            7368                1e3                
+        */
+        MAX_QUOTE_AMOUNT = 10 ** (31 - (LENDER_MIN_BUCKET_INDEX / 260));
 
         MIN_COLLATERAL_AMOUNT = 1;
         MAX_COLLATERAL_AMOUNT = 100;
