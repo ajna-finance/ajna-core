@@ -112,6 +112,16 @@ abstract contract BaseHandler is Test {
     }
 
     /**
+     * @dev Skips some time before each action
+     */
+    modifier skipTime(uint256 time_) {
+        time_ = constrictToRange(time_, 0, 24 hours);
+        vm.warp(block.timestamp + time_);
+
+        _;
+    }
+
+    /**
      * @dev Resets all local states before each action.
      */
     modifier updateLocalStateAndPoolInterest() {
