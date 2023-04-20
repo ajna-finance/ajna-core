@@ -223,7 +223,7 @@ library KickerActions {
         }
 
         // remove bucket LP coresponding to the amount removed from deposits
-        lender.lps -= vars.redeemedLPs;
+        lender.lps -= Maths.min(lender.lps, vars.redeemedLPs);
         bucket.lps -= vars.redeemedLPs;
 
         emit RemoveQuoteToken(
