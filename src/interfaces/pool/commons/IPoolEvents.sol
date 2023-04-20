@@ -16,8 +16,8 @@ interface IPoolEvents {
      *  @param  lender    Recipient that added quote tokens.
      *  @param  index     Index at which quote tokens were added.
      *  @param  amount    Amount of quote tokens added to the pool.
-     *  @param  lpAwarded Amount of LP awarded for the deposit. 
-     *  @param  lup       LUP calculated after deposit.
+     *  @param  lpAwarded Amount of `LP` awarded for the deposit. 
+     *  @param  lup       `LUP` calculated after deposit.
      */
     event AddQuoteToken(
         address indexed lender,
@@ -33,9 +33,9 @@ interface IPoolEvents {
      *  @param  from           Price bucket from which quote tokens were moved.
      *  @param  to             Price bucket where quote tokens were moved.
      *  @param  amount         Amount of quote tokens moved.
-     *  @param  lpRedeemedFrom Amount of LP removed from the `from` bucket.
-     *  @param  lpAwardedTo    Amount of LP credited to the `to` bucket.
-     *  @param  lup            LUP calculated after removal.
+     *  @param  lpRedeemedFrom Amount of `LP` removed from the `from` bucket.
+     *  @param  lpAwardedTo    Amount of `LP` credited to the `to` bucket.
+     *  @param  lup            `LUP` calculated after removal.
      */
     event MoveQuoteToken(
         address indexed lender,
@@ -52,8 +52,8 @@ interface IPoolEvents {
      *  @param  lender     Recipient that removed quote tokens.
      *  @param  index      Index at which quote tokens were removed.
      *  @param  amount     Amount of quote tokens removed from the pool.
-     *  @param  lpRedeemed Amount of LP exchanged for quote token.
-     *  @param  lup        LUP calculated after removal.
+     *  @param  lpRedeemed Amount of `LP` exchanged for quote token.
+     *  @param  lup        `LUP` calculated after removal.
      */
     event RemoveQuoteToken(
         address indexed lender,
@@ -67,8 +67,8 @@ interface IPoolEvents {
      *  @notice Emitted when lender claims collateral from a bucket.
      *  @param  claimer    Recipient that claimed collateral.
      *  @param  index      Index at which collateral was claimed.
-     *  @param  amount     The amount of collateral (or number of NFT tokens) transferred to the claimer.
-     *  @param  lpRedeemed Amount of LP exchanged for quote token.
+     *  @param  amount     The amount of collateral (or number of `NFT` tokens) transferred to the claimer.
+     *  @param  lpRedeemed Amount of `LP` exchanged for quote token.
      */
     event RemoveCollateral(
         address indexed claimer,
@@ -82,11 +82,11 @@ interface IPoolEvents {
     /***********************/
 
     /**
-     *  @notice Emitted when borrower repays quote tokens to the pool, and/or pulls collateral from the pool.
+     *  @notice Emitted when borrower repays quote tokens to the pool and/or pulls collateral from the pool.
      *  @param  borrower         `msg.sender` or on behalf of sender.
      *  @param  quoteRepaid      Amount of quote tokens repaid to the pool.
-     *  @param  collateralPulled The amount of collateral (or number of NFT tokens) transferred to the claimer.
-     *  @param  lup              LUP after repay.
+     *  @param  collateralPulled The amount of collateral (or number of `NFT` tokens) transferred to the claimer.
+     *  @param  lup              `LUP` after repay.
      */
     event RepayDebt(
         address indexed borrower,
@@ -128,11 +128,11 @@ interface IPoolEvents {
     /**
      *  @notice Emitted when an actor uses quote token to arb higher-priced deposit off the book.
      *  @param  borrower    Identifies the loan being liquidated.
-     *  @param  index       The index of the Highest Price Bucket used for this take.
+     *  @param  index       The index of the `Highest Price Bucket` used for this take.
      *  @param  amount      Amount of quote token used to purchase collateral.
      *  @param  collateral  Amount of collateral purchased with quote token.
      *  @param  bondChange  Impact of this take to the liquidation bond.
-     *  @param  isReward    True if kicker was rewarded with `bondChange` amount, false if kicker was penalized.
+     *  @param  isReward    `True` if kicker was rewarded with `bondChange` amount, `false` if kicker was penalized.
      *  @dev    amount / collateral implies the auction price.
      */
     event BucketTake(
@@ -145,11 +145,11 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when LP are awarded to a taker or kicker in a bucket take.
+     *  @notice Emitted when `LP` are awarded to a taker or kicker in a bucket take.
      *  @param  taker           Actor who invoked the bucket take.
      *  @param  kicker          Actor who started the auction.
-     *  @param  lpAwardedTaker  Amount of LP awarded to the taker.
-     *  @param  lpAwardedKicker Amount of LP awarded to the actor who started the auction.
+     *  @param  lpAwardedTaker  Amount of `LP` awarded to the taker.
+     *  @param  lpAwardedKicker Amount of `LP` awarded to the actor who started the auction.
      */
     event BucketTakeLPAwarded(
         address indexed taker,
@@ -162,9 +162,9 @@ interface IPoolEvents {
      *  @notice Emitted when an actor uses quote token outside of the book to purchase collateral under liquidation.
      *  @param  borrower   Identifies the loan being liquidated.
      *  @param  amount     Amount of quote token used to purchase collateral.
-     *  @param  collateral Amount of collateral purchased with quote token (ERC20 pool) or number of NFTs purchased (ERC721 pool).
+     *  @param  collateral Amount of collateral purchased with quote token (`ERC20` pool) or number of `NFT`s purchased (`ERC721` pool).
      *  @param  bondChange Impact of this take to the liquidation bond.
-     *  @param  isReward   True if kicker was rewarded with `bondChange` amount, false if kicker was penalized.
+     *  @param  isReward   `True` if kicker was rewarded with `bondChange` amount, `false` if kicker was penalized.
      *  @dev    amount / collateral implies the auction price.
      */
     event Take(
@@ -179,7 +179,7 @@ interface IPoolEvents {
      *  @notice Emitted when an actor settles debt in a completed liquidation
      *  @param  borrower   Identifies the loan under liquidation.
      *  @param  settledDebt Amount of pool debt settled in this transaction.
-     *  @dev    When amountRemaining_ == 0, the auction has been completed cleared and removed from the queue.
+     *  @dev    When `amountRemaining_ == 0`, the auction has been completed cleared and removed from the queue.
      */
     event Settle(
         address indexed borrower,
@@ -197,23 +197,23 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when NFT auction is completed.
+     *  @notice Emitted when `NFT` auction is completed.
      *  @param  borrower   Address of borrower that exits auction.
      *  @param  collateral Borrower's remaining collateral when auction completed.
-     *  @param  lps        Amount of LP given to the borrower to compensate fractional collateral (if any).
-     *  @param  index      Index of the bucket with LP to compensate fractional collateral.
+     *  @param  lp         Amount of `LP` given to the borrower to compensate fractional collateral (if any).
+     *  @param  index      Index of the bucket with `LP` to compensate fractional collateral.
      */
     event AuctionNFTSettle(
         address indexed borrower,
         uint256 collateral,
-        uint256 lps,
+        uint256 lp,
         uint256 index
     );
 
     /**
-     *  @notice Emitted when a Claimaible Reserve Auction is started.
+     *  @notice Emitted when a `Claimaible Reserve Auction` is started.
      *  @return claimableReservesRemaining Amount of claimable reserves which has not yet been taken.
-     *  @return auctionPrice               Current price at which 1 quote token may be purchased, denominated in Ajna.
+     *  @return auctionPrice               Current price at which `1` quote token may be purchased, denominated in `Ajna`.
      *  @return currentBurnEpoch           Current burn epoch.
      */
     event KickReserveAuction(
@@ -223,9 +223,9 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when a Claimaible Reserve Auction is taken.
+     *  @notice Emitted when a `Claimaible Reserve Auction` is taken.
      *  @return claimableReservesRemaining Amount of claimable reserves which has not yet been taken.
-     *  @return auctionPrice               Current price at which 1 quote token may be purchased, denominated in Ajna.
+     *  @return auctionPrice               Current price at which `1` quote token may be purchased, denominated in `Ajna`.
      *  @return currentBurnEpoch           Current burn epoch.
      */
     event ReserveAuction(
@@ -239,11 +239,11 @@ interface IPoolEvents {
     /**************************/
 
     /**
-     *  @notice Emitted when owner increase the LP allowance of a spender at specified indexes with specified amounts.
-     *  @param  owner     LP owner.
-     *  @param  spender   Address approved to transfer LP.
-     *  @param  indexes   Bucket indexes of LP approved.
-     *  @param  amounts   LP amounts added (ordered by indexes).
+     *  @notice Emitted when owner increase the `LP` allowance of a spender at specified indexes with specified amounts.
+     *  @param  owner     `LP` owner.
+     *  @param  spender   Address approved to transfer `LP`.
+     *  @param  indexes   Bucket indexes of `LP` approved.
+     *  @param  amounts   `LP` amounts added (ordered by indexes).
      */
     event IncreaseLPAllowance(
         address indexed owner,
@@ -253,11 +253,11 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when owner decrease the LP allowance of a spender at specified indexes with specified amounts.
-     *  @param  owner     LP owner.
-     *  @param  spender   Address approved to transfer LP.
-     *  @param  indexes   Bucket indexes of LP approved.
-     *  @param  amounts   LP amounts removed (ordered by indexes).
+     *  @notice Emitted when owner decrease the `LP` allowance of a spender at specified indexes with specified amounts.
+     *  @param  owner     `LP` owner.
+     *  @param  spender   Address approved to transfer `LP`.
+     *  @param  indexes   Bucket indexes of `LP` approved.
+     *  @param  amounts   `LP` amounts removed (ordered by indexes).
      */
     event DecreaseLPAllowance(
         address indexed owner,
@@ -267,8 +267,8 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when lender removes the allowance of a spender for their LP.
-     *  @param  owner   LP owner.
+     *  @notice Emitted when lender removes the allowance of a spender for their `LP`.
+     *  @param  owner   `LP` owner.
      *  @param  spender Address that is having it's allowance revoked.
      *  @param  indexes List of bucket index to remove the allowance from.
      */
@@ -279,9 +279,9 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when lender whitelists addresses to accept LP from.
-     *  @param  lender      Recipient that approves new owner for LP.
-     *  @param  transferors List of addresses that can transfer LP to lender.
+     *  @notice Emitted when lender whitelists addresses to accept `LP` from.
+     *  @param  lender      Recipient that approves new owner for `LP`.
+     *  @param  transferors List of addresses that can transfer `LP` to lender.
      */
     event ApproveLPTransferors(
         address indexed lender,
@@ -289,9 +289,9 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when lender removes addresses from the LP transferors whitelist.
-     *  @param  lender      Recipient that approves new owner for LP.
-     *  @param  transferors List of addresses that won't be able to transfer LP to lender anymore.
+     *  @notice Emitted when lender removes addresses from the `LP` transferors whitelist.
+     *  @param  lender      Recipient that approves new owner for `LP`.
+     *  @param  transferors List of addresses that won't be able to transfer `LP` to lender anymore.
      */
     event RevokeLPTransferors(
         address indexed lender,
@@ -299,18 +299,18 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when a lender transfers their LP to a different address.
-     *  @dev    Used by PositionManager.memorializePositions().
+     *  @notice Emitted when a lender transfers their `LP` to a different address.
+     *  @dev    Used by `PositionManager.memorializePositions()`.
      *  @param  owner    The original owner address of the position.
      *  @param  newOwner The new owner address of the position.
-     *  @param  indexes  Array of price bucket indexes at which LP were transferred.
-     *  @param  lps      Amount of LP transferred.
+     *  @param  indexes  Array of price bucket indexes at which `LP` were transferred.
+     *  @param  lp       Amount of `LP` transferred.
      */
     event TransferLP(
         address owner,
         address newOwner,
         uint256[] indexes,
-        uint256 lps
+        uint256 lp
     );
 
     /**************************/
@@ -318,9 +318,9 @@ interface IPoolEvents {
     /**************************/
 
     /**
-     *  @notice Emitted when LP are forfeited as a result of the bucket losing all assets.
+     *  @notice Emitted when `LP` are forfeited as a result of the bucket losing all assets.
      *  @param  index       The index of the bucket.
-     *  @param  lpForfeited Amount of LP forfeited by lenders.
+     *  @param  lpForfeited Amount of `LP` forfeited by lenders.
      */
     event BucketBankruptcy(
         uint256 indexed index,
@@ -340,15 +340,15 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when a loan Neutral Price is restamped.
-     *  @param  borrower   Identifies the loan to update the Neutral Price.
+     *  @notice Emitted when a loan `Neutral Price` is restamped.
+     *  @param  borrower Identifies the loan to update the `Neutral Price`.
      */
     event LoanStamped(
         address indexed borrower
     );
 
     /**
-     *  @notice Emitted when pool interest rate is reset. This happens when interest rate > 10% and debtEma < 5% of depositEma
+     *  @notice Emitted when pool interest rate is reset. This happens when `interest rate > 10%` and `debtEma < 5%` of `depositEma`
      *  @param  oldRate Old pool interest rate.
      *  @param  newRate New pool interest rate.
      */

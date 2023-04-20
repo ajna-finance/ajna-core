@@ -18,7 +18,11 @@ import { Maths }    from './Maths.sol';
 /**
     @title  Loans library
     @notice Internal library containing common logic for loans management.
-    @dev    Implemented as Max Heap data structure.
+    @dev    The `Loans` heap is a `Max Heap` data structure (complete binary tree), the root node is the loan with the highest threshold price (`TP`)
+            at a given time. The heap is represented as an array, where the first element is a dummy element (`Loan(address(0), 0)`) and the first
+            value of the heap starts at index `1`, `ROOT_INDEX`. The threshold price of a loan's parent is always greater than or equal to the
+            threshold price of the loan.
+    @dev    This code was modified from the following source: https://github.com/zmitton/eth-heap/blob/master/contracts/Heap.sol
  */
 library Loans {
 
@@ -37,34 +41,28 @@ library Loans {
 
     /**
      *  @notice Initializes Loans Max Heap.
-     *  @dev    Organizes loans so Highest Threshold Price can be retreived easily.
-     *  @param loans_ Holds Loan heap data.
+     *  @dev    Organizes loans so `Highest Threshold Price` can be retrieved easily.
+     *  @param  loans_ Holds Loan heap data.
      */
     function init(LoansState storage loans_) internal {
         loans_.loans.push(Loan(address(0), 0));
     }
-
-    /**
-    * The Loans heap is a Max Heap data structure (complete binary tree), the root node is the loan with the highest threshold price (TP)
-    * at a given time. The heap is represented as an array, where the first element is a dummy element (Loan(address(0), 0)) and the first
-    * value of the heap starts at index 1, ROOT_INDEX. The threshold price of a loan's parent is always greater than or equal to the
-    * threshold price of the loan.
-    * This code was modified from the following source: https://github.com/zmitton/eth-heap/blob/master/contracts/Heap.sol
-    */
 
     /***********************************/
     /***  Loans Management Functions ***/
     /***********************************/
 
     /**
-     *  @notice Updates a loan: updates heap (upsert if TP not 0, remove otherwise) and borrower balance.
-     *  @dev    write state:
-     *          - _upsert:
-     *            - insert or update loan in loans array
-     *          - remove:
-     *            - remove loan from loans array
-     *          - update borrower in address => borrower mapping
-     *  @param loans_           Holds loan heap data.
+     *  @notice Updates a loan: updates heap (`upsert` if `TP` not `0`, `remove` otherwise) and borrower balance.
+     *  @dev    === Write state ===
+     *  @dev    - `_upsert`:
+     *  @dev      insert or update loan in `loans` array
+     *  @dev    - `remove`:
+     *  @dev      remove loan from `loans` array
+     *  @dev    - update borrower in `address => borrower` mapping
+     *  @param loans_           Holds loans heap data.
+     *  @param auctions_        Struct for pool auctions state.
+     *  @param deposits_        Struct for pool deposits state.
      *  @param borrower_        Borrower struct with borrower details.
      *  @param borrowerAddress_ Borrower's address to update.
      *  @param poolDebt_        Pool's current debt.
@@ -128,34 +126,34 @@ library Loans {
     /**************************************/
 
     /**
-     *  @notice Moves a Loan up the heap.
-     *  @param loans_ Holds loan heap data.
-     *  @param loan_ Loan to be moved.
-     *  @param i_    Index for Loan to be moved to.
+     *  @notice Moves a `Loan` up the heap.
+     *  @param loans_ Holds loans heap data.
+     *  @param loan_  `Loan` to be moved.
+     *  @param index_ Index of `Loan` to be moved to.
      */
-    function _bubbleUp(LoansState storage loans_, Loan memory loan_, uint i_) private {
+    function _bubbleUp(LoansState storage loans_, Loan memory loan_, uint index_) private {
         uint256 count = loans_.loans.length;
-        if (i_ == ROOT_INDEX || loan_.thresholdPrice <= loans_.loans[i_ / 2].thresholdPrice){
-          _insert(loans_, loan_, i_, count);
+        if (index_ == ROOT_INDEX || loan_.thresholdPrice <= loans_.loans[index_ / 2].thresholdPrice){
+          _insert(loans_, loan_, index_, count);
         } else {
-          _insert(loans_, loans_.loans[i_ / 2], i_, count);
-          _bubbleUp(loans_, loan_, i_ / 2);
+          _insert(loans_, loans_.loans[index_ / 2], index_, count);
+          _bubbleUp(loans_, loan_, index_ / 2);
         }
     }
 
     /**
-     *  @notice Moves a Loan down the heap.
-     *  @param loans_ Holds Loan heap data.
-     *  @param loan_ Loan to be moved.
-     *  @param i_    Index for Loan to be moved to.
+     *  @notice Moves a `Loan` down the heap.
+     *  @param loans_ Holds loans heap data.
+     *  @param loan_  `Loan` to be moved.
+     *  @param index_ Index of `Loan` to be moved to.
      */
-    function _bubbleDown(LoansState storage loans_, Loan memory loan_, uint i_) private {
+    function _bubbleDown(LoansState storage loans_, Loan memory loan_, uint index_) private {
         // Left child index.
-        uint cIndex = i_ * 2;
+        uint cIndex = index_ * 2;
 
         uint256 count = loans_.loans.length;
         if (count <= cIndex) {
-            _insert(loans_, loan_, i_, count);
+            _insert(loans_, loan_, index_, count);
         } else {
             Loan memory largestChild = loans_.loans[cIndex];
 
@@ -164,67 +162,67 @@ library Loans {
             }
 
             if (largestChild.thresholdPrice <= loan_.thresholdPrice) {
-              _insert(loans_, loan_, i_, count);
+              _insert(loans_, loan_, index_, count);
             } else {
-              _insert(loans_, largestChild, i_, count);
+              _insert(loans_, largestChild, index_, count);
               _bubbleDown(loans_, loan_, cIndex);
             }
         }
     }
 
     /**
-     *  @notice Inserts a Loan in the heap.
-     *  @param loans_ Holds loan heap data.
-     *  @param loan_ Loan to be inserted.
-     *  @param i_    index for Loan to be inserted at.
+     *  @notice Inserts a `Loan` in the heap.
+     *  @param loans_ Holds loans heap data.
+     *  @param loan_  `Loan` to be inserted.
+     *  @param index_ Index of `Loan` to be inserted at.
      */
-    function _insert(LoansState storage loans_, Loan memory loan_, uint i_, uint256 count_) private {
-        if (i_ == count_) loans_.loans.push(loan_);
-        else loans_.loans[i_] = loan_;
+    function _insert(LoansState storage loans_, Loan memory loan_, uint index_, uint256 count_) private {
+        if (index_ == count_) loans_.loans.push(loan_);
+        else loans_.loans[index_] = loan_;
 
-        loans_.indices[loan_.borrower] = i_;
+        loans_.indices[loan_.borrower] = index_;
     }
 
     /**
-     *  @notice Removes loan from heap given borrower address.
-     *  @param loans_    Holds loan heap data.
-     *  @param borrower_ Borrower address whose loan is being updated or inserted.
-     *  @param id_       Loan id.
+     *  @notice Removes `Loan` from heap given borrower address.
+     *  @param loans_    Holds loans heap data.
+     *  @param borrower_ Borrower address whose `Loan` is being updated or inserted.
+     *  @param index_    Index of `Loan` to be removed.
      */
-    function remove(LoansState storage loans_, address borrower_, uint256 id_) internal {
+    function remove(LoansState storage loans_, address borrower_, uint256 index_) internal {
         delete loans_.indices[borrower_];
         uint256 tailIndex = loans_.loans.length - 1;
-        if (id_ == tailIndex) loans_.loans.pop(); // we're removing the tail, pop without sorting
+        if (index_ == tailIndex) loans_.loans.pop(); // we're removing the tail, pop without sorting
         else {
             Loan memory tail = loans_.loans[tailIndex];
             loans_.loans.pop();            // remove tail loan
-            _bubbleUp(loans_, tail, id_);
-            _bubbleDown(loans_, loans_.loans[id_], id_);
+            _bubbleUp(loans_, tail, index_);
+            _bubbleDown(loans_, loans_.loans[index_], index_);
         }
     }
 
     /**
      *  @notice Performs an insert or an update dependent on borrowers existance.
-     *  @param loans_ Holds loan heap data.
+     *  @param loans_          Holds loans heap data.
      *  @param borrower_       Borrower address that is being updated or inserted.
-     *  @param id_             Loan id.
-     *  @param thresholdPrice_ Threshold Price that is updated or inserted.
+     *  @param index_          Index of `Loan` to be upserted.
+     *  @param thresholdPrice_ `Threshold Price` that is updated or inserted.
      */
     function _upsert(
         LoansState storage loans_,
         address borrower_,
-        uint256 id_,
+        uint256 index_,
         uint96 thresholdPrice_
     ) internal {
         // Loan exists, update in place.
-        if (id_ != 0) {
-            Loan memory currentLoan = loans_.loans[id_];
+        if (index_ != 0) {
+            Loan memory currentLoan = loans_.loans[index_];
             if (currentLoan.thresholdPrice > thresholdPrice_) {
                 currentLoan.thresholdPrice = thresholdPrice_;
-                _bubbleDown(loans_, currentLoan, id_);
+                _bubbleDown(loans_, currentLoan, index_);
             } else {
                 currentLoan.thresholdPrice = thresholdPrice_;
-                _bubbleUp(loans_, currentLoan, id_);
+                _bubbleUp(loans_, currentLoan, index_);
             }
 
         // New loan, insert it
@@ -239,19 +237,19 @@ library Loans {
     /**********************/
 
     /**
-     *  @notice Retreives Loan by index, i_.
-     *  @param loans_ Holds loan heap data.
-     *  @param i_    Index to retreive Loan.
-     *  @return Loan Loan retrieved by index.
+     *  @notice Retreives `Loan` by index, `index_`.
+     *  @param loans_ Holds loans heap data.
+     *  @param index_ Index to retrieve `Loan`.
+     *  @return `Loan` struct retrieved by index.
      */
-    function getByIndex(LoansState storage loans_, uint256 i_) internal view returns(Loan memory) {
-        return loans_.loans.length > i_ ? loans_.loans[i_] : Loan(address(0), 0);
+    function getByIndex(LoansState storage loans_, uint256 index_) internal view returns(Loan memory) {
+        return loans_.loans.length > index_ ? loans_.loans[index_] : Loan(address(0), 0);
     }
 
     /**
-     *  @notice Retreives Loan with the highest threshold price value.
-     *  @param loans_ Holds loan heap data.
-     *  @return Loan Max Loan in the Heap.
+     *  @notice Retreives `Loan` with the highest threshold price value.
+     *  @param loans_ Holds loans heap data.
+     *  @return `Max Loan` in the heap.
      */
     function getMax(LoansState storage loans_) internal view returns(Loan memory) {
         return getByIndex(loans_, ROOT_INDEX);
@@ -259,8 +257,8 @@ library Loans {
 
     /**
      *  @notice Returns number of loans in pool.
-     *  @param loans_ Holds loan heap data.
-     *  @return number of loans in pool.
+     *  @param loans_ Holds loans heap data.
+     *  @return Number of loans in pool.
      */
     function noOfLoans(LoansState storage loans_) internal view returns (uint256) {
         return loans_.loans.length - 1;

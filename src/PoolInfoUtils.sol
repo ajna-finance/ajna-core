@@ -27,20 +27,21 @@ import { PoolCommons } from './libraries/external/PoolCommons.sol';
 
 /**
  *  @title  Pool Info Utils contract
- *  @notice Contract for providing pools information for any deployed pool.
- *  @dev    Pool info is calculated using same helper functions / logic as in Pool contracts.
+ *  @notice Contract for providing information for any deployed pool.
+ *  @dev    Pool info is calculated using same helper functions / logic as in `Pool` contracts.
  */
 contract PoolInfoUtils {
 
     /**
-     *  @notice Exposes status of a liquidation auction
-     *  @param  borrower_         Identifies the loan being liquidated
-     *  @return kickTime_         Time auction was kicked, implying end time
-     *  @return collateral_       Remaining collateral available to be purchased               (WAD)
-     *  @return debtToCover_      Borrower debt to be covered                                  (WAD)
-     *  @return isCollateralized_ If true, takes will revert
-     *  @return price_            Current price of the auction                                 (WAD)
-     *  @return neutralPrice_     Price at which bond holder is neither rewarded nor penalized (WAD)
+     *  @notice Exposes status of a liquidation auction.
+     *  @param  ajnaPool_         Address of `Ajna` pool.
+     *  @param  borrower_         Identifies the loan being liquidated.
+     *  @return kickTime_         Time auction was kicked, implying end time.
+     *  @return collateral_       Remaining collateral available to be purchased.               (`WAD`)
+     *  @return debtToCover_      Borrower debt to be covered.                                  (`WAD`)
+     *  @return isCollateralized_ `True` if loan is collateralized.
+     *  @return price_            Current price of the auction.                                 (`WAD`)
+     *  @return neutralPrice_     Price at which bond holder is neither rewarded nor penalized. (`WAD`)
      */
     function auctionStatus(address ajnaPool_, address borrower_)
         external
@@ -68,13 +69,21 @@ contract PoolInfoUtils {
         }
     }
 
+    /**
+     *  @notice Retrieves info of a given borrower in a given `Ajna` pool.
+     *  @param  ajnaPool_   Address of `Ajna` pool.
+     *  @param  borrower_   Borrower's address.
+     *  @return debt_       Current debt owed by borrower (`WAD`).
+     *  @return collateral_ Pledged collateral, including encumbered (`WAD`).
+     *  @return t0Np_       `Neutral price` (`WAD`).
+     */
     function borrowerInfo(address ajnaPool_, address borrower_)
         external
         view
         returns (
-            uint256 debt_,             // current debt owed by borrower              (WAD)
-            uint256 collateral_,       // deposited collateral including encumbered  (WAD)
-            uint256 t0Np_              // Np / inflator, used in neutralPrice calc   (WAD)
+            uint256 debt_,
+            uint256 collateral_,
+            uint256 t0Np_
         )
     {
         IPool pool = IPool(ajnaPool_);
@@ -96,13 +105,14 @@ contract PoolInfoUtils {
 
     /**
      *  @notice Get a bucket struct for a given index.
+     *  @param  ajnaPool_     Address of `Ajna` pool.
      *  @param  index_        The index of the bucket to retrieve.
-     *  @return price_        Bucket price (WAD)
-     *  @return quoteTokens_  Amount of quote token in bucket, deposit + interest (WAD)
-     *  @return collateral_   Unencumbered collateral in bucket (WAD).
-     *  @return bucketLPs_    Outstanding LP balance in bucket (WAD)
-     *  @return scale_        Lender interest multiplier (WAD).
-     *  @return exchangeRate_ The exchange rate of the bucket, in WAD units.
+     *  @return price_        Bucket's price (`WAD`).
+     *  @return quoteTokens_  Amount of quote token in bucket, `deposit + interest` (`WAD`).
+     *  @return collateral_   Unencumbered collateral in bucket (`WAD`).
+     *  @return bucketLP_     Outstanding `LP` balance in bucket (`WAD`).
+     *  @return scale_        Lender interest multiplier (`WAD`).
+     *  @return exchangeRate_ The exchange rate of the bucket, in `WAD` units.
      */
     function bucketInfo(address ajnaPool_, uint256 index_)
         external
@@ -111,7 +121,7 @@ contract PoolInfoUtils {
             uint256 price_,
             uint256 quoteTokens_,
             uint256 collateral_,
-            uint256 bucketLPs_,
+            uint256 bucketLP_,
             uint256 scale_,
             uint256 exchangeRate_
         )
@@ -120,15 +130,16 @@ contract PoolInfoUtils {
 
         price_ = _priceAt(index_);
 
-        (bucketLPs_, collateral_, , quoteTokens_, scale_) = pool.bucketInfo(index_);
-        exchangeRate_ = Buckets.getExchangeRate(collateral_, bucketLPs_, quoteTokens_, price_);
+        (bucketLP_, collateral_, , quoteTokens_, scale_) = pool.bucketInfo(index_);
+        exchangeRate_ = Buckets.getExchangeRate(collateral_, bucketLP_, quoteTokens_, price_);
     }
 
     /**
      *  @notice Returns info related to pool loans.
-     *  @return poolSize_              The total amount of quote tokens in pool (WAD).
+     *  @param  ajnaPool_              Address of `Ajna` pool.
+     *  @return poolSize_              The total amount of quote tokens in pool (`WAD`).
      *  @return loansCount_            The number of loans in pool.
-     *  @return maxBorrower_           The address with the highest TP in pool.
+     *  @return maxBorrower_           The address with the highest `TP` in pool.
      *  @return pendingInflator_       Pending inflator in pool.
      *  @return pendingInterestFactor_ Factor used to scale the inflator.
      */
@@ -161,12 +172,13 @@ contract PoolInfoUtils {
 
     /**
      *  @notice Returns info related to pool prices.
-     *  @return hpb_      The price value of the current Highest Price Bucket (HPB), in WAD units.
-     *  @return hpbIndex_ The index of the current Highest Price Bucket (HPB), in WAD units.
-     *  @return htp_      The price value of the current Highest Threshold Price (HTP) bucket, in WAD units.
-     *  @return htpIndex_ The index of the current Highest Threshold Price (HTP) bucket, in WAD units.
-     *  @return lup_      The price value of the current Lowest Utilized Price (LUP) bucket, in WAD units.
-     *  @return lupIndex_ The index of the current Lowest Utilized Price (LUP) bucket, in WAD units.
+     *  @param  ajnaPool_ Address of `Ajna` pool.
+     *  @return hpb_      The price value of the current `Highest Price Bucket` (`HPB`), in `WAD` units.
+     *  @return hpbIndex_ The index of the current `Highest Price Bucket` (`HPB`), in `WAD` units.
+     *  @return htp_      The price value of the current `Highest Threshold Price` (`HTP`) bucket, in `WAD` units.
+     *  @return htpIndex_ The index of the current `Highest Threshold Price` (`HTP`) bucket, in `WAD` units.
+     *  @return lup_      The price value of the current `Lowest Utilized Price` (LUP) bucket, in `WAD` units.
+     *  @return lupIndex_ The index of the current `Lowest Utilized Price` (`LUP`) bucket, in `WAD` units.
      */
     function poolPricesInfo(address ajnaPool_)
         external
@@ -196,11 +208,12 @@ contract PoolInfoUtils {
     }
 
     /**
-     *  @notice Returns info related to Claimaible Reserve Auction.
+     *  @notice Returns info related to `Claimaible Reserve Auction`.
+     *  @param  ajnaPool_                   Address of `Ajna` pool.
      *  @return reserves_                   The amount of excess quote tokens.
-     *  @return claimableReserves_          Denominated in quote token, or 0 if no reserves can be auctioned.
+     *  @return claimableReserves_          Denominated in quote token, or `0` if no reserves can be auctioned.
      *  @return claimableReservesRemaining_ Amount of claimable reserves which has not yet been taken.
-     *  @return auctionPrice_               Current price at which 1 quote token may be purchased, denominated in Ajna.
+     *  @return auctionPrice_               Current price at which `1` quote token may be purchased, denominated in `Ajna`.
      *  @return timeRemaining_              Seconds remaining before takes are no longer allowed.
      */
     function poolReservesInfo(address ajnaPool_)
@@ -224,7 +237,7 @@ contract PoolInfoUtils {
         (uint256 bondEscrowed, uint256 unclaimedReserve, uint256 auctionKickTime, ) = pool.reservesInfo();
 
         // due to rounding issues, especially in Auction.settle, this can be slighly negative
-        if( poolDebt + quoteTokenBalance >= poolSize + bondEscrowed + unclaimedReserve) {
+        if ( poolDebt + quoteTokenBalance >= poolSize + bondEscrowed + unclaimedReserve) {
             reserves_ = poolDebt + quoteTokenBalance - poolSize - bondEscrowed - unclaimedReserve;
         }
 
@@ -242,11 +255,12 @@ contract PoolInfoUtils {
     }
 
     /**
-     *  @notice Returns info related to Claimaible Reserve Auction.
+     *  @notice Returns info related to pool utilization.
+     *  @param  ajnaPool_              Address of `Ajna` pool.
      *  @return poolMinDebtAmount_     Minimum debt amount.
      *  @return poolCollateralization_ Current pool collateralization ratio.
-     *  @return poolActualUtilization_ The current pool actual utilization, in WAD units.
-     *  @return poolTargetUtilization_ The current pool Target utilization, in WAD units.
+     *  @return poolActualUtilization_ The current pool actual utilization, in `WAD` units.
+     *  @return poolTargetUtilization_ The current pool Target utilization, in `WAD` units.
      */
     function poolUtilizationInfo(address ajnaPool_)
         external
@@ -278,6 +292,8 @@ contract PoolInfoUtils {
     /**
      *  @notice Returns the proportion of interest rate which is awarded to lenders;
      *          the remainder accumulates in reserves.
+     *  @param  ajnaPool_             Address of `Ajna` pool.
+     *  @return lenderInterestMargin_ Lender interest margin in pool.
     */
     function lenderInterestMargin(address ajnaPool_)
         external
@@ -291,6 +307,9 @@ contract PoolInfoUtils {
         lenderInterestMargin_ = PoolCommons.lenderInterestMargin(utilization);
     }
 
+    /**
+     *  @notice Returns bucket price for a given bucket index.
+    */
     function indexToPrice(
         uint256 index_
     ) external pure returns (uint256)
@@ -298,6 +317,9 @@ contract PoolInfoUtils {
         return _priceAt(index_);
     }
 
+    /**
+     *  @notice Returns bucket index for a given bucket price.
+    */
     function priceToIndex(
         uint256 price_
     ) external pure returns (uint256)
@@ -305,6 +327,9 @@ contract PoolInfoUtils {
         return _indexOf(price_);
     }
 
+    /**
+     *  @notice Returns current `LUP` for a given pool.
+    */
     function lup(
         address ajnaPool_
     ) external view returns (uint256) {
@@ -316,6 +341,9 @@ contract PoolInfoUtils {
         return _priceAt(currentLupIndex);
     }
 
+    /**
+     *  @notice Returns current `LUP` index for a given pool.
+    */
     function lupIndex(
         address ajnaPool_
     ) external view returns (uint256) {
@@ -326,6 +354,9 @@ contract PoolInfoUtils {
         return pool.depositIndex(debt);
     }
 
+    /**
+     *  @notice Returns current `HPB` for a given pool.
+    */
     function hpb(
         address ajnaPool_
     ) external view returns (uint256) {
@@ -336,6 +367,9 @@ contract PoolInfoUtils {
         return _priceAt(hbpIndex);
     }
 
+    /**
+     *  @notice Returns current `HPB` index for a given pool.
+    */
     function hpbIndex(
         address ajnaPool_
     ) external view returns (uint256) {
@@ -344,12 +378,18 @@ contract PoolInfoUtils {
         return pool.depositIndex(1);
     }
 
+    /**
+     *  @notice Returns current `HTP` for a given pool.
+    */
     function htp(
         address ajnaPool_
     ) external view returns (uint256 htp_) {
         (, htp_, ) = IPool(ajnaPool_).loansInfo();
     }
 
+    /**
+     *  @notice Returns current `MOMP` for a given pool.
+    */
     function momp(
         address ajnaPool_
     ) external view returns (uint256) {
@@ -369,7 +409,7 @@ contract PoolInfoUtils {
 
     /**
      *  @notice Calculates origination fee rate for a pool.
-     *  @notice Calculated as greater of the current annualized interest rate divided by 52 (one week of interest) or 5 bps.
+     *  @notice Calculated as greater of the current annualized interest rate divided by `52` (one week of interest) or `5` bps.
      *  @return Fee rate calculated from the pool interest rate.
      */
     function borrowFeeRate(
@@ -381,7 +421,7 @@ contract PoolInfoUtils {
 
     /**
      *  @notice Calculates unutilized deposit fee rate for a pool.
-     *  @notice Calculated as current annualized rate divided by 365 (24 hours of interest).
+     *  @notice Calculated as current annualized rate divided by `365` (`24` hours of interest).
      *  @return Fee rate calculated from the pool interest rate.
      */
     function unutilizedDepositFeeRate(
@@ -392,46 +432,46 @@ contract PoolInfoUtils {
     }
 
     /**
-     *  @notice Calculate the amount of quote tokens in bucket for a given amount of LP.
-     *  @param  lps_         The number of LP to calculate amounts for.
+     *  @notice Calculate the amount of quote tokens in bucket for a given amount of `LP`.
+     *  @param  lp_          The number of `LP` to calculate amounts for.
      *  @param  index_       The price bucket index for which the value should be calculated.
-     *  @return quoteAmount_ The exact amount of quote tokens that can be exchanged for the given LP, WAD units.
+     *  @return quoteAmount_ The exact amount of quote tokens that can be exchanged for the given `LP`, `WAD` units.
      */
     function lpToQuoteTokens(
         address ajnaPool_,
-        uint256 lps_,
+        uint256 lp_,
         uint256 index_
     ) external view returns (uint256 quoteAmount_) {
         IPool pool = IPool(ajnaPool_);
-        (uint256 bucketLPs_, uint256 bucketCollateral , , uint256 bucketDeposit, ) = pool.bucketInfo(index_);
+        (uint256 bucketLP_, uint256 bucketCollateral , , uint256 bucketDeposit, ) = pool.bucketInfo(index_);
         quoteAmount_ = _lpToQuoteToken(
-            bucketLPs_,
+            bucketLP_,
             bucketCollateral,
             bucketDeposit,
-            lps_,
+            lp_,
             bucketDeposit,
             _priceAt(index_)
         );
     }
 
     /**
-     *  @notice Calculate the amount of collateral tokens in bucket for a given amount of LP.
-     *  @param  lps_              The number of LP to calculate amounts for.
+     *  @notice Calculate the amount of collateral tokens in bucket for a given amount of `LP`.
+     *  @param  lp_               The number of `LP` to calculate amounts for.
      *  @param  index_            The price bucket index for which the value should be calculated.
-     *  @return collateralAmount_ The exact amount of collateral tokens that can be exchanged for the given LP, WAD units.
+     *  @return collateralAmount_ The exact amount of collateral tokens that can be exchanged for the given `LP`, `WAD` units.
      */
     function lpToCollateral(
         address ajnaPool_,
-        uint256 lps_,
+        uint256 lp_,
         uint256 index_
     ) external view returns (uint256 collateralAmount_) {
         IPool pool = IPool(ajnaPool_);
-        (uint256 bucketLPs_, uint256 bucketCollateral , , uint256 bucketDeposit, ) = pool.bucketInfo(index_);
+        (uint256 bucketLP_, uint256 bucketCollateral , , uint256 bucketDeposit, ) = pool.bucketInfo(index_);
         collateralAmount_ = _lpToCollateral(
             bucketCollateral,
-            bucketLPs_,
+            bucketLP_,
             bucketDeposit,
-            lps_,
+            lp_,
             _priceAt(index_)
         );
     }
@@ -459,7 +499,7 @@ contract PoolInfoUtils {
      *  @param  debt_       The debt amount.
      *  @param  collateral_ The collateral amount.
      *  @param  price_      The price to calculate collateralization at.
-     *  @return Collateralization value. 1**18 if debt amount is 0.
+     *  @return Collateralization value. `1 WAD` if debt amount is `0`.
      */
     function _collateralization(
         uint256 debt_,
@@ -471,9 +511,9 @@ contract PoolInfoUtils {
     }
 
     /**
-     *  @notice Calculates target utilization for given EMA values.
-     *  @param  debtColEma_   The EMA of debt squared to collateral.
-     *  @param  lupt0DebtEma_ The EMA of LUP * t0 debt.
+     *  @notice Calculates target utilization for given `EMA` values.
+     *  @param  debtColEma_   The `EMA` of debt squared to collateral.
+     *  @param  lupt0DebtEma_ The `EMA` of `LUP * t0 debt`.
      *  @return Target utilization of the pool.
      */
     function _targetUtilization(

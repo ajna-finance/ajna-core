@@ -17,7 +17,7 @@ import { IPoolErrors }          from './commons/IPoolErrors.sol';
 import { IERC3156FlashLender }  from './IERC3156FlashLender.sol';
 
 /**
- * @title Base Pool
+ * @title Base Pool Interface
  */
 interface IPool is
     IPoolBorrowerActions,
@@ -36,8 +36,10 @@ interface IPool is
 
 }
 
+/// @dev Pool type enum - `ERC20` and `ERC721`
 enum PoolType { ERC20, ERC721 }
 
+/// @dev `ERC20` token interface.
 interface IERC20Token {
     function balanceOf(address account) external view returns (uint256);
     function burn(uint256 amount) external;
@@ -50,6 +52,7 @@ interface IERC20Token {
     ) external returns (bool);
 }
 
+/// @dev `ERC721` token interface.
 interface IERC721Token {
     function transferFrom(
         address from,

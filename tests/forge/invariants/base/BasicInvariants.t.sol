@@ -245,7 +245,7 @@ abstract contract BasicInvariants is BaseInvariants {
         }
 
         uint256 poolT0Debt = _pool.totalT0Debt();
-        if(poolT0Debt == 0) require(currentInflator == 1e18, "Incorrect inflator update");
+        if (poolT0Debt == 0) require(currentInflator == 1e18, "Incorrect inflator update");
 
         previousInflator       = currentInflator;
         previousInflatorUpdate = currentInflatorUpdate;
@@ -336,7 +336,7 @@ abstract contract BasicInvariants is BaseInvariants {
             uint256 nextNonzeroBucket = _pool.depositIndex(_pool.depositUpToIndex(bucketIndex)+1);
             console.log("bucketIndex:         ", bucketIndex);
             console.log("Next nonzero bucket: ", nextNonzeroBucket);
-            for(uint256 j = bucketIndex + 1; j < nextNonzeroBucket && j < LENDER_MAX_BUCKET_INDEX; j++) {
+            for (uint256 j = bucketIndex + 1; j < nextNonzeroBucket && j < LENDER_MAX_BUCKET_INDEX; j++) {
                 (, , , uint256 depositAtJ, ) = _pool.bucketInfo(j);
                 console.log("Deposit at %s is %s", j, depositAtJ);
                 require(

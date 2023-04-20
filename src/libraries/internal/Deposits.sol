@@ -11,15 +11,15 @@ import { Maths } from './Maths.sol';
 /**
     @title  Deposits library
     @notice Internal library containing common logic for deposits management.
-    @dev    Implemented as Fenwick Tree data structure.
+    @dev    Implemented as `Fenwick Tree` data structure.
  */
 library Deposits {
 
-    // Max index supported in the Fenwick tree
+    /// @dev Max index supported in the `Fenwick` tree
     uint256 internal constant SIZE = 8192;
 
     /**
-     *  @notice increase a value in the FenwickTree at an index.
+     *  @notice Increase a value in the FenwickTree at an index.
      *  @dev    Starts at leaf/target and moved up towards root
      *  @param  index_             The deposit index.
      *  @param  unscaledAddAmount_ The unscaled amount to increase deposit by.
@@ -64,11 +64,11 @@ library Deposits {
 
     /**
      *  @notice Finds index and sum of first bucket that EXCEEDS the given sum
-     *  @dev    Used in lup calculation
+     *  @dev    Used in `LUP` calculation
      *  @param  targetSum_     The sum to find index for.
-     *  @return sumIndex_      Smallest index where prefixsum greater than the sum
-     *  @return sumIndexSum_   Sum at index PRECEDING sumIndex_
-     *  @return sumIndexScale_ Scale of bucket PRECEDING sumIndex_
+     *  @return sumIndex_      Smallest index where prefixsum greater than the sum.
+     *  @return sumIndexSum_   Sum at index PRECEDING `sumIndex_`.
+     *  @return sumIndexScale_ Scale of bucket PRECEDING `sumIndex_`.
      */
     function findIndexAndSumOfSum(
         DepositsState storage deposits_,
@@ -114,10 +114,10 @@ library Deposits {
     }
 
     /**
-     *  @notice Finds index of passed sum.  Helper function for findIndexAndSumOfSum
-     *  @dev    Used in lup calculation
+     *  @notice Finds index of passed sum. Helper function for `findIndexAndSumOfSum`.
+     *  @dev    Used in `LUP` calculation
      *  @param  sum_      The sum to find index for.
-     *  @return sumIndex_ Smallest index where prefixsum greater than the sum
+     *  @return sumIndex_ Smallest index where prefixsum greater than the sum.
      */
     function findIndexOfSum(
         DepositsState storage deposits_,
@@ -127,9 +127,9 @@ library Deposits {
     }
 
     /**
-     *  @notice Get least significant bit (LSB) of intiger, i_.
+     *  @notice Get least significant bit (`LSB`) of integer `i_`.
      *  @dev    Used primarily to decrement the binary index in loops, iterating over range parents.
-     *  @param  i_  The integer with which to return the LSB.
+     *  @param  i_  The integer with which to return the `LSB`.
      */
     function lsb(
         uint256 i_
@@ -142,7 +142,7 @@ library Deposits {
 
     /**
      *  @notice Scale values in the tree from the index provided, upwards.
-     *  @dev    Starts at passed in node and increments through range parent nodes, and ends at 8192.
+     *  @dev    Starts at passed in node and increments through range parent nodes, and ends at `8192`.
      *  @param  index_   The index to start scaling from.
      *  @param  factor_  The factor to scale the values by.
      */
@@ -168,7 +168,7 @@ library Deposits {
         //             subtree what was scaled earlier.  Therefore: we need to increment it's stored value
         //             (in sum) which was set in a prior interation in case 1.
         while (bit <= SIZE) {
-            if((bit & index_) != 0) {
+            if ((bit & index_) != 0) {
                 // Case 1 as described above
                 value   = deposits_.values[index_];
                 scaling = deposits_.scaling[index_];
@@ -210,7 +210,7 @@ library Deposits {
 
     /**
      *  @notice Get prefix sum of all indexes from provided index downwards.
-     *  @dev    Starts at tree root and decrements through range parent nodes summing from index i_'s range to index 0.
+     *  @dev    Starts at tree root and decrements through range parent nodes summing from index `sumIndex_`'s range to index `0`.
      *  @param  sumIndex_  The index to receive the prefix sum.
      *  @param  sum_       The prefix sum from current index downwards.
      */
@@ -232,13 +232,13 @@ library Deposits {
             // Skip considering indices outside bounds of Fenwick tree
             if (index + j > SIZE) continue;
 
-            // We are considering whether to include node index_+j in the sum or not.  Either way, we need to scaling[index_+j],
+            // We are considering whether to include node index + j in the sum or not.  Either way, we need to scaling[index + j],
             // either to increment sum_ or to accumulate in runningScale
-            uint256 scaled = deposits_.scaling[index+j];
+            uint256 scaled = deposits_.scaling[index + j];
 
             if (sumIndex_ & j != 0) {
-                // node index+j of tree is included in sum
-                uint256 value = deposits_.values[index+j];
+                // node index + j of tree is included in sum
+                uint256 value = deposits_.values[index + j];
 
                 // Accumulate in sum_, recall that scaled==0 means that the scale factor is actually 1
                 sum_  += scaled != 0 ? (runningScale * scaled * value + 5e35) / 1e36 : Maths.wmul(runningScale, value);
@@ -257,10 +257,10 @@ library Deposits {
     }
 
     /**
-     *  @notice Decrease a node in the FenwickTree at an index.
-     *  @dev    Starts at leaf/target and moved up towards root
-     *  @param  index_                  The deposit index.
-     *  @param  unscaledRemoveAmount_   Unscaled amount to decrease deposit by.
+     *  @notice Decrease a node in the `FenwickTree` at an index.
+     *  @dev    Starts at leaf/target and moved up towards root.
+     *  @param  index_                The deposit index.
+     *  @param  unscaledRemoveAmount_ Unscaled amount to decrease deposit by.
      */
     function unscaledRemove(
         DepositsState storage deposits_,
@@ -293,7 +293,7 @@ library Deposits {
 
     /**
      *  @notice Scale tree starting from given index.
-     *  @dev    Starts at leaf/target and moved up towards root
+     *  @dev    Starts at leaf/target and moved up towards root.
      *  @param  index_  The deposit index.
      *  @return scaled_ Scaled value.
      */
@@ -364,9 +364,9 @@ library Deposits {
     }
 
     /**
-     *  @notice Returns LUP for a given debt value (capped at min bucket price).
-     *  @param  debt_ The debt amount to calculate LUP for.
-     *  @return LUP for given debt.
+     *  @notice Returns `LUP` for a given debt value (capped at min bucket price).
+     *  @param  debt_ The debt amount to calculate `LUP` for.
+     *  @return `LUP` for given debt.
      */
     function getLup(
         DepositsState storage deposits_,

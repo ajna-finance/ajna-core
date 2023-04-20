@@ -8,23 +8,23 @@ pragma solidity 0.8.14;
 interface IPoolImmutables {
 
     /**
-     *  @notice Returns the type of the pool (0 for ERC20, 1 for ERC721)
+     *  @notice Returns the type of the pool (`0` for `ERC20`, `1` for `ERC721`).
      */
     function poolType() external pure returns (uint8);
 
     /**
-     *  @notice Returns the address of the pool's collateral token
+     *  @notice Returns the address of the pool's collateral token.
      */
     function collateralAddress() external pure returns (address);
 
     /**
-     *  @notice Returns the address of the pools quote token
+     *  @notice Returns the address of the pool's quote token.
      */
     function quoteTokenAddress() external pure returns (address);
 
     /**
      *  @notice Returns the `quoteTokenScale` state variable.
-     *  @return The precision of the quote ERC-20 token based on decimals.
+     *  @return The precision of the quote `ERC20` token based on decimals.
      */
     function quoteTokenScale() external pure returns (uint256);
 

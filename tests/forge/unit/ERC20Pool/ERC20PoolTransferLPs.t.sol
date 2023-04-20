@@ -186,7 +186,7 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
         });
     }
 
-    function testIncreaseDecreaseLPsWithInvalidInput() external tearDown {
+    function testIncreaseDecreaseLPWithInvalidInput() external tearDown {
         uint256[] memory indexes = new uint256[](3);
         indexes[0] = 2550;
         indexes[1] = 2551;

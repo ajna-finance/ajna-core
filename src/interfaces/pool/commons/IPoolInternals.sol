@@ -10,6 +10,7 @@ pragma solidity 0.8.14;
 /*** Auction Param Structs ***/
 /*****************************/
 
+/// @dev Struct used to return result of `TakerAction.bucketTake` action.
 struct BucketTakeResult {
     uint256 collateralAmount;      // [WAD] amount of collateral taken
     uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LP
@@ -26,6 +27,7 @@ struct BucketTakeResult {
     uint256 collateralPostAction;  // [WAD] The amount of borrower collateral after take
 }
 
+/// @dev Struct used to return result of `KickerAction.kick` action.
 struct KickResult {
     uint256 amountToCoverBond;    // [WAD] amount of bond that needs to be covered
     uint256 t0PoolDebt;           // [WAD] t0 debt in pool after kick
@@ -35,12 +37,14 @@ struct KickResult {
     uint256 collateralPreAction;  // [WAD] The amount of borrower collateral before kick, same as the one after kick
 }
 
+/// @dev Struct used to hold parameters for `SettlerAction.settlePoolDebt` action.
 struct SettleParams {
     address borrower;    // borrower address to settle
     uint256 bucketDepth; // number of buckets to use when settle debt
     uint256 poolBalance; // current pool quote token balance
 }
 
+/// @dev Struct used to return result of `SettlerAction.settlePoolDebt` action.
 struct SettleResult {
     uint256 debtPreAction;       // [WAD] The amount of borrower t0 debt before settle
     uint256 debtPostAction;      // [WAD] The amount of borrower t0 debt remaining after settle
@@ -50,6 +54,7 @@ struct SettleResult {
     uint256 t0DebtSettled;       // [WAD] The amount of t0 debt settled
 }
 
+/// @dev Struct used to return result of `TakerAction.take` action.
 struct TakeResult {
     uint256 collateralAmount;      // [WAD] amount of collateral taken
     uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LP
@@ -68,6 +73,7 @@ struct TakeResult {
     uint256 collateralPostAction;  // [WAD] The amount of borrower collateral after take
 }
 
+/// @dev Struct used to hold parameters for `KickerAction.kickReserveAuction` action.
 struct KickReserveAuctionParams {
     uint256 poolSize;    // [WAD] total deposits in pool (with accrued debt)
     uint256 t0PoolDebt;  // [WAD] current t0 pool debt
@@ -79,11 +85,13 @@ struct KickReserveAuctionParams {
 /*** Liquidity Management Param Structs ***/
 /******************************************/
 
+/// @dev Struct used to hold parameters for `LenderAction.addQuoteToken` action.
 struct AddQuoteParams {
     uint256 amount;          // [WAD] amount to be added
     uint256 index;           // the index in which to deposit
 }
 
+/// @dev Struct used to hold parameters for `LenderAction.moveQuoteToken` action.
 struct MoveQuoteParams {
     uint256 fromIndex;       // the deposit index from where amount is moved
     uint256 maxAmountToMove; // [WAD] max amount to move between deposits
@@ -91,6 +99,7 @@ struct MoveQuoteParams {
     uint256 thresholdPrice;  // [WAD] max threshold price in pool
 }
 
+/// @dev Struct used to hold parameters for `LenderAction.removeQuoteToken` action.
 struct RemoveQuoteParams {
     uint256 index;           // the deposit index from where amount is removed
     uint256 maxAmount;       // [WAD] max amount to be removed
@@ -101,6 +110,7 @@ struct RemoveQuoteParams {
 /*** Loan Management Param Structs ***/
 /*************************************/
 
+/// @dev Struct used to return result of `BorrowerActions.drawDebt` action.
 struct DrawDebtResult {
     uint256 newLup;                // [WAD] new pool LUP after draw debt
     uint256 poolCollateral;        // [WAD] total amount of collateral in pool after pledge collateral
@@ -115,6 +125,7 @@ struct DrawDebtResult {
     uint256 collateralPostAction;  // [WAD] The amount of borrower collateral after draw debt
 }
 
+/// @dev Struct used to return result of `BorrowerActions.repayDebt` action.
 struct RepayDebtResult {
     uint256 newLup;                // [WAD] new pool LUP after draw debt
     uint256 poolCollateral;        // [WAD] total amount of collateral in pool after pull collateral

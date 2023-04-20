@@ -26,12 +26,12 @@ interface IERC721Pool is
 
     /**
      *  @notice Initializes a new pool, setting initial state variables.
-     *  @param  tokenIds  Enumerates tokenIds to be allowed in the pool.
-     *  @param  rate      Initial interest rate of the pool.
+     *  @param  tokenIds_  Enumerates `tokenIds_` to be allowed in the pool.
+     *  @param  rate_      Initial interest rate of the pool.
      */
     function initialize(
-        uint256[] memory tokenIds,
-        uint256 rate
+        uint256[] memory tokenIds_,
+        uint256 rate_
     ) external;
 
 }

@@ -1919,7 +1919,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         address[] memory minters = _getAddresses(deposits);
 
         // stake variable no of deposits
-        for(uint256 i = 0; i < deposits; ++i) {
+        for (uint256 i = 0; i < deposits; ++i) {
 
             tokenIds[i] = _mintAndMemorializePositionNFT({
                 indexes: depositIndexes,
@@ -1933,12 +1933,12 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         uint256 updaterBalance = _ajnaToken.balanceOf(_updater);
 
-        for(uint i = 0; i < deposits; i++) {
+        for (uint i = 0; i < deposits; i++) {
             minterToBalance[minters[i]] = _ajnaToken.balanceOf(minters[i]);
         }
 
         // start variable no of reserve Auctions and claim rewards for random tokenIds in each epoch
-        for(uint i = 0; i < reserveAuctions; ++i) {
+        for (uint i = 0; i < reserveAuctions; ++i) {
             uint256 limitIndex = _findSecondLowestIndexPrice(depositIndexes);
 
             // start and end new reserve auction 
@@ -1967,7 +1967,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             // pick random NFTs from all NFTs to claim rewards
             uint256[] memory randomNfts = _getRandomSubsetFromArray(tokenIds);
 
-            for(uint j = 0; j < randomNfts.length; j++) {
+            for (uint j = 0; j < randomNfts.length; j++) {
                 address minterAddress = tokenIdToMinter[randomNfts[j]];
                 changePrank(minterAddress);
 

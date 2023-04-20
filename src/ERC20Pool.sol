@@ -57,17 +57,17 @@ import { TakerActions }    from './libraries/external/TakerActions.sol';
 
 /**
  *  @title  ERC20 Pool contract
- *  @notice Entrypoint of ERC20 Pool actions for pool actors:
- *          - Lenders: add, remove and move quote tokens; transfer LP
- *          - Borrowers: draw and repay debt
- *          - Traders: add, remove and move quote tokens; add and remove collateral
- *          - Kickers: kick undercollateralized loans; settle auctions; claim bond rewards
- *          - Bidders: take auctioned collateral
- *          - Reserve purchasers: start auctions; take reserves
- *          - Flash borrowers: initiate flash loans on quote tokens and collateral
- *  @dev    Contract is FlashloanablePool with flash loan logic.
- *  @dev    Contract is base Pool with logic to handle ERC20 collateral.
- *  @dev    Calls logic from external PoolCommons, LenderActions, BorrowerActions and auction actions libraries.
+ *  @notice Entrypoint of `ERC20` Pool actions for pool actors:
+ *          - `Lenders`: add, remove and move quote tokens; transfer `LP`
+ *          - `Borrowers`: draw and repay debt
+ *          - `Traders`: add, remove and move quote tokens; add and remove collateral
+ *          - `Kickers`: kick undercollateralized loans; settle auctions; claim bond rewards
+ *          - `Bidders`: take auctioned collateral
+ *          - `Reserve purchasers`: start auctions; take reserves
+ *          - `Flash borrowers`: initiate flash loans on quote tokens and collateral
+ *  @dev    Contract is `FlashloanablePool` with flash loan logic.
+ *  @dev    Contract is base `Pool` with logic to handle `ERC20` collateral.
+ *  @dev    Calls logic from external `PoolCommons`, `LenderActions`, `BorrowerActions` and `Auction` actions libraries.
  */
 contract ERC20Pool is FlashloanablePool, IERC20Pool {
     using SafeERC20 for IERC20;
@@ -76,7 +76,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
     /*** Constants ***/
     /*****************/
 
-    // immutable args offset
+    /// @dev Immutable collateral scale arg offset.
     uint256 internal constant COLLATERAL_SCALE = 93;
 
     /****************************/
@@ -111,8 +111,8 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
     }
 
     /// @inheritdoc IERC20Pool
-    function bucketCollateralDust(uint256 bucketIndex) external pure override returns (uint256) {
-        return _bucketCollateralDust(bucketIndex);
+    function bucketCollateralDust(uint256 bucketIndex_) external pure override returns (uint256) {
+        return _bucketCollateralDust(bucketIndex_);
     }
 
     /***********************************/
@@ -121,12 +121,12 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
     /**
      *  @inheritdoc IERC20PoolBorrowerActions
-     *  @dev write state:
-     *          - decrement poolBalances.t0DebtInAuction accumulator
-     *          - increment poolBalances.pledgedCollateral accumulator
-     *          - increment poolBalances.t0Debt accumulator
-     *  @dev emit events:
-     *          - DrawDebt
+     *  @dev    === Write state ===
+     *  @dev    - decrement `poolBalances.t0DebtInAuction` accumulator
+     *  @dev    - increment `poolBalances.pledgedCollateral` accumulator
+     *  @dev    - increment `poolBalances.t0Debt` accumulator
+     *  @dev    === Emit events ===
+     *  @dev    - `DrawDebt`
      */
     function drawDebt(
         address borrowerAddress_,
@@ -189,12 +189,12 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
     /**
      *  @inheritdoc IERC20PoolBorrowerActions
-     *  @dev write state:
-     *          - decrement poolBalances.t0Debt accumulator
-     *          - decrement poolBalances.t0DebtInAuction accumulator
-     *          - decrement poolBalances.pledgedCollateral accumulator
-     *  @dev emit events:
-     *          - RepayDebt
+     *  @dev    === Write state ===
+     *  @dev    - decrement `poolBalances.t0Debt accumulator`
+     *  @dev    - decrement `poolBalances.t0DebtInAuction accumulator`
+     *  @dev    - decrement `poolBalances.pledgedCollateral accumulator`
+     *  @dev    === Emit events ===
+     *  @dev    - `RepayDebt`
      */
     function repayDebt(
         address borrowerAddress_,
@@ -262,16 +262,16 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
     /**
      *  @inheritdoc IERC20PoolLenderActions
-     *  @dev reverts on:
-     *          - DustAmountNotExceeded()
-     *  @dev emit events:
-     *          - AddCollateral
+     *  @dev    === Reverts on ===
+     *  @dev    - `DustAmountNotExceeded()`
+     *  @dev    === Emit events ===
+     *  @dev    - `AddCollateral`
      */
     function addCollateral(
         uint256 amountToAdd_,
         uint256 index_,
         uint256 expiry_
-    ) external override nonReentrant returns (uint256 bucketLPs_) {
+    ) external override nonReentrant returns (uint256 bucketLP_) {
         _revertOnExpiry(expiry_);
         PoolState memory poolState = _accruePoolInterest();
 
@@ -279,14 +279,14 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         if (amountToAdd_ != 0 && amountToAdd_ < _bucketCollateralDust(index_)) revert DustAmountNotExceeded();
         amountToAdd_ = _roundToScale(amountToAdd_, _getArgUint256(COLLATERAL_SCALE));
 
-        bucketLPs_ = LenderActions.addCollateral(
+        bucketLP_ = LenderActions.addCollateral(
             buckets,
             deposits,
             amountToAdd_,
             index_
         );
 
-        emit AddCollateral(msg.sender, index_, amountToAdd_, bucketLPs_);
+        emit AddCollateral(msg.sender, index_, amountToAdd_, bucketLP_);
 
         // update pool interest rate state
         _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
@@ -297,13 +297,13 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
     /**
      *  @inheritdoc IPoolLenderActions
-     *  @dev emit events:
-     *          - RemoveCollateral
+     *  @dev    === Emit events ===
+     *  @dev    - `RemoveCollateral`
      */
     function removeCollateral(
         uint256 maxAmount_,
         uint256 index_
-    ) external override nonReentrant returns (uint256 collateralAmount_, uint256 lpAmount_) {
+    ) external override nonReentrant returns (uint256 removedAmount_, uint256 redeemedLP_) {
         _revertIfAuctionClearable(auctions, loans);
 
         PoolState memory poolState = _accruePoolInterest();
@@ -311,20 +311,20 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         // round the collateral amount appropriately based on token precision
         maxAmount_ = _roundToScale(maxAmount_, _getArgUint256(COLLATERAL_SCALE));
 
-        (collateralAmount_, lpAmount_) = LenderActions.removeMaxCollateral(
+        (removedAmount_, redeemedLP_) = LenderActions.removeMaxCollateral(
             buckets,
             deposits,
             maxAmount_,
             index_
         );
 
-        emit RemoveCollateral(msg.sender, index_, collateralAmount_, lpAmount_);
+        emit RemoveCollateral(msg.sender, index_, removedAmount_, redeemedLP_);
 
         // update pool interest rate state
         _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
 
         // move collateral from pool to lender
-        _transferCollateral(msg.sender, collateralAmount_);
+        _transferCollateral(msg.sender, removedAmount_);
     }
 
     /*******************************/
@@ -333,10 +333,10 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
     /**
      *  @inheritdoc IPoolSettlerActions
-     *  @dev write state:
-     *          - decrement poolBalances.t0Debt accumulator
-     *          - decrement poolBalances.t0DebtInAuction accumulator
-     *          - decrement poolBalances.pledgedCollateral accumulator
+     *  @dev    === Write state ===
+     *  @dev    - decrement `poolBalances.t0Debt` accumulator
+     *  @dev    - decrement `poolBalances.t0DebtInAuction` accumulator
+     *  @dev    - decrement `poolBalances.pledgedCollateral` accumulator
      */
     function settle(
         address borrowerAddress_,
@@ -380,14 +380,14 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
     /**
      *  @inheritdoc IPoolTakerActions
-     *  @dev write state:
-     *          - decrement poolBalances.t0Debt accumulator
-     *          - decrement poolBalances.t0DebtInAuction accumulator
-     *          - decrement poolBalances.pledgedCollateral accumulator
+     *  @dev    === Write state ===
+     *  @dev    - decrement `poolBalances.t0Debt` accumulator
+     *  @dev    - decrement `poolBalances.t0DebtInAuction` accumulator
+     *  @dev    - decrement `poolBalances.pledgedCollateral` accumulator
      */
     function take(
         address        borrowerAddress_,
-        uint256        collateral_,
+        uint256        maxAmount_,
         address        callee_,
         bytes calldata data_
     ) external override nonReentrant {
@@ -396,7 +396,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         uint256 collateralDust = _bucketCollateralDust(0);
 
         // round requested collateral to an amount which can actually be transferred
-        collateral_ = _roundToScale(collateral_, collateralDust);
+        maxAmount_ = _roundToScale(maxAmount_, collateralDust);
 
         TakeResult memory result = TakerActions.take(
             auctions,
@@ -405,7 +405,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
             loans,
             poolState,
             borrowerAddress_,
-            collateral_,
+            maxAmount_,
             collateralDust
         );
         // round quote token up to cover the cost of purchasing the collateral
@@ -449,10 +449,10 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
     /**
      *  @inheritdoc IPoolTakerActions
-     *  @dev write state:
-     *          - decrement poolBalances.t0Debt accumulator
-     *          - decrement poolBalances.t0DebtInAuction accumulator
-     *          - decrement poolBalances.pledgedCollateral accumulator
+     *  @dev    === Write state ===
+     *  @dev    - decrement `poolBalances.t0Debt` accumulator
+     *  @dev    - decrement `poolBalances.t0DebtInAuction` accumulator
+     *  @dev    - decrement `poolBalances.pledgedCollateral` accumulator
      */
     function bucketTake(
         address borrowerAddress_,
@@ -516,17 +516,32 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
     /*** Helper Functions ***/
     /************************/
 
+    /**
+     *  @notice Helper function to transfer amount of collateral tokens (in collateral token precision) from sender to pool contract.
+     *  @param  from_    Sender address.
+     *  @param  amount_  Amount to transfer from sender.
+     */
     function _transferCollateralFrom(address from_, uint256 amount_) internal {
         IERC20(_getArgAddress(COLLATERAL_ADDRESS)).safeTransferFrom(from_, address(this), amount_ / _getArgUint256(COLLATERAL_SCALE));
     }
 
+    /**
+     *  @notice Helper function to transfer amount of collateral tokens (in collateral token precision) from pool contract.
+     *  @param  to_     Receiver address.
+     *  @param  amount_ Amount to transfer to receiver.
+     */
     function _transferCollateral(address to_, uint256 amount_) internal {
         IERC20(_getArgAddress(COLLATERAL_ADDRESS)).safeTransfer(to_, amount_ / _getArgUint256(COLLATERAL_SCALE));
     }
 
-    function _bucketCollateralDust(uint256 bucketIndex) internal pure returns (uint256) {
+    /**
+     *  @notice Helper function to calculate the minimum amount of collateral an actor may have in a bucket.
+     *  @param  bucketIndex_  Bucket index.
+     *  @return Amount of collateral dust amount of the bucket.
+     */
+    function _bucketCollateralDust(uint256 bucketIndex_) internal pure returns (uint256) {
         // price precision adjustment will always be 0 for encumbered collateral
-        uint256 pricePrecisionAdjustment = _getCollateralDustPricePrecisionAdjustment(bucketIndex);
+        uint256 pricePrecisionAdjustment = _getCollateralDustPricePrecisionAdjustment(bucketIndex_);
         // difference between the normalized scale and the collateral token's scale
         return Maths.max(_getArgUint256(COLLATERAL_SCALE), 10 ** pricePrecisionAdjustment);
     } 

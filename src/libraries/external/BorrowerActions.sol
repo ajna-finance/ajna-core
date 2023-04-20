@@ -35,7 +35,7 @@ import { SettlerActions } from './SettlerActions.sol';
 /**
     @title  BorrowerActions library
     @notice External library containing logic for for pool actors:
-            - Borrowers: pledge collateral and draw debt; repay debt and pull collateral
+            - `Borrowers`: pledge collateral and draw debt; repay debt and pull collateral
  */
 library BorrowerActions {
 
@@ -43,6 +43,7 @@ library BorrowerActions {
     /*** Local Var Structs ***/
     /*************************/
 
+    /// @dev Struct used for `drawDebt` function local vars.
     struct DrawDebtLocalVars {
         bool    borrow;                // true if borrow action
         uint256 borrowerDebt;          // [WAD] borrower's accrued debt
@@ -53,6 +54,8 @@ library BorrowerActions {
         bool    pledge;                // true if pledge action
         bool    stampT0Np;             // true if loan's t0 neutral price should be restamped (when drawing debt or pledge settles auction)
     }
+
+    /// @dev Struct used for `repayDebt` function local vars.
     struct RepayDebtLocalVars {
         uint256 borrowerDebt;          // [WAD] borrower's accrued debt
         uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LP (NFTs only)
@@ -90,27 +93,23 @@ library BorrowerActions {
 
     /**
      *  @notice See `IERC20PoolBorrowerActions` and `IERC721PoolBorrowerActions` for descriptions
-     *  @dev    write state:
-     *              - SettlerActions._settleAuction:
-     *                  - _removeAuction:
-     *                      - decrement kicker locked accumulator, increment kicker claimable accumumlator
-     *                      - decrement auctions count accumulator
-     *                      - decrement auctions.totalBondEscrowed accumulator
-     *                      - update auction queue state
-     *              - Loans.update:
-     *                  - _upsert:
-     *                      - insert or update loan in loans array
-     *                  - remove:
-     *                      - remove loan from loans array
-     *                  - update borrower in address => borrower mapping
-     *  @dev    reverts on:
-     *              - borrower not sender BorrowerNotSender()
-     *              - borrower debt less than pool min debt AmountLTMinDebt()
-     *              - limit price reached LimitIndexExceeded()
-     *              - borrower cannot draw more debt BorrowerUnderCollateralized()
-     *  @dev    emit events:
-     *              - SettlerActions._settleAuction:
-     *                  - AuctionNFTSettle or AuctionSettle
+     *  @dev    === Write state ===
+     *  @dev    - `SettlerActions._settleAuction` (`_removeAuction`):
+     *  @dev      decrement kicker locked accumulator, increment kicker claimable accumumlator
+     *  @dev      decrement auctions count accumulator
+     *  @dev      decrement `auctions.totalBondEscrowed` accumulator
+     *  @dev      update auction queue state
+     *  @dev    - `Loans.update` (`_upsert`):
+     *  @dev      insert or update loan in loans array
+     *  @dev      remove loan from loans array
+     *  @dev      update borrower in `address => borrower` mapping
+     *  @dev    === Reverts on ===
+     *  @dev    borrower not sender `BorrowerNotSender()`
+     *  @dev    borrower debt less than pool min debt `AmountLTMinDebt()`
+     *  @dev    limit price reached `LimitIndexExceeded()`
+     *  @dev    borrower cannot draw more debt `BorrowerUnderCollateralized()`
+     *  @dev    === Emit events ===
+     *  @dev    - `SettlerActions._settleAuction`: `AuctionNFTSettle` or `AuctionSettle`
      */
     function drawDebt(
         AuctionsState storage auctions_,
@@ -249,28 +248,24 @@ library BorrowerActions {
 
     /**
      *  @notice See `IERC20PoolBorrowerActions` and `IERC721PoolBorrowerActions` for descriptions
-     *  @dev    write state:
-     *              - SettlerActions._settleAuction:
-     *                  - _removeAuction:
-     *                      - decrement kicker locked accumulator, increment kicker claimable accumumlator
-     *                      - decrement auctions count accumulator
-     *                      - decrement auctions.totalBondEscrowed accumulator
-     *                      - update auction queue state
-     *              - Loans.update:
-     *                  - _upsert:
-     *                      - insert or update loan in loans array
-     *                  - remove:
-     *                      - remove loan from loans array
-     *                  - update borrower in address => borrower mapping
-     *  @dev    reverts on:
-     *              - no debt to repay NoDebt()
-     *              - borrower debt less than pool min debt AmountLTMinDebt()
-     *              - borrower not sender BorrowerNotSender()
-     *              - not enough collateral to pull InsufficientCollateral()
-     *              - limit price reached LimitIndexExceeded()
-     *  @dev    emit events:
-     *              - SettlerActions._settleAuction:
-     *                  - AuctionNFTSettle or AuctionSettle
+     *  @dev    === Write state ===
+     *  @dev    - `SettlerActions._settleAuction` (`_removeAuction`):
+     *  @dev      decrement kicker locked accumulator, increment kicker claimable accumumlator
+     *  @dev      decrement auctions count accumulator
+     *  @dev      decrement `auctions.totalBondEscrowed` accumulator
+     *  @dev      update auction queue state
+     *  @dev    - `Loans.update` (`_upsert`):
+     *  @dev      insert or update loan in loans array
+     *  @dev      remove loan from loans array
+     *  @dev      update borrower in `address => borrower` mapping
+     *  @dev    === Reverts on ===
+     *  @dev    no debt to repay `NoDebt()`
+     *  @dev    borrower debt less than pool min debt `AmountLTMinDebt()`
+     *  @dev    borrower not sender `BorrowerNotSender()`
+     *  @dev    not enough collateral to pull `InsufficientCollateral()`
+     *  @dev    limit price reached `LimitIndexExceeded()`
+     *  @dev    === Emit events ===
+     *  @dev    - `SettlerActions._settleAuction`: `AuctionNFTSettle` or `AuctionSettle`
      */
     function repayDebt(
         AuctionsState storage auctions_,
@@ -415,18 +410,16 @@ library BorrowerActions {
 
     /**
      *  @notice See `IPoolBorrowerActions` for descriptions
-     *  @dev    write state:
-     *              - Loans.update:
-     *                  - _upsert:
-     *                      - insert or update loan in loans array
-     *                  - remove:
-     *                      - remove loan from loans array
-     *                  - update borrower in address => borrower mapping
-     *  @dev    reverts on:
-     *              - auction active AuctionActive()
-     *              - loan not fully collateralized BorrowerUnderCollateralized()
-     *  @dev    emit events:
-     *              - LoanStamped
+     *  @dev    === Write state ===
+     *  @dev    - `Loans.update` (`_upsert`):
+     *  @dev      insert or update loan in loans array
+     *  @dev      remove loan from loans array
+     *  @dev      update borrower in `address => borrower` mapping
+     *  @dev    === Reverts on ===
+     *  @dev    auction active `AuctionActive()`
+     *  @dev    loan not fully collateralized `BorrowerUnderCollateralized()`
+     *  @dev    === Emit events ===
+     *  @dev    - `LoanStamped`
      */
     function stampLoan(
         AuctionsState storage auctions_,
@@ -475,10 +468,11 @@ library BorrowerActions {
     /**********************/
 
     /**
-     *  @notice Returns true if borrower is in auction.
-     *  @dev    Used to accuratley increment and decrement t0DebtInAuction.
+     *  @notice Returns `true` if borrower is in auction.
+     *  @dev    Used to accuratley increment and decrement `t0DebtInAuction` accumulator.
+     *  @param  auctions_ Struct for pool auctions state.
      *  @param  borrower_ Borrower address to check auction status for.
-     *  @return  active_ Boolean, based on if borrower is in auction.
+     *  @return `True` if borrower is in auction.
      */
     function _inAuction(
         AuctionsState storage auctions_,
