@@ -32,6 +32,7 @@ interface IERC3156FlashLender {
      * @param  token_    The loan currency.
      * @param  amount_   The amount of tokens lent.
      * @param  data_     Arbitrary data structure, intended to contain user-defined parameters.
+     * @return `True` when successful flashloan, `false` otherwise.
      */
     function flashLoan(
         IERC3156FlashBorrower receiver_,

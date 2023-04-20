@@ -143,7 +143,7 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
 
         // ensure actor has collateral to remove
         (uint256 lpBalanceBefore, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
-        if(lpBalanceBefore == 0) _addCollateral(boundedAmount_, _lenderBucketIndex);
+        if (lpBalanceBefore == 0) _addCollateral(boundedAmount_, _lenderBucketIndex);
     }
 
     function _prePledgeCollateral(

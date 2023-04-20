@@ -22,12 +22,12 @@ interface IRewardsManagerErrors {
     error MoveStakedLiquidityInvalid();
 
     /**
-     *  @notice User attempted to interact with an NFT they aren't the owner of.
+     *  @notice User attempted to interact with an `NFT` they aren't the owner of.
      */
     error NotOwnerOfDeposit();
 
     /**
-     *  @notice Can't deploy with Ajna token address 0x0 address.
+     *  @notice Can't deploy with `Ajna` token address `0x` address.
      */
     error DeployWithZeroAddress();
 }

@@ -7,14 +7,19 @@ pragma solidity 0.8.14;
  */
 interface IPoolDerivedState {
 
+    /**
+     *  @notice Returns the exchange rate for a given bucket index.
+     *  @param  index_        The bucket index.
+     *  @return exchangeRate_ Exchange rate of the bucket.
+     */
     function bucketExchangeRate(
         uint256 index_
     ) external view returns (uint256 exchangeRate_);
 
     /**
-     *  @notice Returns the prefix sum of a given bucket
-     *  @param  index_  The target index
-     *  @return Prefix sum
+     *  @notice Returns the prefix sum of a given bucket.
+     *  @param  index_   The bucket index.
+     *  @return The deposit up to given index.
      */
     function depositUpToIndex(
         uint256 index_

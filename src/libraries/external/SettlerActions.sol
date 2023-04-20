@@ -36,7 +36,7 @@ import { Maths }    from '../internal/Maths.sol';
 /**
     @title  Auction settler library
     @notice External library containing actions involving auctions within pool:
-            - settle auctions
+            - `settle` auctions
  */
 library SettlerActions {
 
@@ -44,12 +44,13 @@ library SettlerActions {
     /*** Local Var Structs ***/
     /*************************/
 
+    /// @dev Struct used for `_settlePoolDebtWithDeposit` function local vars.
     struct SettleLocalVars {
         uint256 collateralUsed;     // [WAD] collateral used to settle debt
         uint256 debt;               // [WAD] debt to settle
         uint256 hpbCollateral;      // [WAD] amount of collateral in HPB bucket
         uint256 hpbUnscaledDeposit; // [WAD] unscaled amount of of quote tokens in HPB bucket before settle
-        uint256 hpbLPs;             // [WAD] amount of LP in HPB bucket
+        uint256 hpbLP;              // [WAD] amount of LP in HPB bucket
         uint256 index;              // index of settling bucket
         uint256 maxSettleableDebt;  // [WAD] max amount that can be settled with existing collateral
         uint256 price;              // [WAD] price of settling bucket
@@ -64,7 +65,7 @@ library SettlerActions {
 
     // See `IPoolEvents` for descriptions
     event AuctionSettle(address indexed borrower, uint256 collateral);
-    event AuctionNFTSettle(address indexed borrower, uint256 collateral, uint256 lps, uint256 index);
+    event AuctionNFTSettle(address indexed borrower, uint256 collateral, uint256 lp, uint256 index);
     event BucketBankruptcy(uint256 indexed index, uint256 lpForfeited);
     event Settle(address indexed borrower, uint256 settledDebt);
 
@@ -81,26 +82,19 @@ library SettlerActions {
     /***************************/
 
     /**
+     *  @notice See `IPoolSettlerActions` for descriptions.
      *  @notice Settles the debt of the given loan / borrower by performing following steps:
      *          1. settle debt with `HPB`s deposit, up to specified buckets depth.
      *          2. settle debt with pool reserves (if there's still debt and no collateral left after step 1).
      *          3. forgive bad debt from next `HPB`, up to remaining buckets depth (and if there's still debt after step 2).
-     *  @dev    write state:
-     *          - Deposits.unscaledRemove() (remove amount in Fenwick tree, from index):
-     *              - update values array state
-     *          - Buckets.addCollateral:
-     *              - increment bucket.collateral and bucket.lps accumulator
-     *              - addLenderLP:
-     *                  - increment lender.lps accumulator and lender.depositTime state
-     *          - update borrower state
-     *  @dev    reverts on:
-     *              - loan is not in auction NoAuction()
-     *              - 72 hours didn't pass and auction still has collateral AuctionNotClearable()
-     *  @dev    emit events:
-     *              - Settle
-     *              - BucketBankruptcy
-     *  @param  params_ Settle params
-     *  @return result_ The result of settle action.
+     *  @dev    === Write state ===
+     *  @dev    update borrower state
+     *  @dev    === Reverts on ===
+     *  @dev    loan is not in auction `NoAuction()`
+     *  @dev    `72` hours didn't pass and auction still has collateral `AuctionNotClearable()`
+     *  @dev    === Emit events ===
+     *  @dev    - `Settle`
+     *  @return result_ The `SettleResult` struct result of settle action.
      */
     function settlePoolDebt(
         AuctionsState storage auctions_,
@@ -191,13 +185,16 @@ library SettlerActions {
 
     /**
      *  @notice Performs auction settle based on pool type, emits settle event and removes auction from auctions queue.
-     *  @dev    emit events:
-     *              - AuctionNFTSettle or AuctionSettle
+     *  @dev    === Emit events ===
+     *  @dev    - `AuctionNFTSettle` or `AuctionSettle`
+     *  @param  auctions_              Struct for pool auctions state.
+     *  @param  buckets_               Struct for pool buckets state.
+     *  @param  deposits_              Struct for pool deposits state.
      *  @param  borrowerAddress_       Address of the borrower that exits auction.
-     *  @param  borrowerCollateral_    Borrower collateral amount before auction exit (in NFT could be fragmented as result of partial takes).
-     *  @param  poolType_              Type of the pool (can be ERC20 or NFT).
-     *  @return remainingCollateral_   Collateral remaining after auction is settled (same amount for ERC20 pool, rounded collateral for NFT pool).
-     *  @return compensatedCollateral_ Amount of collateral compensated (NFT settle only), to be deducted from pool pledged collateral accumulator. 0 for ERC20 pools.
+     *  @param  borrowerCollateral_    Borrower collateral amount before auction exit (in `NFT` could be fragmented as result of partial takes).
+     *  @param  poolType_              Type of the pool (can be `ERC20` or `ERC721`).
+     *  @return remainingCollateral_   Collateral remaining after auction is settled (same amount for `ERC20` pool, rounded collateral for `ERC721` pool).
+     *  @return compensatedCollateral_ Amount of collateral compensated (`ERC721` settle only), to be deducted from pool pledged collateral accumulator. Always `0` for `ERC20` pools.
      */
     function _settleAuction(
         AuctionsState storage auctions_,
@@ -209,7 +206,7 @@ library SettlerActions {
     ) internal returns (uint256 remainingCollateral_, uint256 compensatedCollateral_) {
 
         if (poolType_ == uint8(PoolType.ERC721)) {
-            uint256 lps;
+            uint256 lp;
             uint256 bucketIndex;
 
             remainingCollateral_ = (borrowerCollateral_ / Maths.WAD) * Maths.WAD; // floor collateral of borrower
@@ -230,7 +227,7 @@ library SettlerActions {
                 bucketIndex = auctionPrice > MIN_PRICE ? _indexOf(auctionPrice) : MAX_FENWICK_INDEX;
 
                 // deposit collateral in bucket and reward LP to compensate fractional collateral
-                lps = Buckets.addCollateral(
+                lp = Buckets.addCollateral(
                     buckets_[bucketIndex],
                     borrowerAddress_,
                     Deposits.valueAt(deposits_, bucketIndex),
@@ -242,7 +239,7 @@ library SettlerActions {
             emit AuctionNFTSettle(
                 borrowerAddress_,
                 remainingCollateral_,
-                lps,
+                lp,
                 bucketIndex
             );
 
@@ -260,11 +257,12 @@ library SettlerActions {
 
     /**
      *  @notice Removes auction and repairs the queue order.
-     *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from liquidationBondEscrowed.
-     *  @dev    write state:
-     *              - decrement kicker locked accumulator, increment kicker claimable accumumlator
-     *              - decrement auctions count accumulator
-     *              - update auction queue state
+     *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from `liquidationBondEscrowed`.
+     *  @dev    === Write state ===
+     *  @dev    decrement kicker locked accumulator, increment kicker claimable accumumlator
+     *  @dev    decrement auctions count accumulator
+     *  @dev    update auction queue state
+     *  @param  auctions_ Struct for pool auctions state.
      *  @param  borrower_ Auctioned borrower address.
      */
     function _removeAuction(
@@ -307,7 +305,15 @@ library SettlerActions {
     }
 
     /**
-     *  @notice Called to settle debt using `HPB` deposits.
+     *  @notice Called to settle debt using `HPB` deposits, up to the number of specified buckets depth.
+     *  @dev    === Write state ===
+     *  @dev    - `Deposits.unscaledRemove()` (remove amount in `Fenwick` tree, from index):
+     *  @dev      update `values` array state
+     *  @dev    - `Buckets.addCollateral`:
+     *  @dev      increment `bucket.collateral` and `bucket.lps` accumulator
+     *  @dev      increment `lender.lps` accumulator and `lender.depositTime` state
+     *  @dev    === Emit events ===
+     *  @dev    - `BucketBankruptcy`
      *  @param  buckets_             Struct for pool buckets state.
      *  @param  deposits_            Struct for pool deposits state.
      *  @param  params_              Struct containing params for settle action.
@@ -370,7 +376,7 @@ library SettlerActions {
 
                 // use HPB bucket to swap loan collateral for loan debt
                 Bucket storage hpb = buckets_[vars.index];
-                vars.hpbLPs        = hpb.lps;
+                vars.hpbLP         = hpb.lps;
                 vars.hpbCollateral = hpb.collateral + vars.collateralUsed;
 
                 // set amount to remove as min of calculated amount and available deposit (to prevent rounding issues)
@@ -380,14 +386,14 @@ library SettlerActions {
                 // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
                 Deposits.unscaledRemove(deposits_, vars.index, vars.unscaledDeposit);
 
-                // check if bucket healthy - set bankruptcy if collateral is 0 and entire deposit was used to settle and there's still LPs
-                if (vars.hpbCollateral == 0 && vars.hpbUnscaledDeposit == 0 && vars.hpbLPs != 0) {
+                // check if bucket healthy - set bankruptcy if collateral is 0 and entire deposit was used to settle and there's still LP
+                if (vars.hpbCollateral == 0 && vars.hpbUnscaledDeposit == 0 && vars.hpbLP != 0) {
                     hpb.lps            = 0;
                     hpb.bankruptcyTime = block.timestamp;
 
                     emit BucketBankruptcy(
                         vars.index,
-                        vars.hpbLPs
+                        vars.hpbLP
                     );
                 } else {
                     // add settled collateral into bucket
@@ -412,7 +418,13 @@ library SettlerActions {
     }
 
     /**
-     *  @notice Called to forgive bad debt starting from next `HPB`.
+     *  @notice Called to forgive bad debt starting from next `HPB`, up to the number of remaining buckets depth.
+     *  @dev    === Write state ===
+     *  @dev    - `Deposits.unscaledRemove()` (remove amount in `Fenwick` tree, from index):
+     *  @dev      update `values` array state
+     *  @dev      reset `bucket.lps` accumulator and update `bucket.bankruptcyTime`
+     *  @dev    === Emit events ===
+     *  @dev    - `BucketBankruptcy`
      *  @param  buckets_         Struct for pool buckets state.
      *  @param  deposits_        Struct for pool deposits state.
      *  @param  params_          Struct containing params for settle action.

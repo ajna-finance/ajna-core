@@ -31,13 +31,13 @@ import { PositionNFTSVG } from './libraries/external/PositionNFTSVG.sol';
 
 /**
  *  @title  Position Manager Contract
- *  @notice Used by Pool lenders to optionally mint NFT that represents their positions.
- *          Lenders can:
- *          - mint positions NFT token for a specific pool
- *          - memorialize positions for given buckets
- *          - move liquidity in pool
- *          - redeem positions for given buckets
- *          - burn positions NFT
+ *  @notice Used by Pool lenders to optionally mint `NFT` that represents their positions.
+ *          `Lenders` can:
+ *          - `mint` positions `NFT` token for a specific pool
+ *          - `memorialize` positions for given buckets
+ *          - `move liquidity` in pool
+ *          - `redeem` positions for given buckets
+ *          - `burn` positions `NFT`
  */
 contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, ReentrancyGuard {
 
@@ -48,27 +48,35 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     /*** State Variables ***/
     /***********************/
 
-    mapping(uint256 => address) public override poolKey;     // token id => ajna pool address for which token was minted
+    /// @dev Mapping of `token id => ajna pool address` for which token was minted.
+    mapping(uint256 => address) public override poolKey;
 
-    mapping(uint256 => mapping(uint256 => Position)) internal positions; // token id => bucket index => Position struct
-    mapping(uint256 => uint96)                       internal nonces;          // token id => nonce value used for permit
-    mapping(uint256 => EnumerableSet.UintSet)        internal positionIndexes; // token id => bucket indexes associated with position
+    /// @dev Mapping of `token id => ajna pool address` for which token was minted.
+    mapping(uint256 => mapping(uint256 => Position)) internal positions;
+    /// @dev Mapping of `token id => nonce` value used for permit.
+    mapping(uint256 => uint96)                       internal nonces;
+    /// @dev Mapping of `token id => bucket indexes` associated with position.
+    mapping(uint256 => EnumerableSet.UintSet)        internal positionIndexes;
 
-    uint176 private _nextId = 1; // id of the next token that will be minted. Skips 0
+    /// @dev Id of the next token that will be minted. Skips `0`.
+    uint176 private _nextId = 1;
 
     /******************/
     /*** Immutables ***/
     /******************/
 
-    ERC20PoolFactory  private immutable erc20PoolFactory;  // The ERC20 pools factory contract, used to check if address is an Ajna pool
-    ERC721PoolFactory private immutable erc721PoolFactory; // The ERC721 pools factory contract, used to check if address is an Ajna pool
+    /// @dev The `ERC20` pools factory contract, used to check if address is an `Ajna` pool.
+    ERC20PoolFactory  private immutable erc20PoolFactory;
+    /// @dev The `ERC721` pools factory contract, used to check if address is an `Ajna` pool.
+    ERC721PoolFactory private immutable erc721PoolFactory;
 
     /*************************/
     /*** Local Var Structs ***/
     /*************************/
 
+    /// @dev Struct used for `moveLiquidity` function local vars.
     struct MoveLiquidityLocalVars {
-        uint256 bucketLPs;        // [WAD] amount of LP in from bucket
+        uint256 bucketLP;         // [WAD] amount of LP in from bucket
         uint256 bucketCollateral; // [WAD] amount of collateral in from bucket
         uint256 bankruptcyTime;   // from bucket bankruptcy time
         uint256 bucketDeposit;    // [WAD] from bucket deposit
@@ -82,6 +90,11 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     /*** Modifiers ***/
     /*****************/
 
+    /**
+     *  @dev   Modifier used to check if sender can interact with token id.
+     *  @param pool_    `Ajna` pool address.
+     *  @param tokenId_ Id of positions `NFT`.
+     */
     modifier mayInteract(address pool_, uint256 tokenId_) {
 
         // revert if token id is not a valid / minted id
@@ -114,17 +127,17 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
     /**
      *  @inheritdoc IPositionManagerOwnerActions
-     *  @dev write state:
-     *          - nonces: remove tokenId nonce
-     *          - poolKey: remove tokenId => pool mapping
-     *  @dev revert on:
-     *          - mayInteract:
-     *              - token id is not a valid / minted id
-     *              - sender is not owner NoAuth()
-     *              - token id not minted for given pool WrongPool()
-     *          - positions token to burn has liquidity LiquidityNotRemoved()
-     *  @dev emit events:
-     *          - Burn
+     *  @dev    === Write state ===
+     *  @dev    `nonces`: remove `tokenId` nonce
+     *  @dev    `poolKey`: remove `tokenId => pool` mapping
+     *  @dev    === Revert on ===
+     *  @dev    - `mayInteract`:
+     *  @dev       token id is not a valid / minted id
+     *  @dev       sender is not owner `NoAuth()`
+     *  @dev       token id not minted for given pool `WrongPool()`
+     *  @dev    - positions token to burn has liquidity `LiquidityNotRemoved()`
+     *  @dev    === Emit events ===
+     *  @dev    - `Burn`
      */
     function burn(
         BurnParams calldata params_
@@ -143,16 +156,16 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
     /**
      *  @inheritdoc IPositionManagerOwnerActions
-     *  @dev External calls to Pool contract:
-     *          - lenderInfo(): get lender position in bucket
-     *          - transferLP(): transfer LP ownership to PositionManager contracts
-     *  @dev write state:
-     *          - positionIndexes: add bucket index
-     *          - positions: update tokenId => bucket id position
-     *  @dev revert on:
-     *          - positions token to burn has liquidity LiquidityNotRemoved()
-     *  @dev emit events:
-     *          - MemorializePosition
+     *  @dev    External calls to `Pool` contract:
+     *  @dev    - `lenderInfo()`: get lender position in bucket
+     *  @dev    - `transferLP()`: transfer `LP` ownership to `PositionManager` contract
+     *  @dev    === Write state ===
+     *  @dev    `positionIndexes`: add bucket index
+     *  @dev    `positions`: update `tokenId => bucket id` position
+     *  @dev    === Revert on ===
+     *  @dev    positions token to burn has liquidity `LiquidityNotRemoved()`
+     *  @dev    === Emit events ===
+     *  @dev    - `MemorializePosition`
      */
     function memorializePositions(
         MemorializePositionsParams calldata params_
@@ -204,12 +217,12 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
     /**
      *  @inheritdoc IPositionManagerOwnerActions
-     *  @dev write state:
-     *          - poolKey: update tokenId => pool mapping
-     *  @dev revert on:
-     *          - provided pool not valid NotAjnaPool()
-     *  @dev emit events:
-     *          - Mint
+     *  @dev    === Write state ===
+     *  @dev    `poolKey`: update `tokenId => pool` mapping
+     *  @dev    === Revert on ===
+     *  @dev    provided pool not valid `NotAjnaPool()`
+     *  @dev    === Emit events ===
+     *  @dev    - `Mint`
      */
     function mint(
         MintParams calldata params_
@@ -229,22 +242,22 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
     /**
      *  @inheritdoc IPositionManagerOwnerActions
-     *  @dev External calls to Pool contract:
-     *          - bucketInfo(): get from bucket info
-     *          - moveQuoteToken(): move liquidity between buckets
-     *  @dev write state:
-     *          - positionIndexes: remove from bucket index
-     *          - positionIndexes: add to bucket index
-     *          - positions: update from bucket position
-     *          - positions: update to bucket position
-     *  @dev revert on:
-     *          - mayInteract:
-     *              - token id is not a valid / minted id
-     *              - sender is not owner NoAuth()
-     *              - token id not minted for given pool WrongPool()
-     *          - positions token to burn has liquidity LiquidityNotRemoved()
-     *  @dev emit events:
-     *          - MoveLiquidity
+     *  @dev    External calls to `Pool` contract:
+     *  @dev    `bucketInfo()`: get from bucket info
+     *  @dev    `moveQuoteToken()`: move liquidity between buckets
+     *  @dev    === Write state ===
+     *  @dev    `positionIndexes`: remove from bucket index
+     *  @dev    `positionIndexes`: add to bucket index
+     *  @dev    `positions`: update from bucket position
+     *  @dev    `positions`: update to bucket position
+     *  @dev    === Revert on ===
+     *  @dev    - `mayInteract`:
+     *  @dev      token id is not a valid / minted id
+     *  @dev      sender is not owner `NoAuth()`
+     *  @dev      token id not minted for given pool `WrongPool()`
+     *  @dev    - positions token to burn has liquidity `LiquidityNotRemoved()`
+     *  @dev    === Emit events ===
+     *  @dev    - `MoveLiquidity`
      */
     function moveLiquidity(
         MoveLiquidityParams calldata params_
@@ -262,7 +275,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
         // retrieve info of bucket from which liquidity is moved  
         (
-            vars.bucketLPs,
+            vars.bucketLP,
             vars.bucketCollateral,
             vars.bankruptcyTime,
             vars.bucketDeposit,
@@ -273,7 +286,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
         // calculate the max amount of quote tokens that can be moved, given the tracked LP
         vars.maxQuote = _lpToQuoteToken(
-            vars.bucketLPs,
+            vars.bucketLP,
             vars.bucketCollateral,
             vars.bucketDeposit,
             fromPosition.lps,
@@ -321,20 +334,20 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
     /**
      *  @inheritdoc IPositionManagerOwnerActions
-     *  @dev External calls to Pool contract:
-     *          - increaseLPAllowance(): approve ownership for transfer
-     *          - transferLP(): transfer LP ownership from PositionManager contract
-     *  @dev write state:
-     *          - positionIndexes: remove from bucket index
-     *          - positions: delete bucket position
-     *  @dev revert on:
-     *          - mayInteract:
-     *              - token id is not a valid / minted id
-     *              - sender is not owner NoAuth()
-     *              - token id not minted for given pool WrongPool()
-     *          - position not tracked RemoveLiquidityFailed()
-     *  @dev emit events:
-     *          - RedeemPosition
+     *  @dev    External calls to `Pool` contract:
+     *  @dev    `increaseLPAllowance()`: approve ownership for transfer
+     *  @dev    `transferLP()`: transfer `LP` ownership from `PositionManager` contract
+     *  @dev    === Write state ===
+     *  @dev    `positionIndexes`: remove from bucket index
+     *  @dev    `positions`: delete bucket position
+     *  @dev    === Revert on ===
+     *  @dev    - `mayInteract`:
+     *  @dev      token id is not a valid / minted id
+     *  @dev      sender is not owner `NoAuth()`
+     *  @dev      token id not minted for given pool `WrongPool()`
+     *  @dev    - position not tracked `RemoveLiquidityFailed()`
+     *  @dev    === Emit events ===
+     *  @dev    - `RedeemPosition`
      */
     function reedemPositions(
         RedeemPositionsParams calldata params_
@@ -385,7 +398,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
     /**
      *  @notice Retrieves token's next nonce for permit.
-     *  @param  tokenId_ Address of the Ajna pool to retrieve accumulators of.
+     *  @param  tokenId_ Address of the `Ajna` pool to retrieve accumulators of.
      *  @return Incremented token permit nonce.
      */
     function _getAndIncrementNonce(
@@ -395,10 +408,10 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     }
 
     /**
-     *  @notice Checks that a provided pool address was deployed by an Ajna factory.
-     *  @param  pool_       Address of the Ajna pool.
+     *  @notice Checks that a provided pool address was deployed by an `Ajna` factory.
+     *  @param  pool_       Address of the `Ajna` pool.
      *  @param  subsetHash_ Factory's subset hash pool.
-     *  @return True if a valid Ajna pool false otherwise.
+     *  @return `True` if a valid `Ajna` pool, `false` otherwise.
      */
     function _isAjnaPool(
         address pool_,
@@ -414,11 +427,11 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     }
 
     /**
-     *  @notice Checks that a bucket index associated with a given NFT didn't go bankrupt after memorialization.
+     *  @notice Checks that a bucket index associated with a given `NFT` didn't go bankrupt after memorialization.
      *  @param  pool_        The address of the pool of memorialized position.
      *  @param  index_       The bucket index to check deposit time for.
      *  @param  depositTime_ The recorded deposit time of the position.
-     *  @return True if the bucket went bankrupt after that position memorialzied their lpb.
+     *  @return `True` if the bucket went bankrupt after that position memorialzied their `LP`.
      */
     function _bucketBankruptAfterDeposit(
         IPool pool_,

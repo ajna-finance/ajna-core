@@ -159,7 +159,7 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
 
         // Action phase
         _actor = kicker;
-        if(!borrowerKicked) _kickAuction(borrower_);
+        if (!borrowerKicked) _kickAuction(borrower_);
     }
 
     function _constrictTakeAmount(uint256 amountToTake_) internal view virtual returns(uint256 boundedAmount_);

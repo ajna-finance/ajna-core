@@ -8,9 +8,9 @@ pragma solidity 0.8.14;
 interface IPoolBorrowerActions {
 
     /**
-     *  @notice Called by fully colalteralized borrowers to restamp the Neutral Price of the loan (only if loan is fully collateralized and not in auction).
-     *  @notice The reason for stamping the neutral price on the loan is to provide some certainty to the borrower as to at what price they can expect to be liquidated.
-     *  @notice This action can restamp only the loan of `msg.sender`.
+     *  @notice Called by fully colalteralized borrowers to restamp the `Neutral Price` of the loan (only if loan is fully collateralized and not in auction).
+     *          The reason for stamping the neutral price on the loan is to provide some certainty to the borrower as to at what price they can expect to be liquidated.
+     *          This action can restamp only the loan of `msg.sender`.
      */
     function stampLoan() external;
 

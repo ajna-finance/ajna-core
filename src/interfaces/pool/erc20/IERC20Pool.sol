@@ -21,17 +21,17 @@ interface IERC20Pool is
 
     /**
      *  @notice Initializes a new pool, setting initial state variables.
-     *  @param  rate Initial interest rate of the pool.
+     *  @param  rate_ Initial interest rate of the pool (min accepted value 1%, max accepted value 10%).
      */
-    function initialize(uint256 rate) external;
+    function initialize(uint256 rate_) external;
 
     /**
      *  @notice Returns the minimum amount of collateral an actor may have in a bucket.
-     *  @param  bucketIndex The bucket index for which the dust limit is desired, or 0 for pledged collateral.
-     *  @return The dust limit for `bucketIndex`.
+     *  @param  bucketIndex_ The bucket index for which the dust limit is desired, or `0` for pledged collateral.
+     *  @return The dust limit for `bucketIndex_`.
      */
     function bucketCollateralDust(
-        uint256 bucketIndex
+        uint256 bucketIndex_
     ) external pure returns (uint256);
 
 }
