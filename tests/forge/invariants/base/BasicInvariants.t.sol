@@ -43,6 +43,7 @@ abstract contract BasicInvariants is BaseInvariants {
         * F2: For any index i, the prefix sum up to and including i is the sum of values stored in indices j<=i
         * F3: For any index i < MAX_FENWICK_INDEX, findIndexOfSum(prefixSum(i)) > i
         * F4: For any index i, there is zero deposit above i and below findIndexOfSum(prefixSum(i) + 1): findIndexOfSum(prefixSum(i)) == findIndexOfSum(prefixSum(j) - deposits.valueAt(j)), where j is the next index from i with deposits != 0
+        * F5: Global scalar is never updated (`DepositsState.values[8192]` is always 0)
     ****************************************************************************************************************************************/
 
     // checks pool lps are equal to sum of all lender lps in a bucket 
@@ -350,6 +351,11 @@ abstract contract BasicInvariants is BaseInvariants {
             assertGe(nextNonzeroBucket+1, bucketIndex);
             bucketIndex = nextNonzeroBucket+1;  // can skip ahead
         }
+    }
+
+    // **F5**: Global scalar is never updated (`DepositsState.scaling[8192]` is always 0)
+    function invariant_fenwick_globalscalar_F5() public useCurrentTimestamp {
+        require(_pool.depositScale(8192) == 0, "F5: Global scalar was updated");
     }
 
     function invariant_call_summary() public virtual useCurrentTimestamp {

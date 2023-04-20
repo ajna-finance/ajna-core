@@ -321,10 +321,8 @@ library Deposits {
     function treeSum(
         DepositsState storage deposits_
     ) internal view returns (uint256) {
-        // In a scaled Fenwick tree, sum is at the root node, but needs to be scaled
-        uint256 scaling = deposits_.scaling[SIZE];
-        // scaling == 0 means scale factor is actually 1
-        return (scaling != 0) ? Maths.wmul(scaling, deposits_.values[SIZE]) : deposits_.values[SIZE]; 
+        // In a scaled Fenwick tree, sum is at the root node and never scaled
+        return deposits_.values[SIZE];
     }
 
     /**

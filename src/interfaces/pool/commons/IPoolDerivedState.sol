@@ -46,4 +46,13 @@ interface IPoolDerivedState {
      */
     function depositUtilization() external view returns (uint256);
 
+    /**
+     *  @notice Returns the scaling value of deposit at given index.
+     *  @param  index_  Deposit index.
+     *  @return Deposit scaling.
+     */
+    function depositScale(
+        uint256 index_
+    ) external view returns (uint256);
+
 }
