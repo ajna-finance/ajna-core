@@ -173,11 +173,12 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             if (afterBucketTakeVars.kickerLps > beforeBucketTakeVars.kickerLps) {
                 // **B7**: when awarded bucket take LP : kicker deposit time = timestamp of block when award happened
                 lenderDepositTime[kicker][bucketIndex_] = block.timestamp;
-            } else {
-                // **RE7**: Reserves increase by bond penalty on take.
-                increaseInReserves += afterBucketTakeVars.kickerBond - beforeBucketTakeVars.kickerBond;
             }
-
+            
+            if (beforeBucketTakeVars.kickerBond > afterBucketTakeVars.kickerBond) {
+                // **RE7**: Reserves increase by bond penalty on take.
+                increaseInReserves += beforeBucketTakeVars.kickerBond - afterBucketTakeVars.kickerBond;
+            }
             // **R7**: Exchange rates are unchanged under depositTakes
             // **R8**: Exchange rates are unchanged under arbTakes
             exchangeRateShouldNotChange[bucketIndex_] = true;
