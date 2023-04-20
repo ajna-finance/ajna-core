@@ -407,7 +407,7 @@ abstract contract BaseHandler is Test {
         if (max_ == type(uint256).max && x_ != 0) result_++;
     }
 
-    function getCollateralBuckets() external view returns(uint256[] memory) {
+    function getCollateralBuckets() public view returns(uint256[] memory) {
         return collateralBuckets.values();
     }
 

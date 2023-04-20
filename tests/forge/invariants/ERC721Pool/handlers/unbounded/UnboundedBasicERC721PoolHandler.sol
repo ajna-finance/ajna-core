@@ -83,6 +83,25 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
         }
     }
 
+    function _mergeCollateral(
+        uint256 amount_,
+        uint256[] memory bucketIndexes_
+    ) internal updateLocalStateAndPoolInterest {
+        numberOfCalls['UBBasicHandler.mergeCollateral']++;
+
+        try _erc721Pool.mergeOrRemoveCollateral(bucketIndexes_, amount_, 7388) {
+            
+            for(uint256 i; i < bucketIndexes_.length; i++) {
+                uint256 bucketIndex = bucketIndexes_[i]; 
+                // **R6**: Exchange rates are unchanged by removing collateral token from a bucket
+                exchangeRateShouldNotChange[bucketIndex] = true;
+            }
+
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
+        }
+    }
+
     /*********************************/
     /*** Borrower Helper Functions ***/
     /*********************************/
