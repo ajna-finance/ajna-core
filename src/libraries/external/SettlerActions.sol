@@ -44,14 +44,13 @@ library SettlerActions {
     /*** Local Var Structs ***/
     /*************************/
 
-    /// @dev Struct used for `settlePoolDebt` function local vars.
+    /// @dev Struct used for `_settlePoolDebtWithDeposit` function local vars.
     struct SettleLocalVars {
         uint256 collateralUsed;     // [WAD] collateral used to settle debt
         uint256 debt;               // [WAD] debt to settle
-        uint256 depositToRemove;    // [WAD] deposit used by settle auction
         uint256 hpbCollateral;      // [WAD] amount of collateral in HPB bucket
         uint256 hpbUnscaledDeposit; // [WAD] unscaled amount of of quote tokens in HPB bucket before settle
-        uint256 hpbLP;              // [WAD] amount of LP in HPB bucket
+        uint256 hpbLPs;             // [WAD] amount of LP in HPB bucket
         uint256 index;              // index of settling bucket
         uint256 maxSettleableDebt;  // [WAD] max amount that can be settled with existing collateral
         uint256 price;              // [WAD] price of settling bucket
@@ -66,7 +65,7 @@ library SettlerActions {
 
     // See `IPoolEvents` for descriptions
     event AuctionSettle(address indexed borrower, uint256 collateral);
-    event AuctionNFTSettle(address indexed borrower, uint256 collateral, uint256 lp, uint256 index);
+    event AuctionNFTSettle(address indexed borrower, uint256 collateral, uint256 lps, uint256 index);
     event BucketBankruptcy(uint256 indexed index, uint256 lpForfeited);
     event Settle(address indexed borrower, uint256 settledDebt);
 
@@ -84,19 +83,17 @@ library SettlerActions {
 
     /**
      *  @notice See `IPoolSettlerActions` for descriptions.
+     *  @notice Settles the debt of the given loan / borrower by performing following steps:
+     *          1. settle debt with `HPB`s deposit, up to specified buckets depth.
+     *          2. settle debt with pool reserves (if there's still debt and no collateral left after step 1).
+     *          3. forgive bad debt from next `HPB`, up to remaining buckets depth (and if there's still debt after step 2).
      *  @dev    === Write state ===
-     *  @dev    - `Deposits.unscaledRemove()` (remove amount in `Fenwick` tree, from index):
-     *  @dev      update `values` array state
-     *  @dev    - `Buckets.addCollateral`:
-     *  @dev      increment `bucket.collateral` and `bucket.lps` accumulator
-     *  @dev      increment `lender.lps` accumulator and `lender.depositTime` state
-     *  @dev    - update borrower state
+     *  @dev    update borrower state
      *  @dev    === Reverts on ===
      *  @dev    loan is not in auction `NoAuction()`
      *  @dev    `72` hours didn't pass and auction still has collateral `AuctionNotClearable()`
      *  @dev    === Emit events ===
      *  @dev    - `Settle`
-     *  @dev    - `BucketBankruptcy`
      *  @return result_ The `SettleResult` struct result of settle action.
      */
     function settlePoolDebt(
@@ -119,135 +116,41 @@ library SettlerActions {
         result_.t0DebtSettled       = borrower.t0Debt;
         result_.collateralSettled   = borrower.collateral;
 
-        // auction has debt to cover with remaining collateral
-        while (params_.bucketDepth != 0 && borrower.t0Debt != 0 && borrower.collateral != 0) {
-            SettleLocalVars memory vars;
+        // 1. settle debt with HPB deposit
+        (
+            borrower.t0Debt,
+            borrower.collateral,
+            params_.bucketDepth
+        ) = _settlePoolDebtWithDeposit(
+            buckets_,
+            deposits_,
+            params_,
+            borrower,
+            poolState_.inflator
+        );
 
-            (vars.index, , vars.scale) = Deposits.findIndexAndSumOfSum(deposits_, 1);
-            vars.hpbUnscaledDeposit = Deposits.unscaledValueAt(deposits_, vars.index);
-            vars.unscaledDeposit    = vars.hpbUnscaledDeposit;
-            vars.price              = _priceAt(vars.index);
-
-            if (vars.unscaledDeposit != 0) {
-                vars.debt              = Maths.wmul(borrower.t0Debt, poolState_.inflator); // current debt to be settled
-                vars.maxSettleableDebt = Maths.floorWmul(borrower.collateral, vars.price); // max debt that can be settled with existing collateral
-                vars.scaledDeposit     = Maths.wmul(vars.scale, vars.unscaledDeposit);
-
-                // enough deposit in bucket and collateral avail to settle entire debt
-                if (vars.scaledDeposit >= vars.debt && vars.maxSettleableDebt >= vars.debt) {
-                    // remove only what's needed to settle the debt
-                    vars.unscaledDeposit = Maths.wdiv(vars.debt, vars.scale);
-                    vars.collateralUsed  = Maths.wdiv(vars.debt, vars.price);
-
-                    // settle the entire debt
-                    borrower.t0Debt = 0;
-                }
-                // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
-                else if (vars.maxSettleableDebt >= vars.scaledDeposit) {
-                    vars.collateralUsed = Maths.wdiv(vars.scaledDeposit, vars.price);
-
-                    // subtract from debt the corresponding t0 amount of deposit
-                    borrower.t0Debt -= Maths.floorWdiv(vars.scaledDeposit, poolState_.inflator);
-                }
-                // settle constrained by collateral available
-                else {
-                    vars.unscaledDeposit = Maths.wdiv(vars.maxSettleableDebt, vars.scale);
-                    vars.collateralUsed  = borrower.collateral;
-
-                    borrower.t0Debt -= Maths.floorWdiv(vars.maxSettleableDebt, poolState_.inflator);
-                }
-
-                // remove settled collateral from loan
-                borrower.collateral -= vars.collateralUsed;
-
-                Bucket storage hpb = buckets_[vars.index];
-                vars.hpbLP         = hpb.lps;
-                vars.hpbCollateral = hpb.collateral + vars.collateralUsed;
-
-                // set amount to remove as min of calculated amount and available deposit (to prevent rounding issues)
-                vars.unscaledDeposit    = Maths.min(vars.hpbUnscaledDeposit, vars.unscaledDeposit);
-                vars.hpbUnscaledDeposit -= vars.unscaledDeposit;
-
-                // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
-                Deposits.unscaledRemove(deposits_, vars.index, vars.unscaledDeposit);
-
-                // check if bucket healthy - set bankruptcy if collateral is 0 and entire deposit was used to settle and there's still LP
-                if (vars.hpbCollateral == 0 && vars.hpbUnscaledDeposit == 0 && vars.hpbLP != 0) {
-                    hpb.lps            = 0;
-                    hpb.bankruptcyTime = block.timestamp;
-
-                    emit BucketBankruptcy(
-                        vars.index,
-                        vars.hpbLP
-                    );
-                } else {
-                    // add settled collateral into bucket
-                    hpb.collateral = vars.hpbCollateral;
-                }
-
-            } else {
-                // Deposits in the tree is zero, insert entire collateral into lowest bucket 7388
-                Buckets.addCollateral(
-                    buckets_[vars.index],
-                    params_.borrower,
-                    0,  // zero deposit in bucket
-                    borrower.collateral,
-                    vars.price
-                );
-                borrower.collateral = 0; // entire collateral added into bucket
-            }
-
-            --params_.bucketDepth;
-        }
-
-        // if there's still debt and no collateral
         if (borrower.t0Debt != 0 && borrower.collateral == 0) {
-
+            // 2. settle debt with pool reserves
             uint256 assets      = Maths.wmul(poolState_.t0Debt - result_.t0DebtSettled + borrower.t0Debt, poolState_.inflator) + params_.poolBalance;
             uint256 liabilities = Deposits.treeSum(deposits_) + auctions_.totalBondEscrowed + reserveAuction_.unclaimed;
-
             // settle debt from reserves (assets - liabilities) if reserves positive, round reserves down however
             if (assets > liabilities) {
                 borrower.t0Debt -= Maths.min(borrower.t0Debt, Maths.floorWdiv(assets - liabilities, poolState_.inflator));
             }
 
-            // if there's still debt after settling from reserves then start to forgive amount from next HPB
-            // loop through remaining buckets if there's still debt to settle
-            while (params_.bucketDepth != 0 && borrower.t0Debt != 0) {
-                SettleLocalVars memory vars;
-
-                (vars.index, , vars.scale) = Deposits.findIndexAndSumOfSum(deposits_, 1);
-                vars.unscaledDeposit = Deposits.unscaledValueAt(deposits_, vars.index);
-                vars.depositToRemove = Maths.wmul(vars.scale, vars.unscaledDeposit);
-                vars.debt            = Maths.wmul(borrower.t0Debt, poolState_.inflator);
-
-                // enough deposit in bucket to settle entire debt
-                if (vars.depositToRemove >= vars.debt) {
-                    Deposits.unscaledRemove(deposits_, vars.index, Maths.wdiv(vars.debt, vars.scale));
-                    borrower.t0Debt  = 0;                                                              // no remaining debt to settle
-
-                // not enough deposit to settle entire debt, we settle only deposit amount
-                } else {
-                    borrower.t0Debt -= Maths.floorWdiv(vars.depositToRemove, poolState_.inflator);     // subtract from remaining debt the corresponding t0 amount of deposit
-
-                    Deposits.unscaledRemove(deposits_, vars.index, vars.unscaledDeposit);              // Remove all deposit from bucket
-                    Bucket storage hpbBucket = buckets_[vars.index];
-
-                    if (hpbBucket.collateral == 0) {                                                   // existing LP for the bucket shall become unclaimable.
-                        hpbBucket.lps            = 0;
-                        hpbBucket.bankruptcyTime = block.timestamp;
-
-                        emit BucketBankruptcy(
-                            vars.index,
-                            hpbBucket.lps
-                        );
-                    }
-                }
-
-                --params_.bucketDepth;
+            // 3. forgive bad debt from next HPB
+            if (borrower.t0Debt != 0) {
+                borrower.t0Debt = _forgiveBadDebt(
+                    buckets_,
+                    deposits_,
+                    params_,
+                    borrower,
+                    poolState_.inflator
+                );
             }
         }
 
+        // complete result struct with debt settled
         result_.t0DebtSettled -= borrower.t0Debt;
 
         emit Settle(
@@ -255,8 +158,8 @@ library SettlerActions {
             result_.t0DebtSettled
         );
 
+        // if entire debt was settled then settle auction
         if (borrower.t0Debt == 0) {
-            // settle auction
             (borrower.collateral, ) = _settleAuction(
                 auctions_,
                 buckets_,
@@ -267,8 +170,9 @@ library SettlerActions {
             );
         }
 
+        // complete result struct with debt and collateral post action and collateral settled
         result_.debtPostAction      = borrower.t0Debt;
-        result_.collateralRemaining =  borrower.collateral;
+        result_.collateralRemaining = borrower.collateral;
         result_.collateralSettled   -= result_.collateralRemaining;
 
         // update borrower state
@@ -302,7 +206,7 @@ library SettlerActions {
     ) internal returns (uint256 remainingCollateral_, uint256 compensatedCollateral_) {
 
         if (poolType_ == uint8(PoolType.ERC721)) {
-            uint256 lp;
+            uint256 lps;
             uint256 bucketIndex;
 
             remainingCollateral_ = (borrowerCollateral_ / Maths.WAD) * Maths.WAD; // floor collateral of borrower
@@ -323,7 +227,7 @@ library SettlerActions {
                 bucketIndex = auctionPrice > MIN_PRICE ? _indexOf(auctionPrice) : MAX_FENWICK_INDEX;
 
                 // deposit collateral in bucket and reward LP to compensate fractional collateral
-                lp = Buckets.addCollateral(
+                lps = Buckets.addCollateral(
                     buckets_[bucketIndex],
                     borrowerAddress_,
                     Deposits.valueAt(deposits_, bucketIndex),
@@ -335,7 +239,7 @@ library SettlerActions {
             emit AuctionNFTSettle(
                 borrowerAddress_,
                 remainingCollateral_,
-                lp,
+                lps,
                 bucketIndex
             );
 
@@ -381,12 +285,12 @@ library SettlerActions {
             auctions_.head = address(0);
             auctions_.tail = address(0);
         }
-        else if (auctions_.head == borrower_) {
+        else if(auctions_.head == borrower_) {
             // liquidation is the head
             auctions_.liquidations[liquidation.next].prev = address(0);
             auctions_.head = liquidation.next;
         }
-        else if (auctions_.tail == borrower_) {
+        else if(auctions_.tail == borrower_) {
             // liquidation is the tail
             auctions_.liquidations[liquidation.prev].next = address(0);
             auctions_.tail = liquidation.prev;
@@ -398,6 +302,182 @@ library SettlerActions {
         }
         // delete liquidation
         delete auctions_.liquidations[borrower_];
+    }
+
+    /**
+     *  @notice Called to settle debt using `HPB` deposits.
+     *  @dev    === Write state ===
+     *  @dev    - `Deposits.unscaledRemove()` (remove amount in `Fenwick` tree, from index):
+     *  @dev      update `values` array state
+     *  @dev    - `Buckets.addCollateral`:
+     *  @dev      increment `bucket.collateral` and `bucket.lps` accumulator
+     *  @dev      increment `lender.lps` accumulator and `lender.depositTime` state
+     *  @dev    === Emit events ===
+     *  @dev    - `BucketBankruptcy`
+     *  @param  buckets_             Struct for pool buckets state.
+     *  @param  deposits_            Struct for pool deposits state.
+     *  @param  params_              Struct containing params for settle action.
+     *  @param  borrower_            Struct containing borrower details.
+     *  @param  inflator_            Current pool inflator.
+     *  @return remainingt0Debt_     Remaining borrower `t0` debt after settle with `HPB`.
+     *  @return remainingCollateral_ Remaining borrower collateral after settle with `HPB`.
+     *  @return bucketDepth_         Number of buckets to use for forgiving debt in case there's more remaining.
+     */
+    function _settlePoolDebtWithDeposit(
+        mapping(uint256 => Bucket) storage buckets_,
+        DepositsState storage deposits_,
+        SettleParams memory params_,
+        Borrower memory borrower_,
+        uint256 inflator_
+    ) internal returns (uint256 remainingt0Debt_, uint256 remainingCollateral_, uint256 bucketDepth_) {
+        remainingt0Debt_     = borrower_.t0Debt;
+        remainingCollateral_ = borrower_.collateral;
+        bucketDepth_         = params_.bucketDepth;
+
+        while (bucketDepth_ != 0 && remainingt0Debt_ != 0 && remainingCollateral_ != 0) {
+            SettleLocalVars memory vars;
+
+            (vars.index, , vars.scale) = Deposits.findIndexAndSumOfSum(deposits_, 1);
+            vars.hpbUnscaledDeposit    = Deposits.unscaledValueAt(deposits_, vars.index);
+            vars.unscaledDeposit       = vars.hpbUnscaledDeposit;
+            vars.price                 = _priceAt(vars.index);
+
+            if (vars.unscaledDeposit != 0) {
+                vars.debt              = Maths.wmul(remainingt0Debt_, inflator_);           // current debt to be settled
+                vars.maxSettleableDebt = Maths.floorWmul(remainingCollateral_, vars.price); // max debt that can be settled with existing collateral
+                vars.scaledDeposit     = Maths.wmul(vars.scale, vars.unscaledDeposit);
+
+                // 1) bucket deposit covers remaining loan debt to settle, loan's collateral can cover remaining loan debt to settle
+                if (vars.scaledDeposit >= vars.debt && vars.maxSettleableDebt >= vars.debt) {
+                    // remove only what's needed to settle the debt
+                    vars.unscaledDeposit = Maths.wdiv(vars.debt, vars.scale);
+                    vars.collateralUsed  = Maths.wdiv(vars.debt, vars.price);
+
+                    // settle the entire debt
+                    remainingt0Debt_ = 0;
+                }
+                // 2) bucket deposit can not cover all of loan's remaining debt, bucket deposit is the constraint
+                else if (vars.maxSettleableDebt >= vars.scaledDeposit) {
+                    vars.collateralUsed = Maths.wdiv(vars.scaledDeposit, vars.price);
+
+                    // subtract from debt the corresponding t0 amount of deposit
+                    remainingt0Debt_ -= Maths.floorWdiv(vars.scaledDeposit, inflator_);
+                }
+                // 3) loan's collateral can not cover remaining loan debt to settle, loan collateral is the constraint
+                else {
+                    vars.unscaledDeposit = Maths.wdiv(vars.maxSettleableDebt, vars.scale);
+                    vars.collateralUsed  = remainingCollateral_;
+
+                    remainingt0Debt_ -= Maths.floorWdiv(vars.maxSettleableDebt, inflator_);
+                }
+
+                // remove settled collateral from loan
+                remainingCollateral_ -= vars.collateralUsed;
+
+                // use HPB bucket to swap loan collateral for loan debt
+                Bucket storage hpb = buckets_[vars.index];
+                vars.hpbLPs        = hpb.lps;
+                vars.hpbCollateral = hpb.collateral + vars.collateralUsed;
+
+                // set amount to remove as min of calculated amount and available deposit (to prevent rounding issues)
+                vars.unscaledDeposit    = Maths.min(vars.hpbUnscaledDeposit, vars.unscaledDeposit);
+                vars.hpbUnscaledDeposit -= vars.unscaledDeposit;
+
+                // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
+                Deposits.unscaledRemove(deposits_, vars.index, vars.unscaledDeposit);
+
+                // check if bucket healthy - set bankruptcy if collateral is 0 and entire deposit was used to settle and there's still LPs
+                if (vars.hpbCollateral == 0 && vars.hpbUnscaledDeposit == 0 && vars.hpbLPs != 0) {
+                    hpb.lps            = 0;
+                    hpb.bankruptcyTime = block.timestamp;
+
+                    emit BucketBankruptcy(
+                        vars.index,
+                        vars.hpbLPs
+                    );
+                } else {
+                    // add settled collateral into bucket
+                    hpb.collateral = vars.hpbCollateral;
+                }
+
+            } else {
+                // Deposits in the tree is zero, insert entire collateral into lowest bucket 7388
+                Buckets.addCollateral(
+                    buckets_[vars.index],
+                    params_.borrower,
+                    0,  // zero deposit in bucket
+                    remainingCollateral_,
+                    vars.price
+                );
+                // entire collateral added into bucket, no borrower pledged collateral remaining
+                remainingCollateral_ = 0;
+            }
+
+            --bucketDepth_;
+        }
+    }
+
+    /**
+     *  @notice Called to forgive bad debt starting from next `HPB`.
+     *  @dev    === Write state ===
+     *  @dev    - `Deposits.unscaledRemove()` (remove amount in `Fenwick` tree, from index):
+     *  @dev      update `values` array state
+     *  @dev      reset `bucket.lps` accumulator and update `bucket.bankruptcyTime`
+     *  @dev    === Emit events ===
+     *  @dev    - `BucketBankruptcy`
+     *  @param  buckets_         Struct for pool buckets state.
+     *  @param  deposits_        Struct for pool deposits state.
+     *  @param  params_          Struct containing params for settle action.
+     *  @param  borrower_        Struct containing borrower details.
+     *  @param  inflator_        Current pool inflator.
+     *  @return remainingt0Debt_ Remaining borrower `t0` debt after forgiving bad debt in case not enough buckets used.
+     */
+    function _forgiveBadDebt(
+        mapping(uint256 => Bucket) storage buckets_,
+        DepositsState storage deposits_,
+        SettleParams memory params_,
+        Borrower memory borrower_,
+        uint256 inflator_
+    ) internal returns (uint256 remainingt0Debt_) {
+        remainingt0Debt_ = borrower_.t0Debt;
+
+        // loop through remaining buckets if there's still debt to forgive
+        while (params_.bucketDepth != 0 && remainingt0Debt_ != 0) {
+
+            (uint256 index, , uint256 scale) = Deposits.findIndexAndSumOfSum(deposits_, 1);
+            uint256 unscaledDeposit          = Deposits.unscaledValueAt(deposits_, index);
+            uint256 depositToRemove          = Maths.wmul(scale, unscaledDeposit);
+            uint256 debt                     = Maths.wmul(remainingt0Debt_, inflator_);
+
+            // 1) bucket deposit covers entire loan debt to settle, no constraints needed
+            if (depositToRemove >= debt) {
+                Deposits.unscaledRemove(deposits_, index, Maths.wdiv(debt, scale));
+                // no remaining debt to forgive
+                remainingt0Debt_ = 0;
+
+            // 2) loan debt to settle exceeds bucket deposit, bucket deposit is the constraint
+            } else {
+                // subtract from remaining debt the corresponding t0 amount of deposit
+                remainingt0Debt_ -= Maths.floorWdiv(depositToRemove, inflator_);
+
+                // Remove all deposit from bucket
+                Deposits.unscaledRemove(deposits_, index, unscaledDeposit);
+
+                Bucket storage hpbBucket = buckets_[index];
+                if (hpbBucket.collateral == 0) {
+                    // existing LP for the bucket shall become unclaimable
+                    hpbBucket.lps            = 0;
+                    hpbBucket.bankruptcyTime = block.timestamp;
+
+                    emit BucketBankruptcy(
+                        index,
+                        hpbBucket.lps
+                    );
+                }
+            }
+
+            --params_.bucketDepth;
+        }
     }
 
 }

@@ -177,6 +177,123 @@ contract RewardsManagerTest is RewardsHelperContract {
         });
     }
 
+    function testUnstakeTokenAfterBurnNoInterest() external {
+        skip(10);
+        ERC20Pool pool = ERC20Pool(address(_pool));
+
+        // deposit into a high and low bucket
+        deal(address(_quoteOne), _minterOne, 400 * 1e18);
+        changePrank(_minterOne);
+        _quoteOne.approve(address(_pool), type(uint256).max);
+        _pool.addQuoteToken(200 * 1e18, 2_000, type(uint256).max);
+        _pool.addQuoteToken(200 * 1e18, 4_000, type(uint256).max);
+        skip(1 hours);
+
+        // draw debt between the buckets
+        uint256 borrowAmount = 100 * 1e18;
+        uint256 limitIndex = 3_000;
+        assertGt(_pool.depositSize(), borrowAmount);
+        (
+            uint256 collateralToPledge
+        ) = _createTestBorrower(address(_pool), _borrower, borrowAmount, limitIndex);
+        pool.drawDebt(_borrower, borrowAmount, limitIndex, collateralToPledge);
+        skip(3 days);
+        (,,, uint256 htpIndex,,) = _poolUtils.poolPricesInfo(address(_pool));
+        assertLt(htpIndex, 4_000);
+
+        // mint LP NFT and memorialize position for only the bucket which did not earn interest
+        (uint256 lpBalance, ) = _pool.lenderInfo(4000, _minterOne);
+        assertGt(lpBalance, 0);
+        uint256[] memory indexes = new uint256[](1);
+        indexes[0] = 4_000;
+        uint256[] memory lpBalances = new uint256[](1);
+        lpBalances[0] = lpBalance;
+        changePrank(_minterOne);
+        _pool.increaseLPAllowance(address(_positionManager), indexes, lpBalances);
+        IPositionManagerOwnerActions.MintParams memory mintParams = IPositionManagerOwnerActions.MintParams(
+            _minterOne, address(_pool), keccak256("ERC20_NON_SUBSET_HASH"));
+        uint256 tokenId = _positionManager.mint(mintParams);
+        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
+            tokenId, indexes
+        );
+        _positionManager.memorializePositions(memorializeParams);
+        _registerLender(address(_positionManager), indexes);
+        skip(4 days);
+
+        // stake rewards
+        _stakeToken(address(_pool), _minterOne, tokenId);
+        skip(7 days);
+
+        // repay debt to accumulate some reserves
+        changePrank(_borrower);
+        pool.repayDebt(_borrower, type(uint256).max, collateralToPledge, _borrower, MAX_FENWICK_INDEX);
+        skip(2 hours);
+        
+        // burn
+        changePrank(_bidder);
+        pool.kickReserveAuction();
+        skip(11 hours);
+        _ajnaToken.approve(address(_pool), type(uint256).max);
+        (,, uint256 curClaimableReservesRemaining,,) = _poolUtils.poolReservesInfo(address(_pool));
+        _pool.takeReserves(curClaimableReservesRemaining);
+ 
+        // unstake with no interest earned
+        changePrank(_minterOne);
+        vm.expectEmit(true, true, true, true);
+        emit Unstake(_minterOne, address(_pool), tokenId);
+        _rewardsManager.unstake(tokenId);
+        assertEq(PositionManager(address(_positionManager)).ownerOf(tokenId), _minterOne);
+    }
+
+    function testUnstakeNoBurn() external {
+        skip(10);
+        ERC20Pool pool = ERC20Pool(address(_pool));
+
+        // deposit into some buckets and mint an NFT
+        uint256[] memory indexes = new uint256[](3);
+        indexes[0] = 2000;
+        indexes[1] = 2500;
+        indexes[2] = 3000;
+        uint256 tokenId = _mintAndMemorializePositionNFT({
+            indexes:    indexes,
+            minter:     _minterOne,
+            mintAmount: 1_000 * 1e18,
+            pool:       address(_pool)
+        });
+
+        // draw debt
+        uint256 borrowAmount = 1_500 * 1e18;
+        uint256 limitIndex = 2_500;
+        assertEq(_pool.depositIndex(borrowAmount), limitIndex);
+        assertGt(_pool.depositSize(), borrowAmount);
+        (
+            uint256 collateralToPledge
+        ) = _createTestBorrower(address(_pool), _borrower, borrowAmount, limitIndex);
+        pool.drawDebt(_borrower, borrowAmount, limitIndex, collateralToPledge);
+        skip(3 days);
+
+        // stake rewards
+        _stakeToken(address(_pool), _minterOne, tokenId);
+        skip(7 days);
+
+        // repay debt to accumulate some reserves
+        changePrank(_borrower);
+        pool.repayDebt(_borrower, type(uint256).max, collateralToPledge, _borrower, MAX_FENWICK_INDEX);
+        skip(2 hours);
+        
+        // start auction, but no burn
+        changePrank(_bidder);
+        pool.kickReserveAuction();
+        skip(11 hours);
+ 
+        // unstake
+        changePrank(_minterOne);
+        vm.expectEmit(true, true, true, true);
+        emit Unstake(_minterOne, address(_pool), tokenId);
+        _rewardsManager.unstake(tokenId);
+        assertEq(PositionManager(address(_positionManager)).ownerOf(tokenId), _minterOne);
+    }
+
     function testUpdateExchangeRatesAndClaimRewards() external {
         skip(10);
 
