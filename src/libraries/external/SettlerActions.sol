@@ -341,7 +341,7 @@ library SettlerActions {
                 vars.maxSettleableDebt = Maths.floorWmul(remainingCollateral_, vars.price); // max debt that can be settled with existing collateral
                 vars.scaledDeposit     = Maths.wmul(vars.scale, vars.unscaledDeposit);
 
-                // enough deposit in bucket and collateral available to settle entire debt
+                // 1) bucket deposit covers remaining loan debt to settle, loan's collateral can cover remaining loan debt to settle
                 if (vars.scaledDeposit >= vars.debt && vars.maxSettleableDebt >= vars.debt) {
                     // remove only what's needed to settle the debt
                     vars.unscaledDeposit = Maths.wdiv(vars.debt, vars.scale);
@@ -350,14 +350,14 @@ library SettlerActions {
                     // settle the entire debt
                     remainingt0Debt_ = 0;
                 }
-                // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
+                // 2) bucket deposit can not cover all of loan's remaining debt, bucket deposit is the constraint
                 else if (vars.maxSettleableDebt >= vars.scaledDeposit) {
                     vars.collateralUsed = Maths.wdiv(vars.scaledDeposit, vars.price);
 
                     // subtract from debt the corresponding t0 amount of deposit
                     remainingt0Debt_ -= Maths.floorWdiv(vars.scaledDeposit, inflator_);
                 }
-                // settle constrained by collateral available
+                // 3) loan's collateral can not cover remaining loan debt to settle, loan collateral is the constraint
                 else {
                     vars.unscaledDeposit = Maths.wdiv(vars.maxSettleableDebt, vars.scale);
                     vars.collateralUsed  = remainingCollateral_;
