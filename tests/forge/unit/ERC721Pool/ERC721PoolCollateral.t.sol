@@ -955,7 +955,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 kickTime:          block.timestamp - (32 hours + 4210 minutes),
                 kickMomp:          0.000000099836282890 * 1e18,
                 totalBondEscrowed: 5.907892720203444346 * 1e18,
-                auctionPrice:      0 * 1e18,
+                auctionPrice:      0,
                 debtInAuction:     439.666771301291458550 * 1e18,
                 thresholdPrice:    3_146.557582254998571114 * 1e18,
                 neutralPrice:      310.164365384230997074 * 1e18
@@ -1173,7 +1173,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 loans:                0,
                 maxBorrower:          address(0),
                 interestRate:         0.03645 * 1e18,
-                interestRateUpdate:   _startTime + 10000 days + 32 hours
+                interestRateUpdate:   block.timestamp
             })
         );
 
