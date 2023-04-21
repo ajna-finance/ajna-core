@@ -461,7 +461,7 @@ contract RegressionTestReserveERC20Pool is ReserveERC20PoolInvariants {
 
     /*
         Test was reverting with overflow in `(tu + mau102 - 1e18) ** 2)` calculation in _calculateInterestRate
-        Fixed by updating `((tu + mau102 - 1e18) ** 2) / 1e18` to `((tu / 1e9 + mau102 / 1e9 - 1e9) ** 2)`
+        Fixed by updating `((tu + mau102 - 1e18) ** 2) / 1e18` to `(((tu + mau102 - 1e18) / 1e9) ** 2)`
     */
     function test_regression_evm_revert_3() external {
         _reserveERC20PoolHandler.drawDebt(1000011592650618236, 427626464706163901647666438633);
