@@ -125,7 +125,7 @@ abstract contract BasicPoolHandler is UnboundedBasicPoolHandler {
     ) internal returns (address receiver_, uint256 boundedLps_) {
         // ensure actor has LP to transfer
         (uint256 senderLpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
-        if(senderLpBalance == 0) _addQuoteToken(1e24, _lenderBucketIndex);
+        if (senderLpBalance == 0) _addQuoteToken(1e24, _lenderBucketIndex);
 
         (senderLpBalance, ) = _pool.lenderInfo(_lenderBucketIndex, _actor);
 

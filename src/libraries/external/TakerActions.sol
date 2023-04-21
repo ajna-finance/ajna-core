@@ -42,7 +42,7 @@ import { Maths }    from '../internal/Maths.sol';
 /**
     @title  Auction Taker Actions library
     @notice External library containing actions involving taking auctions within pool:
-            - take auctioned collateral; take reserves
+            - `take` and `bucketTake` auctioned collateral; take reserves
  */
 library TakerActions {
 
@@ -50,6 +50,7 @@ library TakerActions {
     /*** Function Params Structs ***/
     /*******************************/
 
+    /// @dev Struct used to hold `bucketTake` function params.
     struct BucketTakeParams {
         address borrower;        // borrower address to take from
         bool    depositTake;     // deposit or arb take, used by bucket take
@@ -57,6 +58,8 @@ library TakerActions {
         uint256 inflator;        // [WAD] current pool inflator
         uint256 collateralScale; // precision of collateral token based on decimals
     }
+
+    /// @dev Struct used to hold `take` function params.
     struct TakeParams {
         address borrower;        // borrower address to take from
         uint256 takeCollateral;  // [WAD] desired amount to take
@@ -69,6 +72,7 @@ library TakerActions {
     /*** Local Var Structs ***/
     /*************************/
 
+    /// @dev Struct used for `take` function local vars.
     struct TakeLocalVars {
         uint256 auctionPrice;             // [WAD] The price of auction.
         uint256 bondChange;               // [WAD] The change made on the bond size (beeing reward or penalty).
@@ -120,13 +124,11 @@ library TakerActions {
     /***************************/
 
     /**
+     *  @notice See `IPoolTakerActions` for descriptions.
      *  @notice Performs bucket take collateral on an auction, rewards taker and kicker (if case) and updates loan info (settles auction if case).
-     *  @dev    reverts on:
-     *              - insufficient collateral InsufficientCollateral()
-     *  @param  borrowerAddress_ Borrower address to take.
-     *  @param  depositTake_     If true then the take will happen at an auction price equal with bucket price. Auction price is used otherwise.
-     *  @param  index_           Index of a bucket, likely the HPB, in which collateral will be deposited.
-     *  @return result_          BucketTakeResult struct containing details of take.
+     *  @dev    === Reverts on ===
+     *  @dev    not enough collateral to take `InsufficientCollateral()`
+     *  @return result_ `BucketTakeResult` struct containing details of bucket take result.
     */
     function bucketTake(
         AuctionsState storage auctions_,
@@ -189,12 +191,11 @@ library TakerActions {
     }
 
     /**
+     *  @notice See `IPoolTakerActions` for descriptions.
      *  @notice Performs take collateral on an auction, rewards taker and kicker (if case) and updates loan info (settles auction if case).
-     *  @dev    reverts on:
-     *              - insufficient collateral InsufficientCollateral()
-     *  @param  borrowerAddress_ Borrower address to take.
-     *  @param  collateral_      Max amount of collateral that will be taken from the auction (max number of NFTs in case of ERC721 pool).
-     *  @return result_          TakeResult struct containing details of take.
+     *  @dev    === Reverts on ===
+     *  @dev    insufficient collateral to take `InsufficientCollateral()`
+     *  @return result_ `TakeResult` struct containing details of take result.
     */
     function take(
         AuctionsState storage auctions_,
@@ -268,13 +269,13 @@ library TakerActions {
     /*************************/
 
     /**
-     *  @notice See `IPoolReserveAuctionActions` for descriptions.
-     *  @dev    write state:
-     *              - decrement reserveAuction.unclaimed accumulator
-     *  @dev    reverts on:
-     *              - not kicked or 72 hours didn't pass NoReservesAuction()
-     *  @dev    emit events:
-     *              - ReserveAuction
+     *  @notice See `IPoolTakerActions` for descriptions.
+     *  @dev    === Write state ===
+     *  @dev    decrement `reserveAuction.unclaimed` accumulator
+     *  @dev    === Reverts on ===
+     *  @dev    not kicked or `72` hours didn't pass `NoReservesAuction()`
+     *  @dev    === Emit events ===
+     *  @dev    - `ReserveAuction`
      */
     function takeReserves(
         ReserveAuctionState storage reserveAuction_,
@@ -324,8 +325,9 @@ library TakerActions {
 
     /**
      *  @notice Performs take collateral on an auction and updates bond size and kicker balance accordingly.
-     *  @dev    emit events:
-     *              - Take
+     *  @dev    === Emit events ===
+     *  @dev    - `Take`
+     *  @param  auctions_ Struct for pool auctions state.
      *  @param  borrower_ Struct containing auctioned borrower details.
      *  @param  params_   Struct containing take action params details.
      *  @return vars_     Struct containing auction take vars.
@@ -396,8 +398,11 @@ library TakerActions {
 
     /**
      *  @notice Performs bucket take collateral on an auction and rewards taker and kicker (if case).
-     *  @dev    emit events:
-     *              - BucketTake
+     *  @dev    === Emit events ===
+     *  @dev    - `BucketTake`
+     *  @param  auctions_ Struct for pool auctions state.
+     *  @param  buckets_  Struct for pool buckets state.
+     *  @param  deposits_ Struct for pool deposits state.
      *  @param  borrower_ Struct containing auctioned borrower details.
      *  @param  params_   Struct containing take action details.
      *  @return vars_     Struct containing auction take vars.
@@ -466,14 +471,18 @@ library TakerActions {
     /**
      *  @notice Performs update of an auctioned loan that was taken (using bucket or regular take).
      *  @notice If borrower becomes recollateralized then auction is settled. Update loan's state.
-     *  @dev    reverts on:
-     *              - borrower debt less than pool min debt AmountLTMinDebt()
-     *  @param  borrower_              Struct containing pool details.
+     *  @dev    === Reverts on ===
+     *  @dev    borrower debt less than pool min debt `AmountLTMinDebt()`
+     *  @param  auctions_              Struct for pool auctions state.
+     *  @param  buckets_               Struct for pool buckets state.
+     *  @param  deposits_              Struct for pool deposits state.
+     *  @param  loans_                 Struct for pool loans state.
+     *  @param  poolState_             Struct containing pool details.
      *  @param  borrower_              The borrower details owning loan that is taken.
      *  @param  borrowerAddress_       The address of the borrower.
-     *  @return newLup_                The new LUP of pool (after debt is repaid).
-     *  @return settledAuction_        True if auction is settled by the take action. (NFT take: rebalance borrower collateral in pool if true)
-     *  @return remainingCollateral_   Borrower collateral remaining after take action. (NFT take: collateral to be rebalanced in case of NFT settlement)
+     *  @return newLup_                The new `LUP` of pool (after debt is repaid).
+     *  @return settledAuction_        True if auction is settled by the take action. (`NFT` take: rebalance borrower collateral in pool if true)
+     *  @return remainingCollateral_   Borrower collateral remaining after take action. (`NFT` take: collateral to be rebalanced in case of `NFT` settlement)
      *  @return compensatedCollateral_ Amount of collateral compensated, to be deducted from pool pledged collateral accumulator.
     */
     function _takeLoan(
@@ -539,11 +548,13 @@ library TakerActions {
 
     /**
      *  @notice Rewards actors of a regular take action.
-     *  @dev    write state:
-     *              - update liquidation bond size accumulator
-     *              - update kicker's locked balance accumulator
-     *              - update auctions.totalBondEscrowed accumulator
-     *  @param  vars  Struct containing take action result details.
+     *  @dev    === Write state ===
+     *  @dev    update liquidation `bond size` accumulator
+     *  @dev    update kicker's `locked balance` accumulator
+     *  @dev    update `auctions.totalBondEscrowed` accumulator
+     *  @param  auctions_     Struct for pool auctions state.
+     *  @param  liquidation_  Struct containing details of auction.
+     *  @param  vars          Struct containing take action result details.
      */
     function _rewardTake(
         AuctionsState storage auctions_,
@@ -567,19 +578,25 @@ library TakerActions {
 
     /**
      *  @notice Rewards actors of a bucket take action.
-     *  @dev    write state:
-     *              - Buckets.addLenderLP:
-     *                  - increment taker lender.lps accumulator and lender.depositTime state
-     *                  - increment kicker lender.lps accumulator and lender.depositTime state
-     *              - update liquidation bond size accumulator
-     *              - update kicker's locked balance accumulator
-     *              - update auctions.totalBondEscrowed accumulator
-     *              - Deposits.unscaledRemove() (remove amount in Fenwick tree, from index):
-     *                  - update values array state
-     *              - increment bucket.collateral and bucket.lps accumulator
-     *  @dev    emit events:
-     *              - BucketTakeLPAwarded
-     *  @param  vars Struct containing take action result details.
+     *  @dev    === Write state ===
+     *  @dev    - `Buckets.addLenderLP`:
+     *  @dev      increment taker `lender.lps` accumulator and `lender.depositTime` state
+     *  @dev      increment kicker `lender.lps` accumulator and l`ender.depositTime` state
+     *  @dev    - update liquidation bond size accumulator
+     *  @dev    - update kicker's locked balance accumulator
+     *  @dev    - update `auctions.totalBondEscrowed` accumulator
+     *  @dev    - `Deposits.unscaledRemove()` (remove amount in `Fenwick` tree, from index):
+     *  @dev      update `values` array state
+     *  @dev    - increment `bucket.collateral` and `bucket.lps` accumulator
+     *  @dev    === Emit events ===
+     *  @dev    - `BucketTakeLPAwarded`
+     *  @param  auctions_     Struct for pool auctions state.
+     *  @param  deposits_     Struct for pool deposits state.
+     *  @param  buckets_      Struct for pool buckets state.
+     *  @param  liquidation_  Struct containing details of auction to be taken from.
+     *  @param  bucketIndex_  Index of a bucket, likely the `HPB`, in which collateral will be deposited.
+     *  @param  depositTake_  If `true` then the take will happen at an auction price equal with bucket price. Auction price is used otherwise.
+     *  @param  vars          Struct containing bucket take action result details.
      */
     function _rewardBucketTake(
         AuctionsState storage auctions_,
@@ -602,25 +619,25 @@ library TakerActions {
         );
 
         uint256 bankruptcyTime = bucket.bankruptcyTime;
-        uint256 totalLPsReward;
+        uint256 totalLPReward;
 
         // if arb take - taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
         if (!depositTake_) {
             uint256 takerReward = Maths.wmul(vars.collateralAmount, vars.bucketPrice - vars.auctionPrice);
 
-            totalLPsReward = Maths.wdiv(takerReward, exchangeRate);
+            totalLPReward = Maths.wdiv(takerReward, exchangeRate);
 
-            Buckets.addLenderLP(bucket, bankruptcyTime, msg.sender, totalLPsReward);
+            Buckets.addLenderLP(bucket, bankruptcyTime, msg.sender, totalLPReward);
         }
 
-        uint256 kickerLPsReward;
+        uint256 kickerLPReward;
 
         // the bondholder/kicker is awarded bond change worth of LPB in the bucket
         if (vars.isRewarded) {
-            kickerLPsReward = Maths.wdiv(vars.bondChange, exchangeRate);
-            totalLPsReward  += kickerLPsReward;
+            kickerLPReward = Maths.wdiv(vars.bondChange, exchangeRate);
+            totalLPReward  += kickerLPReward;
 
-            Buckets.addLenderLP(bucket, bankruptcyTime, vars.kicker, kickerLPsReward);
+            Buckets.addLenderLP(bucket, bankruptcyTime, vars.kicker, kickerLPReward);
         } else {
             // take is above neutralPrice, Kicker is penalized
             vars.bondChange = Maths.min(liquidation_.bondSize, vars.bondChange);
@@ -634,7 +651,7 @@ library TakerActions {
         Deposits.unscaledRemove(deposits_, bucketIndex_, vars.unscaledQuoteTokenAmount); // remove quote tokens from bucket’s deposit
 
         // total rewarded LP are added to the bucket LP balance
-        bucket.lps += totalLPsReward;
+        bucket.lps += totalLPReward;
 
         // collateral is added to the bucket’s claimable collateral
         bucket.collateral += vars.collateralAmount;
@@ -642,8 +659,8 @@ library TakerActions {
         emit BucketTakeLPAwarded(
             msg.sender,
             vars.kicker,
-            totalLPsReward - kickerLPsReward,
-            kickerLPsReward
+            totalLPReward - kickerLPReward,
+            kickerLPReward
         );
     }
 

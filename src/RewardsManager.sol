@@ -24,13 +24,13 @@ import { Maths } from './libraries/internal/Maths.sol';
 
 /**
  *  @title  Rewards (staking) Manager contract
- *  @notice Pool lenders can optionally mint NFT that represents their positions.
- *          The Rewards contract allows pool lenders with positions NFT to stake and earn AJNA tokens. 
- *          Lenders with NFTs can:
- *          - stake token
- *          - update bucket exchange rate and earn rewards
- *          - claim rewards
- *          - unstake token
+ *  @notice Pool lenders can optionally mint `NFT` that represents their positions.
+ *          The Rewards contract allows pool lenders with positions `NFT` to stake and earn `Ajna` tokens. 
+ *          Lenders with `NFT`s can:
+ *          - `stake` token
+ *          - `update bucket exchange rate` and earn rewards
+ *          - `claim` rewards
+ *          - `unstake` token
  */
 contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
@@ -41,16 +41,16 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     /*****************/
 
     /**
-     * @notice Maximum percentage of tokens burned that can be claimed as Ajna token lp nft rewards.
+     * @notice Maximum percentage of tokens burned that can be claimed as `Ajna` token `LP` `NFT` rewards.
      */
     uint256 internal constant REWARD_CAP = 0.8 * 1e18;
     /**
-     * @notice Maximum percentage of tokens burned that can be claimed as Ajna token update rewards.
+     * @notice Maximum percentage of tokens burned that can be claimed as `Ajna` token update rewards.
      */
     uint256 internal constant UPDATE_CAP = 0.1 * 1e18;
     /**
      * @notice Reward factor by which to scale the total rewards earned.
-     * @dev ensures that rewards issued to staked lenders in a given pool are less than the ajna tokens burned in that pool.
+     * @dev ensures that rewards issued to staked lenders in a given pool are less than the `Ajna` tokens burned in that pool.
      */
     uint256 internal constant REWARD_FACTOR = 0.5 * 1e18;
     /**
@@ -66,21 +66,27 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     /*** State Variables ***/
     /***********************/
 
-    mapping(uint256 => mapping(uint256 => bool)) public override isEpochClaimed;       // tokenID => epoch => bool has claimed
-    mapping(uint256 => uint256)                  public override rewardsClaimed;       // epoch => tokens claimed
-    mapping(uint256 => uint256)                  public override updateRewardsClaimed; // epoch => tokens claimed
+    /// @dev `tokenID => epoch => bool has claimed` mapping.
+    mapping(uint256 => mapping(uint256 => bool)) public override isEpochClaimed;
+    /// @dev `epoch => rewards claimed` mapping.
+    mapping(uint256 => uint256) public override rewardsClaimed;
+    /// @dev `epoch => update bucket rate rewards claimed` mapping.
+    mapping(uint256 => uint256) public override updateRewardsClaimed;
 
-    // Mapping of per pool bucket exchange rates at a given burn event.
-    mapping(address => mapping(uint256 => mapping(uint256 => uint256))) internal bucketExchangeRates; // poolAddress => bucketIndex => epoch => bucket exchange rate
+    /// @dev Mapping of per pool bucket exchange rates at a given burn event `poolAddress => bucketIndex => epoch => bucket exchange rate`.
+    mapping(address => mapping(uint256 => mapping(uint256 => uint256))) internal bucketExchangeRates;
 
-    mapping(uint256 => StakeInfo) internal stakes;  // tokenID => Stake info
+    /// @dev Mapping `tokenID => Stake info`.
+    mapping(uint256 => StakeInfo) internal stakes;
 
     /******************/
     /*** Immutables ***/
     /******************/
 
-    address          public immutable ajnaToken;       // address of the AJNA token
-    IPositionManager public immutable positionManager; // The PositionManager contract
+    /// @dev Address of the `Ajna` token.
+    address public immutable ajnaToken;
+    /// @dev The `PositionManager` contract
+    IPositionManager public immutable positionManager;
 
     /*******************/
     /*** Constructor ***/
@@ -99,11 +105,11 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
     /**
      *  @inheritdoc IRewardsManagerOwnerActions
-     *  @dev revert on:
-     *          - not owner NotOwnerOfDeposit()
-     *          - already claimed AlreadyClaimed()
-     *  @dev emit events:
-     *          - ClaimRewards
+     *  @dev    === Revert on ===
+     *  @dev    not owner `NotOwnerOfDeposit()`
+     *  @dev    already claimed `AlreadyClaimed()`
+     *  @dev    === Emit events ===
+     *  @dev    - `ClaimRewards`
      */
     function claimRewards(
         uint256 tokenId_,
@@ -120,11 +126,11 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
     /**
      *  @inheritdoc IRewardsManagerOwnerActions
-     *  @dev revert on:
-     *          - not owner NotOwnerOfDeposit()
-     *          - invalid index params MoveStakedLiquidityInvalid()
-     *  @dev emit events:
-     *          - MoveStakedLiquidity
+     *  @dev    === Revert on ===
+     *  @dev    not owner `NotOwnerOfDeposit()`
+     *  @dev    invalid index params `MoveStakedLiquidityInvalid()`
+     *  @dev    === Emit events ===
+     *  @dev    - `MoveStakedLiquidity`
      */
     function moveStakedLiquidity(
         uint256 tokenId_,
@@ -193,10 +199,10 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
     /**
      *  @inheritdoc IRewardsManagerOwnerActions
-     *  @dev revert on:
-     *          - not owner NotOwnerOfDeposit()
-     *  @dev emit events:
-     *          - Stake
+     *  @dev    === Revert on ===
+     *  @dev    not owner `NotOwnerOfDeposit()`
+     *  @dev    === Emit events ===
+     *  @dev    - `Stake`
      */
     function stake(
         uint256 tokenId_
@@ -255,11 +261,11 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
     /**
      *  @inheritdoc IRewardsManagerOwnerActions
-     *  @dev revert on:
-     *          - not owner NotOwnerOfDeposit()
-     *  @dev emit events:
-     *          - ClaimRewards
-     *          - Unstake
+     *  @dev    === Revert on ===
+     *  @dev    not owner `NotOwnerOfDeposit()`
+     *  @dev    === Emit events ===
+     *  @dev    - `ClaimRewards`
+     *  @dev    - `Unstake`
      */
     function unstake(
         uint256 tokenId_
@@ -298,8 +304,8 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
     /**
      *  @inheritdoc IRewardsManagerOwnerActions
-     *  @dev emit events:
-     *          - UpdateExchangeRates
+     *  @dev    === Emit events ===
+     *  @dev    - `UpdateExchangeRates`
      */
     function updateBucketExchangeRatesAndClaim(
         address pool_,
@@ -369,11 +375,11 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     /**************************/
 
     /**
-     *  @notice Calculate the amount of rewards that have been accumulated by a staked NFT.
+     *  @notice Calculate the amount of rewards that have been accumulated by a staked `NFT`.
      *  @dev    Rewards are calculated as the difference in exchange rates between the last interaction burn event and the current burn event.
-     *  @param  tokenId_      ID of the staked LP NFT.
+     *  @param  tokenId_      `ID` of the staked `LP` `NFT`.
      *  @param  epochToClaim_ The burn epoch to claim rewards for (rewards calculation starts from the last claimed epoch).
-     *  @return rewards_      Amount of rewards earned by the NFT.
+     *  @return rewards_      Amount of rewards earned by the `NFT`.
      */
     function _calculateAndClaimRewards(
         uint256 tokenId_,
@@ -408,13 +414,13 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     }
 
     /**
-     *  @notice Calculate the amount of rewards that have been accumulated by a staked NFT in next epoch.
+     *  @notice Calculate the amount of rewards that have been accumulated by a staked `NFT` in next epoch.
      *  @dev    Rewards are calculated as the difference in exchange rates between the last interaction burn event and the current burn event.
-     *  @param  tokenId_         ID of the staked LP NFT.
+     *  @param  tokenId_         `ID` of the staked `LP` `NFT`.
      *  @param  epoch_           The current epoch.
      *  @param  stakingEpoch_    The epoch in which token was staked.
      *  @param  ajnaPool_        Address of the pool.
-     *  @param  positionIndexes_ Bucket ids associated with NFT staked.
+     *  @param  positionIndexes_ Bucket ids associated with `NFT` staked.
      *  @return epochRewards_    Calculated rewards in epoch.
      */
     function _calculateNextEpochRewards(
@@ -470,11 +476,11 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     }
 
     /**
-     *  @notice Calculate the amount of interest that has accrued to a lender in a bucket based upon their LP.
+     *  @notice Calculate the amount of interest that has accrued to a lender in a bucket based upon their `LP`.
      *  @param  pool_           Address of the pool whose exchange rates are being checked.
      *  @param  nextEventEpoch_ The next event epoch to check the exchange rate for.
      *  @param  bucketIndex_    Index of the bucket to check the exchange rate for.
-     *  @param  bucketLPs       Amount of LP in bucket.
+     *  @param  bucketLP_       Amount of `LP` in bucket.
      *  @param  exchangeRate_   Exchange rate in current epoch.
      *  @return interestEarned_ The amount of interest accrued.
      */
@@ -482,7 +488,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         address pool_,
         uint256 nextEventEpoch_,
         uint256 bucketIndex_,
-        uint256 bucketLPs,
+        uint256 bucketLP_,
         uint256 exchangeRate_
     ) internal view returns (uint256 interestEarned_) {
 
@@ -495,7 +501,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
                 // calculate the equivalent amount of quote tokens given the stakes lp balance,
                 // and the exchange rate at the next and current burn events
-                interestEarned_ = Maths.wmul(nextExchangeRate - exchangeRate_, bucketLPs);
+                interestEarned_ = Maths.wmul(nextExchangeRate - exchangeRate_, bucketLP_);
             }
 
         }
@@ -503,11 +509,12 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
     /**
      *  @notice Calculate new rewards between current and next epoch, based on earned interest.
-     *  @param  ajnaPool_       Address of the pool.
-     *  @param  interestEarned_ The amount of interest accrued to current epoch.
-     *  @param  nextEpoch_      The next burn event epoch to calculate new rewards.
-     *  @param  epoch_          The current burn event epoch to calculate new rewards.
-     *  @return newRewards_     New rewards between current and next burn event epoch.
+     *  @param  ajnaPool_              Address of the pool.
+     *  @param  interestEarned_        The amount of interest accrued to current epoch.
+     *  @param  nextEpoch_             The next burn event epoch to calculate new rewards.
+     *  @param  epoch_                 The current burn event epoch to calculate new rewards.
+     *  @param  rewardsClaimedInEpoch_ Rewards claimed in epoch.
+     *  @return newRewards_            New rewards between current and next burn event epoch.
      */
     function _calculateNewRewards(
         address ajnaPool_,
@@ -544,12 +551,12 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     }
 
     /**
-     *  @notice Claim rewards that have been accumulated by a staked NFT.
-     *  @param  stakeInfo_     Details of stake to claim rewards for.
-     *  @param  tokenId_       ID of the staked LP NFT.
+     *  @notice Claim rewards that have been accumulated by a staked `NFT`.
+     *  @param  stakeInfo_     `StakeInfo` struct containing details of stake to claim rewards for.
+     *  @param  tokenId_       `ID` of the staked `LP` `NFT`.
      *  @param  epochToClaim_  The burn epoch to claim rewards for (rewards calculation starts from the last claimed epoch)
      *  @param  validateEpoch_ True if the epoch is received as a parameter and needs to be validated (lower or equal with latest epoch).
-     *  @param  ajnaPool_      Address of ajna pool associated with the stake.
+     *  @param  ajnaPool_      Address of `Ajna` pool associated with the stake.
      */
     function _claimRewards(
         StakeInfo storage stakeInfo_,
@@ -619,11 +626,11 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
     /**
      *  @notice Retrieve the total ajna tokens burned and total interest earned by a pool since a given block.
-     *  @param  pool_                  Address of the Ajna pool to retrieve accumulators of.
+     *  @param  pool_                  Address of the `Ajna` pool to retrieve accumulators of.
      *  @param  currentBurnEventEpoch_ The latest burn event.
      *  @param  lastBurnEventEpoch_    The burn event to use as checkpoint since which values have accumulated.
      *  @return Timestamp of the latest burn event.
-     *  @return Total ajna tokens burned by the pool since the last burn event.
+     *  @return Total `Ajna` tokens burned by the pool since the last burn event.
      *  @return Total interest earned by the pool since the last burn event.
      */
     function _getPoolAccumulators(
@@ -655,10 +662,11 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
     /**
      *  @notice Update the exchange rate of a list of buckets.
-     *  @dev    Called as part of stakeToken, unstakeToken, and claimRewards, as well as updateBucketExchangeRatesAndClaim.
-     *  @dev    Caller can claim 5% of the rewards that have accumulated to each bucket since the last burn event, if it hasn't already been updated.
-     *  @param  pool_    Address of the pool whose exchange rates are being updated.
-     *  @param  indexes_ List of bucket indexes to be updated.
+     *  @dev    Called as part of `stake`, `unstake`, and `claimRewards`, as well as `updateBucketExchangeRatesAndClaim`.
+     *  @dev    Caller can claim `5%` of the rewards that have accumulated to each bucket since the last burn event, if it hasn't already been updated.
+     *  @param  pool_           Address of the pool whose exchange rates are being updated.
+     *  @param  indexes_        List of bucket indexes to be updated.
+     *  @return updatedRewards_ Update exchange rate rewards.
      */
     function _updateBucketExchangeRates(
         address pool_,
@@ -753,8 +761,9 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
      *  @param  pool_           Address of the pool whose exchange rates are being updated.
      *  @param  bucketIndex_    Bucket index to update exchange rate.
      *  @param  burnEpoch_      Current burn epoch of the pool.
-     *  @param  totalBurned_    Total Ajna tokens burned in pool.
+     *  @param  totalBurned_    Total `Ajna` tokens burned in pool.
      *  @param  interestEarned_ Total interest rate earned in pool.
+     *  @return rewards_        Rewards for bucket exchange rate update.
      */
     function _updateBucketExchangeRateAndCalculateRewards(
         address pool_,
@@ -794,8 +803,8 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         }
     }
 
-    /** @notice Utility method to transfer Ajna rewards to the sender
-     *  @dev   This method is used to transfer rewards to the sender after a successful claim or update.
+    /** @notice Utility method to transfer `Ajna` rewards to the sender
+     *  @dev   This method is used to transfer rewards to the `msg.sender` after a successful claim or update.
      *  @dev   It is used to ensure that rewards claimers will be able to claim some portion of the remaining tokens if a claim would exceed the remaining contract balance.
      *  @param rewardsEarned_ Amount of rewards earned by the caller.
      */
