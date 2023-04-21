@@ -651,11 +651,10 @@ library LenderActions {
         bucketLP -= Maths.min(bucketLP, lpAmount_);
 
         // If clearing out the bucket collateral, ensure it's zeroed out
-        if (bucketLP == 0 && bucketDeposit == 0) {
-            collateralAmount_ = bucketCollateral;
-        }
+        if (bucketLP == 0 && bucketDeposit == 0) collateralAmount_ = bucketCollateral;
 
-        bucketCollateral  -= Maths.min(bucketCollateral, collateralAmount_);
+        collateralAmount_ = Maths.min(bucketCollateral, collateralAmount_);
+        bucketCollateral  -= collateralAmount_;
         bucket.collateral = bucketCollateral;
 
         // check if bucket healthy after collateral remove - set bankruptcy if collateral and deposit are 0 but there's still LP

@@ -85,6 +85,7 @@ library KickerActions {
     event Kick(address indexed borrower, uint256 debt, uint256 collateral, uint256 bond);
     event RemoveQuoteToken(address indexed lender, uint256 indexed price, uint256 amount, uint256 lpRedeemed, uint256 lup);
     event KickReserveAuction(uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 currentBurnEpoch);
+    event BucketBankruptcy(uint256 indexed index, uint256 lpForfeited);
 
     /**************/
     /*** Errors ***/
@@ -207,20 +208,37 @@ library KickerActions {
             vars.redeemedLP = vars.bucketLP;
 
             Deposits.unscaledRemove(deposits_, index_, vars.bucketUnscaledDeposit);
+            vars.bucketUnscaledDeposit = 0;
 
         } else {
             vars.redeemedLP = Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketRate);
 
+            uint256 unscaledAmountToRemove = Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketScale);
             Deposits.unscaledRemove(
                 deposits_,
                 index_,
-                Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketScale)
+                unscaledAmountToRemove
             );
+            vars.bucketUnscaledDeposit -= unscaledAmountToRemove;
         }
 
-        // remove bucket LP coresponding to the amount removed from deposits
-        lender.lps -= vars.redeemedLP;
-        bucket.lps -= vars.redeemedLP;
+        vars.redeemedLP = Maths.min(lender.lps, vars.redeemedLP);
+
+        uint256 bucketRemainingLP = vars.bucketLP - vars.redeemedLP;
+
+        if (vars.bucketCollateral == 0 && vars.bucketUnscaledDeposit == 0 && bucketRemainingLP != 0) {
+            bucket.lps            = 0;
+            bucket.bankruptcyTime = block.timestamp;
+
+            emit BucketBankruptcy(
+                index_,
+                bucketRemainingLP
+            );
+        } else {
+            // update lender and bucket LP balances
+            lender.lps -= vars.redeemedLP;
+            bucket.lps -= vars.redeemedLP;
+        }
 
         emit RemoveQuoteToken(
             msg.sender,
