@@ -37,6 +37,8 @@ import {
 }                                   from '../interfaces/pool/commons/IPoolState.sol';
 import {
     KickResult,
+    SettleResult,
+    TakeResult,
     RemoveQuoteParams,
     MoveQuoteParams,
     AddQuoteParams,
@@ -575,6 +577,63 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 reserveAuction.totalInterestEarned += newInterest;
             }
         }
+    }
+
+    /**
+     *  @notice Helper function to update pool state post take and bucket take actions.
+     *  @param result_    Struct containing details of take result.
+     *  @param poolState_ Struct containing pool details.
+     */
+    function _updatePostTakeState(
+        TakeResult memory result_,
+        PoolState memory poolState_
+    ) internal {
+        // update in memory pool state struct
+        poolState_.debt            =  result_.poolDebt;
+        poolState_.t0Debt          =  result_.t0PoolDebt;
+        poolState_.t0DebtInAuction += result_.t0DebtPenalty;
+        poolState_.t0DebtInAuction -= result_.t0DebtInAuctionChange;
+        poolState_.collateral      -= (result_.collateralAmount + result_.compensatedCollateral); // deduct collateral taken plus collateral compensated if NFT auction settled
+
+        // adjust t0Debt2ToCollateral ratio if auction settled by take action
+        if (result_.settledAuction) {
+            _updateT0Debt2ToCollateral(
+                0, // debt pre take (for loan in auction) not taken into account
+                result_.debtPostAction,
+                0, // collateral pre take (for loan in auction) not taken into account
+                result_.collateralPostAction
+            );
+        }
+
+        // update pool balances state
+        poolBalances.t0Debt            = poolState_.t0Debt;
+        poolBalances.t0DebtInAuction   = poolState_.t0DebtInAuction;
+        poolBalances.pledgedCollateral = poolState_.collateral;
+        // update pool interest rate state
+        _updateInterestState(poolState_, result_.newLup);
+    }
+
+    /**
+     *  @notice Helper function to update pool state post settle action.
+     *  @param result_    Struct containing details of settle result.
+     *  @param poolState_ Struct containing pool details.
+     */
+    function _updatePostSettleState(
+        SettleResult memory result_,
+        PoolState memory poolState_
+    ) internal {
+        // update in memory pool state struct
+        poolState_.debt            -= Maths.wmul(result_.t0DebtSettled, poolState_.inflator);
+        poolState_.t0Debt          -= result_.t0DebtSettled;
+        poolState_.t0DebtInAuction -= result_.t0DebtSettled;
+        poolState_.collateral      -= result_.collateralSettled;
+
+        // update pool balances state
+        poolBalances.t0Debt            = poolState_.t0Debt;
+        poolBalances.t0DebtInAuction   = poolState_.t0DebtInAuction;
+        poolBalances.pledgedCollateral = poolState_.collateral;
+        // update pool interest rate state
+        _updateInterestState(poolState_, Deposits.getLup(deposits, poolState_.debt));
     }
 
     /**

@@ -18,7 +18,6 @@ import {
     ReserveAuctionState
 }                        from '../../interfaces/pool/commons/IPoolState.sol';
 import {
-    BucketTakeResult,
     TakeResult
 }                        from '../../interfaces/pool/commons/IPoolInternals.sol';
 
@@ -128,7 +127,7 @@ library TakerActions {
      *  @notice Performs bucket take collateral on an auction, rewards taker and kicker (if case) and updates loan info (settles auction if case).
      *  @dev    === Reverts on ===
      *  @dev    not enough collateral to take `InsufficientCollateral()`
-     *  @return result_ `BucketTakeResult` struct containing details of bucket take result.
+     *  @return result_ `TakeResult` struct containing details of bucket take result.
     */
     function bucketTake(
         AuctionsState storage auctions_,
@@ -140,7 +139,7 @@ library TakerActions {
         bool    depositTake_,
         uint256 index_,
         uint256 collateralScale_
-    ) external returns (BucketTakeResult memory result_) {
+    ) external returns (TakeResult memory result_) {
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
 
         if (borrower.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0

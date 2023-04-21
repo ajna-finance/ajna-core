@@ -26,7 +26,6 @@ import {
 
 import {
     DrawDebtResult,
-    BucketTakeResult,
     RepayDebtResult,
     SettleParams,
     SettleResult,
@@ -372,18 +371,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
             })
         );
 
-        // update in memory pool state struct
-        poolState.debt            -= Maths.wmul(result.t0DebtSettled, poolState.inflator);
-        poolState.t0Debt          -= result.t0DebtSettled;
-        poolState.t0DebtInAuction -= result.t0DebtSettled;
-        poolState.collateral      -= result.collateralSettled;
-
-        // update pool balances state
-        poolBalances.t0Debt            = poolState.t0Debt;
-        poolBalances.t0DebtInAuction   = poolState.t0DebtInAuction;
-        poolBalances.pledgedCollateral = poolState.collateral;
-        // update pool interest rate state
-        _updateInterestState(poolState, Deposits.getLup(deposits, poolState.debt));
+        _updatePostSettleState(result, poolState);
     }
 
     /**
@@ -420,29 +408,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         // round quote token up to cover the cost of purchasing the collateral
         result.quoteTokenAmount = _roundUpToScale(result.quoteTokenAmount, _getArgUint256(QUOTE_SCALE));
 
-        // update in memory pool state struct
-        poolState.debt            =  result.poolDebt;
-        poolState.t0Debt          =  result.t0PoolDebt;
-        poolState.t0DebtInAuction += result.t0DebtPenalty;
-        poolState.t0DebtInAuction -= result.t0DebtInAuctionChange;
-        poolState.collateral      -= result.collateralAmount;
-
-        // adjust t0Debt2ToCollateral ratio if auction settled by take action
-        if (result.settledAuction) {
-            _updateT0Debt2ToCollateral(
-                0, // debt pre take (for loan in auction) not taken into account
-                result.debtPostAction,
-                0, // collateral pre take (for loan in auction) not taken into account
-                result.collateralPostAction
-            );
-        }
-
-        // update pool balances state
-        poolBalances.t0Debt            = poolState.t0Debt;
-        poolBalances.t0DebtInAuction   = poolState.t0DebtInAuction;
-        poolBalances.pledgedCollateral = poolState.collateral;
-        // update pool interest rate state
-        _updateInterestState(poolState, result.newLup);
+        _updatePostTakeState(result, poolState);
 
         _transferCollateral(callee_, result.collateralAmount);
 
@@ -473,7 +439,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
 
         PoolState memory poolState = _accruePoolInterest();
 
-        BucketTakeResult memory result = TakerActions.bucketTake(
+        TakeResult memory result = TakerActions.bucketTake(
             auctions,
             buckets,
             deposits,
@@ -485,29 +451,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
             _bucketCollateralDust(0)
         );
 
-        // update in memory pool state struct
-        poolState.debt            = result.poolDebt;
-        poolState.t0Debt          = result.t0PoolDebt;
-        poolState.t0DebtInAuction += result.t0DebtPenalty;
-        poolState.t0DebtInAuction -= result.t0DebtInAuctionChange;
-        poolState.collateral      -= result.collateralAmount;
-
-        // adjust t0Debt2ToCollateral ratio if auction settled by bucket take action
-        if (result.settledAuction) {
-            _updateT0Debt2ToCollateral(
-                0, // debt pre take (for loan in auction) not taken into account
-                result.debtPostAction,
-                0, // collateral pre take (for loan in auction) not taken into account
-                result.collateralPostAction
-            );
-        }
-
-        // update pool balances state
-        poolBalances.t0Debt            = poolState.t0Debt;
-        poolBalances.t0DebtInAuction   = poolState.t0DebtInAuction;
-        poolBalances.pledgedCollateral = poolState.collateral;
-        // update pool interest rate state
-        _updateInterestState(poolState, result.newLup);
+        _updatePostTakeState(result, poolState);
     }
 
     /***************************/
