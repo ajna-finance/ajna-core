@@ -82,6 +82,7 @@ library KickerActions {
     event Kick(address indexed borrower, uint256 debt, uint256 collateral, uint256 bond);
     event RemoveQuoteToken(address indexed lender, uint256 indexed price, uint256 amount, uint256 lpRedeemed, uint256 lup);
     event KickReserveAuction(uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 currentBurnEpoch);
+    event BucketBankruptcy(uint256 indexed index, uint256 lpForfeited);
 
     /**************/
     /*** Errors ***/
@@ -222,9 +223,24 @@ library KickerActions {
             );
         }
 
-        // remove bucket LP coresponding to the amount removed from deposits
-        lender.lps -= Maths.min(lender.lps, vars.redeemedLPs);
-        bucket.lps -= vars.redeemedLPs;
+        vars.redeemedLPs = Maths.min(lender.lps, vars.redeemedLPs);
+
+        vars.bucketUnscaledDeposit = Deposits.unscaledValueAt(deposits_, index_);
+        uint256 bucketLpsRemaining = bucket.lps - vars.redeemedLPs;
+
+        if (vars.bucketCollateral == 0 && vars.bucketUnscaledDeposit == 0 && bucketLpsRemaining != 0) {
+            bucket.lps            = 0;
+            bucket.bankruptcyTime = block.timestamp;
+
+            emit BucketBankruptcy(
+                index_,
+                bucketLpsRemaining
+            );
+        } else {
+            // update lender and bucket LP balances
+            lender.lps -= vars.redeemedLPs;
+            bucket.lps -= vars.redeemedLPs;
+        }
 
         emit RemoveQuoteToken(
             msg.sender,
