@@ -34,10 +34,8 @@ abstract contract BasicInvariants is BaseInvariants {
 
     // checks pool lps are equal to sum of all lender lps in a bucket 
     function invariant_Lps_B4() public useCurrentTimestamp {
-        uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            uint256 totalLps;
 
             // if bucket bankruptcy occured, then previousBankruptcy should be equal to current timestamp
             if (IBaseHandler(_handler).previousBankruptcy(bucketIndex) == block.timestamp) {
