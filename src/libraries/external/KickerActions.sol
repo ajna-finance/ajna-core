@@ -208,21 +208,23 @@ library KickerActions {
             vars.redeemedLP = vars.bucketLP;
 
             Deposits.unscaledRemove(deposits_, index_, vars.bucketUnscaledDeposit);
+            vars.bucketUnscaledDeposit = 0;
 
         } else {
             vars.redeemedLP = Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketRate);
 
+            uint256 unscaledAmountToRemove = Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketScale);
             Deposits.unscaledRemove(
                 deposits_,
                 index_,
-                Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketScale)
+                unscaledAmountToRemove
             );
+            vars.bucketUnscaledDeposit -= unscaledAmountToRemove;
         }
 
         vars.redeemedLP = Maths.min(lender.lps, vars.redeemedLP);
 
-        vars.bucketUnscaledDeposit = Deposits.unscaledValueAt(deposits_, index_);
-        uint256 bucketRemainingLP = bucket.lps - vars.redeemedLP;
+        uint256 bucketRemainingLP = vars.bucketLP - vars.redeemedLP;
 
         if (vars.bucketCollateral == 0 && vars.bucketUnscaledDeposit == 0 && bucketRemainingLP != 0) {
             bucket.lps            = 0;
