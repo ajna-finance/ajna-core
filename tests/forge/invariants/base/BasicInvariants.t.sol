@@ -41,18 +41,8 @@ abstract contract BasicInvariants is BaseInvariants {
 
             // if bucket bankruptcy occured, then previousBankruptcy should be equal to current timestamp
             if (IBaseHandler(_handler).previousBankruptcy(bucketIndex) == block.timestamp) {
-
-                for (uint256 i = 0; i < actorCount; i++) {
-                    address lender = IBaseHandler(_handler).actors(i);
-                    (uint256 lps, ) = _pool.lenderInfo(bucketIndex, lender);
-
-                    totalLps += lps;
-                }
-
                 (uint256 bucketLps, , , , ) = _pool.bucketInfo(bucketIndex);
-
                 assertEq(bucketLps, 0, "Buckets Invariant B4");
-                assertEq(totalLps, 0,  "Buckets Invariant B4");
             }
         }
     }

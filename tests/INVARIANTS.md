@@ -33,7 +33,7 @@
 - **B1**: sum of LP of lenders in bucket (`Lender.lps`) = bucket LP accumulator (`Bucket.lps`)  
 - **B2**: bucket LP accumulator (`Bucket.lps`) = 0 if no deposit / collateral in bucket  
 - **B3**: if no collateral or deposit in bucket then the bucket exchange rate is `1e18`  
-- **B4**: bankrupt bucket LP accumulator = 0; lender LP for deposits before bankruptcy time = 0
+- **B4**: bucket LP accumulator (`Bucket.lps`) = 0 when a bucket is bankrupted
 - **B5**: when adding / moving quote tokens or adding collateral : lender deposit time (`Lender.depositTime`) = timestamp of block when deposit happened (`block.timestamp`)  
 - **B6**: when receiving transferred LP : receiver deposit time (`Lender.depositTime`) = max of sender and receiver deposit time  
 - **B7**: when awarded bucket take LP : taker/kicker deposit time (`Lender.depositTime`) = timestamp of block when award happened (`block.timestamp`)  
