@@ -14,16 +14,18 @@ abstract contract ReservePoolHandler is UnboundedReservePoolHandler, Liquidation
     /*******************************/
 
     function kickReserveAuction(
-        uint256 actorIndex_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(actorIndex_) {
+        uint256 actorIndex_,
+        uint256 timeSkipped_
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(timeSkipped_) {
         // Action phase
         _kickReserveAuction();
     }
 
     function takeReserves(
         uint256 actorIndex_,
+        uint256 timeSkipped_,
         uint256 amountToTake_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(actorIndex_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(timeSkipped_) {
         // Prepare test phase
         uint256 boundedAmount = _preTakeReserves(amountToTake_);
 
