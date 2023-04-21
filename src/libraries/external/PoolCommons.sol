@@ -63,6 +63,7 @@ library PoolCommons {
         int256 weightMau;
         int256 weightTu;
         uint256 newInterestRate;
+        uint256 nonAuctionedT0Debt;
     }
 
     /**************************/
@@ -96,19 +97,21 @@ library PoolCommons {
         vars.t0Debt2ToCollateral = interestParams_.t0Debt2ToCollateral;
 
         // calculate new interest params
-        vars.newDebt = poolState_.debt;
+        vars.nonAuctionedT0Debt = poolState_.t0Debt - poolState_.t0DebtInAuction;
+        vars.newDebt = Maths.wmul(vars.nonAuctionedT0Debt, poolState_.inflator);
         // new meaningful deposit cannot be less than pool's debt
         vars.newMeaningfulDeposit = Maths.max(
             _meaningfulDeposit(
                 deposits_,
-                poolState_.t0Debt,
+                poolState_.t0DebtInAuction,
+                vars.nonAuctionedT0Debt,
                 poolState_.inflator,
                 vars.t0Debt2ToCollateral
             ),
             vars.newDebt
         );
         vars.newDebtCol   = Maths.wmul(poolState_.inflator, vars.t0Debt2ToCollateral);
-        vars.newLupt0Debt = Maths.wmul(lup_, poolState_.t0Debt);
+        vars.newLupt0Debt = Maths.wmul(lup_, vars.nonAuctionedT0Debt);
 
         // update EMAs only once per block
         if (vars.lastEmaUpdate != block.timestamp) {
@@ -337,11 +340,12 @@ library PoolCommons {
 
     function _meaningfulDeposit(
         DepositsState storage deposits_,
-        uint256 t0Debt_,
+        uint256 t0DebtInAuction_,
+        uint256 nonAuctionedT0Debt_,
         uint256 inflator_,
         uint256 t0Debt2ToCollateral_
     ) internal view returns (uint256 meaningfulDeposit_) {
-        uint256 dwatp = _dwatp(t0Debt_, inflator_, t0Debt2ToCollateral_);
+        uint256 dwatp = _dwatp(nonAuctionedT0Debt_, inflator_, t0Debt2ToCollateral_);
         if (dwatp == 0) {
             meaningfulDeposit_ = Deposits.treeSum(deposits_);
         } else {
@@ -349,6 +353,7 @@ library PoolCommons {
             else if (dwatp >= MIN_PRICE) meaningfulDeposit_ = Deposits.prefixSum(deposits_, _indexOf(dwatp));
             else                         meaningfulDeposit_ = Deposits.treeSum(deposits_);
         }
+        meaningfulDeposit_ -= Maths.min(meaningfulDeposit_, t0DebtInAuction_);
     }
 
     /**********************/

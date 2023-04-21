@@ -257,12 +257,12 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
                 pledgedCollateral:    1 * 1e18,
                 encumberedCollateral: 0,
                 poolDebt:             0,
-                actualUtilization:    0.389471335647237918 * 1e18,
-                targetUtilization:    0,
+                actualUtilization:    0,
+                targetUtilization:    1 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                interestRate:         0.055 * 1e18,
+                interestRate:         0.045 * 1e18,
                 interestRateUpdate:   _startTime + 80 hours
             })
         );
