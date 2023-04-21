@@ -105,7 +105,7 @@ abstract contract LiquidationInvariants is BasicInvariants {
             );
         }
     }
-
+    
     function invariant_call_summary() public virtual override useCurrentTimestamp {
         console.log("\nCall Summary\n");
         console.log("--Lender----------");

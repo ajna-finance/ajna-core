@@ -52,7 +52,7 @@ abstract contract BasicInvariants is BaseInvariants {
                 (uint256 bucketLps, , , , ) = _pool.bucketInfo(bucketIndex);
 
                 assertEq(bucketLps, 0, "Buckets Invariant B4");
-                assertEq(totalLps, 0, "Buckets Invariant B4");
+                assertEq(totalLps, 0,  "Buckets Invariant B4");
             }
         }
     }
