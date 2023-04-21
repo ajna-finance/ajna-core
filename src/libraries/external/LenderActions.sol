@@ -650,12 +650,12 @@ library LenderActions {
         // update bucket LP and collateral balance
         bucketLP -= Maths.min(bucketLP, lpAmount_);
 
-        // If collateral to transfer greater than bucket collateral or if clearing out the bucket collateral, ensure it's zeroed out
-        if (collateralAmount_ > bucketCollateral || (bucketLP == 0 && bucketDeposit == 0)) {
+        // If clearing out the bucket collateral, ensure it's zeroed out
+        if (bucketLP == 0 && bucketDeposit == 0) {
             collateralAmount_ = bucketCollateral;
         }
 
-        bucketCollateral  -= collateralAmount_;
+        bucketCollateral  -= Maths.min(bucketCollateral, collateralAmount_);
         bucket.collateral = bucketCollateral;
 
         // check if bucket healthy after collateral remove - set bankruptcy if collateral and deposit are 0 but there's still LP
