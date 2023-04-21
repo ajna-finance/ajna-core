@@ -12,42 +12,8 @@ import { BaseInvariants } from '../base/BaseInvariants.sol';
 // contains invariants for the test
 abstract contract BasicInvariants is BaseInvariants {
 
-    /**************************************************************************************************************************************/
-    /*** Invariant Tests                                                                                                                ***/
-    /***************************************************************************************************************************************
-     * Bucket
-        *  B1: totalBucketLP === totalLenderLps
-        *  B2: bucketLps == 0 (if bucket quote and collateral is 0)
-        *  B3: exchangeRate == 0 (if bucket quote and collateral is 0)
-        *  B4: bankrupt bucket LP accumulator = 0; lender LP for deposits before bankruptcy time = 0
-        *  B5: block.timestamp == lenderDepositTime (if lps are added to lender lp balance)
-        *  B6: block.timestamp == max(sender's depositTime, receiver's depositTime), when receiving transferred LP
-        *  B7: lenderDepositTime == block.timestamp (timestamp of block when taker is rewarded by bucketTake)
-     * Quote Token
-        * QT1: poolQtBal + poolDebt >= totalBondEscrowed + poolDepositSize
-        * QT2: pool t0 debt = sum of all borrower's t0 debt
-    
-     * Loan
-        * L1: for each Loan in loans array (LoansState.loans) starting from index 1, the corresponding address (Loan.borrower) is not 0x, the threshold price (Loan.thresholdPrice) is different than 0
-        * L2: Loan in loans array (LoansState.loans) at index 0 has the corresponding address (Loan.borrower) equal with 0x address and the threshold price (Loan.thresholdPrice) equal with 0
-        * L3: Loans array (LoansState.loans) is a max-heap with respect to t0-threshold price: the t0TP of loan at index i is >= the t0-threshold price of the loans at index 2i and 2i+1
-
-     * Interest Rate
-        * I1: Interest rate should only update once in 12 hours
-        * I2: ReserveAuctionState.totalInterestEarned accrues only once per block and equals to 1e18 if pool debt = 0
-        * I3: Inflator should only update once per block
-        * I4: t0Debt2ToCollateral should sum correctly accross borrowers
-
-    * Fenwick tree
-        * F1: Value represented at index i (Deposits.valueAt(i)) is equal to the accumulation of scaled values incremented or decremented from index i
-        * F2: For any index i, the prefix sum up to and including i is the sum of values stored in indices j<=i
-        * F3: For any index i < MAX_FENWICK_INDEX, findIndexOfSum(prefixSum(i)) > i
-        * F4: For any index i, there is zero deposit above i and below findIndexOfSum(prefixSum(i) + 1): findIndexOfSum(prefixSum(i)) == findIndexOfSum(prefixSum(j) - deposits.valueAt(j)), where j is the next index from i with deposits != 0
-        * F5: Global scalar is never updated (`DepositsState.values[8192]` is always 0)
-    ****************************************************************************************************************************************/
-
     // checks pool lps are equal to sum of all lender lps in a bucket 
-    function invariant_Lps_B1_B4() public useCurrentTimestamp {
+    function invariant_Lps_B1() public useCurrentTimestamp {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
@@ -62,12 +28,25 @@ abstract contract BasicInvariants is BaseInvariants {
 
             (uint256 bucketLps, , , , ) = _pool.bucketInfo(bucketIndex);
 
-            assertEq(bucketLps, totalLps, "Incorrect Bucket/lender lps");
+            assertEq(bucketLps, totalLps, "Buckets Invariant B1");
+        }
+    }
+
+    // checks pool lps are equal to sum of all lender lps in a bucket 
+    function invariant_Lps_B4() public useCurrentTimestamp {
+
+        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+
+            // if bucket bankruptcy occured, then previousBankruptcy should be equal to current timestamp
+            if (IBaseHandler(_handler).previousBankruptcy(bucketIndex) == block.timestamp) {
+                (uint256 bucketLps, , , , ) = _pool.bucketInfo(bucketIndex);
+                assertEq(bucketLps, 0, "Buckets Invariant B4");
+            }
         }
     }
 
     // checks bucket lps are equal to 0 if bucket quote and collateral are 0
-    // checks exchange rate is 1e27 if bucket quote and collateral are 0 
+    // checks exchange rate is 1e18 if bucket quote and collateral are 0 
     function invariant_Buckets_B2_B3() public useCurrentTimestamp {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             (
@@ -80,8 +59,8 @@ abstract contract BasicInvariants is BaseInvariants {
             ) = _poolInfo.bucketInfo(address(_pool), bucketIndex);
 
             if (collateral == 0 && deposit == 0) {
-                require(bucketLps == 0, "Incorrect bucket lps");
-                require(exchangeRate == 1e18, "Incorrect exchange rate");
+                require(bucketLps == 0,       "Buckets Invariant B2");
+                require(exchangeRate == 1e18, "Buckets Invariant B3");
             }
         }
     }
@@ -98,7 +77,7 @@ abstract contract BasicInvariants is BaseInvariants {
 
                 require(
                     depositTime == IBaseHandler(_handler).lenderDepositTime(lender, bucketIndex),
-                    "Incorrect deposit Time"
+                    "Buckets Invariant B5, B6 or B7"
                 );
             }   
         }
@@ -126,7 +105,7 @@ abstract contract BasicInvariants is BaseInvariants {
             assets,
             liabilities,
             1e13,
-            "Incorrect pool quote token"
+            "Quote Token Invariant QT1"
         );
     }
 
@@ -144,7 +123,7 @@ abstract contract BasicInvariants is BaseInvariants {
 
         uint256 poolDebt = _pool.totalT0Debt();
 
-        require(poolDebt == totalDebt, "Incorrect pool debt");
+        require(poolDebt == totalDebt, "Quote Token Invariant QT2");
     }
 
     function invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8() public useCurrentTimestamp {
@@ -162,21 +141,22 @@ abstract contract BasicInvariants is BaseInvariants {
                 console.log("Current bucket lps     -->", bucketLps);
                 console.log("======================================");
 
-
+                // This edge case is if less than 1 one millionth (0.000_001) of a quote token is inserted into a single bucket
                 if (bucketLps < 1e12) {
                     requireWithinDiff(
                         Maths.wmul(currentExchangeRate, bucketLps),
                         Maths.wmul(previousExchangeRate, bucketLps),
-                        1e16,  // allow changes up to 0.01 qt in value if bucket LP < 1e-6
-                        "Incorrect exchange Rate changed"
+                        1e16,  // allow changes up to 0.01 qt in value if bucket LPs < 1e-6
+                        "Exchange Rate Invariant R1, R2, R3, R4, R5, R6, R7 or R8"
                     );
                 } else {
+                    // Common case, 1 one millionth (0.000_001) of a quote token or greater is inserted into a single bucket
                     requireWithinDiff(
                         currentExchangeRate,
                         previousExchangeRate,
                         1e12,  // otherwise require exchange rates to be within 1e-6
-                        "Incorrect exchange Rate changed"
-                    );
+                        "Exchange Rate Invariant R1, R2, R3, R4, R5, R6, R7 or R8"
+                    );    
                 }
             }
         }
@@ -186,8 +166,8 @@ abstract contract BasicInvariants is BaseInvariants {
         (address borrower, uint256 tp) = _pool.loanInfo(0);
 
         // first loan in loan heap should be 0
-        require(borrower == address(0), "Incorrect borrower");
-        require(tp == 0,                "Incorrect threshold price");
+        require(borrower == address(0), "Loan Invariant L2");
+        require(tp == 0,                "Loan Invariant L2");
 
         ( , , uint256 totalLoans) = _pool.loansInfo();
 
@@ -195,15 +175,15 @@ abstract contract BasicInvariants is BaseInvariants {
             (borrower, tp) = _pool.loanInfo(loanId);
 
             // borrower address and threshold price should not 0
-            require(borrower != address(0), "Incorrect borrower");
-            require(tp != 0,                "Incorrect threshold price");
+            require(borrower != address(0), "Loan Invariant L1");
+            require(tp != 0,                "Loan Invariant L1");
 
             // tp of a loan at index 'i' in loan array should be greater than equals to loans at index '2i' and '2i+1'
             (, uint256 tp1) = _pool.loanInfo(2 * loanId);
             (, uint256 tp2) = _pool.loanInfo(2 * loanId + 1);
 
-            require(tp >= tp1, "Incorrect loan heap");
-            require(tp >= tp2, "Incorrect loan heap");
+            require(tp >= tp1, "Loan Invariant L3");
+            require(tp >= tp2, "Loan Invariant L3");
         }
     }
 

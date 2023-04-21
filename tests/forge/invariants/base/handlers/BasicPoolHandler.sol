@@ -20,8 +20,9 @@ abstract contract BasicPoolHandler is UnboundedBasicPoolHandler {
     function addQuoteToken(
         uint256 actorIndex_,
         uint256 amountToAdd_,
-        uint256 bucketIndex_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps {
+        uint256 bucketIndex_,
+        uint256 skippedTime_
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BBasicHandler.addQuoteToken']++;
 
         // Prepare test phase
@@ -34,8 +35,9 @@ abstract contract BasicPoolHandler is UnboundedBasicPoolHandler {
     function removeQuoteToken(
         uint256 actorIndex_,
         uint256 amountToRemove_,
-        uint256 bucketIndex_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps {
+        uint256 bucketIndex_,
+        uint256 skippedTime_
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BBasicHandler.removeQuoteToken']++;
 
         // Prepare test phase
@@ -49,8 +51,9 @@ abstract contract BasicPoolHandler is UnboundedBasicPoolHandler {
         uint256 actorIndex_,
         uint256 amountToMove_,
         uint256 fromIndex_,
-        uint256 toIndex_
-    ) external useRandomActor(actorIndex_) useTimestamps {
+        uint256 toIndex_,
+        uint256 skippedTime_
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BBasicHandler.moveQuoteToken']++;
 
         // Prepare test phase
@@ -68,8 +71,9 @@ abstract contract BasicPoolHandler is UnboundedBasicPoolHandler {
         uint256 fromActorIndex_,
         uint256 toActorIndex_,
         uint256 lpsToTransfer_,
-        uint256 bucketIndex_
-    ) external useRandomActor(fromActorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps {
+        uint256 bucketIndex_,
+        uint256 skippedTime_
+    ) external useRandomActor(fromActorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         // Prepare test phase
         (address receiver, uint256 boundedLps) = _preTransferLps(toActorIndex_, lpsToTransfer_);
 
