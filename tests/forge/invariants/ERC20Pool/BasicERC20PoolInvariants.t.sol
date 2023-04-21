@@ -18,16 +18,6 @@ import { IBaseHandler }          from '../interfaces/IBaseHandler.sol';
 // contains invariants for the test
 contract BasicERC20PoolInvariants is BasicInvariants {
 
-    /**************************************************************************************************************************************/
-    /*** Invariant Tests                                                                                                                ***/
-    /***************************************************************************************************************************************
-
-     * Collateral Token
-        * CT1: poolCtBal >= sum of all borrower's collateral + sum of all bucket's claimable collateral
-        * CT7: pool Pledged collateral = sum of all borrower's pledged collateral
-
-    ****************************************************************************************************************************************/
-
     uint256               internal constant NUM_ACTORS = 10;
 
     TokenWithNDecimals    internal _collateral;
@@ -93,7 +83,7 @@ contract BasicERC20PoolInvariants is BasicInvariants {
             totalCollateralPledged += borrowerCollateral;
         }
 
-        assertEq(_erc20pool.pledgedCollateral(), totalCollateralPledged, "Incorrect Collateral Pledged");
+        assertEq(_erc20pool.pledgedCollateral(), totalCollateralPledged, "Collateral Invariant CT7");
 
         // convert pool collateral balance into WAD
         uint256 collateralBalance = _collateral.balanceOf(address(_erc20pool)) * 10**(18 - _collateral.decimals());
@@ -105,7 +95,7 @@ contract BasicERC20PoolInvariants is BasicInvariants {
             bucketCollateral += collateral;
         }
 
-        assertGe(collateralBalance, bucketCollateral + _erc20pool.pledgedCollateral());
+        assertGe(collateralBalance, bucketCollateral + _erc20pool.pledgedCollateral(), "Collateral Invariant CT1");
     }
 
 }

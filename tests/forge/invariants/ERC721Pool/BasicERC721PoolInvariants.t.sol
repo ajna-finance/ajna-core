@@ -18,19 +18,6 @@ import { IBaseHandler }          from '../interfaces/IBaseHandler.sol';
 // contains invariants for the test
 contract BasicERC721PoolInvariants is BasicInvariants {
 
-    /**************************************************************************************************************************************/
-    /*** Invariant Tests                                                                                                                ***/
-    /***************************************************************************************************************************************
-
-     * Collateral Token
-        * CT2: number of tokens owned by the pool (Collateral.balanceOf(pool)) * 1e18 = sum of collateral across all borrowers (Borrower.collateral) + sum of claimable collateral across all buckets (Bucket.collateral)
-        * CT3: number of tokens owned by the pool (Collateral.balanceOf(pool) = length of borrower array token ids (ERC721Pool.borrowerTokenIds.length) + length of buckets array token ids (ERC721Pool.bucketTokenIds.length)
-        * CT4: number of borrower token ids (ERC721Pool.borrowerTokenIds.length) * 1e18 >= borrower balance (Borrower.collateral) Note: can be lower in case when fractional collateral that is rebalanced / moved to buckets claimable token ids
-        * CT5: token ids in buckets array (ERC721Pool.bucketTokenIds) and in borrowers array (ERC721Pool.borrowerTokenIds) are owned by pool contract (Collateral.ownerOf(tokenId))
-        * CT6: in case of subset pools: token ids in buckets array (ERC721Pool.bucketTokenIds) and in borrowers array (ERC721Pool.borrowerTokenIds) should have a mapping of True in allowed token ids mapping (ERC721Pool.tokenIdsAllowed)
-        * CT7: total pledged collateral in pool (PoolBalancesState.pledgedCollateral) = sum of collateral balances across all borrowers (Borrower.collateral)
-    ****************************************************************************************************************************************/
-
     uint256               internal constant NUM_ACTORS = 10;
 
     NFTCollateralToken     internal _collateral;
@@ -96,7 +83,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
             bucketCollateral += collateral;
         }
 
-        assertEq(collateralBalance, bucketCollateral + _erc721pool.pledgedCollateral());
+        assertEq(collateralBalance, bucketCollateral + _erc721pool.pledgedCollateral(), "Collateral Invariant CT2");
     }
 
     function invariant_CT3() public useCurrentTimestamp {
@@ -111,7 +98,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
         }
 
         uint256 bucketTokens = _erc721pool.totalBucketTokens();
-        assertEq(collateralBalance, borrowerTokens + bucketTokens);
+        assertEq(collateralBalance, borrowerTokens + bucketTokens, "Collateral Invariant CT3");
     }
 
     function invariant_CT4() public useCurrentTimestamp {
@@ -123,7 +110,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
 
             (, uint256 borrowerCollateral, ) = _erc721pool.borrowerInfo(borrower);
 
-            assertGe(borrowerTokens * 1e18, borrowerCollateral);
+            assertGe(borrowerTokens * 1e18, borrowerCollateral, "Collateral Invariant CT4");
         }
     }
 
@@ -137,7 +124,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
             for (uint256 tokenIndex = 0; tokenIndex < borrowerTokens; tokenIndex++) {
                 uint256 borrowerTokenId = _erc721pool.borrowerTokenIds(borrower, tokenIndex);
 
-                assertEq(_collateral.ownerOf(borrowerTokenId), address(_erc721pool));
+                assertEq(_collateral.ownerOf(borrowerTokenId), address(_erc721pool), "Collateral Invariant CT5");
             }
         }
 
@@ -145,7 +132,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
         for (uint256 tokenIndex = 0; tokenIndex < bucketTokens; tokenIndex++) {
             uint256 bucketTokenId = _erc721pool.bucketTokenIds(tokenIndex);
 
-            assertEq(_collateral.ownerOf(bucketTokenId), address(_erc721pool));
+            assertEq(_collateral.ownerOf(bucketTokenId), address(_erc721pool), "Collateral Invariant CT5");
         }
     }
 
@@ -159,7 +146,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
                 for (uint256 tokenIndex = 0; tokenIndex < borrowerTokens; tokenIndex++) {
                     uint256 borrowerTokenId = _erc721pool.borrowerTokenIds(borrower, tokenIndex);
 
-                    assertTrue(_erc721pool.tokenIdsAllowed(borrowerTokenId));
+                    assertTrue(_erc721pool.tokenIdsAllowed(borrowerTokenId), "Collateral Invariant CT6");
                 }
             }
 
@@ -167,7 +154,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
             for (uint256 tokenIndex = 0; tokenIndex < bucketTokens; tokenIndex++) {
                 uint256 bucketTokenId = _erc721pool.bucketTokenIds(tokenIndex);
 
-                assertTrue(_erc721pool.tokenIdsAllowed(bucketTokenId));
+                assertTrue(_erc721pool.tokenIdsAllowed(bucketTokenId), "Collateral Invariant CT6");
             }
         }    
     }
@@ -184,7 +171,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
             totalCollateralPledged += borrowerCollateral;
         }
 
-        assertEq(_erc721pool.pledgedCollateral(), totalCollateralPledged, "Incorrect Collateral Pledged");
+        assertEq(_erc721pool.pledgedCollateral(), totalCollateralPledged, "Collateral Invariant CT7");
     }
 
 }

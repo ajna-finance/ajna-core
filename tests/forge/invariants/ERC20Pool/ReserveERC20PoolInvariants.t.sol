@@ -2,8 +2,6 @@
 
 pragma solidity 0.8.14;
 
-import "@std/console.sol";
-
 import { BaseInvariants }                 from '../base/BaseInvariants.sol';
 import { LiquidationInvariants }          from '../base/LiquidationInvariants.t.sol';
 import { ReserveInvariants }              from '../base/ReserveInvariants.t.sol';

@@ -14,22 +14,25 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
     function kickAuction(
         uint256 borrowerIndex_,
         uint256 amount_,
-        uint256 kickerIndex_
-    ) external useTimestamps {
+        uint256 kickerIndex_,
+        uint256 skippedTime_
+    ) external useTimestamps skipTime(skippedTime_) {
         _kickAuction(borrowerIndex_, amount_, kickerIndex_);
     }
 
     function kickWithDeposit(
         uint256 kickerIndex_,
-        uint256 bucketIndex_
-    ) external useRandomActor(kickerIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps {
+        uint256 bucketIndex_,
+        uint256 skippedTime_
+    ) external useRandomActor(kickerIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         _kickWithDeposit(_lenderBucketIndex);
     }
 
     function withdrawBonds(
         uint256 kickerIndex_,
-        uint256 maxAmount_
-    ) external useRandomActor(kickerIndex_) useTimestamps {
+        uint256 maxAmount_,
+        uint256 skippedTime_
+    ) external useRandomActor(kickerIndex_) useTimestamps skipTime(skippedTime_) {
         _withdrawBonds(_actor, maxAmount_);
     }
 
@@ -40,8 +43,9 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
     function takeAuction(
         uint256 borrowerIndex_,
         uint256 amount_,
-        uint256 takerIndex_
-    ) external useRandomActor(takerIndex_) useTimestamps {
+        uint256 takerIndex_,
+        uint256 skippedTime_
+    ) external useRandomActor(takerIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BLiquidationHandler.takeAuction']++;
 
         // Prepare test phase
@@ -60,8 +64,9 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         uint256 borrowerIndex_,
         uint256 bucketIndex_,
         bool depositTake_,
-        uint256 takerIndex_
-    ) external useRandomActor(takerIndex_) useTimestamps {
+        uint256 takerIndex_,
+        uint256 skippedTime_
+    ) external useRandomActor(takerIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BLiquidationHandler.bucketTake']++;
 
         // Prepare test phase
@@ -81,8 +86,9 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
     function settleAuction(
         uint256 actorIndex_,
         uint256 borrowerIndex_,
-        uint256 kickerIndex_
-    ) external useRandomActor(actorIndex_) useTimestamps {
+        uint256 kickerIndex_,
+        uint256 skippedTime_
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
 
         // prepare phase
         address actor                        = _actor;

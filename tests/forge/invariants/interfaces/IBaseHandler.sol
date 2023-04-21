@@ -18,6 +18,7 @@ interface IBaseHandler {
 
     function exchangeRateShouldNotChange(uint256) external view returns(bool);
     function previousExchangeRate(uint256) external view returns(uint256);
+    function previousBankruptcy(uint256) external view returns(uint256);
 
     function isKickerRewarded() external view returns(bool);
     function kickerBondChange() external view returns(uint256);
