@@ -69,7 +69,9 @@ contract BasicERC20PoolInvariants is BasicInvariants {
         LENDER_MIN_BUCKET_INDEX = IBaseHandler(_handler).LENDER_MIN_BUCKET_INDEX();
         LENDER_MAX_BUCKET_INDEX = IBaseHandler(_handler).LENDER_MAX_BUCKET_INDEX();
 
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+        uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
+        for (uint256 i = 0; i < buckets.length; i++) {
+            uint256 bucketIndex = buckets[i];
             ( , , , , ,uint256 exchangeRate) = _poolInfo.bucketInfo(address(_erc20pool), bucketIndex);
             previousBucketExchangeRate[bucketIndex] = exchangeRate;
         }
@@ -99,7 +101,9 @@ contract BasicERC20PoolInvariants is BasicInvariants {
         uint256 collateralBalance = _collateral.balanceOf(address(_erc20pool)) * 10**(18 - _collateral.decimals());
         uint256 bucketCollateral;
 
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+        uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
+        for (uint256 i = 0; i < buckets.length; i++) {
+            uint256 bucketIndex = buckets[i];
             (, uint256 collateral, , , ) = _erc20pool.bucketInfo(bucketIndex);
 
             bucketCollateral += collateral;
