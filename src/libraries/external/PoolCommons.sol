@@ -123,28 +123,28 @@ library PoolCommons {
             vars.weightTu  = PRBMathSD59x18.exp(PRBMathSD59x18.mul(NEG_H_TU_HOURS,  vars.elapsed));
 
             // calculate the t0 debt EMA, used for MAU
-            vars.debtEma = vars.debtEma == 0 ? vars.newDebt :
+            vars.debtEma = vars.lastEmaUpdate == 0 ? vars.newDebt :
                 uint256(
                     PRBMathSD59x18.mul(vars.weightMau, int256(vars.debtEma)) +
                     PRBMathSD59x18.mul(1e18 - vars.weightMau, int256(interestParams_.debt))
                 );
 
             // update the meaningful deposit EMA, used for MAU
-            vars.depositEma = vars.depositEma == 0 ? vars.newMeaningfulDeposit :
+            vars.depositEma = vars.lastEmaUpdate == 0 ? vars.newMeaningfulDeposit :
                 uint256(
                     PRBMathSD59x18.mul(vars.weightMau, int256(vars.depositEma)) +
                     PRBMathSD59x18.mul(1e18 - vars.weightMau, int256(interestParams_.meaningfulDeposit))
                 );
 
             // calculate the debt squared to collateral EMA, used for TU
-            vars.debtColEma = vars.debtColEma == 0 ? vars.newDebtCol :
+            vars.debtColEma = vars.lastEmaUpdate == 0 ? vars.newDebtCol :
                 uint256(
                     PRBMathSD59x18.mul(vars.weightTu, int256(vars.debtColEma)) +
                     PRBMathSD59x18.mul(1e18 - vars.weightTu, int256(interestParams_.debtCol))
                 );
 
             // calculate the EMA of LUP * t0 debt
-            vars.lupt0DebtEma = vars.lupt0DebtEma == 0 ? vars.newLupt0Debt :
+            vars.lupt0DebtEma = vars.lastEmaUpdate == 0 ? vars.newLupt0Debt :
                 uint256(
                     PRBMathSD59x18.mul(vars.weightTu, int256(vars.lupt0DebtEma)) +
                     PRBMathSD59x18.mul(1e18 - vars.weightTu, int256(interestParams_.lupt0Debt))
