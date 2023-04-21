@@ -338,6 +338,15 @@ library PoolCommons {
         }
     }
 
+    /**
+     *  @notice Calculates pool's meaningful deposit.
+     *  @param  deposits_ Struct for pool deposits state.
+     *  @param  t0DebtInAuction_     Value of pool's t0 debt currently in auction.
+     *  @param  nonAuctionedT0Debt_  Value of pool's t0 debt that is not in auction.
+     *  @param  inflator_            Pool's current inflator.
+     *  @param  t0Debt2ToCollateral_ `t0Debt2ToCollateral` ratio.
+     *  @return meaningfulDeposit_   Pool's meaningful deposit.
+     */
     function _meaningfulDeposit(
         DepositsState storage deposits_,
         uint256 t0DebtInAuction_,

@@ -187,7 +187,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _revertOnExpiry(expiry_);
         PoolState memory poolState = _accruePoolInterest();
 
-        _revertIfAuctionDebtLocked(deposits, poolBalances, fromIndex_, poolState.inflator);
+        _revertIfAuctionDebtLocked(deposits, poolState.t0DebtInAuction, fromIndex_, poolState.inflator);
 
         uint256 newLup;
         (
@@ -220,7 +220,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         PoolState memory poolState = _accruePoolInterest();
 
-        _revertIfAuctionDebtLocked(deposits, poolBalances, index_, poolState.inflator);
+        _revertIfAuctionDebtLocked(deposits, poolState.t0DebtInAuction, index_, poolState.inflator);
 
         uint256 newLup;
         (
