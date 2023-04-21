@@ -296,8 +296,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         // update in memory pool state struct
-        poolState.debt            = Maths.wmul(result.t0PoolDebt, poolState.inflator);
-        poolState.t0Debt          = result.t0PoolDebt;
+        poolState.debt            =  Maths.wmul(result.t0PoolDebt, poolState.inflator);
+        poolState.t0Debt          =  result.t0PoolDebt;
         poolState.t0DebtInAuction += result.t0KickedDebt;
 
         // adjust t0Debt2ToCollateral ratio
@@ -341,8 +341,8 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         );
 
         // update in memory pool state struct
-        poolState.debt            = Maths.wmul(result.t0PoolDebt, poolState.inflator);
-        poolState.t0Debt          = result.t0PoolDebt;
+        poolState.debt            =  Maths.wmul(result.t0PoolDebt, poolState.inflator);
+        poolState.t0Debt          =  result.t0PoolDebt;
         poolState.t0DebtInAuction += result.t0KickedDebt;
 
         // adjust t0Debt2ToCollateral ratio
