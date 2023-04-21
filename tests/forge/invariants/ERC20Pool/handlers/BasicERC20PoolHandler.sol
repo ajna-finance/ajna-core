@@ -35,10 +35,9 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
 
     function addCollateral(
         uint256 actorIndex_,
-        uint256 bucketIndex_,
-        uint256 timeSkipped_,
-        uint256 amountToAdd_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(timeSkipped_) {
+        uint256 amountToAdd_,
+        uint256 bucketIndex_
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(actorIndex_) {
         numberOfCalls['BBasicHandler.addCollateral']++;
 
         // Prepare test phase
@@ -50,10 +49,9 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
 
     function removeCollateral(
         uint256 actorIndex_,
-        uint256 bucketIndex_,
-        uint256 timeSkipped_,
-        uint256 amountToRemove_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(timeSkipped_) {
+        uint256 amountToRemove_,
+        uint256 bucketIndex_
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(actorIndex_) {
         numberOfCalls['BBasicHandler.removeCollateral']++;
 
         // Prepare test phase
@@ -69,9 +67,8 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
 
     function pledgeCollateral(
         uint256 actorIndex_,
-        uint256 timeSkipped_,
         uint256 amountToPledge_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(timeSkipped_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(actorIndex_) {
         numberOfCalls['BBasicHandler.pledgeCollateral']++;
 
         // Prepare test phase
@@ -86,9 +83,8 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
 
     function pullCollateral(
         uint256 actorIndex_,
-        uint256 timeSkipped_,
         uint256 amountToPull_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(timeSkipped_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(actorIndex_) {
         numberOfCalls['BBasicHandler.pullCollateral']++;
 
         // Prepare test phase
@@ -100,9 +96,8 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
 
     function drawDebt(
         uint256 actorIndex_,
-        uint256 timeSkipped_,
         uint256 amountToBorrow_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(timeSkipped_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(actorIndex_) {
         numberOfCalls['BBasicHandler.drawDebt']++;
 
         // Prepare test phase
@@ -117,9 +112,8 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
 
     function repayDebt(
         uint256 actorIndex_,
-        uint256 timeSkipped_,
         uint256 amountToRepay_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(timeSkipped_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(actorIndex_) {
         numberOfCalls['BBasicHandler.repayDebt']++;
 
         // Prepare test phase
