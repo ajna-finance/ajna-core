@@ -247,7 +247,11 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                         collateral                   = 0;
                         borrowerT0Debt               -= Maths.wdiv(maxSettleableDebt, inflator);
                     }
-                } else collateral = 0;
+                } else {
+                    collateral = 0;
+                    // **B5**: when adding collateral: lender deposit time = timestamp of block when deposit happened
+                    lenderDepositTime[borrower_][7388] = block.timestamp;
+                }
 
                 maxDepth_ -= 1;
             }
