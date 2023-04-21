@@ -466,13 +466,13 @@ library SettlerActions {
                 Bucket storage hpbBucket = buckets_[index];
                 if (hpbBucket.collateral == 0) {
                     // existing LP for the bucket shall become unclaimable
-                    hpbBucket.lps            = 0;
-                    hpbBucket.bankruptcyTime = block.timestamp;
-
                     emit BucketBankruptcy(
                         index,
                         hpbBucket.lps
                     );
+
+                    hpbBucket.lps            = 0;
+                    hpbBucket.bankruptcyTime = block.timestamp;
                 }
             }
 

@@ -275,6 +275,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @inheritdoc IPoolKickerActions
      *  @dev    === Write state ===
      *  @dev    increment `poolBalances.t0DebtInAuction` and `poolBalances.t0Debt` accumulators
+     *  @dev    update `t0Debt2ToCollateral` ratio, debt and collateral post action are considered 0
      */
     function kick(
         address borrower_,
@@ -299,9 +300,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         // adjust t0Debt2ToCollateral ratio
         _updateT0Debt2ToCollateral(
             result.debtPreAction,
-            result.t0KickedDebt,
-            result.collateralPreAction, // collateral doesn't change when auction is kicked
-            result.collateralPreAction  // collateral doesn't change when auction is kicked
+            0, // debt post kick (for loan in auction) not taken into account
+            result.collateralPreAction,
+            0  // collateral post kick (for loan in auction) not taken into account
         );
 
         // update pool interest rate state
@@ -316,6 +317,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @inheritdoc IPoolKickerActions
      *  @dev    === Write state ===
      *  @dev    increment `poolBalances.t0DebtInAuction` and `poolBalances.t0Debt` accumulators
+     *  @dev    update `t0Debt2ToCollateral` ratio, debt and collateral post action are considered 0
      */
     function kickWithDeposit(
         uint256 index_,
@@ -341,9 +343,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         // adjust t0Debt2ToCollateral ratio
         _updateT0Debt2ToCollateral(
             result.debtPreAction,
-            result.t0KickedDebt,
-            result.collateralPreAction, // collateral doesn't change when auction is kicked
-            result.collateralPreAction  // collateral doesn't change when auction is kicked
+            0, // debt post kick (for loan in auction) not taken into account
+            result.collateralPreAction,
+            0 // collateral post kick (for loan in auction) not taken into account
         );
 
         // update pool interest rate state

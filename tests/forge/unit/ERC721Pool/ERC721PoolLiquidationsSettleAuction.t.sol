@@ -444,9 +444,9 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         _addLiquidityWithPenalty({
             from:        _lender,
             amount:      100 * 1e18,
-            amountAdded: 99.986438356164383600 * 1e18,
+            amountAdded: 99.983424657534246600 * 1e18,
             index:       MAX_FENWICK_INDEX,
-            lpAward:     99.986438356164383600 * 1e18,
+            lpAward:     99.983424657534246600 * 1e18,
             newLup:      3_806.274307891526195092 * 1e18
         });
 

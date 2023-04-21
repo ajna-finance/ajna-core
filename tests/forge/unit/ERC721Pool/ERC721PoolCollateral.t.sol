@@ -721,7 +721,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 encumberedCollateral: 5_992_754_428.551908353085520210 * 1e18,
                 poolDebt:             598.294326419208615388 * 1e18,
                 actualUtilization:    2.990870666205084615 * 1e18,
-                targetUtilization:    2_995_775_262.887499112057200872 * 1e18,
+                targetUtilization:    0,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
@@ -883,7 +883,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 encumberedCollateral: 4403983968.683524073950025244 * 1e18,
                 poolDebt:             439.677389340513210329 * 1e18,
                 actualUtilization:    1.117110216223813782 * 1e18,
-                targetUtilization:    2_995_775_262.887499112057200872 * 1e18,
+                targetUtilization:    0,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
@@ -1168,12 +1168,12 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 encumberedCollateral: 0,
                 poolDebt:             0,
                 actualUtilization:    1.002468098960724093 * 1e18,
-                targetUtilization:    13_424_722_854.598244140780064966 * 1e18,
+                targetUtilization:    0,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                interestRate:         0.06655 * 1e18,
-                interestRateUpdate:   block.timestamp
+                interestRate:         0.0605 * 1e18,
+                interestRateUpdate:   _startTime + 10000 days + 32 hours
             })
         );
 

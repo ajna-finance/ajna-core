@@ -112,6 +112,7 @@ struct RemoveQuoteParams {
 
 /// @dev Struct used to return result of `BorrowerActions.drawDebt` action.
 struct DrawDebtResult {
+    bool    inAuction;             // true if loan still in auction after pledge more collateral, false otherwise
     uint256 newLup;                // [WAD] new pool LUP after draw debt
     uint256 poolCollateral;        // [WAD] total amount of collateral in pool after pledge collateral
     uint256 poolDebt;              // [WAD] total accrued debt in pool after draw debt
@@ -127,6 +128,7 @@ struct DrawDebtResult {
 
 /// @dev Struct used to return result of `BorrowerActions.repayDebt` action.
 struct RepayDebtResult {
+    bool    inAuction;             // true if loan still in auction after repay, false otherwise
     uint256 newLup;                // [WAD] new pool LUP after draw debt
     uint256 poolCollateral;        // [WAD] total amount of collateral in pool after pull collateral
     uint256 poolDebt;              // [WAD] total accrued debt in pool after repay debt
