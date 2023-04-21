@@ -437,11 +437,10 @@ contract RegressionTestReserveERC20Pool is ReserveERC20PoolInvariants {
     }
 
     /*  
-        FIXME
         Test was reverting when redeemedLps = bucketLps but lenderlps < redeemedLps, this happens due to slight rounding error in deposit calculation from lps
-        Can be fixed by updating lenderLps calculations to `lender.lps -= Maths.min(lender.lps, vars.redeemedLPs)`
+        Fixed by updating redeemedLP calculations to `vars.redeemedLP = Maths.min(lender.lps, vars.redeemedLP)`
     */
-    function _test_regression_evm_revert_2() external {
+    function test_regression_evm_revert_2() external {
         _reserveERC20PoolHandler.moveQuoteToken(1, 2, 115792089237316195423570985008687907853269984665640564039457584007913129639932, 158129467307529830729349478455);
         _reserveERC20PoolHandler.removeQuoteToken(2999999999999999484865294266928579000517539849, 20462, 1576762402919713971836094859031);
         _reserveERC20PoolHandler.takeReserves(115792089237316195423570985008687907853269984665640564039457584007913129639935, 115792089237316195423570985008687907853269984665640564039457584007913129639935);
@@ -461,11 +460,10 @@ contract RegressionTestReserveERC20Pool is ReserveERC20PoolInvariants {
     }
 
     /*
-        FIXME
         Test was reverting with overflow in `(tu + mau102 - 1e18) ** 2)` calculation in _calculateInterestRate
-        can be fixed by updating `((tu + mau102 - 1e18) ** 2) / 1e18` to `((tu / 1e9 + mau102 / 1e9 - 1e9) ** 2)`
+        Fixed by updating `((tu + mau102 - 1e18) ** 2) / 1e18` to `(((tu + mau102 - 1e18) / 1e9) ** 2)`
     */
-    function _test_regression_evm_revert_3() external {
+    function test_regression_evm_revert_3() external {
         _reserveERC20PoolHandler.drawDebt(1000011592650618236, 427626464706163901647666438633);
         _reserveERC20PoolHandler.takeReserves(115792089237316195423570985008687907853269984665640564039457584007913129639933, 1);
         _reserveERC20PoolHandler.repayDebt(115792089237316195423570985008687907853269984665640564039457584007913129639934, 222282777921247831223488066461);
