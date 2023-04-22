@@ -344,7 +344,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         });
     }
 
-    function testReserveAuctionPartiallyTaken() external {
+    function testReserveAuctionPartiallyTaken() external tearDown {
         // borrower repays partial debt (auction for full reserves)
         _repayDebt({
             from:             _borrower,
@@ -425,7 +425,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
             from:             _borrower,
             borrower:         _borrower,
             amountToRepay:    105_000 * 1e18,
-            amountRepaid:     79_940.029064520279557316 * 1e18,
+            amountRepaid:     79_975.078950647281196428 * 1e18,
             collateralToPull: 0,
             newLup:           MAX_PRICE
         });
@@ -433,7 +433,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         // start an auction, confirm old claimable reserves are included alongside new claimable reserves
         skip(1 days);
 
-        reserves = 442.238729377484010623 * 1e18;
+        reserves = 426.739865239988891464 * 1e18;
         uint256 newClaimableReserves = reserves;
         _assertReserveAuction({
             reserves:                   reserves,
@@ -452,9 +452,11 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
             epoch:             2
         });
 
+        uint256 snapshot = vm.snapshot();
+
         // take everything
         skip(28 hours);
-        assertEq(expectedReserves, 767.113079809103242756 * 1e18);
+        assertEq(expectedReserves, 751.769204312983074788 * 1e18);
         expectedPrice = 3.725290298461914062 * 1e18;
         _assertReserveAuction({
             reserves:                   0,
@@ -478,5 +480,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
             auctionPrice:               expectedPrice,
             timeRemaining:              44 hours
         });
+
+        vm.revertTo(snapshot); // revert to ensure tearDown has enough balance in pool
     }
 }
