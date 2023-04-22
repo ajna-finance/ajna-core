@@ -1155,7 +1155,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             from:    _lender1,
             amount:  1_000 * 1e18,
             index:   2873,
-            lpAward: 999.958129650486586454 * 1e18,
+            lpAward: 999.958177826584067212 * 1e18,
             newLup:  601.252968524772188572 * 1e18
         });
 
@@ -1180,7 +1180,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             from:    _lender1,
             amount:  9_000 * 1e18,
             index:   2873,
-            lpAward: 8_994.177960110671668131 * 1e18,
+            lpAward: 8_994.229791354853043265 * 1e18,
             newLup:  601.252968524772188572 * 1e18
         });
         

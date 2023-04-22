@@ -718,14 +718,14 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 lup:                  99836282890,
                 poolSize:             574.548281134908793280 * 1e18,
                 pledgedCollateral:    2 * 1e18,
-                encumberedCollateral: 5_992_535_519.146495284195571276 * 1e18,
+                encumberedCollateral: 5_992_754_428.551908353085520210 * 1e18,
                 poolDebt:             598.294326419208615388 * 1e18,
-                actualUtilization:    0,
-                targetUtilization:    1 * 1e18,
+                actualUtilization:    0.750721153846153847 * 1e18,
+                targetUtilization:    0.328577182109433013 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                interestRate:         0.045 * 1e18,
+                interestRate:         0.055 * 1e18,
                 interestRateUpdate:   block.timestamp - 32 hours
             })
         );
@@ -880,14 +880,14 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 lup:                  99836282890,
                 poolSize:             374.163546520999771310 * 1e18,
                 pledgedCollateral:    1.139736976079754220 * 1e18,
-                encumberedCollateral: 4403877660.001716121985318438 * 1e18,
+                encumberedCollateral: 4404023621.084799631606156246 * 1e18,
                 poolDebt:             439.681348088864224700 * 1e18,
-                actualUtilization:    0,
-                targetUtilization:    1 * 1e18,
+                actualUtilization:    0.061025469820976144 * 1e18,
+                targetUtilization:    0.328577182109433013 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                interestRate:         0.0405 * 1e18,
+                interestRate:         0.0495 * 1e18,
                 interestRateUpdate:   block.timestamp
             })
         );
@@ -901,7 +901,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             borrowerDebt:              439.681348088864224700 * 1e18,
             borrowerCollateral:        1.139736976079754220 * 1e18,
             borrowert0Np:              78.825721153846153882 * 1e18,
-            borrowerCollateralization: 0.000000000258811638 * 1e18,
+            borrowerCollateralization: 0.000000000258794474 * 1e18,
             tokenIds:                  borrowerTokenIds
         });
         
@@ -927,7 +927,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             borrowerDebt:              439.681343513273114610 * 1e18,
             borrowerCollateral:        0.139736976079754220 * 1e18,
             borrowert0Np:              78.825721153846153882 * 1e18,
-            borrowerCollateralization: 0.000000000031739027 * 1e18,
+            borrowerCollateralization: 0.000000000031729389 * 1e18,
             tokenIds:                  borrowerTokenIds
         });
 
@@ -966,7 +966,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             from:        _lender,
             borrower:    _borrower,
             maxDepth:    10,
-            settledDebt: 111.719325626396553736 * 1e18
+            settledDebt: 111.718947293453085984 * 1e18
         });
 
         _assertBorrower({
@@ -1167,12 +1167,12 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
                 poolDebt:             0,
-                actualUtilization:    0,
-                targetUtilization:    1 * 1e18,
+                actualUtilization:    0.001552228747991919 * 1e18,
+                targetUtilization:    0.328577182109433013 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                interestRate:         0.03645 * 1e18,
+                interestRate:         0.04455 * 1e18,
                 interestRateUpdate:   block.timestamp
             })
         );

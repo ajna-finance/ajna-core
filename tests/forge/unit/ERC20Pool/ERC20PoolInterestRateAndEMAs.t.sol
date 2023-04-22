@@ -82,7 +82,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         changePrank(_borrower);
 
         vm.expectEmit(true, true, false, true);
-        emit UpdateInterestRate(0.05 * 1e18, 0.055 * 1e18);
+        emit UpdateInterestRate(0.05 * 1e18, 0.045 * 1e18);
         _drawDebtNoLupCheck({
             from:               _borrower,
             borrower:           _borrower,
@@ -97,21 +97,21 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             110_000 * 1e18,
                 pledgedCollateral:    100 * 1e18,
-                encumberedCollateral: 15.469154633609698947 * 1e18,
+                encumberedCollateral: 15.464917089564537419 * 1e18,
                 poolDebt:             46_101.032636738246882092 * 1e18,
                 actualUtilization:    0.000000000000000000 * 1e18,
                 targetUtilization:    1.000000000000000000 * 1e18,
                 minDebtAmount:        4_610.103263673824688209 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                interestRate:         0.055 * 1e18,
+                interestRate:         0.045 * 1e18,
                 interestRateUpdate:   _startTime + 10 days
             })
         );
         _assertEMAs({
-            debtColEma:   0.000000000000000000 * 1e18,
-            lupt0DebtEma: 0.000000000000000000 * 1e18,
-            debtEma:      0.000000000000000000 * 1e18,
+            debtColEma:   0,
+            lupt0DebtEma: 0,
+            debtEma:      0,
             depositEma:   109_999.904632568359400000 * 1e18
         });
 
@@ -127,21 +127,21 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             110_051.099851162112050000 * 1e18,
                 pledgedCollateral:    100 * 1e18,
-                encumberedCollateral: 15.470514425000097931 * 1e18,
+                encumberedCollateral: 15.466029332500467905 * 1e18,
                 poolDebt:             46_104.348241186195248997 * 1e18,
                 actualUtilization:    0.332788778646025592 * 1e18,
-                targetUtilization:    1.000000000000000000 * 1e18,
+                targetUtilization:    0.154458625018190226 * 1e18,
                 minDebtAmount:        4_610.434824118619524900 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                interestRate:         0.0605 * 1e18,
-                interestRateUpdate:   _startTime + 10 days + 14 hours
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   _startTime + 10 days
             })
         );
         _assertEMAs({
-            debtColEma:   0.000000000000000000 * 1e18,
-            lupt0DebtEma: 0.000000000000000000 * 1e18,
-            debtEma:      0.000000000000000000 * 1e18,
+            debtColEma:   2_313_024.841496349382919830 * 1e18,
+            lupt0DebtEma: 14_975_044.878354639842735067 * 1e18,
+            debtEma:      25_533.857684197937318785 * 1e18,
             depositEma:   76_726.919062848880206510 * 1e18
         });
 
@@ -168,19 +168,19 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 encumberedCollateral: 0,
                 poolDebt:             0,
                 actualUtilization:    0.332788778646025592 * 1e18,
-                targetUtilization:    1.000000000000000000 * 1e18,
+                targetUtilization:    0.154458625018190226 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                interestRate:         0.0495 * 1e18,
+                interestRate:         0.0405 * 1e18,
                 interestRateUpdate:   _startTime + 10 days + 14 hours
             })
         );
 
         _assertEMAs({
-            debtColEma:   0.000000000000000000 * 1e18,
-            lupt0DebtEma: 0.000000000000000000 * 1e18,
-            debtEma:      0.000000000000000000 * 1e18,
+            debtColEma:   2_313_024.841496349382919830 * 1e18,
+            lupt0DebtEma: 14_975_044.878354639842735067 * 1e18,
+            debtEma:      25_533.857684197937318785 * 1e18,
             depositEma:   76_726.919062848880206510 * 1e18
         });
     }
@@ -653,7 +653,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 poolSize:             20_001.166301815699560000 * 1e18,
                 pledgedCollateral:    100 * 1e18,
                 encumberedCollateral: 3.094069767562214045 * 1e18,
-                poolDebt:             1_000.960583870227520994 * 1e18,
+                poolDebt:             1_012.343273629329809307 * 1e18,
                 actualUtilization:    0.050048053058282770 * 1e18,
                 targetUtilization:    0.030592832642066762 * 1e18,
                 minDebtAmount:        50.617163681466490465 * 1e18,
@@ -799,7 +799,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 poolSize:             40_022.159734498291760000 * 1e18,
                 pledgedCollateral:    100 * 1e18,
                 encumberedCollateral: 58.236654596124865142 * 1e18,
-                poolDebt:             19_018.251093534322898890 * 1e18,
+                poolDebt:             19_054.349122034189453676 * 1e18,
                 actualUtilization:    0.475456504053686315 * 1e18,
                 targetUtilization:    0.582873969285693044 * 1e18,
                 minDebtAmount:        952.717456101709472684 * 1e18,
@@ -839,7 +839,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 encumberedCollateral: 58.353196900686720280 * 1e18,
                 poolDebt:             19_092.480394752519489737 * 1e18,
                 actualUtilization:    0.476094973986474284 * 1e18,
-                targetUtilization:    0.582873969285693044 * 1e18,
+                targetUtilization:    0.583872645876088990 * 1e18,
                 minDebtAmount:        954.624019737625974487 * 1e18,
                 loans:                2,
                 maxBorrower:          address(_borrower),
@@ -848,9 +848,9 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             })
         );
         _assertEMAs({
-            debtColEma:   3_126_403.148307075893092949 * 1e18,
-            lupt0DebtEma: 5_363_772.124081052431303092 * 1e18,
-            debtEma:      19_018.251093534322898890 * 1e18,
+            debtColEma:   3_565_623.757561586266590548 * 1e18,
+            lupt0DebtEma: 6_106_851.867005073649467074 * 1e18,
+            debtEma:      19_054.349087608426800461 * 1e18,
             depositEma:   40_022.159713346932216568 * 1e18
         });
 

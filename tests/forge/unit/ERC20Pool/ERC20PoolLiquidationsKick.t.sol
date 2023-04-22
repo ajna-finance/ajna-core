@@ -740,7 +740,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             from:    _lender1,
             amount:  1 * 1e18,
             index:   _i9_91,
-            lpAward: 0.993688621967007295 * 1e18,
+            lpAward: 0.993688287401017551 * 1e18,
             newLup:  9.721295865031779605 * 1e18
         });
 

@@ -136,7 +136,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         });
     }
 
-    function testBorrowAndRepay() external {
+    function testBorrowAndRepay() external tearDown {
 
         // lender deposits 10000 Quote into 3 buckets
         _addInitialLiquidity({
@@ -275,9 +275,9 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
                 htp:                  502.333658244714424687 * 1e18,
                 lup:                  _priceAt(2550),
                 poolSize:             30_003.498905447098680000 * 1e18,
-                pledgedCollateral:    Maths.wad(3),
+                pledgedCollateral:    3 * 1e18,
                 encumberedCollateral: 0.500516446164039921 * 1e18,
-                poolDebt:             1_507.002401317220586672 * 1e18,
+                poolDebt:             1_507.000974734143274062 * 1e18,
                 actualUtilization:    0.100096122026423251 * 1e18,
                 targetUtilization:    0.332446840033426268 * 1e18,
                 minDebtAmount:        150.700097473414327406 * 1e18,
@@ -299,7 +299,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         // check borrower info after partial repay
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              1_507.002401317220586672 * 1e18,
+            borrowerDebt:              1_507.000974734143274062 * 1e18,
             borrowerCollateral:        3 * 1e18,
             borrowert0Np:              1_051.009615384615385100 * 1e18,
             borrowerCollateralization: 5.993809040625961846 * 1e18
@@ -354,7 +354,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
                 encumberedCollateral: 0,
                 poolDebt:             0,
                 actualUtilization:    0.050227555333959397 * 1e18,
-                targetUtilization:    0.332446840033426268 * 1e18,
+                targetUtilization:    0.202597018753257617 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),

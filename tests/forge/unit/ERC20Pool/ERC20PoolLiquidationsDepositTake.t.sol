@@ -229,7 +229,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             amount:      1 * 1e18,
             amountAdded: 0.999876712328767123 * 1e18,
             index:       _i9_52,
-            lpAward:     0.999873479270472476 * 1e18,
+            lpAward:     0.999873479995558788 * 1e18,
             newLup:      9.721295865031779605 * 1e18
         });
 
@@ -283,7 +283,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             bondChange:       0.198343696868718241 * 1e18,
             isReward:         true,
             lpAwardTaker:     0,
-            lpAwardKicker:    0.195764233630548029 * 1e18
+            lpAwardKicker:    0.195764233772511957 * 1e18
         });
 
         _assertLenderLpBalance({

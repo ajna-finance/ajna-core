@@ -450,9 +450,9 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:                      address(_pool),
             tokenId:                   tokenIdOne,
             claimedArray:              _epochsClaimedArray(2, 0),
-            reward:                    78.852344077558527016 * 1e18,
+            reward:                    78.702367919037406995 * 1e18,
             indexes:                   depositIndexes,
-            updateExchangeRatesReward: 3.450241363293378951 * 1e18
+            updateExchangeRatesReward: 3.436607167064188546 * 1e18
         });
     }
 
@@ -524,7 +524,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             updater:        _updater,
             pool:           address(_pool),
             indexes:        depositIndexes,
-            reward:         3.399633583097821167 * 1e18
+            reward:         3.399661193610840835 * 1e18
         });
     }
 
@@ -987,7 +987,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             updater:        _updater,
             pool:           address(_pool),
             indexes:        depositIndexes,
-            reward:         17.238252336072314418 * 1e18
+            reward:         17.047099791704330880 * 1e18
         });
         assertEq(_ajnaToken.balanceOf(_updater), 37.496944332370019762 * 1e18);
 
@@ -1192,11 +1192,11 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         // retrieve the position managers index set, recreating typical tx flow since positionIndexes are stored unordered in EnnumerableSets
         secondIndexes       = _positionManager.getPositionIndexes(tokenIdOne);
-        secondLpsAwarded[0] = 1_000.000164743206012000 * 1e18;
-        secondLpsAwarded[1] = 1_006.443804104948552000 * 1e18;
-        secondLpsAwarded[2] = 1_000.000164743206012000 * 1e18;
-        secondLpsAwarded[3] = 1_000.000164743206012000 * 1e18;
-        secondLpsAwarded[4] = 1_000.000164743206012000 * 1e18;
+        secondLpsAwarded[0] = 1_000.000165321954673000 * 1e18;
+        secondLpsAwarded[1] = 1_006.443804687426460000 * 1e18;
+        secondLpsAwarded[2] = 1_000.000165321954673000 * 1e18;
+        secondLpsAwarded[3] = 1_000.000165321954673000 * 1e18;
+        secondLpsAwarded[4] = 1_000.000165321954673000 * 1e18;
 
         _moveStakedLiquidity({
             from:             _minterOne,
@@ -1233,7 +1233,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             updater:        _updater,
             pool:           address(_pool),
             indexes:        depositIndexes,
-            reward:         3.373279477974559345 * 1e18
+            reward:         3.359647161647741986 * 1e18
         });
 
         /*********************/
@@ -1244,7 +1244,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             from:          _minterOne,
             tokenId:       tokenIdOne,
             epochsClaimed: _epochsClaimedArray(1,1),
-            reward:        33.732794779745615314 * 1e18
+            reward:        33.596471616477451732 * 1e18
         });
     }
 
@@ -1334,7 +1334,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             claimedArray:              _epochsClaimedArray(1, 0),
             reward:                    39.906320577094451437 * 1e18,
             indexes:                   depositIndexes,
-            updateExchangeRatesReward: 6.651002176006408713 * 1e18
+            updateExchangeRatesReward: 6.651053030580225818 * 1e18
         });
 
         uint256 minterTwoBalance = _ajnaToken.balanceOf(_minterTwo);
@@ -1594,7 +1594,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         // auction two
         uint256 tokensToBurnE2 = _triggerReserveAuctions({
             borrower:     _borrower,
-            tokensToBurn: 308.672122067616182565 * 1e18,
+            tokensToBurn: 308.524022190658113598 * 1e18,
             borrowAmount: 1_000 * 1e18,
             limitIndex:   2555,
             pool:         address(_pool)
@@ -1604,14 +1604,14 @@ contract RewardsManagerTest is RewardsHelperContract {
             updater:        _updater,
             pool:           address(_pool),
             indexes:        depositIndexes,
-            reward:         11.343637195247653990 * 1e18
+            reward:         11.336232201399613917 * 1e18
         });
 
         _assertBurn({
             pool:             address(_pool),
             epoch:            2,
             timestamp:        block.timestamp - 24 hours,
-            burned:           308.672122067616182565 * 1e18,
+            burned:           308.524022190658113598 * 1e18,
             tokensToBurn:     tokensToBurnE2,
             interest:         23.938554041534910348 * 1e18
         });
@@ -1619,7 +1619,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         // auction three
         uint256 tokensToBurnE3 = _triggerReserveAuctions({
             borrower:     _borrower,
-            tokensToBurn: 676.658832743043390869 * 1e18,
+            tokensToBurn: 676.510732923020389616 * 1e18,
             borrowAmount: 2_000 * 1e18,
             limitIndex:   2555,
             pool:         address(_pool)
@@ -1629,14 +1629,14 @@ contract RewardsManagerTest is RewardsHelperContract {
             updater: _updater,
             pool:    address(_pool),
             indexes: depositIndexes,
-            reward:  18.399335533771072810 * 1e18
+            reward:  18.399335536618388154 * 1e18
         });
 
         _assertBurn({
             pool:             address(_pool),
             epoch:            3,
             timestamp:        block.timestamp - 24 hours,
-            burned:           676.658832743043390869 * 1e18,
+            burned:           676.510732923020389616 * 1e18,
             tokensToBurn:     tokensToBurnE3,
             interest:         52.423541260157607958 * 1e18
         });
@@ -1647,7 +1647,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:                      address(_pool),
             tokenId:                   tokenIdOne,
             claimedArray:              _epochsClaimedArray(3, 0),
-            reward:                    51.511621814050026070 * 1e18,
+            reward:                    51.499282055430577895 * 1e18,
             indexes:                   firstIndexes,   
             updateExchangeRatesReward: 0
         });
@@ -1657,7 +1657,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:                      address(_pool),
             tokenId:                   tokenIdTwo,
             claimedArray:              _epochsClaimedArray(3, 0),
-            reward:                    286.817794557471160695 * 1e18,
+            reward:                    286.756084406079436885 * 1e18,
             indexes:                   secondIndexes,
             updateExchangeRatesReward: 0
         });
