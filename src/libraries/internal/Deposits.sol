@@ -81,11 +81,13 @@ library Deposits {
         // We construct the target sumIndex_ bit by bit, from MSB to LSB.  lowerIndexSum_ always maintains the sum
         // up to the current value of sumIndex_
         uint256 lowerIndexSum;
+        uint256 curIndex;
 
         while (i > 0) {
             // Consider if the target index is less than or greater than sumIndex_ + i
-            uint256 value   = deposits_.values[sumIndex_ + i];
-            uint256 scaling = deposits_.scaling[sumIndex_ + i];
+            curIndex = sumIndex_ + i;
+            uint256 value   = deposits_.values[curIndex];
+            uint256 scaling = deposits_.scaling[curIndex];
 
             // Compute sum up to sumIndex_ + i
             uint256 scaledValue =
@@ -94,9 +96,9 @@ library Deposits {
 
             if (scaledValue  < targetSum_) {
                 // Target value is too small, need to consider increasing sumIndex_ still
-                if (sumIndex_ + i <= MAX_FENWICK_INDEX) {
+                if (curIndex <= MAX_FENWICK_INDEX) {
                     // sumIndex_+i is in range of Fenwick prices.  Target index has this bit set to 1.  
-                    sumIndex_ += i;
+                    sumIndex_ = curIndex;
                     lowerIndexSum = scaledValue;
                 }
             } else {
@@ -227,23 +229,26 @@ library Deposits {
 
         // Used to terminate loop.  We don't need to consider final 0 bits of sumIndex_
         uint256 indexLSB = lsb(sumIndex_);
+        uint256 curIndex;
 
         while (j >= indexLSB) {
+            curIndex = index + j;
+
             // Skip considering indices outside bounds of Fenwick tree
-            if (index + j > SIZE) continue;
+            if (curIndex > SIZE) continue;
 
             // We are considering whether to include node index + j in the sum or not.  Either way, we need to scaling[index + j],
             // either to increment sum_ or to accumulate in runningScale
-            uint256 scaled = deposits_.scaling[index + j];
+            uint256 scaled = deposits_.scaling[curIndex];
 
             if (sumIndex_ & j != 0) {
                 // node index + j of tree is included in sum
-                uint256 value = deposits_.values[index + j];
+                uint256 value = deposits_.values[curIndex];
 
                 // Accumulate in sum_, recall that scaled==0 means that the scale factor is actually 1
                 sum_  += scaled != 0 ? (runningScale * scaled * value + 5e35) / 1e36 : Maths.wmul(runningScale, value);
                 // Build up index bit by bit
-                index += j;
+                index = curIndex;
 
                 // terminate if we've already matched sumIndex_
                 if (index == sumIndex_) break;
@@ -352,9 +357,13 @@ library Deposits {
         // 2- We may already have computed the scale factor, so we can avoid duplicate traversal
 
         unscaledDepositValue_ = deposits_.values[index_];
+        uint256 curIndex;
+
         while (j & index_ == 0) {
-            uint256 value   = deposits_.values[index_ - j];
-            uint256 scaling = deposits_.scaling[index_ - j];
+            curIndex = index_ - j;
+
+            uint256 value   = deposits_.values[curIndex];
+            uint256 scaling = deposits_.scaling[curIndex];
 
             unscaledDepositValue_ -= scaling != 0 ? Maths.wmul(scaling, value) : value;
             j = j << 1;
