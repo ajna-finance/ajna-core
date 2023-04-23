@@ -955,7 +955,7 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
         assertEq(collateral, 0);
         assertEq(deposit, 2);
         (uint256 borrowerDebt, uint256 borrowerCollateral, ) = _pool.borrowerInfo(actor1);
-        assertEq(borrowerDebt, 985735.245058880968054979 * 1e18);
+        assertEq(borrowerDebt, 985_735.245058880968054979 * 1e18);
         assertEq(borrowerCollateral, 10066231386838.450530455239517417 * 1e18);
 
         changePrank(actor8);
@@ -969,7 +969,7 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
         assertEq(collateral, 0); // no collateral added in bucket 2571
         assertEq(deposit, 0); // entire deposit from bucket 2571 used to settle
         (borrowerDebt, borrowerCollateral, ) = _pool.borrowerInfo(actor1);
-        assertEq(borrowerDebt, 985735.245058880968054978 * 1e18); // decreased with 1
+        assertEq(borrowerDebt, 985_735.245058880968054978 * 1e18); // decreased with 1
         assertEq(borrowerCollateral, 10066231386838.450530455239517417 * 1e18); // same as before settle
     }
 

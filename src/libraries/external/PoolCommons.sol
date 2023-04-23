@@ -342,7 +342,7 @@ library PoolCommons {
 
     /**
      *  @notice Calculates pool's meaningful deposit.
-     *  @param  deposits_ Struct for pool deposits state.
+     *  @param  deposits_            Struct for pool deposits state.
      *  @param  t0DebtInAuction_     Value of pool's t0 debt currently in auction.
      *  @param  nonAuctionedT0Debt_  Value of pool's t0 debt that is not in auction.
      *  @param  inflator_            Pool's current inflator.
