@@ -40,13 +40,17 @@ library Deposits {
         // 2- We often need to precisely change the value in the tree, avoiding the rounding that dividing by scale(index).
         //    This is more relevant to unscaledRemove(...), where we need to ensure the value is precisely set to 0, but we
         //    also prefer it here for consistency.
-        
+
+        uint256 value;
+        uint256 scaling;
+        uint256 newValue;
+
         while (index_ <= SIZE) {
-            uint256 value    = deposits_.values[index_];
-            uint256 scaling  = deposits_.scaling[index_];
+            value    = deposits_.values[index_];
+            scaling  = deposits_.scaling[index_];
 
             // Compute the new value to be put in location index_
-            uint256 newValue = value + unscaledAddAmount_;
+            newValue = value + unscaledAddAmount_;
 
             // Update unscaledAddAmount to propogate up the Fenwick tree
             // Note: we can't just multiply addAmount_ by scaling[i_] due to rounding
@@ -82,15 +86,18 @@ library Deposits {
         // up to the current value of sumIndex_
         uint256 lowerIndexSum;
         uint256 curIndex;
+        uint256 value;
+        uint256 scaling;
+        uint256 scaledValue;
 
         while (i > 0) {
             // Consider if the target index is less than or greater than sumIndex_ + i
             curIndex = sumIndex_ + i;
-            uint256 value   = deposits_.values[curIndex];
-            uint256 scaling = deposits_.scaling[curIndex];
+            value    = deposits_.values[curIndex];
+            scaling  = deposits_.scaling[curIndex];
 
             // Compute sum up to sumIndex_ + i
-            uint256 scaledValue =
+            scaledValue =
                 lowerIndexSum +
                 (scaling != 0 ?  (runningScale * scaling * value + 5e35) / 1e36 : Maths.wmul(runningScale, value));
 
@@ -358,12 +365,14 @@ library Deposits {
 
         unscaledDepositValue_ = deposits_.values[index_];
         uint256 curIndex;
+        uint256 value;
+        uint256 scaling;
 
         while (j & index_ == 0) {
             curIndex = index_ - j;
 
-            uint256 value   = deposits_.values[curIndex];
-            uint256 scaling = deposits_.scaling[curIndex];
+            value   = deposits_.values[curIndex];
+            scaling = deposits_.scaling[curIndex];
 
             unscaledDepositValue_ -= scaling != 0 ? Maths.wmul(scaling, value) : value;
             j = j << 1;
