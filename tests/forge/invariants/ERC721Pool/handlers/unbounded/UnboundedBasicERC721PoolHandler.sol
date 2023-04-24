@@ -83,6 +83,25 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
         }
     }
 
+    function _mergeCollateral(
+        uint256 amount_,
+        uint256[] memory bucketIndexes_
+    ) internal updateLocalStateAndPoolInterest {
+        numberOfCalls['UBBasicHandler.mergeCollateral']++;
+
+        try _erc721Pool.mergeOrRemoveCollateral(bucketIndexes_, amount_, 7388) {
+            
+            for(uint256 i; i < bucketIndexes_.length; i++) {
+                uint256 bucketIndex = bucketIndexes_[i]; 
+                // **R6**: Exchange rates are unchanged by removing collateral token from a bucket
+                exchangeRateShouldNotChange[bucketIndex] = true;
+            }
+
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
+        }
+    }
+
     /*********************************/
     /*** Borrower Helper Functions ***/
     /*********************************/
@@ -92,6 +111,7 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.pledgeCollateral']++;
 
+        (, uint256 borrowerCollateralBefore, ) = _pool.borrowerInfo(_actor);
         (uint256 kickTimeBefore, , , , uint256 auctionPrice, ) =_poolInfo.auctionStatus(address(_erc721Pool), _actor);
 
         // **R1**: Exchange rates are unchanged by pledging collateral
@@ -110,13 +130,17 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
             (uint256 kickTimeAfter, , , , , ) =_poolInfo.auctionStatus(address(_erc721Pool), _actor);
 
             // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
-            if (kickTimeBefore != 0 && kickTimeAfter == 0) {
+            if (kickTimeBefore != 0 && kickTimeAfter == 0 && borrowerCollateralBefore % 1e18 != 0) {
                 if (auctionPrice < MIN_PRICE) {
                     collateralBuckets.add(7388);
+                    lenderDepositTime[_actor][7388] = block.timestamp;
                 } else if (auctionPrice > MAX_PRICE) {
                     collateralBuckets.add(0);
+                    lenderDepositTime[_actor][0] = block.timestamp;
                 } else {
-                    collateralBuckets.add(_indexOf(auctionPrice));
+                    uint256 bucketIndex = _indexOf(auctionPrice);
+                    collateralBuckets.add(bucketIndex);
+                    lenderDepositTime[_actor][bucketIndex] = block.timestamp;
                 }
             }
         } catch (bytes memory err) {
@@ -184,19 +208,24 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.repayDebt']++;
 
+        (, uint256 borrowerCollateralBefore, ) = _pool.borrowerInfo(_actor);
         (uint256 kickTimeBefore, , , , uint256 auctionPrice, ) =_poolInfo.auctionStatus(address(_erc721Pool), _actor);
 
         try _erc721Pool.repayDebt(_actor, amountToRepay_, 0, _actor, 7388) {
             (uint256 kickTimeAfter, , , , , ) =_poolInfo.auctionStatus(address(_erc721Pool), _actor);
 
             // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
-            if (kickTimeBefore != 0 && kickTimeAfter == 0) {
+            if (kickTimeBefore != 0 && kickTimeAfter == 0 && borrowerCollateralBefore % 1e18 != 0) {
                 if (auctionPrice < MIN_PRICE) {
                     collateralBuckets.add(7388);
+                    lenderDepositTime[_actor][7388] = block.timestamp;
                 } else if (auctionPrice > MAX_PRICE) {
                     collateralBuckets.add(0);
+                    lenderDepositTime[_actor][0] = block.timestamp;
                 } else {
-                    collateralBuckets.add(_indexOf(auctionPrice));
+                    uint256 bucketIndex = _indexOf(auctionPrice);
+                    collateralBuckets.add(bucketIndex);
+                    lenderDepositTime[_actor][bucketIndex] = block.timestamp;
                 }
             }
 

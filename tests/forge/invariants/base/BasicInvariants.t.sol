@@ -16,11 +16,13 @@ abstract contract BasicInvariants is BaseInvariants {
     function invariant_Lps_B1() public useCurrentTimestamp {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+        uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
+        for (uint256 i = 0; i < buckets.length; i++) {
+            uint256 bucketIndex = buckets[i];
             uint256 totalLps;
 
-            for (uint256 i = 0; i < actorCount; i++) {
-                address lender = IBaseHandler(_handler).actors(i);
+            for (uint256 j = 0; j < actorCount; j++) {
+                address lender = IBaseHandler(_handler).actors(j);
                 (uint256 lps, ) = _pool.lenderInfo(bucketIndex, lender);
 
                 totalLps += lps;
@@ -48,7 +50,9 @@ abstract contract BasicInvariants is BaseInvariants {
     // checks bucket lps are equal to 0 if bucket quote and collateral are 0
     // checks exchange rate is 1e18 if bucket quote and collateral are 0 
     function invariant_Buckets_B2_B3() public useCurrentTimestamp {
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+        uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
+        for (uint256 i = 0; i < buckets.length; i++) {
+            uint256 bucketIndex = buckets[i];
             (
                 ,
                 uint256 deposit,
@@ -69,9 +73,11 @@ abstract contract BasicInvariants is BaseInvariants {
     function invariant_Bucket_deposit_time_B5_B6_B7() public useCurrentTimestamp {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            for (uint256 i = 0; i < actorCount; i++) {
-                address lender = IBaseHandler(_handler).actors(i);
+        uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
+        for (uint256 i = 0; i < buckets.length; i++) {
+            uint256 bucketIndex = buckets[i];
+            for (uint256 j = 0; j < actorCount; j++) {
+                address lender = IBaseHandler(_handler).actors(j);
 
                 (, uint256 depositTime) = _pool.lenderInfo(bucketIndex, lender);
 
@@ -258,7 +264,9 @@ abstract contract BasicInvariants is BaseInvariants {
 
     // deposits at index i (Deposits.valueAt(i)) is equal to the accumulation of scaled values incremented or decremented from index i
     function invariant_fenwick_depositAtIndex_F1() public useCurrentTimestamp {
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+        uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
+        for (uint256 i = 0; i < buckets.length; i++) {
+            uint256 bucketIndex = buckets[i];
             (, , , uint256 depositAtIndex, ) = _pool.bucketInfo(bucketIndex);
 
             console.log("===================Bucket Index : ", bucketIndex, " ===================");
@@ -277,12 +285,10 @@ abstract contract BasicInvariants is BaseInvariants {
 
     // For any index i, the prefix sum up to and including i is the sum of values stored in indices j<=i
     function invariant_fenwick_depositsTillIndex_F2() public useCurrentTimestamp {
-        uint256 depositTillIndex;
-
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            (, , , uint256 depositAtIndex, ) = _pool.bucketInfo(bucketIndex);
-
-            depositTillIndex += depositAtIndex;
+        uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
+        for (uint256 i = 0; i < buckets.length; i++) {
+            uint256 bucketIndex = buckets[i];
+            uint256 depositTillIndex = _pool.depositUpToIndex(bucketIndex);
 
             console.log("===================Bucket Index : ", bucketIndex, " ===================");
             console.log("Deposit From Pool               -->", depositTillIndex);
@@ -300,7 +306,9 @@ abstract contract BasicInvariants is BaseInvariants {
 
     // For any index i < MAX_FENWICK_INDEX, depositIndex(depositUpToIndex(i)) > i
     function invariant_fenwick_bucket_index_F3() public useCurrentTimestamp {
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+        uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
+        for (uint256 i = 0; i < buckets.length; i++) {
+            uint256 bucketIndex = buckets[i];
             (, , , uint256 depositAtIndex, ) = _pool.bucketInfo(bucketIndex);
             uint256 prefixSum               = _pool.depositUpToIndex(bucketIndex);
             uint256 bucketIndexFromDeposit  = _pool.depositIndex(Maths.wmul(prefixSum, 1e18 + 1e1));

@@ -63,6 +63,18 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         // Action phase
         _removeCollateral(boundedAmount, _lenderBucketIndex);
     }
+    
+    function mergeCollateral(
+        uint256 actorIndex_
+    ) external useRandomActor(actorIndex_) useTimestamps {
+        numberOfCalls['BBasicHandler.mergeCollateral']++;
+
+        // Prepare test phase
+        (uint256 NFTAmount, uint256[] memory bucketIndexes) = _preMergeCollateral();
+
+        // Action phase
+        _mergeCollateral(NFTAmount, bucketIndexes);
+    }
 
     /*******************************/
     /*** Borrower Test Functions ***/
@@ -153,6 +165,25 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         if (lpBalanceBefore == 0) _addCollateral(boundedAmount_, _lenderBucketIndex);
     }
 
+    function _preMergeCollateral() internal returns(uint256 NFTAmount_, uint256[] memory bucketIndexes_) {
+        bucketIndexes_ = getCollateralBuckets();
+        
+        for (uint256 i = 0; i < bucketIndexes_.length; i++) {
+            uint256 bucketIndex = bucketIndexes_[i];
+
+            // Add Quote token in each bucket such that user has enough lps in each bucket to merge collateral
+            uint256 price = _poolInfo.indexToPrice(bucketIndex);
+            _addQuoteToken(price, bucketIndex);
+
+            (uint256 lenderLps, )    = _erc721Pool.lenderInfo(bucketIndex, _actor);
+            uint256 collateralAmount =_poolInfo.lpToCollateral(address(_erc721Pool), lenderLps, bucketIndex);
+            NFTAmount_               += collateralAmount;
+        }
+
+        // Round collateral amount
+        NFTAmount_ = NFTAmount_ / 1e18;
+    }
+
     function _prePledgeCollateral(
         uint256 amountToPledge_
     ) internal view returns (uint256 boundedAmount_) {
@@ -180,8 +211,6 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         (uint256 minDebt, , , ) = _poolInfo.poolUtilizationInfo(address(_pool));
 
         if (boundedAmount_ < minDebt) boundedAmount_ = minDebt + 1;
-
-        // TODO: Need to constrain amount so LUP > HTP
 
         // 2. pool needs sufficent quote token to draw debt
         uint256 poolQuoteBalance = _quote.balanceOf(address(_pool));
