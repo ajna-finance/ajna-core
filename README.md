@@ -191,7 +191,7 @@ Upon completion, contract addresses will be printed to `stdout`:
 
 ```
 
-Record these addresses.
+Record these addresses.  If Etherscan verification fails on the first try, copy the deployment command from the `Makefile`, and tack a `--resume` switch onto the end.
 
 ### Validation
 
