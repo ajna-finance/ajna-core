@@ -5,7 +5,6 @@ The Ajna protocol is a non-custodial, peer-to-peer, permissionless lending, borr
 ## Accepted tokens:
 - Fungible tokens (following the [ERC20 token standard](https://eips.ethereum.org/EIPS/eip-20)).
 - Non-fungible tokens (following the [ERC721 token standard](https://eips.ethereum.org/EIPS/eip-721))
-- Special considerations have been made to support specific NFTs with nonstandard ERC721 implementations, including _CryptoPunks_ and _CryptoKitties_.  This support is limited to Ethereum mainnet.
 
 ### Token limitations
 - The following types of tokens are incompatible with Ajna, and no countermeasures exist to explicitly prevent creating a pool with such tokens, actors should use them at their own risk:
@@ -67,6 +66,13 @@ make all
 
 ### Implementation notes
 Pool external calls carry the `nonReentrant` modifier to prevent invocation from `flashLoan` and `take` callbacks.
+
+## Documentation
+Documentation can be generated as mdbook from Solidity NatSpecs by using `forge doc` command.
+For example, to generate documentation and serve it locally on port 4000 (http://localhost:4000/):
+```bash
+forge doc --serve --port 4000
+```
 
 ## Tests
 ### Forge tests

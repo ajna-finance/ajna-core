@@ -11,11 +11,19 @@ library Maths {
     uint256 internal constant WAD = 1e18;
 
     function wmul(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (x * y + 1e18 / 2) / 1e18;
+        return (x * y + WAD / 2) / WAD;
+    }
+
+    function floorWmul(uint256 x, uint256 y) internal pure returns (uint256) {
+        return (x * y) / WAD;
     }
 
     function wdiv(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (x * 1e18 + y / 2) / y;
+        return (x * WAD + y / 2) / y;
+    }
+
+    function floorWdiv(uint256 x, uint256 y) internal pure returns (uint256) {
+        return (x * WAD) / y;
     }
 
     function max(uint256 x, uint256 y) internal pure returns (uint256) {
@@ -27,7 +35,7 @@ library Maths {
     }
 
     function wad(uint256 x) internal pure returns (uint256) {
-        return x * 1e18;
+        return x * WAD;
     }
 
     function rmul(uint256 x, uint256 y) internal pure returns (uint256) {

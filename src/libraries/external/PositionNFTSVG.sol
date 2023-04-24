@@ -7,7 +7,7 @@ import { Base64 }  from '@base64-sol/base64.sol';
 
 /**
     @title  Position NFT SVG library
-    @notice External library containing logic for generating SVG for a Position NFT.
+    @notice External library containing logic for generating `SVG` for a Position `NFT`.
  */
 library PositionNFTSVG {
 
@@ -23,12 +23,12 @@ library PositionNFTSVG {
         uint256 tokenId;              // the ID of positions NFT token
         address pool;                 // the address of pool tracked in positions NFT token
         address owner;                // the owner of positions NFT token
-        uint256[] indexes;            // the array of price buckets index with LPs to be tracked by the NFT
+        uint256[] indexes;            // the array of price buckets index with LP to be tracked by the NFT
     }
 
-    /**************************/
-    /*** External Functions ***/
-    /**************************/
+    /*******************************/
+    /*** External View Functions ***/
+    /*******************************/
 
     function constructTokenURI(ConstructTokenURIParams memory params_) external pure returns (string memory) {
         // set token metadata

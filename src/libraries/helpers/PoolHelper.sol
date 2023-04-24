@@ -16,33 +16,30 @@ import { Maths }   from '../internal/Maths.sol';
     /*** Price Conversions ***/
     /*************************/
 
-    /**
-        @dev constant price indices defining the min and max of the potential price range
-     */
+    /// @dev constant price indices defining the min and max of the potential price range
     int256  constant MAX_BUCKET_INDEX  =  4_156;
     int256  constant MIN_BUCKET_INDEX  = -3_232;
     uint256 constant MAX_FENWICK_INDEX =  7_388;
 
     uint256 constant MIN_PRICE = 99_836_282_890;
     uint256 constant MAX_PRICE = 1_004_968_987.606512354182109771 * 1e18;
-    /**
-        @dev step amounts in basis points. This is a constant across pools at .005, achieved by dividing WAD by 10,000
-     */
+
+    /// @dev step amounts in basis points. This is a constant across pools at `0.005`, achieved by dividing `WAD` by `10,000`
     int256 constant FLOAT_STEP_INT = 1.005 * 1e18;
 
     /**
-     *  @notice Calculates the price for a given Fenwick index
-     *  @dev    Throws if index exceeds maximum constant
-     *  @dev    Uses fixed-point math to get around lack of floating point numbers in EVM
-     *  @dev    Price expected to be inputted as a 18 decimal WAD
-     *  @dev    Fenwick index is converted to bucket index
-     *  @dev    Fenwick index to bucket index conversion
-     *          1.00      : bucket index 0,     fenwick index 4156: 7388-4156-3232=0
-     *          MAX_PRICE : bucket index 4156,  fenwick index 0:    7388-0-3232=4156.
-     *          MIN_PRICE : bucket index -3232, fenwick index 7388: 7388-7388-3232=-3232.
-     *  @dev    V1: price = MIN_PRICE + (FLOAT_STEP * index)
-     *          V2: price = MAX_PRICE * (FLOAT_STEP ** (abs(int256(index - MAX_PRICE_INDEX))));
-     *          V3 (final): x^y = 2^(y*log_2(x))
+     *  @notice Calculates the price for a given `Fenwick` index.
+     *  @dev    Reverts with `BucketIndexOutOfBounds` if index exceeds maximum constant.
+     *  @dev    Uses fixed-point math to get around lack of floating point numbers in `EVM`.
+     *  @dev    Price expected to be inputted as a `WAD` (`18` decimal).
+     *  @dev    Fenwick index is converted to bucket index.
+     *  @dev    Fenwick index to bucket index conversion:
+     *  @dev      `1.00`      : bucket index `0`,     fenwick index `4156`: `7388-4156-3232=0`.
+     *  @dev      `MAX_PRICE` : bucket index `4156`,  fenwick index `0`:    `7388-0-3232=4156`.
+     *  @dev      `MIN_PRICE` : bucket index - `3232`, fenwick index `7388`: `7388-7388-3232=-3232`.
+     *  @dev    `V1`: `price = MIN_PRICE + (FLOAT_STEP * index)`
+     *  @dev    `V2`: `price = MAX_PRICE * (FLOAT_STEP ** (abs(int256(index - MAX_PRICE_INDEX))));`
+     *  @dev    `V3 (final)`: `x^y = 2^(y*log_2(x))`
      */
     function _priceAt(
         uint256 index_
@@ -62,13 +59,13 @@ import { Maths }   from '../internal/Maths.sol';
     }
 
     /**
-     *  @notice Calculates the Fenwick index for a given price
-     *  @dev    Throws if price exceeds maximum constant
-     *  @dev    Price expected to be inputted as a 18 decimal WAD
-     *  @dev    V1: bucket index = (price - MIN_PRICE) / FLOAT_STEP
-     *          V2: bucket index = (log(FLOAT_STEP) * price) /  MAX_PRICE
-     *          V3 (final): bucket index =  log_2(price) / log_2(FLOAT_STEP)
-     *  @dev    Fenwick index = 7388 - bucket index + 3232
+     *  @notice Calculates the  Fenwick  index for a given price.
+     *  @dev    Reverts with `BucketPriceOutOfBounds` if price exceeds maximum constant.
+     *  @dev    Price expected to be inputted as a `WAD` (`18` decimal).
+     *  @dev    `V1`: `bucket index = (price - MIN_PRICE) / FLOAT_STEP`
+     *  @dev    `V2`: `bucket index = (log(FLOAT_STEP) * price) /  MAX_PRICE`
+     *  @dev    `V3 (final)`: `bucket index =  log_2(price) / log_2(FLOAT_STEP)`
+     *  @dev    `Fenwick index = 7388 - bucket index + 3232`
      */
     function _indexOf(
         uint256 price_
@@ -108,7 +105,7 @@ import { Maths }   from '../internal/Maths.sol';
 
     /**
      *  @notice Calculates origination fee for a given interest rate.
-     *  @notice Calculated as greater of the current annualized interest rate divided by 52 (one week of interest) or 5 bps.
+     *  @notice Calculated as greater of the current annualized interest rate divided by `52` (one week of interest) or `5` bps.
      *  @param  interestRate_ The current interest rate.
      *  @return Fee rate based upon the given interest rate.
      */
@@ -120,7 +117,7 @@ import { Maths }   from '../internal/Maths.sol';
     }
 
     /**
-     * @notice Calculates the unutilized deposit fee, charged to lenders who deposit below the LUP.
+     * @notice Calculates the unutilized deposit fee, charged to lenders who deposit below the `LUP`.
      * @param  interestRate_ The current interest rate.
      * @return Fee rate based upon the given interest rate.
      */
@@ -132,17 +129,17 @@ import { Maths }   from '../internal/Maths.sol';
     }
 
     /**
-     *  @notice Calculates debt-weighted average threshold price
-     *  @param  t0Debt_              pool debt owed by borrowers in t0 terms
-     *  @param  inflator_            pool's borrower inflator
-     *  @param  t0Debt2ToCollateral_ t0-debt-squared-to-collateral accumulator 
+     *  @notice Calculates debt-weighted average threshold price.
+     *  @param  t0Debt_              Pool debt owed by borrowers in `t0` terms.
+     *  @param  inflator_            Pool's borrower inflator.
+     *  @param  t0Debt2ToCollateral_ `t0-debt-squared-to-collateral` accumulator. 
      */
     function _dwatp(
         uint256 t0Debt_,
         uint256 inflator_,
         uint256 t0Debt2ToCollateral_
     ) pure returns (uint256) {
-        return t0Debt_ == 0 ? 0 : Maths.wmul(inflator_, Maths.wdiv(t0Debt2ToCollateral_, t0Debt_));
+        return t0Debt_ == 0 ? 0 : Maths.wdiv(Maths.wmul(inflator_, t0Debt2ToCollateral_), t0Debt_);
     }
 
     /**
@@ -151,7 +148,7 @@ import { Maths }   from '../internal/Maths.sol';
      *  @param collateral_ Collateral to calculate collateralization for.
      *  @param price_      Price to calculate collateralization for.
      *  @param type_       Type of the pool.
-     *  @return True if collateralization calculated is equal or greater than 1.
+     *  @return `True` if collateralization calculated is equal or greater than `1`.
      */
     function _isCollateralized(
         uint256 debt_,
@@ -171,7 +168,7 @@ import { Maths }   from '../internal/Maths.sol';
      *  @notice Price precision adjustment used in calculating collateral dust for a bucket.
      *          To ensure the accuracy of the exchange rate calculation, buckets with smaller prices require
      *          larger minimum amounts of collateral.  This formula imposes a lower bound independent of token scale.
-     *  @param  bucketIndex_              Index of the bucket, or 0 for encumbered collateral with no bucket affinity.
+     *  @param  bucketIndex_              Index of the bucket, or `0` for encumbered collateral with no bucket affinity.
      *  @return pricePrecisionAdjustment_ Unscaled integer of the minimum number of decimal places the dust limit requires.
      */
     function _getCollateralDustPricePrecisionAdjustment(
@@ -186,25 +183,25 @@ import { Maths }   from '../internal/Maths.sol';
     }
 
     /**
-     *  @notice Returns the amount of collateral calculated for the given amount of LPs.
+     *  @notice Returns the amount of collateral calculated for the given amount of `LP`.
      *  @param  bucketCollateral_ Amount of collateral in bucket.
-     *  @param  bucketLPs_        Amount of LPs in bucket.
-     *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs.
-     *  @param  lenderLPsBalance_ The amount of LPs to calculate collateral for.
-     *  @param  bucketPrice_      Bucket price.
-     *  @return collateralAmount_ Amount of collateral calculated for the given LPs amount.
+     *  @param  bucketLP_         Amount of `LP` in bucket.
+     *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / `LP`.
+     *  @param  lenderLPBalance_  The amount of `LP` to calculate collateral for.
+     *  @param  bucketPrice_      Bucket's price.
+     *  @return collateralAmount_ Amount of collateral calculated for the given `LP `amount.
      */
-    function _lpsToCollateral(
+    function _lpToCollateral(
         uint256 bucketCollateral_,
-        uint256 bucketLPs_,
+        uint256 bucketLP_,
         uint256 deposit_,
-        uint256 lenderLPsBalance_,
+        uint256 lenderLPBalance_,
         uint256 bucketPrice_
     ) pure returns (uint256 collateralAmount_) {
-        // max collateral to lps
-        uint256 rate = Buckets.getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_);
+        // max collateral to lp
+        uint256 rate = Buckets.getExchangeRate(bucketCollateral_, bucketLP_, deposit_, bucketPrice_);
 
-        collateralAmount_ = Maths.wdiv(Maths.wmul(lenderLPsBalance_, rate), bucketPrice_);
+        collateralAmount_ = Maths.wdiv(Maths.wmul(lenderLPBalance_, rate), bucketPrice_);
 
         if (collateralAmount_ > bucketCollateral_) {
             // user is owed more collateral than is available in the bucket
@@ -213,26 +210,26 @@ import { Maths }   from '../internal/Maths.sol';
     }
 
     /**
-     *  @notice Returns the amount of quote tokens calculated for the given amount of LPs.
-     *  @param  bucketLPs_        Amount of LPs in bucket.
+     *  @notice Returns the amount of quote tokens calculated for the given amount of `LP`.
+     *  @param  bucketLP_         Amount of `LP` in bucket.
      *  @param  bucketCollateral_ Amount of collateral in bucket.
-     *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs.
-     *  @param  lenderLPsBalance_ The amount of LPs to calculate quote token amount for.
-     *  @param  maxQuoteToken_    The max quote token amount to calculate LPs for.
-     *  @param  bucketPrice_      Bucket price.
-     *  @return quoteTokenAmount_ Amount of quote tokens calculated for the given LPs amount.
+     *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / `LP`.
+     *  @param  lenderLPBalance_  The amount of `LP` to calculate quote token amount for.
+     *  @param  maxQuoteToken_    The max quote token amount to calculate `LP` for.
+     *  @param  bucketPrice_      Bucket's price.
+     *  @return quoteTokenAmount_ Amount of quote tokens calculated for the given `LP` amount.
      */
-    function _lpsToQuoteToken(
-        uint256 bucketLPs_,
+    function _lpToQuoteToken(
+        uint256 bucketLP_,
         uint256 bucketCollateral_,
         uint256 deposit_,
-        uint256 lenderLPsBalance_,
+        uint256 lenderLPBalance_,
         uint256 maxQuoteToken_,
         uint256 bucketPrice_
     ) pure returns (uint256 quoteTokenAmount_) {
-        uint256 rate = Buckets.getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_);
+        uint256 rate = Buckets.getExchangeRate(bucketCollateral_, bucketLP_, deposit_, bucketPrice_);
 
-        quoteTokenAmount_ = Maths.wmul(lenderLPsBalance_, rate);
+        quoteTokenAmount_ = Maths.wmul(lenderLPBalance_, rate);
 
         if (quoteTokenAmount_ > deposit_)       quoteTokenAmount_ = deposit_;
         if (quoteTokenAmount_ > maxQuoteToken_) quoteTokenAmount_ = maxQuoteToken_;
@@ -241,7 +238,7 @@ import { Maths }   from '../internal/Maths.sol';
     /**
      *  @notice Rounds a token amount down to the minimum amount permissible by the token scale.
      *  @param  amount_       Value to be rounded.
-     *  @param  tokenScale_   Scale of the token, presented as a power of 10.
+     *  @param  tokenScale_   Scale of the token, presented as a power of `10`.
      *  @return scaledAmount_ Rounded value.
      */
     function _roundToScale(
@@ -254,7 +251,7 @@ import { Maths }   from '../internal/Maths.sol';
     /**
      *  @notice Rounds a token amount up to the next amount permissible by the token scale.
      *  @param  amount_       Value to be rounded.
-     *  @param  tokenScale_   Scale of the token, presented as a power of 10.
+     *  @param  tokenScale_   Scale of the token, presented as a power of `10`.
      *  @return scaledAmount_ Rounded value.
      */
     function _roundUpToScale(
@@ -273,6 +270,15 @@ import { Maths }   from '../internal/Maths.sol';
 
     uint256 constant MINUTE_HALF_LIFE    = 0.988514020352896135_356867505 * 1e27;  // 0.5^(1/60)
 
+    /**
+     *  @notice Calculates claimable reserves within the pool.
+     *  @param  debt_                    Pool's debt.
+     *  @param  poolSize_                Pool's deposit size.
+     *  @param  totalBondEscrowed_       Total bond escrowed.
+     *  @param  reserveAuctionUnclaimed_ Pool's unclaimed reserve auction.
+     *  @param  quoteTokenBalance_       Pool's quote token balance.
+     *  @return claimable_               Calculated pool reserves.
+     */  
     function _claimableReserves(
         uint256 debt_,
         uint256 poolSize_,
@@ -285,14 +291,115 @@ import { Maths }   from '../internal/Maths.sol';
         claimable_ -= Maths.min(claimable_, poolSize_ + totalBondEscrowed_ + reserveAuctionUnclaimed_);
     }
 
+    /**
+     *  @notice Calculates reserves auction price.
+     *  @param  reserveAuctionKicked_ Time when reserve auction was started (kicked).
+     *  @return price_                Calculated auction price.
+     */     
     function _reserveAuctionPrice(
         uint256 reserveAuctionKicked_
-    ) view returns (uint256 _price) {
+    ) view returns (uint256 price_) {
         if (reserveAuctionKicked_ != 0) {
             uint256 secondsElapsed   = block.timestamp - reserveAuctionKicked_;
             uint256 hoursComponent   = 1e27 >> secondsElapsed / 3600;
             uint256 minutesComponent = Maths.rpow(MINUTE_HALF_LIFE, secondsElapsed % 3600 / 60);
 
-            _price = Maths.rayToWad(1_000_000_000 * Maths.rmul(hoursComponent, minutesComponent));
+            price_ = Maths.rayToWad(1_000_000_000 * Maths.rmul(hoursComponent, minutesComponent));
         }
+    }
+
+    /*************************/
+    /*** Auction Utilities ***/
+    /*************************/
+
+    /**
+     *  @notice Calculates auction price.
+     *  @param  kickMomp_     `MOMP` recorded at the time of kick.
+     *  @param  neutralPrice_ `Neutral Price` of the auction.
+     *  @param  kickTime_      Time when auction was kicked.
+     *  @return price_         Calculated auction price.
+     */
+    function _auctionPrice(
+        uint256 kickMomp_,
+        uint256 neutralPrice_,
+        uint256 kickTime_
+    ) view returns (uint256 price_) {
+        uint256 elapsedHours = Maths.wdiv((block.timestamp - kickTime_) * 1e18, 1 hours * 1e18);
+
+        elapsedHours -= Maths.min(elapsedHours, 1e18);  // price locked during cure period
+
+        int256 timeAdjustment  = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours)); 
+        uint256 referencePrice = Maths.max(kickMomp_, neutralPrice_); 
+
+        price_ = 32 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
+    }
+
+    /**
+     *  @notice Calculates bond penalty factor.
+     *  @dev    Called in kick and take.
+     *  @param debt_         Borrower debt.
+     *  @param collateral_   Borrower collateral.
+     *  @param neutralPrice_ `NP` of auction.
+     *  @param bondFactor_   Factor used to determine bondSize.
+     *  @param auctionPrice_ Auction price at the time of call.
+     *  @return bpf_         Factor used in determining bond `reward` (positive) or `penalty` (negative).
+     */
+    function _bpf(
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 neutralPrice_,
+        uint256 bondFactor_,
+        uint256 auctionPrice_
+    ) pure returns (int256) {
+        int256 thresholdPrice = int256(Maths.wdiv(debt_, collateral_));
+
+        int256 sign;
+        if (thresholdPrice < int256(neutralPrice_)) {
+            // BPF = BondFactor * min(1, max(-1, (neutralPrice - price) / (neutralPrice - thresholdPrice)))
+            sign = Maths.minInt(
+                1e18,
+                Maths.maxInt(
+                    -1 * 1e18,
+                    PRBMathSD59x18.div(
+                        int256(neutralPrice_) - int256(auctionPrice_),
+                        int256(neutralPrice_) - thresholdPrice
+                    )
+                )
+            );
+        } else {
+            int256 val = int256(neutralPrice_) - int256(auctionPrice_);
+            if (val < 0 )      sign = -1e18;
+            else if (val != 0) sign = 1e18;
+        }
+
+        return PRBMathSD59x18.mul(int256(bondFactor_), sign);
+    }
+
+    /**
+     *  @notice Calculates bond parameters of an auction.
+     *  @param  borrowerDebt_ Borrower's debt before entering in liquidation.
+     *  @param  collateral_   Borrower's collateral before entering in liquidation.
+     *  @param  momp_         Current pool `momp`.
+     */
+    function _bondParams(
+        uint256 borrowerDebt_,
+        uint256 collateral_,
+        uint256 momp_
+    ) pure returns (uint256 bondFactor_, uint256 bondSize_) {
+        uint256 thresholdPrice = borrowerDebt_  * Maths.WAD / collateral_;
+
+        // bondFactor = min(30%, max(1%, (MOMP - thresholdPrice) / MOMP))
+        if (thresholdPrice >= momp_) {
+            bondFactor_ = 0.01 * 1e18;
+        } else {
+            bondFactor_ = Maths.min(
+                0.3 * 1e18,
+                Maths.max(
+                    0.01 * 1e18,
+                    1e18 - Maths.wdiv(thresholdPrice, momp_)
+                )
+            );
+        }
+
+        bondSize_ = Maths.wmul(bondFactor_,  borrowerDebt_);
     }

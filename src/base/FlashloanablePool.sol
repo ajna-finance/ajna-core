@@ -10,9 +10,9 @@ import { IERC3156FlashBorrower } from '../interfaces/pool/IERC3156FlashBorrower.
 
 /**
  *  @title  Flashloanable Pool Contract
- *  @notice Pool contract with IERC3156 flash loans capabilities.
- *  @notice No fee is charged for taking flash loans from pool.
- *  @notice Flash loans can be taking in ERC20 quote and ERC20 collateral tokens.
+ *  @notice Pool contract with `IERC3156` flashloans capabilities.
+ *  @notice No fee is charged for taking flashloans from pool.
+ *  @notice Flashloans can be taking in `ERC20` quote and `ERC20` collateral tokens.
  */
 abstract contract FlashloanablePool is Pool {
     using SafeERC20 for IERC20;
@@ -20,10 +20,10 @@ abstract contract FlashloanablePool is Pool {
     /**
      *  @notice Called by flashloan borrowers to borrow liquidity which must be repaid in the same transaction.
      *  @param  receiver_ Address of the contract which implements the appropriate interface to receive tokens.
-     *  @param  token_    Address of the ERC20 token caller wants to borrow.
-     *  @param  amount_   The amount of tokens to borrow.
+     *  @param  token_    Address of the `ERC20` token caller wants to borrow.
+     *  @param  amount_   The denormalized amount (dependent upon token precision) of tokens to borrow.
      *  @param  data_     User-defined calldata passed to the receiver.
-     *  @return success_  True if flashloan was successful.
+     *  @return success_  `True` if flashloan was successful.
      */
     function flashLoan(
         IERC3156FlashBorrower receiver_,
@@ -54,10 +54,12 @@ abstract contract FlashloanablePool is Pool {
         if (tokenContract.balanceOf(address(this)) != initialBalance) revert FlashloanIncorrectBalance();
 
         success_ = true;
+
+        emit Flashloan(address(receiver_), token_, amount_);
     }
 
     /**
-     *  @notice Returns 0, as no fee is charged for flashloans.
+     *  @notice Returns `0`, as no fee is charged for flashloans.
      */
     function flashFee(
         address token_,
@@ -69,7 +71,7 @@ abstract contract FlashloanablePool is Pool {
 
     /**
      *  @notice Returns the amount of tokens available to be lent.
-     *  @param  token_   Address of the ERC20 token to be lent.
+     *  @param  token_   Address of the `ERC20` token to be lent.
      *  @return maxLoan_ The amount of `token_` that can be lent.
      */
      function maxFlashLoan(
@@ -79,10 +81,10 @@ abstract contract FlashloanablePool is Pool {
     }
 
     /**
-     *  @notice Returns true if pool allows flashloans for given token address, false otherwise.
+     *  @notice Returns `true` if pool allows flashloans for given token address, `false` otherwise.
      *  @dev    Allows flashloans for quote token, overriden in pool implementation to allow flashloans for other tokens.
-     *  @param  token_   Address of the ERC20 token to be lent.
-     *  @return True if token can be flashloaned, false otherwise.
+     *  @param  token_   Address of the `ERC20` token to be lent.
+     *  @return `True` if token can be flashloaned, `false` otherwise.
      */
     function _isFlashloanSupported(
         address token_

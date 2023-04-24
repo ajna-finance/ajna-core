@@ -9,54 +9,54 @@ interface IRewardsManagerState {
 
     /**
      *  @notice Track whether a depositor has claimed rewards for a given burn event epoch.
-     *  @param  tokenId ID of the staked LP NFT.
-     *  @param  epoch   The burn epoch to track if rewards were claimed.
-     *  @return True if rewards were claimed for the given epoch, else false.
+     *  @param  tokenId_ ID of the staked `LP` `NFT`.
+     *  @param  epoch_   The burn epoch to track if rewards were claimed.
+     *  @return `True` if rewards were claimed for the given epoch, else false.
      */
     function isEpochClaimed(
-        uint256 tokenId,
-        uint256 epoch
+        uint256 tokenId_,
+        uint256 epoch_
     ) external view returns (bool);
 
     /**
      *  @notice Track the total amount of rewards that have been claimed for a given epoch.
-     *  @param  epoch   The burn epoch to track if rewards were claimed.
+     *  @param  epoch_   The burn epoch to track if rewards were claimed.
      *  @return The amount of rewards claimed in given epoch.
      */
     function rewardsClaimed(
-        uint256 epoch
+        uint256 epoch_
     ) external view returns (uint256);
 
     /**
      *  @notice Track the total amount of rewards that have been claimed for a given burn event's bucket updates.
-     *  @param  epoch   The burn epoch to track if rewards were claimed.
+     *  @param  epoch_   The burn epoch to track if rewards were claimed.
      *  @return The amount of update rewards claimed in given epoch.
      */
     function updateRewardsClaimed(
-        uint256 epoch
+        uint256 epoch_
     ) external view returns (uint256);
 
     /**
      *  @notice Retrieve information about a given stake.
-     *  @param  tokenId  ID of the NFT staked in the rewards contract to retrieve information about.
-     *  @return The owner of a given NFT stake.
-     *  @return The Pool the NFT represents positions in.
-     *  @return The last burn epoch in which the owner of the NFT claimed rewards.
+     *  @param  tokenId_          `ID` of the `NFT` staked in the rewards contract to retrieve information about.
+     *  @return owner_            The owner of a given `NFT` stake.
+     *  @return pool_             The `Pool` the `NFT` represents positions in.
+     *  @return lastClaimedEpoch_ The last burn epoch in which the owner of the `NFT` claimed rewards.
      */
     function getStakeInfo(
-        uint256 tokenId
-    ) external view returns (address, address, uint256);
+        uint256 tokenId_
+    ) external view returns (address owner_, address pool_, uint256 lastClaimedEpoch_);
 
     /**
-     *  @notice Retrieve information about recorded LPs and rate values for a given bucket and a given stake, at stake time.
-     *  @param  tokenId  ID of the NFT staked in the rewards contract to retrieve information about.
-     *  @param  bucketId ID of the bucket to retrieve recorded information at stake time.
-     *  @return [WAD] LP amount the NFT owner is entitled in current bucket at the time of staking.
-     *  @return [WAD] current bucket exchange rate at the time of staking.
+     *  @notice Retrieve information about recorded `LP` and rate values for a given bucket and a given stake, at stake time.
+     *  @param  tokenId_  `ID` of the `NFT` staked in the rewards contract to retrieve information about.
+     *  @param  bucketId_ `ID` of the bucket to retrieve recorded information at stake time.
+     *  @return `LP` amount (in `WAD`) the `NFT` owner is entitled in current bucket at the time of staking.
+     *  @return Current bucket exchange rate (`WAD`) at the time of staking.
      */
     function getBucketStateStakeInfo(
-        uint256 tokenId,
-        uint256 bucketId
+        uint256 tokenId_,
+        uint256 bucketId_
     ) external view returns (uint256, uint256);
 
 }
@@ -65,6 +65,7 @@ interface IRewardsManagerState {
 /*** State Structs ***/
 /*********************/
 
+/// @dev Struct holding stake info state.
 struct StakeInfo {
     address ajnaPool;                         // address of the Ajna pool the NFT corresponds to
     uint96  lastClaimedEpoch;                 // last epoch the stake claimed rewards
@@ -73,6 +74,7 @@ struct StakeInfo {
     mapping(uint256 => BucketState) snapshot; // the LP NFT's balances and exchange rates in each bucket at the time of staking
 }
 
+/// @dev Struct holding bucket state at stake time.
 struct BucketState {
     uint128 lpsAtStakeTime;  // [WAD] LP amount the NFT owner is entitled in current bucket at the time of staking
     uint128 rateAtStakeTime; // [WAD] current bucket exchange rate at the time of staking

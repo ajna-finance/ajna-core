@@ -103,7 +103,7 @@
 	reverts on:
 	- deposits locked RemoveDepositLockedByAuctionDebt()
 	- LenderActions.removeQuoteToken():
-		- no LPs NoClaim()
+		- no LP NoClaim()
 		- LUP lower than HTP LUPBelowHTP()
 	emit events:
 	- LenderActions.removeQuoteToken():
@@ -112,24 +112,24 @@
 	- PoolCommons.updateInterestRate():
 		- UpdateInterestRate
 
-### transferLPs
+### transferLP
 	external libraries call:
-	- LenderActions.transferLPs()
+	- LenderActions.transferLP()
 
 	write state:
-	- LenderActions.transferLPs():
+	- LenderActions.transferLP():
 		- delete allowance mapping
 		- increment new lender.lps accumulator and lender.depositTime state
 		- delete old lender from bucket -> lender mapping
 
 	reverts on:
-	- LenderActions.transferLPs():
+	- LenderActions.transferLP():
 		- invalid index InvalidIndex()
 		- no allowance NoAllowance()
 
 	emit events:
-	- LenderActions.transferLPs():
-		- TransferLPs
+	- LenderActions.transferLP():
+		- TransferLP
 
 ### kick
 	external libraries call:
@@ -232,12 +232,12 @@
 	emit events:
 	- BondWithdrawn
 
-### startClaimableReserveAuction
+### kickReserveAuction
 	external libraries call:
-	- Auctions.startClaimableReserveAuction()
+	- Auctions.kickReserveAuction()
 
 	write state:
-	- Auctions.startClaimableReserveAuction():
+	- Auctions.kickReserveAuction():
 		- update reserveAuction.unclaimed accumulator
 		- update reserveAuction.kicked timestamp state
 	- increment latestBurnEpoch counter
@@ -245,12 +245,12 @@
 
 	reverts on:
 	- 2 weeks not passed ReserveAuctionTooSoon()
-	- Auctions.startClaimableReserveAuction():
+	- Auctions.kickReserveAuction():
 		- no reserves to claim NoReserves()
 
 	emit events:
-	- Auctions.startClaimableReserveAuction():
-		- ReserveAuction
+	- Auctions.kickReserveAuction():
+		- KickReserveAuction
 
 
 ### takeReserves
@@ -488,7 +488,7 @@
 			- update values array state
 		- Buckets.addCollateral():
 			- increment bucket.collateral and bucket.lps accumulator
-			- addLenderLPs():
+			- addLenderLP():
 				- increment lender.lps accumulator and lender.depositTime state
 		- Auctions._settleAuction():
 			- _removeAuction():
@@ -594,7 +594,7 @@
 			- _prepareTake():
 				- update liquidation.alreadyTaken state
 			- _rewardBucketTake():
-				- Buckets.addLenderLPs:
+				- Buckets.addLenderLP:
 					- increment taker lender.lps accumulator and lender.depositTime state
 					- increment kicker lender.lps accumulator and lender.depositTime state
 				- update liquidation bond size accumulator
@@ -659,7 +659,7 @@
 	- LenderActions.addCollateral():
 		- Buckets.addCollateral():
 			- increment bucket.collateral and bucket.lps accumulator
-			- addLenderLPs():
+			- addLenderLP():
 				- increment lender.lps accumulator and lender.depositTime state
 	- _updateInterestState():
 		- PoolCommons.updateInterestRate():
@@ -700,7 +700,7 @@
 	reverts on:
 	- LenderActions.removeCollateral():
 		- not enough collateral InsufficientCollateral()
-		- insufficient LPs InsufficientLPs()
+		- insufficient LP InsufficientLP()
 
 	emit events:
 	- RemoveCollateral

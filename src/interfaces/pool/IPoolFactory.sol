@@ -3,7 +3,7 @@
 pragma solidity 0.8.14;
 
 /**
- *  @title Pool Factory Interface
+ *  @title Pool Factory Interface.
  *  @dev   Used to deploy both funigible and non fungible pools.
  */
 interface IPoolFactory {
@@ -11,9 +11,13 @@ interface IPoolFactory {
     /**************/
     /*** Errors ***/
     /**************/
+    /**
+     *  @notice Can't deploy if quote and collateral are the same token.
+     */
+    error DeployQuoteCollateralSameToken();
 
     /**
-     *  @notice Can't deploy with one of the args pointing to the 0x0 address.
+     *  @notice Can't deploy with one of the args pointing to the `0x` address.
      */
     error DeployWithZeroAddress();
 

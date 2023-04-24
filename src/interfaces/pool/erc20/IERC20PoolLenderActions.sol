@@ -9,14 +9,14 @@ interface IERC20PoolLenderActions {
 
     /**
      *  @notice Deposit claimable collateral into a specified bucket.
-     *  @param  amount    Amount of collateral to deposit.
-     *  @param  index     The bucket index to which collateral will be deposited.
-     *  @param  expiry    Timestamp after which this TX will revert, preventing inclusion in a block with unfavorable price.
-     *  @return lpbChange The amount of LPs changed for the added collateral.
+     *  @param  amountToAdd_    Amount of collateral to deposit.
+     *  @param  index_     The bucket index to which collateral will be deposited.
+     *  @param  expiry_    Timestamp after which this transaction will revert, preventing inclusion in a block with unfavorable price.
+     *  @return bucketLP_  The amount of `LP` awarded for the added collateral.
      */
     function addCollateral(
-        uint256 amount,
-        uint256 index,
-        uint256 expiry
-    ) external returns (uint256 lpbChange);
+        uint256 amountToAdd_,
+        uint256 index_,
+        uint256 expiry_
+    ) external returns (uint256 bucketLP_);
 }

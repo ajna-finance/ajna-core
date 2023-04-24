@@ -11,15 +11,15 @@ import { Maths } from './Maths.sol';
 /**
     @title  Deposits library
     @notice Internal library containing common logic for deposits management.
-    @dev    Implemented as Fenwick Tree data structure.
+    @dev    Implemented as `Fenwick Tree` data structure.
  */
 library Deposits {
 
-    // Max index supported in the Fenwick tree
+    /// @dev Max index supported in the `Fenwick` tree
     uint256 internal constant SIZE = 8192;
 
     /**
-     *  @notice increase a value in the FenwickTree at an index.
+     *  @notice Increase a value in the FenwickTree at an index.
      *  @dev    Starts at leaf/target and moved up towards root
      *  @param  index_             The deposit index.
      *  @param  unscaledAddAmount_ The unscaled amount to increase deposit by.
@@ -40,13 +40,17 @@ library Deposits {
         // 2- We often need to precisely change the value in the tree, avoiding the rounding that dividing by scale(index).
         //    This is more relevant to unscaledRemove(...), where we need to ensure the value is precisely set to 0, but we
         //    also prefer it here for consistency.
-        
+
+        uint256 value;
+        uint256 scaling;
+        uint256 newValue;
+
         while (index_ <= SIZE) {
-            uint256 value    = deposits_.values[index_];
-            uint256 scaling  = deposits_.scaling[index_];
+            value    = deposits_.values[index_];
+            scaling  = deposits_.scaling[index_];
 
             // Compute the new value to be put in location index_
-            uint256 newValue = value + unscaledAddAmount_;
+            newValue = value + unscaledAddAmount_;
 
             // Update unscaledAddAmount to propogate up the Fenwick tree
             // Note: we can't just multiply addAmount_ by scaling[i_] due to rounding
@@ -64,11 +68,11 @@ library Deposits {
 
     /**
      *  @notice Finds index and sum of first bucket that EXCEEDS the given sum
-     *  @dev    Used in lup calculation
+     *  @dev    Used in `LUP` calculation
      *  @param  targetSum_     The sum to find index for.
-     *  @return sumIndex_      Smallest index where prefixsum greater than the sum
-     *  @return sumIndexSum_   Sum at index PRECEDING sumIndex_
-     *  @return sumIndexScale_ Scale of bucket PRECEDING sumIndex_
+     *  @return sumIndex_      Smallest index where prefixsum greater than the sum.
+     *  @return sumIndexSum_   Sum at index PRECEDING `sumIndex_`.
+     *  @return sumIndexScale_ Scale of bucket PRECEDING `sumIndex_`.
      */
     function findIndexAndSumOfSum(
         DepositsState storage deposits_,
@@ -81,28 +85,33 @@ library Deposits {
         // We construct the target sumIndex_ bit by bit, from MSB to LSB.  lowerIndexSum_ always maintains the sum
         // up to the current value of sumIndex_
         uint256 lowerIndexSum;
+        uint256 curIndex;
+        uint256 value;
+        uint256 scaling;
+        uint256 scaledValue;
 
         while (i > 0) {
             // Consider if the target index is less than or greater than sumIndex_ + i
-            uint256 value   = deposits_.values[sumIndex_ + i];
-            uint256 scaling = deposits_.scaling[sumIndex_ + i];
+            curIndex = sumIndex_ + i;
+            value    = deposits_.values[curIndex];
+            scaling  = deposits_.scaling[curIndex];
 
             // Compute sum up to sumIndex_ + i
-            uint256 scaledValue =
+            scaledValue =
                 lowerIndexSum +
-                (scaling != 0 ?  Maths.wmul(Maths.wmul(runningScale, scaling), value) : Maths.wmul(runningScale, value));
+                (scaling != 0 ?  (runningScale * scaling * value + 5e35) / 1e36 : Maths.wmul(runningScale, value));
 
             if (scaledValue  < targetSum_) {
                 // Target value is too small, need to consider increasing sumIndex_ still
-                if (sumIndex_ + i <= MAX_FENWICK_INDEX) {
+                if (curIndex <= MAX_FENWICK_INDEX) {
                     // sumIndex_+i is in range of Fenwick prices.  Target index has this bit set to 1.  
-                    sumIndex_ += i;
+                    sumIndex_ = curIndex;
                     lowerIndexSum = scaledValue;
                 }
             } else {
                 // Target index has this bit set to 0
                 // scaling == 0 means scale factor == 1, otherwise scale factor == scaling
-                if (scaling != 0) runningScale = Maths.wmul(runningScale, scaling);
+                if (scaling != 0) runningScale = Maths.floorWmul(runningScale, scaling);
 
                 // Current scaledValue is <= targetSum_, it's a candidate value for sumIndexSum_
                 sumIndexSum_   = scaledValue;
@@ -114,10 +123,10 @@ library Deposits {
     }
 
     /**
-     *  @notice Finds index of passed sum.  Helper function for findIndexAndSumOfSum
-     *  @dev    Used in lup calculation
+     *  @notice Finds index of passed sum. Helper function for `findIndexAndSumOfSum`.
+     *  @dev    Used in `LUP` calculation
      *  @param  sum_      The sum to find index for.
-     *  @return sumIndex_ Smallest index where prefixsum greater than the sum
+     *  @return sumIndex_ Smallest index where prefixsum greater than the sum.
      */
     function findIndexOfSum(
         DepositsState storage deposits_,
@@ -127,9 +136,9 @@ library Deposits {
     }
 
     /**
-     *  @notice Get least significant bit (LSB) of intiger, i_.
+     *  @notice Get least significant bit (`LSB`) of integer `i_`.
      *  @dev    Used primarily to decrement the binary index in loops, iterating over range parents.
-     *  @param  i_  The integer with which to return the LSB.
+     *  @param  i_  The integer with which to return the `LSB`.
      */
     function lsb(
         uint256 i_
@@ -142,7 +151,7 @@ library Deposits {
 
     /**
      *  @notice Scale values in the tree from the index provided, upwards.
-     *  @dev    Starts at passed in node and increments through range parent nodes, and ends at 8192.
+     *  @dev    Starts at passed in node and increments through range parent nodes, and ends at `8192`.
      *  @param  index_   The index to start scaling from.
      *  @param  factor_  The factor to scale the values by.
      */
@@ -168,7 +177,7 @@ library Deposits {
         //             subtree what was scaled earlier.  Therefore: we need to increment it's stored value
         //             (in sum) which was set in a prior interation in case 1.
         while (bit <= SIZE) {
-            if((bit & index_) != 0) {
+            if ((bit & index_) != 0) {
                 // Case 1 as described above
                 value   = deposits_.values[index_];
                 scaling = deposits_.scaling[index_];
@@ -192,7 +201,7 @@ library Deposits {
                 // Unset the bit in index to continue traversing up the Fenwick tree
                 index_ -= bit;
             } else {
-                // Case 1 above.  superRangeIndex is the index of the node to consider that
+                // Case 2 above.  superRangeIndex is the index of the node to consider that
                 //                contains the sub range that was already scaled in prior iteration
                 uint256 superRangeIndex = index_ + bit;
 
@@ -210,7 +219,7 @@ library Deposits {
 
     /**
      *  @notice Get prefix sum of all indexes from provided index downwards.
-     *  @dev    Starts at tree root and decrements through range parent nodes summing from index i_'s range to index 0.
+     *  @dev    Starts at tree root and decrements through range parent nodes summing from index `sumIndex_`'s range to index `0`.
      *  @param  sumIndex_  The index to receive the prefix sum.
      *  @param  sum_       The prefix sum from current index downwards.
      */
@@ -227,29 +236,32 @@ library Deposits {
 
         // Used to terminate loop.  We don't need to consider final 0 bits of sumIndex_
         uint256 indexLSB = lsb(sumIndex_);
+        uint256 curIndex;
 
         while (j >= indexLSB) {
-            // Skip considering indices outside bounds of Fenwick tree
-            if (index + j > SIZE) continue;
+            curIndex = index + j;
 
-            // We are considering whether to include node index_+j in the sum or not.  Either way, we need to scaling[index_+j],
+            // Skip considering indices outside bounds of Fenwick tree
+            if (curIndex > SIZE) continue;
+
+            // We are considering whether to include node index + j in the sum or not.  Either way, we need to scaling[index + j],
             // either to increment sum_ or to accumulate in runningScale
-            uint256 scaled = deposits_.scaling[index+j];
+            uint256 scaled = deposits_.scaling[curIndex];
 
             if (sumIndex_ & j != 0) {
-                // node index+j of tree is included in sum
-                uint256 value = deposits_.values[index+j];
+                // node index + j of tree is included in sum
+                uint256 value = deposits_.values[curIndex];
 
                 // Accumulate in sum_, recall that scaled==0 means that the scale factor is actually 1
-                sum_  += scaled != 0 ? Maths.wmul(Maths.wmul(runningScale, scaled), value) : Maths.wmul(runningScale, value);
+                sum_  += scaled != 0 ? (runningScale * scaled * value + 5e35) / 1e36 : Maths.wmul(runningScale, value);
                 // Build up index bit by bit
-                index += j;
+                index = curIndex;
 
                 // terminate if we've already matched sumIndex_
                 if (index == sumIndex_) break;
             } else {
                 // node is not included in sum, but its scale needs to be included for subsequent sums
-                if (scaled != 0) runningScale = Maths.wmul(runningScale, scaled);
+                if (scaled != 0) runningScale = Maths.floorWmul(runningScale, scaled);
             }
             // shift j to consider next less signficant bit
             j = j >> 1;
@@ -257,10 +269,10 @@ library Deposits {
     }
 
     /**
-     *  @notice Decrease a node in the FenwickTree at an index.
-     *  @dev    Starts at leaf/target and moved up towards root
-     *  @param  index_                  The deposit index.
-     *  @param  unscaledRemoveAmount_   Unscaled amount to decrease deposit by.
+     *  @notice Decrease a node in the `FenwickTree` at an index.
+     *  @dev    Starts at leaf/target and moved up towards root.
+     *  @param  index_                The deposit index.
+     *  @param  unscaledRemoveAmount_ Unscaled amount to decrease deposit by.
      */
     function unscaledRemove(
         DepositsState storage deposits_,
@@ -293,7 +305,7 @@ library Deposits {
 
     /**
      *  @notice Scale tree starting from given index.
-     *  @dev    Starts at leaf/target and moved up towards root
+     *  @dev    Starts at leaf/target and moved up towards root.
      *  @param  index_  The deposit index.
      *  @return scaled_ Scaled value.
      */
@@ -321,10 +333,8 @@ library Deposits {
     function treeSum(
         DepositsState storage deposits_
     ) internal view returns (uint256) {
-        // In a scaled Fenwick tree, sum is at the root node, but needs to be scaled
-        uint256 scaling = deposits_.scaling[SIZE];
-        // scaling == 0 means scale factor is actually 1
-        return (scaling != 0) ? Maths.wmul(scaling, deposits_.values[SIZE]) : deposits_.values[SIZE]; 
+        // In a scaled Fenwick tree, sum is at the root node and never scaled
+        return deposits_.values[SIZE];
     }
 
     /**
@@ -354,12 +364,30 @@ library Deposits {
         // 2- We may already have computed the scale factor, so we can avoid duplicate traversal
 
         unscaledDepositValue_ = deposits_.values[index_];
+        uint256 curIndex;
+        uint256 value;
+        uint256 scaling;
+
         while (j & index_ == 0) {
-            uint256 value   = deposits_.values[index_ - j];
-            uint256 scaling = deposits_.scaling[index_ - j];
+            curIndex = index_ - j;
+
+            value   = deposits_.values[curIndex];
+            scaling = deposits_.scaling[curIndex];
 
             unscaledDepositValue_ -= scaling != 0 ? Maths.wmul(scaling, value) : value;
             j = j << 1;
         }
+    }
+
+    /**
+     *  @notice Returns `LUP` for a given debt value (capped at min bucket price).
+     *  @param  debt_ The debt amount to calculate `LUP` for.
+     *  @return `LUP` for given debt.
+     */
+    function getLup(
+        DepositsState storage deposits_,
+        uint256 debt_
+    ) internal view returns (uint256) {
+        return _priceAt(findIndexOfSum(deposits_, debt_));
     }
 }

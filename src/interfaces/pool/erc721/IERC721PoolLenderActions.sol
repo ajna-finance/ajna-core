@@ -9,28 +9,28 @@ interface IERC721PoolLenderActions {
 
     /**
      *  @notice Deposit claimable collateral into a specified bucket.
-     *  @param  tokenIds Array of collateral to deposit.
-     *  @param  index    The bucket index to which collateral will be deposited.
-     *  @param  expiry    Timestamp after which this TX will revert, preventing inclusion in a block with unfavorable price.
-     *  @return lpbChange The amount of LPs changed for the added collateral.
+     *  @param  tokenIds_ Array of token ids to deposit.
+     *  @param  index_    The bucket index to which collateral will be deposited.
+     *  @param  expiry_   Timestamp after which this transaction will revert, preventing inclusion in a block with unfavorable price.
+     *  @return bucketLP_ The amount of `LP `changed for the added collateral.
      */
     function addCollateral(
-        uint256[] calldata tokenIds,
-        uint256 index,
-        uint256 expiry
-    ) external returns (uint256);
+        uint256[] calldata tokenIds_,
+        uint256 index_,
+        uint256 expiry_
+    ) external returns (uint256 bucketLP_);
 
     /**
-     *  @notice Merge collateral accross a number of buckets, removeAmountAtIndex_to reconstitute an NFT
-     *  @param  removeAmountAtIndex_ Array of bucket indexes to remove all collateral that the caller has ownership over.
-     *  @param  toIndex_             The bucket index to which merge collateral into.
-     *  @param  noOfNFTsToRemove_    Intergral number of NFTs to remove if collateral amount is met noOfNFTsToRemove_, else merge at bucket index, toIndex_.
-     *  @return collateralMerged_     Amount of collateral merged into toIndex.
-     *  @return bucketLPs_           If non-zero, amount of LPs in toIndex when collateral is merged into bucket. If 0, no collateral is merged.
+     *  @notice Merge collateral accross a number of buckets, `removalIndexes_` reconstitute an `NFT`.
+     *  @param  removalIndexes_   Array of bucket indexes to remove all collateral that the caller has ownership over.
+     *  @param  noOfNFTsToRemove_ Intergral number of `NFT`s to remove if collateral amount is met `noOfNFTsToRemove_`, else merge at bucket index, `toIndex_`.
+     *  @param  toIndex_          The bucket index to which merge collateral into.
+     *  @return collateralMerged_ Amount of collateral merged into `toIndex_`.
+     *  @return bucketLP_         If non-zero, amount of `LP` in `toIndex_` when collateral is merged into bucket. If `0`, no collateral is merged.
      */
     function mergeOrRemoveCollateral(
-        uint256[] calldata removeAmountAtIndex_,
+        uint256[] calldata removalIndexes_,
         uint256 noOfNFTsToRemove_,
         uint256 toIndex_
-    ) external returns (uint256 collateralMerged_, uint256 bucketLPs_);
+    ) external returns (uint256 collateralMerged_, uint256 bucketLP_);
 }

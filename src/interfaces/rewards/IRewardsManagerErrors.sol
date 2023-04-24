@@ -17,17 +17,17 @@ interface IRewardsManagerErrors {
     error EpochNotAvailable();
 
     /**
-     *  @notice User attempted to record updated exchange rates outside of the allowed period.
-     */
-    error ExchangeRateUpdateTooLate();
-
-    /**
      *  @notice User provided move index params that didn't match in size.
      */
     error MoveStakedLiquidityInvalid();
 
     /**
-     *  @notice User attempted to interact with an NFT they aren't the owner of.
+     *  @notice User attempted to interact with an `NFT` they aren't the owner of.
      */
     error NotOwnerOfDeposit();
+
+    /**
+     *  @notice Can't deploy with `Ajna` token address `0x` address.
+     */
+    error DeployWithZeroAddress();
 }

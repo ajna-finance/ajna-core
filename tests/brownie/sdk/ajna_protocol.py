@@ -5,9 +5,12 @@ from brownie import (
     Contract,
     ERC20PoolFactory,
     ERC20Pool,
-    Auctions,
+    KickerActions,
+    TakerActions,
+    SettlerActions,
     PoolCommons,
     LenderActions,
+    LPActions,
     BorrowerActions,
     Deposits,
     Maths,
@@ -33,11 +36,14 @@ class AjnaProtocol:
 
         self.deposits = Deposits.deploy({"from": self.deployer})
         self.pool_logic = PoolCommons.deploy({"from": self.deployer})
-        self.lender_actions = LenderActions.deploy({"from": self.deployer})
-        self.borrower_actions = BorrowerActions.deploy({"from": self.deployer})
         self.maths = Maths.deploy({"from": self.deployer})
         self.loans = Loans.deploy({"from": self.deployer})
-        self.auctions = Auctions.deploy({"from": self.deployer})
+        self.lender_actions = LenderActions.deploy({"from": self.deployer})
+        self.transfer_actions = LPActions.deploy({"from": self.deployer})
+        self.borrower_actions = BorrowerActions.deploy({"from": self.deployer})
+        self.kicker_actions = KickerActions.deploy({"from": self.deployer})
+        self.taker_auctions = TakerActions.deploy({"from": self.deployer})
+        self.settler_auctions = SettlerActions.deploy({"from": self.deployer})
         self.pool_info_utils = PoolInfoUtils.deploy({"from": self.deployer})
 
         self.ajna_factory = ERC20PoolFactory.deploy(ajna, {"from": self.deployer})
