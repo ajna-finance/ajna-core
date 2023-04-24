@@ -551,9 +551,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
         // check bucket
         uint256 quoteScale = _pool.quoteTokenScale();
-        (, uint256 curDeposit, , uint256 bucketLPs,,) = _poolUtils.bucketInfo(address(_pool), bucketId);
+        (, uint256 curDeposit, , uint256 bucketLP,,) = _poolUtils.bucketInfo(address(_pool), bucketId);
         assertEq(curDeposit, _roundToScale(quoteAmount1, quoteScale) + _roundToScale(quoteAmount2, quoteScale));
-        assertEq(bucketLPs, lpBalance1 + lpBalance2);
+        assertEq(bucketLP, lpBalance1 + lpBalance2);
     }
 
     function testMoveQuoteToken(

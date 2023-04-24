@@ -34,7 +34,7 @@ interface IERC721PoolEvents {
     );
 
     /**
-     *  @notice Emitted when borrower draws debt from the pool, or adds collateral to the pool.
+     *  @notice Emitted when borrower draws debt from the pool or adds collateral to the pool.
      *  @param  borrower          `msg.sender`.
      *  @param  amountBorrowed    Amount of quote tokens borrowed from the pool.
      *  @param  tokenIdsPledged   Array of tokenIds to be added to the pool.

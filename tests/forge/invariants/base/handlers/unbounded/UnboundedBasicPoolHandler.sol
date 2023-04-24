@@ -67,7 +67,6 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         (uint256 lpBalanceBeforeAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
 
         try _pool.removeQuoteToken(amount_, bucketIndex_) returns (uint256 removedAmount_, uint256) {
-
             // **R4**: Exchange rates are unchanged by withdrawing deposit (quote token) from a bucket
             exchangeRateShouldNotChange[bucketIndex_] = true;
 

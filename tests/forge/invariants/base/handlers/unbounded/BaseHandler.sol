@@ -63,6 +63,7 @@ abstract contract BaseHandler is Test {
     // exchange rate invariant test state
     mapping(uint256 => bool)    public exchangeRateShouldNotChange; // bucket exchange rate invariant check
     mapping(uint256 => uint256) public previousExchangeRate;        // mapping from bucket index to exchange rate before action
+    mapping(uint256 => uint256) public previousBankruptcy;          // mapping from bucket index to last bankruptcy before action
 
     // reserves invariant test state
     uint256 public previousReserves;    // reserves before action
@@ -108,6 +109,16 @@ abstract contract BaseHandler is Test {
         _;
 
         testContract.setCurrentTimestamp(block.timestamp);
+    }
+
+    /**
+     * @dev Skips some time before each action
+     */
+    modifier skipTime(uint256 time_) {
+        time_ = constrictToRange(time_, 0, 24 hours);
+        vm.warp(block.timestamp + time_);
+
+        _;
     }
 
     /**
@@ -211,6 +222,9 @@ abstract contract BaseHandler is Test {
             exchangeRateShouldNotChange[bucketIndex] = false;
             // record exchange rate before each action
             previousExchangeRate[bucketIndex] = _pool.bucketExchangeRate(bucketIndex);
+            // record bankrupcy block before each action
+            (,,uint256 bankruptcyTimestamp,,) = _pool.bucketInfo(bucketIndex);
+            previousBankruptcy[bucketIndex] = bankruptcyTimestamp;
         }
 
         // reset the reserves before each action 
