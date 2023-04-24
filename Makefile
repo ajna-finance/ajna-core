@@ -46,5 +46,5 @@ analyze:
 
 # Deployment
 deploy-contracts:
-	forge script ./deploy.sol \
-		--rpc-url ${ETH_RPC_URL} --sender ${DEPLOY_ADDRESS} --keystore ${DEPLOY_KEY} --broadcast -vvv
+	forge script script/deploy.s.sol \
+		--rpc-url ${ETH_RPC_URL} --sender ${DEPLOY_ADDRESS} --keystore ${DEPLOY_KEY} --broadcast -vvv --verify
