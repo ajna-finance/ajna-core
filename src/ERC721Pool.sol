@@ -506,7 +506,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
         _updatePostTakeState(result, poolState);
 
-        if (result.settledAuction) _rebalanceTokens(borrowerAddress_, result.remainingCollateral);
+        // always rebalance borrower token ids to bucket claimable array
+        _rebalanceTokens(borrowerAddress_, result.remainingCollateral);
     }
 
     /**************************/
