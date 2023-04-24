@@ -54,8 +54,8 @@ contract RegressionTestLiquidationERC721Pool is LiquidationERC721PoolInvariants 
     }
 
     /*
-        Test was failing when partial collateral is added in bucket for borrower when borrower becomes collateralized
-        Fixed by updating depositTime in invariants when collateral is added for borrower in bucket.
+        Test was failing when partial collateral is added in bucket for borrower after borrower becomes collateralized
+        Fixed by updating depositTime in 'repayDebt' handler when collateral is added for borrower in bucket.
     */
     function test_regression_invariant_B5_1() external {
         _liquidationERC721PoolHandler.mergeCollateral(26379999973303451405097860853);
@@ -67,8 +67,8 @@ contract RegressionTestLiquidationERC721Pool is LiquidationERC721PoolInvariants 
     }
 
     /*
-        Test was failing when partial collateral is added in bucket for borrower when borrower becomes collateralized
-        Fixed by updating depositTime in invariants when collateral is added for borrower in bucket.
+        Test was failing when partial collateral is added in bucket for borrower after borrower becomes collateralized
+        Fixed by updating depositTime in 'takeAuction' handler when collateral is added for borrower in bucket.
     */
     function test_regression_invariant_B5_2() external {
         _liquidationERC721PoolHandler.pledgeCollateral(62072624193766640913909390994885052970245728906467889094353399451535599113244, 1000012687123859870, 16756831076010021813036667829318578467494198906224313602492810544840827711497);
@@ -79,8 +79,8 @@ contract RegressionTestLiquidationERC721Pool is LiquidationERC721PoolInvariants 
     }
 
     /*
-        Test was failing when partial collateral is added in bucket for borrower when borrower becomes collateralized
-        Fixed by updating depositTime in invariants when collateral is added for borrower in bucket.
+        Test was failing when partial collateral is added in bucket for borrower after borrower becomes collateralized
+        Fixed by updating depositTime in 'settleAuction' handler when collateral is added for borrower in bucket.
     */
     function test_regression_invariant_B5_3() external {
         _liquidationERC721PoolHandler.moveQuoteToken(898761346601995332968440, 1, 281290971280478301822821494347217658505029428037879054325, 115792089237316195423570985008687907853269984665640564039457584007913129639932, 0);
@@ -92,8 +92,8 @@ contract RegressionTestLiquidationERC721Pool is LiquidationERC721PoolInvariants 
     }
     
     /*
-        Test was failing when partial collateral is added in bucket for borrower when borrower becomes collateralized
-        Fixed by updating depositTime in invariants when collateral is added for borrower in bucket.
+        Test was failing when partial collateral is added in bucket for borrower after borrower becomes collateralized
+        Fixed by updating depositTime in 'bucketTake' handler when collateral is added for borrower in bucket.
     */
     function test_regression_invariant_B5_4() external {
         _liquidationERC721PoolHandler.bucketTake(3, 37625625304, true, 2, 115792089237316195423570985008687907853269984665640564039457584007913129639933);

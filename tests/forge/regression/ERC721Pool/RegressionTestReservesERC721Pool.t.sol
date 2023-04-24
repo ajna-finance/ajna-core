@@ -77,8 +77,8 @@ contract RegressionTestReserveERC721Pool is ReserveERC721PoolInvariants {
     }
 
     /*
-        Test was failing when partial collateral is added in bucket for borrower when borrower becomes collateralized
-        Fixed by updating depositTime in invariants when collateral is added for borrower in bucket.
+        Test was failing when partial collateral is added in bucket for borrower after borrower becomes collateralized
+        Fixed by updating depositTime in 'takeAuction' handler when collateral is added for borrower in bucket.
     */
     function test_regression_invariant_B5() external {
         _reserveERC721PoolHandler.withdrawBonds(29901450120321179040232647, 33707253840165794915329047600407010147409078919505035384547761916581261664771, 64256482982762173601681848012735492443236160824527223136253084902273448022922);
