@@ -330,6 +330,7 @@ struct PoolBalancesState {
 struct PoolState {
     uint8   poolType;             // pool type, can be ERC20 or ERC721
     uint256 t0Debt;               // [WAD] t0 debt in pool
+    uint256 t0DebtInAuction;      // [WAD] t0 debt in auction within pool
     uint256 debt;                 // [WAD] total debt in pool, accrued in current block
     uint256 collateral;           // [WAD] total collateral pledged in pool
     uint256 inflator;             // [WAD] current pool inflator

@@ -1943,7 +1943,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _assertLenderLpBalance({
             lender:      address(_positionManager),
             index:       moveIndex,
-            lpBalance:   1_999.870115955512239554 * 1e18,
+            lpBalance:   1_999.865897356084855977 * 1e18,
             depositTime: _startTime
         });
         skip(1 weeks);

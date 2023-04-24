@@ -415,14 +415,14 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         _assertBucket({
             index:        2501,
             lpBalance:    2_000 * 1e18,
-            collateral:   0.110649792292326223 * 1e18,
-            deposit:      1_575.729229030217308768 * 1e18,
-            exchangeRate: 1.000557427154164986 * 1e18
+            collateral:   0.110639687749865566 * 1e18,
+            deposit:      1_575.596009456533555165 * 1e18,
+            exchangeRate: 1.000471394253082551 * 1e18
         });
         _assertBucket({
             index:        MAX_FENWICK_INDEX,
-            lpBalance:    4132730466,
-            collateral:   0.041395075478140787 * 1e18,
+            lpBalance:    4133739266,
+            collateral:   0.041405180020601444 * 1e18,
             deposit:      0,
             exchangeRate: 1 * 1e18
         });
@@ -550,7 +550,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             borrower:                  _borrower,
             borrowerDebt:              425.172014916344732952 * 1e18,
             borrowerCollateral:        3 * 1e18,
-            borrowert0Np:              149.491518364962118535 * 1e18,
+            borrowert0Np:              148.074537148232619781 * 1e18,
             borrowerCollateralization: 27.126189445355815944 * 1e18
         });
         _assertAuction(
@@ -599,9 +599,9 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         _addLiquidityWithPenalty({
             from:        _lender,
             amount:      1000 * 1e18,
-            amountAdded: 999.849315068493151000 * 1e18,
+            amountAdded: 999.876712328767123000 * 1e18,
             index:       6113,
-            lpAward:     999.849315068493151000 * 1e18,
+            lpAward:     999.876712328767123000 * 1e18,
             newLup:      3_844.432207828138682757 * 1e18
         });
         uint256[] memory removalIndexes = new uint256[](2);
@@ -1249,9 +1249,9 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         _assertBucket({
             index:        2500,
             lpBalance:    4_997.115384615384614000 * 1e18,
-            collateral:   0.886287035829988542 * 1e18,
-            deposit:      1_574.488096437633785035 * 1e18,
-            exchangeRate: 1.000336091874601493 * 1e18
+            collateral:   0.886214193313763368 * 1e18,
+            deposit:      1_574.549120144393919177 * 1e18,
+            exchangeRate: 1.000291983507608180 * 1e18
         });
         _assertBucket({
             index:        2502,
@@ -1262,8 +1262,8 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         });
         _assertBucket({
             index:        7388,
-            lpBalance:    0.000000036608930253 * 1e18,
-            collateral:   0.366689636201052678 * 1e18,
+            lpBalance:    0.000000036616202579 * 1e18,
+            collateral:   0.366762478717277852 * 1e18,
             deposit:      0,
             exchangeRate: 1 * 1e18
         });

@@ -239,11 +239,15 @@ abstract contract BasicInvariants is BaseInvariants {
 
         for (uint256 i = 0; i < actorCount; i++) {
             address borrower = IBaseHandler(_handler).actors(i);
-            (uint256 borrowerT0Debt, uint256 borrowerCollateral, ) = _pool.borrowerInfo(borrower);
 
-            uint256 weight = borrowerCollateral != 0 ? borrowerT0Debt ** 2 / borrowerCollateral : 0; 
+            (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower);
 
-            manualDebt2ToCollateral += weight;
+            if (kickTime == 0) {
+                (uint256 borrowerT0Debt, uint256 borrowerCollateral, ) = _pool.borrowerInfo(borrower);
+                uint256 weight = borrowerCollateral != 0 ? borrowerT0Debt ** 2 / borrowerCollateral : 0;
+
+                manualDebt2ToCollateral += weight;
+            }
         }
 
         (,,, uint256 t0Debt2ToCollateral) = _pool.debtInfo();

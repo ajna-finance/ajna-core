@@ -237,7 +237,7 @@ contract PoolInfoUtils {
         (uint256 bondEscrowed, uint256 unclaimedReserve, uint256 auctionKickTime, ) = pool.reservesInfo();
 
         // due to rounding issues, especially in Auction.settle, this can be slighly negative
-        if ( poolDebt + quoteTokenBalance >= poolSize + bondEscrowed + unclaimedReserve) {
+        if (poolDebt + quoteTokenBalance >= poolSize + bondEscrowed + unclaimedReserve) {
             reserves_ = poolDebt + quoteTokenBalance - poolSize - bondEscrowed - unclaimedReserve;
         }
 
