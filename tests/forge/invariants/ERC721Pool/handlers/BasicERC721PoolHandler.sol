@@ -206,8 +206,6 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
 
         if (boundedAmount_ < minDebt) boundedAmount_ = minDebt + 1;
 
-        // TODO: Need to constrain amount so LUP > HTP
-
         // 2. pool needs sufficent quote token to draw debt
         uint256 poolQuoteBalance = _quote.balanceOf(address(_pool));
 

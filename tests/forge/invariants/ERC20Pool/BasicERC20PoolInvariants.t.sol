@@ -78,8 +78,6 @@ contract BasicERC20PoolInvariants is BasicInvariants {
 
         (, previousInterestRateUpdate) = _erc20pool.interestRateInfo();
 
-        // TODO: Change once this issue is resolved -> https://github.com/foundry-rs/foundry/issues/2963
-        targetSender(address(0x1234));
     }
 
     // checks pools collateral Balance to be equal to collateral pledged
