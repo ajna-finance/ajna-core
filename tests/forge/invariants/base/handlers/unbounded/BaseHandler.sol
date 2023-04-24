@@ -361,10 +361,13 @@ abstract contract BaseHandler is Test {
     /**********************************/
 
     function fenwickSumTillIndex(uint256 index_) public view returns (uint256 sum_) {
-        while (index_ > 0) {
-            sum_ += fenwickDeposits[index_];
+        uint256[] memory buckets = getCollateralBuckets();
 
-            index_--;
+        for (uint256 i = 0; i < buckets.length; i++) {
+            uint256 bucket = buckets[i];
+            if (bucket <= index_) {
+                sum_ += fenwickDeposits[bucket];
+            }
         }
     }
 
@@ -421,7 +424,7 @@ abstract contract BaseHandler is Test {
         if (max_ == type(uint256).max && x_ != 0) result_++;
     }
 
-    function getCollateralBuckets() external view returns(uint256[] memory) {
+    function getCollateralBuckets() public view returns(uint256[] memory) {
         return collateralBuckets.values();
     }
 

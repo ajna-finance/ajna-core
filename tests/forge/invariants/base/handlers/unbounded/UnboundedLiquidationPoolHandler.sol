@@ -19,6 +19,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         uint256 takerLps;
         uint256 deposit;
         uint256 kickerBond;
+        uint256 borrowerLps;
     }
 
     /*******************************/
@@ -159,13 +160,14 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
 
         (address kicker, , , , , , , , , )     = _pool.auctionInfo(borrower_);
-
-        LocalBucketTakeVars memory beforeBucketTakeVars = getBucketTakeInfo(bucketIndex_, kicker, _actor);
-        ( , , , , uint256 auctionPrice, )               = _poolInfo.auctionStatus(address(_pool), borrower_);
+        ( , , , , uint256 auctionPrice, )      = _poolInfo.auctionStatus(address(_pool), borrower_);
+        uint256 auctionBucketIndex             = auctionPrice < MIN_PRICE ? 0 : (auctionPrice > MAX_PRICE ? 0 : _indexOf(auctionPrice));
+        
+        LocalBucketTakeVars memory beforeBucketTakeVars = getBucketTakeInfo(bucketIndex_, kicker, _actor, auctionBucketIndex, borrower_);
 
         try _pool.bucketTake(borrower_, depositTake_, bucketIndex_) {
 
-            LocalBucketTakeVars memory afterBucketTakeVars = getBucketTakeInfo(bucketIndex_, kicker, _actor);
+            LocalBucketTakeVars memory afterBucketTakeVars = getBucketTakeInfo(bucketIndex_, kicker, _actor, auctionBucketIndex, borrower_);
 
             // **B7**: when awarded bucket take LP : taker deposit time = timestamp of block when award happened
             if (afterBucketTakeVars.takerLps > beforeBucketTakeVars.takerLps) lenderDepositTime[taker_][bucketIndex_] = block.timestamp;
@@ -185,13 +187,10 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
             // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
             (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower_);
-            if (kickTime == 0) {
-                if (auctionPrice < MIN_PRICE) {
-                    collateralBuckets.add(7388);
-                } else if (auctionPrice > MAX_PRICE) {
-                    collateralBuckets.add(0);
-                } else {
-                    collateralBuckets.add(_indexOf(auctionPrice));
+            if (kickTime == 0 && _pool.poolType() == 1) {
+                collateralBuckets.add(auctionBucketIndex);
+                if (beforeBucketTakeVars.borrowerLps < afterBucketTakeVars.borrowerLps) {
+                    lenderDepositTime[borrower_][auctionBucketIndex] = block.timestamp;
                 }
             }
 
@@ -247,7 +246,11 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                         collateral                   = 0;
                         borrowerT0Debt               -= Maths.wdiv(maxSettleableDebt, inflator);
                     }
-                } else collateral = 0;
+                } else {
+                    collateral = 0;
+                    // **B5**: when adding collateral: lender deposit time = timestamp of block when deposit happened
+                    lenderDepositTime[borrower_][7388] = block.timestamp;
+                }
 
                 maxDepth_ -= 1;
             }
@@ -288,18 +291,21 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             }
             // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
             (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower_);
-            if (kickTime == 0) collateralBuckets.add(7388);
-
+            if (kickTime == 0 && collateral % 1e18 != 0 && _pool.poolType() == 1) {
+                collateralBuckets.add(7388);
+                lenderDepositTime[borrower_][7388] = block.timestamp;
+            }
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
     }
 
-    function getBucketTakeInfo(uint256 bucketIndex_, address kicker_, address taker_) internal view returns(LocalBucketTakeVars memory bucketTakeVars) {
+    function getBucketTakeInfo(uint256 bucketIndex_, address kicker_, address taker_, uint256 auctionBucketIndex_, address borrower_) internal view returns(LocalBucketTakeVars memory bucketTakeVars) {
         (bucketTakeVars.kickerLps, )      = _pool.lenderInfo(bucketIndex_, kicker_);
         (bucketTakeVars.takerLps, )       = _pool.lenderInfo(bucketIndex_, taker_);
         ( , , , bucketTakeVars.deposit, ) = _pool.bucketInfo(bucketIndex_);
         bucketTakeVars.kickerBond         = _getKickerBond(kicker_);
+        (bucketTakeVars.borrowerLps, )    = _pool.lenderInfo(auctionBucketIndex_, borrower_);
     }
 
 }

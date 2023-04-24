@@ -502,4 +502,15 @@ contract RegressionTestReserveERC20Pool is ReserveERC20PoolInvariants {
         _reserveERC20PoolHandler.pledgeCollateral(115792089237316195423570985008687907853269984665640564039457584007913129639933, 1, 0);
         _reserveERC20PoolHandler.settleAuction(877519612062733, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 3, 0);
     }
+
+    /*
+        Test was failing when collateral is added to 7388 bucket in settle
+        Fixed by updating depositTime in invariants when collateral is added for borrower in 7388 bucket.
+    */
+    function test_regression_invariant_B5() external {
+        _reserveERC20PoolHandler.settleAuction(115792089237316195423570985008687907853269984665640564039457584007913129639935, 3097951365082855701011892593056006, 28505541224098934564122193102646813744506286540202295861523654, 0);
+        _reserveERC20PoolHandler.settleAuction(268023445355841172515900573198115553, 232461104934, 3, 0);
+
+        invariant_Bucket_deposit_time_B5_B6_B7();
+    }
 }
