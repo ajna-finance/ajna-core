@@ -67,6 +67,13 @@ make all
 ### Implementation notes
 Pool external calls carry the `nonReentrant` modifier to prevent invocation from `flashLoan` and `take` callbacks.
 
+## Documentation
+Documentation can be generated as mdbook from Solidity NatSpecs by using `forge doc` command.
+For example, to generate documentation and serve it locally on port 4000 (http://localhost:4000/):
+```bash
+forge doc --serve --port 4000
+```
+
 ## Tests
 ### Forge tests
 - run tests without the gas load tests (good for checking validity)

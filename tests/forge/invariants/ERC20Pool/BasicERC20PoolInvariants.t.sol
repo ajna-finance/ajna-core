@@ -18,16 +18,6 @@ import { IBaseHandler }          from '../interfaces/IBaseHandler.sol';
 // contains invariants for the test
 contract BasicERC20PoolInvariants is BasicInvariants {
 
-    /**************************************************************************************************************************************/
-    /*** Invariant Tests                                                                                                                ***/
-    /***************************************************************************************************************************************
-
-     * Collateral Token
-        * CT1: poolCtBal >= sum of all borrower's collateral + sum of all bucket's claimable collateral
-        * CT7: pool Pledged collateral = sum of all borrower's pledged collateral
-
-    ****************************************************************************************************************************************/
-
     uint256               internal constant NUM_ACTORS = 10;
 
     TokenWithNDecimals    internal _collateral;
@@ -69,15 +59,15 @@ contract BasicERC20PoolInvariants is BasicInvariants {
         LENDER_MIN_BUCKET_INDEX = IBaseHandler(_handler).LENDER_MIN_BUCKET_INDEX();
         LENDER_MAX_BUCKET_INDEX = IBaseHandler(_handler).LENDER_MAX_BUCKET_INDEX();
 
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+        uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
+        for (uint256 i = 0; i < buckets.length; i++) {
+            uint256 bucketIndex = buckets[i];
             ( , , , , ,uint256 exchangeRate) = _poolInfo.bucketInfo(address(_erc20pool), bucketIndex);
             previousBucketExchangeRate[bucketIndex] = exchangeRate;
         }
 
         (, previousInterestRateUpdate) = _erc20pool.interestRateInfo();
 
-        // TODO: Change once this issue is resolved -> https://github.com/foundry-rs/foundry/issues/2963
-        targetSender(address(0x1234));
     }
 
     // checks pools collateral Balance to be equal to collateral pledged
@@ -93,19 +83,21 @@ contract BasicERC20PoolInvariants is BasicInvariants {
             totalCollateralPledged += borrowerCollateral;
         }
 
-        assertEq(_erc20pool.pledgedCollateral(), totalCollateralPledged, "Incorrect Collateral Pledged");
+        assertEq(_erc20pool.pledgedCollateral(), totalCollateralPledged, "Collateral Invariant CT7");
 
         // convert pool collateral balance into WAD
         uint256 collateralBalance = _collateral.balanceOf(address(_erc20pool)) * 10**(18 - _collateral.decimals());
         uint256 bucketCollateral;
 
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
+        uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
+        for (uint256 i = 0; i < buckets.length; i++) {
+            uint256 bucketIndex = buckets[i];
             (, uint256 collateral, , , ) = _erc20pool.bucketInfo(bucketIndex);
 
             bucketCollateral += collateral;
         }
 
-        assertGe(collateralBalance, bucketCollateral + _erc20pool.pledgedCollateral());
+        assertGe(collateralBalance, bucketCollateral + _erc20pool.pledgedCollateral(), "Collateral Invariant CT1");
     }
 
 }

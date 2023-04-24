@@ -9,7 +9,7 @@ interface IERC20PoolImmutables {
 
     /**
      *  @notice Returns the `collateralScale` immutable.
-     *  @return The precision of the collateral ERC-20 token based on decimals.
+     *  @return The precision of the collateral `ERC20` token based on decimals.
      */
     function collateralScale() external view returns (uint256);
 

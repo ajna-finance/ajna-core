@@ -257,7 +257,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         uint256 amountToPurchase = 10_100 * 1e18;
         assertGt(_quote.balanceOf(address(_pool)), amountToPurchase);
 
-        uint256 amountWithInterest = 24_002.859358364989920000 * 1e18;
+        uint256 amountWithInterest = 24_002.693295339317544000 * 1e18;
 
         _addCollateral({
             from:     _bidder,
@@ -273,7 +273,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             amount:   amountWithInterest,
             index:    2350,
             newLup:   _priceAt(2352),
-            lpRedeem: 24_000.858274845540873331 * 1e18
+            lpRedeem: 24_000.762569742914924690 * 1e18
         });
 
         assertEq(_quote.balanceOf(_bidder), amountWithInterest);
@@ -281,10 +281,10 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         // check bucket state
         _assertBucket({
             index:        2350,
-            lpBalance:    32_653.618582201813497294 * 1e18,
+            lpBalance:    32_653.714287304439445935 * 1e18,
             collateral:   Maths.wad(4),
             deposit:      0,
-            exchangeRate: 1.000083375498348170 * 1e18
+            exchangeRate: 1.000080444343832501 * 1e18
         });
 
         // bidder withdraws unused collateral
@@ -292,13 +292,13 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             from:     _bidder,
             amount:   1,
             index:    2350,
-            lpRedeem: 8_163.404645550453371392 * 1e18
+            lpRedeem: 8_163.428571826109864353 * 1e18
         });
 
         _assertLenderLpBalance({
             lender:      _bidder,
             index:       2350,
-            lpBalance:   490.213936651360125902 * 1e18,
+            lpBalance:   490.285715478329581582 * 1e18,
             depositTime: _startTime + 25 hours
         });
 
@@ -310,13 +310,13 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             from:     _lender,
             amount:   1,
             index:    2350,
-            lpRedeem: 8_163.404645550453371392 * 1e18
+            lpRedeem: 8_163.428571826109864353 * 1e18
         });
 
         _assertLenderLpBalance({
             lender:      _bidder,
             index:       2350,
-            lpBalance:   490.213936651360125902 * 1e18,
+            lpBalance:   490.285715478329581582 * 1e18,
             depositTime: _startTime + 25 hours
         });
 
@@ -325,10 +325,10 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         // check bucket state
         _assertBucket({
             index:        2350,
-            lpBalance:    16_326.809291100906754510 * 1e18,
+            lpBalance:    16_326.857143652219717229 * 1e18,
             collateral:   Maths.wad(2),
             deposit:      0,
-            exchangeRate: 1.000083375498348169 * 1e18
+            exchangeRate: 1.000080444343832502 * 1e18
         });
 
         // should revert if lender2 attempts to remove more collateral than lp is available for

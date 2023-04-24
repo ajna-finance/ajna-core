@@ -18,7 +18,7 @@ block_number        = 16_295_000
 fork_block_number   = 16_295_000
 rpc_storage_caching = { chains = ["mainnet"], endpoints = "all" }
 optimizer           = true
-optimizer_runs      = 100
+optimizer_runs      = 500
 
 [fuzz]
 runs = 300

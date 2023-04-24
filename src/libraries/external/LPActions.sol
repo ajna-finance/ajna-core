@@ -10,8 +10,8 @@ import { Maths } from '../internal/Maths.sol';
 
 /**
     @title  LPActions library
-    @notice External library containing logic for LP owners to:
-            - increase/decrease/revoke LP allowance; approve/revoke LP transferors; transfer LP
+    @notice External library containing logic for `LP` owners to:
+            - `increase`/`decrease`/`revoke` `LP` allowance; `approve`/`revoke` `LP` transferors; `transfer` `LP`
  */
 library LPActions {
 
@@ -25,7 +25,7 @@ library LPActions {
     event IncreaseLPAllowance(address indexed owner, address indexed spender, uint256[] indexes, uint256[] amounts);
     event DecreaseLPAllowance(address indexed owner, address indexed spender, uint256[] indexes, uint256[] amounts);
     event RevokeLPAllowance(address indexed owner, address indexed spender, uint256[] indexes);
-    event TransferLP(address owner, address newOwner, uint256[] indexes, uint256 lps);
+    event TransferLP(address owner, address newOwner, uint256[] indexes, uint256 lp);
 
     /**************/
     /*** Errors ***/
@@ -45,12 +45,12 @@ library LPActions {
 
     /**
      *  @notice See `IPoolLenderActions` for descriptions
-     *  @dev write state:
-     *          - increment LP allowances
-     *  @dev reverts on:
-     *          - invalid indexes and amounts input InvalidAllowancesInput()
-     *  @dev emit events:
-     *          - IncreaseLPAllowance
+     *  @dev    === Write state ===
+     *  @dev    increment `LP` allowances
+     *  @dev    === Reverts on ===
+     *  @dev    invalid indexes and amounts input `InvalidAllowancesInput()`
+     *  @dev    === Emit events ===
+     *  @dev    - `IncreaseLPAllowance`
      */
     function increaseLPAllowance(
         mapping(uint256 => uint256) storage allowances_,
@@ -81,12 +81,12 @@ library LPActions {
 
     /**
      *  @notice See `IPoolLenderActions` for descriptions
-     *  @dev write state:
-     *          - decrement LP allowances
-     *  @dev reverts on:
-     *          - invalid indexes and amounts input InvalidAllowancesInput()
-     *  @dev emit events:
-     *          - DecreaseLPAllowance
+     *  @dev    === Write state ===
+     *  @dev    decrement `LP` allowances
+     *  @dev    === Reverts on ===
+     *  @dev    invalid indexes and amounts input `InvalidAllowancesInput()`
+     *  @dev    === Emit events ===
+     *  @dev    - `DecreaseLPAllowance`
      */
     function decreaseLPAllowance(
         mapping(uint256 => uint256) storage allowances_,
@@ -118,10 +118,10 @@ library LPActions {
 
     /**
      *  @notice See `IPoolLenderActions` for descriptions
-     *  @dev write state:
-     *          - decrement LP allowances
-     *  @dev emit events:
-     *          - RevokeLPAllowance
+     *  @dev    === Write state ===
+     *  @dev    decrement `LP` allowances
+     *  @dev    === Emit events ===
+     *  @dev    - `RevokeLPAllowance`
      */
     function revokeLPAllowance(
         mapping(uint256 => uint256) storage allowances_,
@@ -148,10 +148,10 @@ library LPActions {
 
     /**
      *  @notice See `IPoolLenderActions` for descriptions
-     *  @dev write state:
-     *          - approvedTransferors mapping
-     *  @dev emit events:
-     *          - ApproveLPTransferors
+     *  @dev    === Write state ===
+     *  @dev    `approvedTransferors` mapping
+     *  @dev    === Emit events ===
+     *  @dev    - `ApproveLPTransferors`
      */
     function approveLPTransferors(
         mapping(address => bool) storage allowances_,
@@ -172,10 +172,10 @@ library LPActions {
 
     /**
      *  @notice See `IPoolLenderActions` for descriptions
-     *  @dev write state:
-     *          - approvedTransferors mapping
-     *  @dev emit events:
-     *          - RevokeLPTransferors
+     *  @dev    === Write state ===
+     *  @dev    `approvedTransferors` mapping
+     *  @dev    === Emit events ===
+     *  @dev    - `RevokeLPTransferors`
      */
     function revokeLPTransferors(
         mapping(address => bool) storage allowances_,
@@ -196,15 +196,15 @@ library LPActions {
 
     /**
      *  @notice See `IPoolLenderActions` for descriptions
-     *  @dev write state:
-     *          - delete allowance mapping
-     *          - increment new lender.lps accumulator and lender.depositTime state
-     *          - delete old lender from bucket -> lender mapping
-     *  @dev reverts on:
-     *          - invalid index InvalidIndex()
-     *          - no allowance NoAllowance()
-     *  @dev emit events:
-     *          - TransferLP
+     *  @dev    === Write state ===
+     *  @dev    delete allowance mapping
+     *  @dev    increment new `lender.lps` accumulator and `lender.depositTime` state
+     *  @dev    delete old lender from `bucket -> lender` mapping
+     *  @dev    === Reverts on ===
+     *  @dev    invalid index `InvalidIndex()`
+     *  @dev    no allowance `NoAllowance()`
+     *  @dev    === Emit events ===
+     *  @dev    - `TransferLP`
      */
     function transferLP(
         mapping(uint256 => Bucket) storage buckets_,
@@ -222,7 +222,7 @@ library LPActions {
 
         uint256 indexesLength = indexes_.length;
         uint256 index;
-        uint256 lpsTransferred;
+        uint256 lpTransferred;
 
         for (uint256 i = 0; i < indexesLength; ) {
             index = indexes_[i];
@@ -243,7 +243,7 @@ library LPActions {
             // transfer allowed amount or entire LP balance
             allowedAmount = Maths.min(allowedAmount, ownerLpBalance);
 
-            // move owner lps (if any) to the new owner
+            // move owner LP (if any) to the new owner
             if (allowedAmount != 0) {
                 Lender storage newOwner = bucket.lenders[newOwnerAddress_];
 
@@ -257,8 +257,8 @@ library LPActions {
                     newOwner.lps = allowedAmount;
                 }
 
-                owner.lps      -= allowedAmount; // remove amount of LP from old owner
-                lpsTransferred += allowedAmount; // add amount of LP to total LP transferred
+                owner.lps     -= allowedAmount; // remove amount of LP from old owner
+                lpTransferred += allowedAmount; // add amount of LP to total LP transferred
 
                 // set the deposit time as the max of transferred deposit and current deposit time
                 newOwner.depositTime = Maths.max(ownerDepositTime, newOwnerDepositTime);
@@ -274,7 +274,7 @@ library LPActions {
             ownerAddress_,
             newOwnerAddress_,
             indexes_,
-            lpsTransferred
+            lpTransferred
         );
     }
 }
