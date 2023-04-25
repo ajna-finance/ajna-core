@@ -79,3 +79,7 @@
 - **RW1**:  Staking rewards must be less than reward cap percentage multiplied by ajna burned (`newRewards < REWARD_CAP * totalBurnedInPeriod`) for any given time period (`epoch`)
 - **RW2**:  Updating (recording) rewards must be less than reward cap percentage multiplied by ajna burned (`newRewards < UPDATE_CAP * totalBurned`) for any given time period (`epoch`)
 - **RW3**:  if a bucket has had it's exchange rate updated bucketExchangeRates mapping should be non-zero (`bucketExchangeRates[pool_][bucketIndex_][burnEpoch_] != 0`)
+
+## Position Manager
+- **PM1**: For each bucket, the sum over all LP tokens of their position == LP balance of the position manager in the underlying pool
+- **PM2**: After a bucket bankrupcy all LP tokens have zero balance in that bucket
