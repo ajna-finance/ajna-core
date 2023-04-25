@@ -227,5 +227,14 @@ contract RegressionTestReserveERC721Pool is ReserveERC721PoolInvariants {
         _reserveERC721PoolHandler.addQuoteToken(1072136986589800395035805, 22904335154524190434559120, 1030801052100464518, 0);
         _reserveERC721PoolHandler.addQuoteToken(97677075084166305679836442, 1000008452124308451, 15249165865336324622600068551, 0);
         _reserveERC721PoolHandler.removeCollateral(1, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 3287808436188136722, 0);
+        invariant_CT2();
+        invariant_CT3();
+        invariant_CT4();
+        invariant_CT5();
+        invariant_CT6();
+        invariant_CT7();
+        invariant_Lps_B1();
+        invariant_Lps_B4();
+        invariant_Buckets_B2_B3();
     }
 }
