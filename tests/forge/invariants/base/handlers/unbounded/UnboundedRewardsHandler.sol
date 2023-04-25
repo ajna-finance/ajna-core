@@ -32,16 +32,17 @@ abstract contract UnboundedRewardsHandler is BaseHandler {
     function _unstake(
         uint256 tokenId_
     ) internal updateLocalStateAndPoolInterest {
-        numberOfCalls['UBBasicHandler.stake']++;
+        numberOfCalls['UBBasicHandler.unstake']++;
 
         uint256 actorBalanceBeforeClaim = _quote.balanceOf(_actor);
 
         try _rewards.unstake(tokenId_) {
 
-            // store rewards for epoch
-            uint256 lastClaimedEpoch = _rewards.getStakeInfo(tokenId_).lastClaimedEpoch;
-            totalRewardPerEpoch[lastClaimedEpoch] += _quote.balanceOf(_actor) - actorBalanceBeforeClaim;
-
+            // add to total rewards if actor received reward
+            if ((_quote.balanceOf(_actor) - actorBalanceBeforeClaim) != 0) {
+                (,,uint256 lastClaimedEpoch) = _rewards.getStakeInfo(tokenId_);
+                totalRewardPerEpoch[lastClaimedEpoch] += _quote.balanceOf(_actor) - actorBalanceBeforeClaim;
+            }
 
         } catch (bytes memory err) {
             _ensurePoolError(err);

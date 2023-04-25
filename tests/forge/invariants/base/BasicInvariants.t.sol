@@ -354,6 +354,11 @@ abstract contract BasicInvariants is BaseInvariants {
         console.log("UBBasicHandler.drawDebt             ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.drawDebt"));
         console.log("BBasicHandler.repayDebt             ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt"));
         console.log("UBBasicHandler.repayDebt            ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.repayDebt"));
+        console.log("--Rewards--------");
+        console.log("BBasicHandler.stake                 ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.stake"));
+        console.log("UBBasicHandler.stake                ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.stake"));
+        console.log("BBasicHandler.unstake               ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.unstake"));
+        console.log("UBBasicHandler.unstake              ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.unstake"));
         console.log("------------------");
         console.log(
             "Sum",
@@ -362,7 +367,9 @@ abstract contract BasicInvariants is BaseInvariants {
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.addCollateral") +
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.removeCollateral") +
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.drawDebt") + 
-            IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt")
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt") +
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.stake") + 
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.unstake")
         );
     }
 

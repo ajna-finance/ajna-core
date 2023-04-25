@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.14;
 
+import { IPositionManagerOwnerActions } from 'src/interfaces/position/IPositionManagerOwnerActions.sol';
 import { _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }             from "src/libraries/internal/Maths.sol";
 
@@ -19,9 +20,9 @@ abstract contract UnboundedPositionsHandler is BaseHandler {
         uint256 tokenId_,
         uint256[] memory indexes_
     ) internal updateLocalStateAndPoolInterest {
-        numberOfCalls['UBPositionsHandler.memorializePositions']++;
+        numberOfCalls['UBPositionsHandler.memorialize']++;
 
-        try _positions.memorializePositions(_positions.MemorializePositionsParams({tokenId: tokenId_, indexes: indexes_})) {
+        try _positions.memorializePositions(IPositionManagerOwnerActions.MemorializePositionsParams(tokenId_, indexes_)) {
 
             // TODO: store memorialized position's tokenIds in mapping, for reuse in unstake and redeem calls
             // uint256[] memory ownedPositions = positions[_actor];
@@ -33,10 +34,8 @@ abstract contract UnboundedPositionsHandler is BaseHandler {
         }
     }
 
-    function _mint(
-        uint256 tokenId_
-    ) internal {
-        try _positions.mint(tokenId_) {
+    function _mint() internal {
+        try _positions.mint(IPositionManagerOwnerActions.MintParams(_actor, address(_pool), keccak256("ERC20_NON_SUBSET_HASH"))) {
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
