@@ -74,3 +74,8 @@
 - **RE10**: Reserves increase by origination fee: max(1 week interest, 0.05% of borrow amount), on draw debt
 - **RE11**: Reserves decrease by claimableReserves by kickReserveAuction
 - **RE12**: Reserves decrease by amount of reserve used to settle a auction
+
+## Rewards
+- **RW1**:  Staking rewards must be less than reward cap percentage multiplied by ajna burned (`newRewards < REWARD_CAP * totalBurnedInPeriod`) for any given time period (`epoch`)
+- **RW2**:  Updating (recording) rewards must be less than reward cap percentage multiplied by ajna burned (`newRewards < UPDATE_CAP * totalBurned`) for any given time period (`epoch`)
+- **RW3**:  if a bucket has had it's exchange rate updated bucketExchangeRates mapping should be non-zero (`bucketExchangeRates[pool_][bucketIndex_][burnEpoch_] != 0`)

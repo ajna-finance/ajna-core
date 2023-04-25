@@ -8,7 +8,7 @@ import { UnboundedReservePoolHandler } from '../../base/handlers/unbounded/Unbou
 import { LiquidationPoolHandler }      from './LiquidationPoolHandler.sol';
 
 abstract contract ReservePoolHandler is UnboundedReservePoolHandler, LiquidationPoolHandler {
-
+    
     /*******************************/
     /*** Reserves Test Functions ***/
     /*******************************/

@@ -6,6 +6,8 @@ import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { ERC20Pool }        from 'src/ERC20Pool.sol';
+import { RewardsManager }   from 'src/RewardsManager.sol';
+import { PositionManager }   from 'src/PositionManager.sol';
 
 import { TokenWithNDecimals } from '../../../../utils/Tokens.sol';
 
@@ -25,11 +27,13 @@ abstract contract BaseERC20PoolHandler is BaseHandler {
         address pool_,
         address ajna_,
         address quote_,
+        address rewards_,
+        address positions_,
         address collateral_,
         address poolInfo_,
         uint256 numOfActors_,
         address testContract_
-    ) BaseHandler(pool_, ajna_, quote_, poolInfo_, testContract_) {
+    ) BaseHandler(pool_, ajna_, quote_, rewards_, positions_, poolInfo_, testContract_) {
 
         LENDER_MIN_BUCKET_INDEX = vm.envUint("BUCKET_INDEX_ERC20");
         LENDER_MAX_BUCKET_INDEX = LENDER_MIN_BUCKET_INDEX + vm.envUint("NO_OF_BUCKETS") - 1;
@@ -49,6 +53,10 @@ abstract contract BaseERC20PoolHandler is BaseHandler {
 
         // Pool
         _erc20Pool  = ERC20Pool(pool_);
+
+        // Rewards
+        _rewards = RewardsManager(rewards_);
+        _positions = PositionManager(positions_);
 
         // Actors
         actors = _buildActors(numOfActors_);

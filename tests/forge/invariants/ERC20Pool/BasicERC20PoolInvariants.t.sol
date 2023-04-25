@@ -6,6 +6,8 @@ import "@std/console.sol";
 
 import { Pool }             from 'src/base/Pool.sol';
 import { ERC20Pool }        from 'src/ERC20Pool.sol';
+import { RewardsManager }   from 'src/RewardsManager.sol';
+import { PositionManager }  from 'src/PositionManager.sol';
 import { ERC20PoolFactory } from 'src/ERC20PoolFactory.sol';
 import { Maths }            from 'src/libraries/internal/Maths.sol';
 
@@ -35,11 +37,15 @@ contract BasicERC20PoolInvariants is BasicInvariants {
         _impl             = _erc20poolFactory.implementation();
         _erc20pool        = ERC20Pool(_erc20poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
         _pool             = Pool(address(_erc20pool));
+        _rewards          = RewardsManager(address(_rewards));
+        _positions        = PositionManager(address(_positions));
 
         _basicERC20PoolHandler = new BasicERC20PoolHandler(
             address(_erc20pool),
             address(_ajna),
             address(_quote),
+            address(_rewards),
+            address(_positions),
             address(_collateral),
             address(_poolInfo),
             NUM_ACTORS,
@@ -51,6 +57,8 @@ contract BasicERC20PoolInvariants is BasicInvariants {
         excludeContract(address(_ajna));
         excludeContract(address(_collateral));
         excludeContract(address(_quote));
+        excludeContract(address(_rewards));
+        excludeContract(address(_positions));
         excludeContract(address(_erc20poolFactory));
         excludeContract(address(_erc20pool));
         excludeContract(address(_poolInfo));

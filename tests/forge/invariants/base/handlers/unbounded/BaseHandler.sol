@@ -7,6 +7,8 @@ import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { Pool }             from 'src/base/Pool.sol';
 import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
+import { PositionManager }  from 'src/PositionManager.sol';
+import { RewardsManager }   from 'src/RewardsManager.sol';
 import { PoolCommons }      from 'src/libraries/external/PoolCommons.sol';
 import {
     MAX_FENWICK_INDEX,
@@ -33,6 +35,10 @@ abstract contract BaseHandler is Test {
     // Pool
     Pool          internal _pool;
     PoolInfoUtils internal _poolInfo;
+
+    // Rewards
+    PositionManager internal _positions;
+    RewardsManager  internal _rewards;
 
     // Lender bucket index
     uint256 public LENDER_MIN_BUCKET_INDEX;
@@ -70,6 +76,11 @@ abstract contract BaseHandler is Test {
     uint256 public increaseInReserves;  // amount of reserve decrease
     uint256 public decreaseInReserves;  // amount of reserve increase
 
+    // rewards invariant test state
+    mapping(uint256 => uint256) public totalRewardPerEpoch;    // total rewards per epoch
+    uint256 public totalStakerRewPerEpoch;  // amount of reserve decrease
+    uint256 public totalUpdaterRewPerEpoch;  // amount of reserve increase
+
     // Buckets where collateral is added when a borrower is in auction and has partial NFT
     EnumerableSet.UintSet internal collateralBuckets;
 
@@ -81,6 +92,8 @@ abstract contract BaseHandler is Test {
         address pool_,
         address ajna_,
         address quote_,
+        address rewards_,
+        address positions_,
         address poolInfo_,
         address testContract_
     ) {
@@ -91,6 +104,10 @@ abstract contract BaseHandler is Test {
         // Pool
         _pool     = Pool(pool_);
         _poolInfo = PoolInfoUtils(poolInfo_);
+
+        // Rewards
+        _positions = PositionManager(positions_);
+        _rewards   = RewardsManager(rewards_);
 
         // Test invariant contract
         testContract = ITestBase(testContract_);
