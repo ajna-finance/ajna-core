@@ -53,5 +53,54 @@ contract RegressionTestLiquidationERC721Pool is LiquidationERC721PoolInvariants 
         _liquidationERC721PoolHandler.addCollateral(416000000000000000000, 92001987806333700856071384682550468910212704266158266358190575554223580055260, 210789749744805153960619, 0);
     }
 
+    /*
+        Test was failing when partial collateral is added in bucket for borrower after borrower becomes collateralized
+        Fixed by updating depositTime in 'repayDebt' handler when collateral is added for borrower in bucket.
+    */
+    function test_regression_invariant_B5_1() external {
+        _liquidationERC721PoolHandler.mergeCollateral(26379999973303451405097860853);
+        _liquidationERC721PoolHandler.pledgeCollateral(115792089237316195423570985008687907853269984665640564039457584007913129639933, 198376655287800286010070308646851129242192857410305918128183504, 0);
+        _liquidationERC721PoolHandler.kickAuction(3, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 0, 0);
+        _liquidationERC721PoolHandler.settleAuction(115792089237316195423570985008687907853269984665640564039457584007913129639932, 3, 43157292751004395266775137041853631830242177281331941838335997503, 0);
+        _liquidationERC721PoolHandler.repayDebt(3, 15336155681082503431099729405384462718738794298796523878220489474831773, 0);
+        invariant_Bucket_deposit_time_B5_B6_B7();
+    }
+
+    /*
+        Test was failing when partial collateral is added in bucket for borrower after borrower becomes collateralized
+        Fixed by updating depositTime in 'takeAuction' handler when collateral is added for borrower in bucket.
+    */
+    function test_regression_invariant_B5_2() external {
+        _liquidationERC721PoolHandler.pledgeCollateral(62072624193766640913909390994885052970245728906467889094353399451535599113244, 1000012687123859870, 16756831076010021813036667829318578467494198906224313602492810544840827711497);
+        _liquidationERC721PoolHandler.drawDebt(115792089237316195423570985008687907853269984665640564039457584007913129639934, 2, 39522838938);
+        _liquidationERC721PoolHandler.takeAuction(38436, 12796163474520465714881469213596991307095756029235757350527859532818979149848, 236, 26511057352925151874817900429276281706694346584662189088043467429524323658773);
+
+        invariant_Bucket_deposit_time_B5_B6_B7();
+    }
+
+    /*
+        Test was failing when partial collateral is added in bucket for borrower after borrower becomes collateralized
+        Fixed by updating depositTime in 'settleAuction' handler when collateral is added for borrower in bucket.
+    */
+    function test_regression_invariant_B5_3() external {
+        _liquidationERC721PoolHandler.moveQuoteToken(898761346601995332968440, 1, 281290971280478301822821494347217658505029428037879054325, 115792089237316195423570985008687907853269984665640564039457584007913129639932, 0);
+        _liquidationERC721PoolHandler.settleAuction(115792089237316195423570985008687907853269984665640564039457584007913129639934, 1, 2, 9813692387192478769130999425125066055);
+        _liquidationERC721PoolHandler.kickWithDeposit(0, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 2);
+        _liquidationERC721PoolHandler.settleAuction(140569786344478, 1, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 761335476707022719857597);
+
+        invariant_Bucket_deposit_time_B5_B6_B7();
+    }
+    
+    /*
+        Test was failing when partial collateral is added in bucket for borrower after borrower becomes collateralized
+        Fixed by updating depositTime in 'bucketTake' handler when collateral is added for borrower in bucket.
+    */
+    function test_regression_invariant_B5_4() external {
+        _liquidationERC721PoolHandler.bucketTake(3, 37625625304, true, 2, 115792089237316195423570985008687907853269984665640564039457584007913129639933);
+        _liquidationERC721PoolHandler.kickWithDeposit(3, 3, 2);
+        _liquidationERC721PoolHandler.bucketTake(115792089237316195423570985008687907853269984665640564039457584007913129639933, 115792089237316195423570985008687907853269984665640564039457584007913129639932, true, 115792089237316195423570985008687907853269984665640564039457584007913129639932, 51633399605532141251772874775295477365945157734353620);
+
+        invariant_Bucket_deposit_time_B5_B6_B7();
+    }
 
 }

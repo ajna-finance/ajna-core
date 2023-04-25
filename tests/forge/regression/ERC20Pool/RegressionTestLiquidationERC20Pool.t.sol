@@ -292,7 +292,7 @@ contract RegressionTestLiquidationERC20Pool is LiquidationERC20PoolInvariants {
     }
 
     // Test reverting with overflow error in dwatp calculation in _meaningfulDeposit in updateInterestState
-    function _test_regression_evm_revert_2() external {
+    function test_regression_evm_revert_2() external {
         _liquidationERC20PoolHandler.drawDebt(13141077791835967310451371165744721774, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 0);
         _liquidationERC20PoolHandler.kickAuction(3, 53758605435723729358784, 3, 0);
         _liquidationERC20PoolHandler.repayDebt(668608315443216098571064749198163965820, 18932325376258851353179065817321260901, 0);

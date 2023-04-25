@@ -37,6 +37,8 @@ import {
 }                                   from '../interfaces/pool/commons/IPoolState.sol';
 import {
     KickResult,
+    SettleResult,
+    TakeResult,
     RemoveQuoteParams,
     MoveQuoteParams,
     AddQuoteParams,
@@ -185,7 +187,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         _revertOnExpiry(expiry_);
         PoolState memory poolState = _accruePoolInterest();
 
-        _revertIfAuctionDebtLocked(deposits, poolBalances, fromIndex_, poolState.inflator);
+        _revertIfAuctionDebtLocked(deposits, poolState.t0DebtInAuction, fromIndex_, poolState.inflator);
 
         uint256 newLup;
         (
@@ -218,7 +220,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         PoolState memory poolState = _accruePoolInterest();
 
-        _revertIfAuctionDebtLocked(deposits, poolBalances, index_, poolState.inflator);
+        _revertIfAuctionDebtLocked(deposits, poolState.t0DebtInAuction, index_, poolState.inflator);
 
         uint256 newLup;
         (
@@ -275,6 +277,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @inheritdoc IPoolKickerActions
      *  @dev    === Write state ===
      *  @dev    increment `poolBalances.t0DebtInAuction` and `poolBalances.t0Debt` accumulators
+     *  @dev    update `t0Debt2ToCollateral` ratio, debt and collateral post action are considered 0
      */
     function kick(
         address borrower_,
@@ -292,21 +295,23 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             npLimitIndex_
         );
 
-        // update pool balances state
-        poolBalances.t0Debt          = result.t0PoolDebt;
-        poolBalances.t0DebtInAuction += result.t0KickedDebt;
+        // update in memory pool state struct
+        poolState.debt            =  Maths.wmul(result.t0PoolDebt, poolState.inflator);
+        poolState.t0Debt          =  result.t0PoolDebt;
+        poolState.t0DebtInAuction += result.t0KickedDebt;
 
         // adjust t0Debt2ToCollateral ratio
         _updateT0Debt2ToCollateral(
             result.debtPreAction,
-            result.t0KickedDebt,
-            result.collateralPreAction, // collateral doesn't change when auction is kicked
-            result.collateralPreAction  // collateral doesn't change when auction is kicked
+            0, // debt post kick (for loan in auction) not taken into account
+            result.collateralPreAction,
+            0  // collateral post kick (for loan in auction) not taken into account
         );
 
+        // update pool balances state
+        poolBalances.t0Debt          = poolState.t0Debt;
+        poolBalances.t0DebtInAuction = poolState.t0DebtInAuction;
         // update pool interest rate state
-        poolState.debt   = Maths.wmul(result.t0PoolDebt, poolState.inflator);
-        poolState.t0Debt = result.t0PoolDebt;
         _updateInterestState(poolState, result.lup);
 
         if (result.amountToCoverBond != 0) _transferQuoteTokenFrom(msg.sender, result.amountToCoverBond);
@@ -316,6 +321,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @inheritdoc IPoolKickerActions
      *  @dev    === Write state ===
      *  @dev    increment `poolBalances.t0DebtInAuction` and `poolBalances.t0Debt` accumulators
+     *  @dev    update `t0Debt2ToCollateral` ratio, debt and collateral post action are considered 0
      */
     function kickWithDeposit(
         uint256 index_,
@@ -334,21 +340,24 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             npLimitIndex_
         );
 
-        // update pool balances state
-        poolBalances.t0Debt          = result.t0PoolDebt;
-        poolBalances.t0DebtInAuction += result.t0KickedDebt;
+        // update in memory pool state struct
+        poolState.debt            =  Maths.wmul(result.t0PoolDebt, poolState.inflator);
+        poolState.t0Debt          =  result.t0PoolDebt;
+        poolState.t0DebtInAuction += result.t0KickedDebt;
 
         // adjust t0Debt2ToCollateral ratio
         _updateT0Debt2ToCollateral(
             result.debtPreAction,
-            result.t0KickedDebt,
-            result.collateralPreAction, // collateral doesn't change when auction is kicked
-            result.collateralPreAction  // collateral doesn't change when auction is kicked
+            0, // debt post kick (for loan in auction) not taken into account
+            result.collateralPreAction,
+            0 // collateral post kick (for loan in auction) not taken into account
         );
 
+        // update pool balances state
+        poolBalances.t0Debt          = poolState.t0Debt;
+        poolBalances.t0DebtInAuction = poolState.t0DebtInAuction;
+
         // update pool interest rate state
-        poolState.debt   = Maths.wmul(result.t0PoolDebt, poolState.inflator);
-        poolState.t0Debt = result.t0PoolDebt;
         _updateInterestState(poolState, result.lup);
 
         // transfer from kicker to pool the difference to cover bond
@@ -532,12 +541,13 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @return poolState_ Struct containing pool details.
      */
     function _accruePoolInterest() internal returns (PoolState memory poolState_) {
-        poolState_.t0Debt         = poolBalances.t0Debt;
-        poolState_.collateral     = poolBalances.pledgedCollateral;
-        poolState_.inflator       = inflatorState.inflator;
-        poolState_.rate           = interestState.interestRate;
-        poolState_.poolType       = _getArgUint8(POOL_TYPE);
-        poolState_.quoteDustLimit = _getArgUint256(QUOTE_SCALE);
+        poolState_.t0Debt          = poolBalances.t0Debt;
+        poolState_.t0DebtInAuction = poolBalances.t0DebtInAuction;
+        poolState_.collateral      = poolBalances.pledgedCollateral;
+        poolState_.inflator        = inflatorState.inflator;
+        poolState_.rate            = interestState.interestRate;
+        poolState_.poolType        = _getArgUint8(POOL_TYPE);
+        poolState_.quoteDustLimit  = _getArgUint256(QUOTE_SCALE);
 
 	    // check if t0Debt is not equal to 0, indicating that there is debt to be tracked for the pool
         if (poolState_.t0Debt != 0) {
@@ -567,6 +577,63 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
                 reserveAuction.totalInterestEarned += newInterest;
             }
         }
+    }
+
+    /**
+     *  @notice Helper function to update pool state post take and bucket take actions.
+     *  @param result_    Struct containing details of take result.
+     *  @param poolState_ Struct containing pool details.
+     */
+    function _updatePostTakeState(
+        TakeResult memory result_,
+        PoolState memory poolState_
+    ) internal {
+        // update in memory pool state struct
+        poolState_.debt            =  result_.poolDebt;
+        poolState_.t0Debt          =  result_.t0PoolDebt;
+        poolState_.t0DebtInAuction += result_.t0DebtPenalty;
+        poolState_.t0DebtInAuction -= result_.t0DebtInAuctionChange;
+        poolState_.collateral      -= (result_.collateralAmount + result_.compensatedCollateral); // deduct collateral taken plus collateral compensated if NFT auction settled
+
+        // adjust t0Debt2ToCollateral ratio if auction settled by take action
+        if (result_.settledAuction) {
+            _updateT0Debt2ToCollateral(
+                0, // debt pre take (for loan in auction) not taken into account
+                result_.debtPostAction,
+                0, // collateral pre take (for loan in auction) not taken into account
+                result_.collateralPostAction
+            );
+        }
+
+        // update pool balances state
+        poolBalances.t0Debt            = poolState_.t0Debt;
+        poolBalances.t0DebtInAuction   = poolState_.t0DebtInAuction;
+        poolBalances.pledgedCollateral = poolState_.collateral;
+        // update pool interest rate state
+        _updateInterestState(poolState_, result_.newLup);
+    }
+
+    /**
+     *  @notice Helper function to update pool state post settle action.
+     *  @param result_    Struct containing details of settle result.
+     *  @param poolState_ Struct containing pool details.
+     */
+    function _updatePostSettleState(
+        SettleResult memory result_,
+        PoolState memory poolState_
+    ) internal {
+        // update in memory pool state struct
+        poolState_.debt            -= Maths.wmul(result_.t0DebtSettled, poolState_.inflator);
+        poolState_.t0Debt          -= result_.t0DebtSettled;
+        poolState_.t0DebtInAuction -= result_.t0DebtSettled;
+        poolState_.collateral      -= result_.collateralSettled;
+
+        // update pool balances state
+        poolBalances.t0Debt            = poolState_.t0Debt;
+        poolBalances.t0DebtInAuction   = poolState_.t0DebtInAuction;
+        poolBalances.pledgedCollateral = poolState_.collateral;
+        // update pool interest rate state
+        _updateInterestState(poolState_, Deposits.getLup(deposits, poolState_.debt));
     }
 
     /**

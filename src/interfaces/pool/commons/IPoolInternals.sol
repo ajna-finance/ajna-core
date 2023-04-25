@@ -10,23 +10,6 @@ pragma solidity 0.8.14;
 /*** Auction Param Structs ***/
 /*****************************/
 
-/// @dev Struct used to return result of `TakerAction.bucketTake` action.
-struct BucketTakeResult {
-    uint256 collateralAmount;      // [WAD] amount of collateral taken
-    uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LP
-    uint256 t0DebtPenalty;         // [WAD] t0 penalty applied on first take
-    uint256 remainingCollateral;   // [WAD] amount of borrower collateral remaining after take
-    uint256 poolDebt;              // [WAD] current pool debt
-    uint256 t0PoolDebt;            // [WAD] t0 pool debt
-    uint256 newLup;                // [WAD] current lup
-    uint256 t0DebtInAuctionChange; // [WAD] the amount of t0 debt recovered by take action
-    bool    settledAuction;        // true if auction is settled by take action
-    uint256 debtPreAction;         // [WAD] The amount of borrower t0 debt before take
-    uint256 debtPostAction;        // [WAD] The amount of borrower t0 debt after take
-    uint256 collateralPreAction;   // [WAD] The amount of borrower collateral before take
-    uint256 collateralPostAction;  // [WAD] The amount of borrower collateral after take
-}
-
 /// @dev Struct used to return result of `KickerAction.kick` action.
 struct KickResult {
     uint256 amountToCoverBond;    // [WAD] amount of bond that needs to be covered
@@ -54,13 +37,13 @@ struct SettleResult {
     uint256 t0DebtSettled;       // [WAD] The amount of t0 debt settled
 }
 
-/// @dev Struct used to return result of `TakerAction.take` action.
+/// @dev Struct used to return result of `TakerAction.take` and `TakerAction.bucketTake` actions.
 struct TakeResult {
     uint256 collateralAmount;      // [WAD] amount of collateral taken
     uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LP
-    uint256 quoteTokenAmount;      // [WAD] amount of quote tokens paid by taker for taken collateral
+    uint256 quoteTokenAmount;      // [WAD] amount of quote tokens paid by taker for taken collateral, used in take action
     uint256 t0DebtPenalty;         // [WAD] t0 penalty applied on first take
-    uint256 excessQuoteToken;      // [WAD] (NFT only) amount of quote tokens to be paid by taker to borrower for fractional collateral
+    uint256 excessQuoteToken;      // [WAD] (NFT only) amount of quote tokens to be paid by taker to borrower for fractional collateral, used in take action
     uint256 remainingCollateral;   // [WAD] amount of borrower collateral remaining after take
     uint256 poolDebt;              // [WAD] current pool debt
     uint256 t0PoolDebt;            // [WAD] t0 pool debt
@@ -112,6 +95,7 @@ struct RemoveQuoteParams {
 
 /// @dev Struct used to return result of `BorrowerActions.drawDebt` action.
 struct DrawDebtResult {
+    bool    inAuction;             // true if loan still in auction after pledge more collateral, false otherwise
     uint256 newLup;                // [WAD] new pool LUP after draw debt
     uint256 poolCollateral;        // [WAD] total amount of collateral in pool after pledge collateral
     uint256 poolDebt;              // [WAD] total accrued debt in pool after draw debt
@@ -127,6 +111,7 @@ struct DrawDebtResult {
 
 /// @dev Struct used to return result of `BorrowerActions.repayDebt` action.
 struct RepayDebtResult {
+    bool    inAuction;             // true if loan still in auction after repay, false otherwise
     uint256 newLup;                // [WAD] new pool LUP after draw debt
     uint256 poolCollateral;        // [WAD] total amount of collateral in pool after pull collateral
     uint256 poolDebt;              // [WAD] total accrued debt in pool after repay debt

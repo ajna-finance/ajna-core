@@ -136,7 +136,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         });
     }
 
-    function testBorrowAndRepay() external {
+    function testBorrowAndRepay() external tearDown {
 
         // lender deposits 10000 Quote into 3 buckets
         _addInitialLiquidity({
@@ -275,11 +275,11 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
                 htp:                  502.333658244714424687 * 1e18,
                 lup:                  _priceAt(2550),
                 poolSize:             30_003.498905447098680000 * 1e18,
-                pledgedCollateral:    Maths.wad(3),
+                pledgedCollateral:    3 * 1e18,
                 encumberedCollateral: 0.500516446164039921 * 1e18,
-                poolDebt:             1507.000974734143274062 * 1e18,
-                actualUtilization:    0.050233397762005623 * 1e18,
-                targetUtilization:    0.166838815388013307 * 1e18,
+                poolDebt:             1_507.000974734143274062 * 1e18,
+                actualUtilization:    0.100096122026423251 * 1e18,
+                targetUtilization:    0.332446840033426268 * 1e18,
                 minDebtAmount:        150.700097473414327406 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
@@ -349,12 +349,12 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
-                poolSize:             30_005.083883677219590000 * 1e18,
+                poolSize:             30_005.088767154245370000 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
                 poolDebt:             0,
-                actualUtilization:    0.050227507786735589 * 1e18,
-                targetUtilization:    0.166838815388013307 * 1e18,
+                actualUtilization:    0.050227555333959397 * 1e18,
+                targetUtilization:    0.202597018753257617 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
@@ -363,9 +363,9 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             })
         );
         _assertEMAs({
-            debtColEma:   755_981.012555885345015825 * 1e18,
-            lupt0DebtEma: 4_531_205.827599034360703833 * 1e18,
-            debtEma:      1_507.000974734143274062 * 1e18,
+            debtColEma:   1_009_226.137898421530685238 * 1e18,
+            lupt0DebtEma: 4_981_446.144217726231751319 * 1e18,
+            debtEma:      1_507.002401317220586672 * 1e18,
             depositEma:   30_003.498902092092525534 * 1e18
         });
         // check bucket state after fully repay
@@ -373,8 +373,8 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             index:        2550,
             lpBalance:    10_000 * 1e18,
             collateral:   0,
-            deposit:      10_001.694627892406530000 * 1e18,
-            exchangeRate: 1.000169462789240653 * 1e18
+            deposit:      10_001.696255718081790000 * 1e18,
+            exchangeRate: 1.000169625571808179 * 1e18
         });
         // check borrower info after fully repay
         _assertBorrower({

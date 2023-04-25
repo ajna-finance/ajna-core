@@ -27,19 +27,19 @@ import { Maths }    from '../internal/Maths.sol';
     /**
      *  @notice Called by `LP` removal functions assess whether or not `LP` is locked.
      *  @dev    Reverts with `RemoveDepositLockedByAuctionDebt` if debt locked.
-     *  @param  index_    The deposit index from which `LP` is attempting to be removed.
-     *  @param  inflator_ The pool inflator used to properly assess t0 debt in auctions.
+     *  @param  t0DebtInAuction_ Pool's t0 debt currently in auction.
+     *  @param  index_           The deposit index from which `LP` is attempting to be removed.
+     *  @param  inflator_        The pool inflator used to properly assess t0 debt in auctions.
      */
     function _revertIfAuctionDebtLocked(
         DepositsState storage deposits_,
-        PoolBalancesState storage poolBalances_,
+        uint256 t0DebtInAuction_,
         uint256 index_,
         uint256 inflator_
     ) view {
-        uint256 t0AuctionDebt = poolBalances_.t0DebtInAuction;
-        if (t0AuctionDebt != 0 ) {
+        if (t0DebtInAuction_ != 0 ) {
             // deposit in buckets within liquidation debt from the top-of-book down are frozen.
-            if (index_ <= Deposits.findIndexOfSum(deposits_, Maths.wmul(t0AuctionDebt, inflator_))) revert RemoveDepositLockedByAuctionDebt();
+            if (index_ <= Deposits.findIndexOfSum(deposits_, Maths.wmul(t0DebtInAuction_, inflator_))) revert RemoveDepositLockedByAuctionDebt();
         } 
     }
 

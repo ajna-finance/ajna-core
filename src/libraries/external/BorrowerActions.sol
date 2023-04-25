@@ -50,7 +50,6 @@ library BorrowerActions {
         uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LP (NFTs only)
         uint256 t0BorrowAmount;        // [WAD] t0 amount to borrow
         uint256 t0DebtChange;          // [WAD] additional t0 debt resulted from draw debt action
-        bool    inAuction;             // true if loan is auctioned
         bool    pledge;                // true if pledge action
         bool    stampT0Np;             // true if loan's t0 neutral price should be restamped (when drawing debt or pledge settles auction)
     }
@@ -59,7 +58,6 @@ library BorrowerActions {
     struct RepayDebtLocalVars {
         uint256 borrowerDebt;          // [WAD] borrower's accrued debt
         uint256 compensatedCollateral; // [WAD] amount of borrower collateral that is compensated with LP (NFTs only)
-        bool    inAuction;             // true if loan still in auction after repay, false otherwise
         bool    pull;                  // true if pull action
         bool    repay;                 // true if repay action
         bool    stampT0Np;             // true if loan's t0 neutral price should be restamped (when repay settles auction or pull collateral)
@@ -134,8 +132,8 @@ library BorrowerActions {
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
 
         vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
-        vars.inAuction    = _inAuction(auctions_, borrowerAddress_);
 
+        result_.inAuction           = _inAuction(auctions_, borrowerAddress_);
         result_.debtPreAction       = borrower.t0Debt;
         result_.collateralPreAction = borrower.collateral;
         result_.t0PoolDebt          = poolState_.t0Debt;
@@ -152,15 +150,15 @@ library BorrowerActions {
 
             // if loan is auctioned and becomes collateralized by newly pledged collateral then settle auction
             if (
-                vars.inAuction &&
+                result_.inAuction &&
                 _isCollateralized(vars.borrowerDebt, borrower.collateral, result_.newLup, poolState_.poolType)
             ) {
-                // borrower becomes collateralized
-                vars.inAuction = false;
-                vars.stampT0Np = true;  // stamp borrower t0Np when exiting from auction
+                // stamp borrower t0Np when exiting from auction
+                vars.stampT0Np = true;
 
-                result_.settledAuction = true;
-                // remove debt from pool accumulator and settle auction
+                // borrower becomes re-collateralized, entire borrower debt is removed from pool auctions debt accumulator
+                result_.inAuction             = false;
+                result_.settledAuction        = true;
                 result_.t0DebtInAuctionChange = borrower.t0Debt;
 
                 // settle auction and update borrower's collateral with value after settlement
@@ -175,10 +173,9 @@ library BorrowerActions {
                     borrower.collateral,
                     poolState_.poolType
                 );
-
-                borrower.collateral = result_.remainingCollateral;
-
                 result_.poolCollateral -= vars.compensatedCollateral;
+
+                borrower.collateral = result_.remainingCollateral;                
             }
 
             // add new amount of collateral to pledge to pool balance
@@ -190,7 +187,7 @@ library BorrowerActions {
             if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
 
             // an auctioned borrower in not allowed to draw more debt (even if collateralized at the new LUP) if auction is not settled
-            if (vars.inAuction) revert AuctionActive();
+            if (result_.inAuction) revert AuctionActive();
 
             vars.t0BorrowAmount = Maths.wdiv(amountToBorrow_, poolState_.inflator);
 
@@ -238,7 +235,7 @@ library BorrowerActions {
             result_.poolDebt,
             poolState_.rate,
             result_.newLup,
-            vars.inAuction,
+            result_.inAuction,
             vars.stampT0Np
         );
 
@@ -290,8 +287,8 @@ library BorrowerActions {
         Borrower memory borrower = loans_.borrowers[borrowerAddress_];
 
         vars.borrowerDebt = Maths.wmul(borrower.t0Debt, poolState_.inflator);
-        vars.inAuction    = _inAuction(auctions_, borrowerAddress_);
 
+        result_.inAuction           = _inAuction(auctions_, borrowerAddress_);
         result_.debtPreAction       = borrower.t0Debt;
         result_.collateralPreAction = borrower.collateral;
         result_.t0PoolDebt          = poolState_.t0Debt;
@@ -328,14 +325,14 @@ library BorrowerActions {
             result_.newLup = Deposits.getLup(deposits_, result_.poolDebt);
 
             // if loan is auctioned and becomes collateralized by repaying debt then settle auction
-            if (vars.inAuction) {
+            if (result_.inAuction) {
                 if (_isCollateralized(vars.borrowerDebt, borrower.collateral, result_.newLup, poolState_.poolType)) {
-                    // borrower becomes re-collateralized
-                    vars.inAuction = false;
-                    vars.stampT0Np = true;  // stamp borrower t0Np when exiting from auction
+                     // stamp borrower t0Np when exiting from auction
+                    vars.stampT0Np = true;
 
-                    result_.settledAuction = true;
-                    // remove entire borrower debt from pool auctions debt accumulator
+                    // borrower becomes re-collateralized, entire borrower debt is removed from pool auctions debt accumulator
+                    result_.inAuction             = false;
+                    result_.settledAuction        = true;
                     result_.t0DebtInAuctionChange = borrower.t0Debt;
 
                     // settle auction and update borrower's collateral with value after settlement
@@ -350,10 +347,9 @@ library BorrowerActions {
                         borrower.collateral,
                         poolState_.poolType
                     );
+                    result_.poolCollateral -= vars.compensatedCollateral;
 
                     borrower.collateral = result_.remainingCollateral;
-
-                    result_.poolCollateral -= vars.compensatedCollateral;
                 } else {
                     // partial repay, remove only the paid debt from pool auctions debt accumulator
                     result_.t0DebtInAuctionChange = vars.t0RepaidDebt;
@@ -368,7 +364,7 @@ library BorrowerActions {
             if (borrowerAddress_ != msg.sender) revert BorrowerNotSender();
 
             // an auctioned borrower in not allowed to pull collateral (even if collateralized at the new LUP) if auction is not settled
-            if (vars.inAuction) revert AuctionActive();
+            if (result_.inAuction) revert AuctionActive();
 
             // calculate LUP only if it wasn't calculated in repay action
             if (!vars.repay) result_.newLup = Deposits.getLup(deposits_, result_.poolDebt);
@@ -400,7 +396,7 @@ library BorrowerActions {
             result_.poolDebt,
             poolState_.rate,
             result_.newLup,
-            vars.inAuction,
+            result_.inAuction,
             vars.stampT0Np
         );
 
