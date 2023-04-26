@@ -6,7 +6,9 @@ import { LiquidationERC20PoolInvariants } from "../../invariants/ERC20Pool/Liqui
 
 contract RegressionTestLiquidationERC20Pool is LiquidationERC20PoolInvariants { 
 
-    function setUp() public override { 
+    function setUp() public override {
+        // failures reproduced with 3 active buckets
+        vm.setEnv("NO_OF_BUCKETS", "3");
         super.setUp();
     }
 
