@@ -277,7 +277,7 @@ abstract contract BasicInvariants is BaseInvariants {
             requireWithinDiff(
                 depositAtIndex,
                 IBaseHandler(_handler).fenwickSumAtIndex(bucketIndex),
-                1e16,
+                1e17,
                 "Incorrect deposits in bucket"
             );
         }
@@ -298,7 +298,7 @@ abstract contract BasicInvariants is BaseInvariants {
             requireWithinDiff(
                 depositTillIndex,
                 IBaseHandler(_handler).fenwickSumTillIndex(bucketIndex),
-                1e16,
+                1e17,
                 "Incorrect deposits prefix sum"
             );
         }

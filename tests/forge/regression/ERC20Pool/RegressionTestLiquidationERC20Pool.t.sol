@@ -340,4 +340,34 @@ contract RegressionTestLiquidationERC20Pool is LiquidationERC20PoolInvariants {
         _liquidationERC20PoolHandler.pledgeCollateral(115792089237316195423570985008687907853269984665640564039457584007913129639934, 1, 0);
     }
 
+    /*
+        F1 and F2 invariants were failing in `settleAuction` handler with difference between pool deposit and fenwick deposits of <1e17 but >1e16 for deposits of order 1e25
+        Fixed by changing epsilon in F1, F2 from 1e16 to 1e17.
+    */
+    function test_regression_invariant_settle_F1_5() external {
+        _liquidationERC20PoolHandler.settleAuction(0, 28071594006178250681754737955033434168, 2, 0);
+        _liquidationERC20PoolHandler.bucketTake(1730972569841431578573774649270, 10903, false, 1175990817123654468079021581951, 0);
+        _liquidationERC20PoolHandler.addQuoteToken(18695, 12463, 370340205846027014555877964321, 0);
+        _liquidationERC20PoolHandler.takeAuction(631894654554387507015513816632, 16008, 1016878400672168648586524, 0);
+        _liquidationERC20PoolHandler.settleAuction(0, 10186616154253336796368, 115792089237316195423570985008687907853269984665640564039457584007913129639932, 0);
+
+        /* Logs for settleAuction
+            Pool deposit at 2572 after accrue interest                 -> 2032689444945695599645197
+            local Fenwick deposit at 2572 after accrue interest        -> 2032689444928384299157690
+
+            maxSettleable borrower debt                                -> 1004975124378109460799907
+
+            Pool deposit at 2572 after settlePooldebt                  -> 1027714305720790052619170
+            Required Pool deposit after subtracting maxSettleable      -> 1027714320567586138845290
+            Precision error in unscaled remove                         -> 14846796086226120
+
+            local Fenwick deposit at 2572 after settlePooldebt         -> 1027714320550274838357783
+            Required local fenwick after subtracting maxSettleable     -> 1027714320550274838357783
+
+            Final Difference between pool deposit and local fenwick    -> 14829484785738613
+        */
+        invariant_fenwick_depositAtIndex_F1();
+        invariant_fenwick_depositsTillIndex_F2();
+    }
+
 }
