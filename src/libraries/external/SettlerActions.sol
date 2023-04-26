@@ -2,8 +2,6 @@
 
 pragma solidity 0.8.14;
 
-import "@std/console.sol";
-
 import { PoolType } from '../../interfaces/pool/IPool.sol';
 
 import {
@@ -110,8 +108,6 @@ library SettlerActions {
         uint256 kickTime = auctions_.liquidations[params_.borrower].kickTime;
         if (kickTime == 0) revert NoAuction();
 
-        console.log("Deposit at 2572 %s", Deposits.valueAt(deposits_, 2572));
-        
         Borrower memory borrower = loans_.borrowers[params_.borrower];
         if ((block.timestamp - kickTime < 72 hours) && (borrower.collateral != 0)) revert AuctionNotClearable();
 
@@ -133,21 +129,15 @@ library SettlerActions {
             poolState_.inflator
         );
 
-        console.log(" Settle finished with deposit/collateral %s remaining %s", borrower.t0Debt, borrower.collateral);
-
-        console.log("Deposit at 2572 %s", Deposits.valueAt(deposits_, 2572));
-        
         if (borrower.t0Debt != 0 && borrower.collateral == 0) {
             // 2. settle debt with pool reserves
             uint256 assets      = Maths.wmul(poolState_.t0Debt - result_.t0DebtSettled + borrower.t0Debt, poolState_.inflator) + params_.poolBalance;
             uint256 liabilities = Deposits.treeSum(deposits_) + auctions_.totalBondEscrowed + reserveAuction_.unclaimed;
             // settle debt from reserves (assets - liabilities) if reserves positive, round reserves down however
             if (assets > liabilities) {
-                console.log(" Settling with reserves");
                 borrower.t0Debt -= Maths.min(borrower.t0Debt, Maths.floorWdiv(assets - liabilities, poolState_.inflator));
             }
 
-            console.log(" Now forgiving debt %s", borrower.t0Debt);
             // 3. forgive bad debt from next HPB
             if (borrower.t0Debt != 0) {
                 borrower.t0Debt = _forgiveBadDebt(
@@ -187,8 +177,6 @@ library SettlerActions {
 
         // update borrower state
         loans_.borrowers[params_.borrower] = borrower;
-
-        console.log("** Deposit at 2572 %s", Deposits.valueAt(deposits_, 2572));
     }
 
     /***************************/
@@ -398,10 +386,6 @@ library SettlerActions {
                 // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
                 Deposits.unscaledRemove(deposits_, vars.index, vars.unscaledDeposit);
 
-                console.log("  settle bucket %s price %s", vars.index, vars.price);
-                         
-                console.log("  settle move %s deposit to %s collateral", vars.unscaledDeposit, vars.collateralUsed);
-
                 // check if bucket healthy - set bankruptcy if collateral is 0 and entire deposit was used to settle and there's still LP
                 if (vars.hpbCollateral == 0 && vars.hpbUnscaledDeposit == 0 && vars.hpbLP != 0) {
                     hpb.lps            = 0;
@@ -430,8 +414,6 @@ library SettlerActions {
             }
 
             --bucketDepth_;
-
-            console.log(" Settle depth %s remaining debt %s ", bucketDepth_, remainingt0Debt_);
         }
     }
 
@@ -459,8 +441,6 @@ library SettlerActions {
     ) internal returns (uint256 remainingt0Debt_) {
         remainingt0Debt_ = borrower_.t0Debt;
 
-        console.log(" in forgivebad debt");
-
         // loop through remaining buckets if there's still debt to forgive
         while (params_.bucketDepth != 0 && remainingt0Debt_ != 0) {
 
@@ -469,9 +449,6 @@ library SettlerActions {
             uint256 depositToRemove          = Maths.wmul(scale, unscaledDeposit);
             uint256 debt                     = Maths.wmul(remainingt0Debt_, inflator_);
 
-            console.log("  Bad debt pushed to %s %s", index, debt);
-            console.log("  Deposit to remove %s", depositToRemove);
-            
             // 1) bucket deposit covers entire loan debt to settle, no constraints needed
             if (depositToRemove >= debt) {
                 Deposits.unscaledRemove(deposits_, index, Maths.wdiv(debt, scale));

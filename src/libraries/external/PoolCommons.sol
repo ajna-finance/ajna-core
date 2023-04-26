@@ -14,8 +14,6 @@ import { Buckets }  from '../internal/Buckets.sol';
 import { Loans }    from '../internal/Loans.sol';
 import { Maths }    from '../internal/Maths.sol';
 
-import "@std/console.sol";
-
 /**
     @title  PoolCommons library
     @notice External library containing logic for common pool functionality:
@@ -239,8 +237,6 @@ library PoolCommons {
 
         uint256 lupIndex = Deposits.findIndexOfSum(deposits_, poolState_.debt);
         // accrual price is less of lup and htp, and prices decrease as index increases
-        console.log(" lupindex %s accrualindex %s", lupIndex, accrualIndex);
-        console.log(" htp ", htp);
         if (lupIndex > accrualIndex) accrualIndex = lupIndex;
 
         uint256 interestEarningDeposit = Deposits.prefixSum(deposits_, accrualIndex);
@@ -252,12 +248,13 @@ library PoolCommons {
             );
 
             // Scale the fenwick tree to update amount of debt owed to lenders
-            console.log("   Accrue interest %s %s", newInterest_, interestEarningDeposit);
-
+            // lender factor computation, capped at 10x the interest factor for borrowers
+            uint256 lenderFactor = Maths.min(Maths.floorWdiv(newInterest_, interestEarningDeposit) + Maths.WAD,
+                                             Maths.wmul(pendingFactor, 10e18));
             Deposits.mult(
                 deposits_,
                 accrualIndex,
-                Maths.floorWdiv(newInterest_, interestEarningDeposit) + Maths.WAD // lender factor
+                lenderFactor
             );
         }
     }

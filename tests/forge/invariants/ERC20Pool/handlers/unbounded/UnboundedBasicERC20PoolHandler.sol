@@ -11,8 +11,6 @@ import { Maths }                             from "src/libraries/internal/Maths.
 import { UnboundedBasicPoolHandler } from "../../../base/handlers/unbounded/UnboundedBasicPoolHandler.sol";
 import { BaseERC20PoolHandler }      from './BaseERC20PoolHandler.sol';
 
-import "@std/console.sol";
-
 /**
  *  @dev this contract manages multiple lenders
  *  @dev methods in this contract are called in random order
@@ -32,7 +30,6 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
 
         (uint256 lpBalanceBeforeAction, ) = _erc20Pool.lenderInfo(bucketIndex_, _actor);
 
-        console.log("Adding %s to %s", amount_, bucketIndex_);
         try _erc20Pool.addCollateral(amount_, bucketIndex_, block.timestamp + 1 minutes) {
             // **B5**: when adding collateral: lender deposit time = timestamp of block when deposit happened
             lenderDepositTime[_actor][bucketIndex_] = block.timestamp;
@@ -41,7 +38,6 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
 
             // Post action condition
             (uint256 lpBalanceAfterAction, ) = _erc20Pool.lenderInfo(bucketIndex_, _actor);
-            console.log("  %s %s", lpBalanceAfterAction, lpBalanceBeforeAction);
             require(lpBalanceAfterAction > lpBalanceBeforeAction, "LP balance should increase");
         } catch (bytes memory err) {
             _ensurePoolError(err);
@@ -52,8 +48,6 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
         uint256 amount_,
         uint256 bucketIndex_
     ) internal updateLocalStateAndPoolInterest {
-        console.log("-------------------------");
-        console.log(" _removeCollateral ubph %s %s", bucketIndex_, amount_);
         numberOfCalls['UBBasicHandler.removeCollateral']++;
 
         (uint256 lpBalanceBeforeAction, ) = _erc20Pool.lenderInfo(bucketIndex_, _actor);

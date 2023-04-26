@@ -10,8 +10,6 @@ import { UnboundedBasicPoolHandler }      from '../../base/handlers/unbounded/Un
 import { UnboundedBasicERC20PoolHandler } from './unbounded/UnboundedBasicERC20PoolHandler.sol';
 import { BaseERC20PoolHandler }           from './unbounded/BaseERC20PoolHandler.sol';
 
-import "@std/console.sol";
-
 /**
  *  @dev this contract manages multiple actors
  *  @dev methods in this contract are called in random order
@@ -56,15 +54,11 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
         uint256 bucketIndex_,
         uint256 skippedTime_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
-        console.log("<><><> In BasicERC20PoolHandler");
-
         numberOfCalls['BBasicHandler.removeCollateral']++;
 
         // Prepare test phase
         uint256 boundedAmount = _preRemoveCollateral(amountToRemove_);
 
-        console.log("<><><> In BasicERC20PoolHandler");
-        
         // Action phase
         _removeCollateral(boundedAmount, _lenderBucketIndex);
     }

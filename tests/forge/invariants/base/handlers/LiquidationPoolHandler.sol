@@ -5,8 +5,6 @@ pragma solidity 0.8.14;
 import { UnboundedLiquidationPoolHandler } from './unbounded/UnboundedLiquidationPoolHandler.sol';
 import { BasicPoolHandler }                from './BasicPoolHandler.sol';
 
-import "@std/console.sol";
-
 abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, BasicPoolHandler {
 
     /*****************************/
@@ -102,10 +100,8 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         vm.warp(block.timestamp + 73 hours);
         _settleAuction(borrower, maxDepth);
 
-        console.log(" Here in settleAuction");
         // Cleanup phase
         _auctionSettleStateReset(borrower);
-        console.log(" Here in settleAuction2");
     }
 
     /*******************************/

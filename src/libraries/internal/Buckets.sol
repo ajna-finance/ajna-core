@@ -6,8 +6,6 @@ import { Bucket, Lender } from '../../interfaces/pool/commons/IPoolState.sol';
 
 import { Maths } from './Maths.sol';
 
-import "@std/console.sol";
-
 /**
     @title  Buckets library
     @notice Internal library containing common logic for buckets management.
@@ -47,10 +45,6 @@ library Buckets {
         uint256 bankruptcyTime = bucket_.bankruptcyTime;
         if (bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
 
-        console.log(" collateral %s to add %s", bucket_.collateral, collateralAmountToAdd_);
-        console.log(" deposit %s price %s", deposit_, bucketPrice_);
-        console.log(" originalLPs %s", bucket_.lps);
-        
         // calculate amount of LP to be added for the amount of collateral added to bucket
         addedLP_ = collateralToLP(
             bucket_.collateral,
@@ -59,7 +53,6 @@ library Buckets {
             collateralAmountToAdd_,
             bucketPrice_
         );
-        console.log(addedLP_);
         // update bucket LP balance and collateral
 
         // update bucket collateral
@@ -113,11 +106,9 @@ library Buckets {
         uint256 deposit_,
         uint256 collateral_,
         uint256 bucketPrice_
-    ) internal view returns (uint256 lp_) {
+    ) internal pure returns (uint256 lp_) {
         uint256 rate = getExchangeRate(bucketCollateral_, bucketLP_, deposit_, bucketPrice_);
 
-        console.log(" exchange rate ", rate);
-        
         lp_ = Maths.wdiv(Maths.wmul(collateral_, bucketPrice_), rate);
     }
 
@@ -136,8 +127,7 @@ library Buckets {
         uint256 deposit_,
         uint256 quoteTokens_,
         uint256 bucketPrice_
-    ) internal view returns (uint256) {
-        console.log(" qt2lps ex rate %s", getExchangeRate(bucketCollateral_, bucketLP_, deposit_, bucketPrice_));
+    ) internal pure returns (uint256) {
         return Maths.wdiv(
             quoteTokens_,
             getExchangeRate(bucketCollateral_, bucketLP_, deposit_, bucketPrice_)
