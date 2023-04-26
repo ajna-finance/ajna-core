@@ -9,9 +9,7 @@ import { Pool }             from 'src/base/Pool.sol';
 
 import { TokenWithNDecimals, BurnableToken }  from '../../utils/Tokens.sol';
 
-import { InvariantsTestHelpers } from './InvariantsTestHelpers.sol';
-
-abstract contract BaseInvariants is InvariantsTestHelpers, Test {
+abstract contract BaseInvariants is Test {
 
     uint256 internal LENDER_MIN_BUCKET_INDEX;
     uint256 internal LENDER_MAX_BUCKET_INDEX;
@@ -50,7 +48,7 @@ abstract contract BaseInvariants is InvariantsTestHelpers, Test {
     function setUp() public virtual {
         // Tokens
         _ajna       = new BurnableToken("Ajna", "A");
-        _quote      = new TokenWithNDecimals("Quote", "Q", uint8(vm.envUint("QUOTE_PRECISION")));
+        _quote      = new TokenWithNDecimals("Quote", "Q", uint8(vm.envOr("QUOTE_PRECISION", uint256(18))));
 
         // Pool
         _poolInfo    = new PoolInfoUtils();
@@ -60,5 +58,21 @@ abstract contract BaseInvariants is InvariantsTestHelpers, Test {
 
     function setCurrentTimestamp(uint256 currentTimestamp_) external {
         currentTimestamp = currentTimestamp_;
+    }
+
+    /************************/
+    /*** Helper Functions ***/
+    /************************/
+
+    function getDiff(uint256 x, uint256 y) internal pure returns (uint256 diff) {
+        diff = x > y ? x - y : y - x;
+    }
+
+    function requireWithinDiff(uint256 x, uint256 y, uint256 expectedDiff, string memory err) internal pure {
+        require(getDiff(x, y) <= expectedDiff, err);
+    }
+
+    function greaterThanWithinDiff(uint256 x, uint256 y, uint256 expectedDiff, string memory err) internal pure {
+        require(x > y || getDiff(x, y) <= expectedDiff, err);
     }
 }

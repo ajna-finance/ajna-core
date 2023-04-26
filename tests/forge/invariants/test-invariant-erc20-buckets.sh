@@ -2,5 +2,7 @@
 set -e
 for bucket_index in 1 500 1500 2500 3500 4500 5500 6500 7369
 do
-    make test-invariant-erc20 QUOTE_PRECISION=18 COLLATERAL_PRECISION=18 BUCKET_INDEX_ERC20=${bucket_index}
+    export BUCKET_INDEX_ERC20=${bucket_index}
+    echo "Running test with Starting bucketIndex ${bucket_index}"
+    forge t --mt invariant --nmc RegressionTest --mc ERC20
 done

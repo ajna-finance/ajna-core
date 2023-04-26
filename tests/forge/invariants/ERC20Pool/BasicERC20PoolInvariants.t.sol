@@ -30,7 +30,7 @@ contract BasicERC20PoolInvariants is BasicInvariants {
 
         super.setUp();
 
-        _collateral       = new TokenWithNDecimals("Collateral", "C", uint8(vm.envUint("COLLATERAL_PRECISION")));
+        _collateral       = new TokenWithNDecimals("Collateral", "C", uint8(vm.envOr("COLLATERAL_PRECISION", uint256(18))));
         _erc20poolFactory = new ERC20PoolFactory(address(_ajna));
         _impl             = _erc20poolFactory.implementation();
         _erc20pool        = ERC20Pool(_erc20poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
