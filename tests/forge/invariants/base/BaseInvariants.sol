@@ -50,7 +50,7 @@ abstract contract BaseInvariants is InvariantsTestHelpers, Test {
     function setUp() public virtual {
         // Tokens
         _ajna       = new BurnableToken("Ajna", "A");
-        _quote      = new TokenWithNDecimals("Quote", "Q", uint8(vm.envUint("QUOTE_PRECISION")));
+        _quote      = new TokenWithNDecimals("Quote", "Q", uint8(vm.envOr("QUOTE_PRECISION", uint256(18))));
 
         // Pool
         _poolInfo    = new PoolInfoUtils();
