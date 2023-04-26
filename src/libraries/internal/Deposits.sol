@@ -8,6 +8,8 @@ import { _priceAt, MAX_FENWICK_INDEX } from '../helpers/PoolHelper.sol';
 
 import { Maths } from './Maths.sol';
 
+import "@std/console.sol";
+
 /**
     @title  Deposits library
     @notice Internal library containing common logic for deposits management.
@@ -29,6 +31,7 @@ library Deposits {
         uint256 index_,
         uint256 unscaledAddAmount_
     ) internal {
+        console.log(" unscaledAdd %s %s", index_, unscaledAddAmount_);
         // price buckets are indexed starting at 0, Fenwick bit logic is more elegant starting at 1
         ++index_;
 
@@ -347,6 +350,8 @@ library Deposits {
         uint256 index_
     ) internal view returns (uint256 depositValue_) {
         // Get unscaled value at index and multiply by scale
+        console.log("  valueAt for index ", index_);
+        console.log("  value %s scale %s", unscaledValueAt(deposits_, index_), scale(deposits_,index_));
         depositValue_ = Maths.wmul(unscaledValueAt(deposits_, index_), scale(deposits_,index_));
     }
 

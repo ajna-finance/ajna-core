@@ -20,6 +20,8 @@ import { Deposits } from '../internal/Deposits.sol';
 import { Buckets }  from '../internal/Buckets.sol';
 import { Maths }    from '../internal/Maths.sol';
 
+import "@std/console.sol";
+
 /**
     @title  LenderActions library
     @notice External library containing logic for lender actors:
@@ -116,6 +118,8 @@ library LenderActions {
         uint256 bucketDeposit = Deposits.valueAt(deposits_, index_);
         uint256 bucketPrice   = _priceAt(index_);
 
+        console.log(" ----- Add collateral %s ------- %s ", index_, bucketDeposit);
+                   
         bucketLP_ = Buckets.addCollateral(
             buckets_[index_],
             msg.sender,
@@ -168,6 +172,10 @@ library LenderActions {
             addedAmount = Maths.wmul(addedAmount, Maths.WAD - _depositFeeRate(poolState_.rate));
         }
 
+        console.log("  ---------------------------");
+        console.log(" add quote token coll %s deposit %s", bucket.collateral, bucketDeposit);
+        console.log("  add qt amt %s price %s", addedAmount, bucketPrice);
+
         bucketLP_ = Buckets.quoteTokensToLP(
             bucket.collateral,
             bucket.lps,
@@ -175,7 +183,8 @@ library LenderActions {
             addedAmount,
             bucketPrice
         );
-
+        console.log("  add qt bucketlps %s new lps %s", bucket.lps, bucketLP_);
+        console.log("  ---------------------------");
         Deposits.unscaledAdd(deposits_, params_.index, Maths.wdiv(addedAmount, bucketScale));
 
         // update lender LP
@@ -445,6 +454,9 @@ library LenderActions {
         uint256 index_
     ) external returns (uint256 lpAmount_) {
         // revert if no amount to be removed
+        console.log("remove collateral1: Deposit at 2572 %s", Deposits.valueAt(deposits_, 2572));
+        console.log("remove collateral %s %s", index_, amount_);
+
         if (amount_ == 0) revert InvalidAmount();
 
         Bucket storage bucket = buckets_[index_];
@@ -497,6 +509,7 @@ library LenderActions {
 
             bucket.lps = bucketLP;
         }
+        console.log("remove collateral2: Deposit at 2572 %s", Deposits.valueAt(deposits_, 2572));
     }
 
     /**
