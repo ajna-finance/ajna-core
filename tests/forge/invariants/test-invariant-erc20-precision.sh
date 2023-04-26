@@ -1,3 +1,5 @@
+#!/bin/bash
+set -e
 for quote_precision in 6 8 18
 do
     for collateral_precision in 6 8 18
