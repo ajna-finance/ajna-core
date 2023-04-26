@@ -80,6 +80,9 @@ contract BasicERC721PoolInvariants is BasicInvariants {
             (, collateral, , , ) = _erc721pool.bucketInfo(bucketIndex);
             bucketCollateral += collateral;
         }
+        // add collateral that could be compensated at MAX_FENWICK_INDEX when auction settled
+        (, collateral, , , ) = _erc721pool.bucketInfo(7388);
+        bucketCollateral += collateral;
 
         assertEq(collateralBalance, bucketCollateral + _erc721pool.pledgedCollateral(), "Collateral Invariant CT2");
     }
