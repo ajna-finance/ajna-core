@@ -4,10 +4,11 @@ pragma solidity 0.8.14;
 
 import "@std/console.sol";
 
-import { Pool }             from 'src/base/Pool.sol';
+import { Pool }              from 'src/base/Pool.sol';
 import { ERC721Pool }        from 'src/ERC721Pool.sol';
 import { ERC721PoolFactory } from 'src/ERC721PoolFactory.sol';
-import { Maths }            from 'src/libraries/internal/Maths.sol';
+import { Maths }             from 'src/libraries/internal/Maths.sol';
+import { MAX_FENWICK_INDEX } from 'src/libraries/helpers/PoolHelper.sol';
 
 import { NFTCollateralToken } from '../../utils/Tokens.sol';
 
@@ -74,15 +75,18 @@ contract BasicERC721PoolInvariants is BasicInvariants {
         uint256 bucketCollateral;
         uint256 collateral;
 
+        // always account collateral at MAX_FENWICK_INDEX (since there could be collateral compensated when auction settled)
+        (, collateral, , , ) = _erc721pool.bucketInfo(MAX_FENWICK_INDEX);
+        bucketCollateral += collateral;
+
         uint256[] memory collateralBuckets = IBaseHandler(_handler).getCollateralBuckets();
         for (uint256 i = 0; i < collateralBuckets.length; i++) {
             uint256 bucketIndex = collateralBuckets[i];
-            (, collateral, , , ) = _erc721pool.bucketInfo(bucketIndex);
-            bucketCollateral += collateral;
+            if (bucketIndex != MAX_FENWICK_INDEX) {
+                (, collateral, , , ) = _erc721pool.bucketInfo(bucketIndex);
+                bucketCollateral += collateral;
+            }
         }
-        // add collateral that could be compensated at MAX_FENWICK_INDEX when auction settled
-        (, collateral, , , ) = _erc721pool.bucketInfo(7388);
-        bucketCollateral += collateral;
 
         assertEq(collateralBalance, bucketCollateral + _erc721pool.pledgedCollateral(), "Collateral Invariant CT2");
     }
