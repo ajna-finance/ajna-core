@@ -274,10 +274,13 @@ abstract contract BasicInvariants is BaseInvariants {
             console.log("Deposit From local fenwick tree -->", IBaseHandler(_handler).fenwickSumAtIndex(bucketIndex));
             console.log("=========================================");
 
+            uint256 localDepositAtIndex = IBaseHandler(_handler).fenwickSumAtIndex(bucketIndex);
+
+            // Require local and Fenwick deposits to be within 1 part in a billion relativelty, or 1 one one-millionth absolutely
             requireWithinDiff(
                 depositAtIndex,
-                IBaseHandler(_handler).fenwickSumAtIndex(bucketIndex),
-                1e17,
+                localDepositAtIndex,
+                (depositAtIndex+localDepositAtIndex)/1e9 + 1e12,
                 "Incorrect deposits in bucket"
             );
         }
@@ -300,7 +303,7 @@ abstract contract BasicInvariants is BaseInvariants {
             // Require local and Fenwick deposits to be within 1 part in a billion relativelty, or 1 one one-millionth absolutely
             requireWithinDiff(
                 depositTillIndex,
-                IBaseHandler(_handler).fenwickSumTillIndex(bucketIndex),
+                localDepositTillIndex,
                 (depositTillIndex+localDepositTillIndex)/1e9 + 1e12,
                 "Incorrect deposits prefix sum"
             );
