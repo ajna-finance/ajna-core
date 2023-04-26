@@ -4,8 +4,6 @@ pragma solidity 0.8.14;
 
 import { LiquidationERC20PoolInvariants } from "../../invariants/ERC20Pool/LiquidationERC20PoolInvariants.t.sol";
 
-import "@std/console.sol";
-
 contract RegressionTestLiquidationERC20Pool is LiquidationERC20PoolInvariants { 
 
     function setUp() public override { 
