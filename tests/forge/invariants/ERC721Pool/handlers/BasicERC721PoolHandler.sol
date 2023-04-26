@@ -65,8 +65,9 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
     }
     
     function mergeCollateral(
-        uint256 actorIndex_
-    ) external useRandomActor(actorIndex_) useTimestamps {
+        uint256 actorIndex_,
+        uint256 skippedTime_
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BBasicHandler.mergeCollateral']++;
 
         // Prepare test phase

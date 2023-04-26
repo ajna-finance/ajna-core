@@ -70,7 +70,7 @@ contract RegressionTestReserveERC721Pool is ReserveERC721PoolInvariants {
     function test_regression_invariant_F2() external {
         _reserveERC721PoolHandler.pledgeCollateral(3, 3249247182472647789271370143468153988911, 0);
         _reserveERC721PoolHandler.takeAuction(3, 68002012319987217885680836087921689752254473803305406, 3, 0);
-        _reserveERC721PoolHandler.mergeCollateral(280792061588141829088525786592236158704094119781363060);
+        _reserveERC721PoolHandler.mergeCollateral(280792061588141829088525786592236158704094119781363060, 0);
 
         invariant_fenwick_depositAtIndex_F1();
         invariant_fenwick_depositsTillIndex_F2();
