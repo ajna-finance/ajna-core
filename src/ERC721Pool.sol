@@ -418,7 +418,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         _updatePostSettleState(result, poolState);
 
         // move token ids from borrower array to pool claimable array if any collateral used to settle bad debt
-        if (result.collateralSettled != 0) _rebalanceTokens(params.borrower, result.collateralRemaining);
+        _rebalanceTokens(params.borrower, result.collateralRemaining);
     }
 
     /**
@@ -467,7 +467,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             );
         }
 
-        if (result.settledAuction) _rebalanceTokens(borrowerAddress_, result.remainingCollateral);
+        // move borrower token ids to bucket claimable token ids after taking / reducing borrower collateral
+        _rebalanceTokens(borrowerAddress_, result.remainingCollateral);
 
         // transfer from taker to pool the amount of quote tokens needed to cover collateral auctioned (including excess for rounded collateral)
         _transferQuoteTokenFrom(msg.sender, totalQuoteTokenAmount);
@@ -506,7 +507,8 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
         _updatePostTakeState(result, poolState);
 
-        if (result.settledAuction) _rebalanceTokens(borrowerAddress_, result.remainingCollateral);
+        // move borrower token ids to bucket claimable token ids after taking / reducing borrower collateral
+        _rebalanceTokens(borrowerAddress_, result.remainingCollateral);
     }
 
     /**************************/
@@ -517,8 +519,6 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
      *  @notice Rebalance `NFT` token and transfer difference to floor collateral from borrower to pool claimable array.
      *  @dev    === Write state ===
      *  @dev    - update `borrowerTokens` and `bucketTokenIds` arrays
-     *  @dev    === Emit events ===
-     *  @dev    - `RemoveCollateral`
      *  @param  borrowerAddress_    Address of borrower.
      *  @param  borrowerCollateral_ Current borrower collateral to be rebalanced.
      */
