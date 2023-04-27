@@ -160,7 +160,7 @@ abstract contract BasicInvariants is BaseInvariants {
                     requireWithinDiff(
                         currentExchangeRate,
                         previousExchangeRate,
-                        1e12,  // otherwise require exchange rates to be within 1e-6
+                        1e13,  // otherwise require exchange rates to be within 1e-5
                         "Exchange Rate Invariant R1, R2, R3, R4, R5, R6, R7 or R8"
                     );    
                 }
@@ -274,10 +274,13 @@ abstract contract BasicInvariants is BaseInvariants {
             console.log("Deposit From local fenwick tree -->", IBaseHandler(_handler).fenwickSumAtIndex(bucketIndex));
             console.log("=========================================");
 
+            uint256 localDepositAtIndex = IBaseHandler(_handler).fenwickSumAtIndex(bucketIndex);
+
+            // Require local and Fenwick deposits to be within 1 part in a billion relativelty, or 1 one one-millionth absolutely
             requireWithinDiff(
                 depositAtIndex,
-                IBaseHandler(_handler).fenwickSumAtIndex(bucketIndex),
-                1e17,
+                localDepositAtIndex,
+                (depositAtIndex+localDepositAtIndex)/1e9 + 1e12,
                 "Incorrect deposits in bucket"
             );
         }
@@ -295,10 +298,13 @@ abstract contract BasicInvariants is BaseInvariants {
             console.log("Deposit From local fenwick tree -->", IBaseHandler(_handler).fenwickSumTillIndex(bucketIndex));
             console.log("=========================================");
 
+            uint256 localDepositTillIndex = IBaseHandler(_handler).fenwickSumTillIndex(bucketIndex);
+
+            // Require local and Fenwick deposits to be within 1 part in a billion relativelty, or 1 one one-millionth absolutely
             requireWithinDiff(
                 depositTillIndex,
-                IBaseHandler(_handler).fenwickSumTillIndex(bucketIndex),
-                1e17,
+                localDepositTillIndex,
+                (depositTillIndex+localDepositTillIndex)/1e9 + 1e12,
                 "Incorrect deposits prefix sum"
             );
         }

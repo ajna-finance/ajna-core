@@ -57,7 +57,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             ( , , , uint256 depositAfterAction, ) = _pool.bucketInfo(bucketIndex_);
 
             // **RE9**:  Reserves increase by 3 months of interest when a loan is kicked
-            increaseInReserves += Maths.wmul(borrowerDebt, Maths.wdiv(interestRate, 4 * 1e18));
+            increaseInReserves += Maths.wdiv(Maths.wmul(borrowerDebt, interestRate), 4 * 1e18);
 
             _fenwickRemove(depositBeforeAction - depositAfterAction, bucketIndex_);
 
