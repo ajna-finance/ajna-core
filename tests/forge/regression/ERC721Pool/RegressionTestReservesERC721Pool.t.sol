@@ -96,6 +96,11 @@ contract RegressionTestReserveERC721Pool is ReserveERC721PoolInvariants {
         invariant_Bucket_deposit_time_B5_B6_B7();
     }
 
+    /*
+        Test was failing due to collateral not made claimable after actions that can reduce borrower pledged collateral (bucketTake, settle).
+        In this scenario `settle` was called on a loan with no collateral but bad debt.
+        Fixed by always making tokens claimable after take, bucketTake and settle actions.
+    */
     function test_regression_erc721_evm_revert_1() external {
         _reserveERC721PoolHandler.settleAuction(9989243900619820637977810558874905516372668734956884150787421704623, 18550308766242836156918, 185813535265204352484610945242967379275287026502359577631531764507799333257, 0);
         _reserveERC721PoolHandler.settleAuction(3978325917508522510207263223865211237976, 7790053814939864208425264498, 999999999999999996743786245260429581471869387, 0);
@@ -238,7 +243,11 @@ contract RegressionTestReserveERC721Pool is ReserveERC721PoolInvariants {
         invariant_Buckets_B2_B3();
     }
 
-    function test_regression_erc721_CT2() external {
+    /*
+        Test was failing due to collateral in bucket 7388 not accounted when totaling buckets collateral.
+        Fixed by adding bucket 7388 in `collateralBuckets` array also when bucket take settles the auction.
+    */
+    function test_regression_CT2_3() external {
         _reserveERC721PoolHandler.settleAuction(13652854, 3, 22274361584262295180502534344873136686717874240, 77611568702503302987473072664549443425918559);
         _reserveERC721PoolHandler.withdrawBonds(707, 12156087, 19174970663707445513928200315780515094988880044);
         _reserveERC721PoolHandler.kickWithDeposit(3, 3, 672444647);

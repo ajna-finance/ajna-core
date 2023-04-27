@@ -188,6 +188,11 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
             (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower_);
             if (kickTime == 0 && _pool.poolType() == 1) {
+                if (auctionPrice < MIN_PRICE) {
+                    collateralBuckets.add(7388);
+                } else if (auctionPrice > MAX_PRICE) {
+                    collateralBuckets.add(0);
+                }
                 collateralBuckets.add(auctionBucketIndex);
                 if (beforeBucketTakeVars.borrowerLps < afterBucketTakeVars.borrowerLps) {
                     lenderDepositTime[borrower_][auctionBucketIndex] = block.timestamp;
