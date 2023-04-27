@@ -28,13 +28,9 @@ abstract contract UnboundedPositionsHandler is BaseHandler {
         try _positions.memorializePositions(IPositionManagerOwnerActions.MemorializePositionsParams(tokenId_, indexes_)) {
 
             // TODO: store memorialized position's tokenIds in mapping, for reuse in unstake and redeem calls
-            // uint256[] memory ownedPositions = positions[_actor];
-            // ownedPositions.push(tokenId_);
-            // positions[_actor] = positions;
 
             // track created positions
             for ( uint256 i = 0; i < indexes_.length; i++) {
-                collateralBuckets.add(indexes_[i]);
                 bucketIndexesWithPosition.add(indexes_[i]);
                 tokenIdsByBucketIndex[indexes_[i]].push(tokenId_);
             }
@@ -44,8 +40,14 @@ abstract contract UnboundedPositionsHandler is BaseHandler {
         }
     }
 
-    function _mint() internal {
-        try _positions.mint(IPositionManagerOwnerActions.MintParams(_actor, address(_pool), keccak256("ERC20_NON_SUBSET_HASH"))) {
+    function _mint() internal updateLocalStateAndPoolInterest {
+
+        try _positions.mint(IPositionManagerOwnerActions.MintParams(_actor, address(_pool), keccak256("ERC20_NON_SUBSET_HASH"))) returns (uint256 tokenId) {
+            
+            // add minted token to list of tokenIds
+            tokenIdsMinted.add(tokenId);
+
+            // tokenIdResult = tokenId;
 
         } catch (bytes memory err) {
             _ensurePoolError(err);

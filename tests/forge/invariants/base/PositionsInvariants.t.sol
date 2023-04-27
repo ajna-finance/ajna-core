@@ -34,10 +34,15 @@ abstract contract PositionsInvariants is ReserveInvariants {
 
             }
 
-            assertEq(poolLpAccum, posLpAccum); 
-            assertEq(depositTime, mostRecentDepositTime);
+            assertEq(poolLpAccum, posLpAccum, "Positions Invariant PM1"); 
+            assertEq(depositTime, mostRecentDepositTime, "Positions Invariant PM5");
 
         }
-
     }
+
+    // function invariant_positions_PM3() public useCurrentTimestamp {
+    //     uint256[] memory tokenIds = getTokenIdsMinted();
+    //     assertEq(tokenIds.length, _positions.totalSupply(), "Positions Invariant PM3");
+    // }
+
 }

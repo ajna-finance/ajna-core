@@ -80,6 +80,7 @@ abstract contract BaseHandler is Test {
     // positions invariant test state
     mapping(uint256 => uint256[]) public tokenIdsByBucketIndex;
     EnumerableSet.UintSet internal bucketIndexesWithPosition;
+    EnumerableSet.UintSet internal tokenIdsMinted;
 
     // rewards invariant test state
     mapping(uint256 => uint256) public totalRewardPerEpoch;    // total rewards per epoch
@@ -454,6 +455,10 @@ abstract contract BaseHandler is Test {
 
     function getBucketIndexesWithPosition() public view returns(uint256[] memory) {
         return bucketIndexesWithPosition.values();
+    }
+
+    function getTokenIds() public view returns(uint256[] memory) {
+        return tokenIdsMinted.values();
     }
 
 }

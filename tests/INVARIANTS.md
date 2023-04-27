@@ -89,7 +89,7 @@
 ## Position Manager
 - **PM1**: For each position, for each bucket in the position summed LP balance == LP balance of the position manager in the underlying pool
 - **PM2**: After a bucket bankrupcy all LP tokens have zero balance in that bucket FIXME: redundant, this is already tested in B4
-- **PM3**: After mint, total supply of NFT contract should be increased by one. `poolKey(tokenId)` returns matching pool address, positionIndexes should be empty and owner of (`ownerOf()`) token should be the minter.
+- **PM3**: Total number of NFTs should be equal to the total supply of NFT contract. `poolKey(tokenId)` returns matching pool address, positionIndexes should be empty and owner of (`ownerOf()`) token should be the minter.
 - **PM4**: After burn, total supply of NFT contract should be decreased by one. `poolKey(tokenId)` returns zero address, positionIndexes should be empty. Owner of (`ownerOf()`) token should be zero address.
 - **PM5**: Position LP (`lps`) and deposit time (`depositTime`) tracked by tokens (`positions[tokenId][index]`) should always equal values stored in the pool contract.
 - **PM6**: on move liquidity positionIndex of from index is removed, positionIndex of to index is added. fromPosition LP decrease by moved amount, toPosition LP increase and deposit time updated.

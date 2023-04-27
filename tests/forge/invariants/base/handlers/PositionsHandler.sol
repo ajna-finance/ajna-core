@@ -52,6 +52,8 @@ abstract contract PositionsHandler is UnboundedPositionsHandler, ReservePoolHand
 
         uint256[] memory lpBalances = new uint256[](1);
 
+        // // mint position NFT
+        // tokenId_ = _mint();
         // mint position NFT
         tokenId_ = _positions.mint(IPositionManagerOwnerActions.MintParams({
             recipient:      _actor,
