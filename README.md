@@ -172,7 +172,7 @@ To use it, ensure the following env variables are in your `.env` file or exporte
 | `ETHERSCAN_API_KEY`  | required to verify contracts
 | `ETH_RPC_URL`        | node on your target deployment network
 
-Since contract source has not yet been made public, the `--verify` switch has been omitted.  To run:
+To run:
 
 ```
 make deploy-contracts
@@ -191,7 +191,7 @@ Upon completion, contract addresses will be printed to `stdout`:
 
 ```
 
-Record these addresses.
+Record these addresses.  If Etherscan verification fails on the first try, copy the deployment command from the `Makefile`, and tack a `--resume` switch onto the end.
 
 ### Validation
 

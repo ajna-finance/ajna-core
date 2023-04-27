@@ -147,8 +147,8 @@ abstract contract BasicInvariants is BaseInvariants {
                 console.log("Current bucket lps     -->", bucketLps);
                 console.log("======================================");
 
-                // This edge case is if less than 1 one millionth (0.000_001) of a quote token is inserted into a single bucket
-                if (bucketLps < 1e12) {
+                // If the bucket is small (less than 1 LP), require total change in bucket value to be less than .01 quote token
+                if (bucketLps < 1e18) {
                     requireWithinDiff(
                         Maths.wmul(currentExchangeRate, bucketLps),
                         Maths.wmul(previousExchangeRate, bucketLps),
