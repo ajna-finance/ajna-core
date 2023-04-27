@@ -51,12 +51,10 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         // Prepare test phase
         address borrower;
         address taker       = _actor;
-        (amount_, borrower) = _preTake(amount_, borrowerIndex_, takerIndex_);
+        (amount_, borrower) = _preTake(amount_, borrowerIndex_, takerIndex_, skippedTime_);
 
         // Action phase
         changePrank(taker);
-        // skip time to make auction takeable
-        vm.warp(block.timestamp + 2 hours);
         _takeAuction(borrower, amount_, taker);
     }
 
@@ -71,11 +69,9 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
 
         // Prepare test phase
         address taker                           = _actor;
-        (address borrower, uint256 bucketIndex) = _preBucketTake(borrowerIndex_, takerIndex_, bucketIndex_);
+        (address borrower, uint256 bucketIndex) = _preBucketTake(borrowerIndex_, takerIndex_, bucketIndex_, skippedTime_);
 
         changePrank(taker);
-        // skip time to make auction takeable
-        vm.warp(block.timestamp + 2 hours);
         _bucketTake(taker, borrower, depositTake_, bucketIndex);
     }
 
@@ -96,8 +92,6 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
 
         // Action phase
         changePrank(actor);
-        // skip time to make auction clearable
-        vm.warp(block.timestamp + 73 hours);
         _settleAuction(borrower, maxDepth);
 
         // Cleanup phase
@@ -132,19 +126,30 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         }
     }
 
-    function _preTake(uint256 amount_, uint256 borrowerIndex_, uint256 kickerIndex_) internal returns(uint256 boundedAmount_, address borrower_){
+    function _preTake(uint256 amount_, uint256 borrowerIndex_, uint256 kickerIndex_, uint256 skipTime_) internal returns(uint256 boundedAmount_, address borrower_){
         boundedAmount_ = _constrictTakeAmount(amount_);
         borrower_      = _kickAuction(borrowerIndex_, boundedAmount_ * 100, kickerIndex_);
+
+        // skip time to make auction takeable
+        skipTime_ = constrictToRange(skipTime_, 2 hours, 71 hours);
+        vm.warp(block.timestamp + skipTime_);
     }
 
-    function _preBucketTake(uint256 borrowerIndex_, uint256 kickerIndex_, uint256 bucketIndex_) internal returns(address borrower_, uint256 bucket_) {
+    function _preBucketTake(uint256 borrowerIndex_, uint256 kickerIndex_, uint256 bucketIndex_, uint256 skipTime_) internal returns(address borrower_, uint256 bucket_) {
         bucket_   = constrictToRange(bucketIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
         borrower_ = _kickAuction(borrowerIndex_, 1e24, kickerIndex_);
+
+        // skip time to make auction takeable
+        skipTime_ = constrictToRange(skipTime_, 2 hours, 71 hours);
+        vm.warp(block.timestamp + skipTime_);
     }
 
     function _preSettleAuction(uint256 borrowerIndex_, uint256 kickerIndex_) internal returns(address borrower_, uint256 maxDepth_) {
         maxDepth_ = LENDER_MAX_BUCKET_INDEX - LENDER_MIN_BUCKET_INDEX;
         borrower_ = _kickAuction(borrowerIndex_, 1e24, kickerIndex_);
+
+        // skip time to make auction clearable
+        vm.warp(block.timestamp + 73 hours);
     }
 
     /************************/

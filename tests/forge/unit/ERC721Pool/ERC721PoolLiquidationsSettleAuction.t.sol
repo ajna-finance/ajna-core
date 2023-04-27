@@ -473,6 +473,8 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
     function testDepositTakeAndSettleByPledgeSubsetPool() external tearDown {
 
         // the 2 token ids are owned by borrower before settle
+        assertEq(ERC721Pool(address(_pool)).totalBorrowerTokens(_borrower), 2);
+        assertEq(ERC721Pool(address(_pool)).totalBucketTokens(), 0);
         assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 0), 1);
         assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 1), 3);
 
@@ -505,6 +507,12 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
             lpAwardTaker:     0,
             lpAwardKicker:    2_141.620879120879119905 * 1e18
         });
+
+        // after bucket take, token id 3 is moved to pool claimable array (the most recent pledged)
+        assertEq(ERC721Pool(address(_pool)).totalBorrowerTokens(_borrower), 1);
+        assertEq(ERC721Pool(address(_pool)).totalBucketTokens(), 1);
+        assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 0), 1);
+        assertEq(ERC721Pool(address(_pool)).bucketTokenIds(0), 3);
 
         _assertBucket({
             index:        2500,
@@ -572,13 +580,15 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
 
         _assertCollateralInvariants();
 
-        // the 3 new token ids pledged are owned by borrower
+        // after settle borrower has 3 token ids (token id 1 saved from auction + pledged token ids 2 and 4)
+        // most recent token pledged 5 is used to settle the auction hence in pool claimable array 
+        assertEq(ERC721Pool(address(_pool)).totalBorrowerTokens(_borrower), 3);
+        assertEq(ERC721Pool(address(_pool)).totalBucketTokens(), 2);
         assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 0), 1);
-        assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 1), 3);
-        assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 2), 2);
-        // tokens used to settle auction are moved to pool claimable array
-        assertEq(ERC721Pool(address(_pool)).bucketTokenIds(0), 5);
-        assertEq(ERC721Pool(address(_pool)).bucketTokenIds(1), 4);
+        assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 1), 2);
+        assertEq(ERC721Pool(address(_pool)).borrowerTokenIds(_borrower, 2), 4);
+        assertEq(ERC721Pool(address(_pool)).bucketTokenIds(0), 3);
+        assertEq(ERC721Pool(address(_pool)).bucketTokenIds(1), 5);
 
         _assertBucket({
             index:        2500,
@@ -637,10 +647,10 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         // the 3 NFTs pulled from pool are owned by borrower
         assertEq(_collateral.ownerOf(1), _borrower);
         assertEq(_collateral.ownerOf(2), _borrower);
-        assertEq(_collateral.ownerOf(3), _borrower);
+        assertEq(_collateral.ownerOf(4), _borrower);
         // the 2 NFTs claimed from pool are owned by lender
+        assertEq(_collateral.ownerOf(3), _lender);
         assertEq(_collateral.ownerOf(5), _lender);
-        assertEq(_collateral.ownerOf(4), _lender);
 
         _assertCollateralInvariants();
     }
