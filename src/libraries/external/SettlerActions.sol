@@ -464,7 +464,10 @@ library SettlerActions {
                 Deposits.unscaledRemove(deposits_, index, unscaledDeposit);
 
                 Bucket storage hpbBucket = buckets_[index];
-                if (hpbBucket.collateral == 0) {
+                // If the resulting bucket collateral is so small that the exchange rate
+                // rounds to 0, then bankrupt the bucket.  Note that lhs are WADs, so the
+                // quantity is naturally 1e18 times larger than the actual product
+                if (hpbBucket.collateral * _priceAt(index) <= hpbBucket.lps) {
                     // existing LP for the bucket shall become unclaimable
                     emit BucketBankruptcy(
                         index,
