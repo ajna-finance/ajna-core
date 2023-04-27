@@ -548,7 +548,7 @@ library LenderActions {
      *  @dev      increment `lender.lps` accumulator and `lender.depositTime` state
      *  @dev    === Reverts on ===
      *  @dev    invalid merge index `CannotMergeToHigherPrice()`
-     *  @dev    no LP awarded in bucket `InsufficientLP()`
+     *  @dev    no LP awarded in `toIndex_` bucket `InsufficientLP()`
      */
     function mergeOrRemoveCollateral(
         mapping(uint256 => Bucket) storage buckets_,
