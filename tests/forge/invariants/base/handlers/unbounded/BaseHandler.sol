@@ -3,7 +3,8 @@
 pragma solidity 0.8.14;
 
 import '@std/Test.sol';
-import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+// import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+import { EnumerableSet }   from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { Pool }             from 'src/base/Pool.sol';
 import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
@@ -76,6 +77,10 @@ abstract contract BaseHandler is Test {
     uint256 public increaseInReserves;  // amount of reserve decrease
     uint256 public decreaseInReserves;  // amount of reserve increase
 
+    // positions invariant test state
+    mapping(uint256 => uint256[]) public tokenIdsByBucketIndex;
+    EnumerableSet.UintSet internal bucketIndexesWithPosition;
+
     // rewards invariant test state
     mapping(uint256 => uint256) public totalRewardPerEpoch;    // total rewards per epoch
     uint256 public totalStakerRewPerEpoch;  // amount of reserve decrease
@@ -111,6 +116,8 @@ abstract contract BaseHandler is Test {
 
         // Test invariant contract
         testContract = ITestBase(testContract_);
+
+        bucketIndexesWithPosition.add(1);
     }
 
     /*****************/
@@ -443,6 +450,10 @@ abstract contract BaseHandler is Test {
 
     function getCollateralBuckets() public view returns(uint256[] memory) {
         return collateralBuckets.values();
+    }
+
+    function getBucketIndexesWithPosition() public view returns(uint256[] memory) {
+        return bucketIndexesWithPosition.values();
     }
 
 }

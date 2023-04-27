@@ -40,6 +40,11 @@ abstract contract RewardsHandler is UnboundedRewardsHandler, PositionsHandler {
         
         // Action phase
         _unstake(tokenId);
+
+
+        // Post action
+        // check token was transferred from rewards contract to actor
+        assertEq(_positions.ownerOf(tokenId), _actor);
     }
 
 

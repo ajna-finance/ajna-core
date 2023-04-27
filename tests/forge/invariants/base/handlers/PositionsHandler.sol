@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.14;
 
+import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+
 import { Maths } from 'src/libraries/internal/Maths.sol';
 
 import { IPositionManagerOwnerActions } from 'src/interfaces/position/IPositionManagerOwnerActions.sol';
@@ -25,6 +27,7 @@ abstract contract PositionsHandler is UnboundedPositionsHandler, ReservePoolHand
         
         // Action phase
         _memorializePositions(tokenId, indexes);
+
     }
 
     

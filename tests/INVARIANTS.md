@@ -76,10 +76,22 @@
 - **RE12**: Reserves decrease by amount of reserve used to settle a auction
 
 ## Rewards
-- **RW1**:  Staking rewards must be less than reward cap percentage multiplied by ajna burned (`newRewards < REWARD_CAP * totalBurnedInPeriod`) for any given time period (`epoch`)
-- **RW2**:  Updating (recording) rewards must be less than reward cap percentage multiplied by ajna burned (`newRewards < UPDATE_CAP * totalBurned`) for any given time period (`epoch`)
-- **RW3**:  if a bucket has had it's exchange rate updated bucketExchangeRates mapping should be non-zero (`bucketExchangeRates[pool_][bucketIndex_][burnEpoch_] != 0`)
+- **RW1**: Staking rewards must be less than reward cap percentage multiplied by ajna burned (`newRewards < REWARD_CAP * totalBurnedInPeriod`) for any given time period (`epoch`)
+- **RW2**: Updating (recording) rewards must be less than reward cap percentage multiplied by ajna burned (`newRewards < UPDATE_CAP * totalBurned`) for any given time period (`epoch`)
+- **RW3**: If a bucket has had it's exchange rate updated bucketExchangeRates mapping should be non-zero (`bucketExchangeRates[pool_][bucketIndex_][burnEpoch_] != 0`)
+- **RW4**: After staking, for each bucket in the staked position `lpsAtStakeTime` should equal the position's LP (`position.lps`) in the bucket and `rateAtStakeTime` should equal the bucket's exchange rate (`Buckets.getExchangeRate()`)
+- **RW5**: After staking, the Reward's manager contract should be the new owner of the position (`ERC721.ownerOf()`). Upon unstaking, The caller of unstake should be the new owner of the position (`ERC721.ownerOf()`)
+- **RW5**: After unstaking or claiming rewards, `isEpochClaimed` should be equal to `true`, `stakeInfo_.lastClaimedEpoch` be equal to the current epoch and `rewardsClaimed` should be incremented by the claimed amount.
+- **RW6**: Each time the bucket rate is updated the `updateRewardsClaimed` accumulator should be properly updated
+- **RW7**: After unstaking or claiming rewards, if ajna has been burned over an epoch while the staker was staked they should have an increased amount in ajna balance `_ajna.balanceOf()` that matches the amount of ajna balance deducted from the contract`_ajna.balanceOf()`.
+- **RW8**: After unstaking, stakeInfo's tokenId mapping should be deleted and all corrosponding values should therefore be zero'd out (`StakeInfo.ajnaPool`, `StakeInfo.lastClaimedEpoch`, `StakeInfo.owner`, `StakeInfo.stakingEpoch`, `StakeInfo.snapshots`)
 
 ## Position Manager
-- **PM1**: For each bucket, the sum over all LP tokens of their position == LP balance of the position manager in the underlying pool
-- **PM2**: After a bucket bankrupcy all LP tokens have zero balance in that bucket
+- **PM1**: For each position, for each bucket in the position summed LP balance == LP balance of the position manager in the underlying pool
+- **PM2**: After a bucket bankrupcy all LP tokens have zero balance in that bucket FIXME: redundant, this is already tested in B4
+- **PM3**: After mint, total supply of NFT contract should be increased by one. `poolKey(tokenId)` returns matching pool address, positionIndexes should be empty and owner of (`ownerOf()`) token should be the minter.
+- **PM4**: After burn, total supply of NFT contract should be decreased by one. `poolKey(tokenId)` returns zero address, positionIndexes should be empty. Owner of (`ownerOf()`) token should be zero address.
+- **PM5**: Position LP (`lps`) and deposit time (`depositTime`) tracked by tokens (`positions[tokenId][index]`) should always equal values stored in the pool contract.
+- **PM6**: on move liquidity positionIndex of from index is removed, positionIndex of to index is added. fromPosition LP decrease by moved amount, toPosition LP increase and deposit time updated.
+- **PM7**: on memorializePositions same amount of LPs memorialized should be decreased from owner and increased for PositionManager (by checking the pool). positions[tokenId][index] should reflect new LP and update deposit time.
+- **PM8**: on reedemPositions the positionIndexes of token and all positions[tokenId][index] should be removed. LP of redeemer should increase with same amount that LP of PositionManager decrease (by checking the pool).

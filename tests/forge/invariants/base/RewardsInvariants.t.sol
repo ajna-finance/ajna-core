@@ -6,9 +6,9 @@ import "@std/console.sol";
 
 import { Maths } from 'src/libraries/internal/Maths.sol';
 import { IBaseHandler }          from '../interfaces/IBaseHandler.sol';
-import { LiquidationInvariants } from './LiquidationInvariants.t.sol';
+import { PositionsInvariants } from './PositionsInvariants.t.sol';
 
-abstract contract ReserveInvariants is LiquidationInvariants {
+abstract contract RewardsInvariants is PositionsInvariants {
 
     function invariant_rewards_RW1() public useCurrentTimestamp {
 
