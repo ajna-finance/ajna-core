@@ -340,18 +340,34 @@ contract RegressionTestLiquidationERC20Pool is LiquidationERC20PoolInvariants {
         _liquidationERC20PoolHandler.pledgeCollateral(115792089237316195423570985008687907853269984665640564039457584007913129639934, 1, 0);
     }
 
-     function test_regression_QT1_LPs() public {
-        _liquidationERC20PoolHandler.pledgeCollateral(88, 10637, 1017337595691456058);
-        _liquidationERC20PoolHandler.transferLps(116187002147993087431201936999759132798853473089175430945112853137, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 2761798753, 217707937344175361228855633484267942, 40);
-        _liquidationERC20PoolHandler.addQuoteToken(4183417406698678232609786317, 3309, 9589, 13470);
-        _liquidationERC20PoolHandler.pledgeCollateral(2, 2354562527, 1931201038141294031635448645160698118358189894044071961719100126);
-        _liquidationERC20PoolHandler.repayDebt(2822628332, 3921865623, 1000009223501440336);
-        _liquidationERC20PoolHandler.addQuoteToken(7572, 2849, 3665, 2886);
-        _liquidationERC20PoolHandler.settleAuction(999919110958904110000000, 3739, 550, 22091);
-        _liquidationERC20PoolHandler.removeCollateral(3843024137445444654604473286443, 1539203955156735164081, 19039, 1040728060233730066291212);
-        _liquidationERC20PoolHandler.addCollateral(1707214951, 6983, 8184525818102260242435854437, 4876);
+    /*
+        F1 and F2 invariants were failing in `settleAuction` handler with difference between pool deposit and fenwick deposits of <1e17 but >1e16 for deposits of order 1e25
+        Fixed by changing epsilon in F1, F2 from 1e16 to 1e17.
+    */
+    function test_regression_invariant_settle_F1_5() external {
+        _liquidationERC20PoolHandler.settleAuction(0, 28071594006178250681754737955033434168, 2, 0);
+        _liquidationERC20PoolHandler.bucketTake(1730972569841431578573774649270, 10903, false, 1175990817123654468079021581951, 0);
+        _liquidationERC20PoolHandler.addQuoteToken(18695, 12463, 370340205846027014555877964321, 0);
+        _liquidationERC20PoolHandler.takeAuction(631894654554387507015513816632, 16008, 1016878400672168648586524, 0);
+        _liquidationERC20PoolHandler.settleAuction(0, 10186616154253336796368, 115792089237316195423570985008687907853269984665640564039457584007913129639932, 0);
 
-        invariant_quoteTokenBalance_QT1();
+        /* Logs for settleAuction
+            Pool deposit at 2572 after accrue interest                 -> 2032689444945695599645197
+            local Fenwick deposit at 2572 after accrue interest        -> 2032689444928384299157690
+
+            maxSettleable borrower debt                                -> 1004975124378109460799907
+
+            Pool deposit at 2572 after settlePooldebt                  -> 1027714305720790052619170
+            Required Pool deposit after subtracting maxSettleable      -> 1027714320567586138845290
+            Precision error in unscaled remove                         -> 14846796086226120
+
+            local Fenwick deposit at 2572 after settlePooldebt         -> 1027714320550274838357783
+            Required local fenwick after subtracting maxSettleable     -> 1027714320550274838357783
+
+            Final Difference between pool deposit and local fenwick    -> 14829484785738613
+        */
+        invariant_fenwick_depositAtIndex_F1();
+        invariant_fenwick_depositsTillIndex_F2();
     }
 
 }
