@@ -53,7 +53,7 @@ abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract 
         uint256 tokenId_,
         uint256 deadline_,
         uint256 ownerPrivateKey_
-    ) internal returns (uint8 v, bytes32 r, bytes32 s) {
+    ) internal view returns (uint8 v, bytes32 r, bytes32 s) {
         return vm.sign(
                 ownerPrivateKey_,
                 keccak256(
