@@ -625,42 +625,6 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     }
 
     /**
-     *  @notice Retrieve the total ajna tokens burned and total interest earned by a pool since a given block.
-     *  @param  pool_                  Address of the `Ajna` pool to retrieve accumulators of.
-     *  @param  currentBurnEventEpoch_ The latest burn event.
-     *  @param  lastBurnEventEpoch_    The burn event to use as checkpoint since which values have accumulated.
-     *  @return Timestamp of the latest burn event.
-     *  @return Total `Ajna` tokens burned by the pool since the last burn event.
-     *  @return Total interest earned by the pool since the last burn event.
-     */
-    function _getPoolAccumulators(
-        address pool_,
-        uint256 currentBurnEventEpoch_,
-        uint256 lastBurnEventEpoch_
-    ) internal view returns (uint256, uint256, uint256) {
-        (
-            uint256 currentBurnTime,
-            uint256 totalInterestLatest,
-            uint256 totalBurnedLatest
-        ) = IPool(pool_).burnInfo(currentBurnEventEpoch_);
-
-        (
-            ,
-            uint256 totalInterestAtBlock,
-            uint256 totalBurnedAtBlock
-        ) = IPool(pool_).burnInfo(lastBurnEventEpoch_);
-
-        uint256 totalBurned   = totalBurnedLatest   != 0 ? totalBurnedLatest   - totalBurnedAtBlock   : totalBurnedAtBlock;
-        uint256 totalInterest = totalInterestLatest != 0 ? totalInterestLatest - totalInterestAtBlock : totalInterestAtBlock;
-
-        return (
-            currentBurnTime,
-            totalBurned,
-            totalInterest
-        );
-    }
-
-    /**
      *  @notice Update the exchange rate of a list of buckets.
      *  @dev    Called as part of `stake`, `unstake`, and `claimRewards`, as well as `updateBucketExchangeRatesAndClaim`.
      *  @dev    Caller can claim `5%` of the rewards that have accumulated to each bucket since the last burn event, if it hasn't already been updated.
@@ -819,5 +783,44 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             IERC20(ajnaToken).safeTransfer(msg.sender, rewardsEarned_);
         }
     }
-
 }
+
+    /**********************/
+    /** Rewards Utilities */
+    /**********************/
+
+    /**
+     *  @notice Retrieve the total ajna tokens burned and total interest earned by a pool since a given block.
+     *  @param  pool_                  Address of the `Ajna` pool to retrieve accumulators of.
+     *  @param  currentBurnEventEpoch_ The latest burn event.
+     *  @param  lastBurnEventEpoch_    The burn event to use as checkpoint since which values have accumulated.
+     *  @return Timestamp of the latest burn event.
+     *  @return Total `Ajna` tokens burned by the pool since the last burn event.
+     *  @return Total interest earned by the pool since the last burn event.
+     */
+    function _getPoolAccumulators(
+        address pool_,
+        uint256 currentBurnEventEpoch_,
+        uint256 lastBurnEventEpoch_
+    ) view returns (uint256, uint256, uint256) {
+        (
+            uint256 currentBurnTime,
+            uint256 totalInterestLatest,
+            uint256 totalBurnedLatest
+        ) = IPool(pool_).burnInfo(currentBurnEventEpoch_);
+
+        (
+            ,
+            uint256 totalInterestAtBlock,
+            uint256 totalBurnedAtBlock
+        ) = IPool(pool_).burnInfo(lastBurnEventEpoch_);
+
+        uint256 totalBurned   = totalBurnedLatest   != 0 ? totalBurnedLatest   - totalBurnedAtBlock   : totalBurnedAtBlock;
+        uint256 totalInterest = totalInterestLatest != 0 ? totalInterestLatest - totalInterestAtBlock : totalInterestAtBlock;
+
+        return (
+            currentBurnTime,
+            totalBurned,
+            totalInterest
+        );
+    }
