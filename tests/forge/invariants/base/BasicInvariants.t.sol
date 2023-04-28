@@ -367,11 +367,21 @@ abstract contract BasicInvariants is BaseInvariants {
         console.log("BBasicHandler.repayDebt             ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt"));
         console.log("UBBasicHandler.repayDebt            ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.repayDebt"));
         console.log("--Rewards--------");
-        console.log("BBasicHandler.stake                 ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.stake"));
-        console.log("UBBasicHandler.stake                ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.stake"));
-        console.log("BBasicHandler.unstake               ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.unstake"));
-        console.log("UBBasicHandler.unstake              ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.unstake"));
-        console.log("------------------");
+        console.log("BRewardsHandler.stake                 ",  IBaseHandler(_handler).numberOfCalls("BRewardsHandler.stake"));
+        console.log("UBRewardsHandler.stake                ",  IBaseHandler(_handler).numberOfCalls("UBRewardsHandler.stake"));
+        console.log("BRewardsHandler.unstake               ",  IBaseHandler(_handler).numberOfCalls("BRewardsHandler.unstake"));
+        console.log("UBRewardsHandler.unstake              ",  IBaseHandler(_handler).numberOfCalls("UBRewardsHandler.unstake"));
+        console.log("--Positions--------");
+        console.log("UBPositionHandler.mint              ",  IBaseHandler(_handler).numberOfCalls("UBPositionHandler.mint"));
+        console.log("BPositionHandler.mint               ",  IBaseHandler(_handler).numberOfCalls("BPositionHandler.mint"));
+        console.log("UBPositionHandler.burn              ",  IBaseHandler(_handler).numberOfCalls("UBPositionHandler.burn"));
+        console.log("BPositionHandler.burn               ",  IBaseHandler(_handler).numberOfCalls("BPositionHandler.burn"));
+        console.log("UBPositionHandler.memorialize       ",  IBaseHandler(_handler).numberOfCalls("UBPositionHandler.memorialize"));
+        console.log("BPositionHandler.memorialize        ",  IBaseHandler(_handler).numberOfCalls("BPositionHandler.memorialize"));
+        console.log("UBPositionHandler.redeem            ",  IBaseHandler(_handler).numberOfCalls("UBPositionHandler.redeem"));
+        console.log("BPositionHandler.redeem             ",  IBaseHandler(_handler).numberOfCalls("BPositionHandler.redeem"));
+        console.log("UBPositionHandler.moveLiquidity     ",  IBaseHandler(_handler).numberOfCalls("UBPositionHandler.moveLiquidity"));
+        console.log("BPositionHandler.moveLiquidity      ",  IBaseHandler(_handler).numberOfCalls("BPositionHandler.moveLiquidity"));
         console.log(
             "Sum",
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.addQuoteToken") +
@@ -380,8 +390,13 @@ abstract contract BasicInvariants is BaseInvariants {
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.removeCollateral") +
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.drawDebt") + 
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt") +
-            IBaseHandler(_handler).numberOfCalls("BBasicHandler.stake") + 
-            IBaseHandler(_handler).numberOfCalls("BBasicHandler.unstake")
+            IBaseHandler(_handler).numberOfCalls("BRewardsHandler.stake") + 
+            IBaseHandler(_handler).numberOfCalls("BRewardsHandler.unstake") + 
+            IBaseHandler(_handler).numberOfCalls("BPositionHandler.mint") + 
+            IBaseHandler(_handler).numberOfCalls("BPositionHandler.burn") +
+            IBaseHandler(_handler).numberOfCalls("BPositionHandler.memorialize") +
+            IBaseHandler(_handler).numberOfCalls("BPositionHandler.redeem") +
+            IBaseHandler(_handler).numberOfCalls("BPositionHandler.moveLiquidity") 
         );
     }
 

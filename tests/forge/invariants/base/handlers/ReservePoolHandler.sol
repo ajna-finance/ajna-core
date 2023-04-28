@@ -7,8 +7,7 @@ import { Maths } from 'src/libraries/internal/Maths.sol';
 import { UnboundedReservePoolHandler } from '../../base/handlers/unbounded/UnboundedReservePoolHandler.sol';
 import { LiquidationPoolHandler }      from './LiquidationPoolHandler.sol';
 
-abstract contract ReservePoolHandler is UnboundedReservePoolHandler, LiquidationPoolHandler {
-    
+abstract contract ReservePoolHandler is UnboundedReservePoolHandler, LiquidationPoolHandler { 
     /*******************************/
     /*** Reserves Test Functions ***/
     /*******************************/

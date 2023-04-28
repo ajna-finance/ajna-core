@@ -20,7 +20,7 @@ abstract contract RewardsHandler is UnboundedRewardsHandler, PositionsHandler {
         uint256 amountToAdd_,
         uint256 skippedTime_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
-        numberOfCalls['UBBasicHandler.stake']++;
+        numberOfCalls['BRewardsHandler.stake']++;
         // Pre action
         uint256 tokenId = _preStake(bucketIndex_, amountToAdd_);
         
@@ -34,7 +34,7 @@ abstract contract RewardsHandler is UnboundedRewardsHandler, PositionsHandler {
         uint256 amountToAdd_,
         uint256 skippedTime_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
-        numberOfCalls['UBBasicHandler.unstake']++;
+        numberOfCalls['BRewardsHandler.unstake']++;
         // Pre action
         uint256 tokenId = _preUnstake(bucketIndex_, amountToAdd_);
         

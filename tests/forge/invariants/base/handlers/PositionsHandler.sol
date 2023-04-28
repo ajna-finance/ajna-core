@@ -22,6 +22,7 @@ abstract contract PositionsHandler is UnboundedPositionsHandler, ReservePoolHand
         uint256 amountToAdd_,
         uint256 skippedTime_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+        numberOfCalls['BPositionHandler.memorialize']++;
         // Pre action //
         (uint256 tokenId, uint256[] memory indexes) = _preMemorializePositions(bucketIndex_, amountToAdd_);
 
@@ -69,7 +70,7 @@ abstract contract PositionsHandler is UnboundedPositionsHandler, ReservePoolHand
         uint256 amountToAdd_,
         uint256 skippedTime_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
-
+        numberOfCalls['BPositionHandler.redeem']++;
         // Pre action //
         (uint256 tokenId, uint256[] memory indexes) = _preRedeemPositions(bucketIndex_, amountToAdd_);
 
@@ -128,8 +129,8 @@ abstract contract PositionsHandler is UnboundedPositionsHandler, ReservePoolHand
         uint256 actorIndex_,
         uint256 skippedTime_
     ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
-        // Pre action //
-        
+        numberOfCalls['BPositionHandler.mint']++;        
+
         // Action phase //
         uint256 tokenId = _mint();
  
@@ -152,6 +153,7 @@ abstract contract PositionsHandler is UnboundedPositionsHandler, ReservePoolHand
         uint256 skippedTime_,
         uint256 amountToAdd_
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+        numberOfCalls['BPositionHandler.burn']++;        
         // Pre action //
         (uint256 tokenId_) = _preBurn(bucketIndex_, amountToAdd_);
         
@@ -179,6 +181,7 @@ abstract contract PositionsHandler is UnboundedPositionsHandler, ReservePoolHand
         uint256 fromIndex_,
         uint256 toIndex_
     ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+        numberOfCalls['BPositionHandler.moveLiquidity']++;        
         // Pre action //
         (
             uint256 tokenId,

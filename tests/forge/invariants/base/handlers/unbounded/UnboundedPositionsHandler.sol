@@ -23,7 +23,7 @@ abstract contract UnboundedPositionsHandler is BaseHandler {
         uint256 tokenId_,
         uint256[] memory indexes_
     ) internal updateLocalStateAndPoolInterest {
-        numberOfCalls['UBPositionsHandler.memorialize']++;
+        numberOfCalls['UBPositionHandler.memorialize']++;
 
         try _positions.memorializePositions(IPositionManagerOwnerActions.MemorializePositionsParams(tokenId_, indexes_)) {
 
@@ -41,7 +41,7 @@ abstract contract UnboundedPositionsHandler is BaseHandler {
     }
 
     function _mint() internal updateLocalStateAndPoolInterest returns (uint256 tokenIdResult) {
-
+        numberOfCalls['UBPositionHandler.mint']++;
         try _positions.mint(IPositionManagerOwnerActions.MintParams(_actor, address(_pool), keccak256("ERC20_NON_SUBSET_HASH"))) returns (uint256 tokenId) {
 
             tokenIdResult = tokenId;
@@ -55,7 +55,7 @@ abstract contract UnboundedPositionsHandler is BaseHandler {
         uint256 tokenId_,
         uint256[] memory indexes_
     ) internal updateLocalStateAndPoolInterest {
-        numberOfCalls['UBPositionsHandler.redeem']++;
+        numberOfCalls['UBPositionHandler.redeem']++;
 
         try _positions.reedemPositions(IPositionManagerOwnerActions.RedeemPositionsParams(tokenId_, address(_pool), indexes_)) {
 
@@ -76,7 +76,7 @@ abstract contract UnboundedPositionsHandler is BaseHandler {
         uint256 fromIndex_,
         uint256 toIndex_
     ) internal updateLocalStateAndPoolInterest {
-        numberOfCalls['UBPositionsHandler.moveLiquidity']++;
+        numberOfCalls['UBPositionHandler.moveLiquidity']++;
 
         /**
         *  @notice Struct holding parameters for moving the liquidity of a position.
@@ -113,7 +113,7 @@ abstract contract UnboundedPositionsHandler is BaseHandler {
     function _burn(
         uint256 tokenId_
     ) internal updateLocalStateAndPoolInterest {
-
+        numberOfCalls['UBPositionHandler.burn']++;
         try _positions.burn(IPositionManagerOwnerActions.BurnParams(tokenId_, address(_pool))) {
 
         } catch (bytes memory err) {

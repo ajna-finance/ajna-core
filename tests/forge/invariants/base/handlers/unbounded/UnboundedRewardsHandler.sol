@@ -18,7 +18,7 @@ abstract contract UnboundedRewardsHandler is BaseHandler {
     function _stake(
         uint256 tokenId_
     ) internal updateLocalStateAndPoolInterest {
-        numberOfCalls['UBBasicHandler.stake']++;
+        numberOfCalls['UBRewardsHandler.stake']++;
 
         try _rewards.stake(tokenId_) {
 
@@ -32,7 +32,7 @@ abstract contract UnboundedRewardsHandler is BaseHandler {
     function _unstake(
         uint256 tokenId_
     ) internal updateLocalStateAndPoolInterest {
-        numberOfCalls['UBBasicHandler.unstake']++;
+        numberOfCalls['UBRewardsHandler.unstake']++;
 
         uint256 actorBalanceBeforeClaim = _quote.balanceOf(_actor);
 
