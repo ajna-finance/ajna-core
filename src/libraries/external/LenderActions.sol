@@ -743,7 +743,7 @@ library LenderActions {
             // redeeming all LP
             redeemedLP_    = params_.lpConstraint;
             removedAmount_ = Maths.wmul(redeemedLP_, exchangeRate);
-            unscaledRemovedAmount = unscaledDepositAvailable;
+            unscaledRemovedAmount = Maths.wdiv(removedAmount_, depositScale);
         }
 
         // If clearing out the bucket deposit, ensure it's zeroed out
