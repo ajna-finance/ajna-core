@@ -148,7 +148,7 @@ abstract contract BasicInvariants is BaseInvariants {
                 console.log("======================================");
 
                 // If the bucket is small (less than 1 LP), require total change in bucket value to be less than .01 quote token
-                if (bucketLps < 1e18) {
+                if (bucketLps < Maths.wad(10)) {
                     requireWithinDiff(
                         Maths.wmul(currentExchangeRate, bucketLps),
                         Maths.wmul(previousExchangeRate, bucketLps),
