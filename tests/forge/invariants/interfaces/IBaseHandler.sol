@@ -30,7 +30,7 @@ interface IBaseHandler {
     function totalRewardPerEpoch(uint256) external view returns(uint256);
 
     function getBucketIndexesWithPosition() external view returns(uint256[] memory);
-    function tokenIdsByBucketIndex(uint256) external view returns(uint256[] memory);
+    function getTokenIdsByBucketIndex(uint256) external view returns(uint256[] memory);
     function getTokenIdsMinted() external view returns(uint256[] memory);
 
     function firstTake() external view returns(bool);

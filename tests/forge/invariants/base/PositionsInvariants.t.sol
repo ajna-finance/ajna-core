@@ -10,12 +10,11 @@ import { ReserveInvariants } from './ReserveInvariants.t.sol';
 
 abstract contract PositionsInvariants is ReserveInvariants {
 
-    function invariant_positions_PM1_PM5() public useCurrentTimestamp {
+    function invariant_positions_PM1_PM2() public useCurrentTimestamp {
         uint256 mostRecentDepositTime;
-        // uint256[] memory bucketIndexes = IBaseHandler(_handler).bucketIndexesWithPosition.values();
         uint256[] memory bucketIndexes = IBaseHandler(_handler).getBucketIndexesWithPosition();
 
-        // loop over indexes
+        // loop over bucket indexes with positions
         for (uint256 i = 0; i < bucketIndexes.length; i++) {
             uint256 bucketIndex = bucketIndexes[i];
             uint256 posLpAccum;
@@ -24,25 +23,18 @@ abstract contract PositionsInvariants is ReserveInvariants {
             (uint256 poolLp, uint256 depositTime) = _pool.lenderInfo(bucketIndex, address(_positions));
             poolLpAccum += poolLp;
 
-            // loop over tokenIds
-            for (uint256 k = 0; k < IBaseHandler(_handler).tokenIdsByBucketIndex(bucketIndex).length; k++) {
-                uint256 tokenId = IBaseHandler(_handler).tokenIdsByBucketIndex(bucketIndex)[k];
+            // loop over tokenIds in bucket indexes
+            uint256[] memory tokenIds = IBaseHandler(_handler).getTokenIdsByBucketIndex(bucketIndex);
+            for (uint256 k = 0; k < tokenIds.length; k++) {
+                uint256 tokenId = tokenIds[k];
                 
                 (uint256 posLp, uint256 posDepositTime) = _positions.getPositionInfo(tokenId, bucketIndex);
                 posLpAccum += posLp;
                 mostRecentDepositTime = (posDepositTime > mostRecentDepositTime) ? posDepositTime : mostRecentDepositTime;
-
             }
 
             assertEq(poolLpAccum, posLpAccum, "Positions Invariant PM1"); 
-            assertEq(depositTime, mostRecentDepositTime, "Positions Invariant PM5");
-
+            assertEq(depositTime, mostRecentDepositTime, "Positions Invariant PM2");
         }
     }
-
-    // function invariant_positions_PM3() public useCurrentTimestamp {
-    //     uint256[] memory tokenIds = getTokenIdsMinted();
-    //     assertEq(tokenIds.length, _positions.totalSupply(), "Positions Invariant PM3");
-    // }
-
 }

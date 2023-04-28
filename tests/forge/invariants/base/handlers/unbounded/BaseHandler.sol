@@ -78,9 +78,11 @@ abstract contract BaseHandler is Test {
     uint256 public decreaseInReserves;  // amount of reserve increase
 
     // positions invariant test state
-    mapping(uint256 => uint256[]) public tokenIdsByBucketIndex;
+    mapping(uint256 => EnumerableSet.UintSet) internal tokenIdsByBucketIndex;
     EnumerableSet.UintSet internal bucketIndexesWithPosition;
     EnumerableSet.UintSet internal tokenIdsMinted;
+    mapping(uint256 => uint256) internal bucketIndexToPreActionActorLps; // to track LP changes
+    mapping(uint256 => uint256) internal bucketIndexToPreActionPosLps; // to track LP changes
 
     // rewards invariant test state
     mapping(uint256 => uint256) public totalRewardPerEpoch;    // total rewards per epoch
@@ -455,6 +457,10 @@ abstract contract BaseHandler is Test {
 
     function getBucketIndexesWithPosition() public view returns(uint256[] memory) {
         return bucketIndexesWithPosition.values();
+    }
+
+    function getTokenIdsByBucketIndex(uint256 bucketIndex_) public view returns(uint256[] memory) {
+        return tokenIdsByBucketIndex[bucketIndex_].values();
     }
 
     function getTokenIds() public view returns(uint256[] memory) {
