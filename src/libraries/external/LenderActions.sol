@@ -101,6 +101,7 @@ library LenderActions {
      *  @dev      `addLenderLP`: increment `lender.lps` accumulator and `lender.depositTime `state
      *  @dev    === Reverts on ===
      *  @dev    invalid bucket index `InvalidIndex()`
+     *  @dev    no LP awarded in bucket `InsufficientLP()`
      */
     function addCollateral(
         mapping(uint256 => Bucket) storage buckets_,
@@ -123,6 +124,9 @@ library LenderActions {
             collateralAmountToAdd_,
             bucketPrice
         );
+
+        // revert if (due to rounding) the awarded LP is 0
+        if (bucketLP_ == 0) revert InsufficientLP();
     }
 
     /**
@@ -134,6 +138,7 @@ library LenderActions {
      *  @dev    === Reverts on ===
      *  @dev    invalid bucket index `InvalidIndex()`
      *  @dev    same block when bucket becomes insolvent `BucketBankruptcyBlock()`
+     *  @dev    no LP awarded in bucket `InsufficientLP()`
      *  @dev    === Emit events ===
      *  @dev    - `AddQuoteToken`
      */
@@ -176,6 +181,9 @@ library LenderActions {
             bucketPrice
         );
 
+        // revert if (due to rounding) the awarded LP is 0
+        if (bucketLP_ == 0) revert InsufficientLP();
+
         Deposits.unscaledAdd(deposits_, params_.index, Maths.wdiv(addedAmount, bucketScale));
 
         // update lender LP
@@ -213,6 +221,7 @@ library LenderActions {
      *  @dev    same index `MoveToSameIndex()`
      *  @dev    dust amount `DustAmountNotExceeded()`
      *  @dev    invalid index `InvalidIndex()`
+     *  @dev    no LP awarded in to bucket `InsufficientLP()`
      *  @dev    === Emit events ===
      *  @dev    - `BucketBankruptcy`
      *  @dev    - `MoveQuoteToken`
@@ -282,6 +291,9 @@ library LenderActions {
             movedAmount_,
             vars.toBucketPrice
         );
+
+        // revert if (due to rounding) the awarded LP in to bucket is 0
+        if (toBucketLP_ == 0) revert InsufficientLP();
 
         Deposits.unscaledAdd(deposits_, params_.toIndex, Maths.wdiv(movedAmount_, vars.toBucketScale));
 
@@ -536,6 +548,7 @@ library LenderActions {
      *  @dev      increment `lender.lps` accumulator and `lender.depositTime` state
      *  @dev    === Reverts on ===
      *  @dev    invalid merge index `CannotMergeToHigherPrice()`
+     *  @dev    no LP awarded in `toIndex_` bucket `InsufficientLP()`
      */
     function mergeOrRemoveCollateral(
         mapping(uint256 => Bucket) storage buckets_,
@@ -582,6 +595,9 @@ library LenderActions {
                 collateralToMerge_,
                 toBucketPrice
             );
+
+            // revert if (due to rounding) the awarded LP is 0
+            if (bucketLP_ == 0) revert InsufficientLP();
         }
     }
 

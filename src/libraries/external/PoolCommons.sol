@@ -247,12 +247,14 @@ library PoolCommons {
                 Maths.wmul(pendingFactor - Maths.WAD, poolState_.debt)
             );
 
-            // Scale the fenwick tree to update amount of debt owed to lenders
-            Deposits.mult(
-                deposits_,
-                accrualIndex,
-                Maths.floorWdiv(newInterest_, interestEarningDeposit) + Maths.WAD // lender factor
+            // lender factor computation, capped at 10x the interest factor for borrowers
+            uint256 lenderFactor = Maths.min(
+                Maths.floorWdiv(newInterest_, interestEarningDeposit) + Maths.WAD,
+                Maths.wmul(pendingFactor, Maths.wad(10))
             );
+
+            // Scale the fenwick tree to update amount of debt owed to lenders
+            Deposits.mult(deposits_, accrualIndex, lenderFactor);
         }
     }
 

@@ -372,6 +372,26 @@ contract RegressionTestLiquidationERC20Pool is LiquidationERC20PoolInvariants {
         invariant_fenwick_depositsTillIndex_F2();
     }
 
+    // Fixed with cap interest rate factor for lenders as 10x that of borrowers
+    function test_regression_QT1_LPs() public {
+        _liquidationERC20PoolHandler.pledgeCollateral(88, 10637, 1017337595691456058);
+        _liquidationERC20PoolHandler.transferLps(
+            116187002147993087431201936999759132798853473089175430945112853137,
+            115792089237316195423570985008687907853269984665640564039457584007913129639934,
+            2761798753,
+            217707937344175361228855633484267942,
+            40
+        );
+        _liquidationERC20PoolHandler.addQuoteToken(4183417406698678232609786317, 3309, 9589, 13470);
+        _liquidationERC20PoolHandler.pledgeCollateral(2, 2354562527, 1931201038141294031635448645160698118358189894044071961719100126);
+        _liquidationERC20PoolHandler.repayDebt(2822628332, 3921865623, 1000009223501440336);
+        _liquidationERC20PoolHandler.addQuoteToken(7572, 2849, 3665, 2886);
+        _liquidationERC20PoolHandler.settleAuction(999919110958904110000000, 3739, 550, 22091);
+        _liquidationERC20PoolHandler.removeCollateral(3843024137445444654604473286443, 1539203955156735164081, 19039, 1040728060233730066291212);
+        _liquidationERC20PoolHandler.addCollateral(1707214951, 6983, 8184525818102260242435854437, 4876);
+
+        invariant_quoteTokenBalance_QT1();
+    }
 }
 
 contract RegressionTestLiquidationWith10BucketsERC20Pool is LiquidationERC20PoolInvariants { 
