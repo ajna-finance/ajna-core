@@ -448,12 +448,18 @@ library SettlerActions {
             uint256 unscaledDeposit          = Deposits.unscaledValueAt(deposits_, index);
             uint256 depositToRemove          = Maths.wmul(scale, unscaledDeposit);
             uint256 debt                     = Maths.wmul(remainingt0Debt_, inflator_);
+            uint256 depositRemaining;
 
             // 1) bucket deposit covers entire loan debt to settle, no constraints needed
             if (depositToRemove >= debt) {
-                Deposits.unscaledRemove(deposits_, index, Maths.wdiv(debt, scale));
                 // no remaining debt to forgive
                 remainingt0Debt_ = 0;
+
+                uint256 depositUsed = Maths.wdiv(debt, scale);
+                depositRemaining = unscaledDeposit - depositUsed;
+
+                // Remove deposit used to forgive bad debt from bucket
+                Deposits.unscaledRemove(deposits_, index, depositUsed);
 
             // 2) loan debt to settle exceeds bucket deposit, bucket deposit is the constraint
             } else {
@@ -462,18 +468,22 @@ library SettlerActions {
 
                 // Remove all deposit from bucket
                 Deposits.unscaledRemove(deposits_, index, unscaledDeposit);
+            }
 
-                Bucket storage hpbBucket = buckets_[index];
-                if (hpbBucket.collateral == 0) {
-                    // existing LP for the bucket shall become unclaimable
-                    emit BucketBankruptcy(
-                        index,
-                        hpbBucket.lps
-                    );
+            Bucket storage hpbBucket = buckets_[index];
+            uint256 bucketLP = hpbBucket.lps;
+            // If the remaining deposit and resulting bucket collateral is so small that the exchange rate
+            // rounds to 0, then bankrupt the bucket.  Note that lhs are WADs, so the
+            // quantity is naturally 1e18 times larger than the actual product
+            if (depositRemaining * Maths.WAD + hpbBucket.collateral * _priceAt(index) <= bucketLP) {
+                // existing LP for the bucket shall become unclaimable
+                hpbBucket.lps            = 0;
+                hpbBucket.bankruptcyTime = block.timestamp;
 
-                    hpbBucket.lps            = 0;
-                    hpbBucket.bankruptcyTime = block.timestamp;
-                }
+                emit BucketBankruptcy(
+                    index,
+                    bucketLP
+                );
             }
 
             --params_.bucketDepth;
