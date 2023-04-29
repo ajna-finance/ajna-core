@@ -886,7 +886,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             exchangeRate: 1 * 1e18
         });
     }
-    
+
     function testSettleZeroExchangeRateResidualBankruptcy() external  {
         // Borrower2 borrows
         _borrow({
@@ -1008,7 +1008,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 	// Add 10 more quote token than would be enough to cover debt, with reserves
         _addLiquidity({
             from:    _lender1,
-            amount:  2_884.311069344372084707 * 1e18 + 10 - reserves, 
+            amount:  2_884.311069344372084707 * 1e18 + 10 - reserves,
             index:   _i9_81,
             lpAward: 2_020.307252493359351054 * 1e18,
             newLup:  9.721295865031779605 * 1e18
@@ -1025,10 +1025,10 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             borrowert0Np:              10.307611531622595991 * 1e18,
             borrowerCollateralization: 0
         });
-        
+
         _assertBucket({
             index:        _i9_91,
-            lpBalance:    2_099.367201799558744045 * 1e18, 
+            lpBalance:    2_099.367201799558744045 * 1e18,
             collateral:   0,
             deposit:      bucket1Deposit,
             exchangeRate: 1.006368280367980192 * 1e18
