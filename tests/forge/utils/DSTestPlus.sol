@@ -570,6 +570,20 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 deposit,
         uint256 exchangeRate
     ) internal {
+        _assertBucketAssets(index, lpBalance, collateral, deposit, exchangeRate);
+
+        // validate bucket is healthy / LP consistent with assets 
+        _validateBucketLp(index, lpBalance);
+        _validateBucketQuantities(index);
+    }
+
+    function _assertBucketAssets(
+        uint256 index,
+        uint256 lpBalance,
+        uint256 collateral,
+        uint256 deposit,
+        uint256 exchangeRate
+    ) internal {
         (
             ,
             uint256 curDeposit,
@@ -582,9 +596,6 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         assertEq(availableCollateral, collateral);
         assertEq(curDeposit,          deposit);
         assertEq(rate,                exchangeRate);
-
-        _validateBucketLp(index, lpBalance);
-        _validateBucketQuantities(index);
     }
 
     function _validateBucketLp(

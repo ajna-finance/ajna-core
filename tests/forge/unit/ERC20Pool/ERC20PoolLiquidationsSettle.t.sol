@@ -886,6 +886,203 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             exchangeRate: 1 * 1e18
         });
     }
+
+    function testSettleZeroExchangeRateResidualBankruptcy() external  {
+        // Borrower2 borrows
+        _borrow({
+            from:       _borrower2,
+            amount:     1_730 * 1e18,
+            indexLimit: _i9_72,
+            newLup:     9.721295865031779605 * 1e18
+        });
+
+        // Skip to make borrower undercollateralized
+        skip(100 days);
+        // settle should revert on a borrower that is not auctioned
+        _assertSettleOnNotKickedAuctionRevert({
+            from:     _lender,
+            borrower: _borrower2
+        });
+
+        uint256 kickTime = _startTime + 100 days;
+
+        _kick({
+            from:           _lender,
+            borrower:       _borrower2,
+            debt:           9_976.561670003961916237 * 1e18,
+            collateral:     1_000 * 1e18,
+            bond:           98.533942419792216457 * 1e18,
+            transferAmount: 98.533942419792216457 * 1e18
+        });
+
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower2,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          98.533942419792216457 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          kickTime,
+                kickMomp:          9.818751856078723036 * 1e18,
+                totalBondEscrowed: 98.533942419792216457 * 1e18,
+                auctionPrice:      334.393063846970122880 * 1e18,
+                debtInAuction:     9_976.561670003961916237 * 1e18,
+                thresholdPrice:    9.976561670003961916 * 1e18,
+                neutralPrice:      10.449783245217816340 * 1e18
+            })
+        );
+        _assertBorrower({
+            borrower:                  _borrower2,
+            borrowerDebt:              9_976.561670003961916237 * 1e18,
+            borrowerCollateral:        1_000 * 1e18,
+            borrowert0Np:              10.307611531622595991 * 1e18,
+            borrowerCollateralization: 0.974413448899967463 * 1e18
+        });
+
+        // skip ahead so take can be called on the loan
+        skip(10 hours);
+
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower2,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          98.533942419792216457 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          kickTime,
+                kickMomp:          9.818751856078723036 * 1e18,
+                totalBondEscrowed: 98.533942419792216457 * 1e18,
+                auctionPrice:      0.653111452826113536 * 1e18,
+                debtInAuction:     9_976.561670003961916237 * 1e18,
+                thresholdPrice:    9.977074177773911990 * 1e18,
+                neutralPrice:      10.449783245217816340 * 1e18
+            })
+        );
+        _assertBorrower({
+            borrower:                  _borrower2,
+            borrowerDebt:              9_977.074177773911990381 * 1e18,
+            borrowerCollateral:        1_000 * 1e18,
+            borrowert0Np:              10.307611531622595991 * 1e18,
+            borrowerCollateralization: 0.974363394700228467 * 1e18
+        });
+
+        // take entire collateral
+        _take({
+            from:            _lender,
+            borrower:        _borrower2,
+            maxCollateral:   1_000 * 1e18,
+            bondChange:      6.531114528261135360 * 1e18,
+            givenAmount:     653.111452826113536000 * 1e18,
+            collateralTaken: 1_000 * 1e18,
+            isReward:        true
+        });
+
+        // add liquidity in same block should be possible as debt was not yet settled / bucket is not yet insolvent
+        _addLiquidity({
+            from:    _lender1,
+            amount:  100 * 1e18,
+            index:   _i9_91,
+            lpAward: 99.367201799558744045 * 1e18,
+            newLup:  9.721295865031779605 * 1e18
+        });
+
+        _assertLenderLpBalance({
+            lender:      _lender1,
+            index:       _i9_91,
+            lpBalance:   99.367201799558744045 * 1e18,
+            depositTime: _startTime + 100 days + 10 hours
+        });
+
+        // adding to a different bucket for testing move in same block with bucket bankruptcy
+        _addLiquidityWithPenalty({
+            from:        _lender1,
+            amount:      100 * 1e18,
+            amountAdded: 99.987671232876712300 * 1e18,
+            index:       _i9_52,
+            lpAward:     99.987671232876712300 * 1e18,
+            newLup:      9.721295865031779605 * 1e18
+        });
+
+        (uint256 reserves, , , ,) = _poolUtils.poolReservesInfo(address(_pool));
+
+        // Add 10 more quote token than would be enough to cover debt, with reserves
+        _addLiquidity({
+            from:    _lender1,
+            amount:  2_884.311069344372084707 * 1e18 + 10 - reserves,
+            index:   _i9_81,
+            lpAward: 2_020.307252493359351054 * 1e18,
+            newLup:  9.721295865031779605 * 1e18
+        });
+
+        uint256 bucket1Deposit = 2_112.736560735960384000 * 1e18;
+        uint256 bucket2Deposit = 7_065.014537346601772214 * 1e18;
+        uint256 debtToSettle   = 10_028.889031920233428707 * 1e18;
+
+        _assertBorrower({
+            borrower:                  _borrower2,
+            borrowerDebt:              debtToSettle,
+            borrowerCollateral:        0,
+            borrowert0Np:              10.307611531622595991 * 1e18,
+            borrowerCollateralization: 0
+        });
+
+        _assertBucket({
+            index:        _i9_91,
+            lpBalance:    2_099.367201799558744045 * 1e18,
+            collateral:   0,
+            deposit:      bucket1Deposit,
+            exchangeRate: 1.006368280367980192 * 1e18
+        });
+
+        _assertBucket({
+            index:        _i9_81,
+            lpBalance:    7_020.307252493359351054 * 1e18,
+            collateral:   0,
+            deposit:      bucket2Deposit,
+            exchangeRate: 1.006368280367980192 * 1e18
+        });
+
+        // LP forfeited when forgive bad debt should be reflected in BucketBankruptcy event
+        vm.expectEmit(true, true, false, true);
+        emit BucketBankruptcy(_i9_91, 2_099.367201799558744045 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit BucketBankruptcy(_i9_81, 7_020.307252493359351054 * 1e18);
+        _settle({
+            from:        _lender,
+            borrower:    _borrower2,
+            maxDepth:    10,
+            settledDebt: 9_891.935520844277346922 * 1e18
+        });
+
+        // bucket is insolvent, balances are resetted
+        _assertBucketAssets({
+            index:        _i9_91,
+            lpBalance:    0, // bucket is bankrupt
+            collateral:   0,
+            deposit:      0,
+            exchangeRate: 1 * 1e18
+        });
+
+        skip(1 hours);
+        // bucket is insolvent, balances are resetted
+        _assertBucketAssets({
+            index:        _i9_81,
+            lpBalance:    0, // bucket is bankrupt
+            collateral:   0,
+            deposit:      9,
+            exchangeRate: 1 * 1e18
+        });
+
+        // add to bankrupt bucket with deposit to enable tearDown
+        _addLiquidity({
+            from:    _lender1,
+            amount:  1 * 1e18,
+            index:   _i9_81,
+            lpAward: 1 * 1e18,
+            newLup:  9.721295865031779605 * 1e18
+        });
+
+    }
 }
 
 contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
