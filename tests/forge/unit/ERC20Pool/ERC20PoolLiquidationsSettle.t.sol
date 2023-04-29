@@ -1005,7 +1005,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
         (uint256 reserves, , , ,) = _poolUtils.poolReservesInfo(address(_pool));
 
-	// Add 10 more quote token than would be enough to cover debt, with reserves
+        // Add 10 more quote token than would be enough to cover debt, with reserves
         _addLiquidity({
             from:    _lender1,
             amount:  2_884.311069344372084707 * 1e18 + 10 - reserves,
@@ -1055,7 +1055,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         });
 
         // bucket is insolvent, balances are resetted
-        _assertBucket({
+        _assertBucketAssets({
             index:        _i9_91,
             lpBalance:    0, // bucket is bankrupt
             collateral:   0,
@@ -1065,7 +1065,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
         skip(1 hours);
         // bucket is insolvent, balances are resetted
-        _assertBucket({
+        _assertBucketAssets({
             index:        _i9_81,
             lpBalance:    0, // bucket is bankrupt
             collateral:   0,
