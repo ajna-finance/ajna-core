@@ -384,7 +384,8 @@ library LenderActions {
 
         if (bucket.bankruptcyTime < depositTime) removeParams.lpConstraint = lender.lps;
 
-        if (removeParams.lpConstraint == 0) revert NoClaim(); // revert if no LP to claim
+        // revert if no LP to claim
+        if (removeParams.lpConstraint == 0) revert NoClaim();
 
         removeParams.depositConstraint = params_.maxAmount;
         removeParams.price             = _priceAt(params_.index);
@@ -506,7 +507,7 @@ library LenderActions {
         } else {
             // update lender LP balance
             lender.lps -= lpAmount_;
-
+            // update bucket LP balance
             bucket.lps = bucketLP;
         }
     }
@@ -627,14 +628,16 @@ library LenderActions {
         Bucket storage bucket = buckets_[index_];
 
         uint256 bucketCollateral = bucket.collateral;
-        if (bucketCollateral == 0) revert InsufficientCollateral(); // revert if there's no collateral in bucket
+        // revert if there's no collateral in bucket
+        if (bucketCollateral == 0) revert InsufficientCollateral();
 
         Lender storage lender = bucket.lenders[msg.sender];
 
         uint256 lenderLpBalance;
 
         if (bucket.bankruptcyTime < lender.depositTime) lenderLpBalance = lender.lps;
-        if (lenderLpBalance == 0) revert NoClaim();                  // revert if no LP to redeem
+        // revert if no LP to redeem
+        if (lenderLpBalance == 0) revert NoClaim();
 
         uint256 bucketPrice   = _priceAt(index_);
         uint256 bucketLP     = bucket.lps;
@@ -685,7 +688,7 @@ library LenderActions {
         } else {
             // update lender LP balance
             lender.lps -= lpAmount_;
-
+            // update bucket LP balance
             bucket.lps = bucketLP;
         }
     }
@@ -705,13 +708,13 @@ library LenderActions {
     ) internal returns (uint256 removedAmount_, uint256 redeemedLP_, uint256 unscaledRemaining_) {
 
         uint256 unscaledDepositAvailable = Deposits.unscaledValueAt(deposits_, params_.index);
-        if (unscaledDepositAvailable == 0) revert InsufficientLiquidity(); // revert if there's no liquidity available to remove
 
-        uint256 depositScale = Deposits.scale(deposits_, params_.index);
+        // revert if there's no liquidity available to remove
+        if (unscaledDepositAvailable == 0) revert InsufficientLiquidity();
 
+        uint256 depositScale           = Deposits.scale(deposits_, params_.index);
         uint256 scaledDepositAvailable = Maths.wmul(unscaledDepositAvailable, depositScale);
-
-        uint256 exchangeRate = Buckets.getExchangeRate(
+        uint256 exchangeRate           = Buckets.getExchangeRate(
             params_.bucketCollateral,
             params_.bucketLP,
             scaledDepositAvailable,
@@ -750,6 +753,7 @@ library LenderActions {
         uint256 unscaledRemovedAmount = Maths.min(unscaledDepositAvailable, Maths.wdiv(removedAmount_, depositScale));
         unscaledRemaining_ = unscaledDepositAvailable - unscaledRemovedAmount;
 
-        Deposits.unscaledRemove(deposits_, params_.index, unscaledRemovedAmount); // update FenwickTree
+        // update FenwickTree
+        Deposits.unscaledRemove(deposits_, params_.index, unscaledRemovedAmount);
     }
 }

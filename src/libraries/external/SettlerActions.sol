@@ -209,7 +209,8 @@ library SettlerActions {
             uint256 lp;
             uint256 bucketIndex;
 
-            remainingCollateral_ = (borrowerCollateral_ / Maths.WAD) * Maths.WAD; // floor collateral of borrower
+            // floor collateral of borrower
+            remainingCollateral_ = (borrowerCollateral_ / Maths.WAD) * Maths.WAD;
 
             // if there's fraction of NFTs remaining then reward difference to borrower as LP in auction price bucket
             if (remainingCollateral_ != borrowerCollateral_) {
