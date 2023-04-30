@@ -135,13 +135,16 @@ abstract contract BaseHandler is Test {
     }
 
     modifier useRandomActor(uint256 actorIndex_) {
-        vm.stopPrank();
-
         _actor = actors[constrictToRange(actorIndex_, 0, actors.length - 1)];
 
-        vm.startPrank(_actor);
+        // if prank already started in test then use change prank to change actor
+        try vm.startPrank(_actor) {
+        } catch {
+            changePrank(_actor);
+        }
+
         _;
-        vm.stopPrank();
+
     }
 
     modifier useRandomLenderBucket(uint256 bucketIndex_) {

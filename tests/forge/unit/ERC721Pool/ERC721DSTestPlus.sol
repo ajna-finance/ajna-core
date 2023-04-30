@@ -693,19 +693,19 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
 
     function _mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) internal {
         deal(address(_quote), operator_, mintAmount_);
-        vm.prank(operator_);
+        changePrank(operator_);
         _quote.approve(address(_pool), type(uint256).max);
     }
 
     function _mintAndApproveCollateralTokens(address operator_, uint256 mintAmount_) internal {
         _collateral.mint(operator_, mintAmount_);
-        vm.prank(operator_);
+        changePrank(operator_);
         _collateral.setApprovalForAll(address(_pool), true);
     }
 
     function _mintAndApproveAjnaTokens(address operator_, uint256 mintAmount_) internal {
         deal(_ajna, operator_, mintAmount_);
-        vm.prank(operator_);
+        changePrank(operator_);
         _ajnaToken.approve(address(_pool), type(uint256).max);
     }
 
@@ -762,13 +762,13 @@ abstract contract ERC721NDecimalsHelperContract is ERC721DSTestPlus {
 
     function _mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) internal {
         deal(address(_quote), operator_, mintAmount_);
-        vm.prank(operator_);
+        changePrank(operator_);
         _quote.approve(address(_pool), type(uint256).max);
     }
 
     function _mintAndApproveCollateralTokens(address operator_, uint256 mintAmount_) internal {
         _collateral.mint(operator_, mintAmount_);
-        vm.prank(operator_);
+        changePrank(operator_);
         _collateral.setApprovalForAll(address(_pool), true);
     }
 
@@ -779,7 +779,6 @@ abstract contract ERC721NDecimalsHelperContract is ERC721DSTestPlus {
         // _anonBorrowerCount += 1;
         
         address borrower = makeAddr(string(abi.encodePacked("anonBorrower", borrowers.length())));
-        vm.stopPrank();
         _mintAndApproveCollateralTokens(borrower, 1);
         uint256[] memory tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = _collateral.totalSupply();
@@ -822,19 +821,19 @@ abstract contract ERC721FuzzyHelperContract is ERC721DSTestPlus {
 
     function _mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) internal {
         deal(address(_quote), operator_, mintAmount_);
-        vm.prank(operator_);
+        changePrank(operator_);
         _quote.approve(address(_pool), type(uint256).max);
     }
 
     function _mintAndApproveCollateralTokens(address operator_, uint256 mintAmount_) internal {
         _collateral.mint(operator_, mintAmount_);
-        vm.prank(operator_);
+        changePrank(operator_);
         _collateral.setApprovalForAll(address(_pool), true);
     }
 
     function _mintAndApproveAjnaTokens(address operator_, uint256 mintAmount_) internal {
         deal(_ajna, operator_, mintAmount_);
-        vm.prank(operator_);
+        changePrank(operator_);
         _ajnaToken.approve(address(_pool), type(uint256).max);
     }
 
@@ -843,7 +842,6 @@ abstract contract ERC721FuzzyHelperContract is ERC721DSTestPlus {
         changePrank(borrower_);
         tokenIds_ = new uint256[](requiredCollateral_);
         for (uint i = 0; i < requiredCollateral_; ++i) {
-            vm.stopPrank();
             _mintAndApproveCollateralTokens(borrower_, 1);
             tokenIds_[i] = _collateral.totalSupply();
         }

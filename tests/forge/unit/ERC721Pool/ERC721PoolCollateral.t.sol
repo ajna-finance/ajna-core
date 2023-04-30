@@ -16,6 +16,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     address internal _lender2;
 
     function setUp() virtual external {
+        _startTest();
+
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
@@ -1186,6 +1188,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 contract ERC721SubsetPoolCollateralTest is ERC721PoolCollateralTest {
 
     function setUp() override external {
+        _startTest();
+
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");

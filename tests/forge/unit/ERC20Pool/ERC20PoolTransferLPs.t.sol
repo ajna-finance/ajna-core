@@ -14,6 +14,8 @@ contract ERC20PoolTransferLPTest is ERC20HelperContract {
     address internal _lender2;
 
     function setUp() external {
+        _startTest();
+
         _lender  = makeAddr("lender");
         _lender1 = makeAddr("lender1");
         _lender2 = makeAddr("lender2");

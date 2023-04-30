@@ -77,7 +77,7 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
 
         // wait for borrower to become undercollateralized due to interest accrual
         skip(100 days);
-        vm.prank(_lender);
+        vm.startPrank(_lender);
         // liquidate the borrower
         _ajnaPool.kick(_borrower, MAX_FENWICK_INDEX);
         // wait for the price to become profitable

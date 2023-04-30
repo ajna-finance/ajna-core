@@ -14,6 +14,8 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
     address internal _taker;
 
     function setUp() external {
+        _startTest();
+
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");

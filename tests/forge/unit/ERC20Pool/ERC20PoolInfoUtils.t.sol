@@ -23,6 +23,8 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
     uint256 lowest  = 2554;
 
     function setUp() external {
+        _startTest();
+
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");

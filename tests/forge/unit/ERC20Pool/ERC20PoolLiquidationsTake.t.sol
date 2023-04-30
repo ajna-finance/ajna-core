@@ -13,6 +13,8 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
     address internal _lender1;
 
     function setUp() external {
+        _startTest();
+
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
@@ -2097,6 +2099,8 @@ contract ERC20PoolLiquidationsTakeAndRepayAllDebtInPoolTest is ERC20HelperContra
     address internal _taker;
 
     function setUp() external {
+        _startTest();
+
         _lender   = makeAddr("lender");
         _borrower = makeAddr("borrower");
         _kicker   = makeAddr("kicker");

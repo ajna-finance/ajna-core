@@ -14,6 +14,8 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
     address internal _lender1;
 
     function setUp() external {
+        _startTest();
+
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
@@ -1096,6 +1098,8 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
     address internal actor8;
 
     function setUp() external {
+        _startTest();
+
         actor1 = makeAddr("actor1");
         _mintQuoteAndApproveTokens(actor1, type(uint256).max);
         _mintCollateralAndApproveTokens(actor1, type(uint256).max);

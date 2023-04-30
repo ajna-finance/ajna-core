@@ -14,6 +14,8 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
     address internal _lender2;
 
     function setUp() external {
+        _startTest();
+
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _bidder    = makeAddr("bidder");
