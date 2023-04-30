@@ -46,7 +46,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _quoteDust      = _pool.quoteTokenDust();
         assertEq(_quoteDust, _pool.quoteTokenScale());
         assertEq(_quoteDust, 10 ** (18 - quotePrecisionDecimals_));
-        
+
+        _startTest();
+
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
@@ -60,7 +62,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _lenderDepositNormalized = 200_000 * 1e18;
         deal(address(_quote), _lender,  _lenderDepositDenormalized);
 
-        vm.startPrank(_borrower);
+        changePrank(_borrower);
         _collateral.approve(address(_pool), 150 * _collateralPrecision);
         _quote.approve(address(_pool), _lenderDepositDenormalized);
 
@@ -74,7 +76,6 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         changePrank(_lender);
         _quote.approve(address(_pool), _lenderDepositDenormalized);
 
-        vm.stopPrank();
         skip(1 days); // to avoid deposit time 0 equals bucket bankruptcy time
     }
 
@@ -709,6 +710,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(1),    1);
         assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(4166), 100);
         assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(7388), 1000000000);
+        vm.stopPrank();
 
         // check dust limits for 12-decimal collateral
         init(12, 18);
@@ -716,6 +718,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(1),    1000000);
         assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(6466), 100000000);
         assertEq(IERC20Pool(address(_pool)).bucketCollateralDust(7388), 1000000000);
+        vm.stopPrank();
 
         // check dust limits for 6-decimal collateral
         init(6, 18);

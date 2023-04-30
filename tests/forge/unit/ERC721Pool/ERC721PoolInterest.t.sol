@@ -17,6 +17,8 @@ abstract contract ERC721PoolInterestTest is ERC721HelperContract {
     function createPool() external virtual returns (ERC721Pool);
 
     function setUp() external {
+        _startTest();
+
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _borrower3 = makeAddr("borrower3");

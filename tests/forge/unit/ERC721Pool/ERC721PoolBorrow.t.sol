@@ -20,6 +20,8 @@ abstract contract ERC721PoolBorrowTest is ERC721HelperContract {
     function createPool() external virtual returns (ERC721Pool);
 
     function setUp() external {
+        _startTest();
+
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _borrower3 = makeAddr("borrower3");
@@ -34,7 +36,7 @@ abstract contract ERC721PoolBorrowTest is ERC721HelperContract {
         _mintAndApproveCollateralTokens(_borrower2, 10);
         _mintAndApproveCollateralTokens(_borrower3, 13);
 
-        vm.prank(_borrower);
+        changePrank(_borrower);
         _quote.approve(address(_pool), 200_000 * 1e18);
     }
 }
@@ -550,13 +552,15 @@ contract ERC721CollectionPoolBorrowTest is ERC721NDecimalsHelperContract(18) {
     address internal _lender;
 
     function setUp() external {
+        _startTest();
+
         _borrower  = makeAddr("borrower");
         _lender    = makeAddr("lender");
 
         _mintAndApproveQuoteTokens(_lender, 200_000 * 1e18);
         _mintAndApproveCollateralTokens(_borrower, 52);
 
-        vm.prank(_borrower);
+        changePrank(_borrower);
         _quote.approve(address(_pool), 200_000 * 1e18);
     }
 
@@ -630,6 +634,8 @@ contract ERC721ScaledQuoteTokenBorrowTest is ERC721NDecimalsHelperContract(4) {
     address internal _lender;
 
     function setUp() external {
+        _startTest();
+
         _borrower  = makeAddr("borrower");
         _lender    = makeAddr("lender");
 
@@ -682,6 +688,8 @@ contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
     address internal _lender2;
 
     function setUp() external {
+        _startTest();
+
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _borrower3 = makeAddr("borrower3");
@@ -696,7 +704,7 @@ contract ERC721PoolBorrowFuzzyTest is ERC721FuzzyHelperContract {
         _mintAndApproveCollateralTokens(_borrower2, 10);
         _mintAndApproveCollateralTokens(_borrower3, 13);
 
-        vm.prank(_borrower);
+        changePrank(_borrower);
         _quote.approve(address(_pool), 200_000 * 1e18);
     }
 

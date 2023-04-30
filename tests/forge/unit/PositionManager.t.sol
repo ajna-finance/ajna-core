@@ -24,16 +24,19 @@ abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract 
         _positionManager = new PositionManager(_poolFactory, new ERC721PoolFactory(_ajna));
     }
 
+    function setUp() external {
+        _startTest();
+    }
+
     function _mintQuoteAndApproveManagerTokens(address operator_, uint256 mintAmount_) internal {
         deal(address(_quote), operator_, mintAmount_);
 
-        vm.prank(operator_);
+        changePrank(operator_);
         _quote.approve(address(_pool), type(uint256).max);
         address[] memory transferors = new address[](1);
         transferors[0] = address(_positionManager);
         _pool.approveLPTransferors(transferors);
 
-        vm.prank(operator_);
         _quote.approve(address(_positionManager), type(uint256).max);
         _pool.approveLPTransferors(transferors);
     }
@@ -1404,7 +1407,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // generate a new address and set test params
         address testAddress = makeAddr("testAddress");
 
-        vm.prank(testAddress);
+        changePrank(testAddress);
         uint256 tokenId = _mintNFT(testAddress, testAddress, address(_pool));
         assertEq(_positionManager.ownerOf(tokenId), testAddress);
         // construct BurnParams
@@ -2753,12 +2756,15 @@ abstract contract PositionManagerERC721PoolHelperContract is ERC721HelperContrac
         _pool = _deployCollectionPool();
     }
 
+    function setUp() external {
+        _startTest();
+    }
+
     function _mintQuoteAndApproveManagerTokens(address operator_, uint256 mintAmount_) internal {
         deal(address(_quote), operator_, mintAmount_);
 
-        vm.prank(operator_);
+        changePrank(operator_);
         _quote.approve(address(_pool), type(uint256).max);
-        vm.prank(operator_);
         _quote.approve(address(_positionManager), type(uint256).max);
     }
 

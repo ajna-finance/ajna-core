@@ -15,6 +15,8 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
     address internal _withdrawRecipient;
 
     function setUp() external {
+        _startTest();
+
         _borrower          = makeAddr("borrower");
         _borrower2         = makeAddr("borrower2");
         _lender            = makeAddr("lender");

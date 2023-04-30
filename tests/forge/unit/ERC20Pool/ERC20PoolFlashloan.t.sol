@@ -23,6 +23,8 @@ contract ERC20PoolFlashloanTest is ERC20HelperContract {
     uint    internal _bucketPrice;
 
     function setUp() external {
+        _startTest();
+
         _lender    = makeAddr("lender");
         _borrower  = makeAddr("borrower");
 

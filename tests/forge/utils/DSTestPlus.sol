@@ -91,6 +91,13 @@ abstract contract DSTestPlus is Test, IPoolEvents {
     EnumerableSet.AddressSet borrowers;
     EnumerableSet.UintSet bucketsUsed;
 
+    /**
+     *  @dev fake start prank in order to avoid https://github.com/foundry-rs/foundry/issues/4835
+     **/
+    function _startTest() internal {
+        vm.startPrank(address(this));
+    }
+
     function _registerLender(
         address lender,
         uint256[] memory indexes

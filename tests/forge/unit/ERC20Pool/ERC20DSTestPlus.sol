@@ -723,7 +723,6 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     function _anonBorrowerDrawsDebt(uint256 collateralAmount, uint256 loanAmount, uint256 limitIndex) internal {
         _anonBorrowerCount += 1;
         address borrower = makeAddr(string(abi.encodePacked("anonBorrower", _anonBorrowerCount)));
-        vm.stopPrank();
         _mintCollateralAndApproveTokens(borrower,  collateralAmount);
         _drawDebtNoLupCheck(
             {
@@ -739,18 +738,16 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     function _mintQuoteAndApproveTokens(address operator_, uint256 mintAmount_) internal {
         deal(address(_quote), operator_, mintAmount_);
 
-        vm.prank(operator_);
+        changePrank(operator_);
         _quote.approve(address(_pool), type(uint256).max);
-        vm.prank(operator_);
         _collateral.approve(address(_pool), type(uint256).max);
     }
 
     function _mintCollateralAndApproveTokens(address operator_, uint256 mintAmount_) internal {
         deal(address(_collateral), operator_, mintAmount_);
 
-        vm.prank(operator_);
+        changePrank(operator_);
         _collateral.approve(address(_pool), type(uint256).max);
-        vm.prank(operator_);
         _quote.approve(address(_pool), type(uint256).max);
     }
 
@@ -780,20 +777,16 @@ abstract contract ERC20FuzzyHelperContract is ERC20DSTestPlus {
     function _mintQuoteAndApproveTokens(address operator_, uint256 mintAmount_) internal {
         deal(address(_quote), operator_, mintAmount_);
 
-        vm.prank(operator_);
+        changePrank(operator_);
         _quote.approve(address(_pool), type(uint256).max);
-        vm.prank(operator_);
         _collateral.approve(address(_pool), type(uint256).max);
     }
 
     function _mintCollateralAndApproveTokens(address operator_, uint256 mintAmount_) internal {
         deal(address(_collateral), operator_, mintAmount_);
 
-        vm.prank(operator_);
+        changePrank(operator_);
         _collateral.approve(address(_pool), type(uint256).max);
-        vm.prank(operator_);
         _quote.approve(address(_pool), type(uint256).max);
     }
-
-
 }

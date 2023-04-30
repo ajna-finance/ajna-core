@@ -19,6 +19,8 @@ contract ERC20PoolLoanHeapTest is ERC20HelperContract {
     address internal _lender4;
 
     function setUp() external {
+        _startTest();
+
         _borrower1 = makeAddr("borrower1");
         _borrower2 = makeAddr("borrower2");
         _borrower3 = makeAddr("borrower3");
