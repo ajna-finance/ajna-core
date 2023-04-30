@@ -298,7 +298,11 @@ abstract contract BaseHandler is Test {
                 Maths.wmul(pendingFactor - Maths.WAD, poolDebt)
             );
 
-            uint256 scale = (newInterest * 1e18) / interestEarningDeposit + Maths.WAD;
+            // Cap lender factor at 10x the interest factor for borrowers
+            uint256 scale = Maths.min(
+                (newInterest * 1e18) / interestEarningDeposit,
+                10 * (pendingFactor - Maths.WAD)
+            ) + Maths.WAD;
 
             // simulate scale being applied to all deposits above HTP
             _fenwickMult(accrualIndex, scale);
