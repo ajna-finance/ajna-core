@@ -147,12 +147,12 @@ abstract contract BasicInvariants is BaseInvariants {
                 console.log("Current bucket lps     -->", bucketLps);
                 console.log("======================================");
 
-                // If the bucket is small (less than 1 LP), require total change in bucket value to be less than .01 quote token
+                // If the bucket is small (less than 10 LP), require total change in bucket value to be less than .01 quote token
                 if (bucketLps < Maths.wad(10)) {
                     requireWithinDiff(
                         Maths.wmul(currentExchangeRate, bucketLps),
                         Maths.wmul(previousExchangeRate, bucketLps),
-                        1e16,  // allow changes up to 0.01 qt in value if bucket LPs < 1e-6
+                        1e16,
                         "Exchange Rate Invariant R1, R2, R3, R4, R5, R6, R7 or R8"
                     );
                 } else {
