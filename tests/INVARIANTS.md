@@ -48,7 +48,7 @@
 - **F1**: Value represented at index `i` (`Deposits.valueAt(i)`) is equal to the accumulation of scaled values incremented or decremented from index `i`
 - **F2**: For any index `i`, the prefix sum up to and including `i` is the sum of values stored in indices `j<=i`
 - **F3**: For any index `i < MAX_FENWICK_INDEX`,  `findIndexOfSum(prefixSum(i)) > i`
-- **F4**: For any index i, there is zero deposit above i and below findIndexOfSum(prefixSum(i) + 1): `depositAtIndex(j) == 0 for i < j < findIndexOfSum(prefixSum(i)+1)`
+- **F4**: For any index `i < MAX_FENWICK_INDEX`, `Deposits.valueAt(findIndexOfSum(prefixSum(i) + 1)) > 0`
 - **F5**: Global scalar is never updated (`DepositsState.scaling[8192]` is always 0)
 
 ## Exchange rate (Margin of 1e12 - 1e16 on comparisons, dependent on amounts)

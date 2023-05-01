@@ -667,4 +667,19 @@ contract RegressionTestReserveWith10BucketsERC20Pool is ReserveERC20PoolInvarian
 
         invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10_RE11_RE12();
     }
+
+    /**
+        Test was failing because replicated invariant logic didn't cap lender factor at 10x the interest factor for borrowers.
+        Fixed by getting invariants logic inline with pool logic.
+     */
+    function test_regression_10_buckets_kickWithDeposit_F1_F2() external {
+        _reserveERC20PoolHandler.drawDebt(115792089237316195423570985008687907853269984665640564039457584007913129639934, 872511381148049007720, 539489537953478369108753171886182489172581205791027954527);
+        _reserveERC20PoolHandler.transferLps(3, 115792089237316195423570985008687907853269984665640564039457584007913129639932, 15030691, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 0);
+        _reserveERC20PoolHandler.settleAuction(3311151379956769964767988508503575272954757, 75267398466877804280028379007551879365458802899983, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 282706799353988314281438019223518391928165574);
+        _reserveERC20PoolHandler.removeQuoteToken(11174, 2673, 7678, 1606);
+        _reserveERC20PoolHandler.kickWithDeposit(16859, 23442, 2222);
+
+        invariant_fenwick_depositAtIndex_F1();
+        invariant_fenwick_depositsTillIndex_F2();
+    }
 }

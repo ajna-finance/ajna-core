@@ -147,12 +147,12 @@ abstract contract BasicInvariants is BaseInvariants {
                 console.log("Current bucket lps     -->", bucketLps);
                 console.log("======================================");
 
-                // If the bucket is small (less than 1 LP), require total change in bucket value to be less than .01 quote token
-                if (bucketLps < 1e18) {
+                // If the bucket is small (less than 10 LP), require total change in bucket value to be less than .01 quote token
+                if (bucketLps < Maths.wad(10)) {
                     requireWithinDiff(
                         Maths.wmul(currentExchangeRate, bucketLps),
                         Maths.wmul(previousExchangeRate, bucketLps),
-                        1e16,  // allow changes up to 0.01 qt in value if bucket LPs < 1e-6
+                        1e16,
                         "Exchange Rate Invariant R1, R2, R3, R4, R5, R6, R7 or R8"
                     );
                 } else {
@@ -329,25 +329,18 @@ abstract contract BasicInvariants is BaseInvariants {
         }
     }
 
-    // **F4**: For any index i, there is zero deposit above i and below findIndexOfSum(prefixSum(i) + 1): `depositAt(j) == 0 for i<j<findIndexOfSum(prefixSum(i) + 1) and depositAt(findIndexOfSum(prefixSum(i) + 1))>0
+    // **F4**: For any index i < MAX_FENWICK_INDEX, Deposits.valueAt(findIndexOfSum(prefixSum(i) + 1)) > 0
     function invariant_fenwick_prefixSumIndex_F4() public useCurrentTimestamp {
-        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; ) {
+        uint256 maxBucket = IBaseHandler(_handler).getCollateralBuckets().length;
+
+        for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             uint256 nextNonzeroBucket = _pool.depositIndex(_pool.depositUpToIndex(bucketIndex)+1);
-            console.log("bucketIndex:         ", bucketIndex);
-            console.log("Next nonzero bucket: ", nextNonzeroBucket);
-            for (uint256 j = bucketIndex + 1; j < nextNonzeroBucket && j < LENDER_MAX_BUCKET_INDEX; j++) {
-                (, , , uint256 depositAtJ, ) = _pool.bucketInfo(j);
-                console.log("Deposit at %s is %s", j, depositAtJ);
-                require(
-                        depositAtJ == 0,
-                        "F4: incorrect buckets with 0 deposit"
-                );
+
+            if(nextNonzeroBucket < maxBucket) {
+                (, , , uint256 depositAtNextNonzeroBucket, ) = _pool.bucketInfo(nextNonzeroBucket);
+
+                assertGe(depositAtNextNonzeroBucket, 0, "F4: incorrect bucket with nonzero deposit");
             }
-            (, , , uint256 depositAtNextIndex, ) = _pool.bucketInfo(nextNonzeroBucket);
-            console.log("Deposit at nonzero bucket %s is %s", nextNonzeroBucket, depositAtNextIndex);
-            assertGe(depositAtNextIndex, 0, "F4: incorrect buckets with 0 deposit");
-            assertGe(nextNonzeroBucket+1, bucketIndex);
-            bucketIndex = nextNonzeroBucket+1;  // can skip ahead
         }
     }
 

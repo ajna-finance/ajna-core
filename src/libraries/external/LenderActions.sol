@@ -725,6 +725,7 @@ library LenderActions {
         // redeemedLP_ = min ( maxAmount_/scaledExchangeRate, scaledDeposit/exchangeRate, lenderLPBalance)
 
         uint256 scaledLpConstraint = Maths.wmul(params_.lpConstraint, exchangeRate);
+        uint256 unscaledRemovedAmount;
         if (
             params_.depositConstraint < scaledDepositAvailable &&
             params_.depositConstraint < scaledLpConstraint
@@ -732,22 +733,25 @@ library LenderActions {
             // depositConstraint is binding constraint
             removedAmount_ = params_.depositConstraint;
             redeemedLP_    = Maths.wdiv(removedAmount_, exchangeRate);
+            unscaledRemovedAmount = Maths.wdiv(removedAmount_, depositScale);
         } else if (scaledDepositAvailable < scaledLpConstraint) {
             // scaledDeposit is binding constraint
             removedAmount_ = scaledDepositAvailable;
             redeemedLP_    = Maths.wdiv(removedAmount_, exchangeRate);
+            unscaledRemovedAmount = unscaledDepositAvailable;
         } else {
             // redeeming all LP
             redeemedLP_    = params_.lpConstraint;
             removedAmount_ = Maths.wmul(redeemedLP_, exchangeRate);
+            unscaledRemovedAmount = Maths.wdiv(removedAmount_, depositScale);
         }
 
         // If clearing out the bucket deposit, ensure it's zeroed out
         if (redeemedLP_ == params_.bucketLP) {
             removedAmount_ = scaledDepositAvailable;
+            unscaledRemovedAmount = unscaledDepositAvailable;
         }
 
-        uint256 unscaledRemovedAmount = Maths.min(unscaledDepositAvailable, Maths.wdiv(removedAmount_, depositScale));
         unscaledRemaining_ = unscaledDepositAvailable - unscaledRemovedAmount;
 
         Deposits.unscaledRemove(deposits_, params_.index, unscaledRemovedAmount); // update FenwickTree
