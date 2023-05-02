@@ -29,7 +29,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     function _kickAuction(
         address borrower_
     ) internal updateLocalStateAndPoolInterest {
-        numberOfCalls['UBLiquidationHandler.kickAuction']++;
+        numberOfCalls['UBLiqHandler.kickAuction']++;
 
         (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
         (uint256 interestRate, )   = _pool.interestRateInfo();
@@ -47,6 +47,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     function _kickWithDeposit(
         uint256 bucketIndex_
     ) internal updateLocalStateAndPoolInterest {
+        numberOfCalls['UBLiqHandler.kickWithDeposit']++;
         (address maxBorrower, , )              = _pool.loansInfo();
         (uint256 borrowerDebt, , )             = _poolInfo.borrowerInfo(address(_pool), maxBorrower);
         (uint256 interestRate, )               = _pool.interestRateInfo();
@@ -70,6 +71,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         address kicker_,
         uint256 maxAmount_
     ) internal updateLocalStateAndPoolInterest {
+        numberOfCalls['UBLiqHandler.withdrawBonds']++;
 
         try _pool.withdrawBonds(kicker_, maxAmount_) {
 
@@ -87,7 +89,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         uint256 amount_,
         address taker_
     ) internal updateLocalStateAndPoolInterest {
-        numberOfCalls['UBLiquidationHandler.takeAuction']++;
+        numberOfCalls['UBLiqHandler.takeAuction']++;
 
         (address kicker, , , , , , , , , ) = _pool.auctionInfo(borrower_);
 
@@ -155,7 +157,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         bool depositTake_,
         uint256 bucketIndex_
     ) internal updateLocalStateAndPoolInterest {
-        numberOfCalls['UBLiquidationHandler.bucketTake']++;
+        numberOfCalls['UBLiqHandler.bucketTake']++;
 
         (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
 
@@ -216,6 +218,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         address borrower_,
         uint256 maxDepth_
     ) internal updateLocalStateAndPoolInterest {
+        numberOfCalls['UBLiqHandler.settle']++;
         (
             uint256 borrowerT0Debt,
             uint256 collateral,

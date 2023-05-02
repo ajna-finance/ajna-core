@@ -29,4 +29,18 @@ abstract contract ReserveInvariants is LiquidationInvariants {
             "Incorrect Reserves change"
         );
     }
+
+    function invariant_call_summary() public virtual override useCurrentTimestamp {
+        console.log("\nCall Summary\n");
+        console.log("--Reserves--------");
+        console.log("BReserveHandler.takeReserves        ",  IBaseHandler(_handler).numberOfCalls("BReserveHandler.takeReserves"));
+        console.log("UBReserveHandler.takeReserves       ",  IBaseHandler(_handler).numberOfCalls("UBReserveHandler.takeReserves"));
+        console.log("BReserveHandler.kickReserves        ",  IBaseHandler(_handler).numberOfCalls("BReserveHandler.kickReserves"));
+        console.log("UBReserveHandler.kickReserves       ",  IBaseHandler(_handler).numberOfCalls("UBReserveHandler.kickReserves"));
+        console.log(
+            "Sum",
+            IBaseHandler(_handler).numberOfCalls("BReserveHandler.takeReserves") +
+            IBaseHandler(_handler).numberOfCalls("BReserveHandler.kickReserves")
+        );
+    }
 }

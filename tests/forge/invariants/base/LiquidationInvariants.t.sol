@@ -105,39 +105,31 @@ abstract contract LiquidationInvariants is BasicInvariants {
             );
         }
     }
-    
+
+
     function invariant_call_summary() public virtual override useCurrentTimestamp {
         console.log("\nCall Summary\n");
-        console.log("--Lender----------");
-        console.log("BLiquidationHandler.addQuoteToken         ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.addQuoteToken"));
-        console.log("UBLiquidationHandler.addQuoteToken        ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.addQuoteToken"));
-        console.log("BLiquidationHandler.removeQuoteToken      ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.removeQuoteToken"));
-        console.log("UBLiquidationHandler.removeQuoteToken     ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.removeQuoteToken"));
-        console.log("BLiquidationHandler.addCollateral         ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.addCollateral"));
-        console.log("UBLiquidationHandler.addCollateral        ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.addCollateral"));
-        console.log("BLiquidationHandler.removeCollateral      ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.removeCollateral"));
-        console.log("UBLiquidationHandler.removeCollateral     ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.removeCollateral"));
-        console.log("--Borrower--------");
-        console.log("BLiquidationHandler.drawDebt              ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.drawDebt"));
-        console.log("UBLiquidationHandler.drawDebt             ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.drawDebt"));
-        console.log("BLiquidationHandler.repayDebt             ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt"));
-        console.log("UBLiquidationHandler.repayDebt            ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.repayDebt"));
-        console.log("BLiquidationHandler.kickAuction           ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.kickAuction"));
-        console.log("UBLiquidationHandler.kickAuction          ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.kickAuction"));
-        console.log("BLiquidationHandler.takeAuction           ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.takeAuction"));
-        console.log("UBLiquidationHandler.takeAuction          ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.takeAuction"));
-        console.log("------------------");
+        console.log("--Liquidation--------");
+        console.log("BLiqHandler.kickAuction             ",  IBaseHandler(_handler).numberOfCalls("BLiqHandler.kickAuction"));
+        console.log("UBLiqHandler.kickAuction            ",  IBaseHandler(_handler).numberOfCalls("UBLiqHandler.kickAuction"));
+        console.log("BLiqHandler.kickWithDeposit         ",  IBaseHandler(_handler).numberOfCalls("BLiqHandler.kickWithDeposit"));
+        console.log("UBLiqHandler.kickWithDeposit        ",  IBaseHandler(_handler).numberOfCalls("UBLiqHandler.kickWithDeposit"));
+        console.log("BLiqHandler.takeAuction             ",  IBaseHandler(_handler).numberOfCalls("BLiqHandler.takeAuction"));
+        console.log("UBLiqHandler.takeAuction            ",  IBaseHandler(_handler).numberOfCalls("UBLiqHandler.takeAuction"));
+        console.log("BLiqHandler.bucketTake              ",  IBaseHandler(_handler).numberOfCalls("BLiqHandler.bucketTake"));
+        console.log("UBLiqHandler.bucketTake             ",  IBaseHandler(_handler).numberOfCalls("UBLiqHandler.bucketTake"));
+        console.log("BLiqHandler.withdrawBonds           ",  IBaseHandler(_handler).numberOfCalls("BLiqHandler.withdrawBonds"));
+        console.log("UBLiqHandler.withdrawBonds          ",  IBaseHandler(_handler).numberOfCalls("UBLiqHandler.withdrawBonds"));
+        console.log("BLiqHandler.settleAuction           ",  IBaseHandler(_handler).numberOfCalls("BLiqHandler.settleAuction"));
+        console.log("UBLiqHandler.settleAuction          ",  IBaseHandler(_handler).numberOfCalls("UBLiqHandler.settleAuction"));
         console.log(
             "Sum",
-            IBaseHandler(_handler).numberOfCalls("BBasicHandler.addQuoteToken") +
-            IBaseHandler(_handler).numberOfCalls("BBasicHandler.removeQuoteToken") +
-            IBaseHandler(_handler).numberOfCalls("BBasicHandler.addCollateral") +
-            IBaseHandler(_handler).numberOfCalls("BBasicHandler.removeCollateral") +
-            IBaseHandler(_handler).numberOfCalls("BBasicHandler.drawDebt") + 
-            IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt") +
-            IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.kickAuction") +
-            IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.takeAuction")
+            IBaseHandler(_handler).numberOfCalls("BLiqHandler.kickAuction") +
+            IBaseHandler(_handler).numberOfCalls("BLiqHandler.kickWithDeposit") +
+            IBaseHandler(_handler).numberOfCalls("BLiqHandler.takeAuction") +
+            IBaseHandler(_handler).numberOfCalls("BLiqHandler.bucketTake") +
+            IBaseHandler(_handler).numberOfCalls("BLiqHandler.withdrawBonds") +
+            IBaseHandler(_handler).numberOfCalls("BLiqHandler.settleAuction")
         );
     }
-
 }

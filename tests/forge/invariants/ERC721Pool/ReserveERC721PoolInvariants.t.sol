@@ -35,6 +35,6 @@ contract ReserveERC721PoolInvariants is ReserveInvariants, LiquidationERC721Pool
         _handler = address(_reserveERC721PoolHandler);
     }
 
-    function invariant_call_summary() public virtual override( LiquidationInvariants, LiquidationERC721PoolInvariants) useCurrentTimestamp {}
+    function invariant_call_summary() public virtual override( LiquidationERC721PoolInvariants, ReserveInvariants) useCurrentTimestamp {}
 
 }

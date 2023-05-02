@@ -13,6 +13,7 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
     /*******************************/
 
     function _kickReserveAuction() internal updateLocalStateAndPoolInterest {
+        numberOfCalls['UBReserveHandler.kickReserves']++;
         (, uint256 claimableReserves, , , ) = _poolInfo.poolReservesInfo(address(_pool));
         if (claimableReserves == 0) return;
 
@@ -32,6 +33,7 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
     function _takeReserves(
         uint256 amount_
     ) internal updateLocalStateAndPoolInterest {
+        numberOfCalls['UBReserveHandler.takeReserves']++;
         deal(address(_ajna), _actor, type(uint256).max);
         IERC20(address(_ajna)).approve(address(_pool), type(uint256).max);
 
