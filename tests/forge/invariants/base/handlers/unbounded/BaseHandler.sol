@@ -301,7 +301,11 @@ abstract contract BaseHandler is Test {
                 Maths.wmul(pendingFactor - Maths.WAD, poolDebt)
             );
 
-            uint256 scale = (newInterest * 1e18) / interestEarningDeposit + Maths.WAD;
+            // Cap lender factor at 10x the interest factor for borrowers
+            uint256 scale = Maths.min(
+                (newInterest * 1e18) / interestEarningDeposit,
+                10 * (pendingFactor - Maths.WAD)
+            ) + Maths.WAD;
 
             // simulate scale being applied to all deposits above HTP
             _fenwickMult(accrualIndex, scale);
@@ -375,14 +379,21 @@ abstract contract BaseHandler is Test {
     }
 
     function fenwickIndexForSum(uint256 debt_) public view returns (uint256) {
-        uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX;
+        uint256 minIndex = LENDER_MIN_BUCKET_INDEX;
+        uint256 maxIndex = LENDER_MAX_BUCKET_INDEX;
 
-        while (debt_ != 0 && bucketIndex <= LENDER_MAX_BUCKET_INDEX) {
-            if (fenwickDeposits[bucketIndex] >= debt_) return bucketIndex;
+        uint256[] memory buckets = getCollateralBuckets();
+        for (uint256 i = 0; i < buckets.length; i++) {
+            minIndex = Maths.min(minIndex, buckets[i]);
+            maxIndex = Maths.max(maxIndex, buckets[i]);
+        }
 
-            debt_ -= fenwickDeposits[bucketIndex];
+        while (debt_ != 0 && minIndex <= maxIndex) {
+            if (fenwickDeposits[minIndex] >= debt_) return minIndex;
 
-            bucketIndex += 1;
+            debt_ -= fenwickDeposits[minIndex];
+
+            minIndex += 1;
         }
 
         return MAX_FENWICK_INDEX;
