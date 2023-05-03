@@ -39,6 +39,7 @@ make test-regression-erc721
 Invariant test scenarios can be externally configured by customizing following environment variables:
 | Variable | Pool Type | Default | Description |
 | ------------- | ------------- | ------------- | ------------- |
+| NO_OF_ACTORS  | ERC20 ERC721 | 10 | Max number of actors to interact with the pool |
 | QUOTE_PRECISION  | ERC20 ERC721 | 18 | Precision of token used as quote token |
 | MIN_QUOTE_AMOUNT_ERC20 | ERC20 | 1e3 | The min amount of quote tokens that can be used in a single ERC20 pool action |
 | MIN_QUOTE_AMOUNT_ERC721 | ERC721 | 1e3 | The min amount of quote tokens that can be used in a single ERC721 pool action |

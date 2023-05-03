@@ -18,8 +18,10 @@ abstract contract BaseInvariants is Test {
 
     BurnableToken internal _ajna;
 
-    Pool             internal _pool;
-    PoolInfoUtils    internal _poolInfo;
+    uint256 internal _numOfActors;
+
+    Pool          internal _pool;
+    PoolInfoUtils internal _poolInfo;
 
     // bucket exchange rate tracking
     mapping(uint256 => uint256) internal previousBucketExchangeRate;
@@ -34,7 +36,7 @@ abstract contract BaseInvariants is Test {
     uint256 previousTotalInterestEarnedUpdate;
 
     // address of pool handler
-    address          internal _handler;
+    address internal _handler;
 
     uint256 public currentTimestamp;
 
@@ -47,11 +49,13 @@ abstract contract BaseInvariants is Test {
 
     function setUp() public virtual {
         // Tokens
-        _ajna       = new BurnableToken("Ajna", "A");
-        _quote      = new TokenWithNDecimals("Quote", "Q", uint8(vm.envOr("QUOTE_PRECISION", uint256(18))));
+        _ajna  = new BurnableToken("Ajna", "A");
+        _quote = new TokenWithNDecimals("Quote", "Q", uint8(vm.envOr("QUOTE_PRECISION", uint256(18))));
+
+        _numOfActors = uint256(vm.envOr("NO_OF_ACTORS", uint256(10)));
 
         // Pool
-        _poolInfo    = new PoolInfoUtils();
+        _poolInfo = new PoolInfoUtils();
 
         currentTimestamp = block.timestamp;
     }

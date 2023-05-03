@@ -24,7 +24,7 @@ contract LiquidationERC20PoolInvariants is BasicERC20PoolInvariants, Liquidation
             address(_quote),
             address(_collateral),
             address(_poolInfo),
-            NUM_ACTORS,
+            _numOfActors,
             address(this)
         );
 

@@ -18,8 +18,6 @@ import { IBaseHandler }          from '../interfaces/IBaseHandler.sol';
 // contains invariants for the test
 contract BasicERC721PoolInvariants is BasicInvariants {
 
-    uint256               internal constant NUM_ACTORS = 10;
-
     NFTCollateralToken     internal _collateral;
     ERC721Pool             internal _erc721pool;
     ERC721Pool             internal _impl;
@@ -43,7 +41,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
             address(_quote),
             address(_collateral),
             address(_poolInfo),
-            NUM_ACTORS,
+            _numOfActors,
             address(this)
         );
 
