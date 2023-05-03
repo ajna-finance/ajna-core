@@ -45,6 +45,7 @@
 - **I2**: reserve interest (`ReserveAuctionState.totalInterestEarned`) accrues only once per block (`block.timestamp - InflatorState.inflatorUpdate != 0`) and only if there's debt in the pool (`PoolBalancesState.t0Debt != 0`)  
 - **I3**: pool inflator (`InflatorState.inflator`) cannot be updated more than once per block (`block.timestamp - InflatorState.inflatorUpdate != 0`) and equals `1e18` if there's no debt in the pool (`PoolBalancesState.t0Debt != 0`)
 - **I4**: for all borrowers that are not auctioned and (`borrower.collateral != 0`) the sum of borrower debt squared divided by borrower collateral (`borrower.debt^2 / borrower.collateral`) should equal borrower collateralization accumulator (`t0Debt2ToCollateral`)
+- **I5**: interest rate (`InterestState.interestRate`) should be bound by min and max rate of 0.1% and 50,000% respectively
 
 ## Fenwick tree
 - **F1**: Value represented at index `i` (`Deposits.valueAt(i)`) is equal to the accumulation of scaled values incremented or decremented from index `i`

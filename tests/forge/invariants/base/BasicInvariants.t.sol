@@ -42,6 +42,7 @@ abstract contract BasicInvariants is BaseInvariants {
         _invariant_I2();
         _invariant_I3();
         _invariant_I4();
+        _invariant_I5();
     }
 
     function invariant_fenwick() public useCurrentTimestamp {
@@ -331,6 +332,15 @@ abstract contract BasicInvariants is BaseInvariants {
 
         require(t0Debt2ToCollateral == manualDebt2ToCollateral, "Incorrect debt2ToCollateral");
 
+    }
+
+    // interest should be bound by min and max rate of 0.1% and 50,000% respectively
+    function _invariant_I5() internal view {
+
+        (uint256 currentInterestRate,) = _pool.interestRateInfo();
+
+        require(currentInterestRate >= 0.001 * 1e18, "Interest rate is below minimum");
+        require(currentInterestRate <= 500 * 1e18, "Interest rate is above maximum");
     }
 
     /*******************************/
