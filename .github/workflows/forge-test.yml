@@ -31,5 +31,5 @@ jobs:
 
       - name: Run tests
         run: |
-          make test-with-gas-report && make test-regression
+          make test-with-gas-report && make test-regression-all
         id: test
