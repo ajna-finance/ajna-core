@@ -20,11 +20,11 @@ test-load                       :; forge test --match-test testLoad --gas-report
 test-invariant-all              :; forge t --mt invariant --nmc RegressionTest
 test-invariant-erc20            :; forge t --mt invariant --nmc RegressionTest --mc ERC20
 test-invariant-erc721           :; forge t --mt invariant --nmc RegressionTest --mc ERC721
-test-invariant					:; forge t --mt ${MT} --nmc RegressionTest
+test-invariant                  :; forge t --mt ${MT} --nmc RegressionTest
 test-regression-all             : test-regression-erc20 test-regression-erc721
 test-regression-erc20           :; forge t --mt test_regression --mc ERC20
 test-regression-erc721          :; forge t --mt test_regression --mc ERC721
-test-regression		            :; forge t --mt ${MT}
+test-regression                 :; forge t --mt ${MT}
 coverage                        :; forge coverage --no-match-test "testLoad|invariant"
 test-invariant-erc20-precision  :; ./tests/forge/invariants/test-invariant-erc20-precision.sh
 test-invariant-erc721-precision :; ./tests/forge/invariants/test-invariant-erc721-precision.sh
