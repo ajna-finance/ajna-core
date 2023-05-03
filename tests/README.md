@@ -14,7 +14,11 @@ make test-load
 ```
 - run both ERC20 and ERC721 Pool invariant tests:
 ```bash
-make test-invariant
+make test-invariant-all
+```
+- run both ERC20 and ERC721 Pool invariant tests:
+```bash
+make test-invariant MT=<invariant_name>
 ```
 - run ERC20 Pool invariant tests:
 ```bash
@@ -49,7 +53,11 @@ make test-invariant-erc721-buckets
 ```
 - run regression test for both ERC20 and ERC721 Pool:
 ```bash
-make test-regression
+make test-regression-all
+```
+- run a specific regression test:
+```bash
+make test-regression MT=<test_name>
 ```
 - run regression test for ERC20 Pool:
 ```bash
