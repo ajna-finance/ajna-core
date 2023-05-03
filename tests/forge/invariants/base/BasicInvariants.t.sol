@@ -331,12 +331,16 @@ abstract contract BasicInvariants is BaseInvariants {
 
     // **F4**: For any index i < MAX_FENWICK_INDEX, Deposits.valueAt(findIndexOfSum(prefixSum(i) + 1)) > 0
     function invariant_fenwick_prefixSumIndex_F4() public useCurrentTimestamp {
-        uint256 maxBucket = IBaseHandler(_handler).getCollateralBuckets().length;
+        uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
+        uint256 maxBucket;
+        for (uint256 i = 0; i < buckets.length; i++) {
+            if (buckets[i] > maxBucket) maxBucket = buckets[i];
+        }
 
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            uint256 nextNonzeroBucket = _pool.depositIndex(_pool.depositUpToIndex(bucketIndex)+1);
+            uint256 nextNonzeroBucket = _pool.depositIndex(_pool.depositUpToIndex(bucketIndex) + 1);
 
-            if(nextNonzeroBucket < maxBucket) {
+            if (nextNonzeroBucket < maxBucket) {
                 (, , , uint256 depositAtNextNonzeroBucket, ) = _pool.bucketInfo(nextNonzeroBucket);
 
                 assertGe(depositAtNextNonzeroBucket, 0, "F4: incorrect bucket with nonzero deposit");
