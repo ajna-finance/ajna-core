@@ -338,9 +338,9 @@ abstract contract BasicInvariants is BaseInvariants {
         }
 
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
-            uint256 nextNonzeroBucket = _pool.depositIndex(_pool.depositUpToIndex(bucketIndex)+1);
+            uint256 nextNonzeroBucket = _pool.depositIndex(_pool.depositUpToIndex(bucketIndex) + 1);
 
-            if(nextNonzeroBucket < maxBucket) {
+            if (nextNonzeroBucket < maxBucket) {
                 (, , , uint256 depositAtNextNonzeroBucket, ) = _pool.bucketInfo(nextNonzeroBucket);
 
                 assertGe(depositAtNextNonzeroBucket, 0, "F4: incorrect bucket with nonzero deposit");
