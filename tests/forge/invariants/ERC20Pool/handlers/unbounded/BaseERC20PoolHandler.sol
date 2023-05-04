@@ -34,11 +34,11 @@ abstract contract BaseERC20PoolHandler is BaseHandler {
         LENDER_MIN_BUCKET_INDEX = vm.envOr("BUCKET_INDEX_ERC20", uint256(2570));
         LENDER_MAX_BUCKET_INDEX = LENDER_MIN_BUCKET_INDEX + vm.envOr("NO_OF_BUCKETS", uint256(3)) - 1;
 
-        MIN_QUOTE_AMOUNT = 1e3;
-        MAX_QUOTE_AMOUNT = 1e30;
+        MIN_QUOTE_AMOUNT = vm.envOr("MIN_QUOTE_AMOUNT_ERC20", uint256(1e3));
+        MAX_QUOTE_AMOUNT = vm.envOr("MAX_QUOTE_AMOUNT_ERC20", uint256(1e30));
 
-        MIN_COLLATERAL_AMOUNT = 1e3;
-        MAX_COLLATERAL_AMOUNT = 1e30;
+        MIN_COLLATERAL_AMOUNT = vm.envOr("MIN_COLLATERAL_AMOUNT_ERC20", uint256(1e3));
+        MAX_COLLATERAL_AMOUNT = vm.envOr("MAX_COLLATERAL_AMOUNT_ERC20", uint256(1e30));
 
         for (uint256 bucket = LENDER_MIN_BUCKET_INDEX; bucket <= LENDER_MAX_BUCKET_INDEX; bucket++) {
             collateralBuckets.add(bucket);
