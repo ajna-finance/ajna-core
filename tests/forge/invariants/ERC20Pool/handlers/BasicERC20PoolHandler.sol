@@ -21,13 +21,11 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
         address pool_,
         address ajna_,
         address quote_,
-        address rewards_,
-        address positions_,
         address collateral_,
         address poolInfo_,
         uint256 numOfActors_,
         address testContract_
-    ) BaseERC20PoolHandler(pool_, ajna_, quote_, rewards_, positions_, collateral_, poolInfo_, numOfActors_, testContract_) {
+    ) BaseERC20PoolHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
 
     }
 

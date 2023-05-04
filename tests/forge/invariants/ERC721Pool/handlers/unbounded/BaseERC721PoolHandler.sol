@@ -31,7 +31,7 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
         address poolInfo_,
         uint256 numOfActors_,
         address testContract_
-    ) BaseHandler(pool_, ajna_, quote_, rewards_, positions_, poolInfo_, testContract_) {
+    ) BaseHandler(pool_, ajna_, quote_, poolInfo_, testContract_) {
 
         LENDER_MIN_BUCKET_INDEX = vm.envOr("BUCKET_INDEX_ERC721", uint256(850));
         LENDER_MAX_BUCKET_INDEX = LENDER_MIN_BUCKET_INDEX + vm.envOr("NO_OF_BUCKETS", uint256(3)) - 1;

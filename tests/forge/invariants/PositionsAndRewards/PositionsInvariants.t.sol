@@ -4,11 +4,52 @@ pragma solidity 0.8.14;
 
 import "@std/console.sol";
 
-import { Maths } from 'src/libraries/internal/Maths.sol';
-import { IBaseHandler }          from '../interfaces/IBaseHandler.sol';
-import { ReserveInvariants } from './ReserveInvariants.t.sol';
+import { Maths }                      from 'src/libraries/internal/Maths.sol';
+import { IBaseHandler }               from '../interfaces/IBaseHandler.sol';
+import { BaseInvariants }             from '../base/BaseInvariants.sol';
+import { ReserveERC20PoolInvariants } from '../ERC20Pool/ReserveERC20PoolInvariants.t.sol';
+import { ReserveERC20PoolHandler }    from '../ERC20Pool/handlers/ReserveERC20PoolHandler.sol';
 
-abstract contract PositionsInvariants is ReserveInvariants {
+import { PositionsHandler }    from './handlers/PositionsHandler.sol';
+
+contract PositionInvariants is ReserveERC20PoolInvariants {
+
+    PositionsHandler internal _positionsTempHandler;
+    address          internal _positionsHandler;
+
+    function setUp() public override(ReserveERC20PoolInvariants) virtual {
+
+        super.setUp();
+
+
+        // _reserveERC20PoolHandler = new ReserveERC20PoolHandler(
+        //     address(_erc20pool),
+        //     address(_ajna),
+        //     address(_quote),
+        //     address(_rewards),
+        //     address(_positions),
+        //     address(_collateral),
+        //     address(_poolInfo),
+        //     NUM_ACTORS,
+        //     address(this)
+        // );
+
+        // reserveERC20PooldHanler is already initialized in parent contract (ReserveERC20PoolInvariants)
+        //_handler = address(_reserveERC20PoolHandler);
+
+        _positionsTempHandler = new PositionsHandler(
+            address(_erc20pool),
+            address(_ajna),
+            address(_quote),
+            address(_collateral),
+            address(_poolInfo),
+            NUM_ACTORS,
+            address(this),
+            address(_positions)
+        );
+
+        _positionsHandler = address(_positionsHandler);
+    }
 
     function invariant_positions_PM1_PM2() public useCurrentTimestamp {
         uint256 mostRecentDepositTime;

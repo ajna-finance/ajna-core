@@ -7,10 +7,34 @@ import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import { Maths } from 'src/libraries/internal/Maths.sol';
 
 import { IPositionManagerOwnerActions } from 'src/interfaces/position/IPositionManagerOwnerActions.sol';
-import { UnboundedPositionsHandler }    from '../../base/handlers/unbounded/UnboundedPositionsHandler.sol';
-import { ReservePoolHandler }           from './ReservePoolHandler.sol';
+import { UnboundedPositionsHandler }    from './unbounded/UnboundedPositionsHandler.sol';
+import { BasePositionsHandler }    from './unbounded/BasePositionsHandler.sol';
+import { BaseERC20PoolHandler }         from '../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
+import { BasicPoolHandler }         from '../../base/handlers/BasicPoolHandler.sol';
 
-abstract contract PositionsHandler is UnboundedPositionsHandler, ReservePoolHandler {
+contract PositionsHandler is UnboundedPositionsHandler, BasicPoolHandler {
+
+    constructor(
+        address pool_,
+        address ajna_,
+        address quote_,
+        address collateral_,
+        address poolInfo_,
+        uint256 numOfActors_,
+        address testContract_,
+        address positions_
+    ) BasePositionsHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_, positions_) {}
+
+    // constructor(
+    //     address pool_,
+    //     address ajna_,
+    //     address quote_,
+    //     address collateral_,
+    //     address poolInfo_,
+    //     uint256 numOfActors_,
+    //     address testContract_,
+    //     address positions_
+    // ) UnboundedPositionsHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_, positions_) {}
 
     /*******************************/
     /*** Positions Test Functions ***/

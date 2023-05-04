@@ -44,8 +44,6 @@ contract BasicERC20PoolInvariants is BasicInvariants {
             address(_erc20pool),
             address(_ajna),
             address(_quote),
-            address(_rewards),
-            address(_positions),
             address(_collateral),
             address(_poolInfo),
             NUM_ACTORS,

@@ -37,10 +37,6 @@ abstract contract BaseHandler is Test {
     Pool          internal _pool;
     PoolInfoUtils internal _poolInfo;
 
-    // Rewards
-    PositionManager internal _positions;
-    RewardsManager  internal _rewards;
-
     // Lender bucket index
     uint256 public LENDER_MIN_BUCKET_INDEX;
     uint256 public LENDER_MAX_BUCKET_INDEX;
@@ -77,13 +73,6 @@ abstract contract BaseHandler is Test {
     uint256 public increaseInReserves;  // amount of reserve decrease
     uint256 public decreaseInReserves;  // amount of reserve increase
 
-    // positions invariant test state
-    mapping(uint256 => EnumerableSet.UintSet) internal tokenIdsByBucketIndex;
-    EnumerableSet.UintSet internal bucketIndexesWithPosition;
-    EnumerableSet.UintSet internal tokenIdsMinted;
-    mapping(uint256 => uint256) internal bucketIndexToPreActionActorLps; // to track LP changes
-    mapping(uint256 => uint256) internal bucketIndexToPreActionPosLps; // to track LP changes
-
     // rewards invariant test state
     mapping(uint256 => uint256) public totalRewardPerEpoch;    // total rewards per epoch
     uint256 public totalStakerRewPerEpoch;  // amount of reserve decrease
@@ -100,8 +89,6 @@ abstract contract BaseHandler is Test {
         address pool_,
         address ajna_,
         address quote_,
-        address rewards_,
-        address positions_,
         address poolInfo_,
         address testContract_
     ) {
@@ -113,14 +100,9 @@ abstract contract BaseHandler is Test {
         _pool     = Pool(pool_);
         _poolInfo = PoolInfoUtils(poolInfo_);
 
-        // Rewards
-        _positions = PositionManager(positions_);
-        _rewards   = RewardsManager(rewards_);
-
         // Test invariant contract
         testContract = ITestBase(testContract_);
 
-        bucketIndexesWithPosition.add(1);
     }
 
     /*****************/
@@ -455,16 +437,5 @@ abstract contract BaseHandler is Test {
         return collateralBuckets.values();
     }
 
-    function getBucketIndexesWithPosition() public view returns(uint256[] memory) {
-        return bucketIndexesWithPosition.values();
-    }
-
-    function getTokenIdsByBucketIndex(uint256 bucketIndex_) public view returns(uint256[] memory) {
-        return tokenIdsByBucketIndex[bucketIndex_].values();
-    }
-
-    function getTokenIds() public view returns(uint256[] memory) {
-        return tokenIdsMinted.values();
-    }
 
 }

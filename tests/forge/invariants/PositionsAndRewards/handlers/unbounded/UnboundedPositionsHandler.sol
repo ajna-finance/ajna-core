@@ -8,16 +8,45 @@ import { IPositionManagerOwnerActions } from 'src/interfaces/position/IPositionM
 import { _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }             from "src/libraries/internal/Maths.sol";
 
-import { BaseHandler } from './BaseHandler.sol';
+import { BaseERC20PoolHandler }         from '../../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
+import { BaseHandler }         from '../../../base/handlers/unbounded/BaseHandler.sol';
+import { BasePositionsHandler }         from './BasePositionsHandler.sol';
+import { UnboundedBasicPoolHandler }         from '../../../base/handlers/unbounded/UnboundedBasicPoolHandler.sol';
+
+import { PositionManager }   from 'src/PositionManager.sol';
 
 /**
  *  @dev this contract manages multiple lenders
  *  @dev methods in this contract are called in random order
  *  @dev randomly selects a lender contract to make a txn
  */ 
-abstract contract UnboundedPositionsHandler is BaseHandler {
+abstract contract UnboundedPositionsHandler is UnboundedBasicPoolHandler, BasePositionsHandler {
+
+    // PositionManager internal _positions;
+
+    // // positions invariant test state
+    // mapping(uint256 => EnumerableSet.UintSet) internal tokenIdsByBucketIndex;
+    // EnumerableSet.UintSet internal bucketIndexesWithPosition;
+    // EnumerableSet.UintSet internal tokenIdsMinted;
+    // mapping(uint256 => uint256) internal bucketIndexToPreActionActorLps; // to track LP changes
+    // mapping(uint256 => uint256) internal bucketIndexToPreActionPosLps; // to track LP changes
 
     using EnumerableSet for EnumerableSet.UintSet;
+
+    // constructor(
+    //     address pool_,
+    //     address ajna_,
+    //     address quote_,
+    //     address collateral_,
+    //     address poolInfo_,
+    //     uint256 numOfActors_,
+    //     address testContract_,
+    //     address positions_
+    // ) BasePositionsHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
+
+    //     // _positions = PositionManager(address(_positions));
+
+    // }
 
     function _memorializePositions(
         uint256 tokenId_,
@@ -81,14 +110,6 @@ abstract contract UnboundedPositionsHandler is BaseHandler {
         /**
         *  @notice Struct holding parameters for moving the liquidity of a position.
         */
-        // struct MoveLiquidityParams {
-        //     uint256 tokenId;   // The tokenId of the positions NFT
-        //     address pool;      // The pool address associated with positions NFT
-        //     uint256 fromIndex; // The bucket index from which liquidity should be moved
-        //     uint256 toIndex;   // The bucket index to which liquidity should be moved
-        //     uint256 expiry;    // Timestamp after which this TX will revert, preventing inclusion in a block with unfavorable price
-        // }
-
 
         try _positions.moveLiquidity(IPositionManagerOwnerActions.MoveLiquidityParams(tokenId_, address(_pool), fromIndex_, toIndex_, block.timestamp + 30)) {
 
@@ -120,6 +141,18 @@ abstract contract UnboundedPositionsHandler is BaseHandler {
             _ensurePoolError(err);
         }
     }
+
+    // function getBucketIndexesWithPosition() public view returns(uint256[] memory) {
+    //     return bucketIndexesWithPosition.values();
+    // }
+
+    // function getTokenIdsByBucketIndex(uint256 bucketIndex_) public view returns(uint256[] memory) {
+    //     return tokenIdsByBucketIndex[bucketIndex_].values();
+    // }
+
+    // function getTokenIds() public view returns(uint256[] memory) {
+    //     return tokenIdsMinted.values();
+    // }
 
 
 
