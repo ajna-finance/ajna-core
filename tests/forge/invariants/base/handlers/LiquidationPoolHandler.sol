@@ -121,7 +121,7 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
                 _drawDebt(drawDebtAmount);
 
                 // skip to make borrower undercollateralized
-                vm.warp(block.timestamp + 200 days);
+                vm.warp(block.timestamp + _getKickSkipTime());
             }
         }
     }
