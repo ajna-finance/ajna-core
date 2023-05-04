@@ -632,7 +632,7 @@ library TakerActions {
                 Maths.wmul(vars.collateralAmount, vars.bucketPrice - vars.auctionPrice),
                 exchangeRate
             );
-            totalLPReward += takerLPReward;
+            totalLPReward = takerLPReward;
 
             Buckets.addLenderLP(bucket, bankruptcyTime, msg.sender, takerLPReward);
         }

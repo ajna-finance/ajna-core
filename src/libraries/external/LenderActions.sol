@@ -505,9 +505,8 @@ library LenderActions {
                 bucketLP
             );
         } else {
-            // update lender LP balance
+            // update lender and bucket LP balances
             lender.lps -= lpAmount_;
-            // update bucket LP balance
             bucket.lps = bucketLP;
         }
     }
@@ -686,9 +685,8 @@ library LenderActions {
                 bucketLP
             );
         } else {
-            // update lender LP balance
+            // update lender and bucket LP balances
             lender.lps -= lpAmount_;
-            // update bucket LP balance
             bucket.lps = bucketLP;
         }
     }
