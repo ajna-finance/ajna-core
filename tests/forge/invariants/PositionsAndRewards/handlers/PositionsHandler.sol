@@ -25,16 +25,6 @@ contract PositionsHandler is UnboundedPositionsHandler, BasicPoolHandler {
         address positions_
     ) BasePositionsHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_, positions_) {}
 
-    // constructor(
-    //     address pool_,
-    //     address ajna_,
-    //     address quote_,
-    //     address collateral_,
-    //     address poolInfo_,
-    //     uint256 numOfActors_,
-    //     address testContract_,
-    //     address positions_
-    // ) UnboundedPositionsHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_, positions_) {}
 
     /*******************************/
     /*** Positions Test Functions ***/

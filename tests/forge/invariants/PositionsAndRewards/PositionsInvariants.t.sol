@@ -21,21 +21,7 @@ contract PositionInvariants is ReserveERC20PoolInvariants {
 
         super.setUp();
 
-
-        // _reserveERC20PoolHandler = new ReserveERC20PoolHandler(
-        //     address(_erc20pool),
-        //     address(_ajna),
-        //     address(_quote),
-        //     address(_rewards),
-        //     address(_positions),
-        //     address(_collateral),
-        //     address(_poolInfo),
-        //     NUM_ACTORS,
-        //     address(this)
-        // );
-
-        // reserveERC20PooldHanler is already initialized in parent contract (ReserveERC20PoolInvariants)
-        //_handler = address(_reserveERC20PoolHandler);
+        // reserveERC20PooldHandler is already initialized in parent contract (ReserveERC20PoolInvariants)
 
         _positionsTempHandler = new PositionsHandler(
             address(_erc20pool),

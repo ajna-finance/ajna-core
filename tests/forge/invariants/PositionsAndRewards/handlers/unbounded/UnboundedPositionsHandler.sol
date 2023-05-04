@@ -22,31 +22,7 @@ import { PositionManager }   from 'src/PositionManager.sol';
  */ 
 abstract contract UnboundedPositionsHandler is UnboundedBasicPoolHandler, BasePositionsHandler {
 
-    // PositionManager internal _positions;
-
-    // // positions invariant test state
-    // mapping(uint256 => EnumerableSet.UintSet) internal tokenIdsByBucketIndex;
-    // EnumerableSet.UintSet internal bucketIndexesWithPosition;
-    // EnumerableSet.UintSet internal tokenIdsMinted;
-    // mapping(uint256 => uint256) internal bucketIndexToPreActionActorLps; // to track LP changes
-    // mapping(uint256 => uint256) internal bucketIndexToPreActionPosLps; // to track LP changes
-
     using EnumerableSet for EnumerableSet.UintSet;
-
-    // constructor(
-    //     address pool_,
-    //     address ajna_,
-    //     address quote_,
-    //     address collateral_,
-    //     address poolInfo_,
-    //     uint256 numOfActors_,
-    //     address testContract_,
-    //     address positions_
-    // ) BasePositionsHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
-
-    //     // _positions = PositionManager(address(_positions));
-
-    // }
 
     function _memorializePositions(
         uint256 tokenId_,
@@ -141,19 +117,4 @@ abstract contract UnboundedPositionsHandler is UnboundedBasicPoolHandler, BasePo
             _ensurePoolError(err);
         }
     }
-
-    // function getBucketIndexesWithPosition() public view returns(uint256[] memory) {
-    //     return bucketIndexesWithPosition.values();
-    // }
-
-    // function getTokenIdsByBucketIndex(uint256 bucketIndex_) public view returns(uint256[] memory) {
-    //     return tokenIdsByBucketIndex[bucketIndex_].values();
-    // }
-
-    // function getTokenIds() public view returns(uint256[] memory) {
-    //     return tokenIdsMinted.values();
-    // }
-
-
-
 }
