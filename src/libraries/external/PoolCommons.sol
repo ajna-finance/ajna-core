@@ -233,7 +233,7 @@ library PoolCommons {
         uint256 accrualIndex;
         if (htp > MAX_PRICE)      accrualIndex = 1;                 // if HTP is over the highest price bucket then no buckets earn interest
         else if (htp < MIN_PRICE) accrualIndex = MAX_FENWICK_INDEX; // if HTP is under the lowest price bucket then all buckets earn interest
-        else                      accrualIndex = _indexOf(htp);     // else HPT bucket earn interest
+        else                      accrualIndex = _indexOf(htp);     // else HTP bucket earn interest
 
         uint256 lupIndex = Deposits.findIndexOfSum(deposits_, poolState_.debt);
         // accrual price is less of lup and htp, and prices decrease as index increases
