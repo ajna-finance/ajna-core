@@ -224,12 +224,12 @@ contract PositionsHandler is UnboundedPositionsHandler {
         // Post action //
         // assert that underlying LP balance in PositionManager of fromIndex is 0 and deposit time in PositionManager is 0
         (uint256 fromLps, uint256 fromDepositTime) = _positions.getPositionInfo(tokenId, fromIndex);
-        assertGt(fromLps, 0);
-        assertEq(fromDepositTime, 0);
+        assertEq(fromLps, 0);
+        assertGt(fromDepositTime, 0);
 
         // assert that underlying LP balance in PositionManager of toIndex is increased and deposit time in PositionManager is updated
         (uint256 toLps, uint256 toDepositTime) = _positions.getPositionInfo(tokenId, toIndex);
-        assertEq(toLps, preActionToLps); // difficult to estimate LPS, assert that it is greater than
+        assertGt(toLps, preActionToLps); // difficult to estimate LPS, assert that it is greater than
         assertEq(toDepositTime, block.timestamp); 
     }
 
