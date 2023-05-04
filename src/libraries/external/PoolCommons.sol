@@ -249,9 +249,9 @@ library PoolCommons {
 
             // lender factor computation, capped at 10x the interest factor for borrowers
             uint256 lenderFactor = Maths.min(
-                Maths.floorWdiv(newInterest_, interestEarningDeposit) + Maths.WAD,
-                Maths.wmul(pendingFactor, Maths.wad(10))
-            );
+                Maths.floorWdiv(newInterest_, interestEarningDeposit),
+                Maths.wmul(pendingFactor - Maths.WAD, Maths.wad(10))
+            ) + Maths.WAD;
 
             // Scale the fenwick tree to update amount of debt owed to lenders
             Deposits.mult(deposits_, accrualIndex, lenderFactor);
