@@ -69,7 +69,7 @@ contract BasicERC20PoolInvariants is BasicInvariants {
     }
 
     // checks pools collateral Balance to be equal to collateral pledged
-    function invariant_collateralBalance_CT1_CT7() public useCurrentTimestamp {
+    function invariant_collateral_CT1_CT7() public useCurrentTimestamp {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         uint256 totalCollateralPledged;
