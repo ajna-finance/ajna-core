@@ -172,7 +172,7 @@ abstract contract BaseHandler is Test {
     }
 
     function _getKickSkipTime() internal returns (uint256) {
-        return vm.envOr("SKIP_TIME_TO_KICK", uint256(24 hours));
+        return vm.envOr("SKIP_TIME_TO_KICK", uint256(200 days));
     }
 
     /**
