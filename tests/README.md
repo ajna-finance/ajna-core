@@ -33,6 +33,15 @@ make test-regression-erc20
 ```bash
 make test-regression-erc721
 ```
+#### Instruction to generate regression test from failing invariant sequence
+
+- copy the failing scenario steps from invariant failure in `trace.log` file in invariants dir
+- run python script 
+```bash
+python regression_generator.py
+```
+- it will output regression test based on scenario steps
+- copy test in proper RegressionTest* test suite
 
 ### Invariant tests
 #### Configuration
