@@ -51,7 +51,7 @@ contract PositionsHandler is UnboundedPositionsHandler {
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BPositionHandler.memorialize']++;
         // Pre action //
-        (uint256 tokenId, uint256[] memory indexes) = _preMemorializePositions(bucketIndex_, amountToAdd_);
+        (uint256 tokenId, uint256[] memory indexes) = _preMemorializePositions(_lenderBucketIndex, amountToAdd_);
 
         for(uint256 i=0; i < indexes.length; i++) {
 
@@ -99,7 +99,7 @@ contract PositionsHandler is UnboundedPositionsHandler {
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BPositionHandler.redeem']++;
         // Pre action //
-        (uint256 tokenId, uint256[] memory indexes) = _preRedeemPositions(bucketIndex_, amountToAdd_);
+        (uint256 tokenId, uint256[] memory indexes) = _preRedeemPositions(_lenderBucketIndex, amountToAdd_);
 
         for(uint256 i=0; i < indexes.length; i++) {
 
@@ -182,15 +182,15 @@ contract PositionsHandler is UnboundedPositionsHandler {
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BPositionHandler.burn']++;        
         // Pre action //
-        (uint256 tokenId_) = _preBurn(bucketIndex_, amountToAdd_);
+        (uint256 tokenId_) = _preBurn(_lenderBucketIndex, amountToAdd_);
         
         // Action phase //
         _burn(tokenId_);
-
-            
+   
         // Post action //
-        // assert that no one owns this tokenId
-        assertEq(_positions.ownerOf(tokenId_), address(0));
+        // should revert if token id is burned
+        vm.expectRevert("ERC721: invalid token ID");
+        _positions.ownerOf(tokenId_);
 
         // assert that poolKey is returns zero address
         address poolAddress = _positions.poolKey(tokenId_);
@@ -244,8 +244,11 @@ contract PositionsHandler is UnboundedPositionsHandler {
         // add quote token if they don't have a position
         if (lpBalanceBefore == 0) {
             // Prepare test phase
-            uint256 boundedAmount = _preAddQuoteToken(amountToAdd_);
-            _addQuoteToken(boundedAmount, bucketIndex_);
+            uint256 boundedAmount = constrictToRange(amountToAdd_, MIN_QUOTE_AMOUNT, MAX_QUOTE_AMOUNT);
+            try _pool.addQuoteToken(boundedAmount, bucketIndex_, block.timestamp + 1 minutes) {
+            } catch (bytes memory err) {
+                _ensurePoolError(err);
+            }
         }
 
         //TODO: Check for exisiting nft positions in PositionManager
@@ -271,6 +274,11 @@ contract PositionsHandler is UnboundedPositionsHandler {
         
         // Action phase
         _memorializePositions(tokenId_, indexes_);
+
+        address[] memory transferors = new address[](1);
+        transferors[0] = address(_positions);
+
+        _pool.approveLPTransferors(transferors);
     }
 
     function _preBurn(
@@ -280,9 +288,7 @@ contract PositionsHandler is UnboundedPositionsHandler {
         uint256[] memory indexes;
 
         // check and create the position
-        (tokenId_, indexes) = _preMemorializePositions(bucketIndex_, amountToAdd_);
-        //  
-        _memorializePositions(tokenId_, indexes);
+        (tokenId_, indexes) = _preRedeemPositions(bucketIndex_, amountToAdd_);
 
         _redeemPositions(tokenId_, indexes);
     }
