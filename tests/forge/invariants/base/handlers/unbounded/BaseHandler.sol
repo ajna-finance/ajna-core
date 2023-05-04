@@ -171,6 +171,10 @@ abstract contract BaseHandler is Test {
         _pool.updateInterest();
     }
 
+    function _getKickSkipTime() internal returns (uint256) {
+        return vm.envOr("SKIP_TIME_TO_KICK", uint256(24 hours));
+    }
+
     /**
      * @dev Ensure that error is an Pool expected error.
      */
