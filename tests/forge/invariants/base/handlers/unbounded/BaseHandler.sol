@@ -8,8 +8,6 @@ import { EnumerableSet }   from '@openzeppelin/contracts/utils/structs/Enumerabl
 
 import { Pool }             from 'src/base/Pool.sol';
 import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
-import { PositionManager }  from 'src/PositionManager.sol';
-import { RewardsManager }   from 'src/RewardsManager.sol';
 import { PoolCommons }      from 'src/libraries/external/PoolCommons.sol';
 import {
     MAX_FENWICK_INDEX,
@@ -144,13 +142,15 @@ abstract contract BaseHandler is Test {
     }
 
     modifier useRandomActor(uint256 actorIndex_) {
-        vm.stopPrank();
 
         _actor = actors[constrictToRange(actorIndex_, 0, actors.length - 1)];
 
-        vm.startPrank(_actor);
+        // if prank already started in test then use change prank to change actor
+        try vm.startPrank(_actor) {
+        } catch {
+            changePrank(_actor);
+        }
         _;
-        vm.stopPrank();
     }
 
     modifier useRandomLenderBucket(uint256 bucketIndex_) {

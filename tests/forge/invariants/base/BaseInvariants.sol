@@ -7,9 +7,6 @@ import '@std/Test.sol';
 import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
 import { Pool }             from 'src/base/Pool.sol';
 
-import { RewardsManager }   from 'src/RewardsManager.sol';
-import { PositionManager }  from 'src/PositionManager.sol';
-
 import { TokenWithNDecimals, BurnableToken }  from '../../utils/Tokens.sol';
 
 abstract contract BaseInvariants is Test {
@@ -23,10 +20,6 @@ abstract contract BaseInvariants is Test {
 
     Pool             internal _pool;
     PoolInfoUtils    internal _poolInfo;
-
-    // rewards
-    RewardsManager   internal _rewards;
-    PositionManager  internal _positions;
 
     // bucket exchange rate tracking
     mapping(uint256 => uint256) internal previousBucketExchangeRate;

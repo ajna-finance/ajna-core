@@ -5,29 +5,25 @@ pragma solidity 0.8.14;
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { IPositionManagerOwnerActions } from 'src/interfaces/position/IPositionManagerOwnerActions.sol';
-import { _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
-import { Maths }             from "src/libraries/internal/Maths.sol";
+import { _depositFeeRate }              from 'src/libraries/helpers/PoolHelper.sol';
+import { Maths }                        from "src/libraries/internal/Maths.sol";
 
 import { BaseERC20PoolHandler }         from '../../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
-import { BaseHandler }         from '../../../base/handlers/unbounded/BaseHandler.sol';
 import { BasePositionsHandler }         from './BasePositionsHandler.sol';
-import { UnboundedBasicPoolHandler }         from '../../../base/handlers/unbounded/UnboundedBasicPoolHandler.sol';
-
-import { PositionManager }   from 'src/PositionManager.sol';
 
 /**
  *  @dev this contract manages multiple lenders
  *  @dev methods in this contract are called in random order
  *  @dev randomly selects a lender contract to make a txn
  */ 
-abstract contract UnboundedPositionsHandler is UnboundedBasicPoolHandler, BasePositionsHandler {
+abstract contract UnboundedPositionsHandler is BasePositionsHandler {
 
     using EnumerableSet for EnumerableSet.UintSet;
 
     function _memorializePositions(
         uint256 tokenId_,
         uint256[] memory indexes_
-    ) internal updateLocalStateAndPoolInterest {
+    ) internal {
         numberOfCalls['UBPositionHandler.memorialize']++;
 
         try _positions.memorializePositions(IPositionManagerOwnerActions.MemorializePositionsParams(tokenId_, indexes_)) {
@@ -45,7 +41,7 @@ abstract contract UnboundedPositionsHandler is UnboundedBasicPoolHandler, BasePo
         }
     }
 
-    function _mint() internal updateLocalStateAndPoolInterest returns (uint256 tokenIdResult) {
+    function _mint() internal returns (uint256 tokenIdResult) {
         numberOfCalls['UBPositionHandler.mint']++;
         try _positions.mint(IPositionManagerOwnerActions.MintParams(_actor, address(_pool), keccak256("ERC20_NON_SUBSET_HASH"))) returns (uint256 tokenId) {
 
@@ -59,7 +55,7 @@ abstract contract UnboundedPositionsHandler is UnboundedBasicPoolHandler, BasePo
     function _redeemPositions(
         uint256 tokenId_,
         uint256[] memory indexes_
-    ) internal updateLocalStateAndPoolInterest {
+    ) internal {
         numberOfCalls['UBPositionHandler.redeem']++;
 
         try _positions.reedemPositions(IPositionManagerOwnerActions.RedeemPositionsParams(tokenId_, address(_pool), indexes_)) {
@@ -80,7 +76,7 @@ abstract contract UnboundedPositionsHandler is UnboundedBasicPoolHandler, BasePo
         uint256 tokenId_,
         uint256 fromIndex_,
         uint256 toIndex_
-    ) internal updateLocalStateAndPoolInterest {
+    ) internal {
         numberOfCalls['UBPositionHandler.moveLiquidity']++;
 
         /**
@@ -109,7 +105,7 @@ abstract contract UnboundedPositionsHandler is UnboundedBasicPoolHandler, BasePo
 
     function _burn(
         uint256 tokenId_
-    ) internal updateLocalStateAndPoolInterest {
+    ) internal {
         numberOfCalls['UBPositionHandler.burn']++;
         try _positions.burn(IPositionManagerOwnerActions.BurnParams(tokenId_, address(_pool))) {
 

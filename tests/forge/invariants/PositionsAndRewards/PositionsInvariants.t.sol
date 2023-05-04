@@ -4,37 +4,69 @@ pragma solidity 0.8.14;
 
 import "@std/console.sol";
 
-import { Maths }                      from 'src/libraries/internal/Maths.sol';
+import { Pool }              from 'src/base/Pool.sol';
+import { ERC20Pool }         from 'src/ERC20Pool.sol';
+import { ERC721Pool }        from 'src/ERC721Pool.sol';
+import { ERC20PoolFactory }  from 'src/ERC20PoolFactory.sol';
+import { ERC721PoolFactory } from 'src/ERC721PoolFactory.sol';
+import { PositionManager }   from 'src/PositionManager.sol';
+import { Maths }             from 'src/libraries/internal/Maths.sol';
+
 import { IBaseHandler }               from '../interfaces/IBaseHandler.sol';
 import { BaseInvariants }             from '../base/BaseInvariants.sol';
 import { ReserveERC20PoolInvariants } from '../ERC20Pool/ReserveERC20PoolInvariants.t.sol';
 import { ReserveERC20PoolHandler }    from '../ERC20Pool/handlers/ReserveERC20PoolHandler.sol';
+import { TokenWithNDecimals }         from '../../utils/Tokens.sol';
 
 import { PositionsHandler }    from './handlers/PositionsHandler.sol';
 
-contract PositionInvariants is ReserveERC20PoolInvariants {
+contract PositionsInvariants is BaseInvariants {
 
-    PositionsHandler internal _positionsTempHandler;
-    address          internal _positionsHandler;
+    uint256            internal constant NUM_ACTORS = 10;
 
-    function setUp() public override(ReserveERC20PoolInvariants) virtual {
+    TokenWithNDecimals internal _collateral;
+    ERC20Pool          internal _erc20pool;
+    ERC20Pool          internal _erc20impl;
+    ERC20PoolFactory   internal _erc20poolFactory;
+    ERC721PoolFactory  internal _erc721poolFactory;
+    ERC721Pool         internal _erc721impl;
+    PositionManager    internal _positions;
+    PositionsHandler   internal _positionsHandler;
+
+    function setUp() public override virtual {
 
         super.setUp();
+        _collateral        = new TokenWithNDecimals("Collateral", "C", uint8(vm.envOr("COLLATERAL_PRECISION", uint256(18))));
+        _erc20poolFactory  = new ERC20PoolFactory(address(_ajna));
+        _erc20impl         = _erc20poolFactory.implementation();
+        _erc721poolFactory = new ERC721PoolFactory(address(_ajna));
+        _erc721impl        = _erc721poolFactory.implementation();
+        _erc20pool         = ERC20Pool(_erc20poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
+        _pool              = Pool(address(_erc20pool));
+        _positions         = new PositionManager(_erc20poolFactory, _erc721poolFactory);
 
-        // reserveERC20PooldHandler is already initialized in parent contract (ReserveERC20PoolInvariants)
+        excludeContract(address(_ajna));
+        excludeContract(address(_collateral));
+        excludeContract(address(_quote));
+        excludeContract(address(_erc20poolFactory));
+        excludeContract(address(_erc721poolFactory));
+        excludeContract(address(_erc20pool));
+        excludeContract(address(_poolInfo));
+        excludeContract(address(_erc20impl));
+        excludeContract(address(_erc721impl));
+        excludeContract(address(_positions));
 
-        _positionsTempHandler = new PositionsHandler(
+        _positionsHandler = new PositionsHandler(
+            address(_positions),
             address(_erc20pool),
             address(_ajna),
             address(_quote),
-            address(_collateral),
             address(_poolInfo),
             NUM_ACTORS,
-            address(this),
-            address(_positions)
+            address(this)
         );
 
-        _positionsHandler = address(_positionsHandler);
+        _handler = address(_positionsHandler);
     }
 
     function invariant_positions_PM1_PM2() public useCurrentTimestamp {
@@ -65,7 +97,7 @@ contract PositionInvariants is ReserveERC20PoolInvariants {
         }
     }
 
-    function invariant_call_summary() public virtual override useCurrentTimestamp {
+    function invariant_call_summary() public virtual useCurrentTimestamp {
         console.log("\nCall Summary\n");
         console.log("--Positions--------");
         console.log("UBPositionHandler.mint              ",  IBaseHandler(_handler).numberOfCalls("UBPositionHandler.mint"));

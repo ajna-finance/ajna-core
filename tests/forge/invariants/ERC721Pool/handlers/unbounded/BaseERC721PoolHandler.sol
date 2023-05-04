@@ -25,8 +25,6 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
         address pool_,
         address ajna_,
         address quote_,
-        address rewards_,
-        address positions_,
         address collateral_,
         address poolInfo_,
         uint256 numOfActors_,

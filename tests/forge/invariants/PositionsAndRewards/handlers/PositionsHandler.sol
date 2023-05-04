@@ -7,24 +7,37 @@ import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import { Maths } from 'src/libraries/internal/Maths.sol';
 
 import { IPositionManagerOwnerActions } from 'src/interfaces/position/IPositionManagerOwnerActions.sol';
-import { UnboundedPositionsHandler }    from './unbounded/UnboundedPositionsHandler.sol';
-import { BasePositionsHandler }    from './unbounded/BasePositionsHandler.sol';
-import { BaseERC20PoolHandler }         from '../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
-import { BasicPoolHandler }         from '../../base/handlers/BasicPoolHandler.sol';
+import { PositionManager }              from 'src/PositionManager.sol';
 
-contract PositionsHandler is UnboundedPositionsHandler, BasicPoolHandler {
+import { UnboundedPositionsHandler } from './unbounded/UnboundedPositionsHandler.sol';
+import { BasePositionsHandler }      from './unbounded/BasePositionsHandler.sol';
+import { BasicERC20PoolHandler }     from '../../ERC20Pool/handlers/BasicERC20PoolHandler.sol';
+import { BaseHandler }               from '../../base/handlers/unbounded/BaseHandler.sol';
+
+contract PositionsHandler is UnboundedPositionsHandler {
 
     constructor(
+        address positions_,
         address pool_,
         address ajna_,
         address quote_,
-        address collateral_,
         address poolInfo_,
         uint256 numOfActors_,
-        address testContract_,
-        address positions_
-    ) BasePositionsHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_, positions_) {}
+        address testContract_
+    ) BaseHandler(pool_, ajna_, quote_, poolInfo_, testContract_) {
 
+        LENDER_MIN_BUCKET_INDEX = vm.envOr("BUCKET_INDEX_ERC20", uint256(2570));
+        LENDER_MAX_BUCKET_INDEX = LENDER_MIN_BUCKET_INDEX + vm.envOr("NO_OF_BUCKETS", uint256(3)) - 1;
+        
+        MIN_QUOTE_AMOUNT = 1e3;
+        MAX_QUOTE_AMOUNT = 1e30;
+
+        // Position manager
+        _positions = PositionManager(positions_);
+
+        // Actors
+        actors = _buildActors(numOfActors_);
+    }
 
     /*******************************/
     /*** Positions Test Functions ***/
