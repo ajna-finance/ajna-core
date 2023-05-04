@@ -24,7 +24,7 @@ contract ReserveERC20PoolInvariants is ReserveInvariants, LiquidationERC20PoolIn
             address(_quote),
             address(_collateral),
             address(_poolInfo),
-            NUM_ACTORS,
+            _numOfActors,
             address(this)
         );
 

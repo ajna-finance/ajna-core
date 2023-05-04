@@ -34,7 +34,7 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
         LENDER_MIN_BUCKET_INDEX = vm.envOr("BUCKET_INDEX_ERC721", uint256(850));
         LENDER_MAX_BUCKET_INDEX = LENDER_MIN_BUCKET_INDEX + vm.envOr("NO_OF_BUCKETS", uint256(3)) - 1;
 
-        MIN_QUOTE_AMOUNT = 1e3;
+        MIN_QUOTE_AMOUNT = vm.envOr("MIN_QUOTE_AMOUNT_ERC721", uint256(1e3));
         /* 
             Lower the bucket price, higher number of NFT mints and transfers.
             So this formulae is used to avoid out of gas error and also run the invariants in a reasonable time
@@ -50,10 +50,10 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
             6500                1e6
             7368                1e3                
         */
-        MAX_QUOTE_AMOUNT = 10 ** (31 - (LENDER_MIN_BUCKET_INDEX / 260));
+        MAX_QUOTE_AMOUNT = vm.envOr("MAX_QUOTE_AMOUNT_ERC721", uint256(10 ** (31 - (LENDER_MIN_BUCKET_INDEX / 260))));
 
-        MIN_COLLATERAL_AMOUNT = 1;
-        MAX_COLLATERAL_AMOUNT = 100;
+        MIN_COLLATERAL_AMOUNT = vm.envOr("MIN_COLLATERAL_AMOUNT_ERC721", uint256(1));
+        MAX_COLLATERAL_AMOUNT = vm.envOr("MAX_COLLATERAL_AMOUNT_ERC721", uint256(100));
 
         for (uint256 bucket = LENDER_MIN_BUCKET_INDEX; bucket <= LENDER_MAX_BUCKET_INDEX; bucket++) {
             collateralBuckets.add(bucket);

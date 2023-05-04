@@ -18,8 +18,6 @@ import { IBaseHandler }          from '../interfaces/IBaseHandler.sol';
 // contains invariants for the test
 contract BasicERC20PoolInvariants is BasicInvariants {
 
-    uint256               internal constant NUM_ACTORS = 10;
-
     TokenWithNDecimals    internal _collateral;
     ERC20Pool             internal _erc20pool;
     ERC20Pool             internal _impl;
@@ -42,7 +40,7 @@ contract BasicERC20PoolInvariants is BasicInvariants {
             address(_quote),
             address(_collateral),
             address(_poolInfo),
-            NUM_ACTORS,
+            _numOfActors,
             address(this)
         );
 
