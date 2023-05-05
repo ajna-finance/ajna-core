@@ -22,6 +22,7 @@ contract RewardsManagerTest is RewardsHelperContract {
     mapping (address => uint256) internal minterToBalance;
 
     function setUp() external {
+        _startTest();
 
         // borrowers
         _borrower = makeAddr("borrower");
@@ -42,9 +43,8 @@ contract RewardsManagerTest is RewardsHelperContract {
         _bidder      = makeAddr("bidder");
         deal(address(_ajna), _bidder, 900_000_000 * 10**18);
 
-        vm.prank(_bidder);
+        changePrank(_bidder);
         _ajnaToken.approve(address(_pool), type(uint256).max);
-        vm.prank(_bidder);
         ERC20(address(_quoteOne)).approve(address(_pool), type(uint256).max);
         ERC20(address(_quoteTwo)).approve(address(_pool), type(uint256).max);
 

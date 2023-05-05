@@ -13,6 +13,8 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
     address internal _lender1;
 
     function setUp() external {
+        _startTest();
+
         _borrower = makeAddr("borrower");
         _bidder   = makeAddr("bidder");
         _lender   = makeAddr("lender");

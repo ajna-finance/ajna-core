@@ -12,6 +12,8 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
     address internal _lender;
 
     function setUp() external {
+        _startTest();
+
         _borrower  = makeAddr("borrower");
         _bidder    = makeAddr("bidder");
         _lender    = makeAddr("lender");

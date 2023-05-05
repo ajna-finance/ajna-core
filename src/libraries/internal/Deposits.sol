@@ -170,7 +170,7 @@ library Deposits {
 
         // Starting with the LSB of index, we iteratively move up towards the MSB of SIZE
         // Case 1:     the bit of index_ is set to 1.  In this case, the entire subtree below index_
-        //             is scaled.  So, we include factor_ into scaleing[index_], and remember in sum how much
+        //             is scaled.  So, we include factor_ into scaling[index_], and remember in sum how much
         //             we increased the subtree by, so that we can use it in case we encounter 0 bits (below).
         // Case 2:     The bit of index_ is set to 0.  In this case, consider the subtree below the node
         //             index_+bit. The subtree below that is not entirely scaled, but it does contain the

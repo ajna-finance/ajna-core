@@ -19,6 +19,8 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
     address internal _lender;
 
     function setUp() external {
+        _startTest();
+
         _lender = makeAddr("lender");
         lenders.add(_lender);
 

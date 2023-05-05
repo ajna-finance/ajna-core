@@ -122,7 +122,7 @@ abstract contract BaseHandler is Test {
      * @dev Skips some time before each action
      */
     modifier skipTime(uint256 time_) {
-        time_ = constrictToRange(time_, 0, 24 hours);
+        time_ = constrictToRange(time_, 0, vm.envOr("SKIP_TIME", uint256(24 hours)));
         vm.warp(block.timestamp + time_);
 
         _;
@@ -142,7 +142,6 @@ abstract contract BaseHandler is Test {
     }
 
     modifier useRandomActor(uint256 actorIndex_) {
-
         _actor = actors[constrictToRange(actorIndex_, 0, actors.length - 1)];
 
         // if prank already started in test then use change prank to change actor
@@ -175,6 +174,10 @@ abstract contract BaseHandler is Test {
 
     function _updatePoolState() internal {
         _pool.updateInterest();
+    }
+
+    function _getKickSkipTime() internal returns (uint256) {
+        return vm.envOr("SKIP_TIME_TO_KICK", uint256(200 days));
     }
 
     /**
@@ -307,7 +310,11 @@ abstract contract BaseHandler is Test {
                 Maths.wmul(pendingFactor - Maths.WAD, poolDebt)
             );
 
-            uint256 scale = (newInterest * 1e18) / interestEarningDeposit + Maths.WAD;
+            // Cap lender factor at 10x the interest factor for borrowers
+            uint256 scale = Maths.min(
+                (newInterest * 1e18) / interestEarningDeposit,
+                10 * (pendingFactor - Maths.WAD)
+            ) + Maths.WAD;
 
             // simulate scale being applied to all deposits above HTP
             _fenwickMult(accrualIndex, scale);
@@ -381,14 +388,21 @@ abstract contract BaseHandler is Test {
     }
 
     function fenwickIndexForSum(uint256 debt_) public view returns (uint256) {
-        uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX;
+        uint256 minIndex = LENDER_MIN_BUCKET_INDEX;
+        uint256 maxIndex = LENDER_MAX_BUCKET_INDEX;
 
-        while (debt_ != 0 && bucketIndex <= LENDER_MAX_BUCKET_INDEX) {
-            if (fenwickDeposits[bucketIndex] >= debt_) return bucketIndex;
+        uint256[] memory buckets = getCollateralBuckets();
+        for (uint256 i = 0; i < buckets.length; i++) {
+            minIndex = Maths.min(minIndex, buckets[i]);
+            maxIndex = Maths.max(maxIndex, buckets[i]);
+        }
 
-            debt_ -= fenwickDeposits[bucketIndex];
+        while (debt_ != 0 && minIndex <= maxIndex) {
+            if (fenwickDeposits[minIndex] >= debt_) return minIndex;
 
-            bucketIndex += 1;
+            debt_ -= fenwickDeposits[minIndex];
+
+            minIndex += 1;
         }
 
         return MAX_FENWICK_INDEX;

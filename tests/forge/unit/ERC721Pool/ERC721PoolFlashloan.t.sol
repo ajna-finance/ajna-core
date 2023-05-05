@@ -16,6 +16,8 @@ contract ERC721PoolFlashloanTest is ERC721HelperContract {
     uint    internal _bucketPrice;
 
     function setUp() external {
+        _startTest();
+
         _borrower  = makeAddr("borrower");
         _lender    = makeAddr("lender");
 

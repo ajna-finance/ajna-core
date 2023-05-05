@@ -257,8 +257,10 @@ library LPActions {
                     newOwner.lps = allowedAmount;
                 }
 
-                owner.lps     -= allowedAmount; // remove amount of LP from old owner
-                lpTransferred += allowedAmount; // add amount of LP to total LP transferred
+                // remove amount of LP from old owner
+                owner.lps     -= allowedAmount;
+                // add amount of LP to total LP transferred
+                lpTransferred += allowedAmount;
 
                 // set the deposit time as the max of transferred deposit and current deposit time
                 newOwner.depositTime = Maths.max(ownerDepositTime, newOwnerDepositTime);

@@ -24,7 +24,7 @@ contract LiquidationERC721PoolInvariants is BasicERC721PoolInvariants, Liquidati
             address(_quote),
             address(_collateral),
             address(_poolInfo),
-            NUM_ACTORS,
+            _numOfActors,
             address(this)
         );
 

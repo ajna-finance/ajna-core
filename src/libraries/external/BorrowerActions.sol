@@ -214,9 +214,8 @@ library BorrowerActions {
             // revert if borrow drives LUP price under the specified price limit
             _revertIfPriceDroppedBelowLimit(result_.newLup, limitIndex_);
 
-            // calculate new lup and check borrow action won't push borrower into a state of under-collateralization
+            // use new lup to check borrow action won't push borrower into a state of under-collateralization
             // this check also covers the scenario when loan is already auctioned
-
             if (!_isCollateralized(vars.borrowerDebt, borrower.collateral, result_.newLup, poolState_.poolType)) {
                 revert BorrowerUnderCollateralized();
             }

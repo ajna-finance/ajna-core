@@ -12,6 +12,8 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
     address internal _lender;
 
     function setUp() external {
+        _startTest();
+
         _lender    = makeAddr("lender");
         _borrower  = makeAddr("borrower");
         _attacker  = makeAddr("attacker");
@@ -217,7 +219,6 @@ contract ERC721PoolEMAsTest is ERC721HelperContract {
         );
 
         // draw additional debt
-        vm.stopPrank();
         _mintAndApproveCollateralTokens(_borrower,  6);
         uint256[] memory tokenIdsToAdd = new uint256[](6);
         for (uint i=0; i<6; ++i) {

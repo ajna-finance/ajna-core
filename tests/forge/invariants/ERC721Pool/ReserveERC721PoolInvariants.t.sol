@@ -26,7 +26,7 @@ contract ReserveERC721PoolInvariants is ReserveInvariants, LiquidationERC721Pool
             address(_quote),
             address(_collateral),
             address(_poolInfo),
-            NUM_ACTORS,
+            _numOfActors,
             address(this)
         );
 

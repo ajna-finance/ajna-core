@@ -80,7 +80,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         uint256 bucketCollateral; // [WAD] amount of collateral in from bucket
         uint256 bankruptcyTime;   // from bucket bankruptcy time
         uint256 bucketDeposit;    // [WAD] from bucket deposit
-        uint256 depositTime;      // lender deposit time in from bucekt
+        uint256 depositTime;      // lender deposit time in from bucket
         uint256 maxQuote;         // [WAD] max amount that can be moved from bucket
         uint256 lpbAmountFrom;    // [WAD] the LP redeemed from bucket
         uint256 lpbAmountTo;      // [WAD] the LP awarded in to bucket

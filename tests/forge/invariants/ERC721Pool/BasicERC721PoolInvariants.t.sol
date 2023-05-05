@@ -18,8 +18,6 @@ import { IBaseHandler }          from '../interfaces/IBaseHandler.sol';
 // contains invariants for the test
 contract BasicERC721PoolInvariants is BasicInvariants {
 
-    uint256               internal constant NUM_ACTORS = 10;
-
     NFTCollateralToken     internal _collateral;
     ERC721Pool             internal _erc721pool;
     ERC721Pool             internal _impl;
@@ -43,7 +41,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
             address(_quote),
             address(_collateral),
             address(_poolInfo),
-            NUM_ACTORS,
+            _numOfActors,
             address(this)
         );
 
@@ -69,7 +67,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
 
     }
 
-    function invariant_CT2() public useCurrentTimestamp {
+    function invariant_collateral_CT2() public useCurrentTimestamp {
         uint256 collateralBalance = _collateral.balanceOf(address(_erc721pool)) * 1e18;
         uint256 bucketCollateral;
         uint256 collateral;
@@ -84,7 +82,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
         assertEq(collateralBalance, bucketCollateral + _erc721pool.pledgedCollateral(), "Collateral Invariant CT2");
     }
 
-    function invariant_CT3() public useCurrentTimestamp {
+    function invariant_collateral_CT3() public useCurrentTimestamp {
         uint256 collateralBalance = _collateral.balanceOf(address(_erc721pool));
 
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
@@ -99,7 +97,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
         assertEq(collateralBalance, borrowerTokens + bucketTokens, "Collateral Invariant CT3");
     }
 
-    function invariant_CT4() public useCurrentTimestamp {
+    function invariant_collateral_CT4() public useCurrentTimestamp {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         for (uint256 i = 0; i < actorCount; i++) {
@@ -112,7 +110,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
         }
     }
 
-    function invariant_CT5() public useCurrentTimestamp {
+    function invariant_collateral_CT5() public useCurrentTimestamp {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         for (uint256 i = 0; i < actorCount; i++) {
@@ -134,7 +132,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
         }
     }
 
-    function invariant_CT6() public useCurrentTimestamp {
+    function invariant_collateral_CT6() public useCurrentTimestamp {
         if (_erc721pool.isSubset()) {
             uint256 actorCount = IBaseHandler(_handler).getActorsCount();
             for (uint256 i = 0; i < actorCount; i++) {
@@ -157,7 +155,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
         }    
     }
 
-    function invariant_CT7() public useCurrentTimestamp {
+    function invariant_collateral_CT7() public useCurrentTimestamp {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         uint256 totalCollateralPledged;

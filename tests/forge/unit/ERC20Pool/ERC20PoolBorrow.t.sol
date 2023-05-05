@@ -22,6 +22,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
     uint256 lowest  = 2554;
 
     function setUp() external {
+        _startTest();
+
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
@@ -1116,6 +1118,8 @@ contract ERC20PoolBorrowFuzzyTest is ERC20FuzzyHelperContract {
     uint256 lowest  = 2554;
 
     function setUp() external {
+        _startTest();
+
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
@@ -1362,7 +1366,6 @@ contract ERC20PoolBorrowFuzzyTest is ERC20FuzzyHelperContract {
         address[] memory otherBorrowers = new address[](10);
         for (uint index; index < 10; ++index) {
             otherBorrowers[index] = address(bytes20(keccak256(abi.encodePacked(index + 0x1000))));
-            vm.stopPrank(); // test helper contains a startPrank without a stopPrank
 
             _mintCollateralAndApproveTokens(otherBorrowers[index],  100 * 1e18);
             _drawDebt({

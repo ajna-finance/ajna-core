@@ -24,7 +24,7 @@ contract RegressionTestReserveERC721Pool is ReserveERC721PoolInvariants {
         _reserveERC721PoolHandler.settleAuction(28196, 350662677223461989004552717744870304232548804666, 36769010933687420804596073, 0);
         _reserveERC721PoolHandler.bucketTake(83908, 44550000000000000, false, 20000000000000000000000312288, 0);
 
-        invariant_CT4();
+        invariant_collateral_CT4();
     }
 
     function test_regression_CT4_2() external {
@@ -35,7 +35,7 @@ contract RegressionTestReserveERC721Pool is ReserveERC721PoolInvariants {
         _reserveERC721PoolHandler.pledgeCollateral(349513993113487194057973, 362746040314235282459383005583790844, 0);
         _reserveERC721PoolHandler.settleAuction(3, 2, 3, 0);
 
-        invariant_CT4();
+        invariant_collateral_CT4();
     }
 
     function test_regression_CT2_2() external {
@@ -60,7 +60,7 @@ contract RegressionTestReserveERC721Pool is ReserveERC721PoolInvariants {
         _reserveERC721PoolHandler.removeQuoteToken(10288285818208197682336817035, 45968783023960545347406014687, 691, 0);
         _reserveERC721PoolHandler.settleAuction(154, 860492567187269218261780934935914770288503137169306025450164292967, 463633433497382452344200590293648002678143898236, 0);
 
-        invariant_CT2();
+        invariant_collateral_CT2();
     }
 
     /*
@@ -72,8 +72,8 @@ contract RegressionTestReserveERC721Pool is ReserveERC721PoolInvariants {
         _reserveERC721PoolHandler.takeAuction(3, 68002012319987217885680836087921689752254473803305406, 3, 0);
         _reserveERC721PoolHandler.mergeCollateral(280792061588141829088525786592236158704094119781363060, 0);
 
-        invariant_fenwick_depositAtIndex_F1();
-        invariant_fenwick_depositsTillIndex_F2();
+        invariant_fenwick_F1();
+        invariant_fenwick_F2();
     }
 
     /*
@@ -93,7 +93,7 @@ contract RegressionTestReserveERC721Pool is ReserveERC721PoolInvariants {
         _reserveERC721PoolHandler.moveQuoteToken(41852115601722687085018, 838, 110349606679412691172957834289542550319383271247755660854362242977991410021116, 10708, 1000147102256879879);
         _reserveERC721PoolHandler.takeAuction(65083383064492179858552362056041108711907790400214219220470719778313668067918, 47044205696979556241773847817964719479426890797480386218806479041076417646753, 49891310239897651922054921325833048160713517515033725083348033871686585409233, 113036808365357047396163273250845284856347394197766632691494752070902864551847);
 
-        invariant_Bucket_deposit_time_B5_B6_B7();
+        invariant_bucket_B5_B6_B7();
     }
 
     /*
@@ -232,15 +232,15 @@ contract RegressionTestReserveERC721Pool is ReserveERC721PoolInvariants {
         _reserveERC721PoolHandler.addQuoteToken(1072136986589800395035805, 22904335154524190434559120, 1030801052100464518, 0);
         _reserveERC721PoolHandler.addQuoteToken(97677075084166305679836442, 1000008452124308451, 15249165865336324622600068551, 0);
         _reserveERC721PoolHandler.removeCollateral(1, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 3287808436188136722, 0);
-        invariant_CT2();
-        invariant_CT3();
-        invariant_CT4();
-        invariant_CT5();
-        invariant_CT6();
-        invariant_CT7();
-        invariant_Lps_B1();
-        invariant_Lps_B4();
-        invariant_Buckets_B2_B3();
+        invariant_collateral_CT2();
+        invariant_collateral_CT3();
+        invariant_collateral_CT4();
+        invariant_collateral_CT5();
+        invariant_collateral_CT6();
+        invariant_collateral_CT7();
+        invariant_bucket_B1();
+        invariant_bucket_B4();
+        invariant_bucket_B2_B3();
     }
 
     /*
@@ -261,6 +261,6 @@ contract RegressionTestReserveERC721Pool is ReserveERC721PoolInvariants {
         _reserveERC721PoolHandler.mergeCollateral(742, 36731090122697131118614904036939339014023299978771437847280286066139902285955);
         _reserveERC721PoolHandler.bucketTake(115792089237316195423570985008687907853269984665640564039457584007913129639933, 115792089237316195423570985008687907853269984665640564039457584007913129639932, true, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 4);
 
-        invariant_CT2();
+        invariant_collateral_CT2();
     }
 }

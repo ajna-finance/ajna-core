@@ -21,6 +21,7 @@ contract ERC721TakeWithExternalLiquidityTest is ERC721HelperContract {
     address internal _lender;
 
     function setUp() external {
+        _startTest();
 
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");

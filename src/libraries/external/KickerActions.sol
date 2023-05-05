@@ -171,9 +171,10 @@ library KickerActions {
             vars.bucketPrice
         );
 
-        vars.amountToDebitFromDeposit = Maths.wmul(vars.lenderLP, vars.bucketRate);  // calculate amount to remove based on lender LP in bucket
-
-        if (vars.amountToDebitFromDeposit > vars.bucketDeposit) vars.amountToDebitFromDeposit = vars.bucketDeposit; // cap the amount to remove at bucket deposit
+        // calculate amount to remove based on lender LP in bucket
+        vars.amountToDebitFromDeposit = Maths.wmul(vars.lenderLP, vars.bucketRate);
+        // cap the amount to remove at bucket deposit
+        if (vars.amountToDebitFromDeposit > vars.bucketDeposit) vars.amountToDebitFromDeposit = vars.bucketDeposit;
 
         // revert if no amount that can be removed
         if (vars.amountToDebitFromDeposit == 0) revert InsufficientLiquidity();
@@ -191,12 +192,16 @@ library KickerActions {
 
         // amount to remove from deposit covers entire bond amount
         if (vars.amountToDebitFromDeposit > kickResult_.amountToCoverBond) {
-            vars.amountToDebitFromDeposit = kickResult_.amountToCoverBond;                                 // cap amount to remove from deposit at amount to cover bond
+            // cap amount to remove from deposit at amount to cover bond
+            vars.amountToDebitFromDeposit = kickResult_.amountToCoverBond;
 
-            kickResult_.lup = Deposits.getLup(deposits_, poolState_.debt + vars.amountToDebitFromDeposit); // recalculate the LUP with the amount to cover bond
-            kickResult_.amountToCoverBond = 0;                                                             // entire bond is covered from deposit, no additional amount to be send by lender
+            // recalculate the LUP with the amount to cover bond
+            kickResult_.lup = Deposits.getLup(deposits_, poolState_.debt + vars.amountToDebitFromDeposit);
+            // entire bond is covered from deposit, no additional amount to be send by lender
+            kickResult_.amountToCoverBond = 0;
         } else {
-            kickResult_.amountToCoverBond -= vars.amountToDebitFromDeposit;                                // lender should send additional amount to cover bond
+            // lender should send additional amount to cover bond
+            kickResult_.amountToCoverBond -= vars.amountToDebitFromDeposit;
         }
 
         // revert if the bucket price used to kick and remove is below new LUP
@@ -214,11 +219,7 @@ library KickerActions {
             vars.redeemedLP = Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketRate);
 
             uint256 unscaledAmountToRemove = Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketScale);
-            Deposits.unscaledRemove(
-                deposits_,
-                index_,
-                unscaledAmountToRemove
-            );
+            Deposits.unscaledRemove(deposits_, index_, unscaledAmountToRemove);
             vars.bucketUnscaledDeposit -= unscaledAmountToRemove;
         }
 
