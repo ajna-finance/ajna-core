@@ -2,8 +2,9 @@
 
 pragma solidity 0.8.14;
 
-import { PoolInfoUtils, _collateralization } from 'src/PoolInfoUtils.sol';
-import { Maths }                             from 'src/libraries/internal/Maths.sol';
+import { PoolInfoUtils }               from 'src/PoolInfoUtils.sol';
+import { Maths }                       from 'src/libraries/internal/Maths.sol';
+import { _priceAt, _isCollateralized } from 'src/libraries/helpers/PoolHelper.sol';
 
 import { BORROWER_MIN_BUCKET_INDEX }       from '../../base/handlers/unbounded/BaseHandler.sol';
 import { BasicPoolHandler }                from '../../base/handlers/BasicPoolHandler.sol';
@@ -220,11 +221,15 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
             _addQuoteToken(boundedAmount_ * 2, LENDER_MAX_BUCKET_INDEX);
         }
 
-        // 3. drawing of addition debt will make them under collateralized
-        uint256 lup = _poolInfo.lup(address(_pool));
+        // 3. check if drawing of addition debt will make borrower undercollateralized
+        // recalculate lup with new amount to be borrowed and check borrower collateralization at new lup
+        (uint256 currentPoolDebt, , , ) = _pool.debtInfo();
+        uint256 nextPoolDebt = currentPoolDebt + boundedAmount_;
+        uint256 newLup = _priceAt(_pool.depositIndex(nextPoolDebt));
         (debt, collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
 
-        if (_collateralization(debt, collateral, lup) < 1) {
+        // repay debt if borrower becomes undercollateralized with new debt at new lup
+        if (!_isCollateralized(debt + boundedAmount_, collateral, newLup, _pool.poolType())) {
             _repayDebt(debt);
 
             (debt, collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
