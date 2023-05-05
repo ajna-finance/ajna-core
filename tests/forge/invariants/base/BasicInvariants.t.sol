@@ -13,7 +13,7 @@ import { BaseInvariants } from '../base/BaseInvariants.sol';
 abstract contract BasicInvariants is BaseInvariants {
 
     // checks pool lps are equal to sum of all lender lps in a bucket 
-    function invariant_Lps_B1() public useCurrentTimestamp {
+    function invariant_bucket_B1() public useCurrentTimestamp {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
@@ -35,7 +35,7 @@ abstract contract BasicInvariants is BaseInvariants {
     }
 
     // checks pool lps are equal to sum of all lender lps in a bucket 
-    function invariant_Lps_B4() public useCurrentTimestamp {
+    function invariant_bucket_B4() public useCurrentTimestamp {
 
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
 
@@ -49,7 +49,7 @@ abstract contract BasicInvariants is BaseInvariants {
 
     // checks bucket lps are equal to 0 if bucket quote and collateral are 0
     // checks exchange rate is 1e18 if bucket quote and collateral are 0 
-    function invariant_Buckets_B2_B3() public useCurrentTimestamp {
+    function invariant_bucket_B2_B3() public useCurrentTimestamp {
         uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
         for (uint256 i = 0; i < buckets.length; i++) {
             uint256 bucketIndex = buckets[i];
@@ -70,7 +70,7 @@ abstract contract BasicInvariants is BaseInvariants {
     }
 
     // checks if lender deposit timestamp is updated when lps are added into lender lp balance
-    function invariant_Bucket_deposit_time_B5_B6_B7() public useCurrentTimestamp {
+    function invariant_bucket_B5_B6_B7() public useCurrentTimestamp {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
@@ -90,7 +90,7 @@ abstract contract BasicInvariants is BaseInvariants {
     }
 
     // checks pool quote token balance is greater than equals total deposits in pool
-    function invariant_quoteTokenBalance_QT1() public useCurrentTimestamp {
+    function invariant_quote_QT1() public useCurrentTimestamp {
         // convert pool quote balance into WAD
         uint256 poolBalance    = _quote.balanceOf(address(_pool)) * 10**(18 - _quote.decimals());
         (uint256 poolDebt, , ,) = _pool.debtInfo();
@@ -116,7 +116,7 @@ abstract contract BasicInvariants is BaseInvariants {
     }
 
     // checks pool debt is equal to sum of all borrowers debt
-    function invariant_pooldebt_QT2() public useCurrentTimestamp {
+    function invariant_quote_QT2() public useCurrentTimestamp {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         uint256 totalDebt;
 
@@ -132,7 +132,7 @@ abstract contract BasicInvariants is BaseInvariants {
         require(poolDebt == totalDebt, "Quote Token Invariant QT2");
     }
 
-    function invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8() public useCurrentTimestamp {
+    function invariant_rate_R1_R2_R3_R4_R5_R6_R7_R8() public useCurrentTimestamp {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             uint256 currentExchangeRate = _pool.bucketExchangeRate(bucketIndex);
             (uint256 bucketLps, , , , ) = _pool.bucketInfo(bucketIndex);
@@ -209,7 +209,7 @@ abstract contract BasicInvariants is BaseInvariants {
     }
 
     // reserve.totalInterestEarned should only update once per block
-    function invariant_total_interest_earned_I2() public useCurrentTimestamp {
+    function invariant_interest_rate_I2() public useCurrentTimestamp {
         (, , , uint256 totalInterestEarned) = _pool.reservesInfo();
 
         if (previousTotalInterestEarnedUpdate == block.number) {
@@ -224,7 +224,7 @@ abstract contract BasicInvariants is BaseInvariants {
     }
 
     // inflator should only update once per block
-    function invariant_inflator_I3() public useCurrentTimestamp {
+    function invariant_interest_rate_I3() public useCurrentTimestamp {
         (uint256 currentInflator, uint256 currentInflatorUpdate) = _pool.inflatorInfo();
 
         if (currentInflatorUpdate == previousInflatorUpdate) {
@@ -238,7 +238,7 @@ abstract contract BasicInvariants is BaseInvariants {
         previousInflatorUpdate = currentInflatorUpdate;
     }
 
-    function invariant_t0Debt2ToCollateral_I4() public useCurrentTimestamp {
+    function invariant_interest_rate_I4() public useCurrentTimestamp {
 
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         uint256 manualDebt2ToCollateral;
@@ -263,7 +263,7 @@ abstract contract BasicInvariants is BaseInvariants {
     }
 
     // deposits at index i (Deposits.valueAt(i)) is equal to the accumulation of scaled values incremented or decremented from index i
-    function invariant_fenwick_depositAtIndex_F1() public useCurrentTimestamp {
+    function invariant_fenwick_F1() public useCurrentTimestamp {
         uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
         for (uint256 i = 0; i < buckets.length; i++) {
             uint256 bucketIndex = buckets[i];
@@ -287,7 +287,7 @@ abstract contract BasicInvariants is BaseInvariants {
     }
 
     // For any index i, the prefix sum up to and including i is the sum of values stored in indices j<=i
-    function invariant_fenwick_depositsTillIndex_F2() public useCurrentTimestamp {
+    function invariant_fenwick_F2() public useCurrentTimestamp {
         uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
         for (uint256 i = 0; i < buckets.length; i++) {
             uint256 bucketIndex = buckets[i];
@@ -311,7 +311,7 @@ abstract contract BasicInvariants is BaseInvariants {
     }
 
     // For any index i < MAX_FENWICK_INDEX, depositIndex(depositUpToIndex(i)) > i
-    function invariant_fenwick_bucket_index_F3() public useCurrentTimestamp {
+    function invariant_fenwick_F3() public useCurrentTimestamp {
         uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
         for (uint256 i = 0; i < buckets.length; i++) {
             uint256 bucketIndex = buckets[i];
@@ -330,7 +330,7 @@ abstract contract BasicInvariants is BaseInvariants {
     }
 
     // **F4**: For any index i < MAX_FENWICK_INDEX, Deposits.valueAt(findIndexOfSum(prefixSum(i) + 1)) > 0
-    function invariant_fenwick_prefixSumIndex_F4() public useCurrentTimestamp {
+    function invariant_fenwick_F4() public useCurrentTimestamp {
         uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
         uint256 maxBucket;
         for (uint256 i = 0; i < buckets.length; i++) {
@@ -349,7 +349,7 @@ abstract contract BasicInvariants is BaseInvariants {
     }
 
     // **F5**: Global scalar is never updated (`DepositsState.scaling[8192]` is always 0)
-    function invariant_fenwick_globalscalar_F5() public useCurrentTimestamp {
+    function invariant_fenwick_F5() public useCurrentTimestamp {
         require(_pool.depositScale(8192) == 0, "F5: Global scalar was updated");
     }
 

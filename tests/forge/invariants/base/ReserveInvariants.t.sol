@@ -9,7 +9,7 @@ import { LiquidationInvariants } from './LiquidationInvariants.t.sol';
 
 abstract contract ReserveInvariants is LiquidationInvariants {
 
-    function invariant_reserves_RE1_RE2_RE3_RE4_RE5_RE6_RE7_RE8_RE9_RE10_RE11_RE12() public useCurrentTimestamp {
+    function invariant_reserves() public useCurrentTimestamp {
 
         uint256 previousReserves   = IBaseHandler(_handler).previousReserves();
         uint256 increaseInReserves = IBaseHandler(_handler).increaseInReserves();

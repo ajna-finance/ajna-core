@@ -16,7 +16,7 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         _basicERC20PoolHandler.addQuoteToken(14227, 5211, 3600000000000000000000, 0);
 
         // check invariants hold true
-        invariant_quoteTokenBalance_QT1();
+        invariant_quote_QT1();
     }
 
     function test_regression_exchange_rate_1() external {
@@ -24,7 +24,7 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         _basicERC20PoolHandler.addCollateral(2, 36429077592820139327392187131, 202214962129783771592, 0);
         _basicERC20PoolHandler.removeCollateral(1, 2296695924278944779257290397234298756, 10180568736759156593834642286260647915348262280903719122483474452532722106636, 0);
 
-        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8(); 
+        invariant_rate_R1_R2_R3_R4_R5_R6_R7_R8(); 
     }
 
     function test_regression_exchange_rate_2() external {
@@ -36,7 +36,7 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         _basicERC20PoolHandler.removeCollateral(2, 1e36, 2570, 0);
         _basicERC20PoolHandler.removeQuoteToken(2, 1e36, 2570, 0);
 
-        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
+        invariant_rate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
     function test_regression_exchange_rate_3() external {
@@ -45,7 +45,7 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         _basicERC20PoolHandler.removeCollateral(115792089237316195423570985008687907853269984665640564039457584007913129639932, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 0);
         _basicERC20PoolHandler.removeCollateral(0, 1, 3, 0);
 
-        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
+        invariant_rate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
     function test_regression_exchange_rate_4() external {
@@ -57,16 +57,16 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         _basicERC20PoolHandler.addQuoteToken(0, 3272, 688437777000000000, 0);
         _basicERC20PoolHandler.removeQuoteToken(36653992905059663682442427, 3272, 688437777000000000, 0);
 
-        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
+        invariant_rate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
     function test_regression_exchange_rate_5() external {
         _basicERC20PoolHandler.drawDebt(1156, 1686, 0);
         
-        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
+        invariant_rate_R1_R2_R3_R4_R5_R6_R7_R8();
         _basicERC20PoolHandler.addQuoteToken(711, 2161, 2012, 0); 
 
-        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();   
+        invariant_rate_R1_R2_R3_R4_R5_R6_R7_R8();   
     }
 
     function test_regression_exchange_rate_6() external {
@@ -75,7 +75,7 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         _basicERC20PoolHandler.addCollateral(95036573736725249741129171676163161793295193492729984020, 5009341426566798172861627799, 2, 0);
         _basicERC20PoolHandler.removeCollateral(1, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 5814100241, 0);
 
-        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
+        invariant_rate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
     // test was failing when actors = 10, buckets = [2570], maxAmount = 1e36
@@ -86,36 +86,36 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         _basicERC20PoolHandler.addCollateral(0, 648001392760875820320327007315181208349883976901103343226563974622543668416, 38134304133913510899173609232567613, 0);
         _basicERC20PoolHandler.removeCollateral(0, 1290407354289435191451647900348688457414638662069174249777953, 125945131546441554612275631955778759442752893948134984981883798, 0);
 
-        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
+        invariant_rate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
     // test was failing when actors = 10, buckets = [2570], maxAmount = 1e36
     function test_regression_exchange_rate_8() external {
         _basicERC20PoolHandler.drawDebt(0, 10430, 0);
 
-        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
+        invariant_rate_R1_R2_R3_R4_R5_R6_R7_R8();
         _basicERC20PoolHandler.addCollateral(86808428701435509359888008280539191473421, 35, 89260656586096811497271673595050, 0);
 
-        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
+        invariant_rate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
     function test_regression_exchange_rate_9() external {
         _basicERC20PoolHandler.addQuoteToken(179828875014111774829603408358905079754763388655646874, 39999923045226513122629818514849844245682430, 12649859691422584279364490330583846883, 0);
 
-        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
+        invariant_rate_R1_R2_R3_R4_R5_R6_R7_R8();
         _basicERC20PoolHandler.addCollateral(472, 2100, 11836, 0);
         
-        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
+        invariant_rate_R1_R2_R3_R4_R5_R6_R7_R8();
         _basicERC20PoolHandler.pledgeCollateral(7289, 8216, 0);
 
-        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
+        invariant_rate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
     function test_regression_fenwick_deposit_1() external {
         _basicERC20PoolHandler.addQuoteToken(60321923115154876306287876901335341390357684483818363750, 2, 0, 0);
         _basicERC20PoolHandler.repayDebt(58055409653178, 2, 0);
 
-        invariant_fenwick_depositAtIndex_F1();
+        invariant_fenwick_F1();
     }
 
     function test_regression_fenwick_deposit_2() external {
@@ -125,7 +125,7 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         _basicERC20PoolHandler.addQuoteToken(5673, 8294, 11316, 0);
         _basicERC20PoolHandler.moveQuoteToken(919997327910338711763724656061931477, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 3933155006830995444792575696, 0);
 
-        invariant_fenwick_depositAtIndex_F1();
+        invariant_fenwick_F1();
     }
 
     function test_regression_fenwick_deposit_3() external {
@@ -135,8 +135,8 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         _basicERC20PoolHandler.moveQuoteToken(2, 1, 3, 11769823729834119405789456482320067049929344685247053661486, 0);
         _basicERC20PoolHandler.moveQuoteToken(1, 2833727997543655292227288672285470, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 7962018528962356191057551420322350, 0);
 
-        invariant_fenwick_depositAtIndex_F1();
-        invariant_fenwick_depositsTillIndex_F2();
+        invariant_fenwick_F1();
+        invariant_fenwick_F2();
     }
 
     function test_regression_fenwick_deposit_4() external {
@@ -144,8 +144,8 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         _basicERC20PoolHandler.pledgeCollateral(1700127358962530, 0, 0);
         _basicERC20PoolHandler.moveQuoteToken(115792089237316195423570985008687907853269984665640564039457584007913129639934, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 2, 0);
 
-        invariant_fenwick_depositAtIndex_F1();
-        invariant_fenwick_depositsTillIndex_F2();
+        invariant_fenwick_F1();
+        invariant_fenwick_F2();
     }
 
     function test_regression_fenwick_deposit_5() external {
@@ -153,8 +153,8 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         _basicERC20PoolHandler.addCollateral(5529, 1090, 5431, 0);
         _basicERC20PoolHandler.pullCollateral(3, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 0);
 
-        invariant_fenwick_depositAtIndex_F1();
-        invariant_fenwick_depositsTillIndex_F2();
+        invariant_fenwick_F1();
+        invariant_fenwick_F2();
     }
 
     function test_regression_fenwick_deposit_6() external {
@@ -162,7 +162,7 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         _basicERC20PoolHandler.addQuoteToken(1000000000000000, 19319, 308, 0);
         _basicERC20PoolHandler.pullCollateral(4218, 4175, 0);
 
-        invariant_fenwick_depositAtIndex_F1();
+        invariant_fenwick_F1();
     }
 
     function test_regression_fenwick_prefixSum_1() external {
@@ -171,7 +171,7 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         _basicERC20PoolHandler.pledgeCollateral(2, 185978674898652363737734333012844452989790885966093618883814734917759475, 0);
         _basicERC20PoolHandler.moveQuoteToken(976453319, 2825105681459470134743617749102858205411027017903767825282483319, 115792089237316195423570985008687907853269984665640564039457584007913129639932, 145056082857394229503325854914710239303685607721150607568547620026, 0);
 
-        invariant_fenwick_depositsTillIndex_F2();
+        invariant_fenwick_F2();
     }
 
     function test_regression_fenwick_index_1() external {
@@ -184,27 +184,27 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         _basicERC20PoolHandler.removeCollateral(27428712668923640148402320299830959263828759458932482391338247903954077260349, 1136, 3944, 0);
         _basicERC20PoolHandler.moveQuoteToken(9746204317995874651524496302383356801834068305156642323380998069579800880, 1723109236200550802774859945265636287, 3213180193920898024510373220802133410941904907229061207617048152428481, 0, 0);
 
-        invariant_fenwick_bucket_index_F3();
+        invariant_fenwick_F3();
     }
 
     function test_regression_transferLps_1() external {
         _basicERC20PoolHandler.transferLps(0, 1, 200, 2570, 0);
 
-        invariant_Bucket_deposit_time_B5_B6_B7();
+        invariant_bucket_B5_B6_B7();
     }
 
     function test_regression_transferLps_2() external {
         _basicERC20PoolHandler.transferLps(37233021465377552730514154972012012669272, 45957263314208417069590941186697869465410494677646946058359554, 405, 89727160292150007024940, 0);
 
-        invariant_fenwick_depositAtIndex_F1();
-        invariant_fenwick_depositsTillIndex_F2();
+        invariant_fenwick_F1();
+        invariant_fenwick_F2();
     }
 
     function test_regression_transferLps_3() external {
         _basicERC20PoolHandler.transferLps(1795, 6198, 3110, 11449, 0);
 
-        invariant_Bucket_deposit_time_B5_B6_B7();
-        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
+        invariant_bucket_B5_B6_B7();
+        invariant_rate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
     function test_regression_pull_collateral_when_encumbered_greater_than_pledged() external {
@@ -217,7 +217,7 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
     function test_regression_incorrect_zero_deposit_buckets_1() external {
         _basicERC20PoolHandler.repayDebt(15119, 6786, 0);
         _basicERC20PoolHandler.moveQuoteToken(115792089237316195423570985008687907853269984665640564039457584007913129639932, 1578322581132549441186648538841, 2, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 0);
-        invariant_fenwick_prefixSumIndex_F4();
+        invariant_fenwick_F4();
     }
 
     function test_regression_fenwick_index_2() external {
@@ -238,23 +238,23 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         _basicERC20PoolHandler.addQuoteToken(253022590763482364356576159, 999999999999999273028438503236995092261608400, 712808213364422679443324012750, 0);
         _basicERC20PoolHandler.removeQuoteToken(121890555084215923472733925382, 0, 3, 0);
 
-        invariant_collateralBalance_CT1_CT7();
+        invariant_collateral_CT1_CT7();
     }
 
-    function test_regression_invariant_quoteTokenBalance_QT1() external {
+    function test_regression_invariant_quote_QT1() external {
         _basicERC20PoolHandler.pledgeCollateral(47134563260349377955683144555119028889734284095914219439962386869, 2323610696462098, 0);
         _basicERC20PoolHandler.repayDebt(1, 2, 0);
         _basicERC20PoolHandler.removeCollateral(200953640940463935290718680397023889633667961549, 2481, 3, 0);
         _basicERC20PoolHandler.moveQuoteToken(695230664226651211376892782958299806602599384639648126900062519785408512, 1000115588871659705, 22812, 1955101796782211288928817909562, 0);
         _basicERC20PoolHandler.repayDebt(115792089237316195423570985008687907853269984665640564039457584007913129639932, 103, 0);
 
-        invariant_quoteTokenBalance_QT1();
+        invariant_quote_QT1();
     }
 
     function test_regression_fenwick_deposit_8() external {
         _basicERC20PoolHandler.drawDebt(226719918559509764892175185709, 228676957600917178383525685311331, 0);
 
-        invariant_fenwick_depositAtIndex_F1();
+        invariant_fenwick_F1();
     }
 }
 
@@ -296,7 +296,7 @@ contract RegressionTestBasicWith10BucketsERC20Pool is BasicERC20PoolInvariants {
         _basicERC20PoolHandler.removeQuoteToken(3201781718151524032696177608091, 2788940717158963266260644637275, 1001719209787209063137009778273, 0);
         _basicERC20PoolHandler.removeCollateral(1481112300711317586348171215820373858161462484006514, 168870288186037165317237437722657252078900747583218061139236575915, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 0);
 
-        invariant_collateralBalance_CT1_CT7();
+        invariant_collateral_CT1_CT7();
     }
 
     function test_regression_10_buckets_exchange_rate() external {
@@ -312,7 +312,7 @@ contract RegressionTestBasicWith10BucketsERC20Pool is BasicERC20PoolInvariants {
         _basicERC20PoolHandler.addQuoteToken(7237766368913837526279800803850926, 2318473227034367386476981536426, 3397753274562712559962219817121, 3497677980587);
         _basicERC20PoolHandler.removeCollateral(2, 1, 22225753124285528776218150577139424248166623103654, 2);
 
-        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
+        invariant_rate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
     function test_regression_10_buckets_exchange_rate_2() external {
@@ -327,7 +327,7 @@ contract RegressionTestBasicWith10BucketsERC20Pool is BasicERC20PoolInvariants {
         _basicERC20PoolHandler.addCollateral(1573875203397848960670186019073248854602426094673, 2504217569840181286227620309719896586961536673187089015258250231162, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 2);
         _basicERC20PoolHandler.removeCollateral(115792089237316195423570985008687907853269984665640564039457584007913129639933, 115792089237316195423570985008687907853269984665640564039457584007913129639932, 25673965657298153291575883442400894202624273572440854514727495, 1606415152236964885598131062907211614020217776051558);
 
-        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
+        invariant_rate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
     function test_regression_10_buckets_F4() external {
@@ -373,7 +373,7 @@ contract RegressionTestBasicWith10BucketsERC20Pool is BasicERC20PoolInvariants {
         _basicERC20PoolHandler.removeQuoteToken(115792089237316195423570985008687907853269984665640564039457584007913129639935, 0, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 1);
         _basicERC20PoolHandler.pledgeCollateral(536503026894930742915592263726, 5958204048624414206720153263482, 981672851175865744292519803023);
 
-        invariant_fenwick_prefixSumIndex_F4();
+        invariant_fenwick_F4();
     }
 }
 
