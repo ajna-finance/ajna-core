@@ -235,7 +235,7 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
     }
 
     function _ensureCollateralAmount(address actor_, uint256 amount_) internal {
-        _collateral.mint(_actor, amount_);
+        _collateral.mint(actor_, amount_);
         _collateral.setApprovalForAll(address(_pool), true);
     }
 }
