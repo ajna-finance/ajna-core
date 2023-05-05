@@ -26,6 +26,21 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
     ) internal {
         numberOfCalls['UBPositionHandler.memorialize']++;
 
+        for(uint256 i=0; i < indexes_.length; i++) {
+
+            // store vals in array to check lps -> [poolPreActionLps, posPreActionLps]
+            (uint256 poolPreActionActorLps,) = _pool.lenderInfo(indexes_[i], address(_actor));
+            (uint256 poolPreActionPosManLps,) = _pool.lenderInfo(indexes_[i], address(_positions));
+
+            bucketIndexToPreActionActorLps[indexes_[i]] = poolPreActionActorLps;
+            bucketIndexToPreActionPosLps[indexes_[i]] = poolPreActionPosManLps;
+
+            // assert that the underlying LP balance in PositionManager is 0 
+            (uint256 posPreActionLps,) = _positions.getPositionInfo(tokenId_, indexes_[i]);
+            assertEq(posPreActionLps, 0);
+
+        }
+
         try _positions.memorializePositions(IPositionManagerOwnerActions.MemorializePositionsParams(tokenId_, indexes_)) {
 
             // TODO: store memorialized position's tokenIds in mapping, for reuse in unstake and redeem calls
@@ -34,6 +49,23 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
             for ( uint256 i = 0; i < indexes_.length; i++) {
                 bucketIndexesWithPosition.add(indexes_[i]);
                 tokenIdsByBucketIndex[indexes_[i]].add(tokenId_);
+            }
+
+            // Post action Checks //
+            for(uint256 i=0; i < indexes_.length; i++) {
+                uint256 bucketIndex = indexes_[i];
+
+                // assert that the LP that now exists in the pool contract matches the amount added by the actor 
+                (uint256 poolLps,) = _pool.lenderInfo(bucketIndex, address(_positions));
+                assertEq(poolLps, bucketIndexToPreActionActorLps[bucketIndex] + bucketIndexToPreActionPosLps[bucketIndex]);
+
+                // assert that the underlying LP balance in PositionManager has increased
+                (uint256 posLps, uint256 posDepositTime) = _positions.getPositionInfo(tokenId_, bucketIndex);
+                assertEq(posLps, bucketIndexToPreActionActorLps[bucketIndex]);
+                assertEq(posDepositTime, block.timestamp);
+
+                delete bucketIndexToPreActionActorLps[bucketIndex];
+                delete bucketIndexToPreActionPosLps[bucketIndex];
             }
 
         } catch (bytes memory err) {
@@ -47,6 +79,18 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
 
             tokenIdResult = tokenId;
 
+            // Post Action Checks //
+            // assert that the minter is the owner
+            assertEq(_positions.ownerOf(tokenId), _actor);
+
+            // assert that poolKey is returns correct pool address
+            address poolAddress = _positions.poolKey(tokenId);
+            assertEq(poolAddress, address(_pool));
+
+            // assert that no positions are associated with this tokenId
+            uint256[] memory posIndexes = _positions.getPositionIndexes(tokenId);
+            assertEq(posIndexes, new uint256[](0));
+
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -58,12 +102,59 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
     ) internal {
         numberOfCalls['UBPositionHandler.redeem']++;
 
+        for(uint256 i=0; i < indexes_.length; i++) {
+
+            // store vals in array to check lps -> [poolPreActionLps, posPreActionLps]
+            (uint256 posPreActionActorLps,) = _positions.getPositionInfo(tokenId_, indexes_[i]);
+            (uint256 poolPreActionPosManLps,) = _pool.lenderInfo(indexes_[i], address(_positions));
+
+            bucketIndexToPreActionActorLps[indexes_[i]] = posPreActionActorLps;
+            bucketIndexToPreActionPosLps[indexes_[i]] = poolPreActionPosManLps;
+
+            // assert that the underlying LP balance in PositionManager is greater than 0 
+            (uint256 posPreActionLps,) = _positions.getPositionInfo(tokenId_, indexes_[i]);
+            assertGt(posPreActionLps, 0);
+
+        }
+
         try _positions.reedemPositions(IPositionManagerOwnerActions.RedeemPositionsParams(tokenId_, address(_pool), indexes_)) {
 
             // remove tracked positions
             for ( uint256 i = 0; i < indexes_.length; i++) {
                 bucketIndexesWithPosition.remove(indexes_[i]); 
                 tokenIdsByBucketIndex[indexes_[i]].remove(tokenId_);
+            }
+
+            // Post action Checks //
+            // assert that the minter is still the owner
+            assertEq(_positions.ownerOf(tokenId_), _actor);
+
+            // assert that poolKey is still same
+            address poolAddress = _positions.poolKey(tokenId_);
+            assertEq(poolAddress, address(_pool));
+
+            // assert that no positions are associated with this tokenId
+            uint256[] memory posIndexes = _positions.getPositionIndexes(tokenId_);
+            assertEq(posIndexes, new uint256[](0));
+
+            for(uint256 i=0; i < indexes_.length; i++) {
+                uint256 bucketIndex = indexes_[i];
+
+                // assert that the LP that now exists in the pool contract matches the amount removed by the actor 
+                (uint256 poolPosLps,) = _pool.lenderInfo(bucketIndex, address(_positions));
+                assertEq(poolPosLps, bucketIndexToPreActionPosLps[bucketIndex] - bucketIndexToPreActionActorLps[bucketIndex]);
+
+                // assert that the LP that now exists in the pool contract matches the amount added by the actor 
+                (uint256 poolActorLps,) = _pool.lenderInfo(bucketIndex, address(_actor));
+                assertEq(poolActorLps, bucketIndexToPreActionPosLps[bucketIndex]);
+
+                // assert that the underlying LP balance in PositionManager is zero
+                (uint256 posLps, uint256 posDepositTime) = _positions.getPositionInfo(tokenId_, bucketIndex);
+                assertEq(posLps, 0);
+                assertEq(posDepositTime, 0);
+
+                delete bucketIndexToPreActionActorLps[bucketIndex];
+                delete bucketIndexToPreActionPosLps[bucketIndex];
             }
 
         } catch (bytes memory err) {
@@ -79,6 +170,8 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
     ) internal {
         numberOfCalls['UBPositionHandler.moveLiquidity']++;
 
+        (uint256 preActionToLps,) = _positions.getPositionInfo(tokenId_, toIndex_);
+
         /**
         *  @notice Struct holding parameters for moving the liquidity of a position.
         */
@@ -93,9 +186,20 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
                 bucketIndexesWithPosition.remove(fromIndex_); 
             }
 
+            // Post Action Checks //
             // track created positions
             bucketIndexesWithPosition.add(toIndex_);
             tokenIdsByBucketIndex[toIndex_].add(tokenId_);
+
+            // assert that underlying LP balance in PositionManager of fromIndex is 0 and deposit time in PositionManager is 0
+            (uint256 fromLps, uint256 fromDepositTime) = _positions.getPositionInfo(tokenId_, fromIndex_);
+            assertEq(fromLps, 0);
+            assertGt(fromDepositTime, 0);
+
+            // assert that underlying LP balance in PositionManager of toIndex is increased and deposit time in PositionManager is updated
+            (uint256 toLps, uint256 toDepositTime) = _positions.getPositionInfo(tokenId_, toIndex_);
+            assertGt(toLps, preActionToLps); // difficult to estimate LPS, assert that it is greater than
+            assertEq(toDepositTime, block.timestamp); 
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
@@ -108,7 +212,18 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
     ) internal {
         numberOfCalls['UBPositionHandler.burn']++;
         try _positions.burn(IPositionManagerOwnerActions.BurnParams(tokenId_, address(_pool))) {
+            // Post Action Checks //
+            // should revert if token id is burned
+            vm.expectRevert("ERC721: invalid token ID");
+            _positions.ownerOf(tokenId_);
 
+            // assert that poolKey is returns zero address
+            address poolAddress = _positions.poolKey(tokenId_);
+            assertEq(poolAddress, address(0));
+
+            // assert that no positions are associated with this tokenId
+            uint256[] memory posIndexes = _positions.getPositionIndexes(tokenId_);
+            assertEq(posIndexes, new uint256[](0));
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
