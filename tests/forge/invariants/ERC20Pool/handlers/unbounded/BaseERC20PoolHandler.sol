@@ -19,7 +19,7 @@ abstract contract BaseERC20PoolHandler is BaseHandler {
     TokenWithNDecimals internal _collateral;
 
     // ERC20Pool
-    ERC20Pool     internal _erc20Pool;
+    ERC20Pool internal _erc20Pool;
 
     constructor(
         address pool_,
@@ -66,12 +66,10 @@ abstract contract BaseERC20PoolHandler is BaseHandler {
             actorsAddress[i] = actor;
 
             vm.startPrank(actor);
-
-            _quote.mint(actor, 1e45);
-            _quote.approve(address(_pool), 1e45);
+            _ensureQuoteAmount(actor, 1e45);
 
             _collateral.mint(actor, 1e45);
-            _collateral.approve(address(_pool), 1e45);
+            _collateral.approve(address(_pool), type(uint256).max);
 
             vm.stopPrank();
         }
