@@ -88,5 +88,5 @@
 
 ## Position Manager
 - **PM1**: For each position, for each bucket in the position summed LP balance == LP balance of the position manager in the underlying pool
-- **PM2**: Position LP (`lps`) and deposit time (`depositTime`) tracked by tokens (`positions[tokenId][index]`) should always equal values stored in the pool contract.
+- **PM2**: Position deposit time (`depositTime`) tracked by tokenId in PositionManager (`positions[tokenId][index]`) should always be of equal or lesser value than the PositionManager's LP at that index in the pool contract.
 - **PM3**: After a bucket bankrupcy all LP tokens have zero balance in that bucket

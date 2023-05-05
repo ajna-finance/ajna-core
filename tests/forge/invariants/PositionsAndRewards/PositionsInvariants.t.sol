@@ -70,11 +70,11 @@ contract PositionsInvariants is BaseInvariants {
     }
 
     function invariant_positions_PM1_PM2() public useCurrentTimestamp {
-        uint256 mostRecentDepositTime;
         uint256[] memory bucketIndexes = IBaseHandler(_handler).getBucketIndexesWithPosition();
 
         // loop over bucket indexes with positions
         for (uint256 i = 0; i < bucketIndexes.length; i++) {
+            uint256 mostRecentDepositTime;
             uint256 bucketIndex = bucketIndexes[i];
             uint256 posLpAccum;
             uint256 poolLpAccum;
@@ -93,7 +93,7 @@ contract PositionsInvariants is BaseInvariants {
             }
 
             assertEq(poolLpAccum, posLpAccum, "Positions Invariant PM1"); 
-            assertEq(depositTime, mostRecentDepositTime, "Positions Invariant PM2");
+            assertGe(depositTime, mostRecentDepositTime, "Positions Invariant PM2");
         }
     }
 

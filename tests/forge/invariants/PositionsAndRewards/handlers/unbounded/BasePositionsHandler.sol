@@ -29,7 +29,7 @@ abstract contract BasePositionsHandler is BaseHandler {
     EnumerableSet.UintSet internal tokenIdsMinted;
     mapping(uint256 => uint256) internal bucketIndexToPreActionActorLps; // to track LP changes
     mapping(uint256 => uint256) internal bucketIndexToPreActionPosLps; // to track LP changes
-
+    mapping(uint256 => uint256) internal bucketIndexToPreActionDepositTime;
     using EnumerableSet for EnumerableSet.UintSet;
 
     function _buildActors(uint256 noOfActors_) internal returns(address[] memory) {
