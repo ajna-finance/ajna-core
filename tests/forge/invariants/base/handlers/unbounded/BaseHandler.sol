@@ -167,6 +167,14 @@ abstract contract BaseHandler is Test {
     /*** Pool Helper Functions ***/
     /*****************************/
 
+    function _ensureQuoteAmount(address actor_, uint256 amount_) internal {
+        uint256 actorBalance = _quote.balanceOf(actor_);
+        if (amount_> actorBalance ) {
+            _quote.mint(actor_, amount_ - actorBalance);
+        }
+        _quote.approve(address(_pool), amount_);
+    }
+
     function _updatePoolState() internal {
         _pool.updateInterest();
     }

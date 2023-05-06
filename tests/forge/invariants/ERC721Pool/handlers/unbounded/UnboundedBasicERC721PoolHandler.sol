@@ -40,8 +40,7 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
 
         (uint256 lpBalanceBeforeAction, ) = _erc721Pool.lenderInfo(bucketIndex_, _actor);
 
-        _collateral.mint(_actor, amount_);
-        _collateral.setApprovalForAll(address(_pool), true);
+        _ensureCollateralAmount(_actor, amount_);
         uint256[] memory tokenIds = new uint256[](amount_);
         for (uint256 i = 0; i < amount_; i++) {
             tokenIds[i] = _collateral.tokenOfOwnerByIndex(_actor, i);
@@ -119,8 +118,7 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
             exchangeRateShouldNotChange[bucketIndex] = true;
         }
 
-        _collateral.mint(_actor, amount_);
-        _collateral.setApprovalForAll(address(_pool), true);
+        _ensureCollateralAmount(_actor, amount_);
         uint256[] memory tokenIds = new uint256[](amount_);
         for (uint256 i = 0; i < amount_; i++) {
             tokenIds[i] = _collateral.tokenOfOwnerByIndex(_actor, i);
@@ -182,8 +180,7 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
         // calculates collateral required to borrow <amount_> quote tokens, added 1 for roundup such that 0.8 NFT will become 1
         uint256 collateralToPledge = Maths.wdiv(amount_, price) / 1e18 + 1;
 
-        _collateral.mint(_actor, collateralToPledge);
-        _collateral.setApprovalForAll(address(_pool), true);
+        _ensureCollateralAmount(_actor, collateralToPledge);
         uint256[] memory tokenIds = new uint256[](collateralToPledge);
         for (uint256 i = 0; i < collateralToPledge; i++) {
             tokenIds[i] = _collateral.tokenOfOwnerByIndex(_actor, i);
@@ -211,6 +208,9 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
         (, uint256 borrowerCollateralBefore, ) = _pool.borrowerInfo(_actor);
         (uint256 kickTimeBefore, , , , uint256 auctionPrice, ) =_poolInfo.auctionStatus(address(_erc721Pool), _actor);
 
+        // ensure actor always has amount of quote to repay
+        _ensureQuoteAmount(_actor, 1e45);
+
         try _erc721Pool.repayDebt(_actor, amountToRepay_, 0, _actor, 7388) {
             (uint256 kickTimeAfter, , , , , ) =_poolInfo.auctionStatus(address(_erc721Pool), _actor);
 
@@ -232,5 +232,10 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
+    }
+
+    function _ensureCollateralAmount(address actor_, uint256 amount_) internal {
+        _collateral.mint(actor_, amount_);
+        _collateral.setApprovalForAll(address(_pool), true);
     }
 }

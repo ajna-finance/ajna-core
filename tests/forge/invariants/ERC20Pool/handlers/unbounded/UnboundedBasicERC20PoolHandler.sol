@@ -28,6 +28,9 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.addCollateral']++;
 
+        // ensure actor always has amount of collateral to add
+        _ensureCollateralAmount(_actor, amount_);
+
         (uint256 lpBalanceBeforeAction, ) = _erc20Pool.lenderInfo(bucketIndex_, _actor);
 
         try _erc20Pool.addCollateral(amount_, bucketIndex_, block.timestamp + 1 minutes) {
@@ -75,6 +78,9 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.pledgeCollateral']++;
 
+        // ensure actor always has the amount to pledge
+        _ensureCollateralAmount(_actor, amount_);
+
         // **R1**: Exchange rates are unchanged by pledging collateral
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             exchangeRateShouldNotChange[bucketIndex] = true;
@@ -115,6 +121,9 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
         uint256 price = _poolInfo.indexToPrice(bucket);
         uint256 collateralToPledge = ((amount_ * 1e18 + price / 2) / price) * 101 / 100 + 1;
 
+        // ensure actor always has amount of collateral to pledge
+        _ensureCollateralAmount(_actor, collateralToPledge);
+
         (uint256 interestRate, ) = _erc20Pool.interestRateInfo();
 
         try _erc20Pool.drawDebt(_actor, amount_, 7388, collateralToPledge) {
@@ -134,10 +143,21 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.repayDebt']++;
 
+        // ensure actor always has amount of quote to repay
+        _ensureQuoteAmount(_actor, 1e45);
+
         try _erc20Pool.repayDebt(_actor, amountToRepay_, 0, _actor, 7388) {
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
+    }
+
+    function _ensureCollateralAmount(address actor_, uint256 amount_) internal {
+        uint256 actorBalance = _collateral.balanceOf(actor_);
+        if (amount_> actorBalance ) {
+            _collateral.mint(actor_, amount_ - actorBalance);
+        }
+        _collateral.approve(address(_pool), amount_);
     }
 }
