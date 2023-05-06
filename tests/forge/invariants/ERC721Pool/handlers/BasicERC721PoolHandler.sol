@@ -230,9 +230,6 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
 
         // repay debt if borrower becomes undercollateralized with new debt at new lup
         if (!_isCollateralized(debt + boundedAmount_, collateral, newLup, _pool.poolType())) {
-            // ensure actor always has the amount to repay
-            _ensureQuoteAmount(_actor, debt);
-
             _repayDebt(debt);
 
             (debt, collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
