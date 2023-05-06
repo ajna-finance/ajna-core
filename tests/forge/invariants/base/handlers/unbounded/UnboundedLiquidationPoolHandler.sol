@@ -194,7 +194,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 }
             }
 
-            _fenwickRemove(beforeBucketTakeVars.deposit - afterBucketTakeVars.deposit, bucketIndex_);
+            fenwickDeposits[bucketIndex_] = afterBucketTakeVars.deposit;
 
             _updateCurrentTakeState(borrower_, borrowerDebt);
 

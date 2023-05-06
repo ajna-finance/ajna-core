@@ -524,6 +524,10 @@ contract RegressionTestReserveERC20Pool is ReserveERC20PoolInvariants {
         invariant_rate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
+    /*
+        Test was failing on bucket take due to rounding in invariant fenwick-like structure.
+        Fixed by setting deposit in invariant fenwick-like structure to the amount of pool deposit.
+    */
     function test_regression_bucket_take_F1_F2() external {
         _reserveERC20PoolHandler.settleAuction(1510914784515760699173187165544, 56781153476701101508130985112, 738818868447359631695629380008183363630282764181000585867138796869876478, 826729014323244190827572488053);
         _reserveERC20PoolHandler.pullCollateral(1, 115792089237316195423570985008687907853269984665640564039457584007913129639932, 81950073367662209514774267517191923671913258);
