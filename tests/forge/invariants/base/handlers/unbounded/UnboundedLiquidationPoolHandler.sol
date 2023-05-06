@@ -34,6 +34,9 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
         (uint256 interestRate, )   = _pool.interestRateInfo();
 
+        // ensure actor always has the amount to pay for bond
+        _ensureQuoteAmount(_actor, borrowerDebt);
+
         try _pool.kick(borrower_, 7388) {
 
             // **RE9**:  Reserves increase by 3 months of interest when a loan is kicked
@@ -51,6 +54,9 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         (uint256 borrowerDebt, , )             = _poolInfo.borrowerInfo(address(_pool), maxBorrower);
         (uint256 interestRate, )               = _pool.interestRateInfo();
         ( , , , uint256 depositBeforeAction, ) = _pool.bucketInfo(bucketIndex_);
+
+        // ensure actor always has the amount to add for kick
+        _ensureQuoteAmount(_actor, borrowerDebt);
 
         try _pool.kickWithDeposit(bucketIndex_, 7388) {
 
@@ -96,7 +102,10 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         uint256 totalBalanceBeforeTake       = _quote.balanceOf(address(_pool)) * 10**(18 - _quote.decimals());
 
         ( , , , , uint256 auctionPrice, )    = _poolInfo.auctionStatus(address(_pool), borrower_);
-        
+
+        // ensure actor always has the amount to take collateral
+        _ensureQuoteAmount(taker_, 1e45);
+
         try _pool.take(borrower_, amount_, taker_, bytes("")) {
 
             (uint256 borrowerDebtAfterTake, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
@@ -194,7 +203,8 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 }
             }
 
-            _fenwickRemove(beforeBucketTakeVars.deposit - afterBucketTakeVars.deposit, bucketIndex_);
+            // assign value to fenwick tree to mitigate rounding error that could be created in a _fenwickRemove cal
+            fenwickDeposits[bucketIndex_] = afterBucketTakeVars.deposit;
 
             _updateCurrentTakeState(borrower_, borrowerDebt);
 
@@ -249,6 +259,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 } else {
                     collateral = 0;
                     // **B5**: when adding collateral: lender deposit time = timestamp of block when deposit happened
+                    collateralBuckets.add(7388);
                     lenderDepositTime[borrower_][7388] = block.timestamp;
                 }
 
