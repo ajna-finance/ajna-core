@@ -82,8 +82,7 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
 
             vm.startPrank(actor);
 
-            _quote.mint(actor, 1e45);
-            _quote.approve(address(_pool), 1e45);
+            _ensureQuoteAmount(actor, 1e45);
 
             vm.stopPrank();
         }
