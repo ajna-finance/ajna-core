@@ -115,9 +115,9 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
         uint256 price = _poolInfo.indexToPrice(bucket);
         uint256 collateralToPledge = ((amount_ * 1e18 + price / 2) / price) * 101 / 100 + 1;
 
-        try _erc20Pool.drawDebt(_actor, amount_, 7388, collateralToPledge) {
+        (uint256 interestRate, ) = _erc20Pool.interestRateInfo();
 
-            (uint256 interestRate, ) = _erc20Pool.interestRateInfo();
+        try _erc20Pool.drawDebt(_actor, amount_, 7388, collateralToPledge) {
 
             // **RE10**: Reserves increase by origination fee: max(1 week interest, 0.05% of borrow amount), on draw debt
             increaseInReserves += Maths.wmul(

@@ -189,9 +189,9 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
             tokenIds[i] = _collateral.tokenOfOwnerByIndex(_actor, i);
         }
 
-        try _erc721Pool.drawDebt(_actor, amount_, 7388, tokenIds) {
+        (uint256 interestRate, ) = _erc721Pool.interestRateInfo();
 
-            (uint256 interestRate, ) = _erc721Pool.interestRateInfo();
+        try _erc721Pool.drawDebt(_actor, amount_, 7388, tokenIds) {
 
             // **RE10**: Reserves increase by origination fee: max(1 week interest, 0.05% of borrow amount), on draw debt
             increaseInReserves += Maths.wmul(

@@ -263,4 +263,22 @@ contract RegressionTestReserveERC721Pool is ReserveERC721PoolInvariants {
 
         invariant_collateral_CT2();
     }
+
+    /*
+        Test was failing due to the fact invariant paralele logic was calculating borrow fee rate using post action interest rate.
+        Fixed by changing invariant logic to use interest rate pre action.
+    */
+    function test_regression_erc721_reserves() external {
+        _reserveERC721PoolHandler.takeAuction(52184144563529, 16987068363523950122378, 115792089237316195423570985008687907853269984665640564039457584007913129639934, 249785033563852034807779);
+        _reserveERC721PoolHandler.repayDebt(1839, 110349606679412691172957834289542550319383271247755660854362242977991410020491, 17647);
+        _reserveERC721PoolHandler.kickReserveAuction(12534874786786400574751033333586275499975871598, 21027117108641344940103);
+        _reserveERC721PoolHandler.drawDebt(3252755448059897925800761800, 58806739968885192426137828, 1000000692280530398);
+
+        //  Increase in Reserves  --> 75261318171717473366378
+        //  Decrease in Reserves  --> 0
+        //  Current Reserves      --> 68419380156106783277300
+        //  Required Reserves     --> 75261318171717473366378 - higher due to calculating fee using post action interest rate
+
+        invariant_reserves();
+    }
 }
