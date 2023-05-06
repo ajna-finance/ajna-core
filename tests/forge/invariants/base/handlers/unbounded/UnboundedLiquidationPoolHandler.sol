@@ -203,7 +203,8 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 }
             }
 
-            _fenwickRemove(beforeBucketTakeVars.deposit - afterBucketTakeVars.deposit, bucketIndex_);
+            // assign value to fenwick tree to mitigate rounding error that could be created in a _fenwickRemove cal
+            fenwickDeposits[bucketIndex_] = afterBucketTakeVars.deposit;
 
             _updateCurrentTakeState(borrower_, borrowerDebt);
 
@@ -258,6 +259,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 } else {
                     collateral = 0;
                     // **B5**: when adding collateral: lender deposit time = timestamp of block when deposit happened
+                    collateralBuckets.add(7388);
                     lenderDepositTime[borrower_][7388] = block.timestamp;
                 }
 
