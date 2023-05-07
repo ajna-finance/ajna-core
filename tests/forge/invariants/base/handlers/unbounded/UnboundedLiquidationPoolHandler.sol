@@ -203,7 +203,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 }
             }
 
-            // assign value to fenwick tree to mitigate rounding error that could be created in a _fenwickRemove cal
+            // assign value to fenwick tree to mitigate rounding error that could be created in a _fenwickRemove call
             fenwickDeposits[bucketIndex_] = afterBucketTakeVars.deposit;
 
             _updateCurrentTakeState(borrower_, borrowerDebt);
