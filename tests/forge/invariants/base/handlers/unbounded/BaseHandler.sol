@@ -40,6 +40,8 @@ abstract contract BaseHandler is Test {
 
     uint256 internal MIN_QUOTE_AMOUNT;
     uint256 internal MAX_QUOTE_AMOUNT;
+    uint256 internal MIN_DEBT_AMOUNT;
+    uint256 internal MAX_DEBT_AMOUNT;
 
     uint256 internal MIN_COLLATERAL_AMOUNT;
     uint256 internal MAX_COLLATERAL_AMOUNT;
