@@ -98,7 +98,10 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
         (address kicker, , , , , , , , , ) = _pool.auctionInfo(borrower_);
 
-        (uint256 borrowerDebtBeforeTake, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
+        (
+            uint256 borrowerDebtBeforeTake,
+            uint256 borrowerCollateralBeforeTake, 
+        ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
         uint256 totalBondBeforeTake          = _getKickerBond(kicker);
         uint256 totalBalanceBeforeTake       = _quote.balanceOf(address(_pool)) * 10**(18 - _quote.decimals());
 
@@ -132,9 +135,9 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             // **RE7**: Reserves increase with the quote token paid by taker.
             increaseInReserves += totalBalanceAfterTake - totalBalanceBeforeTake;
 
-            // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
+            // **CT2**: Keep track of bucketIndex when auction is settled and borrower compensated for fractional collateral
             (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower_);
-            if (kickTime == 0 && _pool.poolType() == 1) {
+            if (kickTime == 0 && borrowerCollateralBeforeTake % 1e18 != 0 && _pool.poolType() == 1) {
                 if (auctionPrice < MIN_PRICE) {
                     collateralBuckets.add(7388);
                     lenderDepositTime[borrower_][7388] = block.timestamp;
