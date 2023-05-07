@@ -454,6 +454,11 @@ contract RegressionTestLiquidationERC20Pool is LiquidationERC20PoolInvariants {
         invariant_fenwick_F2();
     }
 
+    /*
+        Test was failing in 2 steps due to invariant logic:
+        - not updating borrower deposit time when compensated with LPs when settle and no deposit in pool
+        - not updating borrower deposit time when settle bad debt, hence no LP awarded
+    */
     function test_regression_settle_buckets_B5() external {
         _liquidationERC20PoolHandler.settleAuction(610050525047610256607064809241, 787978178697424804262352376558, 3844340316627241601299310600, 33978597307241284290879029171);
         _liquidationERC20PoolHandler.kickAuction(1039538901525358855978213874260, 11015, 1048947872777785608, 2836770848444206031406380458652443);

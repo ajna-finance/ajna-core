@@ -69,13 +69,14 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         (uint256 lpBalanceBeforeAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
 
-        try _pool.removeQuoteToken(amount_, bucketIndex_) returns (uint256, uint256) {
+        ( , , , uint256 deposit, ) = _pool.bucketInfo(bucketIndex_);
+        fenwickDeposits[bucketIndex_] = deposit;
+
+        try _pool.removeQuoteToken(amount_, bucketIndex_) returns (uint256 removedAmount_, uint256) {
             // **R4**: Exchange rates are unchanged by withdrawing deposit (quote token) from a bucket
             exchangeRateShouldNotChange[bucketIndex_] = true;
 
-            // assign value to fenwick tree to mitigate rounding error that could be created in a _fenwickRemove call
-            ( , , , uint256 deposit, ) = _pool.bucketInfo(bucketIndex_);
-            fenwickDeposits[bucketIndex_] = deposit;
+            _fenwickRemove(removedAmount_, bucketIndex_);
 
             // Post action condition
             (uint256 lpBalanceAfterAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
@@ -91,6 +92,8 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         uint256 fromIndex_,
         uint256 toIndex_
     ) internal updateLocalStateAndPoolInterest {
+        ( , , , uint256 fromDeposit, ) = _pool.bucketInfo(fromIndex_);
+        fenwickDeposits[fromIndex_] = fromDeposit;
 
         try _pool.moveQuoteToken(
             amount_,

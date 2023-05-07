@@ -54,6 +54,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         (uint256 borrowerDebt, , )             = _poolInfo.borrowerInfo(address(_pool), maxBorrower);
         (uint256 interestRate, )               = _pool.interestRateInfo();
         ( , , , uint256 depositBeforeAction, ) = _pool.bucketInfo(bucketIndex_);
+        fenwickDeposits[bucketIndex_] = depositBeforeAction;
 
         // ensure actor always has the amount to add for kick
         _ensureQuoteAmount(_actor, borrowerDebt);
@@ -237,30 +238,38 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                 uint256 fenwickDeposit    = fenwickDeposits[bucketIndex];
                 uint256 borrowerDebt      = Maths.wmul(borrowerT0Debt, inflator);
 
-                if (bucketIndex != MAX_FENWICK_INDEX) {
-                    // enough deposit in bucket and collateral avail to settle entire debt
-                    if (fenwickDeposit >= borrowerDebt && maxSettleableDebt >= borrowerDebt) {
-                        fenwickDeposits[bucketIndex] -= borrowerDebt;
-                        collateral                   -= Maths.wdiv(borrowerDebt, _priceAt(bucketIndex));
-                        borrowerT0Debt               = 0;
-                    }
-                    // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
-                    else if (maxSettleableDebt >= fenwickDeposit) {
-                        fenwickDeposits[bucketIndex] = 0;
-                        collateral                   -= Maths.wdiv(fenwickDeposit, _priceAt(bucketIndex));
-                        borrowerT0Debt               -= Maths.wdiv(fenwickDeposit, inflator);
-                    }
-                    // exchange all collateral with deposit
-                    else {
-                        fenwickDeposits[bucketIndex] -= maxSettleableDebt;
-                        collateral                   = 0;
-                        borrowerT0Debt               -= Maths.wdiv(maxSettleableDebt, inflator);
-                    }
-                } else {
+                if (fenwickDeposit == 0 && maxSettleableDebt != 0) {
                     collateral = 0;
-                    // **B5**: when adding collateral: lender deposit time = timestamp of block when deposit happened
+                    // Deposits in the tree is zero, insert entire collateral into lowest bucket 7388
+                    // **B5**: when settle with collateral: record min bucket where collateral added
                     collateralBuckets.add(7388);
                     lenderDepositTime[borrower_][7388] = block.timestamp;
+                } else {
+                    if (bucketIndex != MAX_FENWICK_INDEX) {
+                        // enough deposit in bucket and collateral avail to settle entire debt
+                        if (fenwickDeposit >= borrowerDebt && maxSettleableDebt >= borrowerDebt) {
+                            fenwickDeposits[bucketIndex] -= borrowerDebt;
+                            collateral                   -= Maths.wdiv(borrowerDebt, _priceAt(bucketIndex));
+                            borrowerT0Debt               = 0;
+                        }
+                        // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
+                        else if (maxSettleableDebt >= fenwickDeposit) {
+                            fenwickDeposits[bucketIndex] = 0;
+                            collateral                   -= Maths.wdiv(fenwickDeposit, _priceAt(bucketIndex));
+                            borrowerT0Debt               -= Maths.wdiv(fenwickDeposit, inflator);
+                        }
+                        // exchange all collateral with deposit
+                        else {
+                            fenwickDeposits[bucketIndex] -= maxSettleableDebt;
+                            collateral                   = 0;
+                            borrowerT0Debt               -= Maths.wdiv(maxSettleableDebt, inflator);
+                        }
+                    } else {
+                        collateral = 0;
+                        // **B5**: when settle with collateral: record min bucket where collateral added.
+                        // Lender doesn't get any LP when settle bad debt.
+                        collateralBuckets.add(7388);
+                    }
                 }
 
                 maxDepth_ -= 1;

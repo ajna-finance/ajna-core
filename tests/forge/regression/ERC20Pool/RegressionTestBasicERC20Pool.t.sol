@@ -257,7 +257,11 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         invariant_fenwick_F1();
     }
 
-    function test_regression_removeQuote_F1() external {
+    /*
+        Test was failing due to paralel fenwick-like structure rounding issues when removing quote token (pool zeroed out deposit, invariant didn't).
+        Fixed by always updating fenwick-like structure deposit before _removeFenwick with pool value of deposit before action.
+    */
+    function test_regression_removeQuote_F1_F2() external {
         _basicERC20PoolHandler.drawDebt(1000015842906285642, 3025860345093137767157722073974970, 1672579009);
         _basicERC20PoolHandler.pullCollateral(115792089237316195423570985008687907853269984665640564039457584007913129639935, 37350737096356631749868658766446035802507688889, 3);
         _basicERC20PoolHandler.pullCollateral(1339025589888540701846672565416819, 1183378320242304355226217089860, 2819684456210673680471842519329612269717114425950956824633610867);
@@ -343,6 +347,7 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
         _basicERC20PoolHandler.removeQuoteToken(999999999912894033768372883742, 999999999999999999504047943293631522569691684, 688447880865960602171180152209302651722918881293935619220696025762456064, 5242473368138304085708695872797);
 
         invariant_fenwick_F1();
+        invariant_fenwick_F2();
     }
 
 }
