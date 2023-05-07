@@ -467,6 +467,21 @@ contract RegressionTestLiquidationERC20Pool is LiquidationERC20PoolInvariants {
 
         invariant_bucket_B5_B6_B7();
     }
+
+    /*
+        Test was failing because CT2 logic in invariant take logic was applied for ERC20 pools too.
+        Fixed by restricting takeCT2 logic to ERC721 pools.
+    */
+    function test_regression_take_deposit_time_B5() external {
+		_liquidationERC20PoolHandler.settleAuction(34408634483948221383727038599851593478860890647229970667418288627035461486213, 4555, 1631, 896151175188742978778072118469);
+		_liquidationERC20PoolHandler.addCollateral(3, 3, 1, 4740261378835);
+		_liquidationERC20PoolHandler.addQuoteToken(5031361812912801034779235211187405, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 6);
+		_liquidationERC20PoolHandler.settleAuction(3503631305878390543344364147292, 6732, 969763358447405676856513079, 9096);
+		_liquidationERC20PoolHandler.addCollateral(2047256070076464118591650364630, 2113362137, 7143, 1000244562291732179);
+		_liquidationERC20PoolHandler.takeAuction(92213459149712307172046189, 1788201785571547234144154057109, 199392853273676203944354, 1006348391069958886);
+
+        invariant_bucket_B5_B6_B7();
+    }
 }
 
 contract RegressionTestLiquidationWith10BucketsERC20Pool is LiquidationERC20PoolInvariants { 
