@@ -137,10 +137,13 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             if (kickTime == 0) {
                 if (auctionPrice < MIN_PRICE) {
                     collateralBuckets.add(7388);
+                    lenderDepositTime[borrower_][7388] = block.timestamp;
                 } else if (auctionPrice > MAX_PRICE) {
                     collateralBuckets.add(0);
+                    lenderDepositTime[borrower_][0] = block.timestamp;
                 } else {
                     collateralBuckets.add(_indexOf(auctionPrice));
+                    lenderDepositTime[borrower_][_indexOf(auctionPrice)] = block.timestamp;
                 }
             }
 
