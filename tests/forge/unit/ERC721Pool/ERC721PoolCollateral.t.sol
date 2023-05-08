@@ -47,6 +47,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         tokenIdsToAdd[1] = 3;
         tokenIdsToAdd[2] = 5;
 
+        assertTrue(ERC721Pool(address(_pool)).tokenIdsAllowed(1));
+        assertTrue(ERC721Pool(address(_pool)).tokenIdsAllowed(3));
+        assertTrue(ERC721Pool(address(_pool)).tokenIdsAllowed(5));
+
         // borrower deposits three NFTs into the pool
         _pledgeCollateral({
             from:     _borrower,
@@ -904,7 +908,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             borrowerCollateralization: 0.000000000258794474 * 1e18,
             tokenIds:                  borrowerTokenIds
         });
-        
+
         // after depositTake but before take: NFTs pledged by liquidated borrower are owned by the pool
         assertEq(_collateral.ownerOf(1), address(_pool));
         assertEq(_collateral.ownerOf(3), address(_pool));
@@ -982,7 +986,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.ownerOf(1), address(_pool));
         assertEq(_collateral.ownerOf(3), _lender);
 
-        _assertAuction( 
+        _assertAuction(
              AuctionParams({
                 borrower:          _borrower,
                 active:            false,
@@ -1122,7 +1126,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             collateral:   0,
             deposit:      0,
             exchangeRate: 1.0 * 1e18
-        });   
+        });
         _assertBucket({
             index:        7388,
             lpBalance:    10 * 1e18, // LP in bucket 7388 diminished when NFT merged and removed
@@ -1199,6 +1203,13 @@ contract ERC721SubsetPoolCollateralTest is ERC721PoolCollateralTest {
         subsetTokenIds[3] = 51;
         subsetTokenIds[4] = 53;
         _pool = _deploySubsetPool(subsetTokenIds);
+
+        assertTrue(ERC721Pool(address(_pool)).tokenIdsAllowed(1));
+        assertTrue(ERC721Pool(address(_pool)).tokenIdsAllowed(3));
+        assertTrue(ERC721Pool(address(_pool)).tokenIdsAllowed(5));
+        assertTrue(ERC721Pool(address(_pool)).tokenIdsAllowed(51));
+        assertTrue(ERC721Pool(address(_pool)).tokenIdsAllowed(53));
+        assertTrue(!ERC721Pool(address(_pool)).tokenIdsAllowed(1337));
 
         _mintAndApproveQuoteTokens(_lender, 200_000 * 1e18);
         _mintAndApproveQuoteTokens(_borrower, 100 * 1e18);

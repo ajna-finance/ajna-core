@@ -30,9 +30,9 @@ import { IERC721PoolState }     from './interfaces/pool/erc721/IERC721PoolState.
 
 import { FlashloanablePool } from './base/FlashloanablePool.sol';
 
-import { 
+import {
     _revertIfAuctionClearable,
-    _revertOnExpiry 
+    _revertOnExpiry
 }                               from './libraries/helpers/RevertsHelper.sol';
 
 import { Maths }    from './libraries/internal/Maths.sol';
@@ -71,12 +71,13 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     /*** State Variables ***/
     /***********************/
 
-    /// @dev Mapping of `tokenIds` allowed in `NFT` Subset type pool.
-    mapping(uint256 => bool)      public tokenIdsAllowed;
     /// @dev Borrower `address => array` of tokenIds pledged by borrower mapping.
     mapping(address => uint256[]) public borrowerTokenIds;
     /// @dev Array of `tokenIds` in pool buckets (claimable from pool).
     uint256[]                     public bucketTokenIds;
+
+    /// @dev Mapping of `tokenIds` allowed in `NFT` Subset type pool.
+    mapping(uint256 => bool)      internal tokenIdsAllowed_;
 
     /****************************/
     /*** Initialize Functions ***/
@@ -100,7 +101,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         if (noOfTokens != 0) {
             // add subset of tokenIds allowed in the pool
             for (uint256 id = 0; id < noOfTokens;) {
-                tokenIdsAllowed[tokenIds_[id]] = true;
+                tokenIdsAllowed_[tokenIds_[id]] = true;
 
                 unchecked { ++id; }
             }
@@ -124,6 +125,10 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     /***********************************/
     /*** Borrower External Functions ***/
     /***********************************/
+
+    function tokenIdsAllowed(uint256 tokenId_) public view returns (bool) {
+        return (_getArgUint256(SUBSET) == 0 || tokenIdsAllowed_[tokenId_]);
+    }
 
     /**
      *  @inheritdoc IERC721PoolBorrowerActions
@@ -560,7 +565,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
 
         for (uint256 i = 0; i < tokenIds_.length;) {
             uint256 tokenId = tokenIds_[i];
-            if (subset && !tokenIdsAllowed[tokenId]) revert OnlySubset();
+            if (!tokenIdsAllowed(tokenId)) revert OnlySubset();
             poolTokens_.push(tokenId);
 
             _transferNFT(msg.sender, address(this), tokenId);
