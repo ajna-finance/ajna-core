@@ -30,9 +30,9 @@ import { IERC721PoolState }     from './interfaces/pool/erc721/IERC721PoolState.
 
 import { FlashloanablePool } from './base/FlashloanablePool.sol';
 
-import { 
+import {
     _revertIfAuctionClearable,
-    _revertOnExpiry 
+    _revertOnExpiry
 }                               from './libraries/helpers/RevertsHelper.sol';
 
 import { Maths }    from './libraries/internal/Maths.sol';
@@ -71,12 +71,15 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     /*** State Variables ***/
     /***********************/
 
-    /// @dev Mapping of `tokenIds` allowed in `NFT` Subset type pool.
-    mapping(uint256 => bool)      public tokenIdsAllowed;
+    /// @dev Array of tokens permitted by the Pool (if applicable)
+    uint256[]                     public subsetTokenIds;
     /// @dev Borrower `address => array` of tokenIds pledged by borrower mapping.
     mapping(address => uint256[]) public borrowerTokenIds;
     /// @dev Array of `tokenIds` in pool buckets (claimable from pool).
     uint256[]                     public bucketTokenIds;
+
+    /// @dev Mapping of `tokenIds` allowed in `NFT` Subset type pool.
+    mapping(uint256 => bool)      internal tokenIdsAllowed_;
 
     /****************************/
     /*** Initialize Functions ***/
@@ -95,16 +98,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         interestState.interestRate       = uint208(rate_);
         interestState.interestRateUpdate = uint48(block.timestamp);
 
-        uint256 noOfTokens = tokenIds_.length;
-
-        if (noOfTokens != 0) {
-            // add subset of tokenIds allowed in the pool
-            for (uint256 id = 0; id < noOfTokens;) {
-                tokenIdsAllowed[tokenIds_[id]] = true;
-
-                unchecked { ++id; }
-            }
-        }
+        subsetTokenIds = tokenIds_;
 
         Loans.init(loans);
 
@@ -119,6 +113,40 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
     /// @inheritdoc IERC721PoolImmutables
     function isSubset() external pure override returns (bool) {
         return _getArgUint256(SUBSET) != 0;
+    }
+
+    /**
+     * @dev    Binary search of subtoken array to determine if token is permitted
+     * @param  tokenId_ Token ID of NFT to check
+     * @return          true if tokenId is permitted in the pool
+     */
+    function tokenIdsAllowed(uint256 tokenId_) public view returns (bool) {
+        // true if token is not a subset pool or token has already been initialized
+        if (_getArgUint256(SUBSET) == 0 || tokenIdsAllowed_[tokenId_]) return true;
+
+        uint256 low_;
+        uint256 mid_;
+        uint256 high_ = subsetTokenIds.length;
+        // Binary search for log(n) lookup of NFT in sorted subset
+        while (low_ < high_) {
+            mid_ = (low_ & high_) + (low_ ^ high_) / 2; // rounds down
+            if (subsetTokenIds[mid_] == tokenId_) return true;
+            if (subsetTokenIds[mid_] > tokenId_) {
+                high_ = mid_;
+            } else {
+                low_ = mid_ + 1;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @dev external function to optionally pre-approve a token before transfer
+     * @param tokenId_ the NFT id to pre-approve
+    */
+    function allowToken(uint256 tokenId_) external {
+        tokenIdsAllowed_[tokenId_] = tokenIdsAllowed(tokenId_);
     }
 
     /***********************************/
@@ -556,11 +584,12 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         uint256[] storage poolTokens_,
         uint256[] calldata tokenIds_
     ) internal {
-        bool subset   = _getArgUint256(SUBSET) != 0;
 
         for (uint256 i = 0; i < tokenIds_.length;) {
             uint256 tokenId = tokenIds_[i];
-            if (subset && !tokenIdsAllowed[tokenId]) revert OnlySubset();
+
+            if (!tokenIdsAllowed(tokenId)) revert OnlySubset();
+            tokenIdsAllowed_[tokenId] = true; // optimize future tokenIdsAllowed lookups
             poolTokens_.push(tokenId);
 
             _transferNFT(msg.sender, address(this), tokenId);
