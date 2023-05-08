@@ -62,6 +62,8 @@ Invariant test scenarios can be externally configured by customizing following e
 | NO_OF_BUCKETS | ERC20 ERC721 | 3 | Number of buckets starting from `BUCKET_INDEX_*` to be used in pool actions |
 | BUCKET_INDEX_ERC20 | ERC20 | 2570 | First bucket index to be used in ERC20 pool actions |
 | BUCKET_INDEX_ERC721 | ERC721 | 850 | First bucket index to be used in ERC721 pool actions |
+| MIN_DEBT_AMOUNT | ERC20 ERC721 | 0 | The min amount of debt that can be taken in a single pool action |
+| MAX_DEBT_AMOUNT | ERC20 ERC721 | 1e28 | The max amount of debt that can be taken in a single pool action |
 | SKIP_TIME | ERC20 ERC721 | 24 hours | The upper limit of time that can be skipped after a pool action (fuzzed) |
 | SKIP_TIME_TO_KICK | ERC20 ERC721 | 200 days | The time to be skipped and drive a new loan undercollateralized. Use a big value to ensure a successful kick |
 | FOUNDRY_INVARIANT_RUNS | ERC20 ERC721 | 10 | The number of runs for each scenario |
