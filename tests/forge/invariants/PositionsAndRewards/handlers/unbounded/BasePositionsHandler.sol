@@ -13,6 +13,7 @@ import { Maths }             from "src/libraries/internal/Maths.sol";
 import { BaseHandler }         from '../../../base/handlers/unbounded/BaseHandler.sol';
 
 import { PositionManager }   from 'src/PositionManager.sol';
+import { RewardsManager }    from 'src/RewardsManager.sol';
 
 /**
  *  @dev this contract manages multiple lenders
@@ -22,6 +23,7 @@ import { PositionManager }   from 'src/PositionManager.sol';
 abstract contract BasePositionsHandler is BaseHandler {
 
     PositionManager internal _positions;
+    RewardsManager  internal _rewards;
 
     // positions invariant test state
     mapping(uint256 => EnumerableSet.UintSet) internal tokenIdsByBucketIndex;

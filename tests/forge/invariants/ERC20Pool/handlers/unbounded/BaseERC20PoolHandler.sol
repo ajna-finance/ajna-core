@@ -6,7 +6,7 @@ import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { ERC20Pool }        from 'src/ERC20Pool.sol';
-import { RewardsManager }   from 'src/RewardsManager.sol';
+// import { RewardsManager }   from 'src/RewardsManager.sol';
 
 import { TokenWithNDecimals } from '../../../../utils/Tokens.sol';
 
