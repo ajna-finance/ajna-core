@@ -52,6 +52,9 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
         */
         MAX_QUOTE_AMOUNT = vm.envOr("MAX_QUOTE_AMOUNT_ERC721", uint256(10 ** (31 - (LENDER_MIN_BUCKET_INDEX / 260))));
 
+        MIN_DEBT_AMOUNT = vm.envOr("MIN_DEBT_AMOUNT", uint256(0));
+        MAX_DEBT_AMOUNT = vm.envOr("MAX_DEBT_AMOUNT", uint256(1e28));
+
         MIN_COLLATERAL_AMOUNT = vm.envOr("MIN_COLLATERAL_AMOUNT_ERC721", uint256(1));
         MAX_COLLATERAL_AMOUNT = vm.envOr("MAX_COLLATERAL_AMOUNT_ERC721", uint256(100));
 

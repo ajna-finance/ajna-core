@@ -201,7 +201,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
     function _preDrawDebt(
         uint256 amountToBorrow_
     ) internal override returns (uint256 boundedAmount_) {
-        boundedAmount_ = constrictToRange(amountToBorrow_, MIN_QUOTE_AMOUNT, MAX_QUOTE_AMOUNT);
+        boundedAmount_ = constrictToRange(amountToBorrow_, MIN_DEBT_AMOUNT, MAX_DEBT_AMOUNT);
 
         // Pre Condition
         // 1. borrower's debt should exceed minDebt
