@@ -333,7 +333,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             borrower:         _borrower,
             amountToRepay:    type(uint256).max,
             amountRepaid:     1_508.860066921599065131 * 1e18,
-            collateralToPull: 3,
+            collateralToPull: 3 * 1e18,
             newLup:           MAX_PRICE
         });
 
