@@ -104,7 +104,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
             quote:        address(0),
             interestRate: 0.05 * 10**18
         });
-        
+
         // check tracking of deployed pools
         assertEq(_factory.getDeployedPoolsList().length,  3);
         assertEq(_factory.getNumberOfDeployedPools(), 3);
@@ -154,9 +154,9 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
 
     function testDeployERC721PoolWithMinRate() external {
         _factory.deployPool(
-            address(new NFTCollateralToken()), 
-            address(new TokenWithNDecimals("Quote", "Q1", 18)), 
-            tokenIds, 
+            address(new NFTCollateralToken()),
+            address(new TokenWithNDecimals("Quote", "Q1", 18)),
+            tokenIds,
             0.01 * 10**18
         );
 
@@ -167,9 +167,9 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
 
     function testDeployERC721PoolWithMaxRate() external {
         _factory.deployPool(
-            address(new NFTCollateralToken()), 
-            address(new TokenWithNDecimals("Quote", "Q1", 18)), 
-            tokenIds, 
+            address(new NFTCollateralToken()),
+            address(new TokenWithNDecimals("Quote", "Q1", 18)),
+            tokenIds,
             0.1 * 10**18
         );
 
@@ -323,11 +323,25 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
 
         vm.expectRevert(IPoolFactory.DeployQuoteCollateralSameToken.selector);
         _factory.deployPool(
-            address(NFTCollectionAddress), 
-            address(NFTCollectionAddress), 
-            tokenIds, 
+            address(NFTCollectionAddress),
+            address(NFTCollectionAddress),
+            tokenIds,
             0.5 * 10**18
         );
+    }
+
+    function testLargeSubsetPoolCost() external {
+        uint256 poolSize = 1000;
+        uint256[] memory poolTokenIds = new uint256[](poolSize);
+        for (uint256 i = 0; i < poolSize; i++) {
+            poolTokenIds[i] = i;
+        }
+
+        uint256 pre = gasleft();
+        _factory.deployPool(address(_collateral), address(_quote), poolTokenIds, 0.05 * 10**18);
+        uint256 post = gasleft();
+
+        emit log_named_uint("Gas used: ", pre - post);
     }
 
 }
