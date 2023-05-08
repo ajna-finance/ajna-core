@@ -37,7 +37,7 @@ abstract contract BaseERC20PoolHandler is BaseHandler {
         MIN_QUOTE_AMOUNT = vm.envOr("MIN_QUOTE_AMOUNT_ERC20", uint256(1e3));
         MAX_QUOTE_AMOUNT = vm.envOr("MAX_QUOTE_AMOUNT_ERC20", uint256(1e30));
 
-        MIN_DEBT_AMOUNT = vm.envOr("MIN_DEBT_AMOUNT", uint256(1e3));
+        MIN_DEBT_AMOUNT = vm.envOr("MIN_DEBT_AMOUNT", uint256(0));
         MAX_DEBT_AMOUNT = vm.envOr("MAX_DEBT_AMOUNT", uint256(1e28));
 
         MIN_COLLATERAL_AMOUNT = vm.envOr("MIN_COLLATERAL_AMOUNT_ERC20", uint256(1e3));
