@@ -84,6 +84,16 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
         _NFTSubsetOnePool.initialize(_tokenIdsSubsetOne, 0.05 * 10**18);
     }
 
+    function testDeployERC721CollectionPoolWithNoSubset() external {
+        _collateral  = new NFTCollateralToken();
+        _quote       = new TokenWithNDecimals("Quote", "Q", 18);
+
+        address _pool = _factory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
+
+        assertTrue(_pool != address(0), "ERC721PoolFactory/pool-not-created");
+        assertEq(_factory.getNumberOfDeployedPools(),  4, "ERC721PoolFactory/pool-value-incorrect");
+    }
+
     /*******************************/
     /*** ERC721 Collection Tests ***/
     /*******************************/
@@ -104,7 +114,7 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
             quote:        address(0),
             interestRate: 0.05 * 10**18
         });
-        
+
         // check tracking of deployed pools
         assertEq(_factory.getDeployedPoolsList().length,  3);
         assertEq(_factory.getNumberOfDeployedPools(), 3);
@@ -154,9 +164,9 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
 
     function testDeployERC721PoolWithMinRate() external {
         _factory.deployPool(
-            address(new NFTCollateralToken()), 
-            address(new TokenWithNDecimals("Quote", "Q1", 18)), 
-            tokenIds, 
+            address(new NFTCollateralToken()),
+            address(new TokenWithNDecimals("Quote", "Q1", 18)),
+            tokenIds,
             0.01 * 10**18
         );
 
@@ -167,9 +177,9 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
 
     function testDeployERC721PoolWithMaxRate() external {
         _factory.deployPool(
-            address(new NFTCollateralToken()), 
-            address(new TokenWithNDecimals("Quote", "Q1", 18)), 
-            tokenIds, 
+            address(new NFTCollateralToken()),
+            address(new TokenWithNDecimals("Quote", "Q1", 18)),
+            tokenIds,
             0.1 * 10**18
         );
 
@@ -323,9 +333,9 @@ contract ERC721PoolFactoryTest is ERC721HelperContract {
 
         vm.expectRevert(IPoolFactory.DeployQuoteCollateralSameToken.selector);
         _factory.deployPool(
-            address(NFTCollectionAddress), 
-            address(NFTCollectionAddress), 
-            tokenIds, 
+            address(NFTCollectionAddress),
+            address(NFTCollectionAddress),
+            tokenIds,
             0.5 * 10**18
         );
     }
