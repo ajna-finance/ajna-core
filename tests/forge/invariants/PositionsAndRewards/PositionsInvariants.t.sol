@@ -18,7 +18,7 @@ import { ReserveERC20PoolInvariants } from '../ERC20Pool/ReserveERC20PoolInvaria
 import { ReserveERC20PoolHandler }    from '../ERC20Pool/handlers/ReserveERC20PoolHandler.sol';
 import { TokenWithNDecimals }         from '../../utils/Tokens.sol';
 
-import { PositionsHandler }    from './handlers/PositionsHandler.sol';
+import { PositionHandler }    from './handlers/PositionHandler.sol';
 
 contract PositionsInvariants is BaseInvariants {
 
@@ -30,8 +30,8 @@ contract PositionsInvariants is BaseInvariants {
     ERC20PoolFactory   internal _erc20poolFactory;
     ERC721PoolFactory  internal _erc721poolFactory;
     ERC721Pool         internal _erc721impl;
-    PositionManager    internal _positions;
-    PositionsHandler   internal _positionsHandler;
+    PositionManager    internal _position;
+    PositionHandler    internal _positionHandler;
 
     function setUp() public override virtual {
 
@@ -43,7 +43,7 @@ contract PositionsInvariants is BaseInvariants {
         _erc721impl        = _erc721poolFactory.implementation();
         _erc20pool         = ERC20Pool(_erc20poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
         _pool              = Pool(address(_erc20pool));
-        _positions         = new PositionManager(_erc20poolFactory, _erc721poolFactory);
+        _position         = new PositionManager(_erc20poolFactory, _erc721poolFactory);
 
         excludeContract(address(_ajna));
         excludeContract(address(_collateral));
@@ -54,10 +54,10 @@ contract PositionsInvariants is BaseInvariants {
         excludeContract(address(_poolInfo));
         excludeContract(address(_erc20impl));
         excludeContract(address(_erc721impl));
-        excludeContract(address(_positions));
+        excludeContract(address(_position));
 
-        _positionsHandler = new PositionsHandler(
-            address(_positions),
+        _positionHandler = new PositionHandler(
+            address(_position),
             address(_erc20pool),
             address(_ajna),
             address(_quote),
@@ -67,7 +67,7 @@ contract PositionsInvariants is BaseInvariants {
             address(this)
         );
 
-        _handler = address(_positionsHandler);
+        _handler = address(_positionHandler);
     }
 
     function invariant_positions_PM1_PM2() public useCurrentTimestamp {
@@ -80,7 +80,7 @@ contract PositionsInvariants is BaseInvariants {
             uint256 posLpAccum;
             uint256 poolLpAccum;
 
-            (uint256 poolLp, uint256 depositTime) = _pool.lenderInfo(bucketIndex, address(_positions));
+            (uint256 poolLp, uint256 depositTime) = _pool.lenderInfo(bucketIndex, address(_position));
             poolLpAccum += poolLp;
 
             // loop over tokenIds in bucket indexes
@@ -88,7 +88,7 @@ contract PositionsInvariants is BaseInvariants {
             for (uint256 k = 0; k < tokenIds.length; k++) {
                 uint256 tokenId = tokenIds[k];
                 
-                (uint256 posLp, uint256 posDepositTime) = _positions.getPositionInfo(tokenId, bucketIndex);
+                (uint256 posLp, uint256 posDepositTime) = _position.getPositionInfo(tokenId, bucketIndex);
                 posLpAccum += posLp;
                 mostRecentDepositTime = (posDepositTime > mostRecentDepositTime) ? posDepositTime : mostRecentDepositTime;
             }

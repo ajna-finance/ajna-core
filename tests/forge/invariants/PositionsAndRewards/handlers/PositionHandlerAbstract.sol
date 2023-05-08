@@ -14,23 +14,7 @@ import { ERC20Pool }                    from 'src/ERC20Pool.sol';
 import { UnboundedPositionsHandler } from './unbounded/UnboundedPositionsHandler.sol';
 import { BaseERC20PoolHandler }     from '../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
 
-contract PositionsHandler is UnboundedPositionsHandler {
-
-    constructor(
-        address positions_,
-        address pool_,
-        address ajna_,
-        address quote_,
-        address collateral_,
-        address poolInfo_,
-        uint256 numOfActors_,
-        address testContract_
-    ) BaseERC20PoolHandler(pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {
-
-        // Position manager
-        _positions = PositionManager(positions_);
-
-    }
+abstract contract PositionHandlerAbstract is UnboundedPositionsHandler {
 
     /*******************************/
     /*** Positions Test Functions ***/
@@ -139,7 +123,7 @@ contract PositionsHandler is UnboundedPositionsHandler {
         tokenId_ = _mint();
 
         (lpBalances[0], ) = _pool.lenderInfo(bucketIndex_, _actor);
-        _pool.increaseLPAllowance(address(_positions), indexes_, lpBalances);
+        _pool.increaseLPAllowance(address(_position), indexes_, lpBalances);
     }
 
     function _preRedeemPositions(
@@ -153,7 +137,7 @@ contract PositionsHandler is UnboundedPositionsHandler {
         _memorializePositions(tokenId_, indexes_);
 
         address[] memory transferors = new address[](1);
-        transferors[0] = address(_positions);
+        transferors[0] = address(_position);
 
         _pool.approveLPTransferors(transferors);
     }

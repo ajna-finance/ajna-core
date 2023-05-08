@@ -20,14 +20,14 @@ contract RewardsInvariants is PositionsInvariants {
 
         super.setUp();
 
-        _rewards = new RewardsManager(address(_ajna), _positions);
+        _rewards = new RewardsManager(address(_ajna), _position);
 
-        excludeContract(address(_positionsHandler));
+        excludeContract(address(_positionHandler));
         excludeContract(address(_rewards));
 
         _rewardsHandler = new RewardsHandler(
             address(_rewards),
-            address(_positions),
+            address(_position),
             address(_erc20pool),
             address(_ajna),
             address(_quote),

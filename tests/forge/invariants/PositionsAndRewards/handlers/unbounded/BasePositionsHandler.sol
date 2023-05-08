@@ -23,7 +23,7 @@ import { ERC20Pool }         from 'src/ERC20Pool.sol';
  */ 
 abstract contract BasePositionsHandler is BaseERC20PoolHandler {
 
-    PositionManager internal _positions;
+    PositionManager internal _position;
     RewardsManager  internal _rewards;
 
     // positions invariant test state
