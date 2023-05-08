@@ -20,7 +20,7 @@ contract ReserveHandler is UnboundedReservePoolHandler, PositionsHandler {
         address poolInfo_,
         uint256 numOfActors_,
         address testContract_
-    ) PositionsHandler(positions_, pool_, ajna_, quote_, poolInfo_, numOfActors_, testContract_) {}
+    ) PositionsHandler(positions_, pool_, ajna_, quote_, collateral_, poolInfo_, numOfActors_, testContract_) {}
 
     /*******************************/
     /*** Reserves Test Functions ***/

@@ -10,17 +10,18 @@ import { IPositionManagerOwnerActions } from 'src/interfaces/position/IPositionM
 import { _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }             from "src/libraries/internal/Maths.sol";
 
-import { BaseHandler }         from '../../../base/handlers/unbounded/BaseHandler.sol';
+import { BaseERC20PoolHandler }         from '../../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
 
 import { PositionManager }   from 'src/PositionManager.sol';
 import { RewardsManager }    from 'src/RewardsManager.sol';
+import { ERC20Pool }         from 'src/ERC20Pool.sol';
 
 /**
  *  @dev this contract manages multiple lenders
  *  @dev methods in this contract are called in random order
  *  @dev randomly selects a lender contract to make a txn
  */ 
-abstract contract BasePositionsHandler is BaseHandler {
+abstract contract BasePositionsHandler is BaseERC20PoolHandler {
 
     PositionManager internal _positions;
     RewardsManager  internal _rewards;
@@ -33,24 +34,6 @@ abstract contract BasePositionsHandler is BaseHandler {
     mapping(uint256 => uint256) internal bucketIndexToPreActionPosLps; // to track LP changes
     mapping(uint256 => uint256) internal bucketIndexToPreActionDepositTime;
     using EnumerableSet for EnumerableSet.UintSet;
-
-    function _buildActors(uint256 noOfActors_) internal returns(address[] memory) {
-        address[] memory actorsAddress = new address[](noOfActors_);
-
-        for (uint i = 0; i < noOfActors_; i++) {
-            address actor = makeAddr(string(abi.encodePacked("Actor", Strings.toString(i))));
-            actorsAddress[i] = actor;
-
-            vm.startPrank(actor);
-
-            _quote.mint(actor, 1e45);
-            _quote.approve(address(_pool), 1e45);
-
-            vm.stopPrank();
-        }
-
-        return actorsAddress;
-    }
 
     function getBucketIndexesWithPosition() public view returns(uint256[] memory) {
         return bucketIndexesWithPosition.values();

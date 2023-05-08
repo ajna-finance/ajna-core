@@ -23,6 +23,7 @@ contract RewardsInvariants is PositionsInvariants {
         _rewards = new RewardsManager(address(_ajna), _positions);
 
         excludeContract(address(_positionsHandler));
+        excludeContract(address(_rewards));
 
         _rewardsHandler = new RewardsHandler(
             address(_rewards),
@@ -30,6 +31,7 @@ contract RewardsInvariants is PositionsInvariants {
             address(_erc20pool),
             address(_ajna),
             address(_quote),
+            address(_collateral),
             address(_poolInfo),
             NUM_ACTORS,
             address(this)

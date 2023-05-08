@@ -61,6 +61,7 @@ contract PositionsInvariants is BaseInvariants {
             address(_erc20pool),
             address(_ajna),
             address(_quote),
+            address(_collateral),
             address(_poolInfo),
             NUM_ACTORS,
             address(this)
