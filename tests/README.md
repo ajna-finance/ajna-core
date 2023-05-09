@@ -69,6 +69,20 @@ Invariant test scenarios can be externally configured by customizing following e
 | FOUNDRY_INVARIANT_RUNS | ERC20 ERC721 | 10 | The number of runs for each scenario |
 | FOUNDRY_INVARIANT_DEPTH | ERC20 ERC721 | 200 | The number of actions performed in each scenario |
 
+#### Invariant names
+
+The `<invariant_name>` placeholder in commands below could take following values:
+| Invariant Name |
+| ------------- |
+| invariant_bucket |
+| invariant_quote |
+| invariant_collateral |
+| invariant_exchange_rate |
+| invariant_loan |
+| invariant_interest_rate |
+| invariant_fenwick |
+| invariant_auction |
+
 #### Custom Scenarios
 
 Custom scenario configurations are defined in [scenarios](forge/invariants/scenarios/) directory in `scenario-<custom-pool>.sh` files.

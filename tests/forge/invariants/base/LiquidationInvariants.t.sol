@@ -9,8 +9,20 @@ import { BasicInvariants }        from './BasicInvariants.t.sol';
 
 abstract contract LiquidationInvariants is BasicInvariants {
 
-    // checks sum of all borrower's t0debt is equals to total pool t0debtInAuction
-    function invariant_auction_A1() public useCurrentTimestamp {
+    /*************************************/
+    /*** Common Liquidation Invariants ***/
+    /*************************************/
+
+    function invariant_auction() public useCurrentTimestamp {
+        _invariant_A1();
+        _invariant_A2();
+        _invariant_A3_A4();
+        _invariant_A5();
+        _invariant_A6();
+    }
+
+    /// @dev checks sum of all borrower's t0debt is equals to total pool t0debtInAuction
+    function _invariant_A1() internal view {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         uint256 totalT0debtInAuction;
 
@@ -27,8 +39,8 @@ abstract contract LiquidationInvariants is BasicInvariants {
         require(_pool.totalT0DebtInAuction() == totalT0debtInAuction, "Auction Invariant A1");
     }
 
-    // checks sum of all kicker bond is equal to total pool bond
-    function invariant_auction_A2() public useCurrentTimestamp {
+    /// @dev checks sum of all kicker bond is equal to total pool bond
+    function _invariant_A2() internal view {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         uint256 totalKickerBond;
 
@@ -44,9 +56,9 @@ abstract contract LiquidationInvariants is BasicInvariants {
         require(totalPoolBond == totalKickerBond, "Auction Invariant A2");
     }
 
-    // checks total borrowers with debt is equals to sum of borrowers unkicked and borrowers kicked
-    // checks total auctions is equals to total borrowers kicked 
-    function invariant_auction_A3_A4() public useCurrentTimestamp {
+    /// @dev checks total borrowers with debt is equals to sum of borrowers unkicked and borrowers kicked
+    /// @dev checks total auctions is equals to total borrowers kicked
+    function _invariant_A3_A4() internal view {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
         uint256 totalBorrowersWithDebt;
 
@@ -78,8 +90,8 @@ abstract contract LiquidationInvariants is BasicInvariants {
         require(totalAuction == borrowersKicked, "Auction Invariant A4");
     }
 
-    // for each auction, kicker locked bond is more than equal to auction bond 
-    function invariant_auction_A5() public useCurrentTimestamp {
+    /// @dev for each auction, kicker locked bond is more than equal to auction bond
+    function _invariant_A5() internal view {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         for (uint256 i = 0; i < actorCount; i++) {
@@ -91,8 +103,8 @@ abstract contract LiquidationInvariants is BasicInvariants {
         }
     }
 
-    // if a Liquidation is not taken then the take flag (Liquidation.alreadyTaken) should be False, if already taken then the take flag should be True
-    function invariant_auction_A6() public useCurrentTimestamp {
+    /// @dev if a Liquidation is not taken then the take flag (Liquidation.alreadyTaken) should be False, if already taken then the take flag should be True
+    function _invariant_A6() internal view {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         for (uint256 i = 0; i < actorCount; i++) {
