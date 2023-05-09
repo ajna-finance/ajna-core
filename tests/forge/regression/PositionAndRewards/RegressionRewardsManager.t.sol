@@ -32,4 +32,8 @@ contract RegressionRewardsManager is RewardsInvariants {
         _rewardsHandler.settleAuction(0, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 120615857050623137463512130550262626813346106);
         invariant_positions_PM1_PM2();
     }
+
+    function test_regression_rewards_RW1() public {
+        invariant_rewards_RW1();
+    }
 }

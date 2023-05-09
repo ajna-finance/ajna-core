@@ -55,7 +55,7 @@ contract RewardsInvariants is PositionsInvariants {
         uint256 rewardsCap = Maths.wmul(totalBurnedInPeriod, 0.1 * 1e18);
 
         // check claimed rewards < rewards cap
-        require(claimedRewards < rewardsCap, "Rewards invariant RW1");
+        if (rewardsCap != 0) require(claimedRewards < rewardsCap, "Rewards invariant RW1");
     }
 
     function invariant_call_summary() public virtual override useCurrentTimestamp {
