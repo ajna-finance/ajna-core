@@ -148,6 +148,13 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
         tokenId_ = _preStake(bucketIndex_, amountToAdd_);
         _stake(tokenId_);
 
+        // draw some debt and then repay after some times to increase pool earning / reserves 
+        _drawDebt(amountToAdd_);
+
+        skip(365 days);
+
+        _repayDebt(type(uint256).max);
+
         //TODO: Perform multiple randomized reserve auctions to ensure staked position has rewards over multiple epochs 
         // trigger reserve auction
         _kickReserveAuction(); 
@@ -168,6 +175,9 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
         uint256 toBucketIndex_,
         uint256 amountToAdd_
     ) internal returns(uint256 tokenId_, uint256[] memory fromIndexes_, uint256[] memory toIndexes_) {
+        fromBucketIndex_ = constrictToRange(fromBucketIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
+        toBucketIndex_   = constrictToRange(toBucketIndex_,   LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
+
         fromIndexes_ = new uint256[](1);
         fromIndexes_[0] = fromBucketIndex_;
 
