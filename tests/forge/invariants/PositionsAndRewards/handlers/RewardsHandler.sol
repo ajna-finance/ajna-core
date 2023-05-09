@@ -149,7 +149,8 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
         _stake(tokenId_);
 
         // draw some debt and then repay after some times to increase pool earning / reserves 
-        _drawDebt(amountToAdd_);
+        uint256 amountToBorrow = _preDrawDebt(amountToAdd_);
+        _drawDebt(amountToBorrow);
 
         skip(365 days);
 
