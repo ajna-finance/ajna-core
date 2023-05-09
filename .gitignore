@@ -15,3 +15,9 @@ coverage/
 report/
 keystore/
 broadcast/
+
+# Certora
+.certora_internal/
+.certora_recent_jobs.json
+.zip-output-url.txt
+*.zip
