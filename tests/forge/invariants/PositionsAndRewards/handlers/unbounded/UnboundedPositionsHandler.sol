@@ -190,12 +190,6 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
 
             // TODO: store memorialized position's tokenIds in mapping, for reuse in unstake and redeem calls
 
-            // remove tracked positions
-            tokenIdsByBucketIndex[fromIndex_].remove(tokenId_);
-            if (tokenIdsByBucketIndex[fromIndex_].length() == 0) {
-                bucketIndexesWithPosition.remove(fromIndex_); 
-            }
-
             // Post Action Checks //
             // track created positions
             bucketIndexesWithPosition.add(toIndex_);

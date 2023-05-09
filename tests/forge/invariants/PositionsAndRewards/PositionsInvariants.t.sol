@@ -88,7 +88,8 @@ contract PositionsInvariants is BaseInvariants {
             for (uint256 k = 0; k < tokenIds.length; k++) {
                 uint256 tokenId = tokenIds[k];
                 
-                (uint256 posLp, uint256 posDepositTime) = _position.getPositionInfo(tokenId, bucketIndex);
+                (, uint256 posDepositTime) = _position.getPositionInfo(tokenId, bucketIndex);
+                uint256 posLp = _position.getLP(tokenId, bucketIndex);
                 posLpAccum += posLp;
                 mostRecentDepositTime = (posDepositTime > mostRecentDepositTime) ? posDepositTime : mostRecentDepositTime;
             }
