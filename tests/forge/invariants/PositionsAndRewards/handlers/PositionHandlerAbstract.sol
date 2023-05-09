@@ -25,7 +25,7 @@ abstract contract PositionHandlerAbstract is UnboundedPositionsHandler {
         uint256 bucketIndex_,
         uint256 amountToAdd_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BPositionHandler.memorialize']++;
         // Pre action //
         (uint256 tokenId, uint256[] memory indexes) = _preMemorializePositions(_lenderBucketIndex, amountToAdd_);
@@ -97,16 +97,13 @@ abstract contract PositionHandlerAbstract is UnboundedPositionsHandler {
     ) internal returns (uint256 tokenId_, uint256[] memory indexes_) {
 
         // ensure actor has a position
-        uint256 boundedIndex_   = constrictToRange(bucketIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
-        console.log("premem");
-        (uint256 lpBalanceBefore,) = _pool.lenderInfo(boundedIndex_, _actor);
-        console.log("aftermem");
+        (uint256 lpBalanceBefore,) = _pool.lenderInfo(bucketIndex_, _actor);
 
         // add quote token if they don't have a position
         if (lpBalanceBefore == 0) {
             // Prepare test phase
             uint256 boundedAmount = constrictToRange(amountToAdd_, MIN_QUOTE_AMOUNT, MAX_QUOTE_AMOUNT);
-            try _pool.addQuoteToken(boundedAmount, boundedIndex_, block.timestamp + 1 minutes) {
+            try _pool.addQuoteToken(boundedAmount, bucketIndex_, block.timestamp + 1 minutes) {
             } catch (bytes memory err) {
                 _ensurePoolError(err);
             }
@@ -115,7 +112,7 @@ abstract contract PositionHandlerAbstract is UnboundedPositionsHandler {
         //TODO: Check for exisiting nft positions in PositionManager
         //TODO: stake w/ multiple buckets instead of just one
         indexes_ = new uint256[](1);
-        indexes_[0] = boundedIndex_;
+        indexes_[0] = bucketIndex_;
 
         uint256[] memory lpBalances = new uint256[](1);
 
@@ -160,9 +157,9 @@ abstract contract PositionHandlerAbstract is UnboundedPositionsHandler {
         uint256 fromIndex_,
         uint256 toIndex_
     ) internal returns (uint256 tokenId_, uint256 boundedFromIndex_, uint256 boundedToIndex_) {
-        boundedFromIndex_ = constrictToRange(fromIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
-        boundedToIndex_   = constrictToRange(toIndex_,   LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
-        uint256 boundedAmount_    = constrictToRange(amountToMove_, MIN_QUOTE_AMOUNT, MAX_QUOTE_AMOUNT);
+        boundedFromIndex_      = constrictToRange(fromIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
+        boundedToIndex_        = constrictToRange(toIndex_,   LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
+        uint256 boundedAmount_ = constrictToRange(amountToMove_, MIN_QUOTE_AMOUNT, MAX_QUOTE_AMOUNT);
 
         // TODO: check if the actor has an existing position and use that one
         // mint a position if the actor doesn't have one

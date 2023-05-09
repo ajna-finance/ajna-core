@@ -46,7 +46,4 @@ abstract contract BasePositionsHandler is BaseERC20PoolHandler {
     function getTokenIds() public view returns(uint256[] memory) {
         return tokenIdsMinted.values();
     }
-
-
-
 }

@@ -92,9 +92,8 @@ contract PositionsInvariants is BaseInvariants {
                 posLpAccum += posLp;
                 mostRecentDepositTime = (posDepositTime > mostRecentDepositTime) ? posDepositTime : mostRecentDepositTime;
             }
-
-            assertEq(poolLpAccum, posLpAccum, "Positions Invariant PM1"); 
-            assertGe(depositTime, mostRecentDepositTime, "Positions Invariant PM2");
+            require(poolLpAccum == posLpAccum, "Positions Invariant PM1"); 
+            require(depositTime >= mostRecentDepositTime, "Positions Invariant PM2");
         }
     }
 

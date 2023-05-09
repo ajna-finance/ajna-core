@@ -8,6 +8,8 @@ import { IPositionManagerOwnerActions } from 'src/interfaces/position/IPositionM
 import { _depositFeeRate }              from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }                        from "src/libraries/internal/Maths.sol";
 
+import '@std/console.sol';
+
 import { BaseERC20PoolHandler }         from '../../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
 import { BasePositionsHandler }         from './BasePositionsHandler.sol';
 
@@ -40,7 +42,7 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
 
             // assert that the underlying LP balance in PositionManager is 0 
             (uint256 posPreActionLps,) = _position.getPositionInfo(tokenId_, indexes_[i]);
-            assertEq(posPreActionLps, 0);
+            require(posPreActionLps == 0);
 
         }
 
@@ -60,12 +62,12 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
 
                 // assert that the LP that now exists in the pool contract matches the amount added by the actor 
                 (uint256 poolLps, uint256 poolDepositTime) = _pool.lenderInfo(bucketIndex, address(_position));
-                assertEq(poolLps, bucketIndexToPreActionActorLps[bucketIndex] + bucketIndexToPreActionPosLps[bucketIndex]);
-                assertEq(poolDepositTime, bucketIndexToPreActionDepositTime[bucketIndex]);
+                require(poolLps == bucketIndexToPreActionActorLps[bucketIndex] + bucketIndexToPreActionPosLps[bucketIndex]);
+                require(poolDepositTime == bucketIndexToPreActionDepositTime[bucketIndex]);
 
                 // assert that the underlying LP balance in PositionManager has increased
                 (uint256 posLps,) = _position.getPositionInfo(tokenId_, bucketIndex);
-                assertEq(posLps, bucketIndexToPreActionActorLps[bucketIndex]);
+                require(posLps == bucketIndexToPreActionActorLps[bucketIndex]);
 
                 delete bucketIndexToPreActionActorLps[bucketIndex];
                 delete bucketIndexToPreActionPosLps[bucketIndex];
@@ -85,15 +87,15 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
 
             // Post Action Checks //
             // assert that the minter is the owner
-            assertEq(_position.ownerOf(tokenId), _actor);
+            require(_position.ownerOf(tokenId) == _actor);
 
             // assert that poolKey is returns correct pool address
             address poolAddress = _position.poolKey(tokenId);
-            assertEq(poolAddress, address(_pool));
+            require(poolAddress == address(_pool));
 
             // assert that no positions are associated with this tokenId
             uint256[] memory posIndexes = _position.getPositionIndexes(tokenId);
-            assertEq(posIndexes, new uint256[](0));
+            require(posIndexes.length == 0);
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
@@ -117,7 +119,7 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
 
             // assert that the underlying LP balance in PositionManager is greater than 0 
             (uint256 posPreActionLps,) = _position.getPositionInfo(tokenId_, indexes_[i]);
-            assertGt(posPreActionLps, 0);
+            require(posPreActionLps > 0);
 
         }
 
@@ -131,31 +133,31 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
 
             // Post action Checks //
             // assert that the minter is still the owner
-            assertEq(_position.ownerOf(tokenId_), _actor, 'owner is no longer minter on redemption');
+            require(_position.ownerOf(tokenId_) == _actor, 'owner is no longer minter on redemption');
 
             // assert that poolKey is still same
             address poolAddress = _position.poolKey(tokenId_);
-            assertEq(poolAddress, address(_pool), 'poolKey has changed on redemption');
+            require(poolAddress == address(_pool), 'poolKey has changed on redemption');
 
             // assert that no positions are associated with this tokenId
             uint256[] memory posIndexes = _position.getPositionIndexes(tokenId_);
-            assertEq(posIndexes, new uint256[](0), 'positions still exist after redemption');
+            require(posIndexes.length == 0, 'positions still exist after redemption');
 
             for(uint256 i=0; i < indexes_.length; i++) {
                 uint256 bucketIndex = indexes_[i];
 
                 // assert PositionsMan LP in pool matches the amount redeemed by actor 
                 (uint256 poolPosLps,) = _pool.lenderInfo(bucketIndex, address(_position));
-                assertEq(poolPosLps, bucketIndexToPreActionPosLps[bucketIndex] - bucketIndexToPreActionActorLps[bucketIndex]);
+                require(poolPosLps == bucketIndexToPreActionPosLps[bucketIndex] - bucketIndexToPreActionActorLps[bucketIndex]);
 
                 // assert actor LP in pool matches the amount amount of LP redeemed by actor
                 (uint256 poolActorLps,) = _pool.lenderInfo(bucketIndex, address(_actor));
-                assertEq(poolActorLps, bucketIndexToPreActionActorLps[bucketIndex]);
+                require(poolActorLps == bucketIndexToPreActionActorLps[bucketIndex]);
 
                 // assert that the underlying LP balance in PositionManager is zero
                 (uint256 posLps, uint256 posDepositTime) = _position.getPositionInfo(tokenId_, bucketIndex);
-                assertEq(posLps, 0);
-                assertEq(posDepositTime, 0);
+                require(posLps == 0);
+                require(posDepositTime == 0);
 
                 // delete mappings for reuse
                 delete bucketIndexToPreActionActorLps[bucketIndex];
@@ -176,6 +178,9 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
         numberOfCalls['UBPositionHandler.moveLiquidity']++;
 
         (uint256 preActionToLps,) = _position.getPositionInfo(tokenId_, toIndex_);
+
+        // toIndex_ position takes on fromIndex_'s depositTime after moveLiquidity call
+        (uint256 preActionFromLps, uint256 preActionDepositTime) = _position.getPositionInfo(tokenId_, fromIndex_);
 
         /**
         *  @notice Struct holding parameters for moving the liquidity of a position.
@@ -198,13 +203,13 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
 
             // assert that underlying LP balance in PositionManager of fromIndex is 0 and deposit time in PositionManager is 0
             (uint256 fromLps, uint256 fromDepositTime) = _position.getPositionInfo(tokenId_, fromIndex_);
-            assertEq(fromLps, 0);
-            assertGt(fromDepositTime, 0);
+            require(fromLps <= preActionFromLps); // difficult to estimate LPS, assert that it is less than
+            require(fromDepositTime == preActionDepositTime);
 
             // assert that underlying LP balance in PositionManager of toIndex is increased and deposit time in PositionManager is updated
             (uint256 toLps, uint256 toDepositTime) = _position.getPositionInfo(tokenId_, toIndex_);
-            assertGt(toLps, preActionToLps); // difficult to estimate LPS, assert that it is greater than
-            assertEq(toDepositTime, block.timestamp); 
+            require(toLps >= preActionToLps); // difficult to estimate LPS, assert that it is greater than
+            require(toDepositTime == preActionDepositTime); 
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
@@ -224,11 +229,11 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
 
             // assert that poolKey is returns zero address
             address poolAddress = _position.poolKey(tokenId_);
-            assertEq(poolAddress, address(0));
+            require(poolAddress == address(0));
 
             // assert that no positions are associated with this tokenId
             uint256[] memory posIndexes = _position.getPositionIndexes(tokenId_);
-            assertEq(posIndexes, new uint256[](0));
+            require(posIndexes.length == 0);
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }

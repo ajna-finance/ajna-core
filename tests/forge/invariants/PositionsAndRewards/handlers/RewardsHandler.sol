@@ -84,6 +84,9 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
         (uint256 tokenId, uint256[] memory indexes) = _preMemorializePositions(bucketIndex_, amountToAdd_);
         
         _memorializePositions(tokenId, indexes);
+
+        // Approve rewards contract to transfer token
+        _position.approve(address(_rewards), tokenId);
         
         return tokenId;
     }
