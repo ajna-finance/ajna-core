@@ -995,7 +995,7 @@ contract RegressionTestReserveWith30BucketsERC20Pool is ReserveERC20PoolInvarian
         _reserveERC20PoolHandler.removeQuoteToken(999999999999999426444582247143509387950866739, 1148181505672158329590024, 1367070079813696596859779764, 1040389191213838886625616);
         _reserveERC20PoolHandler.bucketTake(577389696155710288147167555978498172752201411440998018353873, 1227885260722585562430938444424231, false, 953332261, 1);
         _reserveERC20PoolHandler.removeCollateral(1, 3, 129, 3);
-        invariant_exchangeRate_R1_R2_R3_R4_R5_R6_R7_R8();
+        invariant_rate_R1_R2_R3_R4_R5_R6_R7_R8();
     }
 
 }
@@ -1035,6 +1035,6 @@ contract RegressionTestReserveWith50BucketsERC20Pool is ReserveERC20PoolInvarian
         _reserveERC20PoolHandler.kickAuction(3589583182297393115565481914547, 41668, 1380496931690591613721258081, 14181);
         _reserveERC20PoolHandler.drawDebt(9014812045836651946560288041872, 38936, 6000187733701002610517000054944);
 
-        invariant_Bucket_deposit_time_B5_B6_B7();
+        invariant_bucket_B5_B6_B7();
     }
 }
