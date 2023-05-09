@@ -150,6 +150,7 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
         _ensureQuoteAmount(_actor, 1e45);
 
         try _erc20Pool.repayDebt(_actor, amountToRepay_, 0, _actor, 7388) {
+
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
