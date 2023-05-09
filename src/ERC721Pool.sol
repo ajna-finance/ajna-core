@@ -29,6 +29,7 @@ import { IERC721Taker }         from './interfaces/pool/erc721/IERC721Taker.sol'
 import { IERC721PoolState }     from './interfaces/pool/erc721/IERC721PoolState.sol';
 
 import { FlashloanablePool } from './base/FlashloanablePool.sol';
+import { _roundToScale }     from './libraries/helpers/PoolHelper.sol';
 
 import { 
     _revertIfAuctionClearable,
@@ -219,6 +220,10 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         uint256 limitIndex_
     ) external nonReentrant {
         PoolState memory poolState = _accruePoolInterest();
+
+        // ensure accounting is performed using the appropriate token scale
+        if (maxQuoteTokenAmountToRepay_ != type(uint256).max)
+            maxQuoteTokenAmountToRepay_ = _roundToScale(maxQuoteTokenAmountToRepay_, _getArgUint256(QUOTE_SCALE));
 
         RepayDebtResult memory result = BorrowerActions.repayDebt(
             auctions,

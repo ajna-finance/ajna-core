@@ -15,6 +15,7 @@ import { IERC721PoolEvents } from 'src/interfaces/pool/erc721/IERC721PoolEvents.
 import 'src/interfaces/pool/erc721/IERC721Pool.sol';
 import 'src/interfaces/pool/IPoolFactory.sol';
 import 'src/interfaces/pool/IPool.sol';
+import 'src/libraries/helpers/PoolHelper.sol';
 import 'src/PoolInfoUtils.sol';
 
 import 'src/libraries/internal/Maths.sol';
@@ -52,6 +53,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
 
         // Calculate current debt of borrower (currentPoolInflator * borrowerT0Debt)
         uint256 currentDebt = Maths.wmul(Maths.wmul(poolInflator, factor), borrowerT0debt);
+        uint256 tokenDebt   = _roundUpToScale(currentDebt, ERC721Pool(address(_pool)).quoteTokenScale());
 
         // mint quote tokens to borrower address equivalent to the current debt
         deal(_pool.quoteTokenAddress(), borrower, currentDebt);
@@ -59,8 +61,8 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
 
         // repay current debt and pull all collateral
         uint256 noOfNfts = borrowerCollateral / 1e18; // round down to pull correct num of NFTs
-        if (currentDebt != 0 || noOfNfts != 0) {
-            _repayDebtNoLupCheck(borrower, borrower, currentDebt, currentDebt, noOfNfts);
+        if (tokenDebt != 0 || noOfNfts != 0) {
+            _repayDebtNoLupCheck(borrower, borrower, tokenDebt, currentDebt, noOfNfts);
         }
 
         // check borrower state after repay of loan and pull Nfts

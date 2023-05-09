@@ -641,9 +641,7 @@ contract ERC721ScaledQuoteTokenBorrowTest is ERC721NDecimalsHelperContract(4) {
 
         _mintAndApproveQuoteTokens(_lender, 20_000 * 1e4);
         _mintAndApproveCollateralTokens(_borrower, 5);
-    }
 
-    function testMinDebtBelowDustLimitCheck() external tearDown {
         // add initial quote to the pool
         changePrank(_lender);
         _pool.addQuoteToken(20_000 * 1e18, 2550, block.timestamp + 30);
@@ -655,8 +653,10 @@ contract ERC721ScaledQuoteTokenBorrowTest is ERC721NDecimalsHelperContract(4) {
             from:       _borrower,
             borrower:   _borrower,
             tokenIds:   tokenIdsToAdd
-        });
+        });        
+    }
 
+    function testMinDebtBelowDustLimitCheck() external tearDown {
         // should revert if borrower tries to draw debt below dust limit
         _assertBorrowDustRevert({
             from:       _borrower,
@@ -675,6 +675,24 @@ contract ERC721ScaledQuoteTokenBorrowTest is ERC721NDecimalsHelperContract(4) {
             amount:     0.000075 * 1e18,
             indexLimit: 2550
         });
+    }
+
+    function testRepayLessThanQuoteTokenPrecision() external tearDown {
+        // bucket 2550 price is 3010.89, so borrower draws a safe 2000 debt against 1 NFT
+        _borrow({
+            from:       _borrower,
+            amount:     2_000 * 1e18,
+            indexLimit: 2550,
+            newLup:     _priceAt(2550)
+        });
+
+        // smallest amount of debt we can repay on a 4-decimal quote token
+        uint256 smallestRepayAmount = 10 ** (18 - 4);
+
+        // try to repay less
+        changePrank(_borrower);
+        vm.expectRevert(IPoolErrors.InvalidAmount.selector);
+        ERC721Pool(address(_pool)).repayDebt(_borrower, smallestRepayAmount - 1, 0, _borrower, 2550);
     }
 }
 

@@ -10,6 +10,7 @@ import 'src/ERC20PoolFactory.sol';
 import 'src/PoolInfoUtils.sol';
 import { MAX_PRICE } from 'src/libraries/helpers/PoolHelper.sol';
 
+import 'src/interfaces/pool/IPool.sol';
 import 'src/libraries/internal/Maths.sol';
 
 contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
@@ -441,6 +442,43 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         assertEq(_collateral.balanceOf(_borrower), (100 * 1e18) / ERC20Pool(address(_pool)).collateralScale() + (unencumberedCollateral / ERC20Pool(address(_pool)).collateralScale()));
         assertEq(_quote.balanceOf(address(_pool)),   145_000 * _quotePrecision);
         assertEq(_quote.balanceOf(_borrower), 5_000 * _quotePrecision);
+    }
+
+    function testRepayLessThanTokenPrecision(
+        uint8  quotePrecisionDecimals_,
+        uint16 bucketId_
+    ) external tearDown {
+        // setup fuzzy bounds and initialize the pool
+        uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_), 1, 17);
+        init(18, boundQuotePrecision);
+        // borrower has 150 collateral, so they can draw 25k debt down to a price of ~166.6667 quote token
+        uint256 bucketId = bound(uint256(bucketId_), 1, _poolUtils.priceToIndex(167 * 1e18));
+        uint256 bucketPrice = _poolUtils.indexToPrice(bucketId);
+
+        // lender adds fixed liquidity
+        _addInitialLiquidity({
+            from:   _lender,
+            amount: 50_000 * 1e18,
+            index:  bucketId
+        });
+        skip(3 hours);
+
+        // borrower draws debt
+        _drawDebt({
+            from:               _borrower, 
+            borrower:           _borrower,
+            amountToBorrow:     25_000 * 1e18,
+            limitIndex:         bucketId,
+            collateralToPledge: 150 * 1e18,
+            newLup:             bucketPrice
+        });
+        skip(12 hours);
+
+        // borrower attempts to repay less than token precision
+        assertGt(_quoteDust, 1);
+        changePrank(_borrower);
+        vm.expectRevert(IPoolErrors.InvalidAmount.selector);
+        ERC20Pool(address(_pool)).repayDebt(_borrower, _quoteDust - 1, 0, _borrower, bucketId);
     }
 
     function testDepositTwoActorSameBucket(
