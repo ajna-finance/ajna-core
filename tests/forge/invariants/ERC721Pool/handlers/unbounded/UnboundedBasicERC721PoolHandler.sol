@@ -170,8 +170,11 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
 
         (uint256 poolDebt, , , ) = _erc721Pool.debtInfo();
 
-        // find bucket to borrow quote token
-        uint256 bucket = _erc721Pool.depositIndex(amount_ + poolDebt) - 1;
+        // find bucket to borrow quote token, return if deposit index is 0
+        uint256 depositIndex = _erc721Pool.depositIndex(amount_ + poolDebt);
+        if (depositIndex == 0) return;
+
+        uint256 bucket = depositIndex - 1;
         uint256 price = _poolInfo.indexToPrice(bucket);
 
         // Pool doesn't have enough deposits to draw debt

@@ -117,7 +117,7 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
         (uint256 poolDebt, , , ) = _erc20Pool.debtInfo();
 
         // find bucket to borrow quote token, return if deposit index is 0
-        uint256 depositIndex =  _erc20Pool.depositIndex(amount_ + poolDebt);
+        uint256 depositIndex = _erc20Pool.depositIndex(amount_ + poolDebt);
         if (depositIndex == 0) return;
 
         uint256 bucket = depositIndex - 1;
