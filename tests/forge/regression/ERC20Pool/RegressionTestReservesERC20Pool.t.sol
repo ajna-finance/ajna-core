@@ -184,7 +184,7 @@ contract RegressionTestReserveERC20Pool is ReserveERC20PoolInvariants {
     function test_regression_incorrect_bond() external {
         _reserveERC20PoolHandler.settleAuction(18129, 6125, 756, 0);
 
-        invariant_auction_A2();
+        invariant_auction();
         invariant_fenwick();
     }
 

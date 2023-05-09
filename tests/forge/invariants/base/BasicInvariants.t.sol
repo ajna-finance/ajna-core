@@ -12,9 +12,9 @@ import { BaseInvariants } from '../base/BaseInvariants.sol';
 // contains invariants for the test
 abstract contract BasicInvariants is BaseInvariants {
 
-    /******************/
-    /*** Invariants ***/
-    /******************/
+    /******************************/
+    /*** Common Pool Invariants ***/
+    /******************************/
 
     function invariant_bucket() public useCurrentTimestamp {
         _invariant_B1();

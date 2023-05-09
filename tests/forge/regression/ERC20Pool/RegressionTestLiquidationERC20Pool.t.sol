@@ -62,7 +62,7 @@ contract RegressionTestLiquidationERC20Pool is LiquidationERC20PoolInvariants {
         _liquidationERC20PoolHandler.addQuoteToken(1469716416900282992357252011629715552, 13037214114647887147246343731476169800, 984665637618013480616943810604306792, 0);
         _liquidationERC20PoolHandler.pullCollateral(438961419917818200942534689247815826455600131, 64633474453314038763068322072915580384442279897841981, 0);
 
-        invariant_auction_A3_A4();
+        invariant_auction();
     }
 
     // test was failing due to deposit time update even if kicker lp reward is 0.
@@ -101,7 +101,7 @@ contract RegressionTestLiquidationERC20Pool is LiquidationERC20PoolInvariants {
         _liquidationERC20PoolHandler.takeAuction(6772, 18720, 6668, 0);
         _liquidationERC20PoolHandler.takeAuction(115792089237316195423570985008687907853269984665640564039457584007913129639932, 1666258487708695528254610529989951, 490873240291829575083322665078478117042861655783753, 0);
 
-        invariant_auction_A6();
+        invariant_auction();
     }
 
     function test_regression_invariant_exchange_rate_bucket_take_1() external {
