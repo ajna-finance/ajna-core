@@ -46,7 +46,7 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BRewardsHandler.stake']++;
         // Pre action
-        uint256 tokenId = _preStake(bucketIndex_, amountToAdd_);
+        uint256 tokenId = _preStake(_lenderBucketIndex, amountToAdd_);
         
         // Action phase
         _stake(tokenId);
@@ -60,7 +60,7 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
     ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BRewardsHandler.unstake']++;
         // Pre action
-        uint256 tokenId = _preUnstake(bucketIndex_, amountToAdd_);
+        uint256 tokenId = _preUnstake(_lenderBucketIndex, amountToAdd_);
         
         // Action phase
         _unstake(tokenId);
@@ -71,6 +71,53 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
         assertEq(_position.ownerOf(tokenId), _actor);
     }
 
+    function updateExchangeRate(
+        uint256 actorIndex_,
+        uint256 bucketIndex_,
+        uint256 skippedTime_
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+        numberOfCalls['BRewardsHandler.updateRate']++;
+
+        // Pre action //
+        uint256[] memory indexes = _preUpdateExchangeRate(_lenderBucketIndex);
+
+        // Action phase
+        _updateExchangeRate(indexes);
+    }
+
+    function claimRewards(
+        uint256 actorIndex_,
+        uint256 bucketIndex_,
+        uint256 amountToAdd_,
+        uint256 skippedTime_
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+        numberOfCalls['BRewardsHandler.claimRewards']++;
+
+        // Pre action //
+        uint256 tokenId = _preUnstake(_lenderBucketIndex, amountToAdd_);
+
+        uint256 currentEpoch = _pool.currentBurnEpoch();
+
+        // Action phase
+        _claimRewards(tokenId, currentEpoch);
+
+    }
+
+    function moveStakedLiquidity(
+        uint256 actorIndex_,
+        uint256 fromBucketIndex_,
+        uint256 toBucketIndex_,
+        uint256 amountToAdd_,
+        uint256 skippedTime_
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+        numberOfCalls['BRewardsHandler.moveLiquidity']++;
+
+        // Pre action //
+        (uint256 tokenId, uint256[] memory fromIndexes, uint256[] memory toIndexes) = _preMoveStakedLiquidity(fromBucketIndex_, toBucketIndex_, amountToAdd_);
+        
+        // Action phase
+        _moveStakedLiquidity(tokenId, fromIndexes, toIndexes);
+    }
 
     /*******************************/
     /*** Rewards Tests Functions ***/
@@ -107,6 +154,30 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
 
         uint256 boundedAmount = _preTakeReserves(amountToAdd_);
         _takeReserves(boundedAmount);
+    }
+
+    function _preUpdateExchangeRate(
+        uint256 bucketIndex_
+    ) internal pure returns (uint256[] memory indexes_) {
+        indexes_ = new uint256[](1);
+        indexes_[0] = bucketIndex_;
+    }
+
+    function _preMoveStakedLiquidity(
+        uint256 fromBucketIndex_,
+        uint256 toBucketIndex_,
+        uint256 amountToAdd_
+    ) internal returns(uint256 tokenId_, uint256[] memory fromIndexes_, uint256[] memory toIndexes_) {
+        fromIndexes_ = new uint256[](1);
+        fromIndexes_[0] = fromBucketIndex_;
+
+        toIndexes_ = new uint256[](1);
+        toIndexes_[0] = toBucketIndex_;
+
+        // Only way to check if the actor has a NFT position or a staked position is tracking events
+        // Create a staked position
+        tokenId_ = _preStake(fromBucketIndex_, amountToAdd_);
+        _stake(tokenId_);
     }
 
 }

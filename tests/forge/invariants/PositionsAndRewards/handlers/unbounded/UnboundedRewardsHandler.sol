@@ -56,4 +56,40 @@ abstract contract UnboundedRewardsHandler is BasePositionsHandler {
             _ensurePoolError(err);
         }
     }
+
+    function _updateExchangeRate(
+        uint256[] memory indexes_
+    ) internal {
+        numberOfCalls['UBRewardsHandler.exchangeRate']++;
+
+        try _rewards.updateBucketExchangeRatesAndClaim(address(_pool), indexes_) {
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
+        }
+    }
+
+    function _moveStakedLiquidity(
+        uint256 tokenId_,
+        uint256[] memory fromIndexes_,
+        uint256[] memory toIndexes_
+    ) internal {
+        numberOfCalls['UBRewardsHandler.moveLiquidity']++;
+
+        try _rewards.moveStakedLiquidity(tokenId_, fromIndexes_, toIndexes_, block.timestamp + 1 minutes) {
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
+        }
+    }
+
+    function _claimRewards(
+        uint256 tokenId_,
+        uint256 epoch_
+    ) internal {
+        numberOfCalls['UBRewardsHandler.claimRewards']++;
+
+        try _rewards.claimRewards(tokenId_, epoch_) {
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
+        }
+    }
 }
