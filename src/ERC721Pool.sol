@@ -561,8 +561,6 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
         uint256[] storage poolTokens_,
         uint256[] calldata tokenIds_
     ) internal {
-        bool subset   = _getArgUint256(SUBSET) != 0;
-
         for (uint256 i = 0; i < tokenIds_.length;) {
             uint256 tokenId = tokenIds_[i];
             if (!tokenIdsAllowed(tokenId)) revert OnlySubset();
