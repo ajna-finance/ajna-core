@@ -152,11 +152,16 @@ abstract contract BaseHandler is Test {
         uint256 totalT0debt = _pool.totalT0Debt();
         printLog("Total t0 debt            = ", totalT0debt);
 
+        (, , , uint256 pendingInflator, ) = _poolInfo.poolLoansInfo(address(_pool));
+        printLog("Total debt               = ", Maths.wmul(totalT0debt, pendingInflator));
+
         uint256 totalAuctions = _pool.totalAuctionsInPool();
         printLog("Total Auctions           = ", totalAuctions);
 
         uint256 totalT0debtInAuction = _pool.totalT0DebtInAuction();
         printLog("Total t0 debt in auction = ", totalT0debtInAuction);
+
+        printLog("Total debt in auction    = ", Maths.wmul(totalT0debtInAuction, pendingInflator));
 
         uint256 depositSize = _pool.depositSize();
         printLog("Total deposits           = ", depositSize);
