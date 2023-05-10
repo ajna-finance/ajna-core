@@ -76,6 +76,15 @@ abstract contract UnboundedRewardsHandler is BasePositionsHandler {
         numberOfCalls['UBRewardsHandler.moveLiquidity']++;
 
         try _rewards.moveStakedLiquidity(tokenId_, fromIndexes_, toIndexes_, block.timestamp + 1 minutes) {
+
+            for (uint256 i = 0; i < toIndexes_.length; i++) {
+                uint256 toIndex = toIndexes_[i];
+
+                // track created positions
+                bucketIndexesWithPosition.add(toIndex);
+                tokenIdsByBucketIndex[toIndex].add(tokenId_);
+            }
+            
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
