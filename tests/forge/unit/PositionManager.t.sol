@@ -2582,7 +2582,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
     function testTokenURI() external {
         // should revert if using non-existant tokenId
-        vm.expectRevert();
+        vm.expectRevert(IPositionManagerErrors.NoToken.selector);
         _positionManager.tokenURI(1);
 
         address testAddress = makeAddr("testAddress");
