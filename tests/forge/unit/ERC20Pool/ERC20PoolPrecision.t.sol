@@ -200,7 +200,10 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         uint256 quoteDecimals      = bound(uint256(quotePrecisionDecimals_),      1, 18);
         uint256 bucketId           = bound(uint256(bucketId_),                    1, 7388);
         init(collateralDecimals, quoteDecimals);
-        uint256 collateralDust = ERC20Pool(address(_pool)).bucketCollateralDust(bucketId);
+        // minimum amount of collateral which can be transferred
+        uint256 minCollateralAmount = ERC20Pool(address(_pool)).bucketCollateralDust(0);
+        // minimum amount of collateral which should remain in bucket
+        uint256 collateralDust      = ERC20Pool(address(_pool)).bucketCollateralDust(bucketId);
 
         // put some deposit in the bucket
         _addInitialLiquidity({
@@ -227,9 +230,13 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _removeCollateralWithoutLPCheck(_bidder, 50 * 1e18, bucketId);
 
         // test removal of dusty amount
-        if (collateralDust != 1) {
+        if (minCollateralAmount != 1) {
             (, , uint256 claimableCollateral, , , ) = _poolUtils.bucketInfo(address(_pool), bucketId);
-            _removeCollateralWithoutLPCheck(_bidder, claimableCollateral - collateralDust / 2, bucketId);
+            uint256 removalAmount = claimableCollateral - (minCollateralAmount - 1);
+            if (collateralDust == minCollateralAmount)
+                _removeCollateralWithoutLPCheck(_bidder, removalAmount, bucketId);
+            else
+                _assertRemoveCollateralDustRevert(_bidder, removalAmount, bucketId);
         }
     }
 
