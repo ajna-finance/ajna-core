@@ -114,3 +114,82 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
         assertEq(AJNA.balanceOf(address(_bidder)), 9.999999998775876800 * 1e18);
     }
 }
+
+contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
+
+    address internal _actor2;
+    address internal _actor3;
+    address internal _actor7;
+    address internal _actor9;
+
+    function setUp() external {
+        _startTest();
+
+        _actor2  = makeAddr("actor2");
+        _actor3  = makeAddr("actor3");
+        _actor7  = makeAddr("actor7");
+        _actor9  = makeAddr("actor9");
+
+        _mintCollateralAndApproveTokens(_actor2,  1e45);
+        _mintCollateralAndApproveTokens(_actor3,  1e45);
+        _mintCollateralAndApproveTokens(_actor7,  1e45);
+        _mintCollateralAndApproveTokens(_actor9,  1e45);
+
+        _mintQuoteAndApproveTokens(_actor2,  1e45);
+        _mintQuoteAndApproveTokens(_actor3,  1e45);
+        _mintQuoteAndApproveTokens(_actor7,  1e45);
+        _mintQuoteAndApproveTokens(_actor9,  1e45);
+    }
+
+    function testReserveAuctionNoFunds() external {
+        ERC20Pool pool = ERC20Pool(address(_pool));
+
+        changePrank(_actor3);
+        pool.addQuoteToken(197806, 2572, block.timestamp + 1);
+        pool.drawDebt(_actor3, 98903, 7388, 37);
+        // pool balance is amount added minus new debt
+        assertEq(_quote.balanceOf(address(pool)), 98903);
+
+        vm.warp(block.timestamp + 17280000);
+
+        changePrank(_actor9);
+        pool.updateInterest();
+        pool.kick(_actor3, 7388);
+        // pool balance increased by kick bond
+        assertEq(_quote.balanceOf(address(pool)), 99920);
+
+        vm.warp(block.timestamp + 86400);
+
+        changePrank(_actor7);
+        pool.updateInterest();
+        pool.drawDebt(_actor7, 99266, 7388, 999234524847);
+        // pool balance decreased by new debt
+        assertEq(_quote.balanceOf(address(pool)), 654);
+
+        vm.warp(block.timestamp + 86400);
+
+        changePrank(_actor2);
+        pool.updateInterest();
+        pool.take(_actor3, 506252187686489913395361995, _actor2, new bytes(0));
+        // pool balance remains the same
+        assertEq(_quote.balanceOf(address(pool)), 654);
+
+        vm.warp(block.timestamp + 86400);
+
+        changePrank(_actor3);
+        pool.updateInterest();
+        pool.kickReserveAuction();
+        // pool balance diminished by reward given to reserves kicker
+        assertEq(_quote.balanceOf(address(pool)), 575);
+        skip(24 hours);
+
+        // mint and approve ajna tokens for taker
+        deal(address(_ajna), _actor3, 1e45);
+        ERC20(address(_ajna)).approve(address(_pool), type(uint256).max);
+
+        // pool balance is 575 but 787 desired to take, transfer reverts with ERC20: transfer amount exceeds balance
+        assertEq(_quote.balanceOf(address(pool)), 575);
+        pool.takeReserves(787);
+    }
+
+}
