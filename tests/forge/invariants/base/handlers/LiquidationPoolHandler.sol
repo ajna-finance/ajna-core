@@ -19,6 +19,7 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         uint256 kickerIndex_,
         uint256 skippedTime_
     ) external useTimestamps skipTime(skippedTime_) {
+        numberOfCalls['BLiquidationHandler.kickAuction']++;
         _kickAuction(borrowerIndex_, amount_, kickerIndex_);
     }
 
@@ -27,6 +28,7 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         uint256 bucketIndex_,
         uint256 skippedTime_
     ) external useRandomActor(kickerIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+        numberOfCalls['BLiquidationHandler.kickWithDeposit']++;
         _kickWithDeposit(_lenderBucketIndex);
     }
 
@@ -35,6 +37,7 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         uint256 maxAmount_,
         uint256 skippedTime_
     ) external useRandomActor(kickerIndex_) useTimestamps skipTime(skippedTime_) {
+        numberOfCalls['BLiquidationHandler.withdrawBonds']++;
         _withdrawBonds(_actor, maxAmount_);
     }
 
@@ -87,6 +90,7 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         uint256 kickerIndex_,
         uint256 skippedTime_
     ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+        numberOfCalls['BLiquidationHandler.settleAuction']++;
 
         // prepare phase
         address actor                        = _actor;
@@ -166,7 +170,6 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         uint256 amount_,
         uint256 kickerIndex_
     ) internal useRandomActor(kickerIndex_) returns(address borrower_) {
-        numberOfCalls['BLiquidationHandler.kickAuction']++;
 
         // Prepare test phase
         address kicker   = _actor;

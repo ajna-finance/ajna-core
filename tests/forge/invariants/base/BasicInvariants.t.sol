@@ -422,20 +422,33 @@ abstract contract BasicInvariants is BaseInvariants {
         console.log("UBBasicHandler.addCollateral        ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.addCollateral"));
         console.log("BBasicHandler.removeCollateral      ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.removeCollateral"));
         console.log("UBBasicHandler.removeCollateral     ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.removeCollateral"));
+        console.log("BBasicHandler.moveQuoteToken        ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.moveQuoteToken"));
+        console.log("UBBasicHandler.moveQuoteToken       ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.moveQuoteToken"));
+        console.log("BBasicHandler.transferLps           ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.transferLps"));
+        console.log("UBBasicHandler.transferLps          ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.transferLps"));
         console.log("--Borrower--------");
         console.log("BBasicHandler.drawDebt              ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.drawDebt"));
         console.log("UBBasicHandler.drawDebt             ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.drawDebt"));
         console.log("BBasicHandler.repayDebt             ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt"));
         console.log("UBBasicHandler.repayDebt            ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.repayDebt"));
+        console.log("BBasicHandler.pledgeCollateral      ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.pledgeCollateral"));
+        console.log("UBBasicHandler.pledgeCollateral     ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.pledgeCollateral"));
+        console.log("BBasicHandler.pullCollateral        ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.pullCollateral"));
+        console.log("UBBasicHandler.pullCollateral       ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.pullCollateral"));
         console.log("------------------");
         console.log(
             "Sum",
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.addQuoteToken") +
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.removeQuoteToken") +
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.moveQuoteToken") + 
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.addCollateral") +
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.removeCollateral") +
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.pledgeCollateral") + 
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.pullCollateral") + 
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.drawDebt") + 
-            IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt")
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt") + 
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.transferLps")
+
         );
     }
 
