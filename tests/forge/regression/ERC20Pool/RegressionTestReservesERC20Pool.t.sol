@@ -1004,7 +1004,6 @@ contract RegressionTestReserveWith30BucketsERC20Pool is ReserveERC20PoolInvarian
 contract RegressionTestReserveWith50BucketsERC20Pool is ReserveERC20PoolInvariants { 
 
     function setUp() public override { 
-        // failures reproduced with 50 active buckets
         vm.setEnv("NO_OF_BUCKETS", "50");
         super.setUp();
     }
