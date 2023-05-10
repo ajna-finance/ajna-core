@@ -39,6 +39,53 @@ contract RegressionRewardsManager is RewardsInvariants {
         invariant_positions_PM1_PM2();
     }
 
+    function test_regression_rewards_PM1_5() public {
+        _rewardsHandler.moveLiquidity(832921267658491751933537549, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 62241022956197145532, 1165012150, 115792089237316195423570985008687907853269984665640564039457584007913129639935);
+        _rewardsHandler.takeAuction(115792089237316195423570985008687907853269984665640564039457584007913129639932, 108613063553696015935192567274231711586207468226993603118670370534031542, 2, 1);
+        _rewardsHandler.takeAuction(115792089237316195423570985008687907853269984665640564039457584007913129639933, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 2, 3);
+        _rewardsHandler.settleAuction(1694548149298356876485941302354, 9052, 1444291546717740702970, 1303240033616582679504132393648);
+        _rewardsHandler.burn(0, 707668523430171576399252973860135329463494151705, 13231138491987546580, 3);
+        /* Logs before moveStakedLiquidity
+            Position Manager at bucket 2572:
+            Lps - 0
+            depositTime - 0
+
+            Position Manager at bucket 2571:
+            Lps - 0 considering bucket is bankrupt
+            depositTime - 1707801700
+
+            Bucket 2571 bankrupty time in pool - 1707752026
+
+            TokenId - 1 positions:
+            - bucket 2571:
+              Actual Lps - 62241022956197145532
+              Lps after considering bankrupty time - 0
+              depositTime - 1672404972
+
+        */
+        _rewardsHandler.moveStakedLiquidity(115792089237316195423570985008687907853269984665640564039457584007913129639933, 9951345024297122146792989820571693988360874292538858793, 0, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 2);
+        /* Logs after moveStakedLiquidity - Liquidity moved from bucket 2572 to 2571 for tokenId - 3
+            Position Manager at bucket 2571:
+            LPs - 13189459982951652473123372396
+            depositTime - 1707801700
+
+            Bucket 2571 bankrupty time in pool - 1707752026
+
+            TokenId - 1 positions:
+            - bucket 2571:
+              Actual Lps - 62241022956197145532
+              Lps after considering bankrupty time - 0
+              depositTime - 1672404972
+              
+            TokenId - 3 positions:
+            - bucket 2571
+              Actual Lps - 13189459982951652473123372396
+              Lps after considering bankrupty time - 0
+              depositTime - 1689933378
+        */
+        invariant_positions_PM1_PM2();
+    }
+
     function test_regression_rewards_RW1() public {
         invariant_rewards_RW1();
     }
