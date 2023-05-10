@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.14;
 
+import { _isCollateralized } from 'src/libraries/helpers/PoolHelper.sol';
+
 import { UnboundedLiquidationPoolHandler } from './unbounded/UnboundedLiquidationPoolHandler.sol';
 import { BasicPoolHandler }                from './BasicPoolHandler.sol';
 
@@ -17,6 +19,7 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         uint256 kickerIndex_,
         uint256 skippedTime_
     ) external useTimestamps skipTime(skippedTime_) writeLogs {
+        numberOfCalls['BLiquidationHandler.kickAuction']++;
         _kickAuction(borrowerIndex_, amount_, kickerIndex_);
     }
 
@@ -25,6 +28,7 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         uint256 bucketIndex_,
         uint256 skippedTime_
     ) external useRandomActor(kickerIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
+        numberOfCalls['BLiquidationHandler.kickWithDeposit']++;
         _kickWithDeposit(_lenderBucketIndex);
     }
 
@@ -33,6 +37,7 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         uint256 maxAmount_,
         uint256 skippedTime_
     ) external useRandomActor(kickerIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
+        numberOfCalls['BLiquidationHandler.withdrawBonds']++;
         _withdrawBonds(_actor, maxAmount_);
     }
 
@@ -85,6 +90,7 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         uint256 kickerIndex_,
         uint256 skippedTime_
     ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
+        numberOfCalls['BLiquidationHandler.settleAuction']++;
 
         // prepare phase
         address actor                        = _actor;
@@ -112,16 +118,19 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         borrowerKicked_ = kickTime != 0;
 
         if (!borrowerKicked_) {
-            (uint256 debt, , ) = _pool.borrowerInfo(borrower_);
+            // if borrower not kicked then check if it is undercollateralized / kickable
+            uint256 lup = _poolInfo.lup(address(_pool));
+            (uint256 debt, uint256 collateral, ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
 
-            if (debt == 0) {
+            if (_isCollateralized(debt, collateral, lup, _pool.poolType())) {
                 changePrank(borrower_);
                 _actor = borrower_;
                 uint256 drawDebtAmount = _preDrawDebt(amount_);
                 _drawDebt(drawDebtAmount);
 
                 // skip to make borrower undercollateralized
-                vm.warp(block.timestamp + _getKickSkipTime());
+                (debt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
+                if (debt != 0) vm.warp(block.timestamp + _getKickSkipTime());
             }
         }
     }
@@ -161,7 +170,6 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
         uint256 amount_,
         uint256 kickerIndex_
     ) internal useRandomActor(kickerIndex_) returns(address borrower_) {
-        numberOfCalls['BLiquidationHandler.kickAuction']++;
 
         // Prepare test phase
         address kicker   = _actor;
@@ -170,6 +178,7 @@ abstract contract LiquidationPoolHandler is UnboundedLiquidationPoolHandler, Bas
 
         // Action phase
         _actor = kicker;
+        changePrank(kicker);
         if (!borrowerKicked) _kickAuction(borrower_);
     }
 

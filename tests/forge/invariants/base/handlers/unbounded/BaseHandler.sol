@@ -41,6 +41,8 @@ abstract contract BaseHandler is Test {
 
     uint256 internal MIN_QUOTE_AMOUNT;
     uint256 internal MAX_QUOTE_AMOUNT;
+    uint256 internal MIN_DEBT_AMOUNT;
+    uint256 internal MAX_DEBT_AMOUNT;
 
     uint256 internal MIN_COLLATERAL_AMOUNT;
     uint256 internal MAX_COLLATERAL_AMOUNT;
@@ -58,7 +60,7 @@ abstract contract BaseHandler is Test {
     mapping(address => mapping(uint256 => uint256)) public lenderDepositTime; // mapping of lender address to bucket index to deposit time
 
     address[] public actors;
-    mapping(bytes32 => uint256)   public numberOfCalls;  // Logging
+    mapping(bytes => uint256)   public numberOfCalls;  // Logging
     mapping(address => uint256[]) public touchedBuckets; // Bucket tracking
 
     // exchange rate invariant test state
@@ -313,6 +315,14 @@ abstract contract BaseHandler is Test {
     /*****************************/
     /*** Pool Helper Functions ***/
     /*****************************/
+
+    function _ensureQuoteAmount(address actor_, uint256 amount_) internal {
+        uint256 actorBalance = _quote.balanceOf(actor_);
+        if (amount_> actorBalance ) {
+            _quote.mint(actor_, amount_ - actorBalance);
+        }
+        _quote.approve(address(_pool), amount_);
+    }
 
     function _updatePoolState() internal {
         _pool.updateInterest();

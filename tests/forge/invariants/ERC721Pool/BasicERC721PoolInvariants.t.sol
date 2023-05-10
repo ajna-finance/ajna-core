@@ -67,7 +67,24 @@ contract BasicERC721PoolInvariants is BasicInvariants {
 
     }
 
-    function invariant_collateral_CT2() public useCurrentTimestamp {
+    /************************************/
+    /*** ERC721 Collateral Invariants ***/
+    /************************************/
+
+    function invariant_collateral() public useCurrentTimestamp {
+        _invariant_CT2();
+        _invariant_CT3();
+        _invariant_CT4();
+        _invariant_CT5();
+        _invariant_CT6();
+        _invariant_CT7();
+    }
+
+    /**************************/
+    /*** Internal functions ***/
+    /**************************/
+
+    function _invariant_CT2() internal {
         uint256 collateralBalance = _collateral.balanceOf(address(_erc721pool)) * 1e18;
         uint256 bucketCollateral;
         uint256 collateral;
@@ -82,7 +99,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
         assertEq(collateralBalance, bucketCollateral + _erc721pool.pledgedCollateral(), "Collateral Invariant CT2");
     }
 
-    function invariant_collateral_CT3() public useCurrentTimestamp {
+    function _invariant_CT3() internal {
         uint256 collateralBalance = _collateral.balanceOf(address(_erc721pool));
 
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
@@ -97,7 +114,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
         assertEq(collateralBalance, borrowerTokens + bucketTokens, "Collateral Invariant CT3");
     }
 
-    function invariant_collateral_CT4() public useCurrentTimestamp {
+    function _invariant_CT4() internal {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         for (uint256 i = 0; i < actorCount; i++) {
@@ -110,7 +127,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
         }
     }
 
-    function invariant_collateral_CT5() public useCurrentTimestamp {
+    function _invariant_CT5() internal {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         for (uint256 i = 0; i < actorCount; i++) {
@@ -132,7 +149,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
         }
     }
 
-    function invariant_collateral_CT6() public useCurrentTimestamp {
+    function _invariant_CT6() internal {
         if (_erc721pool.isSubset()) {
             uint256 actorCount = IBaseHandler(_handler).getActorsCount();
             for (uint256 i = 0; i < actorCount; i++) {
@@ -155,13 +172,12 @@ contract BasicERC721PoolInvariants is BasicInvariants {
         }    
     }
 
-    function invariant_collateral_CT7() public useCurrentTimestamp {
+    function _invariant_CT7() internal {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         uint256 totalCollateralPledged;
         for (uint256 i = 0; i < actorCount; i++) {
             address borrower = IBaseHandler(_handler).actors(i);
-
             (, uint256 borrowerCollateral, ) = _erc721pool.borrowerInfo(borrower);
 
             totalCollateralPledged += borrowerCollateral;
