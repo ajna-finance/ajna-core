@@ -20,7 +20,7 @@ abstract contract BaseERC20PoolHandler is BaseHandler {
     TokenWithNDecimals internal _collateral;
 
     // ERC20Pool
-    ERC20Pool     internal _erc20Pool;
+    ERC20Pool internal _erc20Pool;
 
     constructor(
         address pool_,
@@ -37,6 +37,9 @@ abstract contract BaseERC20PoolHandler is BaseHandler {
 
         MIN_QUOTE_AMOUNT = vm.envOr("MIN_QUOTE_AMOUNT_ERC20", uint256(1e3));
         MAX_QUOTE_AMOUNT = vm.envOr("MAX_QUOTE_AMOUNT_ERC20", uint256(1e30));
+
+        MIN_DEBT_AMOUNT = vm.envOr("MIN_DEBT_AMOUNT", uint256(0));
+        MAX_DEBT_AMOUNT = vm.envOr("MAX_DEBT_AMOUNT", uint256(1e28));
 
         MIN_COLLATERAL_AMOUNT = vm.envOr("MIN_COLLATERAL_AMOUNT_ERC20", uint256(1e3));
         MAX_COLLATERAL_AMOUNT = vm.envOr("MAX_COLLATERAL_AMOUNT_ERC20", uint256(1e30));
@@ -67,12 +70,10 @@ abstract contract BaseERC20PoolHandler is BaseHandler {
             actorsAddress[i] = actor;
 
             vm.startPrank(actor);
-
-            _quote.mint(actor, 1e45);
-            _quote.approve(address(_pool), 1e45);
+            _ensureQuoteAmount(actor, 1e45);
 
             _collateral.mint(actor, 1e45);
-            _collateral.approve(address(_pool), 1e45);
+            _collateral.approve(address(_pool), type(uint256).max);
 
             vm.stopPrank();
         }

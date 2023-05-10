@@ -4,6 +4,8 @@ pragma solidity 0.8.14;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+import { Maths } from "src/libraries/internal/Maths.sol";
+
 import { BaseHandler } from './BaseHandler.sol';
 
 abstract contract UnboundedReservePoolHandler is BaseHandler {
@@ -16,6 +18,10 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
         numberOfCalls['UBReserveHandler.kickReserves']++;
         (, uint256 claimableReserves, , , ) = _poolInfo.poolReservesInfo(address(_pool));
         if (claimableReserves == 0) return;
+
+        // execute kick reserves only if there's enough quote tokens to reward kicker
+        uint256 reward = Maths.wmul(0.01 * 1e18, claimableReserves);
+        if (_quote.balanceOf(address(_pool)) < reward) return;
 
         try _pool.kickReserveAuction() {
 

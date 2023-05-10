@@ -884,12 +884,12 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 pledgedCollateral:    1.139736976079754220 * 1e18,
                 encumberedCollateral: 4404023621.084799631606156246 * 1e18,
                 poolDebt:             439.681348088864224700 * 1e18,
-                actualUtilization:    0.061025469820976144 * 1e18,
+                actualUtilization:    0.750721153846153847 * 1e18,
                 targetUtilization:    0.328577182109433013 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                interestRate:         0.0495 * 1e18,
+                interestRate:         0.0605 * 1e18,
                 interestRateUpdate:   block.timestamp
             })
         );
@@ -959,7 +959,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 totalBondEscrowed: 5.907892720203444346 * 1e18,
                 auctionPrice:      0,
                 debtInAuction:     439.681343513273114610 * 1e18,
-                thresholdPrice:    3_147.740272854337762554 * 1e18,
+                thresholdPrice:    3_148.017628779219832340 * 1e18,
                 neutralPrice:      310.164365384230997074 * 1e18
             })
         );
@@ -1165,16 +1165,16 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             PoolParams({
                 htp:                  0,
                 lup:                  MAX_PRICE,
-                poolSize:             50.000004575591110007 * 1e18,
+                poolSize:             50.000004575591109992 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
                 poolDebt:             0,
-                actualUtilization:    0.001552228747991919 * 1e18,
+                actualUtilization:    0.750721153846153847 * 1e18,
                 targetUtilization:    0.328577182109433013 * 1e18,
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                interestRate:         0.04455 * 1e18,
+                interestRate:         0.05445 * 1e18,
                 interestRateUpdate:   block.timestamp
             })
         );

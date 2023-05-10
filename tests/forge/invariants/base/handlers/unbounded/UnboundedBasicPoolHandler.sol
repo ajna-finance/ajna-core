@@ -29,6 +29,9 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         uint256 lupIndex          = _pool.depositIndex(poolDebt);
         (uint256 interestRate, )  = _pool.interestRateInfo();
 
+        // ensure actor always has amount of quote to add
+        _ensureQuoteAmount(_actor, amount_);
+
         try _pool.addQuoteToken(amount_, bucketIndex_, block.timestamp + 1 minutes) {
         
             // **B5**: when adding quote tokens: lender deposit time  = timestamp of block when deposit happened
@@ -66,6 +69,9 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
 
         (uint256 lpBalanceBeforeAction, ) = _pool.lenderInfo(bucketIndex_, _actor);
 
+        ( , , , uint256 deposit, ) = _pool.bucketInfo(bucketIndex_);
+        fenwickDeposits[bucketIndex_] = deposit;
+
         try _pool.removeQuoteToken(amount_, bucketIndex_) returns (uint256 removedAmount_, uint256) {
             // **R4**: Exchange rates are unchanged by withdrawing deposit (quote token) from a bucket
             exchangeRateShouldNotChange[bucketIndex_] = true;
@@ -87,6 +93,8 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         uint256 toIndex_
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.moveQuoteToken']++;
+        ( , , , uint256 fromDeposit, ) = _pool.bucketInfo(fromIndex_);
+        fenwickDeposits[fromIndex_] = fromDeposit;
 
         try _pool.moveQuoteToken(
             amount_,
