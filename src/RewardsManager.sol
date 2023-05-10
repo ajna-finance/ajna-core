@@ -327,10 +327,9 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         uint256 tokenId_,
         uint256 epochToClaim_
     ) external view override returns (uint256 rewards_) {
-        StakeInfo storage stakeInfo = stakes[tokenId_];
-        address ajnaPool         = stakeInfo.ajnaPool;
-        uint256 lastClaimedEpoch = stakeInfo.lastClaimedEpoch;
-        uint256 stakingEpoch     = stakeInfo.stakingEpoch;
+        address ajnaPool         = stakes[tokenId_].ajnaPool;
+        uint256 lastClaimedEpoch = stakes[tokenId_].lastClaimedEpoch;
+        uint256 stakingEpoch     = stakes[tokenId_].stakingEpoch;
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexesFiltered(tokenId_);
 
@@ -386,10 +385,9 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         uint256 tokenId_,
         uint256 epochToClaim_
     ) internal returns (uint256 rewards_) {
-        StakeInfo storage stakeInfo = stakes[tokenId_];
-        address ajnaPool         = stakeInfo.ajnaPool;
-        uint256 lastClaimedEpoch = stakeInfo.lastClaimedEpoch;
-        uint256 stakingEpoch     = stakeInfo.stakingEpoch;
+        address ajnaPool         = stakes[tokenId_].ajnaPool;
+        uint256 lastClaimedEpoch = stakes[tokenId_].lastClaimedEpoch;
+        uint256 stakingEpoch     = stakes[tokenId_].stakingEpoch;
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexesFiltered(tokenId_);
 
