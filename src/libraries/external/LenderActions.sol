@@ -575,7 +575,7 @@ library LenderActions {
             (collateralRemoved, ) = _removeMaxCollateral(
                 buckets_,
                 deposits_,
-                1,
+                1,                   // dust limit is same as collateral scale
                 collateralRemaining,
                 fromIndex
             );
