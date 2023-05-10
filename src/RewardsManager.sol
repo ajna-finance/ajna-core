@@ -22,6 +22,8 @@ import { PositionManager } from './PositionManager.sol';
 
 import { Maths } from './libraries/internal/Maths.sol';
 
+import '@std/console.sol';
+
 /**
  *  @title  Rewards (staking) Manager contract
  *  @notice Pool lenders can optionally mint `NFT` that represents their positions.
@@ -639,10 +641,9 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         // get the current burn epoch from the given pool
         uint256 curBurnEpoch = IPool(pool_).currentBurnEpoch();
 
-        // update exchange rates only if the pool has not yet burned any tokens without calculating any reward
+        // update exchange rates without calculating reward if first burn hasn't occured
         if (curBurnEpoch == 0) {
             for (uint256 i = 0; i < indexes_.length; ) {
-
                 _updateBucketExchangeRate(
                     pool_,
                     indexes_[i],
@@ -658,7 +659,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             // retrieve accumulator values used to calculate rewards accrued
             (
                 uint256 curBurnTime,
-                uint256 totalBurned,
+                uint256 totalBurnedInEpoch,
                 uint256 totalInterestEarned
             ) = _getPoolAccumulators(pool_, curBurnEpoch, curBurnEpoch - 1);
 
@@ -672,7 +673,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
                         pool_,
                         indexes_[i],
                         curBurnEpoch,
-                        totalBurned,
+                        totalBurnedInEpoch,
                         totalInterestEarned
                     );
 
@@ -680,11 +681,11 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
                     unchecked { ++i; }
                 }
 
-                uint256 rewardsCap            = Maths.wmul(UPDATE_CAP, totalBurned);
+                uint256 rewardsCap            = Maths.wmul(UPDATE_CAP, totalBurnedInEpoch);
                 uint256 rewardsClaimedInEpoch = updateRewardsClaimed[curBurnEpoch];
 
                 // update total tokens claimed for updating bucket exchange rates tracker
-                if (rewardsClaimedInEpoch + updatedRewards_ >= rewardsCap) {
+                if (totalBurnedInEpoch != 0 && (rewardsClaimedInEpoch + updatedRewards_ >= rewardsCap)) {
                     // if update reward is greater than cap, set to remaining difference
                     updatedRewards_ = rewardsCap - rewardsClaimedInEpoch;
                 }

@@ -47,7 +47,7 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
         numberOfCalls['BRewardsHandler.stake']++;
         // Pre action
         uint256 tokenId = _preStake(_lenderBucketIndex, amountToAdd_);
-        
+
         // Action phase
         _stake(tokenId);
     }
@@ -100,7 +100,6 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
 
         // Action phase
         _claimRewards(tokenId, currentEpoch);
-
     }
 
     function moveStakedLiquidity(
@@ -153,7 +152,7 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
         _drawDebt(amountToBorrow);
 
         skip(365 days);
-
+    
         _repayDebt(type(uint256).max);
 
         //TODO: Perform multiple randomized reserve auctions to ensure staked position has rewards over multiple epochs 
@@ -162,6 +161,8 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
 
         uint256 boundedAmount = _preTakeReserves(amountToAdd_);
         _takeReserves(boundedAmount);
+
+        //TODO: Update exchange rates to ensure staked position has rewards        
     }
 
     function _preUpdateExchangeRate(
