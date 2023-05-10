@@ -59,7 +59,7 @@ abstract contract BaseHandler is Test {
     mapping(address => mapping(uint256 => uint256)) public lenderDepositTime; // mapping of lender address to bucket index to deposit time
 
     address[] public actors;
-    mapping(bytes32 => uint256)   public numberOfCalls;  // Logging
+    mapping(bytes => uint256)   public numberOfCalls;  // Logging
     mapping(address => uint256[]) public touchedBuckets; // Bucket tracking
 
     // exchange rate invariant test state
