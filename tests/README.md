@@ -66,6 +66,7 @@ Invariant test scenarios can be externally configured by customizing following e
 | SKIP_TIME_TO_KICK | ERC20 ERC721 | 200 days | The time to be skipped and drive a new loan undercollateralized. Use a big value to ensure a successful kick |
 | FOUNDRY_INVARIANT_RUNS | ERC20 ERC721 | 10 | The number of runs for each scenario |
 | FOUNDRY_INVARIANT_DEPTH | ERC20 ERC721 | 200 | The number of actions performed in each scenario |
+| CREATE_LOG_FILE | ERC20 ERC721 | false | Whether to create Log file for the last run / regression test |
 
 #### Custom Scenarios
 

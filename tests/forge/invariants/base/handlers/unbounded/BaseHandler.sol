@@ -79,6 +79,7 @@ abstract contract BaseHandler is Test {
     mapping(address => bool) public alreadyTaken;     // mapping borrower address to true if auction taken atleast once
 
     string internal path = "logfile.txt";
+    bool   internal createLogFile;
 
     constructor(
         address pool_,
@@ -97,6 +98,10 @@ abstract contract BaseHandler is Test {
 
         // Test invariant contract
         testContract = ITestBase(testContract_);
+
+        // Whether to create log file
+        createLogFile = bool(vm.envOr("CREATE_LOG_FILE", false));
+        console.log("Create Log file", createLogFile);
     }
 
     /*****************/
@@ -126,14 +131,16 @@ abstract contract BaseHandler is Test {
 
     modifier writeLogs() {
         _;
-        if (numberOfCalls["Write logs"]++ == 0) vm.writeFile(path, "");
-        string memory data = string(abi.encodePacked("================= Handler Call : ", Strings.toString(numberOfCalls["Write logs"]), " =================="));
-        printInNextLine(data);
-        writePoolStateLogs();
-        writeLenderLogs();
-        writeBorrowerLogs();
-        writeBucketsLogs();
-        writeAuctionLogs();
+        if (createLogFile) {
+            if (numberOfCalls["Write logs"]++ == 0) vm.writeFile(path, "");
+            string memory data = string(abi.encodePacked("================= Handler Call : ", Strings.toString(numberOfCalls["Write logs"]), " =================="));
+            printInNextLine(data);
+            writePoolStateLogs();
+            writeLenderLogs();
+            writeBorrowerLogs();
+            writeBucketsLogs();
+            writeAuctionLogs();
+        }
     }
 
     function writePoolStateLogs() internal {
