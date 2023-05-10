@@ -167,7 +167,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
     }
 
     function _preMergeCollateral() internal returns(uint256 NFTAmount_, uint256[] memory bucketIndexes_) {
-        bucketIndexes_ = getCollateralBuckets();
+        bucketIndexes_ = getBuckets();
         
         for (uint256 i = 0; i < bucketIndexes_.length; i++) {
             uint256 bucketIndex = bucketIndexes_[i];

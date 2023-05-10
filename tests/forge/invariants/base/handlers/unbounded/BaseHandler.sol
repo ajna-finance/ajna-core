@@ -71,8 +71,8 @@ abstract contract BaseHandler is Test {
     uint256 public increaseInReserves;  // amount of reserve decrease
     uint256 public decreaseInReserves;  // amount of reserve increase
 
-    // Buckets where collateral is added when a borrower is in auction and has partial NFT
-    EnumerableSet.UintSet internal collateralBuckets;
+    // All Buckets used in invariant testing that also includes Buckets where collateral is added when a borrower is in auction and has partial NFT
+    EnumerableSet.UintSet internal buckets;
 
     // auctions invariant test state
     bool                     public firstTake;        // if take is called on auction first time
@@ -101,7 +101,6 @@ abstract contract BaseHandler is Test {
 
         // Whether to create log file
         createLogFile = bool(vm.envOr("CREATE_LOG_FILE", false));
-        console.log("Create Log file", createLogFile);
     }
 
     /*****************/
@@ -181,8 +180,8 @@ abstract contract BaseHandler is Test {
         for (uint256 i = 0; i < actors.length; i++) {
             printLine("");
             printLog("Actor ", i + 1);
-            for (uint256 j = 0; j < collateralBuckets.length(); j++) {
-                uint256 bucketIndex = collateralBuckets.at(j);
+            for (uint256 j = 0; j < buckets.length(); j++) {
+                uint256 bucketIndex = buckets.at(j);
                 (uint256 lenderLps, ) = _pool.lenderInfo(bucketIndex, actors[i]);
                 if (lenderLps != 0) {
                     data = string(abi.encodePacked("Lps at ", Strings.toString(bucketIndex), " = ", Strings.toString(lenderLps)));
@@ -209,9 +208,9 @@ abstract contract BaseHandler is Test {
 
     function writeBucketsLogs() internal {
         printInNextLine("== Buckets Detail ==");
-        for (uint256 i = 0; i < collateralBuckets.length(); i++) {
+        for (uint256 i = 0; i < buckets.length(); i++) {
             printLine("");
-            uint256 bucketIndex = collateralBuckets.at(i);
+            uint256 bucketIndex = buckets.at(i);
             printLog("Bucket:", bucketIndex);
             (
                 ,
@@ -520,10 +519,10 @@ abstract contract BaseHandler is Test {
     /**********************************/
 
     function fenwickSumTillIndex(uint256 index_) public view returns (uint256 sum_) {
-        uint256[] memory buckets = getCollateralBuckets();
+        uint256[] memory depositBuckets = getBuckets();
 
-        for (uint256 i = 0; i < buckets.length; i++) {
-            uint256 bucket = buckets[i];
+        for (uint256 i = 0; i < depositBuckets.length; i++) {
+            uint256 bucket = depositBuckets[i];
             if (bucket <= index_) {
                 sum_ += fenwickDeposits[bucket];
             }
@@ -534,10 +533,10 @@ abstract contract BaseHandler is Test {
         uint256 minIndex = LENDER_MIN_BUCKET_INDEX;
         uint256 maxIndex = LENDER_MAX_BUCKET_INDEX;
 
-        uint256[] memory buckets = getCollateralBuckets();
-        for (uint256 i = 0; i < buckets.length; i++) {
-            minIndex = Maths.min(minIndex, buckets[i]);
-            maxIndex = Maths.max(maxIndex, buckets[i]);
+        uint256[] memory depositBuckets = getBuckets();
+        for (uint256 i = 0; i < depositBuckets.length; i++) {
+            minIndex = Maths.min(minIndex, depositBuckets[i]);
+            maxIndex = Maths.max(maxIndex, depositBuckets[i]);
         }
 
         while (debt_ != 0 && minIndex <= maxIndex) {
@@ -590,8 +589,8 @@ abstract contract BaseHandler is Test {
         if (max_ == type(uint256).max && x_ != 0) result_++;
     }
 
-    function getCollateralBuckets() public view returns(uint256[] memory) {
-        return collateralBuckets.values();
+    function getBuckets() public view returns(uint256[] memory) {
+        return buckets.values();
     }
 
 }

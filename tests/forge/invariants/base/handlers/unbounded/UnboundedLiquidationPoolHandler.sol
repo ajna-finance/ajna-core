@@ -126,11 +126,11 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower_);
             if (kickTime == 0) {
                 if (auctionPrice < MIN_PRICE) {
-                    collateralBuckets.add(7388);
+                    buckets.add(7388);
                 } else if (auctionPrice > MAX_PRICE) {
-                    collateralBuckets.add(0);
+                    buckets.add(0);
                 } else {
-                    collateralBuckets.add(_indexOf(auctionPrice));
+                    buckets.add(_indexOf(auctionPrice));
                 }
             }
 
@@ -188,7 +188,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
             (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower_);
             if (kickTime == 0 && _pool.poolType() == 1) {
-                collateralBuckets.add(auctionBucketIndex);
+                buckets.add(auctionBucketIndex);
                 if (beforeBucketTakeVars.borrowerLps < afterBucketTakeVars.borrowerLps) {
                     lenderDepositTime[borrower_][auctionBucketIndex] = block.timestamp;
                 }
@@ -292,7 +292,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
             (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower_);
             if (kickTime == 0 && collateral % 1e18 != 0 && _pool.poolType() == 1) {
-                collateralBuckets.add(7388);
+                buckets.add(7388);
                 lenderDepositTime[borrower_][7388] = block.timestamp;
             }
         } catch (bytes memory err) {
