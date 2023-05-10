@@ -186,7 +186,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
         emit MoveStakedLiquidity(tokenId_, fromBuckets_, toBuckets_);
 
-        // update to bucket list exchange rates, from buckets are aready updated on claim
+        // update to bucket list exchange rates, from buckets are already updated on claim
         // calculate rewards for updating exchange rates, if any
         uint256 updateReward = _updateBucketExchangeRates(
             ajnaPool,
@@ -225,9 +225,9 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         stakeInfo.lastClaimedEpoch = uint96(curBurnEpoch);
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
+        uint256 noOfPositions = positionIndexes.length;
 
-        for (uint256 i = 0; i < positionIndexes.length; ) {
-
+        for (uint256 i = 0; i < noOfPositions; ) {
             uint256 bucketId = positionIndexes[i];
 
             BucketState storage bucketState = stakeInfo.snapshot[bucketId];
@@ -287,7 +287,8 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
         // remove bucket snapshots recorded at the time of staking
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
-        for (uint256 i = 0; i < positionIndexes.length; ) {
+        uint256 noOfPositions = positionIndexes.length;
+        for (uint256 i = 0; i < noOfPositions; ) {
             delete stakeInfo.snapshot[positionIndexes[i]]; // reset BucketState struct for current position
 
             unchecked { ++i; }
@@ -326,10 +327,10 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         uint256 tokenId_,
         uint256 epochToClaim_
     ) external view override returns (uint256 rewards_) {
-
-        address ajnaPool         = stakes[tokenId_].ajnaPool;
-        uint256 lastClaimedEpoch = stakes[tokenId_].lastClaimedEpoch;
-        uint256 stakingEpoch     = stakes[tokenId_].stakingEpoch;
+        StakeInfo storage stakeInfo = stakes[tokenId_];
+        address ajnaPool         = stakeInfo.ajnaPool;
+        uint256 lastClaimedEpoch = stakeInfo.lastClaimedEpoch;
+        uint256 stakingEpoch     = stakeInfo.stakingEpoch;
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexesFiltered(tokenId_);
 
@@ -385,10 +386,10 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         uint256 tokenId_,
         uint256 epochToClaim_
     ) internal returns (uint256 rewards_) {
-
-        address ajnaPool         = stakes[tokenId_].ajnaPool;
-        uint256 lastClaimedEpoch = stakes[tokenId_].lastClaimedEpoch;
-        uint256 stakingEpoch     = stakes[tokenId_].stakingEpoch;
+        StakeInfo storage stakeInfo = stakes[tokenId_];
+        address ajnaPool         = stakeInfo.ajnaPool;
+        uint256 lastClaimedEpoch = stakeInfo.lastClaimedEpoch;
+        uint256 stakingEpoch     = stakeInfo.stakingEpoch;
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexesFiltered(tokenId_);
 
@@ -437,7 +438,8 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         uint256 interestEarned;
 
         // iterate through all buckets and calculate epoch rewards for
-        for (uint256 i = 0; i < positionIndexes_.length; ) {
+        uint256 noOfPositions = positionIndexes_.length;
+        for (uint256 i = 0; i < noOfPositions; ) {
             bucketIndex = positionIndexes_[i];
             BucketState memory bucketSnapshot = stakes[tokenId_].snapshot[bucketIndex];
 
@@ -677,7 +679,8 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
         // update exchange rates only if the pool has not yet burned any tokens without calculating any reward
         if (curBurnEpoch == 0) {
-            for (uint256 i = 0; i < indexes_.length; ) {
+            uint256 noOfIndexes = indexes_.length;
+            for (uint256 i = 0; i < noOfIndexes; ) {
 
                 _updateBucketExchangeRate(
                     pool_,
@@ -701,7 +704,8 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             if (block.timestamp <= curBurnTime + UPDATE_PERIOD) {
 
                 // update exchange rates and calculate rewards if tokens were burned and within allowed time period
-                for (uint256 i = 0; i < indexes_.length; ) {
+                uint256 noOfIndexes = indexes_.length;
+                for (uint256 i = 0; i < noOfIndexes; ) {
 
                     // calculate rewards earned for updating bucket exchange rate
                     updatedRewards_ += _updateBucketExchangeRateAndCalculateRewards(

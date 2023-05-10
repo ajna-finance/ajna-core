@@ -23,6 +23,11 @@ interface IPositionManagerErrors {
     error NoAuth();
 
     /**
+     * @notice `NFT` with provided ID does not exist.
+     */
+    error NoToken();
+
+    /**
      * @notice User attempted to mint an `NFT` pointing to a pool that wasn't deployed by an `Ajna` factory.
      */
     error NotAjnaPool();

@@ -80,7 +80,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         uint256 bucketCollateral; // [WAD] amount of collateral in from bucket
         uint256 bankruptcyTime;   // from bucket bankruptcy time
         uint256 bucketDeposit;    // [WAD] from bucket deposit
-        uint256 depositTime;      // lender deposit time in from bucekt
+        uint256 depositTime;      // lender deposit time in from bucket
         uint256 maxQuote;         // [WAD] max amount that can be moved from bucket
         uint256 lpbAmountFrom;    // [WAD] the LP redeemed from bucket
         uint256 lpbAmountTo;      // [WAD] the LP awarded in to bucket
@@ -261,7 +261,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      */
     function moveLiquidity(
         MoveLiquidityParams calldata params_
-    ) external override mayInteract(params_.pool, params_.tokenId) nonReentrant {
+    ) external override nonReentrant mayInteract(params_.pool, params_.tokenId) {
         Position storage fromPosition = positions[params_.tokenId][params_.fromIndex];
 
         MoveLiquidityLocalVars memory vars;
@@ -420,8 +420,16 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         address collateralAddress = IPool(pool_).collateralAddress();
         address quoteAddress      = IPool(pool_).quoteTokenAddress();
 
-        address erc20DeployedPoolAddress  = erc20PoolFactory.deployedPools(subsetHash_, collateralAddress, quoteAddress);
-        address erc721DeployedPoolAddress = erc721PoolFactory.deployedPools(subsetHash_, collateralAddress, quoteAddress);
+        address erc20DeployedPoolAddress  = erc20PoolFactory.deployedPools(
+            subsetHash_,
+            collateralAddress,
+            quoteAddress
+        );
+        address erc721DeployedPoolAddress = erc721PoolFactory.deployedPools(
+            subsetHash_,
+            collateralAddress,
+            quoteAddress
+        );
 
         return (pool_ == erc20DeployedPoolAddress || pool_ == erc721DeployedPoolAddress);
     }
@@ -431,7 +439,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      *  @param  pool_        The address of the pool of memorialized position.
      *  @param  index_       The bucket index to check deposit time for.
      *  @param  depositTime_ The recorded deposit time of the position.
-     *  @return `True` if the bucket went bankrupt after that position memorialzied their `LP`.
+     *  @return `True` if the bucket went bankrupt after that position memorialized their `LP`.
      */
     function _bucketBankruptAfterDeposit(
         IPool pool_,
@@ -517,7 +525,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     function tokenURI(
         uint256 tokenId_
     ) public view override(ERC721) returns (string memory) {
-        require(_exists(tokenId_));
+        if (!_exists(tokenId_)) revert NoToken();
 
         address collateralTokenAddress = IPool(poolKey[tokenId_]).collateralAddress();
         address quoteTokenAddress      = IPool(poolKey[tokenId_]).quoteTokenAddress();
