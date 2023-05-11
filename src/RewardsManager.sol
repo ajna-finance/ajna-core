@@ -529,7 +529,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             uint256 totalBurnedInPeriod,
             // total tokens burned over the claim period
             uint256 totalInterestEarnedInPeriod
-        ) = _getPoolAccumulators(ajnaPool_, nextEpoch_, epoch_);
+        ) = _getEpochInfo(ajnaPool_, nextEpoch_);
 
         // calculate rewards earned
         newRewards_ = totalInterestEarnedInPeriod == 0 ? 0 : Maths.wmul(
@@ -625,38 +625,37 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     }
 
     /**
-     *  @notice Retrieve the total ajna tokens burned and total interest earned by a pool since a given block.
-     *  @param  pool_                  Address of the `Ajna` pool to retrieve accumulators of.
-     *  @param  currentBurnEventEpoch_ The latest burn event.
-     *  @param  lastBurnEventEpoch_    The burn event to use as checkpoint since which values have accumulated.
+     *  @notice Retrieve the total ajna tokens burned and total interest earned over a given epoch.
+     *  @param  pool_   Address of the `Ajna` pool to retrieve accumulators of.
+     *  @param  epoch_  The latest burn event.
      *  @return Timestamp of the latest burn event.
      *  @return Total `Ajna` tokens burned by the pool since the last burn event.
      *  @return Total interest earned by the pool since the last burn event.
      */
-    function _getPoolAccumulators(
+    function _getEpochInfo(
         address pool_,
-        uint256 currentBurnEventEpoch_,
-        uint256 lastBurnEventEpoch_
+        uint256 epoch_
     ) internal view returns (uint256, uint256, uint256) {
         (
             uint256 currentBurnTime,
             uint256 totalInterestLatest,
             uint256 totalBurnedLatest
-        ) = IPool(pool_).burnInfo(currentBurnEventEpoch_);
+        ) = IPool(pool_).burnInfo(epoch_);
 
         (
             ,
-            uint256 totalInterestAtBlock,
-            uint256 totalBurnedAtBlock
-        ) = IPool(pool_).burnInfo(lastBurnEventEpoch_);
+            uint256 totalInterestPrev,
+            uint256 totalBurnedPrev
+        ) = IPool(pool_).burnInfo(epoch_ - 1);
 
-        uint256 totalBurned   = totalBurnedLatest   != 0 ? totalBurnedLatest   - totalBurnedAtBlock   : totalBurnedAtBlock;
-        uint256 totalInterest = totalInterestLatest != 0 ? totalInterestLatest - totalInterestAtBlock : totalInterestAtBlock;
+        // only return 
+        uint256 tokensBurned   = totalBurnedLatest   != 0 ? totalBurnedLatest   - totalBurnedPrev   : totalBurnedLatest;
+        uint256 interestEarned = totalInterestLatest != 0 ? totalInterestLatest - totalInterestPrev : totalInterestLatest;
 
         return (
             currentBurnTime,
-            totalBurned,
-            totalInterest
+            tokensBurned,
+            interestEarned
         );
     }
 
@@ -696,7 +695,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
                 uint256 curBurnTime,
                 uint256 totalBurnedInEpoch,
                 uint256 totalInterestEarned
-            ) = _getPoolAccumulators(pool_, curBurnEpoch, curBurnEpoch - 1);
+            ) = _getEpochInfo(pool_, curBurnEpoch);
 
             if (block.timestamp <= curBurnTime + UPDATE_PERIOD) {
 
@@ -720,7 +719,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
                 uint256 rewardsClaimedInEpoch = updateRewardsClaimed[curBurnEpoch];
 
                 // update total tokens claimed for updating bucket exchange rates tracker
-                if (totalBurnedInEpoch != 0 && (rewardsClaimedInEpoch + updatedRewards_ >= rewardsCap)) {
+                if (rewardsClaimedInEpoch + updatedRewards_ >= rewardsCap) {
                     // if update reward is greater than cap, set to remaining difference
                     updatedRewards_ = rewardsCap - rewardsClaimedInEpoch;
                 }

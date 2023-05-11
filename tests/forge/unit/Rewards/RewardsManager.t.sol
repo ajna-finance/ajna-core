@@ -505,7 +505,7 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         skip(2 weeks);
 
-        // first reserve auction happens successfully Staker should receive rewards epoch 0 - 1
+        // second reserve auction is kicked, no take
         _triggerReserveAuctionsNoTake({
             borrower: _borrower,
             borrowAmount: 300 * 1e18,
@@ -521,12 +521,13 @@ contract RewardsManagerTest is RewardsHelperContract {
             tokensToBurn:     tokensToBurn,
             interest:         6.443638300196908069 * 1e18
         });
-
+        
+        // no take has been called on reserveAuction therefore totalBurned is zero. No rewards to distribute
         _updateExchangeRates({
             updater:        _updater,
             pool:           address(_pool),
             indexes:        depositIndexes,
-            reward:         3.399661193610840835 * 1e18
+            reward:         0
         });
     }
 
@@ -1690,7 +1691,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             tokenId: tokenIdOne
         });
 
-        uint256 tokensToBurn = _triggerReserveAuctions({
+        _triggerReserveAuctions({
             borrower:     _borrower,
             tokensToBurn: 81.799378162662704349 * 1e18,
             borrowAmount: 300 * 1e18,
@@ -1705,12 +1706,6 @@ contract RewardsManagerTest is RewardsHelperContract {
             indexes: depositIndexes,
             reward:  4.089968908133134138 * 1e18
         });
-
-        // check owner can withdraw the NFT and rewards will be automatically claimed
-
-        uint256 snapshot = vm.snapshot();
-
-        // claimed rewards amount is greater than available tokens in rewards manager contract
 
         // burn rewards manager tokens and leave only 5 tokens available
         changePrank(address(_rewardsManager));
@@ -1764,7 +1759,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             updater: _updater,
             pool:    address(_pool),
             indexes: depositIndexes,
-            reward:  3.395081241453374356 * 1e18
+            reward:  0
         });
 
         // allow time to pass for the reserve price to decrease
