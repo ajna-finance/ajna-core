@@ -694,7 +694,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             // retrieve accumulator values used to calculate rewards accrued
             (
                 uint256 curBurnTime,
-                uint256 totalBurned,
+                uint256 totalBurnedInEpoch,
                 uint256 totalInterestEarned
             ) = _getPoolAccumulators(pool_, curBurnEpoch, curBurnEpoch - 1);
 
@@ -708,7 +708,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
                         pool_,
                         indexes_[i],
                         curBurnEpoch,
-                        totalBurned,
+                        totalBurnedInEpoch,
                         totalInterestEarned
                     );
 
@@ -716,11 +716,11 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
                     unchecked { ++i; }
                 }
 
-                uint256 rewardsCap            = Maths.wmul(UPDATE_CAP, totalBurned);
+                uint256 rewardsCap            = Maths.wmul(UPDATE_CAP, totalBurnedInEpoch);
                 uint256 rewardsClaimedInEpoch = updateRewardsClaimed[curBurnEpoch];
 
                 // update total tokens claimed for updating bucket exchange rates tracker
-                if (rewardsClaimedInEpoch + updatedRewards_ >= rewardsCap) {
+                if (totalBurnedInEpoch != 0 && (rewardsClaimedInEpoch + updatedRewards_ >= rewardsCap)) {
                     // if update reward is greater than cap, set to remaining difference
                     updatedRewards_ = rewardsCap - rewardsClaimedInEpoch;
                 }
