@@ -34,20 +34,12 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
         address poolInfo_,
         address testContract_
     ) BaseERC20PoolHandler(pool_, ajna_, quote_, collateral_, poolInfo_, 0, testContract_) {
-        LENDER_MIN_BUCKET_INDEX = vm.envOr("BUCKET_INDEX_ERC20", uint256(2570));
-        LENDER_MAX_BUCKET_INDEX = LENDER_MIN_BUCKET_INDEX + vm.envOr("NO_OF_BUCKETS", uint256(3)) - 1;
-
-        for (uint256 bucket = LENDER_MIN_BUCKET_INDEX; bucket <= LENDER_MAX_BUCKET_INDEX; bucket++) {
-            collateralBuckets.add(bucket);
-            ++ numberOfBuckets;
-        }
-
-        _collateral = TokenWithNDecimals(collateral_);
-        _erc20Pool  = ERC20Pool(pool_);
+        numberOfBuckets = collateralBuckets.length();
+        setUp();
     }
 
 
-    function setUp() public useTimestamps {
+    function setUp() internal useTimestamps {
         _setupLendersAndDeposits(LENDERS);
         _setupBorrowersAndLoans(LOANS_COUNT);
 

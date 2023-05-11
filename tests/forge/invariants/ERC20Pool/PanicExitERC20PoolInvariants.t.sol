@@ -34,18 +34,8 @@ contract PanicExitERC20PoolInvariants is BasicERC20PoolInvariants, LiquidationIn
             address(_poolInfo),
             address(this)
         );
-        _panicExitERC20PoolHandler.setUp();
 
         _handler = address(_panicExitERC20PoolHandler);
-        bytes4[] memory selectors = new bytes4[](3);
-        selectors[0] = _panicExitERC20PoolHandler.repayLoan.selector;
-        selectors[1] = _panicExitERC20PoolHandler.kickAuction.selector;
-        selectors[2] = _panicExitERC20PoolHandler.kickWithDeposit.selector;
-
-        targetSelector(FuzzSelector({
-            addr: _handler,
-            selectors: selectors
-        }));
     }
 
     function invariant_call_summary() public virtual override(BasicInvariants, LiquidationInvariants) useCurrentTimestamp {
