@@ -1759,7 +1759,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         ERC20Pool(address(_pool)).kickReserveAuction();
 
         // exchange rate is updated even though no ajna tokens are burned in epoch?
-        // should this we allow this to occur
+        // should this we allow this to occur??
         _updateExchangeRates({
             updater: _updater,
             pool:    address(_pool),
@@ -1783,7 +1783,8 @@ contract RewardsManagerTest is RewardsHelperContract {
         });
 
         // stake nft
-        // reverts here because totalBurned = 0 (takes haven't burned any ajna)
+        // reverts here because totalBurned = 0 for Epoch 2 (takes haven't burned any ajna)
+        // causes the update cap to be zero which then causes overflow
         _stakeToken({
             pool:    address(_pool),
             owner:   _minterTwo,
