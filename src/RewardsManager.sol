@@ -469,7 +469,6 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
                 ajnaPool_,
                 interestEarned,
                 nextEpoch,
-                epoch_,
                 claimedRewardsInNextEpoch
             );
         }
@@ -512,7 +511,6 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
      *  @param  ajnaPool_              Address of the pool.
      *  @param  interestEarned_        The amount of interest accrued to current epoch.
      *  @param  nextEpoch_             The next burn event epoch to calculate new rewards.
-     *  @param  epoch_                 The current burn event epoch to calculate new rewards.
      *  @param  rewardsClaimedInEpoch_ Rewards claimed in epoch.
      *  @return newRewards_            New rewards between current and next burn event epoch.
      */
@@ -520,7 +518,6 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         address ajnaPool_,
         uint256 interestEarned_,
         uint256 nextEpoch_,
-        uint256 epoch_,
         uint256 rewardsClaimedInEpoch_
     ) internal view returns (uint256 newRewards_) {
         (
@@ -636,6 +633,9 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         address pool_,
         uint256 epoch_
     ) internal view returns (uint256, uint256, uint256) {
+
+        if (epoch_ == 0) return (0, 0, 0);
+
         (
             uint256 currentBurnTime,
             uint256 totalInterestLatest,
@@ -674,8 +674,15 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         // get the current burn epoch from the given pool
         uint256 curBurnEpoch = IPool(pool_).currentBurnEpoch();
 
-        // update exchange rates only if the pool has not yet burned any tokens without calculating any reward
-        if (curBurnEpoch == 0) {
+        // retrieve epoch values used to determine if updater receives rewards
+        (
+            uint256 curBurnTime,
+            uint256 totalBurnedInEpoch,
+            uint256 totalInterestEarned
+        ) = _getEpochInfo(pool_, curBurnEpoch);
+
+        // Update exchange rates without reward if first epoch or if the epoch does not have burned tokens associated with it
+        if (curBurnEpoch == 0 || totalBurnedInEpoch == 0) {
             for (uint256 i = 0; i < indexes_.length; ) {
 
                 _updateBucketExchangeRate(
@@ -690,12 +697,6 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         }
 
         else {
-            // retrieve accumulator values used to calculate rewards accrued
-            (
-                uint256 curBurnTime,
-                uint256 totalBurnedInEpoch,
-                uint256 totalInterestEarned
-            ) = _getEpochInfo(pool_, curBurnEpoch);
 
             if (block.timestamp <= curBurnTime + UPDATE_PERIOD) {
 
