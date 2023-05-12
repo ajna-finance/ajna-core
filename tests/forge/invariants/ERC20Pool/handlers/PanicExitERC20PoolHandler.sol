@@ -53,23 +53,29 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
     /*** Borrower Exit Functions ***/
     /*******************************/
 
-    function repayLoan(
+    function repayLoanOrSettleDebt(
         uint256 borrowerIndex_,
         uint256 skippedTime_
     ) external useTimestamps skipTime(skippedTime_) {
-        numberOfCalls['BPanicExitPoolHandler.repayLoan']++;
         borrowerIndex_ = constrictToRange(borrowerIndex_, 0, _activeBorrowers.values().length - 1);
 
         _actor = _borrowers[borrowerIndex_];
         vm.startPrank(_actor);
-        _repayDebt(type(uint256).max);
+        (,,, uint256 kickTime,,,,,,) = _pool.auctionInfo(_actor);
+        if (block.timestamp > kickTime + 72 hours) {
+            numberOfCalls['BPanicExitPoolHandler.settleDebt']++;
+            _settleAuction(_actor, numberOfBuckets);
+        } else {
+            numberOfCalls['BPanicExitPoolHandler.repayLoan']++;
+            _repayDebt(type(uint256).max);
+        }
         (, uint256 collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
         _pullCollateral(collateral);
         vm.stopPrank();
 
         _auctionSettleStateReset(_actor);
-
-        _activeBorrowers.remove(borrowerIndex_);
+        (,,, kickTime,,,,,,) = _pool.auctionInfo(_actor);
+        if (kickTime == 0) _activeBorrowers.remove(borrowerIndex_);
     }
 
     /*****************************/
