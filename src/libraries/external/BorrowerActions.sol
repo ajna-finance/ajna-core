@@ -102,6 +102,7 @@ library BorrowerActions {
      *  @dev      remove loan from loans array
      *  @dev      update borrower in `address => borrower` mapping
      *  @dev    === Reverts on ===
+     *  @dev    not enough quote tokens available `InsufficientLiquidity()`
      *  @dev    borrower not sender `BorrowerNotSender()`
      *  @dev    borrower debt less than pool min debt `AmountLTMinDebt()`
      *  @dev    limit price reached `LimitIndexExceeded()`

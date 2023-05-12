@@ -232,7 +232,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             deposits,
             poolState,
             RemoveQuoteParams({
-                maxAmount:      maxAmount_,
+                maxAmount:      Maths.min(maxAmount_, _availableQuoteToken()),
                 index:          index_,
                 thresholdPrice: Loans.getMax(loans).thresholdPrice
             })
@@ -964,10 +964,5 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /// @inheritdoc IPoolState
     function totalT0DebtInAuction() external view override returns (uint256) {
         return poolBalances.t0DebtInAuction;
-    }
-
-    /// @inheritdoc IPoolState
-    function availableQuoteToken() external view override returns (uint256) {
-        return _availableQuoteToken();
     }
 }
