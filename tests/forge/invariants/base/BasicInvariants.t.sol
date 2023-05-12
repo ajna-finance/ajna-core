@@ -150,11 +150,16 @@ abstract contract BasicInvariants is BaseInvariants {
         console.log("assets      -> ", assets);
         console.log("liabilities -> ", liabilities);
 
+        require(
+            poolBalance >= totalBondEscrowed + unClaimed,
+            "QT1: escrowed bonds and claimable reserves not guaranteed"
+        );
+
         greaterThanWithinDiff(
             assets,
             liabilities,
             1e13,
-            "Quote Token Invariant QT1"
+            "QT1: assets and liabilities not with a `1e13` margin"
         );
     }
 
