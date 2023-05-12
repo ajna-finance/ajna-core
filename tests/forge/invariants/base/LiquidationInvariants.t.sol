@@ -19,6 +19,7 @@ abstract contract LiquidationInvariants is BasicInvariants {
         _invariant_A3_A4();
         _invariant_A5();
         _invariant_A6();
+        _invariant_A7();
     }
 
     /// @dev checks sum of all borrower's t0debt is equals to total pool t0debtInAuction
@@ -126,6 +127,16 @@ abstract contract LiquidationInvariants is BasicInvariants {
                 "Auction Invariant A6"
             );
         }
+    }
+
+    /// @dev total bond escrowed should increase when auctioned kicked with the difference needed to cover the bond and should decrease only when kicker bonds withdrawned
+    function _invariant_A7() internal view {
+        uint256 previousTotalBondEscorwed        = IBaseHandler(_handler).previousTotalBonds();
+        uint256 increaseInBonds                  = IBaseHandler(_handler).increaseInBonds();
+        uint256 decreaseInBonds                  = IBaseHandler(_handler).decreaseInBonds();
+        (uint256 currentTotalBondEscorwed, , , ) = _pool.reservesInfo();
+
+        require(currentTotalBondEscorwed == previousTotalBondEscorwed + increaseInBonds - decreaseInBonds, "Auction Invariant A7");
     }
     
     function invariant_call_summary() public virtual override useCurrentTimestamp {
