@@ -42,18 +42,28 @@ abstract contract LiquidationInvariants is BasicInvariants {
     /// @dev checks sum of all kicker bond is equal to total pool bond
     function _invariant_A2() internal view {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
-        uint256 totalKickerBond;
+        uint256 kickerClaimableBond;
+        uint256 kickerLockedBond;
 
         for (uint256 i = 0; i < actorCount; i++) {
             address kicker = IBaseHandler(_handler).actors(i);
-            (uint256 claimable, uint256 bond) = _pool.kickerInfo(kicker);
+            (uint256 claimable, uint256 locked) = _pool.kickerInfo(kicker);
 
-            totalKickerBond += bond + claimable;
+            kickerLockedBond    += locked;
+            kickerClaimableBond += claimable;
         }
 
-        (uint256 totalPoolBond, , , ) = _pool.reservesInfo();
+        (uint256 totalBondEscrowed, , , ) = _pool.reservesInfo();
 
-        require(totalPoolBond == totalKickerBond, "Auction Invariant A2");
+        require(totalBondEscrowed == kickerClaimableBond + kickerLockedBond, "A2: total bond escrowed != kicker bonds");
+
+        uint256 lockedBonds;
+        for (uint256 i = 0; i < actorCount; i++) {
+            address borrower = IBaseHandler(_handler).actors(i);
+            (, , uint256 bond, , , , , , , ) = _pool.auctionInfo(borrower);
+            lockedBonds += bond;
+        }
+        require(lockedBonds == kickerLockedBond, "A2: bonds in auctions != than kicker locked bonds");
     }
 
     /// @dev checks total borrowers with debt is equals to sum of borrowers unkicked and borrowers kicked

@@ -95,7 +95,6 @@ library BorrowerActions {
      *  @dev    - `SettlerActions._settleAuction` (`_removeAuction`):
      *  @dev      decrement kicker locked accumulator, increment kicker claimable accumumlator
      *  @dev      decrement auctions count accumulator
-     *  @dev      decrement `auctions.totalBondEscrowed` accumulator
      *  @dev      update auction queue state
      *  @dev    - `Loans.update` (`_upsert`):
      *  @dev      insert or update loan in loans array
@@ -248,7 +247,6 @@ library BorrowerActions {
      *  @dev    - `SettlerActions._settleAuction` (`_removeAuction`):
      *  @dev      decrement kicker locked accumulator, increment kicker claimable accumumlator
      *  @dev      decrement auctions count accumulator
-     *  @dev      decrement `auctions.totalBondEscrowed` accumulator
      *  @dev      update auction queue state
      *  @dev    - `Loans.update` (`_upsert`):
      *  @dev      insert or update loan in loans array

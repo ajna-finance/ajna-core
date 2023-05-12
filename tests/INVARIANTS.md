@@ -18,11 +18,12 @@
 
 ## Auctions
 - **A1**: total t0 debt auctioned (`PoolBalancesState.t0DebtInAuction`) = sum of debt across all auctioned borrowers (`Borrower.t0Debt` where borrower's `kickTime != 0`)  
-- **A2**: sum of bonds locked in auctions (`Liquidation.bondSize`) = sum of locked balances across all kickers (`Kicker.locked`) = total bond escrowed accumulator (`AuctionsState.totalBondEscrowed`)  
+- **A2**: sum of bonds locked in auctions (`Liquidation.bondSize`) = sum of locked balances across all kickers (`Kicker.locked`);  total bond escrowed accumulator (`AuctionsState.totalBondEscrowed`) = sum of kickers locked balances (`Kicker.locked`) + sum of kickers claimable balances (`Kicker.claimable`)  
 - **A3**: number of borrowers with debt (`LoansState.borrowers.length` with `t0Debt != 0`) = number of loans (`LoansState.loans.length -1`) + number of auctioned borrowers (`AuctionsState.noOfAuctions`)  
 - **A4**: number of recorded auctions (`AuctionsState.noOfAuctions`) = length of auctioned borrowers (count of borrowers in `AuctionsState.liquidations` with `kickTime != 0`)
 - **A5**: for each `Liquidation` recorded in liquidation mapping (`AuctionsState.liquidations`) the kicker address (`Liquidation.kicker`) has a locked balance (`Kicker.locked`) equal or greater than liquidation bond size (`Liquidation.bondSize`)  
 - **A6**: if a `Liquidation` is not taken then the take flag (`Liquidation.alreadyTaken`) should be `False`, if already taken then the take flag should be `True`  
+- **A7**: total bond escrowed accumulator (`AuctionsState.totalBondEscrowed`) should increase when auctioned kicked with the difference needed to cover the bond and should decrease only when kicker bonds withdrawned (`Pool.withdrawBonds`)  
 
 ## Loans
 - **L1**: for each `Loan` in loans array (`LoansState.loans`) starting from index 1, the corresponding address (`Loan.borrower`) is not `0x`, the threshold price (`Loan.thresholdPrice`) is different than 0 and the id mapped in indices mapping (`LoansState.indices`) equals index of loan in loans array.  
