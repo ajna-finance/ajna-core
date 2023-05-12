@@ -291,6 +291,9 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         // revert if the dust amount was not exceeded, but round on the scale amount
         if (amountToAdd_ != 0 && amountToAdd_ < _bucketCollateralDust(index_)) revert DustAmountNotExceeded();
         amountToAdd_ = _roundToScale(amountToAdd_, _getArgUint256(COLLATERAL_SCALE));
+        if (amountToAdd_ < _bucketCollateralDust(index_)) {
+            require(false, "DustAmountNotExceeded");
+        }
 
         bucketLP_ = LenderActions.addCollateral(
             buckets,

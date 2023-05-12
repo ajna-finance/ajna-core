@@ -448,3 +448,19 @@ contract RegressionTestReserveERC721Pool is ReserveERC721PoolInvariants {
         invariant_bucket();
     }
 }
+
+contract RegressionTestReserveERC721PoolWith10BucketsIndex1500 is ReserveERC721PoolInvariants {
+
+    function setUp() public override {
+        // failures reproduced with 10 active buckets
+        vm.setEnv("NO_OF_BUCKETS", "10");
+        vm.setEnv("BUCKET_INDEX_ERC20", "1500");
+        super.setUp();
+    }
+
+    function test_regression_prototech_R6() external {
+        _reserveERC721PoolHandler.drawDebt(40894544582735366770929425596284039613963499176090659421102230694093755182754, 59676863859226592828181238046386817471754821900195059481052948698499418376317, 88359478049002745225844365034121850373246286287769921216270825248414010959896);
+
+        invariant_auction();
+    }
+}
