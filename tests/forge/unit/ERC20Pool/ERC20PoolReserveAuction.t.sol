@@ -162,9 +162,14 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
 
         changePrank(_actor7);
         pool.updateInterest();
+        assertEq(_pool.availableQuoteToken(), 98903);
+        // should revert if trying to borrow more than available quote token
+        vm.expectRevert(IPoolErrors.InsufficientLiquidity.selector);
         pool.drawDebt(_actor7, 99266, 7388, 999234524847);
+
+        pool.drawDebt(_actor7, 98903, 7388, 999234524847);
         // pool balance decreased by new debt
-        assertEq(_quote.balanceOf(address(pool)), 654);
+        assertEq(_quote.balanceOf(address(pool)), 1017);
 
         vm.warp(block.timestamp + 86400);
 
@@ -172,7 +177,7 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
         pool.updateInterest();
         pool.take(_actor3, 506252187686489913395361995, _actor2, new bytes(0));
         // pool balance remains the same
-        assertEq(_quote.balanceOf(address(pool)), 654);
+        assertEq(_quote.balanceOf(address(pool)), 1017);
 
         vm.warp(block.timestamp + 86400);
 
@@ -180,7 +185,7 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
         pool.updateInterest();
         pool.kickReserveAuction();
         // pool balance diminished by reward given to reserves kicker
-        assertEq(_quote.balanceOf(address(pool)), 575);
+        assertEq(_quote.balanceOf(address(pool)), 938);
         skip(24 hours);
 
         // mint and approve ajna tokens for taker
@@ -188,7 +193,7 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
         ERC20(address(_ajna)).approve(address(_pool), type(uint256).max);
 
         // pool balance is 575 but 787 desired to take, transfer reverts with ERC20: transfer amount exceeds balance
-        assertEq(_quote.balanceOf(address(pool)), 575);
+        assertEq(_quote.balanceOf(address(pool)), 938);
         pool.takeReserves(787);
     }
 

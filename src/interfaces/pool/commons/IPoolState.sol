@@ -273,6 +273,13 @@ interface IPoolState {
     function totalT0DebtInAuction() external view returns (uint256);
 
     /**
+     *  @notice Returns the amount of quote token available for borrowing or removing from pool.
+     *  @dev    Calculated as the difference between pool balance and escrowed amounts locked in pool (auction bons + unclaimed reserves).
+     *  @return The total quote token available to borrow or to be removed from pool, in `WAD` units.
+     */
+    function availableQuoteToken() external view returns (uint256);
+
+    /**
      *  @notice Mapping of addresses that can transfer `LP` to a given lender.
      *  @param  lender_     Lender that receives `LP`.
      *  @param  transferor_ Transferor that transfers `LP`.

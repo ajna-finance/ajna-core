@@ -80,6 +80,7 @@ library BorrowerActions {
     error AuctionActive();
     error BorrowerNotSender();
     error BorrowerUnderCollateralized();
+    error InsufficientLiquidity();
     error InsufficientCollateral();
     error InvalidAmount();
     error LimitIndexExceeded();
@@ -114,6 +115,7 @@ library BorrowerActions {
         DepositsState storage deposits_,
         LoansState    storage loans_,
         PoolState calldata poolState_,
+        uint256 maxAvaialble_,
         address borrowerAddress_,
         uint256 amountToBorrow_,
         uint256 limitIndex_,
@@ -121,6 +123,9 @@ library BorrowerActions {
     ) external returns (
         DrawDebtResult memory result_
     ) {
+        // revert if not enough pool balance to borrow
+        if (amountToBorrow_ > maxAvaialble_) revert InsufficientLiquidity();
+
         DrawDebtLocalVars memory vars;
         vars.pledge = collateralToPledge_ != 0;
         vars.borrow = amountToBorrow_ != 0;

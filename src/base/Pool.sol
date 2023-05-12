@@ -715,6 +715,17 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /**
+     *  @notice Returns the quote token amount available to take loans or to be removed from pool.
+     *          Ensures claimable reserves and auction bonds are not used when taking loans.
+     */
+    function _availableQuoteToken() internal view returns (uint256 quoteAvailable_) {
+        uint256 poolBalance     = _getNormalizedPoolQuoteTokenBalance();
+        uint256 escrowedAmounts = auctions.totalBondEscrowed + reserveAuction.unclaimed;
+
+        if (poolBalance > escrowedAmounts) quoteAvailable_ = poolBalance - escrowedAmounts;
+    }
+
+    /**
      *  @notice Returns the pool quote token balance normalized to `WAD` to be used for calculating pool reserves.
      */
     function _getNormalizedPoolQuoteTokenBalance() internal view returns (uint256) {
@@ -953,5 +964,10 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /// @inheritdoc IPoolState
     function totalT0DebtInAuction() external view override returns (uint256) {
         return poolBalances.t0DebtInAuction;
+    }
+
+    /// @inheritdoc IPoolState
+    function availableQuoteToken() external view override returns (uint256) {
+        return _availableQuoteToken();
     }
 }
