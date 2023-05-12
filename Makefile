@@ -20,6 +20,8 @@ test-load                       :; forge test --match-test testLoad --gas-report
 test-invariant-all              :; forge t --mt invariant --nmc RegressionTest
 test-invariant-erc20            :; forge t --mt invariant --nmc RegressionTest --mc ERC20
 test-invariant-erc721           :; forge t --mt invariant --nmc RegressionTest --mc ERC721
+test-invariant-position         :; forge t --mt invariant --nmc RegressionTest --mc Position
+test-invariant-rewards          :; forge t --mt invariant --nmc RegressionTest --mc Rewards
 test-invariant                  :; forge t --mt ${MT} --nmc RegressionTest
 test-regression-all             : test-regression-erc20 test-regression-erc721
 test-regression-erc20           :; forge t --mt test_regression --mc ERC20

@@ -16,7 +16,8 @@ abstract contract ReservePoolHandler is UnboundedReservePoolHandler, Liquidation
         uint256 actorIndex_,
         uint256 skippedTime_
     ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
-        numberOfCalls['BReserveHandler.kickReserves']++;
+        numberOfCalls['BReserveHandler.kickReserveAuction']++;
+
         // Action phase
         _kickReserveAuction();
     }
@@ -27,6 +28,7 @@ abstract contract ReservePoolHandler is UnboundedReservePoolHandler, Liquidation
         uint256 skippedTime_
     ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
         numberOfCalls['BReserveHandler.takeReserves']++;
+        
         // Prepare test phase
         uint256 boundedAmount = _preTakeReserves(amountToTake_);
 
