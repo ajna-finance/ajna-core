@@ -238,7 +238,7 @@ contract RegressionTestReserveERC721Pool is ReserveERC721PoolInvariants {
 
     /*
         Test was failing due to collateral in bucket 7388 not accounted when totaling buckets collateral.
-        Fixed by adding bucket 7388 in `collateralBuckets` array also when bucket take settles the auction.
+        Fixed by adding bucket 7388 in `buckets` array also when bucket take settles the auction.
     */
     function test_regression_CT2_3() external {
         _reserveERC721PoolHandler.settleAuction(13652854, 3, 22274361584262295180502534344873136686717874240, 77611568702503302987473072664549443425918559);
