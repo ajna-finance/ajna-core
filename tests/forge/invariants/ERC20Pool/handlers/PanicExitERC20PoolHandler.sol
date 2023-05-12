@@ -117,6 +117,23 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
         vm.stopPrank();
     }
 
+    function withdrawBonds(
+        uint256 kickerIndex_,
+        uint256 skippedTime_
+    ) external useTimestamps skipTime(skippedTime_) {
+        numberOfCalls['BPanicExitPoolHandler.withdrawBonds']++;
+
+        kickerIndex_    = constrictToRange(kickerIndex_, 0, LENDERS - 1);
+        address kicker  = _lenders[kickerIndex_];
+
+        (uint256 kickerClaimable, ) = _pool.kickerInfo(kicker); 
+
+        _actor = kicker;
+        vm.startPrank(_actor);
+        _withdrawBonds(kicker, kickerClaimable);
+        vm.stopPrank();
+    }
+
 
     function _setupLendersAndDeposits(uint256 count_) internal virtual {
         uint256[] memory buckets = collateralBuckets.values();
