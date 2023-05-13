@@ -136,7 +136,10 @@ abstract contract LiquidationInvariants is BasicInvariants {
         uint256 decreaseInBonds                  = IBaseHandler(_handler).decreaseInBonds();
         (uint256 currentTotalBondEscrowed, , , ) = _pool.reservesInfo();
 
-        require(currentTotalBondEscrowed == previousTotalBondEscrowed + increaseInBonds - decreaseInBonds, "Auction Invariant A7");
+        require(
+            currentTotalBondEscrowed == previousTotalBondEscrowed + increaseInBonds - decreaseInBonds,
+            "Auction Invariant A7"
+        );
     }
     
     function invariant_call_summary() public virtual override useCurrentTimestamp {

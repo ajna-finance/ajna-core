@@ -37,17 +37,17 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         // ensure actor always has the amount to pay for bond
         _ensureQuoteAmount(_actor, borrowerDebt);
 
-        uint256 balanceBeforeKick = _quote.balanceOf(_actor);
+        uint256 kickerBondBefore = _getKickerBond(_actor);
 
         try _pool.kick(borrower_, 7388) {
 
             // **RE9**:  Reserves increase by 3 months of interest when a loan is kicked
             increaseInReserves += Maths.wmul(borrowerDebt, Maths.wdiv(interestRate, 4 * 1e18));
 
-            uint256 balanceAfterKick = _quote.balanceOf(_actor);
+            uint256 kickerBondAfter = _getKickerBond(_actor);
 
             // **A7**: totalBondEscrowed should increase when auctioned kicked with the difference needed to cover the bond 
-            increaseInBonds += balanceBeforeKick - balanceAfterKick;
+            increaseInBonds += kickerBondAfter - kickerBondBefore;
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
@@ -64,7 +64,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         ( , , , uint256 depositBeforeAction, ) = _pool.bucketInfo(bucketIndex_);
         fenwickDeposits[bucketIndex_] = depositBeforeAction;
 
-        uint256 balanceBeforeKick = _quote.balanceOf(_actor);
+        uint256 kickerBondBefore = _getKickerBond(_actor);
 
         // ensure actor always has the amount to add for kick
         _ensureQuoteAmount(_actor, borrowerDebt);
@@ -76,10 +76,10 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             // **RE9**:  Reserves increase by 3 months of interest when a loan is kicked
             increaseInReserves += Maths.wdiv(Maths.wmul(borrowerDebt, interestRate), 4 * 1e18);
 
-            uint256 balanceAfterKick = _quote.balanceOf(_actor);
+            uint256 kickerBondAfter = _getKickerBond(_actor);
 
             // **A7**: totalBondEscrowed should increase when auctioned kicked with the difference needed to cover the bond 
-            increaseInBonds += balanceBeforeKick - balanceAfterKick;
+            increaseInBonds += kickerBondAfter - kickerBondBefore;
 
             _fenwickRemove(depositBeforeAction - depositAfterAction, bucketIndex_);
 
