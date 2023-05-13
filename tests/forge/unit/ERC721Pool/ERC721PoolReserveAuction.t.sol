@@ -346,7 +346,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         });
     }
 
-    function testReserveAuctionPartiallyTaken() external tearDown {
+    function testReserveAuctionPartiallyTaken() external {
         // borrower repays partial debt (auction for full reserves)
         _repayDebt({
             from:             _borrower,
@@ -454,9 +454,11 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
             epoch:             2
         });
 
-        uint256 snapshot = vm.snapshot();
+        // lender redeem their shares
+        changePrank(_lender);
+        _pool.removeQuoteToken(type(uint256).max, 1663);
 
-        // take everything
+        // ensure entire reserves can still be taken
         skip(28 hours);
         assertEq(expectedReserves, 751.769204312983074788 * 1e18);
         expectedPrice = 3.725290298461914062 * 1e18;
@@ -483,6 +485,5 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
             timeRemaining:              44 hours
         });
 
-        vm.revertTo(snapshot); // revert to ensure tearDown has enough balance in pool
     }
 }

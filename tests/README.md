@@ -68,6 +68,7 @@ Invariant test scenarios can be externally configured by customizing following e
 | SKIP_TIME_TO_KICK | ERC20 ERC721 | 200 days | The time to be skipped and drive a new loan undercollateralized. Use a big value to ensure a successful kick |
 | FOUNDRY_INVARIANT_RUNS | ERC20 ERC721 | 10 | The number of runs for each scenario |
 | FOUNDRY_INVARIANT_DEPTH | ERC20 ERC721 | 200 | The number of actions performed in each scenario |
+| LOGS_VERBOSITY | ERC20 ERC721 | 0 | <p> Details to log <p> 0 = No Logs <p> 1 = pool State  <p> 2 = pool State, Auctions details <p> 3 = pool State, Auctions details , Buckets details <p> 4 = pool State, Auctions details , Buckets details, Lender details <p> 5 = pool State, Auctions details , Buckets details, Lender details, Borrower details <p> Note - Log File with name `logFile.txt` will be generated in project directory|
 
 #### Invariant names
 

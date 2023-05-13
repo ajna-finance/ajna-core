@@ -59,7 +59,7 @@ abstract contract BasicInvariants is BaseInvariants {
     function _invariant_B1() internal {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
-        uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
+        uint256[] memory buckets = IBaseHandler(_handler).getBuckets();
         for (uint256 i = 0; i < buckets.length; i++) {
             uint256 bucketIndex = buckets[i];
             uint256 totalLps;
@@ -91,7 +91,7 @@ abstract contract BasicInvariants is BaseInvariants {
     /// @dev checks bucket lps are equal to 0 if bucket quote and collateral are 0
     /// @dev checks exchange rate is 1e18 if bucket quote and collateral are 0 
     function _invariant_B2_B3() internal view {
-        uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
+        uint256[] memory buckets = IBaseHandler(_handler).getBuckets();
         for (uint256 i = 0; i < buckets.length; i++) {
             uint256 bucketIndex = buckets[i];
             (
@@ -113,7 +113,7 @@ abstract contract BasicInvariants is BaseInvariants {
     /// @dev checks if lender deposit timestamp is updated when lps are added into lender lp balance
     function _invariant_B5_B6_B7() internal view {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
-        uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
+        uint256[] memory buckets = IBaseHandler(_handler).getBuckets();
         for (uint256 i = 0; i < buckets.length; i++) {
             uint256 bucketIndex = buckets[i];
             for (uint256 j = 0; j < actorCount; j++) {
@@ -150,11 +150,16 @@ abstract contract BasicInvariants is BaseInvariants {
         console.log("assets      -> ", assets);
         console.log("liabilities -> ", liabilities);
 
+        require(
+            poolBalance >= totalBondEscrowed + unClaimed,
+            "QT1: escrowed bonds and claimable reserves not guaranteed"
+        );
+
         greaterThanWithinDiff(
             assets,
             liabilities,
             1e13,
-            "Quote Token Invariant QT1"
+            "QT1: assets and liabilities not with a `1e13` margin"
         );
     }
 
@@ -322,7 +327,7 @@ abstract contract BasicInvariants is BaseInvariants {
 
     /// @dev deposits at index i (Deposits.valueAt(i)) is equal to the accumulation of scaled values incremented or decremented from index i
     function _invariant_F1() internal view {
-        uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
+        uint256[] memory buckets = IBaseHandler(_handler).getBuckets();
         for (uint256 i = 0; i < buckets.length; i++) {
             uint256 bucketIndex = buckets[i];
             (, , , uint256 depositAtIndex, ) = _pool.bucketInfo(bucketIndex);
@@ -346,7 +351,7 @@ abstract contract BasicInvariants is BaseInvariants {
 
     /// @dev For any index i, the prefix sum up to and including i is the sum of values stored in indices j<=i
     function _invariant_F2() internal view {
-        uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
+        uint256[] memory buckets = IBaseHandler(_handler).getBuckets();
         for (uint256 i = 0; i < buckets.length; i++) {
             uint256 bucketIndex = buckets[i];
             uint256 depositTillIndex = _pool.depositUpToIndex(bucketIndex);
@@ -370,7 +375,7 @@ abstract contract BasicInvariants is BaseInvariants {
 
     /// @dev For any index i < MAX_FENWICK_INDEX, depositIndex(depositUpToIndex(i)) > i
     function _invariant_F3() internal view {
-        uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
+        uint256[] memory buckets = IBaseHandler(_handler).getBuckets();
         for (uint256 i = 0; i < buckets.length; i++) {
             uint256 bucketIndex = buckets[i];
             (, , , uint256 depositAtIndex, ) = _pool.bucketInfo(bucketIndex);
@@ -389,7 +394,7 @@ abstract contract BasicInvariants is BaseInvariants {
 
     /// @dev **F4**: For any index i < MAX_FENWICK_INDEX, Deposits.valueAt(findIndexOfSum(prefixSum(i) + 1)) > 0
     function _invariant_F4() internal {
-        uint256[] memory buckets = IBaseHandler(_handler).getCollateralBuckets();
+        uint256[] memory buckets = IBaseHandler(_handler).getBuckets();
         uint256 maxBucket;
         for (uint256 i = 0; i < buckets.length; i++) {
             if (buckets[i] > maxBucket) maxBucket = buckets[i];
@@ -422,20 +427,33 @@ abstract contract BasicInvariants is BaseInvariants {
         console.log("UBBasicHandler.addCollateral        ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.addCollateral"));
         console.log("BBasicHandler.removeCollateral      ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.removeCollateral"));
         console.log("UBBasicHandler.removeCollateral     ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.removeCollateral"));
+        console.log("BBasicHandler.moveQuoteToken        ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.moveQuoteToken"));
+        console.log("UBBasicHandler.moveQuoteToken       ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.moveQuoteToken"));
+        console.log("BBasicHandler.transferLps           ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.transferLps"));
+        console.log("UBBasicHandler.transferLps          ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.transferLps"));
         console.log("--Borrower--------");
         console.log("BBasicHandler.drawDebt              ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.drawDebt"));
         console.log("UBBasicHandler.drawDebt             ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.drawDebt"));
         console.log("BBasicHandler.repayDebt             ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt"));
         console.log("UBBasicHandler.repayDebt            ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.repayDebt"));
+        console.log("BBasicHandler.pledgeCollateral      ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.pledgeCollateral"));
+        console.log("UBBasicHandler.pledgeCollateral     ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.pledgeCollateral"));
+        console.log("BBasicHandler.pullCollateral        ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.pullCollateral"));
+        console.log("UBBasicHandler.pullCollateral       ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.pullCollateral"));
         console.log("------------------");
         console.log(
             "Sum",
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.addQuoteToken") +
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.removeQuoteToken") +
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.moveQuoteToken") + 
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.addCollateral") +
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.removeCollateral") +
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.pledgeCollateral") + 
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.pullCollateral") + 
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.drawDebt") + 
-            IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt")
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt") + 
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.transferLps")
+
         );
     }
 

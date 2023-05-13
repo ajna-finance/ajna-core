@@ -10,7 +10,7 @@ interface IBaseHandler {
     function getActorsCount() external view returns(uint256);
     function actors(uint256) external view returns(address);
 
-    function numberOfCalls(bytes32) external view returns(uint256);
+    function numberOfCalls(bytes memory) external view returns(uint256);
 
     function fenwickSumAtIndex(uint256) external view returns(uint256);
     function fenwickTreeSum() external view returns(uint256); 
@@ -36,5 +36,5 @@ interface IBaseHandler {
 
     function lenderDepositTime(address lender, uint256 bucketIndex) external view returns(uint256);
 
-    function getCollateralBuckets() external view returns(uint256[] memory);
+    function getBuckets() external view returns(uint256[] memory);
 }

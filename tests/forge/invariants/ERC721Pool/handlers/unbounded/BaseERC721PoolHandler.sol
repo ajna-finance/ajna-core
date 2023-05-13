@@ -59,7 +59,7 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
         MAX_COLLATERAL_AMOUNT = vm.envOr("MAX_COLLATERAL_AMOUNT_ERC721", uint256(100));
 
         for (uint256 bucket = LENDER_MIN_BUCKET_INDEX; bucket <= LENDER_MAX_BUCKET_INDEX; bucket++) {
-            collateralBuckets.add(bucket);
+            buckets.add(bucket);
         }
 
         // Tokens

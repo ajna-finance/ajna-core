@@ -327,6 +327,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         (removedAmount_, redeemedLP_) = LenderActions.removeMaxCollateral(
             buckets,
             deposits,
+            _bucketCollateralDust(index_),
             maxAmount_,
             index_
         );
