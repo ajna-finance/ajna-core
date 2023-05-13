@@ -131,12 +131,12 @@ abstract contract LiquidationInvariants is BasicInvariants {
 
     /// @dev total bond escrowed should increase when auctioned kicked with the difference needed to cover the bond and should decrease only when kicker bonds withdrawned
     function _invariant_A7() internal view {
-        uint256 previousTotalBondEscorwed        = IBaseHandler(_handler).previousTotalBonds();
+        uint256 previousTotalBondEscrowed        = IBaseHandler(_handler).previousTotalBonds();
         uint256 increaseInBonds                  = IBaseHandler(_handler).increaseInBonds();
         uint256 decreaseInBonds                  = IBaseHandler(_handler).decreaseInBonds();
-        (uint256 currentTotalBondEscorwed, , , ) = _pool.reservesInfo();
+        (uint256 currentTotalBondEscrowed, , , ) = _pool.reservesInfo();
 
-        require(currentTotalBondEscorwed == previousTotalBondEscorwed + increaseInBonds - decreaseInBonds, "Auction Invariant A7");
+        require(currentTotalBondEscrowed == previousTotalBondEscrowed + increaseInBonds - decreaseInBonds, "Auction Invariant A7");
     }
     
     function invariant_call_summary() public virtual override useCurrentTimestamp {
