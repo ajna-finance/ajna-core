@@ -963,15 +963,14 @@ contract RegressionTestReserveWith10BucketsERC20Pool is ReserveERC20PoolInvarian
 
 contract RegressionTestReserveWithMinDebtAmountERC20Pool is ReserveERC20PoolInvariants { 
 
-    function setUp() public override { 
-        // failures reproduced with 10 active buckets
-        // vm.setEnv("NO_OF_BUCKETS", "10");
+    function setUp() public override {
         vm.setEnv("MIN_DEBT_AMOUNT", "1000");
         super.setUp();
     }
 
     /*
-        Test fails because there's not enough quote balance in pool for the calculated rewards.
+        Test failed because there was not enough quote balance in pool for the calculated rewards.
+        Fixed by not allowing draw debt / remove quote tokens actions to use unclaimed rewards and auction bonds amounts.
     */
     function test_regression_reserves_evm_revert_2() external {
         _reserveERC20PoolHandler.kickAuction(115792089237316195423570985008687907853269984665640564039457584007913129639933, 2, 91325230633814398717429910100117206750783558549035123181702119, 115792089237316195423570985008687907853269984665640564039457584007913129639932);
