@@ -2275,11 +2275,12 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             tokenId, address(_pool), indexes
         );
         changePrank(testReceiver);
+        _pool.approveLPTransferors(transferors);
+
         vm.expectEmit(true, true, true, true);
         emit TransferLP(address(_positionManager), testReceiver, indexes, 15_000 * 1e18);
         vm.expectEmit(true, true, true, true);
         emit RedeemPosition(testReceiver, tokenId, indexes);
-        _pool.approveLPTransferors(transferors);
         _positionManager.reedemPositions(reedemParams);
 
         // check pool state
