@@ -34,7 +34,7 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
         address poolInfo_,
         address testContract_
     ) BaseERC20PoolHandler(pool_, ajna_, quote_, collateral_, poolInfo_, 0, testContract_) {
-        numberOfBuckets = collateralBuckets.length();
+        numberOfBuckets = buckets.length();
         setUp();
     }
 
@@ -136,7 +136,7 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
 
 
     function _setupLendersAndDeposits(uint256 count_) internal virtual {
-        uint256[] memory buckets = collateralBuckets.values();
+        uint256[] memory buckets = buckets.values();
         for (uint256 i; i < count_;) {
             address lender = address(uint160(uint256(keccak256(abi.encodePacked(i, 'lender')))));
 
