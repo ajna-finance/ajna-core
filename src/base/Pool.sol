@@ -376,9 +376,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     ) external override nonReentrant {
         uint256 claimable = auctions.kickers[msg.sender].claimable;
 
-        // the amount to claim is constrained by the claimable balance of sender and by pool balance
+        // the amount to claim is constrained by the claimable balance of sender
+        // claiming escrowed bonds is not constraiend by the pool balance
         maxAmount_ = Maths.min(maxAmount_, claimable);
-        maxAmount_ = Maths.min(maxAmount_, _getNormalizedPoolQuoteTokenBalance());
 
         // revert if no amount to claim
         if (maxAmount_ == 0) revert InsufficientLiquidity();

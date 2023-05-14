@@ -323,7 +323,7 @@ library KickerActions {
      *  @dev      increment `auctions count` accumulator
      *  @dev      increment `auctions.totalBondEscrowed` accumulator
      *  @dev      updates auction queue state
-     *  @dev    - `_updateKicker`:
+     *  @dev    - `_updateEscrowedBonds`:
      *  @dev      update `locked` and `claimable` kicker accumulators
      *  @dev    - `Loans.remove`:
      *  @dev      delete borrower from `indices => borrower` address mapping
@@ -398,8 +398,8 @@ library KickerActions {
             vars.neutralPrice
         );
 
-        // update kicker balances and get the difference needed to cover bond (after using any kick claimable funds if any)
-        kickResult_.amountToCoverBond = _updateKicker(auctions_, vars.bondSize);
+        // update escrowed bonds balances and get the difference needed to cover bond (after using any kick claimable funds if any)
+        kickResult_.amountToCoverBond = _updateEscrowedBonds(auctions_, vars.bondSize);
 
         // remove kicked loan from heap
         Loans.remove(loans_, borrowerAddress_, loans_.indices[borrowerAddress_]);
@@ -423,7 +423,7 @@ library KickerActions {
     }
 
     /**
-     *  @notice Updates kicker balances, reuse kicker claimable funds and calculates difference needed to cover new bond.
+     *  @notice Updates escrowed bonds balances, reuse kicker claimable funds and calculates difference needed to cover new bond.
      *  @dev    === Write state ===
      *  @dev    update `locked` and `claimable` kicker accumulators
      *  @dev    update `totalBondEscrowed` accumulator
@@ -431,7 +431,7 @@ library KickerActions {
      *  @param  bondSize_       Bond size to cover newly kicked auction.
      *  @return bondDifference_ The amount that kicker should send to pool to cover auction bond.
      */
-    function _updateKicker(
+    function _updateEscrowedBonds(
         AuctionsState storage auctions_,
         uint256 bondSize_
     ) internal returns (uint256 bondDifference_){
