@@ -3,9 +3,9 @@
 pragma solidity 0.8.14;
 
 import "@std/console.sol";
-import { Maths }                from 'src/libraries/internal/Maths.sol';
-import { RewardsManager }       from 'src/RewardsManager.sol';
-import { _getPoolAccumulators } from 'src/RewardsManager.sol';
+import { Maths }               from 'src/libraries/internal/Maths.sol';
+import { RewardsManager }      from 'src/RewardsManager.sol';
+import { _getEpochInfo }       from 'src/RewardsManager.sol';
 
 import { IBaseHandler }        from '../interfaces/IBaseHandler.sol';
 import { RewardsHandler }      from './handlers/RewardsHandler.sol';
@@ -50,7 +50,7 @@ contract RewardsInvariants is PositionsInvariants {
         uint256 claimedRewards  = IBaseHandler(_handler).totalRewardPerEpoch(curEpoch);
 
         // total ajna burned by the pool over the epoch
-        (, uint256 totalBurnedInPeriod,) = _getPoolAccumulators(address(_pool), curEpoch + 1, curEpoch);
+        (, uint256 totalBurnedInPeriod,) = _getEpochInfo(address(_pool), curEpoch + 1);
 
         uint256 rewardsCap = Maths.wmul(totalBurnedInPeriod, 0.1 * 1e18);
 

@@ -8,6 +8,8 @@ import 'src/interfaces/rewards/IRewardsManager.sol';
 
 import { ERC20Pool }           from 'src/ERC20Pool.sol';
 import { RewardsHelperContract }   from './RewardsDSTestPlus.sol';
+import { IPoolErrors }         from 'src/interfaces/pool/commons/IPoolErrors.sol';
+import { Token }               from '../../utils/Tokens.sol';
 
 contract RewardsManagerTest is RewardsHelperContract {
 
@@ -52,7 +54,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         _updater     = makeAddr("updater");
         _updater2    = makeAddr("updater2");
 
-        _mintCollateralAndApproveTokens(_borrower,  100 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower,  1_000 * 1e18);
         _mintQuoteAndApproveTokens(_borrower,   200_000 * 1e18);
 
         _mintCollateralAndApproveTokens(_borrower2,  1_000 * 1e18);
@@ -503,7 +505,7 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         skip(2 weeks);
 
-        // first reserve auction happens successfully Staker should receive rewards epoch 0 - 1
+        // second reserve auction is kicked, no take
         _triggerReserveAuctionsNoTake({
             borrower: _borrower,
             borrowAmount: 300 * 1e18,
@@ -519,12 +521,13 @@ contract RewardsManagerTest is RewardsHelperContract {
             tokensToBurn:     tokensToBurn,
             interest:         6.443638300196908069 * 1e18
         });
-
+        
+        // no take has been called on reserveAuction therefore totalBurned is zero. No rewards to distribute
         _updateExchangeRates({
             updater:        _updater,
             pool:           address(_pool),
             indexes:        depositIndexes,
-            reward:         3.399661193610840835 * 1e18
+            reward:         0
         });
     }
 
@@ -1660,6 +1663,127 @@ contract RewardsManagerTest is RewardsHelperContract {
             reward:                    286.756084406079436885 * 1e18,
             indexes:                   secondIndexes,
             updateExchangeRatesReward: 0
+        });
+    }
+
+    function testWithdrawClaimAndRestake() external {
+        skip(10);
+
+        // configure NFT position
+        uint256[] memory depositIndexes = new uint256[](5);
+        depositIndexes[0] = 2550;
+        depositIndexes[1] = 2551;
+        depositIndexes[2] = 2552;
+        depositIndexes[3] = 2553;
+        depositIndexes[4] = 2555;
+
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT({
+            indexes:    depositIndexes,
+            minter:     _minterOne,
+            mintAmount: 1_000 * 1e18,
+            pool:       address(_pool)
+        });
+
+        // stake nft
+        _stakeToken({
+            pool:    address(_pool),
+            owner:   _minterOne,
+            tokenId: tokenIdOne
+        });
+
+        _triggerReserveAuctions({
+            borrower:     _borrower,
+            tokensToBurn: 81.799378162662704349 * 1e18,
+            borrowAmount: 300 * 1e18,
+            limitIndex:   2555,
+            pool:         address(_pool)
+        });
+
+        // call update exchange rate to enable claiming rewards
+        _updateExchangeRates({
+            updater: _updater,
+            pool:    address(_pool),
+            indexes: depositIndexes,
+            reward:  4.089968908133134138 * 1e18
+        });
+
+        // burn rewards manager tokens and leave only 5 tokens available
+        changePrank(address(_rewardsManager));
+        IERC20Token(address(_ajnaToken)).burn(99_999_990.978586345404952410 * 1e18);
+
+        uint256 managerBalance = _ajnaToken.balanceOf(address(_rewardsManager));
+        assertEq(managerBalance, 4.931444746461913452 * 1e18);
+
+        // _minterOne unstakes staked position
+        _unstakeToken({
+            owner:                     _minterOne,
+            pool:                      address(_pool),
+            tokenId:                   tokenIdOne,
+            claimedArray:              _epochsClaimedArray(1, 0),
+            reward:                    40.899689081331351737 * 1e18,
+            indexes:                   depositIndexes,
+            updateExchangeRatesReward: 0
+        });
+
+        // borrower drawsDebt from the pool
+        Token collateral = Token(ERC20Pool(address(_pool)).collateralAddress());
+        Token quote = Token(ERC20Pool(address(_pool)).quoteTokenAddress());
+        deal(address(quote), _borrower, 300 * 1e18);
+
+        // approve tokens
+        collateral.approve(address(_pool), type(uint256).max);
+        quote.approve(address(_pool), type(uint256).max);
+
+        changePrank(_borrower);
+        uint256 collateralToPledge = _requiredCollateral(300 * 1e18, 2555);
+        deal(address(collateral), _borrower, collateralToPledge);
+        ERC20Pool(address(_pool)).drawDebt(_borrower, 300 * 1e18, 2555, collateralToPledge);
+
+        // allow time to pass for interest to accumulate
+        skip(26 weeks);
+
+        // borrower repays some of their debt, providing reserves to be claimed
+        // don't pull any collateral, as such functionality is unrelated to reserve auctions
+        ERC20Pool(address(_pool)).repayDebt(_borrower, 300 * 1e18, 0, _borrower, MAX_FENWICK_INDEX);
+
+        // start reserve auction
+        changePrank(_bidder);
+        _ajnaToken.approve(address(_pool), type(uint256).max);
+        (,, uint256 tokensBurned_) = IPool(_pool).burnInfo(IPool(_pool).currentBurnEpoch());
+
+        ERC20Pool(address(_pool)).kickReserveAuction();
+
+        // exchange rate is updated even though no ajna tokens are burned in epoch?
+        // should this we allow this to occur??
+        _updateExchangeRates({
+            updater: _updater,
+            pool:    address(_pool),
+            indexes: depositIndexes,
+            reward:  0
+        });
+
+        // allow time to pass for the reserve price to decrease
+        skip(72 hours);
+
+        // take reserves is called with 0 ajna being burned due to very low price and low take amount
+        ERC20Pool(address(_pool)).takeReserves(612);
+
+        (,, tokensBurned_) = IPool(_pool).burnInfo(IPool(_pool).currentBurnEpoch());
+
+        uint256 tokenIdTwo = _mintAndMemorializePositionNFT({
+            indexes:    depositIndexes,
+            minter:     _minterTwo,
+            mintAmount: 1_000 * 1e18,
+            pool:       address(_pool)
+        });
+
+        // stake nft
+        // reverts here because totalBurned = 0 for Epoch 2 (takes haven't burned any ajna)
+        // causes the update cap to be zero which then causes overflow
+        _stakeToken({
+            pool:    address(_pool),
+            owner:   _minterTwo,
+            tokenId: tokenIdTwo
         });
     }
 

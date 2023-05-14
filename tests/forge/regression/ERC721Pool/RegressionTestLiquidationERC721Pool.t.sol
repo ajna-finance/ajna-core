@@ -131,7 +131,7 @@ contract RegressionTestLiquidationWith10BucketsERC721Pool is LiquidationERC721Po
 
     /**
         Test was failing when auction was settled and borrower compensated with LP for fractional collateral in a bucket with higher price (lower index) than LENDER_MIN_BUCKET_INDEX.
-        Fixed by extracting min and max index from `getCollateralBuckets()` buckets inside `fenwickIndexForSum`.
+        Fixed by extracting min and max index from `getBuckets()` buckets inside `fenwickIndexForSum`.
      */
     function test_regression_10_buckets_erc721_F1_F2() external {
         _liquidationERC721PoolHandler.kickWithDeposit(2, 0, 119623984614);

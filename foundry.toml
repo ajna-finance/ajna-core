@@ -19,6 +19,7 @@ fork_block_number   = 16_295_000
 rpc_storage_caching = { chains = ["mainnet"], endpoints = "all" }
 optimizer           = true
 optimizer_runs      = 500
+fs_permissions      = [{ access = "read-write", path = "./"}]
 
 [fuzz]
 runs = 300
