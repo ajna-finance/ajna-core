@@ -95,10 +95,18 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         numberOfCalls['UBLiquidationHandler.withdrawBonds']++;
 
         uint256 balanceBeforeWithdraw = _quote.balanceOf(_actor);
+        (uint256 claimableBondBeforeWithdraw, ) = _pool.kickerInfo(_actor);
 
         try _pool.withdrawBonds(kicker_, maxAmount_) {
 
-            uint256 balanceAfterWithdraw = _quote.balanceOf(_actor);
+            uint256 balanceAfterWithdraw            = _quote.balanceOf(_actor);
+            (uint256 claimableBondAfterWithdraw, ) = _pool.kickerInfo(_actor);
+
+            // **A7** Claimable bonds should be available for withdrawal from pool at any time (bonds are guaranteed by the protocol).
+            require(
+                claimableBondAfterWithdraw < claimableBondBeforeWithdraw,
+                "A7: claimable bond not available to withdraw"
+            );
 
             // **A7**: totalBondEscrowed should decrease only when kicker bonds withdrawned 
             decreaseInBonds += balanceAfterWithdraw - balanceBeforeWithdraw;

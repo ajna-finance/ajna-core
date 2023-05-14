@@ -82,12 +82,13 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
     /*** Lender Exit Functions ***/
     /*****************************/
 
-    function kickAuction(
+    function kickAndTakeAuction(
         uint256 borrowerIndex_,
         uint256 kickerIndex_,
-        uint256 skippedTime_
+        uint256 skippedTime_,
+        bool    takeAuction_
     ) external useTimestamps skipTime(skippedTime_) {
-        numberOfCalls['BPanicExitPoolHandler.kickAuction']++;
+        numberOfCalls['BPanicExitPoolHandler.kickAndTakeAuction']++;
 
         borrowerIndex_ = constrictToRange(borrowerIndex_, 0, _activeBorrowers.values().length - 1);
         kickerIndex_   = constrictToRange(kickerIndex_, 0, LENDERS - 1);
@@ -98,6 +99,13 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
         _actor = kicker;
         vm.startPrank(_actor);
         _kickAuction(borrower);
+
+        if (takeAuction_) {
+            vm.warp(block.timestamp + 61 minutes);
+            ( , uint256 auctionedCollateral, ) = _pool.borrowerInfo(borrower);
+            _takeAuction(borrower, auctionedCollateral, _actor);
+        }
+
         vm.stopPrank();
     }
 

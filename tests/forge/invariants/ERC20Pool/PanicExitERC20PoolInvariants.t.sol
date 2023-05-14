@@ -41,17 +41,18 @@ contract PanicExitERC20PoolInvariants is BasicERC20PoolInvariants, LiquidationIn
     function invariant_call_summary() public virtual override(BasicInvariants, LiquidationInvariants) useCurrentTimestamp {
         console.log("\nCall Summary\n");
         console.log("--Lender----------");
-        console.log("BPanicExitPoolHandler.kickAuction     ",  _panicExitERC20PoolHandler.numberOfCalls("BPanicExitPoolHandler.kickAuction"));
-        console.log("BPanicExitPoolHandler.kickWithDeposit ",  _panicExitERC20PoolHandler.numberOfCalls("BPanicExitPoolHandler.kickWithDeposit"));
-        console.log("BPanicExitPoolHandler.withdrawBonds   ",  _panicExitERC20PoolHandler.numberOfCalls("UBBasicHandler.withdrawBonds"));
-        console.log("UBBasicHandler.addQuoteToken          ",  _panicExitERC20PoolHandler.numberOfCalls("UBBasicHandler.addQuoteToken"));
+        console.log("BPanicExitPoolHandler.kickAndTakeAuction ",  _panicExitERC20PoolHandler.numberOfCalls("BPanicExitPoolHandler.kickAndTakeAuction"));
+        console.log("BPanicExitPoolHandler.kickWithDeposit    ",  _panicExitERC20PoolHandler.numberOfCalls("BPanicExitPoolHandler.kickWithDeposit"));
+        console.log("UBBasicHandler.addQuoteToken             ",  _panicExitERC20PoolHandler.numberOfCalls("UBBasicHandler.addQuoteToken"));
+        console.log("UBLiquidationHandler.takeAuction         ",  _panicExitERC20PoolHandler.numberOfCalls("UBLiquidationHandler.takeAuction"));
+        console.log("UBLiquidationHandler.withdrawBonds       ",  _panicExitERC20PoolHandler.numberOfCalls("UBLiquidationHandler.withdrawBonds"));
         console.log("--Borrower--------");
-        console.log("BPanicExitPoolHandler.repayLoan       ",  _panicExitERC20PoolHandler.numberOfCalls("BPanicExitPoolHandler.repayLoan"));
-        console.log("BPanicExitPoolHandler.settleDebt      ",  _panicExitERC20PoolHandler.numberOfCalls("BPanicExitPoolHandler.settleDebt"));
-        console.log("UBBasicHandler.drawDebt               ",  _panicExitERC20PoolHandler.numberOfCalls("UBBasicHandler.drawDebt"));
-        console.log("UBBasicHandler.repayDebt              ",  _panicExitERC20PoolHandler.numberOfCalls("UBBasicHandler.repayDebt"));
-        console.log("UBBasicHandler.pledgeCollateral       ",  _panicExitERC20PoolHandler.numberOfCalls("UBBasicHandler.pledgeCollateral"));
-        console.log("UBBasicHandler.pullCollateral         ",  _panicExitERC20PoolHandler.numberOfCalls("UBBasicHandler.pullCollateral"));
+        console.log("BPanicExitPoolHandler.repayLoan          ",  _panicExitERC20PoolHandler.numberOfCalls("BPanicExitPoolHandler.repayLoan"));
+        console.log("BPanicExitPoolHandler.settleDebt         ",  _panicExitERC20PoolHandler.numberOfCalls("BPanicExitPoolHandler.settleDebt"));
+        console.log("UBBasicHandler.drawDebt                  ",  _panicExitERC20PoolHandler.numberOfCalls("UBBasicHandler.drawDebt"));
+        console.log("UBBasicHandler.repayDebt                 ",  _panicExitERC20PoolHandler.numberOfCalls("UBBasicHandler.repayDebt"));
+        console.log("UBBasicHandler.pledgeCollateral          ",  _panicExitERC20PoolHandler.numberOfCalls("UBBasicHandler.pledgeCollateral"));
+        console.log("UBBasicHandler.pullCollateral            ",  _panicExitERC20PoolHandler.numberOfCalls("UBBasicHandler.pullCollateral"));
         console.log("------------------");
         ( , , uint256 totalLoans) = _pool.loansInfo();
         console.log("loans", totalLoans);
