@@ -498,7 +498,10 @@ contract RegressionTestLiquidationERC20Pool is LiquidationERC20PoolInvariants {
         _liquidationERC20PoolHandler.drawDebt(115792089237316195423570985008687907853269984665640564039457584007913129639933, 0, 55978957023135880903650541624801881489613095985964381);
     }
 
-
+    /*
+        Test was failing in drawDebt because the depositIndex was 0 and bucket to draw debt is set as depositIndex - 1 .
+        Fixed by checking depositIndex and not drawing debt if 0.
+    */
     function test_regression_failure_A7_1() external {
         _liquidationERC20PoolHandler.bucketTake(3, 591142574804529212382680063256514252284508713761552453802058, false, 115792089237316195423570985008687907853269984665640564039457584007913129639932, 3);
         _liquidationERC20PoolHandler.repayDebt(3619, 2244, 14976);

@@ -119,6 +119,10 @@ contract RegressionTestLiquidationERC721Pool is LiquidationERC721PoolInvariants 
         invariant_collateral();
     }
 
+    /*
+        Test was failing because invariant logic for kickWithDeposit didn't accounted kicker claimable bonds.
+        Fixed by using pre and post kicker bonds when calculating new bonds accumulator.
+    */
     function test_regression_failure_A7_2() external {
         _liquidationERC721PoolHandler.transferLps(3, 3655401935970994745314177259069, 136769163886422778021983457809130981124, 620942, 1614577858204991477254907493467892865454785457516379154703135967980998);
         _liquidationERC721PoolHandler.mergeCollateral(14415645877527481541237295, 1760186990);
