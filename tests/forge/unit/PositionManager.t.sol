@@ -612,42 +612,45 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             index:  indexes[2]
         });
 
-        // mint NFTs to later memorialize existing positions into
-        uint256 tokenId2 = _mintNFT(testLender1, testLender1, address(_pool));
-
-        (poolSize, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
-        assertEq(poolSize, 18_000 * 1e18);
-
-        // construct memorialize lender 1 params struct
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParamsToken2 = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId2, lender1Indexes
-        );
-
-        // allow position manager to take ownership of lender 1's position
-        transferIndexes = new uint256[](3);
-        transferIndexes[0] = 2550;
-        transferIndexes[1] = 2551;
-        transferIndexes[2] = 2552;
-        amounts = new uint256[](3);
-        amounts[0] = 3_000 * 1e18;
-        amounts[1] = 3_000 * 1e18;
-        amounts[2] = 3_000 * 1e18;
-        _pool.increaseLPAllowance(address(_positionManager), transferIndexes, amounts);
-
-        // memorialize lender 1 quote tokens into minted NFT
-        vm.expectEmit(true, true, true, true);
-        emit TransferLP(testLender1, address(_positionManager), lender1Indexes, 9_000 * 1e18);
-        vm.expectEmit(true, true, true, true);
-        emit MemorializePosition(testLender1, tokenId2, lender1Indexes);
-        _positionManager.memorializePositions(memorializeParamsToken2);
-
         assertEq(_positionManager.getLP(tokenId1, indexes[0]), 3_000 * 1e18);
         assertEq(_positionManager.getLP(tokenId1, indexes[1]), 3_000 * 1e18);
         assertEq(_positionManager.getLP(tokenId1, indexes[2]), 3_000 * 1e18);
 
-        assertEq(_positionManager.getLP(tokenId2, indexes[0]), 3_000 * 1e18);
-        assertEq(_positionManager.getLP(tokenId2, indexes[1]), 3_000 * 1e18);
-        assertEq(_positionManager.getLP(tokenId2, indexes[2]), 3_000 * 1e18);
+        // second NFT cannot be minted as long as first exists
+        vm.expectRevert(IPositionManagerErrors.AlreadyMinted.selector);
+        _mintNFT(testLender1, testLender1, address(_pool));
+
+        // TODO: burn and check logic below can complete
+
+        // (poolSize, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
+        // assertEq(poolSize, 18_000 * 1e18);
+
+        // // construct memorialize lender 1 params struct
+        // IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParamsToken2 = IPositionManagerOwnerActions.MemorializePositionsParams(
+        //     tokenId2, lender1Indexes
+        // );
+
+        // // allow position manager to take ownership of lender 1's position
+        // transferIndexes = new uint256[](3);
+        // transferIndexes[0] = 2550;
+        // transferIndexes[1] = 2551;
+        // transferIndexes[2] = 2552;
+        // amounts = new uint256[](3);
+        // amounts[0] = 3_000 * 1e18;
+        // amounts[1] = 3_000 * 1e18;
+        // amounts[2] = 3_000 * 1e18;
+        // _pool.increaseLPAllowance(address(_positionManager), transferIndexes, amounts);
+
+        // // memorialize lender 1 quote tokens into minted NFT
+        // vm.expectEmit(true, true, true, true);
+        // emit TransferLP(testLender1, address(_positionManager), lender1Indexes, 9_000 * 1e18);
+        // vm.expectEmit(true, true, true, true);
+        // emit MemorializePosition(testLender1, tokenId2, lender1Indexes);
+        // _positionManager.memorializePositions(memorializeParamsToken2);
+
+        // assertEq(_positionManager.getLP(tokenId2, indexes[0]), 3_000 * 1e18);
+        // assertEq(_positionManager.getLP(tokenId2, indexes[1]), 3_000 * 1e18);
+        // assertEq(_positionManager.getLP(tokenId2, indexes[2]), 3_000 * 1e18);
 
     }
 

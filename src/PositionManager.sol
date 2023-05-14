@@ -58,6 +58,10 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     /// @dev Mapping of `token id => bucket indexes` associated with position.
     mapping(uint256 => EnumerableSet.UintSet)        internal positionIndexes;
 
+    /// @dev Mapping to track if lender already has a position NFT minted for pool.
+    /// @dev lender address => pool address => bool minted
+    mapping(address => mapping(address => bool)) internal minted;
+
     /// @dev Id of the next token that will be minted. Skips `0`.
     uint176 private _nextId = 1;
 
@@ -148,6 +152,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         // remove permit nonces and pool mapping for burned token
         delete nonces[params_.tokenId];
         delete poolKey[params_.tokenId];
+        delete minted[ownerOf(params_.tokenId)][params_.pool];
 
         _burn(params_.tokenId);
 
@@ -232,8 +237,12 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         // revert if the address is not a valid Ajna pool
         if (!_isAjnaPool(params_.pool, params_.poolSubsetHash)) revert NotAjnaPool();
 
-        // record which pool the tokenId was minted in
+        // lender cannot mint multiple NFT for same pool
+        if (minted[params_.recipient][params_.pool]) revert AlreadyMinted();
+
+        // record which pool the tokenId was minted in and set minted flag to true
         poolKey[tokenId_] = params_.pool;
+        minted[params_.recipient][params_.pool] = true;
 
         _mint(params_.recipient, tokenId_);
 

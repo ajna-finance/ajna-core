@@ -8,6 +8,11 @@ pragma solidity 0.8.14;
 interface IPositionManagerErrors {
 
     /**
+     * @notice User attempted to mint a `NFT` for a pool that already has a position `NFT` minted..
+     */
+    error AlreadyMinted();
+
+    /**
      * @notice User attempting to utilize `LP` from a bankrupt bucket.
      */
     error BucketBankrupt();
