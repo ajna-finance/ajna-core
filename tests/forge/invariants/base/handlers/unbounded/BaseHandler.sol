@@ -4,6 +4,7 @@ pragma solidity 0.8.14;
 
 import '@std/Test.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 
 import { Pool }             from 'src/base/Pool.sol';
 import { PoolInfoUtils }    from 'src/PoolInfoUtils.sol';
@@ -72,12 +73,15 @@ abstract contract BaseHandler is Test {
     uint256 public increaseInReserves;  // amount of reserve decrease
     uint256 public decreaseInReserves;  // amount of reserve increase
 
-    // Buckets where collateral is added when a borrower is in auction and has partial NFT
-    EnumerableSet.UintSet internal collateralBuckets;
+    // All Buckets used in invariant testing that also includes Buckets where collateral is added when a borrower is in auction and has partial NFT
+    EnumerableSet.UintSet internal buckets;
 
     // auctions invariant test state
     bool                     public firstTake;        // if take is called on auction first time
     mapping(address => bool) public alreadyTaken;     // mapping borrower address to true if auction taken atleast once
+
+    string  internal path = "logfile.txt";
+    uint256 internal logFileVerbosity;
 
     constructor(
         address pool_,
@@ -96,6 +100,9 @@ abstract contract BaseHandler is Test {
 
         // Test invariant contract
         testContract = ITestBase(testContract_);
+        
+        // Verbosity of Log file
+        logFileVerbosity = uint256(vm.envOr("LOGS_VERBOSITY", uint256(0)));
     }
 
     /*****************/
@@ -121,6 +128,146 @@ abstract contract BaseHandler is Test {
         vm.warp(block.timestamp + time_);
 
         _;
+    }
+
+    modifier writeLogs() {
+        _;
+        if (logFileVerbosity > 0) {
+            if (numberOfCalls["Write logs"]++ == 0) vm.writeFile(path, "");
+            string memory data = string(abi.encodePacked("================= Handler Call : ", Strings.toString(numberOfCalls["Write logs"]), " =================="));
+            printInNextLine(data);
+            writePoolStateLogs();
+            if (logFileVerbosity > 1) writeAuctionLogs();
+            if (logFileVerbosity > 2) writeBucketsLogs();
+            if (logFileVerbosity > 3) writeLenderLogs();
+            if (logFileVerbosity > 4) writeBorrowerLogs();
+        }
+    }
+
+    function writePoolStateLogs() internal {
+        printInNextLine("== Pool State ==");
+
+        uint256 pledgedCollateral = _pool.pledgedCollateral();
+        printLog("Pledged Collateral       = ", pledgedCollateral);
+
+        uint256 totalT0debt = _pool.totalT0Debt();
+        printLog("Total t0 debt            = ", totalT0debt);
+
+        (, , , uint256 pendingInflator, ) = _poolInfo.poolLoansInfo(address(_pool));
+        printLog("Total debt               = ", Maths.wmul(totalT0debt, pendingInflator));
+
+        uint256 totalAuctions = _pool.totalAuctionsInPool();
+        printLog("Total Auctions           = ", totalAuctions);
+
+        uint256 totalT0debtInAuction = _pool.totalT0DebtInAuction();
+        printLog("Total t0 debt in auction = ", totalT0debtInAuction);
+
+        printLog("Total debt in auction    = ", Maths.wmul(totalT0debtInAuction, pendingInflator));
+
+        uint256 depositSize = _pool.depositSize();
+        printLog("Total deposits           = ", depositSize);
+
+        (uint256 totalBond, , , ) = _pool.reservesInfo();
+        printLog("Total bond escrowed      = ", totalBond);
+
+        (uint256 interestRate, ) = _pool.interestRateInfo();
+        printLog("Interest Rate            = ", interestRate);
+
+        printInNextLine("=======================");
+    }
+
+    function writeLenderLogs() internal {
+        printInNextLine("== Lenders Details ==");
+        string memory data;
+        for (uint256 i = 0; i < actors.length; i++) {
+            printLine("");
+            printLog("Actor ", i + 1);
+            for (uint256 j = 0; j < buckets.length(); j++) {
+                uint256 bucketIndex = buckets.at(j);
+                (uint256 lenderLps, ) = _pool.lenderInfo(bucketIndex, actors[i]);
+                if (lenderLps != 0) {
+                    data = string(abi.encodePacked("Lps at ", Strings.toString(bucketIndex), " = ", Strings.toString(lenderLps)));
+                    printLine(data);
+                }
+            }
+        }
+        printInNextLine("=======================");
+    }
+
+    function writeBorrowerLogs() internal {
+        printInNextLine("== Borrowers Details ==");
+        for (uint256 i = 0; i < actors.length; i++) {
+            printLine("");
+            printLog("Actor ", i + 1);
+            (uint256 debt, uint256 pledgedCollateral, ) = _poolInfo.borrowerInfo(address(_pool), actors[i]);
+            if (debt != 0 || pledgedCollateral != 0) {
+                printLog("Debt               = ", debt);
+                printLog("Pledged collateral = ", pledgedCollateral);
+            }
+        }
+        printInNextLine("=======================");
+    }
+
+    function writeBucketsLogs() internal {
+        printInNextLine("== Buckets Detail ==");
+        for (uint256 i = 0; i < buckets.length(); i++) {
+            printLine("");
+            uint256 bucketIndex = buckets.at(i);
+            printLog("Bucket:", bucketIndex);
+            (
+                ,
+                uint256 quoteTokens,
+                uint256 collateral,
+                uint256 bucketLP,
+                uint256 scale,
+                uint256 exchangeRate
+            ) = _poolInfo.bucketInfo(address(_pool), bucketIndex);
+
+            printLog("Quote tokens  = ", quoteTokens);
+            printLog("Collateral    = ", collateral);
+            printLog("Bucket Lps    = ", bucketLP);
+            printLog("Scale         = ", scale);
+            printLog("Exchange Rate = ", exchangeRate);
+        }
+        printInNextLine("=======================");
+    }
+
+    function writeAuctionLogs() internal {
+        printInNextLine("== Auctions Details ==");
+        string memory data;
+        address nextBorrower;
+        uint256 kickTime;
+        uint256 kickMomp;
+        uint256 bondFactor;
+        uint256 bondSize;
+        uint256 neutralPrice;
+        (,,,,,, nextBorrower,,,) = _pool.auctionInfo(address(0));
+        while (nextBorrower != address(0)) {
+            data = string(abi.encodePacked("Borrower ", Strings.toHexString(uint160(nextBorrower), 20), " Auction Details :"));
+            printInNextLine(data);
+            (, bondFactor, bondSize, kickTime, kickMomp, neutralPrice,, nextBorrower,,) = _pool.auctionInfo(nextBorrower);
+
+            printLog("Bond Factor   = ", bondFactor);
+            printLog("Bond Size     = ", bondSize);
+            printLog("Kick Time     = ", kickTime);
+            printLog("Kick Momp     = ", kickMomp);
+            printLog("Neutral Price = ", neutralPrice);
+        }
+        printInNextLine("=======================");
+    }
+
+    function printLog(string memory key, uint256 value) internal {
+        string memory data = string(abi.encodePacked(key, Strings.toString(value)));
+        printLine(data);
+    }
+
+    function printLine(string memory data) internal {
+        vm.writeLine(path, data);
+    }
+
+    function printInNextLine(string memory data) internal {
+        printLine("");
+        printLine(data);
     }
 
     /**
@@ -382,10 +529,10 @@ abstract contract BaseHandler is Test {
     /**********************************/
 
     function fenwickSumTillIndex(uint256 index_) public view returns (uint256 sum_) {
-        uint256[] memory buckets = getCollateralBuckets();
+        uint256[] memory depositBuckets = getBuckets();
 
-        for (uint256 i = 0; i < buckets.length; i++) {
-            uint256 bucket = buckets[i];
+        for (uint256 i = 0; i < depositBuckets.length; i++) {
+            uint256 bucket = depositBuckets[i];
             if (bucket <= index_) {
                 sum_ += fenwickDeposits[bucket];
             }
@@ -396,10 +543,10 @@ abstract contract BaseHandler is Test {
         uint256 minIndex = LENDER_MIN_BUCKET_INDEX;
         uint256 maxIndex = LENDER_MAX_BUCKET_INDEX;
 
-        uint256[] memory buckets = getCollateralBuckets();
-        for (uint256 i = 0; i < buckets.length; i++) {
-            minIndex = Maths.min(minIndex, buckets[i]);
-            maxIndex = Maths.max(maxIndex, buckets[i]);
+        uint256[] memory depositBuckets = getBuckets();
+        for (uint256 i = 0; i < depositBuckets.length; i++) {
+            minIndex = Maths.min(minIndex, depositBuckets[i]);
+            maxIndex = Maths.max(maxIndex, depositBuckets[i]);
         }
 
         while (debt_ != 0 && minIndex <= maxIndex) {
@@ -452,8 +599,8 @@ abstract contract BaseHandler is Test {
         if (max_ == type(uint256).max && x_ != 0) result_++;
     }
 
-    function getCollateralBuckets() public view returns(uint256[] memory) {
-        return collateralBuckets.values();
+    function getBuckets() public view returns(uint256[] memory) {
+        return buckets.values();
     }
 
 }

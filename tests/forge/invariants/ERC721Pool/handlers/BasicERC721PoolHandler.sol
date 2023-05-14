@@ -40,7 +40,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         uint256 amountToAdd_,
         uint256 bucketIndex_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BBasicHandler.addCollateral']++;
 
         // Prepare test phase
@@ -55,7 +55,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         uint256 amountToRemove_,
         uint256 bucketIndex_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BBasicHandler.removeCollateral']++;
 
         // Prepare test phase
@@ -68,7 +68,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
     function mergeCollateral(
         uint256 actorIndex_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BBasicHandler.mergeCollateral']++;
 
         // Prepare test phase
@@ -86,7 +86,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         uint256 actorIndex_,
         uint256 amountToPledge_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BBasicHandler.pledgeCollateral']++;
 
         // Prepare test phase
@@ -103,7 +103,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         uint256 actorIndex_,
         uint256 amountToPull_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BBasicHandler.pullCollateral']++;
 
         // Prepare test phase
@@ -117,7 +117,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         uint256 actorIndex_,
         uint256 amountToBorrow_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BBasicHandler.drawDebt']++;
 
         // Prepare test phase
@@ -134,7 +134,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         uint256 actorIndex_,
         uint256 amountToRepay_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BBasicHandler.repayDebt']++;
 
         // Prepare test phase
@@ -168,7 +168,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
     }
 
     function _preMergeCollateral() internal returns(uint256 NFTAmount_, uint256[] memory bucketIndexes_) {
-        bucketIndexes_ = getCollateralBuckets();
+        bucketIndexes_ = getBuckets();
         
         for (uint256 i = 0; i < bucketIndexes_.length; i++) {
             uint256 bucketIndex = bucketIndexes_[i];

@@ -141,13 +141,13 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower_);
             if (kickTime == 0 && borrowerCollateralBeforeTake % 1e18 != 0 && _pool.poolType() == 1) {
                 if (auctionPrice < MIN_PRICE) {
-                    collateralBuckets.add(7388);
+                    buckets.add(7388);
                     lenderDepositTime[borrower_][7388] = block.timestamp;
                 } else if (auctionPrice > MAX_PRICE) {
-                    collateralBuckets.add(0);
+                    buckets.add(0);
                     lenderDepositTime[borrower_][0] = block.timestamp;
                 } else {
-                    collateralBuckets.add(_indexOf(auctionPrice));
+                    buckets.add(_indexOf(auctionPrice));
                     lenderDepositTime[borrower_][_indexOf(auctionPrice)] = block.timestamp;
                 }
             }
@@ -206,7 +206,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
             (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower_);
             if (kickTime == 0 && _pool.poolType() == 1) {
-                collateralBuckets.add(auctionBucketIndex);
+                buckets.add(auctionBucketIndex);
                 if (beforeBucketTakeVars.borrowerLps < afterBucketTakeVars.borrowerLps) {
                     lenderDepositTime[borrower_][auctionBucketIndex] = block.timestamp;
                 }
@@ -251,7 +251,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                     collateral = 0;
                     // Deposits in the tree is zero, insert entire collateral into lowest bucket 7388
                     // **B5**: when settle with collateral: record min bucket where collateral added
-                    collateralBuckets.add(7388);
+                    buckets.add(7388);
                     lenderDepositTime[borrower_][7388] = block.timestamp;
                 } else {
                     if (bucketIndex != MAX_FENWICK_INDEX) {
@@ -277,7 +277,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
                         collateral = 0;
                         // **B5**: when settle with collateral: record min bucket where collateral added.
                         // Lender doesn't get any LP when settle bad debt.
-                        collateralBuckets.add(7388);
+                        buckets.add(7388);
                     }
                 }
 
@@ -321,7 +321,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
             (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower_);
             if (kickTime == 0 && collateral % 1e18 != 0 && _pool.poolType() == 1) {
-                collateralBuckets.add(7388);
+                buckets.add(7388);
                 lenderDepositTime[borrower_][7388] = block.timestamp;
             }
         } catch (bytes memory err) {
