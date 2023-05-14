@@ -624,39 +624,38 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     /**
      *  @notice Retrieve the total ajna tokens burned and total interest earned over a given epoch.
      *  @param  pool_   Address of the `Ajna` pool to retrieve accumulators of.
-     *  @param  epoch_  The latest burn event.
-     *  @return Timestamp of the latest burn event.
-     *  @return Total `Ajna` tokens burned by the pool since the last burn event.
-     *  @return Total interest earned by the pool since the last burn event.
+     *  @param  epoch_  time window used to identify time between Ajna burn events (kickReserve and takeReserve actions).
+     *  @return currentBurnTime_ timestamp of the latest burn event.
+     *  @return tokensBurned_    total `Ajna` tokens burned in epoch.
+     *  @return interestEarned_  total interest earned in epoch.
      */
     function _getEpochInfo(
         address pool_,
         uint256 epoch_
-    ) internal view returns (uint256, uint256, uint256) {
+    ) internal view returns (uint256 currentBurnTime_, uint256 tokensBurned_, uint256 interestEarned_) {
 
-        if (epoch_ == 0) return (0, 0, 0);
+        // 0 epoch won't have any ajna burned or interest associated with it
+        if (epoch_ != 0) {
 
-        (
-            uint256 currentBurnTime,
-            uint256 totalInterestLatest,
-            uint256 totalBurnedLatest
-        ) = IPool(pool_).burnInfo(epoch_);
+            uint256 totalInterestLatest;
+            uint256 totalBurnedLatest;
 
-        (
-            ,
-            uint256 totalInterestPrev,
-            uint256 totalBurnedPrev
-        ) = IPool(pool_).burnInfo(epoch_ - 1);
+            (
+                currentBurnTime_,
+                totalInterestLatest,
+                totalBurnedLatest
+            ) = IPool(pool_).burnInfo(epoch_);
 
-        // only return 
-        uint256 tokensBurned   = totalBurnedLatest   != 0 ? totalBurnedLatest   - totalBurnedPrev   : totalBurnedLatest;
-        uint256 interestEarned = totalInterestLatest != 0 ? totalInterestLatest - totalInterestPrev : totalInterestLatest;
+            (
+                ,
+                uint256 totalInterestPrev,
+                uint256 totalBurnedPrev
+            ) = IPool(pool_).burnInfo(epoch_ - 1);
 
-        return (
-            currentBurnTime,
-            tokensBurned,
-            interestEarned
-        );
+            // calculate total tokens burned and interest earned in epoch
+            tokensBurned_   = totalBurnedLatest   != 0 ? totalBurnedLatest   - totalBurnedPrev   : 0;
+            interestEarned_ = totalInterestLatest != 0 ? totalInterestLatest - totalInterestPrev : 0;
+        }
     }
 
     /**
