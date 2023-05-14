@@ -26,6 +26,7 @@ abstract contract BasicInvariants is BaseInvariants {
     function invariant_quote() public useCurrentTimestamp {
         _invariant_QT1();
         _invariant_QT2();
+        _invariant_QT3();
     }
 
     function invariant_exchange_rate() public useCurrentTimestamp {
@@ -150,11 +151,6 @@ abstract contract BasicInvariants is BaseInvariants {
         console.log("assets      -> ", assets);
         console.log("liabilities -> ", liabilities);
 
-        require(
-            poolBalance >= totalBondEscrowed + unClaimed,
-            "QT1: escrowed bonds and claimable reserves not guaranteed"
-        );
-
         greaterThanWithinDiff(
             assets,
             liabilities,
@@ -178,6 +174,22 @@ abstract contract BasicInvariants is BaseInvariants {
         uint256 poolDebt = _pool.totalT0Debt();
 
         require(poolDebt == totalDebt, "Quote Token Invariant QT2");
+    }
+
+    /// @dev checks pool quote token balance is greater than or equal with sum of escrowed bonds and unclaimed reserves
+    function _invariant_QT3() internal view {
+        // convert pool quote balance into WAD
+        uint256 poolBalance = _quote.balanceOf(address(_pool)) * 10**(18 - _quote.decimals());
+        (
+            uint256 totalBondEscrowed,
+            uint256 unClaimed,
+            ,
+        ) = _pool.reservesInfo();
+
+        require(
+            poolBalance >= totalBondEscrowed + unClaimed,
+            "QT3: escrowed bonds and claimable reserves not guaranteed"
+        );
     }
 
     /********************************/
