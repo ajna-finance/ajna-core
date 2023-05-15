@@ -15,3 +15,4 @@ coverage/
 report/
 keystore/
 broadcast/
+logFile.txt

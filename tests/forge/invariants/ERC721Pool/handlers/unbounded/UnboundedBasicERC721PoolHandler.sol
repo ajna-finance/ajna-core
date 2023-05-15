@@ -130,14 +130,14 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
             // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
             if (kickTimeBefore != 0 && kickTimeAfter == 0 && borrowerCollateralBefore % 1e18 != 0) {
                 if (auctionPrice < MIN_PRICE) {
-                    collateralBuckets.add(7388);
+                    buckets.add(7388);
                     lenderDepositTime[_actor][7388] = block.timestamp;
                 } else if (auctionPrice > MAX_PRICE) {
-                    collateralBuckets.add(0);
+                    buckets.add(0);
                     lenderDepositTime[_actor][0] = block.timestamp;
                 } else {
                     uint256 bucketIndex = _indexOf(auctionPrice);
-                    collateralBuckets.add(bucketIndex);
+                    buckets.add(bucketIndex);
                     lenderDepositTime[_actor][bucketIndex] = block.timestamp;
                 }
             }
@@ -170,8 +170,11 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
 
         (uint256 poolDebt, , , ) = _erc721Pool.debtInfo();
 
-        // find bucket to borrow quote token
-        uint256 bucket = _erc721Pool.depositIndex(amount_ + poolDebt) - 1;
+        // find bucket to borrow quote token, return if deposit index is 0
+        uint256 depositIndex = _erc721Pool.depositIndex(amount_ + poolDebt);
+        if (depositIndex == 0) return;
+
+        uint256 bucket = depositIndex - 1;
         uint256 price = _poolInfo.indexToPrice(bucket);
 
         // Pool doesn't have enough deposits to draw debt
@@ -217,14 +220,14 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
             // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
             if (kickTimeBefore != 0 && kickTimeAfter == 0 && borrowerCollateralBefore % 1e18 != 0) {
                 if (auctionPrice < MIN_PRICE) {
-                    collateralBuckets.add(7388);
+                    buckets.add(7388);
                     lenderDepositTime[_actor][7388] = block.timestamp;
                 } else if (auctionPrice > MAX_PRICE) {
-                    collateralBuckets.add(0);
+                    buckets.add(0);
                     lenderDepositTime[_actor][0] = block.timestamp;
                 } else {
                     uint256 bucketIndex = _indexOf(auctionPrice);
-                    collateralBuckets.add(bucketIndex);
+                    buckets.add(bucketIndex);
                     lenderDepositTime[_actor][bucketIndex] = block.timestamp;
                 }
             }
