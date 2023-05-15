@@ -27,9 +27,9 @@ interface IPermit {
     error NotAuthorized();
 
     /**
-     * @notice Signature being verified is invalid.
+     * @notice User submitted a signature to permit for verification after it's deadline had passed.
      */
-    error InvalidSignature();
+    error PermitExpired();
 
     /**
     *  @notice `EIP-4494` permit to approve by way of owner signature.
@@ -66,8 +66,6 @@ abstract contract PermitERC721 is ERC721, IPermit {
     /** @dev Value is equal to keccak256("Permit(address spender,uint256 tokenId,uint256 nonce,uint256 deadline)"); */
     bytes32 public constant PERMIT_TYPEHASH =
         0x49ecf333e5b8c95c40fdafc95c1ad136e8914a8fb55e9dc8bb01eaa83a2df9ad;
-
-    bytes32 private constant ERC6492_DETECTION_SUFFIX = 0x6492649264926492649264926492649264926492649264926492649264926492;
 
     /******************/
     /*** Immutables ***/
@@ -152,7 +150,7 @@ abstract contract PermitERC721 is ERC721, IPermit {
         bytes memory signature_
     ) external {
         // check that the permit's deadline hasn't passed
-        require(block.timestamp <= deadline_, "ajna/nft-permit-expired");
+        if (block.timestamp > deadline_) revert PermitExpired();
 
         // calculate signature digest
         bytes32 digest = _buildDigest(
@@ -168,18 +166,23 @@ abstract contract PermitERC721 is ERC721, IPermit {
         if (!_checkSignature(digest, signature_, recoveredAddress, tokenId_)) revert NotAuthorized();
 
         _approve(spender_, tokenId_);
+
+        // TODO: should this be moved to an on transfer hook?
+        _incrementNonce(tokenId_);
     }
 
     /**************************/
     /*** Internal Functions ***/
     /**************************/
 
-    /// @notice Builds the permit digest to sign
-    /// @param spender_ the token spender
-    /// @param tokenId_ the tokenId
-    /// @param nonce_ the nonce to make a permit for
-    /// @param deadline_ the deadline before when the permit can be used
-    /// @return the digest (following eip712) to sign
+    /**
+     *  @notice Builds the permit digest to sign.
+     *  @param spender_  The token spender.
+     *  @param tokenId_  The tokenId.
+     *  @param nonce_    The nonce to make a permit for.
+     *  @param deadline_ The deadline before when the permit can be used.
+     *  @return The digest (following `EIP-712`) to sign.
+     */
     function _buildDigest(
         address spender_,
         uint256 tokenId_,
@@ -201,6 +204,11 @@ abstract contract PermitERC721 is ERC721, IPermit {
             );
     }
 
+    /**
+     *  @notice Calculates the `EIP-712` compliant `DOMAIN_SEPERATOR` for ledgible signature encoding.
+     *  @param chainId_ The chainId of the network the `NFT` is being interacted with on.
+     *  @return The `bytes32` domain separator of Position `NFT`s.
+     */
     function _calculateDomainSeparator(uint256 chainId_) internal view returns (bytes32) {
         return
             keccak256(
@@ -217,7 +225,11 @@ abstract contract PermitERC721 is ERC721, IPermit {
 
     /**
      * @notice Checks if the recovered address from the signature matches the spender.
+     * @param digest_           The digest signed by the owner.
+     * @param signature_        The owner's signature to check.
      * @param recoveredAddress_ The address recovered from the signature.
+     * @param tokenId_          The id of the `NFT` being interacted with.
+     * @return isValidPermit_   `true` if the recovered address matches the spender, otherwise `false`.
      */
     function _checkSignature(
         bytes32 digest_,
@@ -240,6 +252,14 @@ abstract contract PermitERC721 is ERC721, IPermit {
             );
 
         isValidPermit_ = (isOwnerOrApproved || isValidSignature);
+    }
+
+    /**
+     * @notice Increments the nonce for a given `NFT`.
+     * @param tokenId The id of the `NFT` to increment the nonce for.
+     */
+    function _incrementNonce(uint256 tokenId) internal {
+        _nonces[tokenId]++;
     }
 
 }

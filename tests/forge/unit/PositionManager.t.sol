@@ -1357,11 +1357,17 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         vm.expectRevert(IPermit.NotAuthorized.selector);
         spenderContract.transferFromWithPermit(address(recipientContract), tokenId, deadline, signature);
 
+        // check nonces don't change with invalid permits
+        assertEq(_positionManager.nonces(tokenId), 0);
+
         // check owner can permit their contract to transfer the NFT
         changePrank(address(mintingContract));
         deadline = block.timestamp + 1 days;
         signature = _getPermitSig(address(spenderContract), tokenId, deadline, mintingOwnerPrivateKey);
         spenderContract.transferFromWithPermit(address(recipientContract), tokenId, deadline, signature);
+
+        // check nonces increment with permit
+        assertEq(_positionManager.nonces(tokenId), 1);
     }
 
     function testPermitReverts() external {
@@ -1377,10 +1383,13 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         uint256 tokenId = _mintNFT(testMinter, testMinter, address(_pool));
         assertEq(_positionManager.ownerOf(tokenId), testMinter);
 
+        // check nonces don't change with invalid permits
+        assertEq(_positionManager.nonces(tokenId), 0);
+
         // check can't use a deadline in the past
         uint256 deadline = block.timestamp - 1 days;
         bytes memory signature = _getPermitSig(testSpender, tokenId, deadline, minterPrivateKey);
-        vm.expectRevert("ajna/nft-permit-expired");
+        vm.expectRevert(IPermit.PermitExpired.selector);
         spenderContract.transferFromWithPermit(testReceiver, tokenId, deadline, signature);
 
         // check signer is authorized to permit
@@ -1389,11 +1398,15 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         vm.expectRevert(IPermit.NotAuthorized.selector);
         spenderContract.transferFromWithPermit(testReceiver, tokenId, deadline, signature);
 
-        // // check that a malformed signature will revert
-        // deadline = block.timestamp + 1 days;
-        // signature = _getPermitSig(testSpender, tokenId, deadline, minterPrivateKey);
-        // vm.expectRevert("ajna/nft-invalid-signature");
-        // spenderContract.transferFromWithPermit(testReceiver, tokenId, deadline, 0, r, s );
+        // check that a malformed signature will revert
+        deadline = block.timestamp + 1 days;
+        // modify one of the signature's bytes to invalidate an otherwise valid signature
+        signature[4] = 0x00;
+        vm.expectRevert(IPermit.NotAuthorized.selector);
+        spenderContract.transferFromWithPermit(testReceiver, tokenId, deadline, signature);
+
+        // check nonces don't change with invalid permits
+        assertEq(_positionManager.nonces(tokenId), 0);
     }
 
     /**
