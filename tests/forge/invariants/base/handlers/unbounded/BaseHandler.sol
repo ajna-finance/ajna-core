@@ -332,6 +332,10 @@ abstract contract BaseHandler is Test {
         return vm.envOr("SKIP_TIME_TO_KICK", uint256(200 days));
     }
 
+    function _getKickReserveTime() internal returns (uint256) {
+        return vm.envOr("SKIP_TIME_TO_KICK_RESERVE", uint256(24 hours));
+    }
+
     /**
      * @dev Ensure that error is an Pool expected error.
      */
