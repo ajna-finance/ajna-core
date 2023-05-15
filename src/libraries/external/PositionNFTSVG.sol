@@ -51,6 +51,7 @@ library PositionNFTSVG {
                             '", "description":"',
                             description,
                             '", "image":"',
+                            'data:image/svg+xml;base64,',
                             image,
                             '", "owner":"',
                             ownerHexString,
