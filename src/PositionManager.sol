@@ -319,7 +319,8 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         // update position LP state
         fromPosition.lps -= vars.lpbAmountFrom;
         toPosition.lps   += vars.lpbAmountTo;
-        // update position deposit time to the from bucket deposit time
+        // update position deposit time with the renewed to bucket deposit time
+        (, vars.depositTime)   = IPool(params_.pool).lenderInfo(params_.toIndex, address(this));
         toPosition.depositTime = vars.depositTime;
 
         emit MoveLiquidity(
