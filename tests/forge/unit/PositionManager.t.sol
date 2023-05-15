@@ -1368,6 +1368,13 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // check nonces increment with permit
         assertEq(_positionManager.nonces(tokenId), 1);
+
+        // check retrieving token nonces for non existent tokens will revert
+        vm.expectRevert(IPermit.NonExistentToken.selector);
+        _positionManager.nonces(5);
+
+        // check domain separator matches expectations for the test chain
+        assertEq(_positionManager.DOMAIN_SEPARATOR(), 0x3d157903719b756bd03176f9e889ef6b5c39980675541c11c005ea6c4e1b6c07);
     }
 
     function testPermitReverts() external {

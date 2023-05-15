@@ -31,6 +31,10 @@ interface IPermit {
      */
     error PermitExpired();
 
+    /**************************/
+    /*** External Functions ***/
+    /**************************/
+
     /**
     *  @notice `EIP-4494` permit to approve by way of owner signature.
     */
@@ -39,12 +43,10 @@ interface IPermit {
     ) external;
 }
 
-// https://github.com/dievardump/erc721-with-permits/blob/main/contracts/ERC721WithPermit.sol
-
 /**
- *  @notice https://soliditydeveloper.com/erc721-permit
  *  @notice Functionality to enable `EIP-4494` permit calls as part of interactions with Position `NFT`s
- *  @dev    spender https://eips.ethereum.org/EIPS/eip-4494
+ *  @dev    EIP-4494: https://eips.ethereum.org/EIPS/eip-4494
+ *  @dev    References this implementation: https://github.com/dievardump/erc721-with-permits/blob/main/contracts/ERC721WithPermit.sol
  */
 abstract contract PermitERC721 is ERC721, IPermit {
 
