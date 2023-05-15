@@ -1213,7 +1213,7 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
         ERC20Pool(address(_pool)).updateInterest();
         _kickReserveAuction({
             from:              actor1,
-            remainingReserves: 642_374_224.754246627157382301 * 1e18,
+            remainingReserves: 642_374_111.754807749608166225 * 1e18,
             price:             1_000_000_000 * 1e18,
             epoch:             1
         });
@@ -1240,7 +1240,7 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
         assertEq(borrowerDebt, 60_144_029_463.415046012797744619 * 1e18);
 
         (uint256 reserves, , , ,) = _poolUtils.poolReservesInfo(address(_pool));
-        assertEq(reserves, 467_743_845.048670767464288715 * 1e18);
+        assertEq(reserves, 467_743_959.189518118524102933 * 1e18);
 
         // settle auction with reserves
         _settle({
@@ -1252,6 +1252,6 @@ contract ERC20PoolLiquidationsSettleRegressionTest is ERC20HelperContract {
 
         (reserves, , , ,) = _poolUtils.poolReservesInfo(address(_pool));
 
-        assertEq(reserves, 1);
+        assertEq(reserves, 2);
     }
 }

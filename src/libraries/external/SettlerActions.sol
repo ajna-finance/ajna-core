@@ -132,7 +132,8 @@ library SettlerActions {
         if (borrower.t0Debt != 0 && borrower.collateral == 0) {
             // 2. settle debt with pool reserves
             uint256 assets      = Maths.wmul(poolState_.t0Debt - result_.t0DebtSettled + borrower.t0Debt, poolState_.inflator) + params_.poolBalance;
-            uint256 liabilities = Deposits.treeSum(deposits_) + auctions_.totalBondEscrowed + reserveAuction_.unclaimed;
+            // Require 1.0+1e-9 extra margin for deposits
+            uint256 liabilities = Maths.wmul(Maths.WAD+1e9, Deposits.treeSum(deposits_)) + auctions_.totalBondEscrowed + reserveAuction_.unclaimed;
             // settle debt from reserves (assets - liabilities) if reserves positive, round reserves down however
             if (assets > liabilities) {
                 borrower.t0Debt -= Maths.min(borrower.t0Debt, Maths.floorWdiv(assets - liabilities, poolState_.inflator));

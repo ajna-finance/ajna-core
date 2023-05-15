@@ -288,7 +288,8 @@ import { Maths }   from '../internal/Maths.sol';
     ) pure returns (uint256 claimable_) {
         claimable_ = Maths.wmul(0.995 * 1e18, debt_) + quoteTokenBalance_;
 
-        claimable_ -= Maths.min(claimable_, poolSize_ + totalBondEscrowed_ + reserveAuctionUnclaimed_);
+        // Require 
+        claimable_ -= Maths.min(claimable_, Maths.wmul(Maths.WAD+1e9,poolSize_) + totalBondEscrowed_ + reserveAuctionUnclaimed_);
     }
 
     /**

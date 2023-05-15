@@ -300,7 +300,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         });
         _assertReserveAuction({
             reserves:                   179.552281242188325467 * 1e18,
-            claimableReserves :         83.959896655448350900 * 1e18,
+            claimableReserves :         83.959813435773714794 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
@@ -577,7 +577,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         });
         _assertReserveAuction({
             reserves:                   179.552281242188325467 * 1e18,
-            claimableReserves :         83.959896655448350900 * 1e18,
+            claimableReserves :         83.959813435773714794 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
@@ -785,7 +785,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         });
         _assertReserveAuction({
             reserves:                   179.552281242188325467 * 1e18,
-            claimableReserves :         83.959896655448350900 * 1e18,
+            claimableReserves :         83.959813435773714794 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
@@ -947,7 +947,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         });
         _assertReserveAuction({
             reserves:                   152.199485178078897491 * 1e18,
-            claimableReserves :         102.373123280655390094 * 1e18,
+            claimableReserves :         102.373050166832495787 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
@@ -1173,7 +1173,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         });
         _assertReserveAuction({
             reserves:                   179.552281242188325467 * 1e18,
-            claimableReserves :         83.959896655448350900 * 1e18,
+            claimableReserves :         83.959813435773714794 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
@@ -1319,7 +1319,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         });
         _assertReserveAuction({
             reserves:                   152.670996883580244810 * 1e18,
-            claimableReserves :         102.690517143674698866 * 1e18,
+            claimableReserves :         102.690444029499747768 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
@@ -1464,7 +1464,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         // reserves should increase after take action
         _assertReserveAuction({
             reserves:                   851.125605070547985156 * 1e18,
-            claimableReserves :         797.715239845906813190 * 1e18,
+            claimableReserves :         797.715166731277766566 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
@@ -1512,7 +1512,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         // reserves should increase after take action
         _assertReserveAuction({
             reserves:                   851.125605070547984803 * 1e18,
-            claimableReserves :         800.883483503566289602 * 1e18,
+            claimableReserves :         800.883410388937242978 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
@@ -1641,7 +1641,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         _assertReserveAuction({
             reserves:                   851.125605070547984803 * 1e18,
-            claimableReserves :         800.883483503566289602 * 1e18,
+            claimableReserves :         800.883410388937242978 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
@@ -1801,7 +1801,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         });
         _assertReserveAuction({
             reserves:                   152.670996883580244810 * 1e18,
-            claimableReserves :         102.690517143674698866 * 1e18,
+            claimableReserves :         102.690444029499747768 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
