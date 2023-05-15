@@ -17,6 +17,11 @@ interface IPermit {
     /**************/
 
     /**
+     * @notice User queried the nonces of a token that doesn't exxist.
+     */
+    error NonExistentToken();
+
+    /**
      * @notice Creator of permit signature is not authorized.
      */
     error NotAuthorized();
@@ -47,9 +52,11 @@ abstract contract PermitERC721 is ERC721, IPermit {
     /*** Mapping ***/
     /***************/
 
-    /** @dev Gets the current nonce for a token ID and then increments it, returning the original value */
-    // function _getAndIncrementNonce(uint256 tokenId_) internal virtual returns (uint256);
-
+    /**
+    * @dev Mapping of nonces per tokenId
+    * @dev Nonces are used to make sure the signature can't be replayed
+    * @dev tokenId => nonce
+    */
     mapping(uint256 => uint256) private _nonces;
 
     /*****************/
@@ -118,18 +125,17 @@ abstract contract PermitERC721 is ERC721, IPermit {
             chainId := chainid()
         }
 
-        return
-            (chainId == _domainChainId)
-                ? _domainSeparator
-                : _calculateDomainSeparator(chainId);
+        return (chainId == _domainChainId) ? _domainSeparator : _calculateDomainSeparator(chainId);
     }
 
-    /// @notice Allows to retrieve current nonce for token
-    /// @param tokenId token id
-    /// @return current token nonce
+    /**
+     *  @notice Retrieves the current nonce for a given `NFT`.
+     *  @param tokenId_ The id of the `NFT` being queried.
+     *  @return The current nonce for the `NFT`.
+     */
     function nonces(uint256 tokenId_) external view returns (uint256) {
-        if (!_exists(tokenId)) revert ERC721.NonExistentToken(tokenId_);
-        return _nonces[tokenId];
+        if (!_exists(tokenId_)) revert NonExistentToken();
+        return _nonces[tokenId_];
     }
 
     /**
@@ -214,11 +220,11 @@ abstract contract PermitERC721 is ERC721, IPermit {
      * @param recoveredAddress_ The address recovered from the signature.
      */
     function _checkSignature(
-        bytes memory digest_,
+        bytes32 digest_,
         bytes memory signature_,
         address recoveredAddress_,
         uint256 tokenId_
-    ) internal pure returns (bool isValidPermit_) {
+    ) internal view returns (bool isValidPermit_) {
         // verify if the recovered address is owner or approved on tokenId
         // and make sure recoveredAddress is not address(0), else getApproved(tokenId) might match
         bool isOwnerOrApproved =

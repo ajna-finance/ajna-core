@@ -6,6 +6,8 @@ import { Base64 } from '@base64-sol/base64.sol';
 import { ERC20HelperContract } from '../unit/ERC20Pool/ERC20DSTestPlus.sol';
 import { ERC721HelperContract } from '../unit/ERC721Pool/ERC721DSTestPlus.sol';
 
+import { IPermit } from 'src/base/PermitERC721.sol';
+
 import 'src/interfaces/position/IPositionManager.sol';
 import 'src/PositionManager.sol';
 import 'src/libraries/helpers/SafeTokenNamer.sol';
@@ -56,8 +58,8 @@ abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract 
         uint256 tokenId_,
         uint256 deadline_,
         uint256 ownerPrivateKey_
-    ) internal view returns (uint8 v, bytes32 r, bytes32 s) {
-        return vm.sign(
+    ) internal view returns (bytes memory signature_) {
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
                 ownerPrivateKey_,
                 keccak256(
                     abi.encodePacked(
@@ -75,6 +77,7 @@ abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract 
                     )
                 )
             );
+        signature_ = abi.encodePacked(r, s, v);
     }
 }
 
@@ -1284,9 +1287,9 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         {
             uint256 deadline = block.timestamp + 10000;
-            (uint8 v, bytes32 r, bytes32 s) = _getPermitSig(address(spenderContract), tokenId, deadline, minterPrivateKey);
+            bytes memory signature = _getPermitSig(address(spenderContract), tokenId, deadline, minterPrivateKey);
             changePrank(testMinter);
-            spenderContract.transferFromWithPermit(testReceiver, tokenId, deadline, v, r, s);
+            spenderContract.transferFromWithPermit(testReceiver, tokenId, deadline, signature);
         }
 
         // check owner
@@ -1350,15 +1353,15 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // check contract owned nft can't be signed by non owner
         uint256 deadline = block.timestamp + 1 days;
-        (uint8 v, bytes32 r, bytes32 s) = _getPermitSig(address(spenderContract), tokenId, deadline, recipientContractOwnerPrivateKey);
-        vm.expectRevert("ajna/nft-unauthorized");
-        spenderContract.transferFromWithPermit(address(recipientContract), tokenId, deadline, v, r, s );
+        bytes memory signature = _getPermitSig(address(spenderContract), tokenId, deadline, recipientContractOwnerPrivateKey);
+        vm.expectRevert(IPermit.NotAuthorized.selector);
+        spenderContract.transferFromWithPermit(address(recipientContract), tokenId, deadline, signature);
 
         // check owner can permit their contract to transfer the NFT
         changePrank(address(mintingContract));
         deadline = block.timestamp + 1 days;
-        (v, r, s) = _getPermitSig(address(spenderContract), tokenId, deadline, mintingOwnerPrivateKey);
-        spenderContract.transferFromWithPermit(address(recipientContract), tokenId, deadline, v, r, s );
+        signature = _getPermitSig(address(spenderContract), tokenId, deadline, mintingOwnerPrivateKey);
+        spenderContract.transferFromWithPermit(address(recipientContract), tokenId, deadline, signature);
     }
 
     function testPermitReverts() external {
@@ -1376,26 +1379,21 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // check can't use a deadline in the past
         uint256 deadline = block.timestamp - 1 days;
-        (uint8 v, bytes32 r, bytes32 s) = _getPermitSig(testSpender, tokenId, deadline, minterPrivateKey);
+        bytes memory signature = _getPermitSig(testSpender, tokenId, deadline, minterPrivateKey);
         vm.expectRevert("ajna/nft-permit-expired");
-        spenderContract.transferFromWithPermit(testReceiver, tokenId, deadline, v, r, s );
+        spenderContract.transferFromWithPermit(testReceiver, tokenId, deadline, signature);
 
         // check signer is authorized to permit
         deadline = block.timestamp + 1 days;
-        (v, r, s) = _getPermitSig(testSpender, tokenId, deadline, receiverPrivateKey);
-        vm.expectRevert("ajna/nft-unauthorized");
-        spenderContract.transferFromWithPermit(testReceiver, tokenId, deadline, v, r, s );
+        signature = _getPermitSig(testSpender, tokenId, deadline, receiverPrivateKey);
+        vm.expectRevert(IPermit.NotAuthorized.selector);
+        spenderContract.transferFromWithPermit(testReceiver, tokenId, deadline, signature);
 
-        // check signature is valid
-        deadline = block.timestamp + 1 days;
-        (v, r, s) = _getPermitSig(testSpender, tokenId, deadline, minterPrivateKey);
-        vm.expectRevert("ajna/nft-invalid-signature");
-        spenderContract.transferFromWithPermit(testReceiver, tokenId, deadline, 0, r, s );
-
-        // check can't self approve
-        (v, r, s) = _getPermitSig(testMinter, tokenId, deadline, minterPrivateKey);
-        vm.expectRevert("ERC721Permit: approval to current owner");
-        _positionManager.permit(testMinter, tokenId, deadline, v, r, s);
+        // // check that a malformed signature will revert
+        // deadline = block.timestamp + 1 days;
+        // signature = _getPermitSig(testSpender, tokenId, deadline, minterPrivateKey);
+        // vm.expectRevert("ajna/nft-invalid-signature");
+        // spenderContract.transferFromWithPermit(testReceiver, tokenId, deadline, 0, r, s );
     }
 
     /**

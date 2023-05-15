@@ -397,17 +397,6 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     /**************************/
 
     /**
-     *  @notice Retrieves token's next nonce for permit.
-     *  @param  tokenId_ Address of the `Ajna` pool to retrieve accumulators of.
-     *  @return Incremented token permit nonce.
-     */
-    function _getAndIncrementNonce(
-        uint256 tokenId_
-    ) internal override returns (uint256) {
-        return uint256(nonces[tokenId_]++);
-    }
-
-    /**
      *  @notice Checks that a provided pool address was deployed by an `Ajna` factory.
      *  @param  pool_       Address of the `Ajna` pool.
      *  @param  subsetHash_ Factory's subset hash pool.
