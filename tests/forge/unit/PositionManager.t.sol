@@ -2,6 +2,7 @@
 pragma solidity 0.8.14;
 
 import { Base64 } from '@base64-sol/base64.sol';
+import { stdJson } from '@std/StdJson.sol';
 
 import { ERC20HelperContract } from '../unit/ERC20Pool/ERC20DSTestPlus.sol';
 import { ERC721HelperContract } from '../unit/ERC721Pool/ERC721DSTestPlus.sol';
@@ -17,6 +18,8 @@ import '../utils/ContractNFTRecipient.sol';
 import '../utils/ContractNFTSpender.sol';
 
 abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract {
+
+    using stdJson for string;
 
     PositionManager  internal _positionManager;
 
@@ -2580,6 +2583,13 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.burn(burnParams);
     }
 
+    struct DecodeTokenURIParams {
+        string name;
+        string description;
+        string image;
+        string owner;
+    }
+
     function testTokenURI() external {
         // should revert if using non-existant tokenId
         vm.expectRevert();
@@ -2622,8 +2632,12 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
         _positionManager.memorializePositions(memorializeParams);
 
+        // decode uri string and check attributes
         string memory uriString = _positionManager.tokenURI(tokenId);
-        // emit log(uriString);
+        // bytes memory data = Base64.decode(uriString);
+        // DecodeTokenURIParams memory decodedURI = abi.decode(data, (DecodeTokenURIParams));
+        emit log(uriString);
+        // emit log(decodedURI.image);
         assertGt(bytes(uriString).length, 0);
     }
 
