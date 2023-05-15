@@ -44,6 +44,13 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     using EnumerableSet for EnumerableSet.UintSet;
     using SafeERC20     for ERC20;
 
+    /*****************/
+    /*** Constants ***/
+    /*****************/
+
+    /// @dev Period of time the token transfer is locked after redeeming from.
+    uint256 internal constant TRANSFER_LOCK_PERIOD = 1 hours;
+
     /***********************/
     /*** State Variables ***/
     /***********************/
@@ -57,6 +64,8 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     mapping(uint256 => uint96)                       internal nonces;
     /// @dev Mapping of `token id => bucket indexes` associated with position.
     mapping(uint256 => EnumerableSet.UintSet)        internal positionIndexes;
+    /// @dev Mapping of `token id => last redeem timestamp`.
+    mapping(uint256 => uint256)                      internal lastRedeemTime;
 
     /// @dev Id of the next token that will be minted. Skips `0`.
     uint176 private _nextId = 1;
@@ -148,6 +157,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         // remove permit nonces and pool mapping for burned token
         delete nonces[params_.tokenId];
         delete poolKey[params_.tokenId];
+        delete lastRedeemTime[params_.tokenId];
 
         _burn(params_.tokenId);
 
@@ -382,8 +392,9 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             unchecked { ++i; }
         }
 
-        address owner = ownerOf(params_.tokenId);
+        lastRedeemTime[params_.tokenId] = block.timestamp;
 
+        address owner = ownerOf(params_.tokenId);
         // approve owner to take over the LP ownership (required for transferLP pool call)
         pool.increaseLPAllowance(owner, params_.indexes, lpAmounts);
         // update pool lps accounting and transfer ownership of lps from PositionManager contract
@@ -395,6 +406,26 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     /**************************/
     /*** Internal Functions ***/
     /**************************/
+
+    /**
+     *  @dev Called before the NFT position transfer, reverts if transfer attempted in less than one hour since last redeem.
+     *  @dev    === Revert on ===
+     *  @dev    - positions redeemed in the last hour `TransferLockedByRedeem()`
+     */
+    function _beforeTokenTransfer(
+        address,
+        address to_,
+        uint256 tokenId_,
+        uint256
+    ) internal override {
+        // burning is not constrained by any redeem action
+        if (to_ != address(0)) {
+            // revert transfer in case token positions were redeem in the last transfer lock period
+            if (block.timestamp - lastRedeemTime[tokenId_] < TRANSFER_LOCK_PERIOD) revert TransferLockedByRedeem();
+
+            delete lastRedeemTime[tokenId_];
+        }
+    }
 
     /**
      *  @notice Retrieves token's next nonce for permit.

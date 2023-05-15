@@ -2745,7 +2745,6 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             _positionManager.reedemPositions(params);
         }
     }
-
 }
 
 abstract contract PositionManagerERC721PoolHelperContract is ERC721HelperContract {
@@ -3222,5 +3221,113 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
         vm.expectRevert("ERC721: invalid token ID");
         _positionManager.ownerOf(tokenId);
 
+    }
+}
+
+contract PositionManagerCode4ArenaFindingsTest is PositionManagerERC20PoolHelperContract {
+
+    /**
+        Code4arena 196: The buyer of the the NFT position can be front-run by the seller
+        https://github.com/code-423n4/2023-05-ajna-findings/issues/196
+        Alice owns a position that is worth 10 eth
+        Alice mints an NFT to represent her position
+        Alice offers her nft on a secondary market for 9 eth
+        Bob sees the good deal and makes a transaction to buy the position for 9 eth
+        Alice front-runs Bob and calls redeemPositions()
+        Alice no has the 10 eth worth of lp
+        Bob's transaction completes and he gets a worthless NFT
+        Alice gets Bobs 9 eth
+
+        Fixed by recording block of last redeem and revert if same as transfer block.
+     */
+    function testCode4arena196() external {
+        // generate addresses and set test params
+        address alice = makeAddr("alice");
+        address bob   = makeAddr("bob");
+        uint256 mintAmount = 50_000 * 1e18;
+        uint256[] memory indexes = new uint256[](2);
+        indexes[0] = 2550;
+        indexes[1] = 2551;
+        uint256[] memory aliceRedeemIndex = new uint256[](1);
+        aliceRedeemIndex[0] = 2550;
+        uint256[] memory bobRedeemIndex = new uint256[](1);
+        bobRedeemIndex[0] = 2551;
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 15_000 * 1e18;
+        amounts[1] = 10_000 * 1e18;
+        address[] memory transferors = new address[](1);
+        transferors[0] = address(_positionManager);
+
+        // add initial liquidity
+        _mintQuoteAndApproveManagerTokens(alice, mintAmount);
+
+        _addInitialLiquidity({
+            from:   alice,
+            amount: 15_000 * 1e18,
+            index:  2550
+        });
+        _addInitialLiquidity({
+            from:   alice,
+            amount: 10_000 * 1e18,
+            index:  2551
+        });
+
+        uint256 tokenId = _mintNFT(alice, alice, address(_pool));
+        assertEq(_positionManager.ownerOf(tokenId), alice);
+
+        // alice memorialize positions
+        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
+        _pool.approveLPTransferors(transferors);
+        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
+            tokenId, indexes
+        );
+        _positionManager.memorializePositions(memorializeParams);
+
+        // alice redeems positions from a bucket before transferring NFT to bob
+        _pool.approveLPTransferors(transferors);
+        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+            tokenId, address(_pool), aliceRedeemIndex
+        );
+        _positionManager.reedemPositions(reedemParams);
+
+        // alice transfer NFT to bob in the same block as redeem, transfer should fail
+        _positionManager.approve(address(this), tokenId);
+        vm.expectRevert(IPositionManagerErrors.TransferLockedByRedeem.selector);
+        _positionManager.safeTransferFrom(alice, bob, tokenId);
+
+        // alice transfer NFT to bob after 1 hour passed since last redeem
+        skip(60 minutes);
+        _positionManager.safeTransferFrom(alice, bob, tokenId);
+
+        // bob owns position NFT
+        assertEq(_positionManager.ownerOf(tokenId), bob);
+
+        // bob redeems positions
+        changePrank(bob);
+        _pool.approveLPTransferors(transferors);
+        reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+            tokenId, address(_pool), bobRedeemIndex
+        );
+        _positionManager.reedemPositions(reedemParams);
+
+        // bob should be able to burn NFT in same block as redeem
+        IPositionManagerOwnerActions.BurnParams memory burnParams = IPositionManagerOwnerActions.BurnParams(
+            tokenId, address(_pool)
+        );
+        _positionManager.burn(burnParams);
+
+        // check balances, alice should have LP in bucket 2550, bob should have LP in bucket 2551
+        _assertLenderLpBalance({
+            lender:      alice,
+            index:       2550,
+            lpBalance:   15_000 * 1e18,
+            depositTime: _startTime
+        });
+        _assertLenderLpBalance({
+            lender:      bob,
+            index:       2551,
+            lpBalance:   10_000 * 1e18,
+            depositTime: _startTime
+        });
     }
 }

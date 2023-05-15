@@ -33,6 +33,11 @@ interface IPositionManagerErrors {
     error RemovePositionFailed();
 
     /**
+     * @notice User cannot transfer a position NFT redeemed in an interval less than 1 hour since last redeem.
+     */
+    error TransferLockedByRedeem();
+
+    /**
      * @notice User attempting to interact with a pool that doesn't match the pool associated with the `tokenId`.
      */
     error WrongPool();
