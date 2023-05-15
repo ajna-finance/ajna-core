@@ -163,16 +163,19 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      *  @dev    `positionIndexes`: add bucket index
      *  @dev    `positions`: update `tokenId => bucket id` position
      *  @dev    === Revert on ===
-     *  @dev    positions token to burn has liquidity `LiquidityNotRemoved()`
+     *  @dev    - `mayInteract`:
+     *  @dev       token id is not a valid / minted id
+     *  @dev       sender is not owner `NoAuth()`
+     *  @dev       token id not minted for given pool `WrongPool()`
      *  @dev    === Emit events ===
      *  @dev    - `MemorializePosition`
      */
     function memorializePositions(
         MemorializePositionsParams calldata params_
-    ) external override {
+    ) external mayInteract(params_.pool, params_.tokenId) override {
         EnumerableSet.UintSet storage positionIndex = positionIndexes[params_.tokenId];
 
-        IPool   pool  = IPool(poolKey[params_.tokenId]);
+        IPool   pool  = IPool(params_.pool);
         address owner = ownerOf(params_.tokenId);
 
         uint256 indexesLength = params_.indexes.length;
