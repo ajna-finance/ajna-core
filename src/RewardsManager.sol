@@ -278,6 +278,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
         address ajnaPool = stakeInfo.ajnaPool;
 
+        // TODO: wrapping like this is also blocking update exchange rates...
         // claim rewards, if rewards are available, and they haven't already been claimed
         uint256 epochToClaim = IPool(ajnaPool).currentBurnEpoch();
         if (!isEpochClaimed[tokenId_][epochToClaim]) {

@@ -75,7 +75,6 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         uint256[] memory indexes,
         uint256 updateExchangeRatesReward
     ) internal {
-
         changePrank(owner);
 
         // when the token is unstaked updateExchangeRates emits
@@ -115,8 +114,7 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         uint256 interest,
         uint256 burned,
         uint256 tokensToBurn
-        ) internal {
-
+    ) internal {
         (uint256 bETimestamp, uint256 bEInterest, uint256 bEBurned) = IPool(pool).burnInfo(epoch);
 
         assertEq(bETimestamp, timestamp);

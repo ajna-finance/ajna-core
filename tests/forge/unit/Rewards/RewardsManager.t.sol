@@ -383,6 +383,8 @@ contract RewardsManagerTest is RewardsHelperContract {
         // check can't call update exchange rate after the update period has elapsed
         uint256 updateRewards = _rewardsManager.updateBucketExchangeRatesAndClaim(address(_pool), depositIndexes);
         assertEq(updateRewards, 0);
+
+        // TODO: check unstake will not emit ClaimRewards
     }
 
     function testWithdrawAndClaimRewardsNoExchangeRateUpdate() external {
