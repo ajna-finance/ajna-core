@@ -29,6 +29,8 @@ import { tokenSymbol } from './libraries/helpers/SafeTokenNamer.sol';
 
 import { PositionNFTSVG } from './libraries/external/PositionNFTSVG.sol';
 
+import '@std/console.sol';
+
 /**
  *  @title  Position Manager Contract
  *  @notice Used by Pool lenders to optionally mint `NFT` that represents their positions.
@@ -267,7 +269,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         MoveLiquidityLocalVars memory vars;
         vars.depositTime = fromPosition.depositTime;
 
-        // handle the case where owner attempts to move liquidity after they've already done so
+        // owner attempts to move liquidity from index without LP or they've already moved it
         if (vars.depositTime == 0) revert RemovePositionFailed();
 
         // ensure bucketDeposit accounts for accrued interest
@@ -440,7 +442,8 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         uint256 depositTime_
     ) internal view returns (bool) {
         (, , uint256 bankruptcyTime, , ) = pool_.bucketInfo(index_);
-        return depositTime_ <= bankruptcyTime;
+        // Only check against deposit time if bucket has gone bankrupt
+        if (bankruptcyTime != 0) return depositTime_ <= bankruptcyTime;
     }
 
     /**********************/
