@@ -1185,17 +1185,6 @@ contract RewardsManagerTest is RewardsHelperContract {
         secondLpsAwarded[3] = 1_000 * 1e18;
         secondLpsAwarded[4] = 1_000 * 1e18;
 
-        _moveStakedLiquidity({
-            from:             _minterOne,
-            tokenId:          tokenIdOne,
-            fromIndexes:      depositIndexes,
-            lpsRedeemed:      secondLpsRedeemed,
-            fromIndStaked:    false,
-            toIndexes:        secondIndexes,
-            lpsAwarded:       secondLpsAwarded,
-            expiry:           block.timestamp + 1000
-        });
-
         /*****************************/
         /*** First Reserve Auction ***/
         /*****************************/
@@ -1220,17 +1209,6 @@ contract RewardsManagerTest is RewardsHelperContract {
         secondLpsAwarded[2] = 1_000.000165321954673000 * 1e18;
         secondLpsAwarded[3] = 1_000.000165321954673000 * 1e18;
         secondLpsAwarded[4] = 1_000.000165321954673000 * 1e18;
-
-        _moveStakedLiquidity({
-            from:             _minterOne,
-            tokenId:          tokenIdOne,
-            fromIndexes:      secondIndexes,
-            lpsRedeemed:      secondLpsRedeemed,
-            fromIndStaked:    true,
-            toIndexes:        depositIndexes,
-            lpsAwarded:       secondLpsAwarded,
-            expiry:           block.timestamp + 1000
-        });
 
         /******************************/
         /*** Second Reserve Auction ***/
