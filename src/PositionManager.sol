@@ -349,7 +349,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      *  @dev    === Emit events ===
      *  @dev    - `RedeemPosition`
      */
-    function reedemPositions(
+    function redeemPositions(
         RedeemPositionsParams calldata params_
     ) external override mayInteract(params_.pool, params_.tokenId) {
         EnumerableSet.UintSet storage positionIndex = positionIndexes[params_.tokenId];
