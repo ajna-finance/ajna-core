@@ -2752,14 +2752,6 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         address testBorrower    = makeAddr("testBorrower");
         address testBorrowerTwo = makeAddr("testBorrowerTwo");
 
-        // minter 1 adds liq set num of indexes
-        // minter 1 memorializes set num of indexes
-        // bucket goes bankrupt
-        // minter 2 adds liq set same indexes
-        // minter 2 memeorializes same indexes setting fresh deposit time on positionManager CT
-        // minter one moves position to previous bankrupted index that minter 2 memorialized, now has pre bankruptcy LP
-        // minter one now can withdraw more from index then they should
-
         uint256 testIndex = _i9_91;
 
         /************************/
@@ -2957,17 +2949,16 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         assertTrue(_positionManager.isPositionBucketBankrupt(tokenId, _i9_91));
 
-        // testMinter moves 11_000 QT _i9_72 to bankrupt _i9_91 deposit
+        // testMinter moves 8_936 QT _i9_72 to bankrupt _i9_91 deposit, should not have any pre bankruptcy LP
         changePrank(testMinter);
         IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
             tokenId, address(_pool), _i9_72, testIndex, block.timestamp + 5 hours
         );
         _positionManager.moveLiquidity(moveLiquidityParams);
 
-        // bucket is insolvent, balances are reset
         _assertBucketAssets({
             index:        _i9_91,
-            lpBalance:    18_936.867749772961757497 * 1e18, // bucket is bankrupt
+            lpBalance:    18_936.867749772961757497 * 1e18,
             collateral:   0,
             deposit:      18_936.867749772961757497 * 1e18,
             exchangeRate: 1.0 * 1e18
@@ -2992,21 +2983,21 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
         _positionManager.reedemPositions(reedemParams);
 
-        //FIXME: testMinter should only be able to withdraw 8,936.865619773958012095 * 1e18 QT
+        // minter one should only be able to withdraw what they moved
         _removeAllLiquidity({
             from:     testMinter,
-            amount:   10_936.867749772961757497 * 1e18,
+            amount:   8_936.867749772961757497 * 1e18,
             index:    _i9_91,
             newLup:   _p9_91,
-            lpRedeem: 10_936.867749772961757497 * 1e18
+            lpRedeem: 8_936.867749772961757497 * 1e18
         });
 
-        // bucket is insolvent, balances are reset
+        // minter2 has remaining liquidity in _i9_91
         _assertBucketAssets({
             index:        _i9_91,
-            lpBalance:    8_000.000000000000000000 * 1e18, // bucket is bankrupt
+            lpBalance:    10_000.000000000000000000 * 1e18,
             collateral:   0,
-            deposit:      8_000.000000000000000000 * 1e18,
+            deposit:      10_000.000000000000000000 * 1e18,
             exchangeRate: 1.0 * 1e18
         });
 
