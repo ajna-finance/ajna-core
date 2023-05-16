@@ -529,12 +529,12 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         ) = _getEpochInfo(ajnaPool_, nextEpoch_);
 
         // calculate rewards earned
-        newRewards_ = totalInterestEarnedInPeriod == 0 ? 0 : Maths.wmul(
-            REWARD_FACTOR,
-            Maths.wdiv(
+        newRewards_ = totalInterestEarnedInPeriod == 0 ? 0 : Maths.wdiv(
+            Maths.wmul(
                 Maths.wmul(interestEarned_, totalBurnedInPeriod),
-                totalInterestEarnedInPeriod
-            )
+                REWARD_FACTOR
+            ),
+            totalInterestEarnedInPeriod
         );
 
         uint256 rewardsCapped = Maths.wmul(REWARD_CAP, totalBurnedInPeriod);

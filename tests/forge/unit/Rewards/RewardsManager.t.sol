@@ -452,7 +452,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:                      address(_pool),
             tokenId:                   tokenIdOne,
             claimedArray:              _epochsClaimedArray(2, 0),
-            reward:                    78.702367919037406995 * 1e18,
+            reward:                    78.702367919037406994 * 1e18,
             indexes:                   depositIndexes,
             updateExchangeRatesReward: 3.436607167064188546 * 1e18
         });
@@ -1660,7 +1660,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:                      address(_pool),
             tokenId:                   tokenIdTwo,
             claimedArray:              _epochsClaimedArray(3, 0),
-            reward:                    286.756084406079436885 * 1e18,
+            reward:                    286.756084406079436884 * 1e18,
             indexes:                   secondIndexes,
             updateExchangeRatesReward: 0
         });
