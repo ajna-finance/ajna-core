@@ -212,11 +212,10 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
 
         // lender redeem their shares
         changePrank(_lender);
-        // Note: uncommenting this causes tearDown to fail again....
-        /* for (uint256 i = 0; i < 4; ++i) { */
-        /*     (, uint256 bucketQuote, , , ,) = _poolUtils.bucketInfo(address(_pool), startBucketId + i); */
-        /*     if (bucketQuote != 0) _pool.removeQuoteToken(type(uint256).max, startBucketId + i); */
-        /* } */
+        for (uint256 i = 0; i < 4; ++i) { 
+            (, uint256 bucketQuote, , , ,) = _poolUtils.bucketInfo(address(_pool), startBucketId + i); 
+            if (bucketQuote != 0) _pool.removeQuoteToken(type(uint256).max, startBucketId + i); 
+        } 
 
         // ensure bidders can still withdraw their bonds
         assertLt(_quote.balanceOf(_bidder), 200_000 * _quoteTokenPrecision);
