@@ -47,14 +47,14 @@ interface IPositionManagerOwnerActions {
     ) external;
 
     /**
-     *  @notice Called to reedem existing positions with a given `NFT`.
+     *  @notice Called to redeem existing positions with a given `NFT`.
      *  @dev    The array of buckets is expected to be constructed off chain by scanning events for that lender.
      *  @dev    The `NFT` must have already been created, and the number of buckets to be memorialized at a time determined by function caller.
      *  @dev    An additional call is made to the pool to transfer the `LP` Position Manager to owner.
      *  @dev    `Pool.approveLPTransferors` must be called prior to calling this method in order to allow `Position manager` contract to transfer redeemed `LP`.
      *  @param  params_ Calldata struct supplying inputs required to conduct the redeem.
      */
-    function reedemPositions(
+    function redeemPositions(
         RedeemPositionsParams calldata params_
     ) external;
 
@@ -104,6 +104,6 @@ interface IPositionManagerOwnerActions {
     struct RedeemPositionsParams {
         uint256   tokenId; // The tokenId of the positions NFT
         address   pool;    // The pool address associated with positions NFT
-        uint256[] indexes; // The array of bucket indexes to reedem positions for
+        uint256[] indexes; // The array of bucket indexes to redeem positions for
     }
 }

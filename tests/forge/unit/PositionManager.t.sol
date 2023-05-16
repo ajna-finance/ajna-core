@@ -968,11 +968,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertTrue(_positionManager.isPositionBucketBankrupt(tokenId, testIndex));
 
         // redeem should fail as the bucket has bankrupted
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        IPositionManagerOwnerActions.RedeemPositionsParams memory redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
         vm.expectRevert(IPositionManagerErrors.BucketBankrupt.selector);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // move liquidity should fail as the bucket has bankrupted
         IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
@@ -1154,19 +1154,19 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // check old owner cannot redeem positions
         // construct redeem liquidity params
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        IPositionManagerOwnerActions.RedeemPositionsParams memory redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
         // redeem liquidity called by old owner
         vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // check new owner can redeem positions
         changePrank(testReceiver);
         // allow position manager as transferor
         _pool.approveLPTransferors(transferors);
 
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // check pool state
         _assertLenderLpBalance({
@@ -1294,12 +1294,12 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // check old owner cannot redeem positions
         // construct redeem liquidity params
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        IPositionManagerOwnerActions.RedeemPositionsParams memory redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
         // redeem liquidity called by old owner
         vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // check new owner can redeem positions
         changePrank(testReceiver);
@@ -1308,7 +1308,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         transferors[0] = address(_positionManager);
         _pool.approveLPTransferors(transferors);
 
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // check pool state
         _assertLenderLpBalance({
@@ -1478,10 +1478,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // redeem positions of testMinter
         changePrank(testMinter);
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        IPositionManagerOwnerActions.RedeemPositionsParams memory redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         _positionManager.burn(burnParams);
 
@@ -1957,11 +1957,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         transferors[0] = address(_positionManager);
         _pool.approveLPTransferors(transferors);
         indexes[0] = moveIndex;
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = 
+        IPositionManagerOwnerActions.RedeemPositionsParams memory redeemParams = 
             IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId1, address(_pool), indexes
         );
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
         skip(2 days);
 
         // borrower repays
@@ -1979,10 +1979,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         changePrank(lender2);
         _pool.approveLPTransferors(transferors);
         indexes[0] = mintIndex;
-        reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId2, address(_pool), indexes
         );
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // tearDown ensures buckets are empty
     }
@@ -2061,20 +2061,20 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         assertTrue(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
 
         // redeem positions of testMinter
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        IPositionManagerOwnerActions.RedeemPositionsParams memory redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
 
         // should fail if trying to redeem from different address but owner
         changePrank(notOwner);
         vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // redeem from owner
         vm.expectEmit(true, true, true, true);
         emit RedeemPosition(testMinter, tokenId, indexes);
         changePrank(testMinter);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // check pool state
         _assertLenderLpBalance({
@@ -2096,7 +2096,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // should fail if trying to redeem one more time
         vm.expectRevert(IPositionManagerErrors.RemovePositionFailed.selector);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
     }
 
     function testRedeemEmptyPositions() external {
@@ -2108,14 +2108,14 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // redeem positions of testMinter
         uint256[] memory indexes = new uint256[](1);
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        IPositionManagerOwnerActions.RedeemPositionsParams memory redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
 
         // should fail if trying to redeem empty position
         changePrank(testMinter);
         vm.expectRevert(IPositionManagerErrors.RemovePositionFailed.selector);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
     }
 
     function testRedeemPositionsByNewNFTOwner() external {
@@ -2257,21 +2257,21 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // check new owner
         assertEq(_positionManager.ownerOf(tokenId), testReceiver);
 
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        IPositionManagerOwnerActions.RedeemPositionsParams memory redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
 
         // check old owner cannot redeem positions
         vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // check position manager cannot redeem positions
         changePrank(address(_positionManager));
         vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // redeem from new owner
-        reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
         changePrank(testReceiver);
@@ -2281,7 +2281,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         emit TransferLP(address(_positionManager), testReceiver, indexes, 15_000 * 1e18);
         vm.expectEmit(true, true, true, true);
         emit RedeemPosition(testReceiver, tokenId, indexes);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // check pool state
         _assertLenderLpBalance({
@@ -2404,11 +2404,11 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.moveLiquidity(moveLiquidityParams);
 
         // minter cannot redeem positions on behalf of lender (is not approved)
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        IPositionManagerOwnerActions.RedeemPositionsParams memory redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
         vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // minter cannot burn positions NFT on behalf of lender (is not approved)
         IPositionManagerOwnerActions.BurnParams memory burnParams = IPositionManagerOwnerActions.BurnParams(
@@ -2446,10 +2446,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // minter can redeem liquidity on behalf of lender
         indexes[0] = 2551;
-        reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         _assertLenderLpBalance({
             lender:      lender,
@@ -2526,7 +2526,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // minter is owner so can reddeem LP
         changePrank(minter);
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        IPositionManagerOwnerActions.RedeemPositionsParams memory redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), indexes
         );
 
@@ -2535,7 +2535,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         transferors[0] = address(_positionManager);
         _pool.approveLPTransferors(transferors);
 
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         _assertLenderLpBalance({
             lender:      lender,
@@ -2721,7 +2721,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
                 tokenIds[i], address(_pool), indexes
             );
             changePrank(addresses[i]);
-            _positionManager.reedemPositions(params);
+            _positionManager.redeemPositions(params);
         }
 
         (lpBalance, depositTime) = _pool.lenderInfo(indexes[0], alice);
@@ -2742,7 +2742,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             );
             changePrank(addresses[i]);
             vm.expectRevert(IPositionManagerErrors.RemovePositionFailed.selector);
-            _positionManager.reedemPositions(params);
+            _positionManager.redeemPositions(params);
         }
     }
 
@@ -3140,17 +3140,17 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
 
         // check old owner cannot redeem positions
         // construct redeem liquidity params
-        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+        IPositionManagerOwnerActions.RedeemPositionsParams memory redeemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), newIndexes
         );
         // redeem liquidity called by old owner
         vm.expectRevert(IPositionManagerErrors.NoAuth.selector);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
         // check new owner can redeem positions
         changePrank(testAddress2);
         _pool.approveLPTransferors(transferors);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(redeemParams);
 
          // check pool state
         _assertLenderLpBalance({
