@@ -330,7 +330,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         }
 
         // update position deposit time with the renewed to bucket deposit time
-        (, vars.toDepositTime)   = IPool(params_.pool).lenderInfo(params_.toIndex, address(this));
+        (, vars.toDepositTime) = IPool(params_.pool).lenderInfo(params_.toIndex, address(this));
         toPosition.depositTime = vars.toDepositTime;
 
         emit MoveLiquidity(
