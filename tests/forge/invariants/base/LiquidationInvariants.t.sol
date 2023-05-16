@@ -141,6 +141,14 @@ abstract contract LiquidationInvariants is BasicInvariants {
             "Auction Invariant A7"
         );
     }
+
+    /// @dev check that MOMP >= LUP
+    function _invariant_A8() internal view {
+        require(
+            _poolInfo.lup(address(_pool)) <= _poolInfo.momp(address(_pool)),
+            "Auction Invariant A8"
+        );
+    }
     
     function invariant_call_summary() public virtual override useCurrentTimestamp {
         console.log("\nCall Summary\n");
