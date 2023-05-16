@@ -352,7 +352,7 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
 
         // construct memorialize params struct
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId_, indexes
+            tokenId_, address(pool), indexes
         );
 
         _positionManager.memorializePositions(memorializeParams);

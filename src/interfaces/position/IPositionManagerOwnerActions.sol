@@ -75,6 +75,7 @@ interface IPositionManagerOwnerActions {
      */
     struct MemorializePositionsParams {
         uint256   tokenId; // The tokenId of the positions NFT
+        address   pool;    // The pool address associated with positions NFT
         uint256[] indexes; // The array of bucket indexes to memorialize positions
     }
 

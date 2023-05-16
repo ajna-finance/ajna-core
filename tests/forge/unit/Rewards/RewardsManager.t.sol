@@ -216,7 +216,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             _minterOne, address(_pool), keccak256("ERC20_NON_SUBSET_HASH"));
         uint256 tokenId = _positionManager.mint(mintParams);
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
+            tokenId, address(_pool), indexes
         );
         _positionManager.memorializePositions(memorializeParams);
         _registerLender(address(_positionManager), indexes);
