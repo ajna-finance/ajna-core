@@ -2756,9 +2756,9 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // minter 1 memorializes set num of indexes
         // bucket goes bankrupt
         // minter 2 adds liq set same indexes
-        // minter 2 memeorializes same indexes
-        // minter one moves position to index that minter 2 memorialized
-        // minter one now has a strage and incorrectly increased LP amount
+        // minter 2 memeorializes same indexes setting fresh deposit time on positionManager CT
+        // minter one moves position to previous bankrupted index that minter 2 memorialized, now has pre bankruptcy LP
+        // minter one now can withdraw more from index then they should
 
         uint256 testIndex = _i9_91;
 
