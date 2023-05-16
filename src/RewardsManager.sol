@@ -149,14 +149,16 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         address ajnaPool = stakeInfo.ajnaPool;
         uint256 curBurnEpoch = IPool(ajnaPool).currentBurnEpoch();
 
-        // claim rewards before moving liquidity, if any
-        _claimRewards(
-            stakeInfo,
-            tokenId_,
-            curBurnEpoch,
-            false,
-            ajnaPool
-        );
+        // claim rewards before moving liquidity, if rewards are available, and they haven't already been claimed
+        if (!isEpochClaimed[tokenId_][curBurnEpoch]) {
+            _claimRewards(
+                stakeInfo,
+                tokenId_,
+                curBurnEpoch,
+                false,
+                ajnaPool
+            );
+        }
 
         uint256 fromIndex;
         uint256 toIndex;
@@ -276,14 +278,17 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
         address ajnaPool = stakeInfo.ajnaPool;
 
-        // claim rewards, if any
-        _claimRewards(
-            stakeInfo,
-            tokenId_,
-            IPool(ajnaPool).currentBurnEpoch(),
-            false,
-            ajnaPool
-        );
+        // claim rewards, if rewards are available, and they haven't already been claimed
+        uint256 epochToClaim = IPool(ajnaPool).currentBurnEpoch();
+        if (!isEpochClaimed[tokenId_][epochToClaim]) {
+            _claimRewards(
+                stakeInfo,
+                tokenId_,
+                epochToClaim,
+                false,
+                ajnaPool
+            );
+        }
 
         // remove bucket snapshots recorded at the time of staking
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
