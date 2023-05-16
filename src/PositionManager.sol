@@ -500,7 +500,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         address pool_,
         bytes32 subsetHash_
     ) external override view returns (bool) {
-        return _isAjnaPool(pool_,subsetHash_);
+        return _isAjnaPool(pool_, subsetHash_);
     }
 
     /// @inheritdoc IPositionManagerDerivedState
