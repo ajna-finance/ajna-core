@@ -567,7 +567,29 @@ contract RegressionTestBasicWith10BucketsIndex6500ERC20Pool is BasicERC20PoolInv
         vm.setEnv("BUCKET_INDEX_ERC20", "6500");
         super.setUp();
     }
-    
+
+//     function test_regression_prototech_R7() external {
+//         _basicERC20PoolHandler.addCollateral(
+//             2,                               // actor index
+//             787978178697424804260644669040,  // amount to add, 787978178697.42480426064466904 * 10^18
+//             6502,                            // bucket index
+//             13838                            // skipped time
+//         );
+//         _basicERC20PoolHandler.transferLps(
+//             7,           // from actor index
+//             5,           // to actor index
+//             1672524930,  // lps to transfer
+//             6502,        // bucket index
+//             83798        // skipped time
+//         );
+//         _basicERC20PoolHandler.removeCollateral(
+//             5,      // actor index
+//             37232,  // amount to remove
+//             6502,   // bucket index
+//             46650   // skipped time
+//         );
+//     }
+
     function test_regression_prototech_R7() external {
         _basicERC20PoolHandler.transferLps(445190349765232478465142808227773858898453383369516032, 0, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 2, 9680518469655246051043034818482128678702);
         _basicERC20PoolHandler.moveQuoteToken(304366, 856235090472024823832840946324028872852, 11092393987026831609074980058169327781, 2473779861, 115792089237316195423570985008687907853269984665640564039457584007913129639932);
@@ -586,7 +608,7 @@ contract RegressionTestBasicWith10BucketsIndex6500ERC20Pool is BasicERC20PoolInv
         _basicERC20PoolHandler.transferLps(34950875869186042868477, 1672424195, 1672524930, 1672622582, 53462937315423623977655);
         _basicERC20PoolHandler.removeCollateral(418067269306838330370237940934375, 4831301178156706043332, 1000054681860295226, 778964714471411072910);
         _basicERC20PoolHandler.removeCollateral(7981428724095, 37232, 1021509466022985526714038681477232, 67792549521882694766664094);
-
+ 
         invariant_bucket();
     }
 }
