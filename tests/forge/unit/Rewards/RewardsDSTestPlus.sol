@@ -60,7 +60,7 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         _rewardsManager.stake(tokenId);
 
         // check token was transferred to rewards contract
-        (address ownerInf, address poolInf, ) = _rewardsManager.getStakeInfo(tokenId);
+        (address ownerInf, address poolInf, , ) = _rewardsManager.getStakeInfo(tokenId);
         assertEq(PositionManager(address(_positionManager)).ownerOf(tokenId), address(_rewardsManager));
         assertEq(ownerInf, owner);
         assertEq(poolInf, pool);
@@ -102,10 +102,11 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
             assertEq(rate, 0);
         }
 
-        (address ownerInf, address poolInf, uint256 interactionBlockInf) = _rewardsManager.getStakeInfo(tokenId);
+        (address ownerInf, address poolInf, uint256 interactionBlockInf, uint256 noOfPositions) = _rewardsManager.getStakeInfo(tokenId);
         assertEq(ownerInf, address(0));
         assertEq(poolInf, address(0));
         assertEq(interactionBlockInf, 0);
+        assertEq(noOfPositions, 0);
     }
 
     function _assertBurn(
@@ -230,7 +231,7 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         uint256 rewardsEarned
     ) internal {
         uint256 currentBurnEpoch = _pool.currentBurnEpoch();
-        (address ownerInf, address poolInf, uint256 interactionBurnEvent) = _rewardsManager.getStakeInfo(tokenId);
+        (address ownerInf, address poolInf, uint256 interactionBurnEvent, ) = _rewardsManager.getStakeInfo(tokenId);
         uint256 rewardsEarnedInf = _rewardsManager.calculateRewards(tokenId, currentBurnEpoch);
 
         assertEq(ownerInf, owner);

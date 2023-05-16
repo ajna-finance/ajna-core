@@ -42,10 +42,11 @@ interface IRewardsManagerState {
      *  @return owner_            The owner of a given `NFT` stake.
      *  @return pool_             The `Pool` the `NFT` represents positions in.
      *  @return lastClaimedEpoch_ The last burn epoch in which the owner of the `NFT` claimed rewards.
+     *  @return noOfIndexes_      The number of indexes tracked in staked `NFT`.
      */
     function getStakeInfo(
         uint256 tokenId_
-    ) external view returns (address owner_, address pool_, uint256 lastClaimedEpoch_);
+    ) external view returns (address owner_, address pool_, uint256 lastClaimedEpoch_, uint256 noOfIndexes_);
 
     /**
      *  @notice Retrieve information about recorded `LP` and rate values for a given bucket and a given stake, at stake time.
@@ -67,10 +68,11 @@ interface IRewardsManagerState {
 
 /// @dev Struct holding stake info state.
 struct StakeInfo {
-    address ajnaPool;                         // address of the Ajna pool the NFT corresponds to
-    uint96  lastClaimedEpoch;                 // last epoch the stake claimed rewards
-    address owner;                            // owner of the LP NFT
-    uint96  stakingEpoch;                     // epoch at staking time
+    address   ajnaPool;                       // address of the Ajna pool the NFT corresponds to
+    uint96    lastClaimedEpoch;               // last epoch the stake claimed rewards
+    address   owner;                          // owner of the LP NFT
+    uint96    stakingEpoch;                   // epoch at staking time
+    uint256[] indexesAtStakeTime;             // array of position indexes at stake time
     mapping(uint256 => BucketState) snapshot; // the LP NFT's balances and exchange rates in each bucket at the time of staking
 }
 

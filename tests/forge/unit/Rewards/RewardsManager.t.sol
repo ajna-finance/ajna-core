@@ -2095,7 +2095,7 @@ contract RewardsManagerTest is RewardsHelperContract {
                 address minterAddress = tokenIdToMinter[randomNfts[j]];
                 changePrank(minterAddress);
 
-                (, , uint256 lastInteractionEpoch) = _rewardsManager.getStakeInfo(randomNfts[j]);
+                (, , uint256 lastInteractionEpoch, ) = _rewardsManager.getStakeInfo(randomNfts[j]);
 
                 // select random epoch to claim reward
                 uint256 epochToClaim = lastInteractionEpoch < _pool.currentBurnEpoch() ? randomInRange(lastInteractionEpoch + 1, _pool.currentBurnEpoch()) : lastInteractionEpoch; 
@@ -2140,6 +2140,71 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         // user should be able to claim rewards for current epoch
         _rewardsManager.claimRewards(tokenIdOne, currentBurnEpoch);
+    }
+
+    function testStakeAndUnstakeBetweenReedem_report_317() external {
+        skip(10);
+
+        // configure NFT position one
+        uint256[] memory depositIndexes = new uint256[](1);
+        depositIndexes[0] = 9;
+
+        // _minterOne's depositIndexes has index '9'
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT({
+            indexes:    depositIndexes,
+            minter:     _minterOne,
+            mintAmount: 1_000 * 1e18,
+            pool:       address(_pool)
+        });
+
+        // minterOne deposits their NFT into the rewards contract
+        _stakeToken({
+            pool:    address(_pool),
+            owner:   _minterOne,
+            tokenId: tokenIdOne
+        });
+
+        // check snapshot at stake time
+        (address ownerInf, address poolInf, uint256 interactionBlockInf, uint256 noOfPositions) = _rewardsManager.getStakeInfo(tokenIdOne);
+        assertEq(ownerInf, address(_minterOne));
+        assertEq(poolInf, address(_pool));
+        assertEq(interactionBlockInf, 0);
+        assertEq(noOfPositions, 1);
+
+        // pool redeem the tokenIdOne with index [9]
+        //changePrank(address(_pool));
+        changePrank(address(_rewardsManager));
+        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+            tokenIdOne, address(_pool), depositIndexes
+        );
+        address[] memory transferors = new address[](1);
+        transferors[0] = address(_positionManager);
+        _pool.approveLPTransferors(transferors);
+        _positionManager.reedemPositions(reedemParams);
+
+        // _minterOne unstake
+        changePrank(_minterOne);
+        _rewardsManager.unstake(tokenIdOne);
+
+        // After unstake, old snapshot stakeInfo.snapshot[9] should be removed
+        assertEq(PositionManager(address(_positionManager)).ownerOf(tokenIdOne), _minterOne);
+
+        // check token was transferred from rewards contract to minter
+        assertEq(PositionManager(address(_positionManager)).ownerOf(tokenIdOne), _minterOne);
+
+        // invariant: all bucket snapshots are removed for the token id that was unstaken
+        for (uint256 bucketIndex = 0; bucketIndex <= 7388; bucketIndex++) {
+            (uint256 lps, uint256 rate) = _rewardsManager.getBucketStateStakeInfo(tokenIdOne, bucketIndex);
+            assertEq(lps, 0);
+            assertEq(rate, 0);
+        }
+
+        // check snapshot cleared after unstake
+        (ownerInf, poolInf, interactionBlockInf, noOfPositions) = _rewardsManager.getStakeInfo(tokenIdOne);
+        assertEq(ownerInf, address(0));
+        assertEq(poolInf, address(0));
+        assertEq(interactionBlockInf, 0);
+        assertEq(noOfPositions, 0);
     }
 
 }

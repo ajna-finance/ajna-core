@@ -244,6 +244,9 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             unchecked { ++i; }
         }
 
+        // record indexes at stake time (to be removed when unstake)
+        stakeInfo.indexesAtStakeTime = positionIndexes;
+
         emit Stake(msg.sender, ajnaPool, tokenId_);
 
         // transfer LP NFT to this contract
@@ -286,8 +289,9 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         );
 
         // remove bucket snapshots recorded at the time of staking
-        uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
-        for (uint256 i = 0; i < positionIndexes.length; ) {
+        uint256[] memory positionIndexes = stakeInfo.indexesAtStakeTime;
+        uint256 noOfPositionsAtStakeTime = positionIndexes.length;
+        for (uint256 i = 0; i < noOfPositionsAtStakeTime; ) {
             delete stakeInfo.snapshot[positionIndexes[i]]; // reset BucketState struct for current position
 
             unchecked { ++i; }
@@ -351,11 +355,12 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     /// @inheritdoc IRewardsManagerState
     function getStakeInfo(
         uint256 tokenId_
-    ) external view override returns (address, address, uint256) {
+    ) external view override returns (address, address, uint256, uint256) {
         return (
             stakes[tokenId_].owner,
             stakes[tokenId_].ajnaPool,
-            stakes[tokenId_].lastClaimedEpoch
+            stakes[tokenId_].lastClaimedEpoch,
+            stakes[tokenId_].indexesAtStakeTime.length
         );
     }
 
