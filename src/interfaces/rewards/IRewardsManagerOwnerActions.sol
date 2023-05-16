@@ -56,12 +56,14 @@ interface IRewardsManagerOwnerActions {
     /**
      *  @notice Update the exchange rate of a list of buckets.
      *  @dev    Caller can claim `5%` of the rewards that have accumulated to each bucket since the last burn event, if it hasn't already been updated.
-     *  @param  pool_    Address of the pool whose exchange rates are being updated.
-     *  @param  indexes_ List of bucket indexes to be updated.
+     *  @param  pool_       Address of the pool whose exchange rates are being updated.
+     *  @param  subsetHash_ Factory's subset hash pool that dpeloyed the Ajna pool. Used to validate that the `pool_` address is a legit Ajna pool.
+     *  @param  indexes_    List of bucket indexes to be updated.
      *  @return Returns reward amount for updating bucket exchange rates.
      */
     function updateBucketExchangeRatesAndClaim(
         address pool_,
+        bytes32 subsetHash_,
         uint256[] calldata indexes_
     ) external returns (uint256);
 

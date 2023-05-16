@@ -309,8 +309,12 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
      */
     function updateBucketExchangeRatesAndClaim(
         address pool_,
+        bytes32 subsetHash_,
         uint256[] calldata indexes_
     ) external override returns (uint256 updateReward) {
+        // revert if trying to update exchange rates for a non Ajna pool
+        if (!positionManager.isAjnaPool(pool_, subsetHash_)) revert NotAjnaPool();
+
         updateReward = _updateBucketExchangeRates(pool_, indexes_);
 
         // transfer rewards to sender

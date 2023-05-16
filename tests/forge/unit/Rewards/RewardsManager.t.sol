@@ -6,10 +6,11 @@ import 'src/RewardsManager.sol';
 import 'src/PositionManager.sol';
 import 'src/interfaces/rewards/IRewardsManager.sol';
 
-import { ERC20Pool }           from 'src/ERC20Pool.sol';
-import { RewardsHelperContract }   from './RewardsDSTestPlus.sol';
-import { IPoolErrors }         from 'src/interfaces/pool/commons/IPoolErrors.sol';
-import { Token }               from '../../utils/Tokens.sol';
+import { ERC20Pool }             from 'src/ERC20Pool.sol';
+import { RewardsHelperContract } from './RewardsDSTestPlus.sol';
+import { IPoolErrors }           from 'src/interfaces/pool/commons/IPoolErrors.sol';
+import { Token }                 from '../../utils/Tokens.sol';
+import { RoguePool }             from './RoguePool.sol';
 
 contract RewardsManagerTest is RewardsHelperContract {
 
@@ -315,6 +316,23 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:       address(_pool)
         });
 
+        // should revert if not an Ajna pool
+        address fakePool = makeAddr("fakePool");
+        vm.expectRevert();
+        _rewardsManager.updateBucketExchangeRatesAndClaim(
+            fakePool, keccak256("ERC20_NON_SUBSET_HASH"), depositIndexes
+        );
+        // should revert if Ajna pool but wrong subset
+        vm.expectRevert(IRewardsManagerErrors.NotAjnaPool.selector);
+        _rewardsManager.updateBucketExchangeRatesAndClaim(
+            address(_pool), keccak256("ERC721_NON_SUBSET_HASH"), depositIndexes
+        );
+        // no rewards earned if legit Ajna pool
+        uint256 rewards = _rewardsManager.updateBucketExchangeRatesAndClaim(
+            address(_pool), keccak256("ERC20_NON_SUBSET_HASH"), depositIndexes
+        );
+        assertEq(rewards, 0);
+
         _stakeToken({
             pool:    address(_pool),
             owner:   _minterOne,
@@ -381,7 +399,9 @@ contract RewardsManagerTest is RewardsHelperContract {
         skip(2 weeks);
 
         // check can't call update exchange rate after the update period has elapsed
-        uint256 updateRewards = _rewardsManager.updateBucketExchangeRatesAndClaim(address(_pool), depositIndexes);
+        uint256 updateRewards = _rewardsManager.updateBucketExchangeRatesAndClaim(
+            address(_pool), keccak256("ERC20_NON_SUBSET_HASH"), depositIndexes
+        );
         assertEq(updateRewards, 0);
     }
 
@@ -2007,7 +2027,9 @@ contract RewardsManagerTest is RewardsHelperContract {
         // call update exchange rate to enable claiming rewards
         changePrank(_updater);
         assertEq(_ajnaToken.balanceOf(_updater), 0);
-        _rewardsManager.updateBucketExchangeRatesAndClaim(address(_pool), depositIndexes);
+        _rewardsManager.updateBucketExchangeRatesAndClaim(
+            address(_pool), keccak256("ERC20_NON_SUBSET_HASH"), depositIndexes
+        );
         assertGt(_ajnaToken.balanceOf(_updater), 0);
 
         // calculate rewards earned and compare to percentages for updating and claiming
@@ -2078,7 +2100,9 @@ contract RewardsManagerTest is RewardsHelperContract {
 
             changePrank(_updater);
             assertEq(_ajnaToken.balanceOf(_updater), updaterBalance);
-            _rewardsManager.updateBucketExchangeRatesAndClaim(address(_pool), depositIndexes);
+            _rewardsManager.updateBucketExchangeRatesAndClaim(
+                address(_pool), keccak256("ERC20_NON_SUBSET_HASH"), depositIndexes
+            );
 
             // ensure updater gets reward for updating exchange rate
             assertGt(_ajnaToken.balanceOf(_updater), updaterBalance);
@@ -2140,6 +2164,38 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         // user should be able to claim rewards for current epoch
         _rewardsManager.claimRewards(tokenIdOne, currentBurnEpoch);
+    }
+
+    function testRoguePoolAttack_report_151() external {
+        address mal = makeAddr("mal");
+        vm.startPrank(mal);
+
+        uint256 rewardsManagerBalance = _ajnaToken.balanceOf(address(_rewardsManager));
+        uint256 malBalance = _ajnaToken.balanceOf(mal);
+        assertEq(malBalance, 0);
+        // set prev exchange rate to bypass
+        // https://github.com/code-423n4/2023-05-ajna/blob/main/ajna-core/src/RewardsManager.sol#L789
+        RoguePool roguePool = new RoguePool(_rewardsManager, _ajnaToken);
+        roguePool.setBurnEpoch(1);
+        uint256[] memory indexes = new uint256[](1);
+        indexes[0] = 777;
+
+        vm.expectRevert();
+        _rewardsManager.updateBucketExchangeRatesAndClaim(
+            address(roguePool), keccak256("ERC20_NON_SUBSET_HASH"), indexes
+        );
+        // finalize the attack
+        roguePool.setBurnEpoch(2);
+        vm.expectRevert();
+        _rewardsManager.updateBucketExchangeRatesAndClaim(
+            address(roguePool), keccak256("ERC20_NON_SUBSET_HASH"), indexes
+        );
+        // post attack checks
+        malBalance = _ajnaToken.balanceOf(mal);
+        assertEq(malBalance, 0);
+
+        rewardsManagerBalance = _ajnaToken.balanceOf(address(_rewardsManager));
+        assertEq(rewardsManagerBalance, 100000000 * 1e18);
     }
 
 }
