@@ -24,6 +24,8 @@ import { Maths }   from '../internal/Maths.sol';
     uint256 constant MIN_PRICE = 99_836_282_890;
     uint256 constant MAX_PRICE = 1_004_968_987.606512354182109771 * 1e18;
 
+    uint256 constant DEPOSIT_BUFFER = 1.000000001 * 1e18;
+
     /// @dev step amounts in basis points. This is a constant across pools at `0.005`, achieved by dividing `WAD` by `10,000`
     int256 constant FLOAT_STEP_INT = 1.005 * 1e18;
 
@@ -289,7 +291,10 @@ import { Maths }   from '../internal/Maths.sol';
         claimable_ = Maths.wmul(0.995 * 1e18, debt_) + quoteTokenBalance_;
 
         // Require 
-        claimable_ -= Maths.min(claimable_, Maths.wmul(Maths.WAD+1e9,poolSize_) + totalBondEscrowed_ + reserveAuctionUnclaimed_);
+        claimable_ -= Maths.min(claimable_,
+                                Maths.wmul(DEPOSIT_BUFFER,poolSize_) +
+                                totalBondEscrowed_ +
+                                reserveAuctionUnclaimed_);
     }
 
     /**
