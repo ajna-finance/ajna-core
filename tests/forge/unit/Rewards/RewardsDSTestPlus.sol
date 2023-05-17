@@ -167,37 +167,6 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         assertEq(_ajnaToken.balanceOf(from), fromAjnaBal + reward);
     }
 
-    function _moveStakedLiquidity(
-        address from,
-        uint256 tokenId,
-        uint256[] memory fromIndexes,
-        uint256[] memory lpsRedeemed,
-        bool fromIndStaked,
-        uint256[] memory toIndexes,
-        uint256[] memory lpsAwarded,
-        uint256 expiry
-    ) internal {
-        
-        changePrank(from);
-
-        // check MoveLiquidity emits
-        for (uint256 i = 0; i < fromIndexes.length; ++i) {
-            vm.expectEmit(true, true, true, true);
-            emit MoveLiquidity(address(_rewardsManager), tokenId, fromIndexes[i], toIndexes[i], lpsRedeemed[i], lpsAwarded[i]);
-        }
-
-        vm.expectEmit(true, true, true, true);
-        emit MoveStakedLiquidity(tokenId, fromIndexes, toIndexes);
-
-        if (fromIndStaked) {
-            // check exchange rates are updated
-            vm.expectEmit(true, true, true, true);
-            emit UpdateExchangeRates(_minterOne, address(_pool), toIndexes, 0);
-        }
-        _rewardsManager.moveStakedLiquidity(tokenId, fromIndexes, toIndexes, expiry);
-
-    }
-
     function _assertNotOwnerOfDepositRevert(address from , uint256 tokenId) internal {
         // check only deposit owner can claim rewards
         changePrank(from);

@@ -19,23 +19,6 @@ interface IRewardsManagerOwnerActions {
     ) external;
 
     /**
-     *  @notice Moves liquidity in a staked `NFT` between buckets.
-     *  @dev    Calls out to `PositionManager.moveLiquidity()`.
-     *  @dev    Automatically claims any available rewards in all existing buckets. Updates exchange rates for each new bucket the `NFT` is associated with.
-     *  @dev    `fromBuckets_` and `toBuckets_` must be the same array length. Liquidity is moved from the `fromBuckets_` to the `toBuckets_` in the same index.
-     *  @param  tokenId_     `ID` of the staked `LP` `NFT`.
-     *  @param  fromBuckets_ The list of bucket indexes to move liquidity from.
-     *  @param  toBuckets_   The list of bucket indexes to move liquidity to.
-     *  @param  expiry_      Timestamp after which this transaction will revert, preventing inclusion in a block with unfavorable price.
-     */
-    function moveStakedLiquidity(
-        uint256 tokenId_,
-        uint256[] memory fromBuckets_,
-        uint256[] memory toBuckets_,
-        uint256 expiry_
-    ) external;
-
-    /**
      *  @notice Stake a `LP` `NFT` into the rewards contract.
      *  @dev    Updates exchange rates for each bucket the `NFT` is associated with.
      *  @param  tokenId_ `ID` of the `LP` `NFT` to stake in the `Rewards contract.
