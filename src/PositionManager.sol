@@ -163,16 +163,19 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      *  @dev    `positionIndexes`: add bucket index
      *  @dev    `positions`: update `tokenId => bucket id` position
      *  @dev    === Revert on ===
-     *  @dev    positions token to burn has liquidity `LiquidityNotRemoved()`
+     *  @dev    - `mayInteract`:
+     *  @dev       token id is not a valid / minted id
+     *  @dev       sender is not owner `NoAuth()`
+     *  @dev       token id not minted for given pool `WrongPool()`
      *  @dev    === Emit events ===
      *  @dev    - `MemorializePosition`
      */
     function memorializePositions(
         MemorializePositionsParams calldata params_
-    ) external override {
+    ) external mayInteract(params_.pool, params_.tokenId) override {
         EnumerableSet.UintSet storage positionIndex = positionIndexes[params_.tokenId];
 
-        IPool   pool  = IPool(poolKey[params_.tokenId]);
+        IPool   pool  = IPool(params_.pool);
         address owner = ownerOf(params_.tokenId);
 
         uint256 indexesLength = params_.indexes.length;
@@ -186,6 +189,11 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             positionIndex.add(index);
 
             (uint256 lpBalance, uint256 depositTime) = pool.lenderInfo(index, owner);
+
+            // check that specified allowance is at least equal to the lp balance
+            uint256 allowance = pool.lpAllowance(index, address(this), owner);
+
+            if (allowance < lpBalance) revert AllowanceTooLow();
 
             Position memory position = positions[params_.tokenId][index];
 
@@ -349,7 +357,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      *  @dev    === Emit events ===
      *  @dev    - `RedeemPosition`
      */
-    function reedemPositions(
+    function redeemPositions(
         RedeemPositionsParams calldata params_
     ) external override mayInteract(params_.pool, params_.tokenId) {
         EnumerableSet.UintSet storage positionIndex = positionIndexes[params_.tokenId];
@@ -493,6 +501,14 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             positions[tokenId_][index_].lps,
             positions[tokenId_][index_].depositTime
         );
+    }
+
+    /// @inheritdoc IPositionManagerDerivedState
+    function isAjnaPool(
+        address pool_,
+        bytes32 subsetHash_
+    ) external override view returns (bool) {
+        return _isAjnaPool(pool_, subsetHash_);
     }
 
     /// @inheritdoc IPositionManagerDerivedState
