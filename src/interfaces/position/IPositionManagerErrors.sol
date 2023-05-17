@@ -8,6 +8,11 @@ pragma solidity 0.8.14;
 interface IPositionManagerErrors {
 
     /**
+     * @notice User attempting to memorialize position with an allowance set too low.
+     */
+    error AllowanceTooLow();
+
+    /**
      * @notice User attempting to utilize `LP` from a bankrupt bucket.
      */
     error BucketBankrupt();

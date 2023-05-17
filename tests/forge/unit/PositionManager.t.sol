@@ -163,7 +163,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         );
 
         // should revert if access hasn't been granted to transfer LP
-        vm.expectRevert(IPoolErrors.NoAllowance.selector);
+        vm.expectRevert(IPositionManagerErrors.AllowanceTooLow.selector);
         _positionManager.memorializePositions(memorializeParams);
 
         // allow position manager to take ownership of the position
