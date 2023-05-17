@@ -346,7 +346,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         });
     }
 
-    function testReserveAuctionPartiallyTaken() external {
+    function testReserveAuctionPartiallyTaken() external tearDown {
         // borrower repays partial debt (auction for full reserves)
         _repayDebt({
             from:             _borrower,
