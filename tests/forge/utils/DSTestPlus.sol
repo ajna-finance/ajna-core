@@ -1367,6 +1367,9 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         (hpb_, , , , , ) = _poolUtils.poolPricesInfo(address(_pool));
     }
 
+    function _availableQuoteToken() internal view returns (uint256) {
+        return _poolUtils.availableQuoteTokenAmount(address(_pool));
+    }
 
     /********************/
     /*** Pool Depoyer ***/

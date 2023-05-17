@@ -37,10 +37,17 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         // ensure actor always has the amount to pay for bond
         _ensureQuoteAmount(_actor, borrowerDebt);
 
+        uint256 kickerBondBefore = _getKickerBond(_actor);
+
         try _pool.kick(borrower_, 7388) {
 
             // **RE9**:  Reserves increase by 3 months of interest when a loan is kicked
             increaseInReserves += Maths.wmul(borrowerDebt, Maths.wdiv(interestRate, 4 * 1e18));
+
+            uint256 kickerBondAfter = _getKickerBond(_actor);
+
+            // **A7**: totalBondEscrowed should increase when auctioned kicked with the difference needed to cover the bond 
+            increaseInBonds += kickerBondAfter - kickerBondBefore;
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
@@ -57,6 +64,8 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         ( , , , uint256 depositBeforeAction, ) = _pool.bucketInfo(bucketIndex_);
         fenwickDeposits[bucketIndex_] = depositBeforeAction;
 
+        uint256 kickerBondBefore = _getKickerBond(_actor);
+
         // ensure actor always has the amount to add for kick
         _ensureQuoteAmount(_actor, borrowerDebt);
 
@@ -66,6 +75,11 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
             // **RE9**:  Reserves increase by 3 months of interest when a loan is kicked
             increaseInReserves += Maths.wdiv(Maths.wmul(borrowerDebt, interestRate), 4 * 1e18);
+
+            uint256 kickerBondAfter = _getKickerBond(_actor);
+
+            // **A7**: totalBondEscrowed should increase when auctioned kicked with the difference needed to cover the bond 
+            increaseInBonds += kickerBondAfter - kickerBondBefore;
 
             _fenwickRemove(depositBeforeAction - depositAfterAction, bucketIndex_);
 
@@ -80,7 +94,22 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBLiquidationHandler.withdrawBonds']++;
 
+        uint256 balanceBeforeWithdraw = _quote.balanceOf(_actor);
+        (uint256 claimableBondBeforeWithdraw, ) = _pool.kickerInfo(_actor);
+
         try _pool.withdrawBonds(kicker_, maxAmount_) {
+
+            uint256 balanceAfterWithdraw            = _quote.balanceOf(_actor);
+            (uint256 claimableBondAfterWithdraw, ) = _pool.kickerInfo(_actor);
+
+            // **A7** Claimable bonds should be available for withdrawal from pool at any time (bonds are guaranteed by the protocol).
+            require(
+                claimableBondAfterWithdraw < claimableBondBeforeWithdraw,
+                "A7: claimable bond not available to withdraw"
+            );
+
+            // **A7**: totalBondEscrowed should decrease only when kicker bonds withdrawned 
+            decreaseInBonds += balanceAfterWithdraw - balanceBeforeWithdraw;
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
@@ -129,9 +158,15 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             if (totalBondBeforeTake > totalBondAfterTake) {
                 // **RE7**: Reserves increase by bond penalty on take.
                 increaseInReserves += totalBondBeforeTake - totalBondAfterTake;
+
+                // **A7**: Total Bond decrease by bond penalty on take.
+                decreaseInBonds    += totalBondBeforeTake - totalBondAfterTake;
             } else {
                 // **RE7**: Reserves decrease by bond reward on take.
                 decreaseInReserves += totalBondAfterTake - totalBondBeforeTake;
+
+                // **A7**: Total Bond increase by bond penalty on take.
+                increaseInBonds += totalBondAfterTake - totalBondBeforeTake;
             }
 
             // **RE7**: Reserves increase with the quote token paid by taker.
@@ -198,6 +233,9 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             if (beforeBucketTakeVars.kickerBond > afterBucketTakeVars.kickerBond) {
                 // **RE7**: Reserves increase by bond penalty on take.
                 increaseInReserves += beforeBucketTakeVars.kickerBond - afterBucketTakeVars.kickerBond;
+
+                // **A7**: Total Bond decrease by bond penalty on take.
+                decreaseInBonds    += beforeBucketTakeVars.kickerBond - afterBucketTakeVars.kickerBond;
             }
             // **R7**: Exchange rates are unchanged under depositTakes
             // **R8**: Exchange rates are unchanged under arbTakes
