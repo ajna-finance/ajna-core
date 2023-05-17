@@ -38,7 +38,6 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
         setUp();
     }
 
-
     function setUp() internal useTimestamps {
         _setupLendersAndDeposits(LENDERS);
         _setupBorrowersAndLoans(LOANS_COUNT);
@@ -141,7 +140,6 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
         _withdrawBonds(kicker, kickerClaimable);
         vm.stopPrank();
     }
-
 
     function _setupLendersAndDeposits(uint256 count_) internal virtual {
         uint256[] memory buckets = buckets.values();

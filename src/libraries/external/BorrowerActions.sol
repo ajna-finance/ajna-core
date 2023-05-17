@@ -116,7 +116,7 @@ library BorrowerActions {
         DepositsState storage deposits_,
         LoansState    storage loans_,
         PoolState calldata poolState_,
-        uint256 maxAvaialble_,
+        uint256 maxAvailable_,
         address borrowerAddress_,
         uint256 amountToBorrow_,
         uint256 limitIndex_,
@@ -125,7 +125,7 @@ library BorrowerActions {
         DrawDebtResult memory result_
     ) {
         // revert if not enough pool balance to borrow
-        if (amountToBorrow_ > maxAvaialble_) revert InsufficientLiquidity();
+        if (amountToBorrow_ > maxAvailable_) revert InsufficientLiquidity();
 
         DrawDebtLocalVars memory vars;
         vars.pledge = collateralToPledge_ != 0;
