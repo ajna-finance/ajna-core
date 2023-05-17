@@ -121,7 +121,7 @@ contract Code4renaReports is PositionManagerERC20PoolHelperContract {
             // Memorialize quote tokens into minted NFT.
             IPositionManagerOwnerActions.MemorializePositionsParams
                 memory memorializeParams = IPositionManagerOwnerActions
-                    .MemorializePositionsParams(tokenId, indexes);
+                    .MemorializePositionsParams(tokenId, address(_pool), indexes);
             try _positionManager.memorializePositions(memorializeParams) { } catch { }
 
             // Get new Pool lp balances.
@@ -208,7 +208,7 @@ contract Code4renaReports is PositionManagerERC20PoolHelperContract {
 
         // alice memorialize params struct
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParamsAlice = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenIdAlice, indexes
+            tokenIdAlice, address(_pool), indexes
         );
 
         // alice allow position manager to take ownership of the position
@@ -223,7 +223,7 @@ contract Code4renaReports is PositionManagerERC20PoolHelperContract {
 
         // bob memorialize params struct
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParamsBob = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenIdBob, indexes
+            tokenIdBob, address(_pool), indexes
         );
 
         // bob memorialize quote tokens into minted NFT but with allowance of 1000e18 instead of 3000e18
@@ -252,7 +252,7 @@ contract Code4renaReports is PositionManagerERC20PoolHelperContract {
         _pool.approveLPTransferors(transferors);
 
         vm.expectRevert(IPositionManagerErrors.RemovePositionFailed.selector);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(reedemParams);
 
         (uint256 lpBalanceBobAfter,) = _pool.lenderInfo(indexes[0], bob);
         console.log("Balance of Bob: ", lpBalanceBobAfter);
@@ -264,7 +264,7 @@ contract Code4renaReports is PositionManagerERC20PoolHelperContract {
         );
 
         _pool.approveLPTransferors(transferors);
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(reedemParams);
 
         (uint256 lpBalanceAliceAfter,) = _pool.lenderInfo(indexes[0], alice);
         console.log("Balance of Alice: ", lpBalanceAliceAfter);
