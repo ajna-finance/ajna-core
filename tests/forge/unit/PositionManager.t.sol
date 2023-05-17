@@ -2864,7 +2864,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _pool.approveLPTransferors(transferors);
 
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
+            tokenId, address(_pool), indexes
         );
         _positionManager.memorializePositions(memorializeParams);
 
@@ -2963,7 +2963,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _pool.approveLPTransferors(transferors);
 
         memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId2, indexes
+            tokenId2, address(_pool), indexes
         );
         _positionManager.memorializePositions(memorializeParams);
 
@@ -3001,7 +3001,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
             tokenId, address(_pool), redeemIndex
         );
-        _positionManager.reedemPositions(reedemParams);
+        _positionManager.redeemPositions(reedemParams);
 
         // minter one should only be able to withdraw what they moved
         _removeAllLiquidity({
@@ -3020,191 +3020,6 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             deposit:      10_000.000000000000000000 * 1e18,
             exchangeRate: 1.0 * 1e18
         });
-
-
-    }
-
-    function testMoveLiquidityInBankruptBucket_LP_freeze_report_494() external {
-        address testMinter      = makeAddr("testMinter");
-        address testMinter2     = makeAddr("testMinter2");
-        address testBorrower    = makeAddr("testBorrower");
-        address testBorrowerTwo = makeAddr("testBorrowerTwo");
-
-        uint256 testIndex = _i9_91;
-
-        /************************/
-        /*** Setup Pool State ***/
-        /************************/
-
-        _mintCollateralAndApproveTokens(testBorrower,  4 * 1e18);
-        _mintCollateralAndApproveTokens(testBorrowerTwo, 1_000 * 1e18);
-
-        _mintQuoteAndApproveManagerTokens(testMinter, 500_000 * 1e18);
-        _mintQuoteAndApproveManagerTokens(testMinter2, 500_000 * 1e18);
-
-        // add initial liquidity
-        _addInitialLiquidity({
-            from:   testMinter,
-            amount: 2_000 * 1e18,
-            index:  _i9_91
-        });
-        _addInitialLiquidity({
-            from:   testMinter,
-            amount: 5_000 * 1e18,
-            index:  _i9_81
-        });
-        _addInitialLiquidity({
-            from:   testMinter,
-            amount: 11_000 * 1e18,
-            index:  _i9_72
-        });
-        _addInitialLiquidity({
-            from:   testMinter,
-            amount: 25_000 * 1e18,
-            index:  _i9_62
-        });
-        _addInitialLiquidity({
-            from:   testMinter,
-            amount: 30_000 * 1e18,
-            index:  _i9_52
-        });
-        // minter 2 adds liquidity 
-        _addInitialLiquidity({
-            from:   testMinter2,
-            amount: 10_000 * 1e18,
-            index:  _i9_52
-        });
-
-        // first borrower adds collateral token and borrows
-        _pledgeCollateral({
-            from:     testBorrower,
-            borrower: testBorrower,
-            amount:   2 * 1e18
-        });
-        _borrow({
-            from:       testBorrower,
-            amount:     19.25 * 1e18,
-            indexLimit: _i9_91,
-            newLup:     9.917184843435912074 * 1e18
-        });
-
-        // second borrower adds collateral token and borrows
-        _pledgeCollateral({
-            from:     testBorrowerTwo,
-            borrower: testBorrowerTwo,
-            amount:   1_000 * 1e18
-        });
-        _borrow({
-            from:       testBorrowerTwo,
-            amount:     7_980 * 1e18,
-            indexLimit: _i9_72,
-            newLup:     9.721295865031779605 * 1e18
-        });
-
-        _borrow({
-            from:       testBorrowerTwo,
-            amount:     1_730 * 1e18,
-            indexLimit: _i9_72,
-            newLup:     9.721295865031779605 * 1e18
-        });
-
-        /****************************/
-        /*** Memorialize Position ***/
-        /****************************/
-
-        // testMinter memorialize positions
-        uint256 tokenId = _mintNFT(testMinter, testMinter, address(_pool));
-        uint256[] memory indexes = new uint256[](1);
-        indexes[0] = testIndex;
-        uint256[] memory amounts = new uint256[](1);
-        amounts[0] = 2_000 * 1e18;
-        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
-
-        address[] memory transferors = new address[](1);
-        transferors[0] = address(_positionManager);
-        _pool.approveLPTransferors(transferors);
-
-        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
-        );
-        _positionManager.memorializePositions(memorializeParams);
-
-        // testMinter2 memorialize positions
-        uint256 tokenId2 = _mintNFT(testMinter2, testMinter2, address(_pool));
-        indexes[0] = _i9_52;
-        amounts[0] = 2_000 * 1e18;
-        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
-
-        _pool.approveLPTransferors(transferors);
-
-        memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId2, indexes
-        );
-        _positionManager.memorializePositions(memorializeParams);
-
-        /*************************/
-        /*** Bucket Bankruptcy ***/
-        /*************************/
-
-        // Skip to make borrower undercollateralized
-        skip(100 days);
-
-        // minter kicks borrower
-        _kick({
-            from:           testMinter,
-            borrower:       testBorrowerTwo,
-            debt:           9_976.561670003961916237 * 1e18,
-            collateral:     1_000 * 1e18,
-            bond:           98.533942419792216457 * 1e18,
-            transferAmount: 98.533942419792216457 * 1e18
-        });
-
-        // skip ahead so take can be called on the loan
-        skip(10 hours);
-
-        // take entire collateral
-        _take({
-            from:            testMinter,
-            borrower:        testBorrowerTwo,
-            maxCollateral:   1_000 * 1e18,
-            bondChange:      6.531114528261135360 * 1e18,
-            givenAmount:     653.111452826113536000 * 1e18,
-            collateralTaken: 1_000 * 1e18,
-            isReward:        true
-        });
-
-        _settle({
-            from:        testMinter,
-            borrower:    testBorrowerTwo,
-            maxDepth:    10,
-            settledDebt: 9_891.935520844277346922 * 1e18
-        });
-
-        // bucket is insolvent, balances are reset
-        _assertBucket({
-            index:        _i9_91,
-            lpBalance:    0, // bucket is bankrupt
-            collateral:   0,
-            deposit:      0,
-            exchangeRate: 1 * 1e18
-        });
-
-        assertTrue(_positionManager.isPositionBucketBankrupt(tokenId, testIndex));
-
-        // testMinter2 moves liquidity from healthy deposit _i9_52 to bankrupt _i9_91 deposit
-        changePrank(testMinter2);
-        IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
-            tokenId2, address(_pool), _i9_52, testIndex, block.timestamp + 5 hours
-        );
-        vm.expectRevert(IPoolErrors.BucketBankruptcyBlock.selector);
-        _positionManager.moveLiquidity(moveLiquidityParams);
-
-        // skip time to avoid move in same block as bucket bankruptcy
-        skip(1 hours);
-        _positionManager.moveLiquidity(moveLiquidityParams);
-
-        // new testMinter2 position should not be bankrupt
-        assertFalse(_positionManager.isPositionBucketBankrupt(tokenId2, testIndex));
     }
 
 }

@@ -450,16 +450,16 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      *  @param  pool_        The address of the pool of memorialized position.
      *  @param  index_       The bucket index to check deposit time for.
      *  @param  depositTime_ The recorded deposit time of the position.
-     *  @return `True` if the bucket went bankrupt after that position memorialzied their `LP`.
+     *  @return isBankrupt_  `True` if the bucket went bankrupt after that position memorialzied their `LP`.
      */
     function _bucketBankruptAfterDeposit(
         IPool pool_,
         uint256 index_,
         uint256 depositTime_
-    ) internal view returns (bool) {
+    ) internal view returns (bool isBankrupt_) {
         (, , uint256 bankruptcyTime, , ) = pool_.bucketInfo(index_);
         // Only check against deposit time if bucket has gone bankrupt
-        if (bankruptcyTime != 0) return depositTime_ <= bankruptcyTime;
+        if (bankruptcyTime != 0) isBankrupt_ = depositTime_ <= bankruptcyTime;
     }
 
     /**********************/

@@ -105,7 +105,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         indexes1[1] = _i9_52;
         uint256[] memory amounts1 = new uint256[](2);
         amounts1[0] = 2_000 * 1e18;
-        amounts1[1] = 10_000 * 1e18;
+        amounts1[1] = 30_000 * 1e18;
         _pool.increaseLPAllowance(address(_positionManager), indexes1, amounts1);
 
         address[] memory transferors = new address[](1);
@@ -113,7 +113,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         _pool.approveLPTransferors(transferors);
 
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes1
+            tokenId, address(_pool), indexes1
         );
         _positionManager.memorializePositions(memorializeParams);
 
@@ -128,7 +128,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         _pool.approveLPTransferors(transferors);
 
         memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId2, indexes2
+            tokenId2, address(_pool), indexes2
         );
         _positionManager.memorializePositions(memorializeParams);
 
@@ -227,7 +227,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         _positionManager.moveLiquidity(moveLiquidityParams);
 
         // testMinter1 moves liquidity from healthy deposit _i9_52 to bankrupt _i9_91
-        // _i9_52 should remain with 20_000 LP, _i9_91 should have 10_000
+        // _i9_52 should remain with 0 LP, _i9_91 should have 30_000
         moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
             tokenId, address(_pool), _i9_52, _i9_91, block.timestamp + 5 hours
         );
@@ -236,8 +236,8 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         assertFalse(_positionManager.isPositionBucketBankrupt(tokenId, _i9_52));
 
         // report 179: testMinter1 position at _i9_91 should contain only moved LP (without LP before bankruptcy)
-        assertEq(_positionManager.getLP(tokenId, _i9_91), 10_000 * 1e18);
-        assertEq(_positionManager.getLP(tokenId, _i9_52), 20_000 * 1e18);
+        assertEq(_positionManager.getLP(tokenId, _i9_91), 30_000 * 1e18);
+        assertEq(_positionManager.getLP(tokenId, _i9_52), 0);
     }
 
 }
