@@ -193,7 +193,11 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         assertLt(_borrowerCollateralization(_borrower), 1e18);
 
         // Kick an auction and wait for a meaningful price
+        assertEq(_quote.balanceOf(_bidder), 200_000 * _quoteTokenPrecision);
         _kick(_borrower, _bidder);
+        // assert bidder locked balance in auction bond
+        assertLt(_quote.balanceOf(_bidder), 200_000 * _quoteTokenPrecision);
+
         (uint256 auctionPrice, uint256 auctionDebt, uint256 auctionCollateral) = _advanceAuction(9 hours);
         assertGt(auctionPrice, 0);
         assertGt(auctionDebt, 0);
@@ -205,6 +209,19 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
         assertGt(auctionDebt, 0);
         assertGt(auctionCollateral, collateralDust);
         _settle();
+
+        // lender redeem their shares
+        changePrank(_lender);
+        for (uint256 i = 0; i < 4; ++i) { 
+            (, uint256 bucketQuote, , , ,) = _poolUtils.bucketInfo(address(_pool), startBucketId + i); 
+            if (bucketQuote != 0) _pool.removeQuoteToken(type(uint256).max, startBucketId + i); 
+        } 
+
+        // ensure bidders can still withdraw their bonds
+        assertLt(_quote.balanceOf(_bidder), 200_000 * _quoteTokenPrecision);
+        changePrank(_bidder);
+        _pool.withdrawBonds(_bidder, type(uint256).max);
+        assertEq(_quote.balanceOf(_bidder), 200_000 * _quoteTokenPrecision);
     }
 
     function testLiquidationKickWithDeposit(

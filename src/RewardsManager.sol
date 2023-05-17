@@ -702,14 +702,19 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
                 // retrieve current deposit of the bucket
                 (, , , uint256 bucketDeposit, ) = IPool(pool_).bucketInfo(bucketIndex_);
 
-                uint256 burnFactor     = Maths.wmul(totalBurned_, bucketDeposit);
-                uint256 interestFactor = interestEarned_ == 0 ? 0 : Maths.wdiv(
-                    Maths.WAD - Maths.wdiv(prevBucketExchangeRate, curBucketExchangeRate),
-                    interestEarned_
-                );
+                uint256 burnFactor = Maths.wmul(totalBurned_, bucketDeposit);
 
                 // calculate rewards earned for updating bucket exchange rate 
-                rewards_ += Maths.wmul(UPDATE_CLAIM_REWARD, Maths.wmul(burnFactor, interestFactor));
+                rewards_ += interestEarned_ == 0 ? 0 : Maths.wdiv(
+                    Maths.wmul(
+                        UPDATE_CLAIM_REWARD,
+                        Maths.wmul(
+                            burnFactor,
+                            curBucketExchangeRate - prevBucketExchangeRate
+                        )
+                    ),
+                    Maths.wmul(curBucketExchangeRate, interestEarned_)
+                );
             }
         }
     }

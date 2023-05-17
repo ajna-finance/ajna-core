@@ -80,6 +80,7 @@ library BorrowerActions {
     error AuctionActive();
     error BorrowerNotSender();
     error BorrowerUnderCollateralized();
+    error InsufficientLiquidity();
     error InsufficientCollateral();
     error InvalidAmount();
     error LimitIndexExceeded();
@@ -95,13 +96,13 @@ library BorrowerActions {
      *  @dev    - `SettlerActions._settleAuction` (`_removeAuction`):
      *  @dev      decrement kicker locked accumulator, increment kicker claimable accumumlator
      *  @dev      decrement auctions count accumulator
-     *  @dev      decrement `auctions.totalBondEscrowed` accumulator
      *  @dev      update auction queue state
      *  @dev    - `Loans.update` (`_upsert`):
      *  @dev      insert or update loan in loans array
      *  @dev      remove loan from loans array
      *  @dev      update borrower in `address => borrower` mapping
      *  @dev    === Reverts on ===
+     *  @dev    not enough quote tokens available `InsufficientLiquidity()`
      *  @dev    borrower not sender `BorrowerNotSender()`
      *  @dev    borrower debt less than pool min debt `AmountLTMinDebt()`
      *  @dev    limit price reached `LimitIndexExceeded()`
@@ -115,6 +116,7 @@ library BorrowerActions {
         DepositsState storage deposits_,
         LoansState    storage loans_,
         PoolState calldata poolState_,
+        uint256 maxAvailable_,
         address borrowerAddress_,
         uint256 amountToBorrow_,
         uint256 limitIndex_,
@@ -122,6 +124,9 @@ library BorrowerActions {
     ) external returns (
         DrawDebtResult memory result_
     ) {
+        // revert if not enough pool balance to borrow
+        if (amountToBorrow_ > maxAvailable_) revert InsufficientLiquidity();
+
         DrawDebtLocalVars memory vars;
         vars.pledge = collateralToPledge_ != 0;
         vars.borrow = amountToBorrow_ != 0;
@@ -248,7 +253,6 @@ library BorrowerActions {
      *  @dev    - `SettlerActions._settleAuction` (`_removeAuction`):
      *  @dev      decrement kicker locked accumulator, increment kicker claimable accumumlator
      *  @dev      decrement auctions count accumulator
-     *  @dev      decrement `auctions.totalBondEscrowed` accumulator
      *  @dev      update auction queue state
      *  @dev    - `Loans.update` (`_upsert`):
      *  @dev      insert or update loan in loans array
