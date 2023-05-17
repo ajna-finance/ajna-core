@@ -5,7 +5,11 @@ pragma solidity 0.8.14;
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { IPositionManagerOwnerActions } from 'src/interfaces/position/IPositionManagerOwnerActions.sol';
-import { _depositFeeRate }              from 'src/libraries/helpers/PoolHelper.sol';
+import { 
+    _depositFeeRate,
+    _lpToQuoteToken,
+    _priceAt
+    }                                   from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }                        from "src/libraries/internal/Maths.sol";
 
 import '@std/console.sol';
@@ -170,6 +174,29 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
 
     }
 
+    function _getQuoteAtIndex(
+        uint256 lp,
+        uint256 index
+    ) internal view returns (uint256 quoteAtIndex_) {
+        // retrieve info of bucket from pool
+        (
+            uint256 bucketLP,
+            uint256 bucketCollateral,
+            ,
+            uint256 bucketDeposit,
+        ) = _pool.bucketInfo(index);
+
+        // calculate the max amount of quote tokens that can be moved, given the tracked LP
+        quoteAtIndex_ = _lpToQuoteToken(
+            bucketLP,
+            bucketCollateral,
+            bucketDeposit,
+            lp,
+            bucketDeposit,
+            _priceAt(index)
+        );
+    }
+
     function _moveLiquidity(
         uint256 tokenId_,
         uint256 fromIndex_,
@@ -177,10 +204,13 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
     ) internal {
         numberOfCalls['UBPositionHandler.moveLiquidity']++;
 
-        (uint256 preActionToLps,) = _position.getPositionInfo(tokenId_, toIndex_);
-
-        // toIndex_ position takes on fromIndex_'s depositTime after moveLiquidity call
+        // fromIndex values
         (uint256 preActionFromLps, uint256 preActionDepositTime) = _position.getPositionInfo(tokenId_, fromIndex_);
+        uint256 preActionFromIndexQuote = _getQuoteAtIndex(preActionFromLps, fromIndex_);
+
+        // toIndex values
+        (uint256 preActionToLps,) = _position.getPositionInfo(tokenId_, toIndex_);
+        uint256 preActionToIndexQuote = _getQuoteAtIndex(preActionToLps, toIndex_);
 
         /**
         *  @notice Struct holding parameters for moving the liquidity of a position.
@@ -203,7 +233,15 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
             // assert that underlying LP balance in PositionManager of toIndex is increased and deposit time in PositionManager is updated
             (uint256 toLps, uint256 toDepositTime) = _position.getPositionInfo(tokenId_, toIndex_);
             require(toLps >= preActionToLps); // difficult to estimate LPS, assert that it is greater than
-            require(toDepositTime == preActionDepositTime); 
+            (,uint256 postActionDepositTime)= _pool.lenderInfo(toIndex_, address(_position));
+            require(toDepositTime == postActionDepositTime); 
+
+            // get post action QT represented in positionManager for tokenID
+            uint256 postActionFromIndexQuote = _getQuoteAtIndex(fromLps, fromIndex_);
+            uint256 postActionToIndexQuote   = _getQuoteAtIndex(toLps, toIndex_);
+
+            // assert total QT represented in positionManager for tokenID is the same as preAction
+            assert (preActionFromIndexQuote + preActionToIndexQuote == postActionFromIndexQuote + postActionToIndexQuote);
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
