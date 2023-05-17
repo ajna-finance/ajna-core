@@ -130,79 +130,6 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
      *  @inheritdoc IRewardsManagerOwnerActions
      *  @dev    === Revert on ===
      *  @dev    not owner `NotOwnerOfDeposit()`
-     *  @dev    invalid index params `MoveStakedLiquidityInvalid()`
-     *  @dev    === Emit events ===
-     *  @dev    - `MoveStakedLiquidity`
-     */
-    function moveStakedLiquidity(
-        uint256 tokenId_,
-        uint256[] memory fromBuckets_,
-        uint256[] memory toBuckets_,
-        uint256 expiry_
-    ) external nonReentrant override {
-        StakeInfo storage stakeInfo = stakes[tokenId_];
-
-        if (msg.sender != stakeInfo.owner) revert NotOwnerOfDeposit();
-
-        // check move array sizes match to be able to match on index
-        uint256 fromBucketLength = fromBuckets_.length;
-        if (fromBucketLength != toBuckets_.length) revert MoveStakedLiquidityInvalid();
-
-        address ajnaPool = stakeInfo.ajnaPool;
-        uint256 curBurnEpoch = IPool(ajnaPool).currentBurnEpoch();
-
-        // claim rewards before moving liquidity, if any
-        _claimRewards(
-            stakeInfo,
-            tokenId_,
-            curBurnEpoch,
-            false,
-            ajnaPool
-        );
-
-        uint256 fromIndex;
-        uint256 toIndex;
-        for (uint256 i = 0; i < fromBucketLength; ) {
-            fromIndex = fromBuckets_[i];
-            toIndex = toBuckets_[i];
-
-            // call out to position manager to move liquidity between buckets
-            IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
-                tokenId_,
-                ajnaPool,
-                fromIndex,
-                toIndex,
-                expiry_
-            );
-            positionManager.moveLiquidity(moveLiquidityParams);
-
-            // update to bucket state
-            BucketState storage toBucket = stakeInfo.snapshot[toIndex];
-            toBucket.lpsAtStakeTime  = uint128(positionManager.getLP(tokenId_, toIndex));
-            toBucket.rateAtStakeTime = uint128(IPool(ajnaPool).bucketExchangeRate(toIndex));
-            delete stakeInfo.snapshot[fromIndex];
-
-            // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
-            unchecked { ++i; }
-        }
-
-        emit MoveStakedLiquidity(tokenId_, fromBuckets_, toBuckets_);
-
-        // update to bucket list exchange rates, from buckets are aready updated on claim
-        // calculate rewards for updating exchange rates, if any
-        uint256 updateReward = _updateBucketExchangeRates(
-            ajnaPool,
-            toBuckets_
-        );
-
-        // transfer rewards to sender
-        _transferAjnaRewards(updateReward);
-    }
-
-    /**
-     *  @inheritdoc IRewardsManagerOwnerActions
-     *  @dev    === Revert on ===
-     *  @dev    not owner `NotOwnerOfDeposit()`
      *  @dev    === Emit events ===
      *  @dev    - `Stake`
      */
@@ -235,12 +162,9 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             BucketState storage bucketState = stakeInfo.snapshot[bucketId];
 
             // record the number of lps in bucket at the time of staking
-            bucketState.lpsAtStakeTime = uint128(positionManager.getLP(
-                tokenId_,
-                bucketId
-            ));
+            bucketState.lpsAtStakeTime = positionManager.getLP(tokenId_, bucketId);
             // record the bucket exchange rate at the time of staking
-            bucketState.rateAtStakeTime = uint128(IPool(ajnaPool).bucketExchangeRate(bucketId));
+            bucketState.rateAtStakeTime = IPool(ajnaPool).bucketExchangeRate(bucketId);
 
             // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
             unchecked { ++i; }
@@ -272,36 +196,20 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     function unstake(
         uint256 tokenId_
     ) external override {
-        StakeInfo storage stakeInfo = stakes[tokenId_];
+        _unstake({ tokenId_: tokenId_, claimRewards_: true });
+    }
 
-        if (msg.sender != stakeInfo.owner) revert NotOwnerOfDeposit();
-
-        address ajnaPool = stakeInfo.ajnaPool;
-
-        // claim rewards, if any
-        _claimRewards(
-            stakeInfo,
-            tokenId_,
-            IPool(ajnaPool).currentBurnEpoch(),
-            false,
-            ajnaPool
-        );
-
-        // remove bucket snapshots recorded at the time of staking
-        uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
-        for (uint256 i = 0; i < positionIndexes.length; ) {
-            delete stakeInfo.snapshot[positionIndexes[i]]; // reset BucketState struct for current position
-
-            unchecked { ++i; }
-        }
-
-        // remove recorded stake info
-        delete stakes[tokenId_];
-
-        emit Unstake(msg.sender, ajnaPool, tokenId_);
-
-        // transfer LP NFT from contract to sender
-        IERC721(address(positionManager)).transferFrom(address(this), msg.sender, tokenId_);
+   /**
+     *  @inheritdoc IRewardsManagerOwnerActions
+     *  @dev    === Revert on ===
+     *  @dev    not owner `NotOwnerOfDeposit()`
+     *  @dev    === Emit events ===
+     *  @dev    - `Unstake`
+     */
+    function emergencyUnstake(
+        uint256 tokenId_
+    ) external override {
+        _unstake({ tokenId_: tokenId_, claimRewards_: false });
     }
 
     /**
@@ -311,8 +219,12 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
      */
     function updateBucketExchangeRatesAndClaim(
         address pool_,
+        bytes32 subsetHash_,
         uint256[] calldata indexes_
     ) external override returns (uint256 updateReward) {
+        // revert if trying to update exchange rates for a non Ajna pool
+        if (!positionManager.isAjnaPool(pool_, subsetHash_)) revert NotAjnaPool();
+
         updateReward = _updateBucketExchangeRates(pool_, indexes_);
 
         // transfer rewards to sender
@@ -766,9 +678,52 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         }
     }
 
-    /** @notice Utility method to transfer `Ajna` rewards to the sender
-     *  @dev   This method is used to transfer rewards to the `msg.sender` after a successful claim or update.
-     *  @dev   It is used to ensure that rewards claimers will be able to claim some portion of the remaining tokens if a claim would exceed the remaining contract balance.
+    /** 
+     *  @notice Utility function to unstake the position token.
+     *  @dev    Used by `stake` function to unstake and claim rewards.
+     *  @dev    Used by `emergencyUnstake` function to unstake without claiming rewards.
+     *  @param tokenId_      The token id to unstake.
+     *  @param claimRewards_ Wether the rewards to be calculated and claimed (true for `stake`, false for `emergencyUnstake`)
+     */
+    function _unstake(uint256 tokenId_, bool claimRewards_) internal {
+        StakeInfo storage stakeInfo = stakes[tokenId_];
+
+        if (msg.sender != stakeInfo.owner) revert NotOwnerOfDeposit();
+
+        address ajnaPool = stakeInfo.ajnaPool;
+
+        if (claimRewards_) {
+            // claim rewards, if any
+            _claimRewards(
+                stakeInfo,
+                tokenId_,
+                IPool(ajnaPool).currentBurnEpoch(),
+                false,
+                ajnaPool
+            );
+        }
+
+        // remove bucket snapshots recorded at the time of staking
+        uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
+        for (uint256 i = 0; i < positionIndexes.length; ) {
+            delete stakeInfo.snapshot[positionIndexes[i]]; // reset BucketState struct for current position
+
+            unchecked { ++i; }
+        }
+
+        // remove recorded stake info
+        delete stakes[tokenId_];
+
+        emit Unstake(msg.sender, ajnaPool, tokenId_);
+
+        // transfer LP NFT from contract to sender
+        IERC721(address(positionManager)).transferFrom(address(this), msg.sender, tokenId_);
+    }
+
+    /**
+     *  @notice Utility function to transfer `Ajna` rewards to the sender
+     *  @dev    This function is used to transfer rewards to the `msg.sender` after a successful claim or update.
+     *  @dev    It is used to ensure that rewards claimers will be able to claim some portion of the remaining tokens if a claim would exceed the remaining contract balance.
      *  @param rewardsEarned_ Amount of rewards earned by the caller.
      */
     function _transferAjnaRewards(uint256 rewardsEarned_) internal {

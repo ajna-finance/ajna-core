@@ -46,7 +46,7 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
 
         }
 
-        try _position.memorializePositions(IPositionManagerOwnerActions.MemorializePositionsParams(tokenId_, indexes_)) {
+        try _position.memorializePositions(IPositionManagerOwnerActions.MemorializePositionsParams(tokenId_, address(_pool), indexes_)) {
 
             // TODO: store memorialized position's tokenIds in mapping, for reuse in unstake and redeem calls
 
@@ -123,7 +123,7 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
 
         }
 
-        try _position.reedemPositions(IPositionManagerOwnerActions.RedeemPositionsParams(tokenId_, address(_pool), indexes_)) {
+        try _position.redeemPositions(IPositionManagerOwnerActions.RedeemPositionsParams(tokenId_, address(_pool), indexes_)) {
 
             // remove tracked positions
             for ( uint256 i = 0; i < indexes_.length; i++) {

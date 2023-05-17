@@ -323,7 +323,7 @@ library KickerActions {
      *  @dev      increment `auctions count` accumulator
      *  @dev      increment `auctions.totalBondEscrowed` accumulator
      *  @dev      updates auction queue state
-     *  @dev    - `_updateKicker`:
+     *  @dev    - `_updateEscrowedBonds`:
      *  @dev      update `locked` and `claimable` kicker accumulators
      *  @dev    - `Loans.remove`:
      *  @dev      delete borrower from `indices => borrower` address mapping
@@ -398,8 +398,8 @@ library KickerActions {
             vars.neutralPrice
         );
 
-        // update kicker balances and get the difference needed to cover bond (after using any kick claimable funds if any)
-        kickResult_.amountToCoverBond = _updateKicker(auctions_, vars.bondSize);
+        // update escrowed bonds balances and get the difference needed to cover bond (after using any kick claimable funds if any)
+        kickResult_.amountToCoverBond = _updateEscrowedBonds(auctions_, vars.bondSize);
 
         // remove kicked loan from heap
         Loans.remove(loans_, borrowerAddress_, loans_.indices[borrowerAddress_]);
@@ -423,14 +423,15 @@ library KickerActions {
     }
 
     /**
-     *  @notice Updates kicker balances.
+     *  @notice Updates escrowed bonds balances, reuse kicker claimable funds and calculates difference needed to cover new bond.
      *  @dev    === Write state ===
      *  @dev    update `locked` and `claimable` kicker accumulators
+     *  @dev    update `totalBondEscrowed` accumulator
      *  @param  auctions_       Struct for pool auctions state.
      *  @param  bondSize_       Bond size to cover newly kicked auction.
      *  @return bondDifference_ The amount that kicker should send to pool to cover auction bond.
      */
-    function _updateKicker(
+    function _updateEscrowedBonds(
         AuctionsState storage auctions_,
         uint256 bondSize_
     ) internal returns (uint256 bondDifference_){
@@ -441,16 +442,14 @@ library KickerActions {
         uint256 kickerClaimable = kicker.claimable;
 
         if (kickerClaimable >= bondSize_) {
+            // no need to update total bond escrowed as bond is covered by kicker claimable (which is already tracked by accumulator)
             kicker.claimable -= bondSize_;
-
-            // decrement total bond escrowed by bond size 
-            auctions_.totalBondEscrowed -= bondSize_;
         } else {
             bondDifference_  = bondSize_ - kickerClaimable;
             kicker.claimable = 0;
 
-            // decrement total bond escrowed by kicker claimable
-            auctions_.totalBondEscrowed -= kickerClaimable;
+            // increment total bond escrowed by amount needed to cover bond difference
+            auctions_.totalBondEscrowed += bondDifference_;
         }
     }
 
@@ -488,9 +487,6 @@ library KickerActions {
 
         // increment number of active auctions
         ++auctions_.noOfAuctions;
-
-        // update totalBondEscrowed accumulator
-        auctions_.totalBondEscrowed += bondSize_;
 
         // update auctions queue
         if (auctions_.head != address(0)) {

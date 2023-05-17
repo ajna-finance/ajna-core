@@ -70,8 +70,13 @@ abstract contract BaseHandler is Test {
 
     // reserves invariant test state
     uint256 public previousReserves;    // reserves before action
-    uint256 public increaseInReserves;  // amount of reserve decrease
-    uint256 public decreaseInReserves;  // amount of reserve increase
+    uint256 public increaseInReserves;  // amount of reserve increase
+    uint256 public decreaseInReserves;  // amount of reserve decrease
+
+    // Auction bond invariant test state
+    uint256 public previousTotalBonds; // total bond before action
+    uint256 public increaseInBonds;    // amount of bond increase
+    uint256 public decreaseInBonds;    // amount of bond decrease
 
     // rewards invariant test state
     mapping(uint256 => uint256) public totalRewardPerEpoch;    // total rewards per epoch
@@ -338,6 +343,10 @@ abstract contract BaseHandler is Test {
         return vm.envOr("SKIP_TIME_TO_KICK", uint256(200 days));
     }
 
+    function _getKickReserveTime() internal returns (uint256) {
+        return vm.envOr("SKIP_TIME_TO_KICK_RESERVE", uint256(24 hours));
+    }
+
     /**
      * @dev Ensure that error is an Pool expected error.
      */
@@ -399,9 +408,15 @@ abstract contract BaseHandler is Test {
 
         // reset the reserves before each action 
         increaseInReserves = 0;
-        decreaseInReserves  = 0;
+        decreaseInReserves = 0;
         // record reserves before each action
         (previousReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
+
+        // reset the bonds before each action
+        increaseInBonds = 0;
+        decreaseInBonds = 0;
+        // record totalBondEscrowed before each action
+        (previousTotalBonds, , , ) = _pool.reservesInfo();
     }
 
     /********************************/

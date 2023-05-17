@@ -32,6 +32,10 @@ interface IBaseHandler {
     function getBucketIndexesWithPosition() external view returns(uint256[] memory);
     function getTokenIdsByBucketIndex(uint256) external view returns(uint256[] memory);
     function getTokenIdsMinted() external view returns(uint256[] memory);
+    
+    function previousTotalBonds() external view returns(uint256);
+    function increaseInBonds() external view returns(uint256);
+    function decreaseInBonds() external view returns(uint256);
 
     function firstTake() external view returns(bool);
     function alreadyTaken(address) external view returns(bool);

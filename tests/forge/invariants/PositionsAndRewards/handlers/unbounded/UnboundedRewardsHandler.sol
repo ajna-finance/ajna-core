@@ -62,29 +62,7 @@ abstract contract UnboundedRewardsHandler is BasePositionsHandler {
     ) internal {
         numberOfCalls['UBRewardsHandler.exchangeRate']++;
 
-        try _rewards.updateBucketExchangeRatesAndClaim(address(_pool), indexes_) {
-        } catch (bytes memory err) {
-            _ensurePoolError(err);
-        }
-    }
-
-    function _moveStakedLiquidity(
-        uint256 tokenId_,
-        uint256[] memory fromIndexes_,
-        uint256[] memory toIndexes_
-    ) internal {
-        numberOfCalls['UBRewardsHandler.moveLiquidity']++;
-
-        try _rewards.moveStakedLiquidity(tokenId_, fromIndexes_, toIndexes_, block.timestamp + 1 minutes) {
-
-            for (uint256 i = 0; i < toIndexes_.length; i++) {
-                uint256 toIndex = toIndexes_[i];
-
-                // track created positions
-                bucketIndexesWithPosition.add(toIndex);
-                tokenIdsByBucketIndex[toIndex].add(tokenId_);
-            }
-            
+        try _rewards.updateBucketExchangeRatesAndClaim(address(_pool), keccak256("ERC20_NON_SUBSET_HASH"), indexes_) {
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }

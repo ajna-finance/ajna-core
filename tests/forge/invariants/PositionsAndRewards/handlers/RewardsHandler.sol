@@ -102,22 +102,6 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
         _claimRewards(tokenId, currentEpoch);
     }
 
-    function moveStakedLiquidity(
-        uint256 actorIndex_,
-        uint256 fromBucketIndex_,
-        uint256 toBucketIndex_,
-        uint256 amountToAdd_,
-        uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
-        numberOfCalls['BRewardsHandler.moveLiquidity']++;
-
-        // Pre action //
-        (uint256 tokenId, uint256[] memory fromIndexes, uint256[] memory toIndexes) = _preMoveStakedLiquidity(fromBucketIndex_, toBucketIndex_, amountToAdd_);
-        
-        // Action phase
-        _moveStakedLiquidity(tokenId, fromIndexes, toIndexes);
-    }
-
     /*******************************/
     /*** Rewards Tests Functions ***/
     /*******************************/
@@ -170,26 +154,6 @@ contract RewardsHandler is UnboundedRewardsHandler, PositionHandlerAbstract, Res
     ) internal pure returns (uint256[] memory indexes_) {
         indexes_ = new uint256[](1);
         indexes_[0] = bucketIndex_;
-    }
-
-    function _preMoveStakedLiquidity(
-        uint256 fromBucketIndex_,
-        uint256 toBucketIndex_,
-        uint256 amountToAdd_
-    ) internal returns(uint256 tokenId_, uint256[] memory fromIndexes_, uint256[] memory toIndexes_) {
-        fromBucketIndex_ = constrictToRange(fromBucketIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
-        toBucketIndex_   = constrictToRange(toBucketIndex_,   LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
-
-        fromIndexes_ = new uint256[](1);
-        fromIndexes_[0] = fromBucketIndex_;
-
-        toIndexes_ = new uint256[](1);
-        toIndexes_[0] = toBucketIndex_;
-
-        // Only way to check if the actor has a NFT position or a staked position is tracking events
-        // Create a staked position
-        tokenId_ = _preStake(fromBucketIndex_, amountToAdd_);
-        _stake(tokenId_);
     }
 
 }
