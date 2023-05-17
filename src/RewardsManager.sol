@@ -160,12 +160,9 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             BucketState storage bucketState = stakeInfo.snapshot[bucketId];
 
             // record the number of lps in bucket at the time of staking
-            bucketState.lpsAtStakeTime = uint128(positionManager.getLP(
-                tokenId_,
-                bucketId
-            ));
+            bucketState.lpsAtStakeTime = positionManager.getLP(tokenId_, bucketId);
             // record the bucket exchange rate at the time of staking
-            bucketState.rateAtStakeTime = uint128(IPool(ajnaPool).bucketExchangeRate(bucketId));
+            bucketState.rateAtStakeTime = IPool(ajnaPool).bucketExchangeRate(bucketId);
 
             // iterations are bounded by array length (which is itself bounded), preventing overflow / underflow
             unchecked { ++i; }
