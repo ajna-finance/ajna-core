@@ -2052,4 +2052,32 @@ contract RewardsManagerTest is RewardsHelperContract {
         assertEq(rewardsManagerBalance, 100000000 * 1e18);
     }
 
+    function testUnsafeCasting_report_227() external {
+        // configure NFT position one
+        uint256[] memory depositIndexes = new uint256[](1);
+        depositIndexes[0] = 9;
+        uint256 mintAmount = uint256(type(uint128).max) + 1;
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT({
+            indexes:    depositIndexes,
+            minter:     _minterOne,
+            mintAmount: mintAmount,
+            pool:       address(_pool)
+        });
+        uint256 lpBalance;
+        (lpBalance, ) =_pool.lenderInfo(depositIndexes[0], address(_positionManager));
+
+        // minterOne deposits their NFT into the rewards contract
+        _stakeToken({
+            pool:    address(_pool),
+            owner:   _minterOne,
+            tokenId: tokenIdOne
+        });
+        uint256 lpsAtStakeTime;
+        uint256 rateAtStakeTime;
+        (lpsAtStakeTime, rateAtStakeTime) = _rewardsManager.getBucketStateStakeInfo(tokenIdOne, depositIndexes[0]);
+
+        // make sure LP balance before staking is the same as staked LP amount
+        assertEq(lpBalance, lpsAtStakeTime);
+    }
+
 }
