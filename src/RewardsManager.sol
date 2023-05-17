@@ -710,7 +710,8 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
                         UPDATE_CLAIM_REWARD,
                         Maths.wmul(
                             burnFactor,
-                            curBucketExchangeRate - prevBucketExchangeRate)
+                            curBucketExchangeRate - prevBucketExchangeRate
+                        )
                     ),
                     Maths.wmul(curBucketExchangeRate, interestEarned_)
                 );
