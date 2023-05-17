@@ -6,10 +6,11 @@ import 'src/RewardsManager.sol';
 import 'src/PositionManager.sol';
 import 'src/interfaces/rewards/IRewardsManager.sol';
 
-import { ERC20Pool }           from 'src/ERC20Pool.sol';
-import { RewardsHelperContract }   from './RewardsDSTestPlus.sol';
-import { IPoolErrors }         from 'src/interfaces/pool/commons/IPoolErrors.sol';
-import { Token }               from '../../utils/Tokens.sol';
+import { ERC20Pool }             from 'src/ERC20Pool.sol';
+import { RewardsHelperContract } from './RewardsDSTestPlus.sol';
+import { IPoolErrors }           from 'src/interfaces/pool/commons/IPoolErrors.sol';
+import { Token }                 from '../../utils/Tokens.sol';
+import { RoguePool }             from './RoguePool.sol';
 
 contract RewardsManagerTest is RewardsHelperContract {
 
@@ -216,7 +217,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             _minterOne, address(_pool), keccak256("ERC20_NON_SUBSET_HASH"));
         uint256 tokenId = _positionManager.mint(mintParams);
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, indexes
+            tokenId, address(_pool), indexes
         );
         _positionManager.memorializePositions(memorializeParams);
         _registerLender(address(_positionManager), indexes);
@@ -315,6 +316,23 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:       address(_pool)
         });
 
+        // should revert if not an Ajna pool
+        address fakePool = makeAddr("fakePool");
+        vm.expectRevert();
+        _rewardsManager.updateBucketExchangeRatesAndClaim(
+            fakePool, keccak256("ERC20_NON_SUBSET_HASH"), depositIndexes
+        );
+        // should revert if Ajna pool but wrong subset
+        vm.expectRevert(IRewardsManagerErrors.NotAjnaPool.selector);
+        _rewardsManager.updateBucketExchangeRatesAndClaim(
+            address(_pool), keccak256("ERC721_NON_SUBSET_HASH"), depositIndexes
+        );
+        // no rewards earned if legit Ajna pool
+        uint256 rewards = _rewardsManager.updateBucketExchangeRatesAndClaim(
+            address(_pool), keccak256("ERC20_NON_SUBSET_HASH"), depositIndexes
+        );
+        assertEq(rewards, 0);
+
         _stakeToken({
             pool:    address(_pool),
             owner:   _minterOne,
@@ -381,7 +399,9 @@ contract RewardsManagerTest is RewardsHelperContract {
         skip(2 weeks);
 
         // check can't call update exchange rate after the update period has elapsed
-        uint256 updateRewards = _rewardsManager.updateBucketExchangeRatesAndClaim(address(_pool), depositIndexes);
+        uint256 updateRewards = _rewardsManager.updateBucketExchangeRatesAndClaim(
+            address(_pool), keccak256("ERC20_NON_SUBSET_HASH"), depositIndexes
+        );
         assertEq(updateRewards, 0);
     }
 
@@ -1103,152 +1123,6 @@ contract RewardsManagerTest is RewardsHelperContract {
         });
         assertEq(_ajnaToken.balanceOf(_minterOne), rewardsEarned);
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
-    }
-
-    function testMoveStakedLiquidity() external {
-        skip(10);
-
-        /*****************/
-        /*** Stake NFT ***/
-        /*****************/
-
-        uint256[] memory depositIndexes = new uint256[](5);
-        depositIndexes[0] = 2550;
-        depositIndexes[1] = 2551;
-        depositIndexes[2] = 2552;
-        depositIndexes[3] = 2553;
-        depositIndexes[4] = 2555;
-
-        // configure NFT position
-        uint256 tokenIdOne = _mintAndMemorializePositionNFT({
-            indexes:    depositIndexes,
-            minter:     _minterOne,
-            mintAmount: 1000 * 1e18,
-            pool:       address(_pool)
-        });
-
-        // stake nft
-        _stakeToken({
-            pool:    address(_pool),
-            owner:   _minterOne,
-            tokenId: tokenIdOne
-        });
-
-        /***********************/
-        /*** Move Staked NFT ***/
-        /***********************/
-
-        _updateExchangeRates({
-            updater:        _minterOne,
-            pool:           address(_pool),
-            indexes:        depositIndexes,
-            reward:         0
-        });
-
-
-        uint256[] memory secondIndexes = new uint256[](5);
-        secondIndexes[0] = 2556;
-        secondIndexes[1] = 2557;
-        secondIndexes[2] = 2558;
-        secondIndexes[3] = 2559;
-        secondIndexes[4] = 2560;
-        uint256[] memory secondLpsRedeemed = new uint256[](5);
-        secondLpsRedeemed[0] = 1_000 * 1e18;
-        secondLpsRedeemed[1] = 1_000 * 1e18;
-        secondLpsRedeemed[2] = 1_000 * 1e18;
-        secondLpsRedeemed[3] = 1_000 * 1e18;
-        secondLpsRedeemed[4] = 1_000 * 1e18;
-        uint256[] memory secondLpsAwarded = new uint256[](5);
-        secondLpsAwarded[0] = 1_000 * 1e18;
-        secondLpsAwarded[1] = 1_000 * 1e18;
-        secondLpsAwarded[2] = 1_000 * 1e18;
-        secondLpsAwarded[3] = 1_000 * 1e18;
-        secondLpsAwarded[4] = 1_000 * 1e18;
-
-        _moveStakedLiquidity({
-            from:             _minterOne,
-            tokenId:          tokenIdOne,
-            fromIndexes:      depositIndexes,
-            lpsRedeemed:      secondLpsRedeemed,
-            fromIndStaked:    false,
-            toIndexes:        secondIndexes,
-            lpsAwarded:       secondLpsAwarded,
-            expiry:           block.timestamp + 1000
-        });
-
-        /*****************************/
-        /*** First Reserve Auction ***/
-        /*****************************/
-
-        // first reserve auction happens successfully -> epoch 1
-        _triggerReserveAuctions({
-            borrower:     _borrower,
-            tokensToBurn: 81.799378162662704349 * 1e18,
-            borrowAmount: 300 * 1e18,
-            limitIndex:   2560,
-            pool:         address(_pool)
-        });
-
-        /***********************/
-        /*** Move Staked NFT ***/
-        /***********************/
-
-        // retrieve the position managers index set, recreating typical tx flow since positionIndexes are stored unordered in EnnumerableSets
-        secondIndexes       = _positionManager.getPositionIndexes(tokenIdOne);
-        secondLpsAwarded[0] = 1_000.000165321954673000 * 1e18;
-        secondLpsAwarded[1] = 1_006.443804687426460000 * 1e18;
-        secondLpsAwarded[2] = 1_000.000165321954673000 * 1e18;
-        secondLpsAwarded[3] = 1_000.000165321954673000 * 1e18;
-        secondLpsAwarded[4] = 1_000.000165321954673000 * 1e18;
-
-        _moveStakedLiquidity({
-            from:             _minterOne,
-            tokenId:          tokenIdOne,
-            fromIndexes:      secondIndexes,
-            lpsRedeemed:      secondLpsRedeemed,
-            fromIndStaked:    true,
-            toIndexes:        depositIndexes,
-            lpsAwarded:       secondLpsAwarded,
-            expiry:           block.timestamp + 1000
-        });
-
-        /******************************/
-        /*** Second Reserve Auction ***/
-        /******************************/
-
-        // second reserve auction happens successfully -> epoch 1
-        _triggerReserveAuctions({
-            borrower:     _borrower,
-            tokensToBurn: 149.002721220086908460 * 1e18,
-            borrowAmount: 300 * 1e18,
-            limitIndex:   2555,
-            pool:         address(_pool)
-        });
-
-        /******************************/
-        /*** Exchange Rates Updated ***/
-        /******************************/
-
-        // retrieve the position managers index set, recreating typical tx flow since positionIndexes are stored unordered in EnnumerableSets
-        depositIndexes = _positionManager.getPositionIndexes(tokenIdOne);
-
-        _updateExchangeRates({
-            updater:        _updater,
-            pool:           address(_pool),
-            indexes:        depositIndexes,
-            reward:         3.359647161647741986 * 1e18
-        });
-
-        /*********************/
-        /*** Claim Rewards ***/
-        /*********************/
-        _claimRewards({
-            pool:          address(_pool),
-            from:          _minterOne,
-            tokenId:       tokenIdOne,
-            epochsClaimed: _epochsClaimedArray(1,1),
-            reward:        33.596471616477451732 * 1e18
-        });
     }
 
     function testEarlyAndLateStakerRewards() external {
@@ -2007,7 +1881,9 @@ contract RewardsManagerTest is RewardsHelperContract {
         // call update exchange rate to enable claiming rewards
         changePrank(_updater);
         assertEq(_ajnaToken.balanceOf(_updater), 0);
-        _rewardsManager.updateBucketExchangeRatesAndClaim(address(_pool), depositIndexes);
+        _rewardsManager.updateBucketExchangeRatesAndClaim(
+            address(_pool), keccak256("ERC20_NON_SUBSET_HASH"), depositIndexes
+        );
         assertGt(_ajnaToken.balanceOf(_updater), 0);
 
         // calculate rewards earned and compare to percentages for updating and claiming
@@ -2078,7 +1954,9 @@ contract RewardsManagerTest is RewardsHelperContract {
 
             changePrank(_updater);
             assertEq(_ajnaToken.balanceOf(_updater), updaterBalance);
-            _rewardsManager.updateBucketExchangeRatesAndClaim(address(_pool), depositIndexes);
+            _rewardsManager.updateBucketExchangeRatesAndClaim(
+                address(_pool), keccak256("ERC20_NON_SUBSET_HASH"), depositIndexes
+            );
 
             // ensure updater gets reward for updating exchange rate
             assertGt(_ajnaToken.balanceOf(_updater), updaterBalance);
@@ -2140,6 +2018,66 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         // user should be able to claim rewards for current epoch
         _rewardsManager.claimRewards(tokenIdOne, currentBurnEpoch);
+    }
+
+    function testRoguePoolAttack_report_151() external {
+        address mal = makeAddr("mal");
+        vm.startPrank(mal);
+
+        uint256 rewardsManagerBalance = _ajnaToken.balanceOf(address(_rewardsManager));
+        uint256 malBalance = _ajnaToken.balanceOf(mal);
+        assertEq(malBalance, 0);
+        // set prev exchange rate to bypass
+        // https://github.com/code-423n4/2023-05-ajna/blob/main/ajna-core/src/RewardsManager.sol#L789
+        RoguePool roguePool = new RoguePool(_rewardsManager, _ajnaToken);
+        roguePool.setBurnEpoch(1);
+        uint256[] memory indexes = new uint256[](1);
+        indexes[0] = 777;
+
+        vm.expectRevert();
+        _rewardsManager.updateBucketExchangeRatesAndClaim(
+            address(roguePool), keccak256("ERC20_NON_SUBSET_HASH"), indexes
+        );
+        // finalize the attack
+        roguePool.setBurnEpoch(2);
+        vm.expectRevert();
+        _rewardsManager.updateBucketExchangeRatesAndClaim(
+            address(roguePool), keccak256("ERC20_NON_SUBSET_HASH"), indexes
+        );
+        // post attack checks
+        malBalance = _ajnaToken.balanceOf(mal);
+        assertEq(malBalance, 0);
+
+        rewardsManagerBalance = _ajnaToken.balanceOf(address(_rewardsManager));
+        assertEq(rewardsManagerBalance, 100000000 * 1e18);
+    }
+
+    function testUnsafeCasting_report_227() external {
+        // configure NFT position one
+        uint256[] memory depositIndexes = new uint256[](1);
+        depositIndexes[0] = 9;
+        uint256 mintAmount = uint256(type(uint128).max) + 1;
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT({
+            indexes:    depositIndexes,
+            minter:     _minterOne,
+            mintAmount: mintAmount,
+            pool:       address(_pool)
+        });
+        uint256 lpBalance;
+        (lpBalance, ) =_pool.lenderInfo(depositIndexes[0], address(_positionManager));
+
+        // minterOne deposits their NFT into the rewards contract
+        _stakeToken({
+            pool:    address(_pool),
+            owner:   _minterOne,
+            tokenId: tokenIdOne
+        });
+        uint256 lpsAtStakeTime;
+        uint256 rateAtStakeTime;
+        (lpsAtStakeTime, rateAtStakeTime) = _rewardsManager.getBucketStateStakeInfo(tokenIdOne, depositIndexes[0]);
+
+        // make sure LP balance before staking is the same as staked LP amount
+        assertEq(lpBalance, lpsAtStakeTime);
     }
 
 }
