@@ -150,8 +150,9 @@
 				- increment auctions count accumulator
 				- increment auctions.totalBondEscrowed accumulator
 				- updates auction queue state
-				- _updateKicker():
+				- _updateEscrowedBonds():
 					- update locked and claimable kicker accumulators
+					- update global escrow accumulator
 				- Loans.remove():
 					- delete borrower from indices => borrower address mapping
 					- remove loan from loans array

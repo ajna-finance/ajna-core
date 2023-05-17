@@ -78,6 +78,35 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
 
         changePrank(owner);
 
+        // unstake using emergency (without claiming rewards)
+        uint256 preEmergency = vm.snapshot();
+        _emergencyUnstakeToken(owner, pool, tokenId);
+        _assertUnstakeInvariants(owner, tokenId);
+        vm.revertTo(preEmergency);
+
+        // unstake gracefully (with claimed rewards)
+        _unstakeTokenGracefully(
+            owner,
+            pool,
+            claimedArray,
+            tokenId,
+            reward,
+            indexes,
+            updateExchangeRatesReward
+        );
+        _assertUnstakeInvariants(owner, tokenId);
+    }
+
+    function _unstakeTokenGracefully(
+        address owner,
+        address pool,
+        uint256[] memory claimedArray,
+        uint256 tokenId,
+        uint256 reward,
+        uint256[] memory indexes,
+        uint256 updateExchangeRatesReward
+    ) internal {
+
         // when the token is unstaked updateExchangeRates emits
         vm.expectEmit(true, true, true, true);
         emit UpdateExchangeRates(owner, pool, indexes, updateExchangeRatesReward);
@@ -90,19 +119,33 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         vm.expectEmit(true, true, true, true);
         emit Unstake(owner, address(pool), tokenId);
         _rewardsManager.unstake(tokenId);
-        assertEq(PositionManager(address(_positionManager)).ownerOf(tokenId), owner);
+    }
+
+    function _emergencyUnstakeToken(
+        address owner,
+        address pool,
+        uint256 tokenId
+    ) internal {
+        // when the token is unstaked in emergency mode then no cliam event is emitted
+        vm.expectEmit(true, true, true, true);
+        emit Unstake(owner, address(pool), tokenId);
+        _rewardsManager.emergencyUnstake(tokenId);
+    }
+
+    function _assertUnstakeInvariants(address owner_, uint256 tokenId_) internal {
+        assertEq(PositionManager(address(_positionManager)).ownerOf(tokenId_), owner_);
 
         // check token was transferred from rewards contract to minter
-        assertEq(PositionManager(address(_positionManager)).ownerOf(tokenId), owner);
+        assertEq(PositionManager(address(_positionManager)).ownerOf(tokenId_), owner_);
 
-        // invariant: all bucket snapshots are removed for the token id that was unstaken
+        // invariant: all bucket snapshots are removed for the token id that was unstaked
         for (uint256 bucketIndex = 0; bucketIndex <= 7388; bucketIndex++) {
-            (uint256 lps, uint256 rate) = _rewardsManager.getBucketStateStakeInfo(tokenId, bucketIndex);
+            (uint256 lps, uint256 rate) = _rewardsManager.getBucketStateStakeInfo(tokenId_, bucketIndex);
             assertEq(lps, 0);
             assertEq(rate, 0);
         }
 
-        (address ownerInf, address poolInf, uint256 interactionBlockInf) = _rewardsManager.getStakeInfo(tokenId);
+        (address ownerInf, address poolInf, uint256 interactionBlockInf) = _rewardsManager.getStakeInfo(tokenId_);
         assertEq(ownerInf, address(0));
         assertEq(poolInf, address(0));
         assertEq(interactionBlockInf, 0);

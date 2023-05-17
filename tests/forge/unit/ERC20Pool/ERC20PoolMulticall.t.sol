@@ -139,7 +139,7 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
         );
 
         changePrank(_lender);
-        vm.expectRevert(IPoolErrors.LimitIndexExceeded.selector);
+        vm.expectRevert(IPoolErrors.InsufficientLiquidity.selector);
         ERC20Pool(address(_pool)).multicall(callsToExecute);
     }
 }

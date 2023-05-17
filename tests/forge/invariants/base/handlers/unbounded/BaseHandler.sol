@@ -70,8 +70,13 @@ abstract contract BaseHandler is Test {
 
     // reserves invariant test state
     uint256 public previousReserves;    // reserves before action
-    uint256 public increaseInReserves;  // amount of reserve decrease
-    uint256 public decreaseInReserves;  // amount of reserve increase
+    uint256 public increaseInReserves;  // amount of reserve increase
+    uint256 public decreaseInReserves;  // amount of reserve decrease
+
+    // Auction bond invariant test state
+    uint256 public previousTotalBonds; // total bond before action
+    uint256 public increaseInBonds;    // amount of bond increase
+    uint256 public decreaseInBonds;    // amount of bond decrease
 
     // All Buckets used in invariant testing that also includes Buckets where collateral is added when a borrower is in auction and has partial NFT
     EnumerableSet.UintSet internal buckets;
@@ -397,9 +402,15 @@ abstract contract BaseHandler is Test {
 
         // reset the reserves before each action 
         increaseInReserves = 0;
-        decreaseInReserves  = 0;
+        decreaseInReserves = 0;
         // record reserves before each action
         (previousReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
+
+        // reset the bonds before each action
+        increaseInBonds = 0;
+        decreaseInBonds = 0;
+        // record totalBondEscrowed before each action
+        (previousTotalBonds, , , ) = _pool.reservesInfo();
     }
 
     /********************************/
