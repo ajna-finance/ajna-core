@@ -197,36 +197,20 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     function unstake(
         uint256 tokenId_
     ) external override {
-        StakeInfo storage stakeInfo = stakes[tokenId_];
+        _unstake({ tokenId_: tokenId_, claimRewards_: true });
+    }
 
-        if (msg.sender != stakeInfo.owner) revert NotOwnerOfDeposit();
-
-        address ajnaPool = stakeInfo.ajnaPool;
-
-        // claim rewards, if any
-        _claimRewards(
-            stakeInfo,
-            tokenId_,
-            IPool(ajnaPool).currentBurnEpoch(),
-            false,
-            ajnaPool
-        );
-
-        // remove bucket snapshots recorded at the time of staking
-        uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
-        for (uint256 i = 0; i < positionIndexes.length; ) {
-            delete stakeInfo.snapshot[positionIndexes[i]]; // reset BucketState struct for current position
-
-            unchecked { ++i; }
-        }
-
-        // remove recorded stake info
-        delete stakes[tokenId_];
-
-        emit Unstake(msg.sender, ajnaPool, tokenId_);
-
-        // transfer LP NFT from contract to sender
-        IERC721(address(positionManager)).transferFrom(address(this), msg.sender, tokenId_);
+   /**
+     *  @inheritdoc IRewardsManagerOwnerActions
+     *  @dev    === Revert on ===
+     *  @dev    not owner `NotOwnerOfDeposit()`
+     *  @dev    === Emit events ===
+     *  @dev    - `Unstake`
+     */
+    function emergencyUnstake(
+        uint256 tokenId_
+    ) external override {
+        _unstake({ tokenId_: tokenId_, claimRewards_: false });
     }
 
     /**
@@ -733,9 +717,52 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         }
     }
 
-    /** @notice Utility method to transfer `Ajna` rewards to the sender
-     *  @dev   This method is used to transfer rewards to the `msg.sender` after a successful claim or update.
-     *  @dev   It is used to ensure that rewards claimers will be able to claim some portion of the remaining tokens if a claim would exceed the remaining contract balance.
+    /** 
+     *  @notice Utility function to unstake the position token.
+     *  @dev    Used by `stake` function to unstake and claim rewards.
+     *  @dev    Used by `emergencyUnstake` function to unstake without claiming rewards.
+     *  @param tokenId_      The token id to unstake.
+     *  @param claimRewards_ Wether the rewards to be calculated and claimed (true for `stake`, false for `emergencyUnstake`)
+     */
+    function _unstake(uint256 tokenId_, bool claimRewards_) internal {
+        StakeInfo storage stakeInfo = stakes[tokenId_];
+
+        if (msg.sender != stakeInfo.owner) revert NotOwnerOfDeposit();
+
+        address ajnaPool = stakeInfo.ajnaPool;
+
+        if (claimRewards_) {
+            // claim rewards, if any
+            _claimRewards(
+                stakeInfo,
+                tokenId_,
+                IPool(ajnaPool).currentBurnEpoch(),
+                false,
+                ajnaPool
+            );
+        }
+
+        // remove bucket snapshots recorded at the time of staking
+        uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
+        for (uint256 i = 0; i < positionIndexes.length; ) {
+            delete stakeInfo.snapshot[positionIndexes[i]]; // reset BucketState struct for current position
+
+            unchecked { ++i; }
+        }
+
+        // remove recorded stake info
+        delete stakes[tokenId_];
+
+        emit Unstake(msg.sender, ajnaPool, tokenId_);
+
+        // transfer LP NFT from contract to sender
+        IERC721(address(positionManager)).transferFrom(address(this), msg.sender, tokenId_);
+    }
+
+    /**
+     *  @notice Utility function to transfer `Ajna` rewards to the sender
+     *  @dev    This function is used to transfer rewards to the `msg.sender` after a successful claim or update.
+     *  @dev    It is used to ensure that rewards claimers will be able to claim some portion of the remaining tokens if a claim would exceed the remaining contract balance.
      *  @param rewardsEarned_ Amount of rewards earned by the caller.
      */
     function _transferAjnaRewards(uint256 rewardsEarned_) internal {
