@@ -135,7 +135,7 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         changePrank(updater);
         vm.expectEmit(true, true, true, true);
         emit UpdateExchangeRates(updater, pool, indexes, reward);
-        _rewardsManager.updateBucketExchangeRatesAndClaim(pool, indexes);
+        _rewardsManager.updateBucketExchangeRatesAndClaim(pool, keccak256("ERC20_NON_SUBSET_HASH"), indexes);
     }
 
 
@@ -352,7 +352,7 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
 
         // construct memorialize params struct
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId_, indexes
+            tokenId_, address(pool), indexes
         );
 
         _positionManager.memorializePositions(memorializeParams);
