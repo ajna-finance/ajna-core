@@ -190,6 +190,11 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
             (uint256 lpBalance, uint256 depositTime) = pool.lenderInfo(index, owner);
 
+            // check that specified allowance is at least equal to the lp balance
+            uint256 allowance = pool.lpAllowance(index, address(this), owner);
+
+            if (allowance < lpBalance) revert AllowanceTooLow();
+
             Position memory position = positions[params_.tokenId][index];
 
             // check for previous deposits
