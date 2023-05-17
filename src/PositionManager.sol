@@ -80,7 +80,8 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         uint256 bucketCollateral; // [WAD] amount of collateral in from bucket
         uint256 bankruptcyTime;   // from bucket bankruptcy time
         uint256 bucketDeposit;    // [WAD] from bucket deposit
-        uint256 depositTime;      // lender deposit time in from bucekt
+        uint256 fromDepositTime;  // lender deposit time in from bucket
+        uint256 toDepositTime;    // lender deposit time in to bucket
         uint256 maxQuote;         // [WAD] max amount that can be moved from bucket
         uint256 lpbAmountFrom;    // [WAD] the LP redeemed from bucket
         uint256 lpbAmountTo;      // [WAD] the LP awarded in to bucket
@@ -273,10 +274,10 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         Position storage fromPosition = positions[params_.tokenId][params_.fromIndex];
 
         MoveLiquidityLocalVars memory vars;
-        vars.depositTime = fromPosition.depositTime;
+        vars.fromDepositTime = fromPosition.depositTime;
 
-        // handle the case where owner attempts to move liquidity after they've already done so
-        if (vars.depositTime == 0) revert RemovePositionFailed();
+        // owner attempts to move liquidity from index without LP or they've already moved it
+        if (vars.fromDepositTime == 0) revert RemovePositionFailed();
 
         // ensure bucketDeposit accounts for accrued interest
         IPool(params_.pool).updateInterest();
@@ -289,8 +290,8 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             vars.bucketDeposit,
         ) = IPool(params_.pool).bucketInfo(params_.fromIndex);
 
-        // check that bucket hasn't gone bankrupt since memorialization
-        if (vars.depositTime <= vars.bankruptcyTime) revert BucketBankrupt();
+        // check that from bucket hasn't gone bankrupt since memorialization
+        if (vars.fromDepositTime <= vars.bankruptcyTime) revert BucketBankrupt();
 
         // calculate the max amount of quote tokens that can be moved, given the tracked LP
         vars.maxQuote = _lpToQuoteToken(
@@ -324,11 +325,21 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
         Position storage toPosition = positions[params_.tokenId][params_.toIndex];
 
-        // update position LP state
+        // update position LP state in from bucket
         fromPosition.lps -= vars.lpbAmountFrom;
-        toPosition.lps   += vars.lpbAmountTo;
-        // update position deposit time to the from bucket deposit time
-        toPosition.depositTime = vars.depositTime;
+
+        vars.toDepositTime = toPosition.depositTime;
+
+        // reset LP in to bucket if bucket went bankrupt after memorialization
+        if (_bucketBankruptAfterDeposit(IPool(params_.pool), params_.toIndex, vars.toDepositTime)) {
+            toPosition.lps = vars.lpbAmountTo;
+        } else {
+            toPosition.lps += vars.lpbAmountTo;
+        }
+
+        // update position deposit time with the renewed to bucket deposit time
+        (, vars.toDepositTime) = IPool(params_.pool).lenderInfo(params_.toIndex, address(this));
+        toPosition.depositTime = vars.toDepositTime;
 
         emit MoveLiquidity(
             ownerOf(params_.tokenId),
@@ -439,15 +450,16 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      *  @param  pool_        The address of the pool of memorialized position.
      *  @param  index_       The bucket index to check deposit time for.
      *  @param  depositTime_ The recorded deposit time of the position.
-     *  @return `True` if the bucket went bankrupt after that position memorialzied their `LP`.
+     *  @return isBankrupt_  `True` if the bucket went bankrupt after that position memorialzied their `LP`.
      */
     function _bucketBankruptAfterDeposit(
         IPool pool_,
         uint256 index_,
         uint256 depositTime_
-    ) internal view returns (bool) {
+    ) internal view returns (bool isBankrupt_) {
         (, , uint256 bankruptcyTime, , ) = pool_.bucketInfo(index_);
-        return depositTime_ <= bankruptcyTime;
+        // Only check against deposit time if bucket has gone bankrupt
+        if (bankruptcyTime != 0) isBankrupt_ = depositTime_ <= bankruptcyTime;
     }
 
     /**********************/
