@@ -48,7 +48,7 @@ abstract contract ReservePoolHandler is UnboundedReservePoolHandler, Liquidation
         if (claimableReservesRemaining == 0) _kickReserveAuction();
 
         // skip enough time for auction price to decrease
-        skip(24 hours);
+        skip(_getKickReserveTime());
 
         (, , claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
         boundedAmount_ = constrictToRange(amountToTake_, 0, Maths.min(MIN_QUOTE_AMOUNT, claimableReservesRemaining));

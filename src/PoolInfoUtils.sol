@@ -208,6 +208,26 @@ contract PoolInfoUtils {
     }
 
     /**
+     *  @notice Returns the amount of quote token available for borrowing or removing from pool.
+     *  @dev    Calculated as the difference between pool balance and escrowed amounts locked in pool (auction bons + unclaimed reserves).
+     *  @param  ajnaPool_ Address of `Ajna` pool.
+     *  @return amount_   The total quote token amount available to borrow or to be removed from pool, in `WAD` units.
+     */
+    function availableQuoteTokenAmount(address ajnaPool_) external view returns (uint256 amount_) {
+        IPool pool = IPool(ajnaPool_);
+        (
+            uint256 bondEscrowed,
+            uint256 unclaimedReserve,
+            ,
+        ) = pool.reservesInfo();
+        uint256 escrowedAmounts = bondEscrowed + unclaimedReserve;
+
+        uint256 poolBalance = IERC20Token(pool.quoteTokenAddress()).balanceOf(ajnaPool_) * pool.quoteTokenScale();
+
+        if (poolBalance > escrowedAmounts) amount_ = poolBalance - escrowedAmounts;
+    }
+
+    /**
      *  @notice Returns info related to `Claimaible Reserve Auction`.
      *  @param  ajnaPool_                   Address of `Ajna` pool.
      *  @return reserves_                   The amount of excess quote tokens.

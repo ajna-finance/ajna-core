@@ -145,6 +145,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
             deposits,
             loans,
             poolState,
+            _availableQuoteToken(),
             borrowerAddress_,
             amountToBorrow_,
             limitIndex_,

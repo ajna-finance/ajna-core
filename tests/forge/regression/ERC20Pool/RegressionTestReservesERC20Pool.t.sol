@@ -960,3 +960,22 @@ contract RegressionTestReserveWith10BucketsERC20Pool is ReserveERC20PoolInvarian
         invariant_fenwick();
     }
 }
+
+contract RegressionTestReserveWithMinDebtAmountERC20Pool is ReserveERC20PoolInvariants { 
+
+    function setUp() public override {
+        vm.setEnv("MIN_DEBT_AMOUNT", "1000");
+        super.setUp();
+    }
+
+    /*
+        Test failed because there was not enough quote balance in pool for the calculated rewards.
+        Fixed by not allowing draw debt / remove quote tokens actions to use unclaimed rewards and auction bonds amounts.
+    */
+    function test_regression_reserves_evm_revert_2() external {
+        _reserveERC20PoolHandler.kickAuction(115792089237316195423570985008687907853269984665640564039457584007913129639933, 2, 91325230633814398717429910100117206750783558549035123181702119, 115792089237316195423570985008687907853269984665640564039457584007913129639932);
+        _reserveERC20PoolHandler.drawDebt(115010764850365438892405937, 99266, 5629612810546441);
+        _reserveERC20PoolHandler.takeAuction(3, 506252187686489913395361995, 17164053241942561945173805142, 614104279766114463662318087446225395238344193500787687172585968162);
+        _reserveERC20PoolHandler.takeReserves(5223, 1039866472752662341, 959205933404025228743315025);
+    }
+}

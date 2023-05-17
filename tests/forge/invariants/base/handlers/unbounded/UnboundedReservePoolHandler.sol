@@ -45,7 +45,16 @@ abstract contract UnboundedReservePoolHandler is BaseHandler {
         deal(address(_ajna), _actor, type(uint256).max);
         IERC20(address(_ajna)).approve(address(_pool), type(uint256).max);
 
+        (, uint256 claimableReservesBeforeAction, ,) = _pool.reservesInfo();
+
         try _pool.takeReserves(amount_) {
+
+            (, uint256 claimableReservesAfterAction, ,) = _pool.reservesInfo();
+            // reserves are guaranteed by the protocol)
+            require(
+                claimableReservesAfterAction < claimableReservesBeforeAction,
+                "QT1: claimable reserve not avaialble to take"
+            );
 
         } catch (bytes memory err) {
             _ensurePoolError(err);

@@ -93,5 +93,14 @@ abstract contract ReserveInvariants is LiquidationInvariants {
             IBaseHandler(_handler).numberOfCalls("BReserveHandler.kickReserveAuction") +
             IBaseHandler(_handler).numberOfCalls("BReserveHandler.takeReserves")
         );
+
+        uint256 currentEpoch = _pool.currentBurnEpoch();
+        console.log("Current epoch", currentEpoch);
+        for (uint256 epoch = 0; epoch <= currentEpoch; epoch++) {
+            (, , uint256 burned) = _pool.burnInfo(epoch);
+            if (burned != 0) {
+                console.log("Epoch: %s; Burned: %s", epoch, burned);
+            }
+        }
     }
 }

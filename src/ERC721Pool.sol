@@ -156,6 +156,7 @@ contract ERC721Pool is FlashloanablePool, IERC721Pool {
             deposits,
             loans,
             poolState,
+            _availableQuoteToken(),
             borrowerAddress_,
             amountToBorrow_,
             limitIndex_,

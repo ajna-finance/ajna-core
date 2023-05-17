@@ -50,9 +50,19 @@ interface IPositionManagerDerivedState {
         uint256 index_
     ) external view returns (uint256, uint256);
 
+    /**
+     *  @notice Checks if a given `pool_` address is an Ajna pool.
+     *  @param  pool_       Address of the `Ajna` pool.
+     *  @param  subsetHash_ Factory's subset hash pool.
+     *  @return isAjnaPool_ `True` if the address to check is an Ajna pool.
+    */
+    function isAjnaPool(
+        address pool_,
+        bytes32 subsetHash_
+    ) external view returns (bool isAjnaPool_);
 
     /**
-     *  @notice Checks if a given `tokenId` has a given position bucket
+     *  @notice Checks if a given `tokenId` has a given position bucket.
      *  @param  tokenId_           Unique `ID` of token.
      *  @param  index_             Index of bucket to check if in position buckets.
      *  @return bucketInPosition_  `True` if tokenId has the position bucket.

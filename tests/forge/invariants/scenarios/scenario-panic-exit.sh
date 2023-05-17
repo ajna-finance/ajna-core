@@ -1,5 +1,5 @@
 #!/bin/bash
-# configuration for active pool
+# configuration for panic exit from pool
 export QUOTE_PRECISION=18
 export COLLATERAL_PRECISION=18
 export BUCKET_INDEX_ERC20=2570
@@ -18,9 +18,5 @@ export MIN_COLLATERAL_AMOUNT_ERC721=1
 export MAX_COLLATERAL_AMOUNT_ERC721=100
 export FOUNDRY_INVARIANT_RUNS=10
 export FOUNDRY_INVARIANT_DEPTH=200
-# 5 minutes
-export SKIP_TIME=300
-# 200 days
-export SKIP_TIME_TO_KICK=17280000
-# 24 hours
-export SKIP_TIME_TO_KICK_RESERVE=86400
+# 1 minute
+export SKIP_TIME=60
