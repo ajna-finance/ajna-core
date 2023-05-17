@@ -79,7 +79,7 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
 
         _assertReserveAuction({
             reserves:                   1.425573699803092 * 1e18,
-            claimableReserves :         1.425573699803092 * 1e18,
+            claimableReserves :         1.425572693359453700 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
@@ -88,7 +88,7 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
         // kick off a new auction
         _kickReserveAuction({
             from:              _bidder,
-            remainingReserves: 1.411317962805061080 * 1e18,
+            remainingReserves: 1.411316966425859163 * 1e18,
             price:             1000000000 * 1e18,
             epoch:             1
         });
@@ -96,9 +96,9 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
         skip(60 hours);
 
         _assertReserveAuction({
-            reserves:                   0.000000736998030920 * 1e18,
-            claimableReserves :         0.000000736998030920 * 1e18,
-            claimableReservesRemaining: 1.411317962805061080 * 1e18,
+            reserves:                   0.000001733377232837 * 1e18,
+            claimableReserves :         0.000000726933594537 * 1e18,
+            claimableReservesRemaining: 1.411316966425859163 * 1e18,
             auctionPrice:               0.000000000867361737 * 1e18,
             timeRemaining:              43200
         });
@@ -109,9 +109,9 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
 
         _pool.takeReserves(10 * 1e18);
 
-        assertEq(USDC.balanceOf(address(_pool)),   1_006.443640 * 1e6);
-        assertEq(USDC.balanceOf(address(_bidder)), 1.425572 * 1e6);
-        assertEq(AJNA.balanceOf(address(_bidder)), 9.999999998775876800 * 1e18);
+        assertEq(USDC.balanceOf(address(_pool)),   1_006.443641 * 1e6);
+        assertEq(USDC.balanceOf(address(_bidder)), 1.425571 * 1e6);
+        assertEq(AJNA.balanceOf(address(_bidder)), 9.999999998775877665 * 1e18);
     }
 }
 
