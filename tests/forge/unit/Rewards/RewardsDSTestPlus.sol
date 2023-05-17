@@ -136,7 +136,7 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         changePrank(updater);
         vm.expectEmit(true, true, true, true);
         emit UpdateExchangeRates(updater, pool, indexes, reward);
-        _rewardsManager.updateBucketExchangeRatesAndClaim(pool, indexes);
+        _rewardsManager.updateBucketExchangeRatesAndClaim(pool, keccak256("ERC20_NON_SUBSET_HASH"), indexes);
     }
 
 
@@ -166,37 +166,6 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
 
         assertEq(_ajnaToken.balanceOf(from), fromAjnaBal + reward);
-    }
-
-    function _moveStakedLiquidity(
-        address from,
-        uint256 tokenId,
-        uint256[] memory fromIndexes,
-        uint256[] memory lpsRedeemed,
-        bool fromIndStaked,
-        uint256[] memory toIndexes,
-        uint256[] memory lpsAwarded,
-        uint256 expiry
-    ) internal {
-        
-        changePrank(from);
-
-        // check MoveLiquidity emits
-        for (uint256 i = 0; i < fromIndexes.length; ++i) {
-            vm.expectEmit(true, true, true, true);
-            emit MoveLiquidity(address(_rewardsManager), tokenId, fromIndexes[i], toIndexes[i], lpsRedeemed[i], lpsAwarded[i]);
-        }
-
-        vm.expectEmit(true, true, true, true);
-        emit MoveStakedLiquidity(tokenId, fromIndexes, toIndexes);
-
-        if (fromIndStaked) {
-            // check exchange rates are updated
-            vm.expectEmit(true, true, true, true);
-            emit UpdateExchangeRates(_minterOne, address(_pool), toIndexes, 0);
-        }
-        _rewardsManager.moveStakedLiquidity(tokenId, fromIndexes, toIndexes, expiry);
-
     }
 
     function _assertNotOwnerOfDepositRevert(address from , uint256 tokenId) internal {
@@ -353,7 +322,7 @@ abstract contract RewardsHelperContract is RewardsDSTestPlus {
 
         // construct memorialize params struct
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId_, indexes
+            tokenId_, address(pool), indexes
         );
 
         _positionManager.memorializePositions(memorializeParams);
