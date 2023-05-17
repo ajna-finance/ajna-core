@@ -301,6 +301,78 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         assertEq(toDepositTime,   block.timestamp);
     }
 
+    function testMoveLiquidity_revert_on_less_LP_moved_report_503() external {
+        // generate a new address
+        address testAddress1 = makeAddr("testAddress1");
+        address testAddress2 = makeAddr("testAddress2");
+        uint256 mintIndex    = 2550;
+        uint256 moveIndex    = 2551;
+        _mintQuoteAndApproveManagerTokens(testAddress1, 1_000_000_000 * 1e18);
+        _mintQuoteAndApproveManagerTokens(testAddress2, 1_000_000_000 * 1e18);
+        _mintCollateralAndApproveTokens(testAddress1,  1000000000000000000 * 1e18);
+
+        _addInitialLiquidity({
+            from:   testAddress1,
+            amount: 2_500 * 1e18,
+            index:  mintIndex
+        });
+        _addInitialLiquidity({
+            from:   testAddress2,
+            amount: 200000000 * 1e18,
+            index:  mintIndex
+        });
+        _addCollateral({
+            from:    testAddress1,
+            amount:  883976901103343226.563974622543668416 * 1e18,
+            index:   2550,
+            lpAward: 2661558999339261844678.534720637400665212 * 1e18
+        });
+
+        uint256 tokenId1 = _mintNFT(testAddress1, testAddress1, address(_pool));
+
+        // allow position manager to take ownership of the position of testAddress1
+        changePrank(testAddress1);
+        uint256[] memory indexes = new uint256[](1);
+        indexes[0] = mintIndex;
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = 3661558999339261844678 * 1e18;
+        _pool.increaseLPAllowance(address(_positionManager), indexes, amounts);
+
+        // memorialize positions of testAddress1
+        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
+            tokenId1, address(_pool), indexes
+        );
+        changePrank(testAddress1);
+        _positionManager.memorializePositions(memorializeParams);
+
+        _removeAllCollateral({
+            from:     testAddress2,
+            amount:   66425.497336169705758545 * 1e18,
+            index:    2550,
+            lpRedeem: 200000000 * 1e18
+        });
+
+        // check from and to positions before move
+        (uint256 fromLp, uint256 fromDepositTime) = _positionManager.getPositionInfo(tokenId1, mintIndex);
+        (uint256 toLp,   uint256 toDepositTime)   = _positionManager.getPositionInfo(tokenId1, moveIndex);
+        assertEq(fromLp, 2661558999339261847178.534720637400665212 * 1e18);
+        assertEq(toLp,   0);
+        assertEq(fromDepositTime, block.timestamp);
+        assertEq(toDepositTime,   0);
+
+        // construct move liquidity params
+        IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
+            tokenId1, address(_pool), mintIndex, moveIndex, block.timestamp + 30
+        );
+
+        // move liquidity called by testAddress1 owner
+        // This protects LP owner of losing LP because position manager tried to move 2661558999339261847178.534720637400665212 memorialized LP
+        // but the amount of LP that can be moved (constrained by available max quote token) is only 200002500
+        changePrank(address(testAddress1));
+        vm.expectRevert(IPositionManagerErrors.RemovePositionFailed.selector);
+        _positionManager.moveLiquidity(moveLiquidityParams);
+    }
+
     /**
     *  @notice Simulates the effect of the described vulnerability where a user
     *          can exponentially increase the value of their position by:
