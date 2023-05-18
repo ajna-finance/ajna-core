@@ -520,12 +520,14 @@ library LenderActions {
      *  @dev    === Reverts on ===
      *  @dev    not enough collateral `InsufficientCollateral()`
      *  @dev    no claim `NoClaim()`
+     *  @dev    leaves less than dust limit in bucket `DustAmountNotExceeded()`
      *  @return Amount of collateral that was removed.
      *  @return Amount of LP redeemed for removed collateral amount.
      */
     function removeMaxCollateral(
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
+        uint256 dustLimit_,
         uint256 maxAmount_,
         uint256 index_
     ) external returns (uint256, uint256) {
@@ -535,6 +537,7 @@ library LenderActions {
         return _removeMaxCollateral(
             buckets_,
             deposits_,
+            dustLimit_,
             maxAmount_,
             index_
         );
@@ -572,6 +575,7 @@ library LenderActions {
             (collateralRemoved, ) = _removeMaxCollateral(
                 buckets_,
                 deposits_,
+                1,                   // dust limit is same as collateral scale
                 collateralRemaining,
                 fromIndex
             );
@@ -613,6 +617,7 @@ library LenderActions {
      *  @dev    === Reverts on ===
      *  @dev    not enough collateral `InsufficientCollateral()`
      *  @dev    no claim `NoClaim()`
+     *  @dev    leaves less than dust limit in bucket `DustAmountNotExceeded()`
      *  @dev    === Emit events ===
      *  @dev    - `BucketBankruptcy`
      *  @return collateralAmount_ Amount of collateral that was removed.
@@ -621,6 +626,7 @@ library LenderActions {
     function _removeMaxCollateral(
         mapping(uint256 => Bucket) storage buckets_,
         DepositsState storage deposits_,
+        uint256 dustLimit_,
         uint256 maxAmount_,
         uint256 index_
     ) internal returns (uint256 collateralAmount_, uint256 lpAmount_) {
@@ -673,6 +679,7 @@ library LenderActions {
 
         collateralAmount_ = Maths.min(bucketCollateral, collateralAmount_);
         bucketCollateral  -= collateralAmount_;
+        if (bucketCollateral != 0 && bucketCollateral < dustLimit_) revert DustAmountNotExceeded();
         bucket.collateral = bucketCollateral;
 
         // check if bucket healthy after collateral remove - set bankruptcy if collateral and deposit are 0 but there's still LP

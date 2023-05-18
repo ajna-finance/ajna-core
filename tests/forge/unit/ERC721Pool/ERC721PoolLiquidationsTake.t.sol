@@ -650,10 +650,8 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
             locked:    0
         });
 
-        uint256 snapshot = vm.snapshot();
-
         changePrank(_lender);
-
+        skip(1 minutes);
         // Kicker claims bond + reward and transfer to a different address
         _pool.withdrawBonds(_withdrawRecipient, 0.1 * 1e18);
         assertEq(_quote.balanceOf(_withdrawRecipient), 0.1 * 1e18);
@@ -661,8 +659,6 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         // Kicker claims remaining bond + reward to his own address
         _pool.withdrawBonds(_lender, type(uint256).max);
         assertEq(_quote.balanceOf(_lender), 46_998.423343483554970812 * 1e18);
-
-        vm.revertTo(snapshot); // revert to ensure tear down has enough balance in pool
     }
 
     function testTakeCollateralSubsetPoolAndSettleByRepayAndPledge() external tearDown {

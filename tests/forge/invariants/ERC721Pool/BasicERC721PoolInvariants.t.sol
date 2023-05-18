@@ -89,9 +89,9 @@ contract BasicERC721PoolInvariants is BasicInvariants {
         uint256 bucketCollateral;
         uint256 collateral;
 
-        uint256[] memory collateralBuckets = IBaseHandler(_handler).getCollateralBuckets();
-        for (uint256 i = 0; i < collateralBuckets.length; i++) {
-            uint256 bucketIndex = collateralBuckets[i];
+        uint256[] memory buckets = IBaseHandler(_handler).getBuckets();
+        for (uint256 i = 0; i < buckets.length; i++) {
+            uint256 bucketIndex = buckets[i];
             (, collateral, , , ) = _erc721pool.bucketInfo(bucketIndex);
             bucketCollateral += collateral;
         }

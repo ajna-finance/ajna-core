@@ -22,6 +22,11 @@ interface IRewardsManagerErrors {
     error MoveStakedLiquidityInvalid();
 
     /**
+     * @notice User attempted to update exchange rates for a pool that wasn't deployed by an `Ajna` factory.
+     */
+    error NotAjnaPool();
+
+    /**
      *  @notice User attempted to interact with an `NFT` they aren't the owner of.
      */
     error NotOwnerOfDeposit();

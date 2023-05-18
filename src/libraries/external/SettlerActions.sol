@@ -25,7 +25,8 @@ import {
     _indexOf,
     _priceAt,
     MAX_FENWICK_INDEX,
-    MIN_PRICE
+    MIN_PRICE,
+    DEPOSIT_BUFFER   
 }  from '../helpers/PoolHelper.sol';
 
 import { Buckets }  from '../internal/Buckets.sol';
@@ -131,8 +132,14 @@ library SettlerActions {
 
         if (borrower.t0Debt != 0 && borrower.collateral == 0) {
             // 2. settle debt with pool reserves
-            uint256 assets      = Maths.wmul(poolState_.t0Debt - result_.t0DebtSettled + borrower.t0Debt, poolState_.inflator) + params_.poolBalance;
-            uint256 liabilities = Deposits.treeSum(deposits_) + auctions_.totalBondEscrowed + reserveAuction_.unclaimed;
+            uint256 assets = Maths.wmul(poolState_.t0Debt - result_.t0DebtSettled + borrower.t0Debt, poolState_.inflator) + params_.poolBalance;
+
+            uint256 liabilities =
+                // require 1.0 + 1e-9 deposit buffer (extra margin) for deposits
+                Maths.wmul(DEPOSIT_BUFFER, Deposits.treeSum(deposits_)) +
+                auctions_.totalBondEscrowed +
+                reserveAuction_.unclaimed;
+
             // settle debt from reserves (assets - liabilities) if reserves positive, round reserves down however
             if (assets > liabilities) {
                 borrower.t0Debt -= Maths.min(borrower.t0Debt, Maths.floorWdiv(assets - liabilities, poolState_.inflator));

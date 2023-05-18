@@ -19,6 +19,7 @@ abstract contract LiquidationInvariants is BasicInvariants {
         _invariant_A3_A4();
         _invariant_A5();
         _invariant_A6();
+        _invariant_A7();
     }
 
     /// @dev checks sum of all borrower's t0debt is equals to total pool t0debtInAuction
@@ -42,18 +43,28 @@ abstract contract LiquidationInvariants is BasicInvariants {
     /// @dev checks sum of all kicker bond is equal to total pool bond
     function _invariant_A2() internal view {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
-        uint256 totalKickerBond;
+        uint256 kickerClaimableBond;
+        uint256 kickerLockedBond;
 
         for (uint256 i = 0; i < actorCount; i++) {
             address kicker = IBaseHandler(_handler).actors(i);
-            (uint256 claimable, uint256 bond) = _pool.kickerInfo(kicker);
+            (uint256 claimable, uint256 locked) = _pool.kickerInfo(kicker);
 
-            totalKickerBond += bond + claimable;
+            kickerLockedBond    += locked;
+            kickerClaimableBond += claimable;
         }
 
-        (uint256 totalPoolBond, , , ) = _pool.reservesInfo();
+        (uint256 totalBondEscrowed, , , ) = _pool.reservesInfo();
 
-        require(totalPoolBond == totalKickerBond, "Auction Invariant A2");
+        require(totalBondEscrowed == kickerClaimableBond + kickerLockedBond, "A2: total bond escrowed != kicker bonds");
+
+        uint256 lockedBonds;
+        for (uint256 i = 0; i < actorCount; i++) {
+            address borrower = IBaseHandler(_handler).actors(i);
+            (, , uint256 bond, , , , , , , ) = _pool.auctionInfo(borrower);
+            lockedBonds += bond;
+        }
+        require(lockedBonds == kickerLockedBond, "A2: bonds in auctions != than kicker locked bonds");
     }
 
     /// @dev checks total borrowers with debt is equals to sum of borrowers unkicked and borrowers kicked
@@ -117,6 +128,19 @@ abstract contract LiquidationInvariants is BasicInvariants {
             );
         }
     }
+
+    /// @dev total bond escrowed should increase when auctioned kicked with the difference needed to cover the bond and should decrease only when kicker bonds withdrawned
+    function _invariant_A7() internal view {
+        uint256 previousTotalBondEscrowed        = IBaseHandler(_handler).previousTotalBonds();
+        uint256 increaseInBonds                  = IBaseHandler(_handler).increaseInBonds();
+        uint256 decreaseInBonds                  = IBaseHandler(_handler).decreaseInBonds();
+        (uint256 currentTotalBondEscrowed, , , ) = _pool.reservesInfo();
+
+        require(
+            currentTotalBondEscrowed == previousTotalBondEscrowed + increaseInBonds - decreaseInBonds,
+            "Auction Invariant A7"
+        );
+    }
     
     function invariant_call_summary() public virtual override useCurrentTimestamp {
         console.log("\nCall Summary\n");
@@ -129,26 +153,51 @@ abstract contract LiquidationInvariants is BasicInvariants {
         console.log("UBLiquidationHandler.addCollateral        ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.addCollateral"));
         console.log("BLiquidationHandler.removeCollateral      ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.removeCollateral"));
         console.log("UBLiquidationHandler.removeCollateral     ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.removeCollateral"));
+        console.log("BLiquidationHandler.moveQuoteToken        ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.moveQuoteToken"));
+        console.log("UBLiquidationHandler.moveQuoteToken       ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.moveQuoteToken"));
+        console.log("BLiquidationHandler.transferLps           ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.transferLps"));
+        console.log("UBLiquidationHandler.transferLps          ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.transferLps"));
         console.log("--Borrower--------");
         console.log("BLiquidationHandler.drawDebt              ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.drawDebt"));
         console.log("UBLiquidationHandler.drawDebt             ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.drawDebt"));
         console.log("BLiquidationHandler.repayDebt             ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt"));
         console.log("UBLiquidationHandler.repayDebt            ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.repayDebt"));
+        console.log("BLiquidationHandler.pledgeCollateral      ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.pledgeCollateral"));
+        console.log("UBLiquidationHandler.pledgeCollateral     ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.pledgeCollateral"));
+        console.log("BLiquidationHandler.pullCollateral        ",  IBaseHandler(_handler).numberOfCalls("BBasicHandler.pullCollateral"));
+        console.log("UBLiquidationHandler.pullCollateral       ",  IBaseHandler(_handler).numberOfCalls("UBBasicHandler.pullCollateral"));
+        console.log("--Kicker/Taker----");
         console.log("BLiquidationHandler.kickAuction           ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.kickAuction"));
         console.log("UBLiquidationHandler.kickAuction          ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.kickAuction"));
         console.log("BLiquidationHandler.takeAuction           ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.takeAuction"));
         console.log("UBLiquidationHandler.takeAuction          ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.takeAuction"));
+        console.log("BLiquidationHandler.bucketTake            ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.bucketTake"));
+        console.log("UBLiquidationHandler.bucketTake           ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.bucketTake"));
+        console.log("BLiquidationHandler.settleAuction         ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.settleAuction"));
+        console.log("UBLiquidationHandler.settleAuction        ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.settleAuction"));
+        console.log("BLiquidationHandler.withdrawBonds         ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.withdrawBonds"));
+        console.log("UBLiquidationHandler.withdrawBonds        ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.withdrawBonds"));
+        console.log("BLiquidationHandler.kickWithDeposit       ",  IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.kickWithDeposit"));
+        console.log("UBLiquidationHandler.kickWithDeposit      ",  IBaseHandler(_handler).numberOfCalls("UBLiquidationHandler.kickWithDeposit"));
         console.log("------------------");
         console.log(
             "Sum",
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.addQuoteToken") +
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.removeQuoteToken") +
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.moveQuoteToken") + 
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.addCollateral") +
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.removeCollateral") +
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.pledgeCollateral") + 
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.pullCollateral") + 
             IBaseHandler(_handler).numberOfCalls("BBasicHandler.drawDebt") + 
-            IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt") +
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.repayDebt") + 
+            IBaseHandler(_handler).numberOfCalls("BBasicHandler.transferLps") +
             IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.kickAuction") +
-            IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.takeAuction")
+            IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.takeAuction") +
+            IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.bucketTake") +
+            IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.settleAuction") +
+            IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.withdrawBonds") +
+            IBaseHandler(_handler).numberOfCalls("BLiquidationHandler.kickWithDeposit")
         );
     }
 

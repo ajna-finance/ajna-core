@@ -1,5 +1,5 @@
 #!/bin/bash
-# configuration for active pool
+# configuration for testing more depth of pool
 export QUOTE_PRECISION=18
 export COLLATERAL_PRECISION=18
 export BUCKET_INDEX_ERC20=2570
@@ -20,7 +20,5 @@ export FOUNDRY_INVARIANT_RUNS=10
 export FOUNDRY_INVARIANT_DEPTH=200
 # 5 minutes
 export SKIP_TIME=300
-# 200 days
-export SKIP_TIME_TO_KICK=17280000
-# 24 hours
-export SKIP_TIME_TO_KICK_RESERVE=86400
+export SKIP_TIME_TO_KICK=0
+export SKIP_TIME_TO_KICK_RESERVE=0
