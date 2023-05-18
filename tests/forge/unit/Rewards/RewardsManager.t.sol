@@ -1765,7 +1765,59 @@ contract RewardsManagerTest is RewardsHelperContract {
     }
 
     function testClaimAndWithdraw() external {
+        skip(10);
 
+        // configure NFT position
+        uint256[] memory depositIndexes = new uint256[](5);
+        depositIndexes[0] = 2550;
+        depositIndexes[1] = 2551;
+        depositIndexes[2] = 2552;
+        depositIndexes[3] = 2553;
+        depositIndexes[4] = 2555;
+
+        uint256 tokenIdOne = _mintAndMemorializePositionNFT({
+            indexes:    depositIndexes,
+            minter:     _minterOne,
+            mintAmount: 1_000 * 1e18,
+            pool:       address(_pool)
+        });
+
+        // stake nft
+        _stakeToken({
+            pool:    address(_pool),
+            owner:   _minterOne,
+            tokenId: tokenIdOne
+        });
+
+        // trigger ajna burns
+        uint256 tokensToBurn = _triggerReserveAuctions({
+            borrower:     _borrower,
+            tokensToBurn: 81.799082739441001952 * 1e18,
+            borrowAmount: 300 * 1e18,
+            limitIndex:   2555,
+            pool:         address(_pool)
+        });
+
+        // claim rewards
+        _claimRewards({
+            pool:          address(_pool),
+            from:          _minterOne,
+            tokenId:       tokenIdOne,
+            reward:        44.989495506692550592 * 1e18,
+            epochsClaimed: _epochsClaimedArray(1, 0)
+        });
+
+        // unstake token and check no rewards are received as user already claimed
+        uint256[] memory claimedArray = new uint256[](0);
+        _unstakeToken({
+            pool:              address(_pool),
+            owner:             _minterOne,
+            tokenId:           tokenIdOne,
+            claimedArray:      claimedArray, // no rewards as no reserve auctions have occured since the last claim
+            reward:            0,
+            indexes:           depositIndexes,
+            updateExchangeRatesReward: 0
+        });
     }
 
     function testMultiplePools() external {

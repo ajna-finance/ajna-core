@@ -110,14 +110,20 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         vm.expectEmit(true, true, true, true);
         emit UpdateExchangeRates(owner, pool, indexes, updateExchangeRatesReward);
 
-        // when the token is unstaked claimRewards emits
-        vm.expectEmit(true, true, true, true);
-        emit ClaimRewards(owner, pool,  tokenId, claimedArray, reward);
+        if (claimedArray.length != 0) {
+            // when the token is unstaked claimRewards emits
+            vm.expectEmit(true, true, true, true);
+            emit ClaimRewards(owner, pool,  tokenId, claimedArray, reward);
+        }
 
         // when the token is unstaked unstake emits
         vm.expectEmit(true, true, true, true);
         emit Unstake(owner, address(pool), tokenId);
         _rewardsManager.unstake(tokenId);
+
+        // check exchange rates were updated
+        uint256 updateEpoch = IPool(pool).currentBurnEpoch();
+        _assertBucketsUpdated(pool, indexes, updateEpoch);
     }
 
     function _emergencyUnstakeToken(
@@ -130,6 +136,54 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         emit Unstake(owner, address(pool), tokenId);
         _rewardsManager.emergencyUnstake(tokenId);
     }
+
+    function _updateExchangeRates(
+        address updater,
+        address pool,
+        uint256[] memory indexes,
+        uint256 reward
+    ) internal {
+        changePrank(updater);
+        vm.expectEmit(true, true, true, true);
+        emit UpdateExchangeRates(updater, pool, indexes, reward);
+        _rewardsManager.updateBucketExchangeRatesAndClaim(pool, keccak256("ERC20_NON_SUBSET_HASH"), indexes);
+
+        // check exchange rates were updated
+        uint256 updateEpoch = IPool(pool).currentBurnEpoch();
+        _assertBucketsUpdated(pool, indexes, updateEpoch);
+    }
+
+    function _epochsClaimedArray(uint256 numberOfAuctions_, uint256 lastClaimed_) internal pure returns (uint256[] memory epochsClaimed_) {
+        epochsClaimed_ = new uint256[](numberOfAuctions_);
+        uint256 claimEpoch = lastClaimed_; // starting index, not inclusive
+
+        for (uint256 i = 0; i < numberOfAuctions_; i++) {
+            epochsClaimed_[i] = claimEpoch + 1;
+            claimEpoch += 1;
+        }
+    }
+
+    function _claimRewards(
+        address from,
+        address pool,
+        uint256 tokenId,
+        uint256 reward,
+        uint256[] memory epochsClaimed
+    ) internal {
+        changePrank(from);
+        uint256 fromAjnaBal = _ajnaToken.balanceOf(from);
+
+        uint256 currentBurnEpoch = IPool(pool).currentBurnEpoch();
+        vm.expectEmit(true, true, true, true);
+        emit ClaimRewards(from, pool, tokenId, epochsClaimed, reward);
+        _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
+
+        assertEq(_ajnaToken.balanceOf(from), fromAjnaBal + reward);
+    }
+
+    /***************/
+    /*** Asserts ***/
+    /***************/
 
     function _assertUnstakeInvariants(address owner_, uint256 tokenId_) internal {
         assertEq(PositionManager(address(_positionManager)).ownerOf(tokenId_), owner_);
@@ -166,52 +220,15 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         assertEq(burned,      tokensToBurn);
     }
 
-
-    function _updateExchangeRates(
-        address updater,
-        address pool,
-        uint256[] memory indexes,
-        uint256 reward
+    // check that an array of bucket indexes had their exchange rates updated
+    function _assertBucketsUpdated(
+        address pool_,
+        uint256[] memory indexes_,
+        uint256 epoch_
     ) internal {
-        changePrank(updater);
-        vm.expectEmit(true, true, true, true);
-        emit UpdateExchangeRates(updater, pool, indexes, reward);
-        _rewardsManager.updateBucketExchangeRatesAndClaim(pool, keccak256("ERC20_NON_SUBSET_HASH"), indexes);
-
-        // check exchange rates were updated
-        uint256 currentBurnEpoch = IPool(pool).currentBurnEpoch();
-        for (uint256 i = 0; i < indexes.length; i++) {
-            assertTrue(_rewardsManager.isBucketUpdated(pool, indexes[i], currentBurnEpoch));
+        for (uint256 i = 0; i < indexes_.length; ++i) {
+            assertTrue(_rewardsManager.isBucketUpdated(pool_, indexes_[i], epoch_));
         }
-    }
-
-
-    function _epochsClaimedArray(uint256 numberOfAuctions_, uint256 lastClaimed_) internal pure returns (uint256[] memory epochsClaimed_) {
-        epochsClaimed_ = new uint256[](numberOfAuctions_);
-        uint256 claimEpoch = lastClaimed_; // starting index, not inclusive
-
-        for (uint256 i = 0; i < numberOfAuctions_; i++) {
-            epochsClaimed_[i] = claimEpoch + 1;
-            claimEpoch += 1;
-        }
-    }
-
-    function _claimRewards(
-        address from,
-        address pool,
-        uint256 tokenId,
-        uint256 reward,
-        uint256[] memory epochsClaimed
-    ) internal {
-        changePrank(from);
-        uint256 fromAjnaBal = _ajnaToken.balanceOf(from);
-
-        uint256 currentBurnEpoch = IPool(pool).currentBurnEpoch();
-        vm.expectEmit(true, true, true, true);
-        emit ClaimRewards(from, pool, tokenId, epochsClaimed, reward);
-        _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
-
-        assertEq(_ajnaToken.balanceOf(from), fromAjnaBal + reward);
     }
 
     function _assertNotOwnerOfDepositRevert(address from , uint256 tokenId) internal {
