@@ -455,7 +455,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         if (rewardsClaimedInEpoch_ + newRewards_ > rewardsCapped) {
 
             // set claim reward to difference between cap and reward
-            newRewards_ = rewardsCapped - rewardsClaimedInEpoch_;
+            newRewards_ = rewardsClaimedInEpoch_ > rewardsCapped ? 0 : rewardsCapped - rewardsClaimedInEpoch_;
         }
     }
 
@@ -633,7 +633,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
                 // update total tokens claimed for updating bucket exchange rates tracker
                 if (rewardsClaimedInEpoch + updatedRewards_ >= rewardsCap) {
                     // if update reward is greater than cap, set to remaining difference
-                    updatedRewards_ = rewardsCap - rewardsClaimedInEpoch;
+                    updatedRewards_ = rewardsClaimedInEpoch > rewardsCap ? 0 : rewardsCap - rewardsClaimedInEpoch;
                 }
 
                 // accumulate the full amount of additional rewards
