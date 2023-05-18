@@ -505,7 +505,13 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
         if (isEpochClaimed[tokenId_][epochToClaim_]) revert AlreadyClaimed();
 
-        uint256 rewardsEarned = _calculateAndClaimAllRewards(stakeInfo, tokenId_, epochToClaim_, true, stakeInfo.ajnaPool);
+        uint256 rewardsEarned = _calculateAndClaimAllRewards(
+            stakeInfo,
+            tokenId_,
+            epochToClaim_,
+            true,
+            stakeInfo.ajnaPool
+        );
 
         // transfer rewards to sender
         _transferAjnaRewards({
