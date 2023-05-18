@@ -118,6 +118,10 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         ERC20PoolFactory erc20Factory_,
         ERC721PoolFactory erc721Factory_
     ) PermitERC721("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {
+        if (
+            address(erc20Factory_) == address(0) || address(erc721Factory_) == address(0)
+        ) revert DeployWithZeroAddress();
+
         erc20PoolFactory  = erc20Factory_;
         erc721PoolFactory = erc721Factory_;
     }
@@ -236,10 +240,10 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     function mint(
         MintParams calldata params_
     ) external override nonReentrant returns (uint256 tokenId_) {
-        tokenId_ = _nextId++;
-
         // revert if the address is not a valid Ajna pool
         if (!_isAjnaPool(params_.pool, params_.poolSubsetHash)) revert NotAjnaPool();
+
+        tokenId_ = _nextId++;
 
         // record which pool the tokenId was minted in
         poolKey[tokenId_] = params_.pool;
@@ -385,7 +389,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
             Position memory position = positions[params_.tokenId][index];
 
-            if (position.depositTime == 0 || position.lps == 0) revert RemovePositionFailed();
+            if (position.lps == 0 || position.depositTime == 0) revert RemovePositionFailed();
 
             // check that bucket didn't go bankrupt after memorialization
             if (_bucketBankruptAfterDeposit(pool, index, position.depositTime)) revert BucketBankrupt();
@@ -555,14 +559,16 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
     ) public view override(ERC721) returns (string memory) {
         if (!_exists(tokenId_)) revert NoToken();
 
-        address collateralTokenAddress = IPool(poolKey[tokenId_]).collateralAddress();
-        address quoteTokenAddress      = IPool(poolKey[tokenId_]).quoteTokenAddress();
+        address pool = poolKey[tokenId_];
+
+        address collateralTokenAddress = IPool(pool).collateralAddress();
+        address quoteTokenAddress      = IPool(pool).quoteTokenAddress();
 
         PositionNFTSVG.ConstructTokenURIParams memory params = PositionNFTSVG.ConstructTokenURIParams({
             collateralTokenSymbol: tokenSymbol(collateralTokenAddress),
             quoteTokenSymbol:      tokenSymbol(quoteTokenAddress),
             tokenId:               tokenId_,
-            pool:                  poolKey[tokenId_],
+            pool:                  pool,
             owner:                 ownerOf(tokenId_),
             indexes:               positionIndexes[tokenId_].values()
         });

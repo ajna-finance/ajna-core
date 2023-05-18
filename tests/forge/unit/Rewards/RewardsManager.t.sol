@@ -76,6 +76,11 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         vm.expectRevert(IRewardsManagerErrors.DeployWithZeroAddress.selector);
         new RewardsManager(address(0), positionManager);
+
+        PositionManager zeroPositionManager;
+
+        vm.expectRevert(IRewardsManagerErrors.DeployWithZeroAddress.selector);
+        new RewardsManager(address(_ajnaToken), zeroPositionManager);
     }
 
     function testStakeToken() external {

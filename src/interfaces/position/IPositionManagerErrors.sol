@@ -18,6 +18,11 @@ interface IPositionManagerErrors {
     error BucketBankrupt();
 
     /**
+     *  @notice Can't deploy with `ERC20` or `ERC721` factory address `0x`.
+     */
+    error DeployWithZeroAddress();
+
+    /**
      * @notice User attempting to burn a `LP` `NFT` before removing liquidity.
      */
     error LiquidityNotRemoved();
