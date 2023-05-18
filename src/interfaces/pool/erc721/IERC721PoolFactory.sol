@@ -24,7 +24,21 @@ interface IERC721PoolFactory is IPoolFactory {
     /**************************/
 
     /**
-     *  @notice Deploys a cloned pool for the given collateral and quote token.
+     *  @notice Deploys a collection pool for the given collateral and quote token.
+     *  @dev    Pool must not already exist, and must use `WETH` instead of `ETH`.
+     *  @param  collateral_   Address of `NFT` collateral token.
+     *  @param  quote_        Address of `NFT` quote token.
+     *  @param  interestRate_ Initial interest rate of the pool.
+     *  @return pool_         Address of the newly created pool.
+     */
+    function deployCollectionPool(
+        address collateral_,
+        address quote_,
+        uint256 interestRate_
+    ) external returns (address pool_);
+
+    /**
+     *  @notice Deploys a subset pool (selected token ids only) for the given collateral and quote token.
      *  @dev    Pool must not already exist, and must use `WETH` instead of `ETH`.
      *  @param  collateral_   Address of `NFT` collateral token.
      *  @param  quote_        Address of `NFT` quote token.
@@ -32,7 +46,7 @@ interface IERC721PoolFactory is IPoolFactory {
      *  @param  interestRate_ Initial interest rate of the pool.
      *  @return pool_         Address of the newly created pool.
      */
-    function deployPool(
+    function deploySubsetPool(
         address collateral_,
         address quote_,
         uint256[] memory tokenIds_,
