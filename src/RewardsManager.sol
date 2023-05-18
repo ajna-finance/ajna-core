@@ -115,7 +115,11 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         uint256 tokenId_,
         uint256 epochToClaim_
     ) external override {
-        _claimRewards({ tokenId_: tokenId_, epochToClaim_: epochToClaim_, claimMaxAvailable_: false });
+        _claimRewards({
+            tokenId_: tokenId_,
+            epochToClaim_: epochToClaim_,
+            claimMaxAvailable_: false
+        });
     }
 
     /**
@@ -130,7 +134,11 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         uint256 tokenId_,
         uint256 epochToClaim_
     ) external override {
-        _claimRewards({ tokenId_: tokenId_, epochToClaim_: epochToClaim_, claimMaxAvailable_: true });
+        _claimRewards({
+            tokenId_: tokenId_,
+            epochToClaim_: epochToClaim_,
+            claimMaxAvailable_: true
+        });
     }
 
     /**
@@ -189,7 +197,10 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         );
 
         // transfer rewards to sender
-        _transferAjnaRewards({ rewardsEarned_: updateReward, transferMaxAvailable_: true });
+        _transferAjnaRewards({
+            rewardsEarned_: updateReward,
+            transferMaxAvailable_: true
+        });
     }
 
     /**
@@ -203,7 +214,10 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     function unstake(
         uint256 tokenId_
     ) external override {
-        _unstake({ tokenId_: tokenId_, claimRewards_: true });
+        _unstake({
+            tokenId_: tokenId_,
+            claimRewards_: true
+        });
     }
 
    /**
@@ -216,7 +230,10 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     function emergencyUnstake(
         uint256 tokenId_
     ) external override {
-        _unstake({ tokenId_: tokenId_, claimRewards_: false });
+        _unstake({
+            tokenId_: tokenId_,
+            claimRewards_: false
+        });
     }
 
     /**
@@ -235,7 +252,10 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         updateReward = _updateBucketExchangeRates(pool_, indexes_);
 
         // transfer rewards to sender
-        _transferAjnaRewards({ rewardsEarned_: updateReward, transferMaxAvailable_: true });
+        _transferAjnaRewards({
+            rewardsEarned_: updateReward,
+            transferMaxAvailable_: true
+        });
     }
 
     /*******************************/
@@ -488,7 +508,10 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         uint256 rewardsEarned = _calculateAndClaimAllRewards(stakeInfo, tokenId_, epochToClaim_, true, stakeInfo.ajnaPool);
 
         // transfer rewards to sender
-        _transferAjnaRewards({ rewardsEarned_: rewardsEarned, transferMaxAvailable_: claimMaxAvailable_ });       
+        _transferAjnaRewards({
+            rewardsEarned_: rewardsEarned,
+            transferMaxAvailable_: claimMaxAvailable_
+        });       
     }
 
     /**
@@ -788,7 +811,10 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         emit Unstake(msg.sender, ajnaPool, tokenId_);
 
         // transfer rewards to sender
-        _transferAjnaRewards({rewardsEarned_: rewardsEarned, transferMaxAvailable_: false});
+        _transferAjnaRewards({
+            rewardsEarned_: rewardsEarned,
+            transferMaxAvailable_: false
+        });
 
         // transfer LP NFT from contract to sender
         IERC721(address(positionManager)).transferFrom(address(this), msg.sender, tokenId_);
@@ -802,15 +828,15 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
      *  @param transferMaxAvailable_ Whether transfer all available balance that may be less than rewardsEarned_
      */
     function _transferAjnaRewards(uint256 rewardsEarned_, bool transferMaxAvailable_) internal {
-        // check that rewards earned isn't greater than remaining balance
-        // if remaining balance is greater and transferMaxAvailable_ is true, set to remaining balance else revert
         uint256 ajnaBalance = IERC20(ajnaToken).balanceOf(address(this));
+
+        // if contract balance cannot cover rewards earned
         if (rewardsEarned_ > ajnaBalance) {
-            if (!transferMaxAvailable_) {
-                revert InsufficientFunds();
-            } else {
-                rewardsEarned_ = ajnaBalance;
-            }
+            // revert if not opt in to give up part of rewards (claim rewards and unstake actions)
+            if (!transferMaxAvailable_) revert InsufficientFunds();
+
+            // cap rewards earned to available balance (update bucket exchange and claim max rewards actions)
+            rewardsEarned_ = ajnaBalance;
         }
 
         if (rewardsEarned_ != 0) {
