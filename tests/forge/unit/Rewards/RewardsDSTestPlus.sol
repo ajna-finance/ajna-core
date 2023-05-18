@@ -210,6 +210,26 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         assertEq(_ajnaToken.balanceOf(from), fromAjnaBal + reward);
     }
 
+
+    function _claimMaxRewards(
+        address from,
+        address pool,
+        uint256 tokenId,
+        uint256 generatedRewards,
+        uint256 claimedRewards,
+        uint256[] memory epochsClaimed
+    ) internal {
+        changePrank(from);
+        uint256 fromAjnaBal = _ajnaToken.balanceOf(from);
+
+        uint256 currentBurnEpoch = IPool(pool).currentBurnEpoch();
+        vm.expectEmit(true, true, true, true);
+        emit ClaimRewards(from, pool, tokenId, epochsClaimed, generatedRewards);
+        _rewardsManager.claimMaxRewards(tokenId, currentBurnEpoch);
+
+        assertEq(_ajnaToken.balanceOf(from), fromAjnaBal + claimedRewards);
+    }
+
     function _assertNotOwnerOfDepositRevert(address from , uint256 tokenId) internal {
         // check only deposit owner can claim rewards
         changePrank(from);
@@ -231,6 +251,21 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         changePrank(from);
         uint256 currentBurnEpoch = _pool.currentBurnEpoch();
         vm.expectRevert(IRewardsManagerErrors.AlreadyClaimed.selector);
+        _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
+    }
+
+    function _assertUnstakeInsufficientFundsRevert(address from, uint256 tokenId) internal {
+        // should revert if token balance is less than rewards to claim
+        changePrank(from);
+        vm.expectRevert(IRewardsManagerErrors.InsufficientFunds.selector);
+        _rewardsManager.unstake(tokenId);
+    }
+
+    function _assertClaimRewardsInsufficientFundsRevert(address from, uint256 tokenId) internal {
+        // should revert if token balance is less than rewards to claim
+        changePrank(from);
+        uint256 currentBurnEpoch = _pool.currentBurnEpoch();
+        vm.expectRevert(IRewardsManagerErrors.InsufficientFunds.selector);
         _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
     }
 
