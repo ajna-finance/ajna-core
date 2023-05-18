@@ -18,6 +18,18 @@ interface IRewardsManagerOwnerActions {
         uint256 epochToClaim_
     ) external;
 
+
+    /**
+     *  @notice Claim maximum available `Ajna` token rewards that have accrued to a staked `LP` `NFT`.
+     *  @dev    Updates exchange rates for each bucket the `NFT` is associated with.
+     *  @param  tokenId_      `ID` of the staked `LP` `NFT`.
+     *  @param  epochToClaim_ The burn epoch to claim rewards for.
+     */
+    function claimMaxRewards(
+        uint256 tokenId_,
+        uint256 epochToClaim_
+    ) external;
+
     /**
      *  @notice Stake a `LP` `NFT` into the rewards contract.
      *  @dev    Updates exchange rates for each bucket the `NFT` is associated with.

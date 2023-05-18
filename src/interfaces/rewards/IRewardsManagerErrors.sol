@@ -35,4 +35,9 @@ interface IRewardsManagerErrors {
      *  @notice Can't deploy with `Ajna` token address `0x` address.
      */
     error DeployWithZeroAddress();
+
+    /**
+     *  @notice Insufficient Token Balance in contract to transfer rewards
+     */
+    error InsufficientFunds();
 }
