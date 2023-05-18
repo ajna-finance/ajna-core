@@ -240,7 +240,7 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
             uint256 postActionFromIndexQuote = _getQuoteAtIndex(fromLps, fromIndex_);
             uint256 postActionToIndexQuote   = _getQuoteAtIndex(toLps, toIndex_);
 
-            // assert total QT represented in positionManager for tokenID is the same as preAction
+            // assert total QT represented in positionManager for tokenID postAction is the same as preAction
             assert (preActionFromIndexQuote + preActionToIndexQuote == postActionFromIndexQuote + postActionToIndexQuote);
 
         } catch (bytes memory err) {
