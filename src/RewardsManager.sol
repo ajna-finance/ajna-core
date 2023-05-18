@@ -70,7 +70,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     mapping(uint256 => mapping(uint256 => bool)) public override isEpochClaimed;
     /// @dev `epoch => rewards claimed` mapping.
     mapping(uint256 => uint256) public override rewardsClaimed;
-    /// @dev `epoch => update bucket rate rewards claimed` mapping.
+    /// @dev `epoch => update bucket rate rewards claimed` mapping. Tracks the total amount of update rewards claimed.
     mapping(uint256 => uint256) public override updateRewardsClaimed;
 
     /// @dev Mapping of per pool bucket exchange rates at a given burn event `poolAddress => bucketIndex => epoch => bucket exchange rate`.
@@ -280,6 +280,15 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             stakes[tokenId_].snapshot[bucketId_].lpsAtStakeTime,
             stakes[tokenId_].snapshot[bucketId_].rateAtStakeTime
         );
+    }
+
+    /// @inheritdoc IRewardsManagerState
+    function isBucketUpdated(
+        address pool_,
+        uint256 bucketIndex_,
+        uint256 epoch_
+    ) external view override returns (bool) {
+        return _isBucketUpdated(pool_, bucketIndex_, epoch_);
     }
 
     /**************************/
@@ -571,6 +580,21 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     }
 
     /**
+     *  @notice Track whether a bucket's exchange rate has been updated in a given burn event epoch.
+     *  @param  pool_        The pool to check the update status of.
+     *  @param  bucketIndex_ The bucket index to check the update status of.
+     *  @param  epoch_   The burn epoch to check the bucket index in.
+     *  @return `True` if the buckets exchange rate was updated in the given epoch, else false.
+     */
+    function _isBucketUpdated(
+        address pool_,
+        uint256 bucketIndex_,
+        uint256 epoch_
+    ) internal view returns (bool) {
+        return bucketExchangeRates[pool_][bucketIndex_][epoch_] != 0;
+    }
+
+    /**
      *  @notice Update the exchange rate of a list of buckets.
      *  @dev    Called as part of `stake`, `unstake`, and `claimRewards`, as well as `updateBucketExchangeRatesAndClaim`.
      *  @dev    Caller can claim `5%` of the rewards that have accumulated to each bucket since the last burn event, if it hasn't already been updated.
@@ -606,9 +630,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
                 unchecked { ++i; }
             }
         }
-
         else {
-
             if (block.timestamp <= curBurnTime + UPDATE_PERIOD) {
 
                 // update exchange rates and calculate rewards if tokens were burned and within allowed time period

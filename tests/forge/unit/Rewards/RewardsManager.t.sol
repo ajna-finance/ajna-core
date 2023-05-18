@@ -309,7 +309,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         depositIndexes[4] = 4;
 
         // mint memorialize and deposit NFT
-        uint256 tokenIdOne = _mintAndMemorializePositionNFT({
+        uint256 tokenId = _mintAndMemorializePositionNFT({
             indexes:    depositIndexes,
             minter:     _minterOne,
             mintAmount: 1_000 * 1e18,
@@ -336,7 +336,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         _stakeToken({
             pool:    address(_pool),
             owner:   _minterOne,
-            tokenId: tokenIdOne
+            tokenId: tokenId
         });
 
         // borrower takes actions providing reserves enabling reserve auctions
@@ -360,14 +360,14 @@ contract RewardsManagerTest is RewardsHelperContract {
         // check only deposit owner can claim rewards
         _assertNotOwnerOfDepositRevert({
             from:    _updater,
-            tokenId: tokenIdOne
+            tokenId: tokenId
         });
 
         // claim rewards accrued since deposit
         _claimRewards({
             pool:          address(_pool),
             from:          _minterOne,
-            tokenId:       tokenIdOne,
+            tokenId:       tokenId,
             reward:        40.899541369720500538 * 1e18,
             epochsClaimed: _epochsClaimedArray(1, 0)
         });
@@ -375,13 +375,13 @@ contract RewardsManagerTest is RewardsHelperContract {
         // check can't claim rewards twice
         _assertAlreadyClaimedRevert({
             from:    _minterOne,
-            tokenId: tokenIdOne
+            tokenId: tokenId
         });
 
         _assertStake({
             owner:         _minterOne,
             pool:          address(_pool),
-            tokenId:       tokenIdOne,
+            tokenId:       tokenId,
             burnEvent:     1,
             rewardsEarned: 0
         });
@@ -404,7 +404,13 @@ contract RewardsManagerTest is RewardsHelperContract {
         );
         assertEq(updateRewards, 0);
 
-        // TODO: check unstake will not emit ClaimRewards
+        // check unstake will only emit Unstake and UpdateExchangeRate events
+        vm.expectEmit(true, true, true, true);
+        emit UpdateExchangeRates(_minterOne, address(_pool), depositIndexes, 0);
+        vm.expectEmit(true, true, true, true);
+        emit Unstake(_minterOne, address(_pool), tokenId);
+        _rewardsManager.unstake(tokenId);
+
     }
 
     function testWithdrawAndClaimRewardsNoExchangeRateUpdate() external {
@@ -1756,6 +1762,10 @@ contract RewardsManagerTest is RewardsHelperContract {
             from: _minterOne,
             tokenId: tokenIdOne
         });
+    }
+
+    function testClaimAndWithdraw() external {
+
     }
 
     function testMultiplePools() external {

@@ -177,6 +177,12 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         vm.expectEmit(true, true, true, true);
         emit UpdateExchangeRates(updater, pool, indexes, reward);
         _rewardsManager.updateBucketExchangeRatesAndClaim(pool, keccak256("ERC20_NON_SUBSET_HASH"), indexes);
+
+        // check exchange rates were updated
+        uint256 currentBurnEpoch = IPool(pool).currentBurnEpoch();
+        for (uint256 i = 0; i < indexes.length; i++) {
+            assertTrue(_rewardsManager.isBucketUpdated(pool, indexes[i], currentBurnEpoch));
+        }
     }
 
 
