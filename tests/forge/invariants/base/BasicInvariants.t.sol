@@ -73,7 +73,7 @@ abstract contract BasicInvariants is BaseInvariants {
 
             (uint256 bucketLps, , , , ) = _pool.bucketInfo(bucketIndex);
 
-            assertEq(bucketLps, totalLps, "Buckets Invariant B1");
+            require(bucketLps == totalLps, "Buckets Invariant B1");
         }
     }
 
@@ -84,7 +84,7 @@ abstract contract BasicInvariants is BaseInvariants {
             if (IBaseHandler(_handler).previousBankruptcy(bucketIndex) == block.timestamp) {
                 (uint256 bucketLps, , , , ) = _pool.bucketInfo(bucketIndex);
 
-                assertEq(bucketLps, 0, "Buckets Invariant B4");
+                require(bucketLps == 0, "Buckets Invariant B4");
             }
         }
     }
@@ -418,7 +418,7 @@ abstract contract BasicInvariants is BaseInvariants {
             if (nextNonzeroBucket < maxBucket) {
                 (, , , uint256 depositAtNextNonzeroBucket, ) = _pool.bucketInfo(nextNonzeroBucket);
 
-                assertGe(depositAtNextNonzeroBucket, 0, "F4: incorrect bucket with nonzero deposit");
+                require(depositAtNextNonzeroBucket >= 0, "F4: incorrect bucket with nonzero deposit");
             }
         }
     }

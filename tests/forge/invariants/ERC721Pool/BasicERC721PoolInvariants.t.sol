@@ -84,7 +84,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
     /*** Internal functions ***/
     /**************************/
 
-    function _invariant_CT2() internal {
+    function _invariant_CT2() internal view {
         uint256 collateralBalance = _collateral.balanceOf(address(_erc721pool)) * 1e18;
         uint256 bucketCollateral;
         uint256 collateral;
@@ -96,10 +96,10 @@ contract BasicERC721PoolInvariants is BasicInvariants {
             bucketCollateral += collateral;
         }
 
-        assertEq(collateralBalance, bucketCollateral + _erc721pool.pledgedCollateral(), "Collateral Invariant CT2");
+        require(collateralBalance == bucketCollateral + _erc721pool.pledgedCollateral(), "Collateral Invariant CT2");
     }
 
-    function _invariant_CT3() internal {
+    function _invariant_CT3() internal view {
         uint256 collateralBalance = _collateral.balanceOf(address(_erc721pool));
 
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
@@ -111,10 +111,10 @@ contract BasicERC721PoolInvariants is BasicInvariants {
         }
 
         uint256 bucketTokens = _erc721pool.totalBucketTokens();
-        assertEq(collateralBalance, borrowerTokens + bucketTokens, "Collateral Invariant CT3");
+        require(collateralBalance == borrowerTokens + bucketTokens, "Collateral Invariant CT3");
     }
 
-    function _invariant_CT4() internal {
+    function _invariant_CT4() internal view {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         for (uint256 i = 0; i < actorCount; i++) {
@@ -123,11 +123,11 @@ contract BasicERC721PoolInvariants is BasicInvariants {
 
             (, uint256 borrowerCollateral, ) = _erc721pool.borrowerInfo(borrower);
 
-            assertGe(borrowerTokens * 1e18, borrowerCollateral, "Collateral Invariant CT4");
+            require(borrowerTokens * 1e18 >= borrowerCollateral, "Collateral Invariant CT4");
         }
     }
 
-    function _invariant_CT5() internal {
+    function _invariant_CT5() internal view {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         for (uint256 i = 0; i < actorCount; i++) {
@@ -137,7 +137,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
             for (uint256 tokenIndex = 0; tokenIndex < borrowerTokens; tokenIndex++) {
                 uint256 borrowerTokenId = _erc721pool.borrowerTokenIds(borrower, tokenIndex);
 
-                assertEq(_collateral.ownerOf(borrowerTokenId), address(_erc721pool), "Collateral Invariant CT5");
+                require(_collateral.ownerOf(borrowerTokenId) == address(_erc721pool), "Collateral Invariant CT5");
             }
         }
 
@@ -145,11 +145,11 @@ contract BasicERC721PoolInvariants is BasicInvariants {
         for (uint256 tokenIndex = 0; tokenIndex < bucketTokens; tokenIndex++) {
             uint256 bucketTokenId = _erc721pool.bucketTokenIds(tokenIndex);
 
-            assertEq(_collateral.ownerOf(bucketTokenId), address(_erc721pool), "Collateral Invariant CT5");
+            require(_collateral.ownerOf(bucketTokenId) == address(_erc721pool), "Collateral Invariant CT5");
         }
     }
 
-    function _invariant_CT6() internal {
+    function _invariant_CT6() internal view {
         if (_erc721pool.isSubset()) {
             uint256 actorCount = IBaseHandler(_handler).getActorsCount();
             for (uint256 i = 0; i < actorCount; i++) {
@@ -159,7 +159,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
                 for (uint256 tokenIndex = 0; tokenIndex < borrowerTokens; tokenIndex++) {
                     uint256 borrowerTokenId = _erc721pool.borrowerTokenIds(borrower, tokenIndex);
 
-                    assertTrue(_erc721pool.tokenIdsAllowed(borrowerTokenId), "Collateral Invariant CT6");
+                    require(_erc721pool.tokenIdsAllowed(borrowerTokenId), "Collateral Invariant CT6");
                 }
             }
 
@@ -167,12 +167,12 @@ contract BasicERC721PoolInvariants is BasicInvariants {
             for (uint256 tokenIndex = 0; tokenIndex < bucketTokens; tokenIndex++) {
                 uint256 bucketTokenId = _erc721pool.bucketTokenIds(tokenIndex);
 
-                assertTrue(_erc721pool.tokenIdsAllowed(bucketTokenId), "Collateral Invariant CT6");
+                require(_erc721pool.tokenIdsAllowed(bucketTokenId), "Collateral Invariant CT6");
             }
         }    
     }
 
-    function _invariant_CT7() internal {
+    function _invariant_CT7() internal view {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         uint256 totalCollateralPledged;
@@ -183,7 +183,7 @@ contract BasicERC721PoolInvariants is BasicInvariants {
             totalCollateralPledged += borrowerCollateral;
         }
 
-        assertEq(_erc721pool.pledgedCollateral(), totalCollateralPledged, "Collateral Invariant CT7");
+        require(_erc721pool.pledgedCollateral() == totalCollateralPledged, "Collateral Invariant CT7");
     }
 
 }
