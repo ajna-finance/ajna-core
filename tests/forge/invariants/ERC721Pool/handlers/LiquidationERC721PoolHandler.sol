@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { LiquidationPoolHandler }               from '../../base/handlers/LiquidationPoolHandler.sol';
 import { BasicERC721PoolHandler }                from './BasicERC721PoolHandler.sol';

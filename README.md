@@ -130,9 +130,9 @@ bash ./check-code-coverage.sh
 ```bash
 pip install slither-analyzer
 ```
-- Make sure the default `solc` version is set to the same version as contracts (currently 0.8.14). This can be done by installing and using `solc-select`:
+- Make sure the default `solc` version is set to the same version as contracts (currently 0.8.18). This can be done by installing and using `solc-select`:
 ```bash
-pip install solc-select && solc-select install 0.8.14 && solc-select use 0.8.14
+pip install solc-select && solc-select install 0.8.18 && solc-select use 0.8.18
 ```
 - Run `analyze`
 
