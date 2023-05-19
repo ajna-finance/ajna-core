@@ -32,6 +32,11 @@ interface IRewardsManagerErrors {
     error NotOwnerOfDeposit();
 
     /**
+     *  @notice User attempted to interact with an `NFT` they aren't the owner or approved of.
+     */
+    error NotOwnerOrApprovedOfDeposit();
+
+    /**
      *  @notice Can't deploy with `Ajna` token address `0x` address.
      */
     error DeployWithZeroAddress();

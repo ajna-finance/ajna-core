@@ -106,7 +106,6 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     /**
      *  @inheritdoc IRewardsManagerOwnerActions
      *  @dev    === Revert on ===
-     *  @dev    not owner `NotOwnerOfDeposit()`
      *  @dev    already claimed `AlreadyClaimed()`
      *  @dev    === Emit events ===
      *  @dev    - `ClaimRewards`
@@ -117,8 +116,6 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     ) external override {
         StakeInfo storage stakeInfo = stakes[tokenId_];
 
-        if (msg.sender != stakeInfo.owner) revert NotOwnerOfDeposit();
-
         if (isEpochClaimed[tokenId_][epochToClaim_]) revert AlreadyClaimed();
 
         _claimRewards(stakeInfo, tokenId_, epochToClaim_, true, stakeInfo.ajnaPool);
@@ -127,7 +124,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     /**
      *  @inheritdoc IRewardsManagerOwnerActions
      *  @dev    === Revert on ===
-     *  @dev    not owner `NotOwnerOfDeposit()`
+     *  @dev    not owner or approved `NotOwnerOrApprovedOfDeposit()`
      *  @dev    === Emit events ===
      *  @dev    - `Stake`
      */
@@ -136,11 +133,13 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     ) external override {
         address ajnaPool = PositionManager(address(positionManager)).poolKey(tokenId_);
 
-        // check that msg.sender is owner of tokenId
-        if (IERC721(address(positionManager)).ownerOf(tokenId_) != msg.sender) revert NotOwnerOfDeposit();
+        address owner = IERC721(address(positionManager)).ownerOf(tokenId_);
+
+        // check if msg.sender is owner or approved of tokenId
+        if (!_isOwnerOrApproved(owner, msg.sender, tokenId_)) revert NotOwnerOrApprovedOfDeposit();
 
         StakeInfo storage stakeInfo = stakes[tokenId_];
-        stakeInfo.owner    = msg.sender;
+        stakeInfo.owner    = owner;
         stakeInfo.ajnaPool = ajnaPool;
 
         uint256 curBurnEpoch = IPool(ajnaPool).currentBurnEpoch();
@@ -168,10 +167,10 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             unchecked { ++i; }
         }
 
-        emit Stake(msg.sender, ajnaPool, tokenId_);
+        emit Stake(owner, ajnaPool, tokenId_);
 
         // transfer LP NFT to this contract
-        IERC721(address(positionManager)).transferFrom(msg.sender, address(this), tokenId_);
+        IERC721(address(positionManager)).transferFrom(owner, address(this), tokenId_);
 
         // calculate rewards for updating exchange rates, if any
         uint256 updateReward = _updateBucketExchangeRates(
@@ -180,7 +179,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         );
 
         // transfer rewards to sender
-        _transferAjnaRewards(updateReward);
+        _transferAjnaRewards(msg.sender, updateReward);
     }
 
     /**
@@ -226,7 +225,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         updateReward = _updateBucketExchangeRates(pool_, indexes_);
 
         // transfer rewards to sender
-        _transferAjnaRewards(updateReward);
+        _transferAjnaRewards(msg.sender, updateReward);
     }
 
     /*******************************/
@@ -285,6 +284,14 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     /**************************/
     /*** Internal Functions ***/
     /**************************/
+
+    function _isOwnerOrApproved(address owner_, address spender_, uint256 tokenId_) internal view returns (bool) {
+        return (
+            owner_ == spender_ || 
+            IERC721(address(positionManager)).isApprovedForAll(owner_, spender_) ||
+            IERC721(address(positionManager)).getApproved(tokenId_) == spender_
+        );
+    }
 
     /**
      *  @notice Calculate the amount of rewards that have been accumulated by a staked `NFT`.
@@ -479,12 +486,12 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         if (validateEpoch_ && epochToClaim_ > IPool(ajnaPool_).currentBurnEpoch()) revert EpochNotAvailable();
 
         // update bucket exchange rates and claim associated rewards
-        uint256 rewardsEarned = _updateBucketExchangeRates(
+        uint256 updateRewardsEarned = _updateBucketExchangeRates(
             ajnaPool_,
             positionManager.getPositionIndexes(tokenId_)
         );
 
-        rewardsEarned += _calculateAndClaimRewards(tokenId_, epochToClaim_);
+        uint256 stakingRewardsEarned = _calculateAndClaimRewards(tokenId_, epochToClaim_);
 
         uint256[] memory burnEpochsClaimed = _getBurnEpochsClaimed(
             stakeInfo_.lastClaimedEpoch,
@@ -492,18 +499,22 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         );
 
         emit ClaimRewards(
-            msg.sender,
+            stakeInfo_.owner,
             ajnaPool_,
             tokenId_,
             burnEpochsClaimed,
-            rewardsEarned
+            stakingRewardsEarned
         );
 
         // update last interaction burn event
         stakeInfo_.lastClaimedEpoch = uint96(epochToClaim_);
 
-        // transfer rewards to sender
-        _transferAjnaRewards(rewardsEarned);
+        // transfer staking rewards to owner
+        _transferAjnaRewards(stakeInfo_.owner, stakingRewardsEarned);
+
+        // transfer update exchange reward to sender
+        _transferAjnaRewards(msg.sender, updateRewardsEarned);
+
     }
 
     /**
@@ -765,9 +776,10 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
      *  @notice Utility function to transfer `Ajna` rewards to the sender
      *  @dev    This function is used to transfer rewards to the `msg.sender` after a successful claim or update.
      *  @dev    It is used to ensure that rewards claimers will be able to claim some portion of the remaining tokens if a claim would exceed the remaining contract balance.
-     *  @param rewardsEarned_ Amount of rewards earned by the caller.
+     *  @param  rewardsEarned_ Amount of rewards earned by the caller.
+     *  @param  to_ Rewards receiver address
      */
-    function _transferAjnaRewards(uint256 rewardsEarned_) internal {
+    function _transferAjnaRewards(address to_, uint256 rewardsEarned_) internal {
         // check that rewards earned isn't greater than remaining balance
         // if remaining balance is greater, set to remaining balance
         uint256 ajnaBalance = IERC20(ajnaToken).balanceOf(address(this));
@@ -775,7 +787,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
         if (rewardsEarned_ != 0) {
             // transfer rewards to sender
-            IERC20(ajnaToken).safeTransfer(msg.sender, rewardsEarned_);
+            IERC20(ajnaToken).safeTransfer(to_, rewardsEarned_);
         }
     }
 

@@ -472,7 +472,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:                      address(_pool),
             tokenId:                   tokenIdOne,
             claimedArray:              _epochsClaimedArray(2, 0),
-            reward:                    78.702220033830716622 * 1e18,
+            reward:                    75.265612882547969705 * 1e18,
             indexes:                   depositIndexes,
             updateExchangeRatesReward: 3.436607151282746917 * 1e18
         });
@@ -1209,7 +1209,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:                      address(_pool),
             tokenId:                   tokenIdTwo,
             claimedArray:              _epochsClaimedArray(1, 0),
-            reward:                    39.906143408239864617 * 1e18,
+            reward:                    33.255119905800315497 * 1e18,
             indexes:                   depositIndexes,
             updateExchangeRatesReward: 6.651023502439549120 * 1e18
         });
@@ -1750,7 +1750,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         assertLt(_ajnaToken.balanceOf(_minterOne), tokensToBurn);
 
         // check can't claim rewards twice
-        _assertNotOwnerOfDepositRevert({
+        _assertClaimRewardsRevert({
             from: _minterOne,
             tokenId: tokenIdOne
         });
@@ -1802,12 +1802,6 @@ contract RewardsManagerTest is RewardsHelperContract {
             borrowAmount: 300 * 1e18,
             limitIndex:   3,
             pool:         address(_pool)
-        });
-
-        // check only deposit owner can claim rewards
-        _assertNotOwnerOfDepositRevert({
-            from: _minterTwo,
-            tokenId: tokenIdOne
         });
 
         // check rewards earned in one pool shouldn't be claimable by depositors from another pool

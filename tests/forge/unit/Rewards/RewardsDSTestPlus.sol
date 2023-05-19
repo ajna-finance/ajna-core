@@ -210,20 +210,26 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         assertEq(_ajnaToken.balanceOf(from), fromAjnaBal + reward);
     }
 
-    function _assertNotOwnerOfDepositRevert(address from , uint256 tokenId) internal {
+    function _assertClaimRewardsRevert(address from , uint256 tokenId) internal {
         // check only deposit owner can claim rewards
         changePrank(from);
         uint256 currentBurnEpoch = _pool.currentBurnEpoch();
-        vm.expectRevert(IRewardsManagerErrors.NotOwnerOfDeposit.selector);
+        vm.expectRevert(IRewardsManagerErrors.AlreadyClaimed.selector);
         _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
+    }
+
+    function _assertNotOwnerOfDepositRevert(address from , uint256 tokenId) internal {
+        // check only deposit owner or operator can stake
+        changePrank(from);
+        vm.expectRevert(IRewardsManagerErrors.NotOwnerOrApprovedOfDeposit.selector);
+        _rewardsManager.stake(tokenId);
     }
 
     function _assertNotOwnerOfDepositUnstakeRevert(address from , uint256 tokenId) internal {
         // check only deposit owner can claim rewards
         changePrank(from);
-        uint256 currentBurnEpoch = _pool.currentBurnEpoch();
         vm.expectRevert(IRewardsManagerErrors.NotOwnerOfDeposit.selector);
-        _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
+        _rewardsManager.unstake(tokenId);
     }
 
     function _assertAlreadyClaimedRevert(address from , uint256 tokenId) internal {
