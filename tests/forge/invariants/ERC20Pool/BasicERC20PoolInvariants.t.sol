@@ -85,7 +85,7 @@ contract BasicERC20PoolInvariants is BasicInvariants {
             totalCollateralPledged += borrowerCollateral;
         }
 
-        assertEq(_erc20pool.pledgedCollateral(), totalCollateralPledged, "Collateral Invariant CT7");
+        require(_erc20pool.pledgedCollateral() == totalCollateralPledged, "Collateral Invariant CT7");
 
         // convert pool collateral balance into WAD
         uint256 collateralBalance = _collateral.balanceOf(address(_erc20pool)) * 10**(18 - _collateral.decimals());
@@ -99,7 +99,7 @@ contract BasicERC20PoolInvariants is BasicInvariants {
             bucketCollateral += collateral;
         }
 
-        assertGe(collateralBalance, bucketCollateral + _erc20pool.pledgedCollateral(), "Collateral Invariant CT1");
+        require(collateralBalance >= bucketCollateral + _erc20pool.pledgedCollateral(), "Collateral Invariant CT1");
     }
 
 }
