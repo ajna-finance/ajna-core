@@ -44,7 +44,7 @@ library LPActions {
     /***************************/
 
     /**
-     *  @notice See `IPoolLenderActions` for descriptions
+     *  @notice See `IPoolLPActions` for descriptions
      *  @dev    === Write state ===
      *  @dev    increment `LP` allowances
      *  @dev    === Reverts on ===
@@ -80,7 +80,7 @@ library LPActions {
     }
 
     /**
-     *  @notice See `IPoolLenderActions` for descriptions
+     *  @notice See `IPoolLPActions` for descriptions
      *  @dev    === Write state ===
      *  @dev    decrement `LP` allowances
      *  @dev    === Reverts on ===
@@ -117,7 +117,7 @@ library LPActions {
     }
 
     /**
-     *  @notice See `IPoolLenderActions` for descriptions
+     *  @notice See `IPoolLPActions` for descriptions
      *  @dev    === Write state ===
      *  @dev    decrement `LP` allowances
      *  @dev    === Emit events ===
@@ -147,7 +147,7 @@ library LPActions {
     }
 
     /**
-     *  @notice See `IPoolLenderActions` for descriptions
+     *  @notice See `IPoolLPActions` for descriptions
      *  @dev    === Write state ===
      *  @dev    `approvedTransferors` mapping
      *  @dev    === Emit events ===
@@ -171,7 +171,7 @@ library LPActions {
     }
 
     /**
-     *  @notice See `IPoolLenderActions` for descriptions
+     *  @notice See `IPoolLPActions` for descriptions
      *  @dev    === Write state ===
      *  @dev    `approvedTransferors` mapping
      *  @dev    === Emit events ===
@@ -195,7 +195,7 @@ library LPActions {
     }
 
     /**
-     *  @notice See `IPoolLenderActions` for descriptions
+     *  @notice See `IPoolLPActions` for descriptions
      *  @dev    === Write state ===
      *  @dev    delete allowance mapping
      *  @dev    increment new `lender.lps` accumulator and `lender.depositTime` state
