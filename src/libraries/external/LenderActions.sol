@@ -180,7 +180,8 @@ library LenderActions {
             bucket.lps,
             bucketDeposit,
             addedAmount,
-            bucketPrice
+            bucketPrice,
+            Math.Rounding.Down
         );
 
         // revert if (due to rounding) the awarded LP is 0
@@ -291,7 +292,8 @@ library LenderActions {
             toBucket.lps,
             vars.toBucketDeposit,
             movedAmount_,
-            vars.toBucketPrice
+            vars.toBucketPrice,
+            Math.Rounding.Down
         );
 
         // revert if (due to rounding) the awarded LP in to bucket is 0
@@ -397,6 +399,7 @@ library LenderActions {
         removeParams.dustLimit         = poolState_.quoteDustLimit;
 
         uint256 unscaledRemaining;
+
         (removedAmount_, redeemedLP_, unscaledRemaining) = _removeMaxDeposit(
             deposits_,
             removeParams
@@ -416,7 +419,7 @@ library LenderActions {
         ) revert LUPBelowHTP();
 
         uint256 lpRemaining = removeParams.bucketLP - redeemedLP_;
-
+                    
         // check if bucket healthy after remove quote tokens - set bankruptcy if collateral and deposit are 0 but there's still LP
         if (removeParams.bucketCollateral == 0 && unscaledRemaining == 0 && lpRemaining != 0) {
             bucket.lps            = 0;
@@ -477,7 +480,8 @@ library LenderActions {
             bucketLP,
             bucketDeposit,
             amount_,
-            bucketPrice
+            bucketPrice,
+            Math.Rounding.Up
         );
 
         Lender storage lender = bucket.lenders[msg.sender];
@@ -659,7 +663,8 @@ library LenderActions {
             bucketLP,
             bucketDeposit,
             collateralAmount_,
-            bucketPrice
+            bucketPrice,
+            Math.Rounding.Up
         );
 
         // limit withdrawal by the lender's LPB
@@ -747,8 +752,10 @@ library LenderActions {
                                                      params_.bucketLP,
                                                      scaledDepositAvailable,
                                                      removedAmount_,
-                                                     params_.price
+                                                     params_.price,
+                                                     Math.Rounding.Up
             );
+            redeemedLP_ = Maths.min(redeemedLP_, params_.lpConstraint);
             unscaledRemovedAmount = Maths.wdiv(removedAmount_, depositScale);
         } else if (scaledDepositAvailable < scaledLpConstraint) {
             // scaledDeposit is binding constraint
@@ -758,14 +765,16 @@ library LenderActions {
                                                      params_.bucketLP,
                                                      scaledDepositAvailable,
                                                      removedAmount_,
-                                                     params_.price
+                                                     params_.price,
+                                                     Math.Rounding.Up
             );
+            redeemedLP_ = Maths.min(redeemedLP_, params_.lpConstraint);
             unscaledRemovedAmount = unscaledDepositAvailable;
         } else {
             // redeeming all LP
             redeemedLP_    = params_.lpConstraint;
             removedAmount_ = Maths.wmul(redeemedLP_, exchangeRate);
-            unscaledRemovedAmount = Math.wdiv(removedAmount_, depositScale);
+            unscaledRemovedAmount = Maths.wdiv(removedAmount_, depositScale);
         }
 
         // If clearing out the bucket deposit, ensure it's zeroed out

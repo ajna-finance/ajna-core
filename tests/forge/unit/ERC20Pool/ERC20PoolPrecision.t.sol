@@ -554,6 +554,73 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         assertEq(bucketLpBalance, lenderLpBalance + bidderLpBalance);
     }
 
+/*********************************************************************************************************/
+/*********************************************************************************************************/
+/*********************************************************************************************************/
+
+    function testDepositTwoActorSameBucketSimplified(
+    ) external tearDown {
+        // setup fuzzy bounds and initialize the pool
+        uint256 boundColPrecision   = 14;
+        uint256 boundQuotePrecision = 7;
+
+        init(boundColPrecision, boundQuotePrecision);
+
+        uint256 bucketId = 2161;
+
+        uint256 collateralAmount    = 3150;
+        uint256 quoteAmount         = 10795;
+
+        uint256 quoteScale = _pool.quoteTokenScale();
+        uint256 quoteDust  = _pool.quoteTokenDust();
+        if (quoteAmount < quoteDust) quoteAmount = quoteDust;
+
+        uint256 colScale      = ERC20Pool(address(_pool)).collateralScale();
+        uint256 colDustAmount = ERC20Pool(address(_pool)).bucketCollateralDust(bucketId);
+        if (collateralAmount < colDustAmount) collateralAmount = colDustAmount + colDustAmount / 2;
+
+        assertEq(ERC20Pool(address(_pool)).collateralScale(), 10 ** (18 - boundColPrecision));
+        assertEq(_pool.quoteTokenScale(), 10 ** (18 - boundQuotePrecision));
+
+        // mint and run approvals, ignoring amounts already init approved above
+        changePrank(_lender);
+        deal(address(_quote), _lender, quoteAmount * _quotePrecision);
+        _quote.approve(address(_pool), quoteAmount * _quotePrecision);
+        changePrank(_bidder);
+        deal(address(_collateral), _bidder, collateralAmount * _collateralPrecision);
+        _collateral.approve(address(_pool), collateralAmount * _collateralPrecision);
+
+        _assertBucket({
+            index:        bucketId,
+            lpBalance:    0,
+            collateral:   0,
+            deposit:      0,
+            exchangeRate: 1e18
+        });
+
+        // addQuoteToken should add scaled quote token amount validate LP
+        _addLiquidityNoEventCheck(_lender, quoteAmount, bucketId);
+
+        // deposit collateral and sanity check bidder LP
+        _addCollateralWithoutCheckingLP(_bidder, collateralAmount, bucketId);
+
+        // check bucket quantities and LP
+        (, uint256 curDeposit, uint256 availableCollateral, uint256 bucketLpBalance,,) = _poolUtils.bucketInfo(address(_pool), bucketId);
+        assertEq(curDeposit,          _roundToScale(quoteAmount, quoteScale));
+        assertEq(availableCollateral, _roundToScale(collateralAmount, colScale));
+
+        (uint256 lenderLpBalance, ) = _pool.lenderInfo(bucketId, _lender);
+        assertEq(lenderLpBalance, _roundToScale(quoteAmount, quoteScale));
+        (uint256 bidderLpBalance, ) = _pool.lenderInfo(bucketId, _bidder);
+        assertGt(bidderLpBalance, 0);
+        assertEq(bucketLpBalance, lenderLpBalance + bidderLpBalance);
+    }
+
+/*********************************************************************************************************/
+/*********************************************************************************************************/
+/*********************************************************************************************************/
+
+    
     function testDepositTwoLendersSameBucket(
         uint8   collateralPrecisionDecimals_,
         uint8   quotePrecisionDecimals_,

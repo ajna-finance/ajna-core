@@ -736,7 +736,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             amount:        withdrawal1,
             index:         1606,
             newLup:        _priceAt(1663),
-            lpRedeem:      1_699.989134088091859892 * 1e18
+            lpRedeem:      1_699.989134088091859893 * 1e18
         });
 
         // lender removes all quote token, including interest, from the bucket
@@ -750,7 +750,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             amount:   expectedWithdrawal2,
             index:    1606,
             newLup:   _priceAt(1663),
-            lpRedeem: 1_700.010865911908140108 * 1e18
+            lpRedeem: 1_700.010865911908140107 * 1e18
         });
 
         assertEq(_quote.balanceOf(_lender), lenderBalanceBefore + withdrawal1 + expectedWithdrawal2);
@@ -1145,7 +1145,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             amountMoved:  2_499.657534246575342500 * 1e18,
             fromIndex:    lupIndex,
             toIndex:      2954,
-            lpRedeemFrom: 2_499.902874075010987320 * 1e18,
+            lpRedeemFrom: 2_499.902874075010987321 * 1e18,
             lpAwardTo:    2_499.657534246575342500 * 1e18,
             newLup:       _lup()
         });
@@ -1182,7 +1182,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             from:    _lender1,
             amount:  9_000 * 1e18,
             index:   2873,
-            lpAward: 8_994.229791354853043265 * 1e18,
+            lpAward: 8_994.229791354853043264 * 1e18,
             newLup:  601.252968524772188572 * 1e18
         });
         
@@ -1191,10 +1191,10 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
         _removeAllLiquidity({
             from:     _lender,
-            amount:   5_003.495432642728075897 * 1e18,
+            amount:   5_003.495432642728075896 * 1e18,
             index:    2873,
             newLup:   601.252968524772188572 * 1e18,
-            lpRedeem: 5_000.280437802026190445 * 1e18
+            lpRedeem: 5_000.280437802026190444 * 1e18
         });
 
         _removeAllLiquidity({

@@ -258,7 +258,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
             amount:   amountWithInterest,
             index:    2550,
             newLup:   _priceAt(2552),
-            lpRedeem: 10_000.348352446860837958 * 1e18
+            lpRedeem: 10_000.348352446860837959 * 1e18
         });
 
         // bidder withdraws unused collateral
@@ -268,7 +268,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
             from:     _bidder,
             amount:   expectedCollateral,
             index:    2550,
-            lpRedeem: 200.057176592387435764 * 1e18
+            lpRedeem: 200.057176592387435763 * 1e18
         });
 
         _assertLenderLpBalance({

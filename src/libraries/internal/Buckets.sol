@@ -52,7 +52,8 @@ library Buckets {
             bucket_.lps,
             deposit_,
             collateralAmountToAdd_,
-            bucketPrice_
+            bucketPrice_,
+            Math.Rounding.Down
         );
         // update bucket LP balance and collateral
 
@@ -106,7 +107,8 @@ library Buckets {
         uint256 bucketLP_,
         uint256 deposit_,
         uint256 collateral_,
-        uint256 bucketPrice_
+        uint256 bucketPrice_,
+        Math.Rounding rounding_
     ) internal pure returns (uint256 lp_) {
         if (deposit_ == 0 && bucketCollateral_ == 0) {
             lp_ = Maths.wmul(collateral_, bucketPrice_);
@@ -114,7 +116,8 @@ library Buckets {
             lp_ = Math.mulDiv(
                 bucketLP_,
                 collateral_ * bucketPrice_,
-                deposit_ * Maths.WAD + bucketCollateral_ * bucketPrice_
+                deposit_ * Maths.WAD + bucketCollateral_ * bucketPrice_,
+                rounding_
             );
         }
     }
@@ -133,7 +136,8 @@ library Buckets {
         uint256 bucketLP_,
         uint256 deposit_,
         uint256 quoteTokens_,
-        uint256 bucketPrice_
+        uint256 bucketPrice_,
+        Math.Rounding rounding_
     ) internal pure returns (uint256 lp_) {
         if (deposit_ == 0 && bucketCollateral_ == 0) {
             lp_ = quoteTokens_;
@@ -141,7 +145,8 @@ library Buckets {
             lp_ = Math.mulDiv(
                 bucketLP_,
                 Maths.WAD * quoteTokens_,
-                deposit_ * Maths.WAD + bucketCollateral_ * bucketPrice_
+                deposit_ * Maths.WAD + bucketCollateral_ * bucketPrice_,
+                rounding_
             );
         }
     }
