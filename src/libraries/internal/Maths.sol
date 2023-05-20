@@ -70,4 +70,63 @@ library Maths {
         return x <= y ? x : y;
     }
 
+    /**********************************/
+    /*** Wider Arithmetic Functions ***/
+    /**********************************/
+
+    function uminus(
+        uint256 i_
+    ) internal pure returns (uint256 minusi_) {
+        minusi_ = ((i_ ^ 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff) + 1);
+    }
+    
+    /**
+     *  @notice Get least significant bit (`LSB`) of integer `i_`.
+     *  @dev    Used primarily to decrement the binary index in loops, iterating over range parents.
+     *  @param  i_  The integer with which to return the `LSB`.
+     */
+    function lsb(
+        uint256 i_
+    ) internal pure returns (uint256 lsb_) {
+        if (i_ != 0) {
+            // "i & (-i)"
+            lsb_ = i_ & uminus(i_);
+        }
+    }
+
+    function fullMul (uint256 x, uint256 y)
+        public pure returns (uint256 l, uint256 h)
+    {
+        uint mm = mulmod (x, y, 2**256 - 1);
+        unchecked {
+        l = x * y;
+        h = mm - l;
+        }
+        if (mm < l) h -= 1;
+    }
+
+    function mulDiv (uint256 x, uint256 y, uint256 z)
+        public pure returns (uint256) {
+        uint r = 1;
+        (uint256 l, uint256 h) = fullMul(x, y);
+        unchecked {
+        require (h < z);
+        uint mm = mulmod (x, y, z);
+        if (mm > l) h -= 1;
+        l -= mm;
+        uint pow2 = lsb(z);
+        z /= pow2;
+        l /= pow2;
+        l += h * (uminus(pow2) / pow2 + 1);
+        r *= 2 - z * r;
+        r *= 2 - z * r;
+        r *= 2 - z * r;
+        r *= 2 - z * r;
+        r *= 2 - z * r;
+        r *= 2 - z * r;
+        r *= 2 - z * r;
+        r *= 2 - z * r;
+        return l * r;
+        }
+    } 
 }

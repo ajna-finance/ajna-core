@@ -62,7 +62,7 @@ library Deposits {
             deposits_.values[index_] = newValue;
 
             // traverse upwards through tree via "update" route
-            index_ += lsb(index_);
+            index_ += Maths.lsb(index_);
         }
     }
 
@@ -135,19 +135,6 @@ library Deposits {
         (sumIndex_,,) = findIndexAndSumOfSum(deposits_, sum_);
     }
 
-    /**
-     *  @notice Get least significant bit (`LSB`) of integer `i_`.
-     *  @dev    Used primarily to decrement the binary index in loops, iterating over range parents.
-     *  @param  i_  The integer with which to return the `LSB`.
-     */
-    function lsb(
-        uint256 i_
-    ) internal pure returns (uint256 lsb_) {
-        if (i_ != 0) {
-            // "i & (-i)"
-            lsb_ = i_ & ((i_ ^ 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff) + 1);
-        }
-    }
 
     /**
      *  @notice Scale values in the tree from the index provided, upwards.
@@ -166,7 +153,7 @@ library Deposits {
         uint256 sum;
         uint256 value;
         uint256 scaling;
-        uint256 bit = lsb(index_);
+        uint256 bit = Maths.lsb(index_);
 
         // Starting with the LSB of index, we iteratively move up towards the MSB of SIZE
         // Case 1:     the bit of index_ is set to 1.  In this case, the entire subtree below index_
@@ -235,7 +222,7 @@ library Deposits {
         uint256 index        = 0;         // build up sumIndex bit by bit
 
         // Used to terminate loop.  We don't need to consider final 0 bits of sumIndex_
-        uint256 indexLSB = lsb(sumIndex_);
+        uint256 indexLSB = Maths.lsb(sumIndex_);
         uint256 curIndex;
 
         while (j >= indexLSB) {
@@ -299,7 +286,7 @@ library Deposits {
             if (scaling != 0) unscaledRemoveAmount_ = Maths.wmul(value + unscaledRemoveAmount_, scaling) - Maths.wmul(value,  scaling);
 
             // Traverse upward through the "update" path of the Fenwick tree
-            index_ += lsb(index_);
+            index_ += Maths.lsb(index_);
         }
     }
 
@@ -323,7 +310,7 @@ library Deposits {
             uint256 scaling = deposits_.scaling[index_];
             // scaling==0 means actual scale factor is 1
             if (scaling != 0) scaled_ = Maths.wmul(scaled_, scaling);
-            index_ += lsb(index_);
+            index_ += Maths.lsb(index_);
         }
     }
 

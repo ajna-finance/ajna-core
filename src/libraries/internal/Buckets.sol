@@ -107,9 +107,12 @@ library Buckets {
         uint256 collateral_,
         uint256 bucketPrice_
     ) internal pure returns (uint256 lp_) {
-        uint256 rate = getExchangeRate(bucketCollateral_, bucketLP_, deposit_, bucketPrice_);
-
-        lp_ = Maths.wdiv(Maths.wmul(collateral_, bucketPrice_), rate);
+        if (deposit_ == 0 && bucketCollateral_ == 0) {
+            lp_ = Maths.wmul(collateral_, bucketPrice_);
+        } else {
+            lp_ = Maths.mulDiv(bucketLP_, collateral_ * bucketPrice_,
+                               deposit_ * Maths.WAD + bucketCollateral_ * bucketPrice_);
+        }
     }
 
     /**
