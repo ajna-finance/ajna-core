@@ -231,7 +231,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             amount:      1 * 1e18,
             amountAdded: 0.999876712328767123 * 1e18,
             index:       _i9_52,
-            lpAward:     0.999873539529846322 * 1e18,
+            lpAward:     0.999873539529846321 * 1e18,
             newLup:      9.721295865031779605 * 1e18
         });
 

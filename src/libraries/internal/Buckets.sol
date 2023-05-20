@@ -122,7 +122,7 @@ library Buckets {
      *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / `LP`.
      *  @param  quoteTokens_      The amount of quote tokens to calculate `LP` amount for.
      *  @param  bucketPrice_      Bucket's price.
-     *  @return The amount of `LP` coresponding to the given quote tokens in current bucket.
+     *  @return lp_               The amount of `LP` coresponding to the given quote tokens in current bucket.
      */
     function quoteTokensToLP(
         uint256 bucketCollateral_,
@@ -130,11 +130,13 @@ library Buckets {
         uint256 deposit_,
         uint256 quoteTokens_,
         uint256 bucketPrice_
-    ) internal pure returns (uint256) {
-        return Maths.wdiv(
-            quoteTokens_,
-            getExchangeRate(bucketCollateral_, bucketLP_, deposit_, bucketPrice_)
-        );
+    ) internal pure returns (uint256 lp_) {
+        if (deposit_ == 0 && bucketCollateral_ == 0) {
+            lp_ = quoteTokens_;
+        } else {
+            lp_ = Maths.mulDiv(bucketLP_, Maths.WAD * quoteTokens_,
+                               deposit_ * Maths.WAD + bucketCollateral_ * bucketPrice_);
+        }
     }
 
     /**
