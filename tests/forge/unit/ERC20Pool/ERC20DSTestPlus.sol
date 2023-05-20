@@ -18,7 +18,6 @@ import 'src/libraries/helpers/PoolHelper.sol';
 import 'src/PoolInfoUtils.sol';
 
 import 'src/libraries/internal/Maths.sol';
-
 abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
 
     using EnumerableSet for EnumerableSet.AddressSet;

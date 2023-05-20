@@ -275,7 +275,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             amount:   amountWithInterest,
             index:    2350,
             newLup:   _priceAt(2352),
-            lpRedeem: 24_000.762569742914924690 * 1e18
+            lpRedeem: 24_000.762569742914919827 * 1e18
         });
 
         assertEq(_quote.balanceOf(_bidder), amountWithInterest);
@@ -283,7 +283,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         // check bucket state
         _assertBucket({
             index:        2350,
-            lpBalance:    32_653.714287304439445934 * 1e18,
+            lpBalance:    32_653.714287304439450797 * 1e18,
             collateral:   Maths.wad(4),
             deposit:      0,
             exchangeRate: 1.000080444343832501 * 1e18
@@ -294,13 +294,13 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             from:     _bidder,
             amount:   1,
             index:    2350,
-            lpRedeem: 8_163.428571826109861483 * 1e18
+            lpRedeem: 8_163.428571826109862699 * 1e18
         });
 
         _assertLenderLpBalance({
             lender:      _bidder,
             index:       2350,
-            lpBalance:   490.285715478329584451 * 1e18,
+            lpBalance:   490.285715478329588098 * 1e18,
             depositTime: _startTime + 25 hours
         });
 
@@ -312,13 +312,13 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             from:     _lender,
             amount:   1,
             index:    2350,
-            lpRedeem: 8_163.428571826109861483 * 1e18
+            lpRedeem: 8_163.428571826109862699 * 1e18
         });
 
         _assertLenderLpBalance({
             lender:      _bidder,
             index:       2350,
-            lpBalance:   490.285715478329584451 * 1e18,
+            lpBalance:   490.285715478329588098 * 1e18,
             depositTime: _startTime + 25 hours
         });
 
@@ -327,7 +327,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         // check bucket state
         _assertBucket({
             index:        2350,
-            lpBalance:    16_326.857143652219722968 * 1e18,
+            lpBalance:    16_326.857143652219725399 * 1e18,
             collateral:   Maths.wad(2),
             deposit:      0,
             exchangeRate: 1.000080444343832501 * 1e18

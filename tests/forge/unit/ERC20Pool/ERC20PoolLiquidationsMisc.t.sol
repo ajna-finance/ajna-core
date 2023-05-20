@@ -145,7 +145,7 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             amount:   2_000.00 * 1e18,
             index:    _i9_91,
             newLup:   9.721295865031779605 * 1e18,
-            lpRedeem: 1_999.892091281103336057 * 1e18
+            lpRedeem: 1_999.892091281103336056 * 1e18
         });
         _removeLiquidity({
             from:     _lender,

@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.14;
 
+import { Math }  from '@openzeppelin/contracts/utils/math/Math.sol';
+
 import {
     AddQuoteParams,
     MoveQuoteParams,
@@ -666,8 +668,8 @@ library LenderActions {
             lpAmount_ = requiredLP;
         } else {
             lpAmount_         = lenderLpBalance;
-            collateralAmount_ = Maths.wdiv(Maths.wmul(lenderLpBalance, collateralAmount_), requiredLP);
-
+            collateralAmount_ = Math.mulDiv(lenderLpBalance, collateralAmount_, requiredLP);
+            
             if (collateralAmount_ == 0) revert InsufficientLP();
         }
 
@@ -740,18 +742,30 @@ library LenderActions {
         ) {
             // depositConstraint is binding constraint
             removedAmount_ = params_.depositConstraint;
-            redeemedLP_    = Maths.wdiv(removedAmount_, exchangeRate);
+            redeemedLP_    = Buckets.quoteTokensToLP(
+                                                     params_.bucketCollateral,
+                                                     params_.bucketLP,
+                                                     scaledDepositAvailable,
+                                                     removedAmount_,
+                                                     params_.price
+            );
             unscaledRemovedAmount = Maths.wdiv(removedAmount_, depositScale);
         } else if (scaledDepositAvailable < scaledLpConstraint) {
             // scaledDeposit is binding constraint
             removedAmount_ = scaledDepositAvailable;
-            redeemedLP_    = Maths.wdiv(removedAmount_, exchangeRate);
+            redeemedLP_    = Buckets.quoteTokensToLP(
+                                                     params_.bucketCollateral,
+                                                     params_.bucketLP,
+                                                     scaledDepositAvailable,
+                                                     removedAmount_,
+                                                     params_.price
+            );
             unscaledRemovedAmount = unscaledDepositAvailable;
         } else {
             // redeeming all LP
             redeemedLP_    = params_.lpConstraint;
             removedAmount_ = Maths.wmul(redeemedLP_, exchangeRate);
-            unscaledRemovedAmount = Maths.wdiv(removedAmount_, depositScale);
+            unscaledRemovedAmount = Math.wdiv(removedAmount_, depositScale);
         }
 
         // If clearing out the bucket deposit, ensure it's zeroed out
