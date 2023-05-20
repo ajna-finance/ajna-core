@@ -5,6 +5,7 @@ pragma solidity 0.8.14;
 import { Bucket, Lender } from '../../interfaces/pool/commons/IPoolState.sol';
 
 import { Maths } from './Maths.sol';
+import { Math }  from '@openzeppelin/contracts/utils/math/Math.sol';
 
 /**
     @title  Buckets library
@@ -110,8 +111,11 @@ library Buckets {
         if (deposit_ == 0 && bucketCollateral_ == 0) {
             lp_ = Maths.wmul(collateral_, bucketPrice_);
         } else {
-            lp_ = Maths.mulDiv(bucketLP_, collateral_ * bucketPrice_,
-                               deposit_ * Maths.WAD + bucketCollateral_ * bucketPrice_);
+            lp_ = Math.mulDiv(
+                bucketLP_,
+                collateral_ * bucketPrice_,
+                deposit_ * Maths.WAD + bucketCollateral_ * bucketPrice_
+            );
         }
     }
 
@@ -134,8 +138,11 @@ library Buckets {
         if (deposit_ == 0 && bucketCollateral_ == 0) {
             lp_ = quoteTokens_;
         } else {
-            lp_ = Maths.mulDiv(bucketLP_, Maths.WAD * quoteTokens_,
-                               deposit_ * Maths.WAD + bucketCollateral_ * bucketPrice_);
+            lp_ = Math.mulDiv(
+                bucketLP_,
+                Maths.WAD * quoteTokens_,
+                deposit_ * Maths.WAD + bucketCollateral_ * bucketPrice_
+            );
         }
     }
 
