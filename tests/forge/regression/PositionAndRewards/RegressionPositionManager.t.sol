@@ -49,7 +49,7 @@ contract RegressionPositionManager is PositionsInvariants {
         _positionHandler.mint(1135715274316739321105, 23206);
         _positionHandler.redeemPositions(15334, 3730, 31354931781638678607228669297131712859107492772550336241160036866987736981860, 2012);
 
-        invariant_positions_PM1_PM2();
+        invariant_positions_PM1_PM2_PM3();
     }
 
 
@@ -67,7 +67,7 @@ contract RegressionPositionManager is PositionsInvariants {
         _positionHandler.memorializePositions(51818345872077820903041, 8835932826797125445564909432711163860901660866650218491158279446532175, 0, 43692);
         _positionHandler.moveLiquidity(3233, 18341, 1300, 20191, 9673);
 
-        invariant_positions_PM1_PM2();
+        invariant_positions_PM1_PM2_PM3();
     }
 
 
@@ -83,7 +83,7 @@ contract RegressionPositionManager is PositionsInvariants {
         _positionHandler.mint(1336497562, 1);
         _positionHandler.moveLiquidity(2, 17729644, 115792089237316195423570985008687907853269984665640564039457584007913129639935, 1780470449382083675, 4500661183205373);
 
-        invariant_positions_PM1_PM2();
+        invariant_positions_PM1_PM2_PM3();
     }
 
     function test_regression_PM2_2() external {
@@ -108,7 +108,7 @@ contract RegressionPositionManager is PositionsInvariants {
         _positionHandler.moveLiquidity(4658405713153015933137719, 838417, 59, 25831175927826091855814245548488793681463667893532830343974308118799, 115792089237316195423570985008687907853269984665640564039457584007913129639934);
         _positionHandler.memorializePositions(12016, 6319, 6900, 8690);
 
-        invariant_positions_PM1_PM2();
+        invariant_positions_PM1_PM2_PM3();
     }
 
     function test_regression_position_manager() external {
