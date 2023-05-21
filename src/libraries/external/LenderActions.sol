@@ -184,7 +184,11 @@ library LenderActions {
         // revert if (due to rounding) the awarded LP is 0
         if (bucketLP_ == 0) revert InsufficientLP();
 
-        Deposits.unscaledAdd(deposits_, params_.index, Maths.wdiv(addedAmount, bucketScale));
+        uint256 unscaledAmount = Maths.wdiv(addedAmount, bucketScale);
+        // revert if unscaled amount is 0
+        if (unscaledAmount == 0) revert InvalidAmount();
+
+        Deposits.unscaledAdd(deposits_, params_.index, unscaledAmount);
 
         // update lender LP
         Buckets.addLenderLP(bucket, bankruptcyTime, msg.sender, bucketLP_);
@@ -478,6 +482,9 @@ library LenderActions {
             bucketPrice
         );
 
+        // revert if (due to rounding) required LP is 0
+        if (lpAmount_ == 0) revert InsufficientLP();
+
         Lender storage lender = bucket.lenders[msg.sender];
 
         uint256 lenderLpBalance;
@@ -580,6 +587,9 @@ library LenderActions {
                 fromIndex
             );
 
+            // revert if calculated amount of collateral to remove is 0
+            if (collateralRemoved == 0) revert InvalidAmount();
+
             collateralToMerge_ += collateralRemoved;
 
             collateralRemaining = collateralRemaining - collateralRemoved;
@@ -659,6 +669,9 @@ library LenderActions {
             collateralAmount_,
             bucketPrice
         );
+
+        // revert if (due to rounding) the required LP is 0
+        if (requiredLP == 0) revert InsufficientLP();
 
         // limit withdrawal by the lender's LPB
         if (requiredLP <= lenderLpBalance) {
@@ -761,6 +774,11 @@ library LenderActions {
         }
 
         unscaledRemaining_ = unscaledDepositAvailable - unscaledRemovedAmount;
+
+        // revert if (due to rounding) required LP is 0
+        if (redeemedLP_ == 0) revert InsufficientLP();
+        // revert if calculated amount of quote to remove is 0
+        if (unscaledRemovedAmount == 0) revert InvalidAmount();
 
         // update FenwickTree
         Deposits.unscaledRemove(deposits_, params_.index, unscaledRemovedAmount);
