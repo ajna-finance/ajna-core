@@ -70,7 +70,7 @@ contract PositionsInvariants is BaseInvariants {
         _handler = address(_positionHandler);
     }
 
-    function invariant_positions_PM1_PM2() public useCurrentTimestamp {
+    function invariant_positions_PM1_PM2_PM3() public useCurrentTimestamp {
         uint256[] memory bucketIndexes = IBaseHandler(_handler).getBucketIndexesWithPosition();
 
         // loop over bucket indexes with positions
@@ -93,8 +93,8 @@ contract PositionsInvariants is BaseInvariants {
                 posLpAccum += posLp;
                 mostRecentDepositTime = (posDepositTime > mostRecentDepositTime) ? posDepositTime : mostRecentDepositTime;
             }
-            require(poolLpAccum == posLpAccum, "Positions Invariant PM1"); 
-            require(depositTime >= mostRecentDepositTime, "Positions Invariant PM2");
+            require(poolLpAccum == posLpAccum, "Positions Invariant PM1 and PM2"); 
+            require(depositTime >= mostRecentDepositTime, "Positions Invariant PM3");
         }
     }
 

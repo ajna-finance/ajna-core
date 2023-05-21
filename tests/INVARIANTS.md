@@ -89,5 +89,6 @@
 - **RW8**: After unstaking, stakeInfo's tokenId mapping should be deleted and all corrosponding values should therefore be zero'd out (`StakeInfo.ajnaPool`, `StakeInfo.lastClaimedEpoch`, `StakeInfo.owner`, `StakeInfo.stakingEpoch`, `StakeInfo.snapshots`)
 
 ## Position Manager
-- **PM1**: For each position, for each bucket in the position summed LP balance == LP balance of the position manager in the underlying pool
-- **PM2**: Position deposit time (`depositTime`) tracked by tokenId in PositionManager (`positions[tokenId][index]`) should always be of equal or lesser value than the PositionManager's LP at that index in the pool contract.
+- **PM1**: LP balance of PositionManager in a Pool for a Bucket should be the sum of the positions[...][index].lps for all tokens/users
+- **PM2** Sum of the LP balance of the PositionManager in a Pool across all buckets should be the sum of the positions[...].[...].lps across all indexes and tokens/users
+- **PM3**: Position deposit time (`depositTime`) tracked by tokenId in PositionManager (`positions[tokenId][index]`) should always be of equal or lesser value than the PositionManager's LP at that index in the pool contract.
