@@ -100,6 +100,7 @@ library Buckets {
      *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / `LP`.
      *  @param  collateral_       The amount of collateral to calculate bucket LP for.
      *  @param  bucketPrice_      Bucket's price.
+     *  @param  rounding_         The direction of rounding when calculating LP (down when adding, up when removing collateral from pool).
      *  @return lp_               Amount of `LP` calculated for the amount of collateral.
      */
     function collateralToLP(
@@ -129,6 +130,7 @@ library Buckets {
      *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / `LP`.
      *  @param  quoteTokens_      The amount of quote tokens to calculate `LP` amount for.
      *  @param  bucketPrice_      Bucket's price.
+     *  @param  rounding_         The direction of rounding when calculating LP (down when adding, up when removing quote tokens from pool).
      *  @return lp_               The amount of `LP` coresponding to the given quote tokens in current bucket.
      */
     function quoteTokensToLP(
@@ -144,7 +146,7 @@ library Buckets {
         } else {
             lp_ = Math.mulDiv(
                 bucketLP_,
-                Maths.WAD * quoteTokens_,
+                quoteTokens_ * Maths.WAD,
                 deposit_ * Maths.WAD + bucketCollateral_ * bucketPrice_,
                 rounding_
             );
