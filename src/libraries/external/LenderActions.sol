@@ -419,7 +419,7 @@ library LenderActions {
         ) revert LUPBelowHTP();
 
         uint256 lpRemaining = removeParams.bucketLP - redeemedLP_;
-                    
+
         // check if bucket healthy after remove quote tokens - set bankruptcy if collateral and deposit are 0 but there's still LP
         if (removeParams.bucketCollateral == 0 && unscaledRemaining == 0 && lpRemaining != 0) {
             bucket.lps            = 0;
@@ -748,12 +748,12 @@ library LenderActions {
             // depositConstraint is binding constraint
             removedAmount_ = params_.depositConstraint;
             redeemedLP_    = Buckets.quoteTokensToLP(
-                                                     params_.bucketCollateral,
-                                                     params_.bucketLP,
-                                                     scaledDepositAvailable,
-                                                     removedAmount_,
-                                                     params_.price,
-                                                     Math.Rounding.Up
+                params_.bucketCollateral,
+                params_.bucketLP,
+                scaledDepositAvailable,
+                removedAmount_,
+                params_.price,
+                Math.Rounding.Up
             );
             redeemedLP_ = Maths.min(redeemedLP_, params_.lpConstraint);
             unscaledRemovedAmount = Maths.wdiv(removedAmount_, depositScale);
@@ -761,12 +761,12 @@ library LenderActions {
             // scaledDeposit is binding constraint
             removedAmount_ = scaledDepositAvailable;
             redeemedLP_    = Buckets.quoteTokensToLP(
-                                                     params_.bucketCollateral,
-                                                     params_.bucketLP,
-                                                     scaledDepositAvailable,
-                                                     removedAmount_,
-                                                     params_.price,
-                                                     Math.Rounding.Up
+                params_.bucketCollateral,
+                params_.bucketLP,
+                scaledDepositAvailable,
+                removedAmount_,
+                params_.price,
+                Math.Rounding.Up
             );
             redeemedLP_ = Maths.min(redeemedLP_, params_.lpConstraint);
             unscaledRemovedAmount = unscaledDepositAvailable;
