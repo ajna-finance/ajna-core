@@ -852,7 +852,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             lpBalance:    20.202020202020202020 * 1e18,
             collateral:   0.286751963595607668 * 1e18,
             deposit:      0,
-            exchangeRate: 3.341559686328149900 * 1e18
+            exchangeRate: 3.341559686328149899 * 1e18
         });
 
         _assertBucket({

@@ -330,7 +330,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             lpBalance:    16_326.857143652219717229 * 1e18,
             collateral:   Maths.wad(2),
             deposit:      0,
-            exchangeRate: 1.000080444343832502 * 1e18
+            exchangeRate: 1.000080444343832501 * 1e18
         });
 
         // should revert if lender2 attempts to remove more collateral than lp is available for

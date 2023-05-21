@@ -273,7 +273,7 @@ contract ERC721PoolLiquidationsDepositTakeTest is ERC721HelperContract {
             lpBalance:    15 * 1e18,
             collateral:   0.009965031187761219 * 1e18,
             deposit:      0,
-            exchangeRate: 1 * 1e18
+            exchangeRate: 0.999999999999999999 * 1e18
         });
         _assertBorrower({
             borrower:                  _borrower,

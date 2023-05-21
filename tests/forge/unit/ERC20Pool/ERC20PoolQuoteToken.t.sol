@@ -1237,14 +1237,14 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             lpBalance:    35880690,
             collateral:   13167,
             deposit:      0,
-            exchangeRate: 1 * 1e18
+            exchangeRate: 0.999999989125110330 * 1e18
         });
 
         _addLiquidity({
             from:    _lender,
             amount:  984665640564039457.584007913129639933 * 1e18,
             index:   2570,
-            lpAward: 984665640564039457.584007913129639933 * 1e18,
+            lpAward: 984665651272169777.007549379595242193 * 1e18,
             newLup:  MAX_PRICE
         });
 
@@ -1257,15 +1257,15 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2570,
-            lpBalance:   984665640564039457.584007913129639933 * 1e18,
+            lpBalance:   984665651272169777.007549379595242193 * 1e18,
             depositTime: _startTime
         });
         _assertBucket({
             index:        2570,
-            lpBalance:    984665640564039457.584007913165520623 * 1e18,
+            lpBalance:    984665651272169777.007549379631122883 * 1e18,
             collateral:   13167,
             deposit:      984665640564039457.584007913129639933 * 1e18,
-            exchangeRate: 1 * 1e18 // exchange rate should not change
+            exchangeRate: 0.999999989125110330 * 1e18 // exchange rate should not change
         });
 
         skip(48 hours); // to avoid penalty
@@ -1275,7 +1275,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             amount:   984665640564039457.584007913129639933 * 1e18,
             index:    2570,
             newLup:   MAX_PRICE,
-            lpRedeem: 984665640564039457.584007913129639933 * 1e18
+            lpRedeem: 984665651272169777.007549379595242193 * 1e18
         });
 
         _assertLenderLpBalance({
@@ -1295,7 +1295,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             lpBalance:    35880690,
             collateral:   13167,
             deposit:      0,
-            exchangeRate: 1 * 1e18 // exchange rate should not change
+            exchangeRate: 0.999999989125110330 * 1e18 // exchange rate should not change
         });
 
         assertEq(_quote.balanceOf(_lender), initialLenderBalance);

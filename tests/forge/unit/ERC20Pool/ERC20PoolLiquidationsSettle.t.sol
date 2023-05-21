@@ -570,7 +570,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             lpBalance:    2_000 * 1e18,
             collateral:   202.986484470302055714 * 1e18,
             deposit:      0,
-            exchangeRate: 1.006527243605609345 * 1e18
+            exchangeRate: 1.006527243605609344 * 1e18
         });
         _assertBucket({
             index:        _i9_81,
