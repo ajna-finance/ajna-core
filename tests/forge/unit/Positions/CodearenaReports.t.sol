@@ -638,4 +638,231 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         assertEq(lpBalanceAliceAfter, 3_000 * 1e18);
     }
 
+
+    function testMoveLiquidityWithDebtInPool() external {
+        address testMinter      = makeAddr("testMinter");
+        address testMinter2     = makeAddr("testMinter2");
+        address testBorrower    = makeAddr("testBorrower");
+        address testBorrowerTwo = makeAddr("testBorrowerTwo");
+
+        /************************/
+        /*** Setup Pool State ***/
+        /************************/
+
+        _mintCollateralAndApproveTokens(testBorrower,  4 * 1e18);
+        _mintCollateralAndApproveTokens(testBorrowerTwo, 1_000 * 1e18);
+
+        _mintQuoteAndApproveManagerTokens(testMinter, 500_000 * 1e18);
+        _mintQuoteAndApproveManagerTokens(testMinter2, 500_000 * 1e18);
+
+        // add initial liquidity
+        _addInitialLiquidity({
+            from:   testMinter,
+            amount: 2_000 * 1e18,
+            index:  _i9_91
+        });
+        _addInitialLiquidity({
+            from:   testMinter,
+            amount: 5_000 * 1e18,
+            index:  _i9_81
+        });
+        _addInitialLiquidity({
+            from:   testMinter,
+            amount: 11_000 * 1e18,
+            index:  _i9_72
+        });
+        _addInitialLiquidity({
+            from:   testMinter,
+            amount: 25_000 * 1e18,
+            index:  _i9_62
+        });
+        _addInitialLiquidity({
+            from:   testMinter,
+            amount: 30_000 * 1e18,
+            index:  _i9_52
+        });
+        // minter 2 adds liquidity 
+        _addInitialLiquidity({
+            from:   testMinter2,
+            amount: 10_000 * 1e18,
+            index:  _i9_52
+        });
+
+        // first borrower adds collateral token and borrows
+        _pledgeCollateral({
+            from:     testBorrower,
+            borrower: testBorrower,
+            amount:   2 * 1e18
+        });
+        _borrow({
+            from:       testBorrower,
+            amount:     19.25 * 1e18,
+            indexLimit: _i9_91,
+            newLup:     9.917184843435912074 * 1e18
+        });
+
+        // second borrower adds collateral token and borrows
+        _pledgeCollateral({
+            from:     testBorrowerTwo,
+            borrower: testBorrowerTwo,
+            amount:   1_000 * 1e18
+        });
+        _borrow({
+            from:       testBorrowerTwo,
+            amount:     7_980 * 1e18,
+            indexLimit: _i9_72,
+            newLup:     9.721295865031779605 * 1e18
+        });
+
+        _borrow({
+            from:       testBorrowerTwo,
+            amount:     1_730 * 1e18,
+            indexLimit: _i9_72,
+            newLup:     9.721295865031779605 * 1e18
+        });
+
+        /****************************/
+        /*** Memorialize Position ***/
+        /****************************/
+
+        // testMinter memorialize positions _i9_91, _i9_81 and _i9_52
+        uint256 tokenId = _mintNFT(testMinter, testMinter, address(_pool));
+        uint256[] memory indexes1 = new uint256[](3);
+        indexes1[0] = _i9_91;
+        indexes1[1] = _i9_81;
+        indexes1[2] = _i9_52;
+        uint256[] memory amounts1 = new uint256[](3);
+        amounts1[0] = 2_000 * 1e18;
+        amounts1[1] = 5_000 * 1e18;
+        amounts1[2] = 30_000 * 1e18;
+        _pool.increaseLPAllowance(address(_positionManager), indexes1, amounts1);
+
+        address[] memory transferors = new address[](1);
+        transferors[0] = address(_positionManager);
+        _pool.approveLPTransferors(transferors);
+
+        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
+            tokenId, address(_pool), indexes1
+        );
+        _positionManager.memorializePositions(memorializeParams);
+
+        // testMinter2 memorialize position _i9_52
+        uint256 tokenId2 = _mintNFT(testMinter2, testMinter2, address(_pool));
+        uint256[] memory indexes2 = new uint256[](1);
+        indexes2[0] = _i9_52;
+        uint256[] memory amounts2 = new uint256[](1);
+        amounts2[0] = 10_000 * 1e18;
+        _pool.increaseLPAllowance(address(_positionManager), indexes2, amounts2);
+
+        _pool.approveLPTransferors(transferors);
+
+        memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
+            tokenId2, address(_pool), indexes2
+        );
+        _positionManager.memorializePositions(memorializeParams);
+
+        _assertPool(
+            PoolParams({
+                htp:                  9.719336538461538466 * 1e18,
+                lup:                  9.721295865031779605 * 1e18,
+                poolSize:             83_000.0* 1e18,
+                pledgedCollateral:    1_002.0 * 1e18,
+                encumberedCollateral: 1_001.780542767698891702 * 1e18,
+                poolDebt:             9_738.605048076923081414 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        486.930252403846154071 * 1e18,
+                loans:                2,
+                maxBorrower:          address(testBorrowerTwo),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+
+        _assertBucketAssets({
+            index: _i9_81,
+            lpBalance: 5_000.0 * 1e18,
+            collateral: 0,
+            deposit: 5_000.0 * 1e18,
+            exchangeRate: 1e18
+        });
+
+        uint256 preMoveUpState = vm.snapshot();
+
+        // Move positiion upwards from _i9_81 to _i9_91
+        changePrank(testMinter);
+        IPositionManagerOwnerActions.MoveLiquidityParams memory moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
+            tokenId, address(_pool), _i9_81, _i9_91, block.timestamp + 5 hours
+        );
+        _positionManager.moveLiquidity(moveLiquidityParams);
+
+        vm.revertTo(preMoveUpState);
+
+        uint256 preMoveDownState = vm.snapshot();
+
+        // Move positiion downwards from _i9_91 to _i9_81
+        moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
+            tokenId, address(_pool), _i9_91, _i9_81, block.timestamp + 5 hours
+        );
+        _positionManager.moveLiquidity(moveLiquidityParams);
+
+        vm.revertTo(preMoveDownState);
+
+        // Move positiion below LUP downwards from _i9_91 to _i9_52
+
+        _assertBucketAssets({
+            index: _i9_81,
+            lpBalance: 5_000.0 * 1e18,
+            collateral: 0,
+            deposit: 5_000.0 * 1e18,
+            exchangeRate: 1e18
+        });
+
+        _assertBucketAssets({
+            index: _i9_52,
+            lpBalance: 40_000.0 * 1e18,
+            collateral: 0,
+            deposit: 40_000.0 * 1e18,
+            exchangeRate: 1e18
+        });
+
+        moveLiquidityParams = IPositionManagerOwnerActions.MoveLiquidityParams(
+            tokenId, address(_pool), _i9_81, _i9_52, block.timestamp + 5 hours
+        );
+        _positionManager.moveLiquidity(moveLiquidityParams);
+
+        _assertBucketAssets({
+            index: _i9_81,
+            lpBalance: 0 * 1e18,
+            collateral: 0,
+            deposit: 0 * 1e18,
+            exchangeRate: 1e18
+        });
+
+        _assertBucketAssets({
+            index: _i9_52,
+            lpBalance: 44_999.315068493150685000 * 1e18,
+            collateral: 0,
+            deposit: 44_999.315068493150685000 * 1e18,
+            exchangeRate: 1e18
+        });
+
+        _assertPool(
+            PoolParams({
+                htp:                  9.719336538461538466 * 1e18,
+                lup:                  9.721295865031779605 * 1e18,
+                poolSize:             82_999.315068493150685000 * 1e18,
+                pledgedCollateral:    1_002.0 * 1e18,
+                encumberedCollateral: 1_001.780542767698891702 * 1e18,
+                poolDebt:             9_738.605048076923081414 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        486.930252403846154071 * 1e18,
+                loans:                2,
+                maxBorrower:          address(testBorrowerTwo),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+    }
 }
