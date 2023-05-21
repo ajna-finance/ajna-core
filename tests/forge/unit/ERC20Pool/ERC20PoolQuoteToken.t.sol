@@ -1244,7 +1244,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             from:    _lender,
             amount:  984665640564039457.584007913129639933 * 1e18,
             index:   2570,
-            lpAward: 984665651272169776.470215805684254103 * 1e18,
+            lpAward: 984665640564039457.584007913129639933 * 1e18,
             newLup:  MAX_PRICE
         });
 
@@ -1257,15 +1257,15 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2570,
-            lpBalance:   984665651272169776.470215805684254103 * 1e18,
+            lpBalance:   984665640564039457.584007913129639933 * 1e18,
             depositTime: _startTime
         });
         _assertBucket({
             index:        2570,
-            lpBalance:    984665651272169776.470215805720134793 * 1e18,
+            lpBalance:    984665640564039457.584007913165520623 * 1e18,
             collateral:   13167,
             deposit:      984665640564039457.584007913129639933 * 1e18,
-            exchangeRate: 0.999999989125110331 * 1e18 // exchange rate should not change
+            exchangeRate: 1 * 1e18 // exchange rate should not change
         });
 
         skip(48 hours); // to avoid penalty
@@ -1275,7 +1275,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             amount:   984665640564039457.584007913129639933 * 1e18,
             index:    2570,
             newLup:   MAX_PRICE,
-            lpRedeem: 984665651272169776.022883717614941981 * 1e18
+            lpRedeem: 984665640564039457.584007913129639933 * 1e18
         });
 
         _assertLenderLpBalance({
@@ -1287,15 +1287,15 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2570,
-            lpBalance:   447332088069312122, // LP should get back to same value as before add / remove collateral
+            lpBalance:   0, // LP should get back to same value as before add / remove collateral
             depositTime: _startTime
         });
         _assertBucket({
             index:        2570,
-            lpBalance:    447332088105192812,
+            lpBalance:    35880690,
             collateral:   13167,
             deposit:      0,
-            exchangeRate: 0.000000000080210410 * 1e18 // exchange rate should not change  ** 
+            exchangeRate: 1 * 1e18 // exchange rate should not change
         });
 
         assertEq(_quote.balanceOf(_lender), initialLenderBalance);

@@ -108,7 +108,7 @@ library Buckets {
         uint256 collateral_,
         uint256 bucketPrice_
     ) internal pure returns (uint256 lp_) {
-        if (deposit_ == 0 && bucketCollateral_ == 0) {
+        if (bucketCollateral_ == 0 && deposit_ == 0) {
             lp_ = Maths.wmul(collateral_, bucketPrice_);
         } else {
             lp_ = Math.mulDiv(
@@ -135,12 +135,19 @@ library Buckets {
         uint256 quoteTokens_,
         uint256 bucketPrice_
     ) internal pure returns (uint256 lp_) {
-        if (deposit_ == 0 && bucketCollateral_ == 0) {
-            lp_ = quoteTokens_;
+        if (deposit_ == 0) {
+            if (bucketCollateral_ == 0) {
+                lp_ = quoteTokens_;
+            } else {
+                lp_ = Maths.wdiv(
+                    quoteTokens_,
+                    getExchangeRate(bucketCollateral_, bucketLP_, deposit_, bucketPrice_)
+                );
+            }
         } else {
             lp_ = Math.mulDiv(
                 bucketLP_,
-                Maths.WAD * quoteTokens_,
+                quoteTokens_ * Maths.WAD,
                 deposit_ * Maths.WAD + bucketCollateral_ * bucketPrice_
             );
         }
