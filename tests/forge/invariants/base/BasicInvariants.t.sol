@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import "@std/console.sol";
 
@@ -26,6 +26,7 @@ abstract contract BasicInvariants is BaseInvariants {
     function invariant_quote() public useCurrentTimestamp {
         _invariant_QT1();
         _invariant_QT2();
+        _invariant_QT3();
     }
 
     function invariant_exchange_rate() public useCurrentTimestamp {
@@ -72,7 +73,7 @@ abstract contract BasicInvariants is BaseInvariants {
 
             (uint256 bucketLps, , , , ) = _pool.bucketInfo(bucketIndex);
 
-            assertEq(bucketLps, totalLps, "Buckets Invariant B1");
+            require(bucketLps == totalLps, "Buckets Invariant B1");
         }
     }
 
@@ -83,7 +84,7 @@ abstract contract BasicInvariants is BaseInvariants {
             if (IBaseHandler(_handler).previousBankruptcy(bucketIndex) == block.timestamp) {
                 (uint256 bucketLps, , , , ) = _pool.bucketInfo(bucketIndex);
 
-                assertEq(bucketLps, 0, "Buckets Invariant B4");
+                require(bucketLps == 0, "Buckets Invariant B4");
             }
         }
     }
@@ -154,7 +155,7 @@ abstract contract BasicInvariants is BaseInvariants {
             assets,
             liabilities,
             1e13,
-            "Quote Token Invariant QT1"
+            "QT1: assets and liabilities not with a `1e13` margin"
         );
     }
 
@@ -173,6 +174,22 @@ abstract contract BasicInvariants is BaseInvariants {
         uint256 poolDebt = _pool.totalT0Debt();
 
         require(poolDebt == totalDebt, "Quote Token Invariant QT2");
+    }
+
+    /// @dev checks pool quote token balance is greater than or equal with sum of escrowed bonds and unclaimed reserves
+    function _invariant_QT3() internal view {
+        // convert pool quote balance into WAD
+        uint256 poolBalance = _quote.balanceOf(address(_pool)) * 10**(18 - _quote.decimals());
+        (
+            uint256 totalBondEscrowed,
+            uint256 unClaimed,
+            ,
+        ) = _pool.reservesInfo();
+
+        require(
+            poolBalance >= totalBondEscrowed + unClaimed,
+            "QT3: escrowed bonds and claimable reserves not guaranteed"
+        );
     }
 
     /********************************/
@@ -401,7 +418,7 @@ abstract contract BasicInvariants is BaseInvariants {
             if (nextNonzeroBucket < maxBucket) {
                 (, , , uint256 depositAtNextNonzeroBucket, ) = _pool.bucketInfo(nextNonzeroBucket);
 
-                assertGe(depositAtNextNonzeroBucket, 0, "F4: incorrect bucket with nonzero deposit");
+                require(depositAtNextNonzeroBucket >= 0, "F4: incorrect bucket with nonzero deposit");
             }
         }
     }
