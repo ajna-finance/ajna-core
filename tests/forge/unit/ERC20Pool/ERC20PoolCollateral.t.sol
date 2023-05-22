@@ -810,19 +810,17 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             index: 2570
         });
 
-        // Issue: neither _lender nor _borrower now has sufficient LP to redeem the collateral=
-        // Perhaps this is actually what we want though
-        _removeAllCollateral({
-            from:     _lender,
-            amount:   1,
-            index:    2570,
-            lpRedeem: 2725
+        // Neither _lender nor _borrower now has sufficient LP to redeem the collateral.
+        // Bidder can though remove his deposit and lender the added collateral.
+        _assertRemoveAllCollateralInsufficientLPRevert({
+            from:  _lender,
+            index: 2570
         });
 
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2570,
-            lpBalance:   0,
+            lpBalance:   2725,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
@@ -833,14 +831,14 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         });
         _assertBucket({
             index:        2570,
-            lpBalance:    304,
-            collateral:   0,
+            lpBalance:    3029,
+            collateral:   1,
             deposit:      304,
             exchangeRate: 1 * 1e18 // exchange rate should not change
         });
     }
 
-    function testSwapSmallAmountsBucketExchangeRateInvariantDifferentActor() external  {
+    function testSwapSmallAmountsBucketExchangeRateInvariantDifferentActor() external tearDown {
         _mintCollateralAndApproveTokens(_lender,  50000000000 * 1e18);
 
         _addInitialLiquidity({
@@ -965,12 +963,34 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
 
         // One deposit remains, with no owner, as collateral was removed with 1 deposit and
         // 1 collateral priced at ~2570
-        _assertBucket({
+        _assertBucketAssets({
             index:        2570,
             lpBalance:    0,
             collateral:   0,
             deposit:      1,
             exchangeRate: 1 * 1e18 // exchange rate should not change
+        });
+
+        // bucket can be healed by adding liquidity / collateral
+        _addLiquidity({
+            from:    _bidder,
+            amount:  2726,
+            index:   2570,
+            lpAward: 2726,
+            newLup:  MAX_PRICE
+        });
+        _addCollateral({
+            from:    _lender,
+            amount:  1,
+            index:   2570,
+            lpAward: 2724
+        });
+        _assertBucket({
+            index:        2570,
+            lpBalance:    5450,
+            collateral:   1,
+            deposit:      2727,
+            exchangeRate: 1.000366972477064220 * 1e18
         });
     }
 

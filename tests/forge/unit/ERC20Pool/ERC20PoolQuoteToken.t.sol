@@ -1295,10 +1295,25 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             lpBalance:    35880690,
             collateral:   13167,
             deposit:      0,
-            exchangeRate: 1 * 1e18 // exchange rate should not change
+            exchangeRate: 1 * 1e18
         });
 
         assertEq(_quote.balanceOf(_lender), initialLenderBalance);
+
+        // bucket can be healed by adding liquidity / collateral
+        _addLiquidity({
+            from:    _lender,
+            amount:  100 * 1e18,
+            index:   2570,
+            lpAward: 100.000001087488978771 * 1e18,
+            newLup:  MAX_PRICE
+        });
+        _addCollateral({
+            from:    _borrower,
+            amount:  1 * 1e18,
+            index:   2570,
+            lpAward: 2725.046707678286625634 * 1e18
+        });
     }
 
     function testRemoveQuoteTokenPoolBalanceLimit() external tearDown {

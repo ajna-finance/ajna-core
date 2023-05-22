@@ -14,8 +14,8 @@ install :; git submodule update --init --recursive
 build   :; forge clean && forge build
 
 # Tests
-test                            :; forge test --no-match-test "testLoad|invariant|test_regression"  # --ffi # enable if you need the `ffi` cheat code on HEVM
-test-with-gas-report            :; forge test --no-match-test "testLoad|invariant|test_regression" --gas-report # --ffi # enable if you need the `ffi` cheat code on HEVM
+test                            :; forge test --no-match-test "testLoad|invariant|test_regression" --nmc "RegressionTest|Panic"  # --ffi # enable if you need the `ffi` cheat code on HEVM
+test-with-gas-report            :; forge test --no-match-test "testLoad|invariant|test_regression" --nmc "RegressionTest|Panic" --gas-report # --ffi # enable if you need the `ffi` cheat code on HEVM
 test-load                       :; forge test --match-test testLoad --gas-report
 test-invariant-all              :; forge t --mt invariant --nmc "RegressionTest|Panic"
 test-invariant-erc20            :; forge t --mt invariant --nmc "RegressionTest|Panic" --mc ERC20

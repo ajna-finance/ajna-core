@@ -4,6 +4,7 @@ pragma solidity 0.8.18;
 import '@std/Test.sol';
 import '@std/Vm.sol';
 
+import '@openzeppelin/contracts/utils/math/Math.sol';
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
@@ -118,8 +119,21 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 amount,
         uint256 index
     ) internal {
-        uint256 quoteTokenScale = IPool(address(_pool)).quoteTokenScale();
-        uint256 lpAmount        = (amount / quoteTokenScale) * quoteTokenScale;
+        (
+            uint256 bucketLP,
+            uint256 bucketCollateral,
+            ,
+            uint256 bucketDeposit,
+        ) = _pool.bucketInfo(index);
+
+        uint256 lpAmount = Buckets.quoteTokensToLP(
+            bucketCollateral,
+            bucketLP,
+            bucketDeposit,
+            amount,
+            _priceAt(index),
+            Math.Rounding.Down
+        );
         _addLiquidity(from, amount, index, lpAmount, MAX_PRICE);
     }
 

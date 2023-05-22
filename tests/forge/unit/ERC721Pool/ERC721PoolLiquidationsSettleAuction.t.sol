@@ -610,7 +610,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         // lender adds liquidity in bucket 6113 and merge / removes the other 2 NFTs
         _addLiquidityWithPenalty({
             from:        _lender,
-            amount:      1000 * 1e18,
+            amount:      1_000 * 1e18,
             amountAdded: 999.876712328767123000 * 1e18,
             index:       6113,
             lpAward:     999.876712328820878239 * 1e18,
@@ -777,7 +777,7 @@ contract ERC721PoolLiquidationsSettleAuctionTest is ERC721HelperContract {
         // lender adds liquidity in bucket 6113 and merge / removes the other 2 NFTs
         _addLiquidity({
             from:    _lender,
-            amount:  1000 * 1e18,
+            amount:  1_000 * 1e18,
             index:   6113,
             lpAward: 1_000.000000000053761867 * 1e18,
             newLup:  MAX_PRICE
