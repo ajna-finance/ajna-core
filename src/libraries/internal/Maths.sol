@@ -26,6 +26,10 @@ library Maths {
         return (x * WAD) / y;
     }
 
+    function ceilDiv(uint256 x, uint256 y) internal pure returns (uint256) {
+        return (x + y - 1) / y;
+    }
+
     function max(uint256 x, uint256 y) internal pure returns (uint256) {
         return x >= y ? x : y;
     }
