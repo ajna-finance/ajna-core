@@ -319,8 +319,8 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         EnumerableSet.UintSet storage positionIndex = positionIndexes[params_.tokenId];
 
         // 1. update FROM memorialized position
-        if (!positionIndex.remove(params_.fromIndex)) revert RemovePositionFailed(); // revert if failed to remove position
-        if (vars.fromLP != vars.lpbAmountFrom)        revert RemovePositionFailed(); // revert if there's still LP remaining in from bucket after move
+        if (!positionIndex.remove(params_.fromIndex)) revert RemovePositionFailed(); // revert if failed to position is not in memorialized indexes
+        if (vars.fromLP != vars.lpbAmountFrom)        revert RemovePositionFailed(); // bucket has collateral and quote therefore LP is not redeemable for full quote token amount
 
         delete positions[params_.tokenId][params_.fromIndex]; // remove memorialized FROM position
 
