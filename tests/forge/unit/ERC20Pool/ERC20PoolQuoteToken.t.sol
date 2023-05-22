@@ -1295,7 +1295,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             lpBalance:    35880690,
             collateral:   13167,
             deposit:      0,
-            exchangeRate: 1 * 1e18 // TODO: exchange rate should not change
+            exchangeRate: 1 * 1e18
         });
 
         assertEq(_quote.balanceOf(_lender), initialLenderBalance);

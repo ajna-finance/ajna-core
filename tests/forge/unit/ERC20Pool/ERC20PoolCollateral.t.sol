@@ -810,9 +810,8 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             index: 2570
         });
 
-        // TODO: check if desired - neither _lender nor _borrower now has sufficient LP to redeem the collateral
-        // Bidder can though remove his deposit and lender the added collateral
-        // Perhaps this is actually what we want though
+        // Neither _lender nor _borrower now has sufficient LP to redeem the collateral.
+        // Bidder can though remove his deposit and lender the added collateral.
         _assertRemoveAllCollateralInsufficientLPRevert({
             from:  _lender,
             index: 2570
