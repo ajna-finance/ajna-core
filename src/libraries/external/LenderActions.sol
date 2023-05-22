@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.18;
 
-import { Math }  from '@openzeppelin/contracts/utils/math/Math.sol';
+import { Math } from '@openzeppelin/contracts/utils/math/Math.sol';
 
 import {
     AddQuoteParams,

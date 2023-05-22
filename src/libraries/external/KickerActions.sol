@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.18;
 
+import { Math } from '@openzeppelin/contracts/utils/math/Math.sol';
+
 import { PoolType } from '../../interfaces/pool/IPool.sol';
 
 import {
@@ -38,7 +40,6 @@ import { Buckets }  from '../internal/Buckets.sol';
 import { Deposits } from '../internal/Deposits.sol';
 import { Loans }    from '../internal/Loans.sol';
 import { Maths }    from '../internal/Maths.sol';
-import { Math }  from '@openzeppelin/contracts/utils/math/Math.sol';
 
 /**
     @title  Auctions kicker actions library
@@ -165,13 +166,14 @@ library KickerActions {
 
         // calculate amount to remove based on lender LP in bucket
         vars.amountToDebitFromDeposit = Buckets.lpToQuoteTokens(
-                                                                vars.bucketCollateral,
-                                                                vars.bucketLP,
-                                                                vars.bucketDeposit,
-                                                                vars.lenderLP,
-                                                                vars.bucketPrice,
-                                                                Math.Rounding.Up
-                                        );
+            vars.bucketCollateral,
+            vars.bucketLP,
+            vars.bucketDeposit,
+            vars.lenderLP,
+            vars.bucketPrice,
+            Math.Rounding.Up
+        );
+
         // cap the amount to remove at bucket deposit
         if (vars.amountToDebitFromDeposit > vars.bucketDeposit) vars.amountToDebitFromDeposit = vars.bucketDeposit;
 
@@ -216,15 +218,17 @@ library KickerActions {
 
         } else {
             vars.redeemedLP = Buckets.quoteTokensToLP(
-                                                      vars.bucketCollateral,
-                                                      vars.bucketLP,
-                                                      vars.bucketDeposit,
-                                                      vars.amountToDebitFromDeposit,
-                                                      vars.bucketPrice,
-                                                      Math.Rounding.Up
+                vars.bucketCollateral,
+                vars.bucketLP,
+                vars.bucketDeposit,
+                vars.amountToDebitFromDeposit,
+                vars.bucketPrice,
+                Math.Rounding.Up
             );
+
             uint256 unscaledAmountToRemove = Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketScale);
             Deposits.unscaledRemove(deposits_, index_, unscaledAmountToRemove);
+
             vars.bucketUnscaledDeposit -= unscaledAmountToRemove;
         }
 
