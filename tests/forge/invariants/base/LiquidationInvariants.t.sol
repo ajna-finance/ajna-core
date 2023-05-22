@@ -158,6 +158,19 @@ abstract contract LiquidationInvariants is BasicInvariants {
             "Auction Invariant A8"
         );
     }
+
+    /// @dev for each auction, kicker locked bondFactor is bounded by [1%, 30%]
+    function _invariant_A9() internal view {
+        uint256 actorCount = IBaseHandler(_handler).getActorsCount();
+
+        for (uint256 i = 0; i < actorCount; i++) {
+            address borrower = IBaseHandler(_handler).actors(i);
+            (, uint256 bondFactor, , , , , , , , ) = _pool.auctionInfo(borrower);
+
+            require(bondFactor >= 0.01 * 1e18, "Auction Invariant A9, bondFactor too low");
+            require(bondFactor <= 0.30 * 1e18, "Auction Invariant A9, bondFactor too high");
+        }
+    }
     
     function invariant_call_summary() public virtual override useCurrentTimestamp {
         console.log("\nCall Summary\n");
