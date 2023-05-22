@@ -18,6 +18,10 @@ library Maths {
         return (x * y) / WAD;
     }
 
+    function ceilWmul(uint256 x, uint256 y) internal pure returns (uint256) {
+        return (x * y + WAD - 1) / WAD;
+    }
+
     function wdiv(uint256 x, uint256 y) internal pure returns (uint256) {
         return (x * WAD + y / 2) / y;
     }

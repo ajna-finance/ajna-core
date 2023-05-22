@@ -64,9 +64,10 @@ contract MathTest is DSTestPlus {
         assertEq(Maths.floorWdiv(1_001.4534563955 * 1e18, 55.24325 * 1e18), 18.128069155878772519 * 1e18);
     }
 
-    function testFloorWmul() external {
+    function testFloorCeilWmul() external {
         assertEq(Maths.wmul(     1.4534563955 * 1e18, 0.112224325121212178 * 1e18), 0.163113163078097153 * 1e18);
         assertEq(Maths.floorWmul(1.4534563955 * 1e18, 0.112224325121212178 * 1e18), 0.163113163078097152 * 1e18);
+        assertEq(Maths.ceilWmul( 1.4534563955 * 1e18, 0.112224325121212178 * 1e18), 0.163113163078097153 * 1e18);
     }
 
     function testMaxMinInt() external {
