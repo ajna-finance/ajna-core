@@ -674,7 +674,7 @@ library LenderActions {
         } else {
             lpAmount_         = lenderLpBalance;
             collateralAmount_ = Math.mulDiv(lenderLpBalance, collateralAmount_, requiredLP);
-            
+
             if (collateralAmount_ == 0) revert InsufficientLP();
         }
 
