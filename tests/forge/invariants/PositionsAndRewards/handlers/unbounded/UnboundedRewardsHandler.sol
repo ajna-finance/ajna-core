@@ -62,7 +62,16 @@ abstract contract UnboundedRewardsHandler is BasePositionsHandler {
     ) internal {
         numberOfCalls['UBRewardsHandler.exchangeRate']++;
 
+        uint256 actorBalanceBeforeClaim = _quote.balanceOf(_actor);
+
         try _rewards.updateBucketExchangeRatesAndClaim(address(_pool), keccak256("ERC20_NON_SUBSET_HASH"), indexes_) {
+
+            // add to total rewards if actor received reward
+            if ((_quote.balanceOf(_actor) - actorBalanceBeforeClaim) != 0) {
+                uint256 curBurnEpoch = _pool.currentBurnEpoch();
+                totalRewardPerEpoch[curBurnEpoch] += _quote.balanceOf(_actor) - actorBalanceBeforeClaim;
+            }
+
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }

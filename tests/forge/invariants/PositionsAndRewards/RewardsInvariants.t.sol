@@ -43,20 +43,41 @@ contract RewardsInvariants is PositionsInvariants {
 
 
     function invariant_rewards_RW1() public useCurrentTimestamp {
-
+        
+        // get current epoch (is incremented every kickReserve() call) 
         uint256 curEpoch = _pool.currentBurnEpoch();
 
         // get rewards that have been claimed
         uint256 claimedRewards  = IBaseHandler(_handler).totalRewardPerEpoch(curEpoch);
 
         // total ajna burned by the pool over the epoch
-        (, uint256 totalBurnedInPeriod,) = _getEpochInfo(address(_pool), curEpoch + 1);
+        (, uint256 totalBurnedInPeriod,) = _getEpochInfo(address(_pool), curEpoch);
 
-        uint256 rewardsCap = Maths.wmul(totalBurnedInPeriod, 0.1 * 1e18);
+        // stake rewards cap is 80% of total burned
+        uint256 stakeRewardsCap = Maths.wmul(totalBurnedInPeriod, 0.8 * 1e18);
 
         // check claimed rewards < rewards cap
-        if (rewardsCap != 0) require(claimedRewards < rewardsCap, "Rewards invariant RW1");
+        if (stakeRewardsCap != 0) require(claimedRewards < stakeRewardsCap, "Rewards invariant RW1");
     }
+
+    function invariant_rewards_RW2() public useCurrentTimestamp {
+
+        // get current epoch (is incremented every kickReserve() call) 
+        uint256 curEpoch = _pool.currentBurnEpoch();
+
+        // get rewards that have been claimed
+        uint256 claimedRewards  = IBaseHandler(_handler).totalRewardPerEpoch(curEpoch);
+
+        // total ajna burned by the pool over the epoch
+        (, uint256 totalBurnedInPeriod,) = _getEpochInfo(address(_pool), curEpoch);
+
+        // update rewards cap is 10% of total burned
+        uint256 updateRewardsCap = Maths.wmul(totalBurnedInPeriod, 0.1 * 1e18);
+
+        // check claimed rewards < rewards cap
+        if (updateRewardsCap != 0) require(claimedRewards < updateRewardsCap, "Rewards invariant RW2");
+    }
+
 
     function invariant_call_summary() public virtual override useCurrentTimestamp {
         console.log("\nCall Summary\n");

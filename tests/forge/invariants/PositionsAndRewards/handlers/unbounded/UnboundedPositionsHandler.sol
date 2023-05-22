@@ -204,6 +204,9 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
     ) internal {
         numberOfCalls['UBPositionHandler.moveLiquidity']++;
 
+        // update interest so pre and post token amounts are equal
+        _pool.updateInterest();
+
         // fromIndex values
         (uint256 preActionFromLps, uint256 preActionDepositTime) = _position.getPositionInfo(tokenId_, fromIndex_);
         uint256 preActionFromIndexQuote = _getQuoteAtIndex(preActionFromLps, fromIndex_);
