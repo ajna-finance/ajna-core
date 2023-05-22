@@ -38,6 +38,7 @@ import { Buckets }  from '../internal/Buckets.sol';
 import { Deposits } from '../internal/Deposits.sol';
 import { Loans }    from '../internal/Loans.sol';
 import { Maths }    from '../internal/Maths.sol';
+import { Math }  from '@openzeppelin/contracts/utils/math/Math.sol';
 
 /**
     @title  Auctions kicker actions library
@@ -70,7 +71,6 @@ library KickerActions {
         uint256 bucketDeposit;            // [WAD] amount of quote tokens in bucket
         uint256 bucketLP;                 // [WAD] LP of the bucket
         uint256 bucketPrice;              // [WAD] bucket price
-        uint256 bucketRate;               // [WAD] bucket exchange rate
         uint256 bucketScale;              // [WAD] bucket scales
         uint256 bucketUnscaledDeposit;    // [WAD] unscaled amount of quote tokens in bucket
         uint256 lenderLP;                 // [WAD] LP of lender in bucket
@@ -163,16 +163,15 @@ library KickerActions {
         vars.bucketScale           = Deposits.scale(deposits_, index_);
         vars.bucketDeposit         = Maths.wmul(vars.bucketUnscaledDeposit, vars.bucketScale);
 
-        // calculate max amount that can be removed (constrained by lender LP in bucket, bucket deposit and the amount lender wants to remove)
-        vars.bucketRate = Buckets.getExchangeRate(
-            vars.bucketCollateral,
-            vars.bucketLP,
-            vars.bucketDeposit,
-            vars.bucketPrice
-        );
-
         // calculate amount to remove based on lender LP in bucket
-        vars.amountToDebitFromDeposit = Maths.wmul(vars.lenderLP, vars.bucketRate);
+        vars.amountToDebitFromDeposit = Buckets.lpToQuoteTokens(
+                                                                vars.bucketCollateral,
+                                                                vars.bucketLP,
+                                                                vars.bucketDeposit,
+                                                                vars.lenderLP,
+                                                                vars.bucketPrice,
+                                                                Math.Rounding.Up
+                                        );
         // cap the amount to remove at bucket deposit
         if (vars.amountToDebitFromDeposit > vars.bucketDeposit) vars.amountToDebitFromDeposit = vars.bucketDeposit;
 
@@ -216,8 +215,14 @@ library KickerActions {
             vars.bucketUnscaledDeposit = 0;
 
         } else {
-            vars.redeemedLP = Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketRate);
-
+            vars.redeemedLP = Buckets.quoteTokensToLP(
+                                                      vars.bucketCollateral,
+                                                      vars.bucketLP,
+                                                      vars.bucketDeposit,
+                                                      vars.amountToDebitFromDeposit,
+                                                      vars.bucketPrice,
+                                                      Math.Rounding.Up
+            );
             uint256 unscaledAmountToRemove = Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketScale);
             Deposits.unscaledRemove(deposits_, index_, unscaledAmountToRemove);
             vars.bucketUnscaledDeposit -= unscaledAmountToRemove;

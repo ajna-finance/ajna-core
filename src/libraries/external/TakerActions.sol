@@ -37,7 +37,7 @@ import { Buckets }  from '../internal/Buckets.sol';
 import { Deposits } from '../internal/Deposits.sol';
 import { Loans }    from '../internal/Loans.sol';
 import { Maths }    from '../internal/Maths.sol';
-
+import { Math }  from '@openzeppelin/contracts/utils/math/Math.sol';
 /**
     @title  Auction Taker Actions library
     @notice External library containing actions involving taking auctions within pool:
@@ -615,22 +615,19 @@ library TakerActions {
 
         uint256 bankruptcyTime = bucket.bankruptcyTime;
         uint256 scaledDeposit  = Maths.wmul(vars.unscaledDeposit, vars.bucketScale);
-        uint256 exchangeRate   = Buckets.getExchangeRate(
-            bucket.collateral,
-            bucket.lps,
-            scaledDeposit,
-            vars.bucketPrice
-        );
-
         uint256 totalLPReward;
         uint256 takerLPReward;
         uint256 kickerLPReward;
 
         // if arb take - taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
         if (!depositTake_) {
-            takerLPReward = Maths.wdiv(
-                Maths.wmul(vars.collateralAmount, vars.bucketPrice - vars.auctionPrice),
-                exchangeRate
+            takerLPReward = Buckets.quoteTokensToLP(
+                                                    bucket.collateral,
+                                                    bucket.lps,
+                                                    scaledDeposit,
+                                                    Maths.wmul(vars.collateralAmount, vars.bucketPrice - vars.auctionPrice),
+                                                    vars.bucketPrice,
+                                                    Math.Rounding.Down
             );
             totalLPReward = takerLPReward;
 
@@ -639,7 +636,14 @@ library TakerActions {
 
         // the bondholder/kicker is awarded bond change worth of LPB in the bucket
         if (vars.isRewarded) {
-            kickerLPReward = Maths.wdiv(vars.bondChange, exchangeRate);
+            kickerLPReward = Buckets.quoteTokensToLP(
+                                                    bucket.collateral,
+                                                    bucket.lps,
+                                                    scaledDeposit,
+                                                    vars.bondChange,
+                                                    vars.bucketPrice,
+                                                    Math.Rounding.Down
+            );
             totalLPReward  += kickerLPReward;
 
             Buckets.addLenderLP(bucket, bankruptcyTime, vars.kicker, kickerLPReward);

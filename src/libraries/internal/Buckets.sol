@@ -154,6 +154,35 @@ library Buckets {
     }
 
     /**
+     *  @notice Returns the amount of quote token (in value) calculated for the given amount of lp
+     *  @param  bucketCollateral_ Amount of collateral in bucket.
+     *  @param  bucketLP_         Amount of `LP` in bucket.
+     *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / `LP`.
+     *  @param  lp_               The amount of LP to calculate `QT` amount for.
+     *  @param  bucketPrice_      Bucket's price.
+     *  @return qt_               The amount of `QT` coresponding to the given quote tokens in current bucket.  Note: it's not capped at deposit.
+     */
+    function lpToQuoteTokens(
+        uint256 bucketCollateral_,
+        uint256 bucketLP_,
+        uint256 deposit_,
+        uint256 lp_,
+        uint256 bucketPrice_,
+        Math.Rounding rounding_
+    ) internal pure returns (uint256 qt_) {
+        if (deposit_ == 0 && bucketCollateral_ == 0) {
+            qt_ = lp_;
+        } else {
+            qt_ = Math.mulDiv(
+                deposit_ * Maths.WAD + bucketCollateral_ * bucketPrice_,
+                lp_,
+                bucketLP_ * Maths.WAD,
+                rounding_
+            );
+        }
+    }
+
+    /**
      *  @notice Returns the exchange rate for a given bucket.
      *  @param  bucketCollateral_ Amount of collateral in bucket.
      *  @param  bucketLP_         Amount of `LP` in bucket.
