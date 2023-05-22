@@ -117,6 +117,8 @@ library Buckets {
             } else {
                 lp_ = Maths.floorWmul(collateral_, bucketPrice_);
             }
+        } else if (bucketLP_ == 0) { // case when there's deposit or collateral in bucket but no LP to cover
+            lp_ = Maths.wmul(collateral_, bucketPrice_);
         } else {
             lp_ = Math.mulDiv(
                 bucketLP_,
@@ -146,6 +148,8 @@ library Buckets {
         Math.Rounding rounding_
     ) internal pure returns (uint256 lp_) {
         if (deposit_ == 0 && bucketCollateral_ == 0) {
+            lp_ = quoteTokens_;
+        } else if (bucketLP_ == 0) { // case when there's deposit or collateral in bucket but no LP to cover
             lp_ = quoteTokens_;
         } else {
             lp_ = Math.mulDiv(

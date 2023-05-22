@@ -839,7 +839,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         });
     }
 
-    function testSwapSmallAmountsBucketExchangeRateInvariantDifferentActor() external  {
+    function testSwapSmallAmountsBucketExchangeRateInvariantDifferentActor() external tearDown {
         _mintCollateralAndApproveTokens(_lender,  50000000000 * 1e18);
 
         _addInitialLiquidity({
@@ -964,13 +964,34 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
 
         // One deposit remains, with no owner, as collateral was removed with 1 deposit and
         // 1 collateral priced at ~2570
-        // TODO: bucket cannot be fixed anymore even if adding more liquidity / collateral as it reverts with InsufficientLP
         _assertBucketAssets({
             index:        2570,
             lpBalance:    0,
             collateral:   0,
             deposit:      1,
             exchangeRate: 1 * 1e18 // exchange rate should not change
+        });
+
+        // bucket can be healed by adding liquidity / collateral
+        _addLiquidity({
+            from:    _bidder,
+            amount:  2726,
+            index:   2570,
+            lpAward: 2726,
+            newLup:  MAX_PRICE
+        });
+        _addCollateral({
+            from:    _lender,
+            amount:  1,
+            index:   2570,
+            lpAward: 2724
+        });
+        _assertBucket({
+            index:        2570,
+            lpBalance:    5450,
+            collateral:   1,
+            deposit:      2727,
+            exchangeRate: 1.000366972477064220 * 1e18
         });
     }
 
