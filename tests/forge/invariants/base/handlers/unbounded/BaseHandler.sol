@@ -12,7 +12,8 @@ import { PoolCommons }      from 'src/libraries/external/PoolCommons.sol';
 import {
     MAX_FENWICK_INDEX,
     MAX_PRICE,
-    MIN_PRICE
+    MIN_PRICE,
+    _indexOf
 }                           from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }            from 'src/libraries/internal/Maths.sol';
 
@@ -537,6 +538,30 @@ abstract contract BaseHandler is Test {
 
         // reset taken flag in case auction was settled by take action
         _auctionSettleStateReset(borrower_);
+    }
+
+    function _recordSettleBucket(
+        address borrower_,
+        uint256 borrowerCollateralBefore_,
+        uint256 kickTimeBefore_,
+        uint256 auctionPrice_
+    ) internal {
+        (uint256 kickTimeAfter, , , , , ) = _poolInfo.auctionStatus(address(_pool), borrower_);
+
+        // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
+        if (kickTimeBefore_ != 0 && kickTimeAfter == 0 && borrowerCollateralBefore_ % 1e18 != 0) {
+            if (auctionPrice_ < MIN_PRICE) {
+                buckets.add(7388);
+                lenderDepositTime[borrower_][7388] = block.timestamp;
+            } else if (auctionPrice_ > MAX_PRICE) {
+                buckets.add(0);
+                lenderDepositTime[borrower_][0] = block.timestamp;
+            } else {
+                uint256 bucketIndex = _indexOf(auctionPrice_);
+                buckets.add(bucketIndex);
+                lenderDepositTime[borrower_][bucketIndex] = block.timestamp;
+            }
+        }
     }
 
     /**********************************/
