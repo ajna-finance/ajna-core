@@ -136,7 +136,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         uint256 totalBondBeforeTake          = _getKickerBond(kicker);
         uint256 totalBalanceBeforeTake       = _quote.balanceOf(address(_pool)) * 10**(18 - _quote.decimals());
 
-        ( , , , , uint256 auctionPrice, )    = _poolInfo.auctionStatus(address(_pool), borrower_);
+        (uint256 kickTimeBefore, , , , uint256 auctionPrice, )    = _poolInfo.auctionStatus(address(_pool), borrower_);
 
         // ensure actor always has the amount to take collateral
         _ensureQuoteAmount(taker_, 1e45);
@@ -172,19 +172,13 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             // **RE7**: Reserves increase with the quote token paid by taker.
             increaseInReserves += totalBalanceAfterTake - totalBalanceBeforeTake;
 
-            // **CT2**: Keep track of bucketIndex when auction is settled and borrower compensated for fractional collateral
-            (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower_);
-            if (kickTime == 0 && borrowerCollateralBeforeTake % 1e18 != 0 && _pool.poolType() == 1) {
-                if (auctionPrice < MIN_PRICE) {
-                    buckets.add(7388);
-                    lenderDepositTime[borrower_][7388] = block.timestamp;
-                } else if (auctionPrice > MAX_PRICE) {
-                    buckets.add(0);
-                    lenderDepositTime[borrower_][0] = block.timestamp;
-                } else {
-                    buckets.add(_indexOf(auctionPrice));
-                    lenderDepositTime[borrower_][_indexOf(auctionPrice)] = block.timestamp;
-                }
+            if (_pool.poolType() == 1) {
+                _recordSettleBucket(
+                    borrower_,
+                    borrowerCollateralBeforeTake,
+                    kickTimeBefore,
+                    auctionPrice
+                );
             }
 
             if (!alreadyTaken[borrower_]) {
