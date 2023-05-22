@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { PositionManagerERC20PoolHelperContract } from '../PositionManager.t.sol';
 
