@@ -171,7 +171,7 @@ library KickerActions {
             vars.bucketDeposit,
             vars.lenderLP,
             vars.bucketPrice,
-            Math.Rounding.Up
+            Math.Rounding.Down
         );
 
         // cap the amount to remove at bucket deposit
