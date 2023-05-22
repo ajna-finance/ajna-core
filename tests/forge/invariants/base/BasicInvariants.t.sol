@@ -57,7 +57,7 @@ abstract contract BasicInvariants is BaseInvariants {
     /*************************/
 
     /// @dev checks pool lps are equal to sum of all lender lps in a bucket 
-    function _invariant_B1() internal {
+    function _invariant_B1() internal view {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         uint256[] memory buckets = IBaseHandler(_handler).getBuckets();
@@ -78,7 +78,7 @@ abstract contract BasicInvariants is BaseInvariants {
     }
 
     /// @dev checks pool lps are equal to sum of all lender lps in a bucket 
-    function _invariant_B4() internal {
+    function _invariant_B4() internal view {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             // if bucket bankruptcy occured, then previousBankruptcy should be equal to current timestamp
             if (IBaseHandler(_handler).previousBankruptcy(bucketIndex) == block.timestamp) {
@@ -405,7 +405,7 @@ abstract contract BasicInvariants is BaseInvariants {
     }
 
     /// @dev **F4**: For any index i < MAX_FENWICK_INDEX, Deposits.valueAt(findIndexOfSum(prefixSum(i) + 1)) > 0
-    function _invariant_F4() internal {
+    function _invariant_F4() internal view {
         uint256[] memory buckets = IBaseHandler(_handler).getBuckets();
         uint256 maxBucket;
         for (uint256 i = 0; i < buckets.length; i++) {
