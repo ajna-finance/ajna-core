@@ -174,7 +174,7 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
         // available quote token decreased with new debt
         assertEq(_availableQuoteToken(), 0);
 
-        // vm.warp(block.timestamp + 86400);
+        vm.warp(block.timestamp + 86400);
 
         changePrank(_actor2);
         pool.updateInterest();

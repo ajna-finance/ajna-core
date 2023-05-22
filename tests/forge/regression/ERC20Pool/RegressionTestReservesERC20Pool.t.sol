@@ -988,8 +988,8 @@ contract RegressionTestReserveWith12CollateralPrecisionERC20Pool is ReserveERC20
     }
 
     /*
-        Test failed because there was not enough quote balance in pool for the calculated rewards.
-        Fixed by not allowing draw debt / remove quote tokens actions to use unclaimed rewards and auction bonds amounts.
+        Test failed because calculated claimable reserves on reserve auction kicked did not accounted guaranteed funds in pool (already kicked reserves and escrowed auction bond).
+        Fixed by capping claimable reserves at available quote token amount (pool balance without kicked reserves not claimed and escrowed auction bonds).
     */
     function test_regression_reserves_QT3() external {
         _reserveERC20PoolHandler.removeQuoteToken(1113521085121132368768304231458008366452480816650014, 518010775851214258829944481483992375293627503745004580402566336003, 115792089237316195423570985008687907853269984665640564039457584007913129639932, 48867430425743212060722974487977454079436894);
