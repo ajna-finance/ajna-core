@@ -101,7 +101,7 @@ library Buckets {
      *  @param  collateral_       The amount of collateral to calculate bucket LP for.
      *  @param  bucketPrice_      Bucket's price.
      *  @param  rounding_         The direction of rounding when calculating LP (down when adding, up when removing collateral from pool).
-     *  @return lp_               Amount of `LP` calculated for the amount of collateral.
+     *  @return Amount of `LP` calculated for the amount of collateral.
      */
     function collateralToLP(
         uint256 bucketCollateral_,
@@ -110,23 +110,26 @@ library Buckets {
         uint256 collateral_,
         uint256 bucketPrice_,
         Math.Rounding rounding_
-    ) internal pure returns (uint256 lp_) {
+    ) internal pure returns (uint256) {
+        // case when there's no deposit nor collateral in bucket
         if (deposit_ == 0 && bucketCollateral_ == 0) {
-            if (rounding_ == Math.Rounding.Up) {
-                lp_ = collateral_ * bucketPrice_ / 1e18;
-            } else {
-                lp_ = Maths.floorWmul(collateral_, bucketPrice_);
-            }
-        } else if (bucketLP_ == 0) { // case when there's deposit or collateral in bucket but no LP to cover
-            lp_ = Maths.wmul(collateral_, bucketPrice_);
-        } else {
-            lp_ = Math.mulDiv(
-                bucketLP_,
-                collateral_ * bucketPrice_,
-                deposit_ * Maths.WAD + bucketCollateral_ * bucketPrice_,
-                rounding_
-            );
+            if (rounding_ == Math.Rounding.Up) return collateral_ * bucketPrice_ / 1e18;
+            else return Maths.floorWmul(collateral_, bucketPrice_);
         }
+
+        // case when there's deposit or collateral in bucket but no LP to cover
+        if (bucketLP_ == 0) {
+            if (rounding_ == Math.Rounding.Up) return collateral_ * bucketPrice_ / 1e18;
+            else return Maths.floorWmul(collateral_, bucketPrice_);
+        }
+
+        // case when there's deposit or collateral and bucket has LP balance
+        return Math.mulDiv(
+            bucketLP_,
+            collateral_ * bucketPrice_,
+            deposit_ * Maths.WAD + bucketCollateral_ * bucketPrice_,
+            rounding_
+        );
     }
 
     /**
@@ -137,7 +140,7 @@ library Buckets {
      *  @param  quoteTokens_      The amount of quote tokens to calculate `LP` amount for.
      *  @param  bucketPrice_      Bucket's price.
      *  @param  rounding_         The direction of rounding when calculating LP (down when adding, up when removing quote tokens from pool).
-     *  @return lp_               The amount of `LP` coresponding to the given quote tokens in current bucket.
+     *  @return The amount of `LP` coresponding to the given quote tokens in current bucket.
      */
     function quoteTokensToLP(
         uint256 bucketCollateral_,
@@ -146,19 +149,20 @@ library Buckets {
         uint256 quoteTokens_,
         uint256 bucketPrice_,
         Math.Rounding rounding_
-    ) internal pure returns (uint256 lp_) {
-        if (deposit_ == 0 && bucketCollateral_ == 0) {
-            lp_ = quoteTokens_;
-        } else if (bucketLP_ == 0) { // case when there's deposit or collateral in bucket but no LP to cover
-            lp_ = quoteTokens_;
-        } else {
-            lp_ = Math.mulDiv(
-                bucketLP_,
-                quoteTokens_ * Maths.WAD,
-                deposit_ * Maths.WAD + bucketCollateral_ * bucketPrice_,
-                rounding_
-            );
-        }
+    ) internal pure returns (uint256) {
+        // case when there's no deposit nor collateral in bucket
+        if (deposit_ == 0 && bucketCollateral_ == 0) return quoteTokens_;
+
+        // case when there's deposit or collateral in bucket but no LP to cover
+        if (bucketLP_ == 0) return quoteTokens_;
+
+        // case when there's deposit or collateral and bucket has LP balance
+        return Math.mulDiv(
+            bucketLP_,
+            quoteTokens_ * Maths.WAD,
+            deposit_ * Maths.WAD + bucketCollateral_ * bucketPrice_,
+            rounding_
+        );
     }
 
     /**
