@@ -215,6 +215,15 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
         (uint256 preActionToLps,) = _position.getPositionInfo(tokenId_, toIndex_);
         uint256 preActionToIndexQuote = _getQuoteAtIndex(preActionToLps, toIndex_);
 
+        // positionManager's preAction QT balances
+        // (uint256 lp,) = _pool.lenderInfo(fromIndex_, address(_position));
+        // console.log("posMan to Pool - preAction LP from", lp);
+        // console.log("in posMan - preAction LP from", preActionFromLps);
+
+        // (lp,) = _pool.lenderInfo(toIndex_, address(_position));
+        // console.log("posMan to Pool - preAction LP to", lp);
+        // console.log("in posMan - preAction LP to", preActionToLps);
+
         /**
         *  @notice Struct holding parameters for moving the liquidity of a position.
         */
@@ -223,7 +232,12 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
 
             // TODO: store memorialized position's tokenIds in mapping, for reuse in unstake and redeem calls
 
+
             // Post Action Checks //
+            // remove tracked positions
+            bucketIndexesWithPosition.remove(fromIndex_); 
+            tokenIdsByBucketIndex[fromIndex_].remove(tokenId_);
+
             // track created positions
             bucketIndexesWithPosition.add(toIndex_);
             tokenIdsByBucketIndex[toIndex_].add(tokenId_);
@@ -242,6 +256,11 @@ abstract contract UnboundedPositionsHandler is BasePositionsHandler {
             // get post action QT represented in positionManager for tokenID
             uint256 postActionFromIndexQuote = _getQuoteAtIndex(fromLps, fromIndex_);
             uint256 postActionToIndexQuote   = _getQuoteAtIndex(toLps, toIndex_);
+
+            console.log("preActionFromIndexQuote", preActionFromIndexQuote);
+            console.log("postActionFromIndexQuote", postActionFromIndexQuote);
+            console.log("preActionToIndexQuote", preActionToIndexQuote);
+            console.log("postActionToIndexQuote", postActionToIndexQuote);
 
             // assert total QT represented in positionManager for tokenID postAction is the same as preAction
             assert (preActionFromIndexQuote + preActionToIndexQuote == postActionFromIndexQuote + postActionToIndexQuote);
