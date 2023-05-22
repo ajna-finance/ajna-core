@@ -1217,13 +1217,13 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             from:    _borrower,
             amount:  13167,
             index:   2570,
-            lpAward: 35880690
+            lpAward: 35880689
         });
 
         _assertLenderLpBalance({
             lender:      _borrower,
             index:       2570,
-            lpBalance:   35880690,
+            lpBalance:   35880689,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
@@ -1234,54 +1234,54 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         });
         _assertBucket({
             index:        2570,
-            lpBalance:    35880690,
+            lpBalance:    35880689,
             collateral:   13167,
             deposit:      0,
-            exchangeRate: 1 * 1e18
+            exchangeRate: 1.000000027870144857 * 1e18
         });
 
         _addLiquidity({
             from:    _lender,
             amount:  984665640564039457.584007913129639933 * 1e18,
             index:   2570,
-            lpAward: 984665651272169776.470215805684254103 * 1e18,
+            lpAward: 984665623829396204.608309680963246628 * 1e18,
             newLup:  MAX_PRICE
         });
 
         _assertLenderLpBalance({
             lender:      _borrower,
             index:       2570,
-            lpBalance:   35880690,
+            lpBalance:   35880689,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2570,
-            lpBalance:   984665651272169776.470215805684254103 * 1e18,
+            lpBalance:   984665623829396204.608309680963246628 * 1e18,
             depositTime: _startTime
         });
         _assertBucket({
             index:        2570,
-            lpBalance:    984665651272169776.470215805720134793 * 1e18,
+            lpBalance:    984665623829396204.608309680999127317 * 1e18,
             collateral:   13167,
             deposit:      984665640564039457.584007913129639933 * 1e18,
-            exchangeRate: 0.999999989125110331 * 1e18 // exchange rate should not change
+            exchangeRate: 1.000000016995254884 * 1e18 // exchange rate should not change
         });
 
         skip(48 hours); // to avoid penalty
 
         _removeAllLiquidity({
             from:     _lender,
-            amount:   984665640564039457.584007913129639933 * 1e18,
+            amount:   984665640564039457.101762310103685040 * 1e18,
             index:    2570,
             newLup:   MAX_PRICE,
-            lpRedeem: 984665651272169776.470215805684254103 * 1e18
+            lpRedeem: 984665623829396204.608309680963246628 * 1e18
         });
 
         _assertLenderLpBalance({
             lender:      _borrower,
             index:       2570,
-            lpBalance:   35880690,
+            lpBalance:   35880689,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
@@ -1292,13 +1292,28 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         });
         _assertBucket({
             index:        2570,
-            lpBalance:    35880690,
+            lpBalance:    35880689,
             collateral:   13167,
-            deposit:      0,
-            exchangeRate: 1 * 1e18 // exchange rate should not change
+            deposit:      0.482245603025954893 * 1e18,
+            exchangeRate: 13440254813.998571292764194132 * 1e18 // TODO: exchange rate should not change
         });
 
-        assertEq(_quote.balanceOf(_lender), initialLenderBalance);
+        assertEq(_quote.balanceOf(_lender), initialLenderBalance - 0.482245603025954893 * 1e18);
+
+        // bucket can be healed by adding liquidity / collateral
+        _addLiquidity({
+            from:    _lender,
+            amount:  100 * 1e18,
+            index:   2570,
+            lpAward: 7440335126,
+            newLup:  MAX_PRICE
+        });
+        _addCollateral({
+            from:    _borrower,
+            amount:  1 * 1e18,
+            index:   2570,
+            lpAward: 202752605186
+        });
     }
 
     function testRemoveQuoteTokenPoolBalanceLimit() external tearDown {

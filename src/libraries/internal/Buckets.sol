@@ -112,7 +112,11 @@ library Buckets {
         Math.Rounding rounding_
     ) internal pure returns (uint256 lp_) {
         if (deposit_ == 0 && bucketCollateral_ == 0) {
-            lp_ = Maths.wmul(collateral_, bucketPrice_);
+            if (rounding_ == Math.Rounding.Up) {
+                lp_ = collateral_ * bucketPrice_ / 1e18;
+            } else {
+                lp_ = Maths.floorWmul(collateral_, bucketPrice_);
+            }
         } else {
             lp_ = Math.mulDiv(
                 bucketLP_,

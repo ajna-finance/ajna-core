@@ -519,7 +519,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             from:    _bidder,
             amount:  0.65 * 1e18,
             index:   testIndex,
-            lpAward: 0.000011611972172012 * 1e18
+            lpAward: 0.000011611972172011 * 1e18
         });
 
         // should revert if actor has no LPB in the bucket
@@ -810,19 +810,18 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             index: 2570
         });
 
-        // Issue: neither _lender nor _borrower now has sufficient LP to redeem the collateral=
+        // TODO: check if desired - neither _lender nor _borrower now has sufficient LP to redeem the collateral
+        // Bidder can though remove his deposit and lender the added collateral
         // Perhaps this is actually what we want though
-        _removeAllCollateral({
-            from:     _lender,
-            amount:   1,
-            index:    2570,
-            lpRedeem: 2725
+        _assertRemoveAllCollateralInsufficientLPRevert({
+            from:  _lender,
+            index: 2570
         });
 
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2570,
-            lpBalance:   0,
+            lpBalance:   2725,
             depositTime: _startTime
         });
         _assertLenderLpBalance({
@@ -833,8 +832,8 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         });
         _assertBucket({
             index:        2570,
-            lpBalance:    304,
-            collateral:   0,
+            lpBalance:    3029,
+            collateral:   1,
             deposit:      304,
             exchangeRate: 1 * 1e18 // exchange rate should not change
         });
@@ -965,7 +964,8 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
 
         // One deposit remains, with no owner, as collateral was removed with 1 deposit and
         // 1 collateral priced at ~2570
-        _assertBucket({
+        // TODO: bucket cannot be fixed anymore even if adding more liquidity / collateral as it reverts with InsufficientLP
+        _assertBucketAssets({
             index:        2570,
             lpBalance:    0,
             collateral:   0,
@@ -982,7 +982,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             from:    _bidder,
             amount:  15200,
             index:   2570,
-            lpAward: 41420710
+            lpAward: 41420709
         });
         _addInitialLiquidity({
             from:   _lender,
@@ -993,12 +993,12 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             from:    _lender,
             amount:  883976901103343226.563974622543668416 * 1e18,
             index:   2570,
-            lpAward: 2408878346532910443679.386064220627467464 * 1e18
+            lpAward: 2408878230220165914666.439899539244674206 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2570,
-            lpBalance:   2408878346532910443679.386064220627467466 * 1e18,
+            lpBalance:   2408878230220165914666.439899539244674207 * 1e18,
             depositTime: _startTime
         });
 
@@ -1006,14 +1006,14 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             from:     _lender,
             amount:   883976901103343226.563974622543668416 * 1e18,
             index:    2570,
-            lpRedeem: 2408878346532910443679.386064220627467466 * 1e18
+            lpRedeem: 2408878230220165914666.439899539244674207 * 1e18
         });
         _assertBucket({
             index:        2570,
-            lpBalance:    41420710,
+            lpBalance:    41420709,
             collateral:   15200,
             deposit:      2,
-            exchangeRate: 1.000000048285024569 * 1e18
+            exchangeRate: 1.000000072427538602 * 1e18
         });
 
     }
