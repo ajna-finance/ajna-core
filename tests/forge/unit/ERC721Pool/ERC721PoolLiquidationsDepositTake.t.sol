@@ -265,7 +265,7 @@ contract ERC721PoolLiquidationsDepositTakeTest is ERC721HelperContract {
         _assertLenderLpBalance({
             lender:      _borrower,
             index:       3519,
-            lpBalance:   23.737330323739529014 * 1e18,
+            lpBalance:   23.737330323739529015 * 1e18,
             depositTime: block.timestamp
         });
         _assertBucket({

@@ -112,20 +112,10 @@ library Buckets {
         Math.Rounding rounding_
     ) internal pure returns (uint256) {
         // case when there's no deposit nor collateral in bucket
-        if (deposit_ == 0 && bucketCollateral_ == 0) {
-            if (rounding_ == Math.Rounding.Up) {
-                return Maths.ceilWmul(collateral_, bucketPrice_);
-            }
-            return Maths.floorWmul(collateral_, bucketPrice_);
-        }
+        if (deposit_ == 0 && bucketCollateral_ == 0) return Maths.wmul(collateral_, bucketPrice_);
 
         // case when there's deposit or collateral in bucket but no LP to cover
-        if (bucketLP_ == 0) {
-            if (rounding_ == Math.Rounding.Up) {
-                return Maths.ceilWmul(collateral_, bucketPrice_);
-            }
-            return Maths.floorWmul(collateral_, bucketPrice_);
-        }
+        if (bucketLP_ == 0) return Maths.wmul(collateral_, bucketPrice_);
 
         // case when there's deposit or collateral and bucket has LP balance
         return Math.mulDiv(
