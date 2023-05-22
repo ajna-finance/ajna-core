@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 

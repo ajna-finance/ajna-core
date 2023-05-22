@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { BaseInvariants }                 from '../base/BaseInvariants.sol';
 import { LiquidationInvariants }          from '../base/LiquidationInvariants.t.sol';

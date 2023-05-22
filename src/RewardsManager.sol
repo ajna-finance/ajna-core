@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { IERC20 }          from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { IERC721 }         from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
@@ -443,12 +443,12 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         ) = _getEpochInfo(ajnaPool_, nextEpoch_);
 
         // calculate rewards earned
-        newRewards_ = totalInterestEarnedInPeriod == 0 ? 0 : Maths.wmul(
-            REWARD_FACTOR,
-            Maths.wdiv(
+        newRewards_ = totalInterestEarnedInPeriod == 0 ? 0 : Maths.floorWdiv(
+            Maths.wmul(
                 Maths.wmul(interestEarned_, totalBurnedInPeriod),
-                totalInterestEarnedInPeriod
-            )
+                REWARD_FACTOR
+            ),
+            totalInterestEarnedInPeriod
         );
 
         uint256 rewardsCapped = Maths.wmul(REWARD_CAP, totalBurnedInPeriod);
@@ -457,7 +457,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         if (rewardsClaimedInEpoch_ + newRewards_ > rewardsCapped) {
 
             // set claim reward to difference between cap and reward
-            newRewards_ = rewardsCapped - rewardsClaimedInEpoch_;
+            newRewards_ = rewardsClaimedInEpoch_ > rewardsCapped ? 0 : rewardsCapped - rewardsClaimedInEpoch_;
         }
     }
 
@@ -597,7 +597,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
                 // update total tokens claimed for updating bucket exchange rates tracker
                 if (totalBurnedInEpoch != 0 && (rewardsClaimedInEpoch + updatedRewards_ >= rewardsCap)) {
                     // if update reward is greater than cap, set to remaining difference
-                    updatedRewards_ = rewardsCap - rewardsClaimedInEpoch;
+                    updatedRewards_ = rewardsClaimedInEpoch > rewardsCap ? 0 : rewardsCap - rewardsClaimedInEpoch;
                 }
 
                 // accumulate the full amount of additional rewards
@@ -666,14 +666,19 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
                 // retrieve current deposit of the bucket
                 (, , , uint256 bucketDeposit, ) = IPool(pool_).bucketInfo(bucketIndex_);
 
-                uint256 burnFactor     = Maths.wmul(totalBurned_, bucketDeposit);
-                uint256 interestFactor = interestEarned_ == 0 ? 0 : Maths.wdiv(
-                    Maths.WAD - Maths.wdiv(prevBucketExchangeRate, curBucketExchangeRate),
-                    interestEarned_
-                );
+                uint256 burnFactor = Maths.wmul(totalBurned_, bucketDeposit);
 
                 // calculate rewards earned for updating bucket exchange rate 
-                rewards_ += Maths.wmul(UPDATE_CLAIM_REWARD, Maths.wmul(burnFactor, interestFactor));
+                rewards_ += interestEarned_ == 0 ? 0 : Maths.wdiv(
+                    Maths.wmul(
+                        UPDATE_CLAIM_REWARD,
+                        Maths.wmul(
+                            burnFactor,
+                            curBucketExchangeRate - prevBucketExchangeRate
+                        )
+                    ),
+                    Maths.wmul(curBucketExchangeRate, interestEarned_)
+                );
             }
         }
     }

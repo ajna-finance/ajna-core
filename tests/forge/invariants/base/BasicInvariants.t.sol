@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import "@std/console.sol";
 
@@ -57,7 +57,7 @@ abstract contract BasicInvariants is BaseInvariants {
     /*************************/
 
     /// @dev checks pool lps are equal to sum of all lender lps in a bucket 
-    function _invariant_B1() internal {
+    function _invariant_B1() internal view {
         uint256 actorCount = IBaseHandler(_handler).getActorsCount();
 
         uint256[] memory buckets = IBaseHandler(_handler).getBuckets();
@@ -73,18 +73,18 @@ abstract contract BasicInvariants is BaseInvariants {
 
             (uint256 bucketLps, , , , ) = _pool.bucketInfo(bucketIndex);
 
-            assertEq(bucketLps, totalLps, "Buckets Invariant B1");
+            require(bucketLps == totalLps, "Buckets Invariant B1");
         }
     }
 
     /// @dev checks pool lps are equal to sum of all lender lps in a bucket 
-    function _invariant_B4() internal {
+    function _invariant_B4() internal view {
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             // if bucket bankruptcy occured, then previousBankruptcy should be equal to current timestamp
             if (IBaseHandler(_handler).previousBankruptcy(bucketIndex) == block.timestamp) {
                 (uint256 bucketLps, , , , ) = _pool.bucketInfo(bucketIndex);
 
-                assertEq(bucketLps, 0, "Buckets Invariant B4");
+                require(bucketLps == 0, "Buckets Invariant B4");
             }
         }
     }
@@ -405,7 +405,7 @@ abstract contract BasicInvariants is BaseInvariants {
     }
 
     /// @dev **F4**: For any index i < MAX_FENWICK_INDEX, Deposits.valueAt(findIndexOfSum(prefixSum(i) + 1)) > 0
-    function _invariant_F4() internal {
+    function _invariant_F4() internal view {
         uint256[] memory buckets = IBaseHandler(_handler).getBuckets();
         uint256 maxBucket;
         for (uint256 i = 0; i < buckets.length; i++) {
@@ -418,7 +418,7 @@ abstract contract BasicInvariants is BaseInvariants {
             if (nextNonzeroBucket < maxBucket) {
                 (, , , uint256 depositAtNextNonzeroBucket, ) = _pool.bucketInfo(nextNonzeroBucket);
 
-                assertGe(depositAtNextNonzeroBucket, 0, "F4: incorrect bucket with nonzero deposit");
+                require(depositAtNextNonzeroBucket >= 0, "F4: incorrect bucket with nonzero deposit");
             }
         }
     }
