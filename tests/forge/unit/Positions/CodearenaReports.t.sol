@@ -325,7 +325,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
             from:    testAddress1,
             amount:  883976901103343226.563974622543668416 * 1e18,
             index:   2550,
-            lpAward: 2661558999339261844678.534720637400665212 * 1e18
+            lpAward: 2661558999339261844678.534720637400665211 * 1e18
         });
 
         uint256 tokenId1 = _mintNFT(testAddress1, testAddress1, address(_pool));
@@ -347,7 +347,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
 
         _removeAllCollateral({
             from:     testAddress2,
-            amount:   66425.497336169705758545 * 1e18,
+            amount:   66425.497336169705758544 * 1e18,
             index:    2550,
             lpRedeem: 200000000 * 1e18
         });
@@ -355,7 +355,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         // check from and to positions before move
         (uint256 fromLp, uint256 fromDepositTime) = _positionManager.getPositionInfo(tokenId1, mintIndex);
         (uint256 toLp,   uint256 toDepositTime)   = _positionManager.getPositionInfo(tokenId1, moveIndex);
-        assertEq(fromLp, 2661558999339261847178.534720637400665212 * 1e18);
+        assertEq(fromLp, 2661558999339261847178.534720637400665211 * 1e18);
         assertEq(toLp,   0);
         assertEq(fromDepositTime, block.timestamp);
         assertEq(toDepositTime,   0);
