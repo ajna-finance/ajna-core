@@ -366,7 +366,7 @@ contract PositionManagerCodeArenaTest is PositionManagerERC20PoolHelperContract 
         );
 
         // move liquidity called by testAddress1 owner
-        // This protects LP owner of losing LP because position manager tried to move 2661558999339261847178.534720637400665212 memorialized LP
+        // This protects LP owner of losing LP because position manager tried to move 2661558999339261847178.534720637400665211 memorialized LP
         // but the amount of LP that can be moved (constrained by available max quote token) is only 200002500
         changePrank(address(testAddress1));
         vm.expectRevert(IPositionManagerErrors.RemovePositionFailed.selector);
