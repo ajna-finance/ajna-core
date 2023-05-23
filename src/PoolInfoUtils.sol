@@ -294,7 +294,7 @@ contract PoolInfoUtils {
     {
         IPool pool = IPool(ajnaPool_);
 
-        (uint256 poolDebt,,,)    = pool.debtInfo();
+        (uint256 poolDebt,,,)   = pool.debtInfo();
         uint256 poolCollateral  = pool.pledgedCollateral();
         (, , uint256 noOfLoans) = pool.loansInfo();
 
