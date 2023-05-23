@@ -95,6 +95,8 @@ library KickerActions {
     error AuctionActive();
     error BorrowerOk();
     error InsufficientLiquidity();
+    error InsufficientLP();
+    error InvalidAmount();
     error NoReserves();
     error PriceBelowLUP();
     error ReserveAuctionTooSoon();
@@ -134,6 +136,9 @@ library KickerActions {
      *  @dev   - `Deposits.unscaledRemove` (remove amount in `Fenwick` tree, from index): update `values` array state
      *  @dev   - decrement `lender.lps` accumulator
      *  @dev   - decrement `bucket.lps` accumulator
+     *  @dev    === Reverts on ===
+     *  @dev    insufficient deposit to kick auction `InsufficientLiquidity()`
+     *  @dev    no `LP` redeemed to kick auction `InsufficientLP()`
      *  @dev    === Emit events ===
      *  @dev    - `RemoveQuoteToken`
      *  @return kickResult_ The `KickResult` struct result of the kick action.
@@ -219,11 +224,18 @@ library KickerActions {
             vars.redeemedLP = Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketRate);
 
             uint256 unscaledAmountToRemove = Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketScale);
+
+            // revert if calculated unscaled amount is 0
+            if (unscaledAmountToRemove == 0) revert InsufficientLiquidity();
+
             Deposits.unscaledRemove(deposits_, index_, unscaledAmountToRemove);
             vars.bucketUnscaledDeposit -= unscaledAmountToRemove;
         }
 
-        vars.redeemedLP = Maths.min(lender.lps, vars.redeemedLP);
+        vars.redeemedLP = Maths.min(vars.lenderLP, vars.redeemedLP);
+
+        // revert if LP redeemed amount to kick auction is 0
+        if (vars.redeemedLP == 0) revert InsufficientLP();
 
         uint256 bucketRemainingLP = vars.bucketLP - vars.redeemedLP;
 
