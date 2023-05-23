@@ -726,12 +726,6 @@ library LenderActions {
 
         uint256 depositScale           = Deposits.scale(deposits_, params_.index);
         uint256 scaledDepositAvailable = Maths.wmul(unscaledDepositAvailable, depositScale);
-        uint256 exchangeRate           = Buckets.getExchangeRate(
-            params_.bucketCollateral,
-            params_.bucketLP,
-            scaledDepositAvailable,
-            params_.price
-        );
 
         // Below is pseudocode explaining the logic behind finding the constrained amount of deposit and LPB
         // scaledRemovedAmount is constrained by the scaled maxAmount(in QT), the scaledDeposit constraint, and
@@ -739,7 +733,14 @@ library LenderActions {
         // scaledRemovedAmount = min ( maxAmount_, scaledDeposit, lenderLPBalance*exchangeRate)
         // redeemedLP_ = min ( maxAmount_/scaledExchangeRate, scaledDeposit/exchangeRate, lenderLPBalance)
 
-        uint256 scaledLpConstraint = Maths.wmul(params_.lpConstraint, exchangeRate);
+        uint256 scaledLpConstraint = Buckets.lpToQuoteTokens(
+            params_.bucketCollateral,
+            params_.bucketLP,
+            scaledDepositAvailable,
+            params_.lpConstraint,
+            params_.price,
+            Math.Rounding.Down
+        );
         uint256 unscaledRemovedAmount;
         if (
             params_.depositConstraint < scaledDepositAvailable &&
@@ -773,7 +774,14 @@ library LenderActions {
         } else {
             // redeeming all LP
             redeemedLP_    = params_.lpConstraint;
-            removedAmount_ = Maths.wmul(redeemedLP_, exchangeRate);
+            removedAmount_ = Buckets.lpToQuoteTokens(
+                params_.bucketCollateral,
+                params_.bucketLP,
+                scaledDepositAvailable,
+                redeemedLP_,
+                params_.price,
+                Math.Rounding.Down
+            );
             unscaledRemovedAmount = Maths.wdiv(removedAmount_, depositScale);
         }
 
