@@ -4,7 +4,6 @@ pragma solidity 0.8.18;
 
 import { ERC20 }           from '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import { IERC20 }          from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import { ERC721 }          from '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import { EnumerableSet }   from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import { Multicall }       from '@openzeppelin/contracts/utils/Multicall.sol';
 import { ReentrancyGuard } from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
@@ -39,7 +38,7 @@ import { PositionNFTSVG } from './libraries/external/PositionNFTSVG.sol';
  *          - `redeem` positions for given buckets
  *          - `burn` positions `NFT`
  */
-contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, ReentrancyGuard {
+contract PositionManager is PermitERC721, IPositionManager, Multicall, ReentrancyGuard {
 
     using EnumerableSet for EnumerableSet.UintSet;
     using SafeERC20     for ERC20;
@@ -545,7 +544,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
      */
     function tokenURI(
         uint256 tokenId_
-    ) public view override(ERC721) returns (string memory) {
+    ) public view override returns (string memory) {
         require(_exists(tokenId_));
 
         address collateralTokenAddress = IPool(poolKey[tokenId_]).collateralAddress();
