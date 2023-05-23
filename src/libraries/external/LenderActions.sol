@@ -141,6 +141,7 @@ library LenderActions {
      *  @dev    invalid bucket index `InvalidIndex()`
      *  @dev    same block when bucket becomes insolvent `BucketBankruptcyBlock()`
      *  @dev    no LP awarded in bucket `InsufficientLP()`
+     *  @dev    calculated unscaled amount to add is 0 `InvalidAmount()`
      *  @dev    === Emit events ===
      *  @dev    - `AddQuoteToken`
      */
@@ -187,7 +188,11 @@ library LenderActions {
         // revert if (due to rounding) the awarded LP is 0
         if (bucketLP_ == 0) revert InsufficientLP();
 
-        Deposits.unscaledAdd(deposits_, params_.index, Maths.wdiv(addedAmount, bucketScale));
+        uint256 unscaledAmount = Maths.wdiv(addedAmount, bucketScale);
+        // revert if unscaled amount is 0
+        if (unscaledAmount == 0) revert InvalidAmount();
+
+        Deposits.unscaledAdd(deposits_, params_.index, unscaledAmount);
 
         // update lender LP
         Buckets.addLenderLP(bucket, bankruptcyTime, msg.sender, bucketLP_);
@@ -452,7 +457,7 @@ library LenderActions {
      *  @dev    decrement `bucket.collateral` and `bucket.lps` accumulator
      *  @dev    === Reverts on ===
      *  @dev    not enough collateral `InsufficientCollateral()`
-     *  @dev    insufficient `LP` `InsufficientLP()`
+     *  @dev    no `LP` redeemed `InsufficientLP()`
      *  @dev    === Emit events ===
      *  @dev    - `BucketBankruptcy`
      */
@@ -483,6 +488,9 @@ library LenderActions {
             bucketPrice,
             Math.Rounding.Up
         );
+
+        // revert if (due to rounding) required LP is 0
+        if (lpAmount_ == 0) revert InsufficientLP();
 
         Lender storage lender = bucket.lenders[msg.sender];
 
@@ -557,7 +565,8 @@ library LenderActions {
      *  @dev      increment `lender.lps` accumulator and `lender.depositTime` state
      *  @dev    === Reverts on ===
      *  @dev    invalid merge index `CannotMergeToHigherPrice()`
-     *  @dev    no LP awarded in `toIndex_` bucket `InsufficientLP()`
+     *  @dev    no `LP` awarded in `toIndex_` bucket `InsufficientLP()`
+     *  @dev    no collateral removed from bucket `InvalidAmount()`
      */
     function mergeOrRemoveCollateral(
         mapping(uint256 => Bucket) storage buckets_,
@@ -585,6 +594,9 @@ library LenderActions {
                 collateralRemaining,
                 fromIndex
             );
+
+            // revert if calculated amount of collateral to remove is 0
+            if (collateralRemoved == 0) revert InvalidAmount();
 
             collateralToMerge_ += collateralRemoved;
 
@@ -623,6 +635,7 @@ library LenderActions {
      *  @dev    === Reverts on ===
      *  @dev    not enough collateral `InsufficientCollateral()`
      *  @dev    no claim `NoClaim()`
+     *  @dev    no `LP` redeemed `InsufficientLP()`
      *  @dev    leaves less than dust limit in bucket `DustAmountNotExceeded()`
      *  @dev    === Emit events ===
      *  @dev    - `BucketBankruptcy`
@@ -667,6 +680,9 @@ library LenderActions {
             Math.Rounding.Up
         );
 
+        // revert if (due to rounding) the required LP is 0
+        if (requiredLP == 0) revert InsufficientLP();
+
         // limit withdrawal by the lender's LPB
         if (requiredLP <= lenderLpBalance) {
             // withdraw collateralAmount_ as is
@@ -710,6 +726,9 @@ library LenderActions {
      *  @dev    === Write state ===
      *  @dev    - `Deposits.unscaledRemove` (remove amount in `Fenwick` tree, from index):
      *  @dev      update `values` array state
+     *  @dev    === Reverts on ===
+     *  @dev    no `LP` redeemed `InsufficientLP()`
+     *  @dev    no unscaled amount removed` `InvalidAmount()`
      *  @return removedAmount_     Amount of scaled deposit removed.
      *  @return redeemedLP_        Amount of bucket `LP` corresponding for calculated scaled deposit amount.
      *  @return unscaledRemaining_ Amount of unscaled deposit remaining.
@@ -792,6 +811,11 @@ library LenderActions {
         }
 
         unscaledRemaining_ = unscaledDepositAvailable - unscaledRemovedAmount;
+
+        // revert if (due to rounding) required LP is 0
+        if (redeemedLP_ == 0) revert InsufficientLP();
+        // revert if calculated amount of quote to remove is 0
+        if (unscaledRemovedAmount == 0) revert InvalidAmount();
 
         // update FenwickTree
         Deposits.unscaledRemove(deposits_, params_.index, unscaledRemovedAmount);
