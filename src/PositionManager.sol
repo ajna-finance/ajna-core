@@ -81,6 +81,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
         uint256 bankruptcyTime;   // from bucket bankruptcy time
         uint256 bucketDeposit;    // [WAD] from bucket deposit
         uint256 fromDepositTime;  // lender deposit time in from bucket
+        uint256 fromLP;           // [WAD] the LP memorialized in from position
         uint256 toDepositTime;    // lender deposit time in to bucket
         uint256 maxQuote;         // [WAD] max amount that can be moved from bucket
         uint256 lpbAmountFrom;    // [WAD] the LP redeemed from bucket
@@ -275,6 +276,7 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
 
         MoveLiquidityLocalVars memory vars;
         vars.fromDepositTime = fromPosition.depositTime;
+        vars.fromLP = fromPosition.lps;
 
         // owner attempts to move liquidity from index without LP or they've already moved it
         if (vars.fromDepositTime == 0) revert RemovePositionFailed();
@@ -298,19 +300,10 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             vars.bucketLP,
             vars.bucketCollateral,
             vars.bucketDeposit,
-            fromPosition.lps,
+            vars.fromLP,
             vars.bucketDeposit,
             _priceAt(params_.fromIndex)
         );
-
-        EnumerableSet.UintSet storage positionIndex = positionIndexes[params_.tokenId];
-
-        // remove bucket index from which liquidity is moved from tracked positions
-        if (!positionIndex.remove(params_.fromIndex)) revert RemovePositionFailed();
-
-        // update bucket set at which a position has liquidity
-        // slither-disable-next-line unused-return
-        positionIndex.add(params_.toIndex);
 
         // move quote tokens in pool
         (
@@ -323,21 +316,29 @@ contract PositionManager is ERC721, PermitERC721, IPositionManager, Multicall, R
             params_.expiry
         );
 
+        EnumerableSet.UintSet storage positionIndex = positionIndexes[params_.tokenId];
+
+        // 1. update FROM memorialized position
+        if (!positionIndex.remove(params_.fromIndex)) revert RemovePositionFailed(); // revert if FROM position is not in memorialized indexes
+        if (vars.fromLP != vars.lpbAmountFrom)        revert RemovePositionFailed(); // bucket has collateral and quote therefore LP is not redeemable for full quote token amount
+
+        delete positions[params_.tokenId][params_.fromIndex]; // remove memorialized FROM position
+
+        // 2. update TO memorialized position
+        // slither-disable-next-line unused-return
+        positionIndex.add(params_.toIndex); // record the TO memorialized position
+
         Position storage toPosition = positions[params_.tokenId][params_.toIndex];
-
-        // update position LP state in from bucket
-        fromPosition.lps -= vars.lpbAmountFrom;
-
         vars.toDepositTime = toPosition.depositTime;
 
-        // reset LP in to bucket if bucket went bankrupt after memorialization
+        // reset LP in TO memorialized position if bucket went bankrupt after memorialization
         if (_bucketBankruptAfterDeposit(IPool(params_.pool), params_.toIndex, vars.toDepositTime)) {
             toPosition.lps = vars.lpbAmountTo;
         } else {
             toPosition.lps += vars.lpbAmountTo;
         }
 
-        // update position deposit time with the renewed to bucket deposit time
+        // update TO memorialized position deposit time with the renewed to bucket deposit time
         (, vars.toDepositTime) = IPool(params_.pool).lenderInfo(params_.toIndex, address(this));
         toPosition.depositTime = vars.toDepositTime;
 
