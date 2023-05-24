@@ -2,10 +2,9 @@
 
 pragma solidity 0.8.14;
 
-import { ERC721 }   from '@openzeppelin/contracts/token/ERC721/ERC721.sol';
+import { ERC721 }           from '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import { ECDSA }            from '@openzeppelin/contracts/utils/cryptography/ECDSA.sol';
 import { SignatureChecker } from '@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol';
-
 
 /**
  *  @dev Interface for token permits for ERC-721
@@ -59,7 +58,7 @@ abstract contract PermitERC721 is ERC721, IPermit {
     * @dev Nonces are used to make sure the signature can't be replayed
     * @dev tokenId => nonce
     */
-    mapping(uint256 => uint256) private _nonces;
+    mapping(uint256 => uint256) internal _nonces;
 
     /*****************/
     /*** Constants ***/
