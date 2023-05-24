@@ -1178,7 +1178,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         });
 
         // Some LP shares leftover due to rounding
-        _assertBucketAssets({
+        _assertBucket({
             index:        6502,              // bucket index
             lpBalance:    0,                 // no LP remaining
             collateral:   0,                 // no collateral left in the pool
