@@ -466,12 +466,9 @@ contract RegressionTestReserveEvmRevertERC721Pool is ReserveERC721PoolInvariants
         vm.setEnv("MAX_QUOTE_AMOUNT_ERC721", "1000000000000000000000000");
         vm.setEnv("MIN_COLLATERAL_AMOUNT_ERC721", "1");
         vm.setEnv("MAX_COLLATERAL_AMOUNT_ERC721", "100");
-        vm.setEnv("FOUNDRY_INVARIANT_RUNS", "1");
-        vm.setEnv("FOUNDRY_INVARIANT_DEPTH", "1000");
         vm.setEnv("SKIP_TIME", "300");
         vm.setEnv("SKIP_TIME_TO_KICK", "259200");
         vm.setEnv("SKIP_TIME_TO_KICK_RESERVE", "2592000");
-        vm.setEnv("LOGS_VERBOSITY", "2");
 
         super.setUp();
     }
