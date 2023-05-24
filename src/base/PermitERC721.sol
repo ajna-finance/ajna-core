@@ -166,9 +166,10 @@ abstract contract PermitERC721 is ERC721, IPermit {
         (address recoveredAddress, ) = ECDSA.tryRecover(digest, signature_);
         if (!_checkSignature(digest, signature_, recoveredAddress, tokenId_)) revert NotAuthorized();
 
+        // approve the spender for accessing the tokenId
         _approve(spender_, tokenId_);
 
-        // TODO: should this be moved to an on transfer hook?
+        // increment the permit nonce of the given tokenId
         _incrementNonce(tokenId_);
     }
 
