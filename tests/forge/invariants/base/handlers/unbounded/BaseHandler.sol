@@ -323,9 +323,9 @@ abstract contract BaseHandler is Test {
     /*****************************/
 
     function _ensureQuoteAmount(address actor_, uint256 amount_) internal {
-        uint256 actorBalance = _quote.balanceOf(actor_);
-        if (amount_> actorBalance ) {
-            _quote.mint(actor_, amount_ - actorBalance);
+        uint256 normalizedActorBalance = _quote.balanceOf(actor_) * _pool.quoteTokenScale();
+        if (amount_> normalizedActorBalance) {
+            _quote.mint(actor_, amount_ - normalizedActorBalance);
         }
         _quote.approve(address(_pool), amount_);
     }

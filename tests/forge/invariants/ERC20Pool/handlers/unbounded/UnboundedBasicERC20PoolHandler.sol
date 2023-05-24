@@ -157,9 +157,9 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
     }
 
     function _ensureCollateralAmount(address actor_, uint256 amount_) internal {
-        uint256 actorBalance = _collateral.balanceOf(actor_);
-        if (amount_> actorBalance ) {
-            _collateral.mint(actor_, amount_ - actorBalance);
+        uint256 normalizedActorBalance = _collateral.balanceOf(actor_) * _erc20Pool.collateralScale();
+        if (amount_> normalizedActorBalance ) {
+            _collateral.mint(actor_, amount_ - normalizedActorBalance);
         }
         _collateral.approve(address(_pool), amount_);
     }

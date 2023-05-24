@@ -88,7 +88,7 @@ contract BasicERC20PoolInvariants is BasicInvariants {
         require(_erc20pool.pledgedCollateral() == totalCollateralPledged, "Collateral Invariant CT7");
 
         // convert pool collateral balance into WAD
-        uint256 collateralBalance = _collateral.balanceOf(address(_erc20pool)) * 10**(18 - _collateral.decimals());
+        uint256 normalizedCollateralBalance = _collateral.balanceOf(address(_erc20pool)) * _erc20pool.collateralScale();
         uint256 bucketCollateral;
 
         uint256[] memory buckets = IBaseHandler(_handler).getBuckets();
@@ -99,7 +99,7 @@ contract BasicERC20PoolInvariants is BasicInvariants {
             bucketCollateral += collateral;
         }
 
-        require(collateralBalance >= bucketCollateral + _erc20pool.pledgedCollateral(), "Collateral Invariant CT1");
+        require(normalizedCollateralBalance >= bucketCollateral + _erc20pool.pledgedCollateral(), "Collateral Invariant CT1");
     }
 
 }
