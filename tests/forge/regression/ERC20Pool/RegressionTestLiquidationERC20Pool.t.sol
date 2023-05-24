@@ -1987,7 +1987,7 @@ contract RegressionTestLiquidationWith20BucketsERC20Pool is LiquidationERC20Pool
     }
 }
 
-contract RegressionTestReserveEvmRevertERC721Pool is LiquidationERC20PoolInvariants {
+contract RegressionTestReserveEvmRevertERC720Pool is LiquidationERC20PoolInvariants {
 
     function setUp() public override {
         vm.setEnv("QUOTE_PRECISION", "8");
