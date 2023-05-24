@@ -343,8 +343,8 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         assertEq(_collateral.balanceOf(_borrower),      52);
         assertEq(_collateral.balanceOf(address(_pool)), 0);
 
-        assertEq(_quote.balanceOf(address(_pool)), 30_008.860066921599065131 * 1e18);
-        assertEq(_quote.balanceOf(_borrower),      991.139933078400934869 * 1e18);
+        assertEq(_quote.balanceOf(address(_pool)), 30_008.860066921599065132 * 1e18);
+        assertEq(_quote.balanceOf(_borrower),      991.139933078400934868 * 1e18);
 
         // check pool state after fully repay
         _assertPool(

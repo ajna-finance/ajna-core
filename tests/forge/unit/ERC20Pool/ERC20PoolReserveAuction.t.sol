@@ -111,7 +111,7 @@ contract ERC20PoolReserveAuctionTest is ERC20HelperContract {
 
         assertEq(USDC.balanceOf(address(_pool)),   1_006.443641 * 1e6);
         assertEq(USDC.balanceOf(address(_bidder)), 1.425571 * 1e6);
-        assertEq(AJNA.balanceOf(address(_bidder)), 9.999999998775877665 * 1e18);
+        assertEq(AJNA.balanceOf(address(_bidder)), 9.999999998775877664 * 1e18);
     }
 }
 

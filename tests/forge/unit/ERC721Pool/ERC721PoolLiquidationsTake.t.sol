@@ -758,7 +758,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
             from:             _borrower,
             borrower:         _borrower,
             amountToRepay:    25 * 1e18,
-            amountRepaid:     24.630052245331353428 * 1e18,
+            amountRepaid:     24.630052245331353429 * 1e18,
             collateralToPull: 0,
             newLup:           _priceAt(3696)
         });
@@ -835,9 +835,9 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         );
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              19.630052245331353428 * 1e18,
+            borrowerDebt:              19.630052245331353429 * 1e18,
             borrowerCollateral:        2 * 1e18,
-            borrowert0Np:              8.902861174861655548 * 1e18,
+            borrowert0Np:              8.902861174861655549 * 1e18,
             borrowerCollateralization: 1.010408400292926569 * 1e18
         });
 

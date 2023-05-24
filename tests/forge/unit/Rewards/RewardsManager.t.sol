@@ -346,7 +346,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             borrowAmount: 300 * 1e18,
             limitIndex:   3,
             pool:         address(_pool),
-            tokensToBurn: 81.799082739441001952 * 1e18
+            tokensToBurn: 81.799082739441002012 * 1e18
         });
 
         // call update exchange rate to enable claiming rewards
@@ -354,7 +354,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             updater: _updater,
             pool:    address(_pool),
             indexes: depositIndexes,
-            reward:  4.089954136972050054 * 1e18
+            reward:  4.089954136972050057 * 1e18
         });
 
         // check only deposit owner can claim rewards
@@ -368,7 +368,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:          address(_pool),
             from:          _minterOne,
             tokenId:       tokenIdOne,
-            reward:        40.899541369720500538 * 1e18,
+            reward:        40.899541369720500568 * 1e18,
             epochsClaimed: _epochsClaimedArray(1, 0)
         });
 
@@ -385,13 +385,13 @@ contract RewardsManagerTest is RewardsHelperContract {
             burnEvent:     1,
             rewardsEarned: 0
         });
-        assertEq(_ajnaToken.balanceOf(_minterOne), 40.899541369720500538 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_minterOne), 40.899541369720500568 * 1e18);
 
         _assertBurn({
             pool:             address(_pool),
             epoch:            1,
             timestamp:        block.timestamp - 24 hours,
-            burned:           81.799082739441001952 * 1e18,
+            burned:           81.799082739441002012 * 1e18,
             tokensToBurn:     tokensToBurn,
             interest:         6.443638300196908069 * 1e18
         });
@@ -433,7 +433,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         // first reserve auction happens successfully -> epoch 1
         uint256 tokensToBurn = _triggerReserveAuctions({
             borrower:     _borrower,
-            tokensToBurn: 81.799082739441001952 * 1e18,
+            tokensToBurn: 81.799082739441002012 * 1e18,
             borrowAmount: 300 * 1e18,
             limitIndex:   2_555,
             pool:         address(_pool)
@@ -444,14 +444,14 @@ contract RewardsManagerTest is RewardsHelperContract {
             updater: _updater,
             pool:    address(_pool),
             indexes: depositIndexes,
-            reward:  4.089954136972050054 * 1e18
+            reward:  4.089954136972050057 * 1e18
         });
 
         _assertBurn({
             pool:             address(_pool),
             epoch:            1,
             timestamp:        block.timestamp - 24 hours,
-            burned:           81.799082739441001952 * 1e18,
+            burned:           81.799082739441002012 * 1e18,
             tokensToBurn:     tokensToBurn,
             interest:         6.443638300196908069 * 1e18
         });
@@ -463,7 +463,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             borrowAmount: 300 * 1e18,
             limitIndex:   2555,
             pool:         address(_pool),
-            tokensToBurn: 150.531225765095992625 * 1e18
+            tokensToBurn: 150.531225765095992686 * 1e18
         });
 
         // check owner can withdraw the NFT and rewards will be automatically claimed
@@ -472,7 +472,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:                      address(_pool),
             tokenId:                   tokenIdOne,
             claimedArray:              _epochsClaimedArray(2, 0),
-            reward:                    78.702220033830716622 * 1e18,
+            reward:                    78.702220033830716653 * 1e18,
             indexes:                   depositIndexes,
             updateExchangeRatesReward: 3.436607151282746917 * 1e18
         });
@@ -509,7 +509,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         // first reserve auction happens successfully Staker should receive rewards epoch 0 - 1
         uint256 tokensToBurn = _triggerReserveAuctions({
             borrower: _borrower,
-            tokensToBurn: 81.799082739441001952 * 1e18,
+            tokensToBurn: 81.799082739441002012 * 1e18,
             borrowAmount: 300 * 1e18,
             limitIndex: 2555,
             pool: address(_pool)
@@ -520,7 +520,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             updater: _updater,
             pool:    address(_pool),
             indexes: depositIndexes,
-            reward:  4.089954136972050054 * 1e18
+            reward:  4.089954136972050057 * 1e18
         });
 
         skip(2 weeks);
@@ -537,7 +537,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:             address(_pool),
             epoch:            1,
             timestamp:        block.timestamp - (2 weeks + 26 weeks + 24 hours),
-            burned:           81.799082739441001952 * 1e18,
+            burned:           81.799082739441002012 * 1e18,
             tokensToBurn:     tokensToBurn,
             interest:         6.443638300196908069 * 1e18
         });
@@ -718,7 +718,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             index:        _i9_81,
             lpBalance:    10_000 * 1e18,
             collateral:   0,
-            deposit:      4_936.865539659334888885 * 1e18,
+            deposit:      4_936.865539659334888884 * 1e18,
             exchangeRate: 0.493686553965933489 * 1e18
         });
 
@@ -889,7 +889,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:             address(_pool),
             epoch:            1,
             timestamp:        block.timestamp - 24 hours,
-            burned:           0.283003854923906624 * 1e18,
+            burned:           0.283003854923906684 * 1e18,
             interest:         0.000048562908902619 * 1e18,
             tokensToBurn:     tokensBurned
         });
@@ -903,7 +903,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             from:               _borrower,
             borrower:           _borrower,
             amountToRepay:      debt,
-            amountRepaid:       2001.900281182536528586 * 1e18,
+            amountRepaid:       2001.900281182536528587 * 1e18,
             collateralToPull:   0,
             newLup:             1_004.989662429170775094 * 1e18
         });
@@ -913,9 +913,9 @@ contract RewardsManagerTest is RewardsHelperContract {
             updater:        _updater2,
             pool:           address(_pool),
             indexes:        depositIndex2,
-            reward:         0.021225289119669276 * 1e18
+            reward:         0.021225289119669282 * 1e18
         });
-        assertEq(_ajnaToken.balanceOf(_updater2), 0.021225289119669276 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_updater2), 0.021225289119669282 * 1e18);
 
 
         /*******************************************/
@@ -928,7 +928,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:                      address(_pool),
             tokenId:                   tokenIdOne,
             claimedArray:              _epochsClaimedArray(1, 0),
-            reward:                    0.226403083939125299 * 1e18,
+            reward:                    0.226403083939125347 * 1e18,
             indexes:                   depositIndexes,
             updateExchangeRatesReward: 0
         });
@@ -974,7 +974,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         // bidder takes reserve auctions by providing ajna tokens to be burned
         totalTokensBurned += _triggerReserveAuctions({
             borrower:     _borrower,
-            tokensToBurn: 408.996298826179924309 * 1e18,
+            tokensToBurn: 408.996298826179924310 * 1e18,
             borrowAmount: 1_500 * 1e18,
             limitIndex:   6000,
             pool:         address(_pool)
@@ -990,7 +990,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         assertEq(_ajnaToken.balanceOf(_updater), 20.449814941308995996 * 1e18);
 
         uint256 rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
-        assertEq(rewardsEarned, 204.498149413089959964 * 1e18);
+        assertEq(rewardsEarned, 204.498149413089959965 * 1e18);
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
         /******************************/
@@ -999,7 +999,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         // trigger second reserve auction
         totalTokensBurned += _triggerReserveAuctions({
             borrower:     _borrower,
-            tokensToBurn: 749.938293079403940141 * 1e18,
+            tokensToBurn: 749.938293079403940202 * 1e18,
             borrowAmount: 1_500 * 1e18,
             limitIndex:   6_000,
             pool:         address(_pool)
@@ -1016,7 +1016,7 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         // check available rewards
         rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
-        assertEq(rewardsEarned, 374.969146539701943229 * 1e18);
+        assertEq(rewardsEarned, 374.969146539701943260 * 1e18);
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
         /*****************************/
@@ -1026,7 +1026,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         // trigger third reserve auction
         totalTokensBurned += _triggerReserveAuctions({
             borrower:     _borrower,
-            tokensToBurn: 1_030.321595435443764806 * 1e18,
+            tokensToBurn: 1_030.321595435443764986 * 1e18,
             borrowAmount: 1_500 * 1e18,
             limitIndex:   6_000,
             pool:         address(_pool)
@@ -1034,7 +1034,7 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         // skip updating exchange rates and check available rewards
         uint256 rewardsEarnedNoUpdate = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
-        assertEq(rewardsEarnedNoUpdate, 374.969146539701943229 * 1e18);
+        assertEq(rewardsEarnedNoUpdate, 374.969146539701943260 * 1e18);
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
 
         // snapshot calling update exchange rate
@@ -1045,10 +1045,10 @@ contract RewardsManagerTest is RewardsHelperContract {
             updater:        _updater2,
             pool:           address(_pool),
             indexes:        depositIndexes,
-            reward:         14.019165117801987560 * 1e18
+            reward:         14.019165117801987568 * 1e18
         });
 
-        assertEq(_ajnaToken.balanceOf(_updater2), 14.019165117801987560 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_updater2), 14.019165117801987568 * 1e18);
 
         // check available rewards
         rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
@@ -1065,7 +1065,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         // triger fourth reserve auction
         totalTokensBurned += _triggerReserveAuctions({
             borrower:     _borrower,
-            tokensToBurn: 1_285.690028219559661985 * 1e18,
+            tokensToBurn: 1_285.690028219559662165 * 1e18,
             borrowAmount: 1_500 * 1e18,
             limitIndex:   6_000,
             pool:         address(_pool)
@@ -1073,7 +1073,7 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         // check rewards earned
         rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
-        assertEq(rewardsEarned, 374.969146539701943229 * 1e18);
+        assertEq(rewardsEarned, 374.969146539701943260 * 1e18);
 
         // call update exchange rate
         _updateExchangeRates({
@@ -1086,7 +1086,7 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         // check rewards earned won't increase since previous update was missed
         rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
-        assertEq(rewardsEarned, 374.969146539701943229 * 1e18);
+        assertEq(rewardsEarned, 374.969146539701943260 * 1e18);
 
         /*****************************/
         /*** Fifth Reserve Auction ***/
@@ -1095,7 +1095,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         // triger fifth reserve auction
         totalTokensBurned += _triggerReserveAuctions({
             borrower:     _borrower,
-            tokensToBurn: 1_518.007030973479013742 * 1e18,
+            tokensToBurn: 1_518.007030973479013922 * 1e18,
             borrowAmount: 1_500 * 1e18,
             limitIndex:   6_000,
             pool:         address(_pool)
@@ -1111,7 +1111,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         assertEq(_ajnaToken.balanceOf(_updater2), 11.615850137695965354 * 1e18);
 
         rewardsEarned = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
-        assertEq(rewardsEarned, 491.127647916661596756 * 1e18);
+        assertEq(rewardsEarned, 491.127647916661596787 * 1e18);
 
         // claim all rewards accrued since deposit
         _claimRewards({
@@ -1119,7 +1119,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             from:          _minterOne,
             tokenId:       tokenIdOne,
             epochsClaimed: _epochsClaimedArray(5,0),
-            reward:        491.127647916661596756 * 1e18
+            reward:        491.127647916661596787 * 1e18
         });
         assertEq(_ajnaToken.balanceOf(_minterOne), rewardsEarned);
         assertLt(rewardsEarned, Maths.wmul(totalTokensBurned, 0.800000000000000000 * 1e18));
@@ -1197,7 +1197,7 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         _triggerReserveAuctions({
             borrower:     _borrower,
-            tokensToBurn: 133.010720463154801071 * 1e18,
+            tokensToBurn: 133.010720463154801131 * 1e18,
             borrowAmount: 300 * 1e18,
             limitIndex:   2555,
             pool:         address(_pool)
@@ -1209,24 +1209,24 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:                      address(_pool),
             tokenId:                   tokenIdTwo,
             claimedArray:              _epochsClaimedArray(1, 0),
-            reward:                    39.906143408239864617 * 1e18,
+            reward:                    39.906143408239864635 * 1e18,
             indexes:                   depositIndexes,
-            updateExchangeRatesReward: 6.651023502439549120 * 1e18
+            updateExchangeRatesReward: 6.651023502439549123 * 1e18
         });
 
         uint256 minterTwoBalance = _ajnaToken.balanceOf(_minterTwo);
-        assertEq(minterTwoBalance, 39.906143408239864617 * 1e18);
+        assertEq(minterTwoBalance, 39.906143408239864635 * 1e18);
         _unstakeToken({
             owner:                     _minterThree,
             pool:                      address(_pool),
             tokenId:                   tokenIdThree,
             claimedArray:              _epochsClaimedArray(1, 0),
-            reward:                    33.250240325777047133 * 1e18,
+            reward:                    33.250240325777047148 * 1e18,
             indexes:                   depositIndexes,
             updateExchangeRatesReward: 0
         });
         uint256 minterThreeBalance = _ajnaToken.balanceOf(_minterThree);
-        assertEq(minterThreeBalance, 33.250240325777047133 * 1e18);
+        assertEq(minterThreeBalance, 33.250240325777047148 * 1e18);
 
         assertGt(minterTwoBalance, minterThreeBalance);
     }
@@ -1269,7 +1269,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         // borrower takes actions providing reserves enabling reserve auctions
         uint256 firstTokensToBurn = _triggerReserveAuctions({
             borrower:     _borrower,
-            tokensToBurn: 81.799082739441001952 * 1e18,
+            tokensToBurn: 81.799082739441002012 * 1e18,
             borrowAmount: 300 * 1e18,
             limitIndex:   3,
             pool:         address(_pool)
@@ -1293,7 +1293,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             owner:   _minterTwo,
             tokenId: tokenIdTwo
         });
-        assertEq(_ajnaToken.balanceOf(_minterTwo), 8.154774722201704474 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_minterTwo), 8.154774722201704480 * 1e18);
 
         // calculate rewards earned since exchange rates have been updated
         uint256 idOneRewardsAtOne = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
@@ -1316,7 +1316,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         // conduct second reserve auction
         uint256 secondTokensToBurn = _triggerReserveAuctions({
             borrower:     _borrower,
-            tokensToBurn: 175.885944654845768273 * 1e18,
+            tokensToBurn: 175.885944654845768334 * 1e18,
             borrowAmount: 300 * 1e18,
             limitIndex:   3,
             pool:         address(_pool)
@@ -1374,7 +1374,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             epochsClaimed: _epochsClaimedArray(1,1),
             reward:        idTwoRewardsAtTwo
         });
-        assertEq(_ajnaToken.balanceOf(_minterTwo), 31.661999680215449079 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_minterTwo), 31.661999680215449085 * 1e18);
 
         // check there are no remaining rewards available after claiming
         uint256 remainingRewards = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
@@ -1446,7 +1446,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         // auction one
         uint256 tokensToBurnE1 = _triggerReserveAuctions({
             borrower:     _borrower,
-            tokensToBurn: 81.797607524483578146 * 1e18,
+            tokensToBurn: 81.797607524483578206 * 1e18,
             borrowAmount: 300 * 1e18,
             limitIndex:   2555,
             pool:         address(_pool)
@@ -1456,14 +1456,14 @@ contract RewardsManagerTest is RewardsHelperContract {
             updater:        _updater,
             pool:           address(_pool),
             indexes:        depositIndexes,
-            reward:         4.089880376224170612 * 1e18
+            reward:         4.089880376224170616 * 1e18
         });
 
         _assertBurn({
             pool:             address(_pool),
             epoch:            1,
             timestamp:        block.timestamp - 24 hours,
-            burned:           81.797607524483578146 * 1e18,
+            burned:           81.797607524483578206 * 1e18,
             tokensToBurn:     tokensToBurnE1,
             interest:         6.443638300196908069 * 1e18
         });
@@ -1471,7 +1471,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         // auction two
         uint256 tokensToBurnE2 = _triggerReserveAuctions({
             borrower:     _borrower,
-            tokensToBurn: 308.522250520127764464 * 1e18,
+            tokensToBurn: 308.522250520127764524 * 1e18,
             borrowAmount: 1_000 * 1e18,
             limitIndex:   2555,
             pool:         address(_pool)
@@ -1488,7 +1488,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:             address(_pool),
             epoch:            2,
             timestamp:        block.timestamp - 24 hours,
-            burned:           308.522250520127764464 * 1e18,
+            burned:           308.522250520127764524 * 1e18,
             tokensToBurn:     tokensToBurnE2,
             interest:         23.938554041534910348 * 1e18
         });
@@ -1496,7 +1496,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         // auction three
         uint256 tokensToBurnE3 = _triggerReserveAuctions({
             borrower:     _borrower,
-            tokensToBurn: 676.508959571630871356 * 1e18,
+            tokensToBurn: 676.508959571630871476 * 1e18,
             borrowAmount: 2_000 * 1e18,
             limitIndex:   2555,
             pool:         address(_pool)
@@ -1506,14 +1506,14 @@ contract RewardsManagerTest is RewardsHelperContract {
             updater: _updater,
             pool:    address(_pool),
             indexes: depositIndexes,
-            reward:  18.399335452575174328 * 1e18
+            reward:  18.399335452575174332 * 1e18
         });
 
         _assertBurn({
             pool:             address(_pool),
             epoch:            3,
             timestamp:        block.timestamp - 24 hours,
-            burned:           676.508959571630871356 * 1e18,
+            burned:           676.508959571630871476 * 1e18,
             tokensToBurn:     tokensToBurnE3,
             interest:         52.423541260157607958 * 1e18
         });
@@ -1524,7 +1524,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:                      address(_pool),
             tokenId:                   tokenIdOne,
             claimedArray:              _epochsClaimedArray(3, 0),
-            reward:                    51.499239671312554520 * 1e18,
+            reward:                    51.499239671312554526 * 1e18,
             indexes:                   firstIndexes,   
             updateExchangeRatesReward: 0
         });
@@ -1534,7 +1534,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:                      address(_pool),
             tokenId:                   tokenIdTwo,
             claimedArray:              _epochsClaimedArray(3, 0),
-            reward:                    286.755240114502701127 * 1e18,
+            reward:                    286.755240114502701181 * 1e18,
             indexes:                   secondIndexes,
             updateExchangeRatesReward: 0
         });
@@ -1567,7 +1567,7 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         _triggerReserveAuctions({
             borrower:     _borrower,
-            tokensToBurn: 81.799082739441001952 * 1e18,
+            tokensToBurn: 81.799082739441002012 * 1e18,
             borrowAmount: 300 * 1e18,
             limitIndex:   2555,
             pool:         address(_pool)
@@ -1578,7 +1578,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             updater: _updater,
             pool:    address(_pool),
             indexes: depositIndexes,
-            reward:  4.089954136972050054 * 1e18
+            reward:  4.089954136972050057 * 1e18
         });
 
         // burn rewards manager tokens and leave only 5 tokens available
@@ -1586,7 +1586,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         IERC20Token(address(_ajnaToken)).burn(99_999_990.978586345404952410 * 1e18);
 
         uint256 managerBalance = _ajnaToken.balanceOf(address(_rewardsManager));
-        assertEq(managerBalance, 4.931459517622997536 * 1e18);
+        assertEq(managerBalance, 4.931459517622997533 * 1e18);
 
         // _minterOne unstakes staked position
         _unstakeToken({
@@ -1594,7 +1594,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:                      address(_pool),
             tokenId:                   tokenIdOne,
             claimedArray:              _epochsClaimedArray(1, 0),
-            reward:                    40.899541369720500538 * 1e18,
+            reward:                    40.899541369720500568 * 1e18,
             indexes:                   depositIndexes,
             updateExchangeRatesReward: 0
         });
@@ -1638,7 +1638,8 @@ contract RewardsManagerTest is RewardsHelperContract {
         // allow time to pass for the reserve price to decrease
         skip(72 hours);
 
-        // take reserves is called with 0 ajna being burned due to very low price and low take amount
+        // take reserves is called with 1 ajna being burned due to very low price and low take amount
+        _ajnaToken.approve(address(_pool), type(uint256).max);
         ERC20Pool(address(_pool)).takeReserves(612);
 
         (,, tokensBurned_) = IPool(_pool).burnInfo(IPool(_pool).currentBurnEpoch());
@@ -1688,7 +1689,7 @@ contract RewardsManagerTest is RewardsHelperContract {
 
         uint256 tokensToBurn = _triggerReserveAuctions({
             borrower:     _borrower,
-            tokensToBurn: 81.799082739441001952 * 1e18,
+            tokensToBurn: 81.799082739441002012 * 1e18,
             borrowAmount: 300 * 1e18,
             limitIndex:   2555,
             pool:         address(_pool)
@@ -1699,7 +1700,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             updater: _updater,
             pool:    address(_pool),
             indexes: depositIndexes,
-            reward:  4.089954136972050054 * 1e18
+            reward:  4.089954136972050057 * 1e18
         });
 
         // check owner can withdraw the NFT and rewards will be automatically claimed
@@ -1713,7 +1714,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         IERC20Token(address(_ajnaToken)).burn(99_999_990.978586345404952410 * 1e18);
 
         uint256 managerBalance = _ajnaToken.balanceOf(address(_rewardsManager));
-        assertEq(managerBalance, 4.931459517622997536 * 1e18);
+        assertEq(managerBalance, 4.931459517622997533 * 1e18);
 
         // _minterOne unstakes staked position
         _unstakeToken({
@@ -1721,7 +1722,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:                      address(_pool),
             tokenId:                   tokenIdOne,
             claimedArray:              _epochsClaimedArray(1, 0),
-            reward:                    40.899541369720500538 * 1e18,
+            reward:                    40.899541369720500568 * 1e18,
             indexes:                   depositIndexes,
             updateExchangeRatesReward: 0
         });
@@ -1740,13 +1741,13 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:                       address(_pool),
             tokenId:                    tokenIdOne,
             claimedArray:               _epochsClaimedArray(1, 0),
-            reward:                     40.899541369720500538 * 1e18,
+            reward:                     40.899541369720500568 * 1e18,
             indexes:                    depositIndexes,
             updateExchangeRatesReward:  0
         });
 
         assertEq(PositionManager(address(_positionManager)).ownerOf(tokenIdOne), _minterOne);
-        assertEq(_ajnaToken.balanceOf(_minterOne), 40.899541369720500538 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_minterOne), 40.899541369720500568 * 1e18);
         assertLt(_ajnaToken.balanceOf(_minterOne), tokensToBurn);
 
         // check can't claim rewards twice
@@ -1798,7 +1799,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         // bidder takes reserve auctions by providing ajna tokens to be burned
         uint256 tokensToBurn = _triggerReserveAuctions({
             borrower:     _borrower,
-            tokensToBurn: 81.799082739441001952 * 1e18,
+            tokensToBurn: 81.799082739441002012 * 1e18,
             borrowAmount: 300 * 1e18,
             limitIndex:   3,
             pool:         address(_pool)
@@ -1826,16 +1827,16 @@ contract RewardsManagerTest is RewardsHelperContract {
             updater: _minterOne,
             pool:    address(_pool),
             indexes: firstIndexes,
-            reward:  4.089954136972050054 * 1e18
+            reward:  4.089954136972050057 * 1e18
         });
-        assertEq(_ajnaToken.balanceOf(_minterOne), 4.089954136972050054 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_minterOne), 4.089954136972050057 * 1e18);
 
         // check owner in pool with accrued interest can properly claim rewards
         _claimRewards({
             pool:          address(_pool),
             from:          _minterOne,
             tokenId:       tokenIdOne,
-            reward:        40.899541369720500538 * 1e18,
+            reward:        40.899541369720500568 * 1e18,
             epochsClaimed: _epochsClaimedArray(1, 0)
         });
         assertLt(_ajnaToken.balanceOf(_minterOne), tokensToBurn);

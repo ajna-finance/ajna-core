@@ -1239,7 +1239,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 htp:                  0,
                 lup:                  MAX_PRICE,
                 poolSize:             19_721.271266431727390767 * 1e18,
-                pledgedCollateral:    3_978.965725315792902720 * 1e18,
+                pledgedCollateral:    3_978.965725315792902718 * 1e18,
                 encumberedCollateral: 0,
                 poolDebt:             0,
                 actualUtilization:    0,
@@ -1255,7 +1255,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       2500,
-            lpBalance:   59_951.726875813759978095 * 1e18,
+            lpBalance:   59_951.726875813759972943 * 1e18,
             depositTime: _startTime + 80 hours
         });
         // assert lender1 as a kicker
@@ -1268,7 +1268,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _assertBorrower({
             borrower:                  _borrower1,
             borrowerDebt:              0,
-            borrowerCollateral:        994.725169378126588636 * 1e18,
+            borrowerCollateral:        994.725169378126588635 * 1e18,
             borrowert0Np:              21.020192307692307702 * 1e18,
             borrowerCollateralization: 1 * 1e18
         });
@@ -1289,7 +1289,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
         _assertBorrower({
             borrower:                  _borrower4,
             borrowerDebt:              0,
-            borrowerCollateral:        994.737731304578575592 * 1e18,
+            borrowerCollateral:        994.737731304578575591 * 1e18,
             borrowert0Np:              21.125293269230769068 * 1e18,
             borrowerCollateralization: 1 * 1e18
         });

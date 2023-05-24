@@ -48,7 +48,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         uint256 currentPoolInflator = Maths.wmul(poolInflator, factor);
 
         // Calculate current debt of borrower, rounding up to token precision
-        uint256 currentDebt = Maths.wmul(currentPoolInflator, borrowerT0debt);
+        uint256 currentDebt = Maths.ceilWmul(currentPoolInflator, borrowerT0debt);
         uint256 tokenDebt   = _roundUpToScale(currentDebt, ERC20Pool(address(_pool)).quoteTokenScale());
 
         // mint quote tokens to borrower address equivalent to the current debt

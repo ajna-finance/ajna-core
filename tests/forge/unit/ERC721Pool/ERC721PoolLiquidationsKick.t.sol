@@ -328,7 +328,7 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
             from:             _borrower,
             borrower:         _borrower,
             amountToRepay:    25 * 1e18,
-            amountRepaid:     23.012828827714740289 * 1e18,
+            amountRepaid:     23.012828827714740290 * 1e18,
             collateralToPull: 0,
             newLup:           _priceAt(3696)
         });
