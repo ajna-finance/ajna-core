@@ -77,10 +77,10 @@ contract AuctionsTest is DSTestPlus {
         uint256 reserveAuctionUnclaimed = 1_001 * 1e18;
         uint256 quoteTokenBalance = 11_000 * 1e18;
 
-        assertEq(_claimableReserves(debt, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, quoteTokenBalance),  18_941.999998999000000000 * 1e18);
-        assertEq(_claimableReserves(debt, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, 0),                  7_941.999998999000000000 * 1e18);
+        assertEq(_claimableReserves(debt, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, quoteTokenBalance),  8_998.000000000000000000 * 1e18);
+        assertEq(_claimableReserves(debt, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, 0),                  0);
         assertEq(_claimableReserves(0, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, quoteTokenBalance),     7_996.999998999000000000 * 1e18);
-        assertEq(_claimableReserves(debt, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, Maths.WAD),          7_942.999998999000000000 * 1e18);
+        assertEq(_claimableReserves(debt, poolSize, liquidationBondEscrowed, reserveAuctionUnclaimed, Maths.WAD),          0);
         assertEq(_claimableReserves(debt, 11_000 * 1e18, liquidationBondEscrowed, reserveAuctionUnclaimed, 0),             0);
         assertEq(_claimableReserves(debt, poolSize, 11_000 * 1e18, reserveAuctionUnclaimed, 0),                            0);
         assertEq(_claimableReserves(debt, poolSize, liquidationBondEscrowed, 11_000 * 1e18, 0),                            0);
