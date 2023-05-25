@@ -186,9 +186,15 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
 
         changePrank(_actor3);
         pool.updateInterest();
+        // not enough balance to start new auction
+        vm.expectRevert(IPoolErrors.NoReserves.selector);
+        pool.kickReserveAuction();
+
+        // add tokens to have enough balance to kick new reserves auction
+        pool.addQuoteToken(100, 2572, block.timestamp + 1);
         pool.kickReserveAuction();
         // pool balance diminished by reward given to reserves kicker
-        assertEq(_quote.balanceOf(address(pool)), 938);
+        assertEq(_quote.balanceOf(address(pool)), 1116);
         assertEq(_availableQuoteToken(), 0);
         skip(24 hours);
 
@@ -198,7 +204,7 @@ contract ERC20PoolReserveAuctionNoFundsTest is ERC20HelperContract {
 
         pool.takeReserves(787);
 
-        assertEq(_quote.balanceOf(address(pool)), 151);
+        assertEq(_quote.balanceOf(address(pool)), 1017);
         assertEq(_availableQuoteToken(), 0);
     }
 
