@@ -481,7 +481,9 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
      *  @param  amount_  Amount to transfer from sender.
      */
     function _transferCollateralFrom(address from_, uint256 amount_) internal {
-        IERC20(_getArgAddress(COLLATERAL_ADDRESS)).safeTransferFrom(from_, address(this), amount_ / _getArgUint256(COLLATERAL_SCALE));
+        // Transfer amount in favour of the pool
+        uint256 transferAmount = Maths.ceilDiv(amount_, _getArgUint256(COLLATERAL_SCALE));
+        IERC20(_getArgAddress(COLLATERAL_ADDRESS)).safeTransferFrom(from_, address(this), transferAmount);
     }
 
     /**
