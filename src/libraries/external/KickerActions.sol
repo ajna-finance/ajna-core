@@ -238,7 +238,6 @@ library KickerActions {
             if (unscaledAmountToRemove == 0) revert InsufficientLiquidity();
 
             Deposits.unscaledRemove(deposits_, index_, unscaledAmountToRemove);
-
             vars.bucketUnscaledDeposit -= unscaledAmountToRemove;
         }
 

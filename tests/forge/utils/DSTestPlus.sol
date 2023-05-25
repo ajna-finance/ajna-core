@@ -119,21 +119,8 @@ abstract contract DSTestPlus is Test, IPoolEvents {
         uint256 amount,
         uint256 index
     ) internal {
-        (
-            uint256 bucketLP,
-            uint256 bucketCollateral,
-            ,
-            uint256 bucketDeposit,
-        ) = _pool.bucketInfo(index);
-
-        uint256 lpAmount = Buckets.quoteTokensToLP(
-            bucketCollateral,
-            bucketLP,
-            bucketDeposit,
-            amount,
-            _priceAt(index),
-            Math.Rounding.Down
-        );
+        uint256 quoteTokenScale = IPool(address(_pool)).quoteTokenScale();
+        uint256 lpAmount        = (amount / quoteTokenScale) * quoteTokenScale;
         _addLiquidity(from, amount, index, lpAmount, MAX_PRICE);
     }
 
