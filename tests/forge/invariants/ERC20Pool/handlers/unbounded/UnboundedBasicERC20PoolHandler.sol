@@ -146,8 +146,10 @@ abstract contract UnboundedBasicERC20PoolHandler is UnboundedBasicPoolHandler, B
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBBasicHandler.repayDebt']++;
 
+        (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), _actor);
+
         // ensure actor always has amount of quote to repay
-        _ensureQuoteAmount(_actor, 1e45);
+        _ensureQuoteAmount(_actor, borrowerDebt + 10 * 1e18);
 
         try _erc20Pool.repayDebt(_actor, amountToRepay_, 0, _actor, 7388) {
 
