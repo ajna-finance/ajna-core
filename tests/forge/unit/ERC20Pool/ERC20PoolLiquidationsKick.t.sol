@@ -374,7 +374,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         _kick({
             from:           _lender,
             borrower:       _borrower,
-            debt:           19.720138163278334393 * 1e18,
+            debt:           19.720138163278334394 * 1e18,
             collateral:     2 * 1e18,
             bond:           0.195007546732047806 * 1e18,
             transferAmount: 0

@@ -1184,7 +1184,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
             from:    _lender1,
             amount:  40_000 * 1e18,
             index:   2500,
-            lpAward: 39_980.573029659913838095 * 1e18,
+            lpAward: 39_980.573029659913832943 * 1e18,
             newLup:  3_863.654368867279344664 * 1e18
         });
 

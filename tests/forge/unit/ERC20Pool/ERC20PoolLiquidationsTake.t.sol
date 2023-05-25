@@ -1651,7 +1651,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             from:        _lender,
             borrower:    _borrower2,
             maxDepth:    0,
-            settledDebt: 839.502646350469647166 * 1e18
+            settledDebt: 839.502646350469647165 * 1e18
         });
         _assertReserveAuction({
             reserves:                   0.000073114629046625 * 1e18,
@@ -1703,7 +1703,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             from:        _lender,
             borrower:    _borrower2,
             maxDepth:    5,
-            settledDebt: 7_067.182044030301540258 * 1e18
+            settledDebt: 7_067.182044030301540259 * 1e18
         });
 
         _assertAuction(
@@ -1917,7 +1917,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             from:        _lender,
             borrower:    _borrower2,
             maxDepth:    1,
-            settledDebt: 2_824.753476813975806664 * 1e18
+            settledDebt: 2_824.753476813975806663 * 1e18
         });
 
         // Borrower draws more debt

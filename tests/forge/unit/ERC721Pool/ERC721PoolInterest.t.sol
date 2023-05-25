@@ -191,8 +191,8 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         _approveAndRepayDebt({
             from:             _borrower,
             borrower:         _borrower,
-            amountToRepay:    6_027.190390289235012950 * 1e18,
-            amountRepaid:     6_027.190390289235012950 * 1e18,
+            amountToRepay:    6_027.190390289235012951 * 1e18,
+            amountRepaid:     6_027.190390289235012951 * 1e18,
             collateralToPull: 0,
             newLup:           MAX_PRICE
         });
