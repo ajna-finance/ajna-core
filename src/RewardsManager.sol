@@ -115,29 +115,24 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         uint256 tokenId_,
         uint256 epochToClaim_
     ) external override {
-        _claimRewards({
-            tokenId_: tokenId_,
-            epochToClaim_: epochToClaim_,
-            claimMaxAvailable_: false
-        });
-    }
+        StakeInfo storage stakeInfo = stakes[tokenId_];
 
-    /**
-     *  @inheritdoc IRewardsManagerOwnerActions
-     *  @dev    === Revert on ===
-     *  @dev    not owner `NotOwnerOfDeposit()`
-     *  @dev    already claimed `AlreadyClaimed()`
-     *  @dev    === Emit events ===
-     *  @dev    - `ClaimRewards`
-     */
-    function claimMaxRewards(
-        uint256 tokenId_,
-        uint256 epochToClaim_
-    ) external override {
-        _claimRewards({
-            tokenId_: tokenId_,
-            epochToClaim_: epochToClaim_,
-            claimMaxAvailable_: true
+        if (msg.sender != stakeInfo.owner) revert NotOwnerOfDeposit();
+
+        if (isEpochClaimed[tokenId_][epochToClaim_]) revert AlreadyClaimed();
+
+        uint256 rewardsEarned = _calculateAndClaimAllRewards(
+            stakeInfo,
+            tokenId_,
+            epochToClaim_,
+            true,
+            stakeInfo.ajnaPool
+        );
+
+        // transfer rewards to sender
+        _transferAjnaRewards({
+            rewardsEarned_: rewardsEarned,
+            transferMaxAvailable_: true
         });
     }
 
@@ -486,38 +481,6 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             // set claim reward to difference between cap and reward
             newRewards_ = rewardsCapped - rewardsClaimedInEpoch_;
         }
-    }
-
-    /**
-     *  @notice Claim rewards that have been accumulated by a staked `NFT`.
-     *  @param  tokenId_            `ID` of the staked `LP` `NFT`.
-     *  @param  epochToClaim_       The burn epoch to claim rewards for (rewards calculation starts from the last claimed epoch).
-     *  @param  claimMaxAvailable_  Whether claim only available ajna tokens that may be less than rewardsEarned
-     */
-    function _claimRewards(
-        uint256 tokenId_,
-        uint256 epochToClaim_,
-        bool claimMaxAvailable_
-    ) internal {
-        StakeInfo storage stakeInfo = stakes[tokenId_];
-
-        if (msg.sender != stakeInfo.owner) revert NotOwnerOfDeposit();
-
-        if (isEpochClaimed[tokenId_][epochToClaim_]) revert AlreadyClaimed();
-
-        uint256 rewardsEarned = _calculateAndClaimAllRewards(
-            stakeInfo,
-            tokenId_,
-            epochToClaim_,
-            true,
-            stakeInfo.ajnaPool
-        );
-
-        // transfer rewards to sender
-        _transferAjnaRewards({
-            rewardsEarned_: rewardsEarned,
-            transferMaxAvailable_: claimMaxAvailable_
-        });       
     }
 
     /**

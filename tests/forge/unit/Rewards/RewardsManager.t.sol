@@ -986,17 +986,13 @@ contract RewardsManagerTest is RewardsHelperContract {
         uint256 rewards = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
         assertGt(rewards, managerBalance);
 
-        // should revert when rewards are more than token balance
-        _assertClaimRewardsInsufficientFundsRevert(_minterOne, tokenIdOne);
-
-        // claimMaxRewards should claim all available ajna token in manager
-        _claimMaxRewards({
-            pool:             address(_pool),
-            from:             _minterOne,
-            tokenId:          tokenIdOne,
-            generatedRewards: 40.899541369720500538 * 1e18,
-            claimedRewards:   5 * 1e18,
-            epochsClaimed:    _epochsClaimedArray(1,0)
+        // claimRewards should claim all available ajna token in manager
+        _claimRewards({
+            pool:          address(_pool),
+            from:          _minterOne,
+            tokenId:       tokenIdOne,
+            reward:        40.899541369720500538 * 1e18,
+            epochsClaimed: _epochsClaimedArray(1,0)
         });
 
         // manager balance should be zero after all ajna tokens are claimed
