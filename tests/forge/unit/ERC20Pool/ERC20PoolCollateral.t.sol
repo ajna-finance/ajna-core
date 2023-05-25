@@ -1011,22 +1011,22 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         });
         _addCollateral({
             from:    _lender,
-            amount:  883976901103343226.563974622543668416 * 1e18,
+            amount:  883_976_901_103_343_226.563974622543668416 * 1e18,
             index:   2570,
-            lpAward: 2408878346532910443679.386064220627467464 * 1e18
+            lpAward: 2_408_878_346_532_910_443_679.386064220627467464 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _lender,
             index:       2570,
-            lpBalance:   2408878346532910443679.386064220627467466 * 1e18,
+            lpBalance:   2_408_878_346_532_910_443_679.386064220627467466 * 1e18,
             depositTime: _startTime
         });
 
         _removeAllCollateral({
             from:     _lender,
-            amount:   883976901103343226.563974622543668416 * 1e18,
+            amount:   883_976_901_103_343_226.563974622543668416 * 1e18,
             index:    2570,
-            lpRedeem: 2408878346532910443679.386064220627467466 * 1e18
+            lpRedeem: 2_408_878_346_532_910_443_679.386064220627467466 * 1e18
         });
         _assertBucket({
             index:        2570,
