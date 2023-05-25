@@ -313,7 +313,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         // find pending debt after interest accumulation
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              1_508.860066921599065131 * 1e18,
+            borrowerDebt:              1_508.860066921599065132 * 1e18,
             borrowerCollateral:        3 * 1e18,
             borrowert0Np:              1_051.009615384615385100 * 1e18,
             borrowerCollateralization: 5.986423966420065589 * 1e18

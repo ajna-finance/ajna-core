@@ -945,7 +945,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 kickMomp:          0,
                 totalBondEscrowed: 30_028.846153846153860000 * 1e18,
                 auctionPrice:      0,
-                debtInAuction:     81_114.914934273090436935 * 1e18,
+                debtInAuction:     81_114.914934273090436936 * 1e18,
                 thresholdPrice:    0,
                 neutralPrice:      0
             })
@@ -984,7 +984,7 @@ contract ERC20PoolLiquidationsKickWithDepositTest is ERC20HelperContract {
                 kickMomp:          3_863.654368867279344664 * 1e18,
                 totalBondEscrowed: 30_028.846153846153860000 * 1e18,
                 auctionPrice:      0,
-                debtInAuction:     81_114.914934273090436935 * 1e18,
+                debtInAuction:     81_114.914934273090436936 * 1e18,
                 thresholdPrice:    20.278728733568272609 * 1e18,
                 neutralPrice:      21.125293269230769068 * 1e18
             })
