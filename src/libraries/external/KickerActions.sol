@@ -24,7 +24,7 @@ import {
 }                             from '../../interfaces/pool/commons/IPoolInternals.sol';
 
 import {
-    MAX_PRICE,
+    MAX_NEUTRAL_PRICE,
     _auctionPrice,
     _bondParams,
     _bpf,
@@ -383,9 +383,10 @@ library KickerActions {
         }
 
         // calculate auction params
+        // neutral price is capped at 50 * max pool price
         vars.neutralPrice = Maths.min(
             Maths.wmul(borrower.t0Np, poolState_.inflator),
-            MAX_PRICE
+            MAX_NEUTRAL_PRICE
         );
         // check if NP is not less than price at the limit index provided by the kicker - done to prevent frontrunning kick auction call with a large amount of loan
         // which will make it harder for kicker to earn a reward and more likely that the kicker is penalized

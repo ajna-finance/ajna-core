@@ -136,7 +136,7 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
     function testTakeCalleeDiffersFromSender() external {
  
         // _lender is msg.sender, QT & CT balances pre take
-        assertEq(usdc.balanceOf(_lender), 119_999.999999926999804658 * 1e18);
+        assertEq(usdc.balanceOf(_lender), 119_999.999999926999804657 * 1e18);
         assertEq(weth.balanceOf(_lender), 0);
 
         // callee, _lender1 QT & CT balances pre take
@@ -148,7 +148,7 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
         _ajnaPool.take(_borrower, 1_001 * 1e18, _lender1, new bytes(0));
 
         // _lender is has QT deducted from balance
-        assertEq(usdc.balanceOf(_lender), 119_999.999999926985301196 * 1e18);
+        assertEq(usdc.balanceOf(_lender), 119_999.999999926985301195 * 1e18);
         assertEq(weth.balanceOf(_lender), 0);
 
         // callee, _lender1 receives CT from take

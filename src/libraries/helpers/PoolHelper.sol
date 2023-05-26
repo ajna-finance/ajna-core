@@ -24,6 +24,8 @@ import { Maths }   from '../internal/Maths.sol';
     uint256 constant MIN_PRICE = 99_836_282_890;
     uint256 constant MAX_PRICE = 1_004_968_987.606512354182109771 * 1e18;
 
+    uint256 constant MAX_NEUTRAL_PRICE = 50_248_449_380.325617709105488550 * 1e18; // 50 * MAX_PRICE
+
     /// @dev deposit buffer (extra margin) used for calculating reserves
     uint256 constant DEPOSIT_BUFFER = 1.000000001 * 1e18;
 

@@ -164,6 +164,17 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         uint256 amount
     ) internal override {
         vm.expectEmit(true, true, false, true);
+
+        uint256 transferAmount = Maths.ceilDiv(amount, _pool.quoteTokenScale());
+        emit Transfer(from, to, transferAmount);
+    }
+
+    function _assertQuoteTokenTransferEventDrawDebt(
+        address from,
+        address to,
+        uint256 amount
+    ) internal {
+        vm.expectEmit(true, true, false, true);
         emit Transfer(from, to, amount / _pool.quoteTokenScale());
     }
 
@@ -263,7 +274,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
 
         // borrow quote
         if (amountToBorrow != 0) {
-            _assertQuoteTokenTransferEvent(address(_pool), from, amountToBorrow);
+            _assertQuoteTokenTransferEventDrawDebt(address(_pool), from, amountToBorrow);
         }
 
         ERC20Pool(address(_pool)).drawDebt(borrower, amountToBorrow, limitIndex, collateralToPledge);

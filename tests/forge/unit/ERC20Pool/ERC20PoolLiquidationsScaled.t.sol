@@ -217,11 +217,20 @@ contract ERC20PoolLiquidationsScaledTest is ERC20DSTestPlus {
             if (bucketQuote != 0) _pool.removeQuoteToken(type(uint256).max, startBucketId + i); 
         } 
 
+
+        // check bond transfer amount with rounding
+        (uint256 claimableBond, ) = _pool.kickerInfo(_bidder);
+        uint256 bondTransferAmount = claimableBond / _pool.quoteTokenScale();
+
+        // Rounded down transfer amount
+        uint256 roundingDiff;
+        if ( bondTransferAmount * _pool.quoteTokenScale() < claimableBond ) roundingDiff = 1;
+
         // ensure bidders can still withdraw their bonds
         assertLt(_quote.balanceOf(_bidder), 200_000 * _quoteTokenPrecision);
         changePrank(_bidder);
         _pool.withdrawBonds(_bidder, type(uint256).max);
-        assertEq(_quote.balanceOf(_bidder), 200_000 * _quoteTokenPrecision);
+        assertEq(_quote.balanceOf(_bidder), 200_000 * _quoteTokenPrecision - roundingDiff);
     }
 
     function testLiquidationKickWithDeposit(
