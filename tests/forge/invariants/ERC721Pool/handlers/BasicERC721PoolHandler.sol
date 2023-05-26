@@ -212,12 +212,12 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
         (uint256 debt, uint256 collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
         (uint256 minDebt, , , ) = _poolInfo.poolUtilizationInfo(address(_pool));
 
-        if (boundedAmount_ < minDebt) boundedAmount_ = minDebt + 1;
+        if (boundedAmount_ < minDebt && minDebt < MAX_DEBT_AMOUNT) boundedAmount_ = minDebt + 1;
 
         // 2. pool needs sufficent quote token to draw debt
-        uint256 poolQuoteBalance = _quote.balanceOf(address(_pool));
+        uint256 normalizedPoolBalance = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
 
-        if (boundedAmount_ > poolQuoteBalance) {
+        if (boundedAmount_ > normalizedPoolBalance) {
             _addQuoteToken(boundedAmount_ * 2, LENDER_MAX_BUCKET_INDEX);
         }
 

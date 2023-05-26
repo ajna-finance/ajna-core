@@ -1044,4 +1044,117 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         // borrower should be able to repay and pull collateral
         ERC20Pool(address(_pool)).repayDebt(actor, 120, 1, actor, 7388);
     }
+
+    function test_prototech_collateral_draining() external {
+        address victim   = makeAddr("victim");
+        address attacker = makeAddr("attacker");
+
+        // test setup
+        _mintCollateralAndApproveTokens(victim, 1 * 1e30);
+        _mintQuoteAndApproveTokens(attacker, 1000000000000 * 1e18);
+
+        // victim will have collateral in a bucket
+        _addCollateral({
+            from:    victim,                // victim address
+            amount:  1 * 1e30,              // amount to add, 1 * 1e30
+            index:   6502,                  // bucket index (with low price)
+            lpAward: 8287415.613413 * 1e18  // expected LP award, 8287415.613413 * 1e18
+        });
+
+        // check bucket state and attacker's LP
+        _assertBucket({
+            index:        6502,                     // bucket index
+            lpBalance:    8287415.613413 * 1e18,    // new bucket LP balance
+            collateral:   1 * 1e30,                 // new bucket collateral
+            deposit:      0,                        // no deposits
+            exchangeRate: 1 * 1e18                  // exchange rate is 1 WAD
+        });
+        _assertLenderLpBalance({
+            lender:      victim,                    // victim address
+            index:       6502,                      // bucket index
+            lpBalance:   8287415.613413 * 1e18,     // new LP balance of victim
+            depositTime: _startTime                 // deposit time
+        });
+
+        // attacker starts w/no collateral tokens
+        assertEq(_collateral.balanceOf(attacker), 0);
+
+        // the pool has all the collateral
+        assertEq(_collateral.balanceOf(address(_pool)), 1 * 1e30);
+
+        // attacker just needs a non-zero LP balance--deposit a minimal amount of quote token
+        _addInitialLiquidity({
+            from:   attacker,
+            amount: 1,
+            index:  6502
+        });
+        _assertLenderLpBalance({
+            lender:      attacker,                  // attacker address
+            index:       6502,                      // bucket index
+            lpBalance:   1,                         // new LP balance of attacker
+            depositTime: _startTime                 // deposit time
+        });
+
+        // The attack for 10^8/(6*10^4) iterations
+        uint256 iterations = 1666;
+        for (uint256 i = 1; i <= iterations; i++) {
+            // redeem maximum amount of collateral possible while keeping LP balance
+            // constant due to redemption amount of LP rounding to zero
+            // (10**18 / 2) / 8287415613413 = 60332
+            // no longer possible, reverts if calculated LP are 0
+            changePrank(attacker);
+            vm.expectRevert(IPoolErrors.InsufficientLP.selector);
+            _pool.removeCollateral(60332, 6502);
+
+            // check bucket state and attacker's LP, no change
+            _assertBucket({
+                index:        6502,
+                lpBalance:    8287415.613413 * 1e18 + 1,   // same LP balance as initially
+                collateral:   1 * 1e30,                    // same collateral as initially
+                deposit:      1,                           // still no deposits
+                exchangeRate: 1 * 1e18                     // still 1 WAD
+            });
+            _assertLenderLpBalance({
+                lender:      attacker,                 // attacker address
+                index:       6502,                     // bucket index
+                lpBalance:   1,                        // attacker's LP balance should change but didn't!
+                depositTime: _startTime                // deposit time
+            });
+
+            // attacker doesn't receive collateral
+            assertEq(_collateral.balanceOf(attacker), 0);
+
+            // no collateral removed from pool
+            assertEq(
+                _collateral.balanceOf(address(_pool)),
+                (1 * 1e30) - 0
+            );
+        }
+
+        // remove victim's remaining collateral
+        _removeCollateral({
+            from:     victim,                               // victim address
+            amount:   1 * 1e30,                             // entire collateral
+            index:    6502,                                 // bucket index
+            lpRedeem: 8287415.613413 * 1e18                 // expected LP redeem
+        });
+
+        // Some LP shares leftover due to rounding
+        _assertBucket({
+            index:        6502,              // bucket index
+            lpBalance:    1,                 // attacker's LP remaining
+            collateral:   0,                 // no collateral left in the pool
+            deposit:      1,                 // still no deposits
+            exchangeRate: 1 * 1e18           // exchange rate didn't change
+        });
+
+        // attacker still has their single LP share
+        _assertLenderLpBalance({
+            lender:      attacker,                 // attacker address
+            index:       6502,                     // bucket index
+            lpBalance:   1,                        // attacker's LP remaining
+            depositTime: _startTime                // deposit time
+        });
+    }
+
 }
