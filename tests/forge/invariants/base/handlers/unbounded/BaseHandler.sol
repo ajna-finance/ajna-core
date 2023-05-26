@@ -133,7 +133,7 @@ abstract contract BaseHandler is Test {
         time_ = constrictToRange(time_, 0, vm.envOr("SKIP_TIME", uint256(24 hours)));
         vm.warp(block.timestamp + time_);
 
-        uint256 maxPoolDebt = uint256(vm.envOr("MAX_POOL_DEBT", uint256(1e55)));
+        uint256 maxPoolDebt = uint256(vm.envOr("MAX_POOL_DEBT", uint256(1e45)));
         (uint256 poolDebt, , ,) = _pool.debtInfo();
 
         while (maxPoolDebt < poolDebt) {
