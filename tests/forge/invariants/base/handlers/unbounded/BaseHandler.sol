@@ -142,10 +142,17 @@ abstract contract BaseHandler is Test {
 
             address currentActor = _actor;
 
-            changePrank(maxBorrower);
+            try vm.startPrank(maxBorrower) {
+            } catch {
+                changePrank(maxBorrower);
+            }
+
             _repayBorrowerDebt(maxBorrower, debt);
 
-            changePrank(currentActor);
+            try vm.startPrank(currentActor) {
+            } catch {
+                changePrank(currentActor);
+            }
         }
 
         _;
