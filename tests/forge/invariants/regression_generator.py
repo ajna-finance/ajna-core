@@ -1,3 +1,4 @@
+import re
 filename = 'trace.log'
 
 with open(filename, 'r') as f:
@@ -13,6 +14,7 @@ print('function test_regression_failure() external {')
 for line in lines:
     function_name = line.split("calldata=")[1].split('(')[0]
     args = line.split("args=")[1].replace("[", "(" ).replace("]", ")" )
+    args = re.sub(r"(\s\(\d.*?\))", "", args)
     sequence_call = function_name + args + ";"
     print('    ' + test_handler + '.' + ''.join(sequence_call.splitlines()))
 print('}')
