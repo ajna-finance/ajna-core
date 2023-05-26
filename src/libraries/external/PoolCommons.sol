@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
@@ -366,7 +366,10 @@ library PoolCommons {
             else if (dwatp >= MIN_PRICE) meaningfulDeposit_ = Deposits.prefixSum(deposits_, _indexOf(dwatp));
             else                         meaningfulDeposit_ = Deposits.treeSum(deposits_);
         }
-        meaningfulDeposit_ -= Maths.min(meaningfulDeposit_, t0DebtInAuction_);
+        meaningfulDeposit_ -= Maths.min(
+            meaningfulDeposit_,
+            Maths.wmul(t0DebtInAuction_, inflator_)
+        );
     }
 
     /**********************/

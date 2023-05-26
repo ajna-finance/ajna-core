@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
@@ -44,7 +44,7 @@ abstract contract BaseERC20PoolHandler is BaseHandler {
         MAX_COLLATERAL_AMOUNT = vm.envOr("MAX_COLLATERAL_AMOUNT_ERC20", uint256(1e30));
 
         for (uint256 bucket = LENDER_MIN_BUCKET_INDEX; bucket <= LENDER_MAX_BUCKET_INDEX; bucket++) {
-            collateralBuckets.add(bucket);
+            buckets.add(bucket);
         }
 
         // Tokens

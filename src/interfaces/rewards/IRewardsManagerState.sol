@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 /**
  * @title Rewards Manager State
@@ -76,6 +76,6 @@ struct StakeInfo {
 
 /// @dev Struct holding bucket state at stake time.
 struct BucketState {
-    uint128 lpsAtStakeTime;  // [WAD] LP amount the NFT owner is entitled in current bucket at the time of staking
-    uint128 rateAtStakeTime; // [WAD] current bucket exchange rate at the time of staking
+    uint256 lpsAtStakeTime;  // [WAD] LP amount the NFT owner is entitled in current bucket at the time of staking
+    uint256 rateAtStakeTime; // [WAD] current bucket exchange rate at the time of staking
 }

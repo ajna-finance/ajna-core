@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 
@@ -23,6 +23,9 @@ import { Maths }   from '../internal/Maths.sol';
 
     uint256 constant MIN_PRICE = 99_836_282_890;
     uint256 constant MAX_PRICE = 1_004_968_987.606512354182109771 * 1e18;
+
+    /// @dev deposit buffer (extra margin) used for calculating reserves
+    uint256 constant DEPOSIT_BUFFER = 1.000000001 * 1e18;
 
     /// @dev step amounts in basis points. This is a constant across pools at `0.005`, achieved by dividing `WAD` by `10,000`
     int256 constant FLOAT_STEP_INT = 1.005 * 1e18;
@@ -272,6 +275,7 @@ import { Maths }   from '../internal/Maths.sol';
 
     /**
      *  @notice Calculates claimable reserves within the pool.
+     *  @dev    Claimable reserve auctions and escrowed auction bonds are guaranteed by the pool.
      *  @param  debt_                    Pool's debt.
      *  @param  poolSize_                Pool's deposit size.
      *  @param  totalBondEscrowed_       Total bond escrowed.
@@ -286,9 +290,24 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 reserveAuctionUnclaimed_,
         uint256 quoteTokenBalance_
     ) pure returns (uint256 claimable_) {
-        claimable_ = Maths.wmul(0.995 * 1e18, debt_) + quoteTokenBalance_;
+        uint256 guaranteedFunds = totalBondEscrowed_ + reserveAuctionUnclaimed_;
 
-        claimable_ -= Maths.min(claimable_, poolSize_ + totalBondEscrowed_ + reserveAuctionUnclaimed_);
+        // calculate claimable reserves if there's quote token excess
+        if (quoteTokenBalance_ > guaranteedFunds) {
+            claimable_ = Maths.wmul(0.995 * 1e18, debt_) + quoteTokenBalance_;
+
+            claimable_ -= Maths.min(
+                claimable_,
+                // require 1.0 + 1e-9 deposit buffer (extra margin) for deposits
+                Maths.wmul(DEPOSIT_BUFFER, poolSize_) + guaranteedFunds
+            );
+
+            // incremental claimable reserve should not exceed excess quote in pool
+            claimable_ = Maths.min(
+                claimable_,
+                quoteTokenBalance_ - guaranteedFunds
+            );
+        }
     }
 
     /**

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { Strings } from '@openzeppelin/contracts/utils/Strings.sol';
 import { Base64 }  from '@base64-sol/base64.sol';

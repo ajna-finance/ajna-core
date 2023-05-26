@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
@@ -125,22 +125,14 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
         }
 
         try _erc721Pool.drawDebt(_actor, 0, 0, tokenIds) {
-            (uint256 kickTimeAfter, , , , , ) =_poolInfo.auctionStatus(address(_erc721Pool), _actor);
 
-            // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
-            if (kickTimeBefore != 0 && kickTimeAfter == 0 && borrowerCollateralBefore % 1e18 != 0) {
-                if (auctionPrice < MIN_PRICE) {
-                    collateralBuckets.add(7388);
-                    lenderDepositTime[_actor][7388] = block.timestamp;
-                } else if (auctionPrice > MAX_PRICE) {
-                    collateralBuckets.add(0);
-                    lenderDepositTime[_actor][0] = block.timestamp;
-                } else {
-                    uint256 bucketIndex = _indexOf(auctionPrice);
-                    collateralBuckets.add(bucketIndex);
-                    lenderDepositTime[_actor][bucketIndex] = block.timestamp;
-                }
-            }
+            _recordSettleBucket(
+                _actor,
+                borrowerCollateralBefore,
+                kickTimeBefore,
+                auctionPrice
+            );
+
         } catch (bytes memory err) {
             _ensurePoolError(err);
         }
@@ -170,8 +162,11 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
 
         (uint256 poolDebt, , , ) = _erc721Pool.debtInfo();
 
-        // find bucket to borrow quote token
-        uint256 bucket = _erc721Pool.depositIndex(amount_ + poolDebt) - 1;
+        // find bucket to borrow quote token, return if deposit index is 0
+        uint256 depositIndex = _erc721Pool.depositIndex(amount_ + poolDebt);
+        if (depositIndex == 0) return;
+
+        uint256 bucket = depositIndex - 1;
         uint256 price = _poolInfo.indexToPrice(bucket);
 
         // Pool doesn't have enough deposits to draw debt
@@ -188,11 +183,21 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
 
         (uint256 interestRate, ) = _erc721Pool.interestRateInfo();
 
+        (, uint256 borrowerCollateralBefore, ) = _pool.borrowerInfo(_actor);
+        (uint256 kickTimeBefore, , , , uint256 auctionPrice, ) =_poolInfo.auctionStatus(address(_erc721Pool), _actor);
+
         try _erc721Pool.drawDebt(_actor, amount_, 7388, tokenIds) {
 
             // **RE10**: Reserves increase by origination fee: max(1 week interest, 0.05% of borrow amount), on draw debt
             increaseInReserves += Maths.wmul(
                 amount_, _borrowFeeRate(interestRate)
+            );
+
+            _recordSettleBucket(
+                _actor,
+                borrowerCollateralBefore,
+                kickTimeBefore,
+                auctionPrice
             );
 
         } catch (bytes memory err) {
@@ -212,22 +217,13 @@ abstract contract UnboundedBasicERC721PoolHandler is UnboundedBasicPoolHandler, 
         _ensureQuoteAmount(_actor, 1e45);
 
         try _erc721Pool.repayDebt(_actor, amountToRepay_, 0, _actor, 7388) {
-            (uint256 kickTimeAfter, , , , , ) =_poolInfo.auctionStatus(address(_erc721Pool), _actor);
 
-            // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
-            if (kickTimeBefore != 0 && kickTimeAfter == 0 && borrowerCollateralBefore % 1e18 != 0) {
-                if (auctionPrice < MIN_PRICE) {
-                    collateralBuckets.add(7388);
-                    lenderDepositTime[_actor][7388] = block.timestamp;
-                } else if (auctionPrice > MAX_PRICE) {
-                    collateralBuckets.add(0);
-                    lenderDepositTime[_actor][0] = block.timestamp;
-                } else {
-                    uint256 bucketIndex = _indexOf(auctionPrice);
-                    collateralBuckets.add(bucketIndex);
-                    lenderDepositTime[_actor][bucketIndex] = block.timestamp;
-                }
-            }
+            _recordSettleBucket(
+                _actor,
+                borrowerCollateralBefore,
+                kickTimeBefore,
+                auctionPrice
+            );
 
         } catch (bytes memory err) {
             _ensurePoolError(err);

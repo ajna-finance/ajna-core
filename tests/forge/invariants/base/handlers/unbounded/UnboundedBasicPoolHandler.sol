@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { _depositFeeRate }   from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }             from "src/libraries/internal/Maths.sol";
@@ -92,6 +92,8 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         uint256 fromIndex_,
         uint256 toIndex_
     ) internal updateLocalStateAndPoolInterest {
+        numberOfCalls['UBBasicHandler.moveQuoteToken']++;
+
         ( , , , uint256 fromDeposit, ) = _pool.bucketInfo(fromIndex_);
         fenwickDeposits[fromIndex_] = fromDeposit;
 
@@ -124,6 +126,8 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         uint256 bucketIndex_,
         uint256 amount_
     ) internal updateLocalStateAndPoolInterest {
+        numberOfCalls['UBBasicHandler.increaseLPAllowance']++;
+
         // approve as transferor
         address[] memory transferors = new address[](1);
         transferors[0] = receiver_;
@@ -141,6 +145,8 @@ abstract contract UnboundedBasicPoolHandler is BaseHandler {
         address receiver_,
         uint256 bucketIndex_
     ) internal updateLocalStateAndPoolInterest {
+        numberOfCalls['UBBasicHandler.transferLps']++;
+
         uint256[] memory buckets = new uint256[](1);
         buckets[0] = bucketIndex_;
 

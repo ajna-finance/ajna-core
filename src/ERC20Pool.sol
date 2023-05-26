@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 }    from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -145,6 +145,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
             deposits,
             loans,
             poolState,
+            _availableQuoteToken(),
             borrowerAddress_,
             amountToBorrow_,
             limitIndex_,
@@ -212,8 +213,9 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         PoolState memory poolState = _accruePoolInterest();
 
         // ensure accounting is performed using the appropriate token scale
-        maxQuoteTokenAmountToRepay_ = _roundToScale(maxQuoteTokenAmountToRepay_, _getArgUint256(QUOTE_SCALE));
-        collateralAmountToPull_     = _roundToScale(collateralAmountToPull_,     _bucketCollateralDust(0));
+        if (maxQuoteTokenAmountToRepay_ != type(uint256).max)
+            maxQuoteTokenAmountToRepay_ = _roundToScale(maxQuoteTokenAmountToRepay_, _getArgUint256(QUOTE_SCALE));
+        collateralAmountToPull_         = _roundToScale(collateralAmountToPull_,     _bucketCollateralDust(0));
 
         RepayDebtResult memory result = BorrowerActions.repayDebt(
             auctions,
@@ -325,6 +327,7 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
         (removedAmount_, redeemedLP_) = LenderActions.removeMaxCollateral(
             buckets,
             deposits,
+            _bucketCollateralDust(index_),
             maxAmount_,
             index_
         );
@@ -478,7 +481,9 @@ contract ERC20Pool is FlashloanablePool, IERC20Pool {
      *  @param  amount_  Amount to transfer from sender.
      */
     function _transferCollateralFrom(address from_, uint256 amount_) internal {
-        IERC20(_getArgAddress(COLLATERAL_ADDRESS)).safeTransferFrom(from_, address(this), amount_ / _getArgUint256(COLLATERAL_SCALE));
+        // Transfer amount in favour of the pool
+        uint256 transferAmount = Maths.ceilDiv(amount_, _getArgUint256(COLLATERAL_SCALE));
+        IERC20(_getArgAddress(COLLATERAL_ADDRESS)).safeTransferFrom(from_, address(this), transferAmount);
     }
 
     /**

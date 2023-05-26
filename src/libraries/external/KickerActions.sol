@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
+
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import { PoolType } from '../../interfaces/pool/IPool.sol';
 
@@ -95,6 +97,8 @@ library KickerActions {
     error AuctionActive();
     error BorrowerOk();
     error InsufficientLiquidity();
+    error InsufficientLP();
+    error InvalidAmount();
     error NoReserves();
     error PriceBelowLUP();
     error ReserveAuctionTooSoon();
@@ -134,6 +138,9 @@ library KickerActions {
      *  @dev   - `Deposits.unscaledRemove` (remove amount in `Fenwick` tree, from index): update `values` array state
      *  @dev   - decrement `lender.lps` accumulator
      *  @dev   - decrement `bucket.lps` accumulator
+     *  @dev    === Reverts on ===
+     *  @dev    insufficient deposit to kick auction `InsufficientLiquidity()`
+     *  @dev    no `LP` redeemed to kick auction `InsufficientLP()`
      *  @dev    === Emit events ===
      *  @dev    - `RemoveQuoteToken`
      *  @return kickResult_ The `KickResult` struct result of the kick action.
@@ -219,11 +226,18 @@ library KickerActions {
             vars.redeemedLP = Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketRate);
 
             uint256 unscaledAmountToRemove = Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketScale);
+
+            // revert if calculated unscaled amount is 0
+            if (unscaledAmountToRemove == 0) revert InsufficientLiquidity();
+
             Deposits.unscaledRemove(deposits_, index_, unscaledAmountToRemove);
             vars.bucketUnscaledDeposit -= unscaledAmountToRemove;
         }
 
-        vars.redeemedLP = Maths.min(lender.lps, vars.redeemedLP);
+        vars.redeemedLP = Maths.min(vars.lenderLP, vars.redeemedLP);
+
+        // revert if LP redeemed amount to kick auction is 0
+        if (vars.redeemedLP == 0) revert InsufficientLP();
 
         uint256 bucketRemainingLP = vars.bucketLP - vars.redeemedLP;
 
@@ -323,7 +337,7 @@ library KickerActions {
      *  @dev      increment `auctions count` accumulator
      *  @dev      increment `auctions.totalBondEscrowed` accumulator
      *  @dev      updates auction queue state
-     *  @dev    - `_updateKicker`:
+     *  @dev    - `_updateEscrowedBonds`:
      *  @dev      update `locked` and `claimable` kicker accumulators
      *  @dev    - `Loans.remove`:
      *  @dev      delete borrower from `indices => borrower` address mapping
@@ -398,8 +412,8 @@ library KickerActions {
             vars.neutralPrice
         );
 
-        // update kicker balances and get the difference needed to cover bond (after using any kick claimable funds if any)
-        kickResult_.amountToCoverBond = _updateKicker(auctions_, vars.bondSize);
+        // update escrowed bonds balances and get the difference needed to cover bond (after using any kick claimable funds if any)
+        kickResult_.amountToCoverBond = _updateEscrowedBonds(auctions_, vars.bondSize);
 
         // remove kicked loan from heap
         Loans.remove(loans_, borrowerAddress_, loans_.indices[borrowerAddress_]);
@@ -423,14 +437,15 @@ library KickerActions {
     }
 
     /**
-     *  @notice Updates kicker balances.
+     *  @notice Updates escrowed bonds balances, reuse kicker claimable funds and calculates difference needed to cover new bond.
      *  @dev    === Write state ===
      *  @dev    update `locked` and `claimable` kicker accumulators
+     *  @dev    update `totalBondEscrowed` accumulator
      *  @param  auctions_       Struct for pool auctions state.
      *  @param  bondSize_       Bond size to cover newly kicked auction.
      *  @return bondDifference_ The amount that kicker should send to pool to cover auction bond.
      */
-    function _updateKicker(
+    function _updateEscrowedBonds(
         AuctionsState storage auctions_,
         uint256 bondSize_
     ) internal returns (uint256 bondDifference_){
@@ -441,16 +456,14 @@ library KickerActions {
         uint256 kickerClaimable = kicker.claimable;
 
         if (kickerClaimable >= bondSize_) {
+            // no need to update total bond escrowed as bond is covered by kicker claimable (which is already tracked by accumulator)
             kicker.claimable -= bondSize_;
-
-            // decrement total bond escrowed by bond size 
-            auctions_.totalBondEscrowed -= bondSize_;
         } else {
             bondDifference_  = bondSize_ - kickerClaimable;
             kicker.claimable = 0;
 
-            // decrement total bond escrowed by kicker claimable
-            auctions_.totalBondEscrowed -= kickerClaimable;
+            // increment total bond escrowed by amount needed to cover bond difference
+            auctions_.totalBondEscrowed += bondDifference_;
         }
     }
 
@@ -481,16 +494,13 @@ library KickerActions {
         // record liquidation info
         liquidation.kicker       = msg.sender;
         liquidation.kickTime     = uint96(block.timestamp);
-        liquidation.kickMomp     = uint96(momp_);
-        liquidation.bondSize     = uint160(bondSize_);
-        liquidation.bondFactor   = uint96(bondFactor_);
-        liquidation.neutralPrice = uint96(neutralPrice_);
+        liquidation.kickMomp     = uint96(momp_); // cannot exceed max price enforced by _priceAt() function
+        liquidation.bondSize     = SafeCast.toUint160(bondSize_);
+        liquidation.bondFactor   = SafeCast.toUint96(bondFactor_);
+        liquidation.neutralPrice = SafeCast.toUint96(neutralPrice_);
 
         // increment number of active auctions
         ++auctions_.noOfAuctions;
-
-        // update totalBondEscrowed accumulator
-        auctions_.totalBondEscrowed += bondSize_;
 
         // update auctions queue
         if (auctions_.head != address(0)) {

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { PoolInfoUtils }               from 'src/PoolInfoUtils.sol';
 import { Maths }                       from 'src/libraries/internal/Maths.sol';
@@ -39,7 +39,7 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
         uint256 amountToAdd_,
         uint256 bucketIndex_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BBasicHandler.addCollateral']++;
 
         // Prepare test phase
@@ -54,7 +54,7 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
         uint256 amountToRemove_,
         uint256 bucketIndex_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BBasicHandler.removeCollateral']++;
 
         // Prepare test phase
@@ -72,7 +72,7 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
         uint256 actorIndex_,
         uint256 amountToPledge_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BBasicHandler.pledgeCollateral']++;
 
         // Prepare test phase
@@ -89,7 +89,7 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
         uint256 actorIndex_,
         uint256 amountToPull_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BBasicHandler.pullCollateral']++;
 
         // Prepare test phase
@@ -103,7 +103,7 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
         uint256 actorIndex_,
         uint256 amountToBorrow_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BBasicHandler.drawDebt']++;
 
         // Prepare test phase
@@ -120,7 +120,7 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
         uint256 actorIndex_,
         uint256 amountToRepay_,
         uint256 skippedTime_
-    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BBasicHandler.repayDebt']++;
 
         // Prepare test phase
@@ -179,7 +179,7 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
         (uint256 debt, uint256 collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
         (uint256 minDebt, , , ) = _poolInfo.poolUtilizationInfo(address(_pool));
 
-        if (boundedAmount_ < minDebt) boundedAmount_ = minDebt + 1;
+        if (boundedAmount_ < minDebt && minDebt < MAX_DEBT_AMOUNT) boundedAmount_ = minDebt + 1;
 
         // 2. pool needs sufficent quote token to draw debt
         uint256 poolQuoteBalance = _quote.balanceOf(address(_pool));
@@ -197,7 +197,7 @@ contract BasicERC20PoolHandler is UnboundedBasicERC20PoolHandler, BasicPoolHandl
 
         // repay debt if borrower becomes undercollateralized with new debt at new lup
         if (!_isCollateralized(debt + boundedAmount_, collateral, newLup, _pool.poolType())) {
-            _repayDebt(debt);
+            _repayDebt(type(uint256).max);
 
             (debt, collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
 
