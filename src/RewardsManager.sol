@@ -113,7 +113,8 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
      */
     function claimRewards(
         uint256 tokenId_,
-        uint256 epochToClaim_
+        uint256 epochToClaim_,
+        uint256 minRewardToClaim_
     ) external override {
         StakeInfo storage stakeInfo = stakes[tokenId_];
 
@@ -132,7 +133,8 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         // transfer rewards to sender
         _transferAjnaRewards({
             rewardsEarned_: rewardsEarned,
-            transferMaxAvailable_: true
+            transferMaxAvailable_: true,
+            minRewardToClaim_: minRewardToClaim_
         });
     }
 
@@ -194,7 +196,8 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         // transfer rewards to sender
         _transferAjnaRewards({
             rewardsEarned_: updateReward,
-            transferMaxAvailable_: true
+            transferMaxAvailable_: true,
+            minRewardToClaim_: 0
         });
     }
 
@@ -249,7 +252,8 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         // transfer rewards to sender
         _transferAjnaRewards({
             rewardsEarned_: updateReward,
-            transferMaxAvailable_: true
+            transferMaxAvailable_: true,
+            minRewardToClaim_: 0
         });
     }
 
@@ -782,7 +786,8 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         // transfer rewards to sender
         _transferAjnaRewards({
             rewardsEarned_: rewardsEarned,
-            transferMaxAvailable_: false
+            transferMaxAvailable_: false,
+            minRewardToClaim_: 0
         });
 
         // transfer LP NFT from contract to sender
@@ -795,14 +800,15 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
      *  @dev    It is used to ensure that rewards claimers will be able to claim some portion of the remaining tokens if a claim would exceed the remaining contract balance.
      *  @param rewardsEarned_        Amount of rewards earned by the caller.
      *  @param transferMaxAvailable_ Whether transfer all available balance that may be less than rewardsEarned_
+     *  @param minRewardToClaim_     Minimum rewards to claim
      */
-    function _transferAjnaRewards(uint256 rewardsEarned_, bool transferMaxAvailable_) internal {
+    function _transferAjnaRewards(uint256 rewardsEarned_, bool transferMaxAvailable_, uint256 minRewardToClaim_) internal {
         uint256 ajnaBalance = IERC20(ajnaToken).balanceOf(address(this));
 
         // if contract balance cannot cover rewards earned
         if (rewardsEarned_ > ajnaBalance) {
             // revert if not opt in to give up part of rewards (claim rewards and unstake actions)
-            if (!transferMaxAvailable_) revert InsufficientFunds();
+            if (!transferMaxAvailable_ || minRewardToClaim_ > ajnaBalance) revert InsufficientFunds();
 
             // cap rewards earned to available balance (update bucket exchange and claim max rewards actions)
             rewardsEarned_ = ajnaBalance;

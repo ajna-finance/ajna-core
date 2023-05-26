@@ -10,12 +10,14 @@ interface IRewardsManagerOwnerActions {
     /**
      *  @notice Claim `Ajna` token rewards that have accrued to a staked `LP` `NFT`.
      *  @dev    Updates exchange rates for each bucket the `NFT` is associated with.
-     *  @param  tokenId_      `ID` of the staked `LP` `NFT`.
-     *  @param  epochToClaim_ The burn epoch to claim rewards for.
+     *  @param  tokenId_           `ID` of the staked `LP` `NFT`.
+     *  @param  epochToClaim_      The burn epoch to claim rewards for.
+     *  @param  minRewardToClaim_  Minimum rewards to claim
      */
     function claimRewards(
         uint256 tokenId_,
-        uint256 epochToClaim_
+        uint256 epochToClaim_,
+        uint256 minRewardToClaim_
     ) external;
 
     /**
