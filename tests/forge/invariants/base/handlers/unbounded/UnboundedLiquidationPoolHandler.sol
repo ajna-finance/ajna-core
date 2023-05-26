@@ -94,12 +94,12 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBLiquidationHandler.withdrawBonds']++;
 
-        uint256 balanceBeforeWithdraw = _quote.balanceOf(_actor);
+        uint256 balanceBeforeWithdraw = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
         (uint256 claimableBondBeforeWithdraw, ) = _pool.kickerInfo(_actor);
 
         try _pool.withdrawBonds(kicker_, maxAmount_) {
 
-            uint256 balanceAfterWithdraw            = _quote.balanceOf(_actor);
+            uint256 balanceAfterWithdraw           = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
             (uint256 claimableBondAfterWithdraw, ) = _pool.kickerInfo(_actor);
 
             // **A7** Claimable bonds should be available for withdrawal from pool at any time (bonds are guaranteed by the protocol).
@@ -109,7 +109,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             );
 
             // **A7**: totalBondEscrowed should decrease only when kicker bonds withdrawned 
-            decreaseInBonds += balanceAfterWithdraw - balanceBeforeWithdraw;
+            decreaseInBonds += balanceBeforeWithdraw - balanceAfterWithdraw;
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
@@ -133,8 +133,8 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             uint256 borrowerDebtBeforeTake,
             uint256 borrowerCollateralBeforeTake, 
         ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
-        uint256 totalBondBeforeTake          = _getKickerBond(kicker);
-        uint256 totalBalanceBeforeTake       = _quote.balanceOf(address(_pool)) * 10**(18 - _quote.decimals());
+        uint256 totalBondBeforeTake    = _getKickerBond(kicker);
+        uint256 totalBalanceBeforeTake = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
 
         (uint256 kickTimeBefore, , , , uint256 auctionPrice, )    = _poolInfo.auctionStatus(address(_pool), borrower_);
 
@@ -145,7 +145,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
             (uint256 borrowerDebtAfterTake, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
             uint256 totalBondAfterTake          = _getKickerBond(kicker);
-            uint256 totalBalanceAfterTake       = _quote.balanceOf(address(_pool)) * 10**(18 - _quote.decimals());
+            uint256 totalBalanceAfterTake       = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
 
             if (borrowerDebtBeforeTake > borrowerDebtAfterTake) {
                 // **RE7**: Reserves decrease with debt covered by take.
