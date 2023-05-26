@@ -9,6 +9,7 @@ contract RegressionTestBasicERC20Pool is BasicERC20PoolInvariants {
     function setUp() public override {
         // failures reproduced with 3 active buckets
         vm.setEnv("NO_OF_BUCKETS", "3");
+        vm.setEnv("BUCKET_INDEX_ERC20", "2570");
         super.setUp();
     }
 

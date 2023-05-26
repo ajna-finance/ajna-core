@@ -721,14 +721,14 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             from:    _lender1,
             amount:  100 * 1e18,
             index:   _i9_91,
-            lpAward: 99.367201799558744045 * 1e18,
+            lpAward: 99.367201799558744044 * 1e18,
             newLup:  9.721295865031779605 * 1e18
         });
 
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       _i9_91,
-            lpBalance:   99.367201799558744045 * 1e18,
+            lpBalance:   99.367201799558744044 * 1e18,
             depositTime: _startTime + 100 days + 10 hours
         });
 
@@ -756,7 +756,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
         // LP forfeited when forgive bad debt should be reflected in BucketBankruptcy event
         vm.expectEmit(true, true, false, true);
-        emit BucketBankruptcy(_i9_91, 2_099.367201799558744045 * 1e18);
+        emit BucketBankruptcy(_i9_91, 2_099.367201799558744044 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit BucketBankruptcy(_i9_81, 5_000 * 1e18);
         _settle({
@@ -984,14 +984,14 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             from:    _lender1,
             amount:  100 * 1e18,
             index:   _i9_91,
-            lpAward: 99.367201799558744045 * 1e18,
+            lpAward: 99.367201799558744044 * 1e18,
             newLup:  9.721295865031779605 * 1e18
         });
 
         _assertLenderLpBalance({
             lender:      _lender1,
             index:       _i9_91,
-            lpBalance:   99.367201799558744045 * 1e18,
+            lpBalance:   99.367201799558744044 * 1e18,
             depositTime: _startTime + 100 days + 10 hours
         });
 
@@ -1030,7 +1030,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
         _assertBucket({
             index:        _i9_91,
-            lpBalance:    2_099.367201799558744045 * 1e18,
+            lpBalance:    2_099.367201799558744044 * 1e18,
             collateral:   0,
             deposit:      bucket1Deposit,
             exchangeRate: 1.006368280367980192 * 1e18
@@ -1046,7 +1046,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
         // LP forfeited when forgive bad debt should be reflected in BucketBankruptcy event
         vm.expectEmit(true, true, false, true);
-        emit BucketBankruptcy(_i9_91, 2_099.367201799558744045 * 1e18);
+        emit BucketBankruptcy(_i9_91, 2_099.367201799558744044 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit BucketBankruptcy(_i9_81, 7_020.307252493359351054 * 1e18);
         _settle({
