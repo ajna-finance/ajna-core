@@ -275,6 +275,7 @@ import { Maths }   from '../internal/Maths.sol';
 
     /**
      *  @notice Calculates claimable reserves within the pool.
+     *  @dev    Claimable reserve auctions and escrowed auction bonds are guaranteed by the pool.
      *  @param  debt_                    Pool's debt.
      *  @param  poolSize_                Pool's deposit size.
      *  @param  totalBondEscrowed_       Total bond escrowed.
@@ -289,13 +290,24 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 reserveAuctionUnclaimed_,
         uint256 quoteTokenBalance_
     ) pure returns (uint256 claimable_) {
-        claimable_ = Maths.wmul(0.995 * 1e18, debt_) + quoteTokenBalance_;
+        uint256 guaranteedFunds = totalBondEscrowed_ + reserveAuctionUnclaimed_;
 
-        claimable_ -= Maths.min(
-            claimable_,
-            // require 1.0 + 1e-9 deposit buffer (extra margin) for deposits
-            Maths.wmul(DEPOSIT_BUFFER, poolSize_) + totalBondEscrowed_ + reserveAuctionUnclaimed_
-        );
+        // calculate claimable reserves if there's quote token excess
+        if (quoteTokenBalance_ > guaranteedFunds) {
+            claimable_ = Maths.wmul(0.995 * 1e18, debt_) + quoteTokenBalance_;
+
+            claimable_ -= Maths.min(
+                claimable_,
+                // require 1.0 + 1e-9 deposit buffer (extra margin) for deposits
+                Maths.wmul(DEPOSIT_BUFFER, poolSize_) + guaranteedFunds
+            );
+
+            // incremental claimable reserve should not exceed excess quote in pool
+            claimable_ = Maths.min(
+                claimable_,
+                quoteTokenBalance_ - guaranteedFunds
+            );
+        }
     }
 
     /**

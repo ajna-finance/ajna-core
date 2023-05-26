@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.18;
 
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+
 import { PoolType } from '../../interfaces/pool/IPool.sol';
 
 import {
@@ -492,10 +494,10 @@ library KickerActions {
         // record liquidation info
         liquidation.kicker       = msg.sender;
         liquidation.kickTime     = uint96(block.timestamp);
-        liquidation.kickMomp     = uint96(momp_);
-        liquidation.bondSize     = uint160(bondSize_);
-        liquidation.bondFactor   = uint96(bondFactor_);
-        liquidation.neutralPrice = uint96(neutralPrice_);
+        liquidation.kickMomp     = uint96(momp_); // cannot exceed max price enforced by _priceAt() function
+        liquidation.bondSize     = SafeCast.toUint160(bondSize_);
+        liquidation.bondFactor   = SafeCast.toUint96(bondFactor_);
+        liquidation.neutralPrice = SafeCast.toUint96(neutralPrice_);
 
         // increment number of active auctions
         ++auctions_.noOfAuctions;
