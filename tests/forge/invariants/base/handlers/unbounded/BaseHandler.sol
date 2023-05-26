@@ -133,33 +133,21 @@ abstract contract BaseHandler is Test {
         time_ = constrictToRange(time_, 0, vm.envOr("SKIP_TIME", uint256(24 hours)));
         vm.warp(block.timestamp + time_);
 
-        uint256 maxPoolDebt = uint256(vm.envOr("MAX_POOL_DEBT", uint256(1e45)));
+        // repay max loan if pool debt exceeds configured max debt
+        uint256 maxPoolDebt = uint256(vm.envOr("MAX_POOL_DEBT", uint256(1e55)));
         (uint256 poolDebt, , ,) = _pool.debtInfo();
+        if (maxPoolDebt < poolDebt) {
+            (address maxBorrower, , ) = _pool.loansInfo();
+            (uint256 debt,,) = _poolInfo.borrowerInfo(address(_pool), maxBorrower);
 
-        while (maxPoolDebt < poolDebt) {
+            address currentActor = _actor;
 
-            (address borrower, , ) = _pool.loansInfo();
+            changePrank(maxBorrower);
+            _repayBorrowerDebt(maxBorrower, debt);
 
-            // if prank already started in test then use change prank to change actor
-            try vm.startPrank(borrower) {
-            } catch {
-                changePrank(borrower);
-            }
-
-            (uint256 debt,,) = _poolInfo.borrowerInfo(address(_pool), borrower);
-
-            uint256 repayAmount = Maths.min(debt, poolDebt - maxPoolDebt);
-
-            _repayBorrowerDebt(borrower, repayAmount);
-
-            (poolDebt, , ,) = _pool.debtInfo();
+            changePrank(currentActor);
         }
 
-        // start prank for actor
-        try vm.startPrank(_actor) {
-        } catch {
-            changePrank(_actor);
-        }
         _;
     }
 
@@ -319,6 +307,12 @@ abstract contract BaseHandler is Test {
     modifier useRandomActor(uint256 actorIndex_) {
         _actor = actors[constrictToRange(actorIndex_, 0, actors.length - 1)];
 
+        // if prank already started in test then use change prank to change actor
+        try vm.startPrank(_actor) {
+        } catch {
+            changePrank(_actor);
+        }
+
         _;
 
     }
@@ -348,7 +342,7 @@ abstract contract BaseHandler is Test {
         if (amount_> normalizedActorBalance) {
             _quote.mint(actor_, amount_ - normalizedActorBalance);
         }
-        _quote.approve(address(_pool), amount_);
+        _quote.approve(address(_pool), _quote.balanceOf(actor_));
     }
 
     function _updatePoolState() internal {
