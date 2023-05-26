@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.18;
 
+import { Math } from '@openzeppelin/contracts/utils/math/Math.sol';
+
 import {
     AddQuoteParams,
     MoveQuoteParams,
@@ -179,7 +181,8 @@ library LenderActions {
             bucket.lps,
             bucketDeposit,
             addedAmount,
-            bucketPrice
+            bucketPrice,
+            Math.Rounding.Down
         );
 
         // revert if (due to rounding) the awarded LP is 0
@@ -294,7 +297,8 @@ library LenderActions {
             toBucket.lps,
             vars.toBucketDeposit,
             movedAmount_,
-            vars.toBucketPrice
+            vars.toBucketPrice,
+            Math.Rounding.Down
         );
 
         // revert if (due to rounding) the awarded LP in to bucket is 0
@@ -400,6 +404,7 @@ library LenderActions {
         removeParams.dustLimit         = poolState_.quoteDustLimit;
 
         uint256 unscaledRemaining;
+
         (removedAmount_, redeemedLP_, unscaledRemaining) = _removeMaxDeposit(
             deposits_,
             removeParams
@@ -480,7 +485,8 @@ library LenderActions {
             bucketLP,
             bucketDeposit,
             amount_,
-            bucketPrice
+            bucketPrice,
+            Math.Rounding.Up
         );
 
         // revert if (due to rounding) required LP is 0
@@ -670,7 +676,8 @@ library LenderActions {
             bucketLP,
             bucketDeposit,
             collateralAmount_,
-            bucketPrice
+            bucketPrice,
+            Math.Rounding.Up
         );
 
         // revert if (due to rounding) the required LP is 0
@@ -682,7 +689,7 @@ library LenderActions {
             lpAmount_ = requiredLP;
         } else {
             lpAmount_         = lenderLpBalance;
-            collateralAmount_ = Maths.wdiv(Maths.wmul(lenderLpBalance, collateralAmount_), requiredLP);
+            collateralAmount_ = Math.mulDiv(lenderLpBalance, collateralAmount_, requiredLP);
 
             if (collateralAmount_ == 0) revert InsufficientLP();
         }
@@ -738,12 +745,6 @@ library LenderActions {
 
         uint256 depositScale           = Deposits.scale(deposits_, params_.index);
         uint256 scaledDepositAvailable = Maths.wmul(unscaledDepositAvailable, depositScale);
-        uint256 exchangeRate           = Buckets.getExchangeRate(
-            params_.bucketCollateral,
-            params_.bucketLP,
-            scaledDepositAvailable,
-            params_.price
-        );
 
         // Below is pseudocode explaining the logic behind finding the constrained amount of deposit and LPB
         // scaledRemovedAmount is constrained by the scaled maxAmount(in QT), the scaledDeposit constraint, and
@@ -751,7 +752,14 @@ library LenderActions {
         // scaledRemovedAmount = min ( maxAmount_, scaledDeposit, lenderLPBalance*exchangeRate)
         // redeemedLP_ = min ( maxAmount_/scaledExchangeRate, scaledDeposit/exchangeRate, lenderLPBalance)
 
-        uint256 scaledLpConstraint = Maths.wmul(params_.lpConstraint, exchangeRate);
+        uint256 scaledLpConstraint = Buckets.lpToQuoteTokens(
+            params_.bucketCollateral,
+            params_.bucketLP,
+            scaledDepositAvailable,
+            params_.lpConstraint,
+            params_.price,
+            Math.Rounding.Down
+        );
         uint256 unscaledRemovedAmount;
         if (
             params_.depositConstraint < scaledDepositAvailable &&
@@ -759,17 +767,40 @@ library LenderActions {
         ) {
             // depositConstraint is binding constraint
             removedAmount_ = params_.depositConstraint;
-            redeemedLP_    = Maths.wdiv(removedAmount_, exchangeRate);
+            redeemedLP_    = Buckets.quoteTokensToLP(
+                params_.bucketCollateral,
+                params_.bucketLP,
+                scaledDepositAvailable,
+                removedAmount_,
+                params_.price,
+                Math.Rounding.Up
+            );
+            redeemedLP_ = Maths.min(redeemedLP_, params_.lpConstraint);
             unscaledRemovedAmount = Maths.wdiv(removedAmount_, depositScale);
         } else if (scaledDepositAvailable < scaledLpConstraint) {
             // scaledDeposit is binding constraint
             removedAmount_ = scaledDepositAvailable;
-            redeemedLP_    = Maths.wdiv(removedAmount_, exchangeRate);
+            redeemedLP_    = Buckets.quoteTokensToLP(
+                params_.bucketCollateral,
+                params_.bucketLP,
+                scaledDepositAvailable,
+                removedAmount_,
+                params_.price,
+                Math.Rounding.Up
+            );
+            redeemedLP_ = Maths.min(redeemedLP_, params_.lpConstraint);
             unscaledRemovedAmount = unscaledDepositAvailable;
         } else {
             // redeeming all LP
             redeemedLP_    = params_.lpConstraint;
-            removedAmount_ = Maths.wmul(redeemedLP_, exchangeRate);
+            removedAmount_ = Buckets.lpToQuoteTokens(
+                params_.bucketCollateral,
+                params_.bucketLP,
+                scaledDepositAvailable,
+                redeemedLP_,
+                params_.price,
+                Math.Rounding.Down
+            );
             unscaledRemovedAmount = Maths.wdiv(removedAmount_, depositScale);
         }
 

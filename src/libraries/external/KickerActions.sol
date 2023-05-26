@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.18;
 
+import { Math }     from '@openzeppelin/contracts/utils/math/Math.sol';
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import { PoolType } from '../../interfaces/pool/IPool.sol';
@@ -73,7 +74,6 @@ library KickerActions {
         uint256 bucketDeposit;            // [WAD] amount of quote tokens in bucket
         uint256 bucketLP;                 // [WAD] LP of the bucket
         uint256 bucketPrice;              // [WAD] bucket price
-        uint256 bucketRate;               // [WAD] bucket exchange rate
         uint256 bucketScale;              // [WAD] bucket scales
         uint256 bucketUnscaledDeposit;    // [WAD] unscaled amount of quote tokens in bucket
         uint256 lenderLP;                 // [WAD] LP of lender in bucket
@@ -171,16 +171,16 @@ library KickerActions {
         vars.bucketScale           = Deposits.scale(deposits_, index_);
         vars.bucketDeposit         = Maths.wmul(vars.bucketUnscaledDeposit, vars.bucketScale);
 
-        // calculate max amount that can be removed (constrained by lender LP in bucket, bucket deposit and the amount lender wants to remove)
-        vars.bucketRate = Buckets.getExchangeRate(
+        // calculate amount to remove based on lender LP in bucket
+        vars.amountToDebitFromDeposit = Buckets.lpToQuoteTokens(
             vars.bucketCollateral,
             vars.bucketLP,
             vars.bucketDeposit,
-            vars.bucketPrice
+            vars.lenderLP,
+            vars.bucketPrice,
+            Math.Rounding.Down
         );
 
-        // calculate amount to remove based on lender LP in bucket
-        vars.amountToDebitFromDeposit = Maths.wmul(vars.lenderLP, vars.bucketRate);
         // cap the amount to remove at bucket deposit
         if (vars.amountToDebitFromDeposit > vars.bucketDeposit) vars.amountToDebitFromDeposit = vars.bucketDeposit;
 
@@ -224,7 +224,14 @@ library KickerActions {
             vars.bucketUnscaledDeposit = 0;
 
         } else {
-            vars.redeemedLP = Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketRate);
+            vars.redeemedLP = Buckets.quoteTokensToLP(
+                vars.bucketCollateral,
+                vars.bucketLP,
+                vars.bucketDeposit,
+                vars.amountToDebitFromDeposit,
+                vars.bucketPrice,
+                Math.Rounding.Up
+            );
 
             uint256 unscaledAmountToRemove = Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketScale);
 
