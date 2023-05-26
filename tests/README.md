@@ -64,6 +64,7 @@ Invariant test scenarios can be externally configured by customizing following e
 | BUCKET_INDEX_ERC721 | ERC721 | 850 | First bucket index to be used in ERC721 pool actions |
 | MIN_DEBT_AMOUNT | ERC20 ERC721 | 0 | The min amount of debt that can be taken in a single pool action |
 | MAX_DEBT_AMOUNT | ERC20 ERC721 | 1e28 | The max amount of debt that can be taken in a single pool action |
+| MAX_POOL_DEBT | ERC20 ERC721 | 1e55 | The max amount of debt that can be taken from the pool. If debt goes above this amount, borrower debt will be repaid |
 | SKIP_TIME | ERC20 ERC721 | 24 hours | The upper limit of time that can be skipped after a pool action (fuzzed) |
 | SKIP_TIME_TO_KICK | ERC20 ERC721 | 200 days | The time to be skipped and drive a new loan undercollateralized. Use a big value to ensure a successful kick |
 | SKIP_TIME_TO_KICK_RESERVE | ERC20 ERC721 | 24 hours | The time to be skipped after `kickReserveAuction` to decrease aution price |

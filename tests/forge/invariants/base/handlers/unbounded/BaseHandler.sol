@@ -133,6 +133,33 @@ abstract contract BaseHandler is Test {
         time_ = constrictToRange(time_, 0, vm.envOr("SKIP_TIME", uint256(24 hours)));
         vm.warp(block.timestamp + time_);
 
+        uint256 maxPoolDebt = uint256(vm.envOr("MAX_POOL_DEBT", uint256(1e55)));
+        (uint256 poolDebt, , ,) = _pool.debtInfo();
+
+        while (maxPoolDebt < poolDebt) {
+
+            (address borrower, , ) = _pool.loansInfo();
+
+            // if prank already started in test then use change prank to change actor
+            try vm.startPrank(borrower) {
+            } catch {
+                changePrank(borrower);
+            }
+
+            (uint256 debt,,) = _poolInfo.borrowerInfo(address(_pool), borrower);
+
+            uint256 repayAmount = Maths.min(debt, poolDebt - maxPoolDebt);
+
+            _repayBorrowerDebt(borrower, repayAmount);
+
+            (poolDebt, , ,) = _pool.debtInfo();
+        }
+
+        // start prank for actor
+        try vm.startPrank(_actor) {
+        } catch {
+            changePrank(_actor);
+        }
         _;
     }
 
@@ -292,12 +319,6 @@ abstract contract BaseHandler is Test {
     modifier useRandomActor(uint256 actorIndex_) {
         _actor = actors[constrictToRange(actorIndex_, 0, actors.length - 1)];
 
-        // if prank already started in test then use change prank to change actor
-        try vm.startPrank(_actor) {
-        } catch {
-            changePrank(_actor);
-        }
-
         _;
 
     }
@@ -341,6 +362,8 @@ abstract contract BaseHandler is Test {
     function _getKickReserveTime() internal returns (uint256) {
         return vm.envOr("SKIP_TIME_TO_KICK_RESERVE", uint256(24 hours));
     }
+
+    function _repayBorrowerDebt(address borrower_, uint256 amount_) internal virtual;
 
     /**
      * @dev Ensure that error is an Pool expected error.

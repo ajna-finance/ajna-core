@@ -93,4 +93,12 @@ abstract contract BaseERC721PoolHandler is BaseHandler {
         return actorsAddress;
     }
 
+    function _repayBorrowerDebt(address borrower_, uint256 amount_) internal override {
+        try _erc721Pool.repayDebt(borrower_, amount_, 0, borrower_, 7388) {
+
+        } catch (bytes memory err) {
+            _ensurePoolError(err);
+        }
+    }
+
 }
