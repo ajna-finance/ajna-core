@@ -493,7 +493,9 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             positionManager.getPositionIndexes(tokenId_)
         );
 
-        rewardsEarned += _calculateAndClaimRewards(tokenId_, epochToClaim_);
+        if (!isEpochClaimed[tokenId_][epochToClaim_]) {
+            rewardsEarned += _calculateAndClaimRewards(tokenId_, epochToClaim_);
+        }
 
         uint256[] memory burnEpochsClaimed = _getBurnEpochsClaimed(
             stakeInfo_.lastClaimedEpoch,
@@ -741,26 +743,14 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         address ajnaPool = stakeInfo.ajnaPool;
 
         if (claimRewards_) {
-            // claim rewards, if rewards are available, and they haven't already been claimed
-            uint256 epochToClaim = IPool(ajnaPool).currentBurnEpoch();
-            if (!isEpochClaimed[tokenId_][epochToClaim]) {
-                _claimRewards(
-                    stakeInfo,
-                    tokenId_,
-                    epochToClaim,
-                    false,
-                    ajnaPool
-                );
-            }
-            else {
-                // since rewards were already claimed, skip claiming staking rewards and just attempt to claim update rewards
-                uint256 updateReward = _updateBucketExchangeRates(
-                    ajnaPool,
-                    positionManager.getPositionIndexes(tokenId_)
-                );
-                // transfer rewards to sender, if any
-                _transferAjnaRewards(updateReward);
-            }
+            // claim rewards, if any
+            _claimRewards(
+                stakeInfo,
+                tokenId_,
+                IPool(ajnaPool).currentBurnEpoch(),
+                false,
+                ajnaPool
+            );
         }
 
         // remove bucket snapshots recorded at the time of staking
