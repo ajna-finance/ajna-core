@@ -288,7 +288,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         uint256 bucketIndex_,
         uint256 epoch_
     ) external view override returns (bool) {
-        return _isBucketUpdated(pool_, bucketIndex_, epoch_);
+        return bucketExchangeRates[pool_][bucketIndex_][epoch_] != 0;
     }
 
     /**************************/
@@ -577,21 +577,6 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             tokensBurned_   = totalBurnedLatest   != 0 ? totalBurnedLatest   - totalBurnedPrev   : 0;
             interestEarned_ = totalInterestLatest != 0 ? totalInterestLatest - totalInterestPrev : 0;
         }
-    }
-
-    /**
-     *  @notice Track whether a bucket's exchange rate has been updated in a given burn event epoch.
-     *  @param  pool_        The pool to check the update status of.
-     *  @param  bucketIndex_ The bucket index to check the update status of.
-     *  @param  epoch_   The burn epoch to check the bucket index in.
-     *  @return `True` if the buckets exchange rate was updated in the given epoch, else false.
-     */
-    function _isBucketUpdated(
-        address pool_,
-        uint256 bucketIndex_,
-        uint256 epoch_
-    ) internal view returns (bool) {
-        return bucketExchangeRates[pool_][bucketIndex_][epoch_] != 0;
     }
 
     /**
