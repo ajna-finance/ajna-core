@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { IERC20 }          from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import { IERC721 }         from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
@@ -70,7 +70,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     mapping(uint256 => mapping(uint256 => bool)) public override isEpochClaimed;
     /// @dev `epoch => rewards claimed` mapping.
     mapping(uint256 => uint256) public override rewardsClaimed;
-    /// @dev `epoch => update bucket rate rewards claimed` mapping.
+    /// @dev `epoch => update bucket rate rewards claimed` mapping. Tracks the total amount of update rewards claimed.
     mapping(uint256 => uint256) public override updateRewardsClaimed;
 
     /// @dev Mapping of per pool bucket exchange rates at a given burn event `poolAddress => bucketIndex => epoch => bucket exchange rate`.
@@ -307,6 +307,15 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         );
     }
 
+    /// @inheritdoc IRewardsManagerState
+    function isBucketUpdated(
+        address pool_,
+        uint256 bucketIndex_,
+        uint256 epoch_
+    ) external view override returns (bool) {
+        return bucketExchangeRates[pool_][bucketIndex_][epoch_] != 0;
+    }
+
     /**************************/
     /*** Internal Functions ***/
     /**************************/
@@ -480,7 +489,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         if (rewardsClaimedInEpoch_ + newRewards_ > rewardsCapped) {
 
             // set claim reward to difference between cap and reward
-            newRewards_ = rewardsCapped - rewardsClaimedInEpoch_;
+            newRewards_ = rewardsClaimedInEpoch_ > rewardsCapped ? 0 : rewardsCapped - rewardsClaimedInEpoch_;
         }
     }
 
@@ -509,7 +518,9 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             positionManager.getPositionIndexes(tokenId_)
         );
 
-        rewardsEarned_ += _calculateAndClaimStakingRewards(tokenId_, epochToClaim_);
+        if (!isEpochClaimed[tokenId_][epochToClaim_]) {
+            rewardsEarned_ += _calculateAndClaimStakingRewards(tokenId_, epochToClaim_);
+        }
 
         uint256[] memory burnEpochsClaimed = _getBurnEpochsClaimed(
             stakeInfo_.lastClaimedEpoch,
@@ -628,9 +639,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
                 unchecked { ++i; }
             }
         }
-
         else {
-
             if (block.timestamp <= curBurnTime + UPDATE_PERIOD) {
 
                 // update exchange rates and calculate rewards if tokens were burned and within allowed time period
@@ -655,7 +664,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
                 // update total tokens claimed for updating bucket exchange rates tracker
                 if (rewardsClaimedInEpoch + updatedRewards_ >= rewardsCap) {
                     // if update reward is greater than cap, set to remaining difference
-                    updatedRewards_ = rewardsCap - rewardsClaimedInEpoch;
+                    updatedRewards_ = rewardsClaimedInEpoch > rewardsCap ? 0 : rewardsCap - rewardsClaimedInEpoch;
                 }
 
                 // accumulate the full amount of additional rewards
@@ -801,18 +810,16 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
      *  @param minAmount_      Min amount that rewards claimer wants to recieve.
      */
     function _transferAjnaRewards(uint256 transferAmount_, uint256 minAmount_) internal {
-
         uint256 ajnaBalance = IERC20(ajnaToken).balanceOf(address(this));
 
-        // cap amount to transfer at contract balance
+        // cap amount to transfer at available contract balance
         if (transferAmount_ > ajnaBalance) transferAmount_ = ajnaBalance;
 
-        // revert if available amount to transfer is lower than limit amount
+        // revert if amount to transfer is lower than limit amount
         if (transferAmount_ < minAmount_) revert InsufficientLiquidity();
 
-        // transfer amount to reward claimer
         if (transferAmount_ != 0) {
-            // transfer rewards to sender
+            // transfer amount to rewards claimer
             IERC20(ajnaToken).safeTransfer(msg.sender, transferAmount_);
         }
     }

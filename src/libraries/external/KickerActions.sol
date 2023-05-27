@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
+
+import { Math }     from '@openzeppelin/contracts/utils/math/Math.sol';
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import { PoolType } from '../../interfaces/pool/IPool.sol';
 
@@ -22,6 +25,7 @@ import {
 }                             from '../../interfaces/pool/commons/IPoolInternals.sol';
 
 import {
+    MAX_NEUTRAL_PRICE,
     _auctionPrice,
     _bondParams,
     _bpf,
@@ -70,7 +74,6 @@ library KickerActions {
         uint256 bucketDeposit;            // [WAD] amount of quote tokens in bucket
         uint256 bucketLP;                 // [WAD] LP of the bucket
         uint256 bucketPrice;              // [WAD] bucket price
-        uint256 bucketRate;               // [WAD] bucket exchange rate
         uint256 bucketScale;              // [WAD] bucket scales
         uint256 bucketUnscaledDeposit;    // [WAD] unscaled amount of quote tokens in bucket
         uint256 lenderLP;                 // [WAD] LP of lender in bucket
@@ -95,6 +98,8 @@ library KickerActions {
     error AuctionActive();
     error BorrowerOk();
     error InsufficientLiquidity();
+    error InsufficientLP();
+    error InvalidAmount();
     error NoReserves();
     error PriceBelowLUP();
     error ReserveAuctionTooSoon();
@@ -134,6 +139,9 @@ library KickerActions {
      *  @dev   - `Deposits.unscaledRemove` (remove amount in `Fenwick` tree, from index): update `values` array state
      *  @dev   - decrement `lender.lps` accumulator
      *  @dev   - decrement `bucket.lps` accumulator
+     *  @dev    === Reverts on ===
+     *  @dev    insufficient deposit to kick auction `InsufficientLiquidity()`
+     *  @dev    no `LP` redeemed to kick auction `InsufficientLP()`
      *  @dev    === Emit events ===
      *  @dev    - `RemoveQuoteToken`
      *  @return kickResult_ The `KickResult` struct result of the kick action.
@@ -163,16 +171,16 @@ library KickerActions {
         vars.bucketScale           = Deposits.scale(deposits_, index_);
         vars.bucketDeposit         = Maths.wmul(vars.bucketUnscaledDeposit, vars.bucketScale);
 
-        // calculate max amount that can be removed (constrained by lender LP in bucket, bucket deposit and the amount lender wants to remove)
-        vars.bucketRate = Buckets.getExchangeRate(
+        // calculate amount to remove based on lender LP in bucket
+        vars.amountToDebitFromDeposit = Buckets.lpToQuoteTokens(
             vars.bucketCollateral,
             vars.bucketLP,
             vars.bucketDeposit,
-            vars.bucketPrice
+            vars.lenderLP,
+            vars.bucketPrice,
+            Math.Rounding.Down
         );
 
-        // calculate amount to remove based on lender LP in bucket
-        vars.amountToDebitFromDeposit = Maths.wmul(vars.lenderLP, vars.bucketRate);
         // cap the amount to remove at bucket deposit
         if (vars.amountToDebitFromDeposit > vars.bucketDeposit) vars.amountToDebitFromDeposit = vars.bucketDeposit;
 
@@ -216,14 +224,28 @@ library KickerActions {
             vars.bucketUnscaledDeposit = 0;
 
         } else {
-            vars.redeemedLP = Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketRate);
+            vars.redeemedLP = Buckets.quoteTokensToLP(
+                vars.bucketCollateral,
+                vars.bucketLP,
+                vars.bucketDeposit,
+                vars.amountToDebitFromDeposit,
+                vars.bucketPrice,
+                Math.Rounding.Up
+            );
 
             uint256 unscaledAmountToRemove = Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketScale);
+
+            // revert if calculated unscaled amount is 0
+            if (unscaledAmountToRemove == 0) revert InsufficientLiquidity();
+
             Deposits.unscaledRemove(deposits_, index_, unscaledAmountToRemove);
             vars.bucketUnscaledDeposit -= unscaledAmountToRemove;
         }
 
-        vars.redeemedLP = Maths.min(lender.lps, vars.redeemedLP);
+        vars.redeemedLP = Maths.min(vars.lenderLP, vars.redeemedLP);
+
+        // revert if LP redeemed amount to kick auction is 0
+        if (vars.redeemedLP == 0) revert InsufficientLP();
 
         uint256 bucketRemainingLP = vars.bucketLP - vars.redeemedLP;
 
@@ -368,7 +390,11 @@ library KickerActions {
         }
 
         // calculate auction params
-        vars.neutralPrice = Maths.wmul(borrower.t0Np, poolState_.inflator);
+        // neutral price is capped at 50 * max pool price
+        vars.neutralPrice = Maths.min(
+            Maths.wmul(borrower.t0Np, poolState_.inflator),
+            MAX_NEUTRAL_PRICE
+        );
         // check if NP is not less than price at the limit index provided by the kicker - done to prevent frontrunning kick auction call with a large amount of loan
         // which will make it harder for kicker to earn a reward and more likely that the kicker is penalized
         _revertIfPriceDroppedBelowLimit(vars.neutralPrice, limitIndex_);
@@ -480,10 +506,10 @@ library KickerActions {
         // record liquidation info
         liquidation.kicker       = msg.sender;
         liquidation.kickTime     = uint96(block.timestamp);
-        liquidation.kickMomp     = uint96(momp_);
-        liquidation.bondSize     = uint160(bondSize_);
-        liquidation.bondFactor   = uint96(bondFactor_);
-        liquidation.neutralPrice = uint96(neutralPrice_);
+        liquidation.kickMomp     = uint96(momp_); // cannot exceed max price enforced by _priceAt() function
+        liquidation.bondSize     = SafeCast.toUint160(bondSize_);
+        liquidation.bondFactor   = SafeCast.toUint96(bondFactor_);
+        liquidation.neutralPrice = SafeCast.toUint96(neutralPrice_);
 
         // increment number of active auctions
         ++auctions_.noOfAuctions;

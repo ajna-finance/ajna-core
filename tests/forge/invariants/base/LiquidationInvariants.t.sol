@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import "@std/console.sol";
 
@@ -136,8 +136,10 @@ abstract contract LiquidationInvariants is BasicInvariants {
         uint256 decreaseInBonds                  = IBaseHandler(_handler).decreaseInBonds();
         (uint256 currentTotalBondEscrowed, , , ) = _pool.reservesInfo();
 
-        require(
-            currentTotalBondEscrowed == previousTotalBondEscrowed + increaseInBonds - decreaseInBonds,
+        requireWithinDiff(
+            currentTotalBondEscrowed,
+            previousTotalBondEscrowed + increaseInBonds - decreaseInBonds,
+            _pool.quoteTokenScale(),
             "Auction Invariant A7"
         );
     }

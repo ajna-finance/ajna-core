@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
@@ -94,12 +94,12 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
     ) internal updateLocalStateAndPoolInterest {
         numberOfCalls['UBLiquidationHandler.withdrawBonds']++;
 
-        uint256 balanceBeforeWithdraw = _quote.balanceOf(_actor);
+        uint256 balanceBeforeWithdraw = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
         (uint256 claimableBondBeforeWithdraw, ) = _pool.kickerInfo(_actor);
 
         try _pool.withdrawBonds(kicker_, maxAmount_) {
 
-            uint256 balanceAfterWithdraw            = _quote.balanceOf(_actor);
+            uint256 balanceAfterWithdraw           = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
             (uint256 claimableBondAfterWithdraw, ) = _pool.kickerInfo(_actor);
 
             // **A7** Claimable bonds should be available for withdrawal from pool at any time (bonds are guaranteed by the protocol).
@@ -109,7 +109,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             );
 
             // **A7**: totalBondEscrowed should decrease only when kicker bonds withdrawned 
-            decreaseInBonds += balanceAfterWithdraw - balanceBeforeWithdraw;
+            decreaseInBonds += balanceBeforeWithdraw - balanceAfterWithdraw;
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
@@ -133,10 +133,10 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             uint256 borrowerDebtBeforeTake,
             uint256 borrowerCollateralBeforeTake, 
         ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
-        uint256 totalBondBeforeTake          = _getKickerBond(kicker);
-        uint256 totalBalanceBeforeTake       = _quote.balanceOf(address(_pool)) * 10**(18 - _quote.decimals());
+        uint256 totalBondBeforeTake    = _getKickerBond(kicker);
+        uint256 totalBalanceBeforeTake = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
 
-        ( , , , , uint256 auctionPrice, )    = _poolInfo.auctionStatus(address(_pool), borrower_);
+        (uint256 kickTimeBefore, , , , uint256 auctionPrice, )    = _poolInfo.auctionStatus(address(_pool), borrower_);
 
         // ensure actor always has the amount to take collateral
         _ensureQuoteAmount(taker_, 1e45);
@@ -145,7 +145,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
             (uint256 borrowerDebtAfterTake, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
             uint256 totalBondAfterTake          = _getKickerBond(kicker);
-            uint256 totalBalanceAfterTake       = _quote.balanceOf(address(_pool)) * 10**(18 - _quote.decimals());
+            uint256 totalBalanceAfterTake       = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
 
             if (borrowerDebtBeforeTake > borrowerDebtAfterTake) {
                 // **RE7**: Reserves decrease with debt covered by take.
@@ -172,19 +172,13 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
             // **RE7**: Reserves increase with the quote token paid by taker.
             increaseInReserves += totalBalanceAfterTake - totalBalanceBeforeTake;
 
-            // **CT2**: Keep track of bucketIndex when auction is settled and borrower compensated for fractional collateral
-            (, , , uint256 kickTime, , , , , , ) = _pool.auctionInfo(borrower_);
-            if (kickTime == 0 && borrowerCollateralBeforeTake % 1e18 != 0 && _pool.poolType() == 1) {
-                if (auctionPrice < MIN_PRICE) {
-                    buckets.add(7388);
-                    lenderDepositTime[borrower_][7388] = block.timestamp;
-                } else if (auctionPrice > MAX_PRICE) {
-                    buckets.add(0);
-                    lenderDepositTime[borrower_][0] = block.timestamp;
-                } else {
-                    buckets.add(_indexOf(auctionPrice));
-                    lenderDepositTime[borrower_][_indexOf(auctionPrice)] = block.timestamp;
-                }
+            if (_pool.poolType() == 1) {
+                _recordSettleBucket(
+                    borrower_,
+                    borrowerCollateralBeforeTake,
+                    kickTimeBefore,
+                    auctionPrice
+                );
             }
 
             if (!alreadyTaken[borrower_]) {

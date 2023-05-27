@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { Clone }           from '@clones/Clone.sol';
 import { ReentrancyGuard } from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
@@ -702,7 +702,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @param  amount_  Amount to transfer from sender.
      */
     function _transferQuoteTokenFrom(address from_, uint256 amount_) internal {
-        IERC20(_getArgAddress(QUOTE_ADDRESS)).safeTransferFrom(from_, address(this), amount_ / _getArgUint256(QUOTE_SCALE));
+        // Transfer amount in favour of the pool
+        uint256 transferAmount = Maths.ceilDiv(amount_, _getArgUint256(QUOTE_SCALE));
+        IERC20(_getArgAddress(QUOTE_ADDRESS)).safeTransferFrom(from_, address(this), transferAmount);
     }
 
     /**
