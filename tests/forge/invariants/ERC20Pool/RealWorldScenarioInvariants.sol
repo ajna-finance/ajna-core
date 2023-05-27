@@ -3,13 +3,12 @@
 pragma solidity 0.8.18;
 
 import { BaseInvariants }                 from '../base/BaseInvariants.sol';
-import { LiquidationInvariants }          from '../base/LiquidationInvariants.t.sol';
 import { ReserveInvariants }              from '../base/ReserveInvariants.t.sol';
 import { ReserveERC20PoolHandler }        from './handlers/ReserveERC20PoolHandler.sol';
 import { LiquidationERC20PoolInvariants } from './LiquidationERC20PoolInvariants.t.sol';
 
-contract ReserveERC20PoolInvariants is ReserveInvariants, LiquidationERC20PoolInvariants {
-    
+contract RealWorldScenarioInvariants is ReserveInvariants, LiquidationERC20PoolInvariants {
+
     ReserveERC20PoolHandler internal _reserveERC20PoolHandler;
 
     function setUp() public override(BaseInvariants, LiquidationERC20PoolInvariants) virtual {
