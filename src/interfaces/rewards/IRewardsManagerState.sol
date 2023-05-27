@@ -8,6 +8,19 @@ pragma solidity 0.8.18;
 interface IRewardsManagerState {
 
     /**
+     *  @notice Track whether a bucket's exchange rate has been updated in a given burn event epoch.
+     *  @param  pool_        The pool to check the update status of.
+     *  @param  bucketIndex_ The bucket index to check the update status of.
+     *  @param  epoch_   The burn epoch to check the bucket index in.
+     *  @return `True` if the buckets exchange rate was updated in the given epoch, else false.
+     */
+    function isBucketUpdated(
+        address pool_,
+        uint256 bucketIndex_,
+        uint256 epoch_
+    ) external view returns (bool);
+
+    /**
      *  @notice Track whether a depositor has claimed rewards for a given burn event epoch.
      *  @param  tokenId_ ID of the staked `LP` `NFT`.
      *  @param  epoch_   The burn epoch to track if rewards were claimed.
