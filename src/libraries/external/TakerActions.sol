@@ -3,6 +3,7 @@
 pragma solidity 0.8.18;
 
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
+import { Math }           from '@openzeppelin/contracts/utils/math/Math.sol';
 
 import { PoolType } from '../../interfaces/pool/IPool.sol';
 
@@ -615,22 +616,19 @@ library TakerActions {
 
         uint256 bankruptcyTime = bucket.bankruptcyTime;
         uint256 scaledDeposit  = Maths.wmul(vars.unscaledDeposit, vars.bucketScale);
-        uint256 exchangeRate   = Buckets.getExchangeRate(
-            bucket.collateral,
-            bucket.lps,
-            scaledDeposit,
-            vars.bucketPrice
-        );
-
         uint256 totalLPReward;
         uint256 takerLPReward;
         uint256 kickerLPReward;
 
         // if arb take - taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
         if (!depositTake_) {
-            takerLPReward = Maths.wdiv(
+            takerLPReward = Buckets.quoteTokensToLP(
+                bucket.collateral,
+                bucket.lps,
+                scaledDeposit,
                 Maths.wmul(vars.collateralAmount, vars.bucketPrice - vars.auctionPrice),
-                exchangeRate
+                vars.bucketPrice,
+                Math.Rounding.Down
             );
             totalLPReward = takerLPReward;
 
@@ -639,7 +637,14 @@ library TakerActions {
 
         // the bondholder/kicker is awarded bond change worth of LPB in the bucket
         if (vars.isRewarded) {
-            kickerLPReward = Maths.wdiv(vars.bondChange, exchangeRate);
+            kickerLPReward = Buckets.quoteTokensToLP(
+                bucket.collateral,
+                bucket.lps,
+                scaledDeposit,
+                vars.bondChange,
+                vars.bucketPrice,
+                Math.Rounding.Down
+            );
             totalLPReward  += kickerLPReward;
 
             Buckets.addLenderLP(bucket, bankruptcyTime, vars.kicker, kickerLPReward);
