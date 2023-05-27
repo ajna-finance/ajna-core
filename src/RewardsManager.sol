@@ -133,7 +133,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         // transfer rewards to claimer, ensuring amount is not below specified min amount
         _transferAjnaRewards({
             transferAmount_: rewardsEarned,
-            minAmount_:     minAmount_
+            minAmount_:      minAmount_
         });
     }
 
@@ -211,7 +211,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         uint256 tokenId_
     ) external override {
         _unstake({
-            tokenId_:     tokenId_,
+            tokenId_:      tokenId_,
             claimRewards_: true
         });
     }
@@ -227,7 +227,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         uint256 tokenId_
     ) external override {
         _unstake({
-            tokenId_:     tokenId_,
+            tokenId_:      tokenId_,
             claimRewards_: false
         });
     }
