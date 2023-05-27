@@ -130,34 +130,95 @@ abstract contract BaseHandler is Test {
      * @dev Skips some time before each action
      */
     modifier skipTime(uint256 time_) {
-        time_ = constrictToRange(time_, 0, vm.envOr("SKIP_TIME", uint256(24 hours)));
-        vm.warp(block.timestamp + time_);
+        address currentActor = _actor;
 
-        // repay max loan if pool debt exceeds configured max debt
         uint256 maxPoolDebt = uint256(vm.envOr("MAX_POOL_DEBT", uint256(1e55)));
         (uint256 poolDebt, , ,) = _pool.debtInfo();
-        if (maxPoolDebt < poolDebt) {
-            (address maxBorrower, , ) = _pool.loansInfo();
-            (uint256 debt,,) = _poolInfo.borrowerInfo(address(_pool), maxBorrower);
 
-            address currentActor = _actor;
+        // skip time only if max debt not exceeded (to prevent additional interest accumulation)
+        if (maxPoolDebt > poolDebt) {
+            time_ = constrictToRange(time_, 0, vm.envOr("SKIP_TIME", uint256(24 hours)));
+            vm.warp(block.timestamp + time_);
+        } else {
+            // repay from debt
+            // max repayments that can be done to prevent running out of gas
+            uint256 maxRepayments = 5;
 
-            try vm.startPrank(maxBorrower) {
-            } catch {
-                changePrank(maxBorrower);
+            // repay from auctions if any
+            {
+                uint256 noOfAuctions = _pool.totalAuctionsInPool();
+                while (noOfAuctions > 0 && maxRepayments > 0) {
+                    (, , , , , , address headAuction, , , ) = _pool.auctionInfo(address(0));
+
+                    if (headAuction != address(0)) {
+                        (uint256 auctionedDebt, , ) = _poolInfo.borrowerInfo(address(_pool), headAuction);
+
+                        try vm.startPrank(headAuction) {
+                        } catch {
+                            changePrank(headAuction);
+                        }
+
+                        _ensureQuoteAmount(headAuction, auctionedDebt);
+                        _repayBorrowerDebt(headAuction, auctionedDebt);
+                    }
+
+                    --noOfAuctions;
+                    --maxRepayments;
+                }
             }
 
-            _repayBorrowerDebt(maxBorrower, debt);
+            // repay max loan if pool debt exceeds configured max debt
+            {
+                if (maxPoolDebt < poolDebt) {
+                    // if debt still not under limit then start repaying from max loan
+                    (poolDebt, , ,) = _pool.debtInfo();
+                    while (maxPoolDebt < poolDebt && maxRepayments > 0) {
+                        (address borrower, , ) = _pool.loansInfo();
+                        (uint256 debt, , )     = _poolInfo.borrowerInfo(address(_pool), borrower);
 
-            _actor = currentActor;
+                        try vm.startPrank(borrower) {
+                        } catch {
+                            changePrank(borrower);
+                        }
 
-            try vm.startPrank(currentActor) {
-            } catch {
-                changePrank(currentActor);
+                        _ensureQuoteAmount(borrower, debt);
+                        _repayBorrowerDebt(borrower, debt);
+
+                        (poolDebt, , ,) = _pool.debtInfo();
+
+                        --maxRepayments;
+                    }
+                }
             }
+
+        }
+
+        _actor = currentActor;
+
+        try vm.startPrank(currentActor) {
+        } catch {
+            changePrank(currentActor);
         }
 
         _;
+    }
+
+    function _getKickSkipTime() internal returns (uint256 skipTime_) {
+        // skip only if debt didn't reach limit
+        uint256 maxPoolDebt = uint256(vm.envOr("MAX_POOL_DEBT", uint256(1e55)));
+        (uint256 poolDebt, , ,) = _pool.debtInfo();
+        if (maxPoolDebt > poolDebt) {
+            skipTime_ = vm.envOr("SKIP_TIME_TO_KICK", uint256(200 days));
+        }
+    }
+
+    function _getKickReserveTime() internal returns (uint256 skipTime_) {
+        // skip only if debt didn't reach limit
+        uint256 maxPoolDebt = uint256(vm.envOr("MAX_POOL_DEBT", uint256(1e55)));
+        (uint256 poolDebt, , ,) = _pool.debtInfo();
+        if (maxPoolDebt > poolDebt) {
+            skipTime_ = vm.envOr("SKIP_TIME_TO_KICK_RESERVE", uint256(24 hours));
+        }
     }
 
     modifier writeLogs() {
@@ -176,15 +237,20 @@ abstract contract BaseHandler is Test {
 
     function writePoolStateLogs() internal {
         printInNextLine("== Pool State ==");
-
+        printLog("Time                     = ", block.timestamp);
+        uint256 poolBalance = _quote.balanceOf(address(_pool));
         uint256 pledgedCollateral = _pool.pledgedCollateral();
+        printLog("Quote pool Balance       = ", poolBalance);
         printLog("Pledged Collateral       = ", pledgedCollateral);
 
         uint256 totalT0debt = _pool.totalT0Debt();
         printLog("Total t0 debt            = ", totalT0debt);
 
-        (, , , uint256 pendingInflator, ) = _poolInfo.poolLoansInfo(address(_pool));
+        (, uint256 noOfLoans, address maxBorrower, uint256 pendingInflator, ) = _poolInfo.poolLoansInfo(address(_pool));
+        string memory data = string(abi.encodePacked("Max borrower             = ", Strings.toHexString(uint160(maxBorrower), 20), ""));
         printLog("Total debt               = ", Maths.wmul(totalT0debt, pendingInflator));
+        printInNextLine(data);
+        printLog("Total Loans              = ", noOfLoans);
 
         uint256 totalAuctions = _pool.totalAuctionsInPool();
         printLog("Total Auctions           = ", totalAuctions);
@@ -197,8 +263,10 @@ abstract contract BaseHandler is Test {
         uint256 depositSize = _pool.depositSize();
         printLog("Total deposits           = ", depositSize);
 
-        (uint256 totalBond, , , ) = _pool.reservesInfo();
+        (uint256 totalBond, uint256 reserveUnclaimed, , uint256 totalInterest) = _pool.reservesInfo();
         printLog("Total bond escrowed      = ", totalBond);
+        printLog("Total reserves unclaimed = ", reserveUnclaimed);
+        printLog("Total interest earned    = ", totalInterest);
 
         (uint256 interestRate, ) = _pool.interestRateInfo();
         printLog("Interest Rate            = ", interestRate);
@@ -356,14 +424,6 @@ abstract contract BaseHandler is Test {
 
     function _updatePoolState() internal {
         _pool.updateInterest();
-    }
-
-    function _getKickSkipTime() internal returns (uint256) {
-        return vm.envOr("SKIP_TIME_TO_KICK", uint256(200 days));
-    }
-
-    function _getKickReserveTime() internal returns (uint256) {
-        return vm.envOr("SKIP_TIME_TO_KICK_RESERVE", uint256(24 hours));
     }
 
     function _repayBorrowerDebt(address borrower_, uint256 amount_) internal virtual;
