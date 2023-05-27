@@ -151,8 +151,8 @@ contract ClaimRewardsOnStakeTest is RewardsHelperContract {
 /**
     Exchange rate update should be possible regardless pool balance
     1. update with enough balance - staker should receive rewards for bucket update
-    2. update without enough balance - staker should receive portion of reward for bucket update
-    3. update with no balance - staker should not receive any token but should be able to stake
+    2. update without enough balance - staker should receive portion of reward for bucket update (available balance)
+    3. update with no balance - staker should not receive any token but should be able to update
  */
 contract ClaimRewardsOnExchangeRateUpdateTest is ClaimRewardsOnStakeTest {
 
@@ -188,7 +188,7 @@ contract ClaimRewardsOnExchangeRateUpdateTest is ClaimRewardsOnStakeTest {
     }
 
     function testClaimOnUpdateRateWithNoBalance() external {
-        // 3. update with no balance - staker should not receive any token but should be able to stake
+        // 3. update with no balance - staker should not receive any token but should be able to update rate
         // burn all rewards manager tokens
         changePrank(address(_rewardsManager));
         IERC20Token(address(_ajnaToken)).burn(_ajnaToken.balanceOf(address(_rewardsManager)));
