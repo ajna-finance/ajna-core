@@ -237,18 +237,18 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         _rewardsManager.claimRewards(tokenId, currentBurnEpoch, 0);
     }
 
-    function _assertUnstakeInsufficientFundsRevert(address from, uint256 tokenId) internal {
+    function _assertUnstakeInsufficientLiquidityRevert(address from, uint256 tokenId) internal {
         // should revert if token balance is less than rewards to claim
         changePrank(from);
-        vm.expectRevert(IRewardsManagerErrors.InsufficientFunds.selector);
+        vm.expectRevert(IRewardsManagerErrors.InsufficientLiquidity.selector);
         _rewardsManager.unstake(tokenId);
     }
 
-    function _assertClaimRewardsInsufficientFundsRevert(address from, uint256 tokenId, uint256 minRewardToClaim) internal {
+    function _assertClaimRewardsInsufficientLiquidityRevert(address from, uint256 tokenId, uint256 minRewardToClaim) internal {
         // should revert if token balance is less than rewards to claim
         changePrank(from);
         uint256 currentBurnEpoch = _pool.currentBurnEpoch();
-        vm.expectRevert(IRewardsManagerErrors.InsufficientFunds.selector);
+        vm.expectRevert(IRewardsManagerErrors.InsufficientLiquidity.selector);
         _rewardsManager.claimRewards(tokenId, currentBurnEpoch, minRewardToClaim);
     }
 

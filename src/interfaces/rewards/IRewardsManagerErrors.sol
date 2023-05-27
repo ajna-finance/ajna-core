@@ -17,6 +17,11 @@ interface IRewardsManagerErrors {
     error EpochNotAvailable();
 
     /**
+     *  @notice Insufficient Token Balance in contract to transfer rewards
+     */
+    error InsufficientLiquidity();
+
+    /**
      *  @notice User provided move index params that didn't match in size.
      */
     error MoveStakedLiquidityInvalid();
@@ -35,9 +40,4 @@ interface IRewardsManagerErrors {
      *  @notice Can't deploy with `Ajna` token address `0x` address.
      */
     error DeployWithZeroAddress();
-
-    /**
-     *  @notice Insufficient Token Balance in contract to transfer rewards
-     */
-    error InsufficientFunds();
 }

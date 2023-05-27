@@ -988,7 +988,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         assertGt(rewards, managerBalance);
 
         // claimRewards should revert when user tries to claim more rewards than available in manager
-        _assertClaimRewardsInsufficientFundsRevert(_minterOne, tokenIdOne, managerBalance + 1);
+        _assertClaimRewardsInsufficientLiquidityRevert(_minterOne, tokenIdOne, managerBalance + 1);
 
         // claimRewards should claim all available ajna token in manager
         _claimRewards({
@@ -1788,7 +1788,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         assertGt(rewards, managerBalance);
 
         // should revert when rewards are more than token balance
-        _assertUnstakeInsufficientFundsRevert(_minterOne, tokenIdOne);
+        _assertUnstakeInsufficientLiquidityRevert(_minterOne, tokenIdOne);
 
         vm.revertTo(snapshot);
 

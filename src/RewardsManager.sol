@@ -114,7 +114,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     function claimRewards(
         uint256 tokenId_,
         uint256 epochToClaim_,
-        uint256 minRewardToClaim_
+        uint256 minAmount_
     ) external override {
         StakeInfo storage stakeInfo = stakes[tokenId_];
 
@@ -130,11 +130,10 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             stakeInfo.ajnaPool
         );
 
-        // transfer rewards to sender
+        // transfer rewards to claimer, ensuring amount is not below specified min amount
         _transferAjnaRewards({
-            rewardsEarned_: rewardsEarned,
-            transferMaxAvailable_: true,
-            minRewardToClaim_: minRewardToClaim_
+            transferAmount_: rewardsEarned,
+            minAmount_:     minAmount_
         });
     }
 
@@ -193,11 +192,10 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             positionIndexes
         );
 
-        // transfer rewards to sender
+        // transfer bucket update rewards to sender even if there's not enough balance for entire amount
         _transferAjnaRewards({
-            rewardsEarned_: updateReward,
-            transferMaxAvailable_: true,
-            minRewardToClaim_: 0
+            transferAmount_: updateReward,
+            minAmount_:      0
         });
     }
 
@@ -213,7 +211,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         uint256 tokenId_
     ) external override {
         _unstake({
-            tokenId_: tokenId_,
+            tokenId_:     tokenId_,
             claimRewards_: true
         });
     }
@@ -229,7 +227,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         uint256 tokenId_
     ) external override {
         _unstake({
-            tokenId_: tokenId_,
+            tokenId_:     tokenId_,
             claimRewards_: false
         });
     }
@@ -249,11 +247,10 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
         updateReward = _updateBucketExchangeRates(pool_, indexes_);
 
-        // transfer rewards to sender
+        // transfer bucket update rewards to sender even if there's not enough balance for entire amount
         _transferAjnaRewards({
-            rewardsEarned_: updateReward,
-            transferMaxAvailable_: true,
-            minRewardToClaim_: 0
+            transferAmount_: updateReward,
+            minAmount_:      0
         });
     }
 
@@ -759,8 +756,8 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         address ajnaPool = stakeInfo.ajnaPool;
         uint256 rewardsEarned;
 
+        // gracefully unstake, claim rewards if any
         if (claimRewards_) {
-            // claim rewards, if any
             rewardsEarned = _calculateAndClaimAllRewards(
                 stakeInfo,
                 tokenId_,
@@ -783,40 +780,40 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
         emit Unstake(msg.sender, ajnaPool, tokenId_);
 
-        // transfer rewards to sender
-        _transferAjnaRewards({
-            rewardsEarned_: rewardsEarned,
-            transferMaxAvailable_: false,
-            minRewardToClaim_: 0
-        });
+        // gracefully unstake, transfer rewards to claimer ensuring entire amount
+        if (claimRewards_) {
+            _transferAjnaRewards({
+                transferAmount_: rewardsEarned,
+                minAmount_:      rewardsEarned
+            });
+        }
 
         // transfer LP NFT from contract to sender
         IERC721(address(positionManager)).transferFrom(address(this), msg.sender, tokenId_);
     }
 
     /**
-     *  @notice Utility function to transfer `Ajna` rewards to the sender
+     *  @notice Utility function to transfer `Ajna` rewards to the sender.
      *  @dev    This function is used to transfer rewards to the `msg.sender` after a successful claim or update.
-     *  @dev    It is used to ensure that rewards claimers will be able to claim some portion of the remaining tokens if a claim would exceed the remaining contract balance.
-     *  @param rewardsEarned_        Amount of rewards earned by the caller.
-     *  @param transferMaxAvailable_ Whether transfer all available balance that may be less than rewardsEarned_
-     *  @param minRewardToClaim_     Minimum rewards to claim
+     *  @dev    It is used to ensure that rewards claimers are able to claim portion from remaining tokens if a claim would exceed the remaining contract balance.
+     *  @dev    Reverts with `InsufficientLiquidity` if calculated rewards or contract balance is below specified min amount to receive limit.
+     *  @param transferAmount_ Amount of rewards earned by the caller.
+     *  @param minAmount_      Min amount that rewards claimer wants to recieve.
      */
-    function _transferAjnaRewards(uint256 rewardsEarned_, bool transferMaxAvailable_, uint256 minRewardToClaim_) internal {
+    function _transferAjnaRewards(uint256 transferAmount_, uint256 minAmount_) internal {
+
         uint256 ajnaBalance = IERC20(ajnaToken).balanceOf(address(this));
 
-        // if contract balance cannot cover rewards earned
-        if (rewardsEarned_ > ajnaBalance) {
-            // revert if not opt in to give up part of rewards (claim rewards and unstake actions)
-            if (!transferMaxAvailable_ || minRewardToClaim_ > ajnaBalance) revert InsufficientFunds();
+        // cap amount to transfer at contract balance
+        if (transferAmount_ > ajnaBalance) transferAmount_ = ajnaBalance;
 
-            // cap rewards earned to available balance (update bucket exchange and claim max rewards actions)
-            rewardsEarned_ = ajnaBalance;
-        }
+        // revert if available amount to transfer is lower than limit amount
+        if (transferAmount_ < minAmount_) revert InsufficientLiquidity();
 
-        if (rewardsEarned_ != 0) {
+        // transfer amount to reward claimer
+        if (transferAmount_ != 0) {
             // transfer rewards to sender
-            IERC20(ajnaToken).safeTransfer(msg.sender, rewardsEarned_);
+            IERC20(ajnaToken).safeTransfer(msg.sender, transferAmount_);
         }
     }
 
