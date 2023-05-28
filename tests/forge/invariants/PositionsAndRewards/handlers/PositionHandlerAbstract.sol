@@ -7,6 +7,8 @@ import '@std/console.sol';
 
 import { Maths } from 'src/libraries/internal/Maths.sol';
 
+import { _priceAt }                     from 'src/libraries/helpers/PoolHelper.sol';
+
 import { IPositionManagerOwnerActions } from 'src/interfaces/position/IPositionManagerOwnerActions.sol';
 import { PositionManager }              from 'src/PositionManager.sol';
 import { ERC20Pool }                    from 'src/ERC20Pool.sol';
@@ -15,6 +17,8 @@ import { UnboundedPositionsHandler } from './unbounded/UnboundedPositionsHandler
 import { BaseERC20PoolHandler }     from '../../ERC20Pool/handlers/unbounded/BaseERC20PoolHandler.sol';
 
 abstract contract PositionHandlerAbstract is UnboundedPositionsHandler {
+
+    using EnumerableSet for EnumerableSet.UintSet;
 
     /*******************************/
     /*** Positions Test Functions ***/
@@ -152,6 +156,81 @@ abstract contract PositionHandlerAbstract is UnboundedPositionsHandler {
         _redeemPositions(tokenId_, indexes);
     }
 
+    function _tearDownBucketIndex(
+        uint256 fromIndex
+    ) internal {
+
+        (
+            ,
+            uint256 bucketCollateral,
+            ,
+            uint256 bucketDeposit,
+        ) = _pool.bucketInfo(fromIndex);
+
+        // loop over tokenIds that have position in this bucket
+        uint256[] memory tokenIds = getTokenIdsByBucketIndex(fromIndex);
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+
+            uint256 tokenId = tokenIds[i];
+            (uint256 lp, ) = _position.getPositionInfo(tokenId, fromIndex);
+
+            // If tokenId has associated position, redeem position back to actor
+            if (lp != 0 ) {
+
+
+                changePrank(actorByTokenId[tokenId]);
+
+                // if tokenId is staked, unstake it
+                if (stakedTokenIds.contains(tokenId)) {
+                    _rewards.unstake(tokenId);
+                }
+
+                address[] memory transferors = new address[](1);
+                transferors[0] = address(_position);
+
+                _pool.approveLPTransferors(transferors);
+                _redeemPositions(tokenId, getBucketIndexesByTokenId(tokenId));
+            }
+
+            // check LP again, if it exists then it was burned? return;
+        }
+
+        // loop over actors
+        for (uint256 i = 0; i < actors.length; i++) {
+
+            (uint256 lpBalance,) = _pool.lenderInfo(fromIndex, actors[i]);
+
+            // check if actor has a position
+            if (lpBalance != 0) {
+
+                (
+                    ,
+                    bucketCollateral,
+                    ,
+                    bucketDeposit,
+                ) = _pool.bucketInfo(fromIndex);
+
+                if (bucketDeposit != 0) {
+
+                    changePrank(actors[i]);
+                    try _pool.removeQuoteToken(bucketDeposit, fromIndex) {
+                    } catch (bytes memory err) {
+                        _ensurePoolError(err);
+                    }
+                }
+
+                if (bucketCollateral != 0) {
+
+                    changePrank(actors[i]);
+                    try _pool.removeCollateral(bucketCollateral, fromIndex) {
+                    } catch (bytes memory err) {
+                        _ensurePoolError(err);
+                    }
+                }
+            }
+        }
+    }
+
 
     function _preMoveLiquidity(
         uint256 amountToMove_,
@@ -163,11 +242,39 @@ abstract contract PositionHandlerAbstract is UnboundedPositionsHandler {
         uint256 boundedAmount_ = constrictToRange(amountToMove_, MIN_QUOTE_AMOUNT, MAX_QUOTE_AMOUNT);
 
         // TODO: check if the actor has an existing position and use that one
-        // mint a position if the actor doesn't have one
+
+        // if bucket exchange rate is less than 1e18 remove all collateral and quote to avoid LP mismatch revert
+        if (_pool.bucketExchangeRate(boundedFromIndex_) < 1e18) {
+            _tearDownBucketIndex(boundedFromIndex_);
+        }
+
+        // retrieve info of bucket from pool
+        (
+            ,
+            uint256 bucketCollateral,
+            ,
+            ,
+        ) = _pool.bucketInfo(boundedFromIndex_);
+
+        // Remove collateral from bucket to avoid LP mismatch revert
+        if (bucketCollateral != 0) {
+            uint256 amountToAdd =  Maths.wmul(bucketCollateral, _priceAt(boundedFromIndex_));
+            _ensureQuoteAmount(_actor, amountToAdd);
+            try _pool.addQuoteToken(amountToAdd, boundedFromIndex_, block.timestamp + 1 minutes) {
+            } catch (bytes memory err) {
+                _ensurePoolError(err);
+            }
+            try _pool.removeCollateral(bucketCollateral, boundedFromIndex_) {
+            } catch (bytes memory err) {
+                _ensurePoolError(err);
+            }
+        }
+
+        // mint a position if the actor
+        changePrank(_actor);
         uint256[] memory indexes;
         (tokenId_, indexes) = _preMemorializePositions(boundedFromIndex_, boundedAmount_);
-
         _memorializePositions(tokenId_, indexes);
-
+        
     }
 }

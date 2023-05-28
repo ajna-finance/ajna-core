@@ -27,12 +27,24 @@ abstract contract BasePositionsHandler is BaseERC20PoolHandler {
     RewardsManager  internal _rewards;
 
     // positions invariant test state
+    // used for PM1_PM2_PM3 tracking
     mapping(uint256 => EnumerableSet.UintSet) internal tokenIdsByBucketIndex;
     EnumerableSet.UintSet internal bucketIndexesWithPosition;
+
+    // used for removing all CT and QT to reset exchange rate
+    mapping(uint256 => address) internal actorByTokenId;
+    mapping(uint256 => EnumerableSet.UintSet) internal bucketIndexesByTokenId;
+
+    EnumerableSet.UintSet internal stakedTokenIds;
+
     EnumerableSet.UintSet internal tokenIdsMinted;
-    mapping(uint256 => uint256) internal bucketIndexToPreActionActorLps; // to track LP changes
-    mapping(uint256 => uint256) internal bucketIndexToPreActionPosLps; // to track LP changes
-    mapping(uint256 => uint256) internal bucketIndexToPreActionDepositTime;
+    // used to track LP changes
+    mapping(uint256 => uint256) internal bucketIndexToActorPositionManLps;
+    mapping(uint256 => uint256) internal bucketIndexToPositionManPoolLps;
+    mapping(uint256 => uint256) internal bucketIndexToActorPoolLps;
+    mapping(uint256 => uint256) internal bucketIndexToDepositTime;
+
+
     using EnumerableSet for EnumerableSet.UintSet;
 
     function getBucketIndexesWithPosition() public view returns(uint256[] memory) {
@@ -41,6 +53,10 @@ abstract contract BasePositionsHandler is BaseERC20PoolHandler {
 
     function getTokenIdsByBucketIndex(uint256 bucketIndex_) public view returns(uint256[] memory) {
         return tokenIdsByBucketIndex[bucketIndex_].values();
+    }
+
+    function getBucketIndexesByTokenId(uint256 tokenId_) public view returns(uint256[] memory) {
+        return bucketIndexesByTokenId[tokenId_].values();
     }
 
     function getTokenIds() public view returns(uint256[] memory) {

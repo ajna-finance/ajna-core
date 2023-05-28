@@ -30,7 +30,7 @@ abstract contract UnboundedRewardsHandler is BasePositionsHandler {
 
         try _rewards.stake(tokenId_) {
 
-            //TODO: store staked tokenId's
+            stakedTokenIds.add(tokenId_);
 
         } catch (bytes memory err) {
             _ensurePoolError(err);
@@ -51,6 +51,8 @@ abstract contract UnboundedRewardsHandler is BasePositionsHandler {
                 (,,uint256 lastClaimedEpoch) = _rewards.getStakeInfo(tokenId_);
                 totalRewardPerEpoch[lastClaimedEpoch] += _quote.balanceOf(_actor) - actorBalanceBeforeClaim;
             }
+
+            stakedTokenIds.remove(tokenId_);
 
         } catch (bytes memory err) {
             _ensurePoolError(err);

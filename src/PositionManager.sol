@@ -28,6 +28,8 @@ import { tokenSymbol } from './libraries/helpers/SafeTokenNamer.sol';
 
 import { PositionNFTSVG } from './libraries/external/PositionNFTSVG.sol';
 
+import '@std/console.sol';
+
 /**
  *  @title  Position Manager Contract
  *  @notice Used by Pool lenders to optionally mint `NFT` that represents their positions.
