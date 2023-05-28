@@ -205,9 +205,7 @@ abstract contract BaseHandler is Test {
         _updateLocalFenwick();
         _fenwickAccrueInterest();
         _updatePoolState();
-
         _resetAndRecordReservesAndExchangeRate();
-
         _;
     }
 
@@ -511,6 +509,7 @@ abstract contract BaseHandler is Test {
         uint256 totalT0debtInAuction = _pool.totalT0DebtInAuction();
         uint256 depositSize          = _pool.depositSize();
         (uint256 interestRate, )     = _pool.interestRateInfo();
+        uint256 currentEpoch         = _pool.currentBurnEpoch();
 
         (
             uint256 totalBond,
@@ -534,6 +533,7 @@ abstract contract BaseHandler is Test {
         printLog("Quote pool Balance       = ", _quote.balanceOf(address(_pool)));
         printLog("Total deposits           = ", depositSize);
         printLog("Pledged Collateral       = ", pledgedCollateral);
+        printLog("Interest Rate            = ", interestRate);
         printLine("");
         printLog("Total t0 debt            = ", totalT0debt);
         printLog("Total t0 debt in auction = ", totalT0debtInAuction);
@@ -554,9 +554,10 @@ abstract contract BaseHandler is Test {
             )
         );
         printLine("");
+
+        printLog("Current Epoch            = ", currentEpoch);
         printLog("Total reserves unclaimed = ", reserveUnclaimed);
         printLog("Total interest earned    = ", totalInterest);
-        printLog("Interest Rate            = ", interestRate);
 
         printInNextLine("=======================");
     }

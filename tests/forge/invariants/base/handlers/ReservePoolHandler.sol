@@ -19,6 +19,10 @@ abstract contract ReservePoolHandler is UnboundedReservePoolHandler, Liquidation
     ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BReserveHandler.kickReserveAuction']++;
 
+        // take all reserves if available
+        (, , uint256 claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
+        _takeReserves(claimableReservesRemaining);
+
         // Action phase
         _kickReserveAuction();
     }
@@ -51,7 +55,8 @@ abstract contract ReservePoolHandler is UnboundedReservePoolHandler, Liquidation
         skip(_getKickReserveTime());
 
         (, , claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
-        boundedAmount_ = constrictToRange(amountToTake_, 0, Maths.min(MIN_QUOTE_AMOUNT, claimableReservesRemaining));
+
+        boundedAmount_ = constrictToRange(amountToTake_, claimableReservesRemaining / 2, claimableReservesRemaining);
     }
 
 }
