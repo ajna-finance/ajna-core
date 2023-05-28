@@ -4,7 +4,8 @@ pragma solidity 0.8.18;
 
 import "@std/console.sol";
 
-import { Maths } from 'src/libraries/internal/Maths.sol';
+import { IERC20Pool } from 'src/interfaces/pool/erc20/IERC20Pool.sol';
+import { Maths }      from 'src/libraries/internal/Maths.sol';
 
 import { IBaseHandler }  from '../interfaces/IBaseHandler.sol';
 import { BaseInvariants } from '../base/BaseInvariants.sol';
@@ -206,6 +207,7 @@ abstract contract BasicInvariants is BaseInvariants {
     /********************************/
 
     function _invariant_R1_R2_R3_R4_R5_R6_R7_R8() internal view {
+
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             uint256 currentExchangeRate = _pool.bucketExchangeRate(bucketIndex);
             (uint256 bucketLps, , , , ) = _pool.bucketInfo(bucketIndex);
@@ -364,7 +366,7 @@ abstract contract BasicInvariants is BaseInvariants {
             requireWithinDiff(
                 depositAtIndex,
                 localDepositAtIndex,
-                (depositAtIndex+localDepositAtIndex)/1e9 + 1e12,
+                (depositAtIndex + localDepositAtIndex) / 1e9 + _pool.quoteTokenScale(),
                 "Incorrect deposits in bucket"
             );
         }
@@ -388,7 +390,7 @@ abstract contract BasicInvariants is BaseInvariants {
             requireWithinDiff(
                 depositTillIndex,
                 localDepositTillIndex,
-                (depositTillIndex+localDepositTillIndex)/1e9 + 1e12,
+                (depositTillIndex + localDepositTillIndex) / 1e9 + _pool.quoteTokenScale(),
                 "Incorrect deposits prefix sum"
             );
         }
