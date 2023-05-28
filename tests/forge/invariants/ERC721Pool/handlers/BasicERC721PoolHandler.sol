@@ -233,6 +233,7 @@ contract BasicERC721PoolHandler is UnboundedBasicERC721PoolHandler, BasicPoolHan
             _repayDebt(type(uint256).max);
 
             (debt, collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
+            _pullCollateral(collateral);
 
             require(debt == 0, "borrower has debt");
         }

@@ -21,7 +21,7 @@ test-invariant-all              :; forge t --mt invariant --nmc "RegressionTest|
 test-invariant-erc20            :; forge t --mt invariant --nmc "RegressionTest|Panic" --mc ERC20
 test-invariant-erc721           :; forge t --mt invariant --nmc "RegressionTest|Panic" --mc ERC721
 test-invariant                  :; forge t --mt ${MT} --nmc RegressionTest
-test-rw-simulation              :; RUST_LOG=forge=info,foundry_evm=info,ethers=info forge t --mt invariant_all --mc RealWorld
+test-rw-simulation              :; FOUNDRY_INVARIANT_SHRINK_SEQUENCE=false RUST_LOG=forge=info,foundry_evm=info,ethers=info forge t --mt invariant_all --mc RealWorld
 test-regression-all             : test-regression-erc20 test-regression-erc721 test-regression-prototech
 test-regression-erc20           :; forge t --mt test_regression --mc ERC20 --nmc Prototech
 test-regression-erc721          :; forge t --mt test_regression --mc ERC721 --nmc Prototech

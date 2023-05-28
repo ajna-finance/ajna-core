@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.18;
 
+import "@std/console.sol";
+
 import { BaseInvariants }                 from '../base/BaseInvariants.sol';
 import { ReserveInvariants }              from '../base/ReserveInvariants.t.sol';
 import { ReserveERC20PoolHandler }        from './handlers/ReserveERC20PoolHandler.sol';
@@ -31,6 +33,11 @@ contract RealWorldScenarioInvariants is ReserveInvariants, LiquidationERC20PoolI
     }
 
     function invariant_all() public useCurrentTimestamp {
+        console.log("Quote precision:     ", _quote.decimals());
+        console.log("Collateral precision:", _collateral.decimals());
+        console.log("Quote balance:       ", _quote.balanceOf(address(_pool)));
+        console.log("Collateral balance:  ", _collateral.balanceOf(address(_pool)));
+
         _invariant_B1();
         _invariant_B2_B3();
         _invariant_B4();
