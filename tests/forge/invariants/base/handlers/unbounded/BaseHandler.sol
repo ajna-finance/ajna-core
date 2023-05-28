@@ -260,10 +260,6 @@ abstract contract BaseHandler is Test {
         return vm.envOr("SKIP_TIME_TO_KICK", uint256(200 days));
     }
 
-    function _getKickReserveTime() internal returns (uint256) {
-        return vm.envOr("SKIP_TIME_TO_KICK_RESERVE", uint256(24 hours));
-    }
-
     function _ensureQuoteAmount(address actor_, uint256 amount_) internal {
         uint256 normalizedActorBalance = _quote.balanceOf(actor_) * _pool.quoteTokenScale();
         if (amount_> normalizedActorBalance) {

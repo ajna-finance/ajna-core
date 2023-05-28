@@ -34,29 +34,18 @@ abstract contract ReservePoolHandler is UnboundedReservePoolHandler, Liquidation
     ) external useRandomActor(actorIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BReserveHandler.takeReserves']++;
 
-        // Prepare test phase
-        uint256 boundedAmount = _preTakeReserves(amountToTake_);
+        // kick reserve auction if claimable reserves available
+        (, uint256 claimableReserves, , , ) = _poolInfo.poolReservesInfo(address(_pool));
+        if (claimableReserves != 0) {
+            _kickReserveAuction();
+        }
 
-        // Action phase
-        _takeReserves(boundedAmount);
-    }
-
-    /*******************************/
-    /*** Prepare Tests Functions ***/
-    /*******************************/
-
-    function _preTakeReserves(
-        uint256 amountToTake_
-    ) internal returns (uint256 boundedAmount_) {
+        // take reserve auction if remaining claimable reserves
         (, , uint256 claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
-        if (claimableReservesRemaining == 0) _kickReserveAuction();
-
-        // skip enough time for auction price to decrease
-        skip(_getKickReserveTime());
-
-        (, , claimableReservesRemaining, , ) = _poolInfo.poolReservesInfo(address(_pool));
-
-        boundedAmount_ = constrictToRange(amountToTake_, claimableReservesRemaining / 2, claimableReservesRemaining);
+        if (claimableReservesRemaining != 0) {
+            uint256 boundedAmount = constrictToRange(amountToTake_, claimableReservesRemaining / 2, claimableReservesRemaining);
+            _takeReserves(boundedAmount);
+        }
     }
 
 }
