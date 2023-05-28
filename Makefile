@@ -34,11 +34,11 @@ test-invariant-erc721-buckets   :; ./tests/forge/invariants/test-invariant-erc72
 test-rw-simulation              :; FOUNDRY_INVARIANT_SHRINK_SEQUENCE=false RUST_LOG=forge=info,foundry_evm=info,ethers=info forge t --mt invariant_all --mc RealWorld
 
 # Regression Tests
-test-regression-all             : test-regression-erc20 test-regression-erc721 test-regression-prototech test-regression-rw
-test-regression-erc20           :; forge t --mt test_regression --mc ERC20 --nmc "RealWorld|Prototech"
-test-regression-erc721          :; forge t --mt test_regression --mc ERC721 --nmc "RealWorld|Prototech"
+test-regression-all             : test-regression-erc20 test-regression-erc721 test-regression-prototech
+test-regression-erc20           :; forge t --mt test_regression --mc ERC20 --nmc "RWERC|Prototech"
+test-regression-erc721          :; forge t --mt test_regression --mc ERC721 --nmc "RWERC|Prototech"
 test-regression-prototech       :; forge t --mt test_regression --mc Prototech
-test-regression-rw       		:; forge t --mt test_regression --mc RWERC20Pool
+test-regression-rw              :; forge t --mt test_regression --mc RWERC
 test-regression                 :; forge t --mt ${MT}
 
 # Coverage
