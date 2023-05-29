@@ -19,8 +19,8 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
     address[] internal _lenders;
     address[] internal _borrowers;
 
-    uint16 internal constant LENDERS     = 500;
-    uint16 internal constant LOANS_COUNT = 3000;
+    uint16 internal constant LENDERS     = 200;
+    uint16 internal constant LOANS_COUNT = 500;
     uint16 nonce;
     uint256 numberOfBuckets;
 
@@ -39,6 +39,8 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
     }
 
     function setUp() internal useTimestamps {
+        vm.startPrank(address(this));
+
         _setupLendersAndDeposits(LENDERS);
         _setupBorrowersAndLoans(LOANS_COUNT);
 
@@ -55,11 +57,11 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
     function repayLoanOrSettleDebt(
         uint256 borrowerIndex_,
         uint256 skippedTime_
-    ) external useTimestamps skipTime(skippedTime_) {
+    ) external useTimestamps skipTime(skippedTime_) writeLogs {
         borrowerIndex_ = constrictToRange(borrowerIndex_, 0, _activeBorrowers.values().length - 1);
 
         _actor = _borrowers[borrowerIndex_];
-        vm.startPrank(_actor);
+        changePrank(_actor);
         (,,, uint256 kickTime,,,,,,) = _pool.auctionInfo(_actor);
         if (block.timestamp > kickTime + 72 hours) {
             numberOfCalls['BPanicExitPoolHandler.settleDebt']++;
@@ -70,11 +72,9 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
         }
         (, uint256 collateral, ) = _poolInfo.borrowerInfo(address(_pool), _actor);
         _pullCollateral(collateral);
-        vm.stopPrank();
 
         _auctionSettleStateReset(_actor);
-        (,,, kickTime,,,,,,) = _pool.auctionInfo(_actor);
-        if (kickTime == 0) _activeBorrowers.remove(borrowerIndex_);
+        _resetSettledAuction(_actor, borrowerIndex_);
     }
 
     /*****************************/
@@ -86,7 +86,7 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
         uint256 kickerIndex_,
         uint256 skippedTime_,
         bool    takeAuction_
-    ) external useTimestamps skipTime(skippedTime_) {
+    ) external useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BPanicExitPoolHandler.kickAndTakeAuction']++;
 
         borrowerIndex_ = constrictToRange(borrowerIndex_, 0, _activeBorrowers.values().length - 1);
@@ -96,38 +96,62 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
         address kicker   = _lenders[kickerIndex_];
 
         _actor = kicker;
-        vm.startPrank(_actor);
+        changePrank(_actor);
         _kickAuction(borrower);
 
         if (takeAuction_) {
             vm.warp(block.timestamp + 61 minutes);
             ( , uint256 auctionedCollateral, ) = _pool.borrowerInfo(borrower);
             _takeAuction(borrower, auctionedCollateral, _actor);
+            _resetSettledAuction(borrower, borrowerIndex_);
         }
+    }
 
-        vm.stopPrank();
+    function kickAndBucketTakeAuction(
+        uint256 borrowerIndex_,
+        uint256 kickerIndex_,
+        uint256 bucketIndex_,
+        bool depositTake_,
+        uint256 skippedTime_
+    ) external useTimestamps skipTime(skippedTime_) writeLogs {
+        numberOfCalls['BPanicExitPoolHandler.kickAndBucketTakeAuction']++;
+
+        bucketIndex_   = constrictToRange(bucketIndex_, LENDER_MIN_BUCKET_INDEX, LENDER_MAX_BUCKET_INDEX);
+        borrowerIndex_ = constrictToRange(borrowerIndex_, 0, _activeBorrowers.values().length - 1);
+        kickerIndex_   = constrictToRange(kickerIndex_, 0, LENDERS - 1);
+
+        address borrower = _borrowers[borrowerIndex_];
+        address kicker   = _lenders[kickerIndex_];
+
+        _actor = kicker;
+        changePrank(_actor);
+        _kickAuction(borrower);
+
+        vm.warp(block.timestamp + 61 minutes);
+
+        _bucketTake(_actor, borrower, depositTake_, bucketIndex_);
+        _resetSettledAuction(borrower, borrowerIndex_);
     }
 
     function kickWithDeposit(
         uint256 kickerIndex_,
         uint256 bucketIndex_,
         uint256 skippedTime_
-    ) external useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) {
+    ) external useRandomLenderBucket(bucketIndex_) useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BPanicExitPoolHandler.kickWithDeposit']++;
 
         kickerIndex_   = constrictToRange(kickerIndex_, 0, LENDERS - 1);
         address kicker  = _lenders[kickerIndex_];
 
         _actor = kicker;
-        vm.startPrank(_actor);
+        changePrank(_actor);
         _kickWithDeposit(_lenderBucketIndex);
-        vm.stopPrank();
     }
 
     function withdrawBonds(
         uint256 kickerIndex_,
         uint256 skippedTime_
-    ) external useTimestamps skipTime(skippedTime_) {
+    ) external useTimestamps skipTime(skippedTime_) writeLogs {
         numberOfCalls['BPanicExitPoolHandler.withdrawBonds']++;
 
         kickerIndex_    = constrictToRange(kickerIndex_, 0, LENDERS - 1);
@@ -136,9 +160,18 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
         (uint256 kickerClaimable, ) = _pool.kickerInfo(kicker); 
 
         _actor = kicker;
-        vm.startPrank(_actor);
+        changePrank(_actor);
         _withdrawBonds(kicker, kickerClaimable);
-        vm.stopPrank();
+    }
+
+    function settleHeadAuction(
+        uint256 skippedTime_
+    ) external useTimestamps skipTime(skippedTime_) writeLogs {
+        (, , , , , , address headAuction, , , ) = _pool.auctionInfo(address(0));
+        if (headAuction != address(0)) {
+            _settleAuction(headAuction, 10);
+            _resetSettledAuction(headAuction, 0);
+        }
     }
 
     function _setupLendersAndDeposits(uint256 count_) internal virtual {
@@ -147,9 +180,8 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
             address lender = address(uint160(uint256(keccak256(abi.encodePacked(i, 'lender')))));
 
             _actor = lender;
-            vm.startPrank(_actor);
+            changePrank(_actor);
             _addQuoteToken(100_000 * 1e18, buckets[_randomBucket()]);
-            vm.stopPrank();
 
             actors.push(lender);
             _lenders.push(lender);
@@ -163,9 +195,8 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
             address borrower = address(uint160(uint256(keccak256(abi.encodePacked(i, 'borrower')))));
 
             _actor = borrower;
-            vm.startPrank(_actor);
+            changePrank(_actor);
             _drawDebt(_randomDebt() * 1e18);
-            vm.stopPrank();
 
             actors.push(borrower);
             _activeBorrowers.add(i);
@@ -187,6 +218,14 @@ contract PanicExitERC20PoolHandler is UnboundedLiquidationPoolHandler, Unbounded
             keccak256(abi.encodePacked(block.timestamp, msg.sender, nonce))
         ) % 900 + 100;
         ++ nonce;
+    }
+
+    function _resetSettledAuction(address borrower_, uint256 borrowerIndex_) internal {
+        (,,, uint256 kickTime,,,,,,) = _pool.auctionInfo(borrower_);
+        if (kickTime == 0) {
+            alreadyTaken[borrower_] = false;
+            if (borrowerIndex_ != 0) _activeBorrowers.remove(borrowerIndex_);
+        }
     }
 
 }

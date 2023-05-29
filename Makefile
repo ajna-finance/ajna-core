@@ -34,6 +34,9 @@ test-invariant-erc721-buckets   :; ./tests/forge/invariants/test-invariant-erc72
 test-erc20-rw-simulation        :; FOUNDRY_INVARIANT_SHRINK_SEQUENCE=false RUST_LOG=forge=info,foundry_evm=info,ethers=info forge t --mt invariant_all_erc20 --mc RealWorldScenario
 test-erc721-rw-simulation       :; FOUNDRY_INVARIANT_SHRINK_SEQUENCE=false RUST_LOG=forge=info,foundry_evm=info,ethers=info forge t --mt invariant_all_erc721 --mc RealWorldScenario
 
+# Load test scenarios
+test-erc20-panic-exit           :; FOUNDRY_INVARIANT_SHRINK_SEQUENCE=false RUST_LOG=forge=info,foundry_evm=info,ethers=info forge t --mt invariant_all_erc20 --mc PanicExit
+
 # Regression Tests
 test-regression-all             : test-regression-erc20 test-regression-erc721 test-regression-prototech
 test-regression-erc20           :; forge t --mt test_regression --mc ERC20 --nmc "RealWorldRegression|Prototech"
