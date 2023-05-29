@@ -146,6 +146,7 @@ abstract contract BaseHandler is Test {
 
                 _ensureQuoteAmount(headAuction, auctionedDebt);
                 _repayBorrowerDebt(headAuction, auctionedDebt);
+                _auctionSettleStateReset(headAuction);
             }
         }
 
