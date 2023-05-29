@@ -4,7 +4,7 @@ pragma solidity 0.8.18;
 
 import { RealWorldScenarioInvariants } from "../../invariants/ERC20Pool/RealWorldScenarioInvariants.t.sol";
 
-contract RegressionTestReserveWithQuotePrecision4RWERC20Pool is RealWorldScenarioInvariants {
+contract RealWorldRegressionTestReserveWithQuotePrecision4 is RealWorldScenarioInvariants {
 
     function setUp() public override {
         vm.setEnv("NO_OF_ACTORS", "25");
@@ -91,7 +91,7 @@ contract RegressionTestReserveWithQuotePrecision4RWERC20Pool is RealWorldScenari
     }
 }
 
-contract RegressionTestReserveWithColPrecision2RWERC20Pool is RealWorldScenarioInvariants {
+contract RealWorldRegressionTestReserveWithColPrecision2 is RealWorldScenarioInvariants {
 
     function setUp() public override {
         vm.setEnv("NO_OF_ACTORS", "25");
