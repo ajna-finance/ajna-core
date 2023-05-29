@@ -22,8 +22,6 @@ import { PositionManager } from './PositionManager.sol';
 
 import { Maths } from './libraries/internal/Maths.sol';
 
-import '@std/console.sol';
-
 /**
  *  @title  Rewards (staking) Manager contract
  *  @notice Pool lenders can optionally mint `NFT` that represents their positions.
@@ -604,7 +602,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
                 uint256 rewardsClaimedInEpoch = updateRewardsClaimed[curBurnEpoch];
 
                 // update total tokens claimed for updating bucket exchange rates tracker
-                if (totalBurnedInEpoch != 0 && (rewardsClaimedInEpoch + updatedRewards_ >= rewardsCap)) {
+                if (rewardsClaimedInEpoch + updatedRewards_ >= rewardsCap) {
                     // if update reward is greater than cap, set to remaining difference
                     updatedRewards_ = rewardsClaimedInEpoch > rewardsCap ? 0 : rewardsCap - rewardsClaimedInEpoch;
                 }
