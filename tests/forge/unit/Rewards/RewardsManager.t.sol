@@ -1790,7 +1790,7 @@ contract RewardsManagerTest is RewardsHelperContract {
         });
 
         // trigger ajna burns
-        uint256 tokensToBurn = _triggerReserveAuctions({
+        _triggerReserveAuctions({
             borrower:     _borrower,
             tokensToBurn: 81.799082739441001952 * 1e18,
             borrowAmount: 300 * 1e18,
