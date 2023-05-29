@@ -31,7 +31,8 @@ test-invariant-erc20-buckets    :; ./tests/forge/invariants/test-invariant-erc20
 test-invariant-erc721-buckets   :; ./tests/forge/invariants/test-invariant-erc721-buckets.sh
 
 # Real-world simulation scenarios
-test-rw-simulation              :; FOUNDRY_INVARIANT_SHRINK_SEQUENCE=false RUST_LOG=forge=info,foundry_evm=info,ethers=info forge t --mt invariant_all --mc RealWorldScenario
+test-erc20-rw-simulation        :; FOUNDRY_INVARIANT_SHRINK_SEQUENCE=false RUST_LOG=forge=info,foundry_evm=info,ethers=info forge t --mt invariant_all_erc20 --mc RealWorldScenario
+test-erc721-rw-simulation       :; FOUNDRY_INVARIANT_SHRINK_SEQUENCE=false RUST_LOG=forge=info,foundry_evm=info,ethers=info forge t --mt invariant_all_erc721 --mc RealWorldScenario
 
 # Regression Tests
 test-regression-all             : test-regression-erc20 test-regression-erc721 test-regression-prototech

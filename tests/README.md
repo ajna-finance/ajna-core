@@ -108,6 +108,12 @@ To test all invariants for a pool with more depth (Time skip after kick actions 
 ```bash
 make test-invariant MT=invariant SCENARIO=no-skip
 ```
+To test all invariants (lend/borrow, liquidations and reserve auctions) for a real-world like pool simulation:
+```bash
+make test-erc20-rw-simulation SCENARIO=<rw-scenario>
+make test-erc721-rw-simulation SCENARIO=<rw-scenario>
+```
+where `<rw-scenario>` is the configured setup (two sample provided as `rw-1` and `rw-2`). Real-time pool statistics are written in `logfile.txt`
 
 #### Commands
 - run all invariant tests for both ERC20 and ERC721 pools:

@@ -6,21 +6,21 @@ import "@std/console.sol";
 
 import { BaseInvariants }                 from '../base/BaseInvariants.sol';
 import { ReserveInvariants }              from '../base/ReserveInvariants.t.sol';
-import { ReserveERC20PoolHandler }        from './handlers/ReserveERC20PoolHandler.sol';
-import { LiquidationERC20PoolInvariants } from './LiquidationERC20PoolInvariants.t.sol';
+import { ReserveERC721PoolHandler }        from './handlers/ReserveERC721PoolHandler.sol';
+import { LiquidationERC721PoolInvariants } from './LiquidationERC721PoolInvariants.t.sol';
 
-contract RealWorldScenarioInvariants is ReserveInvariants, LiquidationERC20PoolInvariants {
+contract RealWorldScenarioInvariants is ReserveInvariants, LiquidationERC721PoolInvariants {
 
-    ReserveERC20PoolHandler internal _reserveERC20PoolHandler;
+    ReserveERC721PoolHandler internal _reserveERC721PoolHandler;
 
-    function setUp() public override(BaseInvariants, LiquidationERC20PoolInvariants) virtual {
+    function setUp() public override(BaseInvariants, LiquidationERC721PoolInvariants) virtual {
 
         super.setUp();
 
-        excludeContract(address(_liquidationERC20PoolHandler));
+        excludeContract(address(_liquidationERC721PoolHandler));
 
-        _reserveERC20PoolHandler = new ReserveERC20PoolHandler(
-            address(_erc20pool),
+        _reserveERC721PoolHandler = new ReserveERC721PoolHandler(
+            address(_erc721pool),
             address(_ajna),
             address(_quote),
             address(_collateral),
@@ -29,14 +29,12 @@ contract RealWorldScenarioInvariants is ReserveInvariants, LiquidationERC20PoolI
             address(this)
         );
 
-        _handler = address(_reserveERC20PoolHandler);
+        _handler = address(_reserveERC721PoolHandler);
     }
 
-    function invariant_all_erc20() public useCurrentTimestamp {
+    function invariant_all_erc721() public useCurrentTimestamp {
         console.log("Quote precision:     ", _quote.decimals());
-        console.log("Collateral precision:", _collateral.decimals());
         console.log("Quote balance:       ", _quote.balanceOf(address(_pool)));
-        console.log("Collateral balance:  ", _collateral.balanceOf(address(_pool)));
 
         _invariant_B1();
         _invariant_B2_B3();
@@ -62,7 +60,7 @@ contract RealWorldScenarioInvariants is ReserveInvariants, LiquidationERC20PoolI
         _invariant_F4();
         _invariant_F5();
 
-        invariant_collateral_CT1_CT7();
+        invariant_collateral();
 
         _invariant_A1();
         _invariant_A2();
@@ -76,7 +74,7 @@ contract RealWorldScenarioInvariants is ReserveInvariants, LiquidationERC20PoolI
         invariant_call_summary();
     }
 
-    function invariant_call_summary() public virtual override(LiquidationERC20PoolInvariants, ReserveInvariants) useCurrentTimestamp {
+    function invariant_call_summary() public virtual override(LiquidationERC721PoolInvariants, ReserveInvariants) useCurrentTimestamp {
         super.invariant_call_summary();
     }
 

@@ -62,6 +62,7 @@ abstract contract BaseHandler is Test {
 
     address[] public actors;
     mapping(bytes => uint256)   public numberOfCalls;  // Logging
+    mapping(bytes => uint256)   public numberOfActions;  // Logging
     mapping(address => uint256[]) public touchedBuckets; // Bucket tracking
 
     // exchange rate invariant test state
@@ -555,6 +556,12 @@ abstract contract BaseHandler is Test {
         printLog("Current Epoch            = ", currentEpoch);
         printLog("Total reserves unclaimed = ", reserveUnclaimed);
         printLog("Total interest earned    = ", totalInterest);
+        printLine("");
+        printLog("Successful kicks         = ", numberOfActions["kick"]);
+        printLog("Successful deposit kicks = ", numberOfActions["kickWithDeposit"]);
+        printLog("Successful takes         = ", numberOfActions["take"]);
+        printLog("Successful bucket takes  = ", numberOfActions["bucketTake"]);
+        printLog("Successful settles       = ", numberOfActions["settle"]);
 
         printInNextLine("=======================");
     }
