@@ -72,7 +72,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     mapping(uint256 => mapping(uint256 => bool)) public override isEpochClaimed;
     /// @dev `epoch => rewards claimed` mapping.
     mapping(uint256 => uint256) public override rewardsClaimed;
-    /// @dev `epoch => update bucket rate rewards claimed` mapping.
+    /// @dev `epoch => update bucket rate rewards claimed` mapping. Tracks the total amount of update rewards claimed.
     mapping(uint256 => uint256) public override updateRewardsClaimed;
 
     /// @dev Mapping of per pool bucket exchange rates at a given burn event `poolAddress => bucketIndex => epoch => bucket exchange rate`.
@@ -284,6 +284,15 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         );
     }
 
+    /// @inheritdoc IRewardsManagerState
+    function isBucketUpdated(
+        address pool_,
+        uint256 bucketIndex_,
+        uint256 epoch_
+    ) external view override returns (bool) {
+        return bucketExchangeRates[pool_][bucketIndex_][epoch_] != 0;
+    }
+
     /**************************/
     /*** Internal Functions ***/
     /**************************/
@@ -486,7 +495,9 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             positionManager.getPositionIndexes(tokenId_)
         );
 
-        rewardsEarned += _calculateAndClaimRewards(tokenId_, epochToClaim_);
+        if (!isEpochClaimed[tokenId_][epochToClaim_]) {
+            rewardsEarned += _calculateAndClaimRewards(tokenId_, epochToClaim_);
+        }
 
         uint256[] memory burnEpochsClaimed = _getBurnEpochsClaimed(
             stakeInfo_.lastClaimedEpoch,
@@ -570,9 +581,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
                 unchecked { ++i; }
             }
         }
-
         else {
-
             if (block.timestamp <= curBurnTime + UPDATE_PERIOD) {
 
                 // update exchange rates and calculate rewards if tokens were burned and within allowed time period

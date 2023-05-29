@@ -87,6 +87,7 @@
 - **RW6**: Each time the bucket rate is updated the `updateRewardsClaimed` accumulator should be properly updated
 - **RW7**: After unstaking or claiming rewards, if ajna has been burned over an epoch while the staker was staked they should have an increased amount in ajna balance `_ajna.balanceOf()` that matches the amount of ajna balance deducted from the contract`_ajna.balanceOf()`.
 - **RW8**: After unstaking, stakeInfo's tokenId mapping should be deleted and all corrosponding values should therefore be zero'd out (`StakeInfo.ajnaPool`, `StakeInfo.lastClaimedEpoch`, `StakeInfo.owner`, `StakeInfo.stakingEpoch`, `StakeInfo.snapshots`)
+- **RW9**: Can't claim rewards for an end epoch twice
 
 ## Position Manager
 - **PM1**: LP balance of PositionManager in a Pool for a Bucket should be the sum of the positions[...][index].lps for all tokens/users
