@@ -95,16 +95,9 @@ abstract contract PermitERC721 is ERC721, IPermit {
         _nameHash    = keccak256(bytes(name_));
         _versionHash = keccak256(bytes(version_));
 
-        // get chainId for the domain
-        uint256 chainId;
-        //solhint-disable-next-line no-inline-assembly
-        assembly {
-            chainId := chainid()
-        }
-
         // save gas by storing the chainId and DomainSeparator in the state on deployment
-        _domainChainId = chainId;
-        _domainSeparator = _calculateDomainSeparator(chainId);
+        _domainChainId   = block.chainid;
+        _domainSeparator = _calculateDomainSeparator(_domainChainId);
     }
 
     /************************/
@@ -116,15 +109,8 @@ abstract contract PermitERC721 is ERC721, IPermit {
      *  @dev    The chainID is not set as a constant, to ensure that the chainId will change in the event of a chain fork.
      *  @return The `bytes32` domain separator of Position `NFT`s.
      */
-    function DOMAIN_SEPARATOR() public view returns (bytes32) {
-        // get chainId for the domain
-        uint256 chainId;
-        //solhint-disable-next-line no-inline-assembly
-        assembly {
-            chainId := chainid()
-        }
-
-        return (chainId == _domainChainId) ? _domainSeparator : _calculateDomainSeparator(chainId);
+    function DOMAIN_SEPARATOR() external view returns (bytes32) {
+        return _getDomainSeparator();
     }
 
     /**
@@ -190,7 +176,7 @@ abstract contract PermitERC721 is ERC721, IPermit {
     ) internal view returns (bytes32) {
         return
             ECDSA.toTypedDataHash(
-                DOMAIN_SEPARATOR(),
+                _getDomainSeparator(),
                 keccak256(
                     abi.encode(
                         PERMIT_TYPEHASH,
@@ -201,6 +187,15 @@ abstract contract PermitERC721 is ERC721, IPermit {
                     )
                 )
             );
+    }
+
+    /**
+     *  @notice Calculate the `EIP-712` compliant `DOMAIN_SEPERATOR` for ledgible signature encoding.
+     *  @dev    The chainID is not set as a constant, to ensure that the chainId will change in the event of a chain fork.
+     *  @return The `bytes32` domain separator of Position `NFT`s.
+     */
+    function _getDomainSeparator() internal view returns (bytes32) {
+        return (block.chainid == _domainChainId) ? _domainSeparator : _calculateDomainSeparator(block.chainid);
     }
 
     /**
