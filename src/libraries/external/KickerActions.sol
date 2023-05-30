@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.18;
 
+import { Math }     from '@openzeppelin/contracts/utils/math/Math.sol';
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import { PoolType } from '../../interfaces/pool/IPool.sol';
@@ -24,6 +25,7 @@ import {
 }                             from '../../interfaces/pool/commons/IPoolInternals.sol';
 
 import {
+    MAX_NEUTRAL_PRICE,
     _auctionPrice,
     _bondParams,
     _bpf,
@@ -72,7 +74,6 @@ library KickerActions {
         uint256 bucketDeposit;            // [WAD] amount of quote tokens in bucket
         uint256 bucketLP;                 // [WAD] LP of the bucket
         uint256 bucketPrice;              // [WAD] bucket price
-        uint256 bucketRate;               // [WAD] bucket exchange rate
         uint256 bucketScale;              // [WAD] bucket scales
         uint256 bucketUnscaledDeposit;    // [WAD] unscaled amount of quote tokens in bucket
         uint256 lenderLP;                 // [WAD] LP of lender in bucket
@@ -170,16 +171,16 @@ library KickerActions {
         vars.bucketScale           = Deposits.scale(deposits_, index_);
         vars.bucketDeposit         = Maths.wmul(vars.bucketUnscaledDeposit, vars.bucketScale);
 
-        // calculate max amount that can be removed (constrained by lender LP in bucket, bucket deposit and the amount lender wants to remove)
-        vars.bucketRate = Buckets.getExchangeRate(
+        // calculate amount to remove based on lender LP in bucket
+        vars.amountToDebitFromDeposit = Buckets.lpToQuoteTokens(
             vars.bucketCollateral,
             vars.bucketLP,
             vars.bucketDeposit,
-            vars.bucketPrice
+            vars.lenderLP,
+            vars.bucketPrice,
+            Math.Rounding.Down
         );
 
-        // calculate amount to remove based on lender LP in bucket
-        vars.amountToDebitFromDeposit = Maths.wmul(vars.lenderLP, vars.bucketRate);
         // cap the amount to remove at bucket deposit
         if (vars.amountToDebitFromDeposit > vars.bucketDeposit) vars.amountToDebitFromDeposit = vars.bucketDeposit;
 
@@ -223,7 +224,14 @@ library KickerActions {
             vars.bucketUnscaledDeposit = 0;
 
         } else {
-            vars.redeemedLP = Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketRate);
+            vars.redeemedLP = Buckets.quoteTokensToLP(
+                vars.bucketCollateral,
+                vars.bucketLP,
+                vars.bucketDeposit,
+                vars.amountToDebitFromDeposit,
+                vars.bucketPrice,
+                Math.Rounding.Up
+            );
 
             uint256 unscaledAmountToRemove = Maths.wdiv(vars.amountToDebitFromDeposit, vars.bucketScale);
 
@@ -364,6 +372,10 @@ library KickerActions {
     ) internal returns (
         KickResult memory kickResult_
     ) {
+        Liquidation storage liquidation = auctions_.liquidations[borrowerAddress_];
+        // revert if liquidation is active
+        if (liquidation.kickTime != 0) revert AuctionActive();
+
         Borrower storage borrower = loans_.borrowers[borrowerAddress_];
 
         kickResult_.debtPreAction       = borrower.t0Debt;
@@ -382,7 +394,11 @@ library KickerActions {
         }
 
         // calculate auction params
-        vars.neutralPrice = Maths.wmul(borrower.t0Np, poolState_.inflator);
+        // neutral price is capped at 50 * max pool price
+        vars.neutralPrice = Maths.min(
+            Maths.wmul(borrower.t0Np, poolState_.inflator),
+            MAX_NEUTRAL_PRICE
+        );
         // check if NP is not less than price at the limit index provided by the kicker - done to prevent frontrunning kick auction call with a large amount of loan
         // which will make it harder for kicker to earn a reward and more likely that the kicker is penalized
         _revertIfPriceDroppedBelowLimit(vars.neutralPrice, limitIndex_);
@@ -405,6 +421,7 @@ library KickerActions {
         // record liquidation info
         _recordAuction(
             auctions_,
+            liquidation,
             borrowerAddress_,
             vars.bondSize,
             vars.bondFactor,
@@ -474,6 +491,7 @@ library KickerActions {
      *  @dev    increment auctions count accumulator
      *  @dev    updates auction queue state
      *  @param  auctions_        Struct for pool auctions state.
+     *  @param  liquidation_     Struct for current auction state.
      *  @param  borrowerAddress_ Address of the borrower that is kicked.
      *  @param  bondSize_        Bond size to cover newly kicked auction.
      *  @param  bondFactor_      Bond factor of the newly kicked auction.
@@ -482,22 +500,20 @@ library KickerActions {
      */
     function _recordAuction(
         AuctionsState storage auctions_,
+        Liquidation storage liquidation_,
         address borrowerAddress_,
         uint256 bondSize_,
         uint256 bondFactor_,
         uint256 momp_,
         uint256 neutralPrice_
     ) internal {
-        Liquidation storage liquidation = auctions_.liquidations[borrowerAddress_];
-        if (liquidation.kickTime != 0) revert AuctionActive();
-
         // record liquidation info
-        liquidation.kicker       = msg.sender;
-        liquidation.kickTime     = uint96(block.timestamp);
-        liquidation.kickMomp     = uint96(momp_); // cannot exceed max price enforced by _priceAt() function
-        liquidation.bondSize     = SafeCast.toUint160(bondSize_);
-        liquidation.bondFactor   = SafeCast.toUint96(bondFactor_);
-        liquidation.neutralPrice = SafeCast.toUint96(neutralPrice_);
+        liquidation_.kicker       = msg.sender;
+        liquidation_.kickTime     = uint96(block.timestamp);
+        liquidation_.kickMomp     = uint96(momp_); // cannot exceed max price enforced by _priceAt() function
+        liquidation_.bondSize     = SafeCast.toUint160(bondSize_);
+        liquidation_.bondFactor   = SafeCast.toUint96(bondFactor_);
+        liquidation_.neutralPrice = SafeCast.toUint96(neutralPrice_);
 
         // increment number of active auctions
         ++auctions_.noOfAuctions;
@@ -506,7 +522,7 @@ library KickerActions {
         if (auctions_.head != address(0)) {
             // other auctions in queue, liquidation doesn't exist or overwriting.
             auctions_.liquidations[auctions_.tail].next = borrowerAddress_;
-            liquidation.prev = auctions_.tail;
+            liquidation_.prev = auctions_.tail;
         } else {
             // first auction in queue
             auctions_.head = borrowerAddress_;

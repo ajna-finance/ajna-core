@@ -3,6 +3,7 @@
 pragma solidity 0.8.18;
 
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
+import { Math }           from '@openzeppelin/contracts/utils/math/Math.sol';
 
 import { PoolType } from '../../interfaces/pool/IPool.sol';
 
@@ -23,6 +24,8 @@ import { Maths }   from '../internal/Maths.sol';
 
     uint256 constant MIN_PRICE = 99_836_282_890;
     uint256 constant MAX_PRICE = 1_004_968_987.606512354182109771 * 1e18;
+
+    uint256 constant MAX_NEUTRAL_PRICE = 50_248_449_380.325617709105488550 * 1e18; // 50 * MAX_PRICE
 
     /// @dev deposit buffer (extra margin) used for calculating reserves
     uint256 constant DEPOSIT_BUFFER = 1.000000001 * 1e18;
@@ -187,6 +190,7 @@ import { Maths }   from '../internal/Maths.sol';
 
     /**
      *  @notice Returns the amount of collateral calculated for the given amount of `LP`.
+     *  @dev    The value returned is capped at collateral amount available in bucket.
      *  @param  bucketCollateral_ Amount of collateral in bucket.
      *  @param  bucketLP_         Amount of `LP` in bucket.
      *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / `LP`.
@@ -201,10 +205,14 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 lenderLPBalance_,
         uint256 bucketPrice_
     ) pure returns (uint256 collateralAmount_) {
-        // max collateral to lp
-        uint256 rate = Buckets.getExchangeRate(bucketCollateral_, bucketLP_, deposit_, bucketPrice_);
-
-        collateralAmount_ = Maths.wdiv(Maths.wmul(lenderLPBalance_, rate), bucketPrice_);
+        collateralAmount_ = Buckets.lpToCollateral(
+            bucketCollateral_,
+            bucketLP_,
+            deposit_,
+            lenderLPBalance_,
+            bucketPrice_,
+            Math.Rounding.Down
+        );
 
         if (collateralAmount_ > bucketCollateral_) {
             // user is owed more collateral than is available in the bucket
@@ -214,13 +222,14 @@ import { Maths }   from '../internal/Maths.sol';
 
     /**
      *  @notice Returns the amount of quote tokens calculated for the given amount of `LP`.
+     *  @dev    The value returned is capped at available bucket deposit.
      *  @param  bucketLP_         Amount of `LP` in bucket.
      *  @param  bucketCollateral_ Amount of collateral in bucket.
      *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / `LP`.
      *  @param  lenderLPBalance_  The amount of `LP` to calculate quote token amount for.
      *  @param  maxQuoteToken_    The max quote token amount to calculate `LP` for.
      *  @param  bucketPrice_      Bucket's price.
-     *  @return quoteTokenAmount_ Amount of quote tokens calculated for the given `LP` amount.
+     *  @return quoteTokenAmount_ Amount of quote tokens calculated for the given `LP` amount, capped at available bucket deposit.
      */
     function _lpToQuoteToken(
         uint256 bucketLP_,
@@ -230,9 +239,14 @@ import { Maths }   from '../internal/Maths.sol';
         uint256 maxQuoteToken_,
         uint256 bucketPrice_
     ) pure returns (uint256 quoteTokenAmount_) {
-        uint256 rate = Buckets.getExchangeRate(bucketCollateral_, bucketLP_, deposit_, bucketPrice_);
-
-        quoteTokenAmount_ = Maths.wmul(lenderLPBalance_, rate);
+        quoteTokenAmount_ = Buckets.lpToQuoteTokens(
+            bucketCollateral_,
+            bucketLP_,
+            deposit_,
+            lenderLPBalance_,
+            bucketPrice_,
+            Math.Rounding.Down
+        );
 
         if (quoteTokenAmount_ > deposit_)       quoteTokenAmount_ = deposit_;
         if (quoteTokenAmount_ > maxQuoteToken_) quoteTokenAmount_ = maxQuoteToken_;

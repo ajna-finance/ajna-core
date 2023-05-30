@@ -12,7 +12,7 @@ abstract contract PoolDeployer {
 
     /// @dev Min interest rate value allowed for deploying the pool (1%)
     uint256 public constant MIN_RATE = 0.01 * 1e18;
-    /// @dev Max interest rate value allowed for deploying the pool (10%
+    /// @dev Max interest rate value allowed for deploying the pool (10%)
     uint256 public constant MAX_RATE = 0.1  * 1e18;
 
     /// @dev `Ajna` token address

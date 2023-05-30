@@ -654,6 +654,71 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         });
     }
 
+    function testKickAuctionWithoutCollateralReverts() external tearDown {
+
+        // Skip to make borrower undercollateralized
+        skip(100 days);
+
+        _assertAuction(
+            AuctionParams({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0,
+                debtInAuction:     0,
+                thresholdPrice:    9.767138988573636286 * 1e18,
+                neutralPrice:      0
+            })
+        );
+        _assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              19.534277977147272573 * 1e18,
+            borrowerCollateral:        2 * 1e18,
+            borrowert0Np:              10.115967548076923081 * 1e18,
+            borrowerCollateralization: 0.995306391810796636 * 1e18
+        });
+
+        _kick({
+            from:           _lender,
+            borrower:       _borrower,
+            debt:           19.778456451861613481 * 1e18,
+            collateral:     2 * 1e18,
+            bond:           0.195342779771472726 * 1e18,
+            transferAmount: 0.195342779771472726 * 1e18
+        });
+
+        // skip enough time to take collateral at 0 price
+        skip(100 days);
+        _take({
+            from:            _lender,
+            borrower:        _borrower,
+            maxCollateral:   2 * 1e18,
+            bondChange:      0,
+            givenAmount:     0,
+            collateralTaken: 2 * 1e18,
+            isReward:        true
+        });
+        // entire borrower collateral is taken but auction not settled as there's still bad debt
+        _assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              21.425476464349380091 * 1e18,
+            borrowerCollateral:        0,
+            borrowert0Np:              10.115967548076923081 * 1e18,
+            borrowerCollateralization: 0
+        });
+
+        // kick borrower again should gracefully revert with AuctionActive error
+        _assertKickAuctionActiveRevert({
+            from:     _lender,
+            borrower: _borrower
+        });
+    }
+
     function testInterestsAccumulationWithAllLoansAuctioned() external tearDown {
         // Borrower2 borrows
         _borrow({

@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.18;
 
+import { Math } from '@openzeppelin/contracts/utils/math/Math.sol';
+
 import { Bucket, Lender } from '../../interfaces/pool/commons/IPoolState.sol';
 
 import { Maths } from './Maths.sol';
@@ -51,7 +53,8 @@ library Buckets {
             bucket_.lps,
             deposit_,
             collateralAmountToAdd_,
-            bucketPrice_
+            bucketPrice_,
+            Math.Rounding.Down
         );
         // update bucket LP balance and collateral
 
@@ -91,6 +94,10 @@ library Buckets {
     /*** View Functions ***/
     /**********************/
 
+    /****************************/
+    /*** Assets to LP helpers ***/
+    /****************************/
+
     /**
      *  @notice Returns the amount of bucket `LP` calculated for the given amount of collateral.
      *  @param  bucketCollateral_ Amount of collateral in bucket.
@@ -98,18 +105,30 @@ library Buckets {
      *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / `LP`.
      *  @param  collateral_       The amount of collateral to calculate bucket LP for.
      *  @param  bucketPrice_      Bucket's price.
-     *  @return lp_               Amount of `LP` calculated for the amount of collateral.
+     *  @param  rounding_         The direction of rounding when calculating LP (down when adding, up when removing collateral from pool).
+     *  @return Amount of `LP` calculated for the amount of collateral.
      */
     function collateralToLP(
         uint256 bucketCollateral_,
         uint256 bucketLP_,
         uint256 deposit_,
         uint256 collateral_,
-        uint256 bucketPrice_
-    ) internal pure returns (uint256 lp_) {
-        uint256 rate = getExchangeRate(bucketCollateral_, bucketLP_, deposit_, bucketPrice_);
+        uint256 bucketPrice_,
+        Math.Rounding rounding_
+    ) internal pure returns (uint256) {
+        // case when there's no deposit nor collateral in bucket
+        if (deposit_ == 0 && bucketCollateral_ == 0) return Maths.wmul(collateral_, bucketPrice_);
 
-        lp_ = Maths.wdiv(Maths.wmul(collateral_, bucketPrice_), rate);
+        // case when there's deposit or collateral in bucket but no LP to cover
+        if (bucketLP_ == 0) return Maths.wmul(collateral_, bucketPrice_);
+
+        // case when there's deposit or collateral and bucket has LP balance
+        return Math.mulDiv(
+            bucketLP_,
+            collateral_ * bucketPrice_,
+            deposit_ * Maths.WAD + bucketCollateral_ * bucketPrice_,
+            rounding_
+        );
     }
 
     /**
@@ -119,6 +138,7 @@ library Buckets {
      *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / `LP`.
      *  @param  quoteTokens_      The amount of quote tokens to calculate `LP` amount for.
      *  @param  bucketPrice_      Bucket's price.
+     *  @param  rounding_         The direction of rounding when calculating LP (down when adding, up when removing quote tokens from pool).
      *  @return The amount of `LP` coresponding to the given quote tokens in current bucket.
      */
     function quoteTokensToLP(
@@ -126,13 +146,97 @@ library Buckets {
         uint256 bucketLP_,
         uint256 deposit_,
         uint256 quoteTokens_,
-        uint256 bucketPrice_
+        uint256 bucketPrice_,
+        Math.Rounding rounding_
     ) internal pure returns (uint256) {
-        return Maths.wdiv(
-            quoteTokens_,
-            getExchangeRate(bucketCollateral_, bucketLP_, deposit_, bucketPrice_)
+        // case when there's no deposit nor collateral in bucket
+        if (deposit_ == 0 && bucketCollateral_ == 0) return quoteTokens_;
+
+        // case when there's deposit or collateral in bucket but no LP to cover
+        if (bucketLP_ == 0) return quoteTokens_;
+
+        // case when there's deposit or collateral and bucket has LP balance
+        return Math.mulDiv(
+            bucketLP_,
+            quoteTokens_ * Maths.WAD,
+            deposit_ * Maths.WAD + bucketCollateral_ * bucketPrice_,
+            rounding_
         );
     }
+
+    /****************************/
+    /*** LP to Assets helpers ***/
+    /****************************/
+
+    /**
+     *  @notice Returns the amount of collateral calculated for the given amount of lp
+     *  @dev    The value returned is not capped at collateral amount available in bucket.
+     *  @param  bucketCollateral_ Amount of collateral in bucket.
+     *  @param  bucketLP_         Amount of `LP` in bucket.
+     *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / `LP`.
+     *  @param  lp_               The amount of LP to calculate collateral amount for.
+     *  @param  bucketPrice_      Bucket's price.
+     *  @return The amount of collateral coresponding to the given `LP` in current bucket.
+     */
+    function lpToCollateral(
+        uint256 bucketCollateral_,
+        uint256 bucketLP_,
+        uint256 deposit_,
+        uint256 lp_,
+        uint256 bucketPrice_,
+        Math.Rounding rounding_
+    ) internal pure returns (uint256) {
+        // case when there's no deposit nor collateral in bucket
+        if (deposit_ == 0 && bucketCollateral_ == 0) return Maths.wdiv(lp_, bucketPrice_);
+
+        // case when there's deposit or collateral in bucket but no LP to cover
+        if (bucketLP_ == 0) return Maths.wdiv(lp_, bucketPrice_);
+
+        // case when there's deposit or collateral and bucket has LP balance
+        return Math.mulDiv(
+            deposit_ * Maths.WAD + bucketCollateral_ * bucketPrice_,
+            lp_,
+            bucketLP_ * bucketPrice_,
+            rounding_
+        );
+    }
+
+    /**
+     *  @notice Returns the amount of quote token (in value) calculated for the given amount of `LP`.
+     *  @dev    The value returned is not capped at available bucket deposit.
+     *  @param  bucketCollateral_ Amount of collateral in bucket.
+     *  @param  bucketLP_         Amount of `LP` in bucket.
+     *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / `LP`.
+     *  @param  lp_               The amount of LP to calculate quote tokens amount for.
+     *  @param  bucketPrice_      Bucket's price.
+     *  @return The amount coresponding to the given quote tokens in current bucket.
+     */
+    function lpToQuoteTokens(
+        uint256 bucketCollateral_,
+        uint256 bucketLP_,
+        uint256 deposit_,
+        uint256 lp_,
+        uint256 bucketPrice_,
+        Math.Rounding rounding_
+    ) internal pure returns (uint256) {
+        // case when there's no deposit nor collateral in bucket
+        if (deposit_ == 0 && bucketCollateral_ == 0) return lp_;
+
+        // case when there's deposit or collateral in bucket but no LP to cover
+        if (bucketLP_ == 0) return lp_;
+
+        // case when there's deposit or collateral and bucket has LP balance
+        return Math.mulDiv(
+            deposit_ * Maths.WAD + bucketCollateral_ * bucketPrice_,
+            lp_,
+            bucketLP_ * Maths.WAD,
+            rounding_
+        );
+    }
+
+    /****************************/
+    /*** Exchange Rate helper ***/
+    /****************************/
 
     /**
      *  @notice Returns the exchange rate for a given bucket.
