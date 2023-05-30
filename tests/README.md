@@ -100,6 +100,16 @@ To test all invariants for a pool with reduced usage (actions happening once in 
 ```bash
 make test-invariant MT=invariant SCENARIO=inactive-pool
 ```
+
+To test all invariants for a pool with more depth (Time skip after kick actions are 0 and `SKIP_TIME` between actions is maximum 5 mins):
+```bash
+make test-invariant MT=invariant SCENARIO=no-skip
+```
+To test all invariants (lend/borrow, liquidations and reserve auctions) for a real-world like pool simulation:
+```bash
+make test-rw-simulation-erc20 SCENARIO=<rw-scenario>
+make test-rw-simulation-erc721 SCENARIO=<rw-scenario>
+```
 To test invariants for an ERC20 auctioned pool with 200 lenders and 500 borrowers:
 ```bash
 make test-liquidations-load-erc20 SCENARIO=panic-exit
@@ -111,16 +121,6 @@ make test-liquidations-load-erc721 SCENARIO=panic-exit
 To test invariants for swapping quote for colalteral in an ERC20 pool with 200 lenders and 500 borrowers:
 ```bash
 make test-swap-load-erc20 SCENARIO=trading-pool
-```
-
-To test all invariants for a pool with more depth (Time skip after kick actions are 0 and `SKIP_TIME` between actions is maximum 5 mins):
-```bash
-make test-invariant MT=invariant SCENARIO=no-skip
-```
-To test all invariants (lend/borrow, liquidations and reserve auctions) for a real-world like pool simulation:
-```bash
-make test-rw-simulation-erc20 SCENARIO=<rw-scenario>
-make test-rw-simulation-erc721 SCENARIO=<rw-scenario>
 ```
 where `<rw-scenario>` is the configured setup (two sample provided as `rw-1` and `rw-2`). Real-time pool statistics are written in `logfile.txt`
 

@@ -73,10 +73,9 @@ contract TradingERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBa
 
         changePrank(_actor);
 
-        uint256 quoteBalanceBeforeSwap = _quote.balanceOf(address(_actor));
-        uint256 colBalanceBeforeSwap   = _collateral.balanceOf(address(_actor));
-        uint256 rateBeforeSwap         = _pool.bucketExchangeRate(_lenderBucketIndex);
-        (uint256 lpBeforeSwap, , , ,)  = _pool.bucketInfo(_lenderBucketIndex);
+        uint256 rateBeforeSwap        = _pool.bucketExchangeRate(_lenderBucketIndex);
+        (uint256 lpBeforeSwap, , , ,) = _pool.bucketInfo(_lenderBucketIndex);
+
         _addQuoteToken(tradeAmount_, _lenderBucketIndex);
         _removeCollateral(type(uint256).max, _lenderBucketIndex);
 
@@ -107,10 +106,9 @@ contract TradingERC20PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBa
 
         changePrank(_actor);
 
-        uint256 quoteBalanceBeforeSwap = _quote.balanceOf(address(_actor));
-        uint256 colBalanceBeforeSwap   = _collateral.balanceOf(address(_actor));
-        uint256 rateBeforeSwap         = _pool.bucketExchangeRate(_lenderBucketIndex);
-        (uint256 lpBeforeSwap, , , ,)  = _pool.bucketInfo(_lenderBucketIndex);
+        uint256 rateBeforeSwap        = _pool.bucketExchangeRate(_lenderBucketIndex);
+        (uint256 lpBeforeSwap, , , ,) = _pool.bucketInfo(_lenderBucketIndex);
+
         _addCollateral(tradeAmount_, _lenderBucketIndex);
         _removeQuoteToken(type(uint256).max, _lenderBucketIndex);
 
