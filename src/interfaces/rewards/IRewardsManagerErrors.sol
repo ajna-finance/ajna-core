@@ -37,7 +37,7 @@ interface IRewardsManagerErrors {
     error NotOwnerOfDeposit();
 
     /**
-     *  @notice Can't deploy with `Ajna` token address `0x` address.
+     *  @notice Can't deploy with `Ajna` token or position manager address `0x`.
      */
     error DeployWithZeroAddress();
 }

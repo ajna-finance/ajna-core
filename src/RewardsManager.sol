@@ -43,20 +43,20 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     /**
      * @notice Maximum percentage of tokens burned that can be claimed as `Ajna` token `LP` `NFT` rewards.
      */
-    uint256 internal constant REWARD_CAP = 0.8 * 1e18;
+    uint256 internal constant REWARD_CAP = 800000000000000000; // 0.8 * 1e18
     /**
      * @notice Maximum percentage of tokens burned that can be claimed as `Ajna` token update rewards.
      */
-    uint256 internal constant UPDATE_CAP = 0.1 * 1e18;
+    uint256 internal constant UPDATE_CAP = 100000000000000000; // 0.1 * 1e18
     /**
      * @notice Reward factor by which to scale the total rewards earned.
      * @dev ensures that rewards issued to staked lenders in a given pool are less than the `Ajna` tokens burned in that pool.
      */
-    uint256 internal constant REWARD_FACTOR = 0.5 * 1e18;
+    uint256 internal constant REWARD_FACTOR = 500000000000000000; // 0.5 * 1e18
     /**
      * @notice Reward factor by which to scale rewards earned for updating a buckets exchange rate.
      */
-    uint256 internal constant UPDATE_CLAIM_REWARD = 0.05 * 1e18;
+    uint256 internal constant UPDATE_CLAIM_REWARD = 50000000000000000; // 0.05 * 1e18
     /**
      * @notice Time period after a burn event in which buckets exchange rates can be updated.
      */
@@ -93,7 +93,9 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     /*******************/
 
     constructor(address ajnaToken_, IPositionManager positionManager_) {
-        if (ajnaToken_ == address(0)) revert DeployWithZeroAddress();
+        if (
+            ajnaToken_ == address(0) || address(positionManager_) == address(0)
+        ) revert DeployWithZeroAddress();
 
         ajnaToken = ajnaToken_;
         positionManager = positionManager_;
@@ -165,13 +167,13 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         stakeInfo.lastClaimedEpoch = uint96(curBurnEpoch);
 
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
+        uint256 noOfPositions = positionIndexes.length;
+        uint256 bucketId;
 
-        for (uint256 i = 0; i < positionIndexes.length; ) {
-
-            uint256 bucketId = positionIndexes[i];
+        for (uint256 i = 0; i < noOfPositions; ) {
+            bucketId = positionIndexes[i];
 
             BucketState storage bucketState = stakeInfo.snapshot[bucketId];
-
             // record the number of lps in bucket at the time of staking
             bucketState.lpsAtStakeTime = positionManager.getLP(tokenId_, bucketId);
             // record the bucket exchange rate at the time of staking
@@ -263,7 +265,6 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         uint256 tokenId_,
         uint256 epochToClaim_
     ) external view override returns (uint256 rewards_) {
-
         address ajnaPool         = stakes[tokenId_].ajnaPool;
         uint256 lastClaimedEpoch = stakes[tokenId_].lastClaimedEpoch;
         uint256 stakingEpoch     = stakes[tokenId_].stakingEpoch;
@@ -331,7 +332,6 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         uint256 tokenId_,
         uint256 epochToClaim_
     ) internal returns (uint256 rewards_) {
-
         address ajnaPool         = stakes[tokenId_].ajnaPool;
         uint256 lastClaimedEpoch = stakes[tokenId_].lastClaimedEpoch;
         uint256 stakingEpoch     = stakes[tokenId_].stakingEpoch;
@@ -383,7 +383,8 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
         uint256 interestEarned;
 
         // iterate through all buckets and calculate epoch rewards for
-        for (uint256 i = 0; i < positionIndexes_.length; ) {
+        uint256 noOfPositions = positionIndexes_.length;
+        for (uint256 i = 0; i < noOfPositions; ) {
             bucketIndex = positionIndexes_[i];
             BucketState memory bucketSnapshot = stakes[tokenId_].snapshot[bucketIndex];
 
@@ -627,8 +628,9 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
         // Update exchange rates without reward if first epoch or if the epoch does not have burned tokens associated with it
         if (curBurnEpoch == 0 || totalBurnedInEpoch == 0) {
-            for (uint256 i = 0; i < indexes_.length; ) {
+            uint256 noOfIndexes = indexes_.length;
 
+            for (uint256 i = 0; i < noOfIndexes; ) {
                 _updateBucketExchangeRate(
                     pool_,
                     indexes_[i],
@@ -643,7 +645,8 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
             if (block.timestamp <= curBurnTime + UPDATE_PERIOD) {
 
                 // update exchange rates and calculate rewards if tokens were burned and within allowed time period
-                for (uint256 i = 0; i < indexes_.length; ) {
+                uint256 noOfIndexes = indexes_.length;
+                for (uint256 i = 0; i < noOfIndexes; ) {
 
                     // calculate rewards earned for updating bucket exchange rate
                     updatedRewards_ += _updateBucketExchangeRateAndCalculateRewards(
@@ -778,7 +781,9 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
 
         // remove bucket snapshots recorded at the time of staking
         uint256[] memory positionIndexes = positionManager.getPositionIndexes(tokenId_);
-        for (uint256 i = 0; i < positionIndexes.length; ) {
+        uint256 noOfIndexes = positionIndexes.length;
+
+        for (uint256 i = 0; i < noOfIndexes; ) {
             delete stakeInfo.snapshot[positionIndexes[i]]; // reset BucketState struct for current position
 
             unchecked { ++i; }
