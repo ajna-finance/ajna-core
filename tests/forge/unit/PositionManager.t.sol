@@ -56,6 +56,7 @@ abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract 
     function _getPermitSig(
         address spender_,
         uint256 tokenId_,
+        uint256 nonce_,
         uint256 deadline_,
         uint256 ownerPrivateKey_
     ) internal view returns (bytes memory signature_) {
@@ -70,7 +71,7 @@ abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract 
                                 _positionManager.PERMIT_TYPEHASH(),
                                 spender_,
                                 tokenId_,
-                                0,
+                                nonce_,
                                 deadline_
                             )
                         )
@@ -1287,7 +1288,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         {
             uint256 deadline = block.timestamp + 10000;
-            bytes memory signature = _getPermitSig(address(spenderContract), tokenId, deadline, minterPrivateKey);
+            bytes memory signature = _getPermitSig(address(spenderContract), tokenId, 0, deadline, minterPrivateKey);
             changePrank(testMinter);
             spenderContract.transferFromWithPermit(testReceiver, tokenId, deadline, signature);
         }
@@ -1353,7 +1354,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // check contract owned nft can't be signed by non owner
         uint256 deadline = block.timestamp + 1 days;
-        bytes memory signature = _getPermitSig(address(spenderContract), tokenId, deadline, recipientContractOwnerPrivateKey);
+        bytes memory signature = _getPermitSig(address(spenderContract), tokenId, 0, deadline, recipientContractOwnerPrivateKey);
         vm.expectRevert(IPermit.NotAuthorized.selector);
         spenderContract.transferFromWithPermit(address(recipientContract), tokenId, deadline, signature);
 
@@ -1363,10 +1364,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // check owner can permit their contract to transfer the NFT
         changePrank(address(mintingContract));
         deadline = block.timestamp + 1 days;
-        signature = _getPermitSig(address(spenderContract), tokenId, deadline, mintingOwnerPrivateKey);
+        signature = _getPermitSig(address(spenderContract), tokenId, 0, deadline, mintingOwnerPrivateKey);
         spenderContract.transferFromWithPermit(address(recipientContract), tokenId, deadline, signature);
 
-        // check nonces increment with permit
+        // check nonces increment with transfer
         assertEq(_positionManager.nonces(tokenId), 1);
 
         // check retrieving token nonces for non existent tokens will revert
@@ -1395,13 +1396,13 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // check can't use a deadline in the past
         uint256 deadline = block.timestamp - 1 days;
-        bytes memory signature = _getPermitSig(testSpender, tokenId, deadline, minterPrivateKey);
+        bytes memory signature = _getPermitSig(testSpender, tokenId, 0, deadline, minterPrivateKey);
         vm.expectRevert(IPermit.PermitExpired.selector);
         spenderContract.transferFromWithPermit(testReceiver, tokenId, deadline, signature);
 
         // check signer is authorized to permit
         deadline = block.timestamp + 1 days;
-        signature = _getPermitSig(testSpender, tokenId, deadline, receiverPrivateKey);
+        signature = _getPermitSig(testSpender, tokenId, 0, deadline, receiverPrivateKey);
         vm.expectRevert(IPermit.NotAuthorized.selector);
         spenderContract.transferFromWithPermit(testReceiver, tokenId, deadline, signature);
 
@@ -1441,11 +1442,17 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // minter creates signature, but doesn't use it
         uint256 deadline = block.timestamp + 10000;
-        bytes memory signature = _getPermitSig(address(spenderContract), tokenId, deadline, minterPrivateKey);
+        bytes memory signature = _getPermitSig(address(spenderContract), tokenId, 0, deadline, minterPrivateKey);
+
+        // check nonces don't change without transfer
+        assertEq(_positionManager.nonces(tokenId), 0);
 
         // minter transfers the nft directly to the receiver without using the previous permit
         changePrank(testMinter);
         _positionManager.transferFrom(testMinter, testReceiver, tokenId);
+
+        // check nonces after transfer
+        assertEq(_positionManager.nonces(tokenId), 1);
 
         // minter attempt to invoke previous permit should fail due to invalid nonce
         vm.expectRevert(IPermit.NotAuthorized.selector);

@@ -16,7 +16,7 @@ interface IPermit {
     /**************/
 
     /**
-     * @notice User queried the nonces of a token that doesn't exxist.
+     * @notice User queried the nonces of a token that doesn't exist.
      */
     error NonExistentToken();
 
