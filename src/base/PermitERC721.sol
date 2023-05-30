@@ -261,8 +261,10 @@ abstract contract PermitERC721 is ERC721, IPermit {
         _nonces[tokenId]++;
     }
 
-    /// @dev _transfer override to be able to increment the permit nonce
-    /// @inheritdoc ERC721
+    /**
+     * @notice _transfer override to be able to increment the permit nonce
+     * @inheritdoc ERC721
+     */
     function _transfer(
         address from,
         address to,
