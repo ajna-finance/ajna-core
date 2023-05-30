@@ -102,11 +102,11 @@ make test-invariant MT=invariant SCENARIO=inactive-pool
 ```
 To test invariants for an ERC20 auctioned pool with 200 lenders and 500 borrowers:
 ```bash
-make test-erc20-panic-exit SCENARIO=panic-exit
+make test-liquidations-load-erc20 SCENARIO=panic-exit
 ```
 or for ERC721 pool:
 ```bash
-make test-erc721-panic-exit SCENARIO=panic-exit
+make test-liquidations-load-erc721 SCENARIO=panic-exit
 ```
 
 To test all invariants for a pool with more depth (Time skip after kick actions are 0 and `SKIP_TIME` between actions is maximum 5 mins):
@@ -115,8 +115,8 @@ make test-invariant MT=invariant SCENARIO=no-skip
 ```
 To test all invariants (lend/borrow, liquidations and reserve auctions) for a real-world like pool simulation:
 ```bash
-make test-erc20-rw-simulation SCENARIO=<rw-scenario>
-make test-erc721-rw-simulation SCENARIO=<rw-scenario>
+make test-rw-simulation-erc20 SCENARIO=<rw-scenario>
+make test-rw-simulation-erc721 SCENARIO=<rw-scenario>
 ```
 where `<rw-scenario>` is the configured setup (two sample provided as `rw-1` and `rw-2`). Real-time pool statistics are written in `logfile.txt`
 
