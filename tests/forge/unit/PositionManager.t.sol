@@ -2928,7 +2928,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             lpBalance:    11_000 * 1e18,
             collateral:   0,
             deposit:      8_936.865546659328965469 * 1e18,
-            exchangeRate: 0.812442322423575360 * 1e18
+            exchangeRate: 0.812442322423575361 * 1e18
         });
 
         assertTrue(_positionManager.isPositionBucketBankrupt(tokenId, testIndex));

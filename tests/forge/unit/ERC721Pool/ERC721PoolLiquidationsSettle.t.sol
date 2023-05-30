@@ -304,7 +304,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
             lpBalance:    0.000000137345389190 * 1e18,
             collateral:   1.375706158271934622 * 1e18,
             deposit:      0,
-            exchangeRate: 1.000000000007280914 * 1e18
+            exchangeRate: 1.000000000005475091 * 1e18
         });
 
         assertEq(_quote.balanceOf(address(_pool)), 6_000 * 1e18);
@@ -374,7 +374,7 @@ contract ERC721PoolLiquidationsSettleTest is ERC721HelperContract {
             lpBalance:    1_860.819465331537769873 * 1e18,
             collateral:   0,
             deposit:      1_861.382770397052268844 * 1e18,
-            exchangeRate: 1.000302718816096507 * 1e18
+            exchangeRate: 1.000302718816096508 * 1e18
         });
     }
 

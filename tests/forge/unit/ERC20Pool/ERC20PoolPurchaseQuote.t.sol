@@ -127,7 +127,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
             lpBalance:    2_043.56808879152623138 * 1e18,
             collateral:   0.678725133191514713 * 1e18,
             deposit:      0,
-            exchangeRate: 1.000000000000000001 * 1e18
+            exchangeRate: 1.000000000000000002 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _lender,

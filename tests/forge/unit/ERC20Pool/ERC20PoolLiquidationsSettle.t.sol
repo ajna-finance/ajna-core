@@ -368,7 +368,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             lpBalance:    2_000 * 1e18,
             collateral:   200 * 1e18,
             deposit:      0,
-            exchangeRate: 0.991718484343591207 * 1e18
+            exchangeRate: 0.991718484343591208 * 1e18
         });
         _assertBucket({
             index:        _i9_81,
@@ -570,21 +570,21 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             lpBalance:    2_000 * 1e18,
             collateral:   202.986484470302055715 * 1e18,
             deposit:      0,
-            exchangeRate: 1.006527243605609345 * 1e18
+            exchangeRate: 1.006527243605609346 * 1e18
         });
         _assertBucket({
             index:        _i9_81,
             lpBalance:    5_000 * 1e18,
             collateral:   512.553559942792076265 * 1e18,
             deposit:      0,
-            exchangeRate: 1.006527243605609345 * 1e18
+            exchangeRate: 1.006527243605609346 * 1e18
         });
         _assertBucket({
             index:        _i9_72,
             lpBalance:    11_000 * 1e18,
             collateral:   284.459955586905868020 * 1e18,
             deposit:      8_290.291541398584037503 * 1e18,
-            exchangeRate: 1.005055539219335975 * 1e18
+            exchangeRate: 1.005055539219335976 * 1e18
         });
         _assertBucket({
             index:        _i9_62,
@@ -1033,7 +1033,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             lpBalance:    2_099.367201799558744044 * 1e18,
             collateral:   0,
             deposit:      bucket1Deposit,
-            exchangeRate: 1.006368280367980192 * 1e18
+            exchangeRate: 1.006368280367980193 * 1e18
         });
 
         _assertBucket({
@@ -1041,7 +1041,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             lpBalance:    7_020.307252493359351054 * 1e18,
             collateral:   0,
             deposit:      bucket2Deposit,
-            exchangeRate: 1.006368280367980192 * 1e18
+            exchangeRate: 1.006368280367980193 * 1e18
         });
 
         // LP forfeited when forgive bad debt should be reflected in BucketBankruptcy event

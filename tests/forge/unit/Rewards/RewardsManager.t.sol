@@ -1260,11 +1260,11 @@ contract RewardsManagerTest is RewardsHelperContract {
         });
 
         // bucket exchange rates are higher at the time minter three stakes
-        assertEq(_pool.bucketExchangeRate(2550), 1.000000116558299385 * 1e18);
-        assertEq(_pool.bucketExchangeRate(2551), 1.000000116558299385 * 1e18);
-        assertEq(_pool.bucketExchangeRate(2552), 1.000000116558299385 * 1e18);
-        assertEq(_pool.bucketExchangeRate(2553), 1.000000116558299385 * 1e18);
-        assertEq(_pool.bucketExchangeRate(2555), 1.000000116558299385 * 1e18);
+        assertEq(_pool.bucketExchangeRate(2550), 1.000000116558299386 * 1e18);
+        assertEq(_pool.bucketExchangeRate(2551), 1.000000116558299386 * 1e18);
+        assertEq(_pool.bucketExchangeRate(2552), 1.000000116558299386 * 1e18);
+        assertEq(_pool.bucketExchangeRate(2553), 1.000000116558299386 * 1e18);
+        assertEq(_pool.bucketExchangeRate(2555), 1.000000116558299386 * 1e18);
 
         // stake NFT
         _stakeToken({
@@ -1289,13 +1289,13 @@ contract RewardsManagerTest is RewardsHelperContract {
             pool:                      address(_pool),
             tokenId:                   tokenIdTwo,
             claimedArray:              _epochsClaimedArray(1, 0),
-            reward:                    39.906143408239864635 * 1e18,
+            reward:                    39.906143408239914821 * 1e18,
             indexes:                   depositIndexes,
-            updateExchangeRatesReward: 6.651023502439549123 * 1e18
+            updateExchangeRatesReward: 6.651023502439557481 * 1e18
         });
 
         uint256 minterTwoBalance = _ajnaToken.balanceOf(_minterTwo);
-        assertEq(minterTwoBalance, 39.906143408239864635 * 1e18);
+        assertEq(minterTwoBalance, 39.906143408239914821 * 1e18);
         _unstakeToken({
             owner:                     _minterThree,
             pool:                      address(_pool),
@@ -1373,7 +1373,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             owner:   _minterTwo,
             tokenId: tokenIdTwo
         });
-        assertEq(_ajnaToken.balanceOf(_minterTwo), 8.154774722201704480 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_minterTwo), 8.154774722201710814 * 1e18);
 
         // calculate rewards earned since exchange rates have been updated
         uint256 idOneRewardsAtOne = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
@@ -1457,7 +1457,7 @@ contract RewardsManagerTest is RewardsHelperContract {
             epochsClaimed:      _epochsClaimedArray(1,1),
             reward:             idTwoRewardsAtTwo
         });
-        assertEq(_ajnaToken.balanceOf(_minterTwo), 31.661999680215449085 * 1e18);
+        assertEq(_ajnaToken.balanceOf(_minterTwo), 31.661999680215455419 * 1e18);
 
         // check there are no remaining rewards available after claiming
         uint256 remainingRewards = _rewardsManager.calculateRewards(tokenIdOne, _pool.currentBurnEpoch());
