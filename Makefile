@@ -34,7 +34,7 @@ test-invariant-erc721-buckets   :; ./tests/forge/invariants/test-invariant-erc72
 test-erc20-rw-simulation        :; FOUNDRY_INVARIANT_SHRINK_SEQUENCE=false RUST_LOG=forge=info,foundry_evm=info,ethers=info forge t --mt invariant_all_erc20 --mc RealWorldScenario
 test-erc721-rw-simulation       :; FOUNDRY_INVARIANT_SHRINK_SEQUENCE=false RUST_LOG=forge=info,foundry_evm=info,ethers=info forge t --mt invariant_all_erc721 --mc RealWorldScenario
 
-# Load test scenarios
+# Liquidations load test scenarios
 test-erc20-panic-exit           :; FOUNDRY_INVARIANT_SHRINK_SEQUENCE=false RUST_LOG=forge=info,foundry_evm=info,ethers=info forge t --mt invariant_all_erc20 --mc PanicExitERC20
 test-erc721-panic-exit          :; FOUNDRY_INVARIANT_SHRINK_SEQUENCE=false RUST_LOG=forge=info,foundry_evm=info,ethers=info forge t --mt invariant_all_erc721 --mc PanicExitERC721
 

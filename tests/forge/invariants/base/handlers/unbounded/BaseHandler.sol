@@ -160,33 +160,30 @@ abstract contract BaseHandler is Test {
             vm.warp(block.timestamp + time_);
         } else {
             // repay from loans if pool debt exceeds configured max debt
-            {
-                // if debt still not under limit then start repaying from max loan
-                // max repayments that can be done to prevent running out of gas
-                uint256 maxLoansRepayments = 5;
+            // max repayments that can be done to prevent running out of gas
+            uint256 maxLoansRepayments = 5;
 
-                while (maxPoolDebt < poolDebt && maxLoansRepayments > 0) {
-                    (address borrower, , ) = _pool.loansInfo();
+            while (maxPoolDebt < poolDebt && maxLoansRepayments > 0) {
+                (address borrower, , ) = _pool.loansInfo();
 
-                    if (borrower != address(0)) {
-                        (uint256 debt, , )     = _poolInfo.borrowerInfo(address(_pool), borrower);
+                if (borrower != address(0)) {
+                    (uint256 debt, , )     = _poolInfo.borrowerInfo(address(_pool), borrower);
 
-                        try vm.startPrank(borrower) {
-                        } catch {
-                            changePrank(borrower);
-                        }
-
-                        _ensureQuoteAmount(borrower, debt);
-                        _repayBorrowerDebt(borrower, debt);
-                    } else {
-                        // max borrower is 0x address, exit loop
-                        break;
+                    try vm.startPrank(borrower) {
+                    } catch {
+                        changePrank(borrower);
                     }
 
-                    (poolDebt, , ,) = _pool.debtInfo();
-
-                    --maxLoansRepayments;
+                    _ensureQuoteAmount(borrower, debt);
+                    _repayBorrowerDebt(borrower, debt);
+                } else {
+                    // max borrower is 0x address, exit loop
+                    break;
                 }
+
+                (poolDebt, , ,) = _pool.debtInfo();
+
+                --maxLoansRepayments;
             }
         }
 

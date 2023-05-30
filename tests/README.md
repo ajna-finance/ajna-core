@@ -100,7 +100,7 @@ To test all invariants for a pool with reduced usage (actions happening once in 
 ```bash
 make test-invariant MT=invariant SCENARIO=inactive-pool
 ```
-To test invariants for an ERC20 auctioned pool with thousands of lenders and borrowers:
+To test invariants for an ERC20 auctioned pool with 200 lenders and 500 borrowers:
 ```bash
 make test-erc20-panic-exit SCENARIO=panic-exit
 ```

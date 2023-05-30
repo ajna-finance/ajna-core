@@ -7,8 +7,8 @@ import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { TokenWithNDecimals } from '../../../utils/Tokens.sol';
 
-import { BaseERC721PoolHandler }            from './unbounded/BaseERC721PoolHandler.sol';
-import { UnboundedBasicERC721PoolHandler }  from './unbounded/UnboundedBasicERC721PoolHandler.sol';
+import { BaseERC721PoolHandler }           from './unbounded/BaseERC721PoolHandler.sol';
+import { UnboundedBasicERC721PoolHandler } from './unbounded/UnboundedBasicERC721PoolHandler.sol';
 import { UnboundedLiquidationPoolHandler } from '../../base/handlers/unbounded/UnboundedLiquidationPoolHandler.sol';
 
 contract PanicExitERC721PoolHandler is UnboundedLiquidationPoolHandler, UnboundedBasicERC721PoolHandler {
