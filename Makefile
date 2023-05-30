@@ -38,6 +38,9 @@ test-rw-simulation-erc721       :; FOUNDRY_INVARIANT_SHRINK_SEQUENCE=false RUST_
 test-liquidations-load-erc20     :; FOUNDRY_INVARIANT_SHRINK_SEQUENCE=false RUST_LOG=forge=info,foundry_evm=info,ethers=info forge t --mt invariant_all_erc20 --mc PanicExitERC20
 test-liquidations-load-erc721    :; FOUNDRY_INVARIANT_SHRINK_SEQUENCE=false RUST_LOG=forge=info,foundry_evm=info,ethers=info forge t --mt invariant_all_erc721 --mc PanicExitERC721
 
+# Swap tokens load test scenarios
+test-swap-load-erc20             :; FOUNDRY_INVARIANT_SHRINK_SEQUENCE=false RUST_LOG=forge=info,foundry_evm=info,ethers=info forge t --mt invariant_all_erc20 --mc TradingERC20
+
 # Regression Tests
 test-regression-all             : test-regression-erc20 test-regression-erc721 test-regression-prototech
 test-regression-erc20           :; forge t --mt test_regression --mc ERC20 --nmc "RealWorldRegression|Prototech"
