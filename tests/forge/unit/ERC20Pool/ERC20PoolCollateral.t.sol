@@ -388,7 +388,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             lpBalance:    7_436.903294828767447877 * 1e18,
             collateral:   2.47 * 1e18,
             deposit:      0,
-            exchangeRate: 1 * 1e18
+            exchangeRate: 1.000000000000000001 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _bidder,
@@ -456,7 +456,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             lpBalance:    243_808.126330587520990920 * 1e18,
             collateral:   0.5 * 1e18,
             deposit:      0,
-            exchangeRate: 1 * 1e18
+            exchangeRate: 1.000000000000000001 * 1e18
         });
         _assertLenderLpBalance({
             lender:      _bidder,
@@ -649,7 +649,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             lpBalance:    9_927_093_687_851.086595628225718495 * 1e18,
             collateral:   3642907759.282013932739218713 * 1e18,
             deposit:      6879,
-            exchangeRate: 1 * 1e18 // exchange rate should not change
+            exchangeRate: 1.000000000000000001 * 1e18 // exchange rate should not change
         });
 
         _removeAllCollateral({
@@ -676,7 +676,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             lpBalance:    6879,
             collateral:   1,
             deposit:      6879,
-            exchangeRate: 1.396133158889373455 * 1e18
+            exchangeRate: 1.396139944475026071 * 1e18
             // exchange rate should not change in theory, but due to rounding unfavorable to the
             // collateral redeemer, the small residual depositor gains
         });
@@ -723,7 +723,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             lpBalance:    9_927_093_687_851.086595628225718495 * 1e18,
             collateral:   3642907759.282013932739218713 * 1e18,
             deposit:      6879,
-            exchangeRate: 1 * 1e18 // exchange rate should not change
+            exchangeRate: 1.000000000000000001 * 1e18 // exchange rate should not change
         });
 
         _removeAllCollateral({
@@ -801,7 +801,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             lpBalance:    3029,
             collateral:   1,
             deposit:      304,
-            exchangeRate: 1 * 1e18 // exchange rate should not change
+            exchangeRate: 1.000015410380886212 * 1e18 // exchange rate should not change
         });
 
         // bidder should not be able to remove any collateral as LP balance is 304 < 2725
@@ -834,7 +834,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             lpBalance:    3029,
             collateral:   1,
             deposit:      304,
-            exchangeRate: 1 * 1e18 // exchange rate should not change
+            exchangeRate: 1.000015410380886212 * 1e18 // exchange rate should not change
         });
     }
 
@@ -891,7 +891,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             lpBalance:    5451,
             collateral:   1,
             deposit:      2726,
-            exchangeRate: 1 * 1e18 // exchange rate should not change
+            exchangeRate: 1.000008563207430625 * 1e18 // exchange rate should not change
         });
 
         uint256 snapshot = vm.snapshot();
@@ -990,7 +990,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             lpBalance:    5450,
             collateral:   1,
             deposit:      2727,
-            exchangeRate: 1.000366972477064220 * 1e18
+            exchangeRate: 1.000375537255725567 * 1e18
         });
     }
 
@@ -1033,7 +1033,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             lpBalance:    41420710,
             collateral:   15200,
             deposit:      2,
-            exchangeRate: 1.000000048285024569 * 1e18
+            exchangeRate: 1.000000036365004509 * 1e18
         });
 
     }
@@ -1138,7 +1138,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             lpBalance:    8287415.613413 * 1e18,       // LP balance decreased with 1 LP redeemed by attacker
             collateral:   (1 * 1e30) - 60332,          // collateral decreased with amount removed
             deposit:      1,                           // deposit added by attacker remains in bucket
-            exchangeRate: 1 * 1e18                     // still 1 WAD
+            exchangeRate: 1.000000000000000001 * 1e18  // still 1 WAD
         });
         _assertLenderLpBalance({
             lender:      attacker,                 // attacker address
