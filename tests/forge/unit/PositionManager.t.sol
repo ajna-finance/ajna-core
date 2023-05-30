@@ -1478,6 +1478,9 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // check owner
         assertEq(_positionManager.ownerOf(tokenId), testMinter);
+
+        // check nonces after transfer
+        assertEq(_positionManager.nonces(tokenId), 2);
     }
 
     /**
