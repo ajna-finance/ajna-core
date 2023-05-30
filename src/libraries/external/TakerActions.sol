@@ -293,7 +293,7 @@ library TakerActions {
             uint256 price     = _reserveAuctionPrice(kicked);
 
             amount_       = Maths.min(unclaimed, maxAmount_);
-            ajnaRequired_ = Maths.wmul(amount_, price);
+            ajnaRequired_ = Maths.ceilWmul(amount_, price);
 
             unclaimed -= amount_;
 

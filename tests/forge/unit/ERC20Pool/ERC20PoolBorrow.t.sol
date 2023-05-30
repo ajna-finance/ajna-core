@@ -331,7 +331,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             newLup:             2_981.007422784467321543 * 1e18
         });
 
-        uint256 expectedDebt = 21_046.123595032677924433 * 1e18;
+        uint256 expectedDebt = 21_046.123595032677924434 * 1e18;
 
         _assertPool(
             PoolParams({
@@ -366,7 +366,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             amount:   10 * 1e18
         });
 
-        expectedDebt = 21_072.086872169016071672 * 1e18;
+        expectedDebt = 21_072.086872169016071673 * 1e18;
 
         _assertPool(
             PoolParams({
@@ -439,7 +439,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         emit LoanStamped(_borrower);
         _pool.stampLoan();
 
-        expectedDebt = 21_132.184557783880298440 * 1e18;
+        expectedDebt = 21_132.184557783880298441 * 1e18;
 
         _assertPool(
             PoolParams({

@@ -158,7 +158,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         );
         _assertBorrower({
             borrower:                  _borrower2,
-            borrowerDebt:              9_853.394241979221645666 * 1e18,
+            borrowerDebt:              9_853.394241979221645667 * 1e18,
             borrowerCollateral:        1_000 * 1e18,
             borrowert0Np:              10.307611531622595991 * 1e18,
             borrowerCollateralization: 0.986593617011217057 * 1e18
@@ -246,7 +246,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         );
         _assertBorrower({
             borrower:                  _borrower2,
-            borrowerDebt:              9_977.074177773911990381 * 1e18,
+            borrowerDebt:              9_977.074177773911990382 * 1e18,
             borrowerCollateral:        1_000 * 1e18,
             borrowert0Np:              10.307611531622595991 * 1e18,
             borrowerCollateralization: 0.974363394700228467 * 1e18
@@ -274,14 +274,14 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
                 kickMomp:          9.818751856078723036 * 1e18,
                 totalBondEscrowed: 103.758834042401124745 * 1e18,
                 auctionPrice:      0.653111452826113536 * 1e18,
-                debtInAuction:     10_158.205099579803908908 * 1e18,
+                debtInAuction:     10_158.205099579803908909 * 1e18,
                 thresholdPrice:    50.791025497899019544 * 1e18,
                 neutralPrice:      10.449783245217816340 * 1e18
             })
         );
         _assertBorrower({
             borrower:                  _borrower2,
-            borrowerDebt:              10_158.205099579803908908 * 1e18,
+            borrowerDebt:              10_158.205099579803908909 * 1e18,
             borrowerCollateral:        200 * 1e18,
             borrowert0Np:              10.307611531622595991 * 1e18,
             borrowerCollateralization: 0.191397904841159446 * 1e18
@@ -320,7 +320,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
         _assertBorrower({
             borrower:                  _borrower2,
-            borrowerDebt:              10_162.015140830231868753 * 1e18,
+            borrowerDebt:              10_162.015140830231868754 * 1e18,
             borrowerCollateral:        200 * 1e18,
             borrowert0Np:              10.307611531622595991 * 1e18,
             borrowerCollateralization: 0.191326144082827145 * 1e18
@@ -368,7 +368,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             lpBalance:    2_000 * 1e18,
             collateral:   200 * 1e18,
             deposit:      0,
-            exchangeRate: 0.991718484343591207 * 1e18
+            exchangeRate: 0.991718484343591208 * 1e18
         });
         _assertBucket({
             index:        _i9_81,
@@ -440,7 +440,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         );
         _assertBorrower({
             borrower:                  _borrower2,
-            borrowerDebt:              9_853.394241979221645666 * 1e18,
+            borrowerDebt:              9_853.394241979221645667 * 1e18,
             borrowerCollateral:        1_000 * 1e18,
             borrowert0Np:              10.307611531622595991 * 1e18,
             borrowerCollateralization: 0.986593617011217057 * 1e18
@@ -529,7 +529,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         );
         _assertBorrower({
             borrower:                  _borrower2,
-            borrowerDebt:              9_980.303582194898667001 * 1e18,
+            borrowerDebt:              9_980.303582194898667002 * 1e18,
             borrowerCollateral:        1_000 * 1e18,
             borrowert0Np:              10.307611531622595991 * 1e18,
             borrowerCollateralization: 0.974048112361512224 * 1e18
@@ -568,23 +568,23 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         _assertBucket({
             index:        _i9_91,
             lpBalance:    2_000 * 1e18,
-            collateral:   202.986484470302055714 * 1e18,
+            collateral:   202.986484470302055715 * 1e18,
             deposit:      0,
-            exchangeRate: 1.006527243605609345 * 1e18
+            exchangeRate: 1.006527243605609346 * 1e18
         });
         _assertBucket({
             index:        _i9_81,
             lpBalance:    5_000 * 1e18,
             collateral:   512.553559942792076265 * 1e18,
             deposit:      0,
-            exchangeRate: 1.006527243605609345 * 1e18
+            exchangeRate: 1.006527243605609346 * 1e18
         });
         _assertBucket({
             index:        _i9_72,
             lpBalance:    11_000 * 1e18,
-            collateral:   284.459955586905868021 * 1e18,
-            deposit:      8_290.291541398584037502 * 1e18,
-            exchangeRate: 1.005055539219335975 * 1e18
+            collateral:   284.459955586905868020 * 1e18,
+            deposit:      8_290.291541398584037503 * 1e18,
+            exchangeRate: 1.005055539219335976 * 1e18
         });
         _assertBucket({
             index:        _i9_62,
@@ -674,7 +674,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         );
         _assertBorrower({
             borrower:                  _borrower2,
-            borrowerDebt:              9_977.074177773911990381 * 1e18,
+            borrowerDebt:              9_977.074177773911990382 * 1e18,
             borrowerCollateral:        1_000 * 1e18,
             borrowert0Np:              10.307611531622595991 * 1e18,
             borrowerCollateralization: 0.974363394700228467 * 1e18
@@ -746,7 +746,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         // settle should work because there is still debt to settle but no collateral left to auction (even if 72 hours didn't pass from kick)
         _assertBorrower({
             borrower:                  _borrower2,
-            borrowerDebt:              10_028.889031920233428707 * 1e18,
+            borrowerDebt:              10_028.889031920233428708 * 1e18,
             borrowerCollateral:        0,
             borrowert0Np:              10.307611531622595991 * 1e18,
             borrowerCollateralization: 0
@@ -874,7 +874,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             index:        _i9_72,
             lpBalance:    11_000 * 1e18,
             collateral:   0 * 1e18,
-            deposit:      9_036.877963971180232638 * 1e18,
+            deposit:      9_036.877963971180232637 * 1e18,
             exchangeRate: 0.821534360361016385 * 1e18
         });
 
@@ -962,7 +962,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
         );
         _assertBorrower({
             borrower:                  _borrower2,
-            borrowerDebt:              9_977.074177773911990381 * 1e18,
+            borrowerDebt:              9_977.074177773911990382 * 1e18,
             borrowerCollateral:        1_000 * 1e18,
             borrowert0Np:              10.307611531622595991 * 1e18,
             borrowerCollateralization: 0.974363394700228467 * 1e18
@@ -1018,7 +1018,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
         uint256 bucket1Deposit = 2_112.736560735960384000 * 1e18;
         uint256 bucket2Deposit = 7_065.014537346601772214 * 1e18;
-        uint256 debtToSettle   = 10_028.889031920233428707 * 1e18;
+        uint256 debtToSettle   = 10_028.889031920233428708 * 1e18;
 
         _assertBorrower({
             borrower:                  _borrower2,
@@ -1033,7 +1033,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             lpBalance:    2_099.367201799558744044 * 1e18,
             collateral:   0,
             deposit:      bucket1Deposit,
-            exchangeRate: 1.006368280367980192 * 1e18
+            exchangeRate: 1.006368280367980193 * 1e18
         });
 
         _assertBucket({
@@ -1041,7 +1041,7 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             lpBalance:    7_020.307252493359351054 * 1e18,
             collateral:   0,
             deposit:      bucket2Deposit,
-            exchangeRate: 1.006368280367980192 * 1e18
+            exchangeRate: 1.006368280367980193 * 1e18
         });
 
         // LP forfeited when forgive bad debt should be reflected in BucketBankruptcy event
