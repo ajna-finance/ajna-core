@@ -168,9 +168,6 @@ abstract contract PermitERC721 is ERC721, IPermit {
 
         // approve the spender for accessing the tokenId
         _approve(spender_, tokenId_);
-
-        // increment the permit nonce of the given tokenId
-        _incrementNonce(tokenId_);
     }
 
     /**************************/
@@ -262,6 +259,20 @@ abstract contract PermitERC721 is ERC721, IPermit {
      */
     function _incrementNonce(uint256 tokenId) internal {
         _nonces[tokenId]++;
+    }
+
+    /// @dev _transfer override to be able to increment the permit nonce
+    /// @inheritdoc ERC721
+    function _transfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal virtual override {
+        // increment the permit nonce of this tokenId to ensure it can't be reused
+        _incrementNonce(tokenId);
+
+        // transfer the NFT to the to address
+        super._transfer(from, to, tokenId);
     }
 
 }
