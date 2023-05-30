@@ -1417,6 +1417,42 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
     }
 
     /**
+     *  @notice Tests permit signatures are invalid after each transfer due to incremented nonce.
+     */
+    function testPermitDuringTransfers() external {
+        // generate addresses and set test params
+        (address testMinter, uint256 minterPrivateKey) = makeAddrAndKey("testMinter");
+        address testReceiver   = makeAddr("testReceiver");
+        uint256 testIndexPrice = 2550;
+
+        // add initial liquidity
+        _mintQuoteAndApproveManagerTokens(testMinter, 50_000 * 1e18);
+
+        _addInitialLiquidity({
+            from:   testMinter,
+            amount: 15_000 * 1e18,
+            index:  testIndexPrice
+        });
+
+        uint256 tokenId = _mintNFT(testMinter, testMinter, address(_pool));
+
+        // deploy spender contract
+        ContractNFTSpender spenderContract = new ContractNFTSpender(address(_positionManager));
+
+        // minter creates signature, but doesn't use it
+        uint256 deadline = block.timestamp + 10000;
+        bytes memory signature = _getPermitSig(address(spenderContract), tokenId, deadline, minterPrivateKey);
+
+        // minter transfers the nft directly to the receiver without using the previous permit
+        changePrank(testMinter);
+        _positionManager.transferFrom(testMinter, testReceiver, tokenId);
+
+        // minter attempt to invoke previous permit should fail due to invalid nonce
+        vm.expectRevert(IPermit.NotAuthorized.selector);
+        spenderContract.transferFromWithPermit(testMinter, tokenId, deadline, signature);
+    }
+
+    /**
      *  @notice Tests NFT position can & can't be burned based on liquidity attached to it.
      *          Checks that old owner cannot move positions.
      *          Owner reverts: attempts to burn NFT with liquidity.
