@@ -221,7 +221,6 @@ contract PanicExitERC721PoolHandler is UnboundedLiquidationPoolHandler, Unbounde
     function _resetSettledAuction(address borrower_, uint256 borrowerIndex_) internal {
         (,,, uint256 kickTime,,,,,,) = _pool.auctionInfo(borrower_);
         if (kickTime == 0) {
-            buckets.add(7388);
             alreadyTaken[borrower_] = false;
             if (borrowerIndex_ != 0) _activeBorrowers.remove(borrowerIndex_);
         }
