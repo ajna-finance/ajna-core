@@ -591,7 +591,6 @@ contract ERC20PoolLiquidationsMiscTest is ERC20HelperContract {
             deposit:      0,
             exchangeRate: 1 * 1e18
         });
-        // TODO: review, strange values
         _assertBucket({
             index:        _i9_52,
             lpBalance:    7_920.016453607292031745 * 1e18,
