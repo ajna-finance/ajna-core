@@ -100,7 +100,7 @@ contract PoolInfoUtils {
         uint256 t0Debt;
         (t0Debt, collateral_, t0Np_)  = pool.borrowerInfo(borrower_);
 
-        debt_ = Maths.wmul(t0Debt, pendingInflator);
+        debt_ = Maths.ceilWmul(t0Debt, pendingInflator);
     }
 
     /**

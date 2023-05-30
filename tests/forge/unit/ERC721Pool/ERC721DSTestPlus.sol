@@ -52,7 +52,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus, IERC721PoolEvents {
         uint256 factor = PoolCommons.pendingInterestFactor(interestRate, block.timestamp - lastInflatorUpdate);
 
         // Calculate current debt of borrower (currentPoolInflator * borrowerT0Debt)
-        uint256 currentDebt = Maths.wmul(Maths.wmul(poolInflator, factor), borrowerT0debt);
+        uint256 currentDebt = Maths.ceilWmul(Maths.wmul(poolInflator, factor), borrowerT0debt);
         uint256 tokenDebt   = _roundUpToScale(currentDebt, ERC721Pool(address(_pool)).quoteTokenScale());
 
         // mint quote tokens to borrower address equivalent to the current debt

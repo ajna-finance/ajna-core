@@ -5,9 +5,6 @@ pragma solidity 0.8.18;
 import { ReserveERC721PoolInvariants } from "../../invariants/ERC721Pool/ReserveERC721PoolInvariants.t.sol";
 
 contract RegressionTestReserveERC721Pool is ReserveERC721PoolInvariants { 
-    function setUp() public override { 
-        super.setUp();
-    }
 
     function test_regression_arithmetic_overflow() external {
         _reserveERC721PoolHandler.takeAuction(92769370221611464325146803683156031925894702957583423527130966373453460, 1, 0, 0);
@@ -450,28 +447,6 @@ contract RegressionTestReserveERC721Pool is ReserveERC721PoolInvariants {
 }
 
 contract RegressionTestReserveEvmRevertERC721Pool is ReserveERC721PoolInvariants {
-
-    function setUp() public override {
-        vm.setEnv("QUOTE_PRECISION", "8");
-        vm.setEnv("COLLATERAL_PRECISION", "6");
-        vm.setEnv("BUCKET_INDEX_ERC20", "2570");
-        vm.setEnv("BUCKET_INDEX_ERC721", "1000");
-        vm.setEnv("NO_OF_BUCKETS", "10");
-        vm.setEnv("MIN_QUOTE_AMOUNT_ERC20", "1000");
-        vm.setEnv("MAX_QUOTE_AMOUNT_ERC20", "1000000000000000000000000");
-        vm.setEnv("MIN_COLLATERAL_AMOUNT_ERC20", "1000");
-        vm.setEnv("MAX_DEBT_AMOUNT", "1000000000000000000000000");
-        vm.setEnv("MAX_COLLATERAL_AMOUNT_ERC20", "100000000000000000000000");
-        vm.setEnv("MIN_QUOTE_AMOUNT_ERC721", "1000");
-        vm.setEnv("MAX_QUOTE_AMOUNT_ERC721", "1000000000000000000000000");
-        vm.setEnv("MIN_COLLATERAL_AMOUNT_ERC721", "1");
-        vm.setEnv("MAX_COLLATERAL_AMOUNT_ERC721", "100");
-        vm.setEnv("SKIP_TIME", "300");
-        vm.setEnv("SKIP_TIME_TO_KICK", "259200");
-        vm.setEnv("SKIP_TIME_TO_KICK_RESERVE", "2592000");
-
-        super.setUp();
-    }
 
     /*
         Test failed because in invariants logic the amount to draw from pool wasn't bounded by configured max debt amount, requiring 100k NFT to be minted.

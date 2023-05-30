@@ -832,9 +832,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             interestState.interestRate
         );
         return (
-            Maths.wmul(poolBalances.t0Debt, pendingInflator),
-            Maths.wmul(poolBalances.t0Debt, inflatorState.inflator),
-            Maths.wmul(poolBalances.t0DebtInAuction, inflatorState.inflator),
+            Maths.ceilWmul(poolBalances.t0Debt, pendingInflator),
+            Maths.ceilWmul(poolBalances.t0Debt, inflatorState.inflator),
+            Maths.ceilWmul(poolBalances.t0DebtInAuction, inflatorState.inflator),
             interestState.t0Debt2ToCollateral
         );
     }

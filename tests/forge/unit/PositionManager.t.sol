@@ -1969,7 +1969,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             from:             borrower,
             borrower:         borrower,
             amountToRepay:    type(uint256).max,
-            amountRepaid:     1_002.608307827389905517 * 1e18,
+            amountRepaid:     1_002.608307827389905518 * 1e18,
             collateralToPull: 250 * 1e18,
             newLup:           MAX_PRICE
         });
@@ -2927,8 +2927,8 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             index:        _i9_72,
             lpBalance:    11_000 * 1e18,
             collateral:   0,
-            deposit:      8_936.865546659328965470 * 1e18,
-            exchangeRate: 0.812442322423575360 * 1e18
+            deposit:      8_936.865546659328965469 * 1e18,
+            exchangeRate: 0.812442322423575361 * 1e18
         });
 
         assertTrue(_positionManager.isPositionBucketBankrupt(tokenId, testIndex));
@@ -2978,9 +2978,9 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         _assertBucketAssets({
             index:        _i9_91,
-            lpBalance:    18_936.867676658332708017 * 1e18,
+            lpBalance:    18_936.867676658332708016 * 1e18,
             collateral:   0,
-            deposit:      18_936.867676658332708017 * 1e18,
+            deposit:      18_936.867676658332708016 * 1e18,
             exchangeRate: 1.0 * 1e18
         });
 
@@ -3006,10 +3006,10 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // minter one should only be able to withdraw what they moved
         _removeAllLiquidity({
             from:     testMinter,
-            amount:   8_936.867676658332708017 * 1e18,
+            amount:   8_936.867676658332708016 * 1e18,
             index:    _i9_91,
             newLup:   _p9_91,
-            lpRedeem: 8_936.867676658332708017 * 1e18
+            lpRedeem: 8_936.867676658332708016 * 1e18
         });
 
         // minter2 has remaining liquidity in _i9_91

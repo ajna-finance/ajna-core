@@ -1235,7 +1235,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             lpBalance:    35880690,
             collateral:   13167,
             deposit:      0,
-            exchangeRate: 1 * 1e18
+            exchangeRate: 0.999999989125110331 * 1e18
         });
 
         _addLiquidity({
@@ -1293,7 +1293,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             lpBalance:    35880690,
             collateral:   13167,
             deposit:      1,
-            exchangeRate: 1.000000027870144080 * 1e18
+            exchangeRate: 1.000000016995254411 * 1e18
         });
 
         assertEq(_quote.balanceOf(address(_pool)), 1);
@@ -1385,7 +1385,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 poolSize:             0.000000059754288926 * 1e18,
                 pledgedCollateral:    1 * 1e18,
                 encumberedCollateral: 2143,
-                poolDebt:             0.000000030736538487 * 1e18,
+                poolDebt:             0.000000030736538488 * 1e18,
                 actualUtilization:    0,
                 targetUtilization:    1e18,
                 minDebtAmount:        0.000000003073653849 * 1e18,

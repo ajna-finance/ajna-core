@@ -224,7 +224,7 @@ abstract contract BasicInvariants is BaseInvariants {
                     requireWithinDiff(
                         currentExchangeRate,
                         previousExchangeRate,
-                        1e13,  // otherwise require exchange rates to be within 1e-5
+                        1e8,  // otherwise require exchange rates to be within 1e-10
                         "Exchange Rate Invariant R1, R2, R3, R4, R5, R6, R7 or R8"
                     );    
                 }
