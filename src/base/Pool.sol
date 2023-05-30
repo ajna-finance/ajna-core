@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { Clone }           from '@clones/Clone.sol';
 import { ReentrancyGuard } from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
@@ -232,7 +232,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             deposits,
             poolState,
             RemoveQuoteParams({
-                maxAmount:      maxAmount_,
+                maxAmount:      Maths.min(maxAmount_, _availableQuoteToken()),
                 index:          index_,
                 thresholdPrice: Loans.getMax(loans).thresholdPrice
             })
@@ -376,9 +376,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     ) external override nonReentrant {
         uint256 claimable = auctions.kickers[msg.sender].claimable;
 
-        // the amount to claim is constrained by the claimable balance of sender and by pool balance
+        // the amount to claim is constrained by the claimable balance of sender
+        // claiming escrowed bonds is not constraiend by the pool balance
         maxAmount_ = Maths.min(maxAmount_, claimable);
-        maxAmount_ = Maths.min(maxAmount_, _getNormalizedPoolQuoteTokenBalance());
 
         // revert if no amount to claim
         if (maxAmount_ == 0) revert InsufficientLiquidity();
@@ -702,7 +702,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      *  @param  amount_  Amount to transfer from sender.
      */
     function _transferQuoteTokenFrom(address from_, uint256 amount_) internal {
-        IERC20(_getArgAddress(QUOTE_ADDRESS)).safeTransferFrom(from_, address(this), amount_ / _getArgUint256(QUOTE_SCALE));
+        // Transfer amount in favour of the pool
+        uint256 transferAmount = Maths.ceilDiv(amount_, _getArgUint256(QUOTE_SCALE));
+        IERC20(_getArgAddress(QUOTE_ADDRESS)).safeTransferFrom(from_, address(this), transferAmount);
     }
 
     /**
@@ -712,6 +714,17 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
      */
     function _transferQuoteToken(address to_, uint256 amount_) internal {
         IERC20(_getArgAddress(QUOTE_ADDRESS)).safeTransfer(to_, amount_ / _getArgUint256(QUOTE_SCALE));
+    }
+
+    /**
+     *  @notice Returns the quote token amount available to take loans or to be removed from pool.
+     *          Ensures claimable reserves and auction bonds are not used when taking loans.
+     */
+    function _availableQuoteToken() internal view returns (uint256 quoteAvailable_) {
+        uint256 poolBalance     = _getNormalizedPoolQuoteTokenBalance();
+        uint256 escrowedAmounts = auctions.totalBondEscrowed + reserveAuction.unclaimed;
+
+        if (poolBalance > escrowedAmounts) quoteAvailable_ = poolBalance - escrowedAmounts;
     }
 
     /**

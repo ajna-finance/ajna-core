@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
@@ -244,7 +244,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         });
         _assertReserveAuction({
             reserves:                   49.824849391649864823 * 1e18,
-            claimableReserves :         8.392712942459132681 * 1e18,
+            claimableReserves :         8.392639704106692235 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
@@ -285,7 +285,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             bondChange:       0.198343696868718241 * 1e18,
             isReward:         true,
             lpAwardTaker:     0,
-            lpAwardKicker:    0.195764233772511957 * 1e18
+            lpAwardKicker:    0.195764233772511956 * 1e18
         });
 
         _assertLenderLpBalance({
@@ -297,12 +297,12 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         _assertLenderLpBalance({
             lender:      _lender,
             index:       _i9_91,
-            lpBalance:   2_000.195764233772511957 * 1e18,
+            lpBalance:   2_000.195764233772511956 * 1e18,
             depositTime: _startTime + 250 days + 6.5 hours
         });
         _assertBucket({
             index:        _i9_91,
-            lpBalance:    2_000.195764233772511957 * 1e18,
+            lpBalance:    2_000.195764233772511956 * 1e18,
             collateral:   2 * 1e18,
             deposit:      2_006.716725444702296094 * 1e18,
             exchangeRate: 1.013176375717352701 * 1e18
@@ -310,7 +310,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         // reserves should remain the same after deposit take
         _assertReserveAuction({
             reserves:                   51.238131288298142182 * 1e18,
-            claimableReserves :         9.897108559574184183 * 1e18,
+            claimableReserves :         9.897035340857769727 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0
@@ -433,7 +433,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         });
         _assertReserveAuction({
             reserves:                   51.428181523373734113 * 1e18,
-            claimableReserves :         10.097312256477323215 * 1e18,
+            claimableReserves :         10.097214040782253164 * 1e18,
             claimableReservesRemaining: 0,
             auctionPrice:               0,
             timeRemaining:              0

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import '@std/Test.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
@@ -12,7 +12,8 @@ import { PoolCommons }      from 'src/libraries/external/PoolCommons.sol';
 import {
     MAX_FENWICK_INDEX,
     MAX_PRICE,
-    MIN_PRICE
+    MIN_PRICE,
+    _indexOf
 }                           from 'src/libraries/helpers/PoolHelper.sol';
 import { Maths }            from 'src/libraries/internal/Maths.sol';
 
@@ -70,8 +71,13 @@ abstract contract BaseHandler is Test {
 
     // reserves invariant test state
     uint256 public previousReserves;    // reserves before action
-    uint256 public increaseInReserves;  // amount of reserve decrease
-    uint256 public decreaseInReserves;  // amount of reserve increase
+    uint256 public increaseInReserves;  // amount of reserve increase
+    uint256 public decreaseInReserves;  // amount of reserve decrease
+
+    // Auction bond invariant test state
+    uint256 public previousTotalBonds; // total bond before action
+    uint256 public increaseInBonds;    // amount of bond increase
+    uint256 public decreaseInBonds;    // amount of bond decrease
 
     // All Buckets used in invariant testing that also includes Buckets where collateral is added when a borrower is in auction and has partial NFT
     EnumerableSet.UintSet internal buckets;
@@ -317,9 +323,9 @@ abstract contract BaseHandler is Test {
     /*****************************/
 
     function _ensureQuoteAmount(address actor_, uint256 amount_) internal {
-        uint256 actorBalance = _quote.balanceOf(actor_);
-        if (amount_> actorBalance ) {
-            _quote.mint(actor_, amount_ - actorBalance);
+        uint256 normalizedActorBalance = _quote.balanceOf(actor_) * _pool.quoteTokenScale();
+        if (amount_> normalizedActorBalance) {
+            _quote.mint(actor_, amount_ - normalizedActorBalance);
         }
         _quote.approve(address(_pool), amount_);
     }
@@ -330,6 +336,10 @@ abstract contract BaseHandler is Test {
 
     function _getKickSkipTime() internal returns (uint256) {
         return vm.envOr("SKIP_TIME_TO_KICK", uint256(200 days));
+    }
+
+    function _getKickReserveTime() internal returns (uint256) {
+        return vm.envOr("SKIP_TIME_TO_KICK_RESERVE", uint256(24 hours));
     }
 
     /**
@@ -393,9 +403,15 @@ abstract contract BaseHandler is Test {
 
         // reset the reserves before each action 
         increaseInReserves = 0;
-        decreaseInReserves  = 0;
+        decreaseInReserves = 0;
         // record reserves before each action
         (previousReserves, , , , ) = _poolInfo.poolReservesInfo(address(_pool));
+
+        // reset the bonds before each action
+        increaseInBonds = 0;
+        decreaseInBonds = 0;
+        // record totalBondEscrowed before each action
+        (previousTotalBonds, , , ) = _pool.reservesInfo();
     }
 
     /********************************/
@@ -522,6 +538,30 @@ abstract contract BaseHandler is Test {
 
         // reset taken flag in case auction was settled by take action
         _auctionSettleStateReset(borrower_);
+    }
+
+    function _recordSettleBucket(
+        address borrower_,
+        uint256 borrowerCollateralBefore_,
+        uint256 kickTimeBefore_,
+        uint256 auctionPrice_
+    ) internal {
+        (uint256 kickTimeAfter, , , , , ) = _poolInfo.auctionStatus(address(_pool), borrower_);
+
+        // **CT2**: Keep track of bucketIndex when borrower is removed from auction to check collateral added into that bucket
+        if (kickTimeBefore_ != 0 && kickTimeAfter == 0 && borrowerCollateralBefore_ % 1e18 != 0) {
+            if (auctionPrice_ < MIN_PRICE) {
+                buckets.add(7388);
+                lenderDepositTime[borrower_][7388] = block.timestamp;
+            } else if (auctionPrice_ > MAX_PRICE) {
+                buckets.add(0);
+                lenderDepositTime[borrower_][0] = block.timestamp;
+            } else {
+                uint256 bucketIndex = _indexOf(auctionPrice_);
+                buckets.add(bucketIndex);
+                lenderDepositTime[borrower_][bucketIndex] = block.timestamp;
+            }
+        }
     }
 
     /**********************************/

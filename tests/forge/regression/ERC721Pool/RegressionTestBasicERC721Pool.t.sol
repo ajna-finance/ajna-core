@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { BasicERC721PoolInvariants } from "../../invariants/ERC721Pool/BasicERC721PoolInvariants.t.sol";
 import "@std/console.sol";

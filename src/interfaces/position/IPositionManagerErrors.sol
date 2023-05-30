@@ -1,11 +1,16 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 /**
  * @title Positions Manager Errors
  */
 interface IPositionManagerErrors {
+
+    /**
+     * @notice User attempting to memorialize position with an allowance set too low.
+     */
+    error AllowanceTooLow();
 
     /**
      * @notice User attempting to utilize `LP` from a bankrupt bucket.

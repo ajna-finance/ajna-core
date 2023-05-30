@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.14;
+pragma solidity 0.8.18;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 import { Token }               from '../../utils/Tokens.sol';
@@ -246,7 +246,7 @@ contract ERC20PoolInfoUtilsTest is ERC20HelperContract {
                 address(_pool),
                 5 * 1e18,
                 high
-            ), 1668940620571264
+            ), 1668940620571263
         );
         assertEq(
             _poolUtils.lpToCollateral(
