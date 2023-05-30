@@ -1422,8 +1422,8 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
      */
     function testPermitDuringTransfers() external {
         // generate addresses and set test params
-        (address testMinter, uint256 minterPrivateKey) = makeAddrAndKey("testMinter");
-        address testReceiver   = makeAddr("testReceiver");
+        (address testMinter, uint256 minterPrivateKey)     = makeAddrAndKey("testMinter");
+        (address testReceiver, uint256 receiverPrivateKey) = makeAddrAndKey("testReceiver");
         uint256 testIndexPrice = 2550;
 
         // add initial liquidity
@@ -1437,12 +1437,18 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         uint256 tokenId = _mintNFT(testMinter, testMinter, address(_pool));
 
+        // check owner
+        assertEq(_positionManager.ownerOf(tokenId), testMinter);
+
         // deploy spender contract
         ContractNFTSpender spenderContract = new ContractNFTSpender(address(_positionManager));
 
         // minter creates signature, but doesn't use it
         uint256 deadline = block.timestamp + 10000;
         bytes memory signature = _getPermitSig(address(spenderContract), tokenId, 0, deadline, minterPrivateKey);
+
+        // minter creates signature, but doesn't use it
+        bytes memory signatureTwo = _getPermitSig(address(spenderContract), tokenId, 1, deadline, minterPrivateKey);
 
         // check nonces don't change without transfer
         assertEq(_positionManager.nonces(tokenId), 0);
@@ -1451,12 +1457,27 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         changePrank(testMinter);
         _positionManager.transferFrom(testMinter, testReceiver, tokenId);
 
+        // check owner
+        assertEq(_positionManager.ownerOf(tokenId), testReceiver);
+
         // check nonces after transfer
         assertEq(_positionManager.nonces(tokenId), 1);
 
         // minter attempt to invoke previous permit should fail due to invalid nonce
         vm.expectRevert(IPermit.NotAuthorized.selector);
         spenderContract.transferFromWithPermit(testMinter, tokenId, deadline, signature);
+
+        // minter attempt to invoke previous permit should fail due to not owner or approved
+        vm.expectRevert(IPermit.NotAuthorized.selector);
+        spenderContract.transferFromWithPermit(testMinter, tokenId, deadline, signatureTwo);
+
+        // receiver creates signature and transfers the token back to the minter
+        bytes memory signatureThree = _getPermitSig(address(spenderContract), tokenId, 1, deadline, receiverPrivateKey);
+        changePrank(testReceiver);
+        spenderContract.transferFromWithPermit(testMinter, tokenId, deadline, signatureThree);
+
+        // check owner
+        assertEq(_positionManager.ownerOf(tokenId), testMinter);
     }
 
     /**
