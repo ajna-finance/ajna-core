@@ -167,18 +167,22 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         address from,
         address pool,
         uint256 tokenId,
+        uint256 minAmountToReceive,
         uint256 reward,
         uint256[] memory epochsClaimed
     ) internal {
         changePrank(from);
-        uint256 fromAjnaBal = _ajnaToken.balanceOf(from);
+        uint256 fromAjnaBal       = _ajnaToken.balanceOf(from);
+
+        uint256 managerBalance    = _ajnaToken.balanceOf(address(_rewardsManager));
+        uint256 rewardTransferred = Maths.min(reward, managerBalance);
 
         uint256 currentBurnEpoch = IPool(pool).currentBurnEpoch();
         vm.expectEmit(true, true, true, true);
         emit ClaimRewards(from, pool, tokenId, epochsClaimed, reward);
-        _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
+        _rewardsManager.claimRewards(tokenId, currentBurnEpoch, minAmountToReceive);
 
-        assertEq(_ajnaToken.balanceOf(from), fromAjnaBal + reward);
+        assertEq(_ajnaToken.balanceOf(from), fromAjnaBal + rewardTransferred);
     }
 
     /***************/
@@ -236,23 +240,37 @@ abstract contract RewardsDSTestPlus is IRewardsManagerEvents, ERC20HelperContrac
         changePrank(from);
         uint256 currentBurnEpoch = _pool.currentBurnEpoch();
         vm.expectRevert(IRewardsManagerErrors.NotOwnerOfDeposit.selector);
-        _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
+        _rewardsManager.claimRewards(tokenId, currentBurnEpoch, 0);
     }
 
     function _assertNotOwnerOfDepositUnstakeRevert(address from , uint256 tokenId) internal {
-        // check only deposit owner can claim rewards
+        // check only deposit owner can unstake
         changePrank(from);
-        uint256 currentBurnEpoch = _pool.currentBurnEpoch();
         vm.expectRevert(IRewardsManagerErrors.NotOwnerOfDeposit.selector);
-        _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
+        _rewardsManager.unstake(tokenId);
     }
 
     function _assertAlreadyClaimedRevert(address from , uint256 tokenId) internal {
-        // check only deposit owner can claim rewards
+        // check if rewards can only be claimed once
         changePrank(from);
         uint256 currentBurnEpoch = _pool.currentBurnEpoch();
         vm.expectRevert(IRewardsManagerErrors.AlreadyClaimed.selector);
-        _rewardsManager.claimRewards(tokenId, currentBurnEpoch);
+        _rewardsManager.claimRewards(tokenId, currentBurnEpoch, 0);
+    }
+
+    function _assertUnstakeInsufficientLiquidityRevert(address from, uint256 tokenId) internal {
+        // should revert if token balance is less than rewards to claim
+        changePrank(from);
+        vm.expectRevert(IRewardsManagerErrors.InsufficientLiquidity.selector);
+        _rewardsManager.unstake(tokenId);
+    }
+
+    function _assertClaimRewardsInsufficientLiquidityRevert(address from, uint256 tokenId, uint256 minRewardToClaim) internal {
+        // should revert if token balance is less than rewards to claim
+        changePrank(from);
+        uint256 currentBurnEpoch = _pool.currentBurnEpoch();
+        vm.expectRevert(IRewardsManagerErrors.InsufficientLiquidity.selector);
+        _rewardsManager.claimRewards(tokenId, currentBurnEpoch, minRewardToClaim);
     }
 
     function _assertStake(

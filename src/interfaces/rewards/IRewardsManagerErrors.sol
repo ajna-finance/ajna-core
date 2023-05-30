@@ -17,6 +17,11 @@ interface IRewardsManagerErrors {
     error EpochNotAvailable();
 
     /**
+     *  @notice Insufficient Token Balance in contract to transfer rewards
+     */
+    error InsufficientLiquidity();
+
+    /**
      *  @notice User provided move index params that didn't match in size.
      */
     error MoveStakedLiquidityInvalid();
