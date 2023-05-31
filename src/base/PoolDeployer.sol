@@ -67,4 +67,8 @@ abstract contract PoolDeployer {
         return deployedPoolsList.length;
     }
 
+    function hasMethod(address contract_, bytes4 methodHash_) internal view returns (bool methodExists_) {
+        (methodExists_,) = contract_.staticcall(abi.encodePacked(methodHash_));
+    }
+
 }

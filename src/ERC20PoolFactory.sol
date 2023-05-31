@@ -53,6 +53,9 @@ contract ERC20PoolFactory is PoolDeployer, IERC20PoolFactory {
     ) external canDeploy(collateral_, quote_, interestRate_) returns (address pool_) {
         if (deployedPools[ERC20_NON_SUBSET_HASH][collateral_][quote_] != address(0)) revert IPoolFactory.PoolAlreadyExists();
 
+        // quote and collateral tokens must have decimals() method or pool is invalid
+        if (!hasMethod(quote_, bytes4(keccak256("decimals()"))) || !hasMethod(collateral_, bytes4(keccak256("decimals()")))) revert IPoolFactory.TokenInvalidNoDecimals();
+
         uint256 quoteTokenScale = 10 ** (18 - IERC20Token(quote_).decimals());
         uint256 collateralScale = 10 ** (18 - IERC20Token(collateral_).decimals());
 

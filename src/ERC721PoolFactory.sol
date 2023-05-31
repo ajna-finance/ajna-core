@@ -57,6 +57,9 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
         bytes32 subsetHash = getNFTSubsetHash(tokenIds_);
         if (deployedPools[subsetHash][collateral_][quote_] != address(0)) revert IPoolFactory.PoolAlreadyExists();
 
+        // quote token must have decimals() method or pool is invalid
+        if (!hasMethod(quote_, bytes4(keccak256("decimals()")))) revert IPoolFactory.TokenInvalidNoDecimals();
+
         uint256 quoteTokenScale = 10**(18 - IERC20Token(quote_).decimals());
 
         try IERC165(collateral_).supportsInterface(0x80ac58cd) returns (bool supportsERC721Interface) {
