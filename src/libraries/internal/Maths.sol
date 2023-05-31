@@ -9,6 +9,7 @@ pragma solidity 0.8.18;
 library Maths {
 
     uint256 internal constant WAD = 1e18;
+    uint256 internal constant RAY = 1e27;
 
     function wmul(uint256 x, uint256 y) internal pure returns (uint256) {
         return (x * y + WAD / 2) / WAD;
@@ -51,11 +52,11 @@ library Maths {
     }
 
     function rmul(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (x * y + 10**27 / 2) / 10**27;
+        return (x * y + RAY / 2) / RAY;
     }
 
     function rpow(uint256 x, uint256 n) internal pure returns (uint256 z) {
-        z = n % 2 != 0 ? x : 10**27;
+        z = n % 2 != 0 ? x : RAY;
 
         for (n /= 2; n != 0; n /= 2) {
             x = rmul(x, x);
