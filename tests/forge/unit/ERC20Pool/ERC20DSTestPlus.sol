@@ -510,7 +510,15 @@ abstract contract ERC20DSTestPlus is DSTestPlus, IERC20PoolEvents {
         address quote,
         uint256 interestRate
     ) internal {
-        vm.expectRevert(IPoolFactory.PoolAlreadyExists.selector);
+        address deployed = ERC20PoolFactory(poolFactory).deployedPools(
+            keccak256("ERC20_NON_SUBSET_HASH"),
+            collateral,
+            quote
+        );
+        vm.expectRevert(
+            abi.encodeWithSelector(bytes4(keccak256("PoolAlreadyExists(address)")),
+            deployed)
+        );
         ERC20PoolFactory(poolFactory).deployPool(collateral, quote, interestRate);
     }
 

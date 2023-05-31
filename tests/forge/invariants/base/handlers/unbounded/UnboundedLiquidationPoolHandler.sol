@@ -40,9 +40,10 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         uint256 kickerBondBefore = _getKickerBond(_actor);
 
         try _pool.kick(borrower_, 7388) {
+            numberOfActions['kick']++;
 
             // **RE9**:  Reserves increase by 3 months of interest when a loan is kicked
-            increaseInReserves += Maths.wmul(borrowerDebt, Maths.wdiv(interestRate, 4 * 1e18));
+            increaseInReserves += Maths.wdiv(Maths.wmul(borrowerDebt, interestRate), 4 * 1e18);
 
             uint256 kickerBondAfter = _getKickerBond(_actor);
 
@@ -70,6 +71,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         _ensureQuoteAmount(_actor, borrowerDebt);
 
         try _pool.kickWithDeposit(bucketIndex_, 7388) {
+            numberOfActions['kickWithDeposit']++;
 
             ( , , , uint256 depositAfterAction, ) = _pool.bucketInfo(bucketIndex_);
 
@@ -142,6 +144,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         _ensureQuoteAmount(taker_, 1e45);
 
         try _pool.take(borrower_, amount_, taker_, bytes("")) {
+            numberOfActions['take']++;
 
             (uint256 borrowerDebtAfterTake, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
             uint256 totalBondAfterTake          = _getKickerBond(kicker);
@@ -206,13 +209,14 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
 
         (uint256 borrowerDebt, , ) = _poolInfo.borrowerInfo(address(_pool), borrower_);
 
-        (address kicker, , , , , , , , , )     = _pool.auctionInfo(borrower_);
-        ( , , , , uint256 auctionPrice, )      = _poolInfo.auctionStatus(address(_pool), borrower_);
-        uint256 auctionBucketIndex             = auctionPrice < MIN_PRICE ? 7388 : (auctionPrice > MAX_PRICE ? 0 : _indexOf(auctionPrice));
+        (address kicker, , , , , , , , , ) = _pool.auctionInfo(borrower_);
+        ( , , , , uint256 auctionPrice, )  = _poolInfo.auctionStatus(address(_pool), borrower_);
+        uint256 auctionBucketIndex         = auctionPrice < MIN_PRICE ? 7388 : (auctionPrice > MAX_PRICE ? 0 : _indexOf(auctionPrice));
         
         LocalBucketTakeVars memory beforeBucketTakeVars = getBucketTakeInfo(bucketIndex_, kicker, _actor, auctionBucketIndex, borrower_);
 
         try _pool.bucketTake(borrower_, depositTake_, bucketIndex_) {
+            numberOfActions['bucketTake']++;
 
             LocalBucketTakeVars memory afterBucketTakeVars = getBucketTakeInfo(bucketIndex_, kicker, _actor, auctionBucketIndex, borrower_);
 
@@ -271,6 +275,7 @@ abstract contract UnboundedLiquidationPoolHandler is BaseHandler {
         (uint256 inflator, ) = _pool.inflatorInfo();
 
         try _pool.settle(borrower_, maxDepth_) {
+            numberOfActions['settle']++;
 
             // settle borrower debt with exchanging borrower collateral with quote tokens starting from hpb
             while (maxDepth_ != 0 && borrowerT0Debt != 0 && collateral != 0) {

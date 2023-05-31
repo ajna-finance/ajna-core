@@ -55,7 +55,9 @@ contract ERC721PoolFactory is PoolDeployer, IERC721PoolFactory {
         address collateral_, address quote_, uint256[] memory tokenIds_, uint256 interestRate_
     ) external canDeploy(collateral_, quote_, interestRate_) returns (address pool_) {
         bytes32 subsetHash = getNFTSubsetHash(tokenIds_);
-        if (deployedPools[subsetHash][collateral_][quote_] != address(0)) revert IPoolFactory.PoolAlreadyExists();
+
+        address existingPool = deployedPools[subsetHash][collateral_][quote_];
+        if (existingPool != address(0)) revert IPoolFactory.PoolAlreadyExists(existingPool);
 
         uint256 quoteTokenScale = 10**(18 - IERC20Token(quote_).decimals());
 

@@ -149,7 +149,7 @@ contract RewardsManager is IRewardsManager, ReentrancyGuard {
     function stake(
         uint256 tokenId_
     ) external override {
-        address ajnaPool = PositionManager(address(positionManager)).poolKey(tokenId_);
+        address ajnaPool = positionManager.poolKey(tokenId_);
 
         // check that msg.sender is owner of tokenId
         if (IERC721(address(positionManager)).ownerOf(tokenId_) != msg.sender) revert NotOwnerOfDeposit();

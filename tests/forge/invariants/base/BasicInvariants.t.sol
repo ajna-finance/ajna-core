@@ -4,7 +4,8 @@ pragma solidity 0.8.18;
 
 import "@std/console.sol";
 
-import { Maths } from 'src/libraries/internal/Maths.sol';
+import { IERC20Pool } from 'src/interfaces/pool/erc20/IERC20Pool.sol';
+import { Maths }      from 'src/libraries/internal/Maths.sol';
 
 import { IBaseHandler }  from '../interfaces/IBaseHandler.sol';
 import { BaseInvariants } from '../base/BaseInvariants.sol';
@@ -176,19 +177,28 @@ abstract contract BasicInvariants is BaseInvariants {
         require(poolDebt == totalDebt, "Quote Token Invariant QT2");
     }
 
-    /// @dev checks pool quote token balance is greater than or equal with sum of escrowed bonds and unclaimed reserves
+    /// @dev checks pool quote token balance is greater than or equal with unclaimed reserves plus claimable auction bonds
     function _invariant_QT3() internal view {
         // convert pool quote balance into WAD
         uint256 poolBalance = _quote.balanceOf(address(_pool)) * _pool.quoteTokenScale();
-        (
-            uint256 totalBondEscrowed,
-            uint256 unClaimed,
-            ,
-        ) = _pool.reservesInfo();
+        (, uint256 unClaimed, , ) = _pool.reservesInfo();
+
+        uint256 actorCount = IBaseHandler(_handler).getActorsCount();
+        uint256 claimableAuctionBonds;
+        for (uint256 i = 0; i < actorCount; i++) {
+            address kicker = IBaseHandler(_handler).actors(i);
+            (uint256 claimable, ) = _pool.kickerInfo(kicker);
+
+            claimableAuctionBonds += claimable;
+        }
+
+        console.log("poolBalance        -> ", poolBalance);
+        console.log("claimable reserves -> ", unClaimed);
+        console.log("claimable bonds    -> ", claimableAuctionBonds);
 
         require(
-            poolBalance >= totalBondEscrowed + unClaimed,
-            "QT3: escrowed bonds and claimable reserves not guaranteed"
+            poolBalance >= unClaimed + claimableAuctionBonds,
+            "QT3: claimable escrowed bonds and claimable reserves not guaranteed"
         );
     }
 
@@ -197,6 +207,7 @@ abstract contract BasicInvariants is BaseInvariants {
     /********************************/
 
     function _invariant_R1_R2_R3_R4_R5_R6_R7_R8() internal view {
+
         for (uint256 bucketIndex = LENDER_MIN_BUCKET_INDEX; bucketIndex <= LENDER_MAX_BUCKET_INDEX; bucketIndex++) {
             uint256 currentExchangeRate = _pool.bucketExchangeRate(bucketIndex);
             (uint256 bucketLps, , , , ) = _pool.bucketInfo(bucketIndex);
@@ -355,7 +366,7 @@ abstract contract BasicInvariants is BaseInvariants {
             requireWithinDiff(
                 depositAtIndex,
                 localDepositAtIndex,
-                (depositAtIndex+localDepositAtIndex)/1e9 + 1e12,
+                (depositAtIndex + localDepositAtIndex) / 1e9 + _pool.quoteTokenScale(),
                 "Incorrect deposits in bucket"
             );
         }
@@ -379,7 +390,7 @@ abstract contract BasicInvariants is BaseInvariants {
             requireWithinDiff(
                 depositTillIndex,
                 localDepositTillIndex,
-                (depositTillIndex+localDepositTillIndex)/1e9 + 1e12,
+                (depositTillIndex + localDepositTillIndex) / 1e9 + _pool.quoteTokenScale(),
                 "Incorrect deposits prefix sum"
             );
         }

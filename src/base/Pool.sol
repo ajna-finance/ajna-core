@@ -72,7 +72,6 @@ import { PoolCommons }     from '../libraries/external/PoolCommons.sol';
  *  @dev    Base contract and entrypoint for commong logic of both `ERC20` and `ERC721` pools.
  */
 abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
-
     using SafeERC20 for IERC20;
 
     /*****************/
@@ -138,10 +137,6 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         return _getArgUint256(QUOTE_SCALE);
     }
 
-    function quoteTokenDust() external pure override returns (uint256) {
-        return _getArgUint256(QUOTE_SCALE);
-    }
-
 
     /*********************************/
     /*** Lender External Functions ***/
@@ -157,7 +152,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
 
         // round to token precision
-        amount_ = _roundToScale(amount_, poolState.quoteDustLimit);
+        amount_ = _roundToScale(amount_, poolState.quoteTokenScale);
 
         uint256 newLup;
         (bucketLP_, newLup) = LenderActions.addQuoteToken(
@@ -547,7 +542,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         poolState_.inflator        = inflatorState.inflator;
         poolState_.rate            = interestState.interestRate;
         poolState_.poolType        = _getArgUint8(POOL_TYPE);
-        poolState_.quoteDustLimit  = _getArgUint256(QUOTE_SCALE);
+        poolState_.quoteTokenScale = _getArgUint256(QUOTE_SCALE);
 
 	    // check if t0Debt is not equal to 0, indicating that there is debt to be tracked for the pool
         if (poolState_.t0Debt != 0) {
@@ -697,9 +692,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /**
-     *  @notice Helper function to transfer amount of quote tokens (in quote token precision) from sender to pool contract.
+     *  @notice Helper function to transfer amount of quote tokens from sender to pool contract.
      *  @param  from_    Sender address.
-     *  @param  amount_  Amount to transfer from sender.
+     *  @param  amount_  Amount to transfer from sender (`WAD` precision). Scaled to quote token precision before transfer.
      */
     function _transferQuoteTokenFrom(address from_, uint256 amount_) internal {
         // Transfer amount in favour of the pool
@@ -708,9 +703,9 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     }
 
     /**
-     *  @notice Helper function to transfer amount of quote tokens (in quote token precision) from pool contract.
+     *  @notice Helper function to transfer amount of quote tokens from pool contract.
      *  @param  to_     Receiver address.
-     *  @param  amount_ Amount to transfer to receiver.
+     *  @param  amount_ Amount to transfer to receiver (`WAD` precision). Scaled to quote token precision before transfer.
      */
     function _transferQuoteToken(address to_, uint256 amount_) internal {
         IERC20(_getArgAddress(QUOTE_ADDRESS)).safeTransfer(to_, amount_ / _getArgUint256(QUOTE_SCALE));

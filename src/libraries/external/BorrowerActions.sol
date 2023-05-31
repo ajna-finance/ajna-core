@@ -208,7 +208,7 @@ library BorrowerActions {
                 loans_,
                 result_.poolDebt,
                 vars.borrowerDebt,
-                poolState_.quoteDustLimit
+                poolState_.quoteTokenScale
             );
 
             // add debt change to pool's debt
@@ -322,7 +322,7 @@ library BorrowerActions {
                 loans_,
                 result_.poolDebt,
                 vars.borrowerDebt,
-                poolState_.quoteDustLimit
+                poolState_.quoteTokenScale
             );
 
             result_.newLup = Deposits.getLup(deposits_, result_.poolDebt);

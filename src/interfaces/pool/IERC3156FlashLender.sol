@@ -9,7 +9,7 @@ interface IERC3156FlashLender {
     /**
      * @dev    The amount of currency available to be lent.
      * @param  token_ The loan currency.
-     * @return The amount of `token` that can be borrowed.
+     * @return The amount of `token` that can be borrowed (token precision).
      */
     function maxFlashLoan(
         address token_
@@ -18,8 +18,8 @@ interface IERC3156FlashLender {
     /**
      * @dev    The fee to be charged for a given loan.
      * @param  token_    The loan currency.
-     * @param  amount_   The amount of tokens lent.
-     * @return The amount of `token` to be charged for the loan, on top of the returned principal.
+     * @param  amount_   The amount of tokens lent (token precision).
+     * @return The amount of `token` to be charged for the loan (token precision), on top of the returned principal .
      */
     function flashFee(
         address token_,
@@ -30,7 +30,7 @@ interface IERC3156FlashLender {
      * @dev    Initiate a flash loan.
      * @param  receiver_ The receiver of the tokens in the loan, and the receiver of the callback.
      * @param  token_    The loan currency.
-     * @param  amount_   The amount of tokens lent.
+     * @param  amount_   The amount of tokens lent (token precision).
      * @param  data_     Arbitrary data structure, intended to contain user-defined parameters.
      * @return `True` when successful flashloan, `false` otherwise.
      */

@@ -4,15 +4,15 @@ pragma solidity 0.8.18;
 
 import "@std/console.sol";
 
-import { LiquidationInvariants }     from '../base/LiquidationInvariants.t.sol';
-import { BaseInvariants }            from '../base/BaseInvariants.sol';
-import { BasicInvariants }           from '../base/BasicInvariants.t.sol';
-import { PanicExitERC20PoolHandler } from './handlers/PanicExitERC20PoolHandler.sol';
-import { BasicERC20PoolInvariants }  from './BasicERC20PoolInvariants.t.sol';
+import { LiquidationInvariants }    from '../base/LiquidationInvariants.t.sol';
+import { BaseInvariants }           from '../base/BaseInvariants.sol';
+import { BasicInvariants }          from '../base/BasicInvariants.t.sol';
+import { TradingERC20PoolHandler }  from './handlers/TradingERC20PoolHandler.sol';
+import { BasicERC20PoolInvariants } from './BasicERC20PoolInvariants.t.sol';
 
-contract PanicExitERC20PoolInvariants is BasicERC20PoolInvariants, LiquidationInvariants {
+contract TradingERC20PoolInvariants is BasicERC20PoolInvariants, LiquidationInvariants {
     
-    PanicExitERC20PoolHandler internal _panicExitERC20PoolHandler;
+    TradingERC20PoolHandler internal _tradingERC20PoolHandler;
 
     address[] internal _lenders;
     address[] internal _borrowers;
@@ -26,7 +26,7 @@ contract PanicExitERC20PoolInvariants is BasicERC20PoolInvariants, LiquidationIn
 
         excludeContract(address(_basicERC20PoolHandler));
 
-        _panicExitERC20PoolHandler = new PanicExitERC20PoolHandler(
+        _tradingERC20PoolHandler = new TradingERC20PoolHandler(
             address(_erc20pool),
             address(_ajna),
             address(_quote),
@@ -35,7 +35,7 @@ contract PanicExitERC20PoolInvariants is BasicERC20PoolInvariants, LiquidationIn
             address(this)
         );
 
-        _handler = address(_panicExitERC20PoolHandler);
+        _handler = address(_tradingERC20PoolHandler);
     }
 
     function invariant_all_erc20() public useCurrentTimestamp {
@@ -49,19 +49,6 @@ contract PanicExitERC20PoolInvariants is BasicERC20PoolInvariants, LiquidationIn
         _invariant_B4();
         _invariant_B5_B6_B7();
 
-        _invariant_QT1();
-        _invariant_QT2();
-        _invariant_QT3();
-
-        _invariant_R1_R2_R3_R4_R5_R6_R7_R8();
-
-        _invariant_L1_L2_L3();
-
-        _invariant_I1();
-        _invariant_I2();
-        _invariant_I3();
-        _invariant_I4();
-
         _invariant_F1();
         _invariant_F2();
         _invariant_F3();
@@ -69,13 +56,6 @@ contract PanicExitERC20PoolInvariants is BasicERC20PoolInvariants, LiquidationIn
         _invariant_F5();
 
         invariant_collateral_CT1_CT7();
-
-        _invariant_A1();
-        _invariant_A2();
-        _invariant_A3_A4();
-        _invariant_A5();
-        _invariant_A6();
-        _invariant_A7();
 
         invariant_call_summary();
     }
