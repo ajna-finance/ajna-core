@@ -110,6 +110,8 @@ To test all invariants (lend/borrow, liquidations and reserve auctions) for a re
 make test-rw-simulation-erc20 SCENARIO=<rw-scenario>
 make test-rw-simulation-erc721 SCENARIO=<rw-scenario>
 ```
+where `<rw-scenario>` is the configured setup (two sample provided as `rw-1` and `rw-2`). Real-time pool statistics are written in `logfile.txt`
+
 To test invariants for an ERC20 auctioned pool with 200 lenders and 500 borrowers:
 ```bash
 make test-liquidations-load-erc20 SCENARIO=panic-exit
@@ -122,7 +124,6 @@ To test invariants for swapping quote for colalteral in an ERC20 pool with 200 l
 ```bash
 make test-swap-load-erc20 SCENARIO=trading-pool
 ```
-where `<rw-scenario>` is the configured setup (two sample provided as `rw-1` and `rw-2`). Real-time pool statistics are written in `logfile.txt`
 
 #### Commands
 - run all invariant tests for both ERC20 and ERC721 pools:
