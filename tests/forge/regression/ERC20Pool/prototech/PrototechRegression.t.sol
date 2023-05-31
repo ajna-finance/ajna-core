@@ -274,6 +274,11 @@ contract PrototechRegressionTestLiquidationWith50BucketsIndex1ERC20Pool is Liqui
         super.setUp();
     }
 
+    /**
+        LUP computing overflows when there's big debt in pool (72911661459413347380086.629833841230757427 in test)
+        Fixed by changing the way scaled sum is calculated in deposits from (runningScale * scaling * value + 5e35) / 1e36 to use Math.mulDiv (keep precision and to allow higher values of debt).
+        Fix doesn't impose a limit so could happen again in pools with higher debt.
+     */
     function test_regression_prototech_R14() external {
         _liquidationERC20PoolHandler.pledgeCollateral(115792089237316195423570985008687907853269984665640564039457584007913129639935, 115792089237316195423570985008687907853269984665640564039457584007913129639933, 1045283732897280077977596116159060);
         _liquidationERC20PoolHandler.kickAuction(115792089237316195423570985008687907853269984665640564039457584007913129639935, 3, 115792089237316195423570985008687907853269984665640564039457584007913129639932, 115792089237316195423570985008687907853269984665640564039457584007913129639935);
