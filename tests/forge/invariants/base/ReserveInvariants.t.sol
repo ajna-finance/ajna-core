@@ -25,7 +25,7 @@ abstract contract ReserveInvariants is LiquidationInvariants {
         requireWithinDiff(
             currentReserves,
             previousReserves + increaseInReserves - decreaseInReserves,
-            1e18,
+            _pool.quoteTokenScale(),
             "Incorrect Reserves change"
         );
     }
